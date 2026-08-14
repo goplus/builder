@@ -83,12 +83,6 @@ const props = defineProps<{
 const tutorial = useTutorial()
 const route = useRoute()
 
-// End whatever course was in progress as soon as we land here, not when `startCourse` eventually
-// runs: the opening sequence (story video, prelude) can take a while, and until then the previous
-// course's session would still be live — its dialogs lingering on screen and its copilot reacting
-// to the navigation that brought us here.
-tutorial.endCurrentCourse()
-
 function getUsercontentOrigin(): string | null {
   if (usercontentBaseUrl == null || usercontentBaseUrl === '') return null
   try {
@@ -132,6 +126,20 @@ const allQueryRet = useQuery(
     en: 'Failed to load course',
     zh: '加载课程失败'
   }
+)
+
+// Keep the previous tutorial session intact until the requested next course is known to exist.
+// This prevents a failed route or data request from leaving the learner in ordinary editor mode.
+// Once the data is ready, end the old session before any opening modal or new course startup runs.
+let handoffCompleted = false
+watch(
+  () => allQueryRet.data.value,
+  (data) => {
+    if (data == null || handoffCompleted) return
+    handoffCompleted = true
+    tutorial.endCurrentCourse()
+  },
+  { immediate: true, flush: 'sync' }
 )
 
 const isStarting = ref(false)

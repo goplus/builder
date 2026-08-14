@@ -49,7 +49,7 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     const nextCourseId = series.courseIDs[index + 1]
     editorLeaveConfirm.requestSkipOnce()
     emit('close')
-    props.tutorial.endCurrentCourse()
+    // `course-start.vue` owns the handoff and ends the old session after this navigation lands.
     await router.push(`/course/${series.id}/${nextCourseId}/start`)
   },
   { en: 'Failed to learn next course', zh: '学习下一个课程失败' }
@@ -72,13 +72,13 @@ const { fn: handleStartNextCourse } = useMessageHandle(
       <div class="flex w-full flex-col">
         <img :src="retryIllustration" alt="" class="block h-[190px] w-[396px]" />
         <div class="flex min-h-[164px] w-full flex-col justify-center rounded-lg bg-grey-300 px-6 py-8">
-          <p class="text-sm/[22px] font-medium text-grey-900">
+          <p class="text-base/[22px] font-medium text-grey-900">
             {{ $t({ en: 'Almost there!', zh: '就差一点！' }) }}
           </p>
-          <p class="text-sm/[22px] font-medium text-grey-900">
+          <p class="text-base/[22px] font-medium text-grey-900">
             {{ $t({ en: 'Your program reached the goal.', zh: '你的程序已经达成目标了。' }) }}
           </p>
-          <MarkdownView v-if="hint !== ''" class="text-sm/[22px]! font-medium text-grey-900" :value="hint" />
+          <MarkdownView v-if="hint !== ''" class="text-base/[22px]! font-medium text-grey-900" :value="hint" />
         </div>
       </div>
 
