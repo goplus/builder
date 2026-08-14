@@ -82,68 +82,6 @@ function getRect(el: HTMLElement): Rect {
   }
 }
 
-function setRectByPosition(rect: Rect, position: Position) {
-  const { x, y } = position
-  const { left, top, right, bottom, width, height } = rect
-  const offsetX = left - x
-  const offsety = top - y
-
-  return {
-    left: x,
-    top: y,
-    right: right + offsetX,
-    bottom: bottom + offsety,
-    width,
-    height
-  }
-}
-
-function correctSpotlightRect(placement: Placement, spotlightRect: Rect) {
-  let { top, left, bottom, right, width, height } = spotlightRect
-  width += anchorSize
-  right -= anchorSize
-  const tipsWidth = width - anchorSize
-  const tipsHeight = height - anchorSize
-
-  switch (placement) {
-    case Placement.TOP_RIGHT:
-      bottom += tipsHeight
-      top -= tipsHeight
-      break
-    case Placement.TOP_LEFT:
-      right += tipsWidth
-      left -= tipsWidth
-      top -= tipsHeight
-      bottom += tipsHeight
-      break
-    case Placement.BOTTOM_LEFT:
-      right += tipsWidth
-      left -= tipsWidth
-      break
-  }
-
-  return {
-    top,
-    left,
-    bottom,
-    right,
-    width,
-    height
-  }
-}
-
-function getPlacementByHalf(spotlightRect: Rect, lowerHalf: boolean) {
-  const placement = lowerHalf ? Placement.BOTTOM_RIGHT : Placement.TOP_RIGHT
-  const correctRect = correctSpotlightRect(placement, spotlightRect)
-  const { right } = correctRect
-  const conflictRight = right - conflictBuffer
-
-  if (lowerHalf) {
-    return conflictRight > 0 ? Placement.BOTTOM_RIGHT : Placement.BOTTOM_LEFT
-  }
-  return conflictRight > 0 ? Placement.TOP_RIGHT : Placement.TOP_LEFT
-}
-
 function getRevealPosition(revealRect: Rect, spotlightRect: Rect): Position {
   const { left, top, bottom, width, height } = revealRect
   const [anchorOffsetLeft, anchorOffsetTop] = anchorOffset
@@ -180,11 +118,49 @@ function providerSpotlightEl() {
 function syncPlacementAndPosition() {
   const revealEl = providerRevealEl()
   const spotlightEl = providerSpotlightEl()
+  const revealElementRect = revealEl.getBoundingClientRect()
   const revealRect = getRect(revealEl)
   const spotlightRect = getRect(spotlightEl)
 
   const position = (positionRef.value = getRevealPosition(revealRect, spotlightRect))
-  placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
+  const edgePadding = 16
+  const tipsWidth =
+    spotlightEl.querySelector<HTMLElement>('.tips')?.getBoundingClientRect().width ?? spotlightRect.width
+  const tipsHeight =
+    spotlightEl.querySelector<HTMLElement>('.tips')?.getBoundingClientRect().height ?? spotlightRect.height
+  const gap = 16
+  const rightSpace = window.innerWidth - revealElementRect.right
+  const leftSpace = revealElementRect.left
+  const rightFits = rightSpace >= tipsWidth + gap + edgePadding
+  const useRight = rightFits || rightSpace >= leftSpace
+  const lowerSpace = window.innerHeight - revealElementRect.bottom
+  const upperSpace = revealElementRect.top
+  const lowerFits = lowerSpace >= tipsHeight + gap + edgePadding
+  const useLower = lowerFits || lowerSpace >= upperSpace
+
+  // Anchor the arrow outside the highlighted code instead of at its center. This keeps the code
+  // visible; only an unavailable side makes the bubble fall back to the opposite edge.
+  placementRef.value = useRight
+    ? useLower
+      ? Placement.BOTTOM_RIGHT
+      : Placement.TOP_RIGHT
+    : useLower
+      ? Placement.BOTTOM_LEFT
+      : Placement.TOP_LEFT
+  position.x = useRight ? revealElementRect.right + gap : revealElementRect.left - gap
+  position.y = useLower ? revealElementRect.bottom + gap : revealElementRect.top - gap
+
+  const horizontalOffset = anchorSize - anchorOffset[0]
+  if (useRight) {
+    position.x = Math.min(position.x, window.innerWidth - edgePadding - tipsWidth - horizontalOffset)
+  } else {
+    position.x = Math.max(position.x, edgePadding + tipsWidth + horizontalOffset)
+  }
+  if (useLower) {
+    position.y = Math.min(position.y, window.innerHeight - edgePadding - tipsHeight)
+  } else {
+    position.y = Math.max(position.y, edgePadding + tipsHeight + 2 * anchorSize - anchorOffset[1])
+  }
 
   spotlightEl.style.transform = `translateX(${position.x}px) translateY(${position.y}px)`
   maskRectRef.value = revealEl.getBoundingClientRect()
@@ -338,7 +314,7 @@ watch(
   --spotlight-z-index: 10000; /* TODO: Adjust as needed */
 
   position: absolute;
-  overflow: hidden;
+  overflow: visible;
   inset: 0;
   pointer-events: none;
   z-index: var(--spotlight-z-index);
@@ -436,8 +412,9 @@ watch(
   padding: 2px;
   font-size: 12px;
   background: var(--ui-color-grey-100);
-  word-wrap: break-word;
-  max-width: 300px;
+  width: max-content;
+  max-width: none;
+  white-space: nowrap;
   box-shadow: var(--ui-box-shadow-sm);
 }
 

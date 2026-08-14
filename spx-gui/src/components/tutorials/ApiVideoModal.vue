@@ -1,7 +1,7 @@
 <!-- The modal playing an API's explainer video, shared by the copilot's `api-video` element and
      the course-opening knowledge-point videos. -->
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { UIIcon, UIModal, UIModalClose } from '@/components/ui'
 import type { ApiVideoInfo } from './api-videos'
 import { handlePlayWithSound, useVideoAspect } from './video-aspect'
@@ -18,14 +18,36 @@ const emit = defineEmits<{
 const videoRef = ref<HTMLVideoElement | null>(null)
 const hasEnded = ref(false)
 
+async function playVideo() {
+  const video = videoRef.value
+  if (video == null) return
+  try {
+    await video.play()
+  } catch {
+    video.muted = true
+    try {
+      await video.play()
+    } catch {
+      // The error state is intentionally left to the existing media error handler.
+    }
+  }
+}
+
 watch(
   () => props.visible,
   (isVisible) => {
     if (!isVisible) return
     hasEnded.value = false
-    videoRef.value?.load()
+    void nextTick(() => {
+      videoRef.value?.load()
+      void playVideo()
+    })
   }
 )
+
+onMounted(() => {
+  if (props.visible) void playVideo()
+})
 
 function handleEnded() {
   hasEnded.value = true
@@ -75,9 +97,10 @@ const { aspectStyle, handleLoadedMetadata } = useVideoAspect(4 / 3)
             :src="video.src"
             crossorigin="anonymous"
             autoplay
+            muted
             playsinline
             @loadedmetadata="handleLoadedMetadata"
-            @loadeddata="handlePlayWithSound"
+            @loadeddata="playVideo"
             @ended="handleEnded"
           ></video>
           <button
