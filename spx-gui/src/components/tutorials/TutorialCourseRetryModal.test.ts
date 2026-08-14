@@ -28,8 +28,9 @@ const global = {
   },
   stubs: {
     UIModal: {
-      props: ['visible'],
-      template: '<div data-testid="modal"><slot /></div>'
+      props: ['visible', 'maskClosable'],
+      inheritAttrs: false,
+      template: '<div data-testid="modal" :data-mask-closable="String(maskClosable)"><slot /></div>'
     },
     UIButton: {
       props: ['type'],
@@ -70,6 +71,7 @@ describe('TutorialCourseRetryModal', () => {
     expect(buttons[0].attributes('data-type')).toBe('secondary')
     expect(buttons[1].text()).toBe('再试一次')
     expect(wrapper.find('[data-testid="hint"]').text()).toBe('试试用 `stepTo`。')
+    expect(wrapper.find('[data-testid="modal"]').attributes('data-mask-closable')).toBe('false')
   })
 
   it('closes the modal when retrying', async () => {

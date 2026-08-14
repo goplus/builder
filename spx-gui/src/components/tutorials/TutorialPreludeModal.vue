@@ -43,7 +43,7 @@ function handleContinue() {
     :visible="visible"
     size="small"
     class="w-[444px]! rounded-xl! shadow-[0_4px_12px_rgba(36,41,47,0.08)]"
-    mask-closable
+    :mask-closable="false"
     @update:visible="handleContinue"
   >
     <div class="flex flex-col items-center gap-6 p-6">
@@ -52,7 +52,7 @@ function handleContinue() {
         <div class="w-full rounded-lg bg-grey-300 px-6 py-8">
           <!-- The course prompt supplies this text for each opening; Markdown keeps inline code
                snippets styled consistently with the rest of the tutorial UI. -->
-          <MarkdownView class="text-base/[22px]! font-medium text-grey-900" :value="text" />
+          <MarkdownView class="text-base/[1.5]! font-normal text-grey-900" :value="text" />
         </div>
       </div>
       <UIButton

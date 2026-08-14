@@ -32,7 +32,9 @@ const global = {
   },
   stubs: {
     UIModal: {
-      template: '<div data-testid="modal"><slot /></div>'
+      props: ['maskClosable'],
+      inheritAttrs: false,
+      template: '<div data-testid="modal" :data-mask-closable="String(maskClosable)"><slot /></div>'
     },
     UIImg: true,
     UIButton: {
@@ -76,11 +78,30 @@ describe('TutorialCourseSuccessModal', () => {
     const { wrapper } = mountModal()
 
     expect(wrapper.find('[data-testid="comment"]').text()).toBe('1.2 修改步数课程已完成')
+    expect(wrapper.find('[data-testid="modal"]').attributes('data-mask-closable')).toBe('false')
+    expect(wrapper.find('[data-testid="comment"]').classes()).toContain('text-center')
     expect(wrapper.findAll('button').map((button) => button.text())).toEqual([
       '再试一次',
       '返回系列课程',
       '学习下一个课程'
     ])
+  })
+
+  it('hides a series sequence prefix from the fallback evaluation', () => {
+    const tutorial = createTutorial()
+    const wrapper = shallowMount(TutorialCourseSuccessModal, {
+      props: {
+        completion: {
+          course: { id: 'course-1', title: '4. 第一行代码' },
+          series: { id: 'series-1', courseIDs: ['course-1'] }
+        } as never,
+        comment: null,
+        tutorial
+      },
+      global
+    })
+
+    expect(wrapper.find('[data-testid="comment"]').text()).toBe('第一行代码课程已完成')
   })
 
   it('navigates by series order without ending tutorial mode before the handoff', async () => {

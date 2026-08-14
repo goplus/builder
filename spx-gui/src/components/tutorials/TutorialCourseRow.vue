@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { type Course } from '@/apis/course'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useAsyncComputed } from '@/utils/utils'
-import { UIImg } from '@/components/ui'
+import { UIButton, UIImg } from '@/components/ui'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 
 const props = defineProps<{
@@ -47,12 +47,14 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
     <span v-if="current" class="flex-none px-1 text-xs font-medium text-primary-main">{{
       $t({ en: 'in progress', zh: '进行中' })
     }}</span>
-    <button
+    <UIButton
       v-if="current"
-      class="ml-auto h-5 flex-none cursor-pointer rounded-sm border border-dividing-line-2 bg-grey-300 px-2 text-xs font-medium text-text transition-colors hover:bg-grey-400"
+      class="ml-auto flex-none rounded-sm! px-2! text-sm!"
+      type="white"
+      size="small"
       @click.stop="emit('restart')"
     >
       {{ $t({ en: 'Restart course', zh: '重新开始' }) }}
-    </button>
+    </UIButton>
   </li>
 </template>
