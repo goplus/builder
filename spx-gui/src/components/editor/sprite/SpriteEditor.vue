@@ -1,5 +1,5 @@
 <template>
-  <EditorHeader>
+  <EditorHeader v-if="!isFocused">
     <UITabs
       v-radar="{
         name: 'Sprite editor tabs',
@@ -164,6 +164,7 @@ defineProps<{
 }>()
 
 const codeFontSize = computed(() => editorWorkspaceLayout.codeFontSize)
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
 const codeToolsVisible = computed(() => !editorWorkspaceLayout.isHidden('code-editor-tools'))
 const apiReferenceBlockStyle = computed(() => editorWorkspaceLayout.mode === 'focused')
 // In block style (tutorial focused mode) the input helper is hidden for plain literals & direction.

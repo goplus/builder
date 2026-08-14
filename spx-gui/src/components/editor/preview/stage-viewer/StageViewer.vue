@@ -6,9 +6,13 @@
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
     class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"
-    :class="{ 'cursor-crosshair': rulerActive }"
-    :style="{ backgroundImage: `url(${stageBgUrl})` }"
-    @mousemove="updateMousePos"
+    :class="{ 'cursor-ruler': rulerActive }"
+    :style="{
+      backgroundImage: `url(${stageBgUrl})`,
+      '--ruler-cursor': `url(${rulerCursorUrl}) 12 12, crosshair`
+    }"
+    @mousemove="updateMousePos(), updateHoveredSprite()"
+    @mouseleave="handleLabelLeave()"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
@@ -47,7 +51,7 @@
           />
         </v-group>
       </v-layer>
-      <v-layer>
+      <v-layer v-if="!isFocused">
         <WidgetNode
           v-for="localConfig in visibleWidgetLocalConfigs"
           :key="localConfig.id"
@@ -59,6 +63,7 @@
       </v-layer>
       <v-layer>
         <NodeTransformer
+          v-if="!isFocused"
           ref="nodeTransformerRef"
           :node-ready-map="nodeReadyMap"
           :target="editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget"
@@ -73,7 +78,7 @@
         :snap-targets="rulerSnapTargets"
       />
     </v-stage>
-    <div v-if="localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
+    <div v-if="!isFocused && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
       <QuickConfigWrapper ref="quickConfigRef">
         <SpriteQuickConfig
           v-if="localConfigRef instanceof SpriteLocalConfig"
@@ -88,30 +93,56 @@
       </QuickConfigWrapper>
     </div>
 
-    <UITooltip v-if="rulerEnabled" placement="left">
+    <!-- One for the selected sprite, one for whatever the pointer is over. The hovered one is what
+         makes another sprite's name reachable at all: selecting it would switch the code editor
+         away from the file the name is meant to go into.
+
+         The label swallows `mousemove`: it sits inside the stage container, so its own moves would
+         otherwise bubble up and be hit-tested against the stage — finding no sprite under the
+         label, and hiding the very thing the pointer is resting on. -->
+    <UITooltip
+      v-for="label in [selectedSpriteNameLabel, hoveredSpriteNameLabel].filter((l) => l != null)"
+      :key="label.name"
+      placement="bottom"
+    >
       <template #trigger>
         <button
-          v-radar="{ name: 'Ruler', desc: 'Toggle the ruler, which measures the distance between things on the stage' }"
-          type="button"
-          class="ruler-toggle absolute top-2 right-2"
-          :class="{ active: rulerActive }"
-          @click="rulerActive = !rulerActive"
+          v-radar="{
+            name: label.name === selectedSpriteNameLabel?.name ? 'Selected sprite name' : 'Hovered sprite name',
+            desc: 'Name label below the sprite; clicking it inserts the name at the code editor cursor'
+          }"
+          class="absolute -translate-x-1/2 cursor-pointer rounded-[4px] border-none bg-black/30 px-1.5 py-0.5 text-xs text-white transition-colors hover:bg-black/50"
+          :style="{ left: `${label.left}px`, top: `${label.top}px` }"
+          @mouseenter="handleLabelEnter(label.name)"
+          @mouseleave="handleLabelLeave()"
+          @mousemove.stop
+          @click.stop="handleSpriteNameLabelClick(label.name)"
         >
-          <span class="ruler-toggle-face">
-            <UIIcon type="ruler" />
-          </span>
+          {{ label.name }}
         </button>
       </template>
-      {{ $t(rulerTip) }}
+      {{ $t({ en: 'Click to insert the name into your code', zh: '点击把名字插入代码' }) }}
     </UITooltip>
 
+    <!-- Invisible per-sprite anchors (focused mode): course-opening spotlights address a sprite on
+         the stage through these radar landmarks (`Stage sprite: <name>`). `pointer-events-none`
+         keeps them out of the way — a click inside the spotlighted box falls through to the canvas
+         and actually selects the sprite, which is exactly the action being taught. -->
     <div
-      v-if="selectedSpriteNameLabel != null"
-      class="pointer-events-none absolute -translate-x-1/2 rounded-[4px] bg-black/30 px-1.5 py-0.5 text-xs text-white"
-      :style="{ left: `${selectedSpriteNameLabel.left}px`, top: `${selectedSpriteNameLabel.top}px` }"
-    >
-      {{ selectedSpriteNameLabel.name }}
-    </div>
+      v-for="anchor in stageSpriteAnchors"
+      :key="anchor.name"
+      v-radar="{
+        name: `Stage sprite: ${anchor.name}`,
+        desc: `On-stage area of the sprite named ${anchor.name}; clicking it selects the sprite`
+      }"
+      class="pointer-events-none absolute"
+      :style="{
+        left: `${anchor.left}px`,
+        top: `${anchor.top}px`,
+        width: `${anchor.width}px`,
+        height: `${anchor.height}px`
+      }"
+    ></div>
 
     <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
@@ -122,6 +153,7 @@
 import { throttle } from 'lodash'
 import {
   computed,
+  onUnmounted,
   reactive,
   ref,
   shallowReactive,
@@ -131,13 +163,14 @@ import {
   type ComponentPublicInstance
 } from 'vue'
 import Konva from 'konva'
-import type { KonvaEventObject } from 'konva/lib/Node'
+import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { StageConfig } from 'konva/lib/Stage'
 import type { LayerConfig } from 'konva/lib/Layer'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
-import { UIIcon, UILoading, UITooltip } from '@/components/ui'
+import { UILoading, UITooltip } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
@@ -145,6 +178,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/spx/stage'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { useCodeEditorRef } from '@/components/editor/spx-code-editor'
 import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
@@ -154,6 +188,7 @@ import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/Wi
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import StageRuler from './StageRuler.vue'
+import rulerCursorUrl from '@/components/ui/icons/ruler.svg?url'
 import WidgetNode from './widgets/WidgetNode.vue'
 import QuickConfigWrapper, {
   type ConfigType
@@ -183,6 +218,7 @@ const mapRef = ref<{
 }>()
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
 const spriteNodeRefs = shallowReactive(new Map<string, InstanceType<typeof SpriteNode>>())
 
@@ -199,14 +235,10 @@ const mousePos = ref<Pos | null>(null)
 // The ruler is not part of the regular editor: guided scenarios (tutorial courses) turn it on
 // through the workspace layout, see `optionalWorkspaceTools`.
 const rulerEnabled = computed(() => editorWorkspaceLayout.isToolEnabled('ruler'))
-const rulerActive = ref(false)
-watch(rulerEnabled, (enabled) => {
-  if (!enabled) rulerActive.value = false
-})
-
-const rulerTip = computed(() =>
-  rulerActive.value ? { en: 'Put the ruler away', zh: '收起尺子' } : { en: 'Measure a distance', zh: '量一量' }
-)
+const props = defineProps<{
+  rulerActive?: boolean
+}>()
+const rulerActive = computed(() => rulerEnabled.value && props.rulerActive === true)
 
 /**
  * Sprite centers, in map coordinates, so that measuring between two sprites needs no steady
@@ -220,11 +252,8 @@ const rulerSnapTargets = computed(() =>
   }))
 )
 
-// In guided scenarios (tutorial focused mode) the selected sprite shows its name just below its
-// transform box, so a beginner can tell which sprite they are working on. It is a DOM overlay placed
-// under the box; the position is refreshed imperatively (see `refreshSelectedSpriteNameLabel`) from
-// the transformer's on-screen rect, which already accounts for the sprite's size/rotation and the
-// rotate handle — wherever it ends up — so the label always clears the box.
+// In guided scenarios (tutorial focused mode) the selected sprite shows its name flush against the
+// bottom of the sprite artwork, so a beginner can tell which sprite they are working on.
 const selectedSpriteNameLabel = shallowRef<{ name: string; left: number; top: number } | null>(null)
 
 const updateMousePos = throttle(() => {
@@ -604,15 +633,32 @@ const selectedSpriteNode = computed(() => {
   return spriteNodeRefs.get(selectedSpriteId) ?? null
 })
 
-// Position the name label just below the selected sprite's transform box. We read the transformer's
-// on-screen rect (canvas pixels, already including the sprite's size/rotation, the anchors and the
-// rotate handle), so the label clears whatever the box's lowest point is. `null` when there is no
-// sprite selected or the transformer is not attached yet.
+const codeEditorRef = useCodeEditorRef()
+
+// Clicking the label drops the sprite's name at the code cursor: the name is how code addresses the
+// sprite (`stepTo Radish2`), and reading it off the stage then retyping it is exactly the step
+// beginners fumble — a typo'd name is a confusing error, and this makes "which carrot is which"
+// clickable instead.
+const handleSpriteNameLabelClick = useMessageHandle(
+  (name: string) => {
+    const codeEditorUI = codeEditorRef.value?.getAttachedUI()
+    if (codeEditorUI == null) return
+    return editorCtx.state.history.doAction({ name: { en: 'Insert sprite name', zh: '插入精灵名字' } }, () =>
+      codeEditorUI.insertInlineText(name)
+    )
+  },
+  { en: 'Failed to insert sprite name', zh: '插入精灵名字失败' }
+).fn
+
+// Position the name label at the bottom-center of the selected sprite's artwork. The transform
+// controls are hidden in focused mode, so using the sprite node itself keeps the gap at exactly zero.
 function refreshSelectedSpriteNameLabel() {
   const sprite = editorWorkspaceLayout.mode === 'focused' ? editorCtx.state.selectedSprite : null
-  const transformerNode = sprite != null ? nodeTransformerRef.value?.getNode() ?? null : null
-  const box = transformerNode?.getClientRect() ?? null
-  if (sprite == null || transformerNode == null || box == null || box.height === 0) {
+  const stage = stageRef.value?.getStage() ?? null
+  const spriteNode =
+    sprite != null ? stage?.findOne((node: Node) => node.getAttr('nodeId') === getNodeId(sprite)) : null
+  const box = spriteNode?.getClientRect() ?? null
+  if (sprite == null || spriteNode == null || box == null || box.height === 0) {
     selectedSpriteNameLabel.value = null
     return
   }
@@ -623,22 +669,21 @@ function refreshSelectedSpriteNameLabel() {
   let offsetX = 0
   let offsetY = 0
   const containerEl = container.value
-  const contentEl = transformerNode.getStage()?.content
+  const contentEl = stage?.content
   if (containerEl != null && contentEl != null) {
     const cr = containerEl.getBoundingClientRect()
     const kr = contentEl.getBoundingClientRect()
     offsetX = kr.left - cr.left
     offsetY = kr.top - cr.top
   }
-  // Bottom-center of the box plus a small gap; the overlay is centered on `left` via -translate-x-1/2.
+  // The overlay is centered on `left` via -translate-x-1/2 and touches the artwork at `top`.
   selectedSpriteNameLabel.value = {
     name: sprite.name,
     left: box.x + box.width / 2 + offsetX,
-    top: box.y + box.height + offsetY + 6
+    top: box.y + box.height + offsetY
   }
 }
-// flush: 'post' so the transformer already reflects the change before we read its rect. The
-// transformer attaches to a newly selected node a tick late, so `@selected-node` also refreshes.
+// flush: 'post' so the sprite node already reflects the change before we read its rect.
 watch(
   () => {
     const sprite = editorCtx.state.selectedSprite
@@ -650,6 +695,7 @@ watch(
       sprite?.y,
       sprite?.size,
       sprite?.heading,
+      sprite != null ? nodeReadyMap.get(getNodeId(sprite)) : null,
       mapPos.value.x,
       mapPos.value.y,
       stageScale.value,
@@ -663,10 +709,149 @@ watch(
   { flush: 'post', immediate: true }
 )
 
+/**
+ * Screen-space boxes of the sprites on the stage (focused mode only), in `.stage-viewer`
+ * coordinates. They back the invisible per-sprite radar anchors in the template, which exist so a
+ * course-opening spotlight can point at a sprite ("click the boat") even though the stage itself is
+ * one canvas with no per-sprite DOM.
+ */
+const stageSpriteAnchors = shallowRef<
+  Array<{ name: string; left: number; top: number; width: number; height: number }>
+>([])
+
+/**
+ * The sprite the pointer is over, which gets a name label of its own.
+ *
+ * Selecting a sprite switches the code editor to that sprite's code, so the selected sprite's label
+ * can only ever insert its own name into its own file. Inserting `Mushroom` while writing Lita's
+ * code needs a label that appears without selecting, which is what hovering gives.
+ */
+const hoveredSpriteName = shallowRef<string | null>(null)
+// Leaving the sprite does not hide the label immediately: the pointer has to cross the gap between
+// the sprite and the label to click it, and a label that vanished on the way would be unclickable.
+let hoverClearTimer: ReturnType<typeof setTimeout> | null = null
+/**
+ * Whether the pointer is resting on a label, in which case nothing may hide it.
+ *
+ * Swallowing the label's own `mousemove` is not enough on its own: the stage's hover tracking is
+ * throttled, so a call scheduled while the pointer was still crossing the gap can run *after* it
+ * has arrived, hit-test that stale point, find nothing, and start hiding the label the pointer is
+ * now sitting on — with no further events coming to cancel it. Hence a flag rather than a race.
+ */
+let pointerOnLabel = false
+
+function handleLabelEnter(name: string) {
+  pointerOnLabel = true
+  setHoveredSprite(name)
+}
+
+function handleLabelLeave() {
+  pointerOnLabel = false
+  setHoveredSprite(null)
+}
+
+function setHoveredSprite(name: string | null) {
+  if (name == null && pointerOnLabel) return
+  if (hoverClearTimer != null) {
+    clearTimeout(hoverClearTimer)
+    hoverClearTimer = null
+  }
+  if (name != null) {
+    hoveredSpriteName.value = name
+    return
+  }
+  hoverClearTimer = setTimeout(() => {
+    hoverClearTimer = null
+    hoveredSpriteName.value = null
+  }, 200)
+}
+
+const updateHoveredSprite = throttle(() => {
+  if (editorWorkspaceLayout.mode !== 'focused') return
+  const stage = stageRef.value?.getStage() ?? null
+  const pos = stage?.getPointerPosition() ?? null
+  if (stage == null || pos == null) return setHoveredSprite(null)
+  // Konva's hit graph respects z-order and the artwork's transparency, so overlapping sprites and
+  // the empty corners of a bounding box behave the way the stage looks.
+  let node: Node | null = stage.getIntersection(pos)
+  while (node != null && node.getAttr('nodeId') == null) node = node.getParent() as Node | null
+  const nodeId = node?.getAttr('nodeId') ?? null
+  const sprite = nodeId == null ? null : editorCtx.project.sprites.find((s) => getNodeId(s) === nodeId)
+  setHoveredSprite(sprite?.name ?? null)
+}, 50)
+
+/** The hovered sprite's label, when it is not the selected one (which already has its own). */
+const hoveredSpriteNameLabel = computed(() => {
+  const name = hoveredSpriteName.value
+  if (name == null || name === editorCtx.state.selectedSprite?.name) return null
+  const anchor = stageSpriteAnchors.value.find((a) => a.name === name)
+  if (anchor == null) return null
+  return { name, left: anchor.left + anchor.width / 2, top: anchor.top + anchor.height }
+})
+
+onUnmounted(() => {
+  if (hoverClearTimer != null) clearTimeout(hoverClearTimer)
+})
+
+function refreshStageSpriteAnchors() {
+  if (editorWorkspaceLayout.mode !== 'focused') {
+    stageSpriteAnchors.value = []
+    return
+  }
+  const stage = stageRef.value?.getStage() ?? null
+  const containerEl = container.value
+  if (stage == null || containerEl == null) {
+    stageSpriteAnchors.value = []
+    return
+  }
+  // Same coordinate correction as the name label: konva rects are canvas-relative while the
+  // anchors are positioned within `.stage-viewer`, and the canvas can sit offset inside it.
+  let offsetX = 0
+  let offsetY = 0
+  const contentEl = stage.content
+  if (contentEl != null) {
+    const cr = containerEl.getBoundingClientRect()
+    const kr = contentEl.getBoundingClientRect()
+    offsetX = kr.left - cr.left
+    offsetY = kr.top - cr.top
+  }
+  const anchors: Array<{ name: string; left: number; top: number; width: number; height: number }> = []
+  for (const sprite of editorCtx.project.sprites) {
+    const nodeId = getNodeId(sprite)
+    const node = stage.findOne((n: Node) => n.getAttr('nodeId') === nodeId)
+    if (node == null) continue
+    const box = node.getClientRect()
+    if (box.width === 0 || box.height === 0) continue
+    anchors.push({
+      name: sprite.name,
+      left: box.x + offsetX,
+      top: box.y + offsetY,
+      width: box.width,
+      height: box.height
+    })
+  }
+  stageSpriteAnchors.value = anchors
+}
+
+watch(
+  () => [
+    editorWorkspaceLayout.mode,
+    // Any sprite moving, scaling, turning, renaming, appearing or leaving shifts its anchor.
+    editorCtx.project.sprites.map((s) => `${s.id}:${s.name}:${s.x}:${s.y}:${s.size}:${s.heading}:${s.visible}`).join(),
+    mapPos.value.x,
+    mapPos.value.y,
+    stageScale.value,
+    loading.value,
+    containerSize.value?.width,
+    containerSize.value?.height
+  ],
+  refreshStageSpriteAnchors,
+  { flush: 'post', immediate: true }
+)
+
 async function takeScreenshot(name: string, signal?: AbortSignal) {
   ensureCanTakeScreenshot()
   const stage = await untilNotNull(stageRef, signal)
-  const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
   await until(() => !loading.value, signal)
   ensureCanTakeScreenshot()
   const takeBlob = () =>
@@ -675,10 +860,11 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
       // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
       imageSmoothingEnabled: false
     }) as Promise<Blob>
-  // Omit editor-only controls when taking screenshot.
-  const blob = await nodeTransformer.withHidden(() =>
+  const takeWithoutPivot = () =>
     selectedSpriteNode.value == null ? takeBlob() : selectedSpriteNode.value.withPivotMarkerHidden(takeBlob)
-  )
+  // Omit editor-only controls when taking screenshot. Focused mode has no transformer to hide.
+  const nodeTransformer = nodeTransformerRef.value
+  const blob = nodeTransformer == null ? await takeWithoutPivot() : await nodeTransformer.withHidden(takeWithoutPivot)
   return fromBlob(`${name}.jpg`, blob)
 }
 
@@ -690,33 +876,8 @@ watchEffect((onCleanup) => {
 </script>
 
 <style scoped>
-/* Ruler toggle: a white card whose inner face turns turquoise on hover and while measuring. */
-.ruler-toggle {
-  display: flex;
-  padding: 2px;
-  border: none;
-  border-radius: 10px;
-  background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-sm);
-  cursor: pointer;
-}
-
-.ruler-toggle-face {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--ui-border-radius-md);
-  color: var(--ui-color-grey-1000);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.ruler-toggle:hover .ruler-toggle-face,
-.ruler-toggle.active .ruler-toggle-face {
-  background: var(--ui-color-turquoise-200);
-  color: var(--ui-color-turquoise-500);
+.cursor-ruler,
+.cursor-ruler :deep(canvas) {
+  cursor: var(--ruler-cursor);
 }
 </style>

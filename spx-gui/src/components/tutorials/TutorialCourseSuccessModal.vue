@@ -1,12 +1,11 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { type Tutorial } from './tutorial'
 import { type Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
-import { timeout } from '@/utils/utils'
 import { UIButton, UIImg, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
@@ -30,15 +29,9 @@ const router = useRouter()
 const course = computed(() => props.completion.course)
 const series = computed(() => props.completion.series)
 
-// The dialog appears at once; the buttons wait until the comment arrives (or a timeout), so the
-// user reads the copilot's evaluation before choosing what to do next.
-const commentTimedOut = ref(false)
-timeout(8000).then(() => (commentTimedOut.value = true))
-const commentReady = computed(() => props.comment != null || commentTimedOut.value)
 const shownComment = computed(() => {
   if (props.comment != null && props.comment !== '') return props.comment
-  if (commentTimedOut.value) return i18n.t({ zh: '做得好！', en: 'Well done!' })
-  return null
+  return i18n.t({ zh: `${course.value.title}课程已完成`, en: `${course.value.title} completed` })
 })
 
 const { fn: handleRetryCourse } = useMessageHandle(
@@ -54,7 +47,8 @@ const { fn: handleBackToCourseSeries } = useMessageHandle(
   async () => {
     editorLeaveConfirm.requestSkipOnce()
     emit('close')
-    props.tutorial.endCurrentCourse()
+    // Match the tutorial control center: navigate to the series page first and let the route
+    // transition finish the current tutorial session instead of ending it before navigation.
     await router.push(`/course-series/${series.value.id}`)
   },
   { en: 'Failed to go back to course series', zh: '返回系列课程失败' }
@@ -74,8 +68,9 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     const nextCourseId = series.value.courseIDs[index + 1]
     editorLeaveConfirm.requestSkipOnce()
     emit('close')
-    props.tutorial.endCurrentCourse()
-    // Go through the next course's opening sequence (story video, prelude) like any other entry.
+    // The start page ends the old course only after navigation succeeds, then runs the next
+    // course's opening sequence. Ending it here first would strand a failed navigation outside
+    // tutorial mode.
     await router.push(`/course/${series.value.id}/${nextCourseId}/start`)
   },
   { en: 'Failed to learn next course', zh: '学习下一个课程失败' }
@@ -104,23 +99,15 @@ function handleClose() {
 
         <div class="mt-5 text-2xl">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
 
-        <!-- The copilot's evaluation sits where the plain "course completed" line used to be. While
-             it is still being written, a typing placeholder holds the space. It renders as Markdown
-             through the copilot's own view, so an evaluation naming `repeat` reads the same here as
-             it does in the chat — and left-aligned, because centering a code block looks broken. -->
-        <div class="mt-3 min-h-12 w-full">
-          <div v-if="shownComment != null" class="rounded-md bg-grey-300 px-4 py-3 text-left text-text">
-            <MarkdownView :value="shownComment" />
-          </div>
-          <div v-else class="flex items-center justify-center gap-1.5 rounded-md bg-grey-200 px-4 py-5">
-            <span class="typing-dot" />
-            <span class="typing-dot" />
-            <span class="typing-dot" />
+        <!-- Show a complete course-title fallback immediately; an asynchronous copilot evaluation
+             replaces it when available without delaying the dialog actions. -->
+        <div class="mt-[9px] min-h-7 w-full flex items-center justify-center text-center">
+          <div class="text-text">
+            <MarkdownView class="text-base/[22px]!" :value="shownComment" />
           </div>
         </div>
 
-        <!-- Buttons appear only once the comment is ready, so the user reads it first. -->
-        <div v-if="commentReady" class="mt-8 w-full flex flex-col gap-3">
+        <div class="mt-8 w-full flex flex-col gap-3">
           <UIButton type="neutral" size="large" @click="handleRetryCourse">
             {{ $t({ zh: '再试一次', en: 'Try again' }) }}
           </UIButton>
@@ -135,32 +122,3 @@ function handleClose() {
     </div>
   </UIModal>
 </template>
-
-<style scoped>
-.typing-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--ui-color-grey-600);
-  animation: typing-bounce 1.2s ease-in-out infinite;
-}
-.typing-dot:nth-child(2) {
-  animation-delay: 0.15s;
-}
-.typing-dot:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-@keyframes typing-bounce {
-  0%,
-  60%,
-  100% {
-    opacity: 0.3;
-    transform: translateY(0);
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-3px);
-  }
-}
-</style>

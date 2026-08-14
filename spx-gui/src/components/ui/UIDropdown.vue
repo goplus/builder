@@ -168,7 +168,7 @@ function scheduleClose() {
 
 function handleTriggerClick() {
   if (props.trigger !== 'click' || props.disabled) return
-  setVisible(true)
+  setVisible(!visibleComputed.value)
 }
 
 function handleTriggerMouseenter() {
