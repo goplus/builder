@@ -15,6 +15,14 @@ describe('editorWorkspaceLayout', () => {
     expect(editorWorkspaceLayout.isToolEnabled('ruler')).toBe(true)
   })
 
+  it('should keep the regular editor layout when an optional tool is enabled', () => {
+    editorWorkspaceLayout.setEnabledTools(['ruler'])
+
+    expect(editorWorkspaceLayout.mode).toBe('default')
+    expect(editorWorkspaceLayout.hiddenAreas.size).toBe(0)
+    expect(editorWorkspaceLayout.codeFontSize).toBeNull()
+  })
+
   it('should disable the tools on reset, so none of them outlives the scenario that enabled it', () => {
     editorWorkspaceLayout.setEnabledTools(['ruler'])
     editorWorkspaceLayout.setHiddenAreas(['editor-panels'])

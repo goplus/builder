@@ -211,17 +211,14 @@ watch(
   (currentCourse, _, onCleanup) => {
     if (currentCourse == null) return
 
-    // The course author declares the workspace setup statically (see `extractCourseConfig`); it is
-    // applied once here, not driven by the copilot at runtime.
+    // Keep the regular editor workspace used by the dev environment. Courses add guidance tools
+    // and behavior without replacing the editor's familiar layout or hiding its standard areas.
     const courseConfig = extractCourseConfig(currentCourse.prompt)
-    editorWorkspaceLayout.setMode('focused')
-    editorWorkspaceLayout.setHiddenAreas(courseConfig.hiddenAreas)
     openingStepsRef.value = buildOpeningQueue(courseConfig)
     openingIndexRef.value = 0
     // The ruler is a course-only tool: measuring a distance is how the user answers "how far?"
     // for themselves, instead of guessing or asking the copilot for the number.
     editorWorkspaceLayout.setEnabledTools(['ruler'])
-    copilot.setUIMode('docked')
     const intervention = new TutorialIntervention(copilot)
     // Surface it on the tutorial so the navbar course menu can show the current guidance level.
     tutorial.setCurrentIntervention(intervention)

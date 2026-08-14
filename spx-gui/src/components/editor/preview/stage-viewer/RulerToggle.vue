@@ -18,7 +18,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <button type="button" class="ruler-toggle" :class="{ active, disabled }" :disabled="disabled" @click="emit('click')">
+  <button
+    type="button"
+    class="ruler-toggle"
+    :class="{ active, disabled }"
+    :disabled="disabled"
+    :aria-label="$t({ en: 'Ruler', zh: '尺子' })"
+    :aria-pressed="active"
+    @click="emit('click')"
+  >
     <img class="ruler-toggle-icon" :src="rulerIconUrl" alt="" draggable="false" />
   </button>
 </template>
