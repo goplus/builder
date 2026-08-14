@@ -1,14 +1,17 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCourse } from '@/apis/course'
+import { listCourses } from '@/apis/course'
+import { listSignedInUserProjects, listUserPublicProjects } from '@/apis/project'
 import { useAsyncComputed } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { UIButton, useConfirmDialog } from '@/components/ui'
+import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
 import { InterventionLevel, neutralThreshold, backThreshold } from './tutorial-intervention'
 import TutorialCourseRow from './TutorialCourseRow.vue'
+import { useSignedInUser } from '@/stores/user'
 
 const emit = defineEmits<{
   /** Ask the host (the navbar dropdown) to close after a navigation. */
@@ -19,6 +22,7 @@ const tutorial = useTutorial()
 const router = useRouter()
 const i18n = useI18n()
 const confirm = useConfirmDialog()
+const dropdown = useDropdown()
 
 const series = computed(() => tutorial.currentSeries)
 const currentCourseId = computed(() => tutorial.currentCourse?.id ?? null)
@@ -26,7 +30,57 @@ const currentCourseId = computed(() => tutorial.currentCourse?.id ?? null)
 // The whole series, in order, so the learner can see where they are and jump between courses.
 const courses = useAsyncComputed(async () => {
   const ids = series.value?.courseIDs ?? []
-  return Promise.all(ids.map((id) => getCourse(id)))
+  if (ids.length === 0) return []
+
+  // Fetch the series in one request instead of issuing one request per course. Besides making
+  // the control center appear immediately, this keeps each course's own thumbnail attached to
+  // the item rendered in the series order.
+  const result = await listCourses({
+    courseSeriesID: series.value?.id,
+    pageIndex: 1,
+    pageSize: ids.length,
+    orderBy: 'sequenceInCourseSeries'
+  })
+  const coursesById = new Map(result.data.map((course) => [course.id, course]))
+  return ids.map((id) => coursesById.get(id)).filter((course) => course != null)
+})
+
+const signedInUser = useSignedInUser()
+const projectThumbnails = useAsyncComputed(async () => {
+  const currentCourses = courses.value ?? []
+  const projectNamesByOwner = new Map<string, Set<string>>()
+  for (const course of currentCourses) {
+    if (course.thumbnail !== '') continue
+    const match = course.entrypoint.match(/\/editor\/([^/]+)\/([^/]+)/)
+    if (match == null) continue
+    const owner = decodeURIComponent(match[1]!)
+    const name = decodeURIComponent(match[2]!)
+    const names = projectNamesByOwner.get(owner) ?? new Set<string>()
+    names.add(name)
+    projectNamesByOwner.set(owner, names)
+  }
+  const projectsByFullName = new Map<string, string>()
+  await Promise.all(
+    Array.from(projectNamesByOwner.entries()).map(async ([owner, names]) => {
+      const firstName = names.values().next().value as string | undefined
+      const prefix = firstName?.split('-').slice(0, 2).join('-')
+      const params = { pageIndex: 1, pageSize: 100, ...(prefix != null ? { keyword: prefix } : {}) }
+      const projects =
+        signedInUser.value?.username.toLowerCase() === owner.toLowerCase()
+          ? await listSignedInUserProjects(params)
+          : await listUserPublicProjects(owner, params)
+      for (const project of projects.data) projectsByFullName.set(`${owner}/${project.name}`, project.thumbnail)
+    })
+  )
+  const thumbnails = new Map<string, string>()
+  for (const course of currentCourses) {
+    const match = course.entrypoint.match(/\/editor\/([^/]+)\/([^/]+)/)
+    if (match == null) continue
+    const fullName = `${decodeURIComponent(match[1]!)}/${decodeURIComponent(match[2]!)}`
+    const thumbnail = projectsByFullName.get(fullName)
+    if (thumbnail != null && thumbnail !== '') thumbnails.set(course.id, thumbnail)
+  }
+  return thumbnails
 })
 
 const guidanceTextByLevel: Record<InterventionLevel, LocaleMessage> = {
@@ -65,6 +119,7 @@ const { fn: handleExitCourse } = useMessageHandle(() => tutorial.exitCurrentCour
 
 const { fn: handleRestartCourse } = useMessageHandle(
   async () => {
+    dropdown?.setVisible(false)
     await confirm({
       title: i18n.t({ en: 'Restart course', zh: '重新开始课程' }),
       content: i18n.t({
@@ -96,9 +151,11 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <ul class="min-h-0 flex-1 flex flex-col gap-2 overflow-y-auto p-1">
       <TutorialCourseRow
-        v-for="course in courses ?? []"
+        v-for="(course, index) in courses ?? []"
         :key="course.id"
         :course="course"
+        :sequence="index + 1"
+        :thumbnail="projectThumbnails?.get(course.id)"
         :current="course.id === currentCourseId"
         @select="selectCourse(course.id)"
         @restart="handleRestartCourse"

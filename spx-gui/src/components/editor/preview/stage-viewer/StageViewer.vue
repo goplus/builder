@@ -6,8 +6,11 @@
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
     class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"
-    :class="{ 'cursor-crosshair': rulerActive }"
-    :style="{ backgroundImage: `url(${stageBgUrl})` }"
+    :class="{ 'cursor-ruler': rulerActive }"
+    :style="{
+      backgroundImage: `url(${stageBgUrl})`,
+      '--ruler-cursor': `url(${rulerCursorUrl}) 12 12, crosshair`
+    }"
     @mousemove="updateMousePos(), updateHoveredSprite()"
     @mouseleave="handleLabelLeave()"
   >
@@ -48,7 +51,7 @@
           />
         </v-group>
       </v-layer>
-      <v-layer>
+      <v-layer v-if="!isFocused">
         <WidgetNode
           v-for="localConfig in visibleWidgetLocalConfigs"
           :key="localConfig.id"
@@ -60,6 +63,7 @@
       </v-layer>
       <v-layer>
         <NodeTransformer
+          v-if="!isFocused"
           ref="nodeTransformerRef"
           :node-ready-map="nodeReadyMap"
           :target="editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget"
@@ -74,7 +78,7 @@
         :snap-targets="rulerSnapTargets"
       />
     </v-stage>
-    <div v-if="localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
+    <div v-if="!isFocused && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
       <QuickConfigWrapper ref="quickConfigRef">
         <SpriteQuickConfig
           v-if="localConfigRef instanceof SpriteLocalConfig"
@@ -88,18 +92,6 @@
         />
       </QuickConfigWrapper>
     </div>
-
-    <UITooltip v-if="rulerEnabled" placement="right">
-      <template #trigger>
-        <RulerToggle
-          v-radar="{ name: 'Ruler', desc: 'Toggle the ruler, which measures the distance between things on the stage' }"
-          class="absolute top-4 left-4"
-          :active="rulerActive"
-          @click="rulerActive = !rulerActive"
-        />
-      </template>
-      {{ $t(rulerTip) }}
-    </UITooltip>
 
     <!-- One for the selected sprite, one for whatever the pointer is over. The hovered one is what
          makes another sprite's name reachable at all: selecting it would switch the code editor
@@ -196,7 +188,7 @@ import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/Wi
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import StageRuler from './StageRuler.vue'
-import RulerToggle from './RulerToggle.vue'
+import rulerCursorUrl from '@/components/ui/icons/ruler.svg?url'
 import WidgetNode from './widgets/WidgetNode.vue'
 import QuickConfigWrapper, {
   type ConfigType
@@ -226,6 +218,7 @@ const mapRef = ref<{
 }>()
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
 const spriteNodeRefs = shallowReactive(new Map<string, InstanceType<typeof SpriteNode>>())
 
@@ -242,14 +235,10 @@ const mousePos = ref<Pos | null>(null)
 // The ruler is not part of the regular editor: guided scenarios (tutorial courses) turn it on
 // through the workspace layout, see `optionalWorkspaceTools`.
 const rulerEnabled = computed(() => editorWorkspaceLayout.isToolEnabled('ruler'))
-const rulerActive = ref(false)
-watch(rulerEnabled, (enabled) => {
-  if (!enabled) rulerActive.value = false
-})
-
-const rulerTip = computed(() =>
-  rulerActive.value ? { en: 'Put the ruler away', zh: '收起尺子' } : { en: 'Measure a distance', zh: '量一量' }
-)
+const props = defineProps<{
+  rulerActive?: boolean
+}>()
+const rulerActive = computed(() => rulerEnabled.value && props.rulerActive === true)
 
 /**
  * Sprite centers, in map coordinates, so that measuring between two sprites needs no steady
@@ -263,11 +252,8 @@ const rulerSnapTargets = computed(() =>
   }))
 )
 
-// In guided scenarios (tutorial focused mode) the selected sprite shows its name just below its
-// transform box, so a beginner can tell which sprite they are working on. It is a DOM overlay placed
-// under the box; the position is refreshed imperatively (see `refreshSelectedSpriteNameLabel`) from
-// the transformer's on-screen rect, which already accounts for the sprite's size/rotation and the
-// rotate handle — wherever it ends up — so the label always clears the box.
+// In guided scenarios (tutorial focused mode) the selected sprite shows its name flush against the
+// bottom of the sprite artwork, so a beginner can tell which sprite they are working on.
 const selectedSpriteNameLabel = shallowRef<{ name: string; left: number; top: number } | null>(null)
 
 const updateMousePos = throttle(() => {
@@ -664,15 +650,15 @@ const handleSpriteNameLabelClick = useMessageHandle(
   { en: 'Failed to insert sprite name', zh: '插入精灵名字失败' }
 ).fn
 
-// Position the name label just below the selected sprite's transform box. We read the transformer's
-// on-screen rect (canvas pixels, already including the sprite's size/rotation, the anchors and the
-// rotate handle), so the label clears whatever the box's lowest point is. `null` when there is no
-// sprite selected or the transformer is not attached yet.
+// Position the name label at the bottom-center of the selected sprite's artwork. The transform
+// controls are hidden in focused mode, so using the sprite node itself keeps the gap at exactly zero.
 function refreshSelectedSpriteNameLabel() {
   const sprite = editorWorkspaceLayout.mode === 'focused' ? editorCtx.state.selectedSprite : null
-  const transformerNode = sprite != null ? nodeTransformerRef.value?.getNode() ?? null : null
-  const box = transformerNode?.getClientRect() ?? null
-  if (sprite == null || transformerNode == null || box == null || box.height === 0) {
+  const stage = stageRef.value?.getStage() ?? null
+  const spriteNode =
+    sprite != null ? stage?.findOne((node: Node) => node.getAttr('nodeId') === getNodeId(sprite)) : null
+  const box = spriteNode?.getClientRect() ?? null
+  if (sprite == null || spriteNode == null || box == null || box.height === 0) {
     selectedSpriteNameLabel.value = null
     return
   }
@@ -683,22 +669,21 @@ function refreshSelectedSpriteNameLabel() {
   let offsetX = 0
   let offsetY = 0
   const containerEl = container.value
-  const contentEl = transformerNode.getStage()?.content
+  const contentEl = stage?.content
   if (containerEl != null && contentEl != null) {
     const cr = containerEl.getBoundingClientRect()
     const kr = contentEl.getBoundingClientRect()
     offsetX = kr.left - cr.left
     offsetY = kr.top - cr.top
   }
-  // Bottom-center of the box plus a small gap; the overlay is centered on `left` via -translate-x-1/2.
+  // The overlay is centered on `left` via -translate-x-1/2 and touches the artwork at `top`.
   selectedSpriteNameLabel.value = {
     name: sprite.name,
     left: box.x + box.width / 2 + offsetX,
-    top: box.y + box.height + offsetY + 6
+    top: box.y + box.height + offsetY
   }
 }
-// flush: 'post' so the transformer already reflects the change before we read its rect. The
-// transformer attaches to a newly selected node a tick late, so `@selected-node` also refreshes.
+// flush: 'post' so the sprite node already reflects the change before we read its rect.
 watch(
   () => {
     const sprite = editorCtx.state.selectedSprite
@@ -710,6 +695,7 @@ watch(
       sprite?.y,
       sprite?.size,
       sprite?.heading,
+      sprite != null ? nodeReadyMap.get(getNodeId(sprite)) : null,
       mapPos.value.x,
       mapPos.value.y,
       stageScale.value,
@@ -800,7 +786,7 @@ const hoveredSpriteNameLabel = computed(() => {
   if (name == null || name === editorCtx.state.selectedSprite?.name) return null
   const anchor = stageSpriteAnchors.value.find((a) => a.name === name)
   if (anchor == null) return null
-  return { name, left: anchor.left + anchor.width / 2, top: anchor.top + anchor.height + 6 }
+  return { name, left: anchor.left + anchor.width / 2, top: anchor.top + anchor.height }
 })
 
 onUnmounted(() => {
@@ -866,7 +852,6 @@ watch(
 async function takeScreenshot(name: string, signal?: AbortSignal) {
   ensureCanTakeScreenshot()
   const stage = await untilNotNull(stageRef, signal)
-  const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
   await until(() => !loading.value, signal)
   ensureCanTakeScreenshot()
   const takeBlob = () =>
@@ -875,10 +860,11 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
       // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
       imageSmoothingEnabled: false
     }) as Promise<Blob>
-  // Omit editor-only controls when taking screenshot.
-  const blob = await nodeTransformer.withHidden(() =>
+  const takeWithoutPivot = () =>
     selectedSpriteNode.value == null ? takeBlob() : selectedSpriteNode.value.withPivotMarkerHidden(takeBlob)
-  )
+  // Omit editor-only controls when taking screenshot. Focused mode has no transformer to hide.
+  const nodeTransformer = nodeTransformerRef.value
+  const blob = nodeTransformer == null ? await takeWithoutPivot() : await nodeTransformer.withHidden(takeWithoutPivot)
   return fromBlob(`${name}.jpg`, blob)
 }
 
@@ -888,3 +874,10 @@ watchEffect((onCleanup) => {
   onCleanup(unbind)
 })
 </script>
+
+<style scoped>
+.cursor-ruler,
+.cursor-ruler :deep(canvas) {
+  cursor: var(--ruler-cursor);
+}
+</style>

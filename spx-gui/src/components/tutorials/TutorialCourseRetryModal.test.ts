@@ -101,7 +101,7 @@ describe('TutorialCourseRetryModal', () => {
 
     await wrapper.findAll('button')[0].trigger('click')
     expect(mocks.requestSkipOnce).toHaveBeenCalledOnce()
-    expect(tutorial.endCurrentCourse).toHaveBeenCalledOnce()
+    expect(tutorial.endCurrentCourse).not.toHaveBeenCalled()
     expect(mocks.push).toHaveBeenCalledWith('/course/series-1/course-2/start')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
