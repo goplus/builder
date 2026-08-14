@@ -138,10 +138,10 @@ useDraggable(chatDraggerRef, {
 .trigger {
   display: flex;
   padding: 5px;
-  border: none;
+  border: 1px solid #b59aff;
   border-radius: 16px;
   background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-sm);
+  box-shadow: var(--ui-box-shadow-control);
   cursor: pointer;
   transition: transform 0.16s ease;
 }

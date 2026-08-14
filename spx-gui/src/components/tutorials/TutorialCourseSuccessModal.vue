@@ -10,7 +10,7 @@ import { UIButton, UIImg, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import successImg from './success.png'
+import successImg from '@/assets/images/tutorial-success-illustration.svg'
 
 const props = defineProps<{
   completion: { course: Course; series: CourseSeries }
@@ -29,9 +29,17 @@ const router = useRouter()
 const course = computed(() => props.completion.course)
 const series = computed(() => props.completion.series)
 
+// Course titles are commonly prefixed with their position in the series (for example,
+// "4. 第一行代码"). The position is navigation metadata, so keep it out of the learner-facing
+// completion message while preserving decimal titles such as "1.2 修改步数".
+function courseTitleForDisplay(title: string) {
+  return title.replace(/^\s*\d+\.\s+/, '')
+}
+
 const shownComment = computed(() => {
   if (props.comment != null && props.comment !== '') return props.comment
-  return i18n.t({ zh: `${course.value.title}课程已完成`, en: `${course.value.title} completed` })
+  const title = courseTitleForDisplay(course.value.title)
+  return i18n.t({ zh: `${title}课程已完成`, en: `${title} completed` })
 })
 
 const { fn: handleRetryCourse } = useMessageHandle(
@@ -90,31 +98,46 @@ function handleClose() {
     }"
     :visible="true"
     size="small"
-    mask-closable
+    class="w-[444px]! rounded-xl! shadow-[0_4px_12px_rgba(36,41,47,0.08)]"
+    :mask-closable="false"
     @update:visible="handleClose"
   >
-    <div class="px-5 pt-6 pb-6">
-      <div class="flex flex-col items-center text-center">
-        <UIImg :src="successImg" class="h-47.5 w-67.5" />
+    <div class="max-h-[calc(100vh-32px)] overflow-y-auto p-6">
+      <div class="flex w-full flex-col items-center">
+        <UIImg :src="successImg" alt="" class="block h-[190px] w-full" />
 
-        <div class="mt-5 text-2xl">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
-
-        <!-- Show a complete course-title fallback immediately; an asynchronous copilot evaluation
-             replaces it when available without delaying the dialog actions. -->
-        <div class="mt-[9px] min-h-7 w-full flex items-center justify-center text-center">
-          <div class="text-text">
-            <MarkdownView class="text-base/[22px]!" :value="shownComment" />
-          </div>
+        <div class="flex w-full flex-col rounded-lg bg-grey-300 px-6 py-8 text-center">
+          <p class="text-xl/[1.4] font-medium text-title">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</p>
+          <!-- The evaluation replaces the fallback as soon as it is available. -->
+          <MarkdownView
+            class="success-comment mt-2 text-center text-base/[1.5]! font-normal text-grey-900"
+            :value="shownComment"
+          />
         </div>
 
-        <div class="mt-8 w-full flex flex-col gap-3">
-          <UIButton type="neutral" size="large" @click="handleRetryCourse">
+        <div class="mt-6 w-full flex flex-col gap-3">
+          <UIButton
+            class="w-full! rounded-lg! text-[15px]/[24px]!"
+            type="white"
+            size="large"
+            @click="handleRetryCourse"
+          >
             {{ $t({ zh: '再试一次', en: 'Try again' }) }}
           </UIButton>
-          <UIButton type="neutral" size="large" @click="handleBackToCourseSeries">
+          <UIButton
+            class="w-full! rounded-lg! text-[15px]/[24px]!"
+            type="white"
+            size="large"
+            @click="handleBackToCourseSeries"
+          >
             {{ $t({ zh: '返回系列课程', en: 'Back to series courses' }) }}
           </UIButton>
-          <UIButton v-if="hasNextCourse" size="large" @click="handleStartNextCourse">
+          <UIButton
+            v-if="hasNextCourse"
+            class="w-full! rounded-lg! text-[15px]/[24px]!"
+            size="large"
+            @click="handleStartNextCourse"
+          >
             {{ $t({ zh: '学习下一个课程', en: 'Learn next course' }) }}
           </UIButton>
         </div>
@@ -122,3 +145,10 @@ function handleClose() {
     </div>
   </UIModal>
 </template>
+
+<style scoped>
+.success-comment :deep(ol) {
+  padding-left: 0;
+  list-style-position: inside;
+}
+</style>

@@ -15,7 +15,7 @@ export function extractCourseStoryVideo(prompt: string): string | null {
 </script>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 
 import { UIButton, UIIcon, UIModal, UIModalClose } from '@/components/ui'
 import { handlePlayWithSound, useVideoAspect } from './video-aspect'
@@ -34,6 +34,27 @@ const emit = defineEmits<{
 const hasPlaybackError = ref(false)
 const videoRef = ref<HTMLVideoElement | null>(null)
 const hasEnded = ref(false)
+const hasLoaded = ref(false)
+const isPlaying = ref(false)
+
+const showPlayButton = computed(
+  () => hasLoaded.value && !hasPlaybackError.value && (!isPlaying.value || hasEnded.value)
+)
+
+async function playVideo() {
+  const video = videoRef.value
+  if (video == null) return
+  // Set the properties as well as the HTML attributes. This matters after `load()`, and makes
+  // the muted fallback explicit for browsers that enforce autoplay policy through the property.
+  video.defaultMuted = true
+  video.muted = true
+  try {
+    await video.play()
+  } catch {
+    // A user gesture may still be required in some browsers. Keep the modal open and expose the
+    // play button instead of leaving the learner on an unexplained frozen first frame.
+  }
+}
 
 watch(
   () => props.visible,
@@ -41,12 +62,40 @@ watch(
     if (!isVisible) return
     hasEnded.value = false
     hasPlaybackError.value = false
-    videoRef.value?.load()
+    hasLoaded.value = false
+    isPlaying.value = false
+    void nextTick(() => {
+      const video = videoRef.value
+      if (video == null) return
+      video.defaultMuted = true
+      video.muted = true
+      video.load()
+      void playVideo()
+    })
   }
 )
 
+onMounted(() => {
+  if (props.visible) void playVideo()
+})
+
 function handleEnded() {
   hasEnded.value = true
+  isPlaying.value = false
+}
+
+function handleLoaded() {
+  hasLoaded.value = true
+  void playVideo()
+}
+
+function handlePlay() {
+  isPlaying.value = true
+  hasEnded.value = false
+}
+
+function handlePause() {
+  isPlaying.value = false
 }
 
 async function replay() {
@@ -88,9 +137,8 @@ function handleContinue() {
         <div class="relative overflow-hidden rounded-md bg-grey-1000">
           <!-- Hover-card style minus the muting: autoplaying once, with no browser controls popping
              up on mouse move. The story has a plot and a soundtrack, so it plays with sound;
-             `handlePlayWithSound` falls back to muted playback if the browser blocks unmuted
-             autoplay (no controls means a paused video could never be unstuck). Once it ends, the
-             overlay play button lets the learner replay it once.
+             `playVideo` uses muted autoplay for browser compatibility. Once playback is paused or
+             ends, the overlay play button gives the learner a recovery/replay action.
              `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
           <video
@@ -100,14 +148,18 @@ function handleContinue() {
             :src="src"
             crossorigin="anonymous"
             autoplay
+            muted
             playsinline
             @loadedmetadata="handleLoadedMetadata"
-            @loadeddata="handlePlayWithSound"
+            @loadeddata="handleLoaded"
+            @canplay="handleLoaded"
+            @play="handlePlay"
+            @pause="handlePause"
             @ended="handleEnded"
             @error="hasPlaybackError = true"
           ></video>
           <button
-            v-if="hasEnded && !hasPlaybackError"
+            v-if="showPlayButton"
             type="button"
             class="absolute left-1/2 top-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 appearance-none items-center justify-center rounded-full border-0 bg-[rgba(36,41,47,0.25)] p-3.5 text-white outline-none transition-colors hover:bg-[rgba(36,41,47,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             :aria-label="$t({ en: 'Play video', zh: '播放视频' })"
