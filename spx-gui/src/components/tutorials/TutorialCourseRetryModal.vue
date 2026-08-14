@@ -65,20 +65,20 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     :visible="visible"
     size="small"
     class="w-[444px]! rounded-xl! shadow-[0_4px_12px_rgba(36,41,47,0.08)]"
-    mask-closable
+    :mask-closable="false"
     @update:visible="emit('close')"
   >
     <div class="flex flex-col items-center gap-6 p-6">
       <div class="flex w-full flex-col">
         <img :src="retryIllustration" alt="" class="block h-[190px] w-[396px]" />
         <div class="flex min-h-[164px] w-full flex-col justify-center rounded-lg bg-grey-300 px-6 py-8">
-          <p class="text-base/[22px] font-medium text-grey-900">
+          <p class="text-base/[1.5] font-normal text-grey-900">
             {{ $t({ en: 'Almost there!', zh: '就差一点！' }) }}
           </p>
-          <p class="text-base/[22px] font-medium text-grey-900">
+          <p class="text-base/[1.5] font-normal text-grey-900">
             {{ $t({ en: 'Your program reached the goal.', zh: '你的程序已经达成目标了。' }) }}
           </p>
-          <MarkdownView v-if="hint !== ''" class="text-base/[22px]! font-medium text-grey-900" :value="hint" />
+          <MarkdownView v-if="hint !== ''" class="text-base/[1.5]! font-normal text-grey-900" :value="hint" />
         </div>
       </div>
 
