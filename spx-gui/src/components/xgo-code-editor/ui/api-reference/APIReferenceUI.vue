@@ -77,6 +77,11 @@ const categoriesComputed = computed<MainCategory[] | null>((oldValue) => {
   return result
 })
 
+// The category rail follows the same filtered items as the list below. Empty course categories
+// disappear together with their items, while clicking a remaining category still scrolls to its
+// matching code section.
+const categoryNavigation = computed(() => categoriesComputed.value ?? [])
+
 // Initially display only items of the first category to improve rendering performance. After a delay, display all items.
 // Delay is applied only for the first update (from empty to non-empty).
 const categoriesForItems = shallowRef(categoriesComputed.value ?? [])
@@ -164,17 +169,23 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul v-if="!controller.filtered" class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
-        <li
-          v-for="c in categoriesComputed"
-          :key="c.id"
-          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
-          :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
-          @click="handleCategoryClick(c.id)"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="h-6 w-6" v-html="c.icon"></div>
-          <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
+      <ul
+        v-if="categoryNavigation.length > 0"
+        class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3"
+      >
+        <li v-for="c in categoryNavigation" :key="c.id" class="flex-none">
+          <button
+            type="button"
+            class="flex h-13 w-13 flex-col items-center justify-center rounded-md border-0 bg-transparent p-0 transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
+            :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
+            :aria-label="$t(c.label)"
+            :aria-current="c.id === activeCategoryIdRef ? 'true' : undefined"
+            @click="handleCategoryClick(c.id)"
+          >
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="h-6 w-6" v-html="c.icon"></div>
+            <span class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</span>
+          </button>
         </li>
       </ul>
       <ul
@@ -188,14 +199,12 @@ function handleCategoryClick(id: string) {
           :data-category-id="c.id"
           class="[&:last-child>section:last-child]:border-b-0"
         >
-          <!-- A narrowed list is a handful of hand-picked items: category headers and separators
-               would outweigh the content, so they hide along with the category sidebar. -->
           <section
             v-for="sc in c.subCategories"
             :key="sc.id"
             :class="controller.filtered ? '' : 'border-b border-dashed border-grey-500'"
           >
-            <h5 v-if="!controller.filtered" class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">
+            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">
               {{ $t(sc.label) }}
             </h5>
             <ul class="flex flex-col gap-md pb-5">

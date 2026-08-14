@@ -5,8 +5,25 @@
     :class="{ 'flex-[1_1_0] min-h-0': isFocused }"
   >
     <UICardHeader v-if="!isPreviewHeaderHidden" class="gap-3">
-      <div class="flex-1 text-title">
-        {{ $t(headerTitle) }}
+      <div class="flex flex-1 items-center">
+        <UITooltip placement="bottom-start">
+          <template #trigger>
+            <RulerToggle
+              v-if="rulerVisible"
+              v-radar="{
+                name: runnerState === 'initial' ? 'Ruler' : 'Ruler (unavailable)',
+                desc:
+                  runnerState === 'initial'
+                    ? 'Toggle the ruler, which measures the distance between things on the stage'
+                    : 'The ruler cannot measure while the project is running'
+              }"
+              :active="rulerActive"
+              :disabled="runnerState !== 'initial'"
+              @click="rulerActive = !rulerActive"
+            />
+          </template>
+          {{ $t(rulerTip) }}
+        </UITooltip>
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
@@ -68,26 +85,6 @@
         </UITooltip>
       </template>
     </UICardHeader>
-
-    <div v-if="rulerVisible" class="ruler-toolbar">
-      <UITooltip placement="bottom-start">
-        <template #trigger>
-          <RulerToggle
-            v-radar="{
-              name: runnerState === 'initial' ? 'Ruler' : 'Ruler (unavailable)',
-              desc:
-                runnerState === 'initial'
-                  ? 'Toggle the ruler, which measures the distance between things on the stage'
-                  : 'The ruler cannot measure while the project is running'
-            }"
-            :active="rulerActive"
-            :disabled="runnerState !== 'initial'"
-            @click="rulerActive = !rulerActive"
-          />
-        </template>
-        {{ $t(rulerTip) }}
-      </UITooltip>
-    </div>
 
     <div class="flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': isFocused }">
       <div
@@ -334,12 +331,6 @@ watch(
     }
   }
 )
-
-const headerTitle = computed(() => {
-  if (runnerState.value === 'loading') return { en: 'Loading', zh: '加载中' } satisfies LocaleMessage
-  if (runnerState.value === 'running') return { en: 'Running', zh: '运行中' } satisfies LocaleMessage
-  return { en: 'Preview', zh: '预览' } satisfies LocaleMessage
-})
 
 const i18n = useI18n()
 const confirm = useConfirmDialog()
@@ -593,14 +584,6 @@ function getStageInlineAnchor() {
 </script>
 
 <style scoped>
-.ruler-toolbar {
-  display: flex;
-  flex: none;
-  align-items: flex-start;
-  padding: 12px 12px 0;
-  background: var(--ui-color-grey-100);
-}
-
 /* In the focused layout the container fills the preview instead of following the stage's 4:3
    aspect ratio; the stage viewer & runner scale their content to fit and letterbox the rest. */
 .stage-viewer-container-focused {
