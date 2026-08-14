@@ -52,7 +52,7 @@ function handleContinue() {
         <div class="w-full rounded-lg bg-grey-300 px-6 py-8">
           <!-- The course prompt supplies this text for each opening; Markdown keeps inline code
                snippets styled consistently with the rest of the tutorial UI. -->
-          <MarkdownView class="text-sm/[22px]! font-medium text-grey-900" :value="text" />
+          <MarkdownView class="text-base/[22px]! font-medium text-grey-900" :value="text" />
         </div>
       </div>
       <UIButton

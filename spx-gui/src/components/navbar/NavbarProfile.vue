@@ -78,7 +78,7 @@ async function handleSignOut() {
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
-  <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
+  <UIDropdown v-else trigger="click" placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
       <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
         <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />

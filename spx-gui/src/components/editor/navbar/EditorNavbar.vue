@@ -5,7 +5,7 @@
       <NavbarDropdown
         :trigger-radar="{
           name: 'Project menu',
-          desc: 'Hover to see project options (create/open/publish/unpublish/remove project, import/export project file, import Scratch project file, import assets from Scratch, etc.)'
+          desc: 'Click to see project options (create/open/publish/unpublish/remove project, import/export project file, import Scratch project file, import assets from Scratch, etc.)'
         }"
       >
         <template #trigger>
