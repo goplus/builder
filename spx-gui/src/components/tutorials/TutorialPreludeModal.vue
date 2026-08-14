@@ -47,11 +47,13 @@ function handleContinue() {
     @update:visible="handleContinue"
   >
     <div class="flex flex-col items-center gap-6 p-6">
-      <img :src="tutorialIllustration" alt="" class="block h-[190px] w-[396px]" />
-      <div class="w-full rounded-lg bg-grey-300 px-6 py-8">
-        <!-- The course prompt supplies this text for each opening; Markdown keeps inline code
-             snippets styled consistently with the rest of the tutorial UI. -->
-        <MarkdownView class="text-sm/[22px]! font-medium text-grey-900" :value="text" />
+      <div class="flex w-full flex-col">
+        <img :src="tutorialIllustration" alt="" class="block h-[190px] w-[396px]" />
+        <div class="w-full rounded-lg bg-grey-300 px-6 py-8">
+          <!-- The course prompt supplies this text for each opening; Markdown keeps inline code
+               snippets styled consistently with the rest of the tutorial UI. -->
+          <MarkdownView class="text-sm/[22px]! font-medium text-grey-900" :value="text" />
+        </div>
       </div>
       <UIButton
         class="w-full! rounded-lg! bg-(--ui-color-turquoise-500)! text-[15px]/[24px]!"
