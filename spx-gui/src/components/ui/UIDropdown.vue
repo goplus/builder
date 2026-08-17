@@ -39,6 +39,8 @@ export type Props = {
   offset?: Offset
   disabled?: boolean
   class?: ClassValue
+  /** Delay before a hover-triggered dropdown opens, in milliseconds. */
+  openDelay?: number
   /**
    * For a `hover` dropdown, whether hovering the content keeps it open (so the pointer can move
    * from trigger into content). Defaults to `true`. Set `false` when the content has nothing to
@@ -62,7 +64,6 @@ import {
 } from './popup'
 import { usePopupContainer } from './utils'
 
-const HOVER_OPEN_DELAY = 100
 const HOVER_CLOSE_DELAY = 100
 
 defineOptions({
@@ -78,6 +79,7 @@ const props = withDefaults(defineProps<Props>(), {
   offset: () => ({ x: 0, y: 8 }),
   disabled: false,
   class: undefined,
+  openDelay: 100,
   keepOnContentHover: true
 })
 
@@ -153,7 +155,7 @@ function scheduleOpen() {
   // while the pointer is just passing across the trigger.
   hoverOpenTimerRef.value = window.setTimeout(() => {
     setVisible(true)
-  }, HOVER_OPEN_DELAY)
+  }, props.openDelay)
 }
 
 function scheduleClose() {
