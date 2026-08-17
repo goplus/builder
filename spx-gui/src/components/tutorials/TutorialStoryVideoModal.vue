@@ -69,7 +69,6 @@ watch(
       if (video == null) return
       video.defaultMuted = true
       video.muted = true
-      video.load()
       void playVideo()
     })
   }
@@ -86,7 +85,6 @@ function handleEnded() {
 
 function handleLoaded() {
   hasLoaded.value = true
-  void playVideo()
 }
 
 function handlePlay() {
@@ -106,7 +104,8 @@ async function replay() {
   await handlePlayWithSound({ target: video } as unknown as Event)
 }
 
-// Series intros differ in shape, so the box follows the video; 16:9 is what they have been so far.
+// Use the video's intrinsic ratio once metadata is available. The fallback only reserves a
+// reasonable loading area; the player itself is never letterboxed inside a fixed-ratio frame.
 const { aspectStyle, handleLoadedMetadata } = useVideoAspect(16 / 9)
 
 function handleContinue() {
@@ -134,7 +133,7 @@ function handleContinue() {
       </div>
 
       <div class="flex flex-col items-center px-6 py-5">
-        <div class="relative overflow-hidden rounded-md bg-grey-1000">
+        <div class="relative w-full overflow-hidden rounded-md bg-grey-1000" :style="aspectStyle">
           <!-- Hover-card style minus the muting: autoplaying once, with no browser controls popping
              up on mouse move. The story has a plot and a soundtrack, so it plays with sound;
              `playVideo` uses muted autoplay for browser compatibility. Once playback is paused or
@@ -143,13 +142,13 @@ function handleContinue() {
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
           <video
             ref="videoRef"
-            class="block w-full"
-            :style="aspectStyle"
+            class="block h-full w-full"
             :src="src"
             crossorigin="anonymous"
             autoplay
             muted
             playsinline
+            preload="auto"
             @loadedmetadata="handleLoadedMetadata"
             @loadeddata="handleLoaded"
             @canplay="handleLoaded"

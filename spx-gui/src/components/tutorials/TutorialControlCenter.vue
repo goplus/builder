@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { listCourses } from '@/apis/course'
 import { listSignedInUserProjects, listUserPublicProjects } from '@/apis/project'
@@ -12,6 +12,7 @@ import { useTutorial } from './tutorial'
 import { InterventionLevel, neutralThreshold, backThreshold } from './tutorial-intervention'
 import TutorialCourseRow from './TutorialCourseRow.vue'
 import { useSignedInUser } from '@/stores/user'
+import { scrollCurrentCourseIntoView } from './tutorial-control-center'
 
 const emit = defineEmits<{
   /** Ask the host (the navbar dropdown) to close after a navigation. */
@@ -26,6 +27,7 @@ const dropdown = useDropdown()
 
 const series = computed(() => tutorial.currentSeries)
 const currentCourseId = computed(() => tutorial.currentCourse?.id ?? null)
+const courseListRef = ref<HTMLElement | null>(null)
 
 // The whole series, in order, so the learner can see where they are and jump between courses.
 const courses = useAsyncComputed(async () => {
@@ -44,6 +46,16 @@ const courses = useAsyncComputed(async () => {
   const coursesById = new Map(result.data.map((course) => [course.id, course]))
   return ids.map((id) => coursesById.get(id)).filter((course) => course != null)
 })
+
+watch(
+  [courses, currentCourseId],
+  async ([loadedCourses, courseId]) => {
+    if (loadedCourses == null || courseId == null) return
+    await nextTick()
+    scrollCurrentCourseIntoView(courseListRef.value)
+  },
+  { immediate: true }
+)
 
 const signedInUser = useSignedInUser()
 const projectThumbnails = useAsyncComputed(async () => {
@@ -149,7 +161,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
-    <ul class="min-h-0 flex-1 flex flex-col gap-2 overflow-y-auto p-1">
+    <ul ref="courseListRef" class="min-h-0 flex-1 flex flex-col gap-2 overflow-y-auto p-1">
       <TutorialCourseRow
         v-for="(course, index) in courses ?? []"
         :key="course.id"
