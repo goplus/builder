@@ -33,16 +33,20 @@ import { untilLoaded } from '@/utils/query'
 import { useMessageHandle } from '@/utils/exception'
 import { isSignedIn, useSignedInStateQuery } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UIButton, UITooltip } from '@/components/ui'
+import { ApiExceptionCode } from '@/apis/common/exception'
+import { providePopupContainer, UIButton, UIButtonGroup, UIButtonGroupItem, UITooltip } from '@/components/ui'
+import { useFeedbackDemoModel } from '@/components/feedback-demo/model'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
+import QuotaExceeded from './feedback/api-exception/QuotaExceeded.vue'
 import { useCopilot } from './context'
-import { type QuickInput, RoundState } from './copilot'
+import { type QuickInput, type Round, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
 import type { LocaleMessage } from '@/utils/i18n'
 import { homePageName } from '@/apps/xbuilder/router'
 
 const copilot = useCopilot()
+const feedbackDemo = useFeedbackDemoModel()
 const spotlight = useSpotlight()
 const router = useRouter()
 
@@ -64,6 +68,29 @@ const activeRound = computed(() => {
   }
   return lastRound
 })
+
+type QuotaDemoMode = 'off' | 'guidance' | 'action'
+
+const quotaDemoMode = ref<QuotaDemoMode>('off')
+const showQuotaDemoControl = import.meta.env.DEV
+const isQuotaDemoActive = computed(() => quotaDemoMode.value !== 'off')
+const quotaDemoFeedbackMode = computed(() => (quotaDemoMode.value === 'off' ? 'default' : quotaDemoMode.value))
+const quotaDemoRound = {
+  state: RoundState.Failed,
+  apiExceptionCode: ApiExceptionCode.errorQuotaExceeded,
+  apiExceptionMeta: { retryAfter: null },
+  retry: () => {
+    quotaDemoMode.value = 'off'
+  }
+} as unknown as Round
+
+function handleQuotaDemoModeUpdate(value: string) {
+  quotaDemoMode.value = value as QuotaDemoMode
+}
+
+function openQuotaFeedback() {
+  feedbackDemo.openFeedbackForm('globalForm')
+}
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
 
@@ -495,7 +522,47 @@ onMounted(async () => {
           </svg>
         </div>
         <div ref="outputRef" class="output">
-          <template v-if="activeRound != null">
+          <div v-if="showQuotaDemoControl" class="mb-4 flex justify-center">
+            <UIButtonGroup
+              v-radar="{ name: 'Quota feedback preview', desc: 'Compare quota feedback options' }"
+              :aria-label="$t({ en: 'Quota feedback preview', zh: '额度反馈方案预览' })"
+              role="group"
+              type="text"
+              variant="secondary"
+              :value="quotaDemoMode"
+              @update:value="handleQuotaDemoModeUpdate"
+            >
+              <UIButtonGroupItem
+                v-radar="{ name: 'Current quota behavior', desc: 'Show the current Copilot state' }"
+                class="focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-main"
+                value="off"
+              >
+                {{ $t({ en: 'Current', zh: '当前' }) }}
+              </UIButtonGroupItem>
+              <UIButtonGroupItem
+                v-radar="{ name: 'Quota menu hint', desc: 'Preview feedback guidance after the quota message' }"
+                class="focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-main"
+                value="guidance"
+              >
+                {{ $t({ en: 'Menu hint', zh: '菜单提示' }) }}
+              </UIButtonGroupItem>
+              <UIButtonGroupItem
+                v-radar="{ name: 'Quota feedback button', desc: 'Preview a direct feedback action' }"
+                class="focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-main"
+                value="action"
+              >
+                {{ $t({ en: 'Button', zh: '反馈按钮' }) }}
+              </UIButtonGroupItem>
+            </UIButtonGroup>
+          </div>
+          <QuotaExceeded
+            v-if="isQuotaDemoActive"
+            :round="quotaDemoRound"
+            :feedback-mode="quotaDemoFeedbackMode"
+            is-last-round
+            @feedback="openQuotaFeedback"
+          />
+          <template v-else-if="activeRound != null">
             <CopilotRound :round="activeRound" is-last-round />
             <div v-if="quickInputs.length > 0" class="quick-inputs">
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
@@ -530,7 +597,12 @@ onMounted(async () => {
           </template>
         </div>
         <div class="divider"></div>
-        <CopilotInput ref="inputRef" class="input" :class="{ 'only-input': activeRound == null }" :copilot="copilot" />
+        <CopilotInput
+          ref="inputRef"
+          class="input"
+          :class="{ 'only-input': activeRound == null && !isQuotaDemoActive }"
+          :copilot="copilot"
+        />
       </div>
     </div>
     <div class="footer">

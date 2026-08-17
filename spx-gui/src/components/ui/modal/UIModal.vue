@@ -5,7 +5,7 @@
         <div
           class="h-full w-full overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div class="min-h-full w-full flex p-4">
+          <div class="min-h-full w-full flex overscroll-contain p-4">
             <div
               v-bind="surfaceAttrs"
               ref="containerRef"
@@ -102,6 +102,7 @@ function handleMaskClick() {
 
 const attachTo = useModalContainer()
 const containerRef = ref<HTMLElement | undefined>(undefined)
+const restoreFocusTarget = ref<HTMLElement | null>(null)
 providePopupContainer(containerRef)
 
 const modalRegistration = useLayerRegistration(computed(() => props.visible))
@@ -127,12 +128,19 @@ const surfaceClass = computed(() =>
 watch(
   () => props.visible,
   async (visible, _, onCleanup) => {
-    if (!visible || !props.autoFocus) return
+    if (!visible) {
+      restoreFocus()
+      return
+    }
+
+    restoreFocusTarget.value =
+      typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null
+    if (!props.autoFocus) return
 
     const signal = getCleanupSignal(onCleanup)
     const container = await untilNotNull(containerRef, signal)
-    const focusTarget = getFirstFocusableElement(container)
-    if (focusTarget != null) focusTarget.focus()
+    const focusTarget = getFirstFocusableElement(container) ?? container
+    focusTarget.focus()
   },
   { immediate: true }
 )
@@ -148,10 +156,22 @@ const focusableSelector = [
 ].join(',')
 
 function getFirstFocusableElement(container: HTMLElement) {
-  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).find((element) => {
+  return getFocusableElements(container)[0]
+}
+
+function getFocusableElements(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter((element) => {
     if (element.hidden || element.getAttribute('aria-hidden') === 'true') return false
-    return element.tabIndex >= 0
+    const style = element.ownerDocument.defaultView?.getComputedStyle(element)
+    return element.tabIndex >= 0 && style?.display !== 'none' && style?.visibility !== 'hidden'
   })
+}
+
+function restoreFocus() {
+  const target = restoreFocusTarget.value
+  restoreFocusTarget.value = null
+  if (target == null || !target.isConnected || target.hasAttribute('disabled')) return
+  target.focus()
 }
 
 watch(
@@ -163,9 +183,35 @@ watch(
     const container = await untilNotNull(containerRef, signal)
 
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if (!isEscTargetWithinModalScope(container, e.target)) return
-      emit('update:visible', false)
+      if (e.key === 'Escape') {
+        if (!isEscTargetWithinModalScope(container, e.target)) return
+        emit('update:visible', false)
+        return
+      }
+
+      if (e.key !== 'Tab') return
+
+      const focusable = getFocusableElements(container)
+      if (focusable.length === 0) {
+        e.preventDefault()
+        container.focus()
+        return
+      }
+
+      const currentIndex = focusable.indexOf(document.activeElement as HTMLElement)
+      if (currentIndex === -1) {
+        e.preventDefault()
+        focusable[e.shiftKey ? focusable.length - 1 : 0]?.focus()
+        return
+      }
+
+      if (!e.shiftKey && currentIndex === focusable.length - 1) {
+        e.preventDefault()
+        focusable[0]?.focus()
+      } else if (e.shiftKey && currentIndex === 0) {
+        e.preventDefault()
+        focusable[focusable.length - 1]?.focus()
+      }
     }
 
     document.addEventListener('keydown', handleKeydown, { signal })
@@ -255,6 +301,23 @@ defineExpose({
   .ui-modal-enter-from .ui-modal-surface,
   .ui-modal-leave-to .ui-modal-surface {
     transform: scale(0.5);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-modal-enter-active,
+    .ui-modal-leave-active {
+      transition: opacity 120ms ease;
+    }
+
+    .ui-modal-enter-active .ui-modal-surface,
+    .ui-modal-leave-active .ui-modal-surface {
+      transition: none;
+    }
+
+    .ui-modal-enter-from .ui-modal-surface,
+    .ui-modal-leave-to .ui-modal-surface {
+      transform: none;
+    }
   }
 }
 </style>

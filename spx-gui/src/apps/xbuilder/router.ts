@@ -192,6 +192,10 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'audit-logs',
         component: () => import('./pages/admin/audit-logs.vue')
+      },
+      {
+        path: 'feedbacks',
+        component: () => import('./pages/admin/feedbacks.vue')
       }
     ]
   },

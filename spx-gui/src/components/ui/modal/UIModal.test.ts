@@ -390,5 +390,53 @@ describe('UIModal', () => {
       expect(surface.tabIndex).toBe(-1)
       expect(document.activeElement).toBe(firstFocusable)
     })
+
+    it('traps Tab within the modal and restores focus to the trigger on close', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            const visible = ref(false)
+            return { visible }
+          },
+          render() {
+            return h(ModalTestProvider, null, {
+              default: () => [
+                h('button', { 'data-test-id': 'trigger' }, 'Open'),
+                h(
+                  UIModal,
+                  {
+                    visible: this.visible,
+                    'onUpdate:visible': (nextVisible: boolean) => (this.visible = nextVisible)
+                  },
+                  {
+                    default: () => [
+                      h('button', { 'data-test-id': 'first' }, 'First'),
+                      h('button', { 'data-test-id': 'last' }, 'Last')
+                    ]
+                  }
+                )
+              ]
+            })
+          }
+        })
+      )
+
+      const trigger = wrapper.get('[data-test-id="trigger"]').element as HTMLButtonElement
+      trigger.focus()
+      ;(wrapper.vm as unknown as { visible: boolean }).visible = true
+      await flushModal()
+
+      const first = getLatestElement('[data-test-id="first"]') as HTMLButtonElement
+      const last = getLatestElement('[data-test-id="last"]') as HTMLButtonElement
+      last.focus()
+      last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+      expect(document.activeElement).toBe(first)
+
+      first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+      expect(document.activeElement).toBe(last)
+      ;(wrapper.vm as unknown as { visible: boolean }).visible = false
+      await flushModal()
+      expect(document.activeElement).toBe(trigger)
+    })
   })
 })
