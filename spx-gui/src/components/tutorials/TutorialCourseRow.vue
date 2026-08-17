@@ -29,6 +29,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 <template>
   <li
     v-radar="{ name: `Course: ${props.course.title}`, desc: 'Click to open this course' }"
+    :aria-current="current ? 'step' : undefined"
     class="flex h-11 flex-none cursor-pointer items-center gap-2 rounded-[6px] py-1 pl-1 pr-2 transition-colors hover:bg-grey-200"
     @click="emit('select')"
   >
