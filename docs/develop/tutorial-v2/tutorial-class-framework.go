@@ -80,18 +80,18 @@ type CopilotRound struct {
 
 // SpotlightOptions controls how the spotlight presents a UI target.
 type SpotlightOptions struct {
-	// mask dims everything except the revealed target with a translucent
-	// overlay. The overlay never blocks pointer events; it only directs
-	// the learner's attention.
-	mask bool
-	// persist keeps the spotlight visible until the learner clicks anywhere,
-	// instead of auto-concealing after a short delay.
-	persist bool
+	// Mask dims everything except the revealed target with a translucent
+	// overlay that directs the learner's attention.
+	Mask bool
+	// Duration is the auto-conceal delay in seconds. 0 keeps the spotlight
+	// visible until the learner clicks anywhere.
+	Duration float64
 }
 
 type Spotlight interface {
 	// reveal focuses the spotlight on the given UI target and shows the given
-	// tip beside it, with Course-guidance defaults (mask and persist enabled).
+	// tip beside it, with Course-guidance defaults: mask enabled and no
+	// auto-conceal (the spotlight stays until the learner clicks anywhere).
 	// Spotlight presentation never blocks the Course flow.
 	// target is a stable UI-target ID owned and published by the SPX Project
 	// Editor; session-local Radar node IDs are not valid targets.

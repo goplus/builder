@@ -26,18 +26,17 @@ export type TutorialProjectIndex = {
 export type TutorialProjectFiles = FileCollection;
 
 /** Controls how the spotlight presents a UI target. */
-export type SpotlightRevealOptions = {
+export type SpotlightOptions = {
   /**
-   * Dims everything except the revealed target with a translucent overlay.
-   * The overlay never blocks pointer events; it only directs the learner's
-   * attention.
+   * Dims everything except the revealed target with a translucent overlay
+   * that directs the learner's attention.
    */
   mask: boolean;
   /**
-   * Keeps the spotlight visible until the learner clicks anywhere, instead of
-   * auto-concealing after a short delay.
+   * Auto-conceal delay in seconds. `0` keeps the spotlight visible until the
+   * learner clicks anywhere.
    */
-  persist: boolean;
+  duration: number;
 };
 
 /** Flat capabilities passed to the Tutorial framework implementation. */
@@ -80,11 +79,14 @@ export interface TutorialFrameworkHost {
    * beside it. Spotlight presentation never blocks the Course flow.
    * `target` is a stable UI-target ID owned and published by the SPX Project
    * Editor; session-local Radar node IDs are not valid targets.
+   * `options` is always fully specified here: the author-facing `reveal`
+   * defaults are materialized by `createTutorialFramework` before this host
+   * method is invoked.
    */
   spotlight_reveal(
     target: string,
     tip: string,
-    options: SpotlightRevealOptions,
+    options: SpotlightOptions,
   ): Promise<void>;
 }
 

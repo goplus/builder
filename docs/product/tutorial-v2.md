@@ -71,7 +71,7 @@ A learner's modifications to the course project exist only within the current le
 
 The framework provides course code with the following atomic capabilities, to be invoked and combined as needed:
 
-* **Messaging**: show text to the learner in a dialog (Markdown supported), play a video, or spotlight a UI element with a hint; dialogs and videos always wait for the learner to confirm or finish watching before the course continues, while spotlight highlights never block the course flow and are dismissed by the learner's next click or after a short delay
+* **Messaging**: show text to the learner in a dialog (Markdown supported), play a video, or spotlight a UI element with a hint; dialogs and videos always wait for the learner to confirm or finish watching before the course continues, while spotlight highlights never block the course flow and are dismissed by the learner's next click
 * **Runtime signals**: listen to the game's run logs. This is the main judging channel: as long as a program is running, it can always `println` to the console — the scene code prints specific logs at key events, and the course code waits for these signals to learn *what the learner accomplished*
 * **Code check**: deterministically check whether specified constructs appear in the learner's code, to learn *how the learner accomplished it*
 * **LLM completion**: make a single generation request to the LLM and get the result back, automatically carrying context such as course information and XGo/spx knowledge (these requests do not appear in the learner's conversation with the Copilot). Useful for judging "expression-type" goals (e.g., have the character say a greeting — anything counts) or for generating personalized feedback based on the learner's actual code
