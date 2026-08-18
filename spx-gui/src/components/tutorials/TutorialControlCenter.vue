@@ -114,14 +114,14 @@ function selectCourse(courseId: string) {
   emit('navigated')
 }
 
-const { fn: handleReturnHome } = useMessageHandle(
+const { fn: handleReturnSeries } = useMessageHandle(
   async () => {
     // Back to the page of the series being learned; the tutorials index is only a fallback.
     const seriesId = series.value?.id
     await router.push(seriesId == null ? '/tutorials' : `/course-series/${seriesId}`)
     emit('navigated')
   },
-  { en: 'Failed to open the tutorials page', zh: '打开教程页失败' }
+  { en: 'Failed to open the course series', zh: '打开系列课程失败' }
 )
 
 const { fn: handleExitCourse } = useMessageHandle(() => tutorial.exitCurrentCourse(), {
@@ -176,11 +176,11 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <footer class="flex-none p-2">
       <button
-        v-radar="{ name: 'Return to tutorial homepage', desc: 'Click to leave the course and open the tutorials page' }"
+        v-radar="{ name: 'Return to series courses', desc: 'Click to leave the course and open its series page' }"
         class="h-[34px] w-full cursor-pointer rounded-md border border-dividing-line-2 bg-grey-100 text-base text-text transition-colors hover:bg-grey-200"
-        @click="handleReturnHome"
+        @click="handleReturnSeries"
       >
-        {{ $t({ en: 'Return to tutorial homepage', zh: '返回教程首页' }) }}
+        {{ $t({ en: 'Back to series courses', zh: '返回系列课程' }) }}
       </button>
       <!-- Debug-visible guidance state: the level in the user's terms, plus how far the counters
            are toward the next escalation. -->
