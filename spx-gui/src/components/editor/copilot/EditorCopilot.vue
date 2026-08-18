@@ -168,41 +168,6 @@ useDraggable(chatDraggerRef, {
   transform: translateY(-2px);
 }
 
-.trigger-logo {
-  /* Spun in place while the copilot is working — see `.running`. */
-  transform-origin: 50% 50%;
-}
-
-.trigger.running .trigger-logo {
-  animation: editor-copilot-spin 1.1s linear infinite;
-}
-
-@keyframes editor-copilot-spin {
-  from {
-    transform: rotate(0);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Respect reduced-motion: fall back to a gentle breathing pulse instead of spinning. */
-@media (prefers-reduced-motion: reduce) {
-  .trigger.running .trigger-logo {
-    animation: editor-copilot-pulse 1.6s ease-in-out infinite;
-  }
-
-  @keyframes editor-copilot-pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-}
-
 .panel {
   position: absolute;
   right: 0;

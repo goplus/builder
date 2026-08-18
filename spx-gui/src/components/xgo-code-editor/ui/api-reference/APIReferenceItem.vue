@@ -109,13 +109,7 @@ function handleMouseUp(e: MouseEvent) {
 </script>
 
 <template>
-  <UIDropdown
-    ref="hoverDropdown"
-    placement="bottom-start"
-    :offset="{ x: 0, y: 4 }"
-    :open-delay="600"
-    :disabled="interactionDisabled"
-  >
+  <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
     <template #trigger>
       <li
         ref="itemEl"

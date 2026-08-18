@@ -41,6 +41,8 @@
             :key="localConfig.id"
             :local-config="localConfig"
             :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
+            :interactive="!isFocused"
+            :show-pivot-marker="!isFocused"
             :project="editorCtx.project"
             :map-size="mapSize"
             :node-ready-map="nodeReadyMap"
