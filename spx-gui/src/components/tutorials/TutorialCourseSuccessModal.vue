@@ -6,11 +6,11 @@ import { type Tutorial } from './tutorial'
 import { type Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
-import { UIButton, UIImg, UIModal } from '@/components/ui'
+import { UIButton, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import successImg from '@/assets/images/tutorial-success-illustration.svg'
+import successImg from '@/assets/images/tutorial-success-illustration-v2.png'
 
 const props = defineProps<{
   completion: { course: Course; series: CourseSeries }
@@ -104,7 +104,9 @@ function handleClose() {
   >
     <div class="max-h-[calc(100vh-32px)] overflow-y-auto p-6">
       <div class="flex w-full flex-col items-center">
-        <UIImg :src="successImg" alt="" class="block h-[190px] w-full" />
+        <div class="aspect-[2/1] w-full overflow-hidden">
+          <img :src="successImg" alt="" class="block size-full object-contain" />
+        </div>
 
         <div class="flex w-full flex-col rounded-lg bg-grey-300 px-6 py-8 text-center">
           <p class="text-xl/[1.4] font-medium text-title">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</p>

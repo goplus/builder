@@ -226,16 +226,10 @@ export class Tutorial {
     if (course == null || this.currentSeries == null) throw new Error('No prepared course')
     this.courseActivationPending = true
     try {
-      // The course starts with the copilot collapsed and running in the background. It opens on its
-      // own once it has something to show, and the user can open it any time. A course whose subject
-      // is the copilot itself (e.g. the first lesson) opts out with `"copilot": "open"`; preparation
-      // still keeps it closed until the learner has continued through the pre-course opening.
-      const config = extractCourseConfig(course.prompt)
-      // An editor-owned opening (prelude / API video / spotlight) still has steps in front of the
-      // learner after the course session starts. Keep the panel collapsed until TutorialRoot has
-      // advanced through that queue; it will honor `copilotOpen` once the last step is complete.
-      const autoOpen = config.copilotOpen && config.opening.length === 0
-      await this.copilot.startSession(this.generateTopic(course), undefined, { autoOpen })
+      // Course sessions always start in the background. Even a course that teaches Copilot must
+      // wait for the learner to click the Copilot trigger; confirming a tutorial dialog or clicking
+      // elsewhere in the editor must never open the conversation panel on their behalf.
+      await this.copilot.startSession(this.generateTopic(course), undefined, { autoOpen: false })
 
       this.copilot.notifyUserEvent(
         {
