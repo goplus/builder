@@ -575,7 +575,6 @@ function getStageInlineAnchor() {
   display: flex;
   flex: none;
   align-items: flex-start;
-  height: 44px;
   padding: 12px 12px 0;
   background: var(--ui-color-grey-100);
 }
