@@ -99,6 +99,22 @@ const currentOpeningStep = computed(() =>
     : null
 )
 
+// Courses may opt into opening Copilot immediately, but a modal opening must remain the only
+// active foreground interaction. Start the session in the background, keep it collapsed through
+// videos and the prelude, then reveal it when the learner confirms the prelude. Non-modal
+// spotlights must not delay the first-course Copilot lesson after that explicit confirmation.
+watch(
+  [() => tutorial.courseActivated, currentOpeningStep, () => tutorial.currentCourse],
+  ([courseActivated, openingStep, course]) => {
+    if (!courseActivated || course == null) return
+    const config = extractCourseConfig(course.prompt)
+    if (config.opening.length === 0 || !config.copilotOpen) return
+    if (openingStep == null || openingStep.kind === 'spotlight') copilot.open()
+    else copilot.close()
+  },
+  { flush: 'sync' }
+)
+
 /**
  * The hint shown when a run reached the goal without meeting the course's secondary goal. Null
  * whenever there is nothing to say — including at the start of every run.
