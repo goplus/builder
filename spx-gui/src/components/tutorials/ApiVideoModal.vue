@@ -2,7 +2,7 @@
      the course-opening knowledge-point videos. -->
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue'
-import { UIIcon, UIModal, UIModalClose } from '@/components/ui'
+import { UIButton, UIIcon, UIModal } from '@/components/ui'
 import type { ApiVideoInfo } from './api-videos'
 import { handlePlayWithSound, useVideoAspect } from './video-aspect'
 
@@ -71,49 +71,44 @@ const { aspectStyle, handleLoadedMetadata } = useVideoAspect(4 / 3)
     v-radar="{ name: 'API video modal', desc: 'Modal playing the explainer video of an API' }"
     :visible="visible"
     size="large"
-    mask-closable
-    @update:visible="emit('close')"
+    :mask-closable="false"
   >
-    <div class="flex flex-col">
-      <div class="flex items-center justify-between border-b border-grey-400 px-6 py-3.5">
-        <div class="text-base/[26px] font-medium text-grey-1000">
-          {{ $t({ en: 'Tutorial guide', zh: '教程引导' }) }}
-        </div>
-        <UIModalClose @click="emit('close')" />
-      </div>
-      <div class="px-6 py-5">
-        <div class="relative overflow-hidden rounded-md bg-grey-1000">
-          <!-- Hover-card style minus the muting: autoplaying once, with no browser controls (they
+    <div class="flex flex-col items-center gap-5 p-6">
+      <div class="relative w-full overflow-hidden rounded-md bg-grey-1000">
+        <!-- Hover-card style minus the muting: autoplaying once, with no browser controls (they
              would appear on hover otherwise). Unlike the hover card's silent preview, the dialog
              is deliberate viewing, so the soundtrack plays; if the browser blocks unmuted
              autoplay, `handlePlayWithSound` falls back to muted rather than freezing (no controls
              means no way to unstick a paused video).
              `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
-          <video
-            ref="videoRef"
-            class="block w-full"
-            :style="aspectStyle"
-            :src="video.src"
-            crossorigin="anonymous"
-            autoplay
-            muted
-            playsinline
-            @loadedmetadata="handleLoadedMetadata"
-            @loadeddata="playVideo"
-            @ended="handleEnded"
-          ></video>
-          <button
-            v-if="hasEnded"
-            type="button"
-            class="absolute left-1/2 top-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 appearance-none items-center justify-center rounded-full border-0 bg-[rgba(36,41,47,0.25)] p-3.5 text-white outline-none transition-colors hover:bg-[rgba(36,41,47,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            :aria-label="$t({ en: 'Play video', zh: '播放视频' })"
-            @click="replay"
-          >
-            <UIIcon type="play" class="size-7" />
-          </button>
-        </div>
+        <video
+          ref="videoRef"
+          class="block w-full"
+          :style="aspectStyle"
+          :src="video.src"
+          crossorigin="anonymous"
+          autoplay
+          muted
+          playsinline
+          @loadedmetadata="handleLoadedMetadata"
+          @loadeddata="playVideo"
+          @ended="handleEnded"
+        ></video>
+        <button
+          v-if="hasEnded"
+          type="button"
+          class="absolute left-1/2 top-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 appearance-none items-center justify-center rounded-full border-0 bg-[rgba(36,41,47,0.25)] p-3.5 text-white outline-none transition-colors hover:bg-[rgba(36,41,47,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          :aria-label="$t({ en: 'Play video', zh: '播放视频' })"
+          @click="replay"
+        >
+          <UIIcon type="play" class="size-7" />
+        </button>
       </div>
+
+      <UIButton type="primary" size="large" @click="emit('close')">
+        {{ $t({ en: 'Continue', zh: '继续进行' }) }}
+      </UIButton>
     </div>
   </UIModal>
 </template>

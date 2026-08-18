@@ -13,7 +13,8 @@ function makeCopilot() {
     startSession: vi.fn(),
     endCurrentSession: vi.fn(),
     notifyUserEvent: vi.fn(),
-    close: vi.fn()
+    close: vi.fn(),
+    open: vi.fn()
   } as unknown as Copilot
 }
 
@@ -103,6 +104,28 @@ describe('Tutorial', () => {
       const course = { ...makeCourse(), prompt: 'Meet the copilot.\n```jsonc\n{ "copilot": "open" }\n```' }
       await tutorial.startCourse(course, makeCourseSeries())
       expect(copilot.startSession).toHaveBeenCalledWith(expect.anything(), undefined, { autoOpen: true })
+    })
+
+    it('should defer an open Copilot until an editor-owned opening is complete', async () => {
+      const copilot = makeCopilot()
+      const tutorial = new Tutorial(
+        copilot,
+        makeRouter(async () => undefined),
+        ref(true)
+      )
+      const course = {
+        ...makeCourse(),
+        prompt: [
+          'Meet the copilot.',
+          '```jsonc',
+          '{ "copilot": "open", "opening": [{ "prelude": "Say hello" }] }',
+          '```'
+        ].join('\n')
+      }
+
+      await tutorial.startCourse(course, makeCourseSeries())
+
+      expect(copilot.startSession).toHaveBeenCalledWith(expect.anything(), undefined, { autoOpen: false })
     })
   })
 

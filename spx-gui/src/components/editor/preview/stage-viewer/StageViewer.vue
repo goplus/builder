@@ -146,7 +146,7 @@
       }"
     ></div>
 
-    <PositionIndicator :position="mousePos" />
+    <PositionIndicator v-if="!isFocused" :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
 </template>
