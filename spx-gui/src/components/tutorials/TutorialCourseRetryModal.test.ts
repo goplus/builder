@@ -1,26 +1,8 @@
 import { shallowMount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { Tutorial } from './tutorial'
 import TutorialCourseRetryModal from './TutorialCourseRetryModal.vue'
-
-const mocks = vi.hoisted(() => ({
-  push: vi.fn(),
-  requestSkipOnce: vi.fn()
-}))
-
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: mocks.push })
-}))
-
-vi.mock('@/components/editor/leave-confirm', () => ({
-  editorLeaveConfirm: { requestSkipOnce: mocks.requestSkipOnce }
-}))
-
-vi.mock('@/utils/exception', () => ({
-  DefaultException: class DefaultException extends Error {},
-  useMessageHandle: (fn: () => unknown) => ({ fn })
-}))
 
 const global = {
   directives: {
@@ -46,12 +28,8 @@ const global = {
   }
 }
 
-function createTutorial(courseIDs = ['course-1', 'course-2']) {
-  return {
-    currentCourse: { id: 'course-1' },
-    currentSeries: { id: 'series-1', courseIDs },
-    endCurrentCourse: vi.fn()
-  } as unknown as Tutorial
+function createTutorial() {
+  return {} as Tutorial
 }
 
 describe('TutorialCourseRetryModal', () => {
@@ -66,12 +44,15 @@ describe('TutorialCourseRetryModal', () => {
     })
 
     const buttons = wrapper.findAll('button')
-    expect(buttons).toHaveLength(2)
-    expect(buttons[0].text()).toBe('学习下一课程')
-    expect(buttons[0].attributes('data-type')).toBe('secondary')
-    expect(buttons[1].text()).toBe('再试一次')
+    expect(buttons).toHaveLength(1)
+    expect(buttons[0].text()).toBe('继续尝试')
+    expect(buttons[0].attributes('data-type')).toBe('primary')
     expect(wrapper.find('[data-testid="hint"]').text()).toBe('试试用 `stepTo`。')
     expect(wrapper.find('[data-testid="modal"]').attributes('data-mask-closable')).toBe('false')
+    const image = wrapper.get('img')
+    expect(image.element.parentElement?.classList.contains('aspect-[2/1]')).toBe(true)
+    expect(image.attributes('src')).toContain('tutorial-retry-illustration-v2.png')
+    expect(image.classes()).toContain('object-contain')
   })
 
   it('closes the modal when retrying', async () => {
@@ -84,42 +65,7 @@ describe('TutorialCourseRetryModal', () => {
       global
     })
 
-    await wrapper.findAll('button')[1].trigger('click')
+    await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
-  })
-
-  it('starts the next course through the existing course-start route', async () => {
-    mocks.push.mockReset()
-    mocks.requestSkipOnce.mockReset()
-    const tutorial = createTutorial()
-    const wrapper = shallowMount(TutorialCourseRetryModal, {
-      props: {
-        visible: true,
-        hint: '再试一次。',
-        tutorial
-      },
-      global
-    })
-
-    await wrapper.findAll('button')[0].trigger('click')
-    expect(mocks.requestSkipOnce).toHaveBeenCalledOnce()
-    expect(tutorial.endCurrentCourse).not.toHaveBeenCalled()
-    expect(mocks.push).toHaveBeenCalledWith('/course/series-1/course-2/start')
-    expect(wrapper.emitted('close')).toHaveLength(1)
-  })
-
-  it('hides the next-course action at the end of a series', () => {
-    const wrapper = shallowMount(TutorialCourseRetryModal, {
-      props: {
-        visible: true,
-        hint: '再试一次。',
-        tutorial: createTutorial(['course-1'])
-      },
-      global
-    })
-
-    const buttons = wrapper.findAll('button')
-    expect(buttons).toHaveLength(1)
-    expect(buttons[0].text()).toBe('再试一次')
   })
 })
