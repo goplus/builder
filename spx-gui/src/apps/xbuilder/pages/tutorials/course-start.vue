@@ -39,9 +39,9 @@ export function resolveStoryVideoUrl(
  * text guide (see `extractCoursePrelude`). Steps a course does not configure are omitted.
  *
  * The prelude is included here only for legacy courses. A course that declares an ordered `opening`
- * sequence in its config runs its prelude inside the editor (see `TutorialRoot`), interleaved with
- * videos and spotlights, so `hasEditorOpening` suppresses the pre-editor prelude for it — the story
- * video, which plays before the editor exists, stays here regardless.
+ * sequence in its config runs its prelude after activation (see `TutorialRoot`), interleaved with
+ * videos and spotlights, so `hasEditorOpening` suppresses the pre-activation prelude for it. The
+ * story video still leads the sequence, but TutorialRoot renders it over the prepared editor.
  */
 export type OpeningStep = { kind: 'story-video'; src: string } | { kind: 'prelude'; text: string }
 
@@ -69,8 +69,8 @@ import { tutorialStoryVideoUrl, usercontentBaseUrl } from '@/apps/xbuilder/env'
 import { tutorialVideoAssetBaseUrl } from '@/components/tutorials/api-videos'
 import { extractCourseConfig } from '@/components/tutorials/course-config'
 import { useTutorial } from '@/components/tutorials/tutorial'
-import TutorialStoryVideoModal, { extractCourseStoryVideo } from '@/components/tutorials/TutorialStoryVideoModal.vue'
-import TutorialPreludeModal, { extractCoursePrelude } from '@/components/tutorials/TutorialPreludeModal.vue'
+import { extractCourseStoryVideo } from '@/components/tutorials/TutorialStoryVideoModal.vue'
+import { extractCoursePrelude } from '@/components/tutorials/TutorialPreludeModal.vue'
 import { UIDetailedLoading, UIError } from '@/components/ui'
 import { ActionException, useAction } from '@/utils/exception'
 import { composeQuery, useQuery } from '@/utils/query'
@@ -149,7 +149,7 @@ const startCourse = useAction(
   async () => {
     const data = allQueryRet.data.value
     if (data == null) throw new Error('Course data is not loaded')
-    await tutorial.startCourse(data.course, data.courseSeries)
+    await tutorial.prepareCourse(data.course, data.courseSeries, openingSteps.value)
   },
   { en: 'Failed to start course', zh: '启动课程失败' }
 )
@@ -181,22 +181,12 @@ const openingSteps = computed<OpeningStep[]>(() => {
   return getOpeningSteps(data.course.prompt, storyVideoUrl, hasEditorOpening)
 })
 
-const openingStepIndex = ref(0)
-const currentOpeningStep = computed(() => openingSteps.value[openingStepIndex.value] ?? null)
-
-function handleOpeningStepContinue() {
-  if (openingStepIndex.value + 1 < openingSteps.value.length) {
-    openingStepIndex.value++
-    return
-  }
-  handleStart()
-}
-
-// Without any opening step configured, start the course right after loading, as before.
+// Prepare the editor as soon as the course data is ready. TutorialRoot keeps any opening modal
+// above the loaded editor and activates the Copilot only after the learner continues.
 watch(
   () => allQueryRet.data.value,
   (data) => {
-    if (data == null || openingSteps.value.length > 0) return
+    if (data == null) return
     handleStart()
   },
   { immediate: true }
@@ -217,19 +207,5 @@ watch(
     <UIError v-else-if="startError != null" :retry="handleStart">
       {{ $t(startError.userMessage) }}
     </UIError>
-    <template v-else-if="currentOpeningStep != null">
-      <TutorialStoryVideoModal
-        v-if="currentOpeningStep.kind === 'story-video'"
-        visible
-        :src="currentOpeningStep.src"
-        @continue="handleOpeningStepContinue"
-      />
-      <TutorialPreludeModal
-        v-else-if="currentOpeningStep.kind === 'prelude'"
-        visible
-        :text="currentOpeningStep.text"
-        @continue="handleOpeningStepContinue"
-      />
-    </template>
   </section>
 </template>

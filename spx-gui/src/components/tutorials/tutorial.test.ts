@@ -55,6 +55,27 @@ describe('Tutorial', () => {
   })
 
   describe('startCourse', () => {
+    it('should load the editor but keep Copilot inactive until the opening is continued', async () => {
+      const copilot = makeCopilot()
+      const push = vi.fn(async () => undefined)
+      const tutorial = new Tutorial(copilot, makeRouter(push), ref(true))
+      const course = { ...makeCourse(), entrypoint: '/editor/owner/project/sprites/Lita/code' }
+
+      await tutorial.prepareCourse(course, makeCourseSeries(), [{ kind: 'story-video', src: '/story.mp4' }])
+
+      expect(push).toHaveBeenCalledWith(course.entrypoint)
+      expect(tutorial.currentCourseOpeningStep).toEqual({ kind: 'story-video', src: '/story.mp4' })
+      expect(tutorial.courseActivated).toBe(false)
+      expect(copilot.close).toHaveBeenCalledOnce()
+      expect(copilot.startSession).not.toHaveBeenCalled()
+
+      await tutorial.advanceCourseOpening()
+
+      expect(tutorial.currentCourseOpeningStep).toBeNull()
+      expect(tutorial.courseActivated).toBe(true)
+      expect(copilot.startSession).toHaveBeenCalledOnce()
+    })
+
     it('should start a session whose topic hides code in chat', async () => {
       const copilot = makeCopilot()
       const tutorial = new Tutorial(

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 import { useSpotlight } from '@/utils/spotlight'
 import { useRadar } from '@/utils/radar'
+import { useMessageHandle } from '@/utils/exception'
 
 import { provideTutorial, Tutorial } from './tutorial'
 
@@ -24,6 +25,7 @@ import {
 import TutorialCourseSuccessModal from './TutorialCourseSuccessModal.vue'
 import TutorialCourseRetryModal from './TutorialCourseRetryModal.vue'
 import TutorialPreludeModal from './TutorialPreludeModal.vue'
+import TutorialStoryVideoModal from './TutorialStoryVideoModal.vue'
 import ApiVideoModal from './ApiVideoModal.vue'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
@@ -45,6 +47,10 @@ const spotlight = useSpotlight()
 const radar = useRadar()
 
 const tutorial = new Tutorial(copilot, router, isRouteLoaded)
+const { fn: handleCourseOpeningContinue } = useMessageHandle(() => tutorial.advanceCourseOpening(), {
+  en: 'Failed to start course',
+  zh: '启动课程失败'
+})
 
 /**
  * The course's opening sequence, applied locally once the editor is up so it plays immediately and
@@ -84,8 +90,13 @@ const openingIndexRef = ref(0)
 // check its first modal step flashes over /start, hides while the editor loads, and pops up a
 // second time once it finishes.
 const isEditorRouteActive = computed(() => router.currentRoute.value.path.startsWith('/editor/'))
+const currentCourseOpeningStep = computed(() =>
+  isRouteLoaded.value && isEditorRouteActive.value ? tutorial.currentCourseOpeningStep : null
+)
 const currentOpeningStep = computed(() =>
-  isRouteLoaded.value && isEditorRouteActive.value ? openingStepsRef.value[openingIndexRef.value] ?? null : null
+  tutorial.courseActivated && isRouteLoaded.value && isEditorRouteActive.value
+    ? openingStepsRef.value[openingIndexRef.value] ?? null
+    : null
 )
 
 /**
@@ -375,8 +386,20 @@ provideTutorial(tutorial)
 
 <template>
   <slot />
+  <TutorialStoryVideoModal
+    v-if="currentCourseOpeningStep?.kind === 'story-video'"
+    visible
+    :src="currentCourseOpeningStep.src"
+    @continue="handleCourseOpeningContinue"
+  />
   <TutorialPreludeModal
-    v-if="currentOpeningStep?.kind === 'prelude'"
+    v-else-if="currentCourseOpeningStep?.kind === 'prelude'"
+    visible
+    :text="currentCourseOpeningStep.text"
+    @continue="handleCourseOpeningContinue"
+  />
+  <TutorialPreludeModal
+    v-else-if="currentOpeningStep?.kind === 'prelude'"
     visible
     :text="currentOpeningStep.text"
     @continue="advanceOpening()"

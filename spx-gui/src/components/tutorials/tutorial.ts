@@ -41,6 +41,8 @@ export type TutorialTopic = Topic & {
   isTutorialTopic: true
 }
 
+export type TutorialCourseOpeningStep = { kind: 'story-video'; src: string } | { kind: 'prelude'; text: string }
+
 export function isTutorialTopic(topic: Topic): topic is TutorialTopic {
   return (topic as TutorialTopic).isTutorialTopic === true
 }
@@ -48,6 +50,10 @@ export function isTutorialTopic(topic: Topic): topic is TutorialTopic {
 export class Tutorial {
   private course = userSessionStorageRef<Course | null>('spx-gui-tutorial-course', null)
   private series = userSessionStorageRef<CourseSeries | null>('spx-gui-tutorial-series', null)
+  private courseActivatedRef = ref(false)
+  private courseOpeningStepsRef = shallowRef<TutorialCourseOpeningStep[]>([])
+  private courseOpeningIndexRef = ref(0)
+  private courseActivationPending = false
 
   constructor(
     private copilot: Copilot,
@@ -61,6 +67,14 @@ export class Tutorial {
 
   get currentSeries(): CourseSeries | null {
     return this.series.value
+  }
+
+  get courseActivated(): boolean {
+    return this.courseActivatedRef.value
+  }
+
+  get currentCourseOpeningStep(): TutorialCourseOpeningStep | null {
+    return this.courseOpeningStepsRef.value[this.courseOpeningIndexRef.value] ?? null
   }
 
   /**
@@ -127,11 +141,16 @@ export class Tutorial {
     this.abandonPredictionCountRef.value = 0
   }
 
-  async startCourse(course: Course, series: CourseSeries): Promise<void> {
+  async prepareCourse(course: Course, series: CourseSeries, openingSteps: TutorialCourseOpeningStep[]): Promise<void> {
     try {
+      this.copilot.close()
       this.copilot.endCurrentSession()
       this.course.value = course
       this.series.value = series
+      this.courseActivatedRef.value = false
+      this.courseOpeningStepsRef.value = openingSteps
+      this.courseOpeningIndexRef.value = 0
+      this.courseActivationPending = false
       this.abandonPredictionCountRef.value = 0
 
       const { entrypoint } = course
@@ -142,11 +161,34 @@ export class Tutorial {
         await timeout(100) // Wait for detailed UI rendering
       }
 
-      // The course starts with the copilot collapsed, running in the background: it sets itself up
-      // and processes the start silently (per the protocol) while the user follows the prelude, so
-      // popping the panel open would only distract. It opens on its own once it has something to
-      // show, and the user can open it any time. A course whose subject is the copilot itself
-      // (e.g. the very first lesson) opts out with `"copilot": "open"` in its config block.
+      if (openingSteps.length === 0) await this.activatePreparedCourse()
+    } catch (error) {
+      console.error('Failed to prepare course:', error)
+      this.endCurrentCourse()
+      throw error
+    }
+  }
+
+  async advanceCourseOpening(): Promise<void> {
+    if (this.courseOpeningIndexRef.value + 1 < this.courseOpeningStepsRef.value.length) {
+      this.courseOpeningIndexRef.value++
+      return
+    }
+    this.courseOpeningStepsRef.value = []
+    this.courseOpeningIndexRef.value = 0
+    await this.activatePreparedCourse()
+  }
+
+  private async activatePreparedCourse(): Promise<void> {
+    if (this.courseActivatedRef.value || this.courseActivationPending) return
+    const course = this.currentCourse
+    if (course == null || this.currentSeries == null) throw new Error('No prepared course')
+    this.courseActivationPending = true
+    try {
+      // The course starts with the copilot collapsed and running in the background. It opens on its
+      // own once it has something to show, and the user can open it any time. A course whose subject
+      // is the copilot itself (e.g. the first lesson) opts out with `"copilot": "open"`; preparation
+      // still keeps it closed until the learner has continued through the pre-course opening.
       const { copilotOpen } = extractCourseConfig(course.prompt)
       await this.copilot.startSession(this.generateTopic(course), undefined, { autoOpen: copilotOpen })
 
@@ -158,11 +200,18 @@ export class Tutorial {
         'Now the course has just started.',
         { autoOpen: false }
       )
+      this.courseActivatedRef.value = true
     } catch (error) {
       console.error('Failed to start course:', error)
       this.endCurrentCourse()
       throw error
+    } finally {
+      this.courseActivationPending = false
     }
+  }
+
+  async startCourse(course: Course, series: CourseSeries): Promise<void> {
+    await this.prepareCourse(course, series, [])
   }
 
   protected generateTopic(course: Course): TutorialTopic {
@@ -484,6 +533,10 @@ ${exampleOpening}
     this.copilot.endCurrentSession()
     this.course.value = null
     this.series.value = null
+    this.courseActivatedRef.value = false
+    this.courseOpeningStepsRef.value = []
+    this.courseOpeningIndexRef.value = 0
+    this.courseActivationPending = false
     this.interventionRef.value = null
     this.abandonPredictionCountRef.value = 0
   }
