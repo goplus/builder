@@ -94,7 +94,7 @@ describe('Tutorial', () => {
       )
     })
 
-    it('should start with the panel open when the course declares "copilot": "open"', async () => {
+    it('should keep the panel collapsed when the course declares "copilot": "open"', async () => {
       const copilot = makeCopilot()
       const tutorial = new Tutorial(
         copilot,
@@ -103,7 +103,7 @@ describe('Tutorial', () => {
       )
       const course = { ...makeCourse(), prompt: 'Meet the copilot.\n```jsonc\n{ "copilot": "open" }\n```' }
       await tutorial.startCourse(course, makeCourseSeries())
-      expect(copilot.startSession).toHaveBeenCalledWith(expect.anything(), undefined, { autoOpen: true })
+      expect(copilot.startSession).toHaveBeenCalledWith(expect.anything(), undefined, { autoOpen: false })
     })
 
     it('should defer an open Copilot until an editor-owned opening is complete', async () => {

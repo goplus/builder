@@ -36,7 +36,6 @@ const global = {
       inheritAttrs: false,
       template: '<div data-testid="modal" :data-mask-closable="String(maskClosable)"><slot /></div>'
     },
-    UIImg: true,
     UIButton: {
       template: '<button><slot /></button>'
     },
@@ -80,6 +79,10 @@ describe('TutorialCourseSuccessModal', () => {
     expect(wrapper.find('[data-testid="comment"]').text()).toBe('1.2 修改步数课程已完成')
     expect(wrapper.find('[data-testid="modal"]').attributes('data-mask-closable')).toBe('false')
     expect(wrapper.find('[data-testid="comment"]').classes()).toContain('text-center')
+    const image = wrapper.get('img')
+    expect(image.element.parentElement?.classList.contains('aspect-[2/1]')).toBe(true)
+    expect(image.attributes('src')).toContain('tutorial-success-illustration-v2.png')
+    expect(image.classes()).toContain('object-contain')
     expect(wrapper.findAll('button').map((button) => button.text())).toEqual([
       '再试一次',
       '返回系列课程',

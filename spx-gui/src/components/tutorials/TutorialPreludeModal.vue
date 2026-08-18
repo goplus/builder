@@ -16,7 +16,7 @@ export function extractCoursePrelude(prompt: string): string | null {
 <script setup lang="ts">
 import { UIButton, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
-import tutorialIllustration from '@/assets/images/tutorial-guide-illustration.svg'
+import tutorialIllustration from '@/assets/images/tutorial-guide-illustration-v2.png'
 
 defineProps<{
   visible: boolean
@@ -48,7 +48,9 @@ function handleContinue() {
   >
     <div class="flex flex-col items-center gap-6 p-6">
       <div class="flex w-full flex-col">
-        <img :src="tutorialIllustration" alt="" class="block h-[190px] w-[396px]" />
+        <div class="aspect-[2/1] w-full overflow-hidden">
+          <img :src="tutorialIllustration" alt="" class="block size-full object-contain" />
+        </div>
         <div class="w-full rounded-lg bg-grey-300 px-6 py-8">
           <!-- The course prompt supplies this text for each opening; Markdown keeps inline code
                snippets styled consistently with the rest of the tutorial UI. -->
