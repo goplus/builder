@@ -230,8 +230,12 @@ export class Tutorial {
       // own once it has something to show, and the user can open it any time. A course whose subject
       // is the copilot itself (e.g. the first lesson) opts out with `"copilot": "open"`; preparation
       // still keeps it closed until the learner has continued through the pre-course opening.
-      const { copilotOpen } = extractCourseConfig(course.prompt)
-      await this.copilot.startSession(this.generateTopic(course), undefined, { autoOpen: copilotOpen })
+      const config = extractCourseConfig(course.prompt)
+      // An editor-owned opening (prelude / API video / spotlight) still has steps in front of the
+      // learner after the course session starts. Keep the panel collapsed until TutorialRoot has
+      // advanced through that queue; it will honor `copilotOpen` once the last step is complete.
+      const autoOpen = config.copilotOpen && config.opening.length === 0
+      await this.copilot.startSession(this.generateTopic(course), undefined, { autoOpen })
 
       this.copilot.notifyUserEvent(
         {
