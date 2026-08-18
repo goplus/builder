@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UIIcon } from '@/components/ui'
+import rulerIconUrl from '@/assets/images/triangle-ruler-button.png'
 
 defineProps<{
   /** Whether the ruler is currently measuring (highlights the button). */
@@ -19,9 +19,7 @@ const emit = defineEmits<{
 
 <template>
   <button type="button" class="ruler-toggle" :class="{ active, disabled }" :disabled="disabled" @click="emit('click')">
-    <span class="ruler-toggle-face">
-      <UIIcon type="ruler" />
-    </span>
+    <img class="ruler-toggle-icon" :src="rulerIconUrl" alt="" draggable="false" />
   </button>
 </template>
 
@@ -32,8 +30,8 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 1px solid var(--ui-color-grey-400);
   border-radius: var(--ui-border-radius-md);
@@ -44,17 +42,11 @@ const emit = defineEmits<{
   transition-timing-function: ease;
 }
 
-.ruler-toggle-face {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-}
-
-.ruler-toggle-face :deep(.ui-icon) {
-  width: 24px;
-  height: 24px;
+.ruler-toggle-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .ruler-toggle:not(.active):not(:disabled):hover {
@@ -78,7 +70,7 @@ const emit = defineEmits<{
   cursor: not-allowed;
 }
 
-.ruler-toggle:disabled .ruler-toggle-face {
+.ruler-toggle:disabled .ruler-toggle-icon {
   opacity: 0.4;
 }
 </style>

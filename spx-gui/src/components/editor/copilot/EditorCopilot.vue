@@ -184,17 +184,30 @@ useDraggable(chatDraggerRef, {
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
 }
 
-/* The pointer toward the trigger below */
+/* The pointer continues the panel's gradient outline toward the trigger below. */
+.frame::before,
 .frame::after {
   content: '';
   position: absolute;
+  transform: rotate(45deg);
+}
+
+.frame::before {
   right: 17px;
-  bottom: -6px;
+  bottom: -7px;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #72bbff 0%, #c390ff 100%);
+  box-shadow: var(--ui-box-shadow-sm);
+  z-index: 0;
+}
+
+.frame::after {
+  right: 18px;
+  bottom: -5px;
   width: 14px;
   height: 14px;
   background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-sm);
-  transform: rotate(45deg);
   z-index: 1;
 }
 </style>
