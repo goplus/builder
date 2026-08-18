@@ -9,7 +9,7 @@
     :class="{ 'cursor-ruler': rulerActive }"
     :style="{
       backgroundImage: `url(${stageBgUrl})`,
-      '--ruler-cursor': `url(${rulerCursorUrl}) 12 12, crosshair`
+      '--ruler-cursor': `url(${rulerCursorUrl}) 0 11, crosshair`
     }"
     @mousemove="updateMousePos(), updateHoveredSprite()"
     @mouseleave="handleLabelLeave()"
@@ -190,7 +190,7 @@ import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/Wi
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import StageRuler from './StageRuler.vue'
-import rulerCursorUrl from '@/components/ui/icons/ruler.svg?url'
+import rulerCursorUrl from '@/assets/images/triangle-ruler-cursor.svg?url&no-inline'
 import WidgetNode from './widgets/WidgetNode.vue'
 import QuickConfigWrapper, {
   type ConfigType
