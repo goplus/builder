@@ -28,7 +28,10 @@ describe('tutorial video modals', () => {
     const wrapper = mount(ApiVideoModal, {
       props: {
         visible: false,
-        video: { src: '/videos/step.mp4' }
+        video: {
+          title: { en: 'step', zh: 'step 前进' },
+          src: '/videos/step.mp4'
+        }
       },
       global
     })
