@@ -105,17 +105,11 @@ export interface TutorialFrameworkHost {
    * Returns the current content of the given code file, including the
    * learner's unsaved edits. `file` is a path relative to the project root
    * (e.g. `"Lita.spx"`); addressing a file the project does not contain fails
-   * the capability call.
+   * the capability call. Reading whichever file the learner happens to be
+   * editing is deliberately not offered yet: it depends on how the Code
+   * Editor exposes its attached UIs and their active documents.
    */
-  editor_codeEditor_getCode(file: string): string;
-  /**
-   * Returns the paths of the code files the learner currently has open, for
-   * composing with `editor_codeEditor_getCode`. One Code Editor may have
-   * several UIs attached, each with at most one active document, so this is a
-   * list; an empty list means nothing is open, which keeps that state
-   * distinct from an open file that happens to be empty.
-   */
-  editor_codeEditor_getActiveDocuments(): string[];
+  editor_project_getCode(file: string): string;
   /**
    * Lists the code files of the session project, e.g. `"main.spx"` and the
    * sprite code files; assets are not included. A Course whose goal is for

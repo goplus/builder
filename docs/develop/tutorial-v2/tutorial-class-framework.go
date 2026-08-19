@@ -41,6 +41,13 @@ type Editor struct {
 }
 
 type Project interface {
+	// getCode returns the current content of the given code file, including
+	// the learner's unsaved edits. file is a path relative to the project root
+	// (e.g. "Lita.spx"); addressing a file the project does not contain fails
+	// the Course program. Reading whichever file the learner happens to be
+	// editing is deliberately not offered yet: it depends on how the Code
+	// Editor exposes its attached UIs and their active documents.
+	getCode(file string) string
 	// listCodeFiles lists the code files of the session project, e.g.
 	// "main.spx" and the sprite code files; assets are not included. A Course
 	// whose goal is for the learner to create a sprite cannot know the name
@@ -66,17 +73,6 @@ type CodeEditor interface {
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
 	formatWorkspace()
-	// getCode returns the current content of the given code file, including
-	// the learner's unsaved edits. file is a path relative to the project root
-	// (e.g. "Lita.spx"); addressing a file the project does not contain fails
-	// the Course program.
-	getCode(file string) string
-	// getActiveDocuments returns the paths of the code files the learner
-	// currently has open, for composing with getCode. One Code Editor may have
-	// several UIs attached, each with at most one active document, so this is
-	// a list; an empty list means nothing is open, which keeps that state
-	// distinct from an open file that happens to be empty.
-	getActiveDocuments() []string
 }
 
 type Ruler interface {
