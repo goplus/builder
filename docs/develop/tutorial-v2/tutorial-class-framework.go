@@ -41,13 +41,10 @@ type Editor struct {
 }
 
 type Project interface {
-	// getCode returns the current content of the given code file in the session
-	// project model, regardless of what the Code Editor UI shows. file is a path
-	// relative to the project root (e.g. "Lita.spx"); addressing a file that
-	// does not exist fails the Course program.
-	getCode(file string) string
-	// listCodeFiles lists the code files of the session project model, e.g.
-	// "main.spx" and the sprite code files. Assets are not included.
+	// listCodeFiles lists the code files of the session project, e.g.
+	// "main.spx" and the sprite code files; assets are not included. A Course
+	// whose goal is for the learner to create a sprite cannot know the name
+	// they will choose, so it discovers the resulting file here.
 	listCodeFiles() []string
 }
 
@@ -62,18 +59,23 @@ type Runtime interface {
 }
 
 type CodeEditor interface {
-	// filterAPIs limits the APIs available in the Code Editor. Each entry is
-	// an API identifier: the author shorthand "name" / "name#overloadId"
-	// resolved in the Course project's API context, or a full definition
-	// identifier ("xgo:<package>?<name>#<overloadId>"). An identifier without
-	// "#overloadId" addresses all overloads of the name.
+	// filterAPIs limits the APIs available in the Code Editor. Each entry is a
+	// definition identifier ("xgo:<package>?<name>#<overloadId>"), the same
+	// identifiers the Code Editor uses elsewhere; omitting "#<overloadId>"
+	// addresses every overload of the name.
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
 	formatWorkspace()
-	// getCode returns the code text of the currently attached Code Editor UI,
-	// or an empty string when none is attached. For reading a specific file of
-	// the session project regardless of the UI state, use editor.project.getCode.
-	getCode() string
+	// getCode returns the current content of the given code file, including
+	// the learner's unsaved edits. file is a path relative to the project root
+	// (e.g. "Lita.spx"); addressing a file the project does not contain fails
+	// the Course program.
+	getCode(file string) string
+	// getCurrentActiveDocument returns the path of the code file the learner
+	// is currently editing, for composing with getCode. It fails the Course
+	// program when no Code Editor UI is attached, so "nothing is open" is
+	// never confused with "the open file is empty".
+	getCurrentActiveDocument() string
 }
 
 type Ruler interface {
@@ -114,18 +116,13 @@ type Spotlight interface {
 	// auto-conceal (the spotlight stays until the learner clicks anywhere).
 	// reveal returns once the spotlight is shown; it does not wait for the
 	// spotlight to be dismissed, so it never blocks the Course flow.
-	// target is a stable UI-target ID owned and published by the SPX Project
-	// Editor (append-only). IDs are either static (initially runButton,
-	// stopButton, rerunButton, formatButton, codeEditor, stage, apiReference
-	// and copilotEntry) or parameterized: "apiReference.<apiId>" addresses
-	// entries of the API Reference panel, where <apiId> uses the same API
-	// identifiers as editor.codeEditor.filterAPIs; an <apiId> without
-	// "#overloadId" highlights all overloads of the name together as one
-	// group. Session-local Radar node IDs are not valid targets.
-	// An unknown ID fails the Course program, so typos surface during
-	// Preview. A known ID whose elements cannot currently be resolved (for
-	// example an API filtered out by filterAPIs) is not an error: the host
-	// retries briefly, then skips the highlight and logs a warning.
+	// target is a Radar selector addressing the UI elements to reveal; see the
+	// Radar module design for its syntax. A selector matching several elements
+	// reveals them together as one group.
+	// A malformed selector fails the Course program, so mistakes surface
+	// during Preview. A well-formed selector that currently matches nothing
+	// (for example an API filtered out by filterAPIs) is not an error: the
+	// host retries briefly, then skips the highlight and logs a warning.
 	reveal(target, tip string)
 	// revealWith is reveal with explicit presentation options.
 	revealWith(target, tip string, options SpotlightOptions)

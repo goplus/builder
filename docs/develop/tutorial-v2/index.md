@@ -27,7 +27,7 @@ Tutorial owns the active Course lifecycle. Its public boundary starts and stops 
 
 For a Playground Course, Course playground interprets the opaque Course content using the Tutorial-project contract, creates a model `SpxProject` without cloud-project identity, builds an `EditorState` from `inEditorRoute` and composes the SPX Project Editor UI. Once that surrounding UI composition is ready, it starts Tutorial with the loaded Course. Tutorial starts a Copilot Topic, combines its own presentation and completion capabilities with the available editor and Copilot capabilities, creates the Tutorial `XGoFramework`, passes that framework through `XGoExecutorOptions` and runs the conventional root `main_course.gox`. Stopping or completing the Course tears these runtime resources down together.
 
-Tutorial is also the event dispatcher for the running Tutorial program (see `TutorialEvent`): it forwards runtime start/exit and Copilot round completion, and adapts the Runtime's `didChangeOutput` notification and cumulative outputs into per-entry `editor.runtime.log` events — one event per newly appended `log`-kind entry, in append order.
+Tutorial is also the event dispatcher for the running Tutorial program: it observes editor and Copilot activity and delivers the framework's events, and it interprets how a run ended.
 
 See [Tutorial](./module_Tutorial.ts).
 
@@ -57,9 +57,7 @@ course
 └── spotlight
 ```
 
-The initial interface includes course start/prelude/message/video/completion with optional feedback, runtime start/exit/log, code reading, API filtering, workspace formatting, Ruler control, Copilot round completion, text and structured JSON generation, and spotlight reveal. For structured generation, Course code passes a non-nil struct pointer; the framework derives its JSON Schema, invokes the frontend capability and decodes the result back into that value. `editor.project` reads the session project model: Course code can read a specific code file's current content or list the project's code files, regardless of what the Code Editor UI shows.
-
-Calling `complete` or `completeWith` ends the Course program from within: after the current callback returns, the framework leaves its event loop and the program exits with reason `completed`. Remaining statements in that callback still run, but queued events are no longer processed, presentation calls after a completion are ignored by the host, and repeated completion calls are idempotent. Executor exit reasons map to Course outcomes accordingly: `completed` following a completion capability call is normal completion, while `completed` without one means the Course program fell through without completing and is treated as a Course-program defect; `stopped` means the Course was ended from outside, such as the learner leaving; `error` means the Course program failed.
+The interface covers Course presentation and completion, observation of the learner's runtime and Copilot activity, reading and constraining the learner's code, Editor tools such as the Ruler and the spotlight, and text or structured generation. Course code drives the Course flow with it and ends the Course from within; the framework owns that program lifecycle, while the surrounding session belongs to Tutorial.
 
 See [Tutorial Class Framework](./module_TutorialFramework.ts), its [Go contract](./tutorial-class-framework.go) and an [example Tutorial Course project](./example-tutorial-course/).
 

@@ -40,13 +40,7 @@ export type TutorialEvent =
   /**
    * One newly appended runtime log entry. Fired exactly once per new entry,
    * in append order, for `log`-kind outputs only: error output is not part
-   * of this channel. The Tutorial module adapts the Runtime's
-   * `didChangeOutput` notification and cumulative `outputs` array into these
-   * per-entry events. The adaptation diffs by the per-entry monotonic `id` —
-   * `outputs` is a bounded ring buffer whose array indices shift once it is
-   * full — and a single `didChangeOutput` notification may carry several
-   * appended entries, which are fanned out in order with the `log`-kind
-   * filter applied per entry.
+   * of this channel.
    */
   | { name: "editor.runtime.log"; payload: { log: string } }
   /** A Copilot conversation round finished. */
@@ -99,33 +93,33 @@ export interface TutorialFrameworkHost {
    */
   course_completeWith(message: string): Promise<void>;
   /**
-   * Limits APIs offered by Code Editor assistance. Each entry is an API
-   * identifier: the author shorthand `name` / `name#overloadId` resolved in
-   * the Course project's API context, or a full definition-identifier string
-   * (`xgo:<package>?<name>#<overloadId>`). An identifier without
-   * `#overloadId` addresses all overloads of the name.
+   * Limits APIs offered by Code Editor assistance. Each entry is a definition
+   * identifier string (`xgo:<package>?<name>#<overloadId>`), the same
+   * identifiers the Code Editor uses elsewhere; omitting `#<overloadId>`
+   * addresses every overload of the name.
    */
   editor_codeEditor_filterAPIs(apis: string[]): void;
   /** Formats the current code workspace. Resolves after formatting completes. */
   editor_codeEditor_formatWorkspace(): Promise<void>;
   /**
-   * Returns the code text of the currently attached Code Editor UI, or an
-   * empty string when none is attached. For reading a specific file of the
-   * session project regardless of the UI state, use `editor_project_getCode`.
+   * Returns the current content of the given code file, including the
+   * learner's unsaved edits. `file` is a path relative to the project root
+   * (e.g. `"Lita.spx"`); addressing a file the project does not contain fails
+   * the capability call.
    */
-  editor_codeEditor_getCode(): string;
+  editor_codeEditor_getCode(file: string): string;
   /**
-   * Returns the current content of the given code file in the session project
-   * model, regardless of what the Code Editor UI shows. `file` is a path
-   * relative to the project root (e.g. `"Lita.spx"`); addressing a file that
-   * does not exist fails the capability call. Resolution is confined to the
-   * files `editor_project_listCodeFiles` enumerates: path traversal (`../`)
-   * and absolute paths are rejected.
+   * Returns the path of the code file the learner is currently editing, for
+   * composing with `editor_codeEditor_getCode`. Fails the capability call
+   * when no Code Editor UI is attached, so "nothing is open" is never
+   * confused with "the open file is empty".
    */
-  editor_project_getCode(file: string): string;
+  editor_codeEditor_getCurrentActiveDocument(): string;
   /**
-   * Lists the code files of the session project model, e.g. `"main.spx"` and
-   * the sprite code files. Assets are not included.
+   * Lists the code files of the session project, e.g. `"main.spx"` and the
+   * sprite code files; assets are not included. A Course whose goal is for
+   * the learner to create a sprite cannot know the name they will choose, so
+   * it discovers the resulting file here.
    */
   editor_project_listCodeFiles(): string[];
   /** Displays the Ruler overlay. */
@@ -140,22 +134,16 @@ export interface TutorialFrameworkHost {
    * Focuses the existing Spotlight on a UI target and shows a short tip
    * beside it. Resolves once the spotlight is shown; it does not wait for the
    * spotlight to be dismissed, so it never blocks the Course flow.
-   * `target` is a stable UI-target ID owned and published by the SPX Project
-   * Editor (append-only); session-local Radar node IDs are not valid targets.
-   * IDs are either static (initially `runButton`, `stopButton`, `rerunButton`,
-   * `formatButton`, `codeEditor`, `stage`, `apiReference` and `copilotEntry`)
-   * or parameterized: `apiReference.<apiId>` addresses entries of the API
-   * Reference panel, where `<apiId>` uses the same API identifiers as
-   * `editor_codeEditor_filterAPIs`. An `<apiId>` without `#<overloadId>`
-   * addresses all overloads of the name, highlighted together as one group.
+   * `target` is a Radar selector addressing the UI elements to reveal; see
+   * the Radar module design for its syntax. Session-local Radar node IDs are
+   * not valid targets. A selector matching several elements reveals them
+   * together as one group.
    *
-   * An unknown ID — neither a published static ID nor a well-formed
-   * parameterized ID (a name outside the API vocabulary, or an overload that
-   * does not exist) — fails the capability call, surfacing the authoring
-   * mistake during Preview. A known ID whose elements cannot currently be
-   * resolved (the API is filtered out, or the element is not mounted yet) is
-   * not an error: the host retries briefly, then resolves without showing
-   * anything and logs a warning.
+   * A malformed selector fails the capability call, surfacing the authoring
+   * mistake during Preview. A well-formed selector that currently matches
+   * nothing — the target is filtered out, or not mounted yet — is not an
+   * error: the host retries briefly, then resolves without showing anything
+   * and logs a warning.
    *
    * `options` is always fully specified here: the author-facing `reveal`
    * defaults are materialized by `createTutorialFramework` before this host

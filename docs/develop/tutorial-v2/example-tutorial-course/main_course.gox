@@ -1,12 +1,12 @@
 onStart => {
-	editor.codeEditor.filterAPIs ["stepTo"]
+	editor.codeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
 }
 
 editor.runtime.onLog log => {
 	if log == "reached-target" {
-		code := editor.codeEditor.getCode()
+		code := editor.codeEditor.getCode("Lita.spx")
 		feedback := copilot.generateText "Give one short sentence of feedback about this solution:\n" + code
 		completeWith feedback
 	}
