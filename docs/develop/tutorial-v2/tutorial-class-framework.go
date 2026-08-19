@@ -62,7 +62,11 @@ type Runtime interface {
 }
 
 type CodeEditor interface {
-	// filterAPIs limits the APIs available in the Code Editor.
+	// filterAPIs limits the APIs available in the Code Editor. Each entry is
+	// an API identifier: the author shorthand "name" / "name#overloadId"
+	// resolved in the Course project's API context, or a full definition
+	// identifier ("xgo:<package>?<name>#<overloadId>"). An identifier without
+	// "#overloadId" addresses all overloads of the name.
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
 	formatWorkspace()
@@ -111,9 +115,17 @@ type Spotlight interface {
 	// reveal returns once the spotlight is shown; it does not wait for the
 	// spotlight to be dismissed, so it never blocks the Course flow.
 	// target is a stable UI-target ID owned and published by the SPX Project
-	// Editor (append-only; initially runButton, stopButton, rerunButton,
-	// formatButton, codeEditor, stage, apiReference and copilotEntry);
-	// session-local Radar node IDs are not valid targets.
+	// Editor (append-only). IDs are either static (initially runButton,
+	// stopButton, rerunButton, formatButton, codeEditor, stage, apiReference
+	// and copilotEntry) or parameterized: "apiReference.<apiId>" addresses
+	// entries of the API Reference panel, where <apiId> uses the same API
+	// identifiers as editor.codeEditor.filterAPIs; an <apiId> without
+	// "#overloadId" highlights all overloads of the name together as one
+	// group. Session-local Radar node IDs are not valid targets.
+	// An unknown ID fails the Course program, so typos surface during
+	// Preview. A known ID whose elements cannot currently be resolved (for
+	// example an API filtered out by filterAPIs) is not an error: the host
+	// retries briefly, then skips the highlight and logs a warning.
 	reveal(target, tip string)
 	// revealWith is reveal with explicit presentation options.
 	revealWith(target, tip string, options SpotlightOptions)

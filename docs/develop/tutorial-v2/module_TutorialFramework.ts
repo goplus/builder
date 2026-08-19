@@ -98,7 +98,13 @@ export interface TutorialFrameworkHost {
    * the given feedback.
    */
   course_completeWith(message: string): Promise<void>;
-  /** Limits APIs offered by Code Editor assistance. */
+  /**
+   * Limits APIs offered by Code Editor assistance. Each entry is an API
+   * identifier: the author shorthand `name` / `name#overloadId` resolved in
+   * the Course project's API context, or a full definition-identifier string
+   * (`xgo:<package>?<name>#<overloadId>`). An identifier without
+   * `#overloadId` addresses all overloads of the name.
+   */
   editor_codeEditor_filterAPIs(apis: string[]): void;
   /** Formats the current code workspace. Resolves after formatting completes. */
   editor_codeEditor_formatWorkspace(): Promise<void>;
@@ -135,9 +141,22 @@ export interface TutorialFrameworkHost {
    * beside it. Resolves once the spotlight is shown; it does not wait for the
    * spotlight to be dismissed, so it never blocks the Course flow.
    * `target` is a stable UI-target ID owned and published by the SPX Project
-   * Editor (append-only; initially `runButton`, `stopButton`, `rerunButton`,
-   * `formatButton`, `codeEditor`, `stage`, `apiReference` and `copilotEntry`);
-   * session-local Radar node IDs are not valid targets.
+   * Editor (append-only); session-local Radar node IDs are not valid targets.
+   * IDs are either static (initially `runButton`, `stopButton`, `rerunButton`,
+   * `formatButton`, `codeEditor`, `stage`, `apiReference` and `copilotEntry`)
+   * or parameterized: `apiReference.<apiId>` addresses entries of the API
+   * Reference panel, where `<apiId>` uses the same API identifiers as
+   * `editor_codeEditor_filterAPIs`. An `<apiId>` without `#<overloadId>`
+   * addresses all overloads of the name, highlighted together as one group.
+   *
+   * An unknown ID — neither a published static ID nor a well-formed
+   * parameterized ID (a name outside the API vocabulary, or an overload that
+   * does not exist) — fails the capability call, surfacing the authoring
+   * mistake during Preview. A known ID whose elements cannot currently be
+   * resolved (the API is filtered out, or the element is not mounted yet) is
+   * not an error: the host retries briefly, then resolves without showing
+   * anything and logs a warning.
+   *
    * `options` is always fully specified here: the author-facing `reveal`
    * defaults are materialized by `createTutorialFramework` before this host
    * method is invoked.
