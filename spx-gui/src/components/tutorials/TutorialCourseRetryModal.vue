@@ -6,7 +6,7 @@
 import type { Tutorial } from './tutorial'
 import { UIButton, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
-import retryIllustration from '@/assets/images/tutorial-retry-illustration-v2.png'
+import retryIllustration from '@/assets/images/tutorial-retry-illustration-v3.svg'
 
 defineProps<{
   visible: boolean

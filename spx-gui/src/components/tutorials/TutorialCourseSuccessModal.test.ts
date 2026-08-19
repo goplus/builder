@@ -81,7 +81,7 @@ describe('TutorialCourseSuccessModal', () => {
     expect(wrapper.find('[data-testid="comment"]').classes()).toContain('text-center')
     const image = wrapper.get('img')
     expect(image.element.parentElement?.classList.contains('aspect-[2/1]')).toBe(true)
-    expect(image.attributes('src')).toContain('tutorial-success-illustration-v2.png')
+    expect(image.attributes('src')).toContain('tutorial-success-illustration-v3.svg')
     expect(image.classes()).toContain('object-contain')
     expect(wrapper.findAll('button').map((button) => button.text())).toEqual([
       '再试一次',
