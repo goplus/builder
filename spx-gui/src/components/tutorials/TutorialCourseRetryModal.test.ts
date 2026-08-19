@@ -9,6 +9,7 @@ const global = {
     radar: () => undefined
   },
   stubs: {
+    TutorialCourseReminderModal: false,
     UIModal: {
       props: ['visible', 'maskClosable'],
       inheritAttrs: false,

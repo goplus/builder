@@ -26,7 +26,7 @@ import { onMounted, ref, watchEffect } from 'vue'
 
 import { useSlotText } from '@/utils/vnode'
 import { useCopilot, useCopilotRound } from '@/components/copilot/context'
-import { UIButton, UIModal } from '@/components/ui'
+import TutorialCourseReminderModal from './TutorialCourseReminderModal.vue'
 
 const copilot = useCopilot()
 const round = useCopilotRound()
@@ -56,18 +56,7 @@ watchEffect((onCleanup) => {
   >
     {{ $t({ en: 'View guidance', zh: '查看引导' }) }}
   </button>
-  <UIModal
-    v-radar="{ name: 'Guide modal', desc: 'Modal showing a short guidance sentence from the copilot' }"
-    :visible="visible"
-    size="small"
-    mask-closable
-    @update:visible="visible = false"
-  >
-    <div class="flex flex-col items-center px-8 pb-8 pt-10">
-      <p class="text-center text-xl text-title">{{ text.trim() }}</p>
-      <UIButton class="mt-8" type="primary" size="large" @click="visible = false">
-        {{ $t({ en: 'Got it', zh: '知道了' }) }}
-      </UIButton>
-    </div>
-  </UIModal>
+  <TutorialCourseReminderModal :visible="visible" @close="visible = false">
+    <p class="text-base/[1.5] font-normal text-grey-900">{{ text.trim() }}</p>
+  </TutorialCourseReminderModal>
 </template>
