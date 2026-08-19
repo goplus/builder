@@ -7,9 +7,17 @@ export type { Pos }
 /** A point the ruler endpoints stick to; when it has a heading, measuring from it also reads the turn angle. */
 export type RulerSnapTarget = Pos & { heading: number | null }
 
-const lineColor = color.grey[800]
-const labelColor = color.grey[800]
-const angleColor = color.blue[600]
+function rgba(hex: string, alpha: number) {
+  const value = hex.replace('#', '')
+  const red = Number.parseInt(value.slice(0, 2), 16)
+  const green = Number.parseInt(value.slice(2, 4), 16)
+  const blue = Number.parseInt(value.slice(4, 6), 16)
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+
+const lineColor = rgba(color.grey[1000], 0.5)
+const labelColor = rgba(color.grey[1000], 0.5)
+const angleColor = rgba(color.blue[600], 0.8)
 
 /** Distance (in map coordinates) within which an endpoint sticks to a snap target. */
 const snapRadius = 24
@@ -21,7 +29,7 @@ const minAngleDistance = 12
 // radius so both angle boundaries remain coupled and share the same endpoint.
 const angleArcRadius = 36
 const headingRayLength = angleArcRadius
-const labelFontSize = 14
+const labelFontSize = 13
 const labelLineHeight = 22
 const labelHorizontalPadding = 6
 const labelCornerRadius = 35
@@ -30,8 +38,8 @@ const labelCornerRadius = 35
 // - near-straight angle values sit below that segment so the two pills form two rows;
 // - wider angle values sit on the angle bisector, outside the arc and inside its 180-degree sector;
 // - collision handling moves only the angle value and only by the smallest required amount.
-const distanceLabelGap = 8
-const angleLabelGap = 8
+const distanceLabelGap = 12
+const angleLabelGap = 12
 const smallAngleThreshold = 32
 const smallAngleOuterOffset = 18
 const nearStraightAngleThreshold = 8
@@ -143,7 +151,7 @@ const lineConfig = computed<LineConfig | null>(() => {
   return {
     points: [from.x, from.y, to.x, to.y],
     stroke: lineColor,
-    strokeWidth: 2,
+    strokeWidth: 1.6,
     dash: [12, 12],
     lineCap: 'round',
     lineJoin: 'round',
@@ -235,7 +243,7 @@ const headingRayConfig = computed<LineConfig | null>(() => {
   return {
     points: [from.x, from.y, from.x + dir.x * headingRayLength, from.y + dir.y * headingRayLength],
     stroke: angleColor,
-    strokeWidth: 2,
+    strokeWidth: 1.6,
     lineCap: 'round',
     listening: false
   }
@@ -246,8 +254,8 @@ const angleArcConfig = computed<ArcConfig | null>(() => {
   const { headingDeg, lineDeg, turn } = angle.value
   return {
     ...measurement.value.from,
-    innerRadius: angleArcRadius - 1,
-    outerRadius: angleArcRadius + 1,
+    innerRadius: angleArcRadius - 0.8,
+    outerRadius: angleArcRadius + 0.8,
     // Konva sweeps clockwise from `rotation`; a left turn is drawn from the segment back to the ray.
     rotation: turn >= 0 ? headingDeg : lineDeg,
     angle: Math.abs(turn),
