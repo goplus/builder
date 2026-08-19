@@ -102,21 +102,20 @@ export interface TutorialFrameworkHost {
   /** Formats the current code workspace. Resolves after formatting completes. */
   editor_codeEditor_formatWorkspace(): Promise<void>;
   /**
-   * Returns the current content of the given code file, including the
-   * learner's unsaved edits. `file` is a path relative to the project root
-   * (e.g. `"Lita.spx"`); addressing a file the project does not contain fails
-   * the capability call. Reading whichever file the learner happens to be
-   * editing is deliberately not offered yet: it depends on how the Code
-   * Editor exposes its attached UIs and their active documents.
+   * Returns the given sprite's current code, including the learner's unsaved
+   * edits. `sprite` is a sprite name (e.g. `"Lita"`), matching how the
+   * project models its contents; addressing a sprite the project does not
+   * contain fails the capability call. Reading whichever code the learner
+   * happens to be editing is deliberately not offered yet: it depends on how
+   * the Code Editor exposes its attached UIs and their active documents.
    */
-  editor_project_getCode(file: string): string;
+  editor_project_getCode(sprite: string): string;
   /**
-   * Lists the code files of the session project, e.g. `"main.spx"` and the
-   * sprite code files; assets are not included. A Course whose goal is for
+   * Lists the session project's sprites by name. A Course whose goal is for
    * the learner to create a sprite cannot know the name they will choose, so
-   * it discovers the resulting file here.
+   * it discovers it here.
    */
-  editor_project_listCodeFiles(): string[];
+  editor_project_listSprites(): string[];
   /** Displays the Ruler overlay. */
   editor_ruler_show(): void;
   /** Hides the Ruler overlay. */

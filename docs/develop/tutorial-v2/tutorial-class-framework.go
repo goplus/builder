@@ -41,18 +41,17 @@ type Editor struct {
 }
 
 type Project interface {
-	// getCode returns the current content of the given code file, including
-	// the learner's unsaved edits. file is a path relative to the project root
-	// (e.g. "Lita.spx"); addressing a file the project does not contain fails
-	// the Course program. Reading whichever file the learner happens to be
-	// editing is deliberately not offered yet: it depends on how the Code
-	// Editor exposes its attached UIs and their active documents.
-	getCode(file string) string
-	// listCodeFiles lists the code files of the session project, e.g.
-	// "main.spx" and the sprite code files; assets are not included. A Course
-	// whose goal is for the learner to create a sprite cannot know the name
-	// they will choose, so it discovers the resulting file here.
-	listCodeFiles() []string
+	// getCode returns the given sprite's current code, including the learner's
+	// unsaved edits. sprite is a sprite name (e.g. "Lita"), matching how the
+	// project models its contents; addressing a sprite the project does not
+	// contain fails the Course program. Reading whichever code the learner
+	// happens to be editing is deliberately not offered yet: it depends on how
+	// the Code Editor exposes its attached UIs and their active documents.
+	getCode(sprite string) string
+	// listSprites lists the session project's sprites by name. A Course whose
+	// goal is for the learner to create a sprite cannot know the name they
+	// will choose, so it discovers it here.
+	listSprites() []string
 }
 
 type Runtime interface {
