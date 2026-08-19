@@ -46,15 +46,15 @@ The Tutorial Class Framework defines both the Tutorial-project format and the Co
 Its Course-author-facing Go contract is included in this design:
 
 ```text
-course
+Course
 ├── CourseAbilities
-├── editor
-│   ├── project
-│   ├── runtime
-│   ├── codeEditor
-│   └── ruler
-├── copilot
-└── spotlight
+├── Editor
+│   ├── Project
+│   ├── Runtime
+│   ├── CodeEditor
+│   └── Ruler
+├── Copilot
+└── Spotlight
 ```
 
 The interface covers Course presentation and completion, observation of the learner's runtime and Copilot activity, reading and constraining the learner's code, Editor tools such as the Ruler and the spotlight, and text or structured generation. Course code drives the Course flow with it and ends the Course from within; the framework owns that program lifecycle, while the surrounding session belongs to Tutorial.

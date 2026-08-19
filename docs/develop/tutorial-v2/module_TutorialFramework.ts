@@ -109,12 +109,13 @@ export interface TutorialFrameworkHost {
    */
   editor_codeEditor_getCode(file: string): string;
   /**
-   * Returns the path of the code file the learner is currently editing, for
-   * composing with `editor_codeEditor_getCode`. Fails the capability call
-   * when no Code Editor UI is attached, so "nothing is open" is never
-   * confused with "the open file is empty".
+   * Returns the paths of the code files the learner currently has open, for
+   * composing with `editor_codeEditor_getCode`. One Code Editor may have
+   * several UIs attached, each with at most one active document, so this is a
+   * list; an empty list means nothing is open, which keeps that state
+   * distinct from an open file that happens to be empty.
    */
-  editor_codeEditor_getCurrentActiveDocument(): string;
+  editor_codeEditor_getActiveDocuments(): string[];
   /**
    * Lists the code files of the session project, e.g. `"main.spx"` and the
    * sprite code files; assets are not included. A Course whose goal is for

@@ -2,9 +2,9 @@ package tutorial
 
 type Course struct {
 	CourseAbilities
-	editor    Editor
-	copilot   Copilot
-	spotlight Spotlight
+	Editor    Editor
+	Copilot   Copilot
+	Spotlight Spotlight
 }
 
 type CourseAbilities interface {
@@ -34,10 +34,10 @@ type CourseAbilities interface {
 }
 
 type Editor struct {
-	project    Project
-	runtime    Runtime
-	codeEditor CodeEditor
-	ruler      Ruler
+	Project    Project
+	Runtime    Runtime
+	CodeEditor CodeEditor
+	Ruler      Ruler
 }
 
 type Project interface {
@@ -71,11 +71,12 @@ type CodeEditor interface {
 	// (e.g. "Lita.spx"); addressing a file the project does not contain fails
 	// the Course program.
 	getCode(file string) string
-	// getCurrentActiveDocument returns the path of the code file the learner
-	// is currently editing, for composing with getCode. It fails the Course
-	// program when no Code Editor UI is attached, so "nothing is open" is
-	// never confused with "the open file is empty".
-	getCurrentActiveDocument() string
+	// getActiveDocuments returns the paths of the code files the learner
+	// currently has open, for composing with getCode. One Code Editor may have
+	// several UIs attached, each with at most one active document, so this is
+	// a list; an empty list means nothing is open, which keeps that state
+	// distinct from an open file that happens to be empty.
+	getActiveDocuments() []string
 }
 
 type Ruler interface {
