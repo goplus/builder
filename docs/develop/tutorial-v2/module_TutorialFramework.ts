@@ -40,9 +40,13 @@ export type TutorialEvent =
   /**
    * One newly appended runtime log entry. Fired exactly once per new entry,
    * in append order, for `log`-kind outputs only: error output is not part
-   * of the judging channel. The Tutorial module adapts the Runtime's
+   * of this channel. The Tutorial module adapts the Runtime's
    * `didChangeOutput` notification and cumulative `outputs` array into these
-   * per-entry events.
+   * per-entry events. The adaptation diffs by the per-entry monotonic `id` —
+   * `outputs` is a bounded ring buffer whose array indices shift once it is
+   * full — and a single `didChangeOutput` notification may carry several
+   * appended entries, which are fanned out in order with the `log`-kind
+   * filter applied per entry.
    */
   | { name: "editor.runtime.log"; payload: { log: string } }
   /** A Copilot conversation round finished. */
@@ -89,7 +93,10 @@ export interface TutorialFrameworkHost {
    * and repeated completion calls are idempotent (the first one wins).
    */
   course_complete(): Promise<void>;
-  /** Completes the Course and displays feedback. Same semantics as `course_complete`. */
+  /**
+   * Same completion/idempotency semantics as `course_complete`, but displays
+   * the given feedback.
+   */
   course_completeWith(message: string): Promise<void>;
   /** Limits APIs offered by Code Editor assistance. */
   editor_codeEditor_filterAPIs(apis: string[]): void;
@@ -105,7 +112,9 @@ export interface TutorialFrameworkHost {
    * Returns the current content of the given code file in the session project
    * model, regardless of what the Code Editor UI shows. `file` is a path
    * relative to the project root (e.g. `"Lita.spx"`); addressing a file that
-   * does not exist fails the capability call.
+   * does not exist fails the capability call. Resolution is confined to the
+   * files `editor_project_listCodeFiles` enumerates: path traversal (`../`)
+   * and absolute paths are rejected.
    */
   editor_project_getCode(file: string): string;
   /**

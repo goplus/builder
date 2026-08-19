@@ -111,7 +111,9 @@ type Spotlight interface {
 	// reveal returns once the spotlight is shown; it does not wait for the
 	// spotlight to be dismissed, so it never blocks the Course flow.
 	// target is a stable UI-target ID owned and published by the SPX Project
-	// Editor; session-local Radar node IDs are not valid targets.
+	// Editor (append-only; initially runButton, stopButton, rerunButton,
+	// formatButton, codeEditor, stage, apiReference and copilotEntry);
+	// session-local Radar node IDs are not valid targets.
 	reveal(target, tip string)
 	// revealWith is reveal with explicit presentation options.
 	revealWith(target, tip string, options SpotlightOptions)

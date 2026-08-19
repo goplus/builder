@@ -30,6 +30,8 @@ export type ProjectSerialized = {
 };
 
 export type RuntimeOutput = {
+  /** Monotonically increasing output id within a run. */
+  id: number;
   kind: "log" | "error";
   message: string;
 };
