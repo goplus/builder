@@ -10,7 +10,7 @@ import { UIButton, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import successImg from '@/assets/images/tutorial-success-illustration-v2.png'
+import successImg from '@/assets/images/tutorial-success-illustration-v3.svg'
 
 const props = defineProps<{
   completion: { course: Course; series: CourseSeries }
