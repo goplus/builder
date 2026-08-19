@@ -23,9 +23,13 @@ type CourseAbilities interface {
 	// name and returns after the learner finishes watching or closes it.
 	// Presentation never advances automatically.
 	showVideo(videoName string)
-	// complete marks the course as completed.
+	// complete marks the course as completed and ends the Course program: after
+	// the current callback returns, no further events are processed and the
+	// program exits. Remaining statements in the same callback still run, but
+	// presentation calls after a completion are ignored by the host. Calling
+	// complete or completeWith again has no effect.
 	complete()
-	// completeWith marks the course as completed and displays the given feedback.
+	// completeWith is complete with the given feedback displayed to the learner.
 	completeWith(message string)
 }
 
@@ -36,14 +40,24 @@ type Editor struct {
 	ruler      Ruler
 }
 
-type Project struct{}
+type Project interface {
+	// getCode returns the current content of the given code file in the session
+	// project model, regardless of what the Code Editor UI shows. file is a path
+	// relative to the project root (e.g. "Lita.spx"); addressing a file that
+	// does not exist fails the Course program.
+	getCode(file string) string
+	// listCodeFiles lists the code files of the session project model, e.g.
+	// "main.spx" and the sprite code files. Assets are not included.
+	listCodeFiles() []string
+}
 
 type Runtime interface {
 	// onStart registers a callback that is called when the project runtime starts.
 	onStart(callback func())
 	// onExit registers a callback that is called when the project runtime exits.
 	onExit(callback func(code int))
-	// onLog registers a callback that is called when the project runtime emits a log.
+	// onLog registers a callback that is called once for every newly appended
+	// runtime log, in append order. Error output is not part of this channel.
 	onLog(callback func(log string))
 }
 
@@ -52,7 +66,9 @@ type CodeEditor interface {
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
 	formatWorkspace()
-	// getCode returns the learner's current code.
+	// getCode returns the code text of the currently attached Code Editor UI,
+	// or an empty string when none is attached. For reading a specific file of
+	// the session project regardless of the UI state, use editor.project.getCode.
 	getCode() string
 }
 
@@ -92,7 +108,8 @@ type Spotlight interface {
 	// reveal focuses the spotlight on the given UI target and shows the given
 	// tip beside it, with Course-guidance defaults: mask enabled and no
 	// auto-conceal (the spotlight stays until the learner clicks anywhere).
-	// Spotlight presentation never blocks the Course flow.
+	// reveal returns once the spotlight is shown; it does not wait for the
+	// spotlight to be dismissed, so it never blocks the Course flow.
 	// target is a stable UI-target ID owned and published by the SPX Project
 	// Editor; session-local Radar node IDs are not valid targets.
 	reveal(target, tip string)

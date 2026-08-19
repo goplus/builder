@@ -25,6 +25,32 @@ export type TutorialProjectIndex = {
  */
 export type TutorialProjectFiles = FileCollection;
 
+/**
+ * Events dispatched into the running Tutorial program through
+ * `XGoExecutor.dispatchEvent`. The Tutorial module is the dispatcher. The
+ * framework registers a handler for every event name below, whether or not
+ * the Course code subscribed to it. Event names mirror the author-facing API
+ * tree.
+ */
+export type TutorialEvent =
+  /** The learner's project runtime started. */
+  | { name: "editor.runtime.start"; payload: null }
+  /** The learner's project runtime exited with the given code. */
+  | { name: "editor.runtime.exit"; payload: { code: number } }
+  /**
+   * One newly appended runtime log entry. Fired exactly once per new entry,
+   * in append order, for `log`-kind outputs only: error output is not part
+   * of the judging channel. The Tutorial module adapts the Runtime's
+   * `didChangeOutput` notification and cumulative `outputs` array into these
+   * per-entry events.
+   */
+  | { name: "editor.runtime.log"; payload: { log: string } }
+  /** A Copilot conversation round finished. */
+  | {
+      name: "copilot.roundFinish";
+      payload: { userMessage: string; resultMessages: string[] };
+    };
+
 /** Controls how the spotlight presents a UI target. */
 export type SpotlightOptions = {
   /**
@@ -56,16 +82,37 @@ export interface TutorialFrameworkHost {
    * watching or closes it; presentation never advances automatically.
    */
   course_showVideo(videoName: string): Promise<void>;
-  /** Completes the Course without feedback. */
+  /**
+   * Completes the Course without feedback. Resolves as soon as the completion
+   * is accepted; it does not wait for the completion dialog. After a
+   * completion the host treats further presentation capabilities as no-ops,
+   * and repeated completion calls are idempotent (the first one wins).
+   */
   course_complete(): Promise<void>;
-  /** Completes the Course and displays feedback. */
+  /** Completes the Course and displays feedback. Same semantics as `course_complete`. */
   course_completeWith(message: string): Promise<void>;
   /** Limits APIs offered by Code Editor assistance. */
   editor_codeEditor_filterAPIs(apis: string[]): void;
-  /** Formats the current code workspace. */
+  /** Formats the current code workspace. Resolves after formatting completes. */
   editor_codeEditor_formatWorkspace(): Promise<void>;
-  /** Returns the learner's current code. */
+  /**
+   * Returns the code text of the currently attached Code Editor UI, or an
+   * empty string when none is attached. For reading a specific file of the
+   * session project regardless of the UI state, use `editor_project_getCode`.
+   */
   editor_codeEditor_getCode(): string;
+  /**
+   * Returns the current content of the given code file in the session project
+   * model, regardless of what the Code Editor UI shows. `file` is a path
+   * relative to the project root (e.g. `"Lita.spx"`); addressing a file that
+   * does not exist fails the capability call.
+   */
+  editor_project_getCode(file: string): string;
+  /**
+   * Lists the code files of the session project model, e.g. `"main.spx"` and
+   * the sprite code files. Assets are not included.
+   */
+  editor_project_listCodeFiles(): string[];
   /** Displays the Ruler overlay. */
   editor_ruler_show(): void;
   /** Hides the Ruler overlay. */
@@ -76,9 +123,12 @@ export interface TutorialFrameworkHost {
   copilot_generateJSON(message: string, schema: JSONSchema): Promise<unknown>;
   /**
    * Focuses the existing Spotlight on a UI target and shows a short tip
-   * beside it. Spotlight presentation never blocks the Course flow.
+   * beside it. Resolves once the spotlight is shown; it does not wait for the
+   * spotlight to be dismissed, so it never blocks the Course flow.
    * `target` is a stable UI-target ID owned and published by the SPX Project
-   * Editor; session-local Radar node IDs are not valid targets.
+   * Editor (append-only; initially `runButton`, `stopButton`, `rerunButton`,
+   * `formatButton`, `codeEditor`, `stage`, `apiReference` and `copilotEntry`);
+   * session-local Radar node IDs are not valid targets.
    * `options` is always fully specified here: the author-facing `reveal`
    * defaults are materialized by `createTutorialFramework` before this host
    * method is invoked.
