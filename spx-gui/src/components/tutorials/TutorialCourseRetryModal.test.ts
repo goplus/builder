@@ -51,7 +51,7 @@ describe('TutorialCourseRetryModal', () => {
     expect(wrapper.find('[data-testid="modal"]').attributes('data-mask-closable')).toBe('false')
     const image = wrapper.get('img')
     expect(image.element.parentElement?.classList.contains('aspect-[2/1]')).toBe(true)
-    expect(image.attributes('src')).toContain('tutorial-retry-illustration-v2.png')
+    expect(image.attributes('src')).toContain('tutorial-retry-illustration-v3.svg')
     expect(image.classes()).toContain('object-contain')
   })
 

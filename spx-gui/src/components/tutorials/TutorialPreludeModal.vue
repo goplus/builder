@@ -16,7 +16,7 @@ export function extractCoursePrelude(prompt: string): string | null {
 <script setup lang="ts">
 import { UIButton, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
-import tutorialIllustration from '@/assets/images/tutorial-guide-illustration-v2.png'
+import tutorialIllustration from '@/assets/images/tutorial-guide-illustration-v3.svg'
 
 defineProps<{
   visible: boolean
