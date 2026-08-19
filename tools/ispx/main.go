@@ -24,7 +24,7 @@ func init() {
 
 // ispxInit initializes the ispx interpreter with extended capabilities.
 func ispxInit() error {
-	ixgoCtx := ixgo.NewContext(ixgo.SupportMultipleInterp)
+	ixgoCtx := ixgo.NewContext(ixgo.SupportMultipleInterp | ixgo.EnableCachedReg)
 	ixgoCtx.Lookup = nil // Let [ispx.Init] handle the lookup.
 	ixgoCtx.SetPanic(logWithPanicInfo)
 
