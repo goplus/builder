@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import rulerIconUrl from '@/assets/images/triangle-ruler-button.png'
+import rulerIconUrl from '@/assets/images/triangle-ruler-button.svg?url&no-inline'
 
 defineProps<{
   /** Whether the ruler is currently measuring (highlights the button). */

@@ -189,24 +189,26 @@ useDraggable(chatDraggerRef, {
 .frame::after {
   content: '';
   position: absolute;
-  transform: rotate(45deg);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
 .frame::before {
-  right: 17px;
-  bottom: -7px;
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(135deg, #72bbff 0%, #c390ff 100%);
-  box-shadow: var(--ui-box-shadow-sm);
+  right: 12px;
+  bottom: -11px;
+  width: 24px;
+  height: 12px;
+  /* Keep the pointer on the same horizontal gradient track as the frame border. */
+  background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
+  background-size: 360px 12px;
+  background-position: right top;
   z-index: 0;
 }
 
 .frame::after {
-  right: 18px;
-  bottom: -5px;
-  width: 14px;
-  height: 14px;
+  right: 14px;
+  bottom: -9px;
+  width: 20px;
+  height: 10px;
   background: var(--ui-color-grey-100);
   z-index: 1;
 }
