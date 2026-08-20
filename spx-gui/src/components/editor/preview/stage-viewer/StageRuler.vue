@@ -66,6 +66,7 @@ const props = defineProps<{
 const layerRef = ref<{ getNode(): Konva.Layer } | null>(null)
 const measurement = ref<{ from: Pos; fromHeading: number | null; to: Pos } | null>(null)
 let measuring = false
+let measurementLocked = false
 
 const distance = computed(() => {
   if (measurement.value == null) return 0
@@ -94,25 +95,34 @@ function getPointerPos(): { pos: Pos; target: RulerSnapTarget | null } | null {
   return pos == null ? null : snap(pos)
 }
 
-function stopMeasuring() {
-  measuring = false
-  window.removeEventListener('mouseup', stopMeasuring)
-}
-
 function handleMouseDown() {
   const snapped = getPointerPos()
   if (snapped == null) return
+
+  if (measurement.value != null && !measurementLocked) {
+    // The second click commits the current pointer position so the complete measurement remains
+    // visible after the button is released.
+    measurement.value = { ...measurement.value, to: snapped.pos }
+    measurementLocked = true
+    return
+  }
+
+  // The first click, or any click after a committed measurement, establishes a new start point.
   measurement.value = { from: snapped.pos, fromHeading: snapped.target?.heading ?? null, to: snapped.pos }
+  measurementLocked = false
   measuring = true
-  // The mouse may be released outside the stage; keep listening globally until it is.
-  window.addEventListener('mouseup', stopMeasuring)
 }
 
 function handleMouseMove() {
-  if (!measuring || measurement.value == null) return
+  if (!measuring || measurementLocked || measurement.value == null) return
   const snapped = getPointerPos()
   if (snapped == null) return
   measurement.value = { ...measurement.value, to: snapped.pos }
+}
+
+function stopMeasuring() {
+  measuring = false
+  measurementLocked = false
 }
 
 watch(
