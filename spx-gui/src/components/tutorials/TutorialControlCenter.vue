@@ -5,11 +5,10 @@ import { listCourses } from '@/apis/course'
 import { listSignedInUserProjects, listUserPublicProjects } from '@/apis/project'
 import { useAsyncComputed } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { useI18n } from '@/utils/i18n'
 import { UIButton, useConfirmDialog } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
-import { InterventionLevel, neutralThreshold, backThreshold } from './tutorial-intervention'
 import TutorialCourseRow from './TutorialCourseRow.vue'
 import { useSignedInUser } from '@/stores/user'
 import { scrollCurrentCourseIntoView } from './tutorial-control-center'
@@ -95,18 +94,6 @@ const projectThumbnails = useAsyncComputed(async () => {
   return thumbnails
 })
 
-const guidanceTextByLevel: Record<InterventionLevel, LocaleMessage> = {
-  [InterventionLevel.Silent]: { en: 'Guidance: off', zh: '引导：关' },
-  [InterventionLevel.Nudge]: { en: 'Guidance: low', zh: '引导：低' },
-  [InterventionLevel.Guide]: { en: 'Guidance: high', zh: '引导：高' }
-}
-const guidanceText = computed<LocaleMessage | null>(() => {
-  const level = tutorial.currentIntervention?.level
-  return level == null ? null : guidanceTextByLevel[level]
-})
-const neutralCount = computed(() => tutorial.currentIntervention?.neutralCount ?? 0)
-const backCount = computed(() => tutorial.currentIntervention?.backCount ?? 0)
-
 function selectCourse(courseId: string) {
   const seriesId = series.value?.id
   if (seriesId == null || courseId === currentCourseId.value) return
@@ -182,13 +169,6 @@ const { fn: handleRestartCourse } = useMessageHandle(
       >
         {{ $t({ en: 'Back to series courses', zh: '返回系列课程' }) }}
       </button>
-      <!-- Debug-visible guidance state: the level in the user's terms, plus how far the counters
-           are toward the next escalation. -->
-      <div v-if="guidanceText != null" class="mt-2 flex items-center gap-3 text-xs text-hint-2">
-        <span>{{ $t(guidanceText) }}</span>
-        <span>Neutral {{ neutralCount }}/{{ neutralThreshold }}</span>
-        <span>Back {{ backCount }}/{{ backThreshold }}</span>
-      </div>
     </footer>
   </div>
 </template>

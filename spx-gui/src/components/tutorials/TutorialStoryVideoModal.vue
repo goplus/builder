@@ -36,6 +36,7 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 const hasEnded = ref(false)
 const hasLoaded = ref(false)
 const isPlaying = ref(false)
+const isMuted = ref(false)
 
 const showPlayButton = computed(
   () => hasLoaded.value && !hasPlaybackError.value && (!isPlaying.value || hasEnded.value)
@@ -44,15 +45,23 @@ const showPlayButton = computed(
 async function playVideo() {
   const video = videoRef.value
   if (video == null) return
-  // Set the properties as well as the HTML attributes. This matters after `load()`, and makes
-  // the muted fallback explicit for browsers that enforce autoplay policy through the property.
-  video.defaultMuted = true
-  video.muted = true
+  // Keep sound enabled by default. Browsers that reject unmuted autoplay are handled below by
+  // falling back to muted playback; the video remains recoverable through the sound toggle.
+  video.defaultMuted = false
+  video.muted = isMuted.value
   try {
     await video.play()
   } catch {
-    // A user gesture may still be required in some browsers. Keep the modal open and expose the
-    // play button instead of leaving the learner on an unexplained frozen first frame.
+    if (!isMuted.value) {
+      isMuted.value = true
+      video.muted = true
+      try {
+        await video.play()
+      } catch {
+        // A user gesture may still be required in some browsers. Keep the modal open and expose
+        // the play button instead of leaving the learner on an unexplained frozen first frame.
+      }
+    }
   }
 }
 
@@ -64,11 +73,12 @@ watch(
     hasPlaybackError.value = false
     hasLoaded.value = false
     isPlaying.value = false
+    isMuted.value = false
     void nextTick(() => {
       const video = videoRef.value
       if (video == null) return
-      video.defaultMuted = true
-      video.muted = true
+      video.defaultMuted = false
+      video.muted = false
       void playVideo()
     })
   }
@@ -101,7 +111,26 @@ async function replay() {
   if (video == null) return
   hasEnded.value = false
   video.currentTime = 0
+  video.muted = isMuted.value
   await handlePlayWithSound({ target: video } as unknown as Event)
+  if (video.muted && !isMuted.value) isMuted.value = true
+}
+
+async function toggleSound() {
+  const video = videoRef.value
+  if (video == null) return
+  if (isMuted.value) {
+    video.muted = false
+    try {
+      await video.play()
+      isMuted.value = false
+    } catch {
+      video.muted = true
+    }
+    return
+  }
+  video.muted = true
+  isMuted.value = true
 }
 
 // Use the video's intrinsic ratio once metadata is available. The fallback only reserves a
@@ -125,10 +154,9 @@ function handleContinue() {
   >
     <div class="flex flex-col items-center gap-5 p-6">
       <div class="relative w-full overflow-hidden rounded-md bg-grey-1000" :style="aspectStyle">
-        <!-- Hover-card style minus the muting: autoplaying once, with no browser controls popping
-             up on mouse move. The story has a plot and a soundtrack, so it plays with sound;
-             `playVideo` uses muted autoplay for browser compatibility. Once playback is paused or
-             ends, the overlay play button gives the learner a recovery/replay action.
+        <!-- Hover-card style without browser controls popping up on mouse move. The story has a
+             plot and a soundtrack, so it starts with sound when the browser permits it; the sound
+             button remains available when the browser requires a gesture before unmuting.
              `crossorigin` puts the request in CORS mode so externally-hosted videos (e.g. S3)
              pass the app's `Cross-Origin-Embedder-Policy: require-corp` check. -->
         <video
@@ -137,7 +165,6 @@ function handleContinue() {
           :src="src"
           crossorigin="anonymous"
           autoplay
-          muted
           playsinline
           preload="auto"
           @loadedmetadata="handleLoadedMetadata"
@@ -148,6 +175,15 @@ function handleContinue() {
           @ended="handleEnded"
           @error="hasPlaybackError = true"
         ></video>
+        <button
+          type="button"
+          class="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full border border-grey-500 bg-grey-100 p-0 text-grey-800 outline-none transition-colors hover:bg-grey-300 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-800"
+          :aria-label="$t(isMuted ? { en: 'Turn sound on', zh: '打开声音' } : { en: 'Turn sound off', zh: '关闭声音' })"
+          :aria-pressed="!isMuted"
+          @click="toggleSound"
+        >
+          <UIIcon :type="isMuted ? 'volumeOff' : 'volumeUp'" class="size-5" />
+        </button>
         <button
           v-if="showPlayButton"
           type="button"

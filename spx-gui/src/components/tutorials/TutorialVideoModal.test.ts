@@ -73,4 +73,18 @@ describe('tutorial video modals', () => {
     await wrapper.get('[data-testid="continue"]').trigger('click')
     expect(wrapper.emitted('continue')).toHaveLength(1)
   })
+
+  it('starts with sound enabled and lets the learner mute the story video', async () => {
+    const wrapper = mount(TutorialStoryVideoModal, {
+      props: { visible: false, src: '/videos/story.mp4' },
+      global
+    })
+
+    const soundButton = wrapper.get('button[aria-label="关闭声音"]')
+    expect(soundButton.attributes('aria-pressed')).toBe('true')
+
+    await soundButton.trigger('click')
+
+    expect(wrapper.get('button[aria-label="打开声音"]').attributes('aria-pressed')).toBe('false')
+  })
 })
