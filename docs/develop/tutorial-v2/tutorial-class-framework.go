@@ -41,12 +41,13 @@ type Editor struct {
 }
 
 type Project interface {
-	// getCode returns the given sprite's current code, including the learner's
-	// unsaved edits. sprite is a sprite name (e.g. "Lita"), matching how the
+	// getCode returns the given sprite's code as it currently stands in the
+	// session project. sprite is a sprite name (e.g. "Lita"), matching how the
 	// project models its contents; addressing a sprite the project does not
-	// contain fails the Course program. Reading whichever code the learner
-	// happens to be editing is deliberately not offered yet: it depends on how
-	// the Code Editor exposes its attached UIs and their active documents.
+	// contain fails the Course program. This reads the project rather than a
+	// Code Editor UI buffer, and reading whichever code the learner happens to
+	// be editing is deliberately not offered yet: it depends on how the Code
+	// Editor exposes its attached UIs and their active documents.
 	getCode(sprite string) string
 	// listSprites lists the session project's sprites by name. A Course whose
 	// goal is for the learner to create a sprite cannot know the name they

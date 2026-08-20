@@ -102,12 +102,13 @@ export interface TutorialFrameworkHost {
   /** Formats the current code workspace. Resolves after formatting completes. */
   editor_codeEditor_formatWorkspace(): Promise<void>;
   /**
-   * Returns the given sprite's current code, including the learner's unsaved
-   * edits. `sprite` is a sprite name (e.g. `"Lita"`), matching how the
+   * Returns the given sprite's code as it currently stands in the session
+   * project. `sprite` is a sprite name (e.g. `"Lita"`), matching how the
    * project models its contents; addressing a sprite the project does not
-   * contain fails the capability call. Reading whichever code the learner
-   * happens to be editing is deliberately not offered yet: it depends on how
-   * the Code Editor exposes its attached UIs and their active documents.
+   * contain fails the capability call. This reads the project rather than a
+   * Code Editor UI buffer, and reading whichever code the learner happens to
+   * be editing is deliberately not offered yet: it depends on how the Code
+   * Editor exposes its attached UIs and their active documents.
    */
   editor_project_getCode(sprite: string): string;
   /**
