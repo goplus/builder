@@ -1,5 +1,3 @@
-import type { TextDocumentRange } from '@/components/xgo-code-editor/common'
-
 /**
  * Editor-owned bridge for runtime output lines, so features outside the editor component tree can
  * observe them. The App-level tutorial lives above the editor's `editorCtx` provider and cannot
@@ -11,9 +9,6 @@ import type { TextDocumentRange } from '@/components/xgo-code-editor/common'
 class EditorRuntimeOutputBridge {
   private listeners = new Set<(line: string) => void>()
   private runStartListeners = new Set<() => void>()
-  private runEndListeners = new Set<() => void>()
-  private sourceListeners = new Set<(source: TextDocumentRange) => void>()
-  private sourceEndListeners = new Set<(source: TextDocumentRange) => void>()
 
   /** Subscribe to fresh runtime output lines. Returns a disposer. */
   onLine(listener: (line: string) => void): () => void {
@@ -29,35 +24,6 @@ class EditorRuntimeOutputBridge {
     return () => {
       this.runStartListeners.delete(listener)
     }
-  }
-
-  /** Subscribe to source locations reported by the running project. */
-  onSource(listener: (source: TextDocumentRange) => void): () => void {
-    this.sourceListeners.add(listener)
-    return () => this.sourceListeners.delete(listener)
-  }
-
-  onSourceEnd(listener: (source: TextDocumentRange) => void): () => void {
-    this.sourceEndListeners.add(listener)
-    return () => this.sourceEndListeners.delete(listener)
-  }
-
-  onRunEnd(listener: () => void): () => void {
-    this.runEndListeners.add(listener)
-    return () => this.runEndListeners.delete(listener)
-  }
-
-  pushRunEnd() {
-    for (const listener of this.runEndListeners) listener()
-  }
-
-  pushSource(source: TextDocumentRange | undefined) {
-    if (source == null) return
-    for (const listener of this.sourceListeners) listener(source)
-  }
-
-  pushSourceEnd(source: TextDocumentRange) {
-    for (const listener of this.sourceEndListeners) listener(source)
   }
 
   push(line: string) {

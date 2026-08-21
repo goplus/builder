@@ -52,39 +52,6 @@ type RunnerFiles = {
   [path: string]: RunnerFile
 }
 
-const executionMarkerPrefix = '__XB_EXEC__'
-
-/**
- * Add source markers to the transient files sent to the runner. The editor's original files are
- * never changed; markers exist only so the browser can correlate runtime activity with a line.
- */
-function instrumentSpxSource(path: string, source: string): string {
-  const lines = source.split(/\r?\n/)
-  const hasFmtImport = lines.some((line) => /^\s*(?:import\b.*fmt|fmt\s+"fmt")/.test(line))
-  const instrumented = lines.flatMap((line, index) => {
-    const trimmed = line.trim()
-    const isExecutable =
-      trimmed !== '' &&
-      !trimmed.startsWith('//') &&
-      !trimmed.startsWith('/*') &&
-      !trimmed.startsWith('*') &&
-      !trimmed.startsWith('import ') &&
-      !trimmed.startsWith('package ') &&
-      trimmed !== '{' &&
-      trimmed !== '}'
-    if (!isExecutable) return [line]
-    const indent = line.slice(0, line.length - line.trimStart().length)
-    const startMarker = `${executionMarkerPrefix}start:${path}:${index + 1}`
-    const endMarker = `${executionMarkerPrefix}end:${path}:${index + 1}`
-    const canMarkCompletion = !trimmed.endsWith('{') && !trimmed.endsWith('}')
-    const result = [`${indent}fmt.Println(${JSON.stringify(startMarker)})`, line]
-    if (canMarkCompletion) result.push(`${indent}fmt.Println(${JSON.stringify(endMarker)})`)
-    return result
-  })
-  if (!hasFmtImport) instrumented.unshift('import "fmt"')
-  return instrumented.join('\n')
-}
-
 interface RunnerIframeWindow extends Window {
   xbuilder_set_ai_interaction_api_endpoint: (endpoint: string) => void
   xbuilder_set_ai_interaction_api_token_provider: (provider: () => Promise<string>) => void
@@ -122,12 +89,8 @@ async function loadFiles(files: Files, reporter: ProgressReporter, signal?: Abor
     Object.entries(files).map(async ([path, file]) => {
       if (file == null) return
       const r = filesCollector.getSubReporter()
-      const originalContent = await file.arrayBuffer(signal)
-      const content = path.endsWith('.spx')
-        ? new TextEncoder().encode(instrumentSpxSource(path, new TextDecoder().decode(originalContent))).buffer
-        : originalContent
       runnerFiles[path] = {
-        content,
+        content: await file.arrayBuffer(signal),
         lastModified: file.lastModified
       }
       r.report(1)

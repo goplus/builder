@@ -38,8 +38,8 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 1px solid var(--ui-color-grey-400);
   border-radius: var(--ui-border-radius-md);
@@ -51,8 +51,8 @@ const emit = defineEmits<{
 }
 
 .ruler-toggle-icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
   pointer-events: none;
 }
