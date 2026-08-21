@@ -84,8 +84,8 @@ importers:
         specifier: ^0.8.1
         version: 0.8.1(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3))
       '@xgo-pkgs/spx':
-        specifier: 3.2.2
-        version: 3.2.2
+        specifier: 3.2.3
+        version: 3.2.3
       bowser:
         specifier: ^2.14.1
         version: 2.14.1
@@ -1227,8 +1227,8 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
-  '@xgo-pkgs/spx@3.2.2':
-    resolution: {integrity: sha512-3YHX1vc1H+6hZU06Zo2VOi6cX0n+By3Jyt1Fgx3vbMpThCqKYYzSZeeyYfnb420fSZfKm7m0nLTZQr28X3FVaA==}
+  '@xgo-pkgs/spx@3.2.3':
+    resolution: {integrity: sha512-DIPjKwLzY9VaRnQXz/Bi4EO9oMWbIrZKgLIH1GYfZi4Yp+Xhz6BqZU0gntypenDQrICNR9w/T4ZKCp8vmZ3Glw==}
 
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
@@ -1576,6 +1576,7 @@ packages:
   eslint@9.39.1:
     resolution: {integrity: sha512-BhHmn2yNOFA9H9JmmIVKJmd288g9hrVRDkdoIgRCRuSySRUHH7r/DI6aAXW9T1WwUuY3DFgrcaqB+deURBLR5g==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -4198,7 +4199,7 @@ snapshots:
     dependencies:
       vue: 3.5.25(typescript@5.9.3)
 
-  '@xgo-pkgs/spx@3.2.2': {}
+  '@xgo-pkgs/spx@3.2.3': {}
 
   abbrev@2.0.0: {}
 

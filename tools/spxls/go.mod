@@ -12,8 +12,8 @@ require (
 require (
 	github.com/goplus/gogen v1.23.6-0.20260809114740-f2368821f75f // indirect
 	github.com/goplus/mod v0.21.2 // indirect
-	github.com/goplus/spbase v0.1.0 // indirect
-	github.com/goplus/spx/v3 v3.2.2 // indirect
+	github.com/goplus/spbase v0.1.1 // indirect
+	github.com/goplus/spx/v3 v3.2.3 // indirect
 	github.com/goplus/xgo v1.7.6-0.20260810073432-2388f206edfe // indirect
 	github.com/qiniu/x v1.18.3 // indirect
 	github.com/visualfc/gid v0.3.3 // indirect
