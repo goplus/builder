@@ -9,7 +9,7 @@
     :class="{ 'cursor-ruler': rulerActive }"
     :style="{
       backgroundImage: `url(${stageBgUrl})`,
-      '--ruler-cursor': `url(${rulerCursorUrl}) 4 25, crosshair`
+      '--ruler-cursor': `url(${rulerCursorUrl}) 0 11, crosshair`
     }"
     @mousemove="updateMousePos(), updateHoveredSprite()"
     @mouseleave="handleLabelLeave()"
