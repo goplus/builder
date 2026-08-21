@@ -9,9 +9,14 @@ import (
 	"github.com/goplus/builder/tools/xgoexec"
 )
 
-// courseSource exercises the whole Course-author-facing API, so that building
-// it catches both a broken class-framework binding and an export that was not
-// regenerated after the framework changed.
+// courseSource 是一段"用满全部作者可见 API"的课程程序。
+//
+// 它同时守住两件事：
+//  1. classfile 绑定是否还正常——课程代码能不能按 XGo 的写法调到框架
+//     （字段大写、方法小写、onXxx 事件写法、SpotlightOptions 字面量等）；
+//  2. qexp 导出有没有忘记重新生成——新增的类型（如 SpotlightOptions）若没进
+//     ixgo 的注册表，这里编译/准备执行就会失败。第二点尤其容易漏，
+//     因为它平时只在运行期才暴露。
 const courseSource = `
 type Feedback struct {
 	Praise string
@@ -81,6 +86,8 @@ func TestTutorialCourseBuilds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load course: %v", err)
 	}
+	// 只准备到"可执行"为止，不真的跑：真正运行会调 capability，而 capability 桥
+	// 只在 js/wasm 下存在。运行期行为由 tools/tutorial 的单测用假宿主覆盖。
 	if _, err := ctx.NewInterp(pkg); err != nil {
 		t.Fatalf("prepare course for execution: %v", err)
 	}

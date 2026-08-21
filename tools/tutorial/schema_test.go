@@ -73,7 +73,7 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 }
 
 func TestGenerateJSONFillsTheResult(t *testing.T) {
-	host := newFakeHost(t)
+	host := newFakeHost()
 	host.responses["copilot_generateJSON"] = `{"praise":"used stepTo","score":5}`
 
 	type answer struct {
@@ -82,7 +82,7 @@ func TestGenerateJSONFillsTheResult(t *testing.T) {
 	}
 	var filled answer
 
-	runCourse(t, func(course *testCourse) {
+	runCourse(t, host, func(course *testCourse) {
 		course.OnStart(func() {
 			course.Copilot.GenerateJSON("judge this", &filled)
 			course.Complete()

@@ -6,15 +6,20 @@ import (
 	"strings"
 )
 
-// deriveSchema builds the JSON Schema of the value Course code passed to
-// GenerateJSON. Course structs are ordinary main-package types once XGo
-// compiles the Course program, so reflection describes them the same way it
-// describes any Go struct.
+// deriveSchema 从课程传给 GenerateJSON 的值派生出 JSON Schema。
+//
+// 前提（做过验证实验确认）：XGo 把课程代码编译成普通的 package main，作者定义的
+// struct 就是普通的 main 包类型，因此 reflect 的行为与面对原生类型完全一致——
+// 字段枚举、tag 读取、encoding/json 的回填可设置性都正常。
+//
+// 这里刻意只做一个"足够用"的 schema：课程判定要的是让 LLM 输出固定形状的 JSON，
+// 不是完整的 JSON Schema 规范实现。
 func deriveSchema(result any) (map[string]any, error) {
 	if result == nil {
 		return nil, fmt.Errorf("generateJSON: result must be a non-nil pointer to a struct")
 	}
 	value := reflect.ValueOf(result)
+	// 必须是指针：否则解码回填改的是副本，课程读到的还是零值。
 	if value.Kind() != reflect.Pointer {
 		return nil, fmt.Errorf("generateJSON: result must be a pointer to a struct, got %s", value.Type())
 	}
@@ -28,13 +33,15 @@ func deriveSchema(result any) (map[string]any, error) {
 	return schemaOfStruct(elem)
 }
 
+// schemaOfStruct 把结构体描述成一个 object schema。
+// 所有字段都进 required：课程判定通常要读全部字段，让 LLM 少省略一个是一个。
 func schemaOfStruct(t reflect.Type) (map[string]any, error) {
 	properties := map[string]any{}
 	required := []string{}
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if field.PkgPath != "" {
-			// Unexported: encoding/json can neither read nor fill it.
+			// 未导出字段：encoding/json 既读不到也填不进，放进 schema 只会误导 LLM。
 			continue
 		}
 		name, omitted := jsonFieldName(field)
@@ -49,8 +56,9 @@ func schemaOfStruct(t reflect.Type) (map[string]any, error) {
 		required = append(required, name)
 	}
 	if len(properties) == 0 {
-		// Every field is unexported or skipped, so the generated value could
-		// never be read back. Say so instead of returning an empty result.
+		// 一个字段都没有可用的——最常见的原因是作者按 XGo 的习惯把字段名写成了小写。
+		// 这种情况下生成的值永远填不回去，课程会读到全零值却毫无提示，所以必须报错，
+		// 而不是回一个空 schema 让它悄悄失败。
 		return nil, fmt.Errorf("generateJSON: %s has no exported fields to fill", t)
 	}
 	return map[string]any{
@@ -60,6 +68,9 @@ func schemaOfStruct(t reflect.Type) (map[string]any, error) {
 	}, nil
 }
 
+// schemaOfType 把一个字段类型映射成 schema 片段。
+// 支持的范围覆盖课程判定会用到的形状：标量、切片/数组、嵌套结构体、以及指针（透传到元素类型）。
+// 其余类型（map、interface、chan 等）直接报错，好过生成一个 LLM 无从遵守的 schema。
 func schemaOfType(t reflect.Type) (map[string]any, error) {
 	switch t.Kind() {
 	case reflect.String:
@@ -86,6 +97,9 @@ func schemaOfType(t reflect.Type) (map[string]any, error) {
 	}
 }
 
+// jsonFieldName 按 encoding/json 的规则决定字段在 JSON 里的名字。
+// 与 encoding/json 保持一致很重要：schema 里的键名必须和实际解码时用的键名相同，
+// 否则 LLM 按 schema 输出的字段会填不进去。
 func jsonFieldName(field reflect.StructField) (name string, omitted bool) {
 	tag := field.Tag.Get("json")
 	if tag == "-" {
