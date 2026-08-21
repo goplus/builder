@@ -27,7 +27,7 @@ onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	Editor.Ruler.show
 	showPrelude "Move Lita to Mushroom."
-	showVideo "assets/step-to.mp4"
+	showVideo "step-to"
 	Spotlight.reveal "Code editor > Code text editor", "Write your code here"
 	Spotlight.revealWith "Stage overview", "Watch Lita", SpotlightOptions{Mask: false, Duration: 3}
 }

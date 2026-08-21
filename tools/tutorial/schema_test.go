@@ -47,6 +47,15 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		praise string
 	}
 
+	// 自引用与互相引用：JSON Schema 要靠 $ref 才能表达递归，我们不生成 $ref，
+	// 所以必须报错。不拦的话是无限递归——在 WASM 里就是解释器爆栈。
+	type node struct {
+		Label string
+		Next  *node
+	}
+	type tree struct {
+		Children []tree
+	}
 	for _, test := range []struct {
 		name   string
 		result any
@@ -58,7 +67,10 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		{name: "not a struct", result: new(string), want: "must point to a struct"},
 		// XGo authors may lowercase field names out of habit; encoding/json
 		// could never fill such a struct, so it must not look like it worked.
-		{name: "no exported fields", result: &lowercase{}, want: "no exported fields"},
+		{name: "no exported fields", result: &lowercase{}, want: "no serializable exported fields"},
+		{name: "self reference", result: &node{}, want: "refers to itself"},
+		{name: "self reference through slice", result: &tree{}, want: "refers to itself"},
+		{name: "mutual reference", result: &left{}, want: "refers to itself"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := deriveSchema(test.result)
@@ -100,3 +112,8 @@ func TestGenerateJSONFillsTheResult(t *testing.T) {
 		t.Errorf("request did not carry the derived schema: %s", request)
 	}
 }
+
+// left 与 right 互相引用，用来验证环检测不只认直接自引用。
+// 互相引用的类型必须声明在包级：Go 的局部类型声明是顺序的，彼此看不见对方。
+type left struct{ Right *right }
+type right struct{ Left *left }

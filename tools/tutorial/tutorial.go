@@ -99,12 +99,15 @@ func (p *Course) ShowMessage(message string) {
 }
 
 // ShowVideo 播放课程内的讲解视频，等学习者看完或关闭后才返回。
-// videoPath 是课程包内的相对路径（如 assets/step-to.mp4）；
-// 若 #3437 合入，这里会变成"已声明的视频资源名"，只是参数含义变，签名不变。
-func (p *Course) ShowVideo(videoPath string) {
+//
+// videoName 是**已声明的视频资源名**而不是文件路径：视频以
+// assets/videos/<name>/index.json 的形式声明，作者写 showVideo "step-to"。
+// 这样课程语言服务能在写课时就检查视频是否存在、名字有没有拼错，
+// 而不是等到课程跑起来才失败。
+func (p *Course) ShowVideo(videoName string) {
 	p.program.mustCallCapability("course_showVideo", struct {
-		VideoPath string `json:"videoPath"`
-	}{VideoPath: videoPath}, nil)
+		VideoName string `json:"videoName"`
+	}{VideoName: videoName}, nil)
 }
 
 // Complete 标记课程完成。

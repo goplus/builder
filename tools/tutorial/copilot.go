@@ -48,7 +48,7 @@ func (p *Copilot) GenerateText(message string) string {
 // 但 xgobuild 会先把它编译成一个普通的 package main，作者写的 struct 就是普通的
 // main 包类型，reflect 看到的与原生类型没有区别。这一点做过专门的验证实验。
 //
-// result 必须是非 nil 的结构体指针，且至少有一个导出字段——否则 deriveSchema 会报错，
+// result 必须是非 nil 的结构体指针，且至少有一个可序列化的导出字段——否则会报错，
 // 进而 panic。这道检查不是吹毛求疵：XGo 作者很容易顺手把字段写成小写，那样
 // encoding/json 既读不到也填不进，课程会拿到一个全零值却毫无提示。
 func (p *Copilot) GenerateJSON(message string, result any) {
