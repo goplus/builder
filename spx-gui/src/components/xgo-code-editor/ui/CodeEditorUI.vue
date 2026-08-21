@@ -27,8 +27,10 @@ import { providePopupContainer, useModal } from '@/components/ui'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { useCodeEditor } from '../context'
 import { getDdiDragData, getTextDocumentId, type Position, type Range, type TextDocumentIdentifier } from '../common'
+import { getCodeFilePath } from '../common'
 import { type MonacoEditor, type monaco } from '../monaco'
 import { fromMonacoPosition } from './common'
+import type { TextDocumentRange } from '../common'
 import { CodeEditorUIController } from './code-editor-ui'
 import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
@@ -44,6 +46,7 @@ import DocumentTabs from './document-tab/DocumentTabs.vue'
 import EditingDocumentThumbnail from './EditingDocumentThumbnail.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
+import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
 
 const props = withDefaults(
   defineProps<{
@@ -115,6 +118,108 @@ const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor
 }
+
+const executionDecorationIds = ref<string[]>([])
+type ExecutionHighlightEvent = { type: 'start'; source: TextDocumentRange } | { type: 'end'; source: TextDocumentRange }
+const executionHighlightQueue: ExecutionHighlightEvent[] = []
+const executionHighlightMinDuration = 180
+let executionHighlightTimer: number | null = null
+const executionDecorationOptions = {
+  isWholeLine: true,
+  className: 'xgo-execution-line',
+  linesDecorationsClassName: 'xgo-execution-line-margin'
+}
+
+function clearExecutionHighlight() {
+  executionHighlightQueue.length = 0
+  if (executionHighlightTimer != null) {
+    window.clearTimeout(executionHighlightTimer)
+    executionHighlightTimer = null
+  }
+  clearExecutionDecoration()
+}
+
+function clearExecutionDecoration() {
+  const editor = monacoEditorRef.value
+  if (editor != null) executionDecorationIds.value = editor.deltaDecorations(executionDecorationIds.value, [])
+}
+
+function renderExecutionSource(source: TextDocumentRange) {
+  const editor = monacoEditorRef.value
+  if (editor == null || !isActiveExecutionSource(source)) return
+  executionDecorationIds.value = editor.deltaDecorations(executionDecorationIds.value, [
+    {
+      range: {
+        startLineNumber: source.range.start.line,
+        startColumn: 1,
+        endLineNumber: Math.max(source.range.start.line, source.range.end.line),
+        endColumn: 1
+      },
+      options: executionDecorationOptions
+    }
+  ])
+  editor.revealLineInCenterIfOutsideViewport(source.range.start.line)
+}
+
+function isActiveExecutionSource(source: TextDocumentRange) {
+  const sourcePath = normalizeExecutionPath(source.textDocument.uri)
+  const activePath = normalizeExecutionPath(getTextDocumentId(props.codeFilePath).uri)
+  return sourcePath != null && activePath != null && sourcePath === activePath
+}
+
+function renderNextExecutionSource() {
+  const event = executionHighlightQueue.shift()
+  if (event == null) {
+    executionHighlightTimer = null
+    return
+  }
+  if (event.type === 'end') {
+    clearExecutionDecoration()
+    renderNextExecutionSource()
+    return
+  }
+  renderExecutionSource(event.source)
+  executionHighlightTimer = window.setTimeout(renderNextExecutionSource, executionHighlightMinDuration)
+}
+
+function queueExecutionSource(source: TextDocumentRange) {
+  if (!isActiveExecutionSource(source)) return
+  executionHighlightQueue.push({ type: 'start', source })
+  if (executionHighlightTimer == null) renderNextExecutionSource()
+}
+
+function queueExecutionSourceEnd(source: TextDocumentRange) {
+  if (!isActiveExecutionSource(source)) return
+  executionHighlightQueue.push({ type: 'end', source })
+  if (executionHighlightTimer == null) renderNextExecutionSource()
+}
+
+function normalizeExecutionPath(uri: string): string | null {
+  try {
+    return decodeURIComponent(getCodeFilePath(uri)).replace(/^\/+/, '').toLowerCase()
+  } catch {
+    return null
+  }
+}
+
+watch(
+  () => props.codeFilePath,
+  () => clearExecutionHighlight()
+)
+
+watchEffect((onCleanup) => {
+  const offStart = editorRuntimeOutputBridge.onRunStart(clearExecutionHighlight)
+  const offEnd = editorRuntimeOutputBridge.onRunEnd(clearExecutionHighlight)
+  const offSource = editorRuntimeOutputBridge.onSource(queueExecutionSource)
+  const offSourceEnd = editorRuntimeOutputBridge.onSourceEnd(queueExecutionSourceEnd)
+  onCleanup(() => {
+    offStart()
+    offEnd()
+    offSource()
+    offSourceEnd()
+    clearExecutionHighlight()
+  })
+})
 
 // Monaco applies construction options only on creation, so the font-size override needs to be
 // (re)applied when it changes while the editor is already mounted.
@@ -387,3 +492,16 @@ providePopupContainer(codeEditorEl)
     </aside>
   </div>
 </template>
+
+<style>
+/* A translucent decoration deliberately layers over the editor without replacing diagnostic colors. */
+.xgo-execution-line {
+  background: rgba(255, 193, 7, 0.24);
+}
+
+.xgo-execution-line-margin {
+  background: rgba(245, 158, 11, 0.9);
+  margin-left: 2px;
+  width: 3px !important;
+}
+</style>

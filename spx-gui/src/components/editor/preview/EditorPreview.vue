@@ -175,6 +175,23 @@ type SpxLog = {
   [key: string]: unknown
 }
 
+const executionMarkerPrefix = '__XB_EXEC__'
+
+function parseExecutionMarker(message: string) {
+  if (!message.startsWith(executionMarkerPrefix)) return null
+  const value = message.slice(executionMarkerPrefix.length)
+  const phaseSeparator = value.indexOf(':')
+  if (phaseSeparator <= 0) return null
+  const phase = value.slice(0, phaseSeparator)
+  if (phase !== 'start' && phase !== 'end') return null
+  const location = value.slice(phaseSeparator + 1)
+  const separator = location.lastIndexOf(':')
+  if (separator <= 0) return null
+  const line = Number(location.slice(separator + 1))
+  if (!Number.isInteger(line) || line < 1) return null
+  return { phase, file: location.slice(0, separator), line }
+}
+
 function isSpxLog(obj: any): obj is SpxLog {
   return (
     obj != null &&
@@ -335,6 +352,7 @@ const lastPanicOutput = ref<RuntimeOutput | null>(null)
 
 function appendRuntimeOutput(output: RuntimeOutputDraft) {
   runtime.value.addOutput(output)
+  editorRuntimeOutputBridge.pushSource(output.source)
 }
 
 function keepRunnerHostVisibleForOverlay() {
@@ -351,6 +369,19 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   if (type !== 'log' || typeof args[0] !== 'string') return
   const spxLog = parseSpxLog(args[0])
   if (spxLog == null) return
+  const execution = parseExecutionMarker(spxLog.msg)
+  if (execution != null) {
+    const source = {
+      textDocument: { uri: `file:///${execution.file.replace(/^\/+/, '')}` },
+      range: {
+        start: { line: execution.line, column: 1 },
+        end: { line: execution.line, column: 1 }
+      }
+    }
+    if (execution.phase === 'start') editorRuntimeOutputBridge.pushSource(source)
+    else editorRuntimeOutputBridge.pushSourceEnd(source)
+    return
+  }
   if (isSpxInfoLog(spxLog)) {
     appendRuntimeOutput({
       kind: RuntimeOutputKind.Log,
@@ -390,6 +421,7 @@ function handleExit(code: number) {
   runtime.value.emit('didExit', code)
   if (exitGuard.value === 'manualStopPending') {
     exitGuard.value = 'idle'
+    editorRuntimeOutputBridge.pushRunEnd()
     return
   }
   exitGuard.value = 'idle'
@@ -399,6 +431,7 @@ function handleExit(code: number) {
     // mode, mirroring handleStop's teardown so the runtime is fully reset.
     runnerState.value = 'initial'
     editorCtx.state.runtime.setRunning({ mode: 'none' })
+    editorRuntimeOutputBridge.pushRunEnd()
     projectRunnerSurfaceRef.value?.stop().catch(() => {})
     return
   }
@@ -511,6 +544,7 @@ const handleStop = useMessageHandle(
       lastPanicOutput.value = null
       runnerState.value = 'initial'
       editorCtx.state.runtime.setRunning({ mode: 'none' })
+      editorRuntimeOutputBridge.pushRunEnd()
     } catch (error) {
       exitGuard.value = 'idle'
       throw error
