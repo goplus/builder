@@ -17,10 +17,10 @@ import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 // TODO: Temporary background, replace with the latest assets
 import stageBg from '@/assets/images/stage-bg.svg'
-import { getTutorialChapters, type TutorialChapter } from '@/components/tutorials/tutorial-chapters'
+import { getTutorialChapters } from '@/components/tutorials/tutorial-chapters'
 
 const coursePadding = 20
-const numInColumn = 2
+const numInColumn = 4
 const height = numInColumn * (courseItemHeight + coursePadding) - coursePadding
 
 const props = defineProps<{
@@ -56,7 +56,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 })
 
 const page = useRouteQueryParamInt('p', 1)
-const selectedChapterId = useRouteQueryParamInt('chapter', 0, (params) => ({ ...params, p: null }))
+const selectedChapterId = useRouteQueryParamInt('chapter', 1, (params) => ({ ...params, p: null }))
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
@@ -64,7 +64,7 @@ const chapters = computed(() => getTutorialChapters(courseSeries.value))
 const selectedChapter = computed(
   () => chapters.value.find((chapter) => chapter.start === selectedChapterId.value) ?? null
 )
-const chapterTabValue = computed(() => selectedChapter.value?.id ?? 'all')
+const chapterTabValue = computed(() => selectedChapter.value?.id ?? '')
 
 const courseQuery = useQuery(
   async (ctx) => {
@@ -95,12 +95,9 @@ const pagedCourses = computed(() => {
   return visibleCourses.value.slice(start, start + pageSize.value)
 })
 
-function selectChapter(chapter: TutorialChapter | null) {
-  selectedChapterId.value = chapter?.start ?? 0
-}
-
 function selectChapterTab(value: string) {
-  selectChapter(value === 'all' ? null : chapters.value.find((chapter) => chapter.id === value) ?? null)
+  const chapter = chapters.value.find((item) => item.id === value)
+  if (chapter != null) selectedChapterId.value = chapter.start
 }
 </script>
 
@@ -144,15 +141,12 @@ function selectChapterTab(value: string) {
       </UICard>
 
       <nav v-if="chapters.length > 0" aria-label="Course chapters" class="mt-5 overflow-x-auto">
-        <UITabs :value="chapterTabValue" class="min-w-max gap-6! px-2!" @update:value="selectChapterTab">
-          <UITab value="all" class="text-[13px]! leading-6! px-2! pt-2! pb-1.5!">
-            {{ $t({ en: 'All courses', zh: '全部课程' }) }}
-          </UITab>
+        <UITabs :value="chapterTabValue" class="min-w-max gap-6! px-0!" @update:value="selectChapterTab">
           <UITab
             v-for="chapter in chapters"
             :key="chapter.id"
             :value="chapter.id"
-            class="text-[13px]! leading-6! px-2! pt-2! pb-1.5!"
+            class="text-[15px]! leading-6! px-2! pt-2! pb-1.5!"
           >
             {{ $t(chapter.shortTitle) }}
           </UITab>
@@ -161,14 +155,6 @@ function selectChapterTab(value: string) {
 
       <div v-if="selectedChapter != null" class="mt-6 flex items-baseline gap-3">
         <h3 class="text-lg font-medium text-title">{{ $t(selectedChapter.title) }}</h3>
-        <span class="text-sm text-grey-700">
-          {{
-            $t({
-              en: `Courses ${selectedChapter.start}–${selectedChapter.end}`,
-              zh: `第 ${selectedChapter.start}–${selectedChapter.end} 课`
-            })
-          }}
-        </span>
       </div>
 
       <div :class="selectedChapter == null ? 'mt-7' : 'mt-4'" class="flex flex-col">
