@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/goplus/ixgo"
@@ -64,7 +65,14 @@ Editor.Runtime.onLog log => {
 }
 `
 
-func TestTutorialCourseBuilds(t *testing.T) {
+// buildCourse 按运行时的真实管线编译一段课程程序：注册 classfile 工程、
+// 预载标准包、xgobuild 编译、ixgo 装载。
+//
+// 只准备到"可执行"为止，不真的跑：真正运行会调 capability，而 capability 桥
+// 只在 js/wasm 下存在。运行期行为由 tools/tutorial 的单测用假宿主覆盖。
+func buildCourse(t *testing.T, courseSource []byte) {
+	t.Helper()
+
 	if err := (tutorialFramework{}).Register(); err != nil {
 		t.Fatalf("register tutorial framework: %v", err)
 	}
@@ -76,7 +84,7 @@ func TestTutorialCourseBuilds(t *testing.T) {
 		}
 	}
 
-	files := xgoexec.MapFS{"main_course.gox": []byte(courseSource)}
+	files := xgoexec.MapFS{"main_course.gox": courseSource}
 	source, err := xgobuild.BuildFSDir(ctx, files, ".")
 	if err != nil {
 		t.Fatalf("build course: %v", err)
@@ -86,9 +94,22 @@ func TestTutorialCourseBuilds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load course: %v", err)
 	}
-	// 只准备到"可执行"为止，不真的跑：真正运行会调 capability，而 capability 桥
-	// 只在 js/wasm 下存在。运行期行为由 tools/tutorial 的单测用假宿主覆盖。
 	if _, err := ctx.NewInterp(pkg); err != nil {
 		t.Fatalf("prepare course for execution: %v", err)
 	}
+}
+
+func TestTutorialCourseBuilds(t *testing.T) {
+	buildCourse(t, []byte(courseSource))
+}
+
+// TestExampleCourseBuilds 编译 docs 里的示例课程，保证文档示例与框架实现不脱节。
+// 示例此前是纯手写、从未被编译验证的，实际带着一处语法错误
+// （无括号命令式调用不能作表达式）躺了很久——这条测试防止它再次腐烂。
+func TestExampleCourseBuilds(t *testing.T) {
+	source, err := os.ReadFile("../../docs/develop/tutorial-v2/example-tutorial-course/main_course.gox")
+	if err != nil {
+		t.Fatalf("read example course: %v", err)
+	}
+	buildCourse(t, source)
 }

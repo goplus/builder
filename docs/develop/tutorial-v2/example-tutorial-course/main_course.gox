@@ -7,7 +7,7 @@ onStart => {
 Editor.Runtime.onLog log => {
 	if log == "reached-target" {
 		code := Editor.Project.getCode("Lita")
-		feedback := Copilot.generateText "Give one short sentence of feedback about this solution:\n" + code
+		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
 		completeWith feedback
 	}
 }
