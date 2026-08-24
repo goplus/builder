@@ -37,6 +37,7 @@
     :tools-visible="codeToolsVisible"
     :api-reference-block-style="apiReferenceBlockStyle"
     :input-helper-hidden-types="inputHelperHiddenTypes"
+    :hover-navigation-actions-visible="!isFocused"
   />
   <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->

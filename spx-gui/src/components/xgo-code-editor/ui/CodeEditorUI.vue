@@ -6,6 +6,8 @@ export type CodeEditorUICtx = {
    * items render as draggable blocks, and the in-place value-editing helper (the pencil) is off.
    */
   blockStyle: boolean
+  /** Whether hover cards may offer actions that navigate away from the current code document. */
+  hoverNavigationActionsVisible: boolean
 }
 const codeEditorUICtxInjectionKey: InjectionKey<CodeEditorUICtx> = Symbol('code-editor-ui-ctx')
 export function useCodeEditorUICtx() {
@@ -65,12 +67,15 @@ const props = withDefaults(
      * hidden — e.g. the tutorial hides it for plain literals. Empty means show it for all types.
      */
     inputHelperHiddenTypes?: string[]
+    /** Whether hover cards show navigation actions such as "View detail" and "Go to definition". */
+    hoverNavigationActionsVisible?: boolean
   }>(),
   {
     fontSize: null,
     toolsVisible: true,
     apiReferenceBlockStyle: false,
-    inputHelperHiddenTypes: () => []
+    inputHelperHiddenTypes: () => [],
+    hoverNavigationActionsVisible: true
   }
 )
 
@@ -323,7 +328,8 @@ watch(
 
 const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
   ui: uiRef.value,
-  blockStyle: props.apiReferenceBlockStyle
+  blockStyle: props.apiReferenceBlockStyle,
+  hoverNavigationActionsVisible: props.hoverNavigationActionsVisible
 }))
 provide(codeEditorUICtxInjectionKey, codeEditorUICtx)
 

@@ -42,6 +42,7 @@
     :tools-visible="codeToolsVisible"
     :api-reference-block-style="apiReferenceBlockStyle"
     :input-helper-hidden-types="inputHelperHiddenTypes"
+    :hover-navigation-actions-visible="!isFocused"
   />
   <BackdropsEditor v-if="state.selected.type === 'backdrops'" :state="state.backdropsState" />
   <SoundsEditor v-else-if="state.selected.type === 'sounds'" :state="state.soundsState" />
@@ -199,6 +200,7 @@ defineProps<{
 }>()
 
 const codeFontSize = computed(() => editorWorkspaceLayout.codeFontSize)
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
 const codeToolsVisible = computed(() => !editorWorkspaceLayout.isHidden('code-editor-tools'))
 const apiReferenceBlockStyle = computed(() => editorWorkspaceLayout.mode === 'focused')
 // In block style (tutorial focused mode) the input helper is hidden for plain literals & direction.
