@@ -156,14 +156,19 @@ const { fn: handleRestartCourse } = useMessageHandle(
           v-if="getTutorialChapter(chapters, index + 1)?.start === index + 1"
           class="flex flex-none items-baseline gap-2 px-1 py-2 text-grey-700"
         >
-          <span class="flex-none text-sm font-medium text-text">
+          <span class="w-12 flex-none text-xs font-normal text-grey-700">
             {{ $t(getTutorialChapter(chapters, index + 1)!.shortTitle) }}
           </span>
-          <span class="min-w-0 truncate text-xs">
+          <span class="min-w-0 truncate text-sm font-medium text-text">
             {{ $t(getTutorialChapter(chapters, index + 1)!.title) }}
           </span>
           <span class="ml-auto flex-none text-xs text-grey-600">
-            {{ getTutorialChapter(chapters, index + 1)?.start }}–{{ getTutorialChapter(chapters, index + 1)?.end }}
+            {{
+              $t({
+                en: `Courses ${getTutorialChapter(chapters, index + 1)?.start}–${getTutorialChapter(chapters, index + 1)?.end}`,
+                zh: `第 ${getTutorialChapter(chapters, index + 1)?.start}–${getTutorialChapter(chapters, index + 1)?.end} 课`
+              })
+            }}
           </span>
         </li>
         <TutorialCourseRow
