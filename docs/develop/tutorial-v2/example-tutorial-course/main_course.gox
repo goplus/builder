@@ -2,6 +2,9 @@ onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
+	// TODO(#3441): "API References" is the target's Radar node name; revisit
+	// once the Radar name-based selector syntax is settled.
+	Spotlight.reveal "API References", "Here is stepTo, the only block you need in this lesson."
 }
 
 Editor.Runtime.onLog log => {
