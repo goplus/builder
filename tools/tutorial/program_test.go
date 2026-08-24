@@ -93,7 +93,7 @@ func (p *testCourse) MainEntry() { p.mainEntry(p) }
 // 而课程代码要到 MainEntry 才开始跑，所以这里是最早、也是唯一合适的注入点。
 func newTestCourse(host *fakeHost, mainEntry func(*testCourse)) *testCourse {
 	return &testCourse{mainEntry: func(course *testCourse) {
-		course.program.callCapability = host.call
+		course.courseProgram.callCapability = host.call
 		mainEntry(course)
 	}}
 }
@@ -317,13 +317,13 @@ func TestCoursesDoNotShareState(t *testing.T) {
 	first.MainEntry()
 	second.MainEntry()
 
-	for _, handler := range first.program.handlerSnapshot().courseStart {
+	for _, handler := range first.courseProgram.handlerSnapshot().courseStart {
 		handler()
 	}
-	if !first.program.markCompleted() {
+	if !first.courseProgram.markCompleted() {
 		t.Fatal("the first course was already completed")
 	}
-	if second.program.isCompleted() {
+	if second.courseProgram.isCompleted() {
 		t.Error("completing one course must not complete another")
 	}
 	if got, want := fmt.Sprint(firstHost.names()), "[course_showMessage]"; got != want {

@@ -21,15 +21,15 @@ type Editor struct {
 
 // init 把四个子 namespace 接到课程的运行状态上，由 Course.initCourse 调用。
 func (p *Editor) init(program *courseProgram) {
-	p.Project.program = program
-	p.Runtime.program = program
-	p.CodeEditor.program = program
-	p.Ruler.program = program
+	p.Project.courseProgram = program
+	p.Runtime.courseProgram = program
+	p.CodeEditor.courseProgram = program
+	p.Ruler.courseProgram = program
 }
 
 // Project 读取学习者正在编辑的会话项目。
 type Project struct {
-	program *courseProgram
+	courseProgram *courseProgram
 }
 
 // GetCode 返回指定精灵在会话项目中的当前代码。
@@ -39,7 +39,7 @@ type Project struct {
 // 这样作者拼错名字会在 Preview 阶段就炸出来，而不是拿到空串继续跑。
 func (p *Project) GetCode(sprite string) string {
 	var code string
-	p.program.mustCallCapability("editor_project_getCode", struct {
+	p.courseProgram.mustCallCapability("editor_project_getCode", struct {
 		Sprite string `json:"sprite"`
 	}{Sprite: sprite}, &code)
 	return code
@@ -51,7 +51,7 @@ func (p *Project) GetCode(sprite string) string {
 // 会起什么名字，只能运行时问项目要。
 func (p *Project) ListSprites() []string {
 	var sprites []string
-	p.program.mustCallCapability("editor_project_listSprites", struct{}{}, &sprites)
+	p.courseProgram.mustCallCapability("editor_project_listSprites", struct{}{}, &sprites)
 	return sprites
 }
 
@@ -61,17 +61,17 @@ func (p *Project) ListSprites() []string {
 // 完成了（见 program.go 的 registerEvents）。因此"课程没订阅某事件"和"课程订阅了"
 // 对宿主而言毫无区别，宿主不需要知道课程内部订阅了什么。
 type Runtime struct {
-	program *courseProgram
+	courseProgram *courseProgram
 }
 
 // OnStart 注册"学习者的项目开始运行"的回调，可注册多个，按注册顺序依次执行。
 func (p *Runtime) OnStart(handler func()) {
-	p.program.addHandler(func(h *handlers) { h.runtimeStart = append(h.runtimeStart, handler) })
+	p.courseProgram.addHandler(func(h *handlers) { h.runtimeStart = append(h.runtimeStart, handler) })
 }
 
 // OnExit 注册"学习者的项目退出"的回调，code 是退出码。可注册多个。
 func (p *Runtime) OnExit(handler func(code int)) {
-	p.program.addHandler(func(h *handlers) { h.runtimeExit = append(h.runtimeExit, handler) })
+	p.courseProgram.addHandler(func(h *handlers) { h.runtimeExit = append(h.runtimeExit, handler) })
 }
 
 // OnLog 注册"学习者的项目输出了一条日志"的回调，每条恰好触发一次、按输出顺序。
@@ -83,12 +83,12 @@ func (p *Runtime) OnExit(handler func(code int)) {
 // 可以注册多个：一节课有两条判定线索时，分开写两段比挤在一个 if-else 里清楚。
 // 同一条日志会按注册顺序依次交给它们。
 func (p *Runtime) OnLog(handler func(log string)) {
-	p.program.addHandler(func(h *handlers) { h.runtimeLog = append(h.runtimeLog, handler) })
+	p.courseProgram.addHandler(func(h *handlers) { h.runtimeLog = append(h.runtimeLog, handler) })
 }
 
 // CodeEditor 控制学习者写代码的编辑器。
 type CodeEditor struct {
-	program *courseProgram
+	courseProgram *courseProgram
 }
 
 // FilterAPIs 限制编辑器辅助（API Reference、补全等）里出现的 API，
@@ -100,27 +100,27 @@ type CodeEditor struct {
 // 映射逻辑，而那份逻辑无法可靠地假定 package 一定是 spx、receiver 一定是 Sprite。
 // 作者的书写负担由 Course Editor 的写课辅助来解决。
 func (p *CodeEditor) FilterAPIs(apis []string) {
-	p.program.mustCallCapability("editor_codeEditor_filterAPIs", struct {
+	p.courseProgram.mustCallCapability("editor_codeEditor_filterAPIs", struct {
 		APIs []string `json:"apis"`
 	}{APIs: apis}, nil)
 }
 
 // FormatWorkspace 格式化学习者的代码，格式化完成后返回。
 func (p *CodeEditor) FormatWorkspace() {
-	p.program.mustCallCapability("editor_codeEditor_formatWorkspace", struct{}{}, nil)
+	p.courseProgram.mustCallCapability("editor_codeEditor_formatWorkspace", struct{}{}, nil)
 }
 
 // Ruler 是舞台上的标尺——帮学习者建立坐标与距离直觉的教具。
 type Ruler struct {
-	program *courseProgram
+	courseProgram *courseProgram
 }
 
 // Show 在舞台上显示标尺。
 func (p *Ruler) Show() {
-	p.program.mustCallCapability("editor_ruler_show", struct{}{}, nil)
+	p.courseProgram.mustCallCapability("editor_ruler_show", struct{}{}, nil)
 }
 
 // Hide 收起标尺。
 func (p *Ruler) Hide() {
-	p.program.mustCallCapability("editor_ruler_hide", struct{}{}, nil)
+	p.courseProgram.mustCallCapability("editor_ruler_hide", struct{}{}, nil)
 }

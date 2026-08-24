@@ -32,7 +32,7 @@ const XGoPackage = true
 // （showMessage → ShowMessage），字段访问不会转。所以课程代码里写的是
 // Editor.CodeEditor.filterAPIs——前两段是字段、大写，最后一段是方法、小写。
 //
-// 运行状态放在 program 字段里，各 namespace 在 initCourse 时拿到它的指针；
+// 运行状态放在 courseProgram 字段里，各 namespace 在 initCourse 时拿到它的指针；
 // 这与 spx 的结构一致：spx 的 Game 也是自己持有 scriptEventRegistry，
 // Game 与各精灵通过 scriptEventBindings 共享同一份注册表。
 type Course struct {
@@ -40,7 +40,7 @@ type Course struct {
 	Copilot   Copilot
 	Spotlight Spotlight
 
-	program courseProgram
+	courseProgram courseProgram
 }
 
 // CourseProto 是 XGo 生成的课程类需要满足的接口。
@@ -66,10 +66,10 @@ type contentRequest struct {
 
 // initCourse 初始化运行状态并把各 namespace 接到同一份状态上，返回内嵌的 Course。
 func (p *Course) initCourse() *Course {
-	p.program.init()
-	p.Editor.init(&p.program)
-	p.Copilot.program = &p.program
-	p.Spotlight.program = &p.program
+	p.courseProgram.init()
+	p.Editor.init(&p.courseProgram)
+	p.Copilot.courseProgram = &p.courseProgram
+	p.Spotlight.courseProgram = &p.courseProgram
 	return p
 }
 
@@ -80,14 +80,14 @@ func (p *Course) initCourse() *Course {
 //
 // 可以注册多个，按注册顺序依次执行。
 func (p *Course) OnStart(handler func()) {
-	p.program.addHandler(func(h *handlers) { h.courseStart = append(h.courseStart, handler) })
+	p.courseProgram.addHandler(func(h *handlers) { h.courseStart = append(h.courseStart, handler) })
 }
 
 // ShowPrelude 展示开场任务引导，等学习者确认后才返回。
 // 与 ShowMessage 的区别只在宿主的呈现形态（开场引导 vs 普通对话框），
 // 框架这侧只是两个不同的 capability 名。
 func (p *Course) ShowPrelude(preludeMessage string) {
-	p.program.mustCallCapability("course_showPrelude", contentRequest{Content: preludeMessage}, nil)
+	p.courseProgram.mustCallCapability("course_showPrelude", contentRequest{Content: preludeMessage}, nil)
 }
 
 // ShowMessage 展示对话框，等学习者确认后才返回。
@@ -95,7 +95,7 @@ func (p *Course) ShowPrelude(preludeMessage string) {
 // 阻塞是刻意的：契约规定展示类能力一律等学习者看完再继续，不做"自动推进"。
 // 这样课程代码写下来就是顺序脚本，作者不需要理解异步。
 func (p *Course) ShowMessage(message string) {
-	p.program.mustCallCapability("course_showMessage", contentRequest{Content: message}, nil)
+	p.courseProgram.mustCallCapability("course_showMessage", contentRequest{Content: message}, nil)
 }
 
 // ShowVideo 播放课程内的讲解视频，等学习者看完或关闭后才返回。
@@ -105,7 +105,7 @@ func (p *Course) ShowMessage(message string) {
 // 这样课程语言服务能在写课时就检查视频是否存在、名字有没有拼错，
 // 而不是等到课程跑起来才失败。
 func (p *Course) ShowVideo(videoName string) {
-	p.program.mustCallCapability("course_showVideo", struct {
+	p.courseProgram.mustCallCapability("course_showVideo", struct {
 		VideoName string `json:"videoName"`
 	}{VideoName: videoName}, nil)
 }
@@ -119,19 +119,19 @@ func (p *Course) ShowVideo(videoName string) {
 //
 // 重复调用会被忽略，见 courseProgram.markCompleted。
 func (p *Course) Complete() {
-	if !p.program.markCompleted() {
+	if !p.courseProgram.markCompleted() {
 		return
 	}
-	p.program.mustCallCapability("course_complete", struct{}{}, nil)
+	p.courseProgram.mustCallCapability("course_complete", struct{}{}, nil)
 }
 
 // CompleteWith 是带一句反馈的 Complete，语义完全相同。
 // 典型用法是先用 Copilot.generateText 根据学习者的最终代码生成评语，再传进来。
 func (p *Course) CompleteWith(message string) {
-	if !p.program.markCompleted() {
+	if !p.courseProgram.markCompleted() {
 		return
 	}
-	p.program.mustCallCapability("course_completeWith", contentRequest{Content: message}, nil)
+	p.courseProgram.mustCallCapability("course_completeWith", contentRequest{Content: message}, nil)
 }
 
 // Start 运行课程程序：先执行开场回调，然后进入事件循环。
@@ -146,18 +146,18 @@ func (p *Course) CompleteWith(message string) {
 //
 // 如果课程在 MainEntry 或 onStart 里就完成了，循环一次都不会进。
 func (p *Course) Start() {
-	for _, handler := range p.program.handlerSnapshot().courseStart {
-		if p.program.isCompleted() {
+	for _, handler := range p.courseProgram.handlerSnapshot().courseStart {
+		if p.courseProgram.isCompleted() {
 			break
 		}
 		handler()
 	}
 
-	p.program.mu.Lock()
-	events := p.program.events
-	p.program.mu.Unlock()
+	p.courseProgram.mu.Lock()
+	events := p.courseProgram.events
+	p.courseProgram.mu.Unlock()
 
-	for !p.program.isCompleted() {
+	for !p.courseProgram.isCompleted() {
 		callback, ok := <-events
 		if !ok {
 			return
@@ -172,7 +172,7 @@ func (p *Course) Start() {
 // 在这里注册各种回调），最后进入 Start。反过来的话，MainEntry 里注册的回调会被
 // initCourse 的重置清掉。
 func Gopt_Course_Main(course CourseProto) {
-	course.initCourse().program.registerEvents()
+	course.initCourse().courseProgram.registerEvents()
 	course.MainEntry()
 	course.Start()
 }

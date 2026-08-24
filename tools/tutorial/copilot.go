@@ -6,7 +6,7 @@ package tutorial
 // 对话里，它们是课程代码自己的判定/生成手段。产品设计上，目标式课程里 Copilot 对学习者
 // 是"被动待命的助手"，对课程代码则是"按需调用的能力"。
 type Copilot struct {
-	program *courseProgram
+	courseProgram *courseProgram
 }
 
 // CopilotRound 是学习者与 Copilot 的一轮完整对话。
@@ -19,7 +19,7 @@ type CopilotRound struct {
 // OnRoundFinish 注册"学习者完成了一轮 Copilot 对话"的回调，可注册多个。
 // 课程可以据此感知学习者求助了什么（例如求助过多时给点额外提示）。
 func (p *Copilot) OnRoundFinish(handler func(round CopilotRound)) {
-	p.program.addHandler(func(h *handlers) { h.copilotRound = append(h.copilotRound, handler) })
+	p.courseProgram.addHandler(func(h *handlers) { h.copilotRound = append(h.copilotRound, handler) })
 }
 
 // GenerateText 让 Copilot 生成一段纯文本并返回。
@@ -29,7 +29,7 @@ func (p *Copilot) OnRoundFinish(handler func(round CopilotRound)) {
 // 这正是事件队列要留足容量的原因（见 program.go 的 eventQueueSize）。
 func (p *Copilot) GenerateText(message string) string {
 	var text string
-	p.program.mustCallCapability("copilot_generateText", contentRequest{Content: message}, &text)
+	p.courseProgram.mustCallCapability("copilot_generateText", contentRequest{Content: message}, &text)
 	return text
 }
 
@@ -56,7 +56,7 @@ func (p *Copilot) GenerateJSON(message string, result any) {
 	if err != nil {
 		panic(err)
 	}
-	p.program.mustCallCapability("copilot_generateJSON", struct {
+	p.courseProgram.mustCallCapability("copilot_generateJSON", struct {
 		Content string         `json:"content"`
 		Schema  map[string]any `json:"schema"`
 	}{Content: message, Schema: schema}, result)

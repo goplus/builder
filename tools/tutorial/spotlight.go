@@ -6,7 +6,7 @@ package tutorial
 // 不等它消失。产品文档里"每次展示可等待确认、也可自动推进"的两种形态，就是由
 // "对话框/视频阻塞"与"spotlight 不阻塞"分别承担的。
 type Spotlight struct {
-	program *courseProgram
+	courseProgram *courseProgram
 }
 
 // SpotlightOptions 控制高亮的呈现方式。
@@ -52,7 +52,7 @@ func (p *Spotlight) Reveal(target, tip string) {
 // 注意作者侧的默认值是在**框架这一层**填好的：宿主契约里 options 是必填的完整值，
 // 宿主不需要知道"课程引导场景的默认是什么"。
 func (p *Spotlight) RevealWith(target, tip string, options SpotlightOptions) {
-	p.program.mustCallCapability("spotlight_reveal", spotlightRevealRequest{
+	p.courseProgram.mustCallCapability("spotlight_reveal", spotlightRevealRequest{
 		Target:  target,
 		Tip:     tip,
 		Options: options,
