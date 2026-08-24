@@ -647,13 +647,6 @@ export function rangeEq(a: Range | null, b: Range | null) {
   return positionEq(a.start, b.start) && positionEq(a.end, b.end)
 }
 
-export function rangeContains(a: Range, b: Range) {
-  return (
-    (positionEq(a.start, b.start) || positionAfter(b.start, a.start)) &&
-    (positionEq(a.end, b.end) || positionAfter(a.end, b.end))
-  )
-}
-
 const textDocumentURIPrefix = 'file:///'
 
 export function getTextDocumentId(codeFilePath: string) {

@@ -12,6 +12,7 @@ import { stripExt } from '../path'
 import { toWav } from '../audio'
 import { toJpeg } from '../img'
 import type { LocaleMessage } from '../i18n'
+import { convertImaAdpcmWavToPcm, isImaAdpcmWav } from '../wav'
 import {
   builderRGB2CSSColorString,
   builderRGBA2CSSColorString,
@@ -29,24 +30,20 @@ import spxProjectSkillMainDoc from './skills/spx-project/SKILL.md?raw'
 export const packageSpx = 'github.com/goplus/spx/v3'
 
 /**
- * Audio file formats supported by spx.
- * See details in https://github.com/goplus/spx/blob/7f46dc7879e2320a9889f1396b9e592efb6d888d/audio.go
- */
-const supportedAudioExts = ['mp3', 'wav']
-
-/**
  * Adapt audio file to fit spx.
  *
  * Currently spx supports `mp3` and `wav` only, and it seems that wav-encoding is simpler than mp3-encoding.
  * So we convert unsupported audio files to wav before added to project.
  *
- * NOTE: wav with codec `adpcm` is supported by spx, while not natively supported by chrome (& maybe more other browsers).
- * So it is allowed to add a sound of wav file with codec `adpcm` to project, and it works in the game.
- * But it does not work as expected with audio element (`SoundPlayer`) & wavesurfer.
+ * SPX does not support IMA ADPCM WAV, so those files are converted to PCM.
  */
 export async function adaptAudio(file: File): Promise<File> {
-  for (const ext of supportedAudioExts) {
-    if (file.type === getMimeFromExt(ext)) return file
+  if (file.type === getMimeFromExt('mp3')) return file
+  if (file.type === getMimeFromExt('wav')) {
+    const source = await file.arrayBuffer()
+    if (!isImaAdpcmWav(source)) return file
+    const pcm = convertImaAdpcmWavToPcm(source)
+    return new File(file.name, async () => pcm)
   }
   const wavAb = await toWav(await file.arrayBuffer())
   const wavFileName = stripExt(file.name) + '.wav'

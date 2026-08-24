@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
       createBrowserHijackPlugin({
         origin: accountWebOrigin,
         routes: ['/sign-in', '/api/identity-providers/*/callback'],
-        chromeStartURL: 'http://localhost:5173'
+        startURL: 'http://localhost:5173'
       })
     )
   }
