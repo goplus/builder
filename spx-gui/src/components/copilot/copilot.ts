@@ -2,7 +2,7 @@ import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
-import { localStorageRef } from '@/utils/utils'
+import { getStringLengthInCodePoints, localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { Disposable, type Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
@@ -111,6 +111,8 @@ export function toApiMessage(m: Message): apis.Message {
   }
 }
 
+export type CopilotUIMode = 'floating' | 'docked'
+
 export type Topic = {
   /** Name of the topic, for display purpose. */
   title: LocaleMessage
@@ -122,10 +124,22 @@ export type Topic = {
   description: string
   /** Whether the copilot should react to user events under the topic */
   reactToEvents: boolean
+  /**
+   * Whether an incoming user event pops the panel open, defaults to `true`. Background-first
+   * topics (e.g. tutorial courses) set `false`: the session keeps perceiving events silently and
+   * the panel only shows when explicitly opened. A per-event `autoOpen` option still wins.
+   */
+  autoOpenOnEvents?: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
   endable?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
+  /**
+   * Whether code content should be hidden from the user in the chat, defaults to `false`.
+   * Used by teaching scenarios (e.g. tutorials) to avoid offering copyable answers: code-rendering
+   * elements keep driving their in-editor guides but do not display the code itself in the chat.
+   */
+  hideCodeInChat?: boolean
 }
 
 export enum RoundState {
@@ -159,7 +173,11 @@ type RoundExported = {
   apiExceptionMeta?: unknown | null
 }
 
+let roundIdCounter = 0
+
 export class Round {
+  /** Stable per-instance id, for use as a list key when rendering rounds. Not persisted. */
+  readonly id = ++roundIdCounter
   resultMessages: Array<CopilotMessage | ToolMessage> = shallowReactive([])
   private inProgressCopilotMessageContentRef = ref<string | null>(null)
   get inProgressCopilotMessageContent() {
@@ -175,6 +193,16 @@ export class Round {
   private stateRef = ref(RoundState.Initialized)
   get state() {
     return this.stateRef.value
+  }
+
+  /**
+   * Whether this round was produced live in the current session (vs. loaded from history). Set when the
+   * round is started; rounds restored via `load` stay `false`. Used by features (e.g. in-editor code
+   * guides) to decide whether to auto-drive the editor — so a restored suggestion doesn't re-pop guides.
+   */
+  private liveRef = ref(false)
+  get isLive() {
+    return this.liveRef.value
   }
   private setState(state: RoundState) {
     this.stateRef.value = state
@@ -313,8 +341,14 @@ export class Round {
 
   private async generateCopilotMessage() {
     try {
-      const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      messages.push(await this.copilot.getContextMessage())
+      const messages: Message[] = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
+      // Insert the context right BEFORE this round's user message, keeping the user's message
+      // (or event) closest to the generation position: the model attends most to the end of the
+      // sequence, and burying the user's words under the (large) context dilutes them.
+      const contextMessage = await this.copilot.getContextMessage()
+      const userMessageIndex = messages.lastIndexOf(this.userMessage)
+      if (userMessageIndex >= 0) messages.splice(userMessageIndex, 0, contextMessage)
+      else messages.push(contextMessage)
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
@@ -355,6 +389,7 @@ export class Round {
     this.errorRef.value = null
     this.apiExceptionCode = null
     this.apiExceptionMeta = null
+    this.liveRef.value = true
     this.setState(RoundState.Loading)
     this.ctrl = new AbortController()
     this.generateCopilotMessage()
@@ -378,11 +413,17 @@ export type SessionExported = {
   rounds: RoundExported[]
 }
 
+/**
+ * How many recent rounds a session keeps; older ones are dropped to limit historical messages.
+ * Consumers reasoning over round history (e.g. counting trailing rounds) cannot see past this.
+ */
+export const maxSessionRounds = 10
+
 export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
 
-  private maxRounds = 10
+  private maxRounds = maxSessionRounds
 
   constructor(
     topic: Topic,
@@ -452,6 +493,12 @@ export interface ICopilotContextProvider {
   provideContext?(): string
   /** List skill names that should be preloaded as part of current context. */
   providePreloadSkills?(): string[]
+  /**
+   * Whether this provider's context must survive truncation (see `getContextMessage`): critical
+   * context is placed after the truncatable ambient context, near the generation position, and
+   * is never cut. Reserve it for small, behavior-driving sections (e.g. per-round rules).
+   */
+  criticalContext?: boolean
 }
 
 /** A quick input represents a UI element (typically a button) which helps the user to quickly send some message */
@@ -490,6 +537,11 @@ export type CustomElementDefinition = {
   isRaw: boolean
   /** Component to render the tool in the UI. */
   component: Component
+  /**
+   * Whether the element renders nothing in the chat. A completed reply consisting of invisible
+   * elements only counts as silent — there is nothing to show the user.
+   */
+  invisible?: boolean
 }
 
 export type MarkdownElementDefinitions = {
@@ -549,6 +601,15 @@ export class Copilot extends Disposable {
   private contextProviders: ICopilotContextProvider[] = shallowReactive([])
   private quickInputProviders: IQuickInputProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
+  /**
+   * Tag names of elements that render nothing in the chat, accumulated across every registration.
+   * Invisibility is a stable property of an element type, so we never remove entries: this lets
+   * "is this round silent?" recognize a tag even after a level-gated element has been unregistered.
+   */
+  private invisibleTagNamesSet = new Set<string>()
+  get invisibleTagNames(): ReadonlySet<string> {
+    return this.invisibleTagNamesSet
+  }
   private toolMap = new Map<string, ToolDefinition>()
   markdownElements = shallowReactive<MarkdownElementDefinitions>({})
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
@@ -580,6 +641,50 @@ export class Copilot extends Disposable {
   private activeRef = localStorageRef('spx-gui-copilot-active', false)
   get active() {
     return this.activeRef.value
+  }
+
+  /**
+   * Whether the user explicitly collapsed the copilot (see `collapse`). While set, user events
+   * no longer auto-open the panel; opening the copilot again (by the user, or a new session)
+   * clears it.
+   */
+  private userCollapsedRef = localStorageRef('builder-copilot-user-collapsed', false)
+
+  /**
+   * How the copilot UI is presented:
+   * - `floating`: the default draggable trigger & panel.
+   * - `docked`: a fixed trigger at the bottom-right corner with the panel anchored above it.
+   * Features (e.g. tutorials) may dock the copilot during guided scenarios.
+   */
+  private uiModeRef = shallowRef<CopilotUIMode>('floating')
+  get uiMode() {
+    return this.uiModeRef.value
+  }
+  setUIMode(mode: CopilotUIMode) {
+    this.uiModeRef.value = mode
+  }
+
+  private visibleArtifactCountRef = shallowRef(0)
+  /**
+   * Whether any user-visible artifact produced by copilot output (a guidance modal, an
+   * in-editor code guide...) is currently on screen. Consumers (e.g. periodic perception)
+   * use this to tell "the copilot has something pending for the user" from "nothing shown".
+   */
+  get hasVisibleArtifacts() {
+    return this.visibleArtifactCountRef.value > 0
+  }
+  /**
+   * Mark a user-visible artifact as currently on screen. Returns a disposer to be called
+   * when the artifact is dismissed / completed.
+   */
+  addVisibleArtifact(): Disposer {
+    this.visibleArtifactCountRef.value++
+    let disposed = false
+    return () => {
+      if (disposed) return
+      disposed = true
+      this.visibleArtifactCountRef.value--
+    }
   }
 
   private currentSessionRef = shallowRef<Session | null>(null)
@@ -637,11 +742,19 @@ ${skillContents.join('\n\n')}`
 
   private async getContext(): Promise<string> {
     const contextParts = await Promise.all([
-      ...this.contextProviders.map((p) => p.provideContext?.()),
+      ...this.contextProviders.filter((p) => p.criticalContext !== true).map((p) => p.provideContext?.()),
       this.getSkillCatalogContext(),
       this.getPreloadSkillsContext()
     ])
     return contextParts.filter((s) => s != null && s.trim() !== '').join('\n\n')
+  }
+
+  private getCriticalContext(): string {
+    return this.contextProviders
+      .filter((p) => p.criticalContext === true)
+      .map((p) => p.provideContext?.())
+      .filter((s) => s != null && s.trim() !== '')
+      .join('\n\n')
   }
 
   private getCustomElementPrompt(customElement: CustomElementDefinition) {
@@ -671,7 +784,30 @@ ${topic.description}`
   }
 
   async getContextMessage(): Promise<UserTextMessage> {
-    const parts = [this.getCustomElementsPrompt(), await this.getContext(), this.getTopicPrompt()]
+    const customElementsPrompt = this.getCustomElementsPrompt()
+    const topicPrompt = this.getTopicPrompt()
+    const criticalContext = this.getCriticalContext()
+    let context = await this.getContext()
+
+    // The backend rejects a single message longer than `copilotMessageContentMaxLength`. When
+    // over budget, truncate the ambient context (UI info, project content, skill documents...):
+    // the custom-element definitions, the critical context (per-round rules) and the topic
+    // instructions drive the copilot's behavior and must stay intact.
+    const reserve = 200 // for the wrapper & joints below
+    const contextBudget =
+      apis.copilotMessageContentMaxLength -
+      reserve -
+      getStringLengthInCodePoints(customElementsPrompt) -
+      getStringLengthInCodePoints(criticalContext) -
+      getStringLengthInCodePoints(topicPrompt)
+    const contextCodePoints = Array.from(context)
+    if (contextCodePoints.length > contextBudget) {
+      const truncationNotice = '\n[...truncated due to the message length limit...]'
+      context =
+        contextCodePoints.slice(0, Math.max(0, contextBudget - truncationNotice.length)).join('') + truncationNotice
+    }
+
+    const parts = [customElementsPrompt, context, criticalContext, topicPrompt]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`
@@ -700,8 +836,17 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * Start a new session for the copilot.
    * If a session is already running, it will be ended first.
    */
-  async startSession(topic: Topic, userMessage?: Message): Promise<void> {
-    this.open()
+  async startSession(topic: Topic, userMessage?: Message, options?: { autoOpen?: boolean }): Promise<void> {
+    if (options?.autoOpen === false) {
+      // Start in the background — a feature (e.g. a tutorial course) is setting itself up silently.
+      // Closed, but with a clean slate: a collapse the user made against the PREVIOUS session must
+      // not keep this one from ever opening once it has something to show.
+      this.activeRef.value = false
+      this.userCollapsedRef.value = false
+    } else {
+      // A session usually starts because the user asked something, so show it.
+      this.open()
+    }
     this.endCurrentSession()
     const session = new Session(topic, this)
     this.currentSessionRef.value = session
@@ -755,12 +900,27 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */
   open() {
     this.checkIdleTimeout()
+    this.userCollapsedRef.value = false
     this.activeRef.value = true
   }
 
+  /**
+   * Hide the copilot panel. The current round keeps running in the background (hiding is not
+   * cancelling) — its result is there when the panel is reopened. To also stop the round, end the
+   * session instead.
+   */
   close() {
-    this.currentSession?.abortCurrentRound()
     this.activeRef.value = false
+  }
+
+  /**
+   * Close the copilot on the user's behalf. Unlike a programmatic `close`, user events will not
+   * auto-open the panel afterwards (the session keeps receiving them silently), until the
+   * copilot is opened again.
+   */
+  collapse() {
+    this.userCollapsedRef.value = true
+    this.close()
   }
 
   /**
@@ -784,12 +944,21 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /**
    * Notify the copilot of a user event.
    * If no session is running, nothing will happen.
+   *
+   * `ambient` marks background perception (editor activity, page/modal noise) as opposed to a
+   * meaningful lifecycle signal: ambient events are dropped while a copilot-produced artifact is
+   * on screen — the artifact is what the user is looking at, and a new event round would abort
+   * the in-flight round serving it (e.g. the course-completion comment).
    */
-  notifyUserEvent(name: LocaleMessage, detail: string): void {
+  notifyUserEvent(name: LocaleMessage, detail: string, options?: { autoOpen?: boolean; ambient?: boolean }): void {
     this.checkIdleTimeout()
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
-    this.open()
+    if (options?.ambient === true && this.hasVisibleArtifacts) return
+    // Respect an explicit collapse by the user: keep feeding events to the session (so the
+    // copilot keeps perceiving), but do not pop the panel open again.
+    const autoOpen = options?.autoOpen ?? this.currentSession.topic.autoOpenOnEvents ?? true
+    if (autoOpen && !this.userCollapsedRef.value) this.open()
     const userEventMessage: UserEventMessage = {
       type: 'event',
       role: 'user',
@@ -818,6 +987,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   registerCustomElement(customElement: CustomElementDefinition): Disposer {
     this.customElementMap.set(customElement.tagName, customElement)
+    if (customElement.invisible === true) this.invisibleTagNamesSet.add(customElement.tagName)
     return () => {
       if (this.customElementMap.get(customElement.tagName) === customElement) {
         this.customElementMap.delete(customElement.tagName)

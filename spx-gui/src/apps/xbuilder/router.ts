@@ -201,6 +201,14 @@ const routes: Array<RouteRecordRaw> = [
   }
 ]
 
+if (import.meta.env.DEV) {
+  // Programmatic harness for verifying course code against the real runtime (`window.courseRunner`).
+  routes.push({
+    path: '/devtools/course-runner',
+    component: () => import('./pages/devtools/course-runner.vue')
+  })
+}
+
 const router = createRouter({
   history: createWebHistory(''),
   routes

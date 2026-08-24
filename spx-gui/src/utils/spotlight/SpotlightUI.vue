@@ -62,6 +62,9 @@ const spotlightRef = ref<HTMLElement | null>(null)
 const placementRef = ref<Placement>(Placement.BOTTOM_RIGHT)
 const positionRef = ref<Position>(getDefaultPosition())
 const spotlightAnimated = ref(false)
+// Viewport rect of the revealed element, tracked for the mask cutout (see `.mask-cutout`)
+const maskRectRef = ref<DOMRect | null>(null)
+const maskCutoutPadding = 6
 
 const spotlight = useSpotlight()
 
@@ -77,68 +80,6 @@ function getRect(el: HTMLElement): Rect {
     width: rect.width,
     height: rect.height
   }
-}
-
-function setRectByPosition(rect: Rect, position: Position) {
-  const { x, y } = position
-  const { left, top, right, bottom, width, height } = rect
-  const offsetX = left - x
-  const offsety = top - y
-
-  return {
-    left: x,
-    top: y,
-    right: right + offsetX,
-    bottom: bottom + offsety,
-    width,
-    height
-  }
-}
-
-function correctSpotlightRect(placement: Placement, spotlightRect: Rect) {
-  let { top, left, bottom, right, width, height } = spotlightRect
-  width += anchorSize
-  right -= anchorSize
-  const tipsWidth = width - anchorSize
-  const tipsHeight = height - anchorSize
-
-  switch (placement) {
-    case Placement.TOP_RIGHT:
-      bottom += tipsHeight
-      top -= tipsHeight
-      break
-    case Placement.TOP_LEFT:
-      right += tipsWidth
-      left -= tipsWidth
-      top -= tipsHeight
-      bottom += tipsHeight
-      break
-    case Placement.BOTTOM_LEFT:
-      right += tipsWidth
-      left -= tipsWidth
-      break
-  }
-
-  return {
-    top,
-    left,
-    bottom,
-    right,
-    width,
-    height
-  }
-}
-
-function getPlacementByHalf(spotlightRect: Rect, lowerHalf: boolean) {
-  const placement = lowerHalf ? Placement.BOTTOM_RIGHT : Placement.TOP_RIGHT
-  const correctRect = correctSpotlightRect(placement, spotlightRect)
-  const { right } = correctRect
-  const conflictRight = right - conflictBuffer
-
-  if (lowerHalf) {
-    return conflictRight > 0 ? Placement.BOTTOM_RIGHT : Placement.BOTTOM_LEFT
-  }
-  return conflictRight > 0 ? Placement.TOP_RIGHT : Placement.TOP_LEFT
 }
 
 function getRevealPosition(revealRect: Rect, spotlightRect: Rect): Position {
@@ -177,13 +118,52 @@ function providerSpotlightEl() {
 function syncPlacementAndPosition() {
   const revealEl = providerRevealEl()
   const spotlightEl = providerSpotlightEl()
+  const revealElementRect = revealEl.getBoundingClientRect()
   const revealRect = getRect(revealEl)
   const spotlightRect = getRect(spotlightEl)
 
   const position = (positionRef.value = getRevealPosition(revealRect, spotlightRect))
-  placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
+  const edgePadding = 16
+  const tipsWidth =
+    spotlightEl.querySelector<HTMLElement>('.tips')?.getBoundingClientRect().width ?? spotlightRect.width
+  const tipsHeight =
+    spotlightEl.querySelector<HTMLElement>('.tips')?.getBoundingClientRect().height ?? spotlightRect.height
+  const gap = 16
+  const rightSpace = window.innerWidth - revealElementRect.right
+  const leftSpace = revealElementRect.left
+  const rightFits = rightSpace >= tipsWidth + gap + edgePadding
+  const useRight = rightFits || rightSpace >= leftSpace
+  const lowerSpace = window.innerHeight - revealElementRect.bottom
+  const upperSpace = revealElementRect.top
+  const lowerFits = lowerSpace >= tipsHeight + gap + edgePadding
+  const useLower = lowerFits || lowerSpace >= upperSpace
+
+  // Anchor the arrow outside the highlighted code instead of at its center. This keeps the code
+  // visible; only an unavailable side makes the bubble fall back to the opposite edge.
+  placementRef.value = useRight
+    ? useLower
+      ? Placement.BOTTOM_RIGHT
+      : Placement.TOP_RIGHT
+    : useLower
+      ? Placement.BOTTOM_LEFT
+      : Placement.TOP_LEFT
+  position.x = useRight ? revealElementRect.right + gap : revealElementRect.left - gap
+  position.y = useLower ? revealElementRect.bottom + gap : revealElementRect.top - gap
+
+  const horizontalOffset = anchorSize - anchorOffset[0]
+  if (useRight) {
+    position.x = Math.min(position.x, window.innerWidth - edgePadding - tipsWidth - horizontalOffset)
+  } else {
+    position.x = Math.max(position.x, edgePadding + tipsWidth + horizontalOffset)
+  }
+  if (useLower) {
+    position.y = Math.min(position.y, window.innerHeight - edgePadding - tipsHeight)
+  } else {
+    position.y = Math.max(position.y, edgePadding + tipsHeight + 2 * anchorSize - anchorOffset[1])
+  }
 
   spotlightEl.style.transform = `translateX(${position.x}px) translateY(${position.y}px)`
+  maskRectRef.value = revealEl.getBoundingClientRect()
 }
 
 function revealElement(revealEl: HTMLElement) {
@@ -225,7 +205,14 @@ const resizeObserver = new ResizeObserver(throttledHandleRefresh)
 watch(
   () => spotlightItem.value,
   (value, _, onCleanUp) => {
-    if (!value) return
+    if (!value) {
+      maskRectRef.value = null
+      return
+    }
+
+    // Take the rect synchronously so the mask shows even if the async position sync below is
+    // delayed; later syncs (scroll / resize) keep it up to date.
+    maskRectRef.value = value.el.getBoundingClientRect()
 
     // After the spotlight is concealed, if it is revealed again,
     // the positions of `center` and `reveal` will be recalculated — this position represents a portion of the distance between them.
@@ -239,10 +226,20 @@ watch(
       // If the distance is too short, animate from center to reveal
       positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
     }
-    requestAnimationFrame(() => {
+    // The spotlight element may not be mounted yet on the frame right after the item is set
+    // (e.g. when revealing during another item's leave transition) — retry on later frames
+    // instead of failing silently.
+    let revealAttempts = 0
+    const tryReveal = () => {
+      if (spotlightItem.value !== value) return // superseded by a newer reveal / conceal
+      if (spotlightRef.value == null) {
+        if (++revealAttempts <= 10) requestAnimationFrame(tryReveal)
+        return
+      }
       revealElement(value.el)
       spotlight.emit('revealed', { rect: value.el.getBoundingClientRect() })
-    })
+    }
+    requestAnimationFrame(tryReveal)
 
     resizeObserver.observe(document.body)
     document.body.addEventListener('scroll', throttledHandleScroll, { capture: true, passive: true })
@@ -260,6 +257,18 @@ watch(
 
 <template>
   <div class="spotlight-ui">
+    <Transition>
+      <div
+        v-if="spotlightItem?.mask && maskRectRef != null"
+        class="mask-cutout"
+        :style="{
+          left: `${maskRectRef.left - maskCutoutPadding}px`,
+          top: `${maskRectRef.top - maskCutoutPadding}px`,
+          width: `${maskRectRef.width + 2 * maskCutoutPadding}px`,
+          height: `${maskRectRef.height + 2 * maskCutoutPadding}px`
+        }"
+      ></div>
+    </Transition>
     <Transition>
       <div
         v-if="spotlightItem"
@@ -305,7 +314,7 @@ watch(
   --spotlight-z-index: 10000; /* TODO: Adjust as needed */
 
   position: absolute;
-  overflow: hidden;
+  overflow: visible;
   inset: 0;
   pointer-events: none;
   z-index: var(--spotlight-z-index);
@@ -313,6 +322,15 @@ watch(
 
 .spotlight-ui .spotlight-item {
   position: absolute;
+}
+
+/* Dims everything except the revealed element: the cutout sits over the element and the huge
+   blurred shadow covers the rest of the viewport, giving a soft (gradient) dark overlay. It
+   lives in the pointer-events-none spotlight layer, so it never blocks interactions. */
+.spotlight-ui .mask-cutout {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: 0 0 24px 100vmax rgba(15, 23, 42, 0.45);
 }
 
 .spotlight-ui .spotlight-item.animated {
@@ -394,8 +412,9 @@ watch(
   padding: 2px;
   font-size: 12px;
   background: var(--ui-color-grey-100);
-  word-wrap: break-word;
-  max-width: 300px;
+  width: max-content;
+  max-width: none;
+  white-space: nowrap;
   box-shadow: var(--ui-box-shadow-sm);
 }
 

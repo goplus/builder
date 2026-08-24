@@ -1,6 +1,11 @@
 <script lang="ts">
 export type CodeEditorUICtx = {
   ui: CodeEditorUIController
+  /**
+   * Whether the editor is in the simplified block style (tutorial focused mode): API reference
+   * items render as draggable blocks, and the in-place value-editing helper (the pencil) is off.
+   */
+  blockStyle: boolean
 }
 const codeEditorUICtxInjectionKey: InjectionKey<CodeEditorUICtx> = Symbol('code-editor-ui-ctx')
 export function useCodeEditorUICtx() {
@@ -12,7 +17,7 @@ export function useCodeEditorUICtx() {
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
+import { type InjectionKey, type Ref, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
 import { computedShallowReactive, untilNotNull, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { useI18n } from '@/utils/i18n'
@@ -34,13 +39,37 @@ import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
 import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
+import CodeGuideUI from './code-guide/CodeGuideUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
+import EditingDocumentThumbnail from './EditingDocumentThumbnail.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
 
-const props = defineProps<{
-  codeFilePath: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    codeFilePath: string
+    /**
+     * Fixed font size (px) for code. When set, it overrides the user-adjustable (zoomable,
+     * persisted) font size and the zoom control is hidden.
+     */
+    fontSize?: number | null
+    /** Whether to show the tools (document tabs & zoom control) beside the code editor. */
+    toolsVisible?: boolean
+    /** Render the API reference items as draggable blocks, see `APIReferenceUI`. */
+    apiReferenceBlockStyle?: boolean
+    /**
+     * Input types whose input helper (the value-edit pencil chip & the hover "Modify" button) is
+     * hidden — e.g. the tutorial hides it for plain literals. Empty means show it for all types.
+     */
+    inputHelperHiddenTypes?: string[]
+  }>(),
+  {
+    fontSize: null,
+    toolsVisible: true,
+    apiReferenceBlockStyle: false,
+    inputHelperHiddenTypes: () => []
+  }
+)
 
 const i18n = useI18n()
 const codeEditor = useCodeEditor()
@@ -70,14 +99,14 @@ const uiRef = computed(() => {
 })
 
 const initialFontSize = 12
-const fontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
+const userFontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
   theme,
   tabSize,
   insertSpaces,
-  fontSize: fontSize.value,
+  fontSize: props.fontSize ?? userFontSize.value,
   contextmenu: false
 }))
 
@@ -86,6 +115,16 @@ const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor
 }
+
+// Monaco applies construction options only on creation, so the font-size override needs to be
+// (re)applied when it changes while the editor is already mounted.
+watch(
+  () => [monacoEditorRef.value, props.fontSize] as const,
+  ([editor, fontSizeOverride]) => {
+    if (editor == null) return
+    editor.updateOptions({ fontSize: fontSizeOverride ?? userFontSize.value })
+  }
+)
 
 const handleMonacoEditorDrag = throttle((clientPoint: { x: number; y: number } | null) => {
   const ui = uiRef.value
@@ -126,6 +165,12 @@ async function handleMonacoEditorDrop(e: DragEvent) {
   const target = ui.editor.getTargetAtClientPoint(e.clientX, e.clientY)
   if (target == null || target.position == null) return
   const position = fromMonacoPosition(target.position)
+  // When dropping onto a blank but indented line (e.g. the line opened for a drag hint), land after the
+  // existing indentation so the inserted code keeps that indent instead of jumping to the line start.
+  const targetLineContent = ui.activeTextDocument?.getLineContent(position.line) ?? ''
+  if (targetLineContent !== '' && targetLineContent.trim() === '') {
+    position.column = targetLineContent.length + 1
+  }
   const range = { start: position, end: position }
   const ddi = getDdiDragData(e.dataTransfer)
   if (ddi != null) {
@@ -156,9 +201,10 @@ watch(
     ui.init(editor)
 
     ui.editor.onDidChangeConfiguration((e) => {
+      if (props.fontSize != null) return // Do not persist changes driven by the fixed override
       const fontSizeId = ui.monaco.editor.EditorOption.fontSize
       if (e.hasChanged(fontSizeId)) {
-        fontSize.value = ui.editor.getOptions().get(fontSizeId)
+        userFontSize.value = ui.editor.getOptions().get(fontSizeId)
       }
     })
 
@@ -171,52 +217,86 @@ watch(
 )
 
 const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
-  ui: uiRef.value
+  ui: uiRef.value,
+  blockStyle: props.apiReferenceBlockStyle
 }))
 provide(codeEditorUICtxInjectionKey, codeEditorUICtx)
+
+// Keep the input helper controller in sync with which input types hide their helper. `uiRef`
+// recreates the controller per code file, so re-apply whenever it or the prop changes.
+watchEffect(() => {
+  uiRef.value.inputHelperController.setHiddenTypes(props.inputHelperHiddenTypes)
+})
 
 // TOOD: use percentage instead of px as default width
 const defaultSidebarWidth = 280 // px
 const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
+const asideEl = ref<HTMLElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
+const blockResizeHandleEl = ref<HTMLDivElement>()
 const sidebarWidth = userLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
+/**
+ * Sidebar width in block style. `null` (the default) means the sidebar fits its content — it
+ * follows the widest API block, clamped below. Dragging the handle takes over with an explicit
+ * width; double-clicking the handle goes back to fit-content.
+ */
+const blockSidebarWidth = userLocalStorageRef<number | null>('spx-code-editor-block-sidebar-width', null)
 const isResizing = ref(false)
 
-watchEffect((onCleanup) => {
-  if (resizeHandleEl.value == null) return
-  const signal = getCleanupSignal(onCleanup)
-  let resizing = {
-    initialClientX: 0,
-    initialWidth: 0,
-    maxWidth: 0
+const asideStyle = computed(() => {
+  if (!props.apiReferenceBlockStyle) return { flexBasis: `${sidebarWidth.value}px` }
+  if (blockSidebarWidth.value != null) {
+    return { width: `${blockSidebarWidth.value}px`, maxWidth: `calc(100% - ${minMonacoEditorWidth}px)` }
   }
-  function handleMouseMove(e: MouseEvent) {
-    const offset = e.clientX - resizing.initialClientX
-    sidebarWidth.value = Math.min(Math.max(minSidebarWidth, resizing.initialWidth + offset), resizing.maxWidth)
-  }
-  function endResizing() {
-    isResizing.value = false
-    window.removeEventListener('mousemove', handleMouseMove)
-    window.removeEventListener('mouseup', endResizing)
-  }
-  resizeHandleEl.value.addEventListener(
-    'mousedown',
-    (e) => {
-      isResizing.value = true
-      resizing = {
-        initialClientX: e.clientX,
-        initialWidth: sidebarWidth.value,
-        maxWidth: codeEditorEl.value!.clientWidth - minMonacoEditorWidth
-      }
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', endResizing)
-    },
-    { signal }
-  )
-  signal.addEventListener('abort', endResizing)
+  // Fit the widest block, clamped so a long signature cannot squeeze the code area — beyond the
+  // clamp the list's own horizontal scroll takes over. `max-content` rather than `fit-content`:
+  // the latter collapses to the min clamp as a flex-item width here (Chrome), while the max-width
+  // already provides the available-space cap that `fit-content` would.
+  return { width: 'max-content', minWidth: '200px', maxWidth: '45%' }
 })
+
+function setupResizeHandle(handleElRef: Ref<HTMLDivElement | undefined>, applyWidth: (width: number) => void) {
+  watchEffect((onCleanup) => {
+    const handleEl = handleElRef.value
+    if (handleEl == null) return
+    const signal = getCleanupSignal(onCleanup)
+    let resizing = {
+      initialClientX: 0,
+      initialWidth: 0,
+      maxWidth: 0
+    }
+    function handleMouseMove(e: MouseEvent) {
+      const offset = e.clientX - resizing.initialClientX
+      applyWidth(Math.min(Math.max(minSidebarWidth, resizing.initialWidth + offset), resizing.maxWidth))
+    }
+    function endResizing() {
+      isResizing.value = false
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', endResizing)
+    }
+    handleEl.addEventListener(
+      'mousedown',
+      (e) => {
+        isResizing.value = true
+        resizing = {
+          initialClientX: e.clientX,
+          // The rendered width, so a drag starting from fit-content continues from where it is.
+          initialWidth: asideEl.value?.getBoundingClientRect().width ?? defaultSidebarWidth,
+          maxWidth: codeEditorEl.value!.clientWidth - minMonacoEditorWidth
+        }
+        window.addEventListener('mousemove', handleMouseMove)
+        window.addEventListener('mouseup', endResizing)
+      },
+      { signal }
+    )
+    signal.addEventListener('abort', endResizing)
+  })
+}
+
+setupResizeHandle(resizeHandleEl, (width) => (sidebarWidth.value = width))
+setupResizeHandle(blockResizeHandleEl, (width) => (blockSidebarWidth.value = width))
 
 function zoomIn() {
   uiRef.value.editor.trigger('keyboard', `editor.action.fontZoomIn`, {})
@@ -244,28 +324,55 @@ providePopupContainer(codeEditorEl)
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
     <aside
-      class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
-      :style="{ flexBasis: `${sidebarWidth}px` }"
+      ref="asideEl"
+      class="relative flex flex-none min-h-0 min-w-0 flex-col border-r border-r-dividing-line-2"
+      :style="asideStyle"
     >
-      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
+      <APIReferenceUI
+        class="flex-[1_1_0]"
+        :controller="uiRef.apiReferenceController"
+        :block-style="apiReferenceBlockStyle"
+      />
+      <div
+        v-if="apiReferenceBlockStyle"
+        ref="blockResizeHandleEl"
+        v-radar="{
+          name: 'Resize handle',
+          desc: 'Drag to resize the API references panel; double-click to fit its content'
+        }"
+        class="absolute -right-1.75 top-0 z-10 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
+        :class="{ 'bg-black/10': isResizing }"
+        @dblclick="blockSidebarWidth = null"
+      ></div>
     </aside>
     <div
+      v-if="!apiReferenceBlockStyle"
       ref="resizeHandleEl"
       v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
       :class="{ 'bg-black/10': isResizing }"
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
-    <MonacoEditorComp
-      v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
-      class="my-3 min-w-0 flex-[1_1_0]"
-      :monaco="codeEditor.monaco"
-      :options="monacoEditorOptions"
-      @init="handleMonacoEditorInit"
-      @dragover="handleMonacoEditorDragOver"
-      @dragleave="handleMonacoEditorDragLeave"
-      @drop="handleMonacoEditorDrop"
-    />
+    <!-- The thumbnail gets its own strip of padding rather than floating over the code: a long line
+         would otherwise run underneath it, and the character it hides is the one being read. -->
+    <div class="relative my-3 min-w-0 flex flex-[1_1_0] justify-stretch" :class="{ 'pr-14': !toolsVisible }">
+      <MonacoEditorComp
+        v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
+        class="min-w-0 flex-[1_1_0]"
+        :monaco="codeEditor.monaco"
+        :options="monacoEditorOptions"
+        @init="handleMonacoEditorInit"
+        @dragover="handleMonacoEditorDragOver"
+        @dragleave="handleMonacoEditorDragLeave"
+        @drop="handleMonacoEditorDrop"
+      />
+      <!-- Only without the tools: the document tabs carry the same image, larger and clickable, so
+           showing both would just be the same thumbnail twice. -->
+      <!-- Placed where the document tabs put the same thumbnail in the standard layout: 8px in from
+           the panel edge (their aside's `px-2`) and 12px down (its `py-3`, which `my-3` above
+           already supplies here). -->
+      <EditingDocumentThumbnail v-if="!toolsVisible" class="absolute right-2 top-0 z-1" />
+    </div>
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
@@ -273,9 +380,10 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
+    <CodeGuideUI :controller="uiRef.codeGuideController" />
+    <aside v-if="toolsVisible" class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+      <ZoomControl v-if="props.fontSize == null" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>

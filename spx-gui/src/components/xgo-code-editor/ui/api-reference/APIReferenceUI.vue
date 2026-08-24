@@ -30,9 +30,16 @@ import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
-const props = defineProps<{
-  controller: APIReferenceController
-}>()
+const props = withDefaults(
+  defineProps<{
+    controller: APIReferenceController
+    /** Render the items as draggable blocks (card look with a grip handle), e.g. for guided scenarios. */
+    blockStyle?: boolean
+  }>(),
+  {
+    blockStyle: false
+  }
+)
 
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
   // Ignore intermediate empty data to keep UI stable
@@ -69,6 +76,11 @@ const categoriesComputed = computed<MainCategory[] | null>((oldValue) => {
   }
   return result
 })
+
+// The category rail follows the same filtered items as the list below. Empty course categories
+// disappear together with their items, while clicking a remaining category still scrolls to its
+// matching code section.
+const categoryNavigation = computed(() => categoriesComputed.value ?? [])
 
 // Initially display only items of the first category to improve rendering performance. After a delay, display all items.
 // Delay is applied only for the first update (from empty to non-empty).
@@ -151,33 +163,50 @@ function handleCategoryClick(id: string) {
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
     class="flex min-h-0"
+    :class="{ 'api-reference-block-style': blockStyle }"
   >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
-        <li
-          v-for="c in categoriesComputed"
-          :key="c.id"
-          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
-          :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
-          @click="handleCategoryClick(c.id)"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="h-6 w-6" v-html="c.icon"></div>
-          <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
+      <ul
+        v-if="categoryNavigation.length > 0"
+        class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3"
+      >
+        <li v-for="c in categoryNavigation" :key="c.id" class="flex-none">
+          <button
+            type="button"
+            class="flex h-13 w-13 flex-col items-center justify-center rounded-md border-0 bg-transparent p-0 transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
+            :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
+            :aria-label="$t(c.label)"
+            :aria-current="c.id === activeCategoryIdRef ? 'true' : undefined"
+            @click="handleCategoryClick(c.id)"
+          >
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="h-6 w-6" v-html="c.icon"></div>
+            <span class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</span>
+          </button>
         </li>
       </ul>
-      <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
+      <ul
+        ref="itemsWrapperRef"
+        class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
+        :class="{ 'overflow-x-auto': blockStyle, 'pt-3': controller.filtered }"
+      >
         <li
           v-for="c in categoriesForItems"
           :key="c.id"
           :data-category-id="c.id"
           class="[&:last-child>section:last-child]:border-b-0"
         >
-          <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
-            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+          <section
+            v-for="sc in c.subCategories"
+            :key="sc.id"
+            :class="controller.filtered ? '' : 'border-b border-dashed border-grey-500'"
+          >
+            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">
+              {{ $t(sc.label) }}
+            </h5>
             <ul class="flex flex-col gap-md pb-5">
               <APIReferenceItemComp
                 v-for="item in sc.items"
@@ -192,3 +221,56 @@ function handleCategoryClick(id: string) {
     </template>
   </section>
 </template>
+
+<style scoped>
+/* Block style: each item reads as a draggable block — a card with a grip handle & grab cursor */
+.api-reference-block-style :deep(.api-reference-item) {
+  position: relative;
+  /* Hug the signature rather than stretching to the column; the list scrolls horizontally
+     when a block is wider than the (narrow) API column. */
+  align-self: flex-start;
+  max-width: none;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 10px 6px 26px;
+  border: 1px solid var(--ui-color-grey-500);
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  cursor: grab;
+}
+
+.api-reference-block-style :deep(.api-reference-item::before) {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 8px;
+  height: 16px;
+  background-image: radial-gradient(circle, var(--ui-color-grey-700) 1.5px, transparent 1.5px);
+  background-size: 4px 5px;
+  transform: translateY(-50%);
+  opacity: 0.65;
+}
+
+.api-reference-block-style :deep(.api-reference-item:hover) {
+  border-color: var(--ui-color-primary-main);
+  background: var(--ui-color-grey-100);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.api-reference-block-style :deep(.api-reference-item.before-dragging) {
+  cursor: grabbing;
+}
+
+/* Show the full signature on one line — the horizontal scroll reveals the overflow instead of `…`. */
+.api-reference-block-style :deep(.api-reference-item .overview) {
+  word-break: normal;
+}
+
+.api-reference-block-style :deep(.api-reference-item .overview > code) {
+  overflow: visible;
+  text-overflow: clip;
+}
+</style>
