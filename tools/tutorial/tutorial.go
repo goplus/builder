@@ -127,11 +127,16 @@ func (p *Course) Complete() {
 
 // CompleteWith 是带一句反馈的 Complete，语义完全相同。
 // 典型用法是先用 Copilot.generateText 根据学习者的最终代码生成评语，再传进来。
-func (p *Course) CompleteWith(message string) {
+//
+// wire 字段用 feedback 而不是泛泛的 content：这是与宿主原型（#3445）对齐过的约定，
+// 也更贴合"这是一句完成反馈"的语义。
+func (p *Course) CompleteWith(feedback string) {
 	if !p.courseProgram.markCompleted() {
 		return
 	}
-	p.courseProgram.mustCallCapability("course_completeWith", contentRequest{Content: message}, nil)
+	p.courseProgram.mustCallCapability("course_completeWith", struct {
+		Feedback string `json:"feedback"`
+	}{Feedback: feedback}, nil)
 }
 
 // Start 运行课程程序：先执行开场回调，然后进入事件循环。
