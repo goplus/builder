@@ -7,7 +7,7 @@ import { computed, reactive, watch, type ComputedRef, toValue, effectScope } fro
 
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
-import { Disposable, getCleanupSignal, getTimeoutSignal, mergeSignals, promiseForSignal } from '@/utils/disposable'
+import { Disposable, getCleanupSignal, withTimeout } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
 import { Cancelled, capture } from '@/utils/exception'
 import { getSpxProjectKnowledge } from '@/utils/spx'
@@ -341,12 +341,9 @@ export class SpxProject extends Disposable implements IProject {
   private updateThumbnail = debounce(async (signal?: AbortSignal) => {
     try {
       const reactiveThis = reactive(this) as this
-      if (reactiveThis.screenshotTaker == null) return
-      const [timeoutSignal, cancelTimeout] = getTimeoutSignal(screenshotTimeout)
-      reactiveThis.thumbnail = await Promise.race([
-        reactiveThis.screenshotTaker('thumbnail', mergeSignals(timeoutSignal, signal)),
-        promiseForSignal(timeoutSignal)
-      ]).finally(cancelTimeout)
+      const screenshotTaker = reactiveThis.screenshotTaker
+      if (screenshotTaker == null) return
+      reactiveThis.thumbnail = await withTimeout(screenshotTimeout, (s) => screenshotTaker('thumbnail', s), signal)
     } catch (e) {
       capture(e, 'failed to update thumbnail')
     }

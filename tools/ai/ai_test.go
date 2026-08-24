@@ -1,11 +1,121 @@
 package ai
 
 import (
+	"context"
 	"reflect"
 	"slices"
 	"sync"
 	"testing"
+	"time"
 )
+
+func TestPlayerThinkArchivesAfterNormalCompletion(t *testing.T) {
+	type archiveCommand struct{}
+
+	originalTransport := DefaultTransport()
+	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+	interactCalls := 0
+	archivedTurnCount := make(chan int, 1)
+	archiveMayFinish := make(chan struct{})
+	var releaseArchiveOnce sync.Once
+	releaseArchive := func() {
+		releaseArchiveOnce.Do(func() { close(archiveMayFinish) })
+	}
+	t.Cleanup(releaseArchive)
+	SetDefaultTransport(&mockTransport{
+		InteractFunc: func(_ context.Context, _ Request) (Response, error) {
+			interactCalls++
+			if interactCalls == 1 {
+				return Response{CommandName: reflect.TypeOf(archiveCommand{}).Name()}, nil
+			}
+			return Response{Text: "done"}, nil
+		},
+		ArchiveFunc: func(_ context.Context, turns []Turn, _ string) (ArchivedHistory, error) {
+			archivedTurnCount <- len(turns)
+			<-archiveMayFinish
+			return ArchivedHistory{Content: "archived"}, nil
+		},
+	})
+
+	// The two new turns bring history to the 30-turn threshold. Retaining at
+	// least 15 turns makes index 10 the latest eligible interaction boundary.
+	history := make([]Turn, 28)
+	for i := range history {
+		history[i].IsInitial = i%10 == 0
+	}
+	p := &Player{
+		errorHandler: func(err error) { t.Errorf("unexpected interaction error: %v", err) },
+		history:      history,
+	}
+	PlayerOnCmd_(p, archiveCommand{}, func(archiveCommand) error { return nil })
+
+	ctx, cancel := context.WithCancel(t.Context())
+	p.think(ctx, nil, "move", nil)
+
+	select {
+	case got := <-archivedTurnCount:
+		if want := 10; got != want {
+			t.Errorf("got %d archived turns, want %d", got, want)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("archive was not called after normal completion")
+	}
+	cancel()
+	releaseArchive()
+
+	deadline := time.Now().Add(time.Second)
+	for {
+		p.mu.RLock()
+		gotArchivedHistory := p.archivedHistory
+		gotHistoryLength := len(p.history)
+		p.mu.RUnlock()
+
+		if gotArchivedHistory == "archived" && gotHistoryLength == 20 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("archive was not applied: archived history %q, history length %d", gotArchivedHistory, gotHistoryLength)
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func TestPlayerThinkReportsTurnLimit(t *testing.T) {
+	type loopCommand struct{}
+
+	originalTransport := DefaultTransport()
+	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+	interactCalls := 0
+	SetDefaultTransport(&mockTransport{
+		InteractFunc: func(_ context.Context, req Request) (Response, error) {
+			if got, want := req.ContinuationTurn, interactCalls; got != want {
+				t.Errorf("got continuation turn %d, want %d", got, want)
+			}
+			interactCalls++
+			return Response{CommandName: reflect.TypeOf(loopCommand{}).Name()}, nil
+		},
+	})
+
+	errorCh := make(chan error, 1)
+	p := &Player{errorHandler: func(err error) { errorCh <- err }}
+	PlayerOnCmd_(p, loopCommand{}, func(loopCommand) error { return nil })
+
+	p.think(t.Context(), nil, "loop", nil)
+
+	if got, want := interactCalls, 20; got != want {
+		t.Errorf("got %d interaction calls, want %d", got, want)
+	}
+	select {
+	case err := <-errorCh:
+		if got, want := err.Error(), "ai interaction did not complete within 20 turns"; got != want {
+			t.Errorf("got error %q, want %q", got, want)
+		}
+	default:
+		t.Fatal("turn limit did not trigger error handler")
+	}
+}
 
 func TestPlayerAppendHistory(t *testing.T) {
 	for _, tt := range []struct {

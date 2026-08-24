@@ -163,7 +163,8 @@ function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
 <script lang="ts" setup>
 import dayjs from 'dayjs'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { capture, useMessageHandle } from '@/utils/exception'
+import { withTimeout } from '@/utils/disposable'
+import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useSignedInUser } from '@/stores/user'
@@ -180,6 +181,9 @@ import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
+
+// Code Editor operations may take a long time for some projects and block project execution.
+const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
 
 const editorCtx = useEditorCtx()
 const codeEditor = useCodeEditor()
@@ -287,7 +291,7 @@ function handleExit(code: number) {
 }
 
 async function checkAndNotifyCodeError() {
-  const r = await codeEditor.diagnosticWorkspace()
+  const r = await withTimeout(CODE_EDITOR_OPERATION_TIMEOUT, (signal) => codeEditor.diagnosticWorkspace(signal))
   const codeFilesWithError: LocaleMessage[] = []
   for (const item of r.items) {
     if (!item.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
@@ -308,8 +312,8 @@ async function checkAndNotifyMonitorError() {
   const { sprites, stage } = editorCtx.project
   const monitors = stage.widgets.filter((w) => w.type === 'monitor')
   const spriteNames = new Set(sprites.map((s) => s.name))
-  const invalidMonitors = await getInvalidMonitors(monitors, spriteNames, (target, signal) =>
-    codeEditor.getProperties(target, signal)
+  const invalidMonitors = await withTimeout(CODE_EDITOR_OPERATION_TIMEOUT, (signal) =>
+    getInvalidMonitors(monitors, spriteNames, (target, s) => codeEditor.getProperties(target, s), signal)
   )
   if (invalidMonitors.length === 0) return
   const monitorNames = humanizeListWithLimit(invalidMonitors.map((m) => ({ en: m.name, zh: m.name })))
@@ -320,6 +324,11 @@ async function checkAndNotifyMonitorError() {
       zh: `监视器 ${monitorNames.zh} 未配置有效的变量，运行时将无法正常显示，确定继续吗？`
     })
   })
+}
+
+async function checkAndNotifyPreRunErrors() {
+  await checkAndNotifyCodeError()
+  await checkAndNotifyMonitorError()
 }
 
 async function executeRun(action: 'run' | 'rerun') {
@@ -357,8 +366,11 @@ const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.pro
 
 const handleRun = useMessageHandle(
   async () => {
-    await checkAndNotifyCodeError()
-    await checkAndNotifyMonitorError()
+    await checkAndNotifyPreRunErrors().catch((error) => {
+      // Cancellation means the user declined to run; other check failures should not block project execution.
+      if (error instanceof Cancelled) throw error
+      capture(error, 'Failed to check project before running')
+    })
     await executeRun('run')
   },
   { en: 'Failed to run project', zh: '运行项目失败' }

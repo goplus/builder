@@ -1,7 +1,12 @@
 import { client, type ByPage, type PaginationParams } from './common'
 
 export const courseTitleMaxLength = 200
-export const coursePromptMaxLength = 4000
+/**
+ * A prompt carries the lesson text together with its scaffold code, reference answer and
+ * completion rules, so exercise and multi-sprite courses run several times longer than a plain
+ * lesson. Kept in step with the API contract in `docs/openapi.yaml`.
+ */
+export const coursePromptMaxLength = 12000
 
 export type Course = {
   /** Unique identifier */

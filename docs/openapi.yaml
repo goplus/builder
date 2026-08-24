@@ -7600,7 +7600,7 @@ components:
         prompt:
           description: Prompt text for the course (used for copilot assistance).
           type: string
-          maxLength: 4000
+          maxLength: 12000
           examples:
             - Learn the basics of XGo programming language
 

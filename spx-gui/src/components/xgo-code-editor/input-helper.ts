@@ -16,7 +16,7 @@ import type {
   ResourceInputSlotAccept,
   InputValueForType
 } from './common'
-import { BuiltInInputType, rangeContains } from './common'
+import { BuiltInInputType } from './common'
 import type { ILSPClient } from './lsp/types'
 import BooleanInput, * as booleanInput from './ui/input-helper/BooleanInput.vue'
 import IntegerInput, * as integerInput from './ui/input-helper/IntegerInput.vue'
@@ -82,13 +82,8 @@ export class InputHelperProvider implements IInputHelperProvider {
     private getResourceAdapter: () => IResourceAdapter
   ) {}
 
-  async provideInputSlots(ctx: InputHelperContext): Promise<InputSlot[]> {
-    const slots = await this.lspClient.getInputSlots({ signal: ctx.signal }, ctx.textDocument.id)
-    return slots.filter((slot) => {
-      // Filter out nested slots (keep only the outermost)
-      if (slots.some((s) => s !== slot && rangeContains(s.range, slot.range))) return false
-      return true
-    })
+  provideInputSlots(ctx: InputHelperContext): Promise<InputSlot[]> {
+    return this.lspClient.getInputSlots({ signal: ctx.signal }, ctx.textDocument.id)
   }
 
   provideInputTypeHandler(type: string): InputTypeHandler | null {
