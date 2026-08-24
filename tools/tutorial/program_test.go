@@ -148,7 +148,7 @@ func TestCompletionEndsTheProgram(t *testing.T) {
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Errorf("capability calls = %v, want %v", got, want)
 	}
-	if request, _ := host.requestOf("course_completeWith"); request != `{"feedback":"Nicely done."}` {
+	if request, _ := host.requestOf("course_completeWith"); request != `{"content":"Nicely done."}` {
 		t.Errorf("completeWith request = %s", request)
 	}
 }

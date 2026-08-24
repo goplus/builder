@@ -26,8 +26,8 @@ export function createMockTutorialHost(log: (message: string) => void): Tutorial
     async course_complete() {
       log('[host] complete')
     },
-    async course_completeWith(feedback) {
-      log(`[host] completeWith: ${feedback}`)
+    async course_completeWith(message) {
+      log(`[host] completeWith: ${message}`)
     },
     editor_codeEditor_filterAPIs(apis) {
       log(`[host] filterAPIs: ${apis.join(', ')}`)

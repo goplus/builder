@@ -31,7 +31,7 @@ export interface TutorialFrameworkHost {
   course_showMessage(message: string): Promise<void>;
   course_showVideo(videoName: string): Promise<void>;
   course_complete(): Promise<void>;
-  course_completeWith(feedback: string): Promise<void>;
+  course_completeWith(message: string): Promise<void>;
   editor_codeEditor_filterAPIs(apis: string[]): void;
   editor_codeEditor_formatWorkspace(): Promise<void>;
   editor_project_getCode(sprite: string): string;
@@ -56,7 +56,6 @@ type Framework = { name: string; capabilities: Record<string, Capability> };
 // 的序列化结构一一对应。改任何一边都必须同步另一边。
 type ContentRequest = { content: string };
 type VideoRequest = { videoName: string };
-type FeedbackRequest = { feedback: string };
 type SpriteRequest = { sprite: string };
 type FilterAPIsRequest = { apis: string[] };
 type GenerateJSONRequest = { content: string; schema: JSONSchema };
@@ -88,7 +87,7 @@ export function createTutorialFramework(
         host.course_showVideo((request as VideoRequest).videoName),
       course_complete: () => host.course_complete(),
       course_completeWith: (request) =>
-        host.course_completeWith((request as FeedbackRequest).feedback),
+        host.course_completeWith((request as ContentRequest).content),
       editor_codeEditor_filterAPIs: (request) =>
         host.editor_codeEditor_filterAPIs((request as FilterAPIsRequest).apis),
       editor_codeEditor_formatWorkspace: () =>

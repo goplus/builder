@@ -56,8 +56,7 @@ describe('createTutorialFramework', () => {
     await capabilities.course_showVideo({ videoName: 'step-to' })
     expect(host.course_showVideo).toHaveBeenCalledWith('step-to')
 
-    // completeWith 的字段是 feedback（与宿主原型 #3445 对齐过），不是泛泛的 content。
-    await capabilities.course_completeWith({ feedback: 'Nicely done.' })
+    await capabilities.course_completeWith({ content: 'Nicely done.' })
     expect(host.course_completeWith).toHaveBeenCalledWith('Nicely done.')
 
     capabilities.editor_codeEditor_filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo'] })
