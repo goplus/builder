@@ -12,7 +12,7 @@ import { useTutorial } from './tutorial'
 import TutorialCourseRow from './TutorialCourseRow.vue'
 import { useSignedInUser } from '@/stores/user'
 import { scrollCurrentCourseIntoView } from './tutorial-control-center'
-import { getTutorialChapter, getTutorialChapters } from './tutorial-chapters'
+import { getTutorialChapter, getTutorialChapters, getTutorialChapterTitle } from './tutorial-chapters'
 
 const emit = defineEmits<{
   /** Ask the host (the navbar dropdown) to close after a navigation. */
@@ -156,17 +156,11 @@ const { fn: handleRestartCourse } = useMessageHandle(
           v-if="getTutorialChapter(chapters, index + 1)?.start === index + 1"
           class="flex flex-none items-baseline gap-2 px-1 py-2 text-grey-700"
         >
-          <span class="w-12 flex-none text-xs font-normal text-grey-700">
-            {{ $t(getTutorialChapter(chapters, index + 1)!.shortTitle) }}
-          </span>
-          <span class="min-w-0 truncate text-sm font-medium text-text">
-            {{ $t(getTutorialChapter(chapters, index + 1)!.title) }}
-          </span>
-          <span class="ml-auto flex-none text-xs text-grey-600">
+          <span class="min-w-0 truncate text-[14px]! font-medium text-text">
             {{
               $t({
-                en: `Courses ${getTutorialChapter(chapters, index + 1)?.start}–${getTutorialChapter(chapters, index + 1)?.end}`,
-                zh: `第 ${getTutorialChapter(chapters, index + 1)?.start}–${getTutorialChapter(chapters, index + 1)?.end} 课`
+                en: getTutorialChapterTitle(getTutorialChapter(chapters, index + 1)!, 'en'),
+                zh: getTutorialChapterTitle(getTutorialChapter(chapters, index + 1)!, 'zh')
               })
             }}
           </span>

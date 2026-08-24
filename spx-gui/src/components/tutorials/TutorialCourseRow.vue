@@ -30,7 +30,8 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   <li
     v-radar="{ name: `Course: ${props.course.title}`, desc: 'Click to open this course' }"
     :aria-current="current ? 'step' : undefined"
-    class="flex h-11 flex-none cursor-pointer items-center gap-2 rounded-[6px] py-1 pl-1 pr-2 transition-colors hover:bg-grey-200"
+    class="flex h-11 flex-none cursor-pointer items-center gap-2 rounded-[6px] py-1 pl-1 pr-2 transition-colors"
+    :class="current ? 'bg-turquoise-100 hover:bg-turquoise-200' : 'hover:bg-grey-200'"
     @click="emit('select')"
   >
     <div
@@ -48,13 +49,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
     <span v-if="current" class="flex-none px-1 text-xs font-medium text-primary-main">{{
       $t({ en: 'in progress', zh: '进行中' })
     }}</span>
-    <UIButton
-      v-if="current"
-      class="ml-auto flex-none rounded-sm! px-2! text-sm!"
-      type="white"
-      size="small"
-      @click.stop="emit('restart')"
-    >
+    <UIButton v-if="current" class="ml-auto flex-none" type="white" size="small" @click.stop="emit('restart')">
       {{ $t({ en: 'Restart course', zh: '重新开始' }) }}
     </UIButton>
   </li>

@@ -103,3 +103,12 @@ export function getTutorialChapters(series: CourseSeries | null | undefined): Tu
 export function getTutorialChapter(chapters: TutorialChapter[], sequence: number) {
   return chapters.find((chapter) => sequence >= chapter.start && sequence <= chapter.end) ?? null
 }
+
+const chineseChapterNumbers = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+
+export function getTutorialChapterTitle(chapter: TutorialChapter, locale: 'en' | 'zh') {
+  if (locale === 'zh') {
+    return `${chineseChapterNumbers[chapter.number] ?? chapter.number}、${chapter.title.zh}`
+  }
+  return `Unit ${chapter.number}: ${chapter.title.en}`
+}
