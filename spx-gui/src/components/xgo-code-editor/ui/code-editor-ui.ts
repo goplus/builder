@@ -418,6 +418,10 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       return insert(content, range)
     }
 
+    // A command completing an object selector belongs at the cursor, e.g. `Boat.|// comment`.
+    // Keep the normal block insertion behavior for every other non-empty line.
+    if (isObjectMethodSelectorContext(lineCntBeforePos)) return insert(content, range)
+
     const lineEndPos = { line: pos.line, column: lineCnt.length + 1 }
     const lineCntAfterPos = textDocument.getValueInRange({ start: pos, end: lineEndPos })
 
@@ -770,4 +774,9 @@ function isPrecededByOpenBrace(s: string): boolean {
 
 function isFollowedByCloseBrace(s: string) {
   return /^\s*\}/.test(s)
+}
+
+function isObjectMethodSelectorContext(s: string) {
+  if (/["'`]/.test(s) || s.includes('//') || s.includes('/*') || s.includes('*/')) return false
+  return /(?:^|[^\p{L}\p{N}_$])[\p{L}_$][\p{L}\p{N}_$]*(?:\s*\.\s*[\p{L}_$][\p{L}\p{N}_$]*)*\s*\.\s*$/u.test(s)
 }
