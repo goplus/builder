@@ -46,8 +46,9 @@ async function runCase(index: number) {
   const exited = new Promise<XGoExitReason>((resolve) => {
     resolveExited = resolve
   })
+  let timeoutId: ReturnType<typeof setTimeout>
   const timeout = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error(`no exit within ${CASE_TIMEOUT_MS}ms`)), CASE_TIMEOUT_MS)
+    timeoutId = setTimeout(() => reject(new Error(`no exit within ${CASE_TIMEOUT_MS}ms`)), CASE_TIMEOUT_MS)
   })
 
   const log = (message: string) => addOutput(`[${courseCase.name}] ${message}`)
@@ -74,6 +75,7 @@ async function runCase(index: number) {
   } catch (error) {
     results.value[index] = { status: 'failed', detail: String(error) }
   } finally {
+    clearTimeout(timeoutId!)
     currentExecutor = null
     await executor.stop()
   }
