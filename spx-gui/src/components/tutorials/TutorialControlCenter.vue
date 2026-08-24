@@ -12,6 +12,7 @@ import { useTutorial } from './tutorial'
 import TutorialCourseRow from './TutorialCourseRow.vue'
 import { useSignedInUser } from '@/stores/user'
 import { scrollCurrentCourseIntoView } from './tutorial-control-center'
+import { getTutorialChapter, getTutorialChapters } from './tutorial-chapters'
 
 const emit = defineEmits<{
   /** Ask the host (the navbar dropdown) to close after a navigation. */
@@ -45,6 +46,7 @@ const courses = useAsyncComputed(async () => {
   const coursesById = new Map(result.data.map((course) => [course.id, course]))
   return ids.map((id) => coursesById.get(id)).filter((course) => course != null)
 })
+const chapters = computed(() => getTutorialChapters(series.value))
 
 watch(
   [courses, currentCourseId],
@@ -149,16 +151,30 @@ const { fn: handleRestartCourse } = useMessageHandle(
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
     <ul ref="courseListRef" class="min-h-0 flex-1 flex flex-col gap-2 overflow-y-auto p-1">
-      <TutorialCourseRow
-        v-for="(course, index) in courses ?? []"
-        :key="course.id"
-        :course="course"
-        :sequence="index + 1"
-        :thumbnail="projectThumbnails?.get(course.id)"
-        :current="course.id === currentCourseId"
-        @select="selectCourse(course.id)"
-        @restart="handleRestartCourse"
-      />
+      <template v-for="(course, index) in courses ?? []" :key="course.id">
+        <li
+          v-if="getTutorialChapter(chapters, index + 1)?.start === index + 1"
+          class="flex flex-none items-baseline gap-2 px-1 py-2 text-grey-700"
+        >
+          <span class="flex-none text-sm font-medium text-text">
+            {{ $t(getTutorialChapter(chapters, index + 1)!.shortTitle) }}
+          </span>
+          <span class="min-w-0 truncate text-xs">
+            {{ $t(getTutorialChapter(chapters, index + 1)!.title) }}
+          </span>
+          <span class="ml-auto flex-none text-xs text-grey-600">
+            {{ getTutorialChapter(chapters, index + 1)?.start }}–{{ getTutorialChapter(chapters, index + 1)?.end }}
+          </span>
+        </li>
+        <TutorialCourseRow
+          :course="course"
+          :sequence="index + 1"
+          :thumbnail="projectThumbnails?.get(course.id)"
+          :current="course.id === currentCourseId"
+          @select="selectCourse(course.id)"
+          @restart="handleRestartCourse"
+        />
+      </template>
     </ul>
 
     <footer class="flex-none p-2">

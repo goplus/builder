@@ -9,7 +9,7 @@ import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/community/TextView.vue'
 import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
-import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
+import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, UITab, UITabs, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt } from '@/utils/route'
@@ -17,6 +17,7 @@ import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 // TODO: Temporary background, replace with the latest assets
 import stageBg from '@/assets/images/stage-bg.svg'
+import { getTutorialChapters, type TutorialChapter } from '@/components/tutorials/tutorial-chapters'
 
 const coursePadding = 20
 const numInColumn = 2
@@ -55,18 +56,23 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 })
 
 const page = useRouteQueryParamInt('p', 1)
+const selectedChapterId = useRouteQueryParamInt('chapter', 0, (params) => ({ ...params, p: null }))
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
-const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
+const chapters = computed(() => getTutorialChapters(courseSeries.value))
+const selectedChapter = computed(
+  () => chapters.value.find((chapter) => chapter.start === selectedChapterId.value) ?? null
+)
+const chapterTabValue = computed(() => selectedChapter.value?.id ?? 'all')
 
 const courseQuery = useQuery(
   async (ctx) => {
     return listCourses(
       {
         courseSeriesID: props.courseSeriesIdInput,
-        pageIndex: page.value,
-        pageSize: pageSize.value,
+        pageIndex: 1,
+        pageSize: 100,
         orderBy: 'sequenceInCourseSeries'
       },
       ctx.signal
@@ -74,6 +80,28 @@ const courseQuery = useQuery(
   },
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
 )
+
+const visibleCourses = computed(() => {
+  const allCourses = courseQuery.data.value?.data ?? []
+  const indexedCourses = allCourses.map((course, index) => ({ course, sequence: index + 1 }))
+  if (selectedChapter.value == null) return indexedCourses
+  return indexedCourses.filter(({ sequence }) => {
+    return sequence >= selectedChapter.value!.start && sequence <= selectedChapter.value!.end
+  })
+})
+const pageTotal = computed(() => Math.ceil(visibleCourses.value.length / pageSize.value))
+const pagedCourses = computed(() => {
+  const start = (page.value - 1) * pageSize.value
+  return visibleCourses.value.slice(start, start + pageSize.value)
+})
+
+function selectChapter(chapter: TutorialChapter | null) {
+  selectedChapterId.value = chapter?.start ?? 0
+}
+
+function selectChapterTab(value: string) {
+  selectChapter(value === 'all' ? null : chapters.value.find((chapter) => chapter.id === value) ?? null)
+}
 </script>
 
 <template>
@@ -115,7 +143,35 @@ const courseQuery = useQuery(
         </div>
       </UICard>
 
-      <div class="mt-7 flex flex-col">
+      <nav v-if="chapters.length > 0" aria-label="Course chapters" class="mt-5 overflow-x-auto">
+        <UITabs :value="chapterTabValue" class="min-w-max gap-6! px-2!" @update:value="selectChapterTab">
+          <UITab value="all" class="text-[13px]! leading-6! px-2! pt-2! pb-1.5!">
+            {{ $t({ en: 'All courses', zh: '全部课程' }) }}
+          </UITab>
+          <UITab
+            v-for="chapter in chapters"
+            :key="chapter.id"
+            :value="chapter.id"
+            class="text-[13px]! leading-6! px-2! pt-2! pb-1.5!"
+          >
+            {{ $t(chapter.shortTitle) }}
+          </UITab>
+        </UITabs>
+      </nav>
+
+      <div v-if="selectedChapter != null" class="mt-6 flex items-baseline gap-3">
+        <h3 class="text-lg font-medium text-title">{{ $t(selectedChapter.title) }}</h3>
+        <span class="text-sm text-grey-700">
+          {{
+            $t({
+              en: `Courses ${selectedChapter.start}–${selectedChapter.end}`,
+              zh: `第 ${selectedChapter.start}–${selectedChapter.end} 课`
+            })
+          }}
+        </span>
+      </div>
+
+      <div :class="selectedChapter == null ? 'mt-7' : 'mt-4'" class="flex flex-col">
         <div v-if="courseSeries" :style="{ '--num-in-row': numInRow }">
           <ListResultWrapper :query-ret="courseQuery" :height="height">
             <template #empty="{ style }">
@@ -128,16 +184,16 @@ const courseQuery = useQuery(
                 }}
               </UIEmpty>
             </template>
-            <template #default="{ data }">
+            <template #default>
               <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-5">
                 <!-- a tag (rendered by router-link) are used for: link preview on hover, context menu support, and better accessibility -->
                 <RouterLink
-                  v-for="course in data.data"
-                  :key="course.id"
-                  :to="`/course/${courseSeries.id}/${course.id}/start`"
+                  v-for="item in pagedCourses"
+                  :key="item.course.id"
+                  :to="`/course/${courseSeries.id}/${item.course.id}/start`"
                   class="no-underline"
                 >
-                  <CourseItem :course="course" />
+                  <CourseItem :course="item.course" />
                 </RouterLink>
               </ul>
             </template>
