@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { XGoExecutor } from '@/utils/xgoexec'
-import { createTutorialFramework, type TutorialFrameworkHost } from '@/utils/tutorial-framework'
+import { createTutorialFramework } from '@/utils/tutorial-framework'
 import { UIButton, UICard, UITextInput } from '@/components/ui'
+import { createMockTutorialHost } from './tutorial-mock-host'
 import exampleCourseSource from '../../../../../../docs/develop/tutorial-v2/example-tutorial-course/main_course.gox?raw'
 
 const PLAIN_XGO_SOURCE = `
@@ -14,73 +16,13 @@ for {
 }
 `
 
-// The learner code the mock host hands back to the Course program, standing in
-// for what `editor_project_getCode` would read from the real project model.
-const MOCK_LEARNER_CODE = `onClick => {
-	stepTo Mushroom
-}
-`
-
-// Mock TutorialFrameworkHost: logs every capability call and answers with
-// canned values, so the docs example course can run end-to-end through the
-// real wasm bridge before the real host (Tutorial module) exists.
-function createMockHost(): TutorialFrameworkHost {
-  return {
-    async course_showPrelude(preludeMessage) {
-      addOutput(`[host] showPrelude: ${preludeMessage}`)
-    },
-    async course_showMessage(message) {
-      addOutput(`[host] showMessage: ${message}`)
-    },
-    async course_showVideo(videoName) {
-      addOutput(`[host] showVideo: ${videoName}`)
-    },
-    async course_complete() {
-      addOutput('[host] complete')
-    },
-    async course_completeWith(feedback) {
-      addOutput(`[host] completeWith: ${feedback}`)
-    },
-    editor_codeEditor_filterAPIs(apis) {
-      addOutput(`[host] filterAPIs: ${apis.join(', ')}`)
-    },
-    async editor_codeEditor_formatWorkspace() {
-      addOutput('[host] formatWorkspace')
-    },
-    editor_project_getCode(sprite) {
-      addOutput(`[host] getCode: ${sprite}`)
-      return MOCK_LEARNER_CODE
-    },
-    editor_project_listSprites() {
-      addOutput('[host] listSprites')
-      return ['Lita', 'Mushroom']
-    },
-    editor_ruler_show() {
-      addOutput('[host] ruler.show')
-    },
-    editor_ruler_hide() {
-      addOutput('[host] ruler.hide')
-    },
-    async copilot_generateText(message) {
-      addOutput(`[host] generateText: ${message}`)
-      return 'You used stepTo to walk Lita right up to the mushroom.'
-    },
-    async copilot_generateJSON(message, schema) {
-      addOutput(`[host] generateJSON: ${message} (schema: ${JSON.stringify(schema)})`)
-      return {}
-    },
-    async spotlight_reveal(target, tip, options) {
-      addOutput(`[host] spotlight.reveal: ${target} (tip: ${tip}, options: ${JSON.stringify(options)})`)
-    }
-  }
-}
-
-const tutorialFramework = createTutorialFramework(createMockHost())
+const tutorialFramework = createTutorialFramework(createMockTutorialHost((message) => addOutput(message)))
 
 const plainStatus = ref('idle')
 const tutorialStatus = ref('idle')
 const output = ref<string[]>([])
 const runtimeLog = ref('reached-target')
+const courseSource = ref(exampleCourseSource)
 let plainExecutor: XGoExecutor | null = null
 let tutorialExecutor: XGoExecutor | null = null
 
@@ -125,7 +67,7 @@ async function runTutorial() {
     }
   })
   try {
-    await tutorialExecutor.run({ 'main_course.gox': exampleCourseSource })
+    await tutorialExecutor.run({ 'main_course.gox': courseSource.value })
     if (tutorialStatus.value === 'starting') tutorialStatus.value = 'running'
   } catch (error) {
     tutorialStatus.value = String(error)
@@ -134,6 +76,16 @@ async function runTutorial() {
 
 async function stopAll() {
   await Promise.all([plainExecutor?.stop(), tutorialExecutor?.stop()])
+}
+
+function loadExampleCourse() {
+  courseSource.value = exampleCourseSource
+}
+
+function statusClass(status: string) {
+  if (status === 'exited: completed') return 'text-success-main'
+  if (status.includes('error')) return 'text-danger-main'
+  return ''
 }
 
 async function dispatchRuntimeLog() {
@@ -155,8 +107,9 @@ onBeforeUnmount(() => {
   <main class="mx-auto max-w-3xl p-8">
     <h1 class="mb-2 text-2xl font-semibold">XGo executor debug</h1>
     <p class="mb-6 text-sm text-grey-700">
-      Validate the isolated executor and the current Tutorial class framework. "Run Tutorial" runs the docs example
-      course against a mock TutorialFrameworkHost.
+      Validate the isolated executor and the current Tutorial class framework. "Run Tutorial" runs the course source
+      below (prefilled with the docs example) against a mock TutorialFrameworkHost. For scripted multi-course runs see
+      <RouterLink class="underline" to="/debug/tutorial-courses">tutorial course cases</RouterLink>.
     </p>
 
     <UICard class="space-y-5 p-6">
@@ -175,8 +128,20 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="grid grid-cols-2 gap-4 text-sm">
-        <div>XGo: {{ plainStatus }}</div>
-        <div>Tutorial: {{ tutorialStatus }}</div>
+        <div>
+          XGo: <span :class="statusClass(plainStatus)">{{ plainStatus }}</span>
+        </div>
+        <div>
+          Tutorial: <span :class="statusClass(tutorialStatus)">{{ tutorialStatus }}</span>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-sm">Course source (main_course.gox)</span>
+          <UIButton type="neutral" @click="loadExampleCourse">Load example course</UIButton>
+        </div>
+        <UITextInput v-model:value="courseSource" type="textarea" :rows="14" class="font-mono" />
       </div>
 
       <div class="flex gap-3">
