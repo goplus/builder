@@ -12,6 +12,11 @@ declare module 'monaco-editor' {
       // It is actually supported while not in the type definition
       onDidType: (callback: (text: string) => void) => monaco.IDisposable
     }
+
+    interface IMouseTargetContentTextData {
+      // It is available at runtime while missing from the type definition
+      readonly injectedText: { readonly options: InjectedTextOptions } | null
+    }
   }
 }
 
