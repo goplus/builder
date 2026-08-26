@@ -1,5 +1,6 @@
 <script lang="ts">
 import { headingToScreenDeg, segmentScreenDeg, turnAngle, type Pos } from './ruler-math'
+import { clampLabelToRect, getVisibleMapRect, type LabelLayout } from './ruler-layout'
 import { color } from '@/components/ui/tokens'
 
 export type { Pos }
@@ -33,6 +34,7 @@ const labelFontSize = 13
 const labelLineHeight = 22
 const labelHorizontalPadding = 6
 const labelCornerRadius = 35
+const labelBoundaryPadding = 4
 // Measurement label placement rules:
 // - distance values sit above the grey measurement segment;
 // - near-straight angle values sit below that segment so the two pills form two rows;
@@ -59,6 +61,8 @@ const props = defineProps<{
   /** Position of the map layer, which the ruler follows so measurements stay pinned while panning. */
   mapPos: Pos
   mapSize: { width: number; height: number }
+  /** Size of the visible stage viewport, in the same unscaled coordinates as `mapPos`. */
+  viewportSize: { width: number; height: number }
   /** Points the endpoints stick to, in map coordinates. */
   snapTargets: RulerSnapTarget[]
 }>()
@@ -173,7 +177,15 @@ function screenDegToVector(deg: number): Pos {
   return { x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }
 }
 
-type LabelLayout = Pos & { width: number; height: number; text: string }
+/** Visible portion of the map, expressed in map coordinates after camera panning. */
+const visibleMapRect = computed(() => ({
+  ...getVisibleMapRect(props.mapPos, props.mapSize, props.viewportSize)
+}))
+
+/** Keep a measurement label fully inside the stage viewport, including its rounded background. */
+function clampLabelToViewport(layout: LabelLayout): LabelLayout {
+  return clampLabelToRect(layout, visibleMapRect.value, labelBoundaryPadding)
+}
 
 function getLabelSize(text: string) {
   const textNode = new Konva.Text({ text, fontFamily: 'Inter', fontSize: labelFontSize, fontStyle: '500' })
@@ -228,7 +240,7 @@ function clearOfAngleLines(layout: LabelLayout): boolean {
 
 const distanceLabelLayout = computed<LabelLayout | null>(() => {
   if (measurement.value == null) return null
-  return getLineLabelLayout(measurement.value.from, measurement.value.to, `${distance.value}`)
+  return clampLabelToViewport(getLineLabelLayout(measurement.value.from, measurement.value.to, `${distance.value}`))
 })
 
 /**
@@ -328,7 +340,7 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
   // Near-zero angles use the shared "above the measurement line" rule because
   // their arc sector collapses onto the line. Wider angles follow the angle
   // bisector outside the arc, while remaining inside the 180-degree sector.
-  const safeCandidates = candidates
+  const safeCandidates = candidates.map(clampLabelToViewport)
   // For a nearly straight angle, the value intentionally sits on the opposite
   // side of the coincident rays, so the generic radial-clearance test would
   // reject the two-row placement as if it were covering a wide-angle boundary.
@@ -343,11 +355,13 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
   // outside-arc offset while keeping the value close to its angle sector.
   for (let distance = 8; distance <= 96; distance += 8) {
     for (const direction of [1, -1]) {
-      const shifted = offsetAlongMeasurementLine(lineSafeCandidates[0] ?? safeCandidates[0], distance * direction)
+      const shifted = clampLabelToViewport(
+        offsetAlongMeasurementLine(lineSafeCandidates[0] ?? safeCandidates[0], distance * direction)
+      )
       if (!rectsOverlap(shifted, distanceLabelLayout.value, 6)) return shifted
     }
   }
-  return offsetAlongMeasurementLine(lineSafeCandidates[0] ?? safeCandidates[0], 104)
+  return clampLabelToViewport(offsetAlongMeasurementLine(lineSafeCandidates[0] ?? safeCandidates[0], 104))
 })
 </script>
 
