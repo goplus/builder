@@ -80,6 +80,14 @@ export class Tutorial {
     return this.courseOpeningStepsRef.value[this.courseOpeningIndexRef.value] ?? null
   }
 
+  get courseOpeningStepIndex(): number {
+    return this.courseOpeningIndexRef.value
+  }
+
+  get courseOpeningStepCount(): number {
+    return this.courseOpeningStepsRef.value.length
+  }
+
   /**
    * Intervention tracking of the running course. Owned by `TutorialRoot` (which creates it per
    * course) and surfaced here so the tutorial's own UI — e.g. the navbar course menu — can show

@@ -78,6 +78,36 @@ describe('Tutorial', () => {
       expect(copilot.startSession).toHaveBeenCalledOnce()
     })
 
+    it.each([1, 2, 3])('should advance %i opening windows before activating the course', async (stepCount) => {
+      const copilot = makeCopilot()
+      const tutorial = new Tutorial(
+        copilot,
+        makeRouter(async () => undefined),
+        ref(true)
+      )
+      const opening = Array.from({ length: stepCount }, (_, index) => ({
+        kind: 'story-video' as const,
+        src: `/story-${index}.mp4`
+      }))
+
+      await tutorial.prepareCourse(makeCourse(), makeCourseSeries(), opening)
+      expect(tutorial.courseOpeningStepCount).toBe(stepCount)
+      expect(tutorial.courseOpeningStepIndex).toBe(0)
+      expect(tutorial.courseActivated).toBe(false)
+
+      for (let index = 0; index < stepCount - 1; index++) {
+        await tutorial.advanceCourseOpening()
+        expect(tutorial.courseOpeningStepIndex).toBe(index + 1)
+        expect(tutorial.courseActivated).toBe(false)
+        expect(copilot.startSession).not.toHaveBeenCalled()
+      }
+
+      await tutorial.advanceCourseOpening()
+      expect(tutorial.currentCourseOpeningStep).toBeNull()
+      expect(tutorial.courseActivated).toBe(true)
+      expect(copilot.startSession).toHaveBeenCalledOnce()
+    })
+
     it('should start a session whose topic hides code in chat', async () => {
       const copilot = makeCopilot()
       const tutorial = new Tutorial(

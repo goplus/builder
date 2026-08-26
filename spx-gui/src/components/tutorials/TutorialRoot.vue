@@ -98,6 +98,10 @@ const currentOpeningStep = computed(() =>
     ? openingStepsRef.value[openingIndexRef.value] ?? null
     : null
 )
+const currentOpeningPosition = computed(() => ({
+  index: openingIndexRef.value,
+  count: openingStepsRef.value.length
+}))
 
 /**
  * The hint shown when a run reached the goal without meeting the course's secondary goal. Null
@@ -390,24 +394,31 @@ provideTutorial(tutorial)
     v-if="currentCourseOpeningStep?.kind === 'story-video'"
     visible
     :src="currentCourseOpeningStep.src"
+    :step-index="tutorial.courseOpeningStepIndex"
+    :step-count="tutorial.courseOpeningStepCount"
     @continue="handleCourseOpeningContinue"
   />
   <TutorialPreludeModal
     v-else-if="currentCourseOpeningStep?.kind === 'prelude'"
     visible
     :text="currentCourseOpeningStep.text"
+    :step-index="tutorial.courseOpeningStepIndex"
+    :step-count="tutorial.courseOpeningStepCount"
     @continue="handleCourseOpeningContinue"
   />
   <TutorialPreludeModal
     v-else-if="currentOpeningStep?.kind === 'prelude'"
     visible
     :text="currentOpeningStep.text"
+    :step-index="currentOpeningPosition.index"
+    :step-count="currentOpeningPosition.count"
     @continue="advanceOpening()"
   />
   <ApiVideoModal
     v-else-if="currentOpeningStep?.kind === 'video'"
     :video="currentOpeningStep.info"
     visible
+    :opening="currentOpeningPosition"
     @close="handleVideoClose(currentOpeningStep)"
   />
   <TutorialCourseRetryModal

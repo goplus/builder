@@ -52,9 +52,27 @@ describe('tutorial video modals', () => {
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
+  it('uses the opening action for an API video in a multi-window opening', async () => {
+    const wrapper = mount(ApiVideoModal, {
+      props: {
+        visible: false,
+        video: {
+          title: { en: 'step', zh: 'step 前进' },
+          src: '/videos/step.mp4'
+        },
+        opening: { stepIndex: 0, stepCount: 2 }
+      },
+      global
+    })
+
+    expect(wrapper.get('[data-testid="continue"]').text()).toBe('下一步')
+    await wrapper.get('[data-testid="continue"]').trigger('click')
+    expect(wrapper.emitted('close')).toHaveLength(1)
+  })
+
   it('requires the start button to dismiss the story video', async () => {
     const wrapper = mount(TutorialStoryVideoModal, {
-      props: { visible: false, src: '/videos/story.mp4' },
+      props: { visible: false, src: '/videos/story.mp4', stepIndex: 0, stepCount: 1 },
       global
     })
 
@@ -65,7 +83,7 @@ describe('tutorial video modals', () => {
       'data-type': 'primary',
       'data-size': 'large'
     })
-    expect(wrapper.get('[data-testid="continue"]').text()).toBe('开始课程')
+    expect(wrapper.get('[data-testid="continue"]').text()).toBe('开始')
 
     await wrapper.get('[data-testid="mask"]').trigger('click')
     expect(wrapper.emitted('continue')).toBeUndefined()
@@ -76,7 +94,7 @@ describe('tutorial video modals', () => {
 
   it('starts with sound enabled and lets the learner mute the story video', async () => {
     const wrapper = mount(TutorialStoryVideoModal, {
-      props: { visible: false, src: '/videos/story.mp4' },
+      props: { visible: false, src: '/videos/story.mp4', stepIndex: 0, stepCount: 1 },
       global
     })
 

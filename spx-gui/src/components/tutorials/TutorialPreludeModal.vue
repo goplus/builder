@@ -17,12 +17,19 @@ export function extractCoursePrelude(prompt: string): string | null {
 import { UIButton, UIModal } from '@/components/ui'
 import MarkdownView from '@/components/copilot/MarkdownView.vue'
 import tutorialIllustration from '@/assets/images/tutorial-guide-illustration-v3.svg'
+import { getOpeningActionMessage } from './tutorial-opening'
 
-defineProps<{
-  visible: boolean
-  /** The guide text to show. Markdown — course authors name code in backticks. */
-  text: string
-}>()
+withDefaults(
+  defineProps<{
+    visible: boolean
+    /** The guide text to show. Markdown — course authors name code in backticks. */
+    text: string
+    /** Position in the queue of windows that are actually rendered for this opening. */
+    stepIndex?: number
+    stepCount?: number
+  }>(),
+  { stepIndex: 0, stepCount: 1 }
+)
 
 const emit = defineEmits<{
   /** Emitted when the user confirms the guide and the course should continue. */
@@ -62,7 +69,7 @@ function handleContinue() {
         size="large"
         @click="handleContinue"
       >
-        {{ $t({ en: 'Start', zh: '开始' }) }}
+        {{ $t(getOpeningActionMessage(stepIndex, stepCount)) }}
       </UIButton>
     </div>
   </UIModal>
