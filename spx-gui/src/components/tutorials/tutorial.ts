@@ -25,6 +25,9 @@ import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from 
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 
+/** How long the success dialog waits after the completion signal (see `revealedCompletion`). */
+const completionRevealDelay = 1000
+
 export function useTutorial() {
   const tutorial = inject(tutorialKey)
   if (tutorial == null) {
@@ -93,31 +96,64 @@ export class Tutorial {
   /**
    * Course completion. Driven by a completion signal — a runtime sentinel for `judge: "code"`
    * courses, or the copilot for `judge: "copilot"` ones. Set once; the success dialog renders from
-   * it immediately (no LLM wait) and the copilot's evaluation fills `completionComment` afterwards.
+   * it (no LLM wait) and the copilot's evaluation fills `completionComment` afterwards.
    */
   private completionRef = shallowRef<{ course: Course; series: CourseSeries } | null>(null)
   private commentRef = ref<string | null>(null)
+  private completionRevealedRef = ref(false)
+  private completionRevealTimer: ReturnType<typeof setTimeout> | null = null
   get completion() {
     return this.completionRef.value
+  }
+  /**
+   * The completion the success dialog renders from: `completion`, one beat later. The completion
+   * signal fires the frame the sprite touches its goal, and popping the dialog that instant robs
+   * the user of watching the pickup actually happen — so the dialog waits, while everything that
+   * protects the evaluation round (the ambient-event gate, the copilot's "Course completed"
+   * event) keys on the undelayed `completion`.
+   */
+  get revealedCompletion() {
+    return this.completionRevealedRef.value ? this.completionRef.value : null
   }
   get completionComment() {
     return this.commentRef.value
   }
 
-  /** Called when the completion signal arrives. Shows the dialog now; the comment fills in later. */
-  markCourseComplete(comment?: string) {
+  /**
+   * Called when the completion signal arrives. Shows the dialog now; the comment fills in later.
+   *
+   * `learnerCode` is the code the user actually has when the goal is reached. It is passed along
+   * to the copilot rather than left for it to recall: asked to comment without it, the copilot
+   * describes the course's reference answer instead — crediting the learner with a construct they
+   * never wrote, which is the one thing this sentence must not do.
+   */
+  markCourseComplete(comment?: string, learnerCode?: string | null) {
     const course = this.currentCourse
     const series = this.currentSeries
     if (course == null || series == null || this.completionRef.value != null) return
     this.completionRef.value = { course, series }
-    this.commentRef.value = comment ?? null
-    // Code-judged completion carries no comment, so ask the copilot to evaluate asynchronously —
-    // the comment is not on the critical path to celebrating, so the dialog does not wait for it.
-    // Copilot-judged completion already provides its comment with the signal.
-    if (comment == null) {
+    this.completionRevealedRef.value = false
+    this.completionRevealTimer = setTimeout(() => {
+      this.completionRevealTimer = null
+      if (this.completionRef.value != null) this.completionRevealedRef.value = true
+    }, completionRevealDelay)
+    // A blank comment counts as no comment: an empty attribute must not leave the dialog stuck
+    // showing nothing when the async request below could fill it.
+    const normalized = comment?.trim() ?? ''
+    this.commentRef.value = normalized !== '' ? normalized : null
+    // A completion signal without a comment (code-judged completion, or a copilot declaration
+    // that omitted it) asks the copilot to evaluate asynchronously — the comment is not on the
+    // critical path to celebrating, so the dialog does not wait for it.
+    if (this.commentRef.value == null) {
+      const code = learnerCode?.trim() ?? ''
+      const codeSection =
+        code === ''
+          ? ''
+          : `\n\nThis is the code the user finished with — the ONLY evidence of what they did, and often not the course's reference answer:\n\n\`\`\`\n${code}\n\`\`\``
       this.copilot.notifyUserEvent(
         { en: 'Course completed', zh: '课程完成' },
-        'The course is now complete. Reply with ONE short, friendly sentence evaluating what the user did; it fills the comment in the success dialog already shown. Prose only (besides your usual invisible progress verdict) — no other tags, no <tutorial-course-success>.',
+        "The course is now complete: the success dialog is opening with an EMPTY comment area waiting. The plain prose of your reply IS that comment — it is displayed in the dialog and NOWHERE else (this round is hidden from chat). Reply with ONE short, friendly sentence in the user's language about what the user did — never naming a construct their code does not contain. No analysis, no second sentence. No tags besides your usual invisible progress verdict — no <tutorial-course-success> (the dialog is already up), and NEVER <stay-silent> (it would leave the comment area blank)." +
+          codeSection,
         { autoOpen: false }
       )
     }
@@ -129,8 +165,13 @@ export class Tutorial {
   }
 
   dismissCompletion() {
+    if (this.completionRevealTimer != null) {
+      clearTimeout(this.completionRevealTimer)
+      this.completionRevealTimer = null
+    }
     this.completionRef.value = null
     this.commentRef.value = null
+    this.completionRevealedRef.value = false
   }
 
   private abandonPredictionCountRef = ref(0)
@@ -328,7 +369,12 @@ Then let the user explore on their own. While they work:
 
 **The "Course completed" event**
 
-When the running game reaches the course goal it declares completion itself: you receive a "Course completed" event and the success dialog is ALREADY open in front of the user. This one event breaks the silence — reply with exactly ONE short, friendly sentence in the user's language evaluating what the user did, because it fills the comment area of the dialog they are looking at. It is prose, not an announcement of success (the dialog already announced it): do NOT add <${tutorialCourseSuccessTagName}> and do NOT add <${staySilentTagName}> (one would double up the dialog, the other would hide your sentence). Emit only that sentence, plus your usual invisible progress verdict. Never react this way to any other event, and never send this sentence for a course you judge yourself.
+When the success dialog opens without a comment — the running game reached the course goal on its own, or your own <${tutorialCourseSuccessTagName}> declaration omitted the comment — you receive a "Course completed" event. The dialog is ALREADY open in front of the user, its comment area empty and waiting. This one event breaks the silence — the plain prose of your reply is displayed in the dialog's comment area and NOWHERE else (the round itself stays hidden from chat). Write it yourself, to these rules:
+
+1. **One sentence**, in the user's language. No analysis, no second sentence, no preamble.
+2. **Only what their code contains.** The event carries the code they finished with — that is the evidence. Never name a construct that is not in it. If the course taught \`stepTo\` and they arrived with \`step\` and a measured number, the sentence is about measuring and stepping.
+3. **Say what it accomplished**, tying it to the course's point when their solution used it — the reward is being seen, not being praised. No exclamation marks, no gushing; the dialog already celebrates.
+4. **Never assign more work** — the course is over. (A course may ask you to name a construct the learner skipped; that is a remark about what they did, not homework.) It is prose, not an announcement of success (the dialog already announced it): do NOT add <${tutorialCourseSuccessTagName}> and do NOT add <${staySilentTagName}> (one would double up the dialog, the other would leave the comment area blank). Emit only that sentence, plus your usual invisible progress verdict. This applies regardless of who judged completion. Trailing ambient events (more game output, the game exiting) may supersede the round carrying this event — whenever a recent "Course completed" event has not yet been answered with its sentence, your current reply must carry it, no matter which event triggered the round. Outside of that, never send such a sentence.
 
 **Staying Silent (the default reaction to user events)**
 
