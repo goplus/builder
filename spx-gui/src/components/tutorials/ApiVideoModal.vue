@@ -5,10 +5,13 @@ import { nextTick, onMounted, ref, watch } from 'vue'
 import { UIButton, UIIcon, UIModal } from '@/components/ui'
 import type { ApiVideoInfo } from './api-videos'
 import { handlePlayWithSound, useVideoAspect } from './video-aspect'
+import { getOpeningActionMessage } from './tutorial-opening'
 
 const props = defineProps<{
   video: ApiVideoInfo
   visible: boolean
+  /** Set only when this video is one of the course's opening windows. */
+  opening?: { stepIndex: number; stepCount: number }
 }>()
 
 const emit = defineEmits<{
@@ -107,7 +110,13 @@ const { aspectStyle, handleLoadedMetadata } = useVideoAspect(4 / 3)
       </div>
 
       <UIButton type="primary" size="large" @click="emit('close')">
-        {{ $t({ en: 'Continue', zh: '继续进行' }) }}
+        {{
+          $t(
+            props.opening == null
+              ? { en: 'Continue', zh: '继续进行' }
+              : getOpeningActionMessage(props.opening.stepIndex, props.opening.stepCount)
+          )
+        }}
       </UIButton>
     </div>
   </UIModal>
