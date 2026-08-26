@@ -77,6 +77,7 @@
         :active="rulerActive"
         :map-pos="mapPos"
         :map-size="mapSize"
+        :viewport-size="viewportSize"
         :snap-targets="rulerSnapTargets"
       />
     </v-stage>
