@@ -19,12 +19,19 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 
 import { UIButton, UIIcon, UIModal } from '@/components/ui'
 import { handlePlayWithSound, useVideoAspect } from './video-aspect'
+import { getOpeningActionMessage } from './tutorial-opening'
 
-const props = defineProps<{
-  visible: boolean
-  /** URL of the story video. */
-  src: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    visible: boolean
+    /** URL of the story video. */
+    src: string
+    /** Position in the queue of windows that are actually rendered for this opening. */
+    stepIndex?: number
+    stepCount?: number
+  }>(),
+  { stepIndex: 0, stepCount: 1 }
+)
 
 const emit = defineEmits<{
   /** Emitted when the user finishes or skips the video and the course should start. */
@@ -202,7 +209,7 @@ function handleContinue() {
       </div>
 
       <UIButton type="primary" size="large" @click="handleContinue">
-        {{ $t({ en: 'Start the course', zh: '开始课程' }) }}
+        {{ $t(getOpeningActionMessage(stepIndex, stepCount)) }}
       </UIButton>
     </div>
   </UIModal>
