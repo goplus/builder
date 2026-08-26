@@ -245,7 +245,7 @@ function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { computed, nextTick, onBeforeUnmount, ref, watch, watchEffect } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
