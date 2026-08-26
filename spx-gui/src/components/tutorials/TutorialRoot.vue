@@ -100,8 +100,8 @@ const currentOpeningStep = computed(() =>
     : null
 )
 const currentOpeningPosition = computed(() => ({
-  index: openingIndexRef.value,
-  count: openingStepsRef.value.length
+  stepIndex: openingIndexRef.value,
+  stepCount: openingStepsRef.value.length
 }))
 
 /**
@@ -447,8 +447,8 @@ provideTutorial(tutorial)
     v-else-if="currentOpeningStep?.kind === 'prelude'"
     visible
     :text="currentOpeningStep.text"
-    :step-index="currentOpeningPosition.index"
-    :step-count="currentOpeningPosition.count"
+    :step-index="currentOpeningPosition.stepIndex"
+    :step-count="currentOpeningPosition.stepCount"
     @continue="advanceOpening()"
   />
   <ApiVideoModal
