@@ -8,6 +8,14 @@ export const courseTitleMaxLength = 200
  */
 export const coursePromptMaxLength = 12000
 
+export type ProjectReference = {
+  type: 'project'
+  /** Full name of the project, in the format `owner/project`. */
+  fullName: string
+}
+
+export type Reference = ProjectReference // We may support more reference types in the future
+
 export type Course = {
   /** Unique identifier */
   id: string
@@ -19,6 +27,8 @@ export type Course = {
   thumbnail: string
   /** Starting URL of the course */
   entrypoint: string
+  /** References used by the course prompt. Older API responses may omit this when empty. */
+  references: Reference[]
   /** Prompt (for copilot) of the course */
   prompt: string
 }
