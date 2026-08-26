@@ -1,5 +1,6 @@
 <script lang="ts">
 import spxPackage from '@xgo-pkgs/spx/package.json'
+import { instrumentSpxSource } from './spx-source-instrumentation'
 
 const ispxWasmUrl = new URL('@/assets/wasm/ispx.wasm', import.meta.url).href
 // TODO: Importing runner.html as a Vite asset would give us a hashed immutable
@@ -50,39 +51,6 @@ type RunnerFile = {
  */
 type RunnerFiles = {
   [path: string]: RunnerFile
-}
-
-const executionMarkerPrefix = '__XB_EXEC__'
-
-/**
- * Add source markers to the transient files sent to the runner. The editor's original files are
- * never changed; markers exist only so the browser can correlate runtime activity with a line.
- */
-function instrumentSpxSource(path: string, source: string): string {
-  const lines = source.split(/\r?\n/)
-  const hasFmtImport = lines.some((line) => /^\s*(?:import\b.*fmt|fmt\s+"fmt")/.test(line))
-  const instrumented = lines.flatMap((line, index) => {
-    const trimmed = line.trim()
-    const isExecutable =
-      trimmed !== '' &&
-      !trimmed.startsWith('//') &&
-      !trimmed.startsWith('/*') &&
-      !trimmed.startsWith('*') &&
-      !trimmed.startsWith('import ') &&
-      !trimmed.startsWith('package ') &&
-      trimmed !== '{' &&
-      trimmed !== '}'
-    if (!isExecutable) return [line]
-    const indent = line.slice(0, line.length - line.trimStart().length)
-    const startMarker = `${executionMarkerPrefix}start:${path}:${index + 1}`
-    const endMarker = `${executionMarkerPrefix}end:${path}:${index + 1}`
-    const canMarkCompletion = !trimmed.endsWith('{') && !trimmed.endsWith('}')
-    const result = [`${indent}fmt.Println(${JSON.stringify(startMarker)})`, line]
-    if (canMarkCompletion) result.push(`${indent}fmt.Println(${JSON.stringify(endMarker)})`)
-    return result
-  })
-  if (!hasFmtImport) instrumented.unshift('import "fmt"')
-  return instrumented.join('\n')
 }
 
 interface RunnerIframeWindow extends Window {
