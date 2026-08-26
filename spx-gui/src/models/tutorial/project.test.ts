@@ -21,7 +21,7 @@ function makeFiles(): Files {
   return {
     'index.json': fromConfig('index.json', {
       project: { type: 'spx', root: 'project' },
-      inEditorRoute: '/simple/sprites/Lita',
+      inEditorPath: '/simple/sprites/Lita',
       copilotContext: 'Help the learner.'
     }),
     [mainCourseFilePath]: fromText(mainCourseFilePath, 'onStart => {}'),

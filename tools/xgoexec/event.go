@@ -3,7 +3,6 @@ package xgoexec
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
 )
 
@@ -28,7 +27,7 @@ func DispatchEvent(name string, payload []byte) error {
 	handler := eventState.handlers[name]
 	eventState.RUnlock()
 	if handler == nil {
-		return fmt.Errorf("event %q has no registered handler", name)
+		return nil
 	}
 	return handler(payload)
 }

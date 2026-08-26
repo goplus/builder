@@ -1,8 +1,9 @@
 import { onMounted, defineComponent } from 'vue'
 import { z } from 'zod'
 
-import { useTutorial } from './tutorial'
 import type { CustomElementDefinition } from '@/components/copilot/copilot'
+
+import { useGuidedTutorial } from './guided-tutorial'
 
 type Props = {}
 
@@ -18,7 +19,7 @@ add <${predictionTagName} /> at the beginning of your message to trigger an aban
   attributes: z.object({}),
   component: defineComponent<Props>(
     () => {
-      const tutorial = useTutorial()
+      const tutorial = useGuidedTutorial()
       onMounted(() => {
         const count = tutorial.predictAbandon()
         if (count > maxAbandonPredictionCount) {
@@ -46,7 +47,7 @@ add <${dismissalTagName} /> at the beginning of your message to dismiss the aban
   attributes: z.object({}),
   component: defineComponent<Props>(
     () => {
-      const tutorial = useTutorial()
+      const tutorial = useGuidedTutorial()
       onMounted(() => tutorial.dismissAbandon())
 
       return function render() {

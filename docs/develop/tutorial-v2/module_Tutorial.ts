@@ -1,7 +1,5 @@
-import type { Course, CourseSeries } from "./module_CourseApis";
-
 /**
- * Owns Course lifecycle; kind-specific behavior remains internal.
+ * Enters and ends Courses; kind-specific loading and behavior remain internal.
  *
  * For a Playground Course, Tutorial interprets how the run ended from the
  * executor's exit reason together with whether the Course program requested
@@ -12,11 +10,8 @@ import type { Course, CourseSeries } from "./module_CourseApis";
  * failed.
  */
 export interface Tutorial {
-  readonly currentCourse: Course | null;
-  readonly currentSeries: CourseSeries | null;
-  /** Starts one loaded Course. Playground editor composition remains caller-owned. */
-  startCourse(course: Course, series: CourseSeries | null): Promise<void>;
-  /** Walks a Course Series using the supplied Course snapshots. */
-  startCourseSeries(series: CourseSeries, courses: Course[]): Promise<void>;
+  /** Loads the identified Course and Course Series, then enters the appropriate runtime. */
+  startCourse(courseSeriesID: string, courseID: string): Promise<void>;
+  /** Ends Guided state or exits the active Playground route to its Course Series. */
   endCurrentCourse(): Promise<void>;
 }

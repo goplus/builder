@@ -22,11 +22,12 @@ export const attributes = z.object({})
 <script setup lang="ts">
 import { onMounted } from 'vue'
 
-import { useTutorial } from './tutorial'
 import { useCopilot } from '@/components/copilot/context'
 import { useModal } from '@/components/ui'
 
-const tutorial = useTutorial()
+import { useGuidedTutorial } from './guided-tutorial'
+
+const tutorial = useGuidedTutorial()
 const copilot = useCopilot()
 const open = useModal(TutorialCourseSuccessModal)
 
@@ -35,7 +36,7 @@ onMounted(async () => {
     throw new Error('No course or series in progress')
   }
   await timeout(500)
-  open({ tutorial, course: tutorial.currentCourse, series: tutorial.currentSeries })
+  open({ course: tutorial.currentCourse, series: tutorial.currentSeries })
   copilot.close()
   tutorial.endCurrentCourse()
 })

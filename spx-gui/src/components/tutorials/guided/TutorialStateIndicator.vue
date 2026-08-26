@@ -5,11 +5,12 @@ export const name = 'tutorial-state-indicator'
 <script lang="ts" setup>
 import { computed } from 'vue'
 
-import { useTutorial } from '@/components/tutorials/tutorial'
 import { UIDropdownWithTooltip, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 
-const tutorial = useTutorial()
+import { useGuidedTutorial } from './guided-tutorial'
+
+const tutorial = useGuidedTutorial()
 
 const course = computed(() => {
   return tutorial.currentCourse

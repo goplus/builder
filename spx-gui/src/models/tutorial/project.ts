@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 
-import type { PlaygroundCourseData } from '@/apis/course'
+import type { PlaygroundCourse } from '@/apis/course'
 import { getFiles } from '@/models/common/cloud'
 import { assign } from '@/models/common'
 import { fromConfig, prefixFiles, toConfig, unprefixFiles, type Files } from '@/models/common/file'
@@ -18,12 +18,12 @@ export type TutorialProjectConfig = {
     root: string
   }
   /** The route initially displayed in the editor. */
-  inEditorRoute: string
+  inEditorPath: string
   /** Copilot instructions supplied by the course author. */
   copilotContext: string
 }
 
-export type TutorialProjectMetadata = Omit<PlaygroundCourseData, 'content'>
+export type TutorialProjectMetadata = Omit<PlaygroundCourse, 'content'>
 
 export type TutorialProjectSerialized = {
   metadata: TutorialProjectMetadata
@@ -55,7 +55,7 @@ export class TutorialProject {
     return reactive(this) as this
   }
 
-  static async load(course: PlaygroundCourseData) {
+  static async load(course: PlaygroundCourse) {
     const project = new TutorialProject()
     await project.load({ metadata: course, files: getFiles(course.content) })
     return project
