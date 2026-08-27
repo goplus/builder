@@ -2837,6 +2837,9 @@ paths:
       description: |
         Create a new course owned by the authenticated user.
 
+        The request either provides `kind` and `content`, or uses the transitional legacy flat shape (`entrypoint` and
+        `prompt` without `kind` and `content`, treated as a guided course) accepted until the API contract release.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can create courses.
@@ -2849,13 +2852,15 @@ paths:
               required:
                 - title
                 - thumbnail
-                - entrypoint
-                - prompt
               properties:
+                kind:
+                  $ref: "#/components/schemas/Course/properties/kind"
                 title:
                   $ref: "#/components/schemas/Course/properties/title"
                 thumbnail:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
+                content:
+                  $ref: "#/components/schemas/Course/properties/content"
                 entrypoint:
                   $ref: "#/components/schemas/Course/properties/entrypoint"
                 prompt:
@@ -2882,6 +2887,67 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /user/courses/playground/copilot-context:
+    post:
+      operationId: generatePlaygroundCourseCopilotContext
+      tags:
+        - Courses
+      summary: Generate a playground course copilot context
+      description: |
+        Generate an editable Copilot context draft from the author's current, possibly unsaved, playground course
+        content.
+
+        Permission requirements:
+
+        - Only users with the `courseAdmin` role can generate course copilot contexts.
+
+        Quota and rate limits:
+
+        - Each generation consumes 1 quota from the authenticated user's `copilotMessage` allowance; the quota is
+          refunded when generation fails.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                content:
+                  description: Current, possibly unsaved, playground course content mapping file paths to universal URLs.
+                  type: object
+                  minProperties: 1
+                  additionalProperties:
+                    type: string
+                    format: uri-reference
+      responses:
+        "200":
+          description: Successfully generated the copilot context.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - copilotContext
+                properties:
+                  copilotContext:
+                    description: Generated copilot context, editable by the author before saving.
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
 
   /courses/{courseID}:
     get:
@@ -2919,6 +2985,9 @@ paths:
       description: |
         Update the details of a specific course.
 
+        The course kind is immutable: a `kind` field is accepted only when it matches the course's current kind, and the
+        transitional legacy fields (`entrypoint`, `prompt`) apply only to guided courses when `content` is absent.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can update courses.
@@ -2937,10 +3006,14 @@ paths:
               type: object
               minProperties: 1
               properties:
+                kind:
+                  $ref: "#/components/schemas/Course/properties/kind"
                 title:
                   $ref: "#/components/schemas/Course/properties/title"
                 thumbnail:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
+                content:
+                  $ref: "#/components/schemas/Course/properties/content"
                 entrypoint:
                   $ref: "#/components/schemas/Course/properties/entrypoint"
                 prompt:
@@ -3060,6 +3133,11 @@ paths:
         - {}
         - bearerAuth: []
       parameters:
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -3103,6 +3181,11 @@ paths:
       summary: List course series owned by the authenticated user
       description: Retrieve a list of course series owned by the authenticated user.
       parameters:
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -3147,6 +3230,8 @@ paths:
       description: |
         Create a new course series owned by the authenticated user.
 
+        Omitting `kind` means a guided series (transitional legacy shape, accepted until the API contract release).
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can create course series.
@@ -3162,6 +3247,8 @@ paths:
                 - courseIDs
                 - order
               properties:
+                kind:
+                  $ref: "#/components/schemas/CourseSeries/properties/kind"
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
                 thumbnail:
@@ -3251,6 +3338,8 @@ paths:
               type: object
               minProperties: 1
               properties:
+                kind:
+                  $ref: "#/components/schemas/CourseSeries/properties/kind"
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
                 thumbnail:
@@ -3321,6 +3410,11 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -7562,8 +7656,10 @@ components:
         - createdAt
         - updatedAt
         - owner
+        - kind
         - title
         - thumbnail
+        - content
         - entrypoint
         - prompt
       properties:
@@ -7576,6 +7672,14 @@ components:
         owner:
           description: Username of the course's owner.
           $ref: "#/components/schemas/User/properties/username"
+        kind:
+          description: Kind of the course, deciding how the course is driven and what its content holds. Immutable after creation.
+          type: string
+          enum:
+            - guided
+            - playground
+          examples:
+            - guided
         title:
           description: Title of the course.
           type: string
@@ -7590,15 +7694,30 @@ components:
           minLength: 1
           examples:
             - kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
+        content:
+          description: |
+            Kind-specific course content. For a `guided` course it holds the guided course data (`entrypoint` and `prompt`);
+            for a `playground` course it is a file collection mapping file paths to universal URLs. The API validates only
+            the top-level shape (and, for `playground`, that every value is a universal URL); internals follow the Tutorial
+            content-format contract and stay opaque to the API and storage.
+          type: object
+          examples:
+            - entrypoint: /editor/john/loop
+              prompt: Learn the basics of XGo programming language
         entrypoint:
-          description: Starting entrypoint of the course.
+          description: |
+            Starting entrypoint of the course. Transitional top-level copy of the guided course content, kept so pre-kind
+            clients keep working; empty for playground courses. Removed by the API contract release.
+          deprecated: true
           type: string
           format: uri-reference
-          minLength: 1
           examples:
             - /editor/john/loop
         prompt:
-          description: Prompt text for the course (used for copilot assistance).
+          description: |
+            Prompt text for the course (used for copilot assistance). Transitional top-level copy of the guided course
+            content; empty for playground courses. Removed by the API contract release.
+          deprecated: true
           type: string
           maxLength: 12000
           examples:
@@ -7612,6 +7731,7 @@ components:
         - createdAt
         - updatedAt
         - owner
+        - kind
         - title
         - thumbnail
         - description
@@ -7627,6 +7747,16 @@ components:
         owner:
           description: Username of the course series' owner.
           $ref: "#/components/schemas/User/properties/username"
+        kind:
+          description: |
+            Kind of the courses in this series; a course series holds courses of exactly one kind. Changing it requires
+            every course in the series to have the new kind.
+          type: string
+          enum:
+            - guided
+            - playground
+          examples:
+            - guided
         title:
           description: Title of the course series.
           type: string
