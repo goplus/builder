@@ -5,20 +5,34 @@ import { createTutorialFramework, type TutorialFrameworkHost } from './tutorial-
 // 这里守住 TS 半边不与之漂移。任何一侧改动都应让本文件先红。
 function makeHost(): TutorialFrameworkHost {
   return {
-    course_showPrelude: vi.fn(async () => {}),
-    course_showMessage: vi.fn(async () => {}),
-    course_showVideo: vi.fn(async () => {}),
-    course_complete: vi.fn(async () => {}),
-    course_completeWith: vi.fn(async () => {}),
-    editor_codeEditor_filterAPIs: vi.fn(),
-    editor_codeEditor_formatWorkspace: vi.fn(async () => {}),
-    editor_project_getCode: vi.fn(() => 'stepTo Mushroom'),
-    editor_project_listSprites: vi.fn(() => ['Lita', 'Mushroom']),
-    editor_ruler_show: vi.fn(),
-    editor_ruler_hide: vi.fn(),
-    copilot_generateText: vi.fn(async () => 'nice work'),
-    copilot_generateJSON: vi.fn(async () => ({ praise: 'used stepTo' })),
-    spotlight_reveal: vi.fn(async () => {})
+    course: {
+      showPrelude: vi.fn(async () => {}),
+      showMessage: vi.fn(async () => {}),
+      showVideo: vi.fn(async () => {}),
+      complete: vi.fn(async () => {}),
+      completeWith: vi.fn(async () => {})
+    },
+    editor: {
+      codeEditor: {
+        filterAPIs: vi.fn(),
+        formatWorkspace: vi.fn(async () => {})
+      },
+      project: {
+        getCode: vi.fn(() => 'stepTo Mushroom'),
+        listSprites: vi.fn(() => ['Lita', 'Mushroom'])
+      },
+      ruler: {
+        show: vi.fn(),
+        hide: vi.fn()
+      }
+    },
+    copilot: {
+      generateText: vi.fn(async () => 'nice work'),
+      generateJSON: vi.fn(async () => ({ praise: 'used stepTo' }))
+    },
+    spotlight: {
+      reveal: vi.fn(async () => {})
+    }
   }
 }
 
@@ -51,29 +65,29 @@ describe('createTutorialFramework', () => {
     const { capabilities } = createTutorialFramework(host)
 
     await capabilities.course_showPrelude({ content: 'Move Lita to Mushroom.' })
-    expect(host.course_showPrelude).toHaveBeenCalledWith('Move Lita to Mushroom.')
+    expect(host.course.showPrelude).toHaveBeenCalledWith('Move Lita to Mushroom.')
 
     await capabilities.course_showVideo({ videoName: 'step-to' })
-    expect(host.course_showVideo).toHaveBeenCalledWith('step-to')
+    expect(host.course.showVideo).toHaveBeenCalledWith('step-to')
 
     await capabilities.course_completeWith({ content: 'Nicely done.' })
-    expect(host.course_completeWith).toHaveBeenCalledWith('Nicely done.')
+    expect(host.course.completeWith).toHaveBeenCalledWith('Nicely done.')
 
     capabilities.editor_codeEditor_filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo'] })
-    expect(host.editor_codeEditor_filterAPIs).toHaveBeenCalledWith(['xgo:github.com/goplus/spx/v3?Sprite.stepTo'])
+    expect(host.editor.codeEditor.filterAPIs).toHaveBeenCalledWith(['xgo:github.com/goplus/spx/v3?Sprite.stepTo'])
 
     expect(capabilities.editor_project_getCode({ sprite: 'Lita' })).toBe('stepTo Mushroom')
     expect(capabilities.editor_project_listSprites({})).toEqual(['Lita', 'Mushroom'])
 
     await capabilities.copilot_generateJSON({ content: 'judge this', schema: { type: 'object' } })
-    expect(host.copilot_generateJSON).toHaveBeenCalledWith('judge this', { type: 'object' })
+    expect(host.copilot.generateJSON).toHaveBeenCalledWith('judge this', { type: 'object' })
 
     await capabilities.spotlight_reveal({
       target: 'Code editor > Code text editor',
       tip: 'Write here',
       options: { mask: true, duration: 0 }
     })
-    expect(host.spotlight_reveal).toHaveBeenCalledWith('Code editor > Code text editor', 'Write here', {
+    expect(host.spotlight.reveal).toHaveBeenCalledWith('Code editor > Code text editor', 'Write here', {
       mask: true,
       duration: 0
     })
@@ -81,8 +95,8 @@ describe('createTutorialFramework', () => {
 
   it('passes host results and rejections through untouched', async () => {
     const host = makeHost()
-    host.copilot_generateText = vi.fn(async () => 'praise')
-    host.course_showMessage = vi.fn(async () => {
+    host.copilot.generateText = vi.fn(async () => 'praise')
+    host.course.showMessage = vi.fn(async () => {
       throw new Error('no dialog')
     })
     const { capabilities } = createTutorialFramework(host)

@@ -24,27 +24,42 @@ export type SpotlightOptions = {
 
 /**
  * 宿主为课程程序提供的全部能力，由 Tutorial 模块组装并实现。
+ * 按作者侧 API 树分层组织（course / editor / copilot / spotlight），
  * 逐条语义（resolve 时机、失败语义）见 docs/develop/tutorial-v2/module_TutorialFramework.ts。
  */
 export interface TutorialFrameworkHost {
-  course_showPrelude(preludeMessage: string): Promise<void>;
-  course_showMessage(message: string): Promise<void>;
-  course_showVideo(videoName: string): Promise<void>;
-  course_complete(): Promise<void>;
-  course_completeWith(message: string): Promise<void>;
-  editor_codeEditor_filterAPIs(apis: string[]): void;
-  editor_codeEditor_formatWorkspace(): Promise<void>;
-  editor_project_getCode(sprite: string): string;
-  editor_project_listSprites(): string[];
-  editor_ruler_show(): void;
-  editor_ruler_hide(): void;
-  copilot_generateText(message: string): Promise<string>;
-  copilot_generateJSON(message: string, schema: JSONSchema): Promise<unknown>;
-  spotlight_reveal(
-    target: string,
-    tip: string,
-    options: SpotlightOptions,
-  ): Promise<void>;
+  course: {
+    showPrelude(preludeMessage: string): Promise<void>;
+    showMessage(message: string): Promise<void>;
+    showVideo(videoName: string): Promise<void>;
+    complete(): Promise<void>;
+    completeWith(message: string): Promise<void>;
+  };
+  editor: {
+    codeEditor: {
+      filterAPIs(apis: string[]): void;
+      formatWorkspace(): Promise<void>;
+    };
+    project: {
+      getCode(sprite: string): string;
+      listSprites(): string[];
+    };
+    ruler: {
+      show(): void;
+      hide(): void;
+    };
+  };
+  copilot: {
+    generateText(message: string): Promise<string>;
+    generateJSON(message: string, schema: JSONSchema): Promise<unknown>;
+  };
+  spotlight: {
+    reveal(
+      target: string,
+      tip: string,
+      options: SpotlightOptions,
+    ): Promise<void>;
+  };
 }
 
 // 与 spx-gui/src/utils/xgoexec 的 XGoFramework/XGoCapability 结构相同；
@@ -80,32 +95,32 @@ export function createTutorialFramework(
     name: "tutorial",
     capabilities: {
       course_showPrelude: (request) =>
-        host.course_showPrelude((request as ContentRequest).content),
+        host.course.showPrelude((request as ContentRequest).content),
       course_showMessage: (request) =>
-        host.course_showMessage((request as ContentRequest).content),
+        host.course.showMessage((request as ContentRequest).content),
       course_showVideo: (request) =>
-        host.course_showVideo((request as VideoRequest).videoName),
-      course_complete: () => host.course_complete(),
+        host.course.showVideo((request as VideoRequest).videoName),
+      course_complete: () => host.course.complete(),
       course_completeWith: (request) =>
-        host.course_completeWith((request as ContentRequest).content),
+        host.course.completeWith((request as ContentRequest).content),
       editor_codeEditor_filterAPIs: (request) =>
-        host.editor_codeEditor_filterAPIs((request as FilterAPIsRequest).apis),
+        host.editor.codeEditor.filterAPIs((request as FilterAPIsRequest).apis),
       editor_codeEditor_formatWorkspace: () =>
-        host.editor_codeEditor_formatWorkspace(),
+        host.editor.codeEditor.formatWorkspace(),
       editor_project_getCode: (request) =>
-        host.editor_project_getCode((request as SpriteRequest).sprite),
-      editor_project_listSprites: () => host.editor_project_listSprites(),
-      editor_ruler_show: () => host.editor_ruler_show(),
-      editor_ruler_hide: () => host.editor_ruler_hide(),
+        host.editor.project.getCode((request as SpriteRequest).sprite),
+      editor_project_listSprites: () => host.editor.project.listSprites(),
+      editor_ruler_show: () => host.editor.ruler.show(),
+      editor_ruler_hide: () => host.editor.ruler.hide(),
       copilot_generateText: (request) =>
-        host.copilot_generateText((request as ContentRequest).content),
+        host.copilot.generateText((request as ContentRequest).content),
       copilot_generateJSON: (request) => {
         const { content, schema } = request as GenerateJSONRequest;
-        return host.copilot_generateJSON(content, schema);
+        return host.copilot.generateJSON(content, schema);
       },
       spotlight_reveal: (request) => {
         const { target, tip, options } = request as SpotlightRevealRequest;
-        return host.spotlight_reveal(target, tip, options);
+        return host.spotlight.reveal(target, tip, options);
       },
     },
   };

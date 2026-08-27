@@ -1,7 +1,7 @@
 import type { TutorialFrameworkHost } from '@/utils/tutorial-framework'
 
 // The learner code the mock host hands back to the Course program, standing in
-// for what `editor_project_getCode` would read from the real project model.
+// for what `editor.project.getCode` would read from the real project model.
 export const mockLearnerCode = `onClick => {
 	stepTo Mushroom
 }
@@ -14,51 +14,65 @@ export const mockLearnerCode = `onClick => {
  */
 export function createMockTutorialHost(log: (message: string) => void): TutorialFrameworkHost {
   return {
-    async course_showPrelude(preludeMessage) {
-      log(`[host] showPrelude: ${preludeMessage}`)
+    course: {
+      async showPrelude(preludeMessage) {
+        log(`[host] course.showPrelude: ${preludeMessage}`)
+      },
+      async showMessage(message) {
+        log(`[host] course.showMessage: ${message}`)
+      },
+      async showVideo(videoName) {
+        log(`[host] course.showVideo: ${videoName}`)
+      },
+      async complete() {
+        log('[host] course.complete')
+      },
+      async completeWith(message) {
+        log(`[host] course.completeWith: ${message}`)
+      }
     },
-    async course_showMessage(message) {
-      log(`[host] showMessage: ${message}`)
+    editor: {
+      codeEditor: {
+        filterAPIs(apis) {
+          log(`[host] editor.codeEditor.filterAPIs: ${apis.join(', ')}`)
+        },
+        async formatWorkspace() {
+          log('[host] editor.codeEditor.formatWorkspace')
+        }
+      },
+      project: {
+        getCode(sprite) {
+          log(`[host] editor.project.getCode: ${sprite}`)
+          return mockLearnerCode
+        },
+        listSprites() {
+          log('[host] editor.project.listSprites')
+          return ['Lita', 'Mushroom']
+        }
+      },
+      ruler: {
+        show() {
+          log('[host] editor.ruler.show')
+        },
+        hide() {
+          log('[host] editor.ruler.hide')
+        }
+      }
     },
-    async course_showVideo(videoName) {
-      log(`[host] showVideo: ${videoName}`)
+    copilot: {
+      async generateText(message) {
+        log(`[host] copilot.generateText: ${message}`)
+        return 'You used stepTo to walk Lita right up to the mushroom.'
+      },
+      async generateJSON(message, schema) {
+        log(`[host] copilot.generateJSON: ${message} (schema: ${JSON.stringify(schema)})`)
+        return {}
+      }
     },
-    async course_complete() {
-      log('[host] complete')
-    },
-    async course_completeWith(message) {
-      log(`[host] completeWith: ${message}`)
-    },
-    editor_codeEditor_filterAPIs(apis) {
-      log(`[host] filterAPIs: ${apis.join(', ')}`)
-    },
-    async editor_codeEditor_formatWorkspace() {
-      log('[host] formatWorkspace')
-    },
-    editor_project_getCode(sprite) {
-      log(`[host] getCode: ${sprite}`)
-      return mockLearnerCode
-    },
-    editor_project_listSprites() {
-      log('[host] listSprites')
-      return ['Lita', 'Mushroom']
-    },
-    editor_ruler_show() {
-      log('[host] ruler.show')
-    },
-    editor_ruler_hide() {
-      log('[host] ruler.hide')
-    },
-    async copilot_generateText(message) {
-      log(`[host] generateText: ${message}`)
-      return 'You used stepTo to walk Lita right up to the mushroom.'
-    },
-    async copilot_generateJSON(message, schema) {
-      log(`[host] generateJSON: ${message} (schema: ${JSON.stringify(schema)})`)
-      return {}
-    },
-    async spotlight_reveal(target, tip, options) {
-      log(`[host] spotlight.reveal: ${target} (tip: ${tip}, options: ${JSON.stringify(options)})`)
+    spotlight: {
+      async reveal(target, tip, options) {
+        log(`[host] spotlight.reveal: ${target} (tip: ${tip}, options: ${JSON.stringify(options)})`)
+      }
     }
   }
 }
