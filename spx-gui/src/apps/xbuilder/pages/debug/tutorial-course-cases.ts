@@ -1,4 +1,23 @@
-import exampleCourseSource from '../../../../../../docs/develop/tutorial-v2/example-tutorial-course/main_course.gox?raw'
+// Copied from docs/develop/tutorial-v2/example-tutorial-course/main_course.gox
+// (frontend code does not import from outside its own directory). Keep in sync
+// manually; the docs copy itself is compile-guarded by tools/xgoexec-bundle.
+export const exampleCourseSource = `onStart => {
+	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
+	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
+	showVideo "step-to"
+	// TODO(#3441): "API References" is the target's Radar node name; revisit
+	// once the Radar name-based selector syntax is settled.
+	Spotlight.reveal "API References", "Here is stepTo, the only block you need in this lesson."
+}
+
+Editor.Runtime.onLog log => {
+	if log == "reached-target" {
+		code := Editor.Project.getCode("Lita")
+		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\\n" + code)
+		completeWith feedback
+	}
+}
+`
 
 export type CourseEvent = {
   name: string
