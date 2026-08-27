@@ -9,8 +9,8 @@ export type TutorialChapter = {
   end: number
 }
 
-// Temporary presentation data for the first chapter prototype. The API does not expose chapter
-// metadata yet, so keep this isolated until the series-management model is ready to own it.
+// Temporary presentation data for Code: Lita. The API does not expose chapter metadata yet, so
+// keep this isolated until the series-management model is ready to own it.
 const litaChapters: TutorialChapter[] = [
   {
     id: 'unit-1',
@@ -50,47 +50,47 @@ const litaChapters: TutorialChapter[] = [
     shortTitle: { en: 'Unit 5', zh: '单元五' },
     title: { en: 'Start, state, conditions and wait', zh: '启动、状态、条件与等待' },
     start: 31,
-    end: 40
+    end: 42
   },
   {
     id: 'unit-6',
     number: 6,
     shortTitle: { en: 'Unit 6', zh: '单元六' },
     title: { en: 'Variables, measuring and counting', zh: '变量、测量与计数' },
-    start: 41,
-    end: 49
+    start: 43,
+    end: 53
   },
   {
     id: 'unit-7',
     number: 7,
     shortTitle: { en: 'Unit 7', zh: '单元七' },
     title: { en: 'Arrays and indexing', zh: '数组与索引' },
-    start: 50,
-    end: 55
+    start: 54,
+    end: 59
   },
   {
     id: 'unit-8',
     number: 8,
     shortTitle: { en: 'Unit 8', zh: '单元八' },
     title: { en: 'Iteration and for in', zh: '逐个处理与 for in' },
-    start: 56,
-    end: 61
+    start: 60,
+    end: 65
   },
   {
     id: 'unit-9',
     number: 9,
     shortTitle: { en: 'Unit 9', zh: '单元九' },
     title: { en: 'Keyboard events and interaction', zh: '按键事件与交互程序' },
-    start: 62,
-    end: 65
+    start: 66,
+    end: 69
   },
   {
     id: 'unit-10',
     number: 10,
     shortTitle: { en: 'Unit 10', zh: '单元十' },
     title: { en: 'Final project', zh: '第一阶段毕业设计' },
-    start: 66,
-    end: 66
+    start: 70,
+    end: 70
   }
 ]
 
