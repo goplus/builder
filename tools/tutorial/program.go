@@ -8,30 +8,76 @@ import (
 	"github.com/goplus/builder/tools/xgoexec"
 )
 
-// eventQueueSize 是待处理事件队列的容量。
+// eventQueueSize 是每个事件通道的待处理队列容量。
 //
-// 为什么需要一个**很大**的队列：课程程序在调用 capability 期间是阻塞的，而阻塞可能
-// 很久。Copilot 生成一次文本是几秒；更长的是展示类能力——契约规定 showMessage 要等
-// 学习者确认才返回，学习者去做别的事，这一等可能是几分钟。这段时间里事件循环停摆，
-// 但学习者的游戏还在跑、还在 println，日志会源源不断地投递进来。
-//
-// 而契约承诺 editor.runtime.log "每条新增日志恰好触发一次、按追加顺序"——一旦队列
-// 打满、投递被拒，这条承诺就破了，丢掉的可能正是课程在等的判定信号。所以上限要取到
-// 现实场景够不着的量级：1024 个待处理回调也不过几十 KB，而"课程程序真的卡死"仍然会
-// 在有限步数内触到上限、以错误的形式暴露出来，不会被无限缓冲掩盖。
+// 回调在等待类 capability（见 capabilityKinds）期间会让出执行权，其他事件的
+// 处理照常进行，所以队列在等待期间是持续排空的，正常课程远够不着这个上限。
+// 打满意味着课程程序真的失控（比如回调死循环），此时必须报错而不是静默丢弃：
+// 丢掉的可能正是课程在等的判定信号，那是最难排查的一类故障。
 const eventQueueSize = 1024
 
-// courseProgram 是一次课程运行的全部状态：注册的回调、待处理事件队列、完成标志，
-// 以及调用 capability 的方式。
+// capabilityKind 决定一次 capability 调用期间的执行语义。
+//
+// 划分标准是"调用在等待谁"：只等宿主自身计算的调用有界且很快，持有执行令牌
+// 直接调即可；等待外部主体（学习者、LLM）的调用无界，必须让出执行令牌，
+// 让其他事件的回调在等待期间照常执行。
+type capabilityKind int
+
+const (
+	// kindFast 只等宿主自身计算：持令牌直接调用，全程不让位。
+	// 未在 capabilityKinds 登记的能力取零值即此类——忘记登记的退化方向是
+	// "少了交错"而不是"多了重入"，错也错在保守侧。
+	kindFast capabilityKind = iota
+	// kindSlow 等待外部主体（LLM）：调用期间让出执行令牌。
+	kindSlow
+	// kindPresentation 等待学习者的展示类：让位规则同 kindSlow，并额外经过
+	// 展示串行通道——同一时刻至多一个展示在进行，宿主永远不会收到并发弹窗。
+	// 通道锁只能在不持令牌时等待（见 mustCallCapability 的顺序），所以展示类
+	// 必然让位：这不是约定，而是本枚举的构造保证——不存在"展示但不让位"的取值。
+	kindPresentation
+)
+
+// capabilityKinds 是能力的执行语义登记表，新增能力时在这里显式分类。
+// client_contract_test.go 会核对表中键名都是真实存在的 capability。
+var capabilityKinds = map[string]capabilityKind{
+	"course_showPrelude":   kindPresentation,
+	"course_showMessage":   kindPresentation,
+	"course_showVideo":     kindPresentation,
+	"copilot_generateText": kindSlow,
+	"copilot_generateJSON": kindSlow,
+}
+
+// courseProgram 是一次课程运行的全部状态：注册的回调、四个事件通道、执行令牌、
+// 完成/致命错误标志，以及调用 capability 的方式。
+//
+// 执行模型：课程回调以"帧"为单位执行，任一瞬间**只有执行令牌的持有者**在跑课程
+// 代码——令牌的 release→acquire 构成 happens-before 链，课程代码里的共享变量
+// 因此没有数据竞争，作者不需要任何同步原语。但存活的帧可以有多个：等待类
+// capability 调用期间帧让出令牌挂起，其他事件的回调照常执行；同一事件的多次
+// 触发（以及同一事件上注册的多个回调）仍严格按序串行，见 eventLane。
 //
 // 它挂在 Course 实例上（而不是做成包级单例），各 namespace 通过指针共享它——
-// 这与 spx 的做法一致：spx 的回调也存在 Game 实例持有的 scriptEventRegistry 里，
-// Game 与各精灵通过 scriptEventBindings 里的指针共享同一份注册表。
+// 这与 spx 的做法一致：spx 的回调也存在 Game 实例持有的 scriptEventRegistry 里。
 type courseProgram struct {
 	mu        sync.Mutex
 	handlers  handlers
-	events    chan func()
+	started   bool
 	completed bool
+	fatal     any
+
+	// token 是执行令牌：cap-1 channel 做二元信号量，初始含一枚。
+	// 选 channel 而不是 Mutex：等待者按 FIFO 唤醒，调度更可预测。
+	token chan struct{}
+	// presentationMu 是展示串行通道：course_show* 调用依次通过，
+	// 持有期横跨"等学习者看完"的全程。等待它之前必须先交还执行令牌。
+	presentationMu sync.Mutex
+	// ending 在完成或致命错误时关闭一次，通知各事件通道的 worker 退出。
+	ending  chan struct{}
+	endOnce sync.Once
+	// workers 计数事件通道的 worker goroutine，awaitEnd 用它等在途回调收尾。
+	workers sync.WaitGroup
+	// laneStarters 收集各事件通道的 worker 启动函数，Start 时统一启动。
+	laneStarters []func()
 
 	// callCapability 是通往前端的桥。做成字段而不是直接调 xgoexec.CallCapability，
 	// 是为了给测试留缝隙：真实的桥只在 js/wasm 构建下可用（非 wasm 构建里 xgoexec
@@ -39,11 +85,7 @@ type courseProgram struct {
 	callCapability func(name string, request, result any) error
 }
 
-// handlers 保存课程程序注册的全部回调，包括课程自己的 onStart 与三类宿主事件的回调。
-//
-// 集中放在一处有两个好处：读代码时"回调在哪"只有一个答案；框架在课程代码执行**之前**
-// 就能把所有事件注册到 xgoexec（契约要求"未订阅的事件也要接受而不是报未知事件"），
-// 注册时的闭包只要捕获 courseProgram 即可，不需要知道课程订阅了什么。
+// handlers 保存课程程序注册的全部回调，包括课程自己的 onStart 与宿主事件的回调。
 //
 // 每个事件存的是一**串**回调而不是一个：课程代码里的 onXxx 就是普通方法调用，作者
 // 完全可能对同一个事件写两段处理（比如两条判定各写一段），此时两段都该生效。
@@ -60,9 +102,146 @@ func (p *courseProgram) init() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.handlers = handlers{}
-	p.events = make(chan func(), eventQueueSize)
+	p.started = true
 	p.completed = false
+	p.fatal = nil
+	p.token = make(chan struct{}, 1)
+	p.token <- struct{}{}
+	p.ending = make(chan struct{})
+	p.endOnce = sync.Once{}
+	p.laneStarters = nil
 	p.callCapability = xgoexec.CallCapability
+}
+
+func (p *courseProgram) acquire() { <-p.token }
+func (p *courseProgram) release() { p.token <- struct{}{} }
+
+// runFrame 以帧为单位执行一段课程回调：取得执行令牌、执行、归还。
+//
+// panic（capability 失败或课程代码自身的错误）在这里兜住并记为致命错误：
+// 帧可能跑在事件通道的 worker goroutine 上，直接放任 panic 会绕过主 goroutine
+// 的退出路径；统一记下来由 awaitEnd 在主 goroutine 上重新抛出，执行器看到的
+// 仍然是"课程程序 panic → exit error"。注意 defer 的顺序：先声明归还令牌、
+// 后声明 recover，LIFO 保证 recover 先跑、令牌总能归还，失败的帧不会把令牌
+// 带走冻结整个课程。
+func (p *courseProgram) runFrame(run func()) {
+	p.acquire()
+	defer p.release()
+	defer func() {
+		if r := recover(); r != nil {
+			p.recordFatal(r)
+		}
+	}()
+	run()
+}
+
+// eventLane 是一个事件的处理通道：一个 FIFO 队列加一个专属 worker。
+//
+// 串行保证是结构性的：worker 是单 goroutine，正在处理一个事件（无论在执行还是
+// 挂起在等待类 capability 里）就不会取下一个，后续事件在队列里排队。因此——
+//   - 同一事件的多次触发严格按到达顺序处理（editor.runtime.log 的
+//     "每条恰好一次、按追加顺序"由此成立）；
+//   - 同一事件上注册的多个回调在一帧内按注册顺序执行，中途不被插队；
+//   - 不同事件的通道相互独立：一个事件的回调挂起等待时，其他事件照常处理。
+type eventLane[T any] struct {
+	queue    chan T
+	dispatch func(T)
+}
+
+func newEventLane[T any](p *courseProgram, dispatch func(T)) *eventLane[T] {
+	lane := &eventLane[T]{
+		queue:    make(chan T, eventQueueSize),
+		dispatch: dispatch,
+	}
+	p.laneStarters = append(p.laneStarters, func() {
+		p.workers.Add(1)
+		go lane.run(p)
+	})
+	return lane
+}
+
+func (l *eventLane[T]) run(p *courseProgram) {
+	defer p.workers.Done()
+	for {
+		select {
+		case <-p.ending:
+			return
+		case event := <-l.queue:
+			// ending 关闭与队列有货可能同时就绪（select 随机选取），
+			// 完成后的积压事件在这里再拦一道。
+			if p.isCompleted() {
+				continue
+			}
+			p.runFrame(func() { l.dispatch(event) })
+		}
+	}
+}
+
+// deliver 把一个事件放进通道，返回的 error 会一路传回宿主的 dispatchEvent。
+//
+// 三种情况分别对应不同的语义：
+//   - 程序还没启动：宿主投递早了，这是错误，得让它知道。
+//   - 已经完成：课程已结束，但这**不是**错误——学习者的游戏可能还在输出日志，
+//     宿主没做错任何事，静默丢弃即可。
+//   - 队列满：课程程序失控（回调在等待类 capability 期间队列本会持续排空，
+//     正常课程够不着上限）。必须报错而不是阻塞或静默丢弃。
+func (l *eventLane[T]) deliver(p *courseProgram, event T) error {
+	p.mu.Lock()
+	started, completed := p.started, p.completed
+	p.mu.Unlock()
+
+	switch {
+	case !started:
+		return fmt.Errorf("course program is not running")
+	case completed:
+		return nil
+	}
+	select {
+	case l.queue <- event:
+		return nil
+	default:
+		return fmt.Errorf("course event queue is full: the course program is not consuming events")
+	}
+}
+
+// startLanes 启动全部事件通道的 worker，由 Course.Start 调用。
+// 在此之前投递的事件安静地躺在队列缓冲里，Start 后按序处理。
+func (p *courseProgram) startLanes() {
+	for _, start := range p.laneStarters {
+		start()
+	}
+}
+
+// awaitEnd 等课程结束：完成或致命错误。
+//
+// 完成路径上等全部在途回调自然收尾——挂起的帧在其等待的 capability 返回后
+// （完成后宿主对展示类 no-op 即回，所以很快）把剩余语句执行完，然后 worker
+// 退出。致命错误路径不等：直接在主 goroutine 上重新抛出，挂起的帧随进程终止。
+func (p *courseProgram) awaitEnd() {
+	<-p.ending
+	if fatal := p.fatalValue(); fatal != nil {
+		panic(fatal)
+	}
+	p.workers.Wait()
+}
+
+func (p *courseProgram) signalEnd() {
+	p.endOnce.Do(func() { close(p.ending) })
+}
+
+func (p *courseProgram) recordFatal(value any) {
+	p.mu.Lock()
+	if p.fatal == nil {
+		p.fatal = value
+	}
+	p.mu.Unlock()
+	p.signalEnd()
+}
+
+func (p *courseProgram) fatalValue() any {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.fatal
 }
 
 // registerEvents 把契约里的四个事件一次性全部注册到执行器。
@@ -122,17 +301,17 @@ type runtimeLogEvent struct {
 	Log string `json:"log"`
 }
 
-// registerEvent 把一个宿主事件接到课程回调上。
+// registerEvent 把一个宿主事件接到该事件的处理通道上。
 //
-// 这里有个关键的线程边界：**解码发生在宿主的 goroutine 上，回调执行在课程程序自己的
-// goroutine 上**。xgoexec 收到 JS 侧 dispatchEvent 后会直接调用这里注册的函数，
-// 我们在那个 goroutine 里只做两件轻量的事——解码载荷、把闭包塞进队列——然后立刻返回，
-// 让宿主的 dispatchEvent 尽快 resolve。真正的课程回调由 Course.Start 的循环取出执行，
-// 从而保证课程代码始终是单线程、顺序执行的。
+// 这里有个关键的线程边界：**解码发生在宿主的 goroutine 上，回调执行在通道的
+// worker goroutine 上**。xgoexec 收到 JS 侧 dispatchEvent 后会直接调用这里注册的
+// 函数，我们在那个 goroutine 里只做两件轻量的事——解码载荷、投递进通道——然后
+// 立刻返回，让宿主的 dispatchEvent 尽快 resolve。
 //
-// 用泛型是为了让四个事件共用这套解码 + 入队逻辑；T 是各自的载荷类型。
+// 用泛型是为了让四个事件共用这套解码 + 投递逻辑；T 是各自的载荷类型。
 // payload 为空或 "null"（editor.runtime.start 就是 null）时跳过解码，用零值即可。
 func registerEvent[T any](p *courseProgram, name string, dispatch func(T)) {
+	lane := newEventLane(p, dispatch)
 	xgoexec.RegisterEventHandler(name, func(payload json.RawMessage) error {
 		var event T
 		if len(payload) > 0 {
@@ -140,36 +319,8 @@ func registerEvent[T any](p *courseProgram, name string, dispatch func(T)) {
 				return fmt.Errorf("decode event %q: %w", name, err)
 			}
 		}
-		return p.enqueue(func() { dispatch(event) })
+		return lane.deliver(p, event)
 	})
-}
-
-// enqueue 把一个回调放进队列，返回的 error 会一路传回宿主的 dispatchEvent。
-//
-// 三种情况分别对应不同的语义：
-//   - 程序还没启动（events == nil）：宿主投递早了，这是错误，得让它知道。
-//   - 已经完成：课程已结束、事件循环不会再取，但这**不是**错误——学习者的游戏
-//     可能还在输出日志，宿主没做错任何事，静默丢弃即可。
-//   - 队列满：课程程序跟不上（多半是卡在某个慢 capability 里）。这时必须报错而不是
-//     阻塞或静默丢弃：阻塞会把宿主的 dispatchEvent 一起拖住，静默丢弃则可能悄悄
-//     吞掉判定信号，让课程永远等不到完成条件——那是最难排查的一类故障。
-func (p *courseProgram) enqueue(callback func()) error {
-	p.mu.Lock()
-	events, completed := p.events, p.completed
-	p.mu.Unlock()
-
-	switch {
-	case events == nil:
-		return fmt.Errorf("course program is not running")
-	case completed:
-		return nil
-	}
-	select {
-	case events <- callback:
-		return nil
-	default:
-		return fmt.Errorf("course event queue is full: the course program is not consuming events")
-	}
 }
 
 // handlerSnapshot 返回回调集合的快照。
@@ -198,11 +349,13 @@ func (p *courseProgram) addHandler(add func(*handlers)) {
 // 先置位再调 capability，这样即使 capability panic 了，重复完成依然被挡住。
 func (p *courseProgram) markCompleted() bool {
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	if p.completed {
+		p.mu.Unlock()
 		return false
 	}
 	p.completed = true
+	p.mu.Unlock()
+	p.signalEnd()
 	return true
 }
 
@@ -212,13 +365,27 @@ func (p *courseProgram) isCompleted() bool {
 	return p.completed
 }
 
-// mustCallCapability 把 capability 失败当作课程程序的致命错误。
+// mustCallCapability 按 capabilityKinds 的登记执行一次 capability 调用，
+// 失败视为课程程序的致命错误。
 //
-// 为什么是 panic 而不是返回 error：作者侧 API 里没有错误通道（DSL 要保持"看起来就是
-// 顺序代码"），而一次失败意味着课程要求的展示/编辑器操作**没有发生**——比如提示没弹出来、
-// API 没过滤掉。此时继续往下跑，等于在一个错误的前提上判定学习者。panic 会被执行器捕获
-// 并报成 runtime 阶段错误，宿主能据此结束课程，这比默默错下去好。
+// 顺序是死锁规避的关键：**先交还执行令牌，再等待展示通道**。展示通道的持有期
+// 横跨"等学习者看完"的全程，若持着令牌去排队，令牌就被攥死、全部回调冻结——
+// 而挂起中的展示帧恢复时又要取令牌，形成环。先还令牌，排队就只是这一帧的事。
+//
+// 为什么失败是 panic 而不是返回 error：作者侧 API 里没有错误通道（DSL 要保持
+// "看起来就是顺序代码"），而一次失败意味着课程要求的展示/编辑器操作**没有发生**。
+// 此时继续往下跑，等于在一个错误的前提上判定学习者。panic 由 runFrame 兜住记为
+// 致命错误，最终在主 goroutine 上重新抛出，执行器据此报 runtime 阶段错误。
 func (p *courseProgram) mustCallCapability(name string, request, result any) {
+	kind := capabilityKinds[name]
+	if kind >= kindSlow {
+		p.release()
+		defer p.acquire()
+	}
+	if kind == kindPresentation {
+		p.presentationMu.Lock()
+		defer p.presentationMu.Unlock()
+	}
 	if err := p.callCapability(name, request, result); err != nil {
 		panic(err)
 	}

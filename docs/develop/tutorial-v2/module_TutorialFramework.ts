@@ -66,6 +66,12 @@ export type SpotlightOptions = {
 /**
  * Capabilities passed to the Tutorial framework implementation, grouped to
  * mirror the author-facing API tree.
+ *
+ * Calls may overlap: while a presentation or generation call is pending, the
+ * Course program keeps handling events and may issue further calls. The
+ * framework serializes presentation (`course.show*`) — at most one is pending
+ * at a time — but other calls, including multiple generations, can be pending
+ * concurrently.
  */
 export interface TutorialFrameworkHost {
   course: {

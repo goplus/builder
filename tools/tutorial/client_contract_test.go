@@ -25,6 +25,18 @@ func TestClientCoversAllWireNames(t *testing.T) {
 	if fmt.Sprint(goNames) != fmt.Sprint(tsNames) {
 		t.Errorf("wire names diverge:\n  Go sends:  %v\n  client.ts: %v", goNames, tsNames)
 	}
+
+	// capabilityKinds 是能力名 → 执行语义的登记表，键必须都是真实存在的
+	// capability——表里的拼写错误会变成无效登记（静默退化为不让位）。
+	known := map[string]bool{}
+	for _, name := range goNames {
+		known[name] = true
+	}
+	for name := range capabilityKinds {
+		if !known[name] {
+			t.Errorf("capabilityKinds has %q, which is not a capability the Go side sends", name)
+		}
+	}
 }
 
 // collectGoWireNames 从本包全部 Go 源文件里收集 mustCallCapability 的首个字符串实参。

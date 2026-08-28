@@ -1,5 +1,15 @@
 package tutorial
 
+// Execution model: callbacks run one at a time, so shared variables in Course
+// code never race. While a callback waits on the learner (showPrelude,
+// showMessage, showVideo) or on generation (generateText, generateJSON),
+// callbacks for other events keep running. Triggers of the same event are
+// processed strictly one after another in arrival order, and callbacks
+// registered on the same event run in registration order without
+// interleaving; ordering across different events is not guaranteed.
+// Presentation waits from different callbacks are serialized: at most one is
+// presented at a time.
+
 type Course struct {
 	CourseAbilities
 	Editor    Editor
@@ -23,11 +33,11 @@ type CourseAbilities interface {
 	// name and returns after the learner finishes watching or closes it.
 	// Presentation never advances automatically.
 	showVideo(videoName string)
-	// complete marks the course as completed and ends the Course program: after
-	// the current callback returns, no further events are processed and the
-	// program exits. Remaining statements in the same callback still run, but
-	// presentation calls after a completion are ignored by the host. Calling
-	// complete or completeWith again has no effect.
+	// complete marks the course as completed and ends the Course program: no
+	// further events are processed, callbacks already running or waiting still
+	// run to their end (presentation calls after a completion are ignored by
+	// the host), and the program then exits. Calling complete or completeWith
+	// again has no effect.
 	complete()
 	// completeWith is complete with the given feedback displayed to the learner.
 	completeWith(message string)

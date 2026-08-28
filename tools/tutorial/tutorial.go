@@ -112,10 +112,11 @@ func (p *Course) ShowVideo(videoName string) {
 
 // Complete 标记课程完成。
 //
-// 完成语义（契约里的"方案 A"）：调用后**当前回调会继续执行到底**，然后事件循环退出、
-// 程序结束，执行器把这次运行报成 completed。之所以不在这里直接终止，是因为 Complete
-// 是在作者回调的调用栈里被调用的，强行退出会让"complete 之后的语句到底执不执行"
-// 变成一件说不清的事。
+// 完成语义：调用后新事件不再投递、积压事件被放弃；**已在执行或挂起中的回调
+// 把剩余语句执行完**（此时宿主对展示类 capability no-op 即回），全部收尾后
+// 程序结束，执行器把这次运行报成 completed。之所以不在这里直接终止，是因为
+// Complete 是在作者回调的调用栈里被调用的，强行退出会让"complete 之后的语句
+// 到底执不执行"变成一件说不清的事。
 //
 // 重复调用会被忽略，见 courseProgram.markCompleted。
 func (p *Course) Complete() {
@@ -137,45 +138,42 @@ func (p *Course) CompleteWith(message string) {
 	p.courseProgram.mustCallCapability("course_completeWith", contentRequest{Content: message}, nil)
 }
 
-// Start 运行课程程序：先执行开场回调，然后进入事件循环。
+// Start 运行课程程序：启动各事件通道，按注册顺序执行开场回调，然后等课程结束。
 //
-// 事件循环是整个框架的核心约束所在：
-//   - **单消费者**：所有课程回调都在这一个 goroutine 上跑，因此课程代码天然是
-//     单线程的，作者不需要考虑并发。
-//   - **保序**：队列是 FIFO，日志按宿主投递的先后顺序交给课程——契约里
-//     editor.runtime.log "按追加顺序、每条恰好一次"就是靠这里保证的。
-//   - **完成即退出**：每处理完一个回调就检查完成标志，一旦完成就返回，
-//     积压的事件不再处理（契约规定完成后的事件应被放弃）。
+// 执行模型的三条约束（详见 courseProgram 与 eventLane 的注释）：
+//   - **单执行、多在途**：任一瞬间只有执行令牌的持有者在跑课程代码（共享变量
+//     因此没有数据竞争）；回调在等待类 capability（展示、LLM）期间让出令牌挂起，
+//     其他事件的回调照常执行。
+//   - **保序**：同一事件的触发严格按到达顺序处理，同一事件上的多个回调按注册
+//     顺序执行——契约里 editor.runtime.log "按追加顺序、每条恰好一次"由此保证。
+//     不同事件的回调之间没有顺序承诺，可能在等待点交错。
+//   - **完成即收尾**：complete 之后新事件不再投递、积压事件被放弃；已在执行或
+//     挂起的回调把剩余语句执行完（此时宿主对展示类 capability no-op 即回），
+//     全部收尾后程序结束。
 //
-// 如果课程在 MainEntry 或 onStart 里就完成了，循环一次都不会进。
+// 开场回调在调用方 goroutine 上依次执行；某个开场回调在等待类 capability 上
+// 挂起时，事件回调可以先行执行。
 func (p *Course) Start() {
-	for _, handler := range p.courseProgram.handlerSnapshot().courseStart {
-		if p.courseProgram.isCompleted() {
+	program := &p.courseProgram
+	program.startLanes()
+	for _, handler := range program.handlerSnapshot().courseStart {
+		if program.isCompleted() || program.fatalValue() != nil {
 			break
 		}
-		handler()
+		program.runFrame(handler)
 	}
-
-	p.courseProgram.mu.Lock()
-	events := p.courseProgram.events
-	p.courseProgram.mu.Unlock()
-
-	for !p.courseProgram.isCompleted() {
-		callback, ok := <-events
-		if !ok {
-			return
-		}
-		callback()
-	}
+	program.awaitEnd()
 }
 
 // Gopt_Course_Main 是 classfile 约定的程序入口，由 XGo 生成的 Main 调用。
 //
 // 顺序很重要：先拿到内嵌实例、初始化状态并注册全部事件，再执行 MainEntry（作者代码
 // 在这里注册各种回调），最后进入 Start。反过来的话，MainEntry 里注册的回调会被
-// initCourse 的重置清掉。
+// initCourse 的重置清掉。MainEntry 也以帧的形式执行——作者在顶层直接调用
+// showMessage 之类的能力同样成立。
 func Gopt_Course_Main(course CourseProto) {
-	course.initCourse().courseProgram.registerEvents()
-	course.MainEntry()
+	program := &course.initCourse().courseProgram
+	program.registerEvents()
+	program.runFrame(course.MainEntry)
 	course.Start()
 }
