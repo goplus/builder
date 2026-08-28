@@ -13,7 +13,7 @@
         </template>
         <UIMenu>
           <UIMenuGroup :disabled="!isOnline">
-            <NavbarNewProjectItem />
+            <NavbarNewProjectItem :handler="newProjectHandler" />
             <NavbarOpenProjectItem />
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null">
@@ -136,6 +136,9 @@
         </UITooltip>
       </UIButtonGroup>
     </template>
+    <template #profile-menu>
+      <slot name="profile-menu"></slot>
+    </template>
   </NavbarWrapper>
 </template>
 
@@ -196,6 +199,7 @@ const { showTutorialsEntry } = useCommunityConfig()
 const props = defineProps<{
   project: SpxProject | null
   state: EditorState | null
+  newProjectHandler?: () => void | Promise<void>
 }>()
 
 const { isOnline } = useNetwork()

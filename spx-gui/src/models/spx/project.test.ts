@@ -249,6 +249,25 @@ describe('Project', () => {
     expect(projectConfig.audioAttenuation).toBe(1)
   })
 
+  it.each([
+    { width: 480, height: 360 },
+    { width: 720, height: 405 },
+    { width: 360, height: 640 }
+  ])('should initialize viewport $width × $height with an equally sized map', async (viewportSize) => {
+    const project = new SpxProject(undefined, undefined, { viewportSize })
+
+    expect(project.viewportSize).toEqual(viewportSize)
+    expect(project.viewportSize).not.toBe(viewportSize)
+    expect(project.stage.getMapSize()).toEqual(viewportSize)
+
+    project.stage.setMapWidth(viewportSize.width + 200)
+    project.stage.setMapHeight(viewportSize.height + 100)
+
+    const config = (await toConfig(project.exportFiles()[projectConfigFilePath]!)) as RawProjectConfig
+    expect(config.run).toEqual(viewportSize)
+    expect(project.stage.getMapSize()).toEqual({ width: viewportSize.width + 200, height: viewportSize.height + 100 })
+  })
+
   it('should add sprite after correctly', () => {
     const project = new SpxProject()
     const sprite1 = new Sprite('sprite1')
