@@ -64,14 +64,16 @@ type Runtime struct {
 	courseProgram *courseProgram
 }
 
-// OnStart 注册"学习者的项目开始运行"的回调，可注册多个，按注册顺序依次执行。
+// OnStart 注册"学习者的项目开始运行"的回调。可注册多段，各段独立生效（见 handlerLane）。
 func (p *Runtime) OnStart(handler func()) {
-	p.courseProgram.addHandler(func(h *handlers) { h.runtimeStart = append(h.runtimeStart, handler) })
+	addLane(p.courseProgram, func(struct{}) { handler() },
+		func(h *handlers, l *handlerLane[struct{}]) { h.runtimeStart = append(h.runtimeStart, l) })
 }
 
-// OnExit 注册"学习者的项目退出"的回调，code 是退出码。可注册多个。
+// OnExit 注册"学习者的项目退出"的回调，code 是退出码。可注册多段。
 func (p *Runtime) OnExit(handler func(code int)) {
-	p.courseProgram.addHandler(func(h *handlers) { h.runtimeExit = append(h.runtimeExit, handler) })
+	addLane(p.courseProgram, handler,
+		func(h *handlers, l *handlerLane[int]) { h.runtimeExit = append(h.runtimeExit, l) })
 }
 
 // OnLog 注册"学习者的项目输出了一条日志"的回调，每条恰好触发一次、按输出顺序。
@@ -80,10 +82,12 @@ func (p *Runtime) OnExit(handler func(code int)) {
 // （比如 "reached-target"），课程代码在这里等这个信号，就能知道学习者"做到了什么"。
 // 只有 kind=log 的输出会进来，运行错误不走这条通道，以免污染判定。
 //
-// 可以注册多个：一节课有两条判定线索时，分开写两段比挤在一个 if-else 里清楚。
-// 同一条日志会按注册顺序依次交给它们。
+// 可以注册多段：一节课有两条判定线索时，分开写两段比挤在一个 if-else 里清楚。
+// 每段各自收到每一条日志、按输出顺序处理；一段挂在等待类能力上时不阻塞另一段
+// （各段独立串行，见 handlerLane）。
 func (p *Runtime) OnLog(handler func(log string)) {
-	p.courseProgram.addHandler(func(h *handlers) { h.runtimeLog = append(h.runtimeLog, handler) })
+	addLane(p.courseProgram, handler,
+		func(h *handlers, l *handlerLane[string]) { h.runtimeLog = append(h.runtimeLog, l) })
 }
 
 // CodeEditor 控制学习者写代码的编辑器。

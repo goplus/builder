@@ -8,9 +8,9 @@ import (
 	"github.com/goplus/builder/tools/xgoexec"
 )
 
-// eventQueueSize 是每个事件通道的待处理队列容量。
+// eventQueueSize 是每条回调通道的待处理队列容量。
 //
-// 回调在等待类 capability（见 capabilityKinds）期间会让出执行权，其他事件的
+// 回调在等待类 capability（见 capabilityKinds）期间会让出执行权，其他回调的
 // 处理照常进行，所以队列在等待期间是持续排空的，正常课程远够不着这个上限。
 // 打满意味着课程程序真的失控（比如回调死循环），此时必须报错而不是静默丢弃：
 // 丢掉的可能正是课程在等的判定信号，那是最难排查的一类故障。
@@ -20,7 +20,7 @@ const eventQueueSize = 1024
 //
 // 划分标准是"调用在等待谁"：只等宿主自身计算的调用有界且很快，持有执行令牌
 // 直接调即可；等待外部主体（学习者、LLM）的调用无界，必须让出执行令牌，
-// 让其他事件的回调在等待期间照常执行。
+// 让其他回调在等待期间照常执行。
 type capabilityKind int
 
 const (
@@ -47,14 +47,15 @@ var capabilityKinds = map[string]capabilityKind{
 	"copilot_generateJSON": kindSlow,
 }
 
-// courseProgram 是一次课程运行的全部状态：注册的回调、四个事件通道、执行令牌、
+// courseProgram 是一次课程运行的全部状态：注册的回调通道、执行令牌、
 // 完成/致命错误标志，以及调用 capability 的方式。
 //
 // 执行模型：课程回调以"帧"为单位执行，任一瞬间**只有执行令牌的持有者**在跑课程
 // 代码——令牌的 release→acquire 构成 happens-before 链，课程代码里的共享变量
 // 因此没有数据竞争，作者不需要任何同步原语。但存活的帧可以有多个：等待类
-// capability 调用期间帧让出令牌挂起，其他事件的回调照常执行；同一事件的多次
-// 触发（以及同一事件上注册的多个回调）仍严格按序串行，见 eventLane。
+// capability 调用期间帧让出令牌挂起，其他回调照常执行。串行的单位是**单个注册的
+// 回调**（见 handlerLane）：同一段回调的多次触发严格排队，不同回调——包括同一
+// 事件上注册的多段——相互独立，可在等待点交错。
 //
 // 它挂在 Course 实例上（而不是做成包级单例），各 namespace 通过指针共享它——
 // 这与 spx 的做法一致：spx 的回调也存在 Game 实例持有的 scriptEventRegistry 里。
@@ -71,13 +72,15 @@ type courseProgram struct {
 	// presentationMu 是展示串行通道：course_show* 调用依次通过，
 	// 持有期横跨"等学习者看完"的全程。等待它之前必须先交还执行令牌。
 	presentationMu sync.Mutex
-	// ending 在完成或致命错误时关闭一次，通知各事件通道的 worker 退出。
+	// ending 在完成或致命错误时关闭一次，通知各回调通道的 worker 退出。
 	ending  chan struct{}
 	endOnce sync.Once
-	// workers 计数事件通道的 worker goroutine，awaitEnd 用它等在途回调收尾。
+	// workers 计数回调通道的 worker goroutine，awaitEnd 用它等在途回调收尾。
 	workers sync.WaitGroup
-	// laneStarters 收集各事件通道的 worker 启动函数，Start 时统一启动。
+	// laneStarters 收集程序启动前注册的回调通道的 worker 启动函数；
+	// lanesStarted 置位后，新注册的通道直接启动自己的 worker。
 	laneStarters []func()
+	lanesStarted bool
 
 	// callCapability 是通往前端的桥。做成字段而不是直接调 xgoexec.CallCapability，
 	// 是为了给测试留缝隙：真实的桥只在 js/wasm 构建下可用（非 wasm 构建里 xgoexec
@@ -90,12 +93,13 @@ type courseProgram struct {
 // 每个事件存的是一**串**回调而不是一个：课程代码里的 onXxx 就是普通方法调用，作者
 // 完全可能对同一个事件写两段处理（比如两条判定各写一段），此时两段都该生效。
 // 这与 spx 一致——spx 的 OnStart 等每次调用都往 sinks 里加一个，而不是覆盖。
+// 宿主事件的每段回调各占一条 handlerLane，泛型参数是回调的入参类型。
 type handlers struct {
 	courseStart  []func()
-	runtimeStart []func()
-	runtimeExit  []func(code int)
-	runtimeLog   []func(log string)
-	copilotRound []func(round CopilotRound)
+	runtimeStart []*handlerLane[struct{}]
+	runtimeExit  []*handlerLane[int]
+	runtimeLog   []*handlerLane[string]
+	copilotRound []*handlerLane[CopilotRound]
 }
 
 func (p *courseProgram) init() {
@@ -110,6 +114,7 @@ func (p *courseProgram) init() {
 	p.ending = make(chan struct{})
 	p.endOnce = sync.Once{}
 	p.laneStarters = nil
+	p.lanesStarted = false
 	p.callCapability = xgoexec.CallCapability
 }
 
@@ -119,7 +124,7 @@ func (p *courseProgram) release() { p.token <- struct{}{} }
 // runFrame 以帧为单位执行一段课程回调：取得执行令牌、执行、归还。
 //
 // panic（capability 失败或课程代码自身的错误）在这里兜住并记为致命错误：
-// 帧可能跑在事件通道的 worker goroutine 上，直接放任 panic 会绕过主 goroutine
+// 帧可能跑在回调通道的 worker goroutine 上，直接放任 panic 会绕过主 goroutine
 // 的退出路径；统一记下来由 awaitEnd 在主 goroutine 上重新抛出，执行器看到的
 // 仍然是"课程程序 panic → exit error"。注意 defer 的顺序：先声明归还令牌、
 // 后声明 recover，LIFO 保证 recover 先跑、令牌总能归还，失败的帧不会把令牌
@@ -135,32 +140,45 @@ func (p *courseProgram) runFrame(run func()) {
 	run()
 }
 
-// eventLane 是一个事件的处理通道：一个 FIFO 队列加一个专属 worker。
+// handlerLane 是**单个注册回调**的处理通道：一个 FIFO 队列加一个专属 worker。
 //
-// 串行保证是结构性的：worker 是单 goroutine，正在处理一个事件（无论在执行还是
-// 挂起在等待类 capability 里）就不会取下一个，后续事件在队列里排队。因此——
-//   - 同一事件的多次触发严格按到达顺序处理（editor.runtime.log 的
-//     "每条恰好一次、按追加顺序"由此成立）；
-//   - 同一事件上注册的多个回调在一帧内按注册顺序执行，中途不被插队；
-//   - 不同事件的通道相互独立：一个事件的回调挂起等待时，其他事件照常处理。
-type eventLane[T any] struct {
-	queue    chan T
-	dispatch func(T)
+// 串行的单位取"每段注册的回调"而不是"每个事件"：作者对同一事件注册多段处理时，
+// 自然期望它们各自独立生效——一段挂在等待类 capability 上时，另一段照常处理
+// 后续触发。而**同一段**回调的串行保证是结构性的：worker 是单 goroutine，正在
+// 处理一次触发（无论在执行还是挂起在等待里）就不会取下一次，后续触发在队列里
+// 排队。因此——
+//   - 同一段回调的多次触发严格按到达顺序处理，绝不重入：判定回调里的
+//     "查了再做"不需要任何防重入守卫；
+//   - editor.runtime.log 的"每条恰好一次、按追加顺序"对每段 onLog 回调各自成立；
+//   - 不同回调（无论是否同一事件）相互独立，可在等待点交错。
+type handlerLane[T any] struct {
+	handler func(T)
+	queue   chan T
 }
 
-func newEventLane[T any](p *courseProgram, dispatch func(T)) *eventLane[T] {
-	lane := &eventLane[T]{
-		queue:    make(chan T, eventQueueSize),
-		dispatch: dispatch,
+// addLane 注册一段回调：建通道、挂进 handlers、安排 worker。
+// 程序启动后（lanesStarted）注册的回调立即获得 worker，从下一次事件开始生效。
+func addLane[T any](p *courseProgram, handler func(T), attach func(*handlers, *handlerLane[T])) {
+	lane := &handlerLane[T]{
+		handler: handler,
+		queue:   make(chan T, eventQueueSize),
 	}
-	p.laneStarters = append(p.laneStarters, func() {
+	start := func() {
 		p.workers.Add(1)
 		go lane.run(p)
-	})
-	return lane
+	}
+	p.mu.Lock()
+	attach(&p.handlers, lane)
+	if p.lanesStarted {
+		p.mu.Unlock()
+		start()
+		return
+	}
+	p.laneStarters = append(p.laneStarters, start)
+	p.mu.Unlock()
 }
 
-func (l *eventLane[T]) run(p *courseProgram) {
+func (l *handlerLane[T]) run(p *courseProgram) {
 	defer p.workers.Done()
 	for {
 		select {
@@ -172,20 +190,21 @@ func (l *eventLane[T]) run(p *courseProgram) {
 			if p.isCompleted() {
 				continue
 			}
-			p.runFrame(func() { l.dispatch(event) })
+			p.runFrame(func() { l.handler(event) })
 		}
 	}
 }
 
-// deliver 把一个事件放进通道，返回的 error 会一路传回宿主的 dispatchEvent。
+// deliverAll 把一次事件触发投递给它的全部回调通道，返回的 error 会一路传回宿主
+// 的 dispatchEvent。
 //
 // 三种情况分别对应不同的语义：
 //   - 程序还没启动：宿主投递早了，这是错误，得让它知道。
 //   - 已经完成：课程已结束，但这**不是**错误——学习者的游戏可能还在输出日志，
 //     宿主没做错任何事，静默丢弃即可。
-//   - 队列满：课程程序失控（回调在等待类 capability 期间队列本会持续排空，
+//   - 某条队列满：课程程序失控（回调在等待类 capability 期间队列本会持续排空，
 //     正常课程够不着上限）。必须报错而不是阻塞或静默丢弃。
-func (l *eventLane[T]) deliver(p *courseProgram, event T) error {
+func deliverAll[T any](p *courseProgram, lanes []*handlerLane[T], event T) error {
 	p.mu.Lock()
 	started, completed := p.started, p.completed
 	p.mu.Unlock()
@@ -196,18 +215,25 @@ func (l *eventLane[T]) deliver(p *courseProgram, event T) error {
 	case completed:
 		return nil
 	}
-	select {
-	case l.queue <- event:
-		return nil
-	default:
-		return fmt.Errorf("course event queue is full: the course program is not consuming events")
+	for _, lane := range lanes {
+		select {
+		case lane.queue <- event:
+		default:
+			return fmt.Errorf("course event queue is full: the course program is not consuming events")
+		}
 	}
+	return nil
 }
 
-// startLanes 启动全部事件通道的 worker，由 Course.Start 调用。
+// startLanes 启动此前注册的全部回调通道的 worker，由 Course.Start 调用。
 // 在此之前投递的事件安静地躺在队列缓冲里，Start 后按序处理。
 func (p *courseProgram) startLanes() {
-	for _, start := range p.laneStarters {
+	p.mu.Lock()
+	p.lanesStarted = true
+	starters := p.laneStarters
+	p.laneStarters = nil
+	p.mu.Unlock()
+	for _, start := range starters {
 		start()
 	}
 }
@@ -255,37 +281,17 @@ func (p *courseProgram) fatalValue() any {
 // 每个课程运行在自己的 Worker/WASM 实例里，一个实例只跑一个课程，所以最后一次
 // 注册指向的就是当前这个 courseProgram。
 func (p *courseProgram) registerEvents() {
-	registerEvent(p, "editor.runtime.start", func(struct{}) {
-		for _, handler := range p.handlerSnapshot().runtimeStart {
-			if p.isCompleted() {
-				return
-			}
-			handler()
-		}
+	registerEvent(p, "editor.runtime.start", func(struct{}) error {
+		return deliverAll(p, p.handlerSnapshot().runtimeStart, struct{}{})
 	})
-	registerEvent(p, "editor.runtime.exit", func(event runtimeExitEvent) {
-		for _, handler := range p.handlerSnapshot().runtimeExit {
-			if p.isCompleted() {
-				return
-			}
-			handler(event.Code)
-		}
+	registerEvent(p, "editor.runtime.exit", func(event runtimeExitEvent) error {
+		return deliverAll(p, p.handlerSnapshot().runtimeExit, event.Code)
 	})
-	registerEvent(p, "editor.runtime.log", func(event runtimeLogEvent) {
-		for _, handler := range p.handlerSnapshot().runtimeLog {
-			if p.isCompleted() {
-				return
-			}
-			handler(event.Log)
-		}
+	registerEvent(p, "editor.runtime.log", func(event runtimeLogEvent) error {
+		return deliverAll(p, p.handlerSnapshot().runtimeLog, event.Log)
 	})
-	registerEvent(p, "copilot.roundFinish", func(round CopilotRound) {
-		for _, handler := range p.handlerSnapshot().copilotRound {
-			if p.isCompleted() {
-				return
-			}
-			handler(round)
-		}
+	registerEvent(p, "copilot.roundFinish", func(round CopilotRound) error {
+		return deliverAll(p, p.handlerSnapshot().copilotRound, round)
 	})
 }
 
@@ -301,17 +307,16 @@ type runtimeLogEvent struct {
 	Log string `json:"log"`
 }
 
-// registerEvent 把一个宿主事件接到该事件的处理通道上。
+// registerEvent 把一个宿主事件接到它的投递逻辑上。
 //
-// 这里有个关键的线程边界：**解码发生在宿主的 goroutine 上，回调执行在通道的
-// worker goroutine 上**。xgoexec 收到 JS 侧 dispatchEvent 后会直接调用这里注册的
-// 函数，我们在那个 goroutine 里只做两件轻量的事——解码载荷、投递进通道——然后
-// 立刻返回，让宿主的 dispatchEvent 尽快 resolve。
+// 这里有个关键的线程边界：**解码与投递发生在宿主的 goroutine 上，回调执行在
+// 各自通道的 worker goroutine 上**。xgoexec 收到 JS 侧 dispatchEvent 后会直接调用
+// 这里注册的函数，我们在那个 goroutine 里只做两件轻量的事——解码载荷、投递进
+// 各回调通道——然后立刻返回，让宿主的 dispatchEvent 尽快 resolve。
 //
-// 用泛型是为了让四个事件共用这套解码 + 投递逻辑；T 是各自的载荷类型。
+// 用泛型是为了让四个事件共用这套解码逻辑；T 是各自的载荷类型。
 // payload 为空或 "null"（editor.runtime.start 就是 null）时跳过解码，用零值即可。
-func registerEvent[T any](p *courseProgram, name string, dispatch func(T)) {
-	lane := newEventLane(p, dispatch)
+func registerEvent[T any](p *courseProgram, name string, deliver func(T) error) {
 	xgoexec.RegisterEventHandler(name, func(payload json.RawMessage) error {
 		var event T
 		if len(payload) > 0 {
@@ -319,23 +324,23 @@ func registerEvent[T any](p *courseProgram, name string, dispatch func(T)) {
 				return fmt.Errorf("decode event %q: %w", name, err)
 			}
 		}
-		return lane.deliver(p, event)
+		return deliver(event)
 	})
 }
 
 // handlerSnapshot 返回回调集合的快照。
 //
-// 取快照（而不是持锁调用回调）是为了避免回调里再调 onLog 之类的注册方法时自锁；
-// 同时它也让"遍历过程中又注册了新回调"这件事有确定的语义：本轮按快照执行，
-// 新注册的从下一次事件开始生效。
+// 取快照（而不是持锁投递）是为了避免投递期间与注册互锁；同时它也让"投递过程中
+// 又注册了新回调"这件事有确定的语义：本次触发按快照投递，新注册的从下一次
+// 事件开始生效。
 func (p *courseProgram) handlerSnapshot() handlers {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.handlers
 }
 
-// addHandler 供各 namespace 的 OnXxx 方法追加回调。追加而不是覆盖，
-// 这样同一事件上的多段处理都会按注册顺序生效。
+// addHandler 供 Course.OnStart 追加开场回调。追加而不是覆盖，
+// 这样多段开场处理都会按注册顺序生效。
 func (p *courseProgram) addHandler(add func(*handlers)) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

@@ -16,10 +16,11 @@ type CopilotRound struct {
 	ResultMessages []string `json:"resultMessages"`
 }
 
-// OnRoundFinish 注册"学习者完成了一轮 Copilot 对话"的回调，可注册多个。
+// OnRoundFinish 注册"学习者完成了一轮 Copilot 对话"的回调，可注册多段。
 // 课程可以据此感知学习者求助了什么（例如求助过多时给点额外提示）。
 func (p *Copilot) OnRoundFinish(handler func(round CopilotRound)) {
-	p.courseProgram.addHandler(func(h *handlers) { h.copilotRound = append(h.copilotRound, handler) })
+	addLane(p.courseProgram, handler,
+		func(h *handlers, l *handlerLane[CopilotRound]) { h.copilotRound = append(h.copilotRound, l) })
 }
 
 // GenerateText 让 Copilot 生成一段纯文本并返回。

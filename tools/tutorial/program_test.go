@@ -3,6 +3,7 @@ package tutorial
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -273,19 +274,24 @@ func TestUnsubscribedEventsAreAccepted(t *testing.T) {
 func TestRuntimeExitAndCopilotRoundPayloads(t *testing.T) {
 	var exitCode int
 	var round CopilotRound
-	exitSeen := make(chan struct{})
+	seen := 0
 
 	runCourse(t, newFakeHost(), func(course *testCourse) {
+		// 两段回调相互独立、完成顺序不承诺；回调都在执行令牌下运行，
+		// 共享计数的读改写是安全的。两段都执行过才完成。
+		note := func() {
+			seen++
+			if seen == 2 {
+				course.Complete()
+			}
+		}
 		course.Editor.Runtime.OnExit(func(code int) {
 			exitCode = code
-			close(exitSeen)
+			note()
 		})
 		course.Copilot.OnRoundFinish(func(finished CopilotRound) {
-			// exit 与 roundFinish 是不同事件、允许交错，用信号确保断言前
-			// exit 回调已经执行过。
-			<-exitSeen
 			round = finished
-			course.Complete()
+			note()
 		})
 		course.OnStart(func() {
 			dispatch(t, "editor.runtime.exit", `{"code":2}`)
@@ -379,11 +385,13 @@ func TestCoursesDoNotShareState(t *testing.T) {
 	}
 }
 
-// TestHandlersAccumulate 验证同一事件上注册的多段处理都会生效、且按注册顺序执行。
+// TestHandlersAccumulate 验证同一事件上注册的多段处理都会生效。
 // 课程代码里的 onXxx 就是普通方法调用，作者对同一事件写两段是自然写法（例如两条
 // 判定线索分开写），任何一段被静默丢掉都是难查的故障。spx 的事件注册同样是累加的。
+// 各段回调相互独立、完成顺序不承诺，所以只断言都恰好执行了一次。
 func TestHandlersAccumulate(t *testing.T) {
 	var trace []string
+	seen := 0
 
 	runCourse(t, newFakeHost(), func(course *testCourse) {
 		course.OnStart(func() { trace = append(trace, "start-1") })
@@ -391,16 +399,56 @@ func TestHandlersAccumulate(t *testing.T) {
 			trace = append(trace, "start-2")
 			dispatch(t, "editor.runtime.log", `{"log":"hit"}`)
 		})
-		course.Editor.Runtime.OnLog(func(log string) { trace = append(trace, "log-A:"+log) })
-		course.Editor.Runtime.OnLog(func(log string) {
-			trace = append(trace, "log-B:"+log)
-			course.Complete()
-		})
+		note := func(entry string) {
+			trace = append(trace, entry)
+			seen++
+			if seen == 2 {
+				course.Complete()
+			}
+		}
+		course.Editor.Runtime.OnLog(func(log string) { note("log-A:" + log) })
+		course.Editor.Runtime.OnLog(func(log string) { note("log-B:" + log) })
 	})
 
-	if got, want := fmt.Sprint(trace), "[start-1 start-2 log-A:hit log-B:hit]"; got != want {
-		t.Errorf("trace = %s, want %s", got, want)
+	if len(trace) != 4 {
+		t.Fatalf("trace = %v, want 4 entries", trace)
 	}
+	if got, want := fmt.Sprint(trace[:2]), "[start-1 start-2]"; got != want {
+		t.Errorf("start trace = %s, want %s", got, want)
+	}
+	rest := fmt.Sprint(trace[2:])
+	if !strings.Contains(rest, "log-A:hit") || !strings.Contains(rest, "log-B:hit") {
+		t.Errorf("log trace = %s, want both log-A:hit and log-B:hit", rest)
+	}
+}
+
+// TestSameEventHandlersRunIndependently 验证同一事件上注册的多段回调相互独立：
+// 一段挂在等待类 capability 上时，另一段照常处理同一条触发。
+func TestSameEventHandlersRunIndependently(t *testing.T) {
+	host := newFakeHost()
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
+
+	otherSeen := make(chan struct{}, 1)
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog(func(log string) {
+			course.Copilot.GenerateText("judge " + log)
+			course.Complete()
+		})
+		course.Editor.Runtime.OnLog(func(string) {
+			otherSeen <- struct{}{}
+		})
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"go"}`)
+	await(t, generateStarted, "the first handler to suspend in generateText")
+	// 第一段还挂着，第二段必须已经（或照常能够）处理同一条日志。
+	await(t, otherSeen, "the second handler to run independently")
+	releaseGenerate()
+	awaitDone(t, done)
 }
 
 // TestWaitingCapabilityYieldsToOtherEvents 验证执行模型的核心承诺：一个回调

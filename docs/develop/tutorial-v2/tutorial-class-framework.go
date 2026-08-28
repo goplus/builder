@@ -3,12 +3,12 @@ package tutorial
 // Execution model: callbacks run one at a time, so shared variables in Course
 // code never race. While a callback waits on the learner (showPrelude,
 // showMessage, showVideo) or on generation (generateText, generateJSON),
-// callbacks for other events keep running. Triggers of the same event are
-// processed strictly one after another in arrival order, and callbacks
-// registered on the same event run in registration order without
-// interleaving; ordering across different events is not guaranteed.
-// Presentation waits from different callbacks are serialized: at most one is
-// presented at a time.
+// other callbacks keep running. Each registered callback is its own serial
+// unit: its triggers are processed strictly one after another in arrival
+// order and it never re-enters, while different callbacks — including several
+// registered on the same event — run independently and may interleave at
+// waiting points. Presentation waits from different callbacks are serialized:
+// at most one is presented at a time.
 
 type Course struct {
 	CourseAbilities
