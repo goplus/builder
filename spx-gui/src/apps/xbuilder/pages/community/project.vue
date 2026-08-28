@@ -72,6 +72,11 @@ const {
 )
 
 const currentProjectIdentifier = computed(() => toProjectIdentifier(project.value?.owner, project.value?.name))
+const projectWrapperStyle = computed(() => {
+  const viewportSize = project.value?.viewportSize
+  if (viewportSize == null) return { aspectRatio: '4 / 3' }
+  return { aspectRatio: `${viewportSize.width} / ${viewportSize.height}` }
+})
 
 watch(currentProjectIdentifier, (currentIdentifier) => {
   if (currentIdentifier == null || isSameProjectIdentifier(currentIdentifier, routeProjectIdentifier.value)) return
@@ -361,7 +366,7 @@ const remixesRet = useQuery(
         {{ $t(error.userMessage) }}
       </UIError>
       <div class="left flex-[1_1_744px]">
-        <div class="project-wrapper">
+        <div class="project-wrapper" :style="projectWrapperStyle">
           <template v-if="project != null">
             <ProjectRunnerSurface
               ref="projectRunnerRef"
@@ -670,7 +675,6 @@ const remixesRet = useQuery(
 .project-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
   overflow: hidden;
 }
 </style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, shallowRef, watch } from 'vue'
 import { timeout, untilNotNull } from '@/utils/utils'
+import { useContentSize } from '@/utils/dom'
 import { useMessageHandle } from '@/utils/exception'
 import { SpxProject } from '@/models/spx/project'
 import { UIButton, UITooltip } from '@/components/ui'
@@ -43,6 +44,7 @@ const emit = defineEmits<{
 const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
 const rootRef = ref<HTMLDivElement>()
 const wrapperRef = ref<HTMLDivElement>()
+const runnerAreaRef = ref<HTMLDivElement | null>(null)
 const overlayActive = ref(false)
 const overlayVisible = ref(false)
 const initialLoading = ref(false)
@@ -327,6 +329,18 @@ onMounted(() => {
 })
 
 const runnerState = computed<RunnerState>(() => props.runnerState ?? 'running')
+const projectAspectRatio = computed(() => `${props.project.viewportSize.width} / ${props.project.viewportSize.height}`)
+const runnerAreaSize = useContentSize(runnerAreaRef)
+const runnerFitMode = computed(() => {
+  const areaSize = runnerAreaSize.value
+  if (areaSize == null) return 'width'
+  const { width, height } = props.project.viewportSize
+  return width / height >= areaSize.width / areaSize.height ? 'width' : 'height'
+})
+const runnerStyle = computed(() => {
+  const { width, height } = props.project.viewportSize
+  return { aspectRatio: `${width} / ${height}` }
+})
 
 const handleInternalRun = useMessageHandle(() => runnerRef.value?.run(), {
   en: 'Failed to run project',
@@ -397,7 +411,12 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="rootRef" class="project-runner-surface" :class="{ fullscreen: overlayActive }">
+  <div
+    ref="rootRef"
+    class="project-runner-surface"
+    :class="{ fullscreen: overlayActive }"
+    :style="{ '--project-aspect-ratio': projectAspectRatio }"
+  >
     <div v-if="overlayActive" class="h-full w-full"></div>
     <div
       ref="wrapperRef"
@@ -471,10 +490,12 @@ defineExpose({
           </UITooltip>
         </div>
       </div>
-      <div class="runner-area">
+      <div ref="runnerAreaRef" class="runner-area">
         <ProjectRunner
           ref="runnerRef"
           class="runner"
+          :class="`fit-${runnerFitMode}`"
+          :style="runnerStyle"
           :project="project"
           @console="(type, args) => emit('console', type, args)"
           @exit="(code) => emit('exit', code)"
@@ -631,6 +652,7 @@ defineExpose({
 .project-runner-surface.fullscreen .runner-area {
   flex: 1 1 auto;
   display: flex;
+  align-items: center;
   justify-content: center;
   min-width: 0;
   min-height: 0;
@@ -639,12 +661,20 @@ defineExpose({
 }
 
 .project-runner-surface.fullscreen .runner-area .runner {
-  width: auto;
-  height: 100%;
   max-width: 100%;
   max-height: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: var(--project-aspect-ratio);
   overflow: hidden;
+}
+
+.project-runner-surface.fullscreen .runner-area .runner.fit-width {
+  width: 100% !important;
+  height: auto !important;
+}
+
+.project-runner-surface.fullscreen .runner-area .runner.fit-height {
+  width: auto !important;
+  height: 100% !important;
 }
 
 .overlay-loading {

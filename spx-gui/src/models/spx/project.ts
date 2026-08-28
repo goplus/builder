@@ -100,6 +100,10 @@ export type ViewportSize = {
   height: number
 }
 
+export type SpxProjectInits = {
+  viewportSize?: ViewportSize
+}
+
 const defaultViewportSize: ViewportSize = defaultMapSize
 const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
 const disabledAudioAttenuationFlag = 0
@@ -287,7 +291,7 @@ export class SpxProject extends Disposable implements IProject {
     this.sounds.splice(to, 0, sound)
   }
 
-  readonly viewportSize = defaultViewportSize
+  readonly viewportSize: ViewportSize
 
   private cameraFollowSpriteId: string | null
   get cameraFollowSprite(): Sprite | null {
@@ -373,9 +377,10 @@ export class SpxProject extends Disposable implements IProject {
     return () => disposable.dispose()
   }
 
-  constructor(owner?: string, name?: string) {
+  constructor(owner?: string, name?: string, inits?: SpxProjectInits) {
     super()
     const reactiveThis = reactive(this) as this
+    const viewportSize = inits?.viewportSize ?? defaultViewportSize
     this.owner = owner
     this.name = name
     if (name != null) {
@@ -384,7 +389,11 @@ export class SpxProject extends Disposable implements IProject {
     this.zorder = []
     this.fonts = []
     this.fontPreferences = ['default']
-    this.stage = new Stage()
+    this.viewportSize = { ...viewportSize }
+    this.stage = new Stage('', {
+      mapWidth: viewportSize.width,
+      mapHeight: viewportSize.height
+    })
     this.sprites = []
     this.sounds = []
     this.addDisposer(() => {
