@@ -20,7 +20,7 @@
           "y": 40,
           "name": "Button",
           "clip": true,
-          "width": 1316,
+          "width": 1425,
           "height": 580,
           "fill": "$grey100",
           "layout": "none",
@@ -2349,7 +2349,7 @@
             {
               "type": "group",
               "id": "eUrvP",
-              "x": 1047,
+              "x": 1161,
               "y": 60,
               "name": "CornerMarker",
               "children": [
@@ -3916,7 +3916,7 @@
             {
               "type": "frame",
               "id": "FE0Zs",
-              "x": 1047,
+              "x": 1161,
               "y": 20,
               "name": "CornerMarker/General/Default",
               "reusable": true,
@@ -4036,6 +4036,1286 @@
                   "y": 8,
                   "content": "Button Text",
                   "fill": "$grey600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "qTWuc",
+              "x": 658,
+              "y": 417,
+              "name": "Button/Variant/Play",
+              "reusable": true,
+              "slot": [
+                "sUZir",
+                "SJkO6",
+                "gzwoI",
+                "f7R9CA",
+                "v3eAOw",
+                "D3sdOr",
+                "X8UQn",
+                "w6uI8",
+                "K7NGM",
+                "qmLiD",
+                "OQli9",
+                "mmdAI"
+              ],
+              "clip": true,
+              "width": "fit_content(36)",
+              "height": "fit_content(36)",
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center"
+            },
+            {
+              "type": "frame",
+              "id": "U1j3U",
+              "x": 663,
+              "y": 453,
+              "name": "Button/SoundPlay/36",
+              "width": 373,
+              "gap": 12,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "SJkO6",
+                  "name": "Button/IconOnly/Size36/Primary/Flat/Circle/Play/Default",
+                  "reusable": true,
+                  "clip": true,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lspFJ",
+                      "name": "Button/IconOnly/Size36/Primary/Flat/Circle/Play/Default",
+                      "gap": 10,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "M9REZZ",
+                          "width": 36,
+                          "height": 36,
+                          "fill": "$turquoise500",
+                          "cornerRadius": "$radius-full",
+                          "gap": "$radius-3",
+                          "padding": "$radius-3",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "e7kfbz",
+                              "name": "XBuilderIcons01/Component/Default",
+                              "clip": true,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "jLtMp",
+                                  "name": "Ic01F/Component/Default",
+                                  "clip": true,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "BIrhq",
+                                      "name": "F",
+                                      "fill": "$grey100",
+                                      "content": "F",
+                                      "fontFamily": "XBuilder_NewIcons_01",
+                                      "fontSize": 16,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gzwoI",
+                  "name": "Button/IconOnly/Size36/Primary/Flat/Circle/Play/Hover",
+                  "reusable": true,
+                  "width": 42,
+                  "height": 42,
+                  "gap": 11.5,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "S6Uqe",
+                      "name": "播放按钮",
+                      "width": 41.400001525878906,
+                      "height": 41.400001525878906,
+                      "fill": "$turquoise400",
+                      "cornerRadius": 999,
+                      "gap": 11.5,
+                      "padding": 11.5,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "znpHD",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 11.700000762939453,
+                          "y": 11.700000762939453,
+                          "children": [
+                            {
+                              "id": "gJGRE",
+                              "type": "ref",
+                              "ref": "1zH6k",
+                              "descendants": {
+                                "M0FRj": {
+                                  "fill": "$grey100",
+                                  "fontSize": 18
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "sUZir",
+                  "name": "Button/IconOnly/Size36/Primary/Flat/Circle/Play/Click",
+                  "reusable": true,
+                  "width": 42,
+                  "height": 42,
+                  "gap": 11.5,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Tkfv1",
+                      "name": "播放按钮",
+                      "width": 41.400001525878906,
+                      "height": 41.400001525878906,
+                      "fill": "$turquoise600",
+                      "cornerRadius": 999,
+                      "gap": 11.5,
+                      "padding": 11.5,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "fEU9V",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 11.700000762939453,
+                          "y": 11.700000762939453,
+                          "children": [
+                            {
+                              "id": "JJiPO",
+                              "type": "ref",
+                              "ref": "1zH6k",
+                              "descendants": {
+                                "M0FRj": {
+                                  "fill": "$grey100",
+                                  "fontSize": 18
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "v3eAOw",
+                  "name": "Button/IconOnly/Size36/Primary/Stroke/Circle/Stop/Default",
+                  "reusable": true,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "d9bqKD",
+                      "name": "播放按钮",
+                      "width": 36,
+                      "height": 36,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "fr9di",
+                          "x": 0.142578125,
+                          "y": 0.142578125,
+                          "name": "Vector (Stroke)",
+                          "geometry": "M10 19c4.97056 0 9-4.02944 9-9 0-4.97056-4.02944-9-9-9-4.97056 0-9 4.02944-9 9 0 4.97056 4.02944 9 9 9z m10-9c0 5.52285-4.47715 10-10 10-5.52285 0-10-4.47715-10-10 0-5.52285 4.47715-10 10-10 5.52285 0 10 4.47715 10 10z",
+                          "fillRule": "evenodd",
+                          "fill": "$turquoise300",
+                          "width": 35.71428680419922,
+                          "height": 35.71428680419922
+                        },
+                        {
+                          "type": "path",
+                          "id": "UjCar",
+                          "x": 18,
+                          "y": 0.1429269015789032,
+                          "name": "Intersect",
+                          "geometry": "M0 20c5.52285 0 10-4.47715 10-10 0-5.52285-4.47715-10-10-10l0 1c4.97056 0 9 4.02944 9 9 0 4.97056-4.02944 9-9 9l0 1z",
+                          "fill": "$turquoise500",
+                          "width": 17.85714340209961,
+                          "height": 35.71428680419922
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ccr79",
+                          "x": 10,
+                          "y": 10,
+                          "name": "icon/stop- filled",
+                          "enabled": false,
+                          "width": 16,
+                          "height": 16,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "path",
+                              "id": "Mop4B",
+                              "x": 2.6666667461395264,
+                              "y": 2.6666667461395264,
+                              "name": "stop",
+                              "geometry": "M0 13l0-10c0-2 1-3 3-3l10 0c2 0 3 1 3 3l0 10c0 2-1 3-3 3l-10 0c-2 0-3-1-3-3z",
+                              "fill": "#36C2CF",
+                              "width": 10.666666984558105,
+                              "height": 10.666666984558105
+                            }
+                          ]
+                        },
+                        {
+                          "id": "TI5s3",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 10,
+                          "y": 10,
+                          "children": [
+                            {
+                              "id": "Fy7WD",
+                              "type": "ref",
+                              "ref": "U0vzG",
+                              "descendants": {
+                                "m7zjA": {
+                                  "fill": "$turquoise500"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "D3sdOr",
+                  "name": "Button/IconOnly/Size36/Primary/Stroke/Circle/Stop/Hover",
+                  "reusable": true,
+                  "width": 42,
+                  "height": 42,
+                  "gap": 11.5,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "s3CKcB",
+                      "name": "播放按钮",
+                      "width": 41.400001525878906,
+                      "height": 41.400001525878906,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "lB8ST",
+                          "x": 0.16416016221046448,
+                          "y": 0.16416016221046448,
+                          "name": "Vector (Stroke)",
+                          "geometry": "M10 19c4.97056 0 9-4.02944 9-9 0-4.97056-4.02944-9-9-9-4.97056 0-9 4.02944-9 9 0 4.97056 4.02944 9 9 9z m10-9c0 5.52285-4.47715 10-10 10-5.52285 0-10-4.47715-10-10 0-5.52285 4.47715-10 10-10 5.52285 0 10 4.47715 10 10z",
+                          "fillRule": "evenodd",
+                          "fill": "$turquoise300",
+                          "width": 41.07143020629883,
+                          "height": 41.07143020629883
+                        },
+                        {
+                          "type": "path",
+                          "id": "H0cqY",
+                          "x": 20.7001953125,
+                          "y": 0.16472168266773224,
+                          "name": "Intersect",
+                          "geometry": "M0 20c5.52285 0 10-4.47715 10-10 0-5.52285-4.47715-10-10-10l0 1c4.97056 0 9 4.02944 9 9 0 4.97056-4.02944 9-9 9l0 1z",
+                          "fill": "$turquoise400",
+                          "width": 20.535715103149414,
+                          "height": 41.07143020629883
+                        },
+                        {
+                          "id": "P2DLYP",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 12,
+                          "y": 12,
+                          "children": [
+                            {
+                              "id": "UBwl3",
+                              "type": "ref",
+                              "ref": "U0vzG",
+                              "descendants": {
+                                "m7zjA": {
+                                  "fontSize": 18,
+                                  "fill": "$turquoise400"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "f7R9CA",
+                  "name": "Button/IconOnly/Size36/Primary/Stroke/Circle/Stop/Click",
+                  "reusable": true,
+                  "width": 42,
+                  "height": 42,
+                  "gap": 11.5,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "HY14X",
+                      "name": "播放按钮",
+                      "width": 41.400001525878906,
+                      "height": 41.400001525878906,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "rKEHO",
+                          "x": 0.16416016221046448,
+                          "y": 0.16416016221046448,
+                          "name": "Vector (Stroke)",
+                          "geometry": "M10 19c4.97056 0 9-4.02944 9-9 0-4.97056-4.02944-9-9-9-4.97056 0-9 4.02944-9 9 0 4.97056 4.02944 9 9 9z m10-9c0 5.52285-4.47715 10-10 10-5.52285 0-10-4.47715-10-10 0-5.52285 4.47715-10 10-10 5.52285 0 10 4.47715 10 10z",
+                          "fillRule": "evenodd",
+                          "fill": "$turquoise300",
+                          "width": 41.07143020629883,
+                          "height": 41.07143020629883
+                        },
+                        {
+                          "type": "path",
+                          "id": "rec8t",
+                          "x": 20.7001953125,
+                          "y": 0.16472168266773224,
+                          "name": "Intersect",
+                          "geometry": "M0 20c5.52285 0 10-4.47715 10-10 0-5.52285-4.47715-10-10-10l0 1c4.97056 0 9 4.02944 9 9 0 4.97056-4.02944 9-9 9l0 1z",
+                          "fill": "$turquoise600",
+                          "width": 20.535715103149414,
+                          "height": 41.07143020629883
+                        },
+                        {
+                          "id": "v0mFqS",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 12,
+                          "y": 12,
+                          "children": [
+                            {
+                              "id": "bKb24",
+                              "type": "ref",
+                              "ref": "U0vzG",
+                              "descendants": {
+                                "m7zjA": {
+                                  "fontSize": 18,
+                                  "fill": "$turquoise600"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Wx7Gt",
+              "x": 663,
+              "y": 505,
+              "name": "Button/SoundPlay/48",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "w6uI8",
+                  "name": "Button/IconOnly/Size48/Primary/Flat/Circle/Play/Default",
+                  "reusable": true,
+                  "clip": true,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "S8liO",
+                      "name": "Button/IconOnly/Size48/Primary/Flat/Circle/Play/Default",
+                      "gap": 14.000000953674316,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "qnnIB",
+                          "name": "播放按钮",
+                          "width": 48,
+                          "height": 48,
+                          "fill": "$turquoise500",
+                          "cornerRadius": 133.33340454101562,
+                          "gap": 13.333333969116211,
+                          "padding": "$radius-3",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "id": "JrTGA",
+                              "type": "ref",
+                              "ref": "1xCKp",
+                              "x": 14,
+                              "y": 14,
+                              "children": [
+                                {
+                                  "id": "OKVAp",
+                                  "type": "ref",
+                                  "ref": "1zH6k",
+                                  "descendants": {
+                                    "M0FRj": {
+                                      "fill": "$grey100",
+                                      "fontSize": 20
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "K7NGM",
+                  "name": "Button/IconOnly/Size48/Primary/Flat/Circle/Play/Hover",
+                  "reusable": true,
+                  "width": 56,
+                  "height": 56,
+                  "gap": 16.100000381469727,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "DfxDz",
+                      "name": "播放按钮",
+                      "width": 55.20000076293945,
+                      "height": 55.20000076293945,
+                      "fill": "$turquoise400",
+                      "cornerRadius": 999,
+                      "gap": 15.333333969116211,
+                      "padding": 15.333333969116211,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "a96d5r",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 16.100000381469727,
+                          "y": 16.100000381469727,
+                          "children": [
+                            {
+                              "id": "heeNs",
+                              "type": "ref",
+                              "ref": "1zH6k",
+                              "descendants": {
+                                "M0FRj": {
+                                  "fontSize": 23,
+                                  "fill": "$grey100"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "X8UQn",
+                  "name": "Button/IconOnly/Size48/Primary/Flat/Circle/Play/Click",
+                  "reusable": true,
+                  "width": 56,
+                  "height": 56,
+                  "gap": 16.100000381469727,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "X4vp21",
+                      "name": "播放按钮",
+                      "width": 55.20000076293945,
+                      "height": 55.20000076293945,
+                      "fill": "$turquoise600",
+                      "cornerRadius": 999,
+                      "gap": 15.333333969116211,
+                      "padding": 15.333333969116211,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "kUEmZ",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 16.100000381469727,
+                          "y": 16.100000381469727,
+                          "children": [
+                            {
+                              "id": "f4n2q",
+                              "type": "ref",
+                              "ref": "1zH6k",
+                              "descendants": {
+                                "M0FRj": {
+                                  "fontSize": 23,
+                                  "fill": "$grey100"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "OQli9",
+                  "name": "Button/IconOnly/Size48/Primary/Stroke/Circle/Stop/Default",
+                  "reusable": true,
+                  "gap": 14.000000953674316,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "vMz4v",
+                      "name": "播放按钮",
+                      "width": 48,
+                      "height": 48,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "FQVJn",
+                          "x": 0.18953758478164673,
+                          "y": 0.19047927856445312,
+                          "name": "Vector (Stroke)",
+                          "geometry": "M10 19c4.97056 0 9-4.02944 9-9 0-4.97056-4.02944-9-9-9-4.97056 0-9 4.02944-9 9 0 4.97056 4.02944 9 9 9z m10-9c0 5.52285-4.47715 10-10 10-5.52285 0-10-4.47715-10-10 0-5.52285 4.47715-10 10-10 5.52285 0 10 4.47715 10 10z",
+                          "fillRule": "evenodd",
+                          "fill": "$turquoise300",
+                          "width": 47.61904525756836,
+                          "height": 47.61904525756836
+                        },
+                        {
+                          "type": "path",
+                          "id": "HvHaZ",
+                          "x": 23.999061584472656,
+                          "y": 0.19047927856445312,
+                          "name": "Intersect",
+                          "geometry": "M0 20c5.52285 0 10-4.47715 10-10 0-5.52285-4.47715-10-10-10l0 1c4.97056 0 9 4.02944 9 9 0 4.97056-4.02944 9-9 9l0 1z",
+                          "fill": "$turquoise500",
+                          "width": 23.80952262878418,
+                          "height": 47.61904525756836
+                        },
+                        {
+                          "id": "r4oJn",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 14,
+                          "y": 14,
+                          "children": [
+                            {
+                              "id": "PGyol",
+                              "type": "ref",
+                              "ref": "U0vzG",
+                              "descendants": {
+                                "m7zjA": {
+                                  "fontSize": 20,
+                                  "fill": "$turquoise500"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mmdAI",
+                  "name": "Button/IconOnly/Size48/Primary/Stroke/Circle/Stop/Hover",
+                  "reusable": true,
+                  "width": 56,
+                  "height": 56,
+                  "gap": 16.100000381469727,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "c9X1GJ",
+                      "name": "播放按钮",
+                      "width": 55.20000076293945,
+                      "height": 55.20000076293945,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "wYRKm",
+                          "x": 0.2177734375,
+                          "y": 0.21923828125,
+                          "name": "Vector (Stroke)",
+                          "geometry": "M10 19c4.97056 0 9-4.02944 9-9 0-4.97056-4.02944-9-9-9-4.97056 0-9 4.02944-9 9 0 4.97056 4.02944 9 9 9z m10-9c0 5.52285-4.47715 10-10 10-5.52285 0-10-4.47715-10-10 0-5.52285 4.47715-10 10-10 5.52285 0 10 4.47715 10 10z",
+                          "fillRule": "evenodd",
+                          "fill": "$turquoise300",
+                          "width": 54.76190185546875,
+                          "height": 54.76190185546875
+                        },
+                        {
+                          "type": "path",
+                          "id": "h67lCn",
+                          "x": 27.598485946655273,
+                          "y": 0.21909180283546448,
+                          "name": "Intersect",
+                          "geometry": "M0 20c5.52285 0 10-4.47715 10-10 0-5.52285-4.47715-10-10-10l0 1c4.97056 0 9 4.02944 9 9 0 4.97056-4.02944 9-9 9l0 1z",
+                          "fill": "$turquoise400",
+                          "width": 27.380950927734375,
+                          "height": 54.76190185546875
+                        },
+                        {
+                          "id": "IWPyN",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 16.100000000000364,
+                          "y": 16.100000000000364,
+                          "children": [
+                            {
+                              "id": "f3zk7J",
+                              "type": "ref",
+                              "ref": "U0vzG",
+                              "descendants": {
+                                "m7zjA": {
+                                  "fontSize": 23,
+                                  "fill": "$turquoise400"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qmLiD",
+                  "name": "Button/IconOnly/Size48/Primary/Stroke/Circle/Stop/Click",
+                  "reusable": true,
+                  "width": 56,
+                  "height": 56,
+                  "gap": 16.100000381469727,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "C8ctjk",
+                      "name": "播放按钮",
+                      "width": 55.20000076293945,
+                      "height": 55.20000076293945,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "k6WGd",
+                          "x": 0.2177734375,
+                          "y": 0.21923828125,
+                          "name": "Vector (Stroke)",
+                          "geometry": "M10 19c4.97056 0 9-4.02944 9-9 0-4.97056-4.02944-9-9-9-4.97056 0-9 4.02944-9 9 0 4.97056 4.02944 9 9 9z m10-9c0 5.52285-4.47715 10-10 10-5.52285 0-10-4.47715-10-10 0-5.52285 4.47715-10 10-10 5.52285 0 10 4.47715 10 10z",
+                          "fillRule": "evenodd",
+                          "fill": "$turquoise300",
+                          "width": 54.76190185546875,
+                          "height": 54.76190185546875
+                        },
+                        {
+                          "type": "path",
+                          "id": "vckky",
+                          "x": 27.598485946655273,
+                          "y": 0.21909180283546448,
+                          "name": "Intersect",
+                          "geometry": "M0 20c5.52285 0 10-4.47715 10-10 0-5.52285-4.47715-10-10-10l0 1c4.97056 0 9 4.02944 9 9 0 4.97056-4.02944 9-9 9l0 1z",
+                          "fill": "$turquoise600",
+                          "width": 27.380950927734375,
+                          "height": 54.76190185546875
+                        },
+                        {
+                          "id": "zPKMx",
+                          "type": "ref",
+                          "ref": "1xCKp",
+                          "x": 16.100000000000364,
+                          "y": 16.100000000000364,
+                          "children": [
+                            {
+                              "id": "tvEhj",
+                              "type": "ref",
+                              "ref": "U0vzG",
+                              "descendants": {
+                                "m7zjA": {
+                                  "fontSize": 23,
+                                  "fill": "$turquoise600"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "qzK0Y",
+              "x": 1038,
+              "y": 12,
+              "name": "Button/Variant/Red/Circle",
+              "reusable": true,
+              "slot": [
+                "y3vG5",
+                "aq4TA",
+                "zH2q0",
+                "tR7Ac",
+                "Q4KURI",
+                "XFaRm"
+              ],
+              "width": "fit_content(40)",
+              "height": "fit_content(40)",
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center"
+            },
+            {
+              "type": "frame",
+              "id": "xeDaR",
+              "x": 1102,
+              "y": 12,
+              "name": "Button/Variant/Green/Circle",
+              "reusable": true,
+              "slot": [
+                "uK8Vc",
+                "R8SWu",
+                "Y3y4LF",
+                "QuxcQ",
+                "pCJPd",
+                "wkdR0"
+              ],
+              "clip": true,
+              "width": 40,
+              "height": 40,
+              "layout": "none"
+            },
+            {
+              "type": "frame",
+              "id": "oC08n",
+              "x": 1038,
+              "y": 60,
+              "name": "Frame 1010106305",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "y3vG5",
+                  "name": "Button/Large/Danger/Circle/Default",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$red500",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "Qllg9",
+                      "type": "ref",
+                      "ref": "1xCKp",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "Q2Ira",
+                          "type": "ref",
+                          "ref": "l6NTw",
+                          "descendants": {
+                            "SXLyi": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "aq4TA",
+                  "name": "Button/Large/Danger/Circle/Hover",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$red400",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "X6Pi5",
+                      "type": "ref",
+                      "ref": "1xCKp",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "QeWHv",
+                          "type": "ref",
+                          "ref": "l6NTw",
+                          "descendants": {
+                            "SXLyi": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zH2q0",
+                  "name": "Button/Large/Danger/Circle/Click",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$red600",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "rkWNq",
+                      "type": "ref",
+                      "ref": "1xCKp",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "aKIta",
+                          "type": "ref",
+                          "ref": "l6NTw",
+                          "descendants": {
+                            "SXLyi": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "tR7Ac",
+                  "name": "Button/Large/Danger/Circle/Loading",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$red500",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "T79aNW",
+                      "type": "ref",
+                      "ref": "1xCKp",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "Y4mav",
+                          "type": "ref",
+                          "ref": "pHfMC",
+                          "descendants": {
+                            "9Ot3T": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Q4KURI",
+                  "name": "Button/Large/Danger/Circle/Disabled",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$grey300",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "GJA68",
+                      "type": "ref",
+                      "ref": "1xCKp",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "ABjtY",
+                          "type": "ref",
+                          "ref": "l6NTw",
+                          "descendants": {
+                            "SXLyi": {
+                              "fontSize": 20,
+                              "fill": "$grey600"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XFaRm",
+                  "name": "Button/Large/Danger/Circle/Focus",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$red500",
+                  "cornerRadius": 999,
+                  "stroke": "$turquoise700",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "outer",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "E2mHS",
+                      "type": "ref",
+                      "ref": "1xCKp",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "ea06n",
+                          "type": "ref",
+                          "ref": "l6NTw",
+                          "descendants": {
+                            "SXLyi": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "EEZQw",
+              "x": 1102,
+              "y": 60,
+              "name": "Frame 1010106306",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uK8Vc",
+                  "name": "Button/Large/Success/Circle/Default",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$green500",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "HYoKK",
+                      "type": "ref",
+                      "ref": "bW00p",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "g2aB7",
+                          "type": "ref",
+                          "ref": "40GrI",
+                          "descendants": {
+                            "CQZLl": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "R8SWu",
+                  "name": "Button/Large/Success/Circle/Hover",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$green400",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "FIpOS",
+                      "type": "ref",
+                      "ref": "bW00p",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "O8Z2A",
+                          "type": "ref",
+                          "ref": "40GrI",
+                          "descendants": {
+                            "CQZLl": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Y3y4LF",
+                  "name": "Button/Large/Success/Circle/Click",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$green600",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "f9JP1x",
+                      "type": "ref",
+                      "ref": "bW00p",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "rLq0o",
+                          "type": "ref",
+                          "ref": "40GrI",
+                          "descendants": {
+                            "CQZLl": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "QuxcQ",
+                  "name": "Button/Large/Success/Circle/Loading",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$green500",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "t7uEB",
+                      "type": "ref",
+                      "ref": "1xCKp",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "ZMBK4",
+                          "type": "ref",
+                          "ref": "pHfMC",
+                          "descendants": {
+                            "9Ot3T": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pCJPd",
+                  "name": "Button/Large/Success/Circle/Disabled",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$grey300",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "Qn8Ow",
+                      "type": "ref",
+                      "ref": "bW00p",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "HdJ1R",
+                          "type": "ref",
+                          "ref": "40GrI",
+                          "descendants": {
+                            "CQZLl": {
+                              "fontSize": 20,
+                              "fill": "$grey600"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "wkdR0",
+                  "name": "Button/Large/Success/Circle/Focus",
+                  "reusable": true,
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$green500",
+                  "cornerRadius": 999,
+                  "stroke": "$turquoise700",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "outer",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "L1oQoz",
+                      "type": "ref",
+                      "ref": "bW00p",
+                      "x": 10,
+                      "y": 10,
+                      "children": [
+                        {
+                          "id": "Z143EV",
+                          "type": "ref",
+                          "ref": "40GrI",
+                          "descendants": {
+                            "CQZLl": {
+                              "fontSize": 20,
+                              "fill": "$grey100"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }
@@ -4398,10 +5678,10 @@
         {
           "type": "frame",
           "id": "shBAI",
-          "x": 1764,
+          "x": 1839,
           "y": 501,
           "name": "Docs/Tooltip",
-          "width": 470,
+          "width": 454,
           "fill": "$grey100",
           "layout": "vertical",
           "padding": "$space-5",
@@ -4625,10 +5905,10 @@
         {
           "type": "frame",
           "id": "7BSQP",
-          "x": 1764,
+          "x": 1839,
           "y": 348,
           "name": "Docs/Switch",
-          "width": 470,
+          "width": 454,
           "fill": "$grey100",
           "layout": "vertical",
           "padding": "$space-5",
@@ -4965,10 +6245,10 @@
         {
           "type": "frame",
           "id": "aKQPH",
-          "x": 1396,
+          "x": 1489,
           "y": 40,
           "name": "Typography",
-          "width": 328,
+          "width": 323,
           "height": 580,
           "fill": "$grey100",
           "layout": "none",
@@ -5355,11 +6635,11 @@
         {
           "type": "frame",
           "id": "aSKSd",
-          "x": 1764,
+          "x": 1839,
           "y": 40,
           "name": "Docs/Tag",
           "clip": true,
-          "width": 470,
+          "width": 454,
           "height": 280,
           "fill": "$grey100",
           "layout": "none",
@@ -6051,11 +7331,11 @@
         {
           "type": "frame",
           "id": "vojeQ",
-          "x": 2754,
+          "x": 2774,
           "y": 40,
           "name": "Icons",
           "clip": true,
-          "width": 760,
+          "width": 740,
           "height": 580,
           "fill": "$grey100",
           "layout": "none",
@@ -13166,7 +14446,7 @@
                       "name": "Content",
                       "clip": true,
                       "width": 512,
-                      "height": 2267.999999999999,
+                      "height": 2327.999999999999,
                       "fill": "$grey500",
                       "cornerRadius": "$radius-1",
                       "gap": 10,
@@ -13237,7 +14517,7 @@
                               "rotation": 1.2424041724466865e-17,
                               "fill": "$yellow500",
                               "textGrowth": "fixed-width",
-                              "width": 4147.235277971853,
+                              "width": 4211.1137667735,
                               "content": "Modifying the username may have the following impacts.",
                               "lineHeight": 1.5714285714285714,
                               "textAlignVertical": "middle",
@@ -13659,7 +14939,7 @@
                       "name": "input-box",
                       "clip": true,
                       "width": 512,
-                      "height": 1683.9999999999998,
+                      "height": 1743.9999999999995,
                       "fill": "$grey300",
                       "cornerRadius": "$radius-4",
                       "layout": "vertical",
@@ -13707,7 +14987,7 @@
                       "fill": "$grey800",
                       "textGrowth": "fixed-width-height",
                       "width": 131,
-                      "height": 22.578288643982088,
+                      "height": 25.058605672520287,
                       "flipX": false,
                       "flipY": false
                     },
@@ -13718,7 +14998,7 @@
                       "rotation": 0.017214400057139954,
                       "clip": true,
                       "width": 511.9999547915265,
-                      "height": 567.54969629156,
+                      "height": 630.3838178786741,
                       "fill": "$grey300",
                       "cornerRadius": "$radius-4",
                       "layout": "vertical",
@@ -13849,7 +15129,7 @@
                               "rotation": 1.2424041724466865e-17,
                               "fill": "$yellow500",
                               "textGrowth": "fixed-width",
-                              "width": 4128.497709975444,
+                              "width": 4192.375653862601,
                               "content": "There are errors in the project code. Some references may not be updated automatically. You can check the code and update them manually after renaming.",
                               "lineHeight": 1.5714285714285714,
                               "textAlignVertical": "middle",
@@ -14110,10 +15390,10 @@
         {
           "type": "frame",
           "id": "xl5pV",
-          "x": 2274,
+          "x": 2321,
           "y": 40,
           "name": "Docs/TabsCombined/States",
-          "width": 440,
+          "width": 427,
           "height": 606,
           "fill": "$grey200",
           "layout": "none",
@@ -21466,26 +22746,6 @@
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "id": "r7N6f",
-          "type": "ref",
-          "ref": "1xCKp",
-          "x": 2823,
-          "y": 626,
-          "children": [
-            {
-              "id": "g8TvmD",
-              "type": "ref",
-              "ref": "wNc4x",
-              "descendants": {
-                "wj3Va": {
-                  "fill": "$grey1000",
-                  "fontSize": 14
-                }
-              }
             }
           ]
         }
@@ -33816,7 +35076,7 @@
                               "type": "ref",
                               "ref": "tfxWX",
                               "x": 24,
-                              "y": 14.999999999999993,
+                              "y": 14.99999999999999,
                               "children": [
                                 {
                                   "id": "y7oK4",
@@ -34425,7 +35685,7 @@
                               "type": "ref",
                               "ref": "tfxWX",
                               "x": 24,
-                              "y": 14.999999999999993,
+                              "y": 14.99999999999999,
                               "children": [
                                 {
                                   "id": "Ta3Aw",
@@ -34929,7 +36189,7 @@
                               "type": "ref",
                               "ref": "tfxWX",
                               "x": 24,
-                              "y": 14.999999999999991,
+                              "y": 14.999999999999993,
                               "children": [
                                 {
                                   "id": "p7X114",
@@ -36092,7 +37352,7 @@
                               "type": "ref",
                               "ref": "m6A5K",
                               "x": 0,
-                              "y": 5.682361148042482e-14,
+                              "y": 5.682361148043401e-14,
                               "children": [
                                 {
                                   "id": "lpatT",
@@ -36105,8 +37365,8 @@
                               "id": "OsOUh",
                               "type": "ref",
                               "ref": "m6A5K",
-                              "x": 247.99999999994955,
-                              "y": 5.682361148042482e-14,
+                              "x": 247.99999999998707,
+                              "y": 5.682361148043401e-14,
                               "children": [
                                 {
                                   "id": "rfnOE",
@@ -36119,8 +37379,8 @@
                               "id": "zRRXP",
                               "type": "ref",
                               "ref": "m6A5K",
-                              "x": 495.99999999989905,
-                              "y": 5.6823611480424834e-14,
+                              "x": 495.9999999999742,
+                              "y": 5.682361148043399e-14,
                               "children": [
                                 {
                                   "id": "dJ1TI",
@@ -36133,8 +37393,8 @@
                               "id": "ryGDv",
                               "type": "ref",
                               "ref": "m6A5K",
-                              "x": 743.9999999998487,
-                              "y": 5.6823611480424834e-14,
+                              "x": 743.9999999999612,
+                              "y": 5.682361148043402e-14,
                               "children": [
                                 {
                                   "id": "f38PK",
@@ -36157,7 +37417,7 @@
                               "type": "ref",
                               "ref": "m6A5K",
                               "x": 0,
-                              "y": 5.682361148042482e-14,
+                              "y": 5.682361148043401e-14,
                               "children": [
                                 {
                                   "id": "eeHrD",
@@ -36170,8 +37430,8 @@
                               "id": "z5Xx2",
                               "type": "ref",
                               "ref": "m6A5K",
-                              "x": 247.99999999994955,
-                              "y": 5.682361148042482e-14,
+                              "x": 247.99999999998707,
+                              "y": 5.682361148043401e-14,
                               "children": [
                                 {
                                   "id": "aGosX",
@@ -36184,8 +37444,8 @@
                               "id": "e6vJm",
                               "type": "ref",
                               "ref": "m6A5K",
-                              "x": 495.99999999989905,
-                              "y": 5.6823611480424834e-14,
+                              "x": 495.9999999999742,
+                              "y": 5.682361148043399e-14,
                               "children": [
                                 {
                                   "id": "u0AjqQ",
@@ -36198,8 +37458,8 @@
                               "id": "r7bhS",
                               "type": "ref",
                               "ref": "m6A5K",
-                              "x": 743.9999999998487,
-                              "y": 5.6823611480424834e-14,
+                              "x": 743.9999999999612,
+                              "y": 5.682361148043402e-14,
                               "children": [
                                 {
                                   "id": "TGis1",
@@ -39965,7 +41225,7 @@
                                               "id": "ZwJbr",
                                               "name": "Label",
                                               "clip": true,
-                                              "width": 833.6787391364617,
+                                              "width": 857.6787391364617,
                                               "alignItems": "center",
                                               "children": [
                                                 {
@@ -64464,7 +65724,7 @@
                           "type": "ref",
                           "ref": "tfxWX",
                           "x": 16,
-                          "y": 8.999999999999991,
+                          "y": 8.999999999999993,
                           "children": [
                             {
                               "id": "eSaJO",
@@ -64860,7 +66120,7 @@
                           "type": "ref",
                           "ref": "tfxWX",
                           "x": 16,
-                          "y": 8.999999999999977,
+                          "y": 8.999999999999979,
                           "children": [
                             {
                               "id": "GYG0X",
@@ -91999,220 +93259,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "frame",
-              "id": "v3eAOw",
-              "x": 738,
-              "y": 924,
-              "name": "Button/IconOnly/MediumPrimaryStrokeCircleDefault",
-              "reusable": true,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "d9bqKD",
-                  "name": "播放按钮",
-                  "width": 36,
-                  "height": 36,
-                  "layout": "none",
-                  "children": [
-                    {
-                      "type": "path",
-                      "id": "fr9di",
-                      "x": 0.142578125,
-                      "y": 0.142578125,
-                      "name": "Vector (Stroke)",
-                      "geometry": "M10 19c4.97056 0 9-4.02944 9-9 0-4.97056-4.02944-9-9-9-4.97056 0-9 4.02944-9 9 0 4.97056 4.02944 9 9 9z m10-9c0 5.52285-4.47715 10-10 10-5.52285 0-10-4.47715-10-10 0-5.52285 4.47715-10 10-10 5.52285 0 10 4.47715 10 10z",
-                      "fillRule": "evenodd",
-                      "fill": "#AFE7EC",
-                      "width": 35.71428680419922,
-                      "height": 35.71428680419922
-                    },
-                    {
-                      "type": "path",
-                      "id": "UjCar",
-                      "x": 18,
-                      "y": 0.1429269015789032,
-                      "name": "Intersect",
-                      "geometry": "M0 20c5.52285 0 10-4.47715 10-10 0-5.52285-4.47715-10-10-10l0 1c4.97056 0 9 4.02944 9 9 0 4.97056-4.02944 9-9 9l0 1z",
-                      "fill": "#36C2CF",
-                      "width": 17.85714340209961,
-                      "height": 35.71428680419922
-                    },
-                    {
-                      "type": "frame",
-                      "id": "ccr79",
-                      "x": 10,
-                      "y": 10,
-                      "name": "icon/stop- filled",
-                      "enabled": false,
-                      "width": 16,
-                      "height": 16,
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "path",
-                          "id": "Mop4B",
-                          "x": 2.6666667461395264,
-                          "y": 2.6666667461395264,
-                          "name": "stop",
-                          "geometry": "M0 13l0-10c0-2 1-3 3-3l10 0c2 0 3 1 3 3l0 10c0 2-1 3-3 3l-10 0c-2 0-3-1-3-3z",
-                          "fill": "#36C2CF",
-                          "width": 10.666666984558105,
-                          "height": 10.666666984558105
-                        }
-                      ]
-                    },
-                    {
-                      "id": "TI5s3",
-                      "type": "ref",
-                      "ref": "1xCKp",
-                      "x": 10,
-                      "y": 10,
-                      "children": [
-                        {
-                          "id": "Fy7WD",
-                          "type": "ref",
-                          "ref": "U0vzG",
-                          "descendants": {
-                            "m7zjA": {
-                              "fill": "$turquoise500"
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "SJkO6",
-              "x": 801,
-              "y": 924,
-              "name": "Button-only icon/Default",
-              "reusable": true,
-              "clip": true,
-              "layout": "vertical",
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "lspFJ",
-                  "name": "Button-only icon/Medium/Blue/Flat/Circle/Default",
-                  "gap": 10,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "M9REZZ",
-                      "width": 36,
-                      "height": 36,
-                      "fill": "$turquoise500",
-                      "cornerRadius": "$radius-full",
-                      "gap": "$radius-3",
-                      "padding": "$radius-3",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "e7kfbz",
-                          "name": "XBuilderIcons01/Component/Default",
-                          "clip": true,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "jLtMp",
-                              "name": "Ic01F/Component/Default",
-                              "clip": true,
-                              "justifyContent": "center",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "BIrhq",
-                                  "name": "F",
-                                  "fill": "$grey100",
-                                  "content": "F",
-                                  "fontFamily": "XBuilder_NewIcons_01",
-                                  "fontSize": 16,
-                                  "fontWeight": "normal"
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "w6uI8",
-              "x": 868,
-              "y": 918,
-              "name": "Button-only icon/Default48px",
-              "reusable": true,
-              "clip": true,
-              "layout": "vertical",
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "S8liO",
-                  "name": "Button-only icon/Large/Primary/Flat/Circle/Default",
-                  "gap": 14.000000953674316,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "qnnIB",
-                      "name": "播放按钮",
-                      "width": 48,
-                      "height": 48,
-                      "fill": "$turquoise500",
-                      "cornerRadius": 133.33340454101562,
-                      "gap": 13.333333969116211,
-                      "padding": "$radius-3",
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "id": "JrTGA",
-                          "type": "ref",
-                          "ref": "1xCKp",
-                          "x": 14,
-                          "y": 14,
-                          "children": [
-                            {
-                              "id": "OKVAp",
-                              "type": "ref",
-                              "ref": "1zH6k",
-                              "descendants": {
-                                "M0FRj": {
-                                  "fill": "$grey100",
-                                  "fontSize": 20
-                                }
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -104154,7 +105200,7 @@
                                   "id": "Q28NZ",
                                   "name": "icon/publish-colorful",
                                   "rotation": -0.05413253639937609,
-                                  "width": 5912.781083544392,
+                                  "width": 6157.9871916281645,
                                   "height": 16,
                                   "cornerRadius": "$radius-full",
                                   "layout": "none",
@@ -104392,7 +105438,7 @@
                                   "id": "05ZuN",
                                   "name": "icon/publish-colorful",
                                   "rotation": -0.05413253639937609,
-                                  "width": 5912.781083544392,
+                                  "width": 6157.9871916281645,
                                   "height": 16,
                                   "cornerRadius": "$radius-full",
                                   "layout": "none",
@@ -104860,7 +105906,7 @@
                                   "id": "cNqrQ",
                                   "name": "icon/publish-colorful",
                                   "rotation": -0.05413253639937609,
-                                  "width": 5915.397213475809,
+                                  "width": 6160.605395468696,
                                   "height": 16,
                                   "cornerRadius": "$radius-full",
                                   "layout": "none",
