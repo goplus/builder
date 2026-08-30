@@ -2,6 +2,7 @@
   <UICard
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
+    :class="{ 'flex-[1_1_0] min-h-0': fillContainer }"
   >
     <UICardHeader class="gap-3">
       <div class="flex-1 text-title">
@@ -65,13 +66,17 @@
       </template>
     </UICardHeader>
 
-    <div class="flex grow justify-center overflow-hidden p-3">
+    <div class="min-h-0 flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': fillContainer }">
       <div
         ref="stageContainerRef"
-        class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
-        :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
+        class="stage-viewer-container relative w-full flex items-center justify-center overflow-hidden rounded-sm bg-grey-200"
+        :class="{
+          'aspect-4/3': !fillContainer,
+          'h-full': fillContainer,
+          'stage-viewer-container-running': runnerState !== 'initial'
+        }"
       >
-        <StageViewer class="stage-viewer" />
+        <StageViewer class="stage-viewer" :style="stageViewerStyle" />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
           class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
@@ -79,6 +84,7 @@
           <ProjectRunnerSurface
             ref="projectRunnerSurfaceRef"
             v-model:fullscreen="fullscreen"
+            :style="stageViewerStyle"
             :project="editorCtx.project"
             :runner-state="runnerState"
             :on-run="handleRun.fn"
@@ -167,12 +173,13 @@ import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
+import { useContentSize } from '@/utils/dom'
 import { useSignedInUser } from '@/stores/user'
 import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
-  useCodeEditor,
+  useCodeEditorRef,
   DiagnosticSeverity,
   textDocumentId2CodeFileName,
   getInvalidMonitors
@@ -185,8 +192,16 @@ import { usePublishProject } from '@/components/project'
 // Code Editor operations may take a long time for some projects and block project execution.
 const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
 
+const props = withDefaults(
+  defineProps<{
+    fillContainer?: boolean
+  }>(),
+  { fillContainer: false }
+)
+
+const fillContainer = computed(() => props.fillContainer)
 const editorCtx = useEditorCtx()
-const codeEditor = useCodeEditor()
+const codeEditorRef = useCodeEditorRef()
 const { isOnline } = useNetwork()
 const signedInUser = useSignedInUser()
 
@@ -195,6 +210,18 @@ const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
+const stageContainerSize = useContentSize(stageContainerRef)
+const viewportSize = computed(() => editorCtx.project.viewportSize)
+const stageViewerStyle = computed(() => {
+  const { width, height } = viewportSize.value
+  const aspectRatio = `${width} / ${height}`
+  const containerSize = stageContainerSize.value
+  if (containerSize == null) return { width: '100%', height: 'auto', aspectRatio }
+  const viewportRatio = width / height
+  const containerRatio = containerSize.width / containerSize.height
+  if (viewportRatio >= containerRatio) return { width: '100%', height: 'auto', aspectRatio }
+  return { width: 'auto', height: '100%', aspectRatio }
+})
 const fullscreen = ref(false)
 const exitGuard = ref<'idle' | 'manualStopPending'>('idle')
 const runnerHostSticky = ref(false)
@@ -291,6 +318,8 @@ function handleExit(code: number) {
 }
 
 async function checkAndNotifyCodeError() {
+  const codeEditor = codeEditorRef.value
+  if (codeEditor == null) return
   const r = await withTimeout(CODE_EDITOR_OPERATION_TIMEOUT, (signal) => codeEditor.diagnosticWorkspace(signal))
   const codeFilesWithError: LocaleMessage[] = []
   for (const item of r.items) {
@@ -309,6 +338,8 @@ async function checkAndNotifyCodeError() {
 }
 
 async function checkAndNotifyMonitorError() {
+  const codeEditor = codeEditorRef.value
+  if (codeEditor == null) return
   const { sprites, stage } = editorCtx.project
   const monitors = stage.widgets.filter((w) => w.type === 'monitor')
   const spriteNames = new Set(sprites.map((s) => s.name))
@@ -455,24 +486,5 @@ function getStageInlineAnchor() {
   filter: blur(4px);
   pointer-events: none;
   user-select: none;
-}
-
-.runner-host :deep(.project-runner-surface) {
-  width: 100%;
-  height: 100%;
-  display: flex;
-}
-
-.runner-host :deep(.project-runner-surface:not(.fullscreen)) {
-  align-items: center;
-  justify-content: center;
-}
-
-.runner-host :deep(.project-runner-surface:not(.fullscreen) .runner) {
-  width: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 4 / 3;
-  height: auto;
 }
 </style>

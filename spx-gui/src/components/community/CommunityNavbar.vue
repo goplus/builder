@@ -1,5 +1,5 @@
 <template>
-  <NavbarWrapper class="bg-grey-100 border-b border-grey-400" centered>
+  <NavbarWrapper class="bg-grey-100 border-b border-grey-400" :centered="!fluid">
     <template #left>
       <NavbarDropdown
         :trigger-radar="{ name: 'Project menu', desc: 'Hover to see project options (create/open project)' }"
@@ -8,7 +8,7 @@
           <UIIcon class="w-5 h-5" type="folder" />
         </template>
         <UIMenu>
-          <NavbarNewProjectItem />
+          <NavbarNewProjectItem :handler="newProjectHandler" />
           <NavbarOpenProjectItem />
         </UIMenu>
       </NavbarDropdown>
@@ -47,6 +47,17 @@ import NavbarLang from '../navbar/NavbarLang.vue'
 import NavbarTutorials from '../navbar/NavbarTutorials.vue'
 import { isSignedIn } from '@/stores/user'
 import { useCommunityConfig } from './config'
+
+withDefaults(
+  defineProps<{
+    fluid?: boolean
+    newProjectHandler?: () => void | Promise<void>
+  }>(),
+  {
+    fluid: false,
+    newProjectHandler: undefined
+  }
+)
 
 const { showTutorialsEntry } = useCommunityConfig()
 const router = useRouter()

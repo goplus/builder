@@ -1,5 +1,5 @@
 <template>
-  <CenteredWrapper class="mt-5">
+  <CenteredWrapper class="mt-5" :fluid="fluid">
     <GuestBanner v-if="!isSignedIn()" class="my-3 mb-8" />
     <ProjectsSection
       v-else
@@ -26,7 +26,7 @@
         }}
       </template>
       <template #empty="emptyProps">
-        <MyProjectsEmpty :style="emptyProps.style" />
+        <MyProjectsEmpty :style="emptyProps.style" :handler="newProjectHandler" />
       </template>
       <ProjectItem
         v-for="project in myProjects.data.value"
@@ -128,6 +128,17 @@ import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
 import GuestBanner from '@/components/community/home/banner/GuestBanner.vue'
+
+withDefaults(
+  defineProps<{
+    fluid?: boolean
+    newProjectHandler?: () => void | Promise<void>
+  }>(),
+  {
+    fluid: false,
+    newProjectHandler: undefined
+  }
+)
 
 usePageTitle([])
 

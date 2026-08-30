@@ -17,8 +17,15 @@ import { useEnsureSignedIn } from '@/utils/user'
 const router = useRouter()
 const ensureSignedIn = useEnsureSignedIn()
 const createProject = useCreateProject()
+const props = defineProps<{
+  handler?: () => void | Promise<void>
+}>()
 const handleNewProject = useMessageHandle(
   async () => {
+    if (props.handler != null) {
+      await props.handler()
+      return
+    }
     await ensureSignedIn()
     const name = await createProject()
     router.push(getOwnProjectEditorRoute(name))

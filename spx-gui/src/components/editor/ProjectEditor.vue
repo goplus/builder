@@ -4,7 +4,8 @@
   <UICard
     v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
-    class="relative flex-[1_1_0] min-w-0 flex flex-col overflow-visible!"
+    class="relative min-w-0 flex flex-col overflow-visible!"
+    :class="isFocusedLayout || isPortraitLayout ? 'flex-[3.5_1_0]' : 'flex-[1_1_0]'"
   >
     <!--
       TODO: optimize performance for switching between editors, which corresponds to selection change.
@@ -22,9 +23,19 @@
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
   </UICard>
-  <div v-show="isPreviewMode" class="min-w-0 flex-[0_0_496px] flex flex-col gap-xl">
-    <EditorPreview />
-    <EditorPanels />
+  <div
+    v-show="isPreviewMode"
+    class="min-w-0 flex gap-xl"
+    :class="
+      isFocusedLayout
+        ? 'flex-[3_1_0] min-w-[660px] flex-col'
+        : isPortraitLayout
+          ? 'flex-[3_1_0] min-w-[660px] flex-row'
+          : 'flex-[0_0_496px] flex-col'
+    "
+  >
+    <EditorPreview :fill-container="isFocusedLayout || isPortraitLayout" />
+    <EditorPanels v-if="!isFocusedLayout" :layout="isPortraitLayout ? 'portrait' : 'default'" />
   </div>
   <MapEditor
     v-if="!isPreviewMode"
@@ -47,10 +58,19 @@ import { EditMode } from './editor-state'
 import MapEditor from './map-editor/MapEditor.vue'
 import { useSpxEditorCopilot } from './copilot'
 
+const props = withDefaults(
+  defineProps<{
+    layout?: 'landscape' | 'portrait' | 'focused'
+  }>(),
+  { layout: 'landscape' }
+)
+
 const editorCtx = useEditorCtx()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
+const isFocusedLayout = computed(() => props.layout === 'focused')
+const isPortraitLayout = computed(() => props.layout === 'portrait')
 
 useSpxEditorCopilot()
 

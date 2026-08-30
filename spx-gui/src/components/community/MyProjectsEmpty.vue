@@ -7,8 +7,15 @@ import { useCreateProject } from '@/components/project'
 
 const router = useRouter()
 const createProject = useCreateProject()
+const props = defineProps<{
+  handler?: () => void | Promise<void>
+}>()
 const handleNewProject = useMessageHandle(
   async () => {
+    if (props.handler != null) {
+      await props.handler()
+      return
+    }
     const name = await createProject()
     router.push(getOwnProjectEditorRoute(name))
   },

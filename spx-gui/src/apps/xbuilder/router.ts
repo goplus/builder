@@ -155,6 +155,10 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'ui-design',
         component: () => import('./pages/docs/ui-design/index.vue')
+      },
+      {
+        path: 'game-size-preview',
+        component: () => import('./pages/docs/game-size-preview/index.vue')
       }
     ]
   },
