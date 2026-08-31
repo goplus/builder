@@ -57,7 +57,9 @@ async function addDemoBackdrop(project: SpxProject) {
 async function addDemoSprite(project: SpxProject) {
   const file = createFileWithWebUrl(demoSpriteUrl, 'Idle.svg')
   const sprite = Sprite.create('Squirrel')
-  sprite.addCostume(await Costume.create('Idle', file))
+  const costume = await Costume.create('Idle', file)
+  await costume.autoFit()
+  sprite.addCostume(costume)
   sprite.setSize(0.08)
   project.addSprite(sprite)
   return sprite

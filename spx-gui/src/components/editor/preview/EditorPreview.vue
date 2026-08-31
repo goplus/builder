@@ -82,10 +82,18 @@
           'stage-viewer-container-running': runnerState !== 'initial'
         }"
       >
+        <img
+          v-if="focusedBackdropSrc != null"
+          :src="focusedBackdropSrc"
+          alt=""
+          aria-hidden="true"
+          class="focused-backdrop pointer-events-none absolute inset-0 h-full w-full bg-white object-cover"
+        />
         <StageViewer class="stage-viewer" :style="stageViewerStyle" />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
-          class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
+          class="runner-host absolute inset-0 flex items-center justify-center"
+          :class="{ 'bg-grey-300': focusedBackdropSrc == null }"
         >
           <ProjectRunnerSurface
             ref="projectRunnerSurfaceRef"
@@ -180,6 +188,7 @@ import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useContentSize } from '@/utils/dom'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { useSignedInUser } from '@/stores/user'
 import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
@@ -219,6 +228,10 @@ const stageContainerRef = ref<HTMLDivElement | null>(null)
 const stageContainerSize = useContentSize(stageContainerRef)
 const compactControls = computed(() => stageContainerSize.value != null && stageContainerSize.value.width < 336)
 const viewportSize = computed(() => editorCtx.project.viewportSize)
+// Fill the unused panel area decoratively without extending the interactive game viewport.
+const [focusedBackdropSrc] = useRenderableImageUrl(() =>
+  fillContainer.value ? editorCtx.project.stage.defaultBackdrop?.img : null
+)
 const stageViewerStyle = computed(() => {
   const { width, height } = viewportSize.value
   const aspectRatio = `${width} / ${height}`
