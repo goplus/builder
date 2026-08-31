@@ -252,7 +252,8 @@ describe('Project', () => {
   it.each([
     { width: 480, height: 360 },
     { width: 720, height: 405 },
-    { width: 360, height: 640 }
+    { width: 360, height: 640 },
+    { width: 620, height: 900 }
   ])('should initialize viewport $width × $height with an equally sized map', async (viewportSize) => {
     const project = new SpxProject(undefined, undefined, { viewportSize })
 

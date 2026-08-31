@@ -2,7 +2,7 @@
   <div
     v-show="running.mode !== 'debug'"
     class="flex gap-xl"
-    :class="layout === 'portrait' ? 'h-full w-64 flex-none flex-col' : 'flex-[1_1_0]'"
+    :class="layout === 'portrait' ? 'h-full w-52 flex-none flex-col' : 'flex-[1_1_0]'"
   >
     <UICard
       v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
@@ -28,7 +28,7 @@
       desc: 'Console panel showing runtime output and errors',
       visible: running.mode === 'debug'
     }"
-    :class="layout === 'portrait' ? 'h-full w-64 flex-none' : 'flex-[1_1_0]'"
+    :class="layout === 'portrait' ? 'h-full w-52 flex-none' : 'flex-[1_1_0]'"
   />
 </template>
 

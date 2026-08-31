@@ -25,17 +25,23 @@
   </UICard>
   <div
     v-show="isPreviewMode"
+    ref="previewColumnRef"
     class="min-w-0 flex gap-xl"
     :class="
       isFocusedLayout
         ? 'flex-[3_1_0] min-w-[660px] flex-col'
-        : isPortraitLayout
-          ? 'flex-[3_1_0] min-w-[660px] flex-row'
-          : 'flex-[0_0_496px] flex-col'
+        : isPortraitRailLayout
+          ? 'flex-none flex-row'
+          : 'flex-none flex-col'
     "
+    :style="previewColumnStyle"
   >
-    <EditorPreview :fill-container="isFocusedLayout || isPortraitLayout" />
-    <EditorPanels v-if="!isFocusedLayout" :layout="isPortraitLayout ? 'portrait' : 'default'" />
+    <EditorPreview
+      class="min-w-0"
+      :class="{ 'flex-[1_1_0] self-start': isPortraitRailLayout }"
+      :fill-container="isFocusedLayout"
+    />
+    <EditorPanels v-if="!isFocusedLayout" :layout="isPortraitRailLayout ? 'portrait' : 'default'" />
   </div>
   <MapEditor
     v-if="!isPreviewMode"
@@ -46,7 +52,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useContentSize } from '@/utils/dom'
 import { UICard } from '@/components/ui'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
@@ -71,6 +78,50 @@ const selected = computed(() => editorCtx.state.selected)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
 const isFocusedLayout = computed(() => props.layout === 'focused')
 const isPortraitLayout = computed(() => props.layout === 'portrait')
+const previewColumnRef = ref<HTMLElement | null>(null)
+const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
+const panelGap = 16
+const minEditorWidth = 384
+// The preview adds a 48px header and 12px padding around the game canvas.
+const previewChromeHeight = 72
+const previewPaddingWidth = 24
+const portraitRailWidth = 208 + panelGap
+const bottomPanelsHeight = 200
+const isPortraitRailLayout = computed(() => {
+  const size = editorSize.value
+  if (!isPortraitLayout.value || size == null) return false
+  const { width, height } = project.value.viewportSize
+  const stackedPreviewWidth =
+    Math.max(0, size.height - previewChromeHeight - panelGap - bottomPanelsHeight) * (width / height) +
+    previewPaddingWidth
+  const railPreviewWidth = size.width - minEditorWidth - panelGap - portraitRailWidth
+  // Move panels below the preview only when doing so gives the game a larger canvas.
+  return railPreviewWidth >= stackedPreviewWidth
+})
+const previewColumnStyle = computed(() => {
+  if (isFocusedLayout.value) return null
+  const size = editorSize.value
+  if (size == null) return { width: '496px' }
+  const { width, height } = project.value.viewportSize
+  const ratio = width / height
+  if (isPortraitLayout.value) {
+    const railWidth = isPortraitRailLayout.value ? portraitRailWidth : 0
+    const bottomHeight = isPortraitRailLayout.value ? 0 : bottomPanelsHeight + panelGap
+    const availableWidth = size.width - minEditorWidth - panelGap - railWidth
+    const heightBasedWidth = Math.max(0, size.height - previewChromeHeight - bottomHeight) * ratio + previewPaddingWidth
+    return { width: `${Math.max(0, Math.min(availableWidth, heightBasedWidth)) + railWidth}px` }
+  }
+  // Leave room below a landscape preview for the Sprites/Stage panels or Console.
+  const heightBasedWidth =
+    Math.max(0, size.height - previewChromeHeight - panelGap - bottomPanelsHeight) * ratio + previewPaddingWidth
+  const previewWidth = Math.min(
+    640,
+    Math.max(360, size.width * 0.4),
+    size.width - minEditorWidth - panelGap,
+    heightBasedWidth
+  )
+  return { width: `${Math.max(0, previewWidth)}px` }
+})
 
 useSpxEditorCopilot()
 

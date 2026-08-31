@@ -2,22 +2,14 @@
   <UIFormModal
     :radar="{ name: 'Create project modal', desc: 'Modal for creating a project from a template' }"
     class="project-create-modal"
-    :title="$t({ en: 'Create a new project', zh: '创建新的项目' })"
+    :title="$t({ en: 'New project', zh: '创建项目' })"
     :visible="visible"
     :mask-closable="false"
     @update:visible="emit('update:visible', $event)"
   >
     <UIForm :form="form" has-success-feedback @submit="handleSubmit">
       <div data-testid="project-create-fields">
-        <div class="h-7.5 text-grey-900">
-          {{
-            $t({
-              en: 'The project name will also be used in project URLs.',
-              zh: '项目名同时也会用于项目 URL。'
-            })
-          }}
-        </div>
-        <UIFormItem path="name">
+        <UIFormItem path="name" :label="$t({ en: 'Project name', zh: '项目名' })">
           <UITextInput
             v-model:value="form.value.name"
             v-radar="{ name: 'Project name input', desc: 'Input field for project name' }"
@@ -27,17 +19,7 @@
         </UIFormItem>
 
         <div class="mt-6">
-          <div class="mb-3">
-            <div class="text-title">{{ $t({ en: 'Choose a template', zh: '选择模板' }) }}</div>
-            <div class="mt-1 text-xs text-grey-700">
-              {{
-                $t({
-                  en: 'The template determines the game canvas and editor preview layout.',
-                  zh: '模板将决定游戏画面以及编辑器预览布局。'
-                })
-              }}
-            </div>
-          </div>
+          <div class="mb-3 text-title">{{ $t({ en: 'Template', zh: '模板' }) }}</div>
 
           <div class="grid grid-cols-3 gap-3">
             <button
@@ -71,9 +53,6 @@
                 </div>
               </div>
               <div class="mt-2 truncate text-xs">{{ $t(template.name) }}</div>
-              <div class="mt-1 line-clamp-2 min-h-8 text-2xs text-grey-700">
-                {{ $t(template.description) }}
-              </div>
             </button>
           </div>
         </div>

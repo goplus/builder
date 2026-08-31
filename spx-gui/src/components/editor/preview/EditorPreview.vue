@@ -4,8 +4,8 @@
     class="editor-preview relative flex flex-col overflow-hidden"
     :class="{ 'flex-[1_1_0] min-h-0': fillContainer }"
   >
-    <UICardHeader class="gap-3">
-      <div class="flex-1 text-title">
+    <UICardHeader class="flex-none gap-3">
+      <div class="min-w-0 flex-1 truncate text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
@@ -35,20 +35,26 @@
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
           type="primary"
           icon="rotate"
+          :shape="compactControls ? 'square' : 'default'"
+          :aria-label="$t({ en: 'Rerun', zh: '重新运行' })"
+          :title="$t({ en: 'Rerun', zh: '重新运行' })"
           :disabled="runnerState !== 'running' || handleStop.isLoading.value"
           :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
           @click="handleRerun.fn"
         >
-          {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+          <span v-if="!compactControls">{{ $t({ en: 'Rerun', zh: '重新运行' }) }}</span>
         </UIButton>
         <UIButton
           v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
           type="neutral"
           icon="end"
+          :shape="compactControls ? 'square' : 'default'"
+          :aria-label="$t({ en: 'Stop', zh: '停止' })"
+          :title="$t({ en: 'Stop', zh: '停止' })"
           :loading="handleStop.isLoading.value"
           @click="handleStop.fn"
         >
-          {{ $t({ en: 'Stop', zh: '停止' }) }}
+          <span v-if="!compactControls">{{ $t({ en: 'Stop', zh: '停止' }) }}</span>
         </UIButton>
         <UITooltip placement="top-end">
           <template #trigger>
@@ -70,8 +76,8 @@
       <div
         ref="stageContainerRef"
         class="stage-viewer-container relative w-full flex items-center justify-center overflow-hidden rounded-sm bg-grey-200"
+        :style="fillContainer ? null : { aspectRatio: `${viewportSize.width} / ${viewportSize.height}` }"
         :class="{
-          'aspect-4/3': !fillContainer,
           'h-full': fillContainer,
           'stage-viewer-container-running': runnerState !== 'initial'
         }"
@@ -211,6 +217,7 @@ const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
 const stageContainerSize = useContentSize(stageContainerRef)
+const compactControls = computed(() => stageContainerSize.value != null && stageContainerSize.value.width < 336)
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const stageViewerStyle = computed(() => {
   const { width, height } = viewportSize.value
