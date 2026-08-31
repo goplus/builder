@@ -56,6 +56,16 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 	type tree struct {
 		Children []tree
 	}
+
+	// 无标签的匿名嵌入：encoding/json 会把内层字段提升到外层，与嵌套 schema
+	// 背离（宿主按嵌套键生成，回填走提升规则读不到）——必须显式拒绝。
+	type common struct {
+		Comment string
+	}
+	type embedded struct {
+		common
+		Score int
+	}
 	for _, test := range []struct {
 		name   string
 		result any
@@ -71,6 +81,7 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		{name: "self reference", result: &node{}, want: "refers to itself"},
 		{name: "self reference through slice", result: &tree{}, want: "refers to itself"},
 		{name: "mutual reference", result: &left{}, want: "refers to itself"},
+		{name: "untagged embedded field", result: &embedded{}, want: "embedded fields are not supported"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := deriveSchema(test.result)
@@ -117,3 +128,33 @@ func TestGenerateJSONFillsTheResult(t *testing.T) {
 // 互相引用的类型必须声明在包级：Go 的局部类型声明是顺序的，彼此看不见对方。
 type left struct{ Right *right }
 type right struct{ Left *left }
+
+// TestDeriveSchemaAcceptsTaggedEmbedding 验证带 json 标签的匿名字段被当作普通
+// 命名字段（encoding/json 对带名字的匿名字段不做提升），schema 生成嵌套对象。
+func TestDeriveSchemaAcceptsTaggedEmbedding(t *testing.T) {
+	type Common struct {
+		Comment string `json:"comment"`
+	}
+	type feedback struct {
+		Common `json:"common"`
+		Score  int `json:"score"`
+	}
+
+	schema, err := deriveSchema(&feedback{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	properties := schema["properties"].(map[string]any)
+	if _, ok := properties["common"]; !ok {
+		t.Errorf("schema should nest the tagged embedded field under its json name: %v", properties)
+	}
+
+	// 与 encoding/json 的实际行为对照：嵌套键真的能回填。
+	var filled feedback
+	if err := json.Unmarshal([]byte(`{"common":{"comment":"nice"},"score":4}`), &filled); err != nil {
+		t.Fatal(err)
+	}
+	if filled.Comment != "nice" || filled.Score != 4 {
+		t.Errorf("filled = %+v", filled)
+	}
+}

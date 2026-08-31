@@ -50,6 +50,15 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 	required := []string{}
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
+		if field.Anonymous && !hasJSONName(field) {
+			// 未带 json 标签的匿名嵌入字段：encoding/json 会把内层导出字段**提升**
+			// 到外层对象，而这里若生成一个嵌套属性，宿主按 schema 生成的结果就
+			// 填不回去（回填走提升规则，读不到嵌套键）。完整复刻提升与冲突规则
+			// 不值得，明确拒绝：作者给字段起个名字或加 json 标签即可。
+			return nil, fmt.Errorf(
+				"generateJSON: %s embeds %s without a json tag; embedded fields are not supported — use a named field or give it an explicit json name",
+				t, field.Type)
+		}
 		if field.PkgPath != "" {
 			// 未导出字段：encoding/json 既读不到也填不进，放进 schema 只会误导 LLM。
 			continue
@@ -105,6 +114,13 @@ func schemaOfType(t reflect.Type, visiting map[reflect.Type]bool) (map[string]an
 	default:
 		return nil, fmt.Errorf("unsupported type %s", t)
 	}
+}
+
+// hasJSONName 判断字段是否带显式的 json 名字标签。
+// 带名字的匿名字段被 encoding/json 当普通命名字段处理（不做提升），可以正常支持。
+func hasJSONName(field reflect.StructField) bool {
+	name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
+	return name != "" && name != "-"
 }
 
 // jsonFieldName 按 encoding/json 的规则决定字段在 JSON 里的名字。
