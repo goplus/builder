@@ -12,13 +12,13 @@ import (
 
 // 本文件把调度器的持锁纪律从注释升级为机器检查。被守护的规则：
 //
-//  1. 执行令牌只经 acquire/release 流转，且只有 runFrame 与 mustCallCapability
+//  1. 执行令牌（execToken）只经 acquireExec/releaseExec 流转，且只有 runFrame 与 mustCallCapability
 //     有资格调它们——不存在散落在别处的临时让位。
 //  2. 可能长时间阻塞的等待（presentationMu、桥的 callCapability）只出现在
 //     mustCallCapability 里——那里的固定顺序保证等待前已交还令牌。
-//  3. mu 与 deliverMu 的持锁区间内没有任何可能阻塞的操作
+//  3. schedulerMu 与 eventDeliveryMu 的持锁区间内没有任何可能阻塞的操作
 //     （channel 收发、select、Wait、取令牌、调桥、拿慢锁）。
-//  4. deliverMu 只在 deliverAll 里使用——deliverMu→mu 是唯一的嵌套方向。
+//  4. eventDeliveryMu 只在 deliverAll 里使用——eventDeliveryMu→schedulerMu 是唯一的嵌套方向。
 //
 // 检查基于 AST 而不是运行观察：违规的“写法”在进入仓库时就变红，
 // 不依赖测试恰好踩中那条时序。
@@ -50,9 +50,9 @@ func TestSchedulingInvariants(t *testing.T) {
 // 各规则的豁免名单：唯一有资格出现这些操作的函数。
 var (
 	tokenOperators   = map[string]bool{"runFrame": true, "mustCallCapability": true}
-	tokenPlumbing    = map[string]bool{"acquire": true, "release": true, "init": true}
+	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
 	blockingWaitHome = "mustCallCapability"
-	deliverMuHome    = "deliverAll"
+	deliveryMuHome   = "deliverAll"
 )
 
 func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
@@ -67,7 +67,7 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 		case *ast.CallExpr:
 			callee := renderExpr(n.Fun)
 			switch {
-			case strings.HasSuffix(callee, ".acquire"), strings.HasSuffix(callee, ".release"):
+			case strings.HasSuffix(callee, ".acquireExec"), strings.HasSuffix(callee, ".releaseExec"):
 				if !tokenOperators[name] {
 					report(n.Pos(), "%s calls %s: only runFrame and mustCallCapability may operate the token", name, callee)
 				}
@@ -79,21 +79,21 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				if name != blockingWaitHome {
 					report(n.Pos(), "%s calls the capability bridge directly: all bridge waits must go through %s", name, blockingWaitHome)
 				}
-			case strings.Contains(callee, "deliverMu."):
-				if name != deliverMuHome {
-					report(n.Pos(), "%s touches deliverMu: delivery serialization belongs to %s only", name, deliverMuHome)
+			case strings.Contains(callee, "eventDeliveryMu."):
+				if name != deliveryMuHome {
+					report(n.Pos(), "%s touches eventDeliveryMu: delivery serialization belongs to %s only", name, deliveryMuHome)
 				}
 			}
 		case *ast.Ident:
-			if n.Name == "token" && !tokenOperators[name] && !tokenPlumbing[name] {
-				report(n.Pos(), "%s references the token directly: use acquire/release", name)
+			if n.Name == "execToken" && !tokenOperators[name] && !tokenPlumbing[name] {
+				report(n.Pos(), "%s references the token directly: use acquireExec/releaseExec", name)
 			}
 		}
 		return true
 	})
 
-	// 规则 3：mu / deliverMu 的持锁区间内不得有阻塞操作。
-	for _, guard := range []string{"mu", "deliverMu"} {
+	// 规则 3：schedulerMu / eventDeliveryMu 的持锁区间内不得有阻塞操作。
+	for _, guard := range []string{"schedulerMu", "eventDeliveryMu"} {
 		for _, region := range heldRegions(fn, guard) {
 			ast.Inspect(fn.Body, func(node ast.Node) bool {
 				if node == nil || node.Pos() < region.from || node.Pos() >= region.to {
@@ -101,10 +101,10 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				}
 				switch n := node.(type) {
 				case *ast.SendStmt:
-					// 唯一豁免：deliverAll 在 deliverMu 区间内向 lane.queue 发送。
-					// 它可证明不阻塞——同一把 deliverMu 下刚做完全量容量预检，
+					// 唯一豁免：deliverAll 在 eventDeliveryMu 区间内向 lane.queue 发送。
+					// 它可证明不阻塞——同一把 eventDeliveryMu 下刚做完全量容量预检，
 					// 而队列只有投递方会填充。这正是全有或全无投递的机制本身。
-					if guard == "deliverMu" && name == deliverMuHome && renderExpr(n.Chan) == "lane.queue" {
+					if guard == "eventDeliveryMu" && name == deliveryMuHome && renderExpr(n.Chan) == "lane.queue" {
 						return true
 					}
 					report(n.Pos(), "channel send inside a %s-held region of %s", guard, name)
@@ -117,12 +117,12 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				case *ast.CallExpr:
 					callee := renderExpr(n.Fun)
 					blocking := strings.HasSuffix(callee, ".Wait") ||
-						strings.HasSuffix(callee, ".acquire") ||
-						strings.HasSuffix(callee, ".release") ||
+						strings.HasSuffix(callee, ".acquireExec") ||
+						strings.HasSuffix(callee, ".releaseExec") ||
 						strings.HasSuffix(callee, ".callCapability") ||
 						strings.Contains(callee, "presentationMu.Lock")
-					if guard == "mu" && strings.Contains(callee, "deliverMu.Lock") {
-						blocking = true // 嵌套方向只允许 deliverMu→mu
+					if guard == "schedulerMu" && strings.Contains(callee, "eventDeliveryMu.Lock") {
+						blocking = true // 嵌套方向只允许 eventDeliveryMu→schedulerMu
 					}
 					if blocking {
 						report(n.Pos(), "%s called inside a %s-held region of %s", callee, guard, name)
@@ -179,7 +179,7 @@ func heldRegions(fn *ast.FuncDecl, guard string) []lockRegion {
 	return regions
 }
 
-// renderExpr 把选择器链渲染成 "p.mu.Lock" 形式的字符串，便于按名匹配。
+// renderExpr 把选择器链渲染成 "p.schedulerMu.Lock" 形式的字符串，便于按名匹配。
 func renderExpr(expr ast.Expr) string {
 	switch n := expr.(type) {
 	case *ast.Ident:

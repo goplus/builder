@@ -163,7 +163,7 @@ func (p *Course) Start() {
 		}
 		program.runFrame(handler)
 	}
-	program.awaitEnd()
+	program.awaitShutdown()
 }
 
 // Gopt_Course_Main 是 classfile 约定的程序入口，由 XGo 生成的 Main 调用。

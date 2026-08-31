@@ -60,25 +60,25 @@ var capabilityKinds = map[string]capabilityKind{
 // 它挂在 Course 实例上（而不是做成包级单例），各 namespace 通过指针共享它——
 // 这与 spx 的做法一致：spx 的回调也存在 Game 实例持有的 scriptEventRegistry 里。
 type courseProgram struct {
-	mu        sync.Mutex
-	handlers  handlers
-	started   bool
-	completed bool
-	fatal     any
+	schedulerMu sync.Mutex
+	handlers    handlers
+	started     bool
+	completed   bool
+	fatal       any
 
-	// token 是执行令牌：cap-1 channel 做二元信号量，初始含一枚。
+	// execToken 是执行令牌：cap-1 channel 做二元信号量，初始含一枚。
 	// 等待者由 runtime 排队唤醒；框架不依赖任何跨回调的唤醒顺序承诺。
-	token chan struct{}
+	execToken chan struct{}
 	// presentationMu 是展示串行通道：course_show* 调用依次通过，
 	// 持有期横跨"等学习者看完"的全程。等待它之前必须先交还执行令牌。
 	presentationMu sync.Mutex
-	// deliverMu 串行化事件投递，保证一次触发对它的全部回调通道"全有或全无"
+	// eventDeliveryMu 串行化事件投递，保证一次触发对它的全部回调通道"全有或全无"
 	// ——只有投递方会往队列里加，持锁预检容量后逐条发送不会中途失败。
-	deliverMu sync.Mutex
-	// ending 在完成或致命错误时关闭一次，通知各回调通道的 worker 退出。
-	ending  chan struct{}
-	endOnce sync.Once
-	// workers 计数回调通道的 worker goroutine，awaitEnd 用它等在途回调收尾。
+	eventDeliveryMu sync.Mutex
+	// shutdown 在完成或致命错误时关闭一次，通知各回调通道的 worker 退出。
+	shutdown     chan struct{}
+	shutdownOnce sync.Once
+	// workers 计数回调通道的 worker goroutine，awaitShutdown 用它等在途回调收尾。
 	workers sync.WaitGroup
 	// laneStarters 收集程序启动前注册的回调通道的 worker 启动函数；
 	// lanesStarted 置位后，新注册的通道直接启动自己的 worker。
@@ -106,35 +106,35 @@ type handlers struct {
 }
 
 func (p *courseProgram) init() {
-	// 令牌在进入锁区之前就填好：mu 的持锁区间内不做任何 channel 操作，
+	// 令牌在进入锁区之前就填好：schedulerMu 的持锁区间内不做任何 channel 操作，
 	// 这是 scheduling_invariants_test.go 机器检查的不变式之一。
-	token := make(chan struct{}, 1)
-	token <- struct{}{}
+	execToken := make(chan struct{}, 1)
+	execToken <- struct{}{}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.schedulerMu.Lock()
+	defer p.schedulerMu.Unlock()
 	p.handlers = handlers{}
 	p.started = true
 	p.completed = false
 	p.fatal = nil
-	p.token = token
-	p.ending = make(chan struct{})
-	p.endOnce = sync.Once{}
+	p.execToken = execToken
+	p.shutdown = make(chan struct{})
+	p.shutdownOnce = sync.Once{}
 	p.laneStarters = nil
 	p.lanesStarted = false
 	p.callCapability = xgoexec.CallCapability
 }
 
-func (p *courseProgram) acquire() { <-p.token }
+func (p *courseProgram) acquireExec() { <-p.execToken }
 
-// release 归还执行令牌。非阻塞发送兼作动态断言：令牌槽已满说明出现了
+// releaseExec 归还执行令牌。非阻塞发送兼作动态断言：令牌槽已满说明出现了
 // "未持有却归还"（配对错误），这是框架 bug，立刻炸出来比默默多出一枚
 // 令牌（互斥失效）好。
-func (p *courseProgram) release() {
+func (p *courseProgram) releaseExec() {
 	select {
-	case p.token <- struct{}{}:
+	case p.execToken <- struct{}{}:
 	default:
-		panic("tutorial: token released without a matching acquire")
+		panic("tutorial: execToken released without a matching acquireExec")
 	}
 }
 
@@ -142,13 +142,13 @@ func (p *courseProgram) release() {
 //
 // panic（capability 失败或课程代码自身的错误）在这里兜住并记为致命错误：
 // 帧可能跑在回调通道的 worker goroutine 上，直接放任 panic 会绕过主 goroutine
-// 的退出路径；统一记下来由 awaitEnd 在主 goroutine 上重新抛出，执行器看到的
+// 的退出路径；统一记下来由 awaitShutdown 在主 goroutine 上重新抛出，执行器看到的
 // 仍然是"课程程序 panic → exit error"。注意 defer 的顺序：先声明归还令牌、
 // 后声明 recover，LIFO 保证 recover 先跑、令牌总能归还，失败的帧不会把令牌
 // 带走冻结整个课程。
 func (p *courseProgram) runFrame(run func()) {
-	p.acquire()
-	defer p.release()
+	p.acquireExec()
+	defer p.releaseExec()
 	// 准入检查必须在**拿到令牌之后**：出队时的检查在等令牌期间可能过期——
 	// 别的帧在这段等待里完成了课程或记了致命错误，此时这一帧不该再开始。
 	if p.terminated() {
@@ -186,38 +186,38 @@ func addLane[T any](p *courseProgram, handler func(T), attach func(*handlers, *h
 		queue:   make(chan T, eventQueueSize),
 	}
 	start := func() {
-		// workers.Add 与终态判断同锁：终态后 awaitEnd 可能已在 Wait，
+		// workers.Add 与终态判断同锁：终态后 awaitShutdown 可能已在 Wait，
 		// 此时不再起新 worker（通道反正已死），避免 Add 与 Wait 竞态。
-		p.mu.Lock()
+		p.schedulerMu.Lock()
 		dead := p.completed || p.fatal != nil
 		if !dead {
 			p.workers.Add(1)
 		}
-		p.mu.Unlock()
+		p.schedulerMu.Unlock()
 		if dead {
 			return
 		}
 		go lane.run(p)
 	}
-	p.mu.Lock()
+	p.schedulerMu.Lock()
 	attach(&p.handlers, lane)
 	if p.lanesStarted {
-		p.mu.Unlock()
+		p.schedulerMu.Unlock()
 		start()
 		return
 	}
 	p.laneStarters = append(p.laneStarters, start)
-	p.mu.Unlock()
+	p.schedulerMu.Unlock()
 }
 
 func (l *handlerLane[T]) run(p *courseProgram) {
 	defer p.workers.Done()
 	for {
 		select {
-		case <-p.ending:
+		case <-p.shutdown:
 			return
 		case event := <-l.queue:
-			// ending 关闭与队列有货可能同时就绪（select 随机选取），
+			// shutdown 关闭与队列有货可能同时就绪（select 随机选取），
 			// 终态后的积压事件由 runFrame 拿到令牌后的准入检查放弃。
 			p.runFrame(func() { l.handler(event) })
 		}
@@ -234,12 +234,12 @@ func (l *handlerLane[T]) run(p *courseProgram) {
 //   - 某条队列满：课程程序失控（回调在等待类 capability 期间队列本会持续排空，
 //     正常课程够不着上限）。必须报错而不是阻塞或静默丢弃。
 func deliverAll[T any](p *courseProgram, lanes []*handlerLane[T], event T) error {
-	p.deliverMu.Lock()
-	defer p.deliverMu.Unlock()
+	p.eventDeliveryMu.Lock()
+	defer p.eventDeliveryMu.Unlock()
 
-	p.mu.Lock()
+	p.schedulerMu.Lock()
 	started, completed, failed := p.started, p.completed, p.fatal != nil
-	p.mu.Unlock()
+	p.schedulerMu.Unlock()
 
 	switch {
 	case !started:
@@ -249,7 +249,7 @@ func deliverAll[T any](p *courseProgram, lanes []*handlerLane[T], event T) error
 	case completed:
 		return nil
 	}
-	// 先全量预检容量再发送：deliverMu 保证没有别的投递方插队，worker 只会
+	// 先全量预检容量再发送：eventDeliveryMu 保证没有别的投递方插队，worker 只会
 	// 消费不会填充，预检通过后的发送不可能中途失败——一次触发对它的全部
 	// 回调通道要么都投进，要么一条都不投。
 	for _, lane := range lanes {
@@ -266,23 +266,23 @@ func deliverAll[T any](p *courseProgram, lanes []*handlerLane[T], event T) error
 // startLanes 启动此前注册的全部回调通道的 worker，由 Course.Start 调用。
 // 在此之前投递的事件安静地躺在队列缓冲里，Start 后按序处理。
 func (p *courseProgram) startLanes() {
-	p.mu.Lock()
+	p.schedulerMu.Lock()
 	p.lanesStarted = true
 	starters := p.laneStarters
 	p.laneStarters = nil
-	p.mu.Unlock()
+	p.schedulerMu.Unlock()
 	for _, start := range starters {
 		start()
 	}
 }
 
-// awaitEnd 等课程结束：完成或致命错误。
+// awaitShutdown 等课程结束：完成或致命错误。
 //
 // 完成路径上等全部在途回调自然收尾——挂起的帧在其等待的 capability 返回后
 // （完成后宿主对展示类 no-op 即回，所以很快）把剩余语句执行完，然后 worker
 // 退出。致命错误路径不等：直接在主 goroutine 上重新抛出，挂起的帧随进程终止。
-func (p *courseProgram) awaitEnd() {
-	<-p.ending
+func (p *courseProgram) awaitShutdown() {
+	<-p.shutdown
 	if fatal := p.fatalValue(); fatal != nil {
 		panic(fatal)
 	}
@@ -295,29 +295,29 @@ func (p *courseProgram) awaitEnd() {
 	}
 }
 
-func (p *courseProgram) signalEnd() {
-	p.endOnce.Do(func() { close(p.ending) })
+func (p *courseProgram) beginShutdown() {
+	p.shutdownOnce.Do(func() { close(p.shutdown) })
 }
 
 func (p *courseProgram) recordFatal(value any) {
-	p.mu.Lock()
+	p.schedulerMu.Lock()
 	if p.fatal == nil {
 		p.fatal = value
 	}
-	p.mu.Unlock()
-	p.signalEnd()
+	p.schedulerMu.Unlock()
+	p.beginShutdown()
 }
 
 func (p *courseProgram) fatalValue() any {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.schedulerMu.Lock()
+	defer p.schedulerMu.Unlock()
 	return p.fatal
 }
 
 // terminated 表示课程已进入终态（完成或致命错误），新的帧不该再开始。
 func (p *courseProgram) terminated() bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.schedulerMu.Lock()
+	defer p.schedulerMu.Unlock()
 	return p.completed || p.fatal != nil
 }
 
@@ -385,16 +385,16 @@ func registerEvent[T any](p *courseProgram, name string, deliver func(T) error) 
 // 又注册了新回调"这件事有确定的语义：本次触发按快照投递，新注册的从下一次
 // 事件开始生效。
 func (p *courseProgram) handlerSnapshot() handlers {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.schedulerMu.Lock()
+	defer p.schedulerMu.Unlock()
 	return p.handlers
 }
 
 // addHandler 供 Course.OnStart 追加开场回调。追加而不是覆盖，
 // 这样多段开场处理都会按注册顺序生效。
 func (p *courseProgram) addHandler(add func(*handlers)) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.schedulerMu.Lock()
+	defer p.schedulerMu.Unlock()
 	add(&p.handlers)
 }
 
@@ -404,20 +404,20 @@ func (p *courseProgram) addHandler(add func(*handlers)) {
 // 而积压的事件也可能让判定回调再触发一次；没有这道闸，学习者就会看到两次完成弹窗。
 // 先置位再调 capability，这样即使 capability panic 了，重复完成依然被挡住。
 func (p *courseProgram) markCompleted() bool {
-	p.mu.Lock()
+	p.schedulerMu.Lock()
 	if p.completed {
-		p.mu.Unlock()
+		p.schedulerMu.Unlock()
 		return false
 	}
 	p.completed = true
-	p.mu.Unlock()
-	p.signalEnd()
+	p.schedulerMu.Unlock()
+	p.beginShutdown()
 	return true
 }
 
 func (p *courseProgram) isCompleted() bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.schedulerMu.Lock()
+	defer p.schedulerMu.Unlock()
 	return p.completed
 }
 
@@ -450,8 +450,8 @@ func (p *courseProgram) mustCallCapability(name string, request, result any) {
 		target = &raw
 	}
 	err := func() error {
-		p.release()
-		defer p.acquire()
+		p.releaseExec()
+		defer p.acquireExec()
 		if kind == kindPresentation {
 			p.presentationMu.Lock()
 			defer p.presentationMu.Unlock()
