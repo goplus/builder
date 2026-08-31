@@ -106,14 +106,18 @@ type handlers struct {
 }
 
 func (p *courseProgram) init() {
+	// 令牌在进入锁区之前就填好：mu 的持锁区间内不做任何 channel 操作，
+	// 这是 scheduling_invariants_test.go 机器检查的不变式之一。
+	token := make(chan struct{}, 1)
+	token <- struct{}{}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.handlers = handlers{}
 	p.started = true
 	p.completed = false
 	p.fatal = nil
-	p.token = make(chan struct{}, 1)
-	p.token <- struct{}{}
+	p.token = token
 	p.ending = make(chan struct{})
 	p.endOnce = sync.Once{}
 	p.laneStarters = nil
@@ -122,7 +126,17 @@ func (p *courseProgram) init() {
 }
 
 func (p *courseProgram) acquire() { <-p.token }
-func (p *courseProgram) release() { p.token <- struct{}{} }
+
+// release 归还执行令牌。非阻塞发送兼作动态断言：令牌槽已满说明出现了
+// "未持有却归还"（配对错误），这是框架 bug，立刻炸出来比默默多出一枚
+// 令牌（互斥失效）好。
+func (p *courseProgram) release() {
+	select {
+	case p.token <- struct{}{}:
+	default:
+		panic("tutorial: token released without a matching acquire")
+	}
+}
 
 // runFrame 以帧为单位执行一段课程回调：取得执行令牌、执行、归还。
 //
