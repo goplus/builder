@@ -50,21 +50,28 @@ describe('CodeEditorUIController definition navigation', () => {
   it('opens a definition preview without changing the active document', () => {
     const { controller, source, target } = makeController()
 
-    ;(controller as any).openDefinitionPeek({ textDocument: target.id, range: targetRange })
+    ;(controller as any).openDefinitionPeek(
+      { textDocument: target.id, range: targetRange },
+      { textDocument: source.id, position: { line: 4, column: 18 } }
+    )
 
     expect(controller.activeTextDocument).toBe(source)
-    expect(controller.definitionPeek).toEqual({ textDocument: target, range: targetRange })
+    expect(controller.definitionPeek).toMatchObject({ textDocument: target, range: targetRange, showReferences: false })
   })
 
   it('returns to the document view state captured before navigation', () => {
     const { controller, editor, source, sourceViewState, target } = makeController()
 
-    ;(controller as any).goToDefinition(
+    ;(controller as any).openDefinitionPeek(
       { textDocument: target.id, range: targetRange },
       { textDocument: source.id, position: { line: 4, column: 18 } }
     )
+    const peekViewState = { cursorState: [] } as any
+    controller.openPeekInEditor({ textDocument: target.id, range: targetRange }, peekViewState)
 
     expect(controller.activeTextDocument).toBe(target)
+    expect(controller.definitionPeek).toBeNull()
+    expect(editor.restoreViewState).toHaveBeenLastCalledWith(peekViewState)
     expect(controller.previousNavigationLocation).toMatchObject({
       textDocument: source,
       position: { line: 4, column: 18 },
@@ -76,6 +83,41 @@ describe('CodeEditorUIController definition navigation', () => {
     expect(controller.activeTextDocument).toBe(source)
     expect(controller.previousNavigationLocation).toBeNull()
     expect(editor.restoreViewState).toHaveBeenLastCalledWith(sourceViewState)
+    expect(editor.focus).toHaveBeenCalled()
+  })
+
+  it('returns through successive expanded locations without reopening peek', () => {
+    const { controller, source, target } = makeController()
+    ;(controller as any).openDefinitionPeek(
+      { textDocument: target.id, range: targetRange },
+      { textDocument: source.id, position: { line: 4, column: 18 } }
+    )
+    controller.openPeekInEditor({ textDocument: target.id, range: targetRange }, null)
+    ;(controller as any).openDefinitionPeek(
+      { textDocument: source.id, range: targetRange },
+      { textDocument: target.id, position: { line: 5, column: 1 } },
+      true
+    )
+    expect(controller.definitionPeek?.showReferences).toBe(true)
+    controller.openPeekInEditor({ textDocument: source.id, range: targetRange }, null)
+    controller.goBack()
+    expect(controller.activeTextDocument).toBe(target)
+    expect(controller.definitionPeek).toBeNull()
+    controller.goBack()
+    expect(controller.activeTextDocument).toBe(source)
+    expect(controller.previousNavigationLocation).toBeNull()
+  })
+
+  it('closing a peek does not navigate or add a return entry', () => {
+    const { controller, source, target, editor } = makeController()
+    ;(controller as any).openDefinitionPeek(
+      { textDocument: target.id, range: targetRange },
+      { textDocument: source.id, position: { line: 4, column: 18 } }
+    )
+    controller.closeDefinitionPeek()
+    expect(controller.activeTextDocument).toBe(source)
+    expect(controller.definitionPeek).toBeNull()
+    expect(controller.previousNavigationLocation).toBeNull()
     expect(editor.focus).toHaveBeenCalled()
   })
 })

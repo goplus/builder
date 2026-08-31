@@ -16,6 +16,7 @@ import {
 } from '../../common'
 import type { monaco } from '../../monaco'
 import type { Hover } from '../../hover'
+import type { CodeEditor } from '../../code-editor'
 
 export type { Hover, HoverContext, IHoverProvider } from '../../hover'
 import {
@@ -31,6 +32,13 @@ import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
 export type InternalHover = Hover & {
   range: Range
 }
+
+type HoverEditorContext = Pick<CodeEditorUIController, 'editor' | 'monaco' | 'activeTextDocument'> &
+  Partial<
+    Pick<CodeEditorUIController, 'diagnosticsController' | 'resourceReferenceController' | 'inputHelperController'>
+  > & {
+    codeEditor: Pick<CodeEditor, 'hoverProvider'>
+  }
 
 type HoverTarget =
   | {
@@ -48,8 +56,12 @@ export class HoverController extends Emitter<{
   cardMouseEnter: MouseEvent
   cardMouseLeave: MouseEvent
 }> {
-  constructor(private ui: CodeEditorUIController) {
+  constructor(private ui: HoverEditorContext) {
     super()
+  }
+
+  get editor() {
+    return this.ui.editor
   }
 
   private hoverMgr = new TaskManager(async (signal, position: Position) => {
@@ -109,7 +121,7 @@ export class HoverController extends Emitter<{
 
   private getDiagnosticsHover(textDocument: ITextDocument, position: Position): InternalHover | null {
     const diagnosticsController = this.ui.diagnosticsController
-    if (diagnosticsController.diagnostics == null) return null
+    if (diagnosticsController?.diagnostics == null) return null
     for (const diagnostic of diagnosticsController.diagnostics) {
       if (!containsPosition(diagnostic.range, position)) continue
       return {
@@ -137,7 +149,7 @@ export class HoverController extends Emitter<{
 
   private getResourceReferenceHover(position: Position): InternalHover | null {
     const resourceReferenceController = this.ui.resourceReferenceController
-    if (resourceReferenceController.items == null) return null
+    if (resourceReferenceController?.items == null) return null
     for (const reference of resourceReferenceController.items) {
       if (!containsPosition(reference.range, position)) continue
       const actions: Action[] = []
@@ -160,7 +172,7 @@ export class HoverController extends Emitter<{
 
   private getInputHelperHover(position: Position): InternalHover | null {
     const inputHelperController = this.ui.inputHelperController
-    if (inputHelperController.slots == null) return null
+    if (inputHelperController?.slots == null) return null
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return null
     for (const item of inputHelperController.slots) {
@@ -209,11 +221,18 @@ export class HoverController extends Emitter<{
       if (currentHover != null && containsPosition(currentHover.range, position)) return
 
       // Do not trigger hover when input helper is active
-      if (this.ui.inputHelperController.inputingSlot != null) return
+      if (this.ui.inputHelperController?.inputingSlot != null) return
 
       startCodeHoveredTransaction()
       this.hoverMgr.start(position)
     }, 50)
+
+    const clearPendingHover = () => {
+      handleMouseEnter.cancel()
+      hideHoverWithDebounce.cancel()
+      this.hideHover()
+    }
+    this.addDisposer(clearPendingHover)
 
     /** Handle mouse move event in Monaco editor. */
     function handleEditorMouseMove(target: monaco.editor.IMouseTarget) {
@@ -276,13 +295,22 @@ export class HoverController extends Emitter<{
       }
     })
 
-    this.addDisposable(editor.onKeyDown(() => this.hideHover()))
-    this.addDisposable(editor.onMouseDown(() => this.hideHover()))
-
-    this.addDisposer(
-      resourceReferenceController.on('didStartModifying', () => {
-        this.hideHover()
+    this.addDisposable(editor.onKeyDown(clearPendingHover))
+    this.addDisposable(editor.onMouseDown(clearPendingHover))
+    this.addDisposable(editor.onDidChangeModel(clearPendingHover))
+    this.addDisposable(editor.onDidChangeModelContent(clearPendingHover))
+    this.addDisposable(
+      editor.onDidScrollChange((event) => {
+        if (event.scrollTopChanged || event.scrollLeftChanged) clearPendingHover()
       })
     )
+
+    if (resourceReferenceController != null) {
+      this.addDisposer(
+        resourceReferenceController.on('didStartModifying', () => {
+          this.hideHover()
+        })
+      )
+    }
   }
 }

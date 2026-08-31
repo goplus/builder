@@ -420,6 +420,10 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     return this.request<lsp.Definition | null>(ctx, lsp.DefinitionRequest.method, params)
   }
 
+  async textDocumentReferences(ctx: RequestContext, params: lsp.ReferenceParams): Promise<lsp.Location[] | null> {
+    return this.request<lsp.Location[] | null>(ctx, lsp.ReferencesRequest.method, params)
+  }
+
   async textDocumentTypeDefinition(
     ctx: RequestContext,
     params: lsp.TypeDefinitionParams

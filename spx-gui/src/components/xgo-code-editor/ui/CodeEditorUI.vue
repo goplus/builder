@@ -35,6 +35,7 @@ import InputHelperUI from './input-helper/InputHelperUI.vue'
 import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import DefinitionPeek from './DefinitionPeek.vue'
+import FunctionChangeReview from './FunctionChangeReview.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
 
@@ -83,7 +84,7 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
 
 const definitionPeekEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   ...monacoEditorOptions.value,
-  readOnly: true,
+  readOnly: false,
   glyphMargin: false,
   folding: false,
   lineDecorationsWidth: 12,
@@ -267,6 +268,11 @@ providePopupContainer(codeEditorEl)
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
     <section class="my-3 min-w-0 flex flex-[1_1_0] flex-col">
+      <FunctionChangeReview
+        v-if="codeEditor.functionChangeReview != null"
+        :review="codeEditor.functionChangeReview"
+        @inspect="uiRef.continueFunctionReview()"
+      />
       <div
         v-if="uiRef.previousNavigationLocation != null"
         class="mx-3 mb-2 h-9 flex flex-none items-center justify-between rounded-sm bg-primary-100 px-3 text-body-medium"
@@ -314,13 +320,12 @@ providePopupContainer(codeEditorEl)
           />
           <DefinitionPeek
             v-if="uiRef.definitionPeek != null"
-            :key="`${uiRef.definitionPeek.textDocument.id.uri}:${uiRef.definitionPeek.range.start.line}:${uiRef.definitionPeek.range.start.column}`"
             class="mx-3 mt-2 min-h-0 flex-[0_1_45%]"
             :monaco="codeEditor.monaco"
             :options="definitionPeekEditorOptions"
-            :text-document="uiRef.definitionPeek.textDocument"
-            :range="uiRef.definitionPeek.range"
+            :peek="uiRef.definitionPeek"
             @close="uiRef.closeDefinitionPeek()"
+            @open="(target, viewState) => uiRef.openPeekInEditor(target, viewState)"
           />
         </div>
         <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-end px-2">

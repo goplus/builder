@@ -43,6 +43,7 @@ import {
   type ICopilot
 } from '../copilot'
 import type { CodeEditor } from '../code-editor'
+import type { PeekReference } from './definition-peek'
 
 export * from './hover'
 export * from './completion'
@@ -88,11 +89,9 @@ export const builtInCommandCopilotFixProblem: Command<[target: CopilotFixProblem
 export const builtInCommandCopy: Command<[], void> = 'editor.action.copy'
 export const builtInCommandCut: Command<[], void> = 'editor.action.cut'
 export const builtInCommandPaste: Command<[], void> = 'editor.action.paste'
-export const builtInCommandGoToDefinition: Command<
-  [target: TextDocumentPosition | TextDocumentRange, source: TextDocumentPosition | undefined],
-  void
-> = 'xgo.goToDefinition'
-export const builtInCommandViewDefinition: Command<[TextDocumentRange], void> = 'xgo.viewDefinition'
+export const builtInCommandViewDefinition: Command<[target: TextDocumentRange, source: TextDocumentPosition], void> =
+  'xgo.viewDefinition'
+export const builtInCommandViewReferences: typeof builtInCommandViewDefinition = 'xgo.viewReferences'
 export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = 'xgo.goToResource'
 export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentRange], void> = 'xgo.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'xgo.renameResource'
@@ -108,6 +107,9 @@ export type InternalAction<A extends any[] = any, R = any> = {
 export type DefinitionPeek = {
   textDocument: TextDocument
   range: Range
+  source: CodeNavigationEntry
+  showReferences: boolean
+  reference: PeekReference | null
 }
 
 export type CodeNavigationEntry = {
@@ -195,10 +197,21 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     return this.definitionPeekRef.value
   }
 
-  private openDefinitionPeek(target: TextDocumentRange) {
+  private openDefinitionPeek(target: TextDocumentRange, source: TextDocumentPosition, showReferences = false) {
     const textDocument = this.codeEditor.getTextDocument(target.textDocument)
-    if (textDocument == null) return
-    this.definitionPeekRef.value = { textDocument, range: target.range }
+    const sourceDocument = this.activeTextDocument
+    if (textDocument == null || sourceDocument == null) return
+    this.definitionPeekRef.value = {
+      textDocument,
+      range: target.range,
+      showReferences,
+      reference: null,
+      source: {
+        textDocument: sourceDocument,
+        position: source.position,
+        viewState: this.editor.saveViewState()
+      }
+    }
   }
 
   closeDefinitionPeek() {
@@ -206,28 +219,46 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.editor.focus()
   }
 
+  continueFunctionReview() {
+    const review = this.codeEditor.functionChangeReview
+    const source = this.activeTextDocument
+    if (review == null || source == null) return
+    this.openDefinitionPeek(review.definition.target, {
+      textDocument: source.id,
+      position: this.cursorPosition ?? { line: 1, column: 1 }
+    })
+    const call = review.remaining[0]
+    if (call != null && this.definitionPeekRef.value != null) {
+      this.definitionPeekRef.value = {
+        ...this.definitionPeekRef.value,
+        reference: {
+          textDocument: call.location.textDocument,
+          range: call.location.range,
+          code: call.location.textDocument.getLineContent(call.location.range.start.line)
+        }
+      }
+    }
+  }
+
   private navigationStack = shallowReactive<CodeNavigationEntry[]>([])
   get previousNavigationLocation() {
     return this.navigationStack[this.navigationStack.length - 1] ?? null
   }
 
-  private goToDefinition(target: TextDocumentPosition | TextDocumentRange, source?: TextDocumentPosition) {
-    const activeTextDocument = this.activeTextDocument
-    if (activeTextDocument != null) {
-      this.navigationStack.push({
-        textDocument: activeTextDocument,
-        position: source?.position ?? this.cursorPosition,
-        viewState: this.editor.saveViewState()
-      })
-    }
+  openPeekInEditor(target: TextDocumentRange, viewState: monaco.editor.ICodeEditorViewState | null) {
+    const peek = this.definitionPeek
+    if (peek == null || this.codeEditor.getTextDocument(target.textDocument) == null) return
+    this.navigationStack.push(peek.source)
     this.definitionPeekRef.value = null
-    if ('position' in target) this.open(target.textDocument, target.position)
-    else this.open(target.textDocument, target.range)
+    this.open(target.textDocument, target.range)
+    if (viewState != null) this.editor.restoreViewState(viewState)
+    this.editor.focus()
   }
 
   goBack() {
     const previous = this.navigationStack.pop()
     if (previous == null) return
+    this.definitionPeekRef.value = null
     this.setActiveTextDocument(previous.textDocument.id)
     if (previous.viewState != null) this.editor.restoreViewState(previous.viewState)
     this.editor.focus()
@@ -643,16 +674,16 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       }
     })
 
-    this.registerCommand(builtInCommandGoToDefinition, {
-      icon: 'goto',
-      title: { en: 'Go to definition', zh: '跳转到定义' },
-      handler: (target, source) => this.goToDefinition(target, source)
-    })
-
     this.registerCommand(builtInCommandViewDefinition, {
       icon: 'view',
       title: { en: 'View definition', zh: '查看定义' },
-      handler: (params) => this.openDefinitionPeek(params)
+      handler: (target, source) => this.openDefinitionPeek(target, source)
+    })
+
+    this.registerCommand(builtInCommandViewReferences, {
+      icon: 'view',
+      title: { en: 'View references', zh: '查看引用' },
+      handler: (target, source) => this.openDefinitionPeek(target, source, true)
     })
 
     this.registerCommand(builtInCommandInvokeInputHelper, {

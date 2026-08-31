@@ -45,7 +45,7 @@ Hover 是这样一种交互模式，当用户将鼠标悬浮在某个元素上�
 
 * 元素相关的操作组 Actions，包括
 
-  - 跳转到定义 Go to Definition
+  - 使用处显示「查看定义」，声明处显示「查看引用」，同一位置只显示一个导航操作。
   - 重命名 Rename
   - 解释 Explain，调起 Copilot 对当前元素的定位、作用等进行解释
   - 修改引用 Modify Reference，对于 Resource Reference，提供修改引用的入口
@@ -65,6 +65,18 @@ Hover 是这样一种交互模式，当用户将鼠标悬浮在某个元素上�
 | **identifier for a method name**                | `func {name}({parameters}) {result}` (omit receiver)<br>func foo(a int) b int<br><br>NOTE: If there's multiple overloads and can't decide which one is used here (sometimes it can be decided if in a call expression), repeat all overload signatures | Document, if there is | Yes, if defined in project | Yes, if defined in project | Yes               | No                         |
 | **string-literal as a resource-reference**      | `{resourceType} {name}`<br>Sound ""explosion""                                                                                                                                                                                                     | Preview for resource  | Yes, select the resource   | Yes                        | No                | Yes                        |
 | **identifier as a resource-reference**          | `{resourceType} {name}`<br>Sprite ""NiuXiaoQi""                                                                                                                                                                                                    | Preview for resource  | Yes, select the resource   | Yes                        | No                | No                         |
+
+### 定义与引用导航
+
+「查看定义」在源编辑器下方打开可编辑 Peek。Peek 与主编辑器使用同一项目代码模型和编辑历史，关闭面板不会丢弃修改，也不增加独立的保存确认。云端保存仍遵循项目原有权限和保存状态。
+
+Peek 标题栏显示当前文档与行号，并提供引用数量、「在编辑器中打开」和关闭操作。在声明处点击「查看引用」会打开同一 Peek，同时展开引用选择列表。列表按项目代码文档分组，每项显示行号和代码摘要；不把声明位置计入引用数量，自递归和相互递归中的调用与普通引用一样展示。选择结果后在同一 Peek 中预览该引用，并可通过「返回定义」回到定义位置。
+
+「在编辑器中打开」把当前预览的定义或引用展开到主编辑器，保留 Peek 内的光标与滚动状态。返回条恢复打开 Peek 前的源代码视图。连续展开形成逐级返回记录；在 Peek 内选择引用不增加返回记录。不恢复常驻文档列表。
+
+引用结果来自语言服务，而不是文本匹配；编辑后会刷新结果，并区分加载中、无引用及失败重试状态。自动保存不等于自动重构，统一修改符号名称及其引用仍需使用「重命名」。在 Peek 中悬浮可重命名的符号也会提供该操作，复用原有弹窗、项目代码错误警告和编辑历史，无需离开 Peek。
+
+在 Peek 直接修改参数列表后，编辑器保留修改前已知的引用并进入调用检查流程。用户逐处修正和标记，不自动猜测新增参数值、转换类型或重排实参。关闭或展开 Peek 不会清除检查进度；「完成检查」是结束人工检查，不是额外保存，也不代表编译成功。检查期间可整体撤销参数及引用行内的修改；若混入其他代码编辑，则禁用整组撤销，保留项目原有的逐步撤销。检查状态不跨页面刷新保存。
 
 ### 标记 Marker
 
