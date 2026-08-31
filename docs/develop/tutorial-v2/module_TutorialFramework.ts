@@ -72,6 +72,10 @@ export type SpotlightOptions = {
  * framework serializes presentation (`course.show*`) — at most one is pending
  * at a time — but other calls, including multiple generations, can be pending
  * concurrently.
+ *
+ * On completion the host must promptly settle every still-pending call (for
+ * presentation, resolving as a no-op is fine): the program only exits after
+ * pending callbacks finish, so an unsettled call would hold the exit open.
  */
 export interface TutorialFrameworkHost {
   course: {

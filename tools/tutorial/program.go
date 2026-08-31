@@ -67,11 +67,14 @@ type courseProgram struct {
 	fatal     any
 
 	// token 是执行令牌：cap-1 channel 做二元信号量，初始含一枚。
-	// 选 channel 而不是 Mutex：等待者按 FIFO 唤醒，调度更可预测。
+	// 等待者由 runtime 排队唤醒；框架不依赖任何跨回调的唤醒顺序承诺。
 	token chan struct{}
 	// presentationMu 是展示串行通道：course_show* 调用依次通过，
 	// 持有期横跨"等学习者看完"的全程。等待它之前必须先交还执行令牌。
 	presentationMu sync.Mutex
+	// deliverMu 串行化事件投递，保证一次触发对它的全部回调通道"全有或全无"
+	// ——只有投递方会往队列里加，持锁预检容量后逐条发送不会中途失败。
+	deliverMu sync.Mutex
 	// ending 在完成或致命错误时关闭一次，通知各回调通道的 worker 退出。
 	ending  chan struct{}
 	endOnce sync.Once
@@ -132,6 +135,11 @@ func (p *courseProgram) release() { p.token <- struct{}{} }
 func (p *courseProgram) runFrame(run func()) {
 	p.acquire()
 	defer p.release()
+	// 准入检查必须在**拿到令牌之后**：出队时的检查在等令牌期间可能过期——
+	// 别的帧在这段等待里完成了课程或记了致命错误，此时这一帧不该再开始。
+	if p.terminated() {
+		return
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			p.recordFatal(r)
@@ -164,7 +172,17 @@ func addLane[T any](p *courseProgram, handler func(T), attach func(*handlers, *h
 		queue:   make(chan T, eventQueueSize),
 	}
 	start := func() {
-		p.workers.Add(1)
+		// workers.Add 与终态判断同锁：终态后 awaitEnd 可能已在 Wait，
+		// 此时不再起新 worker（通道反正已死），避免 Add 与 Wait 竞态。
+		p.mu.Lock()
+		dead := p.completed || p.fatal != nil
+		if !dead {
+			p.workers.Add(1)
+		}
+		p.mu.Unlock()
+		if dead {
+			return
+		}
 		go lane.run(p)
 	}
 	p.mu.Lock()
@@ -186,10 +204,7 @@ func (l *handlerLane[T]) run(p *courseProgram) {
 			return
 		case event := <-l.queue:
 			// ending 关闭与队列有货可能同时就绪（select 随机选取），
-			// 完成后的积压事件在这里再拦一道。
-			if p.isCompleted() {
-				continue
-			}
+			// 终态后的积压事件由 runFrame 拿到令牌后的准入检查放弃。
 			p.runFrame(func() { l.handler(event) })
 		}
 	}
@@ -205,22 +220,31 @@ func (l *handlerLane[T]) run(p *courseProgram) {
 //   - 某条队列满：课程程序失控（回调在等待类 capability 期间队列本会持续排空，
 //     正常课程够不着上限）。必须报错而不是阻塞或静默丢弃。
 func deliverAll[T any](p *courseProgram, lanes []*handlerLane[T], event T) error {
+	p.deliverMu.Lock()
+	defer p.deliverMu.Unlock()
+
 	p.mu.Lock()
-	started, completed := p.started, p.completed
+	started, completed, failed := p.started, p.completed, p.fatal != nil
 	p.mu.Unlock()
 
 	switch {
 	case !started:
 		return fmt.Errorf("course program is not running")
+	case failed:
+		return fmt.Errorf("course program failed")
 	case completed:
 		return nil
 	}
+	// 先全量预检容量再发送：deliverMu 保证没有别的投递方插队，worker 只会
+	// 消费不会填充，预检通过后的发送不可能中途失败——一次触发对它的全部
+	// 回调通道要么都投进，要么一条都不投。
 	for _, lane := range lanes {
-		select {
-		case lane.queue <- event:
-		default:
+		if len(lane.queue) == cap(lane.queue) {
 			return fmt.Errorf("course event queue is full: the course program is not consuming events")
 		}
+	}
+	for _, lane := range lanes {
+		lane.queue <- event
 	}
 	return nil
 }
@@ -249,6 +273,12 @@ func (p *courseProgram) awaitEnd() {
 		panic(fatal)
 	}
 	p.workers.Wait()
+	// 完成路径上收尾的帧仍可能失败（最典型：course_complete 本身失败——
+	// Complete 先关 ending 再调 capability）。收尾结束后再查一次，
+	// 迟到的致命错误不能被吞成 completed。
+	if fatal := p.fatalValue(); fatal != nil {
+		panic(fatal)
+	}
 }
 
 func (p *courseProgram) signalEnd() {
@@ -268,6 +298,13 @@ func (p *courseProgram) fatalValue() any {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.fatal
+}
+
+// terminated 表示课程已进入终态（完成或致命错误），新的帧不该再开始。
+func (p *courseProgram) terminated() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.completed || p.fatal != nil
 }
 
 // registerEvents 把契约里的四个事件一次性全部注册到执行器。
@@ -383,15 +420,36 @@ func (p *courseProgram) isCompleted() bool {
 // 致命错误，最终在主 goroutine 上重新抛出，执行器据此报 runtime 阶段错误。
 func (p *courseProgram) mustCallCapability(name string, request, result any) {
 	kind := capabilityKinds[name]
-	if kind >= kindSlow {
+	if kind == kindFast {
+		if err := p.callCapability(name, request, result); err != nil {
+			panic(err)
+		}
+		return
+	}
+
+	// 等待类调用在让位期间**不允许写课程可见的内存**：result 可能是作者传入的
+	// 共享结构体（generateJSON），而此刻令牌在别的帧手里，桥直接解码进去就是
+	// 数据竞争。先解码进私有缓冲，拿回令牌后再回填。
+	var raw json.RawMessage
+	var target any
+	if result != nil {
+		target = &raw
+	}
+	err := func() error {
 		p.release()
 		defer p.acquire()
-	}
-	if kind == kindPresentation {
-		p.presentationMu.Lock()
-		defer p.presentationMu.Unlock()
-	}
-	if err := p.callCapability(name, request, result); err != nil {
+		if kind == kindPresentation {
+			p.presentationMu.Lock()
+			defer p.presentationMu.Unlock()
+		}
+		return p.callCapability(name, request, target)
+	}()
+	if err != nil {
 		panic(err)
+	}
+	if result != nil && len(raw) > 0 {
+		if err := json.Unmarshal(raw, result); err != nil {
+			panic(fmt.Errorf("decode capability %q result: %w", name, err))
+		}
 	}
 }

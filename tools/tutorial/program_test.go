@@ -594,3 +594,149 @@ func TestSlowCapabilitiesRunConcurrently(t *testing.T) {
 	releaseGenerate()
 	awaitDone(t, done)
 }
+
+// TestFatalDuringCompletionIsReported 验证完成路径上迟到的致命错误不被吞掉：
+// Complete 先进入终态再调 course_complete，这一下若失败，程序必须以错误退出
+// 而不是被报成 completed。
+func TestFatalDuringCompletionIsReported(t *testing.T) {
+	host := newFakeHost()
+	host.fail["course_complete"] = fmt.Errorf("completion rejected")
+
+	done := make(chan any, 1)
+	go func() {
+		defer func() { done <- recover() }()
+		Gopt_Course_Main(newTestCourse(host, func(course *testCourse) {
+			course.OnStart(func() { course.Complete() })
+		}))
+	}()
+
+	select {
+	case recovered := <-done:
+		if recovered == nil {
+			t.Error("a failed completion capability must not be reported as completed")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("course program did not exit")
+	}
+}
+
+// TestQueuedEventDroppedWhenCompletionWinsTheToken 验证令牌后的准入检查：
+// 一个事件已出队、其帧正在等令牌，此时别的帧完成了课程——等到令牌的帧
+// 必须放弃执行，而不是在课程结束后又跑一段回调。
+func TestQueuedEventDroppedWhenCompletionWinsTheToken(t *testing.T) {
+	host := newFakeHost()
+	holding := make(chan struct{})
+	proceed := make(chan struct{})
+	exitRan := make(chan struct{}, 1)
+
+	var program *courseProgram
+	done := startCourse(host, func(course *testCourse) {
+		program = &course.courseProgram
+		course.Editor.Runtime.OnStart(func() {
+			close(holding) // 本帧持有令牌，等测试放行
+			<-proceed
+			course.Complete()
+		})
+		course.Editor.Runtime.OnExit(func(int) {
+			exitRan <- struct{}{}
+		})
+		course.OnStart(func() {})
+	})
+
+	// 等 runtime.start 的帧持有令牌后，再投递 exit：它的 worker 会出队、
+	// 阻塞在取令牌上。
+	dispatch(t, "editor.runtime.start", `null`)
+	await(t, holding, "the start callback to hold the token")
+	dispatch(t, "editor.runtime.exit", `{"code":0}`)
+	// 轮询到 exit 事件已被 worker 取走（队列排空），此刻它只可能在等令牌。
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		lanes := program.handlerSnapshot().runtimeExit
+		if len(lanes) == 1 && len(lanes[0].queue) == 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("exit event was not dequeued")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	close(proceed) // 持令牌的帧现在完成课程并归还令牌
+	awaitDone(t, done)
+
+	select {
+	case <-exitRan:
+		t.Error("a callback started after completion despite the admission check")
+	default:
+	}
+}
+
+// TestGenerateJSONDecodesUnderTheToken 验证等待类调用的响应回填发生在令牌之下：
+// 作者把同一个结构体共享给两段回调时，让位期间另一段的写入与桥的解码
+// 不构成数据竞争（本用例主要靠 -race 守护），且生成结果最终写入成功。
+func TestGenerateJSONDecodesUnderTheToken(t *testing.T) {
+	type feedback struct {
+		Praise string `json:"praise"`
+	}
+	host := newFakeHost()
+	host.responses["copilot_generateJSON"] = `{"praise":"generated"}`
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateJSON")
+
+	shared := &feedback{}
+	touched := make(chan struct{})
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnStart(func() {
+			course.Copilot.GenerateJSON("judge", shared)
+			course.Complete()
+		})
+		course.Editor.Runtime.OnLog(func(string) {
+			shared.Praise = "poked by another callback"
+			touched <- struct{}{}
+		})
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.start", `null`)
+	await(t, generateStarted, "generateJSON to reach the host")
+	// 生成挂起期间，另一段回调写同一个结构体——解码若不回到令牌下，这里就是竞态。
+	dispatch(t, "editor.runtime.log", `{"log":"poke"}`)
+	await(t, touched, "the other callback to write the shared struct")
+	releaseGenerate()
+	awaitDone(t, done)
+
+	if shared.Praise != "generated" {
+		t.Errorf("shared.Praise = %q, want the generated value", shared.Praise)
+	}
+}
+
+// TestCompletionSettlesPendingWait 验证完成时已在途的等待调用被宿主 settle 后，
+// 挂起的帧把剩余语句执行完、程序正常以 completed 收尾（契约要求宿主在完成后
+// 尽快 settle 全部在途调用）。
+func TestCompletionSettlesPendingWait(t *testing.T) {
+	host := newFakeHost()
+	messageShown, releaseMessage := host.holdCapability("course_showMessage")
+	resumed := make(chan struct{}, 1)
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnStart(func() {
+			course.ShowMessage("still open")
+			resumed <- struct{}{}
+		})
+		course.Editor.Runtime.OnExit(func(int) {
+			course.Complete()
+		})
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.start", `null`)
+	await(t, messageShown, "showMessage to reach the host")
+	dispatch(t, "editor.runtime.exit", `{"code":0}`)
+	// 课程已完成，但 showMessage 还挂着；宿主按契约 settle 它。
+	releaseMessage()
+	awaitDone(t, done)
+	await(t, resumed, "the suspended callback to finish its remaining statements")
+}

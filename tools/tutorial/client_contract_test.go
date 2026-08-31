@@ -39,6 +39,36 @@ func TestClientCoversAllWireNames(t *testing.T) {
 	}
 }
 
+// fastCapabilities 是**有意**不让位的能力清单：只等宿主自身计算，或按契约
+// 受理/显示即返。运行时对未登记能力的默认虽然是安全的不让位，但分类必须是
+// 有意识的决定——新增能力时要么进 capabilityKinds，要么进这里。
+var fastCapabilities = map[string]bool{
+	"course_complete":                   true,
+	"course_completeWith":               true,
+	"editor_codeEditor_filterAPIs":      true,
+	"editor_codeEditor_formatWorkspace": true,
+	"editor_project_getCode":            true,
+	"editor_project_listSprites":        true,
+	"editor_ruler_show":                 true,
+	"editor_ruler_hide":                 true,
+	"spotlight_reveal":                  true,
+}
+
+// TestEveryCapabilityIsClassified 强制每个 capability 都被显式分类过：
+// 运行时的保守默认（未登记=不让位）不能成为漏分类的藏身处。
+func TestEveryCapabilityIsClassified(t *testing.T) {
+	for _, name := range collectGoWireNames(t) {
+		_, waiting := capabilityKinds[name]
+		fast := fastCapabilities[name]
+		switch {
+		case waiting && fast:
+			t.Errorf("%q is classified as both waiting and fast", name)
+		case !waiting && !fast:
+			t.Errorf("%q is not classified: add it to capabilityKinds or fastCapabilities", name)
+		}
+	}
+}
+
 // collectGoWireNames 从本包全部 Go 源文件里收集 mustCallCapability 的首个字符串实参。
 func collectGoWireNames(t *testing.T) []string {
 	t.Helper()
