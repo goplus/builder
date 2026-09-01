@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fromText } from '../common/file'
+import { fromText, toConfig } from '../common/file'
 import { SpxProject } from './project'
 import { Sprite } from './sprite'
 import { Costume } from './costume'
@@ -45,5 +45,16 @@ describe('Sound', () => {
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
     expect(animation.sound).not.toBe(clone.id)
+  })
+
+  it('uses the logical name as the resource directory and a fixed filename', async () => {
+    const sound = new Sound('laser', fromText('sound.mp3', 'sound'))
+    const files = sound.export()
+
+    expect(Object.keys(files).sort()).toEqual(['assets/sounds/laser/index.json', 'assets/sounds/laser/sound.mp3'])
+    expect(await toConfig(files['assets/sounds/laser/index.json']!)).toMatchObject({
+      path: 'sound.mp3'
+    })
+    await expect(Sound.loadAll(files)).resolves.toMatchObject([{ name: 'laser' }])
   })
 })

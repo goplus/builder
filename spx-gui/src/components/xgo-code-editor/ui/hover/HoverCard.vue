@@ -6,6 +6,7 @@ import type { InternalAction } from '../code-editor-ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import CodeEditorCard from '../CodeEditorCard.vue'
 import ActionButton from './ActionButton.vue'
+import { filterHoverActions } from './actions'
 
 const props = defineProps<{
   actions: Action[]
@@ -18,7 +19,9 @@ const emit = defineEmits<{
 const codeEditorCtx = useCodeEditorUICtx()
 
 const actions = computed(() => {
-  return props.actions.map((a) => codeEditorCtx.ui.resolveAction(a)).filter((a) => a != null) as InternalAction[]
+  return filterHoverActions(props.actions, codeEditorCtx.hoverNavigationActionsVisible)
+    .map((action) => codeEditorCtx.ui.resolveAction(action))
+    .filter((action) => action != null) as InternalAction[]
 })
 
 const handleAction = useMessageHandle(

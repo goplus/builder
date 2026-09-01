@@ -20,6 +20,18 @@ describe('AnimationGen', () => {
     aigcMock.reset()
   })
 
+  it('encodes an animation name when using it as a directory', () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: 'a/b' },
+      video: mockFile('video.mp4')
+    })
+
+    const [, files] = gen.export('gen/assets/sprites/TestSprite')
+    expect(Object.keys(files)).toContain('gen/assets/sprites/TestSprite/animations/a%2Fb/video.mp4')
+  })
+
   it('should work well', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')

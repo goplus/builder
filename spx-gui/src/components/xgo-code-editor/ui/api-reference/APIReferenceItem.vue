@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown } from '@/components/ui'
-import { type Action, setDdiDragData } from '../../common'
+import { type Action, setDdiDragData, stringifyDefinitionId } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -21,6 +21,16 @@ const props = defineProps<{
 
 const codeEditor = useCodeEditor()
 const codeEditorUICtx = useCodeEditorUICtx()
+
+const itemEl = ref<HTMLElement | null>(null)
+// A stable, author-referenceable handle for the API item (its definition ID): a course opening
+// can spotlight "the `step` item" by finding the rendered node with the matching id.
+const defId = computed(() => stringifyDefinitionId(props.item.definition))
+// Highlighted while a copilot drag guide points the user at this API item.
+const isHighlighted = computed(() => codeEditorUICtx.ui.apiReferenceController.highlightedItem === props.item)
+watch(isHighlighted, (highlighted) => {
+  if (highlighted) itemEl.value?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+})
 
 const handleInsert = useMessageHandle(
   () =>
@@ -102,11 +112,14 @@ function handleMouseUp(e: MouseEvent) {
   <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
     <template #trigger>
       <li
+        ref="itemEl"
         v-radar="{
           name: parsed.overview,
           desc: ''
         }"
+        :data-def-id="defId"
         class="api-reference-item"
+        :class="{ 'api-reference-item-highlighted': isHighlighted }"
         draggable="true"
         @dragstart="handleDragStart"
         @mousedown.passive="handleMouseDown"
@@ -150,6 +163,24 @@ function handleMouseUp(e: MouseEvent) {
 
 .api-reference-item:hover {
   background: var(--ui-color-grey-300);
+}
+
+/* Highlighted while a copilot drag guide points the user at this item. */
+.api-reference-item-highlighted {
+  outline: 2px solid rgba(249, 115, 22, 0.9);
+  outline-offset: 1px;
+  background: rgba(249, 115, 22, 0.12);
+  animation: api-reference-item-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes api-reference-item-pulse {
+  0%,
+  100% {
+    outline-color: rgba(249, 115, 22, 0.9);
+  }
+  50% {
+    outline-color: rgba(249, 115, 22, 0.35);
+  }
 }
 
 .api-reference-item.before-dragging {

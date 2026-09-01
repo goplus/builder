@@ -1,5 +1,6 @@
 <script lang="ts">
 import spxPackage from '@xgo-pkgs/spx/package.json'
+import { instrumentSpxSource } from './spx-source-instrumentation'
 
 const ispxWasmUrl = new URL('@/assets/wasm/ispx.wasm', import.meta.url).href
 // TODO: Importing runner.html as a Vite asset would give us a hashed immutable
@@ -89,8 +90,12 @@ async function loadFiles(files: Files, reporter: ProgressReporter, signal?: Abor
     Object.entries(files).map(async ([path, file]) => {
       if (file == null) return
       const r = filesCollector.getSubReporter()
+      const originalContent = await file.arrayBuffer(signal)
+      const content = path.endsWith('.spx')
+        ? new TextEncoder().encode(instrumentSpxSource(path, new TextDecoder().decode(originalContent))).buffer
+        : originalContent
       runnerFiles[path] = {
-        content: await file.arrayBuffer(signal),
+        content,
         lastModified: file.lastModified
       }
       r.report(1)

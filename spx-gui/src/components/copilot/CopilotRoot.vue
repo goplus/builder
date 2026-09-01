@@ -13,6 +13,7 @@ import { useMessageEvents, useModalEvents } from '@/components/ui'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as pageLink from './markdown-elements/PageLink'
 import * as highlightLink from './markdown-elements/HighlightLink.vue'
+import * as thinking from './markdown-elements/Thinking'
 import { useSignedInStateQuery, type SignedInState } from '@/stores/user'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import { provideCopilot } from './context'
@@ -127,9 +128,7 @@ Current UI structure (\`n\` for \`node\`):
 
 <xbuilder>${this.stringifyNodes(this.radar.getRootNodes())}</xbuilder>
 
-DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly mentioned in the description.
-
-If there's an API References UI in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
+DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly mentioned in the description.`
   }
 }
 
@@ -198,6 +197,14 @@ copilot.registerCustomElement({
   isRaw: highlightLink.isRaw,
   component: highlightLink.default
 })
+copilot.registerCustomElement({
+  tagName: thinking.tagName,
+  description: thinking.detailedDescription,
+  attributes: thinking.attributes,
+  isRaw: thinking.isRaw,
+  component: thinking.default,
+  invisible: true
+})
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider(signedInStateQuery.data))
@@ -205,24 +212,30 @@ copilot.registerContextProvider(new LocationContextProvider(router))
 
 const isRouteLoaded = useIsRouteLoaded()
 
+// Page / modal / notification signals are ambient perception: they must not supersede a round
+// serving an on-screen artifact (e.g. the "Modal opened" fired by the course success dialog
+// itself would otherwise abort the round writing that dialog's comment).
 watch(
   router.currentRoute,
   debounce(async (route) => {
     await until(isRouteLoaded)
-    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`, {
+      ambient: true
+    })
   }, 100)
 )
 
 onBeforeUnmount(
   modalEvents.on('open', () => {
-    copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal dialog')
+    copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal dialog', { ambient: true })
   })
 )
 onBeforeUnmount(
   modalEvents.on('resolved', () => {
     copilot.notifyUserEvent(
       { en: 'Operation completed in modal', zh: '模态框中操作完成' },
-      'User completed operation in modal'
+      'User completed operation in modal',
+      { ambient: true }
     )
   })
 )
@@ -230,7 +243,8 @@ onBeforeUnmount(
   modalEvents.on('cancelled', () => {
     copilot.notifyUserEvent(
       { en: 'Operation cancelled in modal', zh: '模态框中操作取消' },
-      'User cancelled operation in modal'
+      'User cancelled operation in modal',
+      { ambient: true }
     )
   })
 )
@@ -239,7 +253,8 @@ onBeforeUnmount(
   messageEvents.on('message', ({ type, content }) => {
     copilot.notifyUserEvent(
       { en: 'UI Notification', zh: '消息提示' },
-      `A ${type} notification showed with content: ${content}`
+      `A ${type} notification showed with content: ${content}`,
+      { ambient: true }
     )
   })
 )

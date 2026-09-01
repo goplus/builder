@@ -1,33 +1,31 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
-import { listCourses, type Course } from '@/apis/course'
-import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
+import { listCourses } from '@/apis/course'
+import { getCourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/community/TextView.vue'
 import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
-import { useTutorial } from '@/components/tutorials/tutorial'
-import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
+import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, UITab, UITabs, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
-import { useMessageHandle } from '@/utils/exception'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 // TODO: Temporary background, replace with the latest assets
 import stageBg from '@/assets/images/stage-bg.svg'
+import { getTutorialChapters } from '@/components/tutorials/tutorial-chapters'
 
 const coursePadding = 20
-const numInColumn = 2
+const numInColumn = 4
 const height = numInColumn * (courseItemHeight + coursePadding) - coursePadding
 
 const props = defineProps<{
   courseSeriesIdInput: string
 }>()
-
-const tutorial = useTutorial()
 
 const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesIdInput), {
   en: 'Failed to load course series',
@@ -58,18 +56,23 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 })
 
 const page = useRouteQueryParamInt('p', 1)
+const selectedChapterId = useRouteQueryParamInt('chapter', 1, (params) => ({ ...params, p: null }))
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
-const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
+const chapters = computed(() => getTutorialChapters(courseSeries.value))
+const selectedChapter = computed(
+  () => chapters.value.find((chapter) => chapter.start === selectedChapterId.value) ?? null
+)
+const chapterTabValue = computed(() => selectedChapter.value?.id ?? '')
 
 const courseQuery = useQuery(
   async (ctx) => {
     return listCourses(
       {
         courseSeriesID: props.courseSeriesIdInput,
-        pageIndex: page.value,
-        pageSize: pageSize.value,
+        pageIndex: 1,
+        pageSize: 100,
         orderBy: 'sequenceInCourseSeries'
       },
       ctx.signal
@@ -78,20 +81,24 @@ const courseQuery = useQuery(
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
 )
 
-const { fn: handleCourseClick } = useMessageHandle(
-  (event: MouseEvent, course: Course, courseSeries: CourseSeries) => {
-    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
-      return
-    }
+const visibleCourses = computed(() => {
+  const allCourses = courseQuery.data.value?.data ?? []
+  const indexedCourses = allCourses.map((course, index) => ({ course, sequence: index + 1 }))
+  if (selectedChapter.value == null) return indexedCourses
+  return indexedCourses.filter(({ sequence }) => {
+    return sequence >= selectedChapter.value!.start && sequence <= selectedChapter.value!.end
+  })
+})
+const pageTotal = computed(() => Math.ceil(visibleCourses.value.length / pageSize.value))
+const pagedCourses = computed(() => {
+  const start = (page.value - 1) * pageSize.value
+  return visibleCourses.value.slice(start, start + pageSize.value)
+})
 
-    event.preventDefault()
-    tutorial.startCourse(course, courseSeries)
-  },
-  {
-    en: 'Failed to start course',
-    zh: '开始课程失败'
-  }
-)
+function selectChapterTab(value: string) {
+  const chapter = chapters.value.find((item) => item.id === value)
+  if (chapter != null) selectedChapterId.value = chapter.start
+}
 </script>
 
 <template>
@@ -133,7 +140,24 @@ const { fn: handleCourseClick } = useMessageHandle(
         </div>
       </UICard>
 
-      <div class="mt-7 flex flex-col">
+      <nav v-if="chapters.length > 0" aria-label="Course chapters" class="mt-5 overflow-x-auto">
+        <UITabs :value="chapterTabValue" class="min-w-max gap-6! px-0!" @update:value="selectChapterTab">
+          <UITab
+            v-for="chapter in chapters"
+            :key="chapter.id"
+            :value="chapter.id"
+            class="text-[15px]! leading-6! px-2! pt-2! pb-1.5!"
+          >
+            {{ $t(chapter.shortTitle) }}
+          </UITab>
+        </UITabs>
+      </nav>
+
+      <div v-if="selectedChapter != null" class="mt-6 flex items-baseline gap-3">
+        <h3 class="text-lg font-medium text-title">{{ $t(selectedChapter.title) }}</h3>
+      </div>
+
+      <div :class="selectedChapter == null ? 'mt-7' : 'mt-4'" class="flex flex-col">
         <div v-if="courseSeries" :style="{ '--num-in-row': numInRow }">
           <ListResultWrapper :query-ret="courseQuery" :height="height">
             <template #empty="{ style }">
@@ -146,18 +170,17 @@ const { fn: handleCourseClick } = useMessageHandle(
                 }}
               </UIEmpty>
             </template>
-            <template #default="{ data }">
+            <template #default>
               <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-5">
-                <!-- a tag are used for: link preview on hover, context menu support, and better accessibility -->
-                <a
-                  v-for="course in data.data"
-                  :key="course.id"
-                  :href="`/course/${courseSeries.id}/${course.id}/start`"
+                <!-- a tag (rendered by router-link) are used for: link preview on hover, context menu support, and better accessibility -->
+                <RouterLink
+                  v-for="item in pagedCourses"
+                  :key="item.course.id"
+                  :to="`/course/${courseSeries.id}/${item.course.id}/start`"
                   class="no-underline"
-                  @click="handleCourseClick($event, course, courseSeries)"
                 >
-                  <CourseItem :course="course" />
-                </a>
+                  <CourseItem :course="item.course" />
+                </RouterLink>
               </ul>
             </template>
           </ListResultWrapper>

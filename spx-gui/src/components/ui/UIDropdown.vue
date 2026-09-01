@@ -39,6 +39,14 @@ export type Props = {
   offset?: Offset
   disabled?: boolean
   class?: ClassValue
+  /** Delay before a hover-triggered dropdown opens, in milliseconds. */
+  openDelay?: number
+  /**
+   * For a `hover` dropdown, whether hovering the content keeps it open (so the pointer can move
+   * from trigger into content). Defaults to `true`. Set `false` when the content has nothing to
+   * interact with, so the dropdown closes as soon as the pointer leaves the trigger.
+   */
+  keepOnContentHover?: boolean
 }
 </script>
 
@@ -56,7 +64,6 @@ import {
 } from './popup'
 import { usePopupContainer } from './utils'
 
-const HOVER_OPEN_DELAY = 100
 const HOVER_CLOSE_DELAY = 100
 
 defineOptions({
@@ -71,7 +78,9 @@ const props = withDefaults(defineProps<Props>(), {
   pos: undefined,
   offset: () => ({ x: 0, y: 8 }),
   disabled: false,
-  class: undefined
+  class: undefined,
+  openDelay: 100,
+  keepOnContentHover: true
 })
 
 const emit = defineEmits<{
@@ -146,7 +155,7 @@ function scheduleOpen() {
   // while the pointer is just passing across the trigger.
   hoverOpenTimerRef.value = window.setTimeout(() => {
     setVisible(true)
-  }, HOVER_OPEN_DELAY)
+  }, props.openDelay)
 }
 
 function scheduleClose() {
@@ -161,7 +170,7 @@ function scheduleClose() {
 
 function handleTriggerClick() {
   if (props.trigger !== 'click' || props.disabled) return
-  setVisible(true)
+  setVisible(!visibleComputed.value)
 }
 
 function handleTriggerMouseenter() {
@@ -176,6 +185,9 @@ function handleTriggerMouseleave() {
 
 function handleContentMouseenter() {
   if (props.trigger !== 'hover' || props.disabled) return
+  // When the content has nothing to interact with, hovering it should not keep the dropdown open;
+  // it closes as the pointer leaves the trigger.
+  if (!props.keepOnContentHover) return
   clearTimer(hoverCloseTimerRef)
   setVisible(true)
 }

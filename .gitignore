@@ -25,3 +25,6 @@ docs/superpowers/
 
 .idea/
 *.wasm
+
+# Python bytecode from the skill scripts
+__pycache__/

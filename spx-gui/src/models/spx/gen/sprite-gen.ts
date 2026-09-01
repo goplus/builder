@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { reactive, watch } from 'vue'
 import type { Prettify } from '@/utils/types'
-import { extname } from '@/utils/path'
+import { encodePathSegment, extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
 import { getContentBoundingRect } from '@/utils/img'
@@ -47,7 +47,7 @@ export const spriteGenAssetPath = 'assets/sprite-gens'
 const spriteGenConfigFileName = 'index.json'
 
 function assetsPathFor(name: string) {
-  return `gen/assets/sprites/${name}`
+  return `gen/assets/sprites/${encodePathSegment(name)}`
 }
 
 export type SpriteGenInits = {
@@ -587,7 +587,10 @@ export class SpriteGen extends Disposable {
     }
     if (this.imageIndex != null) config.imageIndex = this.imageIndex
     if (this.selectedItem != null) config.selectedItem = this.selectedItem
-    files[`${spriteGenAssetPath}/${this.name}/${spriteGenConfigFileName}`] = fromConfig(spriteGenConfigFileName, config)
+    files[`${spriteGenAssetPath}/${encodePathSegment(this.name)}/${spriteGenConfigFileName}`] = fromConfig(
+      spriteGenConfigFileName,
+      config
+    )
     return files
   }
 }
