@@ -107,6 +107,26 @@ function usesRequiredCode(tokens: string[]): boolean {
   return meetsCodeRequirement(code, tokens)
 }
 
+/**
+ * Format the code the learner has open, the moment the goal is reached. What they wrote is about
+ * to be judged against the course's secondary goal, quoted to the copilot for its completion
+ * comment, and left behind as the answer they keep — so it is tidied first, once, rather than
+ * carrying a run's worth of stray indentation into all three. Formatting is a courtesy: a failure
+ * (unparsable code, no editor attached yet) must never hold up completion.
+ */
+async function formatLearnerCode() {
+  const codeEditor = codeEditorRef.value
+  const textDocument = codeEditor?.getAttachedUI()?.activeTextDocument
+  if (codeEditor == null || textDocument == null) return
+  try {
+    await codeEditor.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
+      codeEditor.formatTextDocument(textDocument.id)
+    )
+  } catch (e) {
+    console.warn('Failed to format the code on course completion', e)
+  }
+}
+
 function advanceOpening() {
   openingIndexRef.value++
 }
@@ -272,18 +292,27 @@ watch(
       const requirement = courseConfig.complete?.require ?? null
       let matchedLines = new Set<string>()
       let signalled = false
+      // Identifies the run a completion signal belongs to, so the async formatting below cannot
+      // land its verdict on a later run the learner has already started.
+      let runSeq = 0
       disposers.push(
         editorRuntimeOutputBridge.onRunStart(() => {
           matchedLines = new Set()
           signalled = false
+          runSeq++
           retryHint.value = null
         }),
-        editorRuntimeOutputBridge.onLine((line) => {
+        editorRuntimeOutputBridge.onLine(async (line) => {
           if (!line.includes(completeLog)) return
           matchedLines.add(line)
           if (matchedLines.size < completeCount || signalled) return
           // Fire once per run: the goal can keep producing output after it is reached.
           signalled = true
+          const signalledRun = runSeq
+          // Tidy the code before judging it, so the secondary goal below, the completion comment
+          // and the learner's own file all see the same, formatted answer.
+          await formatLearnerCode()
+          if (runSeq !== signalledRun) return
           // The secondary goal, if the course declares one — the course is complete only when the
           // learner reached the goal AND did it the way the course is teaching.
           if (requirement != null && !usesRequiredCode(requirement.code)) {
