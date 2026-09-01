@@ -75,13 +75,14 @@ type courseProgram struct {
 	// eventDeliveryMu 串行化事件投递，保证一次触发对它的全部回调通道"全有或全无"
 	// ——只有投递方会往队列里加，持锁预检容量后逐条发送不会中途失败。
 	eventDeliveryMu sync.Mutex
-	// shutdown 在完成或致命错误时关闭一次，通知各回调通道的 worker 退出。
+	// shutdown 在完成或致命错误时关闭一次，通知各回调通道的 lane worker 退出。
 	shutdown     chan struct{}
 	shutdownOnce sync.Once
-	// workers 计数回调通道的 worker goroutine，awaitShutdown 用它等在途回调收尾。
-	workers sync.WaitGroup
-	// laneStarters 收集程序启动前注册的回调通道的 worker 启动函数；
-	// lanesStarted 置位后，新注册的通道直接启动自己的 worker。
+	// laneWorkers 计数各回调通道的 lane worker goroutine（与浏览器的 Web Worker
+	// 无关——那是装着整个 wasm 的容器），awaitShutdown 用它等在途回调收尾。
+	laneWorkers sync.WaitGroup
+	// laneStarters 收集程序启动前注册的回调通道的 lane worker 启动函数；
+	// lanesStarted 置位后，新注册的通道直接启动自己的 lane worker。
 	laneStarters []func()
 	lanesStarted bool
 
@@ -186,12 +187,12 @@ func addLane[T any](p *courseProgram, handler func(T), attach func(*handlers, *h
 		queue:   make(chan T, eventQueueSize),
 	}
 	start := func() {
-		// workers.Add 与终态判断同锁：终态后 awaitShutdown 可能已在 Wait，
+		// laneWorkers.Add 与终态判断同锁：终态后 awaitShutdown 可能已在 Wait，
 		// 此时不再起新 worker（通道反正已死），避免 Add 与 Wait 竞态。
 		p.schedulerMu.Lock()
 		dead := p.completed || p.fatal != nil
 		if !dead {
-			p.workers.Add(1)
+			p.laneWorkers.Add(1)
 		}
 		p.schedulerMu.Unlock()
 		if dead {
@@ -211,7 +212,7 @@ func addLane[T any](p *courseProgram, handler func(T), attach func(*handlers, *h
 }
 
 func (l *handlerLane[T]) run(p *courseProgram) {
-	defer p.workers.Done()
+	defer p.laneWorkers.Done()
 	for {
 		select {
 		case <-p.shutdown:
@@ -286,7 +287,7 @@ func (p *courseProgram) awaitShutdown() {
 	if fatal := p.fatalValue(); fatal != nil {
 		panic(fatal)
 	}
-	p.workers.Wait()
+	p.laneWorkers.Wait()
 	// 完成路径上收尾的帧仍可能失败（最典型：course_complete 本身失败——
 	// Complete 先关 ending 再调 capability）。收尾结束后再查一次，
 	// 迟到的致命错误不能被吞成 completed。
