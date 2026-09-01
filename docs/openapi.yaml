@@ -2912,6 +2912,7 @@ paths:
               type: object
               required:
                 - title
+                - thumbnail
                 - content
               properties:
                 title:
