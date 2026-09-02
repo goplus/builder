@@ -89,6 +89,11 @@ const apiVideoLibrary: Record<string, ApiVideoInfo> = {
     title: { en: 'The ruler', zh: '尺子怎么用' },
     src: `${tutorialVideoAssetBaseUrl}/ruler.mp4`
   },
+  'xgo:github.com/goplus/spx/v2?repeat': {
+    title: { en: 'repeat', zh: 'repeat 重复执行' },
+    // The first WebM in the library; `<video>` picks the decoder from the bucket's `video/webm`.
+    src: `${tutorialVideoAssetBaseUrl}/repeat.webm`
+  },
   // Language-construct knowledge points (ids from the code editor's document base). They carry
   // the demo video until their real explainer videos are produced — listed here so the dialog
   // titles read naturally instead of exposing the raw ids.
