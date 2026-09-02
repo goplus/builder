@@ -39,6 +39,14 @@ describe('getApiVideo', () => {
     expect(video?.src).not.toBe(stepVideoSrc)
   })
 
+  it('resolves repeat, without mistaking repeatUntil for it', () => {
+    const video = getApiVideo('repeat')
+    expect(video?.src).toBe(`${tutorialVideoAssetBaseUrl}/repeat.webm`)
+    expect(getApiVideo('xgo:github.com/goplus/spx/v3?repeat')?.src).toBe(video?.src)
+    // `repeatUntil` is its own API and has no take yet — it must not borrow repeat's.
+    expect(getApiVideo('repeatUntil')?.src).toBe(stepVideoSrc)
+  })
+
   it('keeps the two turn notations apart', () => {
     // `turn 90` and `turn Right` are one function (Direction is a float64, Right is 90), so only a
     // knowledge point of its own can separate them — name matching must not collapse the two.
