@@ -2838,7 +2838,7 @@ paths:
         Create a new course owned by the authenticated user.
 
         The request either provides `kind` and `content`, or uses the transitional legacy flat shape (`entrypoint` and
-        `prompt` without `kind` and `content`, treated as a guided course) accepted until the API contract release.
+        `prompt` without `kind` and `content`, treated as a guided course) accepted until the API contract release (goplus/builder-backend#352).
 
         Permission requirements:
 
@@ -3233,7 +3233,7 @@ paths:
       description: |
         Create a new course series owned by the authenticated user.
 
-        Omitting `kind` means a guided series (transitional legacy shape, accepted until the API contract release).
+        Omitting `kind` means a guided series (transitional legacy shape, accepted until the API contract release (goplus/builder-backend#352)).
 
         Permission requirements:
 
@@ -7707,10 +7707,13 @@ components:
           examples:
             - entrypoint: /editor/john/loop
               prompt: Learn the basics of XGo programming language
+            - main_course.gox: kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
+              project/Lita.spx: kodo://xbuilder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
+              assets/videos/step-to/index.json: data:application/json,%7B%22path%22%3A%22step-to.mp4%22%7D
         entrypoint:
           description: |
             Starting entrypoint of the course. Transitional top-level copy of the guided course content, kept so pre-kind
-            clients keep working; empty for playground courses. Removed by the API contract release.
+            clients keep working; empty for playground courses. Removed by the API contract release (goplus/builder-backend#352).
           deprecated: true
           type: string
           format: uri-reference
@@ -7719,7 +7722,7 @@ components:
         prompt:
           description: |
             Prompt text for the course (used for copilot assistance). Transitional top-level copy of the guided course
-            content; empty for playground courses. Removed by the API contract release.
+            content; empty for playground courses. Removed by the API contract release (goplus/builder-backend#352).
           deprecated: true
           type: string
           maxLength: 12000
