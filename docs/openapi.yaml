@@ -2904,8 +2904,10 @@ paths:
 
         Quota and rate limits:
 
-        - Each generation consumes 1 quota from the authenticated user's `copilotMessage` allowance; the quota is
-          refunded when generation fails.
+        - Each generation consumes 1 quota from the authenticated user's `copilotMessage` allowance. The quota is
+          refunded when generation fails on the server side; it is not refunded when the client cancels the request.
+        - Per-user short-window rate limits also apply. Hitting them returns 429 with `Retry-After`; reaching the
+          long-window quota limit returns 403 with `Retry-After`.
       requestBody:
         required: true
         content:
@@ -2946,9 +2948,9 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "429":
-          $ref: "#/components/responses/TooManyRequests"
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /courses/{courseID}:
     get:
