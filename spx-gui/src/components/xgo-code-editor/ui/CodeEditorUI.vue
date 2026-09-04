@@ -88,7 +88,7 @@ const definitionPeekEditorOptions = computed<monaco.editor.IStandaloneEditorCons
   glyphMargin: false,
   folding: false,
   lineDecorationsWidth: 12,
-  lineNumbersMinChars: 2,
+  lineNumbersMinChars: 4,
   selectOnLineNumbers: false
 }))
 
