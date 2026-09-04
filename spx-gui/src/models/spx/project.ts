@@ -100,6 +100,11 @@ export type ViewportSize = {
   height: number
 }
 
+export type SpxProjectInits = {
+  /** Visible game canvas size used by the editor and runner. */
+  viewportSize?: ViewportSize
+}
+
 const defaultViewportSize: ViewportSize = defaultMapSize
 const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
 const disabledAudioAttenuationFlag = 0
@@ -287,7 +292,8 @@ export class SpxProject extends Disposable implements IProject {
     this.sounds.splice(to, 0, sound)
   }
 
-  readonly viewportSize = defaultViewportSize
+  /** Visible game canvas size. The map may grow beyond this size. */
+  readonly viewportSize: ViewportSize
 
   private cameraFollowSpriteId: string | null
   get cameraFollowSprite(): Sprite | null {
@@ -373,9 +379,10 @@ export class SpxProject extends Disposable implements IProject {
     return () => disposable.dispose()
   }
 
-  constructor(owner?: string, name?: string) {
+  constructor(owner?: string, name?: string, inits?: SpxProjectInits) {
     super()
     const reactiveThis = reactive(this) as this
+    const viewportSize = inits?.viewportSize ?? defaultViewportSize
     this.owner = owner
     this.name = name
     if (name != null) {
@@ -384,7 +391,11 @@ export class SpxProject extends Disposable implements IProject {
     this.zorder = []
     this.fonts = []
     this.fontPreferences = ['default']
-    this.stage = new Stage()
+    this.viewportSize = { ...viewportSize }
+    this.stage = new Stage('', {
+      mapWidth: viewportSize.width,
+      mapHeight: viewportSize.height
+    })
     this.sprites = []
     this.sounds = []
     this.addDisposer(() => {
@@ -434,8 +445,6 @@ export class SpxProject extends Disposable implements IProject {
     }
     const {
       zorder: rawZorder,
-      // For now runConfig will be ignored, as the fixed viewport / run size is used in builder
-      // TODO: support customized viewport / run size
       run: runConfig,
       camera: cameraConfig,
       builder_spriteOrder: spriteOrder,
@@ -445,6 +454,20 @@ export class SpxProject extends Disposable implements IProject {
       fontPreferences,
       ...rawStageConfig
     } = config
+
+    const runWidth = runConfig?.width
+    const runHeight = runConfig?.height
+    if (
+      typeof runWidth === 'number' &&
+      Number.isFinite(runWidth) &&
+      runWidth > 0 &&
+      typeof runHeight === 'number' &&
+      Number.isFinite(runHeight) &&
+      runHeight > 0
+    ) {
+      this.viewportSize.width = runWidth
+      this.viewportSize.height = runHeight
+    }
 
     const sounds = await Sound.loadAll(files)
     const sprites = await Sprite.loadAll(files, { sounds })
