@@ -95,7 +95,8 @@ export function toAbsolutePosition(position: Position, editor: MonacoEditor): Ab
 
 export function useDecorations(
   /** Returns decorations to be rendered in the editor. */
-  getDecorations: () => monaco.editor.IModelDeltaDecoration[]
+  getDecorations: () => monaco.editor.IModelDeltaDecoration[],
+  getEditor?: () => MonacoEditor
 ) {
   const codeEditorUICtx = useCodeEditorUICtx()
   let collection: monaco.editor.IEditorDecorationsCollection | null = null
@@ -107,7 +108,7 @@ export function useDecorations(
       return
     }
 
-    collection = collection ?? codeEditorUICtx.ui.editor.createDecorationsCollection([])
+    collection = collection ?? (getEditor?.() ?? codeEditorUICtx.ui.editor).createDecorationsCollection([])
     collection.set(decorations)
   })
   onUnmounted(() => collection?.clear())

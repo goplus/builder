@@ -2,7 +2,6 @@
 import { ref, watchPostEffect } from 'vue'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
 import { useDecorations } from '../common'
-import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import HoverCard from './HoverCard.vue'
 import HoverCardContent from './HoverCardContent.vue'
@@ -11,8 +10,6 @@ import type { HoverController } from '.'
 const props = defineProps<{
   controller: HoverController
 }>()
-
-const codeEditorUICtx = useCodeEditorUICtx()
 
 const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
@@ -26,7 +23,7 @@ watchPostEffect(async () => {
     return
   }
 
-  const editor = codeEditorUICtx.ui.editor
+  const editor = props.controller.editor
   editor.render(true) // ensure the decoration is rendered
   const decorationEl = editor.getDomNode()?.getElementsByClassName(hoveredTextCls)[0]
   if (decorationEl == null) throw new Error('Decoration element not found')
@@ -40,24 +37,27 @@ watchPostEffect(async () => {
   }
 })
 
-useDecorations(() => {
-  const hover = props.controller.hover
-  if (hover == null) return []
-  return [
-    {
-      range: {
-        startLineNumber: hover.range.start.line,
-        startColumn: hover.range.start.column,
-        endLineNumber: hover.range.end.line,
-        endColumn: hover.range.end.column
-      },
-      options: {
-        isWholeLine: false,
-        className: hoveredTextCls
+useDecorations(
+  () => {
+    const hover = props.controller.hover
+    if (hover == null) return []
+    return [
+      {
+        range: {
+          startLineNumber: hover.range.start.line,
+          startColumn: hover.range.start.column,
+          endLineNumber: hover.range.end.line,
+          endColumn: hover.range.end.column
+        },
+        options: {
+          isWholeLine: false,
+          className: hoveredTextCls
+        }
       }
-    }
-  ]
-})
+    ]
+  },
+  () => props.controller.editor
+)
 </script>
 
 <template>
