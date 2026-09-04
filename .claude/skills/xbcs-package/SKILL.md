@@ -93,7 +93,7 @@ Most edits are safe. These are the ones that bite:
   `displayName` equal to the manifest's `projects[].name` — a stale one (the usual leftover from
   duplicating a project) shows the wrong course number in the editor.
 - **Length limits are server-enforced** and surface as an opaque `40001`: course title ≤200, course
-  prompt ≤4000, series title ≤200, series description ≤400, project name ≤100 and `^[\w-]+$`.
+  prompt ≤12000, series title ≤200, series description ≤400, project name ≤100 and `^[\w-]+$`.
 - **The output filename must end in `.xbcs.zip`.** The import file picker filters on that exact
   suffix, so a `.zip` or `.xbcs` can't even be selected — an "upload problem" that never reaches any
   code.

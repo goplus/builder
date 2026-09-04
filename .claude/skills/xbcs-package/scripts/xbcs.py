@@ -36,9 +36,12 @@ KNOWN_EXTS = {
     "mp3", "wav", "ogg", "webm", "json", "spx", "gmx", "md", "hash",
 }
 
+# Server-enforced, and only on write — stored rows are never revalidated, so a course can exceed
+# a limit that was raised after it was created. Mirror what the deployment actually enforces:
+# the prompt limit went 4000 -> 12000 in goplus/builder-backend#329 (merged 2026-08-12).
 LIMITS = {
     "course_title": 200,
-    "course_prompt": 4000,
+    "course_prompt": 12000,
     "series_title": 200,
     "series_description": 400,
     "project_name": 100,
