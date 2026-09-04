@@ -2,7 +2,8 @@
   <div
     v-show="running.mode !== 'debug'"
     class="flex gap-xl"
-    :class="layout === 'portrait' ? 'h-full w-52 flex-none flex-col' : 'flex-[1_1_0]'"
+    :class="layout === 'portrait' ? 'h-full flex-none flex-col' : 'flex-[1_1_0]'"
+    :style="layout === 'portrait' ? { width: `${railWidth}px` } : null"
   >
     <UICard
       v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
@@ -28,7 +29,8 @@
       desc: 'Console panel showing runtime output and errors',
       visible: running.mode === 'debug'
     }"
-    :class="layout === 'portrait' ? 'h-full w-52 flex-none' : 'flex-[1_1_0]'"
+    :class="layout === 'portrait' ? 'h-full flex-none' : 'flex-[1_1_0]'"
+    :style="layout === 'portrait' ? { width: `${railWidth}px` } : null"
   />
 </template>
 
@@ -43,8 +45,9 @@ import ConsolePanel from './ConsolePanel.vue'
 withDefaults(
   defineProps<{
     layout?: 'default' | 'portrait'
+    railWidth?: number
   }>(),
-  { layout: 'default' }
+  { layout: 'default', railWidth: 208 }
 )
 
 const editorCtx = useEditorCtx()
