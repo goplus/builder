@@ -163,7 +163,7 @@ function openInEditor() {
     class="min-h-0 flex flex-col overflow-hidden rounded-md border border-dividing-line-2 bg-white shadow-sm"
   >
     <header
-      class="flex flex-none flex-wrap items-center justify-between gap-x-2 border-b border-dividing-line-2 px-3 py-1"
+      class="flex flex-none flex-wrap items-center justify-between gap-x-2 border-b border-dividing-line-2 pl-3 pr-2 py-1"
     >
       <div
         class="min-w-0 flex-[1_1_220px] truncate py-1 text-body-medium font-medium text-title"
@@ -212,7 +212,7 @@ function openInEditor() {
           </template>
           <div
             ref="referencesList"
-            class="max-h-64 w-80 max-w-[calc(100vw-32px)] overflow-auto p-2 text-body-medium"
+            class="definition-peek-references max-h-64 w-72 max-w-[calc(100vw-32px)] overflow-auto p-2 text-body-medium"
             @keydown="handleListKeydown"
           >
             <div v-if="controller.loading" role="status" class="px-2 py-3 text-grey-800">
@@ -308,3 +308,24 @@ function openInEditor() {
     <HoverUI v-if="hoverController != null" :controller="hoverController" />
   </section>
 </template>
+
+<style scoped>
+.definition-peek-references {
+  scrollbar-color: var(--ui-color-grey-600) transparent;
+  scrollbar-width: thin;
+}
+
+.definition-peek-references::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.definition-peek-references::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.definition-peek-references::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: var(--ui-color-grey-600);
+}
+</style>

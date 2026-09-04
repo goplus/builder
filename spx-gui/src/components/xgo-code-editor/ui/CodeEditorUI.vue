@@ -320,7 +320,7 @@ providePopupContainer(codeEditorEl)
           />
           <DefinitionPeek
             v-if="uiRef.definitionPeek != null"
-            class="mx-3 mt-2 min-h-0 flex-[0_1_45%]"
+            class="ml-3 mt-2 min-h-0 flex-[0_1_45%]"
             :monaco="codeEditor.monaco"
             :options="definitionPeekEditorOptions"
             :peek="uiRef.definitionPeek"
