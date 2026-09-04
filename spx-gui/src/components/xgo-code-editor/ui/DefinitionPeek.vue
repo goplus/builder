@@ -29,6 +29,8 @@ const referencesVisible = ref(false)
 const referencesTrigger = ref<HTMLButtonElement | null>(null)
 const referencesList = ref<HTMLDivElement | null>(null)
 const hoverController = shallowRef<HoverController | null>(null)
+// Align the dropdown's right edge with the close button: two 32px icon buttons and two 4px gaps.
+const referencesDropdownOffset = { x: 72, y: 8 }
 
 watch(
   () => props.peek,
@@ -177,6 +179,7 @@ function openInEditor() {
         <UIDropdown
           trigger="manual"
           placement="bottom-end"
+          :offset="referencesDropdownOffset"
           :visible="referencesVisible"
           @update:visible="referencesVisible = $event"
         >
