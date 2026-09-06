@@ -51,11 +51,10 @@ export async function adaptAudio(file: File): Promise<File> {
 }
 
 /**
- * Image file formats supported by spx. See details in
- * - https://github.com/goplus/spx/blob/7f46dc7879e2320a9889f1396b9e592efb6d888d/spbase.go#L25-L26
- * - https://github.com/goplus/spx/blob/7f46dc7879e2320a9889f1396b9e592efb6d888d/internal/svgr/svg.go#L22
+ * Image file formats preserved by Builder for SPX.
+ * See https://github.com/goplus/spx/blob/4953f393febca4bede367e54392320c80ae18f77/docs/en/dev/image_assets.md for WebP support.
  */
-const supportedImgExts = ['jpg', 'jpeg', 'png', 'svg']
+const supportedImgExts = ['jpg', 'jpeg', 'png', 'svg', 'webp']
 
 /** Adapt image file to fit spx. Unsupported image files will be converted to jpeg. */
 export async function adaptImg(file: File): Promise<File> {

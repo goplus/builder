@@ -461,14 +461,14 @@ export class MockAigcApis {
         const interval = p.interval ?? 200
         const count = Math.max(1, Math.floor(p.duration / interval))
         return {
-          frameUrls: this.range(count).map((i) => this.url(`frame-${i + 1}.png`))
+          frameUrls: this.range(count).map((i) => this.url(`frame-${i + 1}.webp`))
         } as TaskResult<T>
       }
       case TaskType.GenerateBackdrop: {
         const p = params as TaskParams<TaskType.GenerateBackdrop>
         const name = this.sanitize(p.settings.name)
         return {
-          imageUrls: this.range(p.n).map((i) => this.url(`backdrop-${name}-${i + 1}.png`))
+          imageUrls: this.range(p.n).map((i) => this.url(`backdrop-${name}-${i + 1}.webp`))
         } as TaskResult<T>
       }
       default:

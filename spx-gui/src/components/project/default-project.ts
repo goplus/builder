@@ -4,6 +4,7 @@ import type { Files } from '@/models/common/file'
 import { Backdrop } from '@/models/spx/backdrop'
 import { basicChineseFontFamilyName, createBasicChineseFontFamily } from '@/models/spx/font'
 import { SpxProject } from '@/models/spx/project'
+import { Sound } from '@/models/spx/sound'
 import { Sprite } from '@/models/spx/sprite'
 
 const templateAssetUrls = import.meta.glob('./default-project/assets/**/*', {
@@ -27,11 +28,14 @@ function getTemplateAssets(): Files {
 export async function createDefaultProject(owner: string, name: string, fontPreferences: string[]) {
   const project = new SpxProject(owner, name)
   const files = getTemplateAssets()
-  const backdropFile = files['assets/backdrop.png']!
-  project.stage.addBackdrop(await Backdrop.create('backdrop', backdropFile))
+  const backdropFile = files['assets/grass.svg']!
+  project.stage.addBackdrop(await Backdrop.create('grass', backdropFile))
   project.stage.setExtraConfig({ autoSetCollisionLayer: true, stretchMode: true })
 
-  const sprite = await Sprite.load('NiuXiaoQi', files, { sounds: [] })
+  const sounds = await Sound.loadAll(files)
+  sounds.forEach((sound) => project.addSound(sound))
+
+  const sprite = await Sprite.load('Squirrel', files, { sounds })
   if (sprite == null) throw new Error('default sprite not found')
   project.addSprite(sprite)
 
