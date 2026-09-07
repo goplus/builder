@@ -2854,6 +2854,27 @@ paths:
                 - title
                 - thumbnail
                 - content
+              allOf:
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: guided
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/GuidedCourseContent"
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: playground
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/PlaygroundCourseContent"
               properties:
                 kind:
                   $ref: "#/components/schemas/Course/properties/kind"
@@ -2987,7 +3008,8 @@ paths:
         Update the details of a specific course.
 
         The course kind is immutable: a `kind` field is accepted only when it matches the course's current kind. `content`
-        is validated against the course's kind and replaced as a whole, never merged.
+        is validated against the course's kind (`GuidedCourseContent` or `PlaygroundCourseContent`) and replaced as a
+        whole, never merged.
 
         Permission requirements:
 
@@ -3006,6 +3028,27 @@ paths:
             schema:
               type: object
               minProperties: 1
+              allOf:
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: guided
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/GuidedCourseContent"
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: playground
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/PlaygroundCourseContent"
               properties:
                 kind:
                   $ref: "#/components/schemas/Course/properties/kind"
@@ -7656,6 +7699,27 @@ components:
         - title
         - thumbnail
         - content
+      allOf:
+        - if:
+            required:
+              - kind
+            properties:
+              kind:
+                const: guided
+          then:
+            properties:
+              content:
+                $ref: "#/components/schemas/GuidedCourseContent"
+        - if:
+            required:
+              - kind
+            properties:
+              kind:
+                const: playground
+          then:
+            properties:
+              content:
+                $ref: "#/components/schemas/PlaygroundCourseContent"
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -7693,9 +7757,7 @@ components:
             Kind-specific course content, selected by `kind`: `GuidedCourseContent` for a `guided` course,
             `PlaygroundCourseContent` for a `playground` course. The API validates only the top-level shape; internals
             follow the Tutorial content-format contract and stay opaque to the API and storage.
-          oneOf:
-            - $ref: "#/components/schemas/GuidedCourseContent"
-            - $ref: "#/components/schemas/PlaygroundCourseContent"
+          type: object
 
     GuidedCourseContent:
       description: Content of a `guided` course, driven by Copilot.
