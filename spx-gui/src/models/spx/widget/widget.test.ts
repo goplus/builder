@@ -29,6 +29,8 @@ describe('Widget', () => {
   it('should clone correctly', () => {
     const stage = makeStage()
     const widget = stage.widgets[0]
+    widget.mode = 2
+    widget.style = 'custom'
 
     const clone = widget.clone()
     expect(clone.id).not.toEqual(widget.id)
@@ -40,6 +42,8 @@ describe('Widget', () => {
     expect(clone.visible).toEqual(widget.visible)
 
     expect(clone.type).toEqual('monitor')
+    expect(clone.mode).toEqual(2)
+    expect(clone.style).toEqual('custom')
     expect(clone.target).toEqual('MySprite')
     expect(clone.variableName).toEqual('variableName1')
 
@@ -57,8 +61,10 @@ describe('Monitor.load', () => {
       val: 'score',
       label: 'Score'
     })
+    expect(monitor.style).toEqual('default')
     expect(monitor.target).toEqual('')
     expect(monitor.variableName).toEqual('score')
+    expect(monitor.export().style).toEqual('default')
   })
 
   it('should load val without legacy prefix', () => {
@@ -72,6 +78,24 @@ describe('Monitor.load', () => {
     })
     expect(monitor.target).toEqual('MySprite')
     expect(monitor.variableName).toEqual('score')
+  })
+
+  it('should load mode 2', () => {
+    const monitor = Monitor.load({
+      type: 'monitor',
+      name: 'monitor1',
+      mode: 2,
+      style: 'custom',
+      target: 'MySprite',
+      val: 'score',
+      label: 'Score'
+    })
+    expect(monitor.mode).toEqual(2)
+    expect(monitor.style).toEqual('custom')
+    expect(monitor.target).toEqual('MySprite')
+    expect(monitor.variableName).toEqual('score')
+    expect(monitor.export().mode).toEqual(2)
+    expect(monitor.export().style).toEqual('custom')
   })
 
   it('should load val with legacy getVar: prefix', () => {

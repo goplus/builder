@@ -3,7 +3,11 @@ import { getWidgetName } from '../common/asset-name'
 import { BaseWidget, type BaseWidgetInits, type BaseRawWidgetConfig } from './widget'
 import { defaultMapSize } from '../stage'
 
+export type MonitorMode = 1 | 2
+
 export type MonitorInits = BaseWidgetInits & {
+  mode?: MonitorMode
+  style?: string
   label?: string
   /** Target name: empty string for stage, sprite name for sprite */
   target?: string
@@ -14,17 +18,24 @@ export type MonitorInits = BaseWidgetInits & {
 export type RawMonitorConfig = BaseRawWidgetConfig & {
   type: 'monitor'
   mode?: number
+  style?: string
   label?: string
   target?: string
   val?: string
 }
 
-// There are different modes for monitor, but only `mode: 1` is supported
-const supportedMode = 1
+const supportedModes: MonitorMode[] = [1, 2]
+const defaultMonitorStyle = 'default'
+function isMonitorMode(mode: number): mode is MonitorMode {
+  return supportedModes.includes(mode as MonitorMode)
+}
 // Legacy prefix for `val` field: old configs stored `val` as `getVar:${variableName}`
 const legacyValPrefix = 'getVar:'
 
 export class Monitor extends BaseWidget {
+  mode: MonitorMode
+  style: string
+
   label: string
   setLabel(label: string) {
     this.label = label
@@ -47,8 +58,10 @@ export class Monitor extends BaseWidget {
     this.variableName = name
   }
 
-  constructor(name: string, { label, target, variableName, ...extraInits }: MonitorInits) {
+  constructor(name: string, { mode, style, label, target, variableName, ...extraInits }: MonitorInits) {
     super(name, 'monitor', extraInits)
+    this.mode = mode ?? 1
+    this.style = style ?? defaultMonitorStyle
     this.label = label ?? ''
     this.target = target ?? ''
     this.variableName = variableName ?? ''
@@ -71,13 +84,22 @@ export class Monitor extends BaseWidget {
     })
   }
 
-  static load({ builder_id: id, type, name, mode, target, val, ...inits }: RawMonitorConfig) {
+  static load({ builder_id: id, type, name, mode, style, target, val, ...inits }: RawMonitorConfig) {
     if (type !== 'monitor') throw new Error(`unexpected type ${type}`)
     if (name == null) throw new Error('name expected for monitor')
-    if (mode !== supportedMode) throw new Error(`unsupported mode: ${mode} for monitor ${name}`)
+    if (mode == null || !isMonitorMode(mode)) {
+      throw new Error(`unsupported mode: ${mode} for monitor ${name}`)
+    }
     if (val == null) throw new Error(`val expected for monitor ${name}`)
     const variableName = val.startsWith(legacyValPrefix) ? val.slice(legacyValPrefix.length) : val
-    return new Monitor(name, { ...inits, id, target: target ?? '', variableName })
+    return new Monitor(name, {
+      ...inits,
+      id,
+      mode,
+      style: style ?? defaultMonitorStyle,
+      target: target ?? '',
+      variableName
+    })
   }
 
   clone(preserveId = false) {
@@ -87,6 +109,8 @@ export class Monitor extends BaseWidget {
       y: this.y,
       size: this.size,
       visible: this.visible,
+      mode: this.mode,
+      style: this.style,
       label: this.label,
       target: this.target,
       variableName: this.variableName
@@ -98,7 +122,8 @@ export class Monitor extends BaseWidget {
       ...super.export(),
       type: 'monitor',
       label: this.label,
-      mode: supportedMode,
+      mode: this.mode,
+      style: this.style,
       target: this.target,
       val: this.variableName
     }
