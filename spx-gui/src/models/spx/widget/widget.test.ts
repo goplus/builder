@@ -30,7 +30,7 @@ describe('Widget', () => {
     const stage = makeStage()
     const widget = stage.widgets[0]
     widget.mode = 2
-    widget.style = 'custom'
+    widget.style = 'scratch'
 
     const clone = widget.clone()
     expect(clone.id).not.toEqual(widget.id)
@@ -43,7 +43,7 @@ describe('Widget', () => {
 
     expect(clone.type).toEqual('monitor')
     expect(clone.mode).toEqual(2)
-    expect(clone.style).toEqual('custom')
+    expect(clone.style).toEqual('scratch')
     expect(clone.target).toEqual('MySprite')
     expect(clone.variableName).toEqual('variableName1')
 
@@ -85,17 +85,29 @@ describe('Monitor.load', () => {
       type: 'monitor',
       name: 'monitor1',
       mode: 2,
-      style: 'custom',
+      style: 'scratch',
       target: 'MySprite',
       val: 'score',
       label: 'Score'
     })
     expect(monitor.mode).toEqual(2)
-    expect(monitor.style).toEqual('custom')
+    expect(monitor.style).toEqual('scratch')
     expect(monitor.target).toEqual('MySprite')
     expect(monitor.variableName).toEqual('score')
     expect(monitor.export().mode).toEqual(2)
-    expect(monitor.export().style).toEqual('custom')
+    expect(monitor.export().style).toEqual('scratch')
+  })
+
+  it('should fall back to default style when style is unsupported', () => {
+    const monitor = Monitor.load({
+      type: 'monitor',
+      name: 'monitor1',
+      mode: 1,
+      style: 'unsupported',
+      val: 'score'
+    })
+    expect(monitor.style).toEqual('default')
+    expect(monitor.export().style).toEqual('default')
   })
 
   it('should load val with legacy getVar: prefix', () => {

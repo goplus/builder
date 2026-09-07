@@ -3,11 +3,15 @@ import { getWidgetName } from '../common/asset-name'
 import { BaseWidget, type BaseWidgetInits, type BaseRawWidgetConfig } from './widget'
 import { defaultMapSize } from '../stage'
 
+/** Monitor display mode: 1 for the default readout, 2 for the large readout. */
 export type MonitorMode = 1 | 2
+
+/** Monitor visual style: `default` for the standard appearance, `scratch` for Scratch-compatible rendering. */
+export type MonitorStyle = 'default' | 'scratch'
 
 export type MonitorInits = BaseWidgetInits & {
   mode?: MonitorMode
-  style?: string
+  style?: MonitorStyle
   label?: string
   /** Target name: empty string for stage, sprite name for sprite */
   target?: string
@@ -25,16 +29,20 @@ export type RawMonitorConfig = BaseRawWidgetConfig & {
 }
 
 const supportedModes: MonitorMode[] = [1, 2]
+const supportedStyles: MonitorStyle[] = ['default', 'scratch']
 const defaultMonitorStyle = 'default'
 function isMonitorMode(mode: number): mode is MonitorMode {
   return supportedModes.includes(mode as MonitorMode)
+}
+function isMonitorStyle(style: string): style is MonitorStyle {
+  return supportedStyles.includes(style as MonitorStyle)
 }
 // Legacy prefix for `val` field: old configs stored `val` as `getVar:${variableName}`
 const legacyValPrefix = 'getVar:'
 
 export class Monitor extends BaseWidget {
   mode: MonitorMode
-  style: string
+  style: MonitorStyle
 
   label: string
   setLabel(label: string) {
@@ -96,7 +104,7 @@ export class Monitor extends BaseWidget {
       ...inits,
       id,
       mode,
-      style: style ?? defaultMonitorStyle,
+      style: style != null && isMonitorStyle(style) ? style : defaultMonitorStyle,
       target: target ?? '',
       variableName
     })
