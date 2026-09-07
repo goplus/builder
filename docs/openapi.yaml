@@ -2837,6 +2837,9 @@ paths:
       description: |
         Create a new course owned by the authenticated user.
 
+        `content` must match `kind`: `GuidedCourseContent` for a `guided` course, `PlaygroundCourseContent` for a
+        `playground` course.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can create courses.
@@ -2847,19 +2850,40 @@ paths:
             schema:
               type: object
               required:
+                - kind
                 - title
                 - thumbnail
-                - entrypoint
-                - prompt
+                - content
+              allOf:
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: guided
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/GuidedCourseContent"
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: playground
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/PlaygroundCourseContent"
               properties:
+                kind:
+                  $ref: "#/components/schemas/Course/properties/kind"
                 title:
                   $ref: "#/components/schemas/Course/properties/title"
                 thumbnail:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
-                entrypoint:
-                  $ref: "#/components/schemas/Course/properties/entrypoint"
-                prompt:
-                  $ref: "#/components/schemas/Course/properties/prompt"
+                content:
+                  $ref: "#/components/schemas/Course/properties/content"
       responses:
         "201":
           description: Successfully created the course.
@@ -2882,6 +2906,70 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /user/courses/playground/copilot-context:
+    post:
+      operationId: generatePlaygroundCourseCopilotContext
+      tags:
+        - Courses
+      summary: Generate a playground course copilot context
+      description: |
+        Generate an editable Copilot context draft from the author's current, possibly unsaved, playground course
+        content.
+
+        Permission requirements:
+
+        - Only users with the `courseAdmin` role can generate course copilot contexts.
+
+        Quota and rate limits:
+
+        - Each generation consumes 1 quota from the authenticated user's `copilotMessage` allowance. The quota is
+          refunded when generation fails on the server side; it is not refunded when the client cancels the request.
+        - Per-user short-window rate limits also apply. Hitting them returns 429 with `Retry-After`; reaching the
+          long-window quota limit returns 403 with `Retry-After`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - thumbnail
+                - content
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                content:
+                  description: Current, possibly unsaved, playground course content mapping file paths to universal URLs.
+                  type: object
+                  minProperties: 1
+                  additionalProperties:
+                    type: string
+                    format: uri-reference
+      responses:
+        "200":
+          description: Successfully generated the copilot context.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - copilotContext
+                properties:
+                  copilotContext:
+                    description: Generated copilot context, editable by the author before saving.
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /courses/{courseID}:
     get:
@@ -2919,6 +3007,10 @@ paths:
       description: |
         Update the details of a specific course.
 
+        The course kind is immutable: a `kind` field is accepted only when it matches the course's current kind. `content`
+        is validated against the course's kind (`GuidedCourseContent` or `PlaygroundCourseContent`) and replaced as a
+        whole, never merged.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can update courses.
@@ -2936,15 +3028,36 @@ paths:
             schema:
               type: object
               minProperties: 1
+              allOf:
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: guided
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/GuidedCourseContent"
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: playground
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/PlaygroundCourseContent"
               properties:
+                kind:
+                  $ref: "#/components/schemas/Course/properties/kind"
                 title:
                   $ref: "#/components/schemas/Course/properties/title"
                 thumbnail:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
-                entrypoint:
-                  $ref: "#/components/schemas/Course/properties/entrypoint"
-                prompt:
-                  $ref: "#/components/schemas/Course/properties/prompt"
+                content:
+                  $ref: "#/components/schemas/Course/properties/content"
       responses:
         "200":
           description: Successfully updated the course.
@@ -3060,6 +3173,11 @@ paths:
         - {}
         - bearerAuth: []
       parameters:
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -3103,6 +3221,11 @@ paths:
       summary: List course series owned by the authenticated user
       description: Retrieve a list of course series owned by the authenticated user.
       parameters:
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -3157,11 +3280,14 @@ paths:
             schema:
               type: object
               required:
+                - kind
                 - title
                 - thumbnail
                 - courseIDs
                 - order
               properties:
+                kind:
+                  $ref: "#/components/schemas/CourseSeries/properties/kind"
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
                 thumbnail:
@@ -3251,6 +3377,8 @@ paths:
               type: object
               minProperties: 1
               properties:
+                kind:
+                  $ref: "#/components/schemas/CourseSeries/properties/kind"
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
                 thumbnail:
@@ -3321,6 +3449,11 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -7562,10 +7695,31 @@ components:
         - createdAt
         - updatedAt
         - owner
+        - kind
         - title
         - thumbnail
-        - entrypoint
-        - prompt
+        - content
+      allOf:
+        - if:
+            required:
+              - kind
+            properties:
+              kind:
+                const: guided
+          then:
+            properties:
+              content:
+                $ref: "#/components/schemas/GuidedCourseContent"
+        - if:
+            required:
+              - kind
+            properties:
+              kind:
+                const: playground
+          then:
+            properties:
+              content:
+                $ref: "#/components/schemas/PlaygroundCourseContent"
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -7576,6 +7730,14 @@ components:
         owner:
           description: Username of the course's owner.
           $ref: "#/components/schemas/User/properties/username"
+        kind:
+          description: Kind of the course, deciding how the course is driven and what its content holds. Immutable after creation.
+          type: string
+          enum:
+            - guided
+            - playground
+          examples:
+            - guided
         title:
           description: Title of the course.
           type: string
@@ -7590,6 +7752,20 @@ components:
           minLength: 1
           examples:
             - kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
+        content:
+          description: |
+            Kind-specific course content, selected by `kind`: `GuidedCourseContent` for a `guided` course,
+            `PlaygroundCourseContent` for a `playground` course. The API validates only the top-level shape; internals
+            follow the Tutorial content-format contract and stay opaque to the API and storage.
+          type: object
+
+    GuidedCourseContent:
+      description: Content of a `guided` course, driven by Copilot.
+      type: object
+      required:
+        - entrypoint
+        - prompt
+      properties:
         entrypoint:
           description: Starting entrypoint of the course.
           type: string
@@ -7604,6 +7780,20 @@ components:
           examples:
             - Learn the basics of XGo programming language
 
+    PlaygroundCourseContent:
+      description: |
+        Content of a `playground` course, driven by course code: a file collection mapping file paths to universal URLs.
+        The referenced files form the Tutorial project; its layout is owned by the Tutorial Class Framework contract. An
+        empty collection is valid, so a course can be created before its files are uploaded.
+      type: object
+      additionalProperties:
+        type: string
+        format: uri-reference
+      examples:
+        - main_course.gox: kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
+          project/Lita.spx: kodo://xbuilder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
+          assets/videos/step-to/index.json: data:application/json,%7B%22path%22%3A%22step-to.mp4%22%7D
+
     CourseSeries:
       description: Collection of related courses.
       type: object
@@ -7612,6 +7802,7 @@ components:
         - createdAt
         - updatedAt
         - owner
+        - kind
         - title
         - thumbnail
         - description
@@ -7627,6 +7818,16 @@ components:
         owner:
           description: Username of the course series' owner.
           $ref: "#/components/schemas/User/properties/username"
+        kind:
+          description: |
+            Kind of the courses in this series; a course series holds courses of exactly one kind. Changing it requires
+            every course in the series to have the new kind.
+          type: string
+          enum:
+            - guided
+            - playground
+          examples:
+            - guided
         title:
           description: Title of the course series.
           type: string
