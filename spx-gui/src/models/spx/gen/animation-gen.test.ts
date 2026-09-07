@@ -10,6 +10,8 @@ import { Sprite } from '../sprite'
 import { createI18n } from '@/utils/i18n'
 import { AnimationGen } from './animation-gen'
 import { Costume } from '../costume'
+import * as imageProcess from './img-process'
+import { mockSaveFile } from './test-helpers'
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
@@ -18,6 +20,7 @@ vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 1
 describe('AnimationGen', () => {
   beforeEach(() => {
     aigcMock.reset()
+    mockSaveFile()
   })
 
   it('encodes an animation name when using it as a directory', () => {
@@ -496,5 +499,43 @@ describe('AnimationGen', () => {
     expect(loadedGen.finishState.result?.name).toBe(gen.finishState.result?.name)
     expect(loadedGen.finishState.result?.costumes.length).toBe(gen.finishState.result?.costumes.length)
     expect(loadedGen.finishState.result?.duration).toBe(1)
+  })
+
+  it('uses a retained local image as the processed animation reference frame', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile('default.png'))
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new AnimationGen(i18n, sprite, project, { settings: { description: 'Local ref animation' } })
+
+    const localFile = mockFile('local_character.png')
+    gen.setReferenceImage(localFile)
+    gen.setReferenceCostume(defaultCostume.id)
+    expect(gen.referenceImage).toBe(localFile)
+    gen.setReferenceImageSelection({ type: 'local-image' })
+
+    const processedFile = mockFile('processed-reference.jpg')
+    const referenceImageTaskId = 'remove-background-task'
+    vi.spyOn(imageProcess, 'prepareAnimationReferenceImage').mockResolvedValueOnce({
+      file: processedFile,
+      taskId: referenceImageTaskId
+    })
+
+    await gen.generateVideo()
+    expect(imageProcess.prepareAnimationReferenceImage).toHaveBeenCalledWith(localFile, expect.any(AbortSignal))
+    const [videoTask] = [...aigcMock.tasks.values()]
+    expect(videoTask.task.type).toBe(TaskType.GenerateAnimationVideo)
+    expect(videoTask.params).toMatchObject({
+      settings: { referenceFrameUrl: 'kodo://mock-bucket/processed-reference.jpg' }
+    })
+    expect(gen.getTaskIds()).toEqual([referenceImageTaskId, videoTask.task.id])
+
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    const loadedGen = AnimationGen.load(i18n, sprite, project, config, files)
+    expect(loadedGen.referenceImage?.name).toBe(localFile.name)
+    expect(loadedGen.referenceImageSelection).toEqual({ type: 'local-image' })
+    expect(loadedGen.getTaskIds()).toEqual([referenceImageTaskId, videoTask.task.id])
   })
 })

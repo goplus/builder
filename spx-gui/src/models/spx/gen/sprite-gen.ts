@@ -24,7 +24,8 @@ import type { Animation } from '../animation'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
 import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
 import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
-import { createFileWithUniversalUrl } from '../../common/cloud'
+import { loadReferenceImageFile, saveReferenceImageFile, validateReferenceImage } from './reference-image'
+import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
 import type { File, Files } from '../../common/file'
 import { fromConfig, toConfig, listDirs, toNativeFile } from '../../common/file'
 import {
@@ -53,6 +54,7 @@ function assetsPathFor(name: string) {
 export type SpriteGenInits = {
   id?: string
   settings?: Partial<SpriteSettings>
+  referenceImage?: File | null
   imageIndex?: number | null
   selectedItem?: SpriteGenSelected | null
   animationGenIdBindings?: Partial<Record<State, string>>
@@ -67,8 +69,15 @@ export type SpriteGenInits = {
 export type RawSpriteGenConfig = Prettify<
   Omit<
     SpriteGenInits,
-    'enrichPhase' | 'genImagesTask' | 'genImagesPhase' | 'prepareContentPhase' | 'costumes' | 'animations'
+    | 'enrichPhase'
+    | 'genImagesTask'
+    | 'genImagesPhase'
+    | 'prepareContentPhase'
+    | 'costumes'
+    | 'animations'
+    | 'referenceImage'
   > & {
+    referenceImagePath?: string
     enrichPhaseSerialized?: PhaseSerialized<SpriteSettings>
     genImagesTaskSerialized?: TaskSerialized<TaskType.GenerateCostume>
     genImagesPhaseSerialized?: PhaseSerialized<string[]>
@@ -111,6 +120,8 @@ export class SpriteGen extends Disposable {
       perspective: Perspective.Unspecified,
       ...inits.settings
     }
+    this.referenceImage = inits.referenceImage ?? null
+    if (this.referenceImage != null) validateReferenceImage(this.referenceImage)
     this.imageIndex = inits.imageIndex ?? null
     this.selectedItem = inits.selectedItem ?? null
     this.previewProject = new SpxProject()
@@ -204,6 +215,9 @@ export class SpriteGen extends Disposable {
     this.setImageIndex(null)
     return this.genImagesPhase.run(async (reporter) => {
       const settings = this.getDefaultCostumeSettings()
+      if (this.referenceImage != null) {
+        settings.referenceImageUrl = await saveFile(this.referenceImage)
+      }
       this.genImagesTask?.tryCancel()
       this.genImagesTask = new Task(TaskType.GenerateCostume)
       await this.genImagesTask.start({ settings, n: 4 })
@@ -218,6 +232,12 @@ export class SpriteGen extends Disposable {
       const { imageUrls } = await task.untilCompleted(reporter)
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
     })
+  }
+
+  referenceImage: File | null = null
+  setReferenceImage(file: File | null) {
+    if (file != null) validateReferenceImage(file)
+    this.referenceImage = file
   }
 
   imageIndex: number | null = null
@@ -506,6 +526,7 @@ export class SpriteGen extends Disposable {
       imageIndex,
       selectedItem,
       animationGenIdBindings,
+      referenceImagePath,
       enrichPhaseSerialized,
       genImagesTaskSerialized,
       genImagesPhaseSerialized,
@@ -520,6 +541,9 @@ export class SpriteGen extends Disposable {
 
     const inits: SpriteGenInits = { id: genId }
     inits.settings = settings
+    if (referenceImagePath != null) {
+      inits.referenceImage = loadReferenceImageFile(referenceImagePath, basePath, files, `sprite gen ${genId}`)
+    }
     if (imageIndex != null) inits.imageIndex = imageIndex
     if (selectedItem != null) inits.selectedItem = selectedItem
     if (animationGenIdBindings != null) inits.animationGenIdBindings = animationGenIdBindings
@@ -568,9 +592,12 @@ export class SpriteGen extends Disposable {
       return ac
     })
 
+    const referenceImagePath = saveReferenceImageFile(files, basePath, this.referenceImage)
+
     const config: RawSpriteGenConfig = {
       id: this.id,
       settings: this.settings,
+      referenceImagePath: referenceImagePath ?? undefined,
       animationGenIdBindings: this.animationGenIdBindings,
       enrichPhaseSerialized: this.enrichPhase.export(),
       genImagesTaskSerialized: this.genImagesTask?.export(),

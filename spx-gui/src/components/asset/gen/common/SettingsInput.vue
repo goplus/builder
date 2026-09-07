@@ -52,6 +52,11 @@ const emit = defineEmits<{
   enrich: []
 }>()
 
+defineSlots<{
+  extra(props: Pick<SettingsInputCtx, 'disabled' | 'iconOnly'>): unknown
+  submit(): unknown
+}>()
+
 const focus = ref(false)
 const enrichShow = computed(() => !ctx.readonly && focus.value && props.description.length > 0)
 
@@ -144,7 +149,7 @@ provide(settingsInputCtxKey, ctx)
     </div>
     <div class="footer">
       <div ref="extraRef" class="extra">
-        <slot name="extra"></slot>
+        <slot name="extra" :icon-only="ctx.iconOnly" :disabled="ctx.disabled"></slot>
       </div>
       <slot v-if="!ctx.readonly" name="submit"></slot>
     </div>
