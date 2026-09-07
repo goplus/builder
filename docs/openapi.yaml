@@ -2838,7 +2838,8 @@ paths:
         Create a new course owned by the authenticated user.
 
         The request either provides `kind` and `content`, or uses the transitional legacy flat shape (`entrypoint` and
-        `prompt` without `kind` and `content`, treated as a guided course) accepted until the API contract release (goplus/builder-backend#352).
+        `prompt` without `content`, with `kind` omitted or `guided`, treated as a guided course) accepted until the API contract
+        release (goplus/builder-backend#352). When both are present, `content` wins.
 
         Permission requirements:
 
