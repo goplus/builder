@@ -92,14 +92,15 @@ type courseProgram struct {
 	callCapability func(name string, request, result any) error
 }
 
-// handlers 保存课程程序注册的全部回调，包括课程自己的 onStart 与宿主事件的回调。
+// handlers 保存课程程序注册的全部回调。课程自己的 onStart 也在其中：课程开始
+// 就是一个由 Course.Start 投递一次的事件，与宿主事件走同一条路，不做特殊处理。
 //
 // 每个事件存的是一**串**回调而不是一个：课程代码里的 onXxx 就是普通方法调用，作者
 // 完全可能对同一个事件写两段处理（比如两条判定各写一段），此时两段都该生效。
 // 这与 spx 一致——spx 的 OnStart 等每次调用都往 sinks 里加一个，而不是覆盖。
-// 宿主事件的每段回调各占一条 handlerLane，泛型参数是回调的入参类型。
+// 每段回调各占一条 handlerLane，泛型参数是回调的入参类型。
 type handlers struct {
-	courseStart  []func()
+	courseStart  []*handlerLane[struct{}]
 	runtimeStart []*handlerLane[struct{}]
 	runtimeExit  []*handlerLane[int]
 	runtimeLog   []*handlerLane[string]
@@ -389,14 +390,6 @@ func (p *courseProgram) handlerSnapshot() handlers {
 	p.schedulerMu.Lock()
 	defer p.schedulerMu.Unlock()
 	return p.handlers
-}
-
-// addHandler 供 Course.OnStart 追加开场回调。追加而不是覆盖，
-// 这样多段开场处理都会按注册顺序生效。
-func (p *courseProgram) addHandler(add func(*handlers)) {
-	p.schedulerMu.Lock()
-	defer p.schedulerMu.Unlock()
-	add(&p.handlers)
 }
 
 // markCompleted 把课程标记为已完成，返回值表示"这是不是第一次完成"。

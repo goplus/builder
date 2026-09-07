@@ -7,8 +7,10 @@ package tutorial
 // unit: its triggers are processed strictly one after another in arrival
 // order and it never re-enters, while different callbacks — including several
 // registered on the same event — run independently and may interleave at
-// waiting points. Presentation waits from different callbacks are serialized:
-// at most one is presented at a time.
+// waiting points. Course start is delivered like any other event, so several
+// onStart callbacks also run independently, with no ordering promise between
+// them. Presentation waits from different callbacks are serialized: at most
+// one is presented at a time.
 
 type Course struct {
 	CourseAbilities
@@ -19,6 +21,8 @@ type Course struct {
 
 type CourseAbilities interface {
 	// onStart registers a callback that is called when the course starts.
+	// Several callbacks may be registered; they run independently of each
+	// other. Opening steps that must happen in order belong in one callback.
 	onStart(callback func())
 	// showPrelude displays the Course opening guide with the given message and
 	// returns after the learner dismisses it. Unlike showMessage, the host

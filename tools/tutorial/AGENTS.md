@@ -3,6 +3,9 @@
 Course callbacks run as frames under a cooperative scheduler; design rationale lives in `program.go`'s comments. These are the rules of change.
 
 - Course callbacks execute only through `runFrame`. At any instant, only the `execToken` holder runs course code
+- Every `onXxx`, course start included, registers a lane through `addLane`; `Start` delivers the single course-start
+  trigger through `deliverAll`. Author callbacks have exactly two execution paths, a lane worker's frame and the one
+  `MainEntry` frame. Do not add a third, and do not special-case any event
 - Release `execToken` before any wait that can block for long (`presentationMu`, the capability bridge). Hold no lock
   across a blocking operation: `schedulerMu` and `eventDeliveryMu` regions must stay free of channel ops, `select`,
   `Wait`, token ops, and bridge calls; `eventDeliveryMu` → `schedulerMu` is the only permitted nesting

@@ -368,8 +368,8 @@ func TestCoursesDoNotShareState(t *testing.T) {
 	first.courseProgram.runFrame(first.MainEntry)
 	second.courseProgram.runFrame(second.MainEntry)
 
-	for _, handler := range first.courseProgram.handlerSnapshot().courseStart {
-		first.courseProgram.runFrame(handler)
+	for _, lane := range first.courseProgram.handlerSnapshot().courseStart {
+		first.courseProgram.runFrame(func() { lane.handler(struct{}{}) })
 	}
 	if !first.courseProgram.markCompleted() {
 		t.Fatal("the first course was already completed")
@@ -385,27 +385,26 @@ func TestCoursesDoNotShareState(t *testing.T) {
 	}
 }
 
-// TestHandlersAccumulate 验证同一事件上注册的多段处理都会生效。
+// TestHandlersAccumulate 验证同一事件上注册的多段处理都会生效，课程开始也不例外。
 // 课程代码里的 onXxx 就是普通方法调用，作者对同一事件写两段是自然写法（例如两条
 // 判定线索分开写），任何一段被静默丢掉都是难查的故障。spx 的事件注册同样是累加的。
-// 各段回调相互独立、完成顺序不承诺，所以只断言都恰好执行了一次。
+// 各段回调相互独立、完成顺序不承诺（多段 onStart 之间也一样），所以只断言每段都
+// 恰好执行了一次；完成要等四段都到齐，否则先完成的一方会让尚未开始的帧被准入检查放弃。
 func TestHandlersAccumulate(t *testing.T) {
 	var trace []string
-	seen := 0
 
 	runCourse(t, newFakeHost(), func(course *testCourse) {
-		course.OnStart(func() { trace = append(trace, "start-1") })
-		course.OnStart(func() {
-			trace = append(trace, "start-2")
-			dispatch(t, "editor.runtime.log", `{"log":"hit"}`)
-		})
 		note := func(entry string) {
 			trace = append(trace, entry)
-			seen++
-			if seen == 2 {
+			if len(trace) == 4 {
 				course.Complete()
 			}
 		}
+		course.OnStart(func() { note("start-1") })
+		course.OnStart(func() {
+			note("start-2")
+			dispatch(t, "editor.runtime.log", `{"log":"hit"}`)
+		})
 		course.Editor.Runtime.OnLog(func(log string) { note("log-A:" + log) })
 		course.Editor.Runtime.OnLog(func(log string) { note("log-B:" + log) })
 	})
@@ -413,13 +412,34 @@ func TestHandlersAccumulate(t *testing.T) {
 	if len(trace) != 4 {
 		t.Fatalf("trace = %v, want 4 entries", trace)
 	}
-	if got, want := fmt.Sprint(trace[:2]), "[start-1 start-2]"; got != want {
-		t.Errorf("start trace = %s, want %s", got, want)
+	for _, want := range []string{"start-1", "start-2", "log-A:hit", "log-B:hit"} {
+		if got := strings.Count(fmt.Sprint(trace), want); got != 1 {
+			t.Errorf("trace = %v: %s appears %d times, want exactly once", trace, want, got)
+		}
 	}
-	rest := fmt.Sprint(trace[2:])
-	if !strings.Contains(rest, "log-A:hit") || !strings.Contains(rest, "log-B:hit") {
-		t.Errorf("log trace = %s, want both log-A:hit and log-B:hit", rest)
-	}
+}
+
+// TestCourseStartHandlersRunIndependently 验证课程开始与其他事件走同一条路：
+// 一段 onStart 挂在展示类 capability 上等学习者时，另一段 onStart 不必等它返回。
+// 两段谁先拿到令牌不承诺，但无论哪种顺序，第二段的信号都必须在放行展示之前到达；
+// 开场回调若仍在主 goroutine 上顺序执行，这个等待会超时。
+func TestCourseStartHandlersRunIndependently(t *testing.T) {
+	host := newFakeHost()
+	preludeShown, releasePrelude := host.holdCapability("course_showPrelude")
+	otherRan := make(chan struct{}, 1)
+
+	done := startCourse(host, func(course *testCourse) {
+		course.OnStart(func() {
+			course.ShowPrelude("welcome")
+			course.Complete()
+		})
+		course.OnStart(func() { otherRan <- struct{}{} })
+	})
+
+	await(t, preludeShown, "the first onStart to suspend in showPrelude")
+	await(t, otherRan, "the second onStart to run while the prelude is still up")
+	releasePrelude()
+	awaitDone(t, done)
 }
 
 // TestSameEventHandlersRunIndependently 验证同一事件上注册的多段回调相互独立：
