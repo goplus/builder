@@ -1,11 +1,19 @@
 <template>
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-modal">
-      <div v-if="visible" class="fixed inset-0 z-1100 bg-overlay-modal" @click="handleMaskClick">
+      <div
+        v-if="visible"
+        class="fixed inset-0 z-1100"
+        :class="mask ? 'bg-overlay-modal' : 'bg-transparent'"
+        @click="handleMaskClick"
+      >
         <div
           class="h-full w-full overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div class="min-h-full w-full flex overscroll-contain p-4">
+          <div
+            class="min-h-full w-full flex overscroll-contain p-4"
+            :class="placement === 'top-right' ? 'items-start justify-end pt-14' : ''"
+          >
             <div
               v-bind="surfaceAttrs"
               ref="containerRef"
@@ -63,6 +71,10 @@ const props = withDefaults(
     /** Whether to focus the first focusable element inside modal. */
     autoFocus?: boolean
     maskClosable?: boolean
+    /** Whether to render the backdrop. Dropdown-like surfaces can opt out. */
+    mask?: boolean
+    /** Align the surface to the viewport's top-right corner. */
+    placement?: 'center' | 'top-right'
     class?: ClassValue
     /**
      * Metadata for radar, equivalent to applying `v-radar` on the dialog surface.
@@ -79,6 +91,8 @@ const props = withDefaults(
     visible: false,
     autoFocus: true,
     maskClosable: true,
+    mask: true,
+    placement: 'center',
     active: true,
     class: undefined,
     radar: undefined
@@ -113,7 +127,9 @@ const modalRegistration = useLayerRegistration(computed(() => props.visible))
 const surfaceAttrs = computed(() => mergeProps(modalRegistration.rootAttrs, attrs))
 const surfaceClass = computed(() =>
   cn(
-    'm-auto max-w-full overflow-hidden outline-none bg-white rounded-lg shadow-lg',
+    'max-w-full overflow-hidden outline-none bg-white rounded-lg shadow-lg',
+    props.placement === 'top-right' ? 'mt-0 mr-0 mb-auto ml-auto' : 'm-auto',
+    !props.mask ? 'pointer-events-auto' : null,
     {
       'w-[480px]': props.size === 'small',
       'w-[640px]': props.size === 'medium',

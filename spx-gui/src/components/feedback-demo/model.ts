@@ -119,6 +119,13 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     notification.readAt = new Date().toISOString()
   }
 
+  function markAllNotificationsRead() {
+    const readAt = new Date().toISOString()
+    for (const notification of data.notifications) {
+      if (notification.readAt == null) notification.readAt = readAt
+    }
+  }
+
   function reset() {
     Object.assign(data, createMockFeedbackDemoData())
     activeFormSource.value = null
@@ -137,6 +144,7 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     replyToFeedback,
     markFeedbackHandled,
     markNotificationRead,
+    markAllNotificationsRead,
     reset
   }
 }

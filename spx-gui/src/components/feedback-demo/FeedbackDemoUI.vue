@@ -3,7 +3,7 @@ import { computed, nextTick, onScopeDispose, ref, useId, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
-import { UIButton, UIFormModal, UIIcon, UIModal, UIModalClose, useMessage } from '@/components/ui'
+import { UIButton, UIEmpty, UIFormModal, UIIcon, UIModal, UIModalClose, useMessage } from '@/components/ui'
 import { useCopilot } from '@/components/copilot/context'
 import { RoundState } from '@/components/copilot/copilot'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -14,9 +14,12 @@ import FeedbackForm from './FeedbackForm.vue'
 import { useFeedbackDemoModel, type SubmitFeedbackInput } from './model'
 import type { FeedbackAttachment, InProductNotification } from './mock-data'
 import { captureViewport } from '@/components/screenshot/capture'
+import xbuilderNotificationIcon from '@/components/ui/icons/xbuilder-notification.svg'
+import notificationAttachmentIcon from '@/components/ui/icons/notification-attachment.svg'
+import notificationAssociationArrow from '@/components/ui/icons/notification-association-arrow.svg'
 
 const model = useFeedbackDemoModel()
-const notificationPageSize = 5
+const notificationPageSize = 4
 const copilot = useCopilot()
 const i18n = useI18n()
 const { t } = i18n
@@ -29,11 +32,18 @@ const activeSubmission = ref<symbol | null>(null)
 const pendingCopilotFeedback = ref<PreparedFeedbackDraft | null>(null)
 const selectedNotificationID = ref<string | null>(null)
 const visibleNotificationCount = ref(notificationPageSize)
+const activeNotificationTab = ref<'feedback' | 'system'>('feedback')
 const notificationTitleID = useId()
 const imagePreviewTitleID = useId()
 type RenderableFeedbackAttachment = FeedbackAttachment & { url: string }
 const selectedPreviewAttachment = ref<RenderableFeedbackAttachment | null>(null)
-const visibleNotifications = computed(() => model.data.notifications.slice(0, visibleNotificationCount.value))
+const feedbackNotifications = computed(() => model.data.notifications)
+const systemNotifications = computed<InProductNotification[]>(() => [])
+const activeNotifications = computed(() =>
+  activeNotificationTab.value === 'feedback' ? feedbackNotifications.value : systemNotifications.value
+)
+const visibleNotifications = computed(() => activeNotifications.value.slice(0, visibleNotificationCount.value))
+const unreadFeedbackCount = computed(() => feedbackNotifications.value.filter((item) => item.readAt == null).length)
 const selectedNotification = computed(
   () => model.data.notifications.find((notification) => notification.id === selectedNotificationID.value) ?? null
 )
@@ -88,7 +98,14 @@ watch(model.notificationCenterOpen, (open) => {
     selectedNotificationID.value = null
     selectedPreviewAttachment.value = null
   }
-  if (open) visibleNotificationCount.value = notificationPageSize
+  if (open) {
+    visibleNotificationCount.value = notificationPageSize
+    activeNotificationTab.value = 'feedback'
+  }
+})
+
+watch(activeNotificationTab, () => {
+  visibleNotificationCount.value = notificationPageSize
 })
 
 async function handleSubmit(input: SubmitFeedbackInput) {
@@ -209,14 +226,6 @@ function isRenderableImageAttachment(attachment: FeedbackAttachment): attachment
   return imageFileExtensionPattern.test(attachment.name) || imageFileExtensionPattern.test(attachment.url)
 }
 
-function getNotificationImageAttachments(notification: InProductNotification) {
-  return notificationImageAttachmentsMap.value.get(notification.feedbackID) ?? []
-}
-
-function getNotificationImageAttachmentCount(notification: InProductNotification) {
-  return getNotificationImageAttachments(notification).length
-}
-
 function getAttachmentPreviewAriaLabel(attachment: RenderableFeedbackAttachment) {
   return t({
     en: `Preview image: ${attachment.name}`,
@@ -246,6 +255,13 @@ function handlePreviewVisibleChange(visible: boolean) {
 function loadMoreNotifications() {
   visibleNotificationCount.value += notificationPageSize
 }
+
+function handleNotificationScroll(event: Event) {
+  const target = event.currentTarget as HTMLElement
+  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 24) {
+    if (visibleNotificationCount.value < activeNotifications.value.length) loadMoreNotifications()
+  }
+}
 </script>
 
 <template>
@@ -269,32 +285,62 @@ function loadMoreNotifications() {
 
   <UIModal
     :visible="model.notificationCenterOpen.value"
-    size="small"
-    class="w-[520px]"
+    :mask="false"
+    placement="top-right"
+    class="h-[484px] w-[408px]"
     :aria-labelledby="notificationTitleID"
     :radar="{ name: 'Notifications', desc: 'Notifications from the XBuilder support team' }"
     @update:visible="model.notificationCenterOpen.value = $event"
   >
-    <div v-if="selectedNotification == null">
-      <div class="flex items-center justify-between border-b border-grey-400 px-5 py-4">
-        <h2 :id="notificationTitleID" class="font-semibold text-title">
+    <div v-if="selectedNotification == null" class="flex min-h-0 flex-1 flex-col">
+      <div class="flex shrink-0 items-center justify-between px-6 pb-3 pt-5">
+        <h2 :id="notificationTitleID" class="text-lg font-semibold text-title">
           {{ $t({ en: 'Notifications', zh: '通知' }) }}
         </h2>
-        <UIButton
-          v-radar="{ name: 'Close notifications', desc: 'Close notifications' }"
-          :aria-label="$t({ en: 'Close notifications', zh: '关闭通知' })"
-          type="white"
-          shape="square"
-          size="small"
-          icon="close"
-          @click="model.notificationCenterOpen.value = false"
-        />
+        <button
+          v-radar="{ name: 'Mark all notifications read', desc: 'Mark all notifications as read' }"
+          type="button"
+          class="border-0 bg-transparent text-sm text-primary-main transition-colors hover:text-primary-600 focus-visible:outline-2 focus-visible:outline-primary-main"
+          @click="model.markAllNotificationsRead"
+        >
+          {{ $t({ en: 'Mark all as read', zh: '全部已读' }) }}
+        </button>
       </div>
 
-      <div v-if="model.data.notifications.length === 0" class="px-5 py-12 text-center text-sm text-grey-800">
-        {{ $t({ en: 'No notifications', zh: '暂无通知' }) }}
+      <div class="flex shrink-0 border-b border-grey-300 px-6">
+        <button
+          type="button"
+          class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
+          :class="activeNotificationTab === 'feedback' ? 'mr-6 text-primary-main' : 'mr-6 text-grey-700'"
+          @click="activeNotificationTab = 'feedback'"
+        >
+          {{ $t({ en: 'Messages', zh: '消息通知' })
+          }}<template v-if="unreadFeedbackCount > 0">（{{ unreadFeedbackCount }}）</template>
+          <span
+            v-if="activeNotificationTab === 'feedback'"
+            class="absolute inset-x-0 bottom-0 h-0.5 bg-primary-main"
+          ></span>
+        </button>
+        <button
+          type="button"
+          class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
+          :class="activeNotificationTab === 'system' ? 'text-primary-main' : 'text-grey-700'"
+          @click="activeNotificationTab = 'system'"
+        >
+          {{ $t({ en: 'System messages', zh: '系统消息' }) }}
+          <span
+            v-if="activeNotificationTab === 'system'"
+            class="absolute inset-x-0 bottom-0 h-0.5 bg-primary-main"
+          ></span>
+        </button>
       </div>
-      <div v-else class="max-h-[480px] overflow-y-auto">
+
+      <div v-if="activeNotifications.length === 0" class="flex min-h-0 flex-1 items-center justify-center">
+        <UIEmpty size="large" img="document" class="text-sm">
+          {{ $t({ en: 'No notifications', zh: '暂无信息' }) }}
+        </UIEmpty>
+      </div>
+      <div v-else class="min-h-0 flex-1 overflow-y-auto p-3" @scroll.passive="handleNotificationScroll">
         <button
           v-for="notification in visibleNotifications"
           :key="notification.id"
@@ -302,122 +348,128 @@ function loadMoreNotifications() {
             name: 'Support notification',
             desc: notification.readAt == null ? 'Unread reply from XBuilder Support' : 'Reply from XBuilder Support'
           }"
-          class="block w-full cursor-pointer border-b border-grey-200 px-5 py-4 text-left transition-colors last:border-b-0 focus-visible:relative focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-primary-main"
-          :class="
-            notification.readAt == null
-              ? 'bg-primary-100/40 hover:bg-primary-100/70 active:bg-primary-200'
-              : 'bg-white hover:bg-grey-100 active:bg-grey-200'
-          "
+          class="group relative block w-full cursor-pointer rounded-lg border-0 bg-white p-3 text-left transition-colors hover:bg-grey-300 focus-visible:relative focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-primary-main"
+          :class="notification.readAt == null ? 'bg-white' : 'bg-white'"
           @click="openNotification(notification)"
         >
-          <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
-            <span
-              class="mt-1.5 size-2 shrink-0 rounded-full ring-4 ring-transparent"
-              :class="notification.readAt == null ? 'bg-primary-main ring-primary-100/70' : 'bg-grey-500'"
-            ></span>
+          <div class="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-3">
+            <span class="relative flex size-10 shrink-0 items-center justify-center">
+              <span
+                v-if="notification.readAt == null"
+                aria-hidden="true"
+                class="absolute left-0 top-0 size-2 rounded-full bg-[#ef4149]"
+              ></span>
+              <img class="size-6" :src="xbuilderNotificationIcon" alt="" aria-hidden="true" />
+            </span>
             <div class="min-w-0">
               <div class="flex items-start justify-between gap-3">
                 <span
-                  class="min-w-0 flex-1 truncate text-sm leading-5 text-title"
+                  class="min-w-0 flex-1 truncate text-[14px] leading-[22px] text-title"
                   :class="notification.readAt == null ? 'font-semibold' : 'font-medium'"
                 >
                   {{ notification.title }}
                 </span>
-                <time class="shrink-0 text-xs text-grey-800">{{ formatTime(notification.createdAt) }}</time>
+                <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
+                  formatTime(notification.createdAt)
+                }}</time>
               </div>
-              <p class="mt-1 line-clamp-2 text-sm leading-5 text-grey-900">{{ notification.body }}</p>
-              <div
-                v-if="getNotificationImageAttachmentCount(notification) > 0"
-                class="mt-2 flex items-center gap-2 text-xs text-grey-800"
-              >
-                <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-grey-200 px-2 py-1 text-grey-900"
-                >
-                  <UIIcon type="camera" class="size-3 text-grey-800" />
-                  {{ formatImageCount(getNotificationImageAttachmentCount(notification)) }}
-                </span>
-                <span>{{ $t({ en: 'Tap to open the image details', zh: '点击查看图片详情' }) }}</span>
-              </div>
+              <p class="mt-1 line-clamp-2 text-[12px] leading-[18px] text-grey-800">{{ notification.body }}</p>
             </div>
-            <UIIcon type="arrowRightSmall" class="mt-1 size-4 shrink-0 text-grey-600" />
           </div>
         </button>
-        <div
-          v-if="visibleNotificationCount < model.data.notifications.length"
-          class="border-t border-grey-300 p-3 text-center"
-        >
-          <UIButton type="white" size="small" @click="loadMoreNotifications">
-            {{ $t({ en: 'Load more', zh: '加载更多' }) }}
-          </UIButton>
-        </div>
       </div>
     </div>
 
-    <div v-else>
-      <div class="flex items-center justify-between border-b border-grey-400 px-4 py-4">
+    <div v-else class="flex min-h-0 flex-1 flex-col">
+      <div class="flex shrink-0 items-center gap-2 border-b border-grey-300 px-4 py-3">
         <div class="flex min-w-0 items-center gap-2">
           <UIButton
             v-radar="{ name: 'Back to notifications', desc: 'Return to the notification list' }"
             :aria-label="$t({ en: 'Back to notifications', zh: '返回通知' })"
             type="white"
             shape="square"
-            size="small"
+            size="medium"
             @click="backToNotificationList"
           >
             <template #icon>
-              <UIIcon type="arrowRightSmall" class="size-3.5 rotate-180" />
+              <UIIcon type="arrowRightSmall" class="size-4 rotate-180" />
             </template>
           </UIButton>
-          <h2 :id="notificationTitleID" class="truncate font-semibold text-title" :title="selectedNotification.title">
+          <h2
+            :id="notificationTitleID"
+            class="truncate text-base font-semibold text-title"
+            :title="selectedNotification.title"
+          >
             {{ selectedNotification.title }}
           </h2>
         </div>
-        <UIButton
-          v-radar="{ name: 'Close notification detail', desc: 'Close notifications' }"
-          :aria-label="$t({ en: 'Close notifications', zh: '关闭通知' })"
-          type="white"
-          shape="square"
-          size="small"
-          icon="close"
-          @click="model.notificationCenterOpen.value = false"
-        />
       </div>
 
-      <article class="max-h-[480px] overflow-y-auto px-5 py-5">
-        <section class="rounded-2xl border border-grey-300 bg-grey-100 px-4 py-4 shadow-sm">
+      <article class="min-h-0 flex-1 overflow-y-auto p-3">
+        <section class="rounded-lg bg-white px-3">
           <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="text-xs font-medium uppercase tracking-wide text-grey-800">
-                {{ $t({ en: 'Support reply', zh: '支持回复' }) }}
-              </p>
-              <h3 class="mt-1 text-sm font-semibold leading-5 text-title">
-                {{ $t({ en: 'Reply from XBuilder Support', zh: 'XBuilder 支持团队回复' }) }}
-              </h3>
-            </div>
-            <time class="shrink-0 text-xs text-grey-800">{{ formatTime(selectedNotification.createdAt) }}</time>
+            <p class="text-[14px] font-medium leading-[22px] text-primary-main">
+              {{ $t({ en: 'Support reply', zh: '支持回复' }) }}
+            </p>
+            <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
+              formatTime(selectedNotification.createdAt)
+            }}</time>
           </div>
-          <p class="mt-3 whitespace-pre-wrap text-sm leading-6 text-grey-1000">{{ selectedNotification.body }}</p>
-        </section>
-
-        <section class="mt-4 rounded-2xl border border-grey-300 bg-white px-4 py-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-grey-800">
-            {{ $t({ en: 'Original feedback', zh: '原始反馈' }) }}
+          <p class="mt-3 whitespace-pre-wrap text-[14px] font-medium leading-[22px] text-grey-1000">
+            {{ selectedNotification.body }}
           </p>
-          <p class="mt-2 text-sm font-medium leading-5 text-title">
-            {{
-              selectedNotificationFeedback?.title ??
-              $t({ en: 'The original feedback is not available.', zh: '原始反馈暂不可用。' })
-            }}
-          </p>
-          <p
-            v-if="selectedNotificationFeedback?.description != null"
-            class="mt-1 whitespace-pre-wrap text-sm leading-6 text-grey-900"
+          <UIButton
+            v-if="selectedNotificationImageAttachments.length > 0"
+            type="white"
+            size="small"
+            class="mt-3"
+            @click="openAttachmentPreview(selectedNotificationImageAttachments[0])"
           >
-            {{ selectedNotificationFeedback.description }}
-          </p>
+            <template #icon
+              ><img class="size-[13px]" :src="notificationAttachmentIcon" alt="" aria-hidden="true"
+            /></template>
+            {{ $t({ en: 'View attachment', zh: '查看附件' }) }}
+          </UIButton>
         </section>
 
-        <template v-if="selectedNotificationImageAttachments.length > 0">
+        <section class="relative mt-5 flex gap-2 px-3">
+          <div class="flex shrink-0 items-start justify-center pt-1">
+            <img class="size-4" :src="notificationAssociationArrow" alt="" aria-hidden="true" />
+          </div>
+          <div class="min-w-0 flex-1 rounded-lg bg-grey-300 p-3">
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-[13px] font-medium leading-5 text-title">
+                {{
+                  selectedNotificationFeedback?.title ??
+                  $t({ en: 'The original feedback is not available.', zh: '原始反馈暂不可用。' })
+                }}
+              </p>
+              <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
+                formatTime(selectedNotificationFeedback?.createdAt ?? selectedNotification.createdAt)
+              }}</time>
+            </div>
+            <p
+              v-if="selectedNotificationFeedback?.description != null"
+              class="mt-1 whitespace-pre-wrap text-[12px] leading-[18px] text-grey-900"
+            >
+              {{ selectedNotificationFeedback.description }}
+            </p>
+            <UIButton
+              v-if="selectedNotificationImageAttachments.length > 0"
+              type="white"
+              size="small"
+              class="mt-2"
+              @click="openAttachmentPreview(selectedNotificationImageAttachments[0])"
+            >
+              <template #icon
+                ><img class="size-[13px]" :src="notificationAttachmentIcon" alt="" aria-hidden="true"
+              /></template>
+              {{ $t({ en: 'View attachment', zh: '查看附件' }) }}
+            </UIButton>
+          </div>
+        </section>
+
+        <template v-if="selectedNotificationImageAttachments.length > 1">
           <div class="mt-5 flex items-center justify-between gap-3">
             <h3 class="text-sm font-semibold text-title">
               {{ $t({ en: 'Images you submitted', zh: '你提交的图片' }) }}
@@ -426,33 +478,16 @@ function loadMoreNotifications() {
               formatImageCount(selectedNotificationImageAttachments.length)
             }}</span>
           </div>
-          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="mt-3 grid grid-cols-1 gap-3">
             <button
-              v-for="attachment in selectedNotificationImageAttachments"
+              v-for="attachment in selectedNotificationImageAttachments.slice(1)"
               :key="attachment.id"
               type="button"
-              class="group block w-full cursor-zoom-in overflow-hidden rounded-2xl border border-black/10 bg-grey-100 text-left shadow-sm transition-colors hover:border-primary-main hover:bg-primary-100/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
+              class="block w-full cursor-zoom-in overflow-hidden rounded-lg border border-grey-300 bg-grey-100 text-left focus-visible:outline-2 focus-visible:outline-primary-main"
               :aria-label="getAttachmentPreviewAriaLabel(attachment)"
               @click="openAttachmentPreview(attachment)"
             >
-              <div class="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-grey-200 p-3">
-                <img class="h-full w-full object-contain" :src="attachment.url" :alt="getAttachmentAlt(attachment)" />
-                <span
-                  class="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[11px] font-medium text-white"
-                >
-                  <UIIcon type="fullScreen" class="size-3 text-white" />
-                  {{ $t({ en: 'Open', zh: '查看' }) }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-                <span class="min-w-0">
-                  <span class="block truncate text-xs font-medium text-title">{{ attachment.name }}</span>
-                  <span class="block text-xs text-grey-800">{{ formatFileSize(attachment.size) }}</span>
-                </span>
-                <span class="rounded-full bg-grey-200 px-2 py-1 text-[11px] font-medium text-grey-900">
-                  {{ $t({ en: 'Tap to enlarge', zh: '点击放大' }) }}
-                </span>
-              </div>
+              <img class="h-32 w-full object-contain" :src="attachment.url" :alt="getAttachmentAlt(attachment)" />
             </button>
           </div>
         </template>
