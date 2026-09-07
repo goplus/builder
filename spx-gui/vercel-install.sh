@@ -12,4 +12,5 @@ tar -C /usr/local -xzf ./go1.25.8.linux-amd64.tar.gz
 
 corepack enable
 # Vercel may select pnpm 9 by default, which ignores our required pnpm 11 setup.
-corepack pnpm@11.9.0 install --frozen-lockfile
+corepack install --global pnpm@11.9.0
+pnpm install --frozen-lockfile
