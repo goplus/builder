@@ -13,8 +13,11 @@ import { makeSpxProject } from '../common/test'
 import type { CostumeGen } from './costume-gen'
 import type { AnimationGen } from './animation-gen'
 import { SpriteGen } from './sprite-gen'
+import { mockSaveFile } from './test-helpers'
+import { mockFile } from '../../common/test'
 
 const aigcMock = setupAigcMock()
+const i18n = createI18n({ lang: 'en' })
 // TODO: Consider replacing this spy by pre-filling file.meta.imgSize in test fixtures.
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
 
@@ -44,6 +47,7 @@ async function finishAnimationGen(name: string, gen: AnimationGen) {
 describe('SpriteGen', () => {
   beforeEach(() => {
     aigcMock.reset()
+    mockSaveFile()
   })
 
   it('should work well', async () => {
@@ -667,5 +671,25 @@ describe('SpriteGen', () => {
       expect(loadedWizard.enrichState.status).toBe('finished')
       expect(loadedWizard.imagesGenState.status).toBe('initial')
     })
+  })
+
+  it('uses and persists a local reference image for default costume generation', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(i18n, project, { settings: { description: 'A test sprite with ref' } })
+
+    const localFile = mockFile('reference.png')
+    gen.setReferenceImage(localFile)
+    expect(gen.referenceImage).toBe(localFile)
+
+    await gen.genImages()
+    const [taskRecord] = [...aigcMock.tasks.values()]
+    expect(taskRecord.params).toMatchObject({
+      settings: { referenceImageUrl: 'kodo://mock-bucket/reference.png' }
+    })
+
+    const rawConfig = gen.export()
+    const files = sndFiles(rawConfig)
+    const loadedGen = await SpriteGen.load(gen.name, i18n, project, files)
+    expect(loadedGen.referenceImage?.name).toBe(localFile.name)
   })
 })

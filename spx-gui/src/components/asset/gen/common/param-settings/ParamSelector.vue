@@ -4,7 +4,7 @@ import { UIBlockItem, UIBlockItemTitle, UICornerIcon, UIDropdownWithTooltip, UII
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { settingsInputCtxKey } from '../SettingsInput.vue'
 
-type Option = { value: T; label: LocaleMessage; image?: string }
+type Option = { value: T; label: LocaleMessage; image?: string; removable?: boolean }
 
 const props = withDefaults(
   defineProps<{
@@ -22,11 +22,16 @@ const props = withDefaults(
   }
 )
 
-defineEmits<{
+const emit = defineEmits<{
   'update:value': [value: T | null]
+  'remove:option': [value: T]
 }>()
 
 const { t } = useI18n()
+
+defineSlots<{
+  'additional-options'(props: { disabled: boolean }): unknown
+}>()
 
 const showPlaceholder = computed(() => props.value == null && props.placeholder != null)
 const selectedItem = computed(() => {
@@ -103,11 +108,12 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
               {{ $t(item.label) }}
             </UIBlockItemTitle>
             <UICornerIcon
-              v-show="clearable && value === item.value"
+              v-show="(clearable && value === item.value) || item.removable"
               type="minus"
-              @click.stop.prevent="$emit('update:value', null)"
+              @click.stop.prevent="item.removable ? emit('remove:option', item.value) : emit('update:value', null)"
             />
           </UIBlockItem>
+          <slot name="additional-options" :disabled="disabled"></slot>
         </ul>
       </div>
     </template>
