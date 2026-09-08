@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/no-v-html -->
 <template>
   <NavbarWrapper>
     <template #left>
@@ -71,24 +70,7 @@
 
       <NavbarTutorials v-if="showTutorialsEntry" />
 
-      <div class="flex">
-        <UITooltip :disabled="undoAction == null">
-          <template #trigger>
-            <button :class="historyBtnClz" :disabled="undoAction == null" @click="handleUndo.fn">
-              <UIIcon class="h-5 w-5" type="undo" />
-            </button>
-          </template>
-          <span>{{ $t(undoText) }}</span>
-        </UITooltip>
-        <UITooltip :disabled="redoAction == null">
-          <template #trigger>
-            <button :class="historyBtnClz" :disabled="redoAction == null" @click="handleRedo.fn">
-              <UIIcon class="h-5 w-5" type="redo" />
-            </button>
-          </template>
-          <span>{{ $t(redoText) }}</span>
-        </UITooltip>
-      </div>
+      <EditorHistoryButtons :state="state" />
     </template>
     <template #center>
       <div v-if="project != null" class="flex items-center justify-center gap-2">
@@ -98,43 +80,7 @@
       </div>
     </template>
     <template #right>
-      <UIButtonGroup
-        v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
-        class="mx-3 items-center"
-        type="icon"
-        variant="secondary"
-        :value="selectedEditMode"
-        @update:value="(v) => state?.selectEditMode(v as EditMode)"
-      >
-        <UITooltip>
-          <template #trigger>
-            <UIButtonGroupItem
-              v-radar="{
-                name: 'Default mode',
-                desc: 'Editor for defining the behavior and resources of independent entities (Sprites, Sounds, Stage). It features code editing, internal resource (Costumes, Animations, Backdrops, Widgets) management, and game running/debugging'
-              }"
-              :value="EditMode.Default"
-            >
-              <div class="w-4.5 flex [&_svg]:block [&_svg]:h-auto [&_svg]:w-full" v-html="defaultModeSvg"></div>
-            </UIButtonGroupItem>
-          </template>
-          {{ $t({ en: 'Default mode', zh: '默认模式' }) }}
-        </UITooltip>
-        <UITooltip>
-          <template #trigger>
-            <UIButtonGroupItem
-              v-radar="{
-                name: 'Map edit mode',
-                desc: 'Map-centric editor for the game\'s spatial arrangement. It features sprite placement on the stage and global configuration (map size, physics, layer sorting, etc.)'
-              }"
-              :value="EditMode.Map"
-            >
-              <div class="w-4.5 flex [&_svg]:block [&_svg]:h-auto [&_svg]:w-full" v-html="mapEditModeSvg"></div>
-            </UIButtonGroupItem>
-          </template>
-          {{ $t({ en: 'Map edit mode', zh: '地图编辑模式' }) }}
-        </UITooltip>
-      </UIButtonGroup>
+      <EditorModeSwitch :state="state" />
     </template>
   </NavbarWrapper>
 </template>
@@ -143,18 +89,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import saveAs from 'file-saver'
-import {
-  UIMenu,
-  UIMenuGroup,
-  UIMenuItem,
-  UIIcon,
-  UITooltip,
-  useConfirmDialog,
-  useMessage,
-  UIButtonGroup,
-  UIButtonGroupItem,
-  UITag
-} from '@/components/ui'
+import { UIMenu, UIMenuGroup, UIMenuItem, UIIcon, useConfirmDialog, useMessage, UITag } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
@@ -177,7 +112,9 @@ import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
 import EditorAutoSaveStateIcon from './EditorAutoSaveStateIcon.vue'
 import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
 import EditorCheckoutReleaseButton from './EditorCheckoutReleaseButton.vue'
-import { EditMode, type EditorState } from '../editor-state'
+import EditorHistoryButtons from './EditorHistoryButtons.vue'
+import EditorModeSwitch from './EditorModeSwitch.vue'
+import type { EditorState } from '../editor-state'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
@@ -188,8 +125,6 @@ import importAssetsScratchSvg from './icons/import-assets-scratch.svg'
 import publishSvg from './icons/publish.svg'
 import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
-import defaultModeSvg from './icons/default-mode.svg?raw'
-import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
 
 const { showTutorialsEntry } = useCommunityConfig()
 
@@ -208,8 +143,6 @@ const canManageProject = computed(() => {
   if (signedInUsername == null || props.project == null) return false
   return props.project.owner === signedInUsername
 })
-
-const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 
@@ -354,31 +287,4 @@ const handleRemoveProject = useMessageHandle(
   },
   { en: 'Failed to remove project', zh: '删除项目失败' }
 ).fn
-
-const undoAction = computed(() => props.state?.history.getUndoAction())
-
-const undoText = computed(() => ({
-  en: undoAction.value != null ? `Undo "${undoAction.value.name.en}"` : 'Undo',
-  zh: undoAction.value != null ? `撤销“${undoAction.value.name.zh}”` : '撤销'
-}))
-
-const redoAction = computed(() => props.state?.history.getRedoAction())
-
-const redoText = computed(() => ({
-  en: redoAction.value != null ? `Redo "${redoAction.value.name.en}"` : 'Redo',
-  zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
-}))
-
-const handleUndo = useMessageHandle(() => props.state?.history.undo(), {
-  en: 'Failed to undo',
-  zh: '撤销操作失败'
-})
-
-const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
-  en: 'Failed to redo',
-  zh: '重做操作失败'
-})
-
-const historyBtnClz =
-  'h-full flex items-center justify-center border-none bg-transparent px-3 text-inherit outline-none disabled:cursor-not-allowed disabled:text-grey-600 enabled:cursor-pointer enabled:hover:bg-grey-400'
 </script>

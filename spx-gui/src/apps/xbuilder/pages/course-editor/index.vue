@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { nextTick, onUnmounted, shallowRef, watch } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router'
 import { DefaultException } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
@@ -80,7 +79,6 @@ watch(entryQueryRet.data, async (next) => {
   session.value = next
 })
 
-onBeforeRouteLeave(() => disposeSession())
 onUnmounted(() => void disposeSession())
 </script>
 
