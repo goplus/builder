@@ -23,7 +23,7 @@
               tabindex="-1"
               class="ui-modal-surface"
               :class="surfaceClass"
-              :style="{ transformOrigin: 'var(--ui-modal-transform-origin, center)' }"
+              :style="surfaceStyle"
               @click.stop
             >
               <slot></slot>
@@ -41,6 +41,11 @@ export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 export type ModalTransformOrigin = {
   x: number
   y: number
+}
+
+export type ModalAnchor = {
+  top: number
+  right: number
 }
 </script>
 
@@ -75,6 +80,8 @@ const props = withDefaults(
     mask?: boolean
     /** Align the surface to the viewport's top-right corner. */
     placement?: 'center' | 'top-right'
+    /** Position a top-right surface relative to a viewport trigger. */
+    anchor?: ModalAnchor | null
     class?: ClassValue
     /**
      * Metadata for radar, equivalent to applying `v-radar` on the dialog surface.
@@ -93,6 +100,7 @@ const props = withDefaults(
     maskClosable: true,
     mask: true,
     placement: 'center',
+    anchor: null,
     active: true,
     class: undefined,
     radar: undefined
@@ -125,6 +133,16 @@ const modalRegistration = useLayerRegistration(computed(() => props.visible))
 // - surfaceRootAttrs marks the actual modal root for stack/popup lookup
 // - attrs preserves external style/data-* on the dialog container
 const surfaceAttrs = computed(() => mergeProps(modalRegistration.rootAttrs, attrs))
+const surfaceStyle = computed(() => ({
+  transformOrigin: 'var(--ui-modal-transform-origin, center)',
+  ...(props.placement === 'top-right' && props.anchor != null
+    ? {
+        position: 'absolute' as const,
+        top: `${props.anchor.top}px`,
+        right: `${props.anchor.right}px`
+      }
+    : {})
+}))
 const surfaceClass = computed(() =>
   cn(
     'max-w-full overflow-hidden outline-none bg-white rounded-lg shadow-lg',

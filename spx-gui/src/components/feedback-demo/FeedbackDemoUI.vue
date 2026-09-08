@@ -291,6 +291,7 @@ function handlePreviewVisibleChange(visible: boolean) {
     :visible="model.notificationCenterOpen.value"
     :mask="false"
     placement="top-right"
+    :anchor="model.notificationCenterAnchor.value"
     class="h-[484px] w-[408px]"
     :aria-labelledby="notificationTitleID"
     :radar="{ name: 'Notifications', desc: 'Notifications from the XBuilder support team' }"

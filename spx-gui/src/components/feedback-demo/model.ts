@@ -22,10 +22,16 @@ export interface SubmitFeedbackInput {
 
 type FeedbackFormPrefill = Pick<FeedbackDraft, 'title' | 'description'>
 
+export interface NotificationCenterAnchor {
+  top: number
+  right: number
+}
+
 export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData()) {
   const data = reactive<FeedbackDemoData>(initialData)
   const activeFormSource = ref<FeedbackSource | null>(null)
   const notificationCenterOpen = ref(false)
+  const notificationCenterAnchor = ref<NotificationCenterAnchor | null>(null)
   const unreadNotificationCount = computed(
     () => data.notifications.filter((notification) => notification.readAt == null).length
   )
@@ -51,8 +57,9 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     data.drafts.globalForm.attachments = []
   }
 
-  function openNotificationCenter() {
+  function openNotificationCenter(anchor?: NotificationCenterAnchor) {
     activeFormSource.value = null
+    notificationCenterAnchor.value = anchor ?? null
     notificationCenterOpen.value = true
   }
 
@@ -130,12 +137,14 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     Object.assign(data, createMockFeedbackDemoData())
     activeFormSource.value = null
     notificationCenterOpen.value = false
+    notificationCenterAnchor.value = null
   }
 
   return {
     data,
     activeFormSource,
     notificationCenterOpen,
+    notificationCenterAnchor,
     unreadNotificationCount,
     openFeedbackForm,
     closeFeedbackForm,

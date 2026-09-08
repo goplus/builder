@@ -125,6 +125,36 @@ describe('UIModal', () => {
       if (popupContainerRef == null) throw new Error('Expected popup container ref')
       expect((popupContainerRef as Ref<HTMLElement | undefined>).value).toBe(surface)
     })
+
+    it('positions a top-right surface from its trigger anchor', async () => {
+      mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () =>
+                  h(
+                    UIModal,
+                    {
+                      visible: true,
+                      mask: false,
+                      placement: 'top-right',
+                      anchor: { top: 56, right: 24 }
+                    },
+                    { default: () => h('div', 'Notifications') }
+                  )
+              })
+          }
+        })
+      )
+
+      await flushModal()
+
+      const surface = getLatestElement('.ui-modal-surface') as HTMLElement
+      expect(surface.style.position).toBe('absolute')
+      expect(surface.style.top).toBe('56px')
+      expect(surface.style.right).toBe('24px')
+    })
   })
 
   describe('attrs and interaction', () => {

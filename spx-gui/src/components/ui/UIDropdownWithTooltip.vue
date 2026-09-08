@@ -1,9 +1,15 @@
 <template>
-  <UIDropdown trigger="click" :visible="dropdownVisible" @update:visible="handleDropdownVisibleChange">
+  <UIDropdown
+    trigger="click"
+    :visible="dropdownVisible"
+    :placement="props.placement"
+    :offset="props.offset"
+    @update:visible="handleDropdownVisibleChange"
+  >
     <template #trigger>
       <UITooltip :visible="tooltipVisible" @update:visible="handleTooltipVisibleChange">
         <template #trigger>
-          <slot name="trigger"></slot>
+          <slot name="trigger" :expanded="dropdownVisible"></slot>
         </template>
         <slot name="tooltip-content"></slot>
       </UITooltip>
@@ -14,7 +20,10 @@
 
 <script setup lang="ts">
 import { UIDropdown, UITooltip } from '@/components/ui'
+import type { Offset, Placement } from './UIDropdown.vue'
 import { ref } from 'vue'
+
+const props = defineProps<{ placement?: Placement; offset?: Offset }>()
 
 const dropdownVisible = ref(false)
 const tooltipVisible = ref(false)

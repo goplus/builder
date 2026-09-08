@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
@@ -7,7 +7,7 @@ import { useExternalUrl } from '@/utils/utils'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
+import { UIButton, UIDropdownWithTooltip, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useFeedbackDemoModel } from '@/components/feedback-demo/model'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
@@ -30,7 +30,6 @@ const canUseAccountAdmin = computed(
     signedInUser.value?.capabilities.canManageAuthorization === true
 )
 const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
-const profileMenuVisible = ref(false)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 function toggleLang() {
@@ -75,25 +74,24 @@ async function handleSignOut() {
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
-  <UIDropdown
+  <UIDropdownWithTooltip
     v-else
-    v-model:visible="profileMenuVisible"
-    trigger="click"
     placement="bottom-end"
     :offset="{ x: 0, y: 8 }"
   >
-    <template #trigger>
+    <template #trigger="{ expanded }">
       <button
         v-radar="{ name: 'Profile menu', desc: 'Click to open account options' }"
         type="button"
         class="h-full cursor-pointer border-0 bg-transparent px-3 hover:bg-grey-400 focus-visible:outline-2 focus-visible:outline-primary-main"
         aria-haspopup="menu"
-        :aria-expanded="profileMenuVisible"
+        :aria-expanded="expanded"
         :aria-label="$t({ en: 'Account menu', zh: '账户菜单' })"
       >
         <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" alt="" aria-hidden="true" />
       </button>
     </template>
+    <template #tooltip-content>{{ $t({ en: 'Account', zh: '个人中心' }) }}</template>
     <UIMenu class="min-w-30">
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
@@ -154,7 +152,7 @@ async function handleSignOut() {
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
     </UIMenu>
-  </UIDropdown>
+  </UIDropdownWithTooltip>
 </template>
 
 <style scoped>
