@@ -24,14 +24,15 @@ const config = computed(() => {
 const handleGenerateCopilotContext = useMessageHandle(
   async () => {
     // The endpoint reads the author's current (unsaved) work, so the working copy is uploaded first.
+    const { metadata, files } = await props.project.snapshot()
     const { fileCollection } = await m.withLoading(
-      saveFiles(props.project.exportFiles()),
+      saveFiles(files),
       t({ en: 'Uploading course files...', zh: '上传课程文件中...' })
     )
     const { copilotContext } = await m.withLoading(
       generatePlaygroundCourseCopilotContext({
-        title: props.project.title,
-        thumbnail: props.project.thumbnail,
+        title: metadata.title,
+        thumbnail: metadata.thumbnail,
         content: fileCollection
       }),
       t({ en: 'Generating Copilot context...', zh: '生成 Copilot 上下文中...' })
