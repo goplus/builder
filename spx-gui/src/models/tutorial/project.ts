@@ -119,6 +119,14 @@ export class TutorialProject {
     return files
   }
 
+  /**
+   * Export after any in-flight transaction of the embedded project (undo/redo, imports) has finished,
+   * so the result never captures an intermediate state. Use this for saving and previewing.
+   */
+  snapshot(): Promise<TutorialProjectSerialized> {
+    return this.project.mutex.runExclusive(() => this.export())
+  }
+
   export(): TutorialProjectSerialized {
     return {
       metadata: {
