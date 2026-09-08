@@ -27,6 +27,7 @@ function mockImage(width: number, height: number) {
 function mockCanvas(imageData: Uint8ClampedArray) {
   const ctx = {
     imageSmoothingEnabled: false,
+    imageSmoothingQuality: 'low' as ImageSmoothingQuality,
     clearRect: vi.fn(),
     drawImage: vi.fn(),
     getImageData: vi.fn().mockReturnValue({ data: imageData }),
@@ -66,6 +67,9 @@ describe('img-process', () => {
     expect(fitted.name).toBe('input.jpg')
     expect(ctx.drawImage).toHaveBeenNthCalledWith(1, expect.anything(), 0, 128, 512, 256)
     expect(ctx.drawImage).toHaveBeenNthCalledWith(2, expect.anything(), 0, 128, 512, 256)
+    expect(ctx.getImageData).toHaveBeenCalledWith(0, 128, 512, 256)
+    expect(ctx.imageSmoothingEnabled).toBe(true)
+    expect(ctx.imageSmoothingQuality).toBe('high')
     expect(ctx.fillStyle).toBe(background)
     expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 512, 512)
   })

@@ -151,7 +151,7 @@ describe('AnimationGen', () => {
     expect(gen.generateVideoState.status).toBe('finished')
   })
 
-  it('should throw error when generating video without reference costume', async () => {
+  it('should throw error when generating video without a reference image or costume', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
@@ -159,8 +159,8 @@ describe('AnimationGen', () => {
 
     await gen.enrich()
 
-    // Try to generate video without reference costume
-    await expect(gen.generateVideo()).rejects.toThrow('reference costume expected')
+    // Try to generate video without a reference image or costume
+    await expect(gen.generateVideo()).rejects.toThrow('reference image or costume expected')
   })
 
   it('should throw error when extracting frames without video', async () => {
