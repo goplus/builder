@@ -5,7 +5,6 @@ import type { RadarNodeMeta } from '@/utils/radar'
 const props = defineProps<{
   triggerRadar: RadarNodeMeta
 }>()
-
 </script>
 
 <template>
