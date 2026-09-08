@@ -65,6 +65,11 @@ export class TutorialProject {
     assign<TutorialProject>(this, metadata)
   }
 
+  setConfig(config: Partial<TutorialProjectConfig>) {
+    if (this.config == null) throw new Error('Tutorial project has not been loaded')
+    this.config = { ...this.config, ...config }
+  }
+
   async load({ metadata, files }: TutorialProjectSerialized) {
     this.setMetadata(metadata)
     await this.loadFiles(files)

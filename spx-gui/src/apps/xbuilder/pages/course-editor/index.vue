@@ -80,6 +80,12 @@ watch(entryQueryRet.data, async (next) => {
 })
 
 onUnmounted(() => void disposeSession())
+
+function handleSaved(course: PlaygroundCourse) {
+  const current = session.value
+  if (current == null) return
+  session.value = { ...current, course }
+}
 </script>
 
 <template>
@@ -89,6 +95,7 @@ onUnmounted(() => void disposeSession())
     :course="session.course"
     :series="session.series"
     :project="session.project"
+    @saved="handleSaved"
   />
   <section v-else class="h-full w-full flex items-center justify-center">
     <UIDetailedLoading v-if="entryQueryRet.isLoading.value" :percentage="entryQueryRet.progress.value.percentage">
