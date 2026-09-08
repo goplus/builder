@@ -47,7 +47,32 @@ const selectedPreviewAttachment = ref<RenderableFeedbackAttachment | null>(null)
 const previewAttachments = ref<RenderableFeedbackAttachment[]>([])
 const previewPage = ref(1)
 const feedbackNotifications = computed(() => model.data.notifications)
-const systemNotifications = computed<InProductNotification[]>(() => [])
+const systemNotifications = computed<InProductNotification[]>(() => [
+  {
+    id: 'system-v1-6-release',
+    userID: model.data.currentUser.id,
+    feedbackID: '',
+    title: t({ en: 'XBuilder V1.6 is now available', zh: 'XBuilder 新版本 V1.6 已发布' }),
+    body: t({
+      en: 'We completed editor performance optimizations and several feature upgrades, including batch asset upload, faster project loading, and improved runtime stability.',
+      zh: '我们完成了编辑器性能优化与多项功能升级，新增素材批量上传、项目加载加速及运行稳定性改进。'
+    }),
+    createdAt: '2026-09-07T18:00:00+08:00',
+    readAt: '2026-09-07T18:00:00+08:00'
+  },
+  {
+    id: 'system-maintenance-2026-09-07',
+    userID: model.data.currentUser.id,
+    feedbackID: '',
+    title: t({ en: 'System maintenance notice', zh: '系统维护通知' }),
+    body: t({
+      en: 'To improve service stability, XBuilder will perform system maintenance from 23:00 to 24:00 on September 7. Some features may be temporarily unavailable. Please save your projects in advance. Thank you for your understanding and support.',
+      zh: '为提升服务稳定性，XBuilder 将于9月7日晚 23:00–24:00 进行系统维护。维护期间部分功能可能暂时无法使用，请提前保存项目，感谢你的理解与支持。'
+    }),
+    createdAt: '2026-09-07T12:00:00+08:00',
+    readAt: '2026-09-07T12:00:00+08:00'
+  }
+])
 const activeNotifications = computed(() =>
   activeNotificationTab.value === 'feedback' ? feedbackNotifications.value : systemNotifications.value
 )
@@ -299,7 +324,7 @@ function handlePreviewVisibleChange(visible: boolean) {
   >
     <div v-if="selectedNotification == null" class="flex min-h-0 flex-1 flex-col">
       <div class="flex shrink-0 items-center justify-between px-6 pb-3 pt-5">
-        <h2 :id="notificationTitleID" class="text-lg font-semibold text-title">
+        <h2 :id="notificationTitleID" class="text-lg text-title">
           {{ $t({ en: 'Notifications', zh: '通知' }) }}
         </h2>
         <button
@@ -315,7 +340,7 @@ function handlePreviewVisibleChange(visible: boolean) {
       <div class="flex shrink-0 border-b border-grey-300 px-6">
         <button
           type="button"
-          class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
+          class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
           :class="activeNotificationTab === 'feedback' ? 'mr-6 text-primary-main' : 'mr-6 text-grey-700'"
           @click="activeNotificationTab = 'feedback'"
         >
@@ -328,7 +353,7 @@ function handlePreviewVisibleChange(visible: boolean) {
         </button>
         <button
           type="button"
-          class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
+          class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
           :class="activeNotificationTab === 'system' ? 'text-primary-main' : 'text-grey-700'"
           @click="activeNotificationTab = 'system'"
         >
@@ -355,7 +380,7 @@ function handlePreviewVisibleChange(visible: boolean) {
           }"
           class="group relative block w-full cursor-pointer rounded-lg border-0 bg-white p-3 text-left transition-colors hover:bg-grey-300 focus-visible:relative focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-primary-main"
           :class="notification.readAt == null ? 'bg-white' : 'bg-white'"
-          @click="openNotification(notification)"
+          @click="notification.feedbackID === '' ? undefined : openNotification(notification)"
         >
           <div class="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-3">
             <span class="relative flex size-10 shrink-0 items-center justify-center">
@@ -368,10 +393,7 @@ function handlePreviewVisibleChange(visible: boolean) {
             </span>
             <div class="min-w-0">
               <div class="flex items-start justify-between gap-3">
-                <span
-                  class="min-w-0 flex-1 truncate text-[14px] leading-[22px] text-title"
-                  :class="notification.readAt == null ? 'font-semibold' : 'font-medium'"
-                >
+                <span class="min-w-0 flex-1 truncate text-[14px] leading-[22px] text-title font-normal">
                   {{ notification.title }}
                 </span>
                 <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
@@ -402,7 +424,7 @@ function handlePreviewVisibleChange(visible: boolean) {
           </UIButton>
           <h2
             :id="notificationTitleID"
-            class="truncate text-base font-semibold text-title"
+            class="truncate text-base font-normal text-title"
             :title="selectedNotification.title"
           >
             {{ selectedNotification.title }}
@@ -413,14 +435,14 @@ function handlePreviewVisibleChange(visible: boolean) {
       <article class="min-h-0 flex-1 overflow-y-auto p-3">
         <section class="rounded-lg bg-white px-3">
           <div class="flex items-start justify-between gap-3">
-            <p class="text-[14px] font-medium leading-[22px] text-primary-main">
+            <p class="text-[14px] font-normal leading-[22px] text-primary-main">
               {{ $t({ en: 'Support reply', zh: '支持回复' }) }}
             </p>
             <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
               formatTime(selectedNotification.createdAt)
             }}</time>
           </div>
-          <p class="mt-3 whitespace-pre-wrap text-[14px] font-medium leading-[22px] text-grey-1000">
+          <p class="mt-3 whitespace-pre-wrap text-[14px] font-normal leading-[22px] text-grey-1000">
             {{ selectedNotification.body }}
           </p>
           <UIButton
@@ -443,7 +465,7 @@ function handlePreviewVisibleChange(visible: boolean) {
           </div>
           <div class="min-w-0 flex-1 rounded-lg bg-grey-300 p-3">
             <div class="flex items-start justify-between gap-3">
-              <p class="text-[13px] font-medium leading-5 text-title">
+              <p class="text-[13px] font-normal leading-5 text-title">
                 {{
                   selectedNotificationFeedback?.title ??
                   $t({ en: 'The original feedback is not available.', zh: '原始反馈暂不可用。' })
@@ -476,7 +498,7 @@ function handlePreviewVisibleChange(visible: boolean) {
 
         <template v-if="selectedNotificationImageAttachments.length > 1">
           <div class="mt-5 flex items-center justify-between gap-3">
-            <h3 class="text-sm font-semibold text-title">
+            <h3 class="text-sm font-normal text-title">
               {{ $t({ en: 'Images you submitted', zh: '你提交的图片' }) }}
             </h3>
             <span class="text-xs text-grey-800">{{
@@ -511,7 +533,7 @@ function handlePreviewVisibleChange(visible: boolean) {
     <div v-if="selectedPreviewAttachment != null" class="flex max-h-[calc(100vh-2rem)] min-h-[360px] flex-col">
       <div class="flex items-center justify-between gap-3 border-b border-grey-400 px-6 py-3.5">
         <div class="min-w-0">
-          <h2 :id="imagePreviewTitleID" class="truncate text-sm font-medium leading-[22px] text-title">
+          <h2 :id="imagePreviewTitleID" class="truncate text-sm font-normal leading-[22px] text-title">
             {{ selectedPreviewAttachment.name }}
           </h2>
         </div>

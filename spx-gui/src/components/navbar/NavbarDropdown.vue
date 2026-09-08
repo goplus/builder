@@ -23,6 +23,8 @@ const props = defineProps<{
       </button>
     </template>
     <template #tooltip-content>项目</template>
-    <slot></slot>
+    <template #dropdown-content>
+      <slot></slot>
+    </template>
   </UIDropdownWithTooltip>
 </template>

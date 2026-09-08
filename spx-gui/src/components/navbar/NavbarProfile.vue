@@ -88,66 +88,68 @@ async function handleSignOut() {
       </button>
     </template>
     <template #tooltip-content>{{ $t({ en: 'Account', zh: '个人中心' }) }}</template>
-    <UIMenu class="min-w-30">
-      <UIMenuGroup>
-        <UIMenuItem :interactive="false">
-          <div class="user-info-wrapper">
-            {{ signedInUser?.displayName }}
-          </div>
-        </UIMenuItem>
-        <UITooltip placement="left">
-          <template #trigger>
-            <UIMenuItem
-              v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
-              class="justify-between p-2"
-              @click="toggleLang"
-            >
-              {{ $t({ en: 'Language', zh: '语言' }) }}
-              <div class="lang-switch-icon h-4.5 w-4.5 text-turquoise-600" v-html="langContent"></div>
-            </UIMenuItem>
-          </template>
-          {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
-        </UITooltip>
-      </UIMenuGroup>
-      <UIMenuGroup>
-        <UIMenuItem @click="handleUserPage">
-          {{ $t({ en: 'Profile', zh: '个人主页' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="handleProjects">
-          {{ $t({ en: 'Projects', zh: '项目列表' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="feedbackDemo.openFeedbackForm('globalForm')">
-          {{ $t({ en: 'Send feedback', zh: '提交反馈' }) }}
-        </UIMenuItem>
-      </UIMenuGroup>
-      <UIMenuGroup v-if="signedInUser?.capabilities.canManageAssets">
-        <UIMenuItem @click="manageAssets(AssetType.Sprite)">
-          {{ $t({ en: 'Manage sprites', zh: '管理精灵' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="manageAssets(AssetType.Sound)">
-          {{ $t({ en: 'Manage sounds', zh: '管理声音' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="manageAssets(AssetType.Backdrop)">
-          {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
-        </UIMenuItem>
-      </UIMenuGroup>
-      <UIMenuGroup v-if="signedInUser?.capabilities.canManageCourses">
-        <UIMenuItem @click="manageCourses()">
-          {{ $t({ en: 'Manage courses', zh: '管理课程' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="manageCourseSeries()">
-          {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
-        </UIMenuItem>
-      </UIMenuGroup>
-      <UIMenuGroup v-if="canUseAccountAdmin">
-        <UIMenuItem @click="handleAccountAdmin">
-          {{ $t({ en: 'Account admin', zh: '账号管理' }) }}
-        </UIMenuItem>
-      </UIMenuGroup>
-      <UIMenuGroup>
-        <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
-      </UIMenuGroup>
-    </UIMenu>
+    <template #dropdown-content>
+      <UIMenu class="min-w-30">
+        <UIMenuGroup>
+          <UIMenuItem :interactive="false">
+            <div class="user-info-wrapper">
+              {{ signedInUser?.displayName }}
+            </div>
+          </UIMenuItem>
+          <UITooltip placement="left">
+            <template #trigger>
+              <UIMenuItem
+                v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
+                class="justify-between p-2"
+                @click="toggleLang"
+              >
+                {{ $t({ en: 'Language', zh: '语言' }) }}
+                <div class="lang-switch-icon h-4.5 w-4.5 text-turquoise-600" v-html="langContent"></div>
+              </UIMenuItem>
+            </template>
+            {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
+          </UITooltip>
+        </UIMenuGroup>
+        <UIMenuGroup>
+          <UIMenuItem @click="handleUserPage">
+            {{ $t({ en: 'Profile', zh: '个人主页' }) }}
+          </UIMenuItem>
+          <UIMenuItem @click="handleProjects">
+            {{ $t({ en: 'Projects', zh: '项目列表' }) }}
+          </UIMenuItem>
+          <UIMenuItem @click="feedbackDemo.openFeedbackForm('globalForm')">
+            {{ $t({ en: 'Send feedback', zh: '提交反馈' }) }}
+          </UIMenuItem>
+        </UIMenuGroup>
+        <UIMenuGroup v-if="signedInUser?.capabilities.canManageAssets">
+          <UIMenuItem @click="manageAssets(AssetType.Sprite)">
+            {{ $t({ en: 'Manage sprites', zh: '管理精灵' }) }}
+          </UIMenuItem>
+          <UIMenuItem @click="manageAssets(AssetType.Sound)">
+            {{ $t({ en: 'Manage sounds', zh: '管理声音' }) }}
+          </UIMenuItem>
+          <UIMenuItem @click="manageAssets(AssetType.Backdrop)">
+            {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
+          </UIMenuItem>
+        </UIMenuGroup>
+        <UIMenuGroup v-if="signedInUser?.capabilities.canManageCourses">
+          <UIMenuItem @click="manageCourses()">
+            {{ $t({ en: 'Manage courses', zh: '管理课程' }) }}
+          </UIMenuItem>
+          <UIMenuItem @click="manageCourseSeries()">
+            {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
+          </UIMenuItem>
+        </UIMenuGroup>
+        <UIMenuGroup v-if="canUseAccountAdmin">
+          <UIMenuItem @click="handleAccountAdmin">
+            {{ $t({ en: 'Account admin', zh: '账号管理' }) }}
+          </UIMenuItem>
+        </UIMenuGroup>
+        <UIMenuGroup>
+          <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
+        </UIMenuGroup>
+      </UIMenu>
+    </template>
   </UIDropdownWithTooltip>
 </template>
 
