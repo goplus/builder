@@ -3,19 +3,22 @@ type CoursePane = 'program' | 'videos' | 'info'
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { updateCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { saveFiles } from '@/models/common/cloud'
-import type { TutorialProject } from '@/models/tutorial/project'
+import { TutorialProject } from '@/models/tutorial/project'
 import type { EditorState } from '@/components/editor/editor-state'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
-import { UIButton, UICard, UITab, UITabs, UITag, useConfirmDialogWithResult } from '@/components/ui'
+import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
+import CoursePlaygroundCompletionModal from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
+import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/runner'
+import { UIButton, UICard, UIError, UITab, UITabs, UITag, useConfirmDialogWithResult, useModal } from '@/components/ui'
 import CourseInfoPane from './CourseInfoPane.vue'
 import CourseProgramEditor from './CourseProgramEditor.vue'
 import CourseVideosPane from './CourseVideosPane.vue'
@@ -33,7 +36,9 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const router = useRouter()
 const confirm = useConfirmDialogWithResult()
+const openCompletion = useModal(CoursePlaygroundCompletionModal)
 
 const config = computed(() => {
   const config = props.project.config
@@ -73,6 +78,58 @@ const handleSave = useMessageHandle(
   { en: 'Course saved', zh: '课程已保存' }
 )
 
+// Preview runs the real Tutorial lifecycle on a snapshot of the author's current work, so learner-side
+// edits and course execution never touch the working copy. The snapshot replaces the editor while it is
+// shown: both drive the route's `inEditorPath`, so they cannot be mounted at the same time.
+const preview = shallowRef<TutorialProject | null>(null)
+const previewError = ref<Error | null>(null)
+let inEditorPathBeforePreview: string | string[] | undefined
+
+/** The course as the learner would see it: the saved record with the working copy's metadata. */
+const previewCourse = computed<PlaygroundCourse>(() => ({
+  ...props.course,
+  title: props.project.title,
+  thumbnail: props.project.thumbnail
+}))
+
+const handlePreview = useMessageHandle(
+  async () => {
+    const snapshot = new TutorialProject()
+    await snapshot.load(props.project.export())
+    if (preview.value == null) inEditorPathBeforePreview = router.currentRoute.value.params.inEditorPath
+    previewError.value = null
+    preview.value = snapshot
+  },
+  { en: 'Failed to start preview', zh: '启动预览失败' }
+)
+
+async function exitPreview() {
+  // Restore the author's editor path before the snapshot unmounts, so the editor comes back where it was.
+  const currentRoute = router.currentRoute.value
+  await router.replace({
+    params: { ...currentRoute.params, inEditorPath: inEditorPathBeforePreview ?? [] },
+    query: currentRoute.query,
+    hash: currentRoute.hash
+  })
+  preview.value = null
+  previewError.value = null
+  await nextTick()
+}
+
+async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
+  const action = await openCompletion({
+    course: previewCourse.value,
+    series: props.series,
+    feedback: completion.feedback
+  })
+  if (action === 'continueEditing') return
+  await exitPreview()
+}
+
+function handlePreviewFailed(error: Error) {
+  previewError.value = error
+}
+
 onBeforeRouteLeave(async () => {
   if (!dirty.value) return true
   return confirm({
@@ -111,7 +168,35 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="min-h-full w-full flex flex-col bg-grey-300">
+  <section v-if="preview != null" class="min-h-full w-full flex flex-col bg-grey-300">
+    <div
+      v-radar="{
+        name: 'Course preview banner',
+        desc: 'Shows that the course is being previewed, with a button to go back to the editor'
+      }"
+      class="flex flex-none items-center gap-3 bg-primary-100 px-4 py-1 text-sm"
+    >
+      <span class="flex-1">{{ $t({ en: 'Previewing the course as a learner', zh: '正在以学习者视角预览课程' }) }}</span>
+      <UIButton
+        v-radar="{ name: 'Back to editor button', desc: 'Click to stop previewing and return to the course editor' }"
+        type="secondary"
+        size="small"
+        @click="exitPreview"
+      >
+        {{ $t({ en: 'Back to editor', zh: '返回编辑器' }) }}
+      </UIButton>
+    </div>
+    <UIError v-if="previewError != null" class="flex-1" :retry="handlePreview.fn">
+      {{ previewError.message }}
+    </UIError>
+    <CoursePlayground
+      v-else
+      :project="preview"
+      @course-completed="handlePreviewCompleted"
+      @failed="handlePreviewFailed"
+    />
+  </section>
+  <section v-else class="min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
       <NavbarWrapper>
         <template #left>
@@ -137,7 +222,8 @@ onUnmounted(() => {
             class="mr-2"
             type="secondary"
             size="small"
-            disabled
+            :loading="handlePreview.isLoading.value"
+            @click="handlePreview.fn"
           >
             {{ $t({ en: 'Preview', zh: '预览' }) }}
           </UIButton>
