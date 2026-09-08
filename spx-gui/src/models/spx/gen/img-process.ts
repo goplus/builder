@@ -115,9 +115,18 @@ export async function fitImageToCanvasWithContrastBg(
     const dy = (targetHeight - drawHeight) / 2
 
     const { canvas, ctx } = createCanvas(targetWidth, targetHeight)
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
     ctx.clearRect(0, 0, targetWidth, targetHeight)
     ctx.drawImage(img, dx, dy, drawWidth, drawHeight)
-    const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight)
+    const sampleX = Math.floor(dx)
+    const sampleY = Math.floor(dy)
+    const imageData = ctx.getImageData(
+      sampleX,
+      sampleY,
+      Math.ceil(dx + drawWidth) - sampleX,
+      Math.ceil(dy + drawHeight) - sampleY
+    )
     ctx.fillStyle = isLightSubject(imageData) ? '#000000' : '#FFFFFF'
     ctx.fillRect(0, 0, targetWidth, targetHeight)
     ctx.drawImage(img, dx, dy, drawWidth, drawHeight)

@@ -242,7 +242,7 @@ export class AnimationGen extends Disposable {
         } else if (this.referenceCostume != null) {
           referenceFrameUrl = await saveFile(this.referenceCostume.img)
         } else {
-          throw new Error('reference costume expected')
+          throw new Error('reference image or costume expected')
         }
         const settings = { ...this.settings, referenceFrameUrl }
         this.generateVideoTask?.tryCancel()
