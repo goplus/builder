@@ -16,3 +16,4 @@ See `package.json` or `go.mod` files in subdirectories for details.
 
 - [spx-gui Apps](./spx-gui-apps.md)
 - [Account Local Debugging](./account-local-debugging.md)
+- [Maintaining the Default Project](../../skills/xbuilder-default-project/SKILL.md)

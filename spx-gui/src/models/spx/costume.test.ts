@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { resolve as resolvePath } from '@/utils/path'
+import { getFiles } from '../common/cloud'
 import { File, fromText, type Files } from '../common/file'
 import { Animation } from './animation'
 import { Costume } from './costume'
@@ -84,5 +85,20 @@ describe('Costume', () => {
 
     expect(config.imageWidth).toEqual(320)
     expect(config.imageHeight).toEqual(240)
+  })
+
+  it('should preserve slash-containing names after loading from cloud files', () => {
+    const costume = new Costume('=/', fromText('source.svg', '<svg />'))
+    const [config, files] = costume.export({ basePath: 'assets/sprites/Sprite' })
+    const fileCollection = Object.fromEntries(Object.keys(files).map((path) => [path, 'data:,']))
+    const loaded = Costume.load(config, getFiles(fileCollection), {
+      basePath: 'assets/sprites/Sprite',
+      includeId: true
+    })
+    const [reExportedConfig, reExportedFiles] = loaded.export({ basePath: 'assets/sprites/Sprite' })
+
+    expect(config.path).toBe('=%2F.svg')
+    expect(reExportedConfig.path).toBe(config.path)
+    expect(Object.keys(reExportedFiles)).toEqual(Object.keys(files))
   })
 })

@@ -509,4 +509,16 @@ describe('BackdropGen', () => {
     expect(loadedMountain.enrichState.status).toBe('finished')
     expect(loadedMountain.imagesGenState.status).toBe('initial')
   })
+
+  it('encodes a backdrop name when using it as a directory', async () => {
+    const project = makeSpxProject()
+    const gen = new BackdropGen(i18n, project, { settings: { name: 'a/b' } })
+    const files = sndFiles(gen.export())
+
+    expect(Object.keys(files)).toContain('assets/backdrop-gens/a%2Fb/index.json')
+    expect(Object.keys(files)).not.toContain('assets/backdrop-gens/a/b/index.json')
+
+    const [loaded] = await BackdropGen.loadAll(i18n, project, files)
+    expect(loaded?.name).toBe('a/b')
+  })
 })

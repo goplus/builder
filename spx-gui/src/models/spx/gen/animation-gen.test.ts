@@ -20,6 +20,18 @@ describe('AnimationGen', () => {
     aigcMock.reset()
   })
 
+  it('encodes an animation name when using it as a directory', () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: 'a/b' },
+      video: mockFile('video.mp4')
+    })
+
+    const [, files] = gen.export('gen/assets/sprites/TestSprite')
+    expect(Object.keys(files)).toContain('gen/assets/sprites/TestSprite/animations/a%2Fb/video.mp4')
+  })
+
   it('should work well', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
@@ -61,12 +73,12 @@ describe('AnimationGen', () => {
     // 6. Configure frames extraction
     gen.setFramesConfig({
       startTime: 0,
-      duration: 1000,
+      duration: 1100,
       interval: 200
     })
     expect(gen.framesConfig).toEqual({
       startTime: 0,
-      duration: 1000,
+      duration: 1100,
       interval: 200
     })
 
@@ -75,6 +87,8 @@ describe('AnimationGen', () => {
     expect(gen.finishState.status).toBe('finished')
     expect(gen.finishState.result).not.toBeNull()
     expect(animation.name).toBe('enriched-animation')
+    expect(animation.costumes).toHaveLength(5)
+    expect(animation.duration).toBe(1.1)
   })
 
   it('should validate animation name correctly', async () => {
@@ -481,5 +495,6 @@ describe('AnimationGen', () => {
     expect(loadedGen.finishState.status).toBe('finished')
     expect(loadedGen.finishState.result?.name).toBe(gen.finishState.result?.name)
     expect(loadedGen.finishState.result?.costumes.length).toBe(gen.finishState.result?.costumes.length)
+    expect(loadedGen.finishState.result?.duration).toBe(1)
   })
 })

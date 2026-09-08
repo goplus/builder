@@ -112,11 +112,11 @@ export function listAccountUserSessions(userID: string, params?: PaginationParam
   >
 }
 
-export function deleteAccountUserSessions(userID: string) {
+export function revokeAccountUserSessions(userID: string) {
   return client.delete(`/admin/account/users/${encodeURIComponent(userID)}/sessions`) as Promise<void>
 }
 
-export function deleteAccountSession(sessionID: string) {
+export function revokeAccountSession(sessionID: string) {
   return client.delete(`/admin/account/sessions/${encodeURIComponent(sessionID)}`) as Promise<void>
 }
 
@@ -168,7 +168,7 @@ export function createAccountAppGrantToken(appGrantID: string, params: CreateAcc
   ) as Promise<CreatedAccountAppToken>
 }
 
-export function deleteAccountAppGrantToken(appGrantID: string, tokenID: string) {
+export function revokeAccountAppGrantToken(appGrantID: string, tokenID: string) {
   return client.delete(
     `/admin/account/app-grants/${encodeURIComponent(appGrantID)}/tokens/${encodeURIComponent(tokenID)}`
   ) as Promise<void>
@@ -235,7 +235,7 @@ export function createAccountAppSecret(appID: string, params: CreateAccountAppSe
   ) as Promise<CreatedAccountAppSecret>
 }
 
-export function deleteAccountAppSecret(appID: string, secretID: string) {
+export function revokeAccountAppSecret(appID: string, secretID: string) {
   return client.delete(
     `/admin/account/apps/${encodeURIComponent(appID)}/secrets/${encodeURIComponent(secretID)}`
   ) as Promise<void>

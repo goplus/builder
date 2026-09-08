@@ -116,17 +116,7 @@ export async function importCourseSeriesFileAsNew(
   signal?: AbortSignal
 ) {
   const data = await loadCourseSeriesFile(file, signal)
-  const courseSeries = await addCourseSeries(
-    {
-      title: data.manifest.courseSeries.title,
-      thumbnail: '',
-      description: data.manifest.courseSeries.description,
-      order: 1,
-      courseIDs: []
-    },
-    signal
-  )
-  return importCourseSeriesFileData(courseSeries, data, signedInUsername, signal)
+  return importCourseSeriesFileData(null, data, signedInUsername, signal)
 }
 
 export async function inspectCourseSeriesFileImport(
@@ -165,7 +155,7 @@ async function loadCourseSeriesFile(file: globalThis.File, signal?: AbortSignal)
 }
 
 async function importCourseSeriesFileData(
-  courseSeries: CourseSeries,
+  courseSeries: CourseSeries | null,
   { manifest, unzipped }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
   signedInUsername: string,
   signal?: AbortSignal
@@ -191,20 +181,20 @@ async function importCourseSeriesFileData(
     )
   }
 
-  const importedCourseSeries = await updateCourseSeries(
-    courseSeries.id,
-    {
-      title: manifest.courseSeries.title,
-      thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
-      description: manifest.courseSeries.description,
-      // Keep the local sort order because it depends on other course series in the current environment.
-      order: courseSeries.order,
-      courseIDs: importedCourses.map((course) => course.id)
-    },
-    signal
-  )
+  const params = {
+    title: manifest.courseSeries.title,
+    thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
+    description: manifest.courseSeries.description,
+    // Keep the local sort order because it depends on other course series in the current environment.
+    order: courseSeries?.order ?? 1,
+    courseIDs: importedCourses.map((course) => course.id)
+  }
+  const importedCourseSeries =
+    courseSeries == null
+      ? await addCourseSeries(params, signal)
+      : await updateCourseSeries(courseSeries.id, params, signal)
 
-  await Promise.all(courseSeries.courseIDs.map((courseID) => deleteCourse(courseID)))
+  if (courseSeries != null) await Promise.all(courseSeries.courseIDs.map((courseID) => deleteCourse(courseID)))
   return importedCourseSeries
 }
 
@@ -273,31 +263,35 @@ async function importProject(
 ) {
   const serialized = await xbpHelpers.load(new File([getRequiredEntry(unzipped, project.path)], `${project.name}.xbp`))
   const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
-  const owner = existingProject?.owner ?? signedInUsername
-  const name = existingProject?.name ?? project.name
   const metadata: PartialMetadata = {
     ...serialized.metadata,
     id: existingProject?.id,
-    owner,
-    name,
+    owner: existingProject?.owner ?? signedInUsername,
+    name: existingProject?.name ?? project.name,
     displayName: serialized.metadata.displayName ?? project.name,
     type: serialized.metadata.type ?? ProjectType.Game,
     visibility: Visibility.Public
   }
 
-  await cloudHelpers.save({ metadata, files: serialized.files }, signal)
+  const saved = await cloudHelpers.save({ metadata, files: serialized.files }, signal)
+  let { owner, name, revision } = saved.metadata
   const metadataUpdates: UpdateProjectParams = {}
   if (serialized.metadata.description != null) metadataUpdates.description = serialized.metadata.description
   if (serialized.metadata.instructions != null) metadataUpdates.instructions = serialized.metadata.instructions
   if (serialized.metadata.extraSettings != null) metadataUpdates.extraSettings = serialized.metadata.extraSettings
-  if (Object.keys(metadataUpdates).length > 0) await updateProject(owner, name, metadataUpdates, signal)
+  if (Object.keys(metadataUpdates).length > 0) {
+    const updated = await updateProject(owner, name, metadataUpdates, signal)
+    owner = updated.owner
+    name = updated.name
+    revision = updated.revision
+  }
   await createProjectRelease(
     owner,
     name,
     {
       name: generateReleaseName(),
       description: `Imported from course series "${manifest.courseSeries.title}"`,
-      thumbnail: ''
+      projectRevision: revision
     },
     signal
   )

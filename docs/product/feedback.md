@@ -1,213 +1,119 @@
 # Feedback
 
-Users may encounter broken features, unexpected runtime results, or situations where they do not know how to continue
-while using XBuilder. Feedback allows users to describe a problem directly in XBuilder and, with their consent, attach
-diagnostic information from the current project to help administrators investigate it.
+Feedback lets users describe a problem they encounter in XBuilder and, with their consent, share Context that helps administrators investigate it.
 
 ## Background
 
-User feedback often consists of a short description. Administrators then need to ask where the user was, what the
-project looked like, and which errors occurred before they can start investigating.
+A short description rarely contains enough information to reproduce a problem. Administrators may also need the page, project state, code, diagnostics, and runtime output from when the problem occurred.
 
-Feedback therefore stores both the user's own description and, when the user agrees, the project's diagnostic context
-captured at submission time. Administrators can review and process feedback from one shared list.
+Feedback keeps the user's description and the Context they agree to share in one record, so administrators can understand and process the problem with fewer follow-up questions.
 
 ## Goals
 
-* Users can submit feedback from within XBuilder.
-* Feedback can include diagnostic information captured when it is submitted.
-* Copilot can help users prepare feedback, but the user confirms and submits the final content.
-* Users can still access feedback when Copilot is temporarily unavailable or its quota is exhausted.
-* Administrators can review, process, and reply to feedback.
+* Users can submit Feedback within XBuilder.
+* Users can include Context captured at submission time.
+* Copilot can prepare a Feedback draft for the user to review and submit.
+* Supported AI features can provide a Feedback entry when a feature or quota issue occurs.
+* Administrators can investigate, process, and reply to Feedback.
 * Users can receive administrator replies within XBuilder.
 
 ## Basic Concepts and Rules
 
 ### Feedback
 
-A Feedback contains:
+A Feedback item contains:
 
-* User
-* Title
-* Description
-* Attachments
-* Diagnostic Context
-* Status
-* CreatedAt
-* Reply
-
-Title is limited to 100 characters. Description is limited to 2000 characters.
+* User: the user who submitted the Feedback
+* Title: a summary of the problem, limited to 100 characters
+* Description: details about the problem, limited to 2000 characters
+* Context: optional diagnostic information the user chooses to share
+* Status: the processing state
+* CreatedAt: the submission time
+* Reply: one administrator response, stored when the Feedback enters `replied`
 
 Feedback has three statuses:
 
 | Status | Meaning |
 | - | - |
-| `new` | Not processed yet |
-| `replied` | An administrator has replied |
-| `handled` | Processed without a reply |
+| `new` | Awaiting administrator processing |
+| `replied` | Completed with an administrator Reply |
+| `handled` | Completed through the administrator's "Mark as handled" action |
 
-The allowed status transitions are:
+A Feedback item is created in `new`. It can move from `new` to `replied` or `handled`; both are terminal states.
 
-```text
-new -> replied
-new -> handled
-```
+### Context
 
-`replied` and `handled` are terminal states. A Feedback is processed once and can have at most one Reply.
+Context is the diagnostic information shared with a Feedback item. It includes available information from the following categories:
 
-### Diagnostic Context
-
-Diagnostic Context is diagnostic information collected when the user confirms Feedback submission. It includes:
-
-* The current page, language, and capture time
-* The current project's identifier, type, name, and resource structure
-* The selected sprite and its basic state
-* The current code file, cursor, selection, and nearby source
+* Source: the feature and entry point from which Feedback was opened
+* Current page, language, and capture time
+* Current project's identifier, type, name, and resource structure
+* Selected sprite and its basic state
+* Current code file, cursor, selection, and nearby source
 * Code errors and warnings in the current project
-* The latest 50 runtime outputs
+* Runtime output from the current project
+* Project Snapshot
+* Current page screenshot
 
-Context is captured when the user confirms submission, rather than when the form is opened. It is not updated when the
-project changes after submission.
+Context follows these rules:
 
-Users can turn off "Share diagnostic information"; when it is off, Diagnostic Context is not captured. Some diagnostic
-details may be omitted when unavailable, but this must not prevent Feedback from being submitted.
+* Enabling "Share diagnostic information" includes the available Context in Feedback.
+* Context is captured when the user confirms submission and remains fixed after submission.
+* Nearby source includes up to 21 lines around the current cursor. Runtime output includes the latest 50 entries.
+* The Project Snapshot and current page screenshot are stored separately, and Feedback stores references to them. Both follow the existing upload size limit.
+* If an item is unavailable or exceeds its limit, Feedback includes the remaining Context and can still be submitted.
 
-### Attachment
+### Project Snapshot
 
-The screenshot generated at Feedback submission is stored as an image attachment.
+A Project Snapshot is the complete project file content captured when the user submits Feedback, represented as the `Files` collection used by the editor.
 
-The image size limit comes from `maxSize` returned by the Upload Session. The client checks the generated screenshot,
-and the server and object storage check it again:
-
-* An image over `maxSize` returns `413 Content Too Large`.
-* An unsupported image type returns `415 Unsupported Media Type`.
-
-Attachments reuse the existing upload-session and Kodo storage capabilities. Feedback stores the attachment ID, file
-name, media type, size, and object reference, but not a public download URL.
-
-Before downloading an attachment, the server must verify that the requester is the Feedback's submitting user or has
-the `feedbackAdmin` role, then return a short-lived signed URL. Attachments cannot be accessed as public resources.
-
-### Reply
-
-A Reply is an administrator's text response to a Feedback.
-
-After a Reply is saved, the Feedback changes to `replied` and the submitting user receives an in-product notification.
-
-### In-Product Notification
-
-An In-Product Notification delivers an administrator's reply to the user.
-
-It contains the reply and reply time. Users can view the unread count, notification list, and notification details from
-the navigation bar.
-
-## User Flows
-
-### Submit Feedback
-
-Users open "Send feedback" from the profile menu in the top-right corner, enter a title and description, and decide
-whether to share Diagnostic Context.
-
-The form shows an in-progress state while submitting to prevent repeated actions. It closes and shows a success message
-only after the server confirms that the Feedback was created. When submission fails, the form keeps the user's input and
-allows a retry.
-
-The same submission uses a stable Submission ID:
-
-* The same Submission ID and the same content return the existing Feedback.
-* The same Submission ID with different content returns `409 Conflict`.
-* The same content with a different Submission ID is not merged automatically.
-
-### Copilot Assistance
-
-After the user explicitly asks for feedback, or accepts Copilot's suggestion, Copilot may generate a Title and
-Description draft and open the Feedback form.
-
-The user can edit the draft and decide whether to share context. Copilot cannot
-submit Feedback directly or open the form without the user's confirmation.
-
-### Copilot Quota Exhausted
-
-The quota-exhausted message may provide a direct action to open the Feedback form. Users can always open Feedback from the
-profile menu.
-
-## Administrator Flows
+## Permissions
 
 The feedback administrator role is `feedbackAdmin`, with the derived `canManageFeedback` capability.
 
-`feedbackAdmin` can:
+Users can read the Feedback they submitted. `feedbackAdmin` can:
 
 * View Feedback lists and details
-* View Diagnostic Context shared by users
-* Download Feedback attachments
+* Open its Project Snapshot in the editor
 * Reply to Feedback in the `new` state
-* Mark Feedback as `handled`
+* Mark Feedback in the `new` state as `handled`
 
-`authorizationAdmin` can assign `feedbackAdmin`. Other administrator roles do not include Feedback management
-permissions.
+`authorizationAdmin` can assign the `feedbackAdmin` role.
 
-The frontend uses `canManageFeedback` to control the management entry point. Admin APIs must still check
-`feedbackAdmin` on the server.
+## Core Mechanisms
 
-When administrators process the same Feedback, the first successful operation wins:
+### Submission and Capture
 
-* The first successful operation takes effect.
-* Later operations return `409 Conflict`.
-* A saved Reply is not overwritten.
-* The frontend reloads the Feedback and shows the effective state.
+Users open the Feedback form from the profile menu, enter a Title and Description, and submit the Feedback.
 
-Administrators may also use internal tools to classify feedback and identify items that may correspond to engineering
-Issues.
+The form indicates progress while Feedback is being submitted. If submission fails, the form keeps the entered content and provides an action to try again.
 
-### Reply Failure
+### Copilot Assistance
 
-The Reply, status change, and In-Product Notification are saved as one complete operation.
+When a user asks to submit Feedback or accepts Copilot's suggestion, Copilot can prepare a Title and Description draft. After the user confirms opening the Feedback form, they can review the draft, decide whether to share Context, and submit the Feedback.
 
-If any step fails:
+### Feedback for AI Feature and Quota Issues
 
-* The Feedback remains `new`.
-* No partial Reply is saved.
-* No user notification is created.
-* The administrator's reply and selected images remain available.
-* The interface reports the failure and allows a retry.
+Copilot, Costume Generation, and Animation Generation each present messages for their corresponding feature and quota issues. A message can provide an action that opens the Feedback form, with Source identifying the affected feature and entry point.
 
-The interface shows "Reply sent" only after the complete operation succeeds.
+### Viewing a Project Snapshot
 
-### Repeated Processing
+From Feedback details, an administrator can open the Project Snapshot through the editor's reusable local project-loading capability. The editor loads the captured `Files` into a local session where the administrator can inspect and run the project as it was when the Feedback was submitted.
 
-After a Feedback enters a terminal state, it no longer accepts processing requests.
+### Processing Feedback
 
-If an administrator repeats a request after a network timeout, the server rejects the request based on the current
-state. It does not create another Reply or Notification. The frontend reloads the Feedback and shows the saved result.
+When administrators process the same Feedback in the `new` state concurrently, the first successful action determines its terminal state, and the other administrators see the resulting state.
 
-### Notification Failure
+### Reply and Notification
 
-The in-product notification record is saved together with the Reply. If creating the notification fails, the complete
-reply operation fails and the Feedback does not change to `replied`.
+After an administrator successfully sends a Reply, Feedback enters the `replied` state and creates an [In-Product Notification](./in-product-notification.md) for the submitting user. If sending the Reply fails, the draft remains available and the administrator can try again.
 
-After the notification record has been saved, a failure to refresh the navigation badge does not affect the notification.
-Users can still view it the next time they open the notification center.
+## User Story
 
-Marking Feedback as `handled` does not create a Notification.
+### Submitting Feedback
 
-## User Stories
+A user opens the Feedback form from the profile menu, after asking Copilot to prepare a draft, or from an AI feature or quota message. The user reviews the Title and Description, chooses whether to share Context, and submits the Feedback. A successful submission creates a Feedback item in `new`; if submission fails, the form keeps the entered content so the user can try again.
 
-### User Submits Feedback
+### Processing Feedback
 
-The user enters a problem, decides whether to share Diagnostic Context, and
-submits Feedback. On success, the user sees a clear completion state. On failure, the user can retry with the original
-content.
-
-### User Asks Copilot to Prepare Feedback
-
-Copilot prepares a draft after the user explicitly asks for it. The user reviews and edits the content before submitting
-Feedback.
-
-### Administrator Processes Feedback
-
-An administrator with `feedbackAdmin` opens the Feedback details, replies to the user, or marks the Feedback as requiring
-no reply. When concurrent processing occurs, the interface shows the operation that took effect.
-
-### User Views a Reply
-
-After an administrator replies, the user sees an unread notification in the navigation bar and can view the reply.
+A `feedbackAdmin` opens a Feedback item in `new` and uses its Title, Description, and available Context to investigate the problem. The administrator can open the Project Snapshot in a local editor session, then send a Reply or mark the Feedback as `handled`. A successful Reply moves the Feedback to `replied` and creates an In-Product Notification for the submitting user. If sending the Reply fails, the draft remains available for another attempt. If another administrator completes the Feedback first, the interface shows the resulting terminal state.

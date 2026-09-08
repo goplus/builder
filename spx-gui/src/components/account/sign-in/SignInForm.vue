@@ -22,7 +22,7 @@ import { ref, watch } from 'vue'
 import {
   buildIdentityProviderAuthorizeUrl,
   createSessionWithPassword,
-  deleteSession,
+  revokeSession,
   getIdentityProviders,
   getPasswordSignInRetryAfter,
   getSession
@@ -82,7 +82,7 @@ watch(sessionQuery.data, (session) => {
 
 const { fn: handleSwitchAccount, isLoading: isSwitchingAccount } = useMessageHandle(
   async () => {
-    await deleteSession()
+    await revokeSession()
     showPasswordForm.value = false
     sessionQuery.refetch()
   },

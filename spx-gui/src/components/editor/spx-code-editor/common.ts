@@ -302,6 +302,8 @@ export async function getInvalidMonitors(
         ownPropertyNames = new Set(ownProperties.map((p) => p.name))
         propertyNamesMap.set(monitor.target, ownPropertyNames)
       } catch (e) {
+        // Propagate cancellation instead of treating it as a property-loading failure.
+        signal?.throwIfAborted()
         capture(e, `Failed to load properties for target: "${monitor.target}"`)
         continue
       }

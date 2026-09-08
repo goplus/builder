@@ -476,10 +476,10 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
     delete:
-      operationId: deleteAccountSession
+      operationId: revokeAccountSession
       tags:
         - Account
-      summary: Delete the current account session
+      summary: Revoke the current account session
       description: |
         Revoke the current account session.
 
@@ -488,7 +488,7 @@ paths:
         - accountSessionCookie: []
       responses:
         "204":
-          description: Account session deleted.
+          description: Account session revoked.
           headers:
             Set-Cookie:
               description: Clears the `__Host-xbuilder-account-session` cookie.
@@ -533,10 +533,10 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
     delete:
-      operationId: deleteAccountSessions
+      operationId: revokeAccountSessions
       tags:
         - Account
-      summary: Delete current account sessions
+      summary: Revoke all current account sessions
       description: |
         Revoke all account sessions of the current user.
 
@@ -545,7 +545,7 @@ paths:
         - accountSessionCookie: []
       responses:
         "204":
-          description: Account sessions deleted.
+          description: Account sessions revoked.
           headers:
             Set-Cookie:
               description: Clears the `__Host-xbuilder-account-session` cookie.
@@ -558,10 +558,10 @@ paths:
 
   /account/sessions/{sessionID}:
     delete:
-      operationId: deleteAccountSessionByID
+      operationId: revokeAccountSessionByID
       tags:
         - Account
-      summary: Delete an account session of the current user
+      summary: Revoke an account session of the current user
       description: |
         Revoke an account session owned by the current user.
 
@@ -570,17 +570,17 @@ paths:
         - accountSessionCookie: []
       parameters:
         - name: sessionID
-          description: ID of the account session to delete.
+          description: ID of the account session to revoke.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
       responses:
         "204":
-          description: Account session deleted.
+          description: Account session revoked.
           headers:
             Set-Cookie:
-              description: Clears the `__Host-xbuilder-account-session` cookie when the deleted session is current.
+              description: Clears the `__Host-xbuilder-account-session` cookie when the revoked session is current.
               schema:
                 type: string
         "400":
@@ -1524,6 +1524,9 @@ paths:
         Create a new project owned by the authenticated user.
 
         If `remixSource` is provided, the new project will be a remix of an existing project.
+
+        For remixes, omitted `files` and `thumbnail` inherit from the source release, while omitted `description` and
+        `instructions` inherit from the source project. Explicitly provided values are used as-is.
       requestBody:
         required: true
         content:
@@ -1691,7 +1694,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          $ref: "#/components/responses/ResourceMoved"
+          $ref: "#/components/responses/ProjectUpdateConflict"
     delete:
       operationId: deleteProject
       tags:
@@ -2211,7 +2214,10 @@ paths:
       tags:
         - Project Releases
       summary: Create a project release
-      description: Create a new release for a specific project.
+      description: |
+        Create a new release for a specific project.
+
+        The request fails with a conflict if the current project revision does not match `projectRevision`.
       parameters:
         - name: owner
           description: Username of the project's owner.
@@ -2234,13 +2240,26 @@ paths:
               required:
                 - name
                 - description
+                - projectRevision
               properties:
                 name:
                   $ref: "#/components/schemas/ProjectRelease/properties/name"
                 description:
                   $ref: "#/components/schemas/ProjectRelease/properties/description"
                 thumbnail:
-                  $ref: "#/components/schemas/ProjectRelease/properties/thumbnail"
+                  description: Defaults to the project's thumbnail if not provided.
+                  allOf:
+                    - $ref: "#/components/schemas/ProjectRelease/properties/thumbnail"
+                  minLength: 1
+                projectRevision:
+                  description: |
+                    Expected revision of the project state from which to create the release. The request fails with a
+                    conflict if the current project revision does not match this value.
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  examples:
+                    - 1
       responses:
         "201":
           description: Successfully created the project release.
@@ -2266,7 +2285,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          $ref: "#/components/responses/ResourceMoved"
+          $ref: "#/components/responses/ProjectReleaseCreateConflict"
 
   /projects/{owner}/{project}/releases/{release}:
     get:
@@ -3139,6 +3158,7 @@ paths:
               type: object
               required:
                 - title
+                - thumbnail
                 - courseIDs
                 - order
               properties:
@@ -3174,6 +3194,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /course-series/{courseSeriesID}:
     get:
@@ -5038,24 +5060,24 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
     delete:
-      operationId: deleteAdminAccountUserSessions
+      operationId: revokeAdminAccountUserSessions
       tags:
         - Account Admin
-      summary: Delete account user sessions as admin
+      summary: Revoke all account user sessions as admin
       description: |
         Revoke all account sessions of an account user.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: userID
-          description: ID of the user whose account sessions are deleted.
+          description: ID of the user whose account sessions are revoked.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
       responses:
         "204":
-          description: Account user sessions deleted.
+          description: Account user sessions revoked.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5067,24 +5089,24 @@ paths:
 
   /admin/account/sessions/{sessionID}:
     delete:
-      operationId: deleteAdminAccountSession
+      operationId: revokeAdminAccountSession
       tags:
         - Account Admin
-      summary: Delete an account session as admin
+      summary: Revoke an account session as admin
       description: |
         Revoke an account session.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: sessionID
-          description: ID of the account session to delete.
+          description: ID of the account session to revoke.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
       responses:
         "204":
-          description: Account session deleted.
+          description: Account session revoked.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5356,30 +5378,33 @@ paths:
 
   /admin/account/apps/{appID}/secrets/{secretID}:
     delete:
-      operationId: deleteAdminAccountAppSecret
+      operationId: revokeAdminAccountAppSecret
       tags:
         - Account Admin
-      summary: Delete an account app secret as admin
+      summary: Revoke an account app secret as admin
       description: |
-        Delete a secret from a confidential account app.
+        Permanently revoke a secret from a confidential account app. The secret can no longer authenticate the client
+        and cannot be restored.
+
+        Existing grants and tokens issued before revocation remain valid. This operation does not revoke them.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: appID
-          description: ID of the app whose secret is deleted.
+          description: ID of the app whose secret is revoked.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
         - name: secretID
-          description: ID of the secret to delete.
+          description: ID of the secret to revoke.
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Model/properties/id"
       responses:
         "204":
-          description: Account app secret deleted.
+          description: Account app secret revoked.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5589,10 +5614,10 @@ paths:
 
   /admin/account/app-grants/{appGrantID}/tokens/{tokenID}:
     delete:
-      operationId: deleteAdminAccountAppGrantToken
+      operationId: revokeAdminAccountAppGrantToken
       tags:
         - Account Admin
-      summary: Delete an account app grant token as admin
+      summary: Revoke an account app grant token as admin
       description: |
         Revoke an Account-issued OAuth token for an account app grant.
 
@@ -5815,6 +5840,26 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/MovedResourceError"
+    ProjectUpdateConflict:
+      description: |
+        The update conflicts with current project state because the requested project route moved or the requested name
+        is unavailable.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/ConflictError"
+              - $ref: "#/components/schemas/MovedResourceError"
+    ProjectReleaseCreateConflict:
+      description: |
+        The release creation conflicts with current project state because `projectRevision` does not match the current
+        project revision or the requested project route moved.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/ConflictError"
+              - $ref: "#/components/schemas/MovedResourceError"
     BadRequest:
       description: Invalid request syntax, parameters, or body.
       content:
@@ -6194,6 +6239,23 @@ components:
         - 50101
       examples:
         - 40001
+
+    ConflictError:
+      description: Error payload for a generic resource conflict.
+      type: object
+      required:
+        - code
+        - msg
+      properties:
+        code:
+          type: integer
+          format: int32
+          enum:
+            - 40900
+        msg:
+          type: string
+          enum:
+            - Conflict
 
     MovedResourceError:
       description: |
@@ -7215,7 +7277,6 @@ components:
           examples:
             - true
 
-
     Project:
       type: object
       description: Project information including files, metadata, and statistics.
@@ -7227,7 +7288,7 @@ components:
         - name
         - type
         - displayName
-        - version
+        - revision
         - files
         - visibility
         - description
@@ -7275,10 +7336,16 @@ components:
           maxLength: 100
           examples:
             - Niu Xiao Qi
-        version:
-          description: Version number of the project.
+        revision:
+          description: |
+            Monotonically increasing identifier of the project's editable state.
+
+            Changes to editable project content or metadata advance this revision. Creating releases and updating
+            activity counters such as views, likes, and remixes do not.
           type: integer
-          format: int32
+          format: int64
+          minimum: 1
+          readOnly: true
           examples:
             - 1
         files:
@@ -7533,7 +7600,7 @@ components:
         prompt:
           description: Prompt text for the course (used for copilot assistance).
           type: string
-          maxLength: 4000
+          maxLength: 12000
           examples:
             - Learn the basics of XGo programming language
 
@@ -7571,6 +7638,7 @@ components:
           description: Thumbnail reference of the course series.
           type: string
           format: uri-reference
+          minLength: 1
           examples:
             - kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
         description:

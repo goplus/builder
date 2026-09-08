@@ -167,7 +167,7 @@ const handleRevokeToken = useMessageHandle(
       content: i18n.t({ en: 'Are you sure to revoke this token?', zh: '确定要撤销此 token 吗？' }),
       confirmText: i18n.t({ en: 'Revoke', zh: '撤销' })
     })
-    await accountAdminApis.deleteAccountAppGrantToken(props.grantID, tokenID)
+    await accountAdminApis.revokeAccountAppGrantToken(props.grantID, tokenID)
     if (createdToken.value?.id === tokenID) createdToken.value = null
     tokensQuery.refetch()
   },

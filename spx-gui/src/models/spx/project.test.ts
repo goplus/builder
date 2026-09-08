@@ -10,6 +10,7 @@ import * as hashHelper from '../common/hash'
 import { Backdrop } from './backdrop'
 import { Monitor } from './widget/monitor'
 import { SpxProject, projectConfigFilePath, type RawProjectConfig, type ScreenshotTaker } from './project'
+import { FontFamily } from './font'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
@@ -99,6 +100,31 @@ describe('Project', () => {
     const files2 = project.exportFiles()
     const hash2 = await hashHelper.hashFiles(files2)
     expect(hash).toBe(hash2)
+  })
+
+  it('should preserve project font collection and preferences', async () => {
+    const project = new SpxProject()
+    project.setFontPreferences(['basic-chinese', 'default'])
+    project.fonts.push(new FontFamily('basic-chinese', fromText('basic-chinese.otf', 'font')))
+
+    const files = project.exportFiles()
+    expect(await toConfig(files[projectConfigFilePath]!)).toMatchObject({
+      fontPreferences: ['basic-chinese', 'default']
+    })
+    const loaded = new SpxProject()
+    await loaded.loadFiles(files)
+
+    expect(loaded.fontPreferences).toEqual(['basic-chinese', 'default'])
+    expect(loaded.fonts.map((font) => font.name)).toEqual(['basic-chinese'])
+  })
+
+  it('should reject duplicate font names', () => {
+    const project = new SpxProject()
+    project.addFont(new FontFamily('custom', mockFile('font-1.otf')))
+
+    expect(() => project.addFont(new FontFamily('custom', mockFile('font-2.otf')))).toThrow(
+      'font custom already exists'
+    )
   })
 
   it('should export with existing thumbnail after screenshot taker unbound', async () => {

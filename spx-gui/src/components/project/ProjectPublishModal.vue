@@ -6,7 +6,7 @@ import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { Visibility } from '@/apis/common'
 import { projectDescriptionMaxLength, projectInstructionsMaxLength } from '@/apis/project'
 import { createProjectRelease, projectReleaseDescriptionMaxLength } from '@/apis/project-release'
-import { cloudHelpers, saveFile } from '@/models/common/cloud'
+import { cloudHelpers } from '@/models/common/cloud'
 import type { SpxProject } from '@/models/spx/project'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
@@ -81,12 +81,12 @@ const handleSubmit = useMessageHandle(
     if (isProjectUsingAIInteraction(project)) await project.ensureAIDescription(true) // Ensure AI description is available if needed
     const serialized = await project.export()
     const saved = await cloudHelpers.save(serialized)
+    const { owner, name, revision } = saved.metadata
     project.setMetadata(saved.metadata)
-    const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
-    await createProjectRelease(project.owner!, project.name!, {
+    await createProjectRelease(owner, name, {
       name: generateReleaseName(),
       description: form.value.releaseDescription,
-      thumbnail: thumbnailUniversalUrl
+      projectRevision: revision
     })
     emit('resolved')
   },

@@ -11,9 +11,6 @@ importers:
       '@floating-ui/dom':
         specifier: ^1.7.6
         version: 1.7.6
-      '@jridgewell/resolve-uri':
-        specifier: ^3.1.2
-        version: 3.1.2
       '@lottiefiles/dotlottie-vue':
         specifier: ^0.5.8
         version: 0.5.8(vue@3.5.25(typescript@5.9.3))
@@ -84,8 +81,8 @@ importers:
         specifier: ^0.8.1
         version: 0.8.1(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3))
       '@xgo-pkgs/spx':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.2.4
+        version: 3.2.4
       bowser:
         specifier: ^2.14.1
         version: 2.14.1
@@ -1230,8 +1227,8 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
-  '@xgo-pkgs/spx@3.0.0':
-    resolution: {integrity: sha512-+aLj+XSXJZpuBJcAGgOqhHDEBs7qcer3xQ/ZkiSvNPDdXEfn1006V1X8VS6avXsGyr/eKSHV4ep4rpuKMgQrRg==}
+  '@xgo-pkgs/spx@3.2.4':
+    resolution: {integrity: sha512-UEdnjyJyc3vpVDfTTsTJhB5EvsUaf/CusIG6qXrMPGFLsZzVQpniKy/7L+S3IEJfYoT6uRcgxI6f7mvYFeZThA==}
 
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
@@ -1579,6 +1576,7 @@ packages:
   eslint@9.39.1:
     resolution: {integrity: sha512-BhHmn2yNOFA9H9JmmIVKJmd288g9hrVRDkdoIgRCRuSySRUHH7r/DI6aAXW9T1WwUuY3DFgrcaqB+deURBLR5g==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -4204,7 +4202,7 @@ snapshots:
     dependencies:
       vue: 3.5.25(typescript@5.9.3)
 
-  '@xgo-pkgs/spx@3.0.0': {}
+  '@xgo-pkgs/spx@3.2.4': {}
 
   abbrev@2.0.0: {}
 

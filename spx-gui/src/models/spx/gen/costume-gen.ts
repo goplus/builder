@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
-import { extname } from '@/utils/path'
+import { encodePathSegment, extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { ArtStyle, Perspective } from '@/apis/common'
@@ -52,7 +52,7 @@ export type RawCostumeGenConfig = Prettify<
 >
 
 function assetsPathFor(basePath: string, name: string) {
-  return `${basePath}/costumes/${name}`
+  return `${basePath}/costumes/${encodePathSegment(name)}`
 }
 
 /** `CostumeGen` tracks the generation process of a costume. */

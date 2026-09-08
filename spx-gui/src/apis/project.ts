@@ -61,8 +61,8 @@ export type ProjectData = {
   type: ProjectType
   /** Display name of the project */
   displayName: string
-  /** Version number of the project */
-  version: number
+  /** Monotonically increasing identifier of the project's editable state */
+  revision: number
   /** File paths and their corresponding universal URLs associated with the project */
   files: FileCollection
   /** Visibility of the project */

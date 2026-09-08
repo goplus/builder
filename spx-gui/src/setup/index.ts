@@ -48,7 +48,16 @@ export function configureApp(app: VueApp, router: Router | undefined, config: Ap
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }
   })
-  app.use(VueQueryPlugin)
+  app.use(VueQueryPlugin, {
+    queryClientConfig: {
+      defaultOptions: {
+        queries: {
+          refetchOnReconnect: false,
+          refetchOnWindowFocus: false
+        }
+      }
+    }
+  })
   app.use(createRadar())
   app.use(createSpotlight())
   app.use(createAppState())

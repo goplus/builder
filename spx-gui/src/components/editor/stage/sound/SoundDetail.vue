@@ -35,22 +35,33 @@
       />
       <VolumeSlider class="mx-6 flex-[0_1_438px]" :value="gain" @update:value="handleGainUpdate" />
       <div class="flex-[1_1_0]" />
-      <div v-if="editing" class="flex-none flex items-center gap-2">
+      <div v-if="isDeveloperMode || editing" class="flex-none flex items-center gap-2">
         <UIButton
-          v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
+          v-if="isDeveloperMode"
+          v-radar="{ name: 'Adapt audio button', desc: 'Click to adapt the current sound file' }"
           type="neutral"
-          @click="handleResetEdit"
+          :loading="handleAdaptAudio.isLoading.value"
+          @click="handleAdaptAudio.fn"
         >
-          {{ $t({ en: 'Cancel', zh: '取消' }) }}
+          {{ $t({ en: 'Adapt audio', zh: '适配音频' }) }}
         </UIButton>
-        <UIButton
-          v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
-          type="green"
-          :loading="handleSave.isLoading.value"
-          @click="handleSave.fn"
-        >
-          {{ $t({ en: 'Save', zh: '保存' }) }}
-        </UIButton>
+        <template v-if="editing">
+          <UIButton
+            v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
+            type="neutral"
+            @click="handleResetEdit"
+          >
+            {{ $t({ en: 'Cancel', zh: '取消' }) }}
+          </UIButton>
+          <UIButton
+            v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
+            type="green"
+            :loading="handleSave.isLoading.value"
+            @click="handleSave.fn"
+          >
+            {{ $t({ en: 'Save', zh: '保存' }) }}
+          </UIButton>
+        </template>
       </div>
     </div>
   </div>
@@ -58,10 +69,12 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { isDeveloperMode } from '@/utils/developer-mode'
 import { useFileUrl } from '@/utils/file'
 import { stripExt } from '@/utils/path'
 import { useMessageHandle } from '@/utils/exception'
 import { formatDuration, useAudioDuration } from '@/utils/audio'
+import { adaptAudio } from '@/utils/spx'
 import { fromBlob } from '@/models/common/file'
 import type { Sound } from '@/models/spx/sound'
 import { UIIcon, UIButton } from '@/components/ui'
@@ -134,6 +147,23 @@ const handleGainUpdate = (v: number) => {
   gain.value = v
   waveformPlayerRef.value?.play()
 }
+
+const handleAdaptAudio = useMessageHandle(
+  async () => {
+    const sound = props.sound
+    const sourceFile = sound.file
+    const newFile = await adaptAudio(sourceFile)
+    if (newFile === sourceFile) return
+
+    const sname = sound.name
+    const action = { name: { en: `Adapt sound ${sname}`, zh: `适配声音 ${sname}` } }
+    await editorCtx.state.history.doAction(action, () => sound.setFile(newFile))
+  },
+  {
+    en: 'Failed to adapt audio',
+    zh: '适配音频失败'
+  }
+)
 
 const handleSave = useMessageHandle(
   async () => {

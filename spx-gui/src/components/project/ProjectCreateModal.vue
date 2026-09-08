@@ -61,9 +61,8 @@ import { useMessageHandle } from '@/utils/exception'
 import { untilLoaded } from '@/utils/query'
 import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
-import { xbpHelpers } from '@/models/common/xbp'
-import { SpxProject } from '@/models/spx/project'
-import { getDefaultProjectFile } from '@/components/project'
+import { useProjectConfig } from './config'
+import { createDefaultProject } from './default-project'
 
 const props = defineProps<{
   remixSource?: string
@@ -76,6 +75,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { defaultFontPreferences } = useProjectConfig()
 const signedInStateQuery = useSignedInStateQuery()
 const title = computed(() => {
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
@@ -107,10 +107,7 @@ const handleSubmit = useMessageHandle(
     } else {
       const signedInState = await untilLoaded(signedInStateQuery)
       if (!signedInState.isSignedIn) throw new Error('login required')
-      const defaultProjectFile = await getDefaultProjectFile()
-      const project = new SpxProject(signedInState.user.username, projectName)
-      const serialized = await xbpHelpers.load(defaultProjectFile)
-      await project.load(serialized)
+      const project = await createDefaultProject(signedInState.user.username, projectName, defaultFontPreferences)
       project.setDisplayName(projectName)
       project.setVisibility(Visibility.Private)
       const exported = await project.export()
