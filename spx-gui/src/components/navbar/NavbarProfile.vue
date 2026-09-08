@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
@@ -30,6 +30,7 @@ const canUseAccountAdmin = computed(
     signedInUser.value?.capabilities.canManageAuthorization === true
 )
 const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
+const profileMenuVisible = ref(false)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 function toggleLang() {
@@ -74,11 +75,24 @@ async function handleSignOut() {
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
-  <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
+  <UIDropdown
+    v-else
+    v-model:visible="profileMenuVisible"
+    trigger="click"
+    placement="bottom-end"
+    :offset="{ x: 0, y: 8 }"
+  >
     <template #trigger>
-      <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
-        <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
-      </div>
+      <button
+        v-radar="{ name: 'Profile menu', desc: 'Click to open account options' }"
+        type="button"
+        class="h-full cursor-pointer border-0 bg-transparent px-3 hover:bg-grey-400 focus-visible:outline-2 focus-visible:outline-primary-main"
+        aria-haspopup="menu"
+        :aria-expanded="profileMenuVisible"
+        :aria-label="$t({ en: 'Account menu', zh: '账户菜单' })"
+      >
+        <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" alt="" aria-hidden="true" />
+      </button>
     </template>
     <UIMenu class="min-w-30">
       <UIMenuGroup>

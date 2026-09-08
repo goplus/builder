@@ -1,19 +1,29 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { UIDropdown, UIIcon } from '@/components/ui'
 import type { RadarNodeMeta } from '@/utils/radar'
 
-defineProps<{
+const props = defineProps<{
   triggerRadar: RadarNodeMeta
 }>()
+
+const visible = ref(false)
 </script>
 
 <template>
-  <UIDropdown placement="bottom-start">
+  <UIDropdown v-model:visible="visible" trigger="click" placement="bottom-start">
     <template #trigger>
-      <div v-radar="triggerRadar" class="h-full flex items-center px-3 hover:bg-grey-400">
+      <button
+        v-radar="triggerRadar"
+        type="button"
+        class="h-full cursor-pointer flex items-center border-0 bg-transparent px-3 text-grey-1000 hover:bg-grey-400 focus-visible:outline-2 focus-visible:outline-primary-main"
+        aria-haspopup="menu"
+        :aria-expanded="visible"
+        :aria-label="props.triggerRadar.name"
+      >
         <slot name="trigger"></slot>
         <UIIcon type="arrowMini" class="w-2 ml-1" />
-      </div>
+      </button>
     </template>
     <slot></slot>
   </UIDropdown>

@@ -2,7 +2,7 @@
   <NavbarWrapper class="bg-grey-100 border-b border-grey-400" centered>
     <template #left>
       <NavbarDropdown
-        :trigger-radar="{ name: 'Project menu', desc: 'Hover to see project options (create/open project)' }"
+        :trigger-radar="{ name: 'Project menu', desc: 'Click to see project options (create/open project)' }"
       >
         <template #trigger>
           <UIIcon class="w-5 h-5" type="folder" />
