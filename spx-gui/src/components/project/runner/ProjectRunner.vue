@@ -56,6 +56,9 @@ interface RunnerIframeWindow extends Window {
   xbuilder_set_ai_interaction_api_endpoint: (endpoint: string) => void
   xbuilder_set_ai_interaction_api_token_provider: (provider: () => Promise<string>) => void
   xbuilder_set_ai_description: (description: string) => void
+  xbuilder_set_game_session_id: (id: string) => void
+  xbuilder_set_message_replier: (replier: ((message: unknown) => void) | null) => void
+  xbuilder_handle_rpc_message: (message: unknown) => void
   /** Set the current logged-in username, injected into the spx runtime before running. */
   xbuilder_set_username: (username: string) => void
   /** Init the engine. Can be called early; project-agnostic. */
@@ -145,12 +148,14 @@ type State =
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, onBeforeUnmount, onUnmounted, ref, shallowReactive, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
+import { RPCSession } from '@/ispx/rpc'
+import { createSentryTelemetryAdapter } from '@/ispx/sentry-telemetry-adapter'
 import type { Files } from '@/models/common/file'
 import { hashFiles } from '@/models/common/hash'
 import type { SpxProject } from '@/models/spx/project'
@@ -179,6 +184,32 @@ const state = shallowRef<State>({ type: 'initial' })
 const runnerIframeRef = ref<HTMLIFrameElement>()
 const runnerIframeWindowRef = ref<RunnerIframeWindow | null>(null)
 let engineInitPromise: Promise<void> | null = null
+let ispxRPCSession: { session: RPCSession; iframeWindow: RunnerIframeWindow } | null = null
+
+function closeISPXRPCSession() {
+  const current = ispxRPCSession
+  if (current == null) return
+  ispxRPCSession = null
+  current.session.close()
+  try {
+    current.iframeWindow.xbuilder_set_message_replier(null)
+  } catch {
+    // The iframe may already be stale.
+  }
+}
+
+function installISPXRPCSession(iframeWindow: RunnerIframeWindow) {
+  closeISPXRPCSession()
+  const session = new RPCSession(createSentryTelemetryAdapter(), (message) => {
+    iframeWindow.xbuilder_handle_rpc_message(message)
+  })
+  ispxRPCSession = { session, iframeWindow }
+  try {
+    iframeWindow.xbuilder_set_message_replier((message) => session.handleMessage(message))
+  } catch {
+    closeISPXRPCSession()
+  }
+}
 
 watch(runnerIframeRef, (iframe) => {
   if (iframe == null) return
@@ -202,10 +233,12 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   function handleRunnerReady() {
     runnerIframeWindowRef.value = iframeWindow
     iframeWindow.onGameError((err: string) => {
+      closeISPXRPCSession()
       state.value = { type: 'failed', err }
       capture(err, 'ProjectRunner game error')
     })
     iframeWindow.onGameExit((code: number) => {
+      closeISPXRPCSession()
       emit('exit', code)
     })
     iframeWindow.onEngineCrash((err: string) => {
@@ -231,9 +264,12 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
 let unmounted = false
 onBeforeUnmount(() => {
   unmounted = true
+  closeISPXRPCSession()
+  runCtrl?.abort(new Cancelled('unmounted'))
 })
 
 async function reloadIframe() {
+  closeISPXRPCSession()
   const iframeWindow = runnerIframeWindowRef.value
   if (iframeWindow == null) return
   iframeWindow.__xb_is_stale = true
@@ -269,9 +305,12 @@ async function prepareAIInteraction(
   const aiDescription = await project.ensureAIDescription(false, signal)
   if (engineInitPromise == null) throw new Error('engineInitPromise expected')
   await engineInitPromise
+  signal?.throwIfAborted()
   iframeWindow.xbuilder_set_ai_description(aiDescription)
   iframeWindow.xbuilder_set_ai_interaction_api_endpoint(aiInteractionEndpoint)
   iframeWindow.xbuilder_set_ai_interaction_api_token_provider(async () => (await ensureAccessToken()) ?? '')
+  iframeWindow.xbuilder_set_game_session_id(crypto.randomUUID())
+  installISPXRPCSession(iframeWindow)
   reporter.report(1)
   return
 }
@@ -291,15 +330,12 @@ watch(state, ({ type }) => {
 let runPromise: Promise<unknown> | null = null
 let runCtrl: AbortController | null = null
 function getRunCtrl() {
+  closeISPXRPCSession()
   runCtrl?.abort(new Cancelled('new run'))
   const ctrl = new AbortController()
   runCtrl = ctrl
   return ctrl
 }
-
-onUnmounted(() => {
-  runCtrl?.abort(new Cancelled('unmounted'))
-})
 
 async function runInternal(ctrl: AbortController) {
   const startingState = shallowReactive({
@@ -361,6 +397,7 @@ async function runInternal(ctrl: AbortController) {
     return hashFiles(files, ctrl.signal)
   } catch (err) {
     if (err instanceof Cancelled) throw err
+    closeISPXRPCSession()
     capture(err, 'ProjectRunner run game error')
     state.value = { type: 'failed', err }
     throw err
@@ -382,9 +419,11 @@ defineExpose({
     })
   },
   async stop() {
+    closeISPXRPCSession()
     const promise = runPromise
     runCtrl?.abort(new Cancelled('stop'))
     if (promise != null) await promise.catch(() => {})
+    closeISPXRPCSession()
 
     const iframeWindow = runnerIframeWindowRef.value
     if (iframeWindow == null) return

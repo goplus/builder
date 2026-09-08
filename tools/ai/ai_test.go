@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"slices"
 	"sync"
@@ -114,6 +115,68 @@ func TestPlayerThinkReportsTurnLimit(t *testing.T) {
 		}
 	default:
 		t.Fatal("turn limit did not trigger error handler")
+	}
+}
+
+func TestPlayerThinkKeepsTransportForCompleteInteraction(t *testing.T) {
+	type continueCommand struct{}
+
+	originalTransport := DefaultTransport()
+	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+	var firstCalls, replacementCalls int
+	replacement := &mockTransport{InteractFunc: func(context.Context, Request) (Response, error) {
+		replacementCalls++
+		return Response{Text: "unexpected"}, nil
+	}}
+	first := &mockTransport{InteractFunc: func(context.Context, Request) (Response, error) {
+		firstCalls++
+		if firstCalls == 1 {
+			SetDefaultTransport(replacement)
+			return Response{CommandName: reflect.TypeOf(continueCommand{}).Name()}, nil
+		}
+		return Response{Text: "done"}, nil
+	}}
+	SetDefaultTransport(first)
+
+	p := &Player{errorHandler: func(err error) { t.Errorf("unexpected interaction error: %v", err) }}
+	PlayerOnCmd_(p, continueCommand{}, func(continueCommand) error { return nil })
+	p.think(t.Context(), nil, "continue", nil)
+
+	if firstCalls != 2 {
+		t.Fatalf("original transport calls = %d; want 2", firstCalls)
+	}
+	if replacementCalls != 0 {
+		t.Fatalf("replacement transport calls = %d; want 0", replacementCalls)
+	}
+}
+
+func TestPlayerThinkQuotaExceededDoesNotRetry(t *testing.T) {
+	originalTransport := DefaultTransport()
+	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+	interactCalls := 0
+	SetDefaultTransport(&mockTransport{
+		InteractFunc: func(_ context.Context, _ Request) (Response, error) {
+			interactCalls++
+			return Response{}, ErrorFromHTTPResponse(403, 0, `{"code":40301,"msg":"Quota exceeded"}`, errors.New("quota exceeded"))
+		},
+	})
+
+	errorCh := make(chan error, 1)
+	p := &Player{errorHandler: func(err error) { errorCh <- err }}
+	p.think(t.Context(), nil, "hello", nil)
+
+	if interactCalls != 1 {
+		t.Fatalf("got %d interact calls, want 1 (quota must not retry)", interactCalls)
+	}
+	select {
+	case err := <-errorCh:
+		if !isQuotaExceeded(err) {
+			t.Fatalf("error handler got %v, want quota exceeded", err)
+		}
+	default:
+		t.Fatal("quota did not trigger error handler")
 	}
 }
 

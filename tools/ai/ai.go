@@ -126,12 +126,15 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 	)
 
 	p.beginInteraction()
+	// Keep one Transport for the complete interaction so a runner session change
+	// cannot move an in-flight Player onto a newly installed global transport.
+	transport := p.transport()
 	defer func() {
 		p.endInteraction()
 		if ctx.Err() != nil {
 			return
 		}
-		p.scheduleHistoryManagement(owner)
+		p.scheduleHistoryManagement(owner, transport)
 	}()
 
 	var (
@@ -155,7 +158,6 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 			}
 		}
 		currentKnowledgeBase := p.knowledgeBase()
-		currentTransport := p.transport()
 		p.mu.RUnlock()
 
 		request := Request{
@@ -181,14 +183,23 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 			waitErr := rateGate.Wait(waitCtx)
 			waitCancel()
 			if waitErr != nil {
-				lastErr = fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout)
+				if ctx.Err() != nil {
+					lastErr = waitErr
+				} else {
+					lastErr = &TooManyRequestsError{
+						Err: fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout),
+					}
+				}
 				break
 			}
 
-			timeoutCtx, cancel := stdContext.WithTimeout(ctx, transportTimeout)
-			resp, lastErr = currentTransport.Interact(timeoutCtx, request)
+			attemptCtx, cancel := stdContext.WithTimeout(ctx, transportTimeout)
+			resp, lastErr = transport.Interact(attemptCtx, request)
 			cancel()
 			if lastErr == nil {
+				break
+			}
+			if isQuotaExceeded(lastErr) {
 				break
 			}
 
@@ -333,16 +344,16 @@ func (p *Player) appendHistory(turn Turn) {
 // scheduleHistoryManagement starts history management in an owner-scoped
 // coroutine so it can outlive the caller without outliving its owner. The
 // blocking archive work runs natively to avoid blocking the game engine.
-func (p *Player) scheduleHistoryManagement(owner any) {
+func (p *Player) scheduleHistoryManagement(owner any, transport Transport) {
 	spx.Go(owner, func(ctx stdContext.Context, _ any) {
 		spx.ExecuteNative(func(_ stdContext.Context, _ any) {
-			p.manageHistory(ctx)
+			p.manageHistory(ctx, transport)
 		})
 	})
 }
 
 // manageHistory checks if archiving is needed and performs it if necessary.
-func (p *Player) manageHistory(ctx stdContext.Context) {
+func (p *Player) manageHistory(ctx stdContext.Context, transport Transport) {
 	const (
 		archiveTimeout       = 120 * time.Second      // Timeout for archive operation.
 		maxArchiveAttempts   = 3                      // Maximum number of archive attempts.
@@ -358,7 +369,6 @@ func (p *Player) manageHistory(ctx stdContext.Context) {
 	}
 
 	// Perform archive with retries.
-	transport := p.transport()
 	var (
 		archived ArchivedHistory
 		lastErr  error
@@ -369,14 +379,23 @@ func (p *Player) manageHistory(ctx stdContext.Context) {
 		waitErr := rateGate.Wait(waitCtx)
 		waitCancel()
 		if waitErr != nil {
-			lastErr = fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout)
+			if ctx.Err() != nil {
+				lastErr = waitErr
+			} else {
+				lastErr = &TooManyRequestsError{
+					Err: fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout),
+				}
+			}
 			break
 		}
 
-		archiveCtx, cancel := stdContext.WithTimeout(ctx, archiveTimeout)
-		archived, lastErr = transport.Archive(archiveCtx, turnsToArchive, existingArchive)
+		attemptCtx, cancel := stdContext.WithTimeout(ctx, archiveTimeout)
+		archived, lastErr = transport.Archive(attemptCtx, turnsToArchive, existingArchive)
 		cancel()
 		if lastErr == nil {
+			break
+		}
+		if isQuotaExceeded(lastErr) {
 			break
 		}
 
@@ -387,13 +406,22 @@ func (p *Player) manageHistory(ctx stdContext.Context) {
 		p.cancelArchive()
 		return
 	}
+	if isQuotaExceeded(lastErr) {
+		log.Printf("archive history stopped: %v", lastErr)
+		p.cancelArchive()
+		return
+	}
+	if isTooManyRequests(lastErr) {
+		log.Printf("archive history rate limited: %v", lastErr)
+		p.cancelArchive()
+		return
+	}
 	if lastErr != nil {
 		log.Printf("failed to archive history after %d attempts: %v", maxArchiveAttempts, lastErr)
 		p.cancelArchive()
 		return
 	}
 
-	// Apply the archive result.
 	p.applyArchive(archived.Content, len(turnsToArchive))
 }
 

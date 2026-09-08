@@ -147,6 +147,11 @@ type TooManyRequestsError struct {
 	Err        error
 }
 
+func isTooManyRequests(err error) bool {
+	var typed *TooManyRequestsError
+	return errors.As(err, &typed)
+}
+
 // Error implements [error].
 func (tmr *TooManyRequestsError) Error() string {
 	if tmr.RetryAfter > 0 {

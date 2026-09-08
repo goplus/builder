@@ -9,13 +9,13 @@ require (
 	github.com/goplus/ixgo v1.1.5
 	github.com/goplus/mod v0.22.0
 	github.com/goplus/spx/v3 v3.2.4
+	github.com/goplus/xgo v1.7.6-0.20260818050008-fd36b6192e30
 )
 
 require (
 	github.com/goplus/gogen v1.23.6-0.20260816085451-b240c8b2c5b1 // indirect
 	github.com/goplus/reflectx v1.7.6 // indirect
 	github.com/goplus/spbase v0.1.1 // indirect
-	github.com/goplus/xgo v1.7.6-0.20260818050008-fd36b6192e30 // indirect
 	github.com/qiniu/x v1.18.3 // indirect
 	github.com/visualfc/funcval v0.1.5 // indirect
 	github.com/visualfc/gid v0.3.5 // indirect

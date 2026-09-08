@@ -90,15 +90,15 @@ func extractCommandSpec(cmdType reflect.Type) CommandSpec {
 // callCommandHandler handles the overall logic for executing a command
 // handler. It creates the command struct, populates its fields, calls the
 // handler, and processes the result.
-func callCommandHandler(owner any, info commandInfo, args map[string]any) (*CommandResult, error) {
+func callCommandHandler(owner any, info commandInfo, args map[string]any) (result *CommandResult, err error) {
 	// Create a new zero value of the command struct type (T).
 	cmdType := info.typ
 	cmdPtrVal := reflect.New(cmdType)
 	cmdVal := cmdPtrVal.Elem()
 
 	// Populate struct fields from args.
-	if err := populateCommandFields(cmdVal, args); err != nil {
-		return nil, fmt.Errorf("failed to populate command fields for %s: %w", info.spec.Name, err)
+	if popErr := populateCommandFields(cmdVal, args); popErr != nil {
+		return nil, fmt.Errorf("failed to populate command fields for %s: %w", info.spec.Name, popErr)
 	}
 
 	// Call the actual handler function.
@@ -135,7 +135,7 @@ func callCommandHandler(owner any, info commandInfo, args map[string]any) (*Comm
 	}
 
 	// Construct [CommandResult] based on handlerErr.
-	result := &CommandResult{}
+	result = &CommandResult{}
 	if handlerErr == nil {
 		result.Success = true
 	} else if errors.Is(handlerErr, Break) {
@@ -145,6 +145,7 @@ func callCommandHandler(owner any, info commandInfo, args map[string]any) (*Comm
 		result.Success = false
 		result.ErrorMessage = handlerErr.Error()
 	}
+
 	return result, nil
 }
 

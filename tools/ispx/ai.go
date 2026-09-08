@@ -17,6 +17,7 @@ func init() {
 	js.Global().Set("xbuilder_set_ai_description", js.FuncOf(setAIDescription))
 	js.Global().Set("xbuilder_set_ai_interaction_api_endpoint", js.FuncOf(setAIInteractionAPIEndpoint))
 	js.Global().Set("xbuilder_set_ai_interaction_api_token_provider", js.FuncOf(setAIInteractionAPITokenProvider))
+	js.Global().Set("xbuilder_set_game_session_id", js.FuncOf(setGameSessionID))
 }
 
 // initAI initializes AI integration for the ispx interpreter.
@@ -53,6 +54,13 @@ func setAIDescription(this js.Value, args []js.Value) any {
 
 // aiInteractionAPIEndpoint holds the endpoint URL for AI Interaction API.
 var aiInteractionAPIEndpoint string
+
+func setGameSessionID(this js.Value, args []js.Value) any {
+	// Game session ID is currently unused. The registration point is kept so
+	// the runner JavaScript does not break.
+	_ = args
+	return nil
+}
 
 // setAIInteractionAPIEndpoint sets [aiInteractionAPIEndpoint] from JavaScript.
 func setAIInteractionAPIEndpoint(this js.Value, args []js.Value) any {
@@ -129,8 +137,9 @@ func resetAIDefaultTransport() {
 	if aiInteractionAPIEndpoint == "" || aiInteractionAPITokenProvider == nil {
 		return
 	}
-	ai.SetDefaultTransport(wasmtrans.New(
+	base := wasmtrans.New(
 		wasmtrans.WithEndpoint(aiInteractionAPIEndpoint),
 		wasmtrans.WithTokenProvider(aiInteractionAPITokenProvider),
-	))
+	)
+	ai.SetDefaultTransport(newTelemetryTransport(base, currentTelemetryClient()))
 }

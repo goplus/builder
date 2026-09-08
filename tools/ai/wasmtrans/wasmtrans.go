@@ -104,19 +104,19 @@ func (t *wasmTransport) buildHeaders() map[string]any {
 
 // fetchAndParse performs a fetch request and parses the JSON response into the target.
 func (t *wasmTransport) fetchAndParse(ctx context.Context, path string, body []byte, result any) error {
-	headers := t.buildHeaders()
+	headers := mergeExtraHeaders(t.buildHeaders(), ai.ExtraHeadersFromContext(ctx))
 
-	jsAbortController := js.Global().Get("AbortController").New()
-	defer context.AfterFunc(ctx, func() {
-		jsAbortController.Call("abort")
-	})()
-	jsAbortSignal := jsAbortController.Get("signal")
+	controller := js.Global().Get("AbortController").New()
+	stopAbort := context.AfterFunc(ctx, func() {
+		controller.Call("abort")
+	})
+	defer stopAbort()
 
 	jsResp, err := awaitPromise(ctx, js.Global().Call("fetch", t.endpoint+path, map[string]any{
 		"method":  "POST",
 		"headers": headers,
 		"body":    string(body),
-		"signal":  jsAbortSignal,
+		"signal":  controller.Get("signal"),
 	}))
 	if err != nil {
 		return fmt.Errorf("failed to fetch: %w", err)
@@ -125,45 +125,45 @@ func (t *wasmTransport) fetchAndParse(ctx context.Context, path string, body []b
 	if !jsResp.Get("ok").Bool() {
 		status := jsResp.Get("status").Int()
 		statusText := jsResp.Get("statusText").String()
-		retryAfter := time.Duration(0)
-		if headers := jsResp.Get("headers"); headers.Truthy() {
-			headerValue := headers.Call("get", "Retry-After")
-			if headerValue.Truthy() {
-				retryAfter = ai.RetryAfterFromHeader(headerValue.String())
-			}
-		}
+		retryAfter := retryAfterFromResponse(jsResp)
 
-		bodyPromise := jsResp.Call("text")
-		bodyTextVal, bodyErr := awaitPromise(ctx, bodyPromise)
+		bodyText, bodyErr := responseBody(ctx, jsResp)
 		if bodyErr != nil {
-			err := fmt.Errorf("failed to fetch with status %d %s (and failed to read error body: %w)", status, statusText, bodyErr)
-			if status == 429 {
-				return &ai.TooManyRequestsError{
-					RetryAfter: retryAfter,
-					Err:        err,
-				}
-			}
-			return err
+			fallback := fmt.Errorf("failed to fetch with status %d %s (and failed to read error body: %w)", status, statusText, bodyErr)
+			return ai.ErrorFromHTTPResponse(status, retryAfter, "", fallback)
 		}
-
-		bodyText := bodyTextVal.String()
-		if status == 429 {
-			return &ai.TooManyRequestsError{
-				RetryAfter: retryAfter,
-				Err:        fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText),
-			}
-		}
-		return fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText)
+		fallback := fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText)
+		return ai.ErrorFromHTTPResponse(status, retryAfter, bodyText, fallback)
 	}
 
-	jsJSON, err := awaitPromise(ctx, jsResp.Call("json"))
+	bodyText, err := responseBody(ctx, jsResp)
 	if err != nil {
 		return fmt.Errorf("failed to process json response: %w", err)
 	}
-	jsonString := js.Global().Get("JSON").Call("stringify", jsJSON).String()
-
-	if err := json.Unmarshal([]byte(jsonString), result); err != nil {
+	if err := json.Unmarshal([]byte(bodyText), result); err != nil {
 		return fmt.Errorf("failed to unmarshal response json: %w", err)
 	}
 	return nil
+}
+
+// responseBody consumes the native Response body at most once.
+func responseBody(ctx context.Context, response js.Value) (string, error) {
+	bodyText, err := awaitPromise(ctx, response.Call("text"))
+	if err != nil {
+		return "", err
+	}
+	return bodyText.String(), nil
+}
+
+// retryAfterFromResponse reads the native Response Retry-After header.
+func retryAfterFromResponse(jsResp js.Value) time.Duration {
+	headers := jsResp.Get("headers")
+	if !headers.Truthy() {
+		return 0
+	}
+	got := headers.Call("get", "Retry-After")
+	if got.Type() != js.TypeString {
+		return 0
+	}
+	return ai.RetryAfterFromHeader(got.String())
 }
