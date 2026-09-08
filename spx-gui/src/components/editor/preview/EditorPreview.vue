@@ -2,13 +2,15 @@
   <UICard
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
+    :class="{ 'flex-[1_1_0] min-h-0': isFocused }"
   >
-    <UICardHeader class="gap-3">
+    <UICardHeader v-if="!isPreviewHeaderHidden" class="gap-3">
       <div class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
+          v-if="!isFocused"
           v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
           type="primary"
           icon="playHollow"
@@ -31,6 +33,7 @@
       </template>
       <template v-else>
         <UIButton
+          v-if="!isFocused"
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
           type="primary"
           icon="rotate"
@@ -41,6 +44,7 @@
           {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
         </UIButton>
         <UIButton
+          v-if="!isFocused"
           v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
           type="neutral"
           icon="end"
@@ -65,36 +69,88 @@
       </template>
     </UICardHeader>
 
-    <div class="flex grow justify-center overflow-hidden p-3">
+    <div class="flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': isFocused }">
       <div
         ref="stageContainerRef"
         class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
-        :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
+        :class="{
+          'stage-viewer-container-running': runnerState !== 'initial',
+          'stage-viewer-container-focused': isFocused
+        }"
       >
         <StageViewer class="stage-viewer" />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
           class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
         >
-          <ProjectRunnerSurface
-            ref="projectRunnerSurfaceRef"
-            v-model:fullscreen="fullscreen"
-            :project="editorCtx.project"
-            :runner-state="runnerState"
-            :on-run="handleRun.fn"
-            :run-loading="handleRun.isLoading.value"
-            :on-rerun="handleRerun.fn"
-            :rerun-loading="handleRerun.isLoading.value"
-            :on-stop="handleStop.fn"
-            :stop-loading="handleStop.isLoading.value"
-            :inline-anchor="getStageInlineAnchor"
-            @console="handleConsole"
-            @update:fullscreen="handleFullscreenChange"
-            @exit="handleExit"
-          />
+          <!-- The runner is constrained to the largest viewport-aspect rect inscribed in the
+               container — the same letterbox the stage viewer applies in edit mode — so the game
+               renders exactly over the edit stage's visual area instead of stretching to the
+               (non-4:3) container, which subtly shifted the world on every run. -->
+          <div ref="stageAspectEl" class="relative" :style="stageAspectStyle">
+            <ProjectRunnerSurface
+              ref="projectRunnerSurfaceRef"
+              v-model:fullscreen="fullscreen"
+              :project="editorCtx.project"
+              :runner-state="runnerState"
+              :on-run="handleRun.fn"
+              :run-loading="handleRun.isLoading.value"
+              :on-rerun="handleRerun.fn"
+              :rerun-loading="handleRerun.isLoading.value"
+              :on-stop="handleStop.fn"
+              :stop-loading="handleStop.isLoading.value"
+              :inline-anchor="getStageInlineAnchor"
+              @console="handleConsole"
+              @update:fullscreen="handleFullscreenChange"
+              @exit="handleExit"
+            />
+          </div>
+          <UITooltip v-if="rulerDisabledVisible && !fullscreen" placement="right">
+            <template #trigger>
+              <RulerToggle
+                v-radar="{ name: 'Ruler (unavailable)', desc: 'The ruler cannot measure while the project is running' }"
+                class="absolute top-4 left-4"
+                disabled
+              />
+            </template>
+            {{ $t({ en: 'Stop the run to measure', zh: '停止运行后才能量' }) }}
+          </UITooltip>
         </div>
       </div>
     </div>
+
+    <!-- In the focused layout, one run/stop control sits in the code column's control row (owned
+         by ProjectEditor), teleported there since the runner lives here. There is no rerun: a run
+         is either stopped by the user or ends on its own, and either way returns to edit mode
+         (see handleExit) — so at any moment it is exactly Run (edit mode) or Stop (running). -->
+    <Teleport v-if="isFocused && controlsAnchor != null" :to="controlsAnchor">
+      <button
+        v-if="runnerState === 'initial'"
+        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+        type="button"
+        class="run-control run-control-run"
+        :disabled="handleRun.isLoading.value"
+        @click="handleRun.fn"
+      >
+        <span class="run-control-face">
+          <UIIcon :type="handleRun.isLoading.value ? 'loading' : 'playHollow'" />
+          {{ $t({ en: 'Run', zh: '运行' }) }}
+        </span>
+      </button>
+      <button
+        v-else
+        v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+        type="button"
+        class="run-control run-control-stop"
+        :disabled="handleStop.isLoading.value"
+        @click="handleStop.fn"
+      >
+        <span class="run-control-face">
+          <UIIcon :type="handleStop.isLoading.value ? 'loading' : 'end'" />
+          {{ $t({ en: 'Stop', zh: '停止' }) }}
+        </span>
+      </button>
+    </Teleport>
   </UICard>
 </template>
 
@@ -168,7 +224,8 @@ import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useSignedInUser } from '@/stores/user'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { useContentSize } from '@/utils/dom'
+import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
@@ -178,6 +235,10 @@ import {
   getInvalidMonitors
 } from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
+import { editorWorkspaceLayout } from '@/components/editor/workspace-layout'
+import RulerToggle from './stage-viewer/RulerToggle.vue'
+import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
+import { useFocusedControlsAnchor } from '@/components/editor/focused-controls'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
@@ -186,6 +247,12 @@ import { usePublishProject } from '@/components/project'
 const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
 
 const editorCtx = useEditorCtx()
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
+const isPreviewHeaderHidden = computed(() => editorWorkspaceLayout.isHidden('preview-header'))
+// While the game runs the stage is the engine's canvas — live sprite positions are inside the
+// engine, so measuring is impossible. The ruler button stays in place as an unusable variant
+// instead of vanishing, so the tool doesn't appear to come and go.
+const rulerDisabledVisible = computed(() => editorWorkspaceLayout.isToolEnabled('ruler'))
 const codeEditor = useCodeEditor()
 const { isOnline } = useNetwork()
 const signedInUser = useSignedInUser()
@@ -195,6 +262,27 @@ const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
+const stageAspectEl = ref<HTMLDivElement | null>(null)
+const stageContainerSize = useContentSize(stageContainerRef)
+/**
+ * The largest viewport-aspect rect inscribed in the stage container — the same letterbox the
+ * stage viewer applies to the edit stage, computed with the same min-scale fit, so the running
+ * game and the edit stage occupy the same pixels.
+ */
+const stageAspectStyle = computed(() => {
+  const size = stageContainerSize.value
+  const viewport = editorCtx.project.viewportSize
+  if (size == null || size.width === 0 || size.height === 0 || viewport.width === 0 || viewport.height === 0) {
+    return { width: '100%', height: '100%' }
+  }
+  const scale = Math.min(size.width / viewport.width, size.height / viewport.height)
+  return { width: `${viewport.width * scale}px`, height: `${viewport.height * scale}px` }
+})
+
+// The focused layout's control row (owned by ProjectEditor) that the Run/Stop control below
+// teleports into.
+const controlsAnchor = useFocusedControlsAnchor()
+
 const fullscreen = ref(false)
 const exitGuard = ref<'idle' | 'manualStopPending'>('idle')
 const runnerHostSticky = ref(false)
@@ -286,6 +374,14 @@ function handleExit(code: number) {
   }
   exitGuard.value = 'idle'
   lastPanicOutput.value = null
+  if (isFocused.value) {
+    // In focused (tutorial) mode there is no rerun: a run that ends on its own returns to edit
+    // mode, mirroring handleStop's teardown so the runtime is fully reset.
+    runnerState.value = 'initial'
+    editorCtx.state.runtime.setRunning({ mode: 'none' })
+    projectRunnerSurfaceRef.value?.stop().catch(() => {})
+    return
+  }
   const shouldRestore = restoreDebugRuntime()
   runnerState.value = shouldRestore ? 'running' : 'loading'
 }
@@ -338,6 +434,8 @@ async function executeRun(action: 'run' | 'rerun') {
   await nextTick()
   const surface = await untilNotNull(projectRunnerSurfaceRef)
   runtime.value.clearOutputs()
+  // A fresh run starts: features counting output lines (e.g. course completion) reset with it.
+  editorRuntimeOutputBridge.pushRunStart()
   editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
@@ -446,11 +544,30 @@ onBeforeUnmount(() => {
 })
 
 function getStageInlineAnchor() {
-  return stageContainerRef.value
+  // The letterboxed rect the runner actually occupies inline; the container is the fallback
+  // before the wrapper mounts.
+  return stageAspectEl.value ?? stageContainerRef.value
 }
 </script>
 
 <style scoped>
+/* In the focused layout the container fills the preview instead of following the stage's 4:3
+   aspect ratio; the stage viewer & runner scale their content to fit and letterbox the rest. */
+.stage-viewer-container-focused {
+  height: 100%;
+}
+
+.stage-viewer-container-focused :deep(.stage-viewer) {
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+.stage-viewer-container-focused .runner-host :deep(.project-runner-surface:not(.fullscreen) .runner-area) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .stage-viewer-container-running .stage-viewer {
   filter: blur(4px);
   pointer-events: none;
@@ -474,5 +591,60 @@ function getStageInlineAnchor() {
   max-height: 100%;
   aspect-ratio: 4 / 3;
   height: auto;
+}
+
+/* Focused-mode Run/Stop: a white card framing a solid colored pill (teal Run / red Stop). */
+.run-control {
+  padding: 5px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: var(--ui-color-grey-100);
+  box-shadow: var(--ui-box-shadow-sm);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.run-control-run {
+  border-color: rgba(54, 194, 207, 0.2);
+}
+
+.run-control-stop {
+  border-color: rgba(239, 65, 73, 0.2);
+}
+
+.run-control-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 12px;
+  color: var(--ui-color-grey-100);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.run-control-run .run-control-face {
+  background: var(--ui-color-turquoise-500);
+}
+
+.run-control-stop .run-control-face {
+  background: var(--ui-color-red-500);
+}
+
+.run-control-face :deep(.ui-icon) {
+  width: 20px;
+  height: 20px;
+}
+
+.run-control:not(:disabled):hover {
+  filter: brightness(1.04);
+}
+
+.run-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
 }
 </style>

@@ -1,7 +1,11 @@
 <template>
   <section class="min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
-      <EditorNavbar :project="state?.project ?? null" :state="state" />
+      <EditorNavbar :project="state?.project ?? null" :state="state">
+        <template v-if="isInCourse" #tutorials>
+          <TutorialNavbarExit />
+        </template>
+      </EditorNavbar>
     </header>
     <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
@@ -54,12 +58,16 @@ import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
+import TutorialNavbarExit from '@/components/tutorials/TutorialNavbarExit.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
+import { editorReload } from '@/components/editor/editor-reload'
 import { EditorState } from '@/components/editor/editor-state'
+import { useTutorial } from '@/components/tutorials/tutorial'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
 import type { ProjectSerialized } from '@/models/project'
@@ -72,6 +80,8 @@ const props = defineProps<{
 const localCache = new LocalCache(localHelpers)
 
 const signedInStateQuery = useSignedInStateQuery()
+const tutorial = useTutorial()
+const isInCourse = computed(() => tutorial.currentCourse != null)
 
 const router = useRouter()
 const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
@@ -184,6 +194,13 @@ const allQueryRet = useQuery(
 
 useRegisterUpdateRouteLoaded(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
 
+// Reload the project state on request (e.g. when a tutorial course is restarted), which
+// rebuilds the `EditorState` and reloads the project from the cloud.
+watch(
+  () => editorReload.counter,
+  () => stateQueryRet.refetch()
+)
+
 const publishProject = usePublishProject()
 
 onMounted(async () => {
@@ -213,6 +230,7 @@ onBeforeRouteLeave(async () => {
  * If it is OK to leave, return true, otherwise return false.
  */
 async function checkChangesNotToBeSaved(es: EditorState) {
+  if (editorLeaveConfirm.consumeSkipOnce()) return true
   const hasEdits = es.editing.mode === EditingMode.EffectFree && es.editing.dirty
   if (!hasEdits) return true
   return confirm({
@@ -221,8 +239,8 @@ async function checkChangesNotToBeSaved(es: EditorState) {
       zh: '离开编辑器'
     }),
     content: t({
-      en: `Project edits will not be saved if you leave now. Are you sure to leave?`,
-      zh: `若现在离开，对项目的修改将不会被保存。确定要离开吗？`
+      en: `Project edits will not be saved. Are you sure to leave?`,
+      zh: `对项目的修改将不会被保存，确定要离开吗？`
     }),
     cancelText: t({
       en: 'Keep editing',

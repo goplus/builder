@@ -1,4 +1,4 @@
-import { watch } from 'vue'
+import { shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { TaskManager } from '@/utils/task'
 import type {
@@ -8,12 +8,50 @@ import type {
   IAPIReferenceProvider
 } from '../../api-reference'
 import type { CodeEditorUIController } from '../code-editor-ui'
+import { leadingIdentifier, normalizeCode } from '../code-guide'
 
 export type { APIReferenceItem, APIReferenceContext, IAPIReferenceProvider, APICategoryViewInfo }
 
 export class APIReferenceController extends Disposable {
   constructor(private ui: CodeEditorUIController) {
     super()
+  }
+
+  /** Code whose corresponding API item should be highlighted, or null. */
+  private highlightCodeRef = shallowRef<string | null>(null)
+  private highlightedItemRef = shallowRef<APIReferenceItem | null>(null)
+
+  /** The API item currently highlighted (e.g. while a drag guide points the user at it), or null. */
+  get highlightedItem() {
+    return this.highlightedItemRef.value
+  }
+
+  /** Highlight the API item whose function name matches the leading identifier of `code`. */
+  highlightForCode(code: string) {
+    this.highlightCodeRef.value = code
+    this.applyHighlight()
+  }
+
+  clearHighlight() {
+    this.highlightCodeRef.value = null
+    this.highlightedItemRef.value = null
+  }
+
+  private applyHighlight() {
+    const code = this.highlightCodeRef.value
+    if (code == null || code === '') {
+      this.highlightedItemRef.value = null
+      return
+    }
+    const items = this.items ?? []
+    // Prefer the item whose resolved snippet matches the expected code exactly — this disambiguates
+    // same-name variants (e.g. several `turn ...` overloads). Fall back to matching by function name.
+    const target = normalizeCode(code)
+    const name = leadingIdentifier(code)
+    this.highlightedItemRef.value =
+      items.find((item) => normalizeCode(this.ui.parseSnippet(item.insertSnippet).toString()) === target) ??
+      (name !== '' ? items.find((item) => leadingIdentifier(item.insertSnippet) === name) : undefined) ??
+      null
   }
 
   private itemsMgr = new TaskManager(async (signal) => {
@@ -23,8 +61,38 @@ export class APIReferenceController extends Disposable {
     return provider.provideAPIReference({ textDocument, signal })
   }, true)
 
-  get items() {
+  /** Items as loaded from the provider, before applying the filter. */
+  private get loadedItems() {
     return this.itemsMgr.result.data
+  }
+
+  /**
+   * Items exposed to consumers, after applying `codeEditor.apiReferenceFilter`. Filtering is an
+   * internal concern of the controller: it is a synchronous derivation over the already-loaded items,
+   * so filter changes update the UI reactively without re-running the async provider. Falls back to
+   * the full list when the filter matches nothing, to avoid leaving the panel empty.
+   */
+  get items() {
+    const items = this.loadedItems
+    if (items == null) return null
+    const filter = this.ui.codeEditor.apiReferenceFilter
+    if (filter == null) return items
+    const filtered = items.filter(filter)
+    return filtered.length > 0 ? filtered : items
+  }
+
+  /**
+   * Whether a filter is actively narrowing the list (a proper, non-empty subset). The category
+   * sidebar is redundant in this case — a guided scenario left only a handful of items — so the
+   * UI hides it. False when there is no filter or it matched nothing (the panel shows everything).
+   */
+  get filtered() {
+    const items = this.loadedItems
+    if (items == null) return false
+    const filter = this.ui.codeEditor.apiReferenceFilter
+    if (filter == null) return false
+    const filteredCount = items.filter(filter).length
+    return filteredCount > 0 && filteredCount < items.length
   }
 
   get error() {
@@ -44,6 +112,13 @@ export class APIReferenceController extends Disposable {
           this.itemsMgr.start()
         },
         { immediate: true }
+      )
+    )
+    // Re-resolve the highlighted item when the item list (re)loads.
+    this.addDisposer(
+      watch(
+        () => this.items,
+        () => this.applyHighlight()
       )
     )
   }
