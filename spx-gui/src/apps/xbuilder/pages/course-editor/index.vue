@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onUnmounted, shallowRef, watch } from 'vue'
-import { DefaultException } from '@/utils/exception'
+import { Cancelled, DefaultException } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
 import { getCourse, type PlaygroundCourse } from '@/apis/course'
@@ -35,15 +35,22 @@ usePageTitle(() => {
 })
 
 const entryQueryRet = useQuery(
-  async () => {
-    const signedInState = await untilNotNull(signedInStateQuery.data)
+  async (ctx) => {
+    // Route params must be read synchronously so that their change re-runs the query;
+    // `untilNotNull` below deliberately does not collect dependencies.
+    const courseIdInput = props.courseIdInput
+    const courseSeriesIdInput = props.courseSeriesIdInput
+    // Avoid collecting the data accessed below as dependencies, which would re-run the query endlessly.
+    await nextTick()
+
+    const signedInState = await untilNotNull(signedInStateQuery.data, ctx.signal)
     if (!signedInState.isSignedIn || signedInState.user?.capabilities.canManageCourses !== true) {
       throw new DefaultException({ en: 'You are not allowed to edit courses', zh: '你没有编辑课程的权限' })
     }
 
     const [course, series] = await Promise.all([
-      getCourse(props.courseIdInput),
-      getCourseSeries(props.courseSeriesIdInput)
+      getCourse(courseIdInput, ctx.signal),
+      getCourseSeries(courseSeriesIdInput, ctx.signal)
     ])
     if (course.kind !== 'playground') {
       throw new DefaultException({
@@ -59,6 +66,11 @@ const entryQueryRet = useQuery(
     }
 
     const project = await TutorialProject.load(course)
+    if (ctx.signal.aborted) {
+      // A newer query (e.g. another course on the same route) has superseded this one.
+      project.project.dispose()
+      throw new Cancelled('superseded')
+    }
     return { course, series, project }
   },
   {
@@ -77,6 +89,12 @@ async function disposeSession() {
 watch(entryQueryRet.data, async (next) => {
   await disposeSession()
   session.value = next
+})
+
+// `useQuery` keeps the previous data while re-fetching or after a failure. When the route switches to
+// another course, the previous session must not stay on screen: end it as soon as a new load starts or fails.
+watch([entryQueryRet.isLoading, entryQueryRet.error], ([isLoading, error]) => {
+  if (isLoading || error != null) void disposeSession()
 })
 
 onUnmounted(() => void disposeSession())

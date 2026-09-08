@@ -21,7 +21,6 @@ const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
 
 // Plain XGo text editing for now; completion and diagnostics wait for the Tutorial Language Server.
 const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
-  value: props.course.code,
   language: 'xgo',
   theme,
   tabSize,
@@ -31,6 +30,9 @@ const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
 }
 
 function handleEditorInit(editor: MonacoEditor) {
+  // The editor is re-created when Monaco reloads (e.g. on language change), so always start from the
+  // current code rather than whatever the component captured at setup.
+  editor.setValue(props.course.code)
   const contentListener = editor.onDidChangeModelContent(() => {
     const code = editor.getValue()
     if (code !== props.course.code) props.course.setCode(code)

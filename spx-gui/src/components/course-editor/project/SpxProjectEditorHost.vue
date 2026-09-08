@@ -1,4 +1,5 @@
 <script lang="ts">
+import type { RouteLocationNormalizedGeneric } from 'vue-router'
 import type { ILocalCache } from '@/components/editor/editing'
 
 // The embedded learner project has no owner, so the editor runs in EffectFree mode and nothing is cached locally.
@@ -8,6 +9,12 @@ const noopLocalCache: ILocalCache = {
   },
   async save() {},
   async clear() {}
+}
+
+type RouteSnapshot = Pick<RouteLocationNormalizedGeneric, 'fullPath' | 'params' | 'query' | 'hash'>
+
+function snapshotRoute(route: RouteSnapshot): RouteSnapshot {
+  return { fullPath: route.fullPath, params: { ...route.params }, query: { ...route.query }, hash: route.hash }
 }
 
 function toPathSegments(path: string) {
@@ -25,7 +32,7 @@ function isSamePath(a: string[], b: string[]) {
 </script>
 
 <script setup lang="ts">
-import { nextTick, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { capture } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -35,7 +42,7 @@ import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import type { SpxProject } from '@/models/spx/project'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
-import { EditorState } from '@/components/editor/editor-state'
+import { EditorState, type IRouter } from '@/components/editor/editor-state'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { UIDetailedLoading, UIError } from '@/components/ui'
@@ -44,6 +51,12 @@ const props = defineProps<{
   project: SpxProject
   /** In-editor path to open initially, used only when the current route does not carry one. */
   initialPath: string
+  /**
+   * Whether the editor UI is shown and follows the route. While inactive, the editor state (selection,
+   * undo history, ...) is kept alive but detached from the route, so whatever replaces the editor in the
+   * meantime (e.g. the course preview) can drive the route freely.
+   */
+  active: boolean
 }>()
 
 const emit = defineEmits<{
@@ -63,6 +76,14 @@ function setState(next: EditorState | null) {
   emit('update:editorState', next)
 }
 
+// While inactive, the editor state sees the route frozen at the moment it was deactivated and its own
+// navigations are dropped. On re-activation the real route is brought back to the frozen one first.
+const frozenRoute = shallowRef<RouteSnapshot | null>(null)
+const editorRouter: IRouter = {
+  currentRoute: computed(() => frozenRoute.value ?? router.currentRoute.value),
+  push: (to) => (frozenRoute.value == null ? router.push(to) : Promise.resolve())
+}
+
 let disposed = false
 async function initialize() {
   const previousState = state.value
@@ -77,7 +98,7 @@ async function initialize() {
     nextState.editing.startEditing()
     await openInitialPath(nextState)
     if (disposed) throw new Error('Project editor disposed during initialization')
-    nextState.syncWithRouter(router)
+    nextState.syncWithRouter(editorRouter)
     setState(nextState)
   } catch (error) {
     nextState.dispose()
@@ -116,6 +137,26 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => props.active,
+  async (active) => {
+    if (!active) {
+      frozenRoute.value = snapshotRoute(router.currentRoute.value)
+      return
+    }
+    const frozen = frozenRoute.value
+    if (frozen == null) return
+    const currentRoute = router.currentRoute.value
+    await router.replace({
+      params: { ...currentRoute.params, inEditorPath: frozen.params.inEditorPath ?? [] },
+      query: frozen.query,
+      hash: frozen.hash
+    })
+    if (disposed) return
+    frozenRoute.value = null
+  }
+)
+
 const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
   en: 'Failed to load code editor',
   zh: '加载代码编辑器失败'
@@ -130,21 +171,26 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <UIDetailedLoading v-if="state == null && initializationError == null" :percentage="0">
-    <span>{{ $t({ en: 'Preparing project...', zh: '准备项目中...' }) }}</span>
-  </UIDetailedLoading>
-  <UIError v-else-if="initializationError != null" :retry="initialize">
-    {{ initializationError.message }}
-  </UIError>
-  <UIDetailedLoading v-else-if="monacoQueryRet.isLoading.value" :percentage="monacoQueryRet.progress.value.percentage">
-    <span>{{ $t({ en: 'Loading code editor...', zh: '加载代码编辑器中...' }) }}</span>
-  </UIDetailedLoading>
-  <UIError v-else-if="monacoQueryRet.error.value != null" :retry="monacoQueryRet.refetch">
-    {{ $t(monacoQueryRet.error.value.userMessage) }}
-  </UIError>
-  <EditorContextProvider v-else-if="state != null" :project="state.project" :state="state">
-    <CodeEditorProvider :monaco="monacoQueryRet.data.value!">
-      <ProjectEditor />
-    </CodeEditorProvider>
-  </EditorContextProvider>
+  <template v-if="active">
+    <UIDetailedLoading v-if="state == null && initializationError == null" :percentage="0">
+      <span>{{ $t({ en: 'Preparing project...', zh: '准备项目中...' }) }}</span>
+    </UIDetailedLoading>
+    <UIError v-else-if="initializationError != null" :retry="initialize">
+      {{ initializationError.message }}
+    </UIError>
+    <UIDetailedLoading
+      v-else-if="monacoQueryRet.isLoading.value"
+      :percentage="monacoQueryRet.progress.value.percentage"
+    >
+      <span>{{ $t({ en: 'Loading code editor...', zh: '加载代码编辑器中...' }) }}</span>
+    </UIDetailedLoading>
+    <UIError v-else-if="monacoQueryRet.error.value != null" :retry="monacoQueryRet.refetch">
+      {{ $t(monacoQueryRet.error.value.userMessage) }}
+    </UIError>
+    <EditorContextProvider v-else-if="state != null" :project="state.project" :state="state">
+      <CodeEditorProvider :monaco="monacoQueryRet.data.value!">
+        <ProjectEditor />
+      </CodeEditorProvider>
+    </EditorContextProvider>
+  </template>
 </template>
