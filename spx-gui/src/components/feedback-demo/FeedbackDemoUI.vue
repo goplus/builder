@@ -3,7 +3,16 @@ import { computed, nextTick, onScopeDispose, ref, useId, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
-import { UIButton, UIEmpty, UIFormModal, UIIcon, UIModal, UIModalClose, useMessage } from '@/components/ui'
+import {
+  UIButton,
+  UIEmpty,
+  UIFormModal,
+  UIIcon,
+  UIModal,
+  UIModalClose,
+  UIPagination,
+  useMessage
+} from '@/components/ui'
 import { useCopilot } from '@/components/copilot/context'
 import { RoundState } from '@/components/copilot/copilot'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -19,7 +28,6 @@ import notificationAttachmentIcon from '@/components/ui/icons/notification-attac
 import notificationAssociationArrow from '@/components/ui/icons/notification-association-arrow.svg'
 
 const model = useFeedbackDemoModel()
-const notificationPageSize = 4
 const copilot = useCopilot()
 const i18n = useI18n()
 const { t } = i18n
@@ -31,19 +39,19 @@ const isSubmitting = ref(false)
 const activeSubmission = ref<symbol | null>(null)
 const pendingCopilotFeedback = ref<PreparedFeedbackDraft | null>(null)
 const selectedNotificationID = ref<string | null>(null)
-const visibleNotificationCount = ref(notificationPageSize)
 const activeNotificationTab = ref<'feedback' | 'system'>('feedback')
 const notificationTitleID = useId()
 const imagePreviewTitleID = useId()
 type RenderableFeedbackAttachment = FeedbackAttachment & { url: string }
 const selectedPreviewAttachment = ref<RenderableFeedbackAttachment | null>(null)
+const previewAttachments = ref<RenderableFeedbackAttachment[]>([])
+const previewPage = ref(1)
 const feedbackNotifications = computed(() => model.data.notifications)
 const systemNotifications = computed<InProductNotification[]>(() => [])
 const activeNotifications = computed(() =>
   activeNotificationTab.value === 'feedback' ? feedbackNotifications.value : systemNotifications.value
 )
-const visibleNotifications = computed(() => activeNotifications.value.slice(0, visibleNotificationCount.value))
-const unreadFeedbackCount = computed(() => feedbackNotifications.value.filter((item) => item.readAt == null).length)
+const unreadFeedbackCount = computed(() => model.unreadNotificationCount.value)
 const selectedNotification = computed(
   () => model.data.notifications.find((notification) => notification.id === selectedNotificationID.value) ?? null
 )
@@ -97,15 +105,12 @@ watch(model.notificationCenterOpen, (open) => {
   if (!open) {
     selectedNotificationID.value = null
     selectedPreviewAttachment.value = null
+    previewAttachments.value = []
+    previewPage.value = 1
   }
   if (open) {
-    visibleNotificationCount.value = notificationPageSize
     activeNotificationTab.value = 'feedback'
   }
-})
-
-watch(activeNotificationTab, () => {
-  visibleNotificationCount.value = notificationPageSize
 })
 
 async function handleSubmit(input: SubmitFeedbackInput) {
@@ -189,12 +194,16 @@ async function captureFeedbackScreenshot(): Promise<FeedbackAttachment> {
 
 function openNotification(notification: InProductNotification) {
   selectedPreviewAttachment.value = null
+  previewAttachments.value = []
+  previewPage.value = 1
   selectedNotificationID.value = notification.id
   model.markNotificationRead(notification.id)
 }
 
 function backToNotificationList() {
   selectedPreviewAttachment.value = null
+  previewAttachments.value = []
+  previewPage.value = 1
   selectedNotificationID.value = null
 }
 
@@ -205,10 +214,6 @@ function formatTime(value: string) {
     hour: 'numeric',
     minute: '2-digit'
   }).format(new Date(value))
-}
-
-function formatFileSize(size: number) {
-  return size < 1024 * 1024 ? Math.max(1, Math.round(size / 1024)) + ' KB' : (size / 1024 / 1024).toFixed(1) + ' MB'
 }
 
 function formatImageCount(count: number) {
@@ -241,26 +246,25 @@ function getAttachmentAlt(attachment: RenderableFeedbackAttachment) {
 }
 
 function openAttachmentPreview(attachment: RenderableFeedbackAttachment) {
-  selectedPreviewAttachment.value = attachment
+  const attachments = selectedNotificationImageAttachments.value
+  previewAttachments.value = attachments.length > 0 ? attachments : [attachment]
+  previewPage.value = Math.max(1, previewAttachments.value.findIndex((item) => item.id === attachment.id) + 1)
+  selectedPreviewAttachment.value = previewAttachments.value[previewPage.value - 1] ?? attachment
+}
+
+function handlePreviewPageChange(page: number) {
+  previewPage.value = page
+  selectedPreviewAttachment.value = previewAttachments.value[page - 1] ?? null
 }
 
 function closeAttachmentPreview() {
   selectedPreviewAttachment.value = null
+  previewAttachments.value = []
+  previewPage.value = 1
 }
 
 function handlePreviewVisibleChange(visible: boolean) {
   if (!visible) closeAttachmentPreview()
-}
-
-function loadMoreNotifications() {
-  visibleNotificationCount.value += notificationPageSize
-}
-
-function handleNotificationScroll(event: Event) {
-  const target = event.currentTarget as HTMLElement
-  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 24) {
-    if (visibleNotificationCount.value < activeNotifications.value.length) loadMoreNotifications()
-  }
 }
 </script>
 
@@ -340,9 +344,9 @@ function handleNotificationScroll(event: Event) {
           {{ $t({ en: 'No notifications', zh: '暂无信息' }) }}
         </UIEmpty>
       </div>
-      <div v-else class="min-h-0 flex-1 overflow-y-auto p-3" @scroll.passive="handleNotificationScroll">
+      <div v-else class="min-h-0 flex-1 overflow-y-auto p-3">
         <button
-          v-for="notification in visibleNotifications"
+          v-for="notification in activeNotifications"
           :key="notification.id"
           v-radar="{
             name: 'Support notification',
@@ -504,25 +508,31 @@ function handleNotificationScroll(event: Event) {
     @update:visible="handlePreviewVisibleChange"
   >
     <div v-if="selectedPreviewAttachment != null" class="flex max-h-[calc(100vh-2rem)] min-h-[360px] flex-col">
-      <div class="flex items-start justify-between gap-3 border-b border-grey-400 px-5 py-4">
+      <div class="flex items-center justify-between gap-3 border-b border-grey-400 px-6 py-3.5">
         <div class="min-w-0">
-          <h2 :id="imagePreviewTitleID" class="truncate text-base font-semibold text-title">
+          <h2 :id="imagePreviewTitleID" class="truncate text-sm font-medium leading-[22px] text-title">
             {{ selectedPreviewAttachment.name }}
           </h2>
-          <p class="mt-1 text-xs text-grey-800">{{ formatFileSize(selectedPreviewAttachment.size) }}</p>
         </div>
         <UIModalClose
           :aria-label="$t({ en: 'Close image preview', zh: '关闭图片预览' })"
           @click="closeAttachmentPreview"
         />
       </div>
-      <div class="flex min-h-0 flex-1 items-center justify-center bg-grey-100 p-4 sm:p-6">
+      <div class="min-h-0 flex-1 overflow-y-auto bg-grey-100 p-6">
         <img
-          class="max-h-full max-w-full object-contain"
+          class="block h-auto max-h-[calc(100vh-10rem)] w-full max-w-none rounded-lg object-contain"
           :src="selectedPreviewAttachment.url"
           :alt="getAttachmentAlt(selectedPreviewAttachment)"
         />
       </div>
+      <UIPagination
+        v-if="previewAttachments.length > 1"
+        :current="previewPage"
+        :total="previewAttachments.length"
+        class="justify-center px-2 pb-10 pt-2.5"
+        @update:current="handlePreviewPageChange"
+      />
     </div>
   </UIModal>
 </template>
