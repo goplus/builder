@@ -50,6 +50,10 @@ export function getCourseSeriesPageRoute(courseSeriesID: string) {
   return `/course-series/${encodeURIComponent(courseSeriesID)}`
 }
 
+export function getCourseEditorRoute(courseSeriesID: string, courseID: string) {
+  return `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}`
+}
+
 export const homePageName = 'home'
 
 declare module 'vue-router' {
@@ -143,6 +147,11 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/course-series/:courseSeriesIdInput',
     component: () => import('./pages/tutorials/course-series.vue'),
+    props: true
+  },
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*',
+    component: () => import('./pages/course-editor/index.vue'),
     props: true
   },
   {
