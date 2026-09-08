@@ -277,7 +277,8 @@ export class EditorState extends Disposable {
     }
   }
 
-  private selectByRoute(path: PathSegments) {
+  /** Select a target (by specifying route path). Throws if the path is not recognized. */
+  selectByRoute(path: PathSegments) {
     let [segment, extra] = shiftPath(path)
 
     switch (segment) {
