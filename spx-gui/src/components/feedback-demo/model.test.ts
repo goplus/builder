@@ -158,7 +158,7 @@ describe('feedback demo model', () => {
     expect(model.data.feedbacks).toHaveLength(2)
     expect(model.data.notifications).toHaveLength(9)
     expect(model.data.feedbacks[0].status).toBe('new')
-    expect(model.unreadNotificationCount.value).toBe(6)
+    expect(model.unreadNotificationCount.value).toBe(8)
   })
 
   it('stores image attachments on submitted feedback', () => {

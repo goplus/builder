@@ -33,7 +33,8 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
   const notificationCenterOpen = ref(false)
   const notificationCenterAnchor = ref<NotificationCenterAnchor | null>(null)
   const unreadNotificationCount = computed(
-    () => data.notifications.filter((notification) => notification.readAt == null).length
+    () =>
+      [...data.notifications, ...data.systemNotifications].filter((notification) => notification.readAt == null).length
   )
 
   function openFeedbackForm(source: FeedbackSource, prefill?: FeedbackFormPrefill) {
@@ -121,14 +122,14 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
   }
 
   function markNotificationRead(notificationID: string) {
-    const notification = data.notifications.find((item) => item.id === notificationID)
+    const notification = [...data.notifications, ...data.systemNotifications].find((item) => item.id === notificationID)
     if (notification == null || notification.readAt != null) return
     notification.readAt = new Date().toISOString()
   }
 
   function markAllNotificationsRead() {
     const readAt = new Date().toISOString()
-    for (const notification of data.notifications) {
+    for (const notification of [...data.notifications, ...data.systemNotifications]) {
       if (notification.readAt == null) notification.readAt = readAt
     }
   }

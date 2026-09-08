@@ -47,38 +47,21 @@ const selectedPreviewAttachment = ref<RenderableFeedbackAttachment | null>(null)
 const previewAttachments = ref<RenderableFeedbackAttachment[]>([])
 const previewPage = ref(1)
 const feedbackNotifications = computed(() => model.data.notifications)
-const systemNotifications = computed<InProductNotification[]>(() => [
-  {
-    id: 'system-v1-6-release',
-    userID: model.data.currentUser.id,
-    feedbackID: '',
-    title: t({ en: 'XBuilder V1.6 is now available', zh: 'XBuilder 新版本 V1.6 已发布' }),
-    body: t({
-      en: 'We completed editor performance optimizations and several feature upgrades, including batch asset upload, faster project loading, and improved runtime stability.',
-      zh: '我们完成了编辑器性能优化与多项功能升级，新增素材批量上传、项目加载加速及运行稳定性改进。'
-    }),
-    createdAt: '2026-09-07T18:00:00+08:00',
-    readAt: '2026-09-07T18:00:00+08:00'
-  },
-  {
-    id: 'system-maintenance-2026-09-07',
-    userID: model.data.currentUser.id,
-    feedbackID: '',
-    title: t({ en: 'System maintenance notice', zh: '系统维护通知' }),
-    body: t({
-      en: 'To improve service stability, XBuilder will perform system maintenance from 23:00 to 24:00 on September 7. Some features may be temporarily unavailable. Please save your projects in advance. Thank you for your understanding and support.',
-      zh: '为提升服务稳定性，XBuilder 将于9月7日晚 23:00–24:00 进行系统维护。维护期间部分功能可能暂时无法使用，请提前保存项目，感谢你的理解与支持。'
-    }),
-    createdAt: '2026-09-07T12:00:00+08:00',
-    readAt: '2026-09-07T12:00:00+08:00'
-  }
-])
+const systemNotifications = computed(() => model.data.systemNotifications)
 const activeNotifications = computed(() =>
   activeNotificationTab.value === 'feedback' ? feedbackNotifications.value : systemNotifications.value
 )
-const unreadFeedbackCount = computed(() => model.unreadNotificationCount.value)
+const unreadFeedbackCount = computed(
+  () => feedbackNotifications.value.filter((notification) => notification.readAt == null).length
+)
 const selectedNotification = computed(
-  () => model.data.notifications.find((notification) => notification.id === selectedNotificationID.value) ?? null
+  () =>
+    [...model.data.notifications, ...model.data.systemNotifications].find(
+      (notification) => notification.id === selectedNotificationID.value
+    ) ?? null
+)
+const selectedSystemNotification = computed(() =>
+  selectedNotification.value?.feedbackID === '' ? selectedNotification.value : null
 )
 const selectedNotificationFeedback = computed(() => {
   const notification = selectedNotification.value
@@ -380,7 +363,7 @@ function handlePreviewVisibleChange(visible: boolean) {
           }"
           class="group relative block w-full cursor-pointer rounded-lg border-0 bg-white p-3 text-left transition-colors hover:bg-grey-300 focus-visible:relative focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-primary-main"
           :class="notification.readAt == null ? 'bg-white' : 'bg-white'"
-          @click="notification.feedbackID === '' ? undefined : openNotification(notification)"
+          @click="openNotification(notification)"
         >
           <div class="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-3">
             <span class="relative flex size-10 shrink-0 items-center justify-center">
@@ -407,6 +390,33 @@ function handlePreviewVisibleChange(visible: boolean) {
       </div>
     </div>
 
+    <div v-else-if="selectedSystemNotification != null" class="flex min-h-0 flex-1 flex-col">
+      <div class="flex shrink-0 items-center gap-2 border-b border-grey-300 px-4 py-3">
+        <UIButton
+          :aria-label="$t({ en: 'Back to notifications', zh: '返回通知' })"
+          type="white"
+          shape="square"
+          size="medium"
+          @click="backToNotificationList"
+        >
+          <template #icon><UIIcon type="arrowRightSmall" class="size-4 rotate-180" /></template>
+        </UIButton>
+        <h2 :id="notificationTitleID" class="truncate text-base font-normal text-title">
+          {{ selectedSystemNotification.title }}
+        </h2>
+      </div>
+      <article class="min-h-0 flex-1 overflow-y-auto p-6">
+        <div class="flex items-start justify-between gap-3">
+          <p class="text-[14px] text-primary-main">{{ $t({ en: 'System notice', zh: '系统消息' }) }}</p>
+          <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
+            formatTime(selectedSystemNotification.createdAt)
+          }}</time>
+        </div>
+        <p class="mt-4 whitespace-pre-wrap text-[14px] leading-[22px] text-grey-1000">
+          {{ selectedSystemNotification.body }}
+        </p>
+      </article>
+    </div>
     <div v-else class="flex min-h-0 flex-1 flex-col">
       <div class="flex shrink-0 items-center gap-2 border-b border-grey-300 px-4 py-3">
         <div class="flex min-w-0 items-center gap-2">

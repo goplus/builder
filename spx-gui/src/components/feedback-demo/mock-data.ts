@@ -53,6 +53,7 @@ export interface FeedbackDemoData {
   drafts: Record<FeedbackSource, FeedbackDraft>
   feedbacks: FeedbackSubmission[]
   notifications: InProductNotification[]
+  systemNotifications: InProductNotification[]
 }
 
 const mockData: FeedbackDemoData = {
@@ -255,6 +256,26 @@ const mockData: FeedbackDemoData = {
       createdAt: '2026-08-02T16:32:00+08:00',
       readAt: '2026-08-02T17:00:00+08:00'
     }
+  ],
+  systemNotifications: [
+    {
+      id: 'system-v1-6-release',
+      userID: 'user-xiaoyu',
+      feedbackID: '',
+      title: 'XBuilder 新版本 V1.6 已发布',
+      body: '我们完成了编辑器性能优化与多项功能升级，新增素材批量上传、项目加载加速及运行稳定性改进。',
+      createdAt: '2026-09-07T18:00:00+08:00',
+      readAt: null
+    },
+    {
+      id: 'system-maintenance-2026-09-07',
+      userID: 'user-xiaoyu',
+      feedbackID: '',
+      title: '系统维护通知',
+      body: '为提升服务稳定性，XBuilder 将于9月7日晚 23:00–24:00 进行系统维护。维护期间部分功能可能暂时无法使用，请提前保存项目，感谢你的理解与支持。',
+      createdAt: '2026-09-07T12:00:00+08:00',
+      readAt: null
+    }
   ]
 }
 
@@ -281,6 +302,7 @@ export function createMockFeedbackDemoData(): FeedbackDemoData {
       attachments: cloneAttachments(feedback.attachments),
       context: feedback.context == null ? undefined : cloneFeedbackContext(feedback.context)
     })),
-    notifications: mockData.notifications.map((notification) => ({ ...notification }))
+    notifications: mockData.notifications.map((notification) => ({ ...notification })),
+    systemNotifications: mockData.systemNotifications.map((notification) => ({ ...notification }))
   }
 }
