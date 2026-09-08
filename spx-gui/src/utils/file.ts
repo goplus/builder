@@ -22,6 +22,7 @@ const ext2mime: Record<string, string | undefined> = {
   otf: 'font/otf',
   json: 'application/json',
   spx: 'text/plain',
+  gox: 'text/plain',
   gmx: 'text/plain',
   md: 'text/plain',
   hash: 'text/plain'

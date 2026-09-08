@@ -1,15 +1,24 @@
+<script lang="ts">
+type CoursePane = 'program' | 'videos' | 'info'
+</script>
+
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import type { PlaygroundCourse } from '@/apis/course'
+import { updateCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
+import { saveFiles } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import type { EditorState } from '@/components/editor/editor-state'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
-import { UIButton, UITag, useConfirmDialogWithResult } from '@/components/ui'
+import { UIButton, UICard, UITab, UITabs, UITag, useConfirmDialogWithResult } from '@/components/ui'
+import CourseInfoPane from './CourseInfoPane.vue'
+import CourseProgramEditor from './CourseProgramEditor.vue'
+import CourseVideosPane from './CourseVideosPane.vue'
 import { getProjectEditorHost } from './project'
 
 const props = defineProps<{
@@ -17,6 +26,10 @@ const props = defineProps<{
   series: CourseSeries
   /** The author's working copy of the Tutorial project; the page owns its lifecycle. */
   project: TutorialProject
+}>()
+
+const emit = defineEmits<{
+  saved: [course: PlaygroundCourse]
 }>()
 
 const { t } = useI18n()
@@ -30,6 +43,7 @@ const config = computed(() => {
 const projectEditorHost = computed(() => getProjectEditorHost(config.value.project.type))
 
 const editorState = shallowRef<EditorState | null>(null)
+const activePane = ref<CoursePane>('program')
 
 // Track unsaved changes across everything the Tutorial project exports, plus its metadata.
 const dirty = ref(false)
@@ -38,6 +52,25 @@ watch(
   () => {
     dirty.value = true
   }
+)
+
+const handleSave = useMessageHandle(
+  async () => {
+    const { project } = props
+    if (project.title.trim() === '') {
+      throw new DefaultException({ en: 'Please enter the course title', zh: '请输入课程标题' })
+    }
+    const { fileCollection } = await saveFiles(project.exportFiles())
+    const saved = await updateCourse(props.course.id, {
+      title: project.title,
+      thumbnail: project.thumbnail,
+      content: fileCollection
+    })
+    dirty.value = false
+    emit('saved', saved as PlaygroundCourse)
+  },
+  { en: 'Failed to save course', zh: '保存课程失败' },
+  { en: 'Course saved', zh: '课程已保存' }
 )
 
 onBeforeRouteLeave(async () => {
@@ -57,22 +90,23 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
   if (dirty.value) event.preventDefault()
 }
 
-function preventDefaultSaveBehavior(event: KeyboardEvent) {
+function handleSaveShortcut(event: KeyboardEvent) {
   const { metaKey, ctrlKey, key } = event
   // command/ctrl + s
   if ((metaKey || ctrlKey) && key.toLowerCase() === 's') {
     event.preventDefault()
+    if (dirty.value && !handleSave.isLoading.value) handleSave.fn()
   }
 }
 
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
-  window.addEventListener('keydown', preventDefaultSaveBehavior)
+  window.addEventListener('keydown', handleSaveShortcut)
 })
 
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
-  window.removeEventListener('keydown', preventDefaultSaveBehavior)
+  window.removeEventListener('keydown', handleSaveShortcut)
 })
 </script>
 
@@ -91,7 +125,7 @@ onUnmounted(() => {
             }"
             class="flex min-w-0 items-center gap-2"
           >
-            <span class="truncate font-semibold">{{ course.title }}</span>
+            <span class="truncate font-semibold">{{ project.title }}</span>
             <span class="truncate text-sm text-grey-700">{{ series.title }}</span>
             <UITag v-if="dirty">{{ $t({ en: 'Unsaved', zh: '未保存' }) }}</UITag>
           </div>
@@ -112,7 +146,9 @@ onUnmounted(() => {
             class="mr-3"
             type="primary"
             size="small"
-            disabled
+            :disabled="!dirty"
+            :loading="handleSave.isLoading.value"
+            @click="handleSave.fn"
           >
             {{ $t({ en: 'Save', zh: '保存' }) }}
           </UIButton>
@@ -120,6 +156,33 @@ onUnmounted(() => {
       </NavbarWrapper>
     </header>
     <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
+      <!-- Course-level panes. Layout is a placeholder for design to iterate on. -->
+      <UICard class="min-w-0 flex-[0_0_360px] flex flex-col overflow-hidden">
+        <UITabs
+          v-radar="{ name: 'Course panes tabs', desc: 'Switch between the course program, videos and course info' }"
+          class="flex-none border-b border-line py-2"
+          :value="activePane"
+          @update:value="(v) => (activePane = v as CoursePane)"
+        >
+          <UITab v-radar="{ name: 'Course program tab', desc: 'Click to edit the course program' }" value="program">
+            {{ $t({ en: 'Program', zh: '课程程序' }) }}
+          </UITab>
+          <UITab v-radar="{ name: 'Videos tab', desc: 'Click to manage course videos' }" value="videos">
+            {{ $t({ en: 'Videos', zh: '视频' }) }}
+          </UITab>
+          <UITab
+            v-radar="{ name: 'Course info tab', desc: 'Click to edit course title, thumbnail and Copilot context' }"
+            value="info"
+          >
+            {{ $t({ en: 'Info', zh: '课程信息' }) }}
+          </UITab>
+        </UITabs>
+        <div class="min-h-0 flex-[1_1_0]">
+          <CourseProgramEditor v-if="activePane === 'program'" :course="project.mainCourse" />
+          <CourseVideosPane v-else-if="activePane === 'videos'" :project="project" />
+          <CourseInfoPane v-else :project="project" />
+        </div>
+      </UICard>
       <component
         :is="projectEditorHost"
         v-model:editor-state="editorState"
