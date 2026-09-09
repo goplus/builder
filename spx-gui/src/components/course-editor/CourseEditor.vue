@@ -33,6 +33,7 @@ import CourseVideoDoc from './CourseVideoDoc.vue'
 import CourseVideosPane from './CourseVideosPane.vue'
 import { getProjectEditorHost } from './project'
 import { inCourseEditorPathParam, parseCourseDoc, toInCourseEditorPath, type CourseDoc } from './route'
+import { getDirtyDocs, takeDocsBaseline, type DirtyDocs } from './dirty-docs'
 
 const props = defineProps<{
   course: PlaygroundCourse
@@ -92,6 +93,11 @@ watch(
   }
 )
 
+// Per-document unsaved marks for the explorer: each document is compared with the baseline taken at load
+// and after every successful save, so a save made while editing still shows what remains unsaved.
+const docsBaseline = shallowRef(takeDocsBaseline(props.project))
+const dirtyDocs = computed<DirtyDocs>(() => getDirtyDocs(props.project, docsBaseline.value))
+
 // Saving blocks the editor (mask + route guards) so nothing changes underneath the upload. The abort
 // controller is the safety net for the paths that bypass the guards (programmatic session end, page close):
 // a save that outlives its session must never publish its stale snapshot.
@@ -111,6 +117,7 @@ async function save(signal: AbortSignal) {
     signal
   )
   if (revision.value === savedRevision) dirty.value = false
+  docsBaseline.value = takeDocsBaseline(props.project, { metadata, files })
   emit('saved', saved as PlaygroundCourse)
 }
 
@@ -355,7 +362,7 @@ onUnmounted(() => {
       <template v-else>
         <!-- Course explorer + one document at a time. Layout is a placeholder for design to iterate on. -->
         <UICard class="min-w-0 flex-[0_0_240px] overflow-hidden">
-          <CourseExplorer :project="project" :doc="doc" @select="openDoc" />
+          <CourseExplorer :project="project" :doc="doc" :dirty-docs="dirtyDocs" @select="openDoc" />
         </UICard>
         <UICard v-if="doc.type !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
           <CourseProgramEditor v-if="doc.type === 'program'" :course="project.mainCourse" />
