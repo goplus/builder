@@ -6,7 +6,7 @@ export type FeedbackSource = 'globalForm'
 export type FeedbackStatus = 'new' | 'handled' | 'replied'
 export type { FeedbackContext } from './context'
 
-export const feedbackDemoMockVersion = 14
+export const feedbackDemoMockVersion = 15
 
 export interface FeedbackAttachment {
   id: string
@@ -176,6 +176,24 @@ const mockData: FeedbackDemoData = {
   ],
   notifications: [
     {
+      id: 'notification-1011',
+      userID: 'user-xiaoyu',
+      feedbackID: 'feedback-1002',
+      title: '发布流程问题已修复',
+      body: '发布流程中的状态提示已经优化，请重新发布项目确认效果。',
+      createdAt: '2026-08-12T09:40:00+08:00',
+      readAt: null
+    },
+    {
+      id: 'notification-1010',
+      userID: 'user-xiaoyu',
+      feedbackID: 'feedback-1001',
+      title: '项目打开问题已处理',
+      body: '项目打开异常已经修复，感谢你的反馈。',
+      createdAt: '2026-08-11T14:20:00+08:00',
+      readAt: null
+    },
+    {
       id: 'notification-1009',
       userID: 'user-xiaoyu',
       feedbackID: 'feedback-1002',
@@ -236,7 +254,7 @@ const mockData: FeedbackDemoData = {
       title: '角色动画问题已修复',
       body: '切换造型时的闪烁问题已经处理。',
       createdAt: '2026-08-04T12:20:00+08:00',
-      readAt: '2026-08-04T12:45:00+08:00'
+      readAt: null
     },
     {
       id: 'notification-1002',
@@ -245,7 +263,7 @@ const mockData: FeedbackDemoData = {
       title: '加载界面问题已定位',
       body: '问题与一条无效指令有关，请按回复中的建议修改后重试。',
       createdAt: '2026-08-03T10:05:00+08:00',
-      readAt: '2026-08-03T10:30:00+08:00'
+      readAt: null
     },
     {
       id: 'notification-1001',
@@ -254,7 +272,7 @@ const mockData: FeedbackDemoData = {
       title: '支持团队回复了你的反馈',
       body: '发布页面的问题已经修复，请重新发布项目后再试一次。',
       createdAt: '2026-08-02T16:32:00+08:00',
-      readAt: '2026-08-02T17:00:00+08:00'
+      readAt: null
     }
   ],
   systemNotifications: [

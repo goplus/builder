@@ -54,6 +54,9 @@ const activeNotifications = computed(() =>
 const unreadFeedbackCount = computed(
   () => feedbackNotifications.value.filter((notification) => notification.readAt == null).length
 )
+const unreadSystemCount = computed(
+  () => systemNotifications.value.filter((notification) => notification.readAt == null).length
+)
 const selectedNotification = computed(
   () =>
     [...model.data.notifications, ...model.data.systemNotifications].find(
@@ -231,6 +234,10 @@ function formatImageCount(count: number) {
   })
 }
 
+function formatUnreadCount(count: number) {
+  return count > 99 ? '99+' : String(count)
+}
+
 const imageFileExtensionPattern = /\.(apng|avif|bmp|gif|jpe?g|png|svg|webp)(?:[?#].*)?$/i
 
 function isRenderableImageAttachment(attachment: FeedbackAttachment): attachment is RenderableFeedbackAttachment {
@@ -320,15 +327,20 @@ function handlePreviewVisibleChange(visible: boolean) {
         </button>
       </div>
 
-      <div class="flex shrink-0 border-b border-grey-300 px-6">
+      <div class="flex shrink-0 gap-6 border-b border-grey-300 px-6">
         <button
           type="button"
           class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
-          :class="activeNotificationTab === 'feedback' ? 'mr-6 text-primary-main' : 'mr-6 text-grey-700'"
+          :class="activeNotificationTab === 'feedback' ? 'text-primary-main' : 'text-grey-700'"
           @click="activeNotificationTab = 'feedback'"
         >
-          {{ $t({ en: 'Messages', zh: '消息通知' })
-          }}<template v-if="unreadFeedbackCount > 0">（{{ unreadFeedbackCount }}）</template>
+          {{ $t({ en: 'Messages', zh: '消息通知' }) }}
+          <span
+            v-if="unreadFeedbackCount > 0"
+            class="ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-100 px-1 text-sm font-normal leading-[18px] text-red-main tabular-nums"
+          >
+            {{ formatUnreadCount(unreadFeedbackCount) }}
+          </span>
           <span
             v-if="activeNotificationTab === 'feedback'"
             class="absolute inset-x-0 bottom-0 h-0.5 bg-primary-main"
@@ -341,6 +353,12 @@ function handlePreviewVisibleChange(visible: boolean) {
           @click="activeNotificationTab = 'system'"
         >
           {{ $t({ en: 'System messages', zh: '系统消息' }) }}
+          <span
+            v-if="unreadSystemCount > 0"
+            class="ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-100 px-1 text-sm font-normal leading-[18px] text-red-main tabular-nums"
+          >
+            {{ formatUnreadCount(unreadSystemCount) }}
+          </span>
           <span
             v-if="activeNotificationTab === 'system'"
             class="absolute inset-x-0 bottom-0 h-0.5 bg-primary-main"
