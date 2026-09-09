@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { RouteLocationNormalizedGeneric } from 'vue-router'
 import type { ILocalCache } from '@/components/editor/editing'
+import { inCourseEditorPathParam, paramToSegments, projectDocSegment } from '../route'
 
 // The embedded learner project has no owner, so the editor runs in EffectFree mode and nothing is cached locally.
 const noopLocalCache: ILocalCache = {
@@ -13,17 +14,33 @@ const noopLocalCache: ILocalCache = {
 
 type RouteSnapshot = Pick<RouteLocationNormalizedGeneric, 'fullPath' | 'params' | 'query' | 'hash'>
 
-function snapshotRoute(route: RouteSnapshot): RouteSnapshot {
-  return { fullPath: route.fullPath, params: { ...route.params }, query: { ...route.query }, hash: route.hash }
+function isProjectDocRoute(route: RouteSnapshot) {
+  return paramToSegments(route.params[inCourseEditorPathParam])[0] === projectDocSegment
+}
+
+/** The Project Editor's in-editor path carried by the Course Editor route (empty unless the project document is open). */
+function projectInEditorPath(route: RouteSnapshot) {
+  const [doc, ...rest] = paramToSegments(route.params[inCourseEditorPathParam])
+  return doc === projectDocSegment ? rest : []
+}
+
+/**
+ * What the Project Editor's state sees as its route: the Course Editor route with the `project/…` tail presented
+ * under the `inEditorPath` param the state expects.
+ */
+function translateRoute(route: RouteSnapshot): RouteSnapshot {
+  const params = { ...route.params }
+  delete params[inCourseEditorPathParam]
+  return {
+    fullPath: route.fullPath,
+    params: { ...params, inEditorPath: projectInEditorPath(route) },
+    query: { ...route.query },
+    hash: route.hash
+  }
 }
 
 function toPathSegments(path: string) {
   return path.split('/').filter((segment) => segment !== '')
-}
-
-function paramToPathSegments(param: string | string[] | undefined) {
-  if (param == null) return []
-  return typeof param === 'string' ? toPathSegments(param) : param
 }
 
 function isSamePath(a: string[], b: string[]) {
@@ -49,12 +66,12 @@ import { UIDetailedLoading, UIError } from '@/components/ui'
 
 const props = defineProps<{
   project: SpxProject
-  /** In-editor path to open initially, used only when the current route does not carry one. */
+  /** In-editor path to open the first time the project document is shown, unless the route already carries one. */
   initialPath: string
   /**
-   * Whether the editor UI is shown and follows the route. While inactive, the editor state (selection,
-   * undo history, ...) is kept alive but detached from the route, so whatever replaces the editor in the
-   * meantime (e.g. the course preview) can drive the route freely.
+   * Whether the project document is open: the editor UI is shown and follows the route. While inactive, the
+   * editor state (selection, undo history, ...) is kept alive but detached from the route, so other documents
+   * and the course preview can drive the route freely.
    */
   active: boolean
 }>()
@@ -76,19 +93,50 @@ function setState(next: EditorState | null) {
   emit('update:editorState', next)
 }
 
-// While inactive, the editor state sees the route frozen at the moment it was deactivated and its own
-// navigations are dropped. On re-activation the real route is brought back to the frozen one first.
-const frozenRoute = shallowRef<RouteSnapshot | null>(null)
+// The editor state follows the route only while the project document is open. Otherwise it keeps seeing the
+// last project route (so nothing gets deselected while another document or the preview drives the route) and
+// its own navigations are dropped; the Project Editor's in-editor path is mapped to and from the `project/…` tail.
+const lastProjectRoute = shallowRef<RouteSnapshot | null>(null)
+watch(
+  () => router.currentRoute.value,
+  (current) => {
+    // A bare `project` (no tail) is transient: it gets replaced with the last or initial path right away.
+    if (props.active && projectInEditorPath(current).length > 0) lastProjectRoute.value = translateRoute(current)
+  },
+  { immediate: true }
+)
 const editorRouter: IRouter = {
-  currentRoute: computed(() => frozenRoute.value ?? router.currentRoute.value),
-  push: (to) => (frozenRoute.value == null ? router.push(to) : Promise.resolve())
+  currentRoute: computed(() => {
+    const current = router.currentRoute.value
+    if (props.active && isProjectDocRoute(current)) return translateRoute(current)
+    return lastProjectRoute.value ?? translateRoute(current)
+  }),
+  push: (to) => {
+    if (!props.active) return Promise.resolve()
+    const current = router.currentRoute.value
+    return router.push({
+      query: current.query,
+      hash: current.hash,
+      ...to,
+      params: {
+        ...current.params,
+        [inCourseEditorPathParam]: [projectDocSegment, ...paramToSegments(to.params?.inEditorPath)]
+      }
+    })
+  }
 }
 
 let disposed = false
+// Route sync starts the first time the project document is opened, so that opening the course on another
+// document does not write the project's route.
+let routeSynced = false
+
 async function initialize() {
   const previousState = state.value
   setState(null)
   initializationError.value = null
+  lastProjectRoute.value = null
+  routeSynced = false
   await nextTick()
   previousState?.dispose()
   if (disposed) return
@@ -96,9 +144,8 @@ async function initialize() {
   const nextState = new EditorState(i18n, props.project, isOnline, signedInStateQuery, cloudHelpers, noopLocalCache)
   try {
     nextState.editing.startEditing()
-    await openInitialPath(nextState)
+    if (props.active) await startRouteSync(nextState)
     if (disposed) throw new Error('Project editor disposed during initialization')
-    nextState.syncWithRouter(editorRouter)
     setState(nextState)
   } catch (error) {
     nextState.dispose()
@@ -107,14 +154,20 @@ async function initialize() {
   }
 }
 
+async function startRouteSync(editorState: EditorState) {
+  await openInitialPath(editorState)
+  if (disposed) return
+  editorState.syncWithRouter(editorRouter)
+  routeSynced = true
+}
+
 /**
- * Select the initial in-editor path: the one in the current route if any, otherwise the configured one.
+ * Select the initial in-editor path: the one in the route if any, otherwise the configured one.
  * The configured path may refer to editor routes the Project Editor does not recognize yet (Simple Mode, for
  * example), so an unresolvable path falls back to the default selection instead of blocking the whole editor.
  */
 async function openInitialPath(editorState: EditorState) {
-  const currentRoute = router.currentRoute.value
-  const routePath = paramToPathSegments(currentRoute.params.inEditorPath)
+  const routePath = projectInEditorPath(router.currentRoute.value)
   let path = routePath.length > 0 ? routePath : toPathSegments(props.initialPath)
   try {
     editorState.selectByRoute(path)
@@ -124,11 +177,7 @@ async function openInitialPath(editorState: EditorState) {
     editorState.selectByRoute(path)
   }
   if (isSamePath(path, routePath)) return
-  await router.replace({
-    params: { ...currentRoute.params, inEditorPath: path },
-    query: currentRoute.query,
-    hash: currentRoute.hash
-  })
+  await editorRouter.push({ params: { inEditorPath: path }, replace: true })
 }
 
 watch(
@@ -140,23 +189,30 @@ watch(
 watch(
   () => props.active,
   async (active) => {
+    const editorState = state.value
+    if (editorState == null) return
     if (!active) {
-      frozenRoute.value = snapshotRoute(router.currentRoute.value)
       // Known gap (owner: #3416): unmounting the editor UI tears down the project runner, but
       // `EditorPreview` does not reset `EditorState.runtime` on unmount, so a project that was running
       // comes back with `runtime.running` still in debug mode. To be fixed in `EditorPreview` itself.
       return
     }
-    const frozen = frozenRoute.value
-    if (frozen == null) return
-    const currentRoute = router.currentRoute.value
-    await router.replace({
-      params: { ...currentRoute.params, inEditorPath: frozen.params.inEditorPath ?? [] },
-      query: frozen.query,
-      hash: frozen.hash
-    })
-    if (disposed) return
-    frozenRoute.value = null
+    if (!routeSynced) {
+      await startRouteSync(editorState)
+      return
+    }
+    // Reopened without a path (e.g. from the explorer): return to where the editor was.
+    const last = lastProjectRoute.value
+    if (last == null) return
+    const lastPath = paramToSegments(last.params.inEditorPath)
+    if (projectInEditorPath(router.currentRoute.value).length === 0 && lastPath.length > 0) {
+      const current = router.currentRoute.value
+      await router.replace({
+        params: { ...current.params, [inCourseEditorPathParam]: [projectDocSegment, ...lastPath] },
+        query: last.query,
+        hash: last.hash
+      })
+    }
   }
 )
 
