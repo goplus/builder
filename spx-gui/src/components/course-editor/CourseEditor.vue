@@ -1,14 +1,11 @@
-<script lang="ts">
-type CoursePane = 'program' | 'videos' | 'info'
-</script>
-
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
-import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
+import { useRoute, useRouter, type RouteLocationNormalizedGeneric } from 'vue-router'
 import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { updateCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
+import { courseEditorPreviewRouteName, courseEditorRouteName } from '@/apps/xbuilder/router'
 import { saveFiles } from '@/models/common/cloud'
 import { TutorialProject } from '@/models/tutorial/project'
 import type { EditorState } from '@/components/editor/editor-state'
@@ -21,19 +18,21 @@ import type { PlaygroundCourseCompletion } from '@/components/tutorials/playgrou
 import {
   UIButton,
   UICard,
+  UIDetailedLoading,
   UIError,
   UILoading,
-  UITab,
-  UITabs,
   UITag,
   useConfirmDialogWithResult,
   useMessage,
   useModal
 } from '@/components/ui'
+import CourseExplorer from './CourseExplorer.vue'
 import CourseInfoPane from './CourseInfoPane.vue'
 import CourseProgramEditor from './CourseProgramEditor.vue'
+import CourseVideoDoc from './CourseVideoDoc.vue'
 import CourseVideosPane from './CourseVideosPane.vue'
 import { getProjectEditorHost } from './project'
+import { inCourseEditorPathParam, parseCourseDoc, toInCourseEditorPath, type CourseDoc } from './route'
 
 const props = defineProps<{
   course: PlaygroundCourse
@@ -48,6 +47,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const m = useMessage()
+const route = useRoute()
+const router = useRouter()
 const confirm = useConfirmDialogWithResult()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 
@@ -59,7 +60,25 @@ const config = computed(() => {
 const projectEditorHost = computed(() => getProjectEditorHost(config.value.project.type))
 
 const editorState = shallowRef<EditorState | null>(null)
-const activePane = ref<CoursePane>('program')
+
+// The open document comes from the route, so it survives reloads and works with browser history.
+const doc = computed<CourseDoc>(() => parseCourseDoc(route.params[inCourseEditorPathParam]))
+const isPreviewRoute = computed(() => route.name === courseEditorPreviewRouteName)
+
+function courseRouteParams() {
+  return { courseSeriesIdInput: route.params.courseSeriesIdInput, courseIdInput: route.params.courseIdInput }
+}
+
+function openDoc(next: CourseDoc) {
+  return router.push({
+    name: courseEditorRouteName,
+    params: { ...courseRouteParams(), [inCourseEditorPathParam]: toInCourseEditorPath(next) }
+  })
+}
+
+function openVideo(name: string) {
+  return openDoc({ type: 'videos', name })
+}
 
 // Track unsaved changes across everything the Tutorial project exports, plus its metadata.
 // `revision` tells a save whether edits happened after its snapshot was taken.
@@ -111,10 +130,11 @@ const handleSave = useMessageHandle(
 const saving = computed(() => handleSave.isLoading.value)
 
 // Preview runs the real Tutorial lifecycle on a snapshot of the author's current work, so learner-side
-// edits and course execution never touch the working copy. While previewing, the author's editor UI is
-// hidden and detached from the route (its state survives), since both would otherwise drive `inEditorPath`.
+// edits and course execution never touch the working copy. It lives on its own route (the playground drives
+// that route's `inEditorPath`); entering and leaving it, also through browser history, drives the state below.
 const preview = shallowRef<TutorialProject | null>(null)
 const previewError = ref<Error | null>(null)
+let routeBeforePreview: string | null = null
 
 /** The course as the learner would see it: the saved record with the working copy's metadata. */
 const previewCourse = computed<PlaygroundCourse>(() => ({
@@ -123,19 +143,52 @@ const previewCourse = computed<PlaygroundCourse>(() => ({
   thumbnail: props.project.thumbnail
 }))
 
+async function loadPreviewSnapshot() {
+  const snapshot = new TutorialProject()
+  await snapshot.load(await props.project.snapshot())
+  return snapshot
+}
+
 const handlePreview = useMessageHandle(
   async () => {
-    const snapshot = new TutorialProject()
-    await snapshot.load(await props.project.snapshot())
+    const snapshot = await loadPreviewSnapshot()
     previewError.value = null
     preview.value = snapshot
+    routeBeforePreview = route.fullPath
+    await router.push({ name: courseEditorPreviewRouteName, params: { ...courseRouteParams(), inEditorPath: [] } })
   },
   { en: 'Failed to start preview', zh: '启动预览失败' }
 )
 
+async function enterPreviewFromRoute() {
+  try {
+    const snapshot = await loadPreviewSnapshot()
+    if (!isPreviewRoute.value) return
+    previewError.value = null
+    preview.value = snapshot
+  } catch (error) {
+    previewError.value = error instanceof Error ? error : new Error(String(error))
+  }
+}
+
+watch(
+  isPreviewRoute,
+  (isPreview) => {
+    if (!isPreview) {
+      preview.value = null
+      previewError.value = null
+      return
+    }
+    if (preview.value == null) void enterPreviewFromRoute()
+  },
+  { immediate: true }
+)
+
 function exitPreview() {
-  preview.value = null
-  previewError.value = null
+  const target = routeBeforePreview
+  routeBeforePreview = null
+  if (target != null) return router.push(target)
+  return openDoc({ type: 'project', inEditorPath: [] })
 }
 
 async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
@@ -145,7 +198,7 @@ async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
     feedback: completion.feedback
   })
   if (action === 'continueEditing') return
-  exitPreview()
+  await exitPreview()
 }
 
 function handlePreviewFailed(error: Error) {
@@ -169,15 +222,19 @@ function confirmDiscardingUnsavedChanges() {
   })
 }
 
-onBeforeRouteLeave(() => confirmDiscardingUnsavedChanges())
+function isThisCourseEditor(location: RouteLocationNormalizedGeneric) {
+  const name = location.name
+  return (
+    (name === courseEditorRouteName || name === courseEditorPreviewRouteName) &&
+    location.params.courseSeriesIdInput === route.params.courseSeriesIdInput &&
+    location.params.courseIdInput === route.params.courseIdInput
+  )
+}
 
-// The same route also serves other courses; only a change of course identity leaves this editing session.
-// In-editor navigation (`inEditorPath`) updates the route too and must not prompt.
-onBeforeRouteUpdate((to, from) => {
-  const sameCourse =
-    to.params.courseIdInput === from.params.courseIdInput &&
-    to.params.courseSeriesIdInput === from.params.courseSeriesIdInput
-  if (sameCourse) return true
+// Editing, preview and document switches of this course are the same session; only leaving it asks about
+// unsaved changes. A global guard is used because the session spans two route records.
+const stopLeaveGuard = router.beforeEach((to, from) => {
+  if (!isThisCourseEditor(from) || isThisCourseEditor(to)) return true
   return confirmDiscardingUnsavedChanges()
 })
 
@@ -202,6 +259,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('keydown', handleSaveShortcut)
+  stopLeaveGuard()
   saveController?.abort(new Cancelled('unmounted'))
 })
 </script>
@@ -216,7 +274,7 @@ onUnmounted(() => {
     />
     <header class="flex-none">
       <div
-        v-if="preview != null"
+        v-if="isPreviewRoute"
         v-radar="{
           name: 'Course preview banner',
           desc: 'Shows that the course is being previewed, with a button to go back to the editor'
@@ -237,7 +295,7 @@ onUnmounted(() => {
       </div>
       <NavbarWrapper v-else>
         <template #left>
-          <EditorHistoryButtons :state="editorState" />
+          <EditorHistoryButtons v-if="doc.type === 'project'" :state="editorState" />
         </template>
         <template #center>
           <div
@@ -253,7 +311,7 @@ onUnmounted(() => {
           </div>
         </template>
         <template #right>
-          <EditorModeSwitch :state="editorState" />
+          <EditorModeSwitch v-if="doc.type === 'project'" :state="editorState" />
           <UIButton
             v-radar="{ name: 'Preview course button', desc: 'Click to preview the course as a learner' }"
             class="mr-2"
@@ -279,52 +337,46 @@ onUnmounted(() => {
         </template>
       </NavbarWrapper>
     </header>
-    <main class="flex-[1_1_0] flex" :class="preview != null ? 'flex-col' : 'gap-xl p-4 pt-2'">
-      <template v-if="preview != null">
-        <UIError v-if="previewError != null" class="flex-1" :retry="handlePreview.fn">
+    <main class="flex-[1_1_0] flex" :class="isPreviewRoute ? 'flex-col' : 'gap-xl p-4 pt-2'">
+      <template v-if="isPreviewRoute">
+        <UIError v-if="previewError != null" class="flex-1" :retry="enterPreviewFromRoute">
           {{ previewError.message }}
         </UIError>
         <CoursePlayground
-          v-else
+          v-else-if="preview != null"
           :project="preview"
           @course-completed="handlePreviewCompleted"
           @failed="handlePreviewFailed"
         />
+        <UIDetailedLoading v-else class="flex-1" :percentage="0">
+          <span>{{ $t({ en: 'Preparing preview...', zh: '准备预览中...' }) }}</span>
+        </UIDetailedLoading>
       </template>
-      <!-- Course-level panes. Layout is a placeholder for design to iterate on. -->
-      <UICard v-else class="min-w-0 flex-[0_0_360px] flex flex-col overflow-hidden">
-        <UITabs
-          v-radar="{ name: 'Course panes tabs', desc: 'Switch between the course program, videos and course info' }"
-          class="flex-none border-b border-line py-2"
-          :value="activePane"
-          @update:value="(v) => (activePane = v as CoursePane)"
-        >
-          <UITab v-radar="{ name: 'Course program tab', desc: 'Click to edit the course program' }" value="program">
-            {{ $t({ en: 'Program', zh: '课程程序' }) }}
-          </UITab>
-          <UITab v-radar="{ name: 'Videos tab', desc: 'Click to manage course videos' }" value="videos">
-            {{ $t({ en: 'Videos', zh: '视频' }) }}
-          </UITab>
-          <UITab
-            v-radar="{ name: 'Course info tab', desc: 'Click to edit course title, thumbnail and Copilot context' }"
-            value="info"
-          >
-            {{ $t({ en: 'Info', zh: '课程信息' }) }}
-          </UITab>
-        </UITabs>
-        <div class="min-h-0 flex-[1_1_0]">
-          <CourseProgramEditor v-if="activePane === 'program'" :course="project.mainCourse" />
-          <CourseVideosPane v-else-if="activePane === 'videos'" :project="project" />
-          <CourseInfoPane v-else :project="project" />
-        </div>
-      </UICard>
-      <!-- Always mounted: the author's editor state must outlive the preview. -->
+      <template v-else>
+        <!-- Course explorer + one document at a time. Layout is a placeholder for design to iterate on. -->
+        <UICard class="min-w-0 flex-[0_0_240px] overflow-hidden">
+          <CourseExplorer :project="project" :doc="doc" @select="openDoc" />
+        </UICard>
+        <UICard v-if="doc.type !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
+          <CourseProgramEditor v-if="doc.type === 'program'" :course="project.mainCourse" />
+          <CourseInfoPane v-else-if="doc.type === 'info'" :project="project" />
+          <CourseVideoDoc
+            v-else-if="doc.type === 'videos' && doc.name != null"
+            :project="project"
+            :name="doc.name"
+            @renamed="openVideo"
+            @deleted="openDoc({ type: 'videos', name: null })"
+          />
+          <CourseVideosPane v-else-if="doc.type === 'videos'" :project="project" @open="openVideo" />
+        </UICard>
+      </template>
+      <!-- Always mounted: the author's editor state outlives document switches and the preview. -->
       <component
         :is="projectEditorHost"
         v-model:editor-state="editorState"
         :project="project.project"
         :initial-path="config.inEditorPath"
-        :active="preview == null"
+        :active="!isPreviewRoute && doc.type === 'project'"
       />
     </main>
   </section>

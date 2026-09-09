@@ -38,8 +38,13 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
-export function getCourseEditorRoute(courseSeriesID: string, courseID: string) {
-  return `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}`
+export const courseEditorRouteName = 'course-editor'
+export const courseEditorPreviewRouteName = 'course-editor-preview'
+
+export function getCourseEditorRoute(courseSeriesID: string, courseID: string, inCourseEditorPath: string[] = []) {
+  const base = `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}`
+  if (inCourseEditorPath.length === 0) return base
+  return `${base}/${inCourseEditorPath.map(encodeURIComponent).join('/')}`
 }
 
 export const homePageName = 'home'
@@ -137,8 +142,17 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/tutorials/course-series.vue'),
     props: true
   },
+  // Course preview runs the learner-side playground, which drives `inEditorPath` itself, so it gets its own
+  // route record; both records render the same page so the editing session survives entering preview.
   {
-    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*',
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/preview/:inEditorPath*',
+    name: courseEditorPreviewRouteName,
+    component: () => import('./pages/course-editor/index.vue'),
+    props: true
+  },
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inCourseEditorPath*',
+    name: courseEditorRouteName,
     component: () => import('./pages/course-editor/index.vue'),
     props: true
   },

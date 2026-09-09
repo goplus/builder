@@ -63,7 +63,9 @@ const handleGenerateCopilotContext = useMessageHandle(
       />
     </div>
     <label class="flex flex-col gap-1">
-      <span class="text-grey-700">{{ $t({ en: 'Initial editor path', zh: '初始编辑器路径' }) }}</span>
+      <span class="text-grey-700">{{
+        $t({ en: "Learner's initial view (path inside the Project Editor)", zh: '学习者初始视图（工程编辑器内路径）' })
+      }}</span>
       <UITextInput
         v-radar="{
           name: 'Initial editor path input',
