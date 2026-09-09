@@ -50,17 +50,14 @@ type Request struct {
 	// interaction sequence.
 	//
 	// A value of 0 means this is the initial turn from user input. Values
-	// > 0 indicate continuation turns where the AI continues the current
-	// interaction sequence based on the outcomes of commands executed
-	// within this sequence.
+	// greater than 0 indicate continuation turns and must equal the number
+	// of completed turns in the current interaction sequence, up to 19. The
+	// latest completed turn must not contain a BREAK signal.
 	ContinuationTurn int `json:"continuationTurn,omitempty"`
 }
 
 // Response encapsulates the response received from the AI via the [Transport].
 type Response struct {
-	// Text is the textual part of the AI's response.
-	Text string `json:"text"`
-
 	// CommandName is the name of the command the AI wants to execute.
 	CommandName string `json:"commandName,omitempty"`
 
@@ -76,9 +73,6 @@ type Turn struct {
 	// RequestContext is the context for the user's input text for the turn.
 	RequestContext map[string]any `json:"context,omitempty"`
 
-	// ResponseText is the AI's text output for that turn.
-	ResponseText string `json:"responseText"`
-
 	// ResponseCommandName is the command requested by the AI in this turn's response.
 	ResponseCommandName string `json:"responseCommandName,omitempty"`
 
@@ -86,8 +80,7 @@ type Turn struct {
 	ResponseCommandArgs map[string]any `json:"responseCommandArgs,omitempty"`
 
 	// ExecutedCommandResult holds the result of executing the command requested in
-	// this turn's response. Nil if execution hasn't happened/failed before result
-	// recording.
+	// this turn's response. Every recorded turn contains a result.
 	ExecutedCommandResult *CommandResult `json:"executedCommandResult,omitempty"`
 
 	// IsInitial indicates whether this turn is the initial turn of an
@@ -101,7 +94,7 @@ type ArchivedHistory struct {
 	Content string `json:"content"`
 }
 
-// ErrTransportNotSet indicates that the AI transport has not been configured via [SetGlobalTransport].
+// ErrTransportNotSet indicates that the AI transport has not been configured via [SetDefaultTransport].
 var ErrTransportNotSet = errors.New("transport not set")
 
 // notSetTransport is the [Transport] implementation that always returns [ErrTransportNotSet].
@@ -164,6 +157,88 @@ func (tmr *TooManyRequestsError) Error() string {
 // Unwrap returns the underlying error.
 func (tmr *TooManyRequestsError) Unwrap() error {
 	return tmr.Err
+}
+
+// RetryableError marks a transport failure that is safe to attempt again.
+type RetryableError struct {
+	Err error
+}
+
+// Error implements [error].
+func (re *RetryableError) Error() string {
+	if re.Err == nil {
+		return "retryable transport error"
+	}
+	return re.Err.Error()
+}
+
+// Unwrap returns the underlying error.
+func (re *RetryableError) Unwrap() error {
+	return re.Err
+}
+
+// ClientError describes a non-retryable HTTP 4xx response other than 429.
+type ClientError struct {
+	StatusCode int
+	RetryAfter time.Duration
+	Err        error
+}
+
+// Error implements [error].
+func (ce *ClientError) Error() string {
+	if ce.Err == nil {
+		return fmt.Sprintf("client request failed with status %d", ce.StatusCode)
+	}
+	return ce.Err.Error()
+}
+
+// Unwrap returns the underlying error.
+func (ce *ClientError) Unwrap() error {
+	return ce.Err
+}
+
+// isRetryableTransportError reports whether a failed transport call is
+// explicitly safe to attempt again.
+func isRetryableTransportError(err error) bool {
+	var tooManyRequestsErr *TooManyRequestsError
+	if errors.As(err, &tooManyRequestsErr) {
+		return true
+	}
+	var retryableErr *RetryableError
+	return errors.As(err, &retryableErr)
+}
+
+// retryTransportCall calls a transport operation with bounded timeouts,
+// backoff, and rate-limit waits.
+func retryTransportCall[T any](
+	ctx context.Context,
+	maxAttempts int,
+	backoffBase time.Duration,
+	backoffCap time.Duration,
+	callTimeout time.Duration,
+	call func(context.Context) (T, error),
+) (result T, err error) {
+	const rateLimitWaitTimeout = 2 * time.Minute
+
+	var rateGate rateLimitGate
+	for range backoffAttempts(ctx, maxAttempts, backoffBase, backoffCap) {
+		waitCtx, waitCancel := context.WithTimeout(ctx, rateLimitWaitTimeout)
+		waitErr := rateGate.Wait(waitCtx)
+		waitCancel()
+		if waitErr != nil {
+			return result, fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout)
+		}
+
+		callCtx, callCancel := context.WithTimeout(ctx, callTimeout)
+		result, err = call(callCtx)
+		callCancel()
+		if err == nil || !isRetryableTransportError(err) {
+			return result, err
+		}
+
+		rateGate.Observe(err)
+	}
+	return result, err
 }
 
 // RetryAfterFromHeader converts a Retry-After header value to [time.Duration].

@@ -2,118 +2,441 @@ package ai
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 )
 
-func TestPlayerThinkArchivesAfterNormalCompletion(t *testing.T) {
-	type archiveCommand struct{}
+func TestPlayerOnCmd(t *testing.T) {
+	type CommandWithANameThatIsLongerThanSixtyFourCharactersAndCannotBeRegistered struct{}
+	type commandWithLongParameterName struct {
+		ParameterWithANameThatIsLongerThanSixtyFourCharactersAndCannotBeRegistered string
+	}
+	type commandWithPointerParameter struct {
+		Value *string
+	}
 
+	for _, tt := range []struct {
+		name          string
+		cmd           any
+		handler       any
+		wantPanicText string
+	}{
+		{
+			name: "LongCommandName",
+			cmd:  CommandWithANameThatIsLongerThanSixtyFourCharactersAndCannotBeRegistered{},
+			handler: func(CommandWithANameThatIsLongerThanSixtyFourCharactersAndCannotBeRegistered) error {
+				return nil
+			},
+			wantPanicText: "must not exceed 64 characters",
+		},
+		{
+			name:          "LongParameterName",
+			cmd:           commandWithLongParameterName{},
+			handler:       func(commandWithLongParameterName) error { return nil },
+			wantPanicText: "invalid name",
+		},
+		{
+			name:          "UnsupportedParameterType",
+			cmd:           commandWithPointerParameter{},
+			handler:       func(commandWithPointerParameter) error { return nil },
+			wantPanicText: "unsupported type *string",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				panicValue := recover()
+				if panicValue == nil {
+					t.Fatal("expected panic")
+				}
+				if got := fmt.Sprint(panicValue); !strings.Contains(got, tt.wantPanicText) {
+					t.Errorf("got panic %q, want panic containing %q", got, tt.wantPanicText)
+				}
+			}()
+			PlayerOnCmd_(&Player{}, tt.cmd, tt.handler)
+		})
+	}
+
+	t.Run("TooManyCommands", func(t *testing.T) {
+		type extraCommand struct{}
+
+		p := &Player{commands: make(map[string]commandInfo, maxCommandCount)}
+		for i := range maxCommandCount {
+			p.commands[fmt.Sprintf("Command%d", i)] = commandInfo{}
+		}
+
+		defer func() {
+			panicValue := recover()
+			if panicValue == nil {
+				t.Fatal("expected panic")
+			}
+			if got := fmt.Sprint(panicValue); got != "cannot register more than 128 AI commands" {
+				t.Errorf("got panic %q, want command count error", got)
+			}
+		}()
+		PlayerOnCmd_(p, extraCommand{}, func(extraCommand) error { return nil })
+	})
+}
+
+func TestPlayerThink(t *testing.T) {
+	t.Run("RejectsInvalidInitialRequestBeforeTransport", func(t *testing.T) {
+		type testCommand struct{}
+
+		for _, tt := range []struct {
+			name            string
+			message         string
+			registerCommand bool
+			wantError       string
+		}{
+			{
+				name:            "MissingContent",
+				registerCommand: true,
+				wantError:       "missing content",
+			},
+			{
+				name:            "ContentTooLong",
+				message:         strings.Repeat(string(rune(0x4e00)), 281),
+				registerCommand: true,
+				wantError:       "content length exceeds 280 characters",
+			},
+			{
+				name:      "NoCommands",
+				message:   "move",
+				wantError: "no available commands",
+			},
+		} {
+			t.Run(tt.name, func(t *testing.T) {
+				originalTransport := DefaultTransport()
+				t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+				transportCalls := 0
+				SetDefaultTransport(&mockTransport{
+					InteractFunc: func(_ context.Context, _ Request) (Response, error) {
+						transportCalls++
+						return Response{}, nil
+					},
+				})
+
+				var gotErr error
+				p := &Player{errorHandler: func(err error) { gotErr = err }}
+				if tt.registerCommand {
+					PlayerOnCmd_(p, testCommand{}, func(testCommand) error { return nil })
+				}
+
+				p.think(t.Context(), nil, tt.message, nil)
+
+				if gotErr == nil || gotErr.Error() != tt.wantError {
+					t.Errorf("got error %v, want %q", gotErr, tt.wantError)
+				}
+				if transportCalls != 0 {
+					t.Errorf("got %d transport calls, want 0", transportCalls)
+				}
+			})
+		}
+	})
+
+	t.Run("RejectsEmptyInitialResponse", func(t *testing.T) {
+		type testCommand struct{}
+
+		originalTransport := DefaultTransport()
+		t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+		transportCalls := 0
+		SetDefaultTransport(&mockTransport{
+			InteractFunc: func(_ context.Context, _ Request) (Response, error) {
+				transportCalls++
+				return Response{}, nil
+			},
+		})
+
+		var gotErr error
+		p := &Player{errorHandler: func(err error) { gotErr = err }}
+		PlayerOnCmd_(p, testCommand{}, func(testCommand) error { return nil })
+
+		p.think(t.Context(), nil, "move", nil)
+
+		if got, want := transportCalls, 1; got != want {
+			t.Errorf("got %d transport calls, want %d", got, want)
+		}
+		if gotErr == nil || gotErr.Error() != "ai did not provide a command for the initial turn" {
+			t.Errorf("got error %v, want initial command error", gotErr)
+		}
+	})
+
+	t.Run("SortsCommandSpecsByName", func(t *testing.T) {
+		type AlphaCommand struct{}
+		type MiddleCommand struct{}
+		type ZuluCommand struct{}
+
+		originalTransport := DefaultTransport()
+		t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+		interactCalls := 0
+		SetDefaultTransport(&mockTransport{
+			InteractFunc: func(_ context.Context, req Request) (Response, error) {
+				interactCalls++
+				var gotNames []string
+				for _, spec := range req.CommandSpecs {
+					gotNames = append(gotNames, spec.Name)
+				}
+				wantNames := []string{"AlphaCommand", "MiddleCommand", "ZuluCommand"}
+				if !slices.Equal(gotNames, wantNames) {
+					t.Errorf("got command names %v, want %v", gotNames, wantNames)
+				}
+				if interactCalls == 1 {
+					return Response{CommandName: "AlphaCommand"}, nil
+				}
+				return Response{}, nil
+			},
+		})
+
+		p := &Player{errorHandler: func(err error) { t.Errorf("unexpected interaction error: %v", err) }}
+		PlayerOnCmd_(p, ZuluCommand{}, func(ZuluCommand) error { return nil })
+		PlayerOnCmd_(p, AlphaCommand{}, func(AlphaCommand) error { return nil })
+		PlayerOnCmd_(p, MiddleCommand{}, func(MiddleCommand) error { return nil })
+
+		p.think(t.Context(), nil, "move", nil)
+
+		if got, want := interactCalls, 2; got != want {
+			t.Errorf("got %d interaction calls, want %d", got, want)
+		}
+	})
+
+	t.Run("DoesNotRetryOrdinaryTransportError", func(t *testing.T) {
+		type testCommand struct{}
+
+		originalTransport := DefaultTransport()
+		t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+		transportCalls := 0
+		baseErr := errors.New("forbidden")
+		SetDefaultTransport(&mockTransport{
+			InteractFunc: func(_ context.Context, _ Request) (Response, error) {
+				transportCalls++
+				return Response{}, baseErr
+			},
+		})
+
+		var gotErr error
+		p := &Player{errorHandler: func(err error) { gotErr = err }}
+		PlayerOnCmd_(p, testCommand{}, func(testCommand) error { return nil })
+
+		p.think(t.Context(), nil, "move", nil)
+
+		if got, want := transportCalls, 1; got != want {
+			t.Errorf("got %d transport calls, want %d", got, want)
+		}
+		if gotErr == nil || !errors.Is(gotErr, baseErr) {
+			t.Errorf("got error %v, want error wrapping %v", gotErr, baseErr)
+		}
+	})
+
+	t.Run("RetriesExplicitlyRetryableTransportError", func(t *testing.T) {
+		type testCommand struct{}
+
+		originalTransport := DefaultTransport()
+		t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+		transportCalls := 0
+		SetDefaultTransport(&mockTransport{
+			InteractFunc: func(_ context.Context, _ Request) (Response, error) {
+				transportCalls++
+				switch transportCalls {
+				case 1:
+					return Response{}, &RetryableError{Err: errors.New("unavailable")}
+				case 2:
+					return Response{CommandName: reflect.TypeOf(testCommand{}).Name()}, nil
+				default:
+					return Response{}, nil
+				}
+			},
+		})
+
+		p := &Player{errorHandler: func(err error) { t.Errorf("unexpected interaction error: %v", err) }}
+		PlayerOnCmd_(p, testCommand{}, func(testCommand) error { return nil })
+
+		p.think(t.Context(), nil, "move", nil)
+
+		if got, want := transportCalls, 3; got != want {
+			t.Errorf("got %d transport calls, want %d", got, want)
+		}
+	})
+
+	t.Run("ArchivesAfterNormalCompletion", func(t *testing.T) {
+		type archiveCommand struct{}
+
+		originalTransport := DefaultTransport()
+		t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+		interactCalls := 0
+		archivedTurnCount := make(chan int, 1)
+		archiveMayFinish := make(chan struct{})
+		var releaseArchiveOnce sync.Once
+		releaseArchive := func() {
+			releaseArchiveOnce.Do(func() { close(archiveMayFinish) })
+		}
+		t.Cleanup(releaseArchive)
+		SetDefaultTransport(&mockTransport{
+			InteractFunc: func(_ context.Context, _ Request) (Response, error) {
+				interactCalls++
+				if interactCalls == 1 {
+					return Response{CommandName: reflect.TypeOf(archiveCommand{}).Name()}, nil
+				}
+				return Response{}, nil
+			},
+			ArchiveFunc: func(_ context.Context, turns []Turn, _ string) (ArchivedHistory, error) {
+				archivedTurnCount <- len(turns)
+				<-archiveMayFinish
+				return ArchivedHistory{Content: "archived"}, nil
+			},
+		})
+
+		// The new command turn brings history to the 30-turn threshold. Retaining at
+		// least 15 turns makes index 10 the latest eligible interaction boundary.
+		history := make([]Turn, 29)
+		for i := range history {
+			history[i].IsInitial = i%10 == 0
+		}
+		p := &Player{
+			errorHandler: func(err error) { t.Errorf("unexpected interaction error: %v", err) },
+			history:      history,
+		}
+		PlayerOnCmd_(p, archiveCommand{}, func(archiveCommand) error { return nil })
+
+		ctx, cancel := context.WithCancel(t.Context())
+		p.think(ctx, nil, "move", nil)
+
+		select {
+		case got := <-archivedTurnCount:
+			if want := 10; got != want {
+				t.Errorf("got %d archived turns, want %d", got, want)
+			}
+		case <-time.After(time.Second):
+			t.Fatal("archive was not called after normal completion")
+		}
+		cancel()
+		releaseArchive()
+
+		deadline := time.Now().Add(time.Second)
+		for {
+			p.mu.RLock()
+			gotArchivedHistory := p.archivedHistory
+			gotHistoryLength := len(p.history)
+			p.mu.RUnlock()
+
+			if gotArchivedHistory == "archived" && gotHistoryLength == 20 {
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("archive was not applied: archived history %q, history length %d", gotArchivedHistory, gotHistoryLength)
+			}
+			time.Sleep(time.Millisecond)
+		}
+	})
+
+	t.Run("ReportsTurnLimit", func(t *testing.T) {
+		type loopCommand struct{}
+
+		originalTransport := DefaultTransport()
+		t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+		interactCalls := 0
+		SetDefaultTransport(&mockTransport{
+			InteractFunc: func(_ context.Context, req Request) (Response, error) {
+				if got, want := req.ContinuationTurn, interactCalls; got != want {
+					t.Errorf("got continuation turn %d, want %d", got, want)
+				}
+				interactCalls++
+				return Response{CommandName: reflect.TypeOf(loopCommand{}).Name()}, nil
+			},
+		})
+
+		errorCh := make(chan error, 1)
+		p := &Player{errorHandler: func(err error) { errorCh <- err }}
+		PlayerOnCmd_(p, loopCommand{}, func(loopCommand) error { return nil })
+
+		p.think(t.Context(), nil, "loop", nil)
+
+		if got, want := interactCalls, 20; got != want {
+			t.Errorf("got %d interaction calls, want %d", got, want)
+		}
+		select {
+		case err := <-errorCh:
+			if got, want := err.Error(), "ai interaction did not complete within 20 turns"; got != want {
+				t.Errorf("got error %q, want %q", got, want)
+			}
+		default:
+			t.Fatal("turn limit did not trigger error handler")
+		}
+	})
+}
+
+func TestPlayerManageHistoryDoesNotRetryOrdinaryTransportError(t *testing.T) {
 	originalTransport := DefaultTransport()
 	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
 
-	interactCalls := 0
-	archivedTurnCount := make(chan int, 1)
-	archiveMayFinish := make(chan struct{})
-	var releaseArchiveOnce sync.Once
-	releaseArchive := func() {
-		releaseArchiveOnce.Do(func() { close(archiveMayFinish) })
-	}
-	t.Cleanup(releaseArchive)
+	archiveCalls := 0
 	SetDefaultTransport(&mockTransport{
-		InteractFunc: func(_ context.Context, _ Request) (Response, error) {
-			interactCalls++
-			if interactCalls == 1 {
-				return Response{CommandName: reflect.TypeOf(archiveCommand{}).Name()}, nil
-			}
-			return Response{Text: "done"}, nil
-		},
-		ArchiveFunc: func(_ context.Context, turns []Turn, _ string) (ArchivedHistory, error) {
-			archivedTurnCount <- len(turns)
-			<-archiveMayFinish
-			return ArchivedHistory{Content: "archived"}, nil
+		ArchiveFunc: func(_ context.Context, _ []Turn, _ string) (ArchivedHistory, error) {
+			archiveCalls++
+			return ArchivedHistory{}, errors.New("forbidden")
 		},
 	})
 
-	// The two new turns bring history to the 30-turn threshold. Retaining at
-	// least 15 turns makes index 10 the latest eligible interaction boundary.
-	history := make([]Turn, 28)
+	history := make([]Turn, 35)
 	for i := range history {
 		history[i].IsInitial = i%10 == 0
 	}
-	p := &Player{
-		errorHandler: func(err error) { t.Errorf("unexpected interaction error: %v", err) },
-		history:      history,
+	p := &Player{history: history}
+
+	p.manageHistory(t.Context())
+
+	if got, want := archiveCalls, 1; got != want {
+		t.Errorf("got %d archive calls, want %d", got, want)
 	}
-	PlayerOnCmd_(p, archiveCommand{}, func(archiveCommand) error { return nil })
-
-	ctx, cancel := context.WithCancel(t.Context())
-	p.think(ctx, nil, "move", nil)
-
-	select {
-	case got := <-archivedTurnCount:
-		if want := 10; got != want {
-			t.Errorf("got %d archived turns, want %d", got, want)
-		}
-	case <-time.After(time.Second):
-		t.Fatal("archive was not called after normal completion")
+	if p.archiveInProgress {
+		t.Error("archive remained in progress after a non-retryable error")
 	}
-	cancel()
-	releaseArchive()
-
-	deadline := time.Now().Add(time.Second)
-	for {
-		p.mu.RLock()
-		gotArchivedHistory := p.archivedHistory
-		gotHistoryLength := len(p.history)
-		p.mu.RUnlock()
-
-		if gotArchivedHistory == "archived" && gotHistoryLength == 20 {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("archive was not applied: archived history %q, history length %d", gotArchivedHistory, gotHistoryLength)
-		}
-		time.Sleep(time.Millisecond)
+	if got, want := len(p.history), len(history); got != want {
+		t.Errorf("got %d history turns, want %d", got, want)
 	}
 }
 
-func TestPlayerThinkReportsTurnLimit(t *testing.T) {
-	type loopCommand struct{}
-
+func TestPlayerManageHistoryDefersClientErrorRetry(t *testing.T) {
 	originalTransport := DefaultTransport()
 	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
 
-	interactCalls := 0
+	archiveCalls := 0
 	SetDefaultTransport(&mockTransport{
-		InteractFunc: func(_ context.Context, req Request) (Response, error) {
-			if got, want := req.ContinuationTurn, interactCalls; got != want {
-				t.Errorf("got continuation turn %d, want %d", got, want)
+		ArchiveFunc: func(_ context.Context, _ []Turn, _ string) (ArchivedHistory, error) {
+			archiveCalls++
+			return ArchivedHistory{}, &ClientError{
+				StatusCode: 403,
+				RetryAfter: time.Hour,
+				Err:        errors.New("quota exceeded"),
 			}
-			interactCalls++
-			return Response{CommandName: reflect.TypeOf(loopCommand{}).Name()}, nil
 		},
 	})
 
-	errorCh := make(chan error, 1)
-	p := &Player{errorHandler: func(err error) { errorCh <- err }}
-	PlayerOnCmd_(p, loopCommand{}, func(loopCommand) error { return nil })
-
-	p.think(t.Context(), nil, "loop", nil)
-
-	if got, want := interactCalls, 20; got != want {
-		t.Errorf("got %d interaction calls, want %d", got, want)
+	history := make([]Turn, 35)
+	for i := range history {
+		history[i].IsInitial = i%10 == 0
 	}
-	select {
-	case err := <-errorCh:
-		if got, want := err.Error(), "ai interaction did not complete within 20 turns"; got != want {
-			t.Errorf("got error %q, want %q", got, want)
-		}
-	default:
-		t.Fatal("turn limit did not trigger error handler")
+	p := &Player{history: history}
+
+	p.manageHistory(t.Context())
+	p.manageHistory(t.Context())
+
+	if got, want := archiveCalls, 1; got != want {
+		t.Errorf("got %d archive calls, want %d", got, want)
+	}
+	if !p.archiveRetryAt.After(time.Now()) {
+		t.Errorf("got archive retry time %v, want a future time", p.archiveRetryAt)
 	}
 }
 
@@ -129,7 +452,6 @@ func TestPlayerAppendHistory(t *testing.T) {
 			initialHistory: nil,
 			turnToAppend: Turn{
 				RequestContent: "hello",
-				ResponseText:   "world",
 				IsInitial:      true,
 			},
 			wantLength: 1,
@@ -255,6 +577,12 @@ func TestPlayerPrepareArchive(t *testing.T) {
 			wantExistingArchive:   "old",
 			wantArchiveInProgress: true,
 		},
+		{
+			name:                  "CapsBatchAtBackendLimit",
+			history:               makeHistory(100, []int{0, 10, 20, 30, 40, 50, 60, 70, 80, 90}),
+			wantTurnsCount:        50,
+			wantArchiveInProgress: true,
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Player{
@@ -378,9 +706,9 @@ func TestPlayerPrepareArchive(t *testing.T) {
 			}
 		}
 
-		// History should be valid (no nil entries).
+		// History should contain no empty turns.
 		for i, turn := range p.history {
-			if turn.RequestContent == "" && !turn.IsInitial && turn.ResponseText == "" {
+			if turn.RequestContent == "" && turn.ResponseCommandName == "" && !turn.IsInitial {
 				t.Errorf("invalid turn at index %d", i)
 			}
 		}
