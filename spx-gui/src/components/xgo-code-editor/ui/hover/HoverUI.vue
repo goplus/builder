@@ -26,11 +26,16 @@ watchPostEffect(async () => {
     return
   }
 
-  const editor = codeEditorUICtx.ui.editor
-  editor.render(true) // ensure the decoration is rendered
-  const decorationEl = editor.getDomNode()?.getElementsByClassName(hoveredTextCls)[0]
-  if (decorationEl == null) throw new Error('Decoration element not found')
-  const rect = decorationEl.getBoundingClientRect()
+  let rect: DOMRect
+  if (hover.range == null) {
+    rect = hover.anchorRect
+  } else {
+    const editor = codeEditorUICtx.ui.editor
+    editor.render(true) // ensure the decoration is rendered
+    const decorationEl = editor.getDomNode()?.getElementsByClassName(hoveredTextCls)[0]
+    if (decorationEl == null) throw new Error('Decoration element not found')
+    rect = decorationEl.getBoundingClientRect()
+  }
   dropdownVisible.value = true
   dropdownPos.value = {
     x: rect.x,
@@ -42,7 +47,7 @@ watchPostEffect(async () => {
 
 useDecorations(() => {
   const hover = props.controller.hover
-  if (hover == null) return []
+  if (hover == null || hover.range == null) return []
   return [
     {
       range: {
