@@ -5,7 +5,7 @@ type CoursePane = 'program' | 'videos' | 'info'
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
-import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { updateCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
@@ -18,7 +18,18 @@ import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/runner'
-import { UIButton, UICard, UIError, UITab, UITabs, UITag, useConfirmDialogWithResult, useModal } from '@/components/ui'
+import {
+  UIButton,
+  UICard,
+  UIError,
+  UILoading,
+  UITab,
+  UITabs,
+  UITag,
+  useConfirmDialogWithResult,
+  useMessage,
+  useModal
+} from '@/components/ui'
 import CourseInfoPane from './CourseInfoPane.vue'
 import CourseProgramEditor from './CourseProgramEditor.vue'
 import CourseVideosPane from './CourseVideosPane.vue'
@@ -36,6 +47,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const m = useMessage()
 const confirm = useConfirmDialogWithResult()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 
@@ -61,26 +73,42 @@ watch(
   }
 )
 
+// Saving blocks the editor (mask + route guards) so nothing changes underneath the upload. The abort
+// controller is the safety net for the paths that bypass the guards (programmatic session end, page close):
+// a save that outlives its session must never publish its stale snapshot.
+let saveController: AbortController | null = null
+
+async function save(signal: AbortSignal) {
+  const { metadata, files } = await props.project.snapshot()
+  const savedRevision = revision.value
+  if (metadata.title.trim() === '') {
+    throw new DefaultException({ en: 'Please enter the course title', zh: '请输入课程标题' })
+  }
+  const { fileCollection } = await saveFiles(files, signal)
+  signal.throwIfAborted()
+  const saved = await updateCourse(
+    props.course.id,
+    { title: metadata.title, thumbnail: metadata.thumbnail, content: fileCollection },
+    signal
+  )
+  if (revision.value === savedRevision) dirty.value = false
+  emit('saved', saved as PlaygroundCourse)
+}
+
 const handleSave = useMessageHandle(
   async () => {
-    const { metadata, files } = await props.project.snapshot()
-    const savedRevision = revision.value
-    if (metadata.title.trim() === '') {
-      throw new DefaultException({ en: 'Please enter the course title', zh: '请输入课程标题' })
+    const controller = new AbortController()
+    saveController = controller
+    try {
+      await m.withLoading(save(controller.signal), t({ en: 'Saving course...', zh: '保存课程中...' }))
+    } finally {
+      if (saveController === controller) saveController = null
     }
-    const { fileCollection } = await saveFiles(files)
-    const saved = await updateCourse(props.course.id, {
-      title: metadata.title,
-      thumbnail: metadata.thumbnail,
-      content: fileCollection
-    })
-    // Edits made while saving are not part of what was uploaded, so they stay unsaved.
-    if (revision.value === savedRevision) dirty.value = false
-    emit('saved', saved as PlaygroundCourse)
   },
   { en: 'Failed to save course', zh: '保存课程失败' },
   { en: 'Course saved', zh: '课程已保存' }
 )
+const saving = computed(() => handleSave.isLoading.value)
 
 // Preview runs the real Tutorial lifecycle on a snapshot of the author's current work, so learner-side
 // edits and course execution never touch the working copy. While previewing, the author's editor UI is
@@ -125,6 +153,10 @@ function handlePreviewFailed(error: Error) {
 }
 
 function confirmDiscardingUnsavedChanges() {
+  if (saving.value) {
+    m.warning(t({ en: 'The course is being saved, please wait', zh: '课程正在保存，请稍候' }))
+    return false
+  }
   if (!dirty.value) return true
   return confirm({
     title: t({ en: 'Leave course editor', zh: '离开课程编辑器' }),
@@ -150,7 +182,7 @@ onBeforeRouteUpdate((to, from) => {
 })
 
 function handleBeforeUnload(event: BeforeUnloadEvent) {
-  if (dirty.value) event.preventDefault()
+  if (dirty.value || saving.value) event.preventDefault()
 }
 
 function handleSaveShortcut(event: KeyboardEvent) {
@@ -158,7 +190,7 @@ function handleSaveShortcut(event: KeyboardEvent) {
   // command/ctrl + s
   if ((metaKey || ctrlKey) && key.toLowerCase() === 's') {
     event.preventDefault()
-    if (dirty.value && !handleSave.isLoading.value) handleSave.fn()
+    if (dirty.value && !saving.value) handleSave.fn()
   }
 }
 
@@ -170,11 +202,18 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('keydown', handleSaveShortcut)
+  saveController?.abort(new Cancelled('unmounted'))
 })
 </script>
 
 <template>
-  <section class="min-h-full w-full flex flex-col bg-grey-300">
+  <section class="relative min-h-full w-full flex flex-col bg-grey-300">
+    <UILoading
+      v-radar="{ name: 'Saving course mask', desc: 'Covers the editor while the course is being saved' }"
+      class="z-50"
+      cover
+      :visible="saving"
+    />
     <header class="flex-none">
       <div
         v-if="preview != null"
@@ -220,6 +259,7 @@ onUnmounted(() => {
             class="mr-2"
             type="secondary"
             size="small"
+            :disabled="saving"
             :loading="handlePreview.isLoading.value"
             @click="handlePreview.fn"
           >
@@ -231,7 +271,7 @@ onUnmounted(() => {
             type="primary"
             size="small"
             :disabled="!dirty"
-            :loading="handleSave.isLoading.value"
+            :loading="saving"
             @click="handleSave.fn"
           >
             {{ $t({ en: 'Save', zh: '保存' }) }}
