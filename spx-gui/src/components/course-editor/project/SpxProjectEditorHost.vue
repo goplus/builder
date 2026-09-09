@@ -142,6 +142,9 @@ watch(
   async (active) => {
     if (!active) {
       frozenRoute.value = snapshotRoute(router.currentRoute.value)
+      // Known gap (owner: #3416): unmounting the editor UI tears down the project runner, but
+      // `EditorPreview` does not reset `EditorState.runtime` on unmount, so a project that was running
+      // comes back with `runtime.running` still in debug mode. To be fixed in `EditorPreview` itself.
       return
     }
     const frozen = frozenRoute.value
