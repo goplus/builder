@@ -2,10 +2,14 @@ import { reactive } from 'vue'
 
 import { fromText, toText, type Files } from '@/models/common/file'
 
+import { DerivedFile } from './derived-file'
+
 export const mainCourseFilePath = 'main_course.gox'
 
 export class Course {
   code: string
+
+  private codeFile = new DerivedFile((code) => fromText(mainCourseFilePath, code))
 
   constructor(code = '') {
     this.code = code
@@ -23,6 +27,6 @@ export class Course {
   }
 
   export(): Files {
-    return { [mainCourseFilePath]: fromText(mainCourseFilePath, this.code) }
+    return { [mainCourseFilePath]: this.codeFile.get(this.code) }
   }
 }
