@@ -5,7 +5,7 @@ import { fromConfig, fromText, toConfig, toText, type Files } from '@/models/com
 import { Sprite } from '@/models/spx/sprite'
 import { mainCourseFilePath } from './course'
 import { TutorialProject } from './project'
-import { Video } from './video'
+import { Resource } from './resource'
 
 function makeMetadata(): TutorialProjectMetadata {
   return {
@@ -44,8 +44,8 @@ describe('TutorialProject', () => {
     expect(tutorial.id).toBe('course-id')
     expect(tutorial.project.owner).toBeUndefined()
     expect(tutorial.mainCourse.code).toBe('onStart => {}')
-    expect(tutorial.videos.map((video) => video.name)).toEqual(['step-to'])
-    expect(tutorial.videos[0]._project).toBe(tutorial)
+    expect(tutorial.resources.map((resource) => resource.name)).toEqual(['step-to'])
+    expect(tutorial.resources[0]._project).toBe(tutorial)
   })
 
   it('writes course code and owned SPX project state', async () => {
@@ -80,23 +80,28 @@ describe('TutorialProject', () => {
     expect(await toText(serialized.files[mainCourseFilePath]!)).toBe('onStart => {}')
   })
 
-  it('adds and removes videos using the resource ID', async () => {
+  it('adds and removes resources using the resource ID', async () => {
     const tutorial = await loadProject()
-    const video = new Video('another', fromText('another.mp4', 'another'))
-    tutorial.addVideo(video)
+    const video = new Resource('videos', 'another', fromText('another.mp4', 'another'))
+    tutorial.addResource(video)
     expect(video._project).toBe(tutorial)
+    expect(tutorial.getResource('videos', 'another')).toBe(video)
 
-    tutorial.removeVideo(video.id)
+    tutorial.removeResource(video.id)
     expect(video._project).toBeNull()
   })
 
-  it('gives an added video a non-conflicting name', async () => {
+  it('gives an added resource a name that does not conflict within its kind', async () => {
     const tutorial = await loadProject()
-    const video = new Video('step-to', fromText('step-to.mp4', 'another'))
+    const video = new Resource('videos', 'step-to', fromText('step-to.mp4', 'another'))
+    const image = new Resource('images', 'step-to', fromText('step-to.png', 'png'))
 
-    tutorial.addVideo(video)
+    tutorial.addResource(video)
+    tutorial.addResource(image)
 
     expect(video.name).toBe('step-to2')
+    expect(image.name).toBe('step-to')
+    expect(Object.keys(tutorial.exportFiles())).toContain('assets/images/step-to/step-to.png')
   })
 
   it('keeps records nobody claims and writes them back', async () => {
@@ -107,7 +112,7 @@ describe('TutorialProject', () => {
     const tutorial = new TutorialProject()
     await tutorial.load({ metadata: makeMetadata(), files })
 
-    expect(tutorial.videos.map((video) => video.name)).toEqual(['step-to'])
+    expect(tutorial.resources.map((resource) => resource.name)).toEqual(['step-to'])
     expect(Object.keys(tutorial.extraFiles).sort()).toEqual(['assets/videos/orphan/orphan.mp4', 'notes.md'])
 
     const exported = tutorial.exportFiles()
