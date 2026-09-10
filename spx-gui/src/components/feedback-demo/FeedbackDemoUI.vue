@@ -23,7 +23,8 @@ import FeedbackForm from './FeedbackForm.vue'
 import { useFeedbackDemoModel, type SubmitFeedbackInput } from './model'
 import type { FeedbackAttachment, InProductNotification } from './mock-data'
 import { captureViewport } from '@/components/screenshot/capture'
-import xbuilderNotificationIcon from '@/components/ui/icons/xbuilder-notification.svg'
+import notificationMessageIcon from '@/components/ui/icons/notification-message.svg'
+import notificationSystemIcon from '@/components/ui/icons/notification-system.svg'
 import notificationAttachmentIcon from '@/components/ui/icons/notification-attachment.svg'
 import notificationAssociationArrow from '@/components/ui/icons/notification-association-arrow.svg'
 
@@ -334,17 +335,19 @@ function handlePreviewVisibleChange(visible: boolean) {
           :class="activeNotificationTab === 'feedback' ? 'text-primary-main' : 'text-grey-700'"
           @click="activeNotificationTab = 'feedback'"
         >
-          {{ $t({ en: 'Messages', zh: '消息通知' }) }}
+          <span class="relative inline-block">
+            {{ $t({ en: 'Messages', zh: '消息通知' }) }}
+            <span
+              v-if="activeNotificationTab === 'feedback'"
+              class="absolute inset-x-0 -bottom-[13px] h-0.5 bg-primary-main"
+            ></span>
+          </span>
           <span
             v-if="unreadFeedbackCount > 0"
             class="ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-100 px-1 text-sm font-normal leading-[18px] text-red-main tabular-nums"
           >
             {{ formatUnreadCount(unreadFeedbackCount) }}
           </span>
-          <span
-            v-if="activeNotificationTab === 'feedback'"
-            class="absolute inset-x-0 bottom-0 h-0.5 bg-primary-main"
-          ></span>
         </button>
         <button
           type="button"
@@ -352,17 +355,19 @@ function handlePreviewVisibleChange(visible: boolean) {
           :class="activeNotificationTab === 'system' ? 'text-primary-main' : 'text-grey-700'"
           @click="activeNotificationTab = 'system'"
         >
-          {{ $t({ en: 'System messages', zh: '系统消息' }) }}
+          <span class="relative inline-block">
+            {{ $t({ en: 'System messages', zh: '系统消息' }) }}
+            <span
+              v-if="activeNotificationTab === 'system'"
+              class="absolute inset-x-0 -bottom-[13px] h-0.5 bg-primary-main"
+            ></span>
+          </span>
           <span
             v-if="unreadSystemCount > 0"
             class="ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-100 px-1 text-sm font-normal leading-[18px] text-red-main tabular-nums"
           >
             {{ formatUnreadCount(unreadSystemCount) }}
           </span>
-          <span
-            v-if="activeNotificationTab === 'system'"
-            class="absolute inset-x-0 bottom-0 h-0.5 bg-primary-main"
-          ></span>
         </button>
       </div>
 
@@ -388,9 +393,14 @@ function handlePreviewVisibleChange(visible: boolean) {
               <span
                 v-if="notification.readAt == null"
                 aria-hidden="true"
-                class="absolute left-0 top-0 size-2 rounded-full bg-[#ef4149]"
+                class="absolute right-0 top-0 size-2 rounded-full bg-[#ef4149]"
               ></span>
-              <img class="size-6" :src="xbuilderNotificationIcon" alt="" aria-hidden="true" />
+              <img
+                class="size-8"
+                :src="notification.feedbackID === '' ? notificationSystemIcon : notificationMessageIcon"
+                alt=""
+                aria-hidden="true"
+              />
             </span>
             <div class="min-w-0">
               <div class="flex items-start justify-between gap-3">
@@ -425,7 +435,7 @@ function handlePreviewVisibleChange(visible: boolean) {
       </div>
       <article class="min-h-0 flex-1 overflow-y-auto p-6">
         <div class="flex items-start justify-between gap-3">
-          <p class="text-[14px] text-primary-main">{{ $t({ en: 'System notice', zh: '系统消息' }) }}</p>
+          <p class="text-[14px] text-grey-700">{{ $t({ en: 'System notice', zh: '系统消息' }) }}</p>
           <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
             formatTime(selectedSystemNotification.createdAt)
           }}</time>
@@ -463,8 +473,8 @@ function handlePreviewVisibleChange(visible: boolean) {
       <article class="min-h-0 flex-1 overflow-y-auto p-3">
         <section class="rounded-lg bg-white px-3">
           <div class="flex items-start justify-between gap-3">
-            <p class="text-[14px] font-normal leading-[22px] text-primary-main">
-              {{ $t({ en: 'Support reply', zh: '支持回复' }) }}
+            <p class="text-[14px] font-normal leading-[22px] text-grey-700">
+              {{ $t({ en: 'Administrator reply', zh: '管理员回复' }) }}
             </p>
             <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
               formatTime(selectedNotification.createdAt)
