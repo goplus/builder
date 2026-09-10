@@ -15,8 +15,6 @@ import FeedbackForm from './FeedbackForm.vue'
 import { useFeedbackDemoModel, type SubmitFeedbackInput } from './model'
 import type { FeedbackAttachment, InProductNotification } from './mock-data'
 import { captureViewport } from '@/components/screenshot/capture'
-import notificationMessageIcon from '@/components/ui/icons/notification-message.svg'
-import notificationSystemIcon from '@/components/ui/icons/notification-system.svg'
 import notificationAttachmentIcon from '@/components/ui/icons/notification-attachment.svg'
 import notificationAssociationArrow from '@/components/ui/icons/notification-association-arrow.svg'
 import notificationBackIcon from '@/components/ui/icons/angle-left.svg'
@@ -383,31 +381,23 @@ function handlePreviewVisibleChange(visible: boolean) {
           :class="notification.readAt == null ? 'bg-white' : 'bg-white'"
           @click="openNotification(notification)"
         >
-          <div class="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-3">
-            <span class="relative flex size-10 shrink-0 items-center justify-center">
-              <span
-                v-if="notification.readAt == null"
-                aria-hidden="true"
-                class="absolute right-0 top-0 size-2 rounded-full bg-[#ef4149]"
-              ></span>
-              <img
-                class="size-8"
-                :src="notification.feedbackID === '' ? notificationSystemIcon : notificationMessageIcon"
-                alt=""
-                aria-hidden="true"
-              />
-            </span>
-            <div class="min-w-0">
-              <div class="flex items-start justify-between gap-3">
-                <span class="min-w-0 flex-1 truncate text-[14px] leading-[22px] text-title font-normal">
+          <div class="min-w-0">
+            <div class="flex items-start justify-between gap-3">
+              <span class="flex min-w-0 flex-1 items-start gap-1">
+                <span class="min-w-0 truncate text-[14px] leading-[22px] text-title font-normal">
                   {{ notification.title }}
                 </span>
-                <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
-                  formatTime(notification.createdAt)
-                }}</time>
-              </div>
-              <p class="mt-1 line-clamp-1 text-[12px] leading-[18px] text-grey-800">{{ notification.body }}</p>
+                <span
+                  v-if="notification.readAt == null"
+                  aria-hidden="true"
+                  class="mt-0.5 size-2 shrink-0 rounded-full bg-[#ef4149]"
+                ></span>
+              </span>
+              <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
+                formatTime(notification.createdAt)
+              }}</time>
             </div>
+            <p class="mt-1 line-clamp-1 text-[12px] leading-[18px] text-grey-800">{{ notification.body }}</p>
           </div>
         </button>
       </div>
