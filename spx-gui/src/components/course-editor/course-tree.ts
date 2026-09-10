@@ -1,7 +1,7 @@
 /**
  * The course explorer shows the course as a tree of nodes projected from the Tutorial project's records. A node
  * stands for one record or for a package of records: the embedded project is one opaque node over its root
- * directory, a video is one node over its package directory, and the course itself (the tree root) stands for the
+ * directory, a resource is one node over its package directory, and the course itself (the tree root) stands for the
  * config record plus the course metadata. Records nobody claims appear as plain files, so whatever the explorer
  * shows is exactly what gets saved.
  */
@@ -10,13 +10,14 @@ import { extname, filename } from '@/utils/path'
 import { isText, type File, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { configFilePath, type TutorialProject } from '@/models/tutorial/project'
-import { getVideoAssetPath, videoAssetPath } from '@/models/tutorial/video'
+import { getResourceKindDir, videosKind } from '@/models/tutorial/resource'
 import { dirname, isPathWithin, pathToSegments } from './route'
 
 export type FileKind = 'text' | 'image' | 'other'
 
 export type ProjectNode = { type: 'project'; path: string; projectType: string }
-export type VideoNode = { type: 'video'; path: string; name: string; id: string }
+/** A resource package under `assets/<kind>/`. */
+export type ResourceNode = { type: 'resource'; path: string; kind: string; name: string; id: string; file: File }
 export type FileNode = {
   type: 'file'
   path: string
@@ -27,7 +28,7 @@ export type FileNode = {
   known: boolean
 }
 export type FolderNode = { type: 'folder'; path: string; name: string; children: CourseNode[] }
-export type CourseNode = ProjectNode | VideoNode | FileNode | FolderNode
+export type CourseNode = ProjectNode | ResourceNode | FileNode | FolderNode
 
 /** What the explorer opens: the course itself (root), the embedded project, one of the tree's nodes, or nothing. */
 export type CourseDoc =
@@ -50,7 +51,7 @@ function rank(node: CourseNode) {
     case 'folder':
     case 'project':
       return 0
-    case 'video':
+    case 'resource':
       return 1
     case 'file':
       return node.known ? 2 : 3
@@ -86,9 +87,16 @@ export function buildCourseTree(project: TutorialProject): CourseNode[] {
   folder(dirname(projectRoot)).children.push({ type: 'project', path: projectRoot, projectType: config.project.type })
 
   // The videos folder is where videos get added, so it exists even while there is none.
-  const videosFolder = folder(videoAssetPath)
-  for (const video of project.videos) {
-    videosFolder.children.push({ type: 'video', path: getVideoAssetPath(video.name), name: video.name, id: video.id })
+  folder(getResourceKindDir(videosKind))
+  for (const resource of project.resources) {
+    folder(getResourceKindDir(resource.kind)).children.push({
+      type: 'resource',
+      path: resource.assetPath,
+      kind: resource.kind,
+      name: resource.name,
+      id: resource.id,
+      file: resource.file
+    })
   }
 
   const mainCourseFile = project.mainCourse.export()[mainCourseFilePath]!

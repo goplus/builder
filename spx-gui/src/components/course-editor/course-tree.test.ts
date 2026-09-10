@@ -49,7 +49,7 @@ describe('buildCourseTree', () => {
         'assets',
         [
           ['assets/images', ['file:assets/images/hint.png']],
-          ['assets/videos', ['video:assets/videos/step-to']]
+          ['assets/videos', ['resource:assets/videos/step-to']]
         ]
       ],
       'project:project',
@@ -85,7 +85,7 @@ describe('resolveCourseDoc', () => {
       inEditorPath: ['sprites', 'Lita']
     })
     const doc = resolveCourseDoc(tree, 'project', 'assets/videos/step-to')
-    expect(doc.type === 'node' && doc.node.type).toBe('video')
+    expect(doc.type === 'node' && doc.node.type).toBe('resource')
     expect(resolveCourseDoc(tree, 'project', 'assets/videos')).toMatchObject({ type: 'node', node: { type: 'folder' } })
     expect(resolveCourseDoc(tree, 'project', 'nope.txt')).toEqual({ type: 'missing', path: 'nope.txt' })
   })
