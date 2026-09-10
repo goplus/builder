@@ -1,18 +1,10 @@
 <script setup lang="ts">
+import dayjs from 'dayjs'
 import { computed, nextTick, onScopeDispose, ref, useId, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
-import {
-  UIButton,
-  UIEmpty,
-  UIFormModal,
-  UIIcon,
-  UIModal,
-  UIModalClose,
-  UIPagination,
-  useMessage
-} from '@/components/ui'
+import { UIButton, UIEmpty, UIFormModal, UIModal, UIModalClose, UIPagination, useMessage } from '@/components/ui'
 import { useCopilot } from '@/components/copilot/context'
 import { RoundState } from '@/components/copilot/copilot'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -27,6 +19,7 @@ import notificationMessageIcon from '@/components/ui/icons/notification-message.
 import notificationSystemIcon from '@/components/ui/icons/notification-system.svg'
 import notificationAttachmentIcon from '@/components/ui/icons/notification-attachment.svg'
 import notificationAssociationArrow from '@/components/ui/icons/notification-association-arrow.svg'
+import notificationBackIcon from '@/components/ui/icons/angle-left.svg'
 
 const model = useFeedbackDemoModel()
 const copilot = useCopilot()
@@ -82,6 +75,9 @@ const notificationImageAttachmentsMap = computed(() => {
 })
 const selectedNotificationImageAttachments = computed(
   () => notificationImageAttachmentsMap.value.get(selectedNotification.value?.feedbackID ?? '') ?? []
+)
+const selectedNotificationReplyAttachments = computed(() =>
+  (selectedNotification.value?.replyAttachments ?? []).filter(isRenderableImageAttachment)
 )
 
 onScopeDispose(
@@ -220,12 +216,9 @@ function backToNotificationList() {
 }
 
 function formatTime(value: string) {
-  return new Intl.DateTimeFormat(i18n.lang.value === 'zh' ? 'zh-CN' : 'en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  }).format(new Date(value))
+  return dayjs(value)
+    .locale(i18n.lang.value === 'zh' ? 'zh' : 'en')
+    .fromNow()
 }
 
 function formatImageCount(count: number) {
@@ -261,8 +254,10 @@ function getAttachmentAlt(attachment: RenderableFeedbackAttachment) {
   })
 }
 
-function openAttachmentPreview(attachment: RenderableFeedbackAttachment) {
-  const attachments = selectedNotificationImageAttachments.value
+function openAttachmentPreview(
+  attachment: RenderableFeedbackAttachment,
+  attachments: RenderableFeedbackAttachment[] = selectedNotificationImageAttachments.value
+) {
   previewAttachments.value = attachments.length > 0 ? attachments : [attachment]
   previewPage.value = Math.max(1, previewAttachments.value.findIndex((item) => item.id === attachment.id) + 1)
   selectedPreviewAttachment.value = previewAttachments.value[previewPage.value - 1] ?? attachment
@@ -411,7 +406,7 @@ function handlePreviewVisibleChange(visible: boolean) {
                   formatTime(notification.createdAt)
                 }}</time>
               </div>
-              <p class="mt-1 line-clamp-2 text-[12px] leading-[18px] text-grey-800">{{ notification.body }}</p>
+              <p class="mt-1 line-clamp-1 text-[12px] leading-[18px] text-grey-800">{{ notification.body }}</p>
             </div>
           </div>
         </button>
@@ -427,7 +422,7 @@ function handlePreviewVisibleChange(visible: boolean) {
           size="medium"
           @click="backToNotificationList"
         >
-          <template #icon><UIIcon type="arrowRightSmall" class="size-4 rotate-180" /></template>
+          <template #icon><img class="size-4" :src="notificationBackIcon" alt="" aria-hidden="true" /></template>
         </UIButton>
         <h2 :id="notificationTitleID" class="truncate text-base font-normal text-title">
           {{ selectedSystemNotification.title }}
@@ -457,7 +452,7 @@ function handlePreviewVisibleChange(visible: boolean) {
             @click="backToNotificationList"
           >
             <template #icon>
-              <UIIcon type="arrowRightSmall" class="size-4 rotate-180" />
+              <img class="size-4" :src="notificationBackIcon" alt="" aria-hidden="true" />
             </template>
           </UIButton>
           <h2
@@ -484,11 +479,13 @@ function handlePreviewVisibleChange(visible: boolean) {
             {{ selectedNotification.body }}
           </p>
           <UIButton
-            v-if="selectedNotificationImageAttachments.length > 0"
+            v-if="selectedNotificationReplyAttachments.length > 0"
             type="white"
             size="small"
             class="mt-3"
-            @click="openAttachmentPreview(selectedNotificationImageAttachments[0])"
+            @click="
+              openAttachmentPreview(selectedNotificationReplyAttachments[0], selectedNotificationReplyAttachments)
+            "
           >
             <template #icon
               ><img class="size-[13px]" :src="notificationAttachmentIcon" alt="" aria-hidden="true"

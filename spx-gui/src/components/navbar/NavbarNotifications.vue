@@ -4,11 +4,14 @@ import { useRoute } from 'vue-router'
 
 import { useFeedbackDemoModel } from '@/components/feedback-demo/model'
 import { UITooltip } from '@/components/ui'
+import { useSignedInStateQuery } from '@/stores/user'
 import { useI18n } from '@/utils/i18n'
 import notificationIcon from '@/components/ui/icons/notification-feedback.svg'
 
 const route = useRoute()
 const feedbackDemo = useFeedbackDemoModel()
+const signedInStateQuery = useSignedInStateQuery()
+const signedIn = computed(() => signedInStateQuery.data.value?.isSignedIn === true)
 const { t } = useI18n()
 const notificationLabel = computed(() => {
   const unreadCount = feedbackDemo.unreadNotificationCount.value
@@ -37,7 +40,7 @@ function openNotificationCenter(event: MouseEvent) {
 </script>
 
 <template>
-  <UITooltip v-if="!route.path.startsWith('/admin')" placement="bottom">
+  <UITooltip v-if="!route.path.startsWith('/admin') && signedIn" placement="bottom">
     <template #trigger>
       <button
         v-radar="notificationRadar"
