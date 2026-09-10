@@ -6,7 +6,7 @@ import { useI18n } from '@/utils/i18n'
 import { updateCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { courseEditorPreviewRouteName, courseEditorRouteName } from '@/apps/xbuilder/router'
-import { saveFiles } from '@/models/common/cloud'
+import { saveFiles, selectFilesWithUploadLimit } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -35,10 +35,12 @@ import CourseConfigDoc from './CourseConfigDoc.vue'
 import CourseFileDoc from './CourseFileDoc.vue'
 import CourseFolderDoc from './CourseFolderDoc.vue'
 import CourseTextDoc from './CourseTextDoc.vue'
+import CourseUploadModal from './CourseUploadModal.vue'
 import CourseVideoDoc from './CourseVideoDoc.vue'
 import { getProjectEditorHost } from './project'
 import { dirname, inCourseEditorPathParam, paramToSegments, pathToSegments, segmentsToPath } from './route'
 import { buildCourseTree, getChangedPaths, nearestExistingPath, resolveCourseDoc } from './course-tree'
+import { addUploadedFiles, validateUploadDir } from './upload'
 
 const props = defineProps<{
   course: PlaygroundCourse
@@ -57,6 +59,7 @@ const route = useRoute()
 const router = useRouter()
 const confirm = useConfirmDialogWithResult()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
+const openUploadModal = useModal(CourseUploadModal)
 
 const config = computed(() => {
   const config = props.project.config
@@ -84,6 +87,24 @@ function openPath(path: string) {
     params: { ...courseRouteParams(), [inCourseEditorPathParam]: pathToSegments(path) }
   })
 }
+
+// Uploading: pick files, choose the target folder (proposed from the open node), put them in and open the first.
+function proposedUploadDir() {
+  const current = doc.value
+  let dir = ''
+  if (current.type === 'node') dir = current.node.type === 'folder' ? current.node.path : dirname(current.node.path)
+  return validateUploadDir(props.project, dir) == null ? dir : ''
+}
+
+const handleUpload = useMessageHandle(
+  async (dir: string = proposedUploadDir()) => {
+    const files = await selectFilesWithUploadLimit({})
+    const targetDir = await openUploadModal({ project: props.project, tree: tree.value, initialDir: dir, files })
+    const paths = addUploadedFiles(props.project, targetDir, files)
+    await openPath(paths[0])
+  },
+  { en: 'Failed to upload files', zh: '上传文件失败' }
+)
 
 // Track unsaved changes across everything the Tutorial project exports.
 // `revision` tells a save whether edits happened after its snapshot was taken.
@@ -362,6 +383,7 @@ onUnmounted(() => {
             :active-path="activePath"
             :changed-paths="changedPaths"
             @select="openPath"
+            @upload="handleUpload.fn()"
           />
         </UICard>
         <UICard v-if="doc.type !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
@@ -379,6 +401,7 @@ onUnmounted(() => {
             :project="project"
             :node="doc.node"
             @open="openPath"
+            @upload="(dir) => handleUpload.fn(dir)"
           />
           <CourseVideoDoc
             v-else-if="doc.node.type === 'video'"

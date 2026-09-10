@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useMessageHandle } from '@/utils/exception'
-import { filename, stripExt } from '@/utils/path'
-import { selectFileWithUploadLimit } from '@/models/common/cloud'
-import { fromNativeFile } from '@/models/common/file'
+import { filename } from '@/utils/path'
 import type { TutorialProject } from '@/models/tutorial/project'
-import { getVideoAssetPath, getVideoName, validateVideoName, Video, videoAssetPath } from '@/models/tutorial/video'
+import { videoAssetPath } from '@/models/tutorial/video'
 import { UIButton, UIEmpty } from '@/components/ui'
 import type { CourseNode, FolderNode } from './course-tree'
+import { validateUploadDir } from './upload'
 
 const props = defineProps<{
   project: TutorialProject
@@ -16,26 +14,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   open: [path: string]
+  /** Upload files into this folder. */
+  upload: [dir: string]
 }>()
 
-// Uploads are offered per resource kind; videos are the only kind so far, added in their folder.
 const isVideosFolder = computed(() => props.node.path === videoAssetPath)
+const canUpload = computed(() => validateUploadDir(props.project, props.node.path) == null)
 
 function childLabel(child: CourseNode) {
   return child.type === 'project' ? filename(child.path) : child.name
 }
-
-const handleAddVideo = useMessageHandle(
-  async () => {
-    const nativeFile = await selectFileWithUploadLimit({ accept: ['mp4', 'webm'] })
-    const base = stripExt(nativeFile.name)
-    // Derive the video name from the file name when it is usable, otherwise start from a generic name.
-    const name = getVideoName(props.project, validateVideoName(base, null) == null ? base : 'video')
-    props.project.addVideo(new Video(name, fromNativeFile(nativeFile)))
-    emit('open', getVideoAssetPath(name))
-  },
-  { en: 'Failed to add video', zh: '添加视频失败' }
-)
 </script>
 
 <template>
@@ -45,18 +33,22 @@ const handleAddVideo = useMessageHandle(
         {{ isVideosFolder ? $t({ en: 'Videos', zh: '视频' }) : node.path }}
       </h2>
       <UIButton
-        v-if="isVideosFolder"
-        v-radar="{ name: 'Add video button', desc: 'Click to add a video file to the course' }"
+        v-if="canUpload"
+        v-radar="{ name: 'Upload into folder button', desc: 'Click to upload files into this folder' }"
         type="secondary"
         size="small"
-        :loading="handleAddVideo.isLoading.value"
-        @click="handleAddVideo.fn"
+        @click="emit('upload', node.path)"
       >
-        {{ $t({ en: 'Add video...', zh: '添加视频...' }) }}
+        {{ isVideosFolder ? $t({ en: 'Add video...', zh: '添加视频...' }) : $t({ en: 'Upload...', zh: '上传...' }) }}
       </UIButton>
     </div>
     <p v-if="isVideosFolder" class="m-0 text-sm text-grey-700">
-      {{ $t({ en: 'The course program refers to a video by its name, e.g.', zh: '课程程序按名字引用视频，例如' }) }}
+      {{
+        $t({
+          en: 'Every file added here becomes a video the course program refers to by name, e.g.',
+          zh: '放到这里的每个文件都成为一个视频，课程程序按名字引用它，例如'
+        })
+      }}
       <code>showVideo "step-to"</code>
     </p>
     <UIEmpty v-if="node.children.length === 0" size="small">

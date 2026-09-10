@@ -144,15 +144,21 @@ export class TutorialProject {
     delete this.extraFiles[path]
   }
 
+  /** The config record, generated from `config`. */
+  exportConfig(): Files {
+    if (this.config == null) throw new Error('Tutorial project has not been loaded')
+    return { [configFilePath]: this.configFile.get(JSON.stringify(this.config)) }
+  }
+
   exportFiles() {
     if (this.config == null) throw new Error('Tutorial project has not been loaded')
     const files: Files = {}
     for (const [path, file] of Object.entries(this.extraFiles)) {
       if (file != null) files[path] = file
     }
-    files[configFilePath] = this.configFile.get(JSON.stringify(this.config))
     Object.assign(
       files,
+      this.exportConfig(),
       prefixFiles(this.project.exportFiles(), this.config.project.root),
       this.mainCourse.export(),
       ...this.videos.map((video) => video.export())
