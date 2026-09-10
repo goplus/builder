@@ -10,7 +10,6 @@ import { saveFiles } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
-import { getVideoAssetPath, videoAssetPath } from '@/models/tutorial/video'
 import type { EditorState } from '@/components/editor/editor-state'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
@@ -36,7 +35,7 @@ import CourseFileDoc from './CourseFileDoc.vue'
 import CourseFolderDoc from './CourseFolderDoc.vue'
 import CourseTextDoc from './CourseTextDoc.vue'
 import CourseUploadModal from './CourseUploadModal.vue'
-import CourseVideoDoc from './CourseVideoDoc.vue'
+import CourseResourceDoc from './CourseResourceDoc.vue'
 import { getProjectEditorHost } from './project'
 import { dirname, inCourseEditorPathParam, paramToSegments, pathToSegments, segmentsToPath } from './route'
 import { buildCourseTree, getChangedPaths, nearestExistingPath, resolveCourseDoc } from './course-tree'
@@ -407,13 +406,14 @@ onUnmounted(() => {
             @open="openPath"
             @upload="(dir) => handleUpload.fn(dir)"
           />
-          <CourseVideoDoc
-            v-else-if="doc.node.type === 'video'"
+          <CourseResourceDoc
+            v-else-if="doc.node.type === 'resource'"
             :key="doc.node.path"
             :project="project"
+            :kind="doc.node.kind"
             :name="doc.node.name"
-            @renamed="(name) => openPath(getVideoAssetPath(name))"
-            @deleted="openPath(videoAssetPath)"
+            @renamed="openPath"
+            @deleted="openPath"
           />
           <CourseTextDoc
             v-else-if="doc.node.path === mainCourseFilePath"

@@ -10,7 +10,8 @@ export const explorerDotClass = 'ml-1 text-primary-main'
 import { computed, ref } from 'vue'
 import type { LocaleMessage } from '@/utils/i18n'
 import { filename } from '@/utils/path'
-import { videoAssetPath } from '@/models/tutorial/video'
+import { getResourceKindDir, videosKind } from '@/models/tutorial/resource'
+import { getUploadResourceKind } from './upload'
 import { UITag } from '@/components/ui'
 import { isNodeDirty, type CourseNode } from './course-tree'
 import { isPathWithin } from './route'
@@ -44,12 +45,15 @@ const hint = computed<LocaleMessage | null>(() => {
   switch (node.type) {
     case 'project':
       return { en: `Project (${node.projectType})`, zh: `工程（${node.projectType}）` }
-    case 'video':
-      return { en: 'Video', zh: '视频' }
+    case 'resource':
+      return node.kind === videosKind ? { en: 'Video', zh: '视频' } : { en: node.kind, zh: node.kind }
     case 'folder': {
-      if (node.path !== videoAssetPath) return null
-      const count = node.children.filter((child) => child.type === 'video').length
-      return { en: `Videos (${count})`, zh: `视频（${count}）` }
+      // `assets/<kind>` folders hold packages of that kind.
+      const kind = getUploadResourceKind(node.path)
+      if (kind == null) return null
+      const count = node.children.filter((child) => child.type === 'resource').length
+      if (node.path === getResourceKindDir(videosKind)) return { en: `Videos (${count})`, zh: `视频（${count}）` }
+      return { en: `${kind} (${count})`, zh: `${kind}（${count}）` }
     }
     case 'file':
       return node.known ? { en: 'Course program', zh: '课程程序' } : null

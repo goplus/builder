@@ -2,10 +2,10 @@
 import { computed } from 'vue'
 import { filename } from '@/utils/path'
 import type { TutorialProject } from '@/models/tutorial/project'
-import { videoAssetPath } from '@/models/tutorial/video'
+import { getResourceKindDir, videosKind } from '@/models/tutorial/resource'
 import { UIButton, UIEmpty } from '@/components/ui'
 import type { CourseNode, FolderNode } from './course-tree'
-import { validateUploadDir } from './upload'
+import { getUploadResourceKind, validateUploadDir } from './upload'
 
 const props = defineProps<{
   project: TutorialProject
@@ -18,7 +18,8 @@ const emit = defineEmits<{
   upload: [dir: string]
 }>()
 
-const isVideosFolder = computed(() => props.node.path === videoAssetPath)
+const isVideosFolder = computed(() => props.node.path === getResourceKindDir(videosKind))
+const resourceKind = computed(() => getUploadResourceKind(props.node.path))
 const canUpload = computed(() => validateUploadDir(props.project, props.node.path) == null)
 
 function childLabel(child: CourseNode) {
@@ -50,6 +51,14 @@ function childLabel(child: CourseNode) {
         })
       }}
       <code>showVideo "step-to"</code>
+    </p>
+    <p v-else-if="resourceKind != null" class="m-0 text-sm text-grey-700">
+      {{
+        $t({
+          en: `Every file added here becomes a ${resourceKind} resource package. The course program cannot address this kind yet.`,
+          zh: `放到这里的每个文件都成为一个 ${resourceKind} 资源包。课程程序目前还不能引用这种资源。`
+        })
+      }}
     </p>
     <UIEmpty v-if="node.children.length === 0" size="small">
       {{ $t({ en: 'Empty folder', zh: '空文件夹' }) }}
