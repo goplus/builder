@@ -150,7 +150,7 @@ export function getChangedPaths(baseline: Files, current: Files): Set<string> {
   return changed
 }
 
-/** Whether a node (or the course root) has records among `changedPaths`. */
+/** Whether a node (or the course root, which stands for the config record) has records among `changedPaths`. */
 export function isNodeDirty(node: CourseNode | { type: 'root' }, changedPaths: Set<string>) {
   if (node.type === 'root') return changedPaths.has(configFilePath)
   for (const path of changedPaths) if (isPathWithin(path, node.path)) return true

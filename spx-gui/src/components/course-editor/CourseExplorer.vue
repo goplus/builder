@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { TutorialProject } from '@/models/tutorial/project'
+import { UIButton } from '@/components/ui'
 import { isNodeDirty, type CourseNode } from './course-tree'
 import CourseExplorerNode, {
   explorerActiveNodeClass,
@@ -18,6 +19,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [path: string]
+  /** Upload files; the target folder is chosen in the upload flow. */
+  upload: []
 }>()
 
 const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPaths))
@@ -31,17 +34,28 @@ const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPath
     }"
     class="flex h-full flex-col gap-0.5 overflow-y-auto p-2"
   >
-    <!-- The course itself is the root: its settings live in `index.json`, its title and thumbnail in course management. -->
-    <button
-      v-radar="{ name: 'Course root node', desc: 'Click to edit the course settings' }"
-      :class="[explorerNodeClass, 'pl-2 font-semibold', activePath === '' && explorerActiveNodeClass]"
-      :title="project.title"
-      @click="emit('select', '')"
-    >
-      <span class="truncate">{{ project.title }}</span>
-      <span class="flex-none text-xs font-normal text-grey-700">{{ $t({ en: 'Course', zh: '课程' }) }}</span>
-      <span v-if="rootDirty" :class="explorerDotClass">•</span>
-    </button>
+    <div class="flex items-center gap-1">
+      <!-- The course itself is the root: its settings live in `index.json`, its title and thumbnail in course management. -->
+      <button
+        v-radar="{ name: 'Course root node', desc: 'Click to edit the course settings' }"
+        :class="[explorerNodeClass, 'min-w-0 flex-1 pl-2 font-semibold', activePath === '' && explorerActiveNodeClass]"
+        :title="project.title"
+        @click="emit('select', '')"
+      >
+        <span class="truncate">{{ project.title }}</span>
+        <span class="flex-none text-xs font-normal text-grey-700">{{ $t({ en: 'Course', zh: '课程' }) }}</span>
+        <span v-if="rootDirty" :class="explorerDotClass">•</span>
+      </button>
+      <UIButton
+        v-radar="{ name: 'Upload files button', desc: 'Click to upload files into the course' }"
+        class="flex-none"
+        type="secondary"
+        size="small"
+        @click="emit('upload')"
+      >
+        {{ $t({ en: 'Upload...', zh: '上传...' }) }}
+      </UIButton>
+    </div>
     <CourseExplorerNode
       v-for="node in tree"
       :key="node.path"
