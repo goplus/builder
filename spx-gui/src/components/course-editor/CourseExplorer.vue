@@ -1,84 +1,55 @@
-<script lang="ts">
-const nodeClass =
-  'w-full rounded px-2 py-1 text-left text-sm border-none bg-transparent cursor-pointer hover:bg-grey-400 truncate'
-const activeNodeClass = 'bg-primary-100 text-primary-main hover:bg-primary-100'
-const dotClass = 'ml-1 text-primary-main'
-</script>
-
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { TutorialProject } from '@/models/tutorial/project'
-import type { DirtyDocs } from './dirty-docs'
-import type { CourseDoc } from './route'
+import { isNodeDirty, type CourseNode } from './course-tree'
+import CourseExplorerNode, {
+  explorerActiveNodeClass,
+  explorerDotClass,
+  explorerNodeClass
+} from './CourseExplorerNode.vue'
 
 const props = defineProps<{
   project: TutorialProject
-  doc: CourseDoc
-  dirtyDocs: DirtyDocs
+  tree: CourseNode[]
+  /** Path of the open node; the empty path is the course itself. */
+  activePath: string
+  changedPaths: Set<string>
 }>()
 
 const emit = defineEmits<{
-  select: [doc: CourseDoc]
+  select: [path: string]
 }>()
 
-function isActive(type: CourseDoc['type'], videoName: string | null = null) {
-  const doc = props.doc
-  if (doc.type !== type) return false
-  return doc.type === 'videos' ? doc.name === videoName : true
-}
+const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPaths))
 </script>
 
 <template>
   <nav
     v-radar="{
       name: 'Course explorer',
-      desc: 'Tree of the course documents: info, program, videos and the embedded project'
+      desc: 'Tree of the course records: the course itself, its program, videos, other files and the embedded project'
     }"
     class="flex h-full flex-col gap-0.5 overflow-y-auto p-2"
   >
-    <div class="px-2 py-1 text-xs font-semibold uppercase text-grey-700">{{ $t({ en: 'Course', zh: '课程' }) }}</div>
-    <!-- A dot marks a document with changes not saved yet. -->
+    <!-- The course itself is the root: its settings live in `index.json`, its title and thumbnail in course management. -->
     <button
-      v-radar="{ name: 'Course info node', desc: 'Click to edit course title, thumbnail and Copilot context' }"
-      :class="[nodeClass, isActive('info') && activeNodeClass]"
-      @click="emit('select', { type: 'info' })"
+      v-radar="{ name: 'Course root node', desc: 'Click to edit the course settings' }"
+      :class="[explorerNodeClass, 'pl-2 font-semibold', activePath === '' && explorerActiveNodeClass]"
+      :title="project.title"
+      @click="emit('select', '')"
     >
-      {{ $t({ en: 'Course info', zh: '课程信息' }) }}<span v-if="dirtyDocs.info" :class="dotClass">•</span>
+      <span class="truncate">{{ project.title }}</span>
+      <span class="flex-none text-xs font-normal text-grey-700">{{ $t({ en: 'Course', zh: '课程' }) }}</span>
+      <span v-if="rootDirty" :class="explorerDotClass">•</span>
     </button>
-    <button
-      v-radar="{ name: 'Course program node', desc: 'Click to edit the course program main_course.gox' }"
-      :class="[nodeClass, isActive('program') && activeNodeClass]"
-      @click="emit('select', { type: 'program' })"
-    >
-      {{ $t({ en: 'Course program', zh: '课程程序' }) }} <code class="text-xs">main_course.gox</code
-      ><span v-if="dirtyDocs.program" :class="dotClass">•</span>
-    </button>
-    <button
-      v-radar="{ name: 'Videos node', desc: 'Click to manage course videos' }"
-      :class="[nodeClass, isActive('videos', null) && activeNodeClass]"
-      @click="emit('select', { type: 'videos', name: null })"
-    >
-      {{ $t({ en: 'Videos', zh: '视频' }) }} <span class="text-xs text-grey-700">({{ project.videos.length }})</span
-      ><span v-if="dirtyDocs.videos" :class="dotClass">•</span>
-    </button>
-    <ul class="m-0 list-none pl-4">
-      <li v-for="video in project.videos" :key="video.id">
-        <button
-          v-radar="{ name: `Video node ${video.name}`, desc: 'Click to open this video' }"
-          :class="[nodeClass, isActive('videos', video.name) && activeNodeClass]"
-          :title="video.name"
-          @click="emit('select', { type: 'videos', name: video.name })"
-        >
-          {{ video.name }}<span v-if="dirtyDocs.videoIds.has(video.id)" :class="dotClass">•</span>
-        </button>
-      </li>
-    </ul>
-    <button
-      v-radar="{ name: 'Project node', desc: 'Click to edit the embedded learner project in the Project Editor' }"
-      :class="[nodeClass, isActive('project') && activeNodeClass]"
-      @click="emit('select', { type: 'project', inEditorPath: [] })"
-    >
-      {{ $t({ en: 'Project', zh: '工程' }) }} <span class="text-xs text-grey-700">spx</span
-      ><span v-if="dirtyDocs.project" :class="dotClass">•</span>
-    </button>
+    <CourseExplorerNode
+      v-for="node in tree"
+      :key="node.path"
+      :node="node"
+      :depth="1"
+      :active-path="activePath"
+      :changed-paths="changedPaths"
+      @select="emit('select', $event)"
+    />
   </nav>
 </template>

@@ -54,9 +54,10 @@ export function getCourse(id: string, signal?: AbortSignal) {
 export type AddCourseParams =
   | Pick<GuidedCourse, 'kind' | 'title' | 'thumbnail' | 'content'>
   | Pick<PlaygroundCourse, 'kind' | 'title' | 'thumbnail' | 'content'>
+/** Fields to update; the endpoint patches only the fields given. */
 export type UpdateCourseParams =
-  | Pick<GuidedCourse, 'title' | 'thumbnail' | 'content'>
-  | Pick<PlaygroundCourse, 'title' | 'thumbnail' | 'content'>
+  | Partial<Pick<GuidedCourse, 'title' | 'thumbnail' | 'content'>>
+  | Partial<Pick<PlaygroundCourse, 'title' | 'thumbnail' | 'content'>>
 
 /** Current unsaved Playground Course content used to generate its Copilot context. */
 export type GeneratePlaygroundCourseCopilotContextParams = Pick<PlaygroundCourse, 'title' | 'thumbnail' | 'content'>
