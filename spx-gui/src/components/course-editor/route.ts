@@ -1,19 +1,12 @@
 /**
- * The Course Editor route carries an in-Course-Editor path telling which document is open:
- * `program`, `info`, `videos[/<name>]`, or `project[/<inEditorPath>]`, where the tail after `project` is the
- * SPX Project Editor's own in-editor path (mode and selection). Naming follows "in<Editor>Path": every editor
- * has one, and the Course Editor's path embeds the Project Editor's when the project document is open.
+ * The Course Editor route carries an in-Course-Editor path naming the open node of the course explorer. Nodes
+ * are addressed by the path of the record(s) they stand for: the empty path is the course itself, `main_course.gox`
+ * the course program, `assets/videos/<name>` a video package, and so on. Under the embedded project's root the
+ * tail is the SPX Project Editor's own in-editor path (mode and selection). Naming follows "in<Editor>Path":
+ * every editor has one, and the Course Editor's path embeds the Project Editor's when the project is open.
  */
 
 export const inCourseEditorPathParam = 'inCourseEditorPath'
-
-export const projectDocSegment = 'project'
-
-export type CourseDoc =
-  | { type: 'program' }
-  | { type: 'info' }
-  | { type: 'videos'; name: string | null }
-  | { type: 'project'; inEditorPath: string[] }
 
 /** Normalize a route param (string or string array) into non-empty path segments. */
 export function paramToSegments(param: unknown): string[] {
@@ -22,30 +15,21 @@ export function paramToSegments(param: unknown): string[] {
   return raw.filter((segment) => segment !== '')
 }
 
-/** The document a route param points at; the course program when the param names nothing. */
-export function parseCourseDoc(param: unknown): CourseDoc {
-  const [head, ...rest] = paramToSegments(param)
-  switch (head) {
-    case 'info':
-      return { type: 'info' }
-    case 'videos':
-      return { type: 'videos', name: rest[0] ?? null }
-    case projectDocSegment:
-      return { type: 'project', inEditorPath: rest }
-    default:
-      return { type: 'program' }
-  }
+export function pathToSegments(path: string): string[] {
+  return path.split('/').filter((segment) => segment !== '')
 }
 
-export function toInCourseEditorPath(doc: CourseDoc): string[] {
-  switch (doc.type) {
-    case 'program':
-      return ['program']
-    case 'info':
-      return ['info']
-    case 'videos':
-      return doc.name == null ? ['videos'] : ['videos', doc.name]
-    case 'project':
-      return [projectDocSegment, ...doc.inEditorPath]
-  }
+export function segmentsToPath(segments: string[]): string {
+  return segments.join('/')
+}
+
+/** Whether `path` equals `dir` or lies under it. The empty `dir` is the root and contains every path. */
+export function isPathWithin(path: string, dir: string) {
+  return dir === '' || path === dir || path.startsWith(dir + '/')
+}
+
+/** The directory part of `path`; the empty string for a top-level path. */
+export function dirname(path: string) {
+  const slash = path.lastIndexOf('/')
+  return slash < 0 ? '' : path.slice(0, slash)
 }

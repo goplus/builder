@@ -98,4 +98,53 @@ describe('TutorialProject', () => {
 
     expect(video.name).toBe('step-to2')
   })
+
+  it('keeps records nobody claims and writes them back', async () => {
+    const files = makeFiles()
+    files['notes.md'] = fromText('notes.md', '# notes')
+    // A directory under `assets/videos` without a manifest is not a video package.
+    files['assets/videos/orphan/orphan.mp4'] = fromText('orphan.mp4', 'orphan')
+    const tutorial = new TutorialProject()
+    await tutorial.load({ metadata: makeMetadata(), files })
+
+    expect(tutorial.videos.map((video) => video.name)).toEqual(['step-to'])
+    expect(Object.keys(tutorial.extraFiles).sort()).toEqual(['assets/videos/orphan/orphan.mp4', 'notes.md'])
+
+    const exported = tutorial.exportFiles()
+    expect(exported['notes.md']).toBe(files['notes.md'])
+    expect(exported['assets/videos/orphan/orphan.mp4']).toBe(files['assets/videos/orphan/orphan.mp4'])
+  })
+
+  it('refuses extra files on claimed paths and removes extra files', async () => {
+    const tutorial = await loadProject()
+
+    expect(() => tutorial.setExtraFile(mainCourseFilePath, fromText(mainCourseFilePath, ''))).toThrow('claimed')
+    expect(() => tutorial.setExtraFile('project/extra.txt', fromText('extra.txt', ''))).toThrow('claimed')
+    expect(() => tutorial.setExtraFile('assets/videos/step-to/x.txt', fromText('x.txt', ''))).toThrow('claimed')
+
+    tutorial.setExtraFile('notes.md', fromText('notes.md', '# notes'))
+    expect(tutorial.getExtraFile('notes.md')).not.toBeNull()
+    expect(tutorial.exportFiles()['notes.md']).toBe(tutorial.getExtraFile('notes.md'))
+
+    tutorial.removeExtraFile('notes.md')
+    expect(tutorial.getExtraFile('notes.md')).toBeNull()
+    expect(tutorial.exportFiles()['notes.md']).toBeUndefined()
+  })
+
+  it('keeps the identity of generated files while their source is unchanged', async () => {
+    const tutorial = await loadProject()
+    const first = tutorial.exportFiles()
+    const second = tutorial.exportFiles()
+
+    expect(second['index.json']).toBe(first['index.json'])
+    expect(second[mainCourseFilePath]).toBe(first[mainCourseFilePath])
+    expect(second['assets/videos/step-to/index.json']).toBe(first['assets/videos/step-to/index.json'])
+
+    tutorial.mainCourse.setCode('onStart => { showVideo "step-to" }')
+    tutorial.setConfig({ copilotContext: 'Changed.' })
+    const third = tutorial.exportFiles()
+    expect(third[mainCourseFilePath]).not.toBe(first[mainCourseFilePath])
+    expect(third['index.json']).not.toBe(first['index.json'])
+    expect(third['assets/videos/step-to/index.json']).toBe(first['assets/videos/step-to/index.json'])
+  })
 })

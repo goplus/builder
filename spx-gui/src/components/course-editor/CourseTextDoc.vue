@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { insertSpaces, tabSize, theme } from '@/utils/xgo/highlighter'
-import type { Course } from '@/models/tutorial/course'
 import { loadMonaco, type MonacoEditor, type monaco } from '@/components/xgo-code-editor'
 import MonacoEditorComp from '@/components/xgo-code-editor/ui/MonacoEditor.vue'
 import { UIDetailedLoading, UIError } from '@/components/ui'
 
 const props = defineProps<{
-  course: Course
+  text: string
+  /** Monaco language id; falls back to plain text when the loaded Monaco does not know it. */
+  language: string
+}>()
+
+const emit = defineEmits<{
+  'update:text': [text: string]
 }>()
 
 const i18n = useI18n()
@@ -19,28 +24,32 @@ const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
   zh: '加载代码编辑器失败'
 })
 
-// Plain XGo text editing for now; completion and diagnostics wait for the Tutorial Language Server.
-const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
-  language: 'xgo',
-  theme,
-  tabSize,
-  insertSpaces,
-  fontSize: 12,
-  contextmenu: false
-}
+// Plain text editing for now; completion and diagnostics for course programs wait for the Tutorial Language Server.
+const editorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => {
+  const loaded = monacoQueryRet.data.value
+  const known = loaded != null && loaded.languages.getLanguages().some((l) => l.id === props.language)
+  return {
+    language: known ? props.language : 'plaintext',
+    theme,
+    tabSize,
+    insertSpaces,
+    fontSize: 12,
+    contextmenu: false
+  }
+})
 
 function handleEditorInit(editor: MonacoEditor) {
   // The editor is re-created when Monaco reloads (e.g. on language change), so always start from the
-  // current code rather than whatever the component captured at setup.
-  editor.setValue(props.course.code)
+  // current text rather than whatever the component captured at setup.
+  editor.setValue(props.text)
   const contentListener = editor.onDidChangeModelContent(() => {
-    const code = editor.getValue()
-    if (code !== props.course.code) props.course.setCode(code)
+    const text = editor.getValue()
+    if (text !== props.text) emit('update:text', text)
   })
   const stopModelSync = watch(
-    () => props.course.code,
-    (code) => {
-      if (editor.getValue() !== code) editor.setValue(code)
+    () => props.text,
+    (text) => {
+      if (editor.getValue() !== text) editor.setValue(text)
     }
   )
   editor.onDidDispose(() => {
@@ -59,7 +68,7 @@ function handleEditorInit(editor: MonacoEditor) {
   </UIError>
   <MonacoEditorComp
     v-else-if="monacoQueryRet.data.value != null"
-    v-radar="{ name: 'Course program editor', desc: 'Code editor for the course program main_course.gox' }"
+    v-radar="{ name: 'Text editor', desc: 'Code editor for the open text file' }"
     class="h-full w-full"
     :monaco="monacoQueryRet.data.value"
     :options="editorOptions"

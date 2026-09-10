@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalizedGeneric } from 'vue-router'
-import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
+import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { updateCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { courseEditorPreviewRouteName, courseEditorRouteName } from '@/apps/xbuilder/router'
 import { saveFiles } from '@/models/common/cloud'
+import type { Files } from '@/models/common/file'
+import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
+import { getVideoAssetPath, videoAssetPath } from '@/models/tutorial/video'
 import type { EditorState } from '@/components/editor/editor-state'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
@@ -19,6 +22,7 @@ import {
   UIButton,
   UICard,
   UIDetailedLoading,
+  UIEmpty,
   UIError,
   UILoading,
   UITag,
@@ -27,13 +31,14 @@ import {
   useModal
 } from '@/components/ui'
 import CourseExplorer from './CourseExplorer.vue'
-import CourseInfoPane from './CourseInfoPane.vue'
-import CourseProgramEditor from './CourseProgramEditor.vue'
+import CourseConfigDoc from './CourseConfigDoc.vue'
+import CourseFileDoc from './CourseFileDoc.vue'
+import CourseFolderDoc from './CourseFolderDoc.vue'
+import CourseTextDoc from './CourseTextDoc.vue'
 import CourseVideoDoc from './CourseVideoDoc.vue'
-import CourseVideosPane from './CourseVideosPane.vue'
 import { getProjectEditorHost } from './project'
-import { inCourseEditorPathParam, parseCourseDoc, toInCourseEditorPath, type CourseDoc } from './route'
-import { getDirtyDocs, takeDocsBaseline, type DirtyDocs } from './dirty-docs'
+import { dirname, inCourseEditorPathParam, paramToSegments, pathToSegments, segmentsToPath } from './route'
+import { buildCourseTree, getChangedPaths, nearestExistingPath, resolveCourseDoc } from './course-tree'
 
 const props = defineProps<{
   course: PlaygroundCourse
@@ -62,41 +67,41 @@ const projectEditorHost = computed(() => getProjectEditorHost(config.value.proje
 
 const editorState = shallowRef<EditorState | null>(null)
 
-// The open document comes from the route, so it survives reloads and works with browser history.
-const doc = computed<CourseDoc>(() => parseCourseDoc(route.params[inCourseEditorPathParam]))
+// The explorer tree is a projection of the project's records, and the open node comes from the route (so it
+// survives reloads and works with browser history).
+const tree = computed(() => buildCourseTree(props.project))
+const activePath = computed(() => segmentsToPath(paramToSegments(route.params[inCourseEditorPathParam])))
+const doc = computed(() => resolveCourseDoc(tree.value, config.value.project.root, activePath.value))
 const isPreviewRoute = computed(() => route.name === courseEditorPreviewRouteName)
 
 function courseRouteParams() {
   return { courseSeriesIdInput: route.params.courseSeriesIdInput, courseIdInput: route.params.courseIdInput }
 }
 
-function openDoc(next: CourseDoc) {
+function openPath(path: string) {
   return router.push({
     name: courseEditorRouteName,
-    params: { ...courseRouteParams(), [inCourseEditorPathParam]: toInCourseEditorPath(next) }
+    params: { ...courseRouteParams(), [inCourseEditorPathParam]: pathToSegments(path) }
   })
 }
 
-function openVideo(name: string) {
-  return openDoc({ type: 'videos', name })
-}
-
-// Track unsaved changes across everything the Tutorial project exports, plus its metadata.
+// Track unsaved changes across everything the Tutorial project exports.
 // `revision` tells a save whether edits happened after its snapshot was taken.
 const dirty = ref(false)
 const revision = ref(0)
 watch(
-  () => [props.project.exportFiles(), props.project.title, props.project.thumbnail],
+  () => props.project.exportFiles(),
   () => {
     dirty.value = true
     revision.value++
   }
 )
 
-// Per-document unsaved marks for the explorer: each document is compared with the baseline taken at load
-// and after every successful save, so a save made while editing still shows what remains unsaved.
-const docsBaseline = shallowRef(takeDocsBaseline(props.project))
-const dirtyDocs = computed<DirtyDocs>(() => getDirtyDocs(props.project, docsBaseline.value))
+// Per-node unsaved marks for the explorer: records are compared with the baseline taken at load and after every
+// successful save, so a save made while editing still shows what remains unsaved. Generated records keep their
+// identity while their source is unchanged, so comparing `File` instances is enough.
+const filesBaseline = shallowRef<Files>(props.project.exportFiles())
+const changedPaths = computed(() => getChangedPaths(filesBaseline.value, props.project.exportFiles()))
 
 // Saving blocks the editor (mask + route guards) so nothing changes underneath the upload. The abort
 // controller is the safety net for the paths that bypass the guards (programmatic session end, page close):
@@ -104,21 +109,17 @@ const dirtyDocs = computed<DirtyDocs>(() => getDirtyDocs(props.project, docsBase
 let saveController: AbortController | null = null
 
 async function save(signal: AbortSignal) {
-  const { metadata, files } = await props.project.snapshot()
+  const { files } = await props.project.snapshot()
   const savedRevision = revision.value
-  if (metadata.title.trim() === '') {
-    throw new DefaultException({ en: 'Please enter the course title', zh: '请输入课程标题' })
-  }
   const { fileCollection } = await saveFiles(files, signal)
   signal.throwIfAborted()
-  const saved = await updateCourse(
-    props.course.id,
-    { title: metadata.title, thumbnail: metadata.thumbnail, content: fileCollection },
-    signal
-  )
+  // Only the content is edited here; title and thumbnail belong to course management and are left untouched.
+  const saved = (await updateCourse(props.course.id, { content: fileCollection }, signal)) as PlaygroundCourse
   if (revision.value === savedRevision) dirty.value = false
-  docsBaseline.value = takeDocsBaseline(props.project, { metadata, files })
-  emit('saved', saved as PlaygroundCourse)
+  filesBaseline.value = files
+  // Pick up metadata edited elsewhere in the meantime.
+  props.project.setMetadata({ title: saved.title, thumbnail: saved.thumbnail })
+  emit('saved', saved)
 }
 
 const handleSave = useMessageHandle(
@@ -142,13 +143,6 @@ const saving = computed(() => handleSave.isLoading.value)
 const preview = shallowRef<TutorialProject | null>(null)
 const previewError = ref<Error | null>(null)
 let routeBeforePreview: string | null = null
-
-/** The course as the learner would see it: the saved record with the working copy's metadata. */
-const previewCourse = computed<PlaygroundCourse>(() => ({
-  ...props.course,
-  title: props.project.title,
-  thumbnail: props.project.thumbnail
-}))
 
 async function loadPreviewSnapshot() {
   const snapshot = new TutorialProject()
@@ -195,12 +189,12 @@ function exitPreview() {
   const target = routeBeforePreview
   routeBeforePreview = null
   if (target != null) return router.push(target)
-  return openDoc({ type: 'project', inEditorPath: [] })
+  return openPath('')
 }
 
 async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
   const action = await openCompletion({
-    course: previewCourse.value,
+    course: props.course,
     series: props.series,
     feedback: completion.feedback
   })
@@ -361,20 +355,53 @@ onUnmounted(() => {
       </template>
       <template v-else>
         <!-- Course explorer + one document at a time. Layout is a placeholder for design to iterate on. -->
-        <UICard class="min-w-0 flex-[0_0_240px] overflow-hidden">
-          <CourseExplorer :project="project" :doc="doc" :dirty-docs="dirtyDocs" @select="openDoc" />
+        <UICard class="min-w-0 flex-[0_0_260px] overflow-hidden">
+          <CourseExplorer
+            :project="project"
+            :tree="tree"
+            :active-path="activePath"
+            :changed-paths="changedPaths"
+            @select="openPath"
+          />
         </UICard>
         <UICard v-if="doc.type !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
-          <CourseProgramEditor v-if="doc.type === 'program'" :course="project.mainCourse" />
-          <CourseInfoPane v-else-if="doc.type === 'info'" :project="project" />
-          <CourseVideoDoc
-            v-else-if="doc.type === 'videos' && doc.name != null"
+          <CourseConfigDoc v-if="doc.type === 'root'" :project="project" />
+          <UIEmpty v-else-if="doc.type === 'missing'" class="m-auto" size="small">
+            {{ $t({ en: `"${doc.path}" does not exist in the course`, zh: `课程中不存在“${doc.path}”` }) }}
+            <UIButton type="secondary" size="small" class="mt-2" @click="openPath('')">
+              {{ $t({ en: 'Back to course', zh: '回到课程' }) }}
+            </UIButton>
+          </UIEmpty>
+          <!-- Each document is keyed by its path so switching nodes starts the document fresh. -->
+          <CourseFolderDoc
+            v-else-if="doc.node.type === 'folder'"
+            :key="doc.node.path"
             :project="project"
-            :name="doc.name"
-            @renamed="openVideo"
-            @deleted="openDoc({ type: 'videos', name: null })"
+            :node="doc.node"
+            @open="openPath"
           />
-          <CourseVideosPane v-else-if="doc.type === 'videos'" :project="project" @open="openVideo" />
+          <CourseVideoDoc
+            v-else-if="doc.node.type === 'video'"
+            :key="doc.node.path"
+            :project="project"
+            :name="doc.node.name"
+            @renamed="(name) => openPath(getVideoAssetPath(name))"
+            @deleted="openPath(videoAssetPath)"
+          />
+          <CourseTextDoc
+            v-else-if="doc.node.path === mainCourseFilePath"
+            :key="doc.node.path"
+            :text="project.mainCourse.code"
+            language="xgo"
+            @update:text="(text) => project.mainCourse.setCode(text)"
+          />
+          <CourseFileDoc
+            v-else
+            :key="doc.node.path"
+            :project="project"
+            :node="doc.node"
+            @deleted="openPath(nearestExistingPath(tree, dirname(activePath)))"
+          />
         </UICard>
       </template>
       <!-- Always mounted: the author's editor state outlives document switches and the preview. -->
@@ -382,6 +409,7 @@ onUnmounted(() => {
         :is="projectEditorHost"
         v-model:editor-state="editorState"
         :project="project.project"
+        :root-path="config.project.root"
         :initial-path="config.inEditorPath"
         :active="!isPreviewRoute && doc.type === 'project'"
       />

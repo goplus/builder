@@ -6,7 +6,6 @@ import { generatePlaygroundCourseCopilotContext } from '@/apis/course'
 import { saveFiles } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { UIButton, UITextInput, useMessage } from '@/components/ui'
-import ThumbnailUploader from '@/components/course/management/ThumbnailUploader.vue'
 
 const props = defineProps<{
   project: TutorialProject
@@ -44,23 +43,18 @@ const handleGenerateCopilotContext = useMessageHandle(
 </script>
 
 <template>
+  <!-- The course settings stored in `index.json`. Title and thumbnail are course metadata, edited in course management. -->
   <div class="flex h-full flex-col gap-4 overflow-y-auto p-3 text-sm">
-    <label class="flex flex-col gap-1">
-      <span class="text-grey-700">{{ $t({ en: 'Title', zh: '标题' }) }}</span>
-      <UITextInput
-        v-radar="{ name: 'Course title input', desc: 'Input for the course title' }"
-        :value="project.title"
-        @update:value="(v) => project.setMetadata({ title: v })"
-      />
-    </label>
     <div class="flex flex-col gap-1">
-      <span class="text-grey-700">{{ $t({ en: 'Thumbnail', zh: '缩略图' }) }}</span>
-      <ThumbnailUploader
-        v-radar="{ name: 'Course thumbnail uploader', desc: 'Click to upload the course thumbnail' }"
-        class="h-32 w-full"
-        :thumbnail="project.thumbnail"
-        @update:thumbnail="(v) => project.setMetadata({ thumbnail: v })"
-      />
+      <h2 class="m-0 truncate text-base font-semibold" :title="project.title">{{ project.title }}</h2>
+      <p class="m-0 text-grey-700">
+        {{
+          $t({
+            en: 'The title and thumbnail are edited in course management. Settings below are stored with the course files.',
+            zh: '标题和缩略图在课程管理中修改。下面的设置随课程文件保存。'
+          })
+        }}
+      </p>
     </div>
     <label class="flex flex-col gap-1">
       <span class="text-grey-700">{{
