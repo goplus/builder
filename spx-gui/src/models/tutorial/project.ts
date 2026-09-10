@@ -8,7 +8,7 @@ import { SpxProject } from '@/models/spx/project'
 
 import { Course, mainCourseFilePath } from './course'
 import { DerivedFile } from './derived-file'
-import { ensureValidVideoName, getVideoAssetPath, Video } from './video'
+import { ensureValidResourceName, Resource } from './resource'
 
 export const configFilePath = 'index.json'
 
@@ -31,13 +31,13 @@ export type TutorialProjectSerialized = {
   files: Files
 }
 
-export { Video } from './video'
+export { Resource } from './resource'
 export { Course } from './course'
 
 /**
  * A Tutorial project is a collection of records (path → file). Typed parts of the model claim the records they
  * understand: the config claims `index.json`, the course program claims `main_course.gox`, the embedded project
- * claims its root directory and each video package claims its directory. Records nobody claims are kept in
+ * claims its root directory and each resource package claims its directory. Records nobody claims are kept in
  * `extraFiles` and written back as they are, so a course produced by a newer format, or carrying files this
  * model does not understand, is never silently trimmed.
  */
@@ -54,8 +54,8 @@ export class TutorialProject {
   project: SpxProject
   /** The course author's main program. */
   mainCourse: Course
-  /** Course-local video resources. */
-  videos: Video[] = []
+  /** Course-local resource packages under `assets/` (videos, and whatever other kinds the author added). */
+  resources: Resource[] = []
   /** Records claimed by no part of the model, keyed by path. */
   extraFiles: Files = {}
 
@@ -93,41 +93,45 @@ export class TutorialProject {
     const config = (await toConfig(configFile)) as TutorialProjectConfig
     await this.project.loadFiles(unprefixFiles(files, config.project.root))
     await this.mainCourse.loadFiles(files)
-    const videos = await Video.loadAll(files)
+    const resources = await Resource.loadAll(files)
 
     const extraFiles: Files = {}
     for (const [path, file] of Object.entries(files)) {
-      if (file != null && !isClaimedPath(path, config, videos)) extraFiles[path] = file
+      if (file != null && !isClaimedPath(path, config, resources)) extraFiles[path] = file
     }
 
     this.config = config
-    this.videos.splice(0).forEach((video) => video.setProject(null))
-    videos.forEach((video) => this.addVideo(video))
+    this.resources.splice(0).forEach((resource) => resource.setProject(null))
+    resources.forEach((resource) => this.addResource(resource))
     this.extraFiles = extraFiles
   }
 
-  private prepareAddVideo(video: Video) {
-    const name = ensureValidVideoName(video.name, this)
-    video.setName(name)
-    video.setProject(this)
+  getResource(kind: string, name: string): Resource | null {
+    return this.resources.find((resource) => resource.kind === kind && resource.name === name) ?? null
   }
 
-  addVideo(video: Video) {
-    this.prepareAddVideo(video)
-    this.videos.push(video)
+  private prepareAddResource(resource: Resource) {
+    const name = ensureValidResourceName(resource.kind, resource.name, this)
+    resource.setName(name)
+    resource.setProject(this)
   }
 
-  removeVideo(id: string) {
-    const index = this.videos.findIndex((video) => video.id === id)
-    if (index < 0) throw new Error(`video ${id} not found`)
-    const [video] = this.videos.splice(index, 1)
-    video.setProject(null)
+  addResource(resource: Resource) {
+    this.prepareAddResource(resource)
+    this.resources.push(resource)
+  }
+
+  removeResource(id: string) {
+    const index = this.resources.findIndex((resource) => resource.id === id)
+    if (index < 0) throw new Error(`resource ${id} not found`)
+    const [resource] = this.resources.splice(index, 1)
+    resource.setProject(null)
   }
 
   /** Whether `path` is claimed by a typed part of the model, so that it cannot hold an extra file. */
   isClaimedPath(path: string) {
     if (this.config == null) throw new Error('Tutorial project has not been loaded')
-    return isClaimedPath(path, this.config, this.videos)
+    return isClaimedPath(path, this.config, this.resources)
   }
 
   getExtraFile(path: string): File | null {
@@ -161,7 +165,7 @@ export class TutorialProject {
       this.exportConfig(),
       prefixFiles(this.project.exportFiles(), this.config.project.root),
       this.mainCourse.export(),
-      ...this.videos.map((video) => video.export())
+      ...this.resources.map((resource) => resource.export())
     )
     return files
   }
@@ -188,8 +192,8 @@ export class TutorialProject {
   }
 }
 
-function isClaimedPath(path: string, config: TutorialProjectConfig, videos: Video[]) {
+function isClaimedPath(path: string, config: TutorialProjectConfig, resources: Resource[]) {
   if (path === configFilePath || path === mainCourseFilePath) return true
   if (path.startsWith(config.project.root + '/')) return true
-  return videos.some((video) => path.startsWith(getVideoAssetPath(video.name) + '/'))
+  return resources.some((resource) => path.startsWith(resource.assetPath + '/'))
 }

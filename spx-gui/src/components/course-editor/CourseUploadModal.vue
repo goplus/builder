@@ -18,7 +18,13 @@ import { useMessageHandle } from '@/utils/exception'
 import { selectFilesWithUploadLimit } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
-import { getUploadConflicts, isResourceKindDir, normalizeDir, validateUploadDir, validateUploadPath } from './upload'
+import {
+  getUploadConflicts,
+  getUploadResourceKind,
+  normalizeDir,
+  validateUploadDir,
+  validateUploadPath
+} from './upload'
 
 const props = defineProps<{
   visible: boolean
@@ -72,7 +78,7 @@ const conflicts = computed(() =>
     : []
 )
 
-const becomesPackages = computed(() => error.value == null && isResourceKindDir(dir.value))
+const packageKind = computed(() => (error.value == null ? getUploadResourceKind(dir.value) : null))
 
 function dirLabel(candidate: string) {
   return candidate === '' ? '/' : candidate
@@ -136,11 +142,11 @@ function dirLabel(candidate: string) {
         />
       </div>
       <p v-if="error != null" class="m-0 text-red-main">{{ $t(error) }}</p>
-      <p v-else-if="becomesPackages" class="m-0 text-grey-700">
+      <p v-else-if="packageKind != null" class="m-0 text-grey-700">
         {{
           $t({
-            en: 'Each file becomes a video resource named after the file.',
-            zh: '每个文件将成为一个以文件名命名的视频资源。'
+            en: `Each file becomes a ${packageKind} resource package named after the file.`,
+            zh: `每个文件将成为一个以文件名命名的 ${packageKind} 资源包。`
           })
         }}
       </p>

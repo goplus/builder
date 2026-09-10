@@ -31,21 +31,21 @@ function nativeFile(name: string) {
 }
 
 describe('validateUploadDir', () => {
-  it('accepts the course root, workspace folders and resource type folders', async () => {
+  it('accepts the course root, workspace folders and any resource type folder', async () => {
     const project = await loadProject()
     expect(validateUploadDir(project, '')).toBeNull()
     expect(validateUploadDir(project, 'docs/notes')).toBeNull()
     expect(validateUploadDir(project, 'assets/videos')).toBeNull()
+    expect(validateUploadDir(project, 'assets/images')).toBeNull()
   })
 
-  it('refuses the project, assets itself, unknown resource types and package directories', async () => {
+  it('refuses the project, assets itself and package directories', async () => {
     const project = await loadProject()
     expect(validateUploadDir(project, 'project')?.en).toContain('Project Editor')
     expect(validateUploadDir(project, 'project/assets')?.en).toContain('Project Editor')
     expect(validateUploadDir(project, 'assets')?.en).toContain('resource type folder')
-    expect(validateUploadDir(project, 'assets/images')?.en).toContain('resource type folders')
-    expect(validateUploadDir(project, 'assets/videos/step-to')?.en).toContain('packages are managed')
-    expect(validateUploadDir(project, 'assets/videos/new-package')?.en).toContain('packages are managed')
+    expect(validateUploadDir(project, 'assets/videos/step-to')?.en).toContain('managed by the editor')
+    expect(validateUploadDir(project, 'assets/videos/new-package')?.en).toContain('managed by the editor')
   })
 })
 
@@ -60,17 +60,26 @@ describe('validateUploadPath', () => {
 })
 
 describe('addUploadedFiles', () => {
-  it('packages files uploaded into the videos folder, whatever their extension', async () => {
+  it('packages files uploaded into assets/<kind>, whatever the kind and extension', async () => {
     const project = await loadProject()
 
-    const paths = addUploadedFiles(project, 'assets/videos', [nativeFile('step-to.mov'), nativeFile('Intro clip.mkv')])
+    const videos = addUploadedFiles(project, 'assets/videos', [nativeFile('step-to.mov'), nativeFile('Intro clip.mkv')])
+    const images = addUploadedFiles(project, 'assets/images', [nativeFile('hint.png')])
 
-    expect(paths).toEqual(['assets/videos/step-to2', 'assets/videos/Intro clip'])
-    expect(project.videos.map((video) => video.name)).toEqual(['step-to', 'step-to2', 'Intro clip'])
+    expect(videos).toEqual(['assets/videos/step-to2', 'assets/videos/Intro clip'])
+    expect(images).toEqual(['assets/images/hint'])
+    expect(project.resources.map((r) => `${r.kind}/${r.name}`)).toEqual([
+      'videos/step-to',
+      'videos/step-to2',
+      'videos/Intro clip',
+      'images/hint'
+    ])
     const exported = project.exportFiles()
     expect(exported['assets/videos/step-to2/index.json']).toBeDefined()
     expect(exported['assets/videos/step-to2/step-to2.mov']).toBeDefined()
     expect(exported['assets/videos/Intro clip/Intro clip.mkv']).toBeDefined()
+    expect(exported['assets/images/hint/index.json']).toBeDefined()
+    expect(exported['assets/images/hint/hint.png']).toBeDefined()
   })
 
   it('stores files uploaded elsewhere as plain records, creating folders implicitly', async () => {
