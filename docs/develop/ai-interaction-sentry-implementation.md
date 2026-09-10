@@ -6,36 +6,38 @@
 
 以下 Builder 文件路径以仓库根目录为基准。
 
-| 文件                                                      | 职责                                                            |
-| --------------------------------------------------------- | --------------------------------------------------------------- |
-| `tools/ai/ai.go`                                          | 执行 Think 和历史归档，在一次交互开始时保存 Transport           |
-| `tools/ai/transport_context.go`                           | 通过 context 保存和读取 extra headers 的副本                    |
-| `tools/ai/wasmtrans/wasmtrans.go`                         | 构造 HTTP 请求、调用原生 fetch、读取和解析响应                  |
-| `tools/ai/wasmtrans/headers.go`                           | 合并 extra headers，保护凭据和 HTTP 控制字段                    |
-| `tools/ai/wasmtrans/promise.go`                           | 等待 JS Promise，返回结果、拒绝原因或 context 错误              |
-| `tools/ai/httperr.go`                                     | 将 API 的 quota、429 和其他 HTTP 失败转换为 Go 错误             |
-| `tools/ispx/ai.go`                                        | 接收 AI 配置，组装 `wasmtrans` 和 `traceTransport`              |
-| `tools/ispx/trace_transport.go`                           | 在 Interact / Archive 调用前后执行监控，传递 headers 和结束状态 |
-| `tools/ispx/trace_hook_wasm.go`                           | 保存并直接调用页面 Hook，将 JavaScript 异常隔离在监控层         |
-| `spx-gui/src/ispx/sentry-trace-hook.ts`                   | 将 Hook 调用转换为独立 Sentry span，并管理活跃 span             |
-| `spx-gui/src/components/project/runner/ProjectRunner.vue` | 准备游戏和 AI 配置，安装 Hook，管理运行期间的资源清理           |
-| `spx-gui/src/setup/sentry.ts`                             | 初始化 Sentry，配置 AI 请求采样和自动 fetch tracing 过滤        |
+| 文件 | 职责 |
+| --- | --- |
+| `tools/ai/ai.go` | 执行 Think 和历史归档，在一次交互开始时保存 Transport |
+| `tools/ai/transport_context.go` | 通过 context 保存和读取 extra headers 的副本 |
+| `tools/ai/wasmtrans/wasmtrans.go` | 构造 HTTP 请求、调用原生 fetch、读取和解析响应 |
+| `tools/ai/wasmtrans/headers.go` | 合并 extra headers，保护凭据和 HTTP 控制字段 |
+| `tools/ai/wasmtrans/promise.go` | 等待 JS Promise，返回结果、拒绝原因或 context 错误 |
+| `tools/ai/httperr.go` | 将 API 的 quota、429 和其他 HTTP 失败转换为 Go 错误 |
+| `tools/ispx/ai.go` | 接收 AI 配置，组装 `wasmtrans` 和 `traceTransport` |
+| `tools/ispx/trace_transport.go` | 在 Interact / Archive 调用前后执行监控，传递 headers 和结束状态 |
+| `tools/ispx/trace_hook_wasm.go` | 保存并直接调用页面 Hook，将 JavaScript 异常隔离在监控层 |
+| `tools/ispx/trace_transport_test.go` | Trace Transport 的 headers、状态和失败开放行为 |
+| `spx-gui/src/ispx/sentry-trace-hook.ts` | 将 Hook 调用转换为独立 Sentry span，并管理活跃 span |
+| `spx-gui/src/ispx/sentry-trace-hook.test.ts` | 页面 Hook 的独立 trace、finish 和关闭行为 |
+| `spx-gui/src/components/project/runner/ProjectRunner.vue` | 准备游戏和 AI 配置，安装 Hook，管理运行期间的资源清理 |
+| `spx-gui/src/setup/sentry.ts` | 初始化 Sentry，配置 AI 请求采样和自动 fetch tracing 过滤 |
 
 配套 Builder backend 的文件路径以其仓库根目录为基准：
 
-| 文件                                       | 职责                                                                             |
-| ------------------------------------------ | -------------------------------------------------------------------------------- |
-| `cmd/xbuilder-backend/middleware.go`       | 按配置匹配 body 捕获路由，创建并结束 HTTP transaction                            |
-| `internal/tracer/transaction.go`           | 续接 trace，保存 metadata、HTTP 状态和有大小限制的 body                          |
-| `internal/tracer/response_writer.go`       | 代理响应写入，记录状态、首次写入时间和响应 body 前缀                             |
-| `internal/tracer/metadata.go`              | 提供 context 内并发安全的 tag/extra 记录器                                       |
-| `internal/tracer/httpclient/client.go`     | 记录模型 HTTP 请求的 RoundTrip、响应头和传输错误                                 |
-| `internal/aiinteraction/aiinteraction.go`  | 读取模型流，累积响应，将 completion ID 放入内部 metadata                         |
-| `internal/aiinteraction/types.go`          | 定义内部 metadata 和携带错误 metadata 的 `ErrorWithMetadata`                     |
-| `internal/aiinteraction/tracer.go`         | 包装 Interact / Archive，将响应及错误中的 metadata 写入请求 context              |
-| `internal/controller/controller.go`        | 安装 AI interaction 包装                                                         |
+| 文件 | 职责 |
+| --- | --- |
+| `cmd/xbuilder-backend/middleware.go` | 按配置匹配 body 捕获路由，创建并结束 HTTP transaction |
+| `internal/tracer/transaction.go` | 续接 trace，保存 metadata、HTTP 状态和有大小限制的 body |
+| `internal/tracer/response_writer.go` | 代理响应写入，记录状态、首次写入时间和响应 body 前缀 |
+| `internal/tracer/metadata.go` | 提供 context 内并发安全的 tag/extra 记录器 |
+| `internal/tracer/httpclient/client.go` | 记录模型 HTTP 请求的 RoundTrip、响应头和传输错误 |
+| `internal/aiinteraction/aiinteraction.go` | 读取模型流，累积响应，将 completion ID 放入内部 metadata |
+| `internal/aiinteraction/types.go` | 定义内部 metadata 和携带错误 metadata 的 `ErrorWithMetadata` |
+| `internal/aiinteraction/tracer.go` | 包装 Interact / Archive，将响应及错误中的 metadata 写入请求 context |
+| `internal/controller/controller.go` | 安装 AI interaction 包装 |
 | `cmd/xbuilder-backend/util.go` / `slog.go` | 将内部服务器错误原文写入 `error.message`，并给请求错误日志附加 `sentry_trace_id` |
-| `internal/config/config.go` / `loader.go`  | 定义并读取 Sentry 采样和 body 捕获路由配置                                       |
+| `internal/config/config.go` / `loader.go` | 定义并读取 Sentry 采样和 body 捕获路由配置 |
 
 ## 初始化与接线
 

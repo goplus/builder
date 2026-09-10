@@ -18,14 +18,14 @@ http.client                   浏览器 WASM 请求，独立 root
 
 ## 各层职责
 
-| 层                              | 职责                                                                                |
-| ------------------------------- | ----------------------------------------------------------------------------------- |
-| `tools/ai`                      | 执行交互、命令和历史管理，通过 Transport 发起请求                                   |
+| 层 | 职责 |
+| --- | --- |
+| `tools/ai` | 执行交互、命令和历史管理，通过 Transport 发起请求 |
 | `tools/ispx/trace_transport.go` | 包装 Transport，调用 Trace Hook，将传播请求头放入 context，并在请求返回时结束 trace |
-| `tools/ispx/trace_hook_wasm.go` | 保存页面注入的 Hook，完成 Go 与 JavaScript 的直接调用和容错                         |
-| Web Sentry Trace Hook           | 创建独立 Sentry span，返回传播请求头和该 span 对应的 `finish` 函数                  |
-| `wasmtrans`                     | 合并请求头，执行原生 `fetch`，处理网络取消和响应解析                                |
-| 后端 HTTP transaction           | 续接 trace，记录 HTTP 状态、已配置的请求现场和请求期间积累的 metadata               |
+| `tools/ispx/trace_hook_wasm.go` | 保存页面注入的 Hook，完成 Go 与 JavaScript 的直接调用和容错 |
+| `spx-gui/src/ispx/sentry-trace-hook.ts` | 创建独立 Sentry span，返回传播请求头和该 span 对应的 `finish` 函数 |
+| `wasmtrans` | 合并请求头，执行原生 `fetch`，处理网络取消和响应解析 |
+| 后端 HTTP transaction | 续接 trace，记录 HTTP 状态、已配置的请求现场和请求期间积累的 metadata |
 
 Trace Hook 不传输 AI 请求正文或响应正文，也不替代 `wasmtrans`。它只是页面注入给 iSPX 的一个可选回调入口。
 
