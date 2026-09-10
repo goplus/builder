@@ -34,6 +34,24 @@ describe('Video', () => {
     expect((await Video.loadAll(files)).map((video) => video.name)).toEqual(['step-to', 'another'])
   })
 
+  it('carries unknown records of the package directory along, also when renamed', async () => {
+    const files = makeFiles()
+    files['assets/videos/step-to/captions.vtt'] = fromText('captions.vtt', 'WEBVTT')
+    const video = await Video.load('step-to', files)
+    if (video == null) throw new Error('video expected')
+
+    expect(Object.keys(video.extraFiles)).toEqual(['captions.vtt'])
+    expect(video.export()['assets/videos/step-to/captions.vtt']).toBe(files['assets/videos/step-to/captions.vtt'])
+
+    video.setName('intro')
+    const exported = video.export()
+    expect(Object.keys(exported).sort()).toEqual([
+      'assets/videos/intro/captions.vtt',
+      'assets/videos/intro/index.json',
+      'assets/videos/intro/intro.mp4'
+    ])
+  })
+
   it('rejects names that cannot identify a video directory', () => {
     const video = new Video('step-to', fromText('step-to.mp4', 'video'))
 

@@ -4,16 +4,19 @@ import { reactive } from 'vue'
 import { extname, join, resolve } from '@/utils/path'
 import type { LocaleMessage } from '@/utils/i18n'
 import { getStringLengthInCodePoints } from '@/utils/utils'
-import { File, fromConfig, listDirs, toConfig, type Files } from '@/models/common/file'
+import { File, fromText, listDirs, toConfig, type Files } from '@/models/common/file'
 import { getValidName } from '@/models/common/name'
 
+import { DerivedFile } from './derived-file'
 import type { TutorialProject } from './project'
 
 export type VideoInits = {
   id?: string
+  /** Records in the video's directory other than its manifest and media file, keyed by path relative to it. */
+  extraFiles?: Files
 }
 
-export type RawVideoConfig = Omit<VideoInits, 'id'> & {
+export type RawVideoConfig = {
   builder_id?: string
   path?: string
 }
@@ -22,10 +25,19 @@ export const videoAssetPath = 'assets/videos'
 const videoConfigFileName = 'index.json'
 const videoNameMaxLength = 100
 
+/** Directory of the video package named `name`, without trailing slash. */
+export function getVideoAssetPath(name: string) {
+  return join(videoAssetPath, name)
+}
+
 export type VideoExportLoadOptions = {
   includeId?: boolean
 }
 
+/**
+ * A video package: the directory `assets/videos/<name>/` with a manifest pointing at the media file. The package
+ * owns every record in its directory, so records the format does not know yet are carried along and written back.
+ */
 export class Video {
   id: string
 
@@ -46,22 +58,37 @@ export class Video {
     this.file = file
   }
 
+  /** Records in the package directory other than the manifest and the media file, keyed by relative path. */
+  extraFiles: Files
+
+  private configFile = new DerivedFile((json) => fromText(videoConfigFileName, json))
+
   constructor(name: string, file: File, inits?: VideoInits) {
     this.id = inits?.id ?? nanoid()
     this.name = name
     this.file = file
+    this.extraFiles = { ...inits?.extraFiles }
     return reactive(this) as this
   }
 
   static async load(name: string, files: Files, { includeId = true }: VideoExportLoadOptions = {}) {
-    const pathPrefix = join(videoAssetPath, name)
-    const configFile = files[join(pathPrefix, videoConfigFileName)]
+    const pathPrefix = getVideoAssetPath(name)
+    const configFilePath = join(pathPrefix, videoConfigFileName)
+    const configFile = files[configFilePath]
     if (configFile == null) return null
     const { builder_id: id, path } = (await toConfig(configFile)) as RawVideoConfig
     if (path == null) throw new Error(`path expected for video ${name}`)
-    const file = files[resolve(pathPrefix, path)]
+    const filePath = resolve(pathPrefix, path)
+    const file = files[filePath]
     if (file == null) throw new Error(`file ${path} for video ${name} not found`)
-    return new Video(name, file, { id: includeId ? id : undefined })
+    const extraFiles: Files = {}
+    const dirPrefix = pathPrefix + '/'
+    for (const [recordPath, record] of Object.entries(files)) {
+      if (record == null || !recordPath.startsWith(dirPrefix)) continue
+      if (recordPath === configFilePath || recordPath === filePath) continue
+      extraFiles[recordPath.slice(dirPrefix.length)] = record
+    }
+    return new Video(name, file, { id: includeId ? id : undefined, extraFiles })
   }
 
   static async loadAll(files: Files, options?: VideoExportLoadOptions) {
@@ -76,11 +103,14 @@ export class Video {
     const filename = this.name + extname(this.file.name)
     const config: RawVideoConfig = { path: filename }
     if (includeId) config.builder_id = this.id
-    const assetPath = join(videoAssetPath, this.name)
-    return {
-      [join(assetPath, videoConfigFileName)]: fromConfig(videoConfigFileName, config),
-      [join(assetPath, filename)]: this.file
+    const assetPath = getVideoAssetPath(this.name)
+    const files: Files = {}
+    for (const [relativePath, record] of Object.entries(this.extraFiles)) {
+      if (record != null) files[join(assetPath, relativePath)] = record
     }
+    files[join(assetPath, videoConfigFileName)] = this.configFile.get(JSON.stringify(config))
+    files[join(assetPath, filename)] = this.file
+    return files
   }
 }
 
