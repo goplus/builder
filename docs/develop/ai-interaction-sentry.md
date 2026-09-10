@@ -1,6 +1,6 @@
 # AI Interaction Sentry
 
-AI Interaction 的请求监控通过 iSPX 消息通道连接浏览器与 Builder backend，记录单次交互请求和归档请求的耗时、状态及请求现场。
+AI Interaction 的请求监控通过 iSPX Trace Hook 连接页面中的 Sentry 和 WASM 中的 AI Transport。Hook 只负责创建、结束 trace 以及提供传播请求头；AI 请求仍由 `wasmtrans` 使用浏览器原生 `fetch` 发出。
 
 ## Trace 结构
 
@@ -12,57 +12,53 @@ http.client                   浏览器 WASM 请求，独立 root
     └── http.client           后端 HTTP client 调用模型
 ```
 
-浏览器 root 的名称为 `POST /ai-interaction/turns` 或 `POST /ai-interaction/archives`。每次重试经过 Transport 时创建新的 root，生命周期从创建监控操作持续到 Transport 返回。请求的限流等待发生在调用 Transport 之前。
+浏览器 root 的名称为 `POST /ai-interaction/turns` 或 `POST /ai-interaction/archives`。每次重试经过 Transport 时创建新的 root，生命周期从调用 Transport 开始持续到 Transport 返回。请求的限流等待发生在调用 Transport 之前。
 
 后端模型 `http.client` 的计时覆盖底层 `RoundTrip` 调用；后端读取模型流、拼装结果和返回 API 响应的过程位于 `http.server` 生命周期内。
 
 ## 各层职责
 
-| 层 | 职责 |
-| --- | --- |
-| `tools/ai` | 执行交互、命令和历史管理，通过 Transport 发起请求 |
-| `tools/ispx/telemetry_transport.go` | 包装 Transport，创建监控操作，将传播请求头放入 context，并在请求返回时结束操作 |
-| iSPX telemetry client | 构造通用 operation 消息，保存操作编号和传播请求头 |
-| iSPX RPC client | 发送 JSON-RPC 请求和通知，匹配回复，处理取消与关闭 |
-| Web Sentry adapter | 创建 Sentry span，返回传播请求头，设置状态并结束记录 |
-| `wasmtrans` | 合并请求头，执行原生 `fetch`，处理网络取消和响应解析 |
-| 后端 HTTP transaction | 续接 trace，记录 HTTP 状态、已配置的请求现场和请求期间积累的 metadata |
+| 层                              | 职责                                                                                |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| `tools/ai`                      | 执行交互、命令和历史管理，通过 Transport 发起请求                                   |
+| `tools/ispx/trace_transport.go` | 包装 Transport，调用 Trace Hook，将传播请求头放入 context，并在请求返回时结束 trace |
+| `tools/ispx/trace_hook_wasm.go` | 保存页面注入的 Hook，完成 Go 与 JavaScript 的直接调用和容错                         |
+| Web Sentry Trace Hook           | 创建独立 Sentry span，返回传播请求头和该 span 对应的 `finish` 函数                  |
+| `wasmtrans`                     | 合并请求头，执行原生 `fetch`，处理网络取消和响应解析                                |
+| 后端 HTTP transaction           | 续接 trace，记录 HTTP 状态、已配置的请求现场和请求期间积累的 metadata               |
 
-消息通道传递监控操作和传播请求头；AI 请求正文与响应正文通过 WASM 的 HTTP 请求传输。
+Trace Hook 不传输 AI 请求正文或响应正文，也不替代 `wasmtrans`。它只是页面注入给 iSPX 的一个可选回调入口。
 
 ## 请求链路
 
 ```text
 Transport.Interact / Transport.Archive
-  -> telemetryTransport 请求开始监控操作
-  -> JSON-RPC: telemetry/operation.start
+  -> traceTransport 调用页面 Trace Hook
   -> 页面创建独立 Sentry span
-  <- { operationId, propagationHeaders }
+  <- { propagationHeaders, finish }
   -> 将传播请求头写入本次请求 context
-  -> wasmtrans 合并 headers 并调用 fetch
+  -> wasmtrans 合并 headers 并调用原生 fetch
   -> backend 续接 trace，调用模型并返回响应
-  -> telemetryTransport 根据调用结果确定状态
-  -> JSON-RPC: telemetry/operation.finish
-  -> 页面更新状态，结束并移除对应 span
+  -> traceTransport 根据调用结果得到 ok / error / cancelled
+  -> 调用本次操作对应的 finish(status)
+  -> 页面更新状态并结束 span
 ```
 
-`telemetry/operation.start` 使用有回复的 RPC Call，默认等待上限为 500ms，也受原始请求 context 的取消和截止时间约束。开始操作失败时，包装层继续调用底层 Transport。未配置 telemetry client 时使用原始 Transport。
+这里使用 “Hook” 是因为页面把一个函数注入到 iSPX 的固定扩展点，iSPX 在请求开始时回调它，从而挂接额外的观测逻辑。它不是 React Hook，也不是 WebHook。Hook 返回的 `finish` 闭包已经绑定本次 span，因此不需要 JSON-RPC、请求 ID 或页面侧 pending map。
+
+创建 trace、读取传播信息、设置状态或结束 span 任一步失败时，Hook 都按 best effort 处理，底层 AI 请求继续执行。未安装 Hook 时，直接使用原始 Transport。
 
 传播请求头通过 `ai.WithExtraHeaders` 保存在原始请求的派生 context 中。写入和读取时均复制 map。`wasmtrans` 按大小写不敏感的规则保护 `Authorization`、`Content-Type`、`Content-Length`、`Cookie`、`Host`、`Origin`、`Proxy-Authorization` 和 `Referer`。
 
-## 操作数据和状态
+## 操作状态
 
-开始消息包含操作名称 `name`、类型 `operation`、毫秒时间戳 `startTimeUnixMilli`，以及可选的 `attributes` 和 `propagation`。AI 请求使用 `operation=http.client`、`propagation=http`。
-
-页面返回 `operationId` 和 `propagationHeaders`，结束消息使用相同的 `operationId`，携带 `endTimeUnixMilli`、`status` 和可选属性。页面接受字符串、数字和布尔值作为 span 属性。
-
-| 结束状态 | 当前 Transport 包装的判定 |
-| --- | --- |
-| `ok` | 请求返回时 context 有效且调用成功 |
-| `error` | 请求返回错误且 context 仍有效 |
+| 结束状态    | 当前 Transport 包装的判定               |
+| ----------- | --------------------------------------- |
+| `ok`        | 请求返回时 context 有效且调用成功       |
+| `error`     | 请求返回错误且 context 仍有效           |
 | `cancelled` | 请求返回时 context 已取消或超过截止时间 |
 
-Go 侧的 `Operation.Finish` 只执行一次。页面按操作编号查找记录，对重复或迟到的结束消息直接返回。
+Go 侧和页面侧都保证每个 `finish` 最多生效一次。Runner 关闭 Hook 时，页面将仍未完成的 span 结束为 `cancelled`。
 
 ## 后端请求现场
 
@@ -80,11 +76,11 @@ server transaction 的 `http.first_byte_ms` 记录从 HTTP transaction 开始到
 
 ## 运行生命周期
 
-`ProjectRunner` 为使用 AI Interaction 的运行准备 endpoint、token provider 和消息回调，并创建对应的 RPC session。Go 侧收到回调后创建 RPC client 和 telemetry client，再安装带监控的默认 Transport。
+`ProjectRunner` 为使用 AI Interaction 的运行准备 endpoint、token provider 和 Trace Hook。Go 侧收到 Hook 后，用它包装原生 `wasmtrans`，再安装默认 Transport。
 
-一次 Think 开始时保存当时的 Transport，后续请求及由其安排的历史归档沿用该实例。Transport 包装保存所属运行的 telemetry client。
+一次 Think 开始时保存当时的 Transport，后续请求及由其安排的历史归档沿用该实例。旧 Transport 即使仍持有旧 Hook，Hook 关闭后也只会返回空结果，AI 请求仍可继续。
 
-停止、重新运行、卸载组件、重载 iframe、游戏错误或退出时，Runner 关闭消息 session。页面中止等待中的 RPC 处理并结束剩余 span；Go 侧关闭 RPC client，唤醒等待回复的调用。关闭的 session 拒绝后续工作，无法匹配的迟到回复被忽略。网络请求通过请求 context 和 `AbortController` 执行取消。
+停止、重新运行、开始新运行、卸载组件、重载 iframe、游戏错误或退出时，Runner 都会关闭当前 Hook。关闭只清理观测资源，不负责取消 HTTP；网络请求仍通过原始请求 context 和 `AbortController` 取消。
 
 ## 采样与查看
 

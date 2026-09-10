@@ -1,5 +1,6 @@
 <script lang="ts">
 import spxPackage from '@xgo-pkgs/spx/package.json'
+import type { TraceHook } from '@/ispx/sentry-trace-hook'
 
 const ispxWasmUrl = new URL('@/assets/wasm/ispx.wasm', import.meta.url).href
 // TODO: Importing runner.html as a Vite asset would give us a hashed immutable
@@ -56,9 +57,7 @@ interface RunnerIframeWindow extends Window {
   xbuilder_set_ai_interaction_api_endpoint: (endpoint: string) => void
   xbuilder_set_ai_interaction_api_token_provider: (provider: () => Promise<string>) => void
   xbuilder_set_ai_description: (description: string) => void
-  xbuilder_set_game_session_id: (id: string) => void
-  xbuilder_set_message_replier: (replier: ((message: unknown) => void) | null) => void
-  xbuilder_handle_rpc_message: (message: unknown) => void
+  xbuilder_set_trace_hook: (hook: TraceHook | null) => void
   /** Set the current logged-in username, injected into the spx runtime before running. */
   xbuilder_set_username: (username: string) => void
   /** Init the engine. Can be called early; project-agnostic. */
@@ -154,8 +153,7 @@ import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/prog
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
-import { RPCSession } from '@/ispx/rpc'
-import { createSentryTelemetryAdapter } from '@/ispx/sentry-telemetry-adapter'
+import { createSentryTraceHook, type TraceHookController } from '@/ispx/sentry-trace-hook'
 import type { Files } from '@/models/common/file'
 import { hashFiles } from '@/models/common/hash'
 import type { SpxProject } from '@/models/spx/project'
@@ -184,30 +182,32 @@ const state = shallowRef<State>({ type: 'initial' })
 const runnerIframeRef = ref<HTMLIFrameElement>()
 const runnerIframeWindowRef = ref<RunnerIframeWindow | null>(null)
 let engineInitPromise: Promise<void> | null = null
-let ispxRPCSession: { session: RPCSession; iframeWindow: RunnerIframeWindow } | null = null
+let traceHookSession: { controller: TraceHookController; iframeWindow: RunnerIframeWindow } | null = null
 
-function closeISPXRPCSession() {
-  const current = ispxRPCSession
+function closeTraceHook() {
+  const current = traceHookSession
   if (current == null) return
-  ispxRPCSession = null
-  current.session.close()
+  traceHookSession = null
+  current.controller.close()
+
   try {
-    current.iframeWindow.xbuilder_set_message_replier(null)
+    current.iframeWindow.xbuilder_set_trace_hook(null)
   } catch {
     // The iframe may already be stale.
   }
 }
 
-function installISPXRPCSession(iframeWindow: RunnerIframeWindow) {
-  closeISPXRPCSession()
-  const session = new RPCSession(createSentryTelemetryAdapter(), (message) => {
-    iframeWindow.xbuilder_handle_rpc_message(message)
-  })
-  ispxRPCSession = { session, iframeWindow }
+function installTraceHook(iframeWindow: RunnerIframeWindow) {
+  closeTraceHook()
+
+  const controller = createSentryTraceHook()
   try {
-    iframeWindow.xbuilder_set_message_replier((message) => session.handleMessage(message))
-  } catch {
-    closeISPXRPCSession()
+    iframeWindow.xbuilder_set_trace_hook(controller.hook)
+    traceHookSession = { controller, iframeWindow }
+  } catch (err) {
+    controller.close()
+    // Tracing is best effort and must not prevent the game from starting.
+    console.warn('Failed to install iSPX trace hook', err)
   }
 }
 
@@ -233,12 +233,12 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   function handleRunnerReady() {
     runnerIframeWindowRef.value = iframeWindow
     iframeWindow.onGameError((err: string) => {
-      closeISPXRPCSession()
+      closeTraceHook()
       state.value = { type: 'failed', err }
       capture(err, 'ProjectRunner game error')
     })
     iframeWindow.onGameExit((code: number) => {
-      closeISPXRPCSession()
+      closeTraceHook()
       emit('exit', code)
     })
     iframeWindow.onEngineCrash((err: string) => {
@@ -264,12 +264,12 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
 let unmounted = false
 onBeforeUnmount(() => {
   unmounted = true
-  closeISPXRPCSession()
   runCtrl?.abort(new Cancelled('unmounted'))
+  closeTraceHook()
 })
 
 async function reloadIframe() {
-  closeISPXRPCSession()
+  closeTraceHook()
   const iframeWindow = runnerIframeWindowRef.value
   if (iframeWindow == null) return
   iframeWindow.__xb_is_stale = true
@@ -309,8 +309,7 @@ async function prepareAIInteraction(
   iframeWindow.xbuilder_set_ai_description(aiDescription)
   iframeWindow.xbuilder_set_ai_interaction_api_endpoint(aiInteractionEndpoint)
   iframeWindow.xbuilder_set_ai_interaction_api_token_provider(async () => (await ensureAccessToken()) ?? '')
-  iframeWindow.xbuilder_set_game_session_id(crypto.randomUUID())
-  installISPXRPCSession(iframeWindow)
+  installTraceHook(iframeWindow)
   reporter.report(1)
   return
 }
@@ -330,7 +329,7 @@ watch(state, ({ type }) => {
 let runPromise: Promise<unknown> | null = null
 let runCtrl: AbortController | null = null
 function getRunCtrl() {
-  closeISPXRPCSession()
+  closeTraceHook()
   runCtrl?.abort(new Cancelled('new run'))
   const ctrl = new AbortController()
   runCtrl = ctrl
@@ -397,7 +396,7 @@ async function runInternal(ctrl: AbortController) {
     return hashFiles(files, ctrl.signal)
   } catch (err) {
     if (err instanceof Cancelled) throw err
-    closeISPXRPCSession()
+    closeTraceHook()
     capture(err, 'ProjectRunner run game error')
     state.value = { type: 'failed', err }
     throw err
@@ -419,11 +418,11 @@ defineExpose({
     })
   },
   async stop() {
-    closeISPXRPCSession()
+    closeTraceHook()
     const promise = runPromise
     runCtrl?.abort(new Cancelled('stop'))
     if (promise != null) await promise.catch(() => {})
-    closeISPXRPCSession()
+    closeTraceHook()
 
     const iframeWindow = runnerIframeWindowRef.value
     if (iframeWindow == null) return
