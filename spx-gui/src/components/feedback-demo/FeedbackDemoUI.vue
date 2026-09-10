@@ -115,7 +115,7 @@ watch(model.notificationCenterOpen, (open) => {
     previewPage.value = 1
   }
   if (open) {
-    activeNotificationTab.value = 'feedback'
+    activeNotificationTab.value = unreadFeedbackCount.value === 0 && unreadSystemCount.value > 0 ? 'system' : 'feedback'
   }
 })
 
@@ -314,7 +314,8 @@ function handlePreviewVisibleChange(visible: boolean) {
         <button
           v-radar="{ name: 'Mark all notifications read', desc: 'Mark all notifications as read' }"
           type="button"
-          class="border-0 bg-transparent text-sm text-primary-main transition-colors hover:text-primary-600 focus-visible:outline-2 focus-visible:outline-primary-main"
+          class="border-0 bg-transparent text-sm text-primary-main transition-colors enabled:hover:text-primary-600 disabled:cursor-default disabled:text-grey-600 focus-visible:outline-2 focus-visible:outline-primary-main"
+          :disabled="model.unreadNotificationCount.value === 0"
           @click="model.markAllNotificationsRead"
         >
           {{ $t({ en: 'Mark all as read', zh: '全部已读' }) }}
@@ -325,7 +326,7 @@ function handlePreviewVisibleChange(visible: boolean) {
         <button
           type="button"
           class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
-          :class="activeNotificationTab === 'feedback' ? 'text-primary-main' : 'text-grey-700'"
+          :class="activeNotificationTab === 'feedback' ? 'text-primary-main' : 'text-grey-800'"
           @click="activeNotificationTab = 'feedback'"
         >
           <span class="relative inline-block">
@@ -345,7 +346,7 @@ function handlePreviewVisibleChange(visible: boolean) {
         <button
           type="button"
           class="relative border-0 bg-transparent px-0 pb-3 pt-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-primary-main"
-          :class="activeNotificationTab === 'system' ? 'text-primary-main' : 'text-grey-700'"
+          :class="activeNotificationTab === 'system' ? 'text-primary-main' : 'text-grey-800'"
           @click="activeNotificationTab = 'system'"
         >
           <span class="relative inline-block">
@@ -369,37 +370,39 @@ function handlePreviewVisibleChange(visible: boolean) {
           {{ $t({ en: 'No notifications', zh: '暂无信息' }) }}
         </UIEmpty>
       </div>
-      <div v-else class="min-h-0 flex-1 overflow-y-auto p-3">
-        <button
-          v-for="notification in activeNotifications"
-          :key="notification.id"
-          v-radar="{
-            name: 'Support notification',
-            desc: notification.readAt == null ? 'Unread reply from XBuilder Support' : 'Reply from XBuilder Support'
-          }"
-          class="group relative block w-full cursor-pointer rounded-lg border-0 bg-white p-3 text-left transition-colors hover:bg-grey-300 focus-visible:relative focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-primary-main"
-          :class="notification.readAt == null ? 'bg-white' : 'bg-white'"
-          @click="openNotification(notification)"
-        >
-          <div class="min-w-0">
-            <div class="flex items-start justify-between gap-3">
-              <span class="flex min-w-0 flex-1 items-start gap-1">
-                <span class="min-w-0 truncate text-[14px] leading-[22px] text-title font-normal">
-                  {{ notification.title }}
+      <div v-else class="min-h-0 flex-1 p-3">
+        <div class="h-full w-[calc(100%+12px)] overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2">
+          <button
+            v-for="notification in activeNotifications"
+            :key="notification.id"
+            v-radar="{
+              name: 'Support notification',
+              desc: notification.readAt == null ? 'Unread reply from XBuilder Support' : 'Reply from XBuilder Support'
+            }"
+            class="group relative block w-full cursor-pointer rounded-lg border-0 bg-white p-3 text-left transition-colors hover:bg-grey-300 focus-visible:relative focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-primary-main"
+            :class="notification.readAt == null ? 'bg-white' : 'bg-white'"
+            @click="openNotification(notification)"
+          >
+            <div class="min-w-0">
+              <div class="flex items-start justify-between gap-3">
+                <span class="flex min-w-0 flex-1 items-start gap-1">
+                  <span class="min-w-0 truncate text-[14px] leading-[22px] text-title font-normal">
+                    {{ notification.title }}
+                  </span>
+                  <span
+                    v-if="notification.readAt == null"
+                    aria-hidden="true"
+                    class="mt-0.5 size-2 shrink-0 rounded-full bg-[#ef4149]"
+                  ></span>
                 </span>
-                <span
-                  v-if="notification.readAt == null"
-                  aria-hidden="true"
-                  class="mt-0.5 size-2 shrink-0 rounded-full bg-[#ef4149]"
-                ></span>
-              </span>
-              <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
-                formatTime(notification.createdAt)
-              }}</time>
+                <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
+                  formatTime(notification.createdAt)
+                }}</time>
+              </div>
+              <p class="mt-1 line-clamp-1 text-[12px] leading-[18px] text-grey-800">{{ notification.body }}</p>
             </div>
-            <p class="mt-1 line-clamp-1 text-[12px] leading-[18px] text-grey-800">{{ notification.body }}</p>
-          </div>
-        </button>
+          </button>
+        </div>
       </div>
     </div>
 
