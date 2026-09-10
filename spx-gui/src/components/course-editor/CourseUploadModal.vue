@@ -13,7 +13,9 @@ function collectUploadDirs(nodes: CourseNode[], accepts: (dir: string) => boolea
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
+import { selectFilesWithUploadLimit } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { getUploadConflicts, isResourceKindDir, normalizeDir, validateUploadDir, validateUploadPath } from './upload'
@@ -24,14 +26,22 @@ const props = defineProps<{
   tree: CourseNode[]
   /** Directory proposed as the target. */
   initialDir: string
-  files: globalThis.File[]
 }>()
 
 const emit = defineEmits<{
   cancelled: []
-  /** Resolves with the chosen target directory (normalized). */
-  resolved: [dir: string]
+  /** Resolves with the files to upload and the chosen target directory (normalized). */
+  resolved: [result: { dir: string; files: globalThis.File[] }]
 }>()
+
+const files = shallowRef<globalThis.File[]>([])
+
+const handleSelectFiles = useMessageHandle(
+  async () => {
+    files.value = await selectFilesWithUploadLimit({})
+  },
+  { en: 'Failed to select files', zh: '选择文件失败' }
+)
 
 const dirInput = ref(props.initialDir)
 const dir = computed(() => normalizeDir(dirInput.value))
@@ -45,7 +55,7 @@ const knownDirs = computed(() => [
 const error = computed(() => {
   const dirError = validateUploadDir(props.project, dir.value)
   if (dirError != null) return dirError
-  for (const file of props.files) {
+  for (const file of files.value) {
     const pathError = validateUploadPath(props.project, dir.value, file.name)
     if (pathError != null) return pathError
   }
@@ -57,7 +67,7 @@ const conflicts = computed(() =>
     ? getUploadConflicts(
         props.project,
         dir.value,
-        props.files.map((file) => file.name)
+        files.value.map((file) => file.name)
       )
     : []
 )
@@ -79,10 +89,26 @@ function dirLabel(candidate: string) {
   >
     <div class="flex flex-col gap-4 text-sm">
       <div class="flex flex-col gap-1">
-        <span class="text-grey-700">{{ $t({ en: 'Files', zh: '文件' }) }}</span>
-        <ul class="m-0 max-h-32 list-none overflow-y-auto p-0">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-grey-700">{{ $t({ en: 'Files', zh: '文件' }) }}</span>
+          <UIButton
+            v-radar="{ name: 'Select files button', desc: 'Click to choose the files to upload' }"
+            type="secondary"
+            size="small"
+            :loading="handleSelectFiles.isLoading.value"
+            @click="handleSelectFiles.fn"
+          >
+            {{
+              files.length === 0
+                ? $t({ en: 'Select files...', zh: '选择文件...' })
+                : $t({ en: 'Select again...', zh: '重新选择...' })
+            }}
+          </UIButton>
+        </div>
+        <ul v-if="files.length > 0" class="m-0 max-h-32 list-none overflow-y-auto p-0">
           <li v-for="file in files" :key="file.name" class="truncate" :title="file.name">{{ file.name }}</li>
         </ul>
+        <p v-else class="m-0 text-grey-700">{{ $t({ en: 'No files selected yet', zh: '还没有选择文件' }) }}</p>
       </div>
       <div class="flex flex-col gap-1">
         <span class="text-grey-700">{{ $t({ en: 'Target folder', zh: '目标目录' }) }}</span>
@@ -135,8 +161,8 @@ function dirLabel(candidate: string) {
         <UIButton
           v-radar="{ name: 'Confirm upload button', desc: 'Click to upload the files into the chosen folder' }"
           type="primary"
-          :disabled="error != null"
-          @click="emit('resolved', dir)"
+          :disabled="error != null || files.length === 0"
+          @click="emit('resolved', { dir, files })"
         >
           {{ $t({ en: 'Upload', zh: '上传' }) }}
         </UIButton>

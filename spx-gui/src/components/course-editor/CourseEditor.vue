@@ -6,7 +6,7 @@ import { useI18n } from '@/utils/i18n'
 import { updateCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { courseEditorPreviewRouteName, courseEditorRouteName } from '@/apps/xbuilder/router'
-import { saveFiles, selectFilesWithUploadLimit } from '@/models/common/cloud'
+import { saveFiles } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -88,7 +88,8 @@ function openPath(path: string) {
   })
 }
 
-// Uploading: pick files, choose the target folder (proposed from the open node), put them in and open the first.
+// Uploading: the modal picks the files and the target folder (proposed from the open node); the first created
+// node is opened afterwards.
 function proposedUploadDir() {
   const current = doc.value
   let dir = ''
@@ -98,8 +99,11 @@ function proposedUploadDir() {
 
 const handleUpload = useMessageHandle(
   async (dir: string = proposedUploadDir()) => {
-    const files = await selectFilesWithUploadLimit({})
-    const targetDir = await openUploadModal({ project: props.project, tree: tree.value, initialDir: dir, files })
+    const { dir: targetDir, files } = await openUploadModal({
+      project: props.project,
+      tree: tree.value,
+      initialDir: dir
+    })
     const paths = addUploadedFiles(props.project, targetDir, files)
     await openPath(paths[0])
   },
