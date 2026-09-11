@@ -277,7 +277,24 @@ export class EditorState extends Disposable {
     }
   }
 
-  /** Select a target (by specifying route path). Throws if the path is not recognized. */
+  /**
+   * Select a target (by specifying route path). Throws if the path is not recognized.
+   *
+   * Applies an in-editor route (the `inEditorPath` segments after `/editor/<owner>/<project>/`) to the editor
+   * state: first the edit mode (a leading `map` segment selects `EditMode.Map`, anything else `EditMode.Default`),
+   * then the selected target (`stage/...`, the legacy top-level `sounds/...`, or `sprites/<name>/...`), handing the
+   * remaining segments to the stage or sprite sub-state. Made public on this branch (it was `private`) so that a
+   * host embedding the Project Editor can open an initial path itself, before `syncWithRouter` takes over.
+   * @param path - Route segments, e.g. `['map', 'sprites', 'Bird', 'code']`; `[]` selects the default target.
+   * @throws Error when a sub-state does not recognize its section segment (`StageEditor`/`SpriteEditor`
+   *   `selectByRoute` throw `Unknown type: ...`). An unknown sprite name does not throw: `selectByName` then
+   *   selects the sprite target with no sprite.
+   * @returns void; side effects: `selectedEditMode` and `selected` (plus the sub-states' selections) change,
+   *   which the state → router watch of `syncWithRouter`, when active, turns into a router push/replace.
+   * Called by: components/editor/editor-state.ts#EditorState.syncWithRouter (router → state watch),
+   * components/course-editor/project/SpxProjectEditorHost.vue#openInitialPath (route path or configured
+   * `initialPath`, falling back to `[]` when that path cannot be resolved).
+   */
   selectByRoute(path: PathSegments) {
     let [segment, extra] = shiftPath(path)
 

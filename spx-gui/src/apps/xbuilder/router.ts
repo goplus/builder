@@ -38,12 +38,39 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+/**
+ * Name of the editing route of the Course Editor (`/course-editor/:courseSeriesIdInput/:courseIdInput/...`).
+ * Named so the Course Editor can navigate to it and recognize it in guards, since one editing session spans two
+ * route records (editing and preview).
+ * Consumed by: apps/xbuilder/router.ts (the editing route record's `name`),
+ * components/course-editor/CourseEditor.vue#openPath (named push) and #isThisCourseEditor (leave guard).
+ */
 export const courseEditorRouteName = 'course-editor'
+/**
+ * Name of the preview route of the Course Editor
+ * (`/course-editor/:courseSeriesIdInput/:courseIdInput/preview/...`), where the author sees the course as a learner.
+ * Consumed by: apps/xbuilder/router.ts (the preview route record's `name`),
+ * components/course-editor/CourseEditor.vue#isPreviewRoute (computed), #handlePreview (named push) and
+ * #isThisCourseEditor (leave guard).
+ */
 export const courseEditorPreviewRouteName = 'course-editor-preview'
 
+/**
+ * Builds the Course Editor path for a course inside a series, optionally opening a node of the course tree.
+ * @param courseSeriesID - ID of the course series the course belongs to (becomes the `courseSeriesIdInput` param).
+ * @param courseID - ID of the course to edit (becomes the `courseIdInput` param).
+ * @param inCourseEditorPath - Segments of the course-tree path to open (e.g. `['project', 'sprites', 'Bird']`);
+ *   empty (the default) opens the course root.
+ * @returns `/course-editor/<series>/<course>`, followed by `/<segment>/...` when a path is given; every part is
+ *   URI-encoded.
+ * Called by: (not called yet; reserved for links into the Course Editor, e.g. from course management pages).
+ */
 export function getCourseEditorRoute(courseSeriesID: string, courseID: string, inCourseEditorPath: string[] = []) {
+  // Both IDs are user data, so each is encoded as its own path segment.
   const base = `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}`
+  // No path: open the root of the course tree.
   if (inCourseEditorPath.length === 0) return base
+  // Segments are encoded one by one so a `/` inside a segment cannot create extra segments.
   return `${base}/${inCourseEditorPath.map(encodeURIComponent).join('/')}`
 }
 
@@ -144,15 +171,25 @@ const routes: Array<RouteRecordRaw> = [
   },
   // Course preview runs the learner-side playground, which drives `inEditorPath` itself, so it gets its own
   // route record; both records render the same page so the editing session survives entering preview.
+  // Listed before the editing record: its static `preview` segment outranks the editing record's catch-all in
+  // vue-router's path ranking anyway, but the explicit order keeps the intent readable.
   {
+    // `:inEditorPath*` is the Project Editor's in-editor path (same param name as `/editor/...` routes), so the
+    // learner-side `EditorState.syncWithRouter` and `CoursePlayground.vue` work unchanged inside the preview.
     path: '/course-editor/:courseSeriesIdInput/:courseIdInput/preview/:inEditorPath*',
     name: courseEditorPreviewRouteName,
+    // Same page component as the editing record: the loaded `TutorialProject` survives switching records.
     component: () => import('./pages/course-editor/index.vue'),
+    // Route params are passed to the page as props (`courseSeriesIdInput`, `courseIdInput` are declared there).
     props: true
   },
+  // The editing record. `:inCourseEditorPath*` is the course-tree node being edited (the course root when
+  // empty); when it points into the embedded project, `SpxProjectEditorHost.vue` translates the tail after the
+  // project root into the Project Editor's own `inEditorPath`.
   {
     path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inCourseEditorPath*',
     name: courseEditorRouteName,
+    // Same page component as the preview record (see above).
     component: () => import('./pages/course-editor/index.vue'),
     props: true
   },
