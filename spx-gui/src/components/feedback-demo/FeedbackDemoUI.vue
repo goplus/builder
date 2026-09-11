@@ -35,6 +35,7 @@ const activeNotificationTab = ref<'feedback' | 'system'>('feedback')
 const notificationTitleID = useId()
 const notificationListScrollRef = ref<HTMLElement | null>(null)
 const notificationListHasScroll = ref(false)
+const notificationListScrollbarWidth = ref(0)
 const imagePreviewTitleID = useId()
 type RenderableFeedbackAttachment = FeedbackAttachment & { url: string }
 const selectedPreviewAttachment = ref<RenderableFeedbackAttachment | null>(null)
@@ -82,7 +83,15 @@ const selectedNotificationReplyAttachments = computed(() =>
 
 function updateNotificationListScrollState() {
   const element = notificationListScrollRef.value
-  notificationListHasScroll.value = element != null && element.scrollHeight > element.clientHeight + 1
+  if (element == null) {
+    notificationListHasScroll.value = false
+    notificationListScrollbarWidth.value = 0
+    return
+  }
+  notificationListHasScroll.value = element.scrollHeight > element.clientHeight + 1
+  notificationListScrollbarWidth.value = notificationListHasScroll.value
+    ? Math.max(0, element.offsetWidth - element.clientWidth)
+    : 0
 }
 
 watch(
@@ -395,7 +404,9 @@ function handlePreviewVisibleChange(visible: boolean) {
         <div
           ref="notificationListScrollRef"
           class="h-full overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2"
-          :class="notificationListHasScroll ? 'w-[calc(100%+12px)]' : 'w-full'"
+          :style="{
+            width: notificationListHasScroll ? `calc(100% + ${notificationListScrollbarWidth}px)` : '100%'
+          }"
         >
           <button
             v-for="notification in activeNotifications"

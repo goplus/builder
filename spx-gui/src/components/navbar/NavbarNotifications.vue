@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useFeedbackDemoModel } from '@/components/feedback-demo/model'
@@ -30,21 +30,51 @@ const notificationRadar = computed(() => ({
       : `Open notifications. ${feedbackDemo.unreadNotificationCount.value} unread.`
 }))
 
-function openNotificationCenter(event: MouseEvent) {
-  closeActiveDropdown()
-  const trigger = event.currentTarget as HTMLElement
+const notificationTriggerRef = ref<HTMLElement | null>(null)
+
+function updateNotificationCenterPosition() {
+  const trigger = notificationTriggerRef.value
+  if (trigger == null) return
   const rect = trigger.getBoundingClientRect()
-  feedbackDemo.openNotificationCenter({
+  feedbackDemo.updateNotificationCenterAnchor({
     top: rect.bottom + 8,
     right: window.innerWidth - rect.right
   })
 }
+
+function openNotificationCenter(event: MouseEvent) {
+  closeActiveDropdown()
+  const trigger = event.currentTarget as HTMLElement
+  const rect = trigger.getBoundingClientRect()
+  feedbackDemo.openNotificationCenter({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
+}
+
+watch(
+  feedbackDemo.notificationCenterOpen,
+  (open) => {
+    if (open) {
+      updateNotificationCenterPosition()
+      window.addEventListener('resize', updateNotificationCenterPosition)
+      window.addEventListener('scroll', updateNotificationCenterPosition, true)
+    } else {
+      window.removeEventListener('resize', updateNotificationCenterPosition)
+      window.removeEventListener('scroll', updateNotificationCenterPosition, true)
+    }
+  },
+  { immediate: true }
+)
+
+onScopeDispose(() => {
+  window.removeEventListener('resize', updateNotificationCenterPosition)
+  window.removeEventListener('scroll', updateNotificationCenterPosition, true)
+})
 </script>
 
 <template>
   <UITooltip v-if="!route.path.startsWith('/admin') && signedIn" placement="bottom">
     <template #trigger>
       <button
+        ref="notificationTriggerRef"
         v-radar="notificationRadar"
         :aria-label="notificationLabel"
         aria-haspopup="dialog"
