@@ -7,6 +7,10 @@ const props = defineProps<{
   triggerRadar: RadarNodeMeta
 }>()
 const feedbackDemo = useFeedbackDemoModel()
+
+function closeNotificationAfterMenuToggle() {
+  void Promise.resolve().then(() => feedbackDemo.closeNotificationCenter())
+}
 </script>
 
 <template>
@@ -19,7 +23,7 @@ const feedbackDemo = useFeedbackDemoModel()
         aria-haspopup="menu"
         :aria-expanded="expanded"
         :aria-label="props.triggerRadar.name"
-        @click="feedbackDemo.closeNotificationCenter"
+        @click="closeNotificationAfterMenuToggle"
       >
         <slot name="trigger"></slot>
         <UIIcon type="arrowMini" class="w-2 ml-1" />

@@ -61,6 +61,10 @@ async function handleSignOut() {
   await signOut()
   router.go(0) // Reload the page to trigger navigation guards.
 }
+
+function closeNotificationAfterMenuToggle() {
+  void Promise.resolve().then(() => feedbackDemo.closeNotificationCenter())
+}
 </script>
 
 <!-- eslint-disable vue/no-v-html -->
@@ -83,7 +87,7 @@ async function handleSignOut() {
         aria-haspopup="menu"
         :aria-expanded="expanded"
         :aria-label="$t({ en: 'Account menu', zh: '账户菜单' })"
-        @click="feedbackDemo.closeNotificationCenter"
+        @click="closeNotificationAfterMenuToggle"
       >
         <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" alt="" aria-hidden="true" />
       </button>
