@@ -82,6 +82,20 @@ describe('addUploadedFiles', () => {
     expect(exported['assets/images/hint/hint.png']).toBeDefined()
   })
 
+  it('packages a file named index.json without shadowing the manifest, and the course reloads', async () => {
+    const project = await loadProject()
+
+    const paths = addUploadedFiles(project, 'assets/data', [nativeFile('index.json')])
+
+    expect(paths).toEqual(['assets/data/index2'])
+    const exported = project.exportFiles()
+    expect(exported['assets/data/index2/index2.json']).toBeDefined()
+    expect(exported['assets/data/index2/index.json']).toBeDefined()
+    const reloaded = new TutorialProject()
+    await reloaded.loadFiles(exported)
+    expect(reloaded.getResource('data', 'index2')).not.toBeNull()
+  })
+
   it('stores files uploaded elsewhere as plain records, creating folders implicitly', async () => {
     const project = await loadProject()
 

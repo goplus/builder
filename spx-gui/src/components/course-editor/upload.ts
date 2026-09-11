@@ -15,7 +15,7 @@
 
 import type { LocaleMessage } from '@/utils/i18n'
 import { stripExt } from '@/utils/path'
-import { fromNativeFile } from '@/models/common/file'
+import { fromNativeFile, type File } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { configFilePath, type TutorialProject } from '@/models/tutorial/project'
 import {
@@ -184,18 +184,21 @@ export function getUploadConflicts(project: TutorialProject, dir: string, names:
  *
  * @param project - The loaded Tutorial project (existing resources are consulted for uniqueness).
  * @param kind - The resource kind (`assets/<kind>`).
- * @param fileName - The uploaded file's name, e.g. `step-to.mov`.
+ * @param file - The payload file; its name without extension seeds the resource name, its extension the payload path.
  * @returns A name that `validateResourceName` accepts for `project`, e.g. `step-to` or `step-to2`.
  *
  * Called by:
  * - components/course-editor/upload.ts#addUploadedFiles
  */
-export function deriveResourceName(project: TutorialProject, kind: string, fileName: string) {
-  const base = stripExt(fileName)
-  // Derive the resource name from the file name when it is usable, otherwise start from the kind.
+export function deriveResourceName(project: TutorialProject, kind: string, file: File) {
+  const base = stripExt(file.name)
+  // Derive the resource name from the file name when it is well formed, otherwise start from the kind.
   // `validateResourceName` gets `null` as the project here so a name that merely clashes still counts as usable;
-  // `getResourceName` then appends a suffix until it is unique within `project`.
-  return getResourceName(project, kind, validateResourceName(kind, base, null) == null ? base : kind)
+  // `getResourceName` then appends a suffix until the whole layout (uniqueness, payload path) is valid.
+  return getResourceName(project, kind, validateResourceName(kind, base, null) == null ? base : kind, {
+    file,
+    extraFiles: {}
+  })
 }
 
 /**
@@ -222,11 +225,8 @@ export function addUploadedFiles(project: TutorialProject, dir: string, files: g
     // One package per file: name derived from the file, payload wrapped as a `File`. `addResource` re-validates
     // the name against packages added earlier in this same loop, so two uploads of `a.mov` yield `a` and `a2`.
     return files.map((nativeFile) => {
-      const resource = new Resource(
-        kind,
-        deriveResourceName(project, kind, nativeFile.name),
-        fromNativeFile(nativeFile)
-      )
+      const file = fromNativeFile(nativeFile)
+      const resource = new Resource(kind, deriveResourceName(project, kind, file), file)
       project.addResource(resource)
       return resource.assetPath
     })

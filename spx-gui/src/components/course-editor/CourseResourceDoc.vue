@@ -30,7 +30,7 @@ import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useAsyncComputed } from '@/utils/utils'
 import { fromText, toText } from '@/models/common/file'
 import type { TutorialProject } from '@/models/tutorial/project'
-import { getResourceKindDir, validateResourceName, videosKind } from '@/models/tutorial/resource'
+import { getResourceKindDir, validateResourceLayout, videosKind } from '@/models/tutorial/resource'
 import { UIButton, UIEmpty, UITextInput } from '@/components/ui'
 import { getFileKind } from './course-tree'
 import CourseTextDoc from './CourseTextDoc.vue'
@@ -170,8 +170,11 @@ const handleRename = useMessageHandle(
     // Normalize the draft; a no-op rename is silently ignored.
     const next = nameInput.value.trim()
     if (next === current.name) return
-    // Validate against the model (uniqueness is checked among resources of the same kind).
-    const error = validateResourceName(props.kind, next, props.project)
+    // The package-layout guard: name shape, uniqueness within the kind, payload path clear of other records.
+    const error = validateResourceLayout(
+      { kind: props.kind, name: next, file: current.file, extraFiles: current.extraFiles },
+      props.project
+    )
     if (error != null) throw new DefaultException(error)
     // Rename, then let the parent navigate to the new package path.
     current.setName(next)

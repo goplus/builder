@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { fromConfig, fromText, toConfig, toText, type Files } from '@/models/common/file'
-import { Resource, validateResourceName } from './resource'
+import { getResourceName, Resource, validateResourceLayout, validateResourceName } from './resource'
 
 function makeFiles(): Files {
   return {
@@ -71,5 +71,46 @@ describe('Resource', () => {
 
   it('limits names to 100 code points', () => {
     expect(validateResourceName('videos', 'a'.repeat(101), null)?.en).toContain('maximum is 100 characters')
+  })
+
+  describe('package layout guard', () => {
+    it('keeps the payload path clear of the manifest', () => {
+      const data = new Resource('data', 'config', fromText('config.json', '{}'))
+
+      expect(() => data.setName('index')).toThrow('conflicts with the package manifest')
+      expect(
+        validateResourceLayout({ kind: 'data', name: 'index', file: data.file, extraFiles: {} }, null)?.en
+      ).toContain('manifest')
+      // Another extension is fine: only `index` + `.json` would be the manifest path.
+      expect(() => new Resource('data', 'index', fromText('index.txt', 'x')).setName('index')).not.toThrow()
+    })
+
+    it('keeps the payload path clear of the extra records of the package', async () => {
+      const files = makeFiles()
+      files['assets/videos/step-to/captions.vtt'] = fromText('captions.vtt', 'WEBVTT')
+      const video = await Resource.load('videos', 'step-to', files)
+      if (video == null) throw new Error('resource expected')
+
+      // Renaming to `captions` is fine while the payload is `.mp4`, but not once the payload becomes `.vtt`.
+      video.setName('captions')
+      expect(() => video.setFile(fromText('subs.vtt', 'WEBVTT'))).toThrow('conflicts with file captions.vtt')
+      expect(Object.keys(video.export()).sort()).toEqual([
+        'assets/videos/captions/captions.mp4',
+        'assets/videos/captions/captions.vtt',
+        'assets/videos/captions/index.json'
+      ])
+    })
+
+    it('derives names that satisfy the whole layout, so index.json becomes the resource index2', () => {
+      const file = fromText('index.json', '{}')
+      expect(getResourceName(null, 'data', 'index', { file, extraFiles: {} })).toBe('index2')
+      expect(getResourceName(null, 'data', 'index')).toBe('index')
+    })
+
+    it('refuses to export a layout that would overwrite a record', () => {
+      // The constructor is lenient (loaded packages are tolerated as they are); export is where it must not lie.
+      const broken = new Resource('data', 'index', fromText('index.json', '{}'))
+      expect(() => broken.export()).toThrow('would overwrite another record')
+    })
   })
 })
