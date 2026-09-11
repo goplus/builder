@@ -210,6 +210,14 @@ function proposedUploadDir() {
 }
 
 /**
+ * Whether this editor session is still mounted. Every await that can outlive the component (modals, snapshot
+ * loads) checks it before touching the model or navigating: results that arrive after unmount are dropped.
+ * Written by: `onUnmounted` (set to false). Read by: `handleUpload`, `loadPreviewSnapshot`,
+ * `handlePreviewCompleted`.
+ */
+let sessionAlive = true
+
+/**
  * Upload files into the course: the modal picks the files and confirms the target folder, the files are added to
  * the model (as resource packages under `assets/<kind>`, or as plain records elsewhere) and the first created node
  * is opened. Wrapped by `useMessageHandle` so failures show a toast; closing the modal rejects with `Cancelled`,
@@ -228,6 +236,9 @@ const handleUpload = useMessageHandle(
       tree: tree.value,
       initialDir: dir
     })
+    // The modal lives in the app-level provider and survives this editor; a late confirmation must not write into
+    // a session that ended (browser history while the modal was open).
+    if (!sessionAlive) return
     // Put the files into the model; returns one node path per file (package path or record path).
     const paths = addUploadedFiles(props.project, targetDir, files)
     // Show the first new node so the author sees the result right away.
@@ -381,16 +392,40 @@ const previewError = ref<Error | null>(null)
 let routeBeforePreview: string | null = null
 
 /**
- * Build a fresh `TutorialProject` loaded from a snapshot of the working copy, for the playground to run.
- * @returns Promise resolving to the loaded snapshot project (its embedded `SpxProject` is disposed by
- * `CoursePlayground` when it unmounts).
+ * Generation counter of preview loads. Starting a load takes the next number; leaving the preview bumps it. A load
+ * whose number is no longer current when it finishes was superseded (exit, re-enter, unmount) and is discarded.
+ * Written by: `handlePreview`, `enterPreviewFromRoute` (take), the `watch(isPreviewRoute)` (bump on leave).
+ * Read by: `loadPreviewSnapshot`.
+ */
+let previewGeneration = 0
+
+/**
+ * Build a fresh `TutorialProject` loaded from a snapshot of the working copy, for the playground to run. The
+ * snapshot's embedded `SpxProject` carries watchers, so whoever ends up not delivering it must dispose it: a
+ * failed load and a superseded load are disposed here; a delivered one is disposed by `CoursePlayground` when it
+ * unmounts.
+ * @param generation - The preview generation this load belongs to (see `previewGeneration`).
+ * @throws Cancelled when the session ended or the generation was superseded while loading (the snapshot is
+ * disposed first); rethrows load errors after disposing.
+ * @returns Promise resolving to the loaded snapshot project.
  * Called by: `components/course-editor/CourseEditor.vue#handlePreview`,
  * `components/course-editor/CourseEditor.vue#enterPreviewFromRoute`
  */
-async function loadPreviewSnapshot() {
+async function loadPreviewSnapshot(generation: number) {
   // A new instance, loaded from the exported metadata + files of the author's project.
   const snapshot = new TutorialProject()
-  await snapshot.load(await props.project.snapshot())
+  try {
+    await snapshot.load(await props.project.snapshot())
+  } catch (error) {
+    // Nobody will receive this snapshot: release its embedded project before reporting the failure.
+    snapshot.project.dispose()
+    throw error
+  }
+  // Superseded or orphaned: the author left the preview (or the editor) while the snapshot loaded.
+  if (!sessionAlive || generation !== previewGeneration) {
+    snapshot.project.dispose()
+    throw new Cancelled('preview superseded')
+  }
   return snapshot
 }
 
@@ -405,8 +440,9 @@ async function loadPreviewSnapshot() {
  */
 const handlePreview = useMessageHandle(
   async () => {
-    // Snapshot first: if loading fails the toast reports it and the route is left untouched.
-    const snapshot = await loadPreviewSnapshot()
+    // Snapshot first: if loading fails the toast reports it and the route is left untouched. A superseded load
+    // rejects with `Cancelled`, which the wrapper swallows.
+    const snapshot = await loadPreviewSnapshot(++previewGeneration)
     previewError.value = null
     preview.value = snapshot
     // Remember where to come back to, then switch to the preview route record with an empty in-editor path
@@ -427,12 +463,14 @@ const handlePreview = useMessageHandle(
  */
 async function enterPreviewFromRoute() {
   try {
-    const snapshot = await loadPreviewSnapshot()
-    // The author may have left the preview route while the snapshot loaded; drop it in that case.
-    if (!isPreviewRoute.value) return
+    // Leaving the preview route bumps the generation (see the watch below), so a load that finishes after the
+    // author left is discarded by `loadPreviewSnapshot` itself.
+    const snapshot = await loadPreviewSnapshot(++previewGeneration)
     previewError.value = null
     preview.value = snapshot
   } catch (error) {
+    // A superseded load is not an error to show.
+    if (error instanceof Cancelled) return
     // Normalize non-Error throwables so the template can always show `.message`.
     previewError.value = error instanceof Error ? error : new Error(String(error))
   }
@@ -452,6 +490,8 @@ watch(
     // Leaving the preview (Back to editor, history, completion modal): release the snapshot so the playground
     // unmounts and disposes its project.
     if (!isPreview) {
+      // Any load still in flight belongs to a preview that is over: let it discard its snapshot.
+      previewGeneration++
       preview.value = null
       previewError.value = null
       return
@@ -493,6 +533,9 @@ async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
   })
   // Both "next" and "exit" leave the preview here: there is no next course to open from the editor.
   if (action === 'continueEditing') return
+  // The modal outlives this editor; a late choice must not navigate a session that ended or a preview already
+  // left by other means.
+  if (!sessionAlive || !isPreviewRoute.value) return
   await exitPreview()
 }
 
@@ -612,6 +655,10 @@ onMounted(() => {
  * Called by: Vue lifecycle (onUnmounted)
  */
 onUnmounted(() => {
+  // Anything still awaited (modals, snapshot loads) sees this and drops its result.
+  sessionAlive = false
+  // A preview load in flight is orphaned too.
+  previewGeneration++
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('keydown', handleSaveShortcut)
   // The guard is router-global, so it must be removed explicitly.
