@@ -63,92 +63,125 @@ export type SpotlightOptions = {
   duration: number;
 };
 
-/** Flat capabilities passed to the Tutorial framework implementation. */
+/**
+ * Capabilities passed to the Tutorial framework implementation, grouped to
+ * mirror the author-facing API tree.
+ *
+ * Calls may overlap: while a presentation or generation call is pending, the
+ * Course program keeps handling events and may issue further calls. The
+ * framework serializes presentation (`course.show*`) — at most one is pending
+ * at a time — but other calls, including multiple generations, can be pending
+ * concurrently.
+ *
+ * On completion the host must promptly settle every still-pending call (for
+ * presentation, resolving as a no-op is fine): the program only exits after
+ * pending callbacks finish, so an unsettled call would hold the exit open.
+ */
 export interface TutorialFrameworkHost {
-  /**
-   * Displays the Course opening guide with the given message. Resolves after
-   * the learner dismisses it; presentation never advances automatically.
-   */
-  course_showPrelude(preludeMessage: string): Promise<void>;
-  /**
-   * Displays a message dialog. Resolves after the learner dismisses it;
-   * presentation never advances automatically.
-   */
-  course_showMessage(message: string): Promise<void>;
-  /**
-   * Displays a Course-local video. Resolves after the learner finishes
-   * watching or closes it; presentation never advances automatically.
-   */
-  course_showVideo(videoName: string): Promise<void>;
-  /**
-   * Completes the Course without feedback. Resolves as soon as the completion
-   * is accepted; it does not wait for the completion dialog. After a
-   * completion the host treats further presentation capabilities as no-ops,
-   * and repeated completion calls are idempotent (the first one wins).
-   */
-  course_complete(): Promise<void>;
-  /**
-   * Same completion/idempotency semantics as `course_complete`, but displays
-   * the given feedback.
-   */
-  course_completeWith(message: string): Promise<void>;
-  /**
-   * Limits APIs offered by Code Editor assistance. Each entry is a definition
-   * identifier string (`xgo:<package>?<name>#<overloadId>`), the same
-   * identifiers the Code Editor uses elsewhere; omitting `#<overloadId>`
-   * addresses every overload of the name.
-   */
-  editor_codeEditor_filterAPIs(apis: string[]): void;
-  /** Formats the current code workspace. Resolves after formatting completes. */
-  editor_codeEditor_formatWorkspace(): Promise<void>;
-  /**
-   * Returns the given sprite's code as it currently stands in the session
-   * project. `sprite` is a sprite name (e.g. `"Lita"`), matching how the
-   * project models its contents; addressing a sprite the project does not
-   * contain fails the capability call. This reads the project rather than a
-   * Code Editor UI buffer, and reading whichever code the learner happens to
-   * be editing is deliberately not offered yet: it depends on how the Code
-   * Editor exposes its attached UIs and their active documents.
-   */
-  editor_project_getCode(sprite: string): string;
-  /**
-   * Lists the session project's sprites by name. A Course whose goal is for
-   * the learner to create a sprite cannot know the name they will choose, so
-   * it discovers it here.
-   */
-  editor_project_listSprites(): string[];
-  /** Displays the Ruler overlay. */
-  editor_ruler_show(): void;
-  /** Hides the Ruler overlay. */
-  editor_ruler_hide(): void;
-  /** Generates text without adding a Copilot conversation round. */
-  copilot_generateText(message: string): Promise<string>;
-  /** Generates a JSON value conforming to the framework-derived schema. */
-  copilot_generateJSON(message: string, schema: JSONSchema): Promise<unknown>;
-  /**
-   * Focuses the existing Spotlight on a UI target and shows a short tip
-   * beside it. Resolves once the spotlight is shown; it does not wait for the
-   * spotlight to be dismissed, so it never blocks the Course flow.
-   * `target` is a Radar selector addressing the UI elements to reveal; see
-   * the Radar module design for its syntax. Session-local Radar node IDs are
-   * not valid targets. A selector matching several elements reveals them
-   * together as one group.
-   *
-   * A malformed selector fails the capability call, surfacing the authoring
-   * mistake during Preview. A well-formed selector that currently matches
-   * nothing — the target is filtered out, or not mounted yet — is not an
-   * error: the host retries briefly, then resolves without showing anything
-   * and logs a warning.
-   *
-   * `options` is always fully specified here: the author-facing `reveal`
-   * defaults are materialized by `createTutorialFramework` before this host
-   * method is invoked.
-   */
-  spotlight_reveal(
-    target: string,
-    tip: string,
-    options: SpotlightOptions,
-  ): Promise<void>;
+  course: {
+    /**
+     * Displays the Course opening guide with the given message. Resolves
+     * after the learner dismisses it; presentation never advances
+     * automatically.
+     */
+    showPrelude(preludeMessage: string): Promise<void>;
+    /**
+     * Displays a message dialog. Resolves after the learner dismisses it;
+     * presentation never advances automatically.
+     */
+    showMessage(message: string): Promise<void>;
+    /**
+     * Displays a Course-local video. Resolves after the learner finishes
+     * watching or closes it; presentation never advances automatically.
+     */
+    showVideo(videoName: string): Promise<void>;
+    /**
+     * Completes the Course without feedback. Resolves as soon as the
+     * completion is accepted; it does not wait for the completion dialog.
+     * After a completion the host treats further presentation capabilities
+     * as no-ops, and repeated completion calls are idempotent (the first one
+     * wins).
+     */
+    complete(): Promise<void>;
+    /**
+     * Same completion/idempotency semantics as `complete`, but displays the
+     * given feedback.
+     */
+    completeWith(message: string): Promise<void>;
+  };
+  editor: {
+    codeEditor: {
+      /**
+       * Limits APIs offered by Code Editor assistance. Each entry is a
+       * definition identifier string (`xgo:<package>?<name>#<overloadId>`),
+       * the same identifiers the Code Editor uses elsewhere; omitting
+       * `#<overloadId>` addresses every overload of the name.
+       */
+      filterAPIs(apis: string[]): void;
+      /**
+       * Formats the current code workspace. Resolves after formatting
+       * completes.
+       */
+      formatWorkspace(): Promise<void>;
+    };
+    project: {
+      /**
+       * Returns the given sprite's code as it currently stands in the
+       * session project. `sprite` is a sprite name (e.g. `"Lita"`), matching
+       * how the project models its contents; addressing a sprite the project
+       * does not contain fails the capability call. This reads the project
+       * rather than a Code Editor UI buffer, and reading whichever code the
+       * learner happens to be editing is deliberately not offered yet: it
+       * depends on how the Code Editor exposes its attached UIs and their
+       * active documents.
+       */
+      getCode(sprite: string): string;
+      /**
+       * Lists the session project's sprites by name. A Course whose goal is
+       * for the learner to create a sprite cannot know the name they will
+       * choose, so it discovers it here.
+       */
+      listSprites(): string[];
+    };
+    ruler: {
+      /** Displays the Ruler overlay. */
+      show(): void;
+      /** Hides the Ruler overlay. */
+      hide(): void;
+    };
+  };
+  copilot: {
+    /** Generates text without adding a Copilot conversation round. */
+    generateText(message: string): Promise<string>;
+    /** Generates a JSON value conforming to the framework-derived schema. */
+    generateJSON(message: string, schema: JSONSchema): Promise<unknown>;
+  };
+  spotlight: {
+    /**
+     * Focuses the existing Spotlight on a UI target and shows a short tip
+     * beside it. Resolves once the spotlight is shown; it does not wait for
+     * the spotlight to be dismissed, so it never blocks the Course flow.
+     * `target` is a Radar selector addressing the UI elements to reveal; see
+     * the Radar module design for its syntax. Session-local Radar node IDs
+     * are not valid targets. A selector matching several elements reveals
+     * them together as one group.
+     *
+     * A malformed selector fails the capability call, surfacing the
+     * authoring mistake during Preview. A well-formed selector that
+     * currently matches nothing — the target is filtered out, or not
+     * mounted yet — is not an error: the host retries briefly, then
+     * resolves without showing anything and logs a warning.
+     *
+     * `options` is always fully specified here: the author-facing `reveal`
+     * defaults are materialized by `createTutorialFramework` before this
+     * host method is invoked.
+     */
+    reveal(
+      target: string,
+      tip: string,
+      options: SpotlightOptions,
+    ): Promise<void>;
+  };
 }
 
 /** Creates the framework passed to `XGoExecutorOptions.framework`. */

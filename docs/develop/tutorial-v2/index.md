@@ -59,7 +59,7 @@ Course
 
 The interface covers Course presentation and completion, observation of the learner's runtime and Copilot activity, reading and constraining the learner's code, Editor tools such as the Ruler and the spotlight, and text or structured generation. Course code drives the Course flow with it and ends the Course from within; the framework owns that program lifecycle, while the surrounding session belongs to Tutorial.
 
-See [Tutorial Class Framework](./module_TutorialFramework.ts), its [Go contract](./tutorial-class-framework.go) and an [example Tutorial Course project](./example-tutorial-course/).
+See [Tutorial Class Framework](./module_TutorialFramework.ts), its [Go contract](./tutorial-class-framework.go) and an [example Tutorial Course project](./example-tutorial-course/). A guide for Course authors lives next to the implementation in [`tools/tutorial`](../../../tools/tutorial/README.md).
 
 ### SPX Project Editor
 
