@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
-import { computed, nextTick, onScopeDispose, ref, useId, watch } from 'vue'
+import { computed, nextTick, onMounted, onScopeDispose, ref, useId, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
@@ -33,6 +33,8 @@ const pendingCopilotFeedback = ref<PreparedFeedbackDraft | null>(null)
 const selectedNotificationID = ref<string | null>(null)
 const activeNotificationTab = ref<'feedback' | 'system'>('feedback')
 const notificationTitleID = useId()
+const notificationListScrollRef = ref<HTMLElement | null>(null)
+const notificationListHasScroll = ref(false)
 const imagePreviewTitleID = useId()
 type RenderableFeedbackAttachment = FeedbackAttachment & { url: string }
 const selectedPreviewAttachment = ref<RenderableFeedbackAttachment | null>(null)
@@ -77,6 +79,25 @@ const selectedNotificationImageAttachments = computed(
 const selectedNotificationReplyAttachments = computed(() =>
   (selectedNotification.value?.replyAttachments ?? []).filter(isRenderableImageAttachment)
 )
+
+function updateNotificationListScrollState() {
+  const element = notificationListScrollRef.value
+  notificationListHasScroll.value = element != null && element.scrollHeight > element.clientHeight + 1
+}
+
+watch(
+  [activeNotificationTab, activeNotifications, model.notificationCenterOpen],
+  () => {
+    void nextTick(updateNotificationListScrollState)
+  },
+  { deep: true, flush: 'post' }
+)
+
+onMounted(() => {
+  const resizeObserver = new ResizeObserver(updateNotificationListScrollState)
+  if (notificationListScrollRef.value != null) resizeObserver.observe(notificationListScrollRef.value)
+  onScopeDispose(() => resizeObserver.disconnect())
+})
 
 onScopeDispose(
   copilot.registerTool(
@@ -371,7 +392,11 @@ function handlePreviewVisibleChange(visible: boolean) {
         </UIEmpty>
       </div>
       <div v-else class="min-h-0 flex-1 p-3">
-        <div class="h-full w-[calc(100%+12px)] overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2">
+        <div
+          ref="notificationListScrollRef"
+          class="h-full overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2"
+          :class="notificationListHasScroll ? 'w-[calc(100%+12px)]' : 'w-full'"
+        >
           <button
             v-for="notification in activeNotifications"
             :key="notification.id"

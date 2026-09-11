@@ -21,14 +21,23 @@
 <script setup lang="ts">
 import { UIDropdown, UITooltip } from '@/components/ui'
 import type { Offset, Placement } from './UIDropdown.vue'
-import { ref } from 'vue'
+import { onScopeDispose, ref } from 'vue'
+import { activateDropdown, deactivateDropdown } from './dropdownGroup'
 
 const props = defineProps<{ placement?: Placement; offset?: Offset }>()
 
 const dropdownVisible = ref(false)
 const tooltipVisible = ref(false)
 
+function closeDropdown() {
+  dropdownVisible.value = false
+  tooltipVisible.value = false
+}
+
 const handleDropdownVisibleChange = (v: boolean) => {
+  if (v) {
+    activateDropdown(closeDropdown)
+  } else deactivateDropdown(closeDropdown)
   dropdownVisible.value = v
   if (v) {
     tooltipVisible.value = false
@@ -38,4 +47,8 @@ const handleDropdownVisibleChange = (v: boolean) => {
 const handleTooltipVisibleChange = (v: boolean) => {
   tooltipVisible.value = v && !dropdownVisible.value
 }
+
+onScopeDispose(() => {
+  deactivateDropdown(closeDropdown)
+})
 </script>

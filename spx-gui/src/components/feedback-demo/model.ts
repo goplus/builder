@@ -64,6 +64,11 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     notificationCenterOpen.value = true
   }
 
+  function closeNotificationCenter() {
+    notificationCenterOpen.value = false
+    notificationCenterAnchor.value = null
+  }
+
   function submitFeedback(input: SubmitFeedbackInput) {
     const title = input.title.trim()
     const description = input.description.trim()
@@ -150,6 +155,7 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     openFeedbackForm,
     closeFeedbackForm,
     openNotificationCenter,
+    closeNotificationCenter,
     submitFeedback,
     replyToFeedback,
     markFeedbackHandled,

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { UIDropdownWithTooltip, UIIcon } from '@/components/ui'
+import { useFeedbackDemoModel } from '@/components/feedback-demo/model'
 import type { RadarNodeMeta } from '@/utils/radar'
 
 const props = defineProps<{
   triggerRadar: RadarNodeMeta
 }>()
+const feedbackDemo = useFeedbackDemoModel()
 </script>
 
 <template>
@@ -17,6 +19,7 @@ const props = defineProps<{
         aria-haspopup="menu"
         :aria-expanded="expanded"
         :aria-label="props.triggerRadar.name"
+        @click="feedbackDemo.closeNotificationCenter"
       >
         <slot name="trigger"></slot>
         <UIIcon type="arrowMini" class="w-2 ml-1" />

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useFeedbackDemoModel } from '@/components/feedback-demo/model'
+import { closeActiveDropdown } from '@/components/ui/dropdownGroup'
 import { UITooltip } from '@/components/ui'
 import { useSignedInStateQuery } from '@/stores/user'
 import { useI18n } from '@/utils/i18n'
@@ -30,6 +31,7 @@ const notificationRadar = computed(() => ({
 }))
 
 function openNotificationCenter(event: MouseEvent) {
+  closeActiveDropdown()
   const trigger = event.currentTarget as HTMLElement
   const rect = trigger.getBoundingClientRect()
   feedbackDemo.openNotificationCenter({
