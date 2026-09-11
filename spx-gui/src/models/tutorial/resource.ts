@@ -143,8 +143,11 @@ export class Resource {
    * components/course-editor/CourseResourceDoc.vue#handleRename, models/tutorial/resource.test.ts.
    */
   setName(name: string) {
-    // Validate against the project so two packages of the same kind never share a directory.
-    const error = validateResourceName(this.kind, name, this._project)
+    // The whole layout is re-validated: the new name also moves the payload path (see `getPayloadFileName`).
+    const error = validateResourceLayout(
+      { kind: this.kind, name, file: this.file, extraFiles: this.extraFiles },
+      this._project
+    )
     if (error != null) throw new Error(`invalid ${this.kind} resource name ${name}: ${error.en}`)
     this.name = name
   }
@@ -152,12 +155,19 @@ export class Resource {
   /** The payload file (video, image, text, ...). Its extension is kept; its base name is replaced on export. */
   file: File
   /**
-   * Replaces the payload file.
+   * Replaces the payload file, after checking that its extension keeps the payload path clear of the manifest and
+   * of the extra records.
    * @param file - The new payload `File`.
+   * @throws Error carrying the English validation message when the new payload path would shadow another record.
    * @returns void; only `file` changes.
    * Called by: components/course-editor/CourseResourceDoc.vue#handleTextChange.
    */
   setFile(file: File) {
+    const error = validateResourceLayout(
+      { kind: this.kind, name: this.name, file, extraFiles: this.extraFiles },
+      this._project
+    )
+    if (error != null) throw new Error(`invalid payload for ${this.kind} resource ${this.name}: ${error.en}`)
     this.file = file
   }
 
@@ -265,7 +275,12 @@ export class Resource {
    */
   export({ includeId = true }: ResourceExportLoadOptions = {}): Files {
     // The payload is renamed after the resource, keeping only the original extension.
-    const filename = this.name + extname(this.file.name)
+    const filename = getPayloadFileName(this.name, this.file)
+    // Every mutation path validates the layout, so a clash here is a programming error: fail loudly instead of
+    // letting one record silently overwrite another.
+    if (filename === resourceConfigFileName || this.extraFiles[filename] != null) {
+      throw new Error(`payload ${filename} of ${this.kind} resource ${this.name} would overwrite another record`)
+    }
     const config: RawResourceConfig = { path: filename }
     if (includeId) config.builder_id = this.id
     const assetPath = this.assetPath
@@ -294,21 +309,31 @@ export function validateResourceKind(kind: string): LocaleMessage | null {
 }
 
 /**
- * Checks that `name` can be the directory name of a package of `kind`, and is unused in `project` when given.
- * @param kind - Resource kind the name is checked within (uniqueness is per kind).
- * @param name - Candidate resource name.
- * @param project - Project to check uniqueness against, or null to skip the uniqueness check.
- * @returns A bilingual message describing the first problem found, or null when `name` is valid.
- * Called by: models/tutorial/resource.ts#Resource.setName, models/tutorial/resource.ts#ensureValidResourceName,
- * models/tutorial/resource.ts#getResourceName, components/course-editor/CourseResourceDoc.vue#handleRename,
- * components/course-editor/upload.ts#deriveResourceName, models/tutorial/resource.test.ts.
+ * The parts of a package the layout rules look at: the package as it would be after a change. `Resource` itself
+ * satisfies this shape, so a live package can be passed as is.
  */
-export function validateResourceName(
-  kind: string,
-  name: string,
-  project: TutorialProject | null
-): LocaleMessage | null {
-  // Shape checks: non-blank, bounded length (in code points, so CJK and emoji count as one), single segment.
+export type ResourceLayout = Pick<Resource, 'kind' | 'name' | 'file' | 'extraFiles'>
+
+/**
+ * A layout rule: returns the problem it finds with a candidate layout, or null. Rules are pure and ordered; the
+ * first failing rule's message is reported. Add new constraints here (reserved names, key length limits, ...) and
+ * every rename / file change / upload gets them at once.
+ */
+type LayoutRule = (layout: ResourceLayout, project: TutorialProject | null) => LocaleMessage | null
+
+/**
+ * File name of the payload inside the package: the resource name plus the payload file's extension.
+ * @param name - Resource name.
+ * @param file - Payload file (only its extension is used).
+ * @returns The payload's file name, e.g. `step-to.mp4`.
+ * Called by: models/tutorial/resource.ts#Resource.export, the payload layout rules below.
+ */
+export function getPayloadFileName(name: string, file: File) {
+  return name + extname(file.name)
+}
+
+/** Rule: the name is non-blank, bounded (in code points, so CJK and emoji count as one) and a single segment. */
+const nameIsWellFormed: LayoutRule = ({ name }) => {
   if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
   if (getStringLengthInCodePoints(name) > resourceNameMaxLength) {
     return {
@@ -317,40 +342,123 @@ export function validateResourceName(
     }
   }
   if (name.includes('/')) return { en: 'The name must not contain /', zh: '名字不可包含 /' }
-  // Uniqueness within the kind, when a project is given to check against.
+  return null
+}
+
+/** Rule: no other package of the same kind in the project uses the name (two packages never share a directory). */
+const nameIsUniqueInKind: LayoutRule = ({ kind, name }, project) => {
   if (project?.getResource(kind, name) != null) {
     return { en: `${kind} resource with name ${name} already exists`, zh: '存在同名的资源' }
   }
   return null
 }
 
+/** Rule: the payload path never equals the manifest path, or the manifest would be overwritten on export. */
+const payloadDoesNotShadowManifest: LayoutRule = ({ name, file }) => {
+  if (getPayloadFileName(name, file) !== resourceConfigFileName) return null
+  return {
+    en: `The name conflicts with the package manifest (${resourceConfigFileName})`,
+    zh: `名字与包的清单文件（${resourceConfigFileName}）冲突`
+  }
+}
+
+/** Rule: the payload path never equals one of the package's extra records, or that record would be overwritten. */
+const payloadDoesNotShadowExtraRecord: LayoutRule = ({ name, file, extraFiles }) => {
+  const payload = getPayloadFileName(name, file)
+  if (extraFiles[payload] == null) return null
+  return { en: `The name conflicts with file ${payload} in the package`, zh: `名字与包内文件 ${payload} 冲突` }
+}
+
+/** Rules about the name alone, checkable without a payload. */
+const nameRules: LayoutRule[] = [nameIsWellFormed, nameIsUniqueInKind]
+/** Rules about the payload path; they need the payload file and the extra records. */
+const payloadRules: LayoutRule[] = [payloadDoesNotShadowManifest, payloadDoesNotShadowExtraRecord]
+
 /**
- * Returns `name` when it is valid in `project`, otherwise a derived name that is (numeric suffix appended).
- * @param kind - Resource kind.
- * @param name - Preferred name.
- * @param project - Project to check uniqueness against, or null.
- * @throws Error (from `getResourceName`) when `name` is invalid for a reason other than a conflict.
- * @returns A name that passes `validateResourceName` in `project`.
+ * Runs `rules` in order against a layout.
+ * @returns The first problem found, or null when every rule passes.
+ */
+function runLayoutRules(rules: LayoutRule[], layout: ResourceLayout, project: TutorialProject | null) {
+  for (const rule of rules) {
+    const error = rule(layout, project)
+    if (error != null) return error
+  }
+  return null
+}
+
+/**
+ * Checks that `name` can be the directory name of a package of `kind`, and is unused in `project` when given.
+ * Only the name rules run; use `validateResourceLayout` when the payload is known.
+ * @param kind - Resource kind the name is checked within (uniqueness is per kind).
+ * @param name - Candidate resource name.
+ * @param project - Project to check uniqueness against, or null to skip the uniqueness check.
+ * @returns A bilingual message describing the first problem found, or null when `name` is valid.
+ * Called by: models/tutorial/resource.ts#getResourceName, components/course-editor/upload.ts#deriveResourceName,
+ * models/tutorial/resource.test.ts.
+ */
+export function validateResourceName(
+  kind: string,
+  name: string,
+  project: TutorialProject | null
+): LocaleMessage | null {
+  // The payload rules are skipped: a placeholder layout without a file is not available here.
+  return runLayoutRules(nameRules, { kind, name, file: null as unknown as File, extraFiles: {} }, project)
+}
+
+/**
+ * The package-layout guard: checks a candidate layout against every rule (name shape, uniqueness within the kind,
+ * payload path clear of the manifest and of the extra records). Every mutation of a package goes through it.
+ * @param layout - The package as it would be after the change.
+ * @param project - Project to check uniqueness against, or null to skip that rule.
+ * @returns A bilingual message describing the first problem found, or null when the layout is valid.
+ * Called by: models/tutorial/resource.ts#Resource.setName, models/tutorial/resource.ts#Resource.setFile,
+ * models/tutorial/resource.ts#ensureValidResourceName, models/tutorial/resource.ts#getResourceName,
+ * components/course-editor/CourseResourceDoc.vue#handleRename, models/tutorial/resource.test.ts.
+ */
+export function validateResourceLayout(layout: ResourceLayout, project: TutorialProject | null): LocaleMessage | null {
+  return runLayoutRules([...nameRules, ...payloadRules], layout, project)
+}
+
+/**
+ * Returns the layout's name when the layout is valid in `project`, otherwise a derived name that is (numeric
+ * suffix appended).
+ * @param layout - The package (a `Resource` about to be added, typically).
+ * @param project - Project to check against, or null.
+ * @throws Error (from `getResourceName`) when the name is malformed.
+ * @returns A name that passes `validateResourceLayout` in `project`.
  * Called by: models/tutorial/project.ts#TutorialProject.prepareAddResource.
  */
-export function ensureValidResourceName(kind: string, name: string, project: TutorialProject | null) {
-  if (validateResourceName(kind, name, project) == null) return name
-  return getResourceName(project, kind, name)
+export function ensureValidResourceName(layout: ResourceLayout, project: TutorialProject | null) {
+  if (validateResourceLayout(layout, project) == null) return layout.name
+  return getResourceName(project, layout.kind, layout.name, layout)
 }
 
 /**
  * Derives a name that is free in `project` from `base`, by appending or bumping a numeric suffix.
- * @param project - Project to check uniqueness against, or null (then `base` itself is free).
+ * @param project - Project to check against, or null.
  * @param kind - Resource kind.
- * @param base - Starting name; must be valid apart from uniqueness.
+ * @param base - Starting name; must be well formed (only conflicts are fixed by renaming).
+ * @param payload - The payload file and extra records the name must not shadow; omit to check the name alone.
  * @throws Error when `base` is blank, too long or contains `/`.
- * @returns The first candidate (`base`, then `base` with an increasing numeric suffix) that passes
- *   `validateResourceName`.
+ * @returns The first candidate (`base`, then `base` with an increasing numeric suffix) that passes the rules.
  * Called by: models/tutorial/resource.ts#ensureValidResourceName,
  * components/course-editor/upload.ts#deriveResourceName.
  */
-export function getResourceName(project: TutorialProject | null, kind: string, base: string) {
+export function getResourceName(
+  project: TutorialProject | null,
+  kind: string,
+  base: string,
+  payload?: Pick<ResourceLayout, 'file' | 'extraFiles'>
+) {
   // Only conflicts can be fixed by renaming; a malformed base is a programming error.
-  if (validateResourceName(kind, base, null) != null) throw new Error(`invalid resource name ${base}`)
-  return getValidName(base, (name) => validateResourceName(kind, name, project) == null)
+  if (nameIsWellFormed({ kind, name: base, file: null as unknown as File, extraFiles: {} }, null) != null) {
+    throw new Error(`invalid resource name ${base}`)
+  }
+  // Only the payload parts are taken from `payload`: a live `Resource` passed here must not leak its current name.
+  const { file, extraFiles } = payload ?? {}
+  return getValidName(base, (name) =>
+    file == null || extraFiles == null
+      ? validateResourceName(kind, name, project) == null
+      : validateResourceLayout({ kind, name, file, extraFiles }, project) == null
+  )
 }
