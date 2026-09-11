@@ -161,6 +161,21 @@ function createRadioGroupHarness(validateMode: ReturnType<typeof vi.fn>) {
 }
 
 describe('UIFormItem external value sync', () => {
+  it('focuses the first invalid control after submit', async () => {
+    const validateName = vi.fn((value: string) => (value === '' ? 'Required' : null))
+    const wrapper = mount(createHarness(validateName), { attachTo: document.body })
+    try {
+      await wrapper.get('form').trigger('submit')
+      await nextTick()
+      await nextTick()
+
+      expect(wrapper.get('input').attributes('aria-invalid')).toBe('true')
+      expect(document.activeElement).toBe(wrapper.get('input').element)
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
   it('revalidates an already-validated field when its value changes externally', async () => {
     const validateName = vi.fn((value: string) => (value === '' ? 'Required' : null))
     const wrapper = mount(createHarness(validateName))
