@@ -26,7 +26,7 @@ const XGoPackage = true
 //
 //	type Course struct { tutorial.Course }
 //	func (this *Course) MainEntry() { ...课程代码... }
-//	func (this *Course) Main() { tutorial.Gopt_Course_Main(this) }
+//	func (this *Course) Main() { tutorial.XGot_Course_Main(this) }
 //
 // namespace 字段必须**导出（大驼峰）**：XGo 只会把方法调用自动转成大驼峰
 // （showMessage → ShowMessage），字段访问不会转。所以课程代码里写的是
@@ -170,13 +170,17 @@ func (p *Course) Start() {
 	program.awaitShutdown()
 }
 
-// Gopt_Course_Main 是 classfile 约定的程序入口，由 XGo 生成的 Main 调用。
+// XGot_Course_Main 是 classfile 约定的程序入口，由 XGo 生成的 Main 调用。
+//
+// XGot_ 前缀（旧写法 Gopt_）标记"模板接收者方法"：gogen 在导入本包时看到这个前缀，
+// 就把函数注册成 Course 类型上的方法，从而让生成的 Main 能调到它。spx 的同位物是
+// XGot_Game_Main。
 //
 // 顺序很重要：先拿到内嵌实例、初始化状态并注册全部事件，再执行 MainEntry（作者代码
 // 在这里注册各种回调），最后进入 Start。反过来的话，MainEntry 里注册的回调会被
 // initCourse 的重置清掉。MainEntry 也以帧的形式执行——作者在顶层直接调用
 // showMessage 之类的能力同样成立。
-func Gopt_Course_Main(course CourseProto) {
+func XGot_Course_Main(course CourseProto) {
 	program := &course.initCourse().courseProgram
 	program.registerEvents()
 	program.runFrame(course.MainEntry)

@@ -40,7 +40,7 @@ func init() {
 		AliasTypes: map[string]reflect.Type{},
 		Vars:       map[string]reflect.Value{},
 		Funcs: map[string]reflect.Value{
-			"Gopt_Course_Main": reflect.ValueOf(q.Gopt_Course_Main),
+			"XGot_Course_Main": reflect.ValueOf(q.XGot_Course_Main),
 		},
 		TypedConsts: map[string]ixgo.TypedConst{},
 		UntypedConsts: map[string]ixgo.UntypedConst{

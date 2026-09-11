@@ -132,7 +132,7 @@ func startCourse(host *fakeHost, mainEntry func(*testCourse)) <-chan struct{} {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		Gopt_Course_Main(newTestCourse(host, mainEntry))
+		XGot_Course_Main(newTestCourse(host, mainEntry))
 	}()
 	return done
 }
@@ -335,7 +335,7 @@ func TestCapabilityFailureStopsTheCourse(t *testing.T) {
 	done := make(chan any, 1)
 	go func() {
 		defer func() { done <- recover() }()
-		Gopt_Course_Main(newTestCourse(host, func(course *testCourse) {
+		XGot_Course_Main(newTestCourse(host, func(course *testCourse) {
 			course.OnStart(func() { course.ShowMessage("hi") })
 		}))
 	}()
@@ -625,7 +625,7 @@ func TestFatalDuringCompletionIsReported(t *testing.T) {
 	done := make(chan any, 1)
 	go func() {
 		defer func() { done <- recover() }()
-		Gopt_Course_Main(newTestCourse(host, func(course *testCourse) {
+		XGot_Course_Main(newTestCourse(host, func(course *testCourse) {
 			course.OnStart(func() { course.Complete() })
 		}))
 	}()
