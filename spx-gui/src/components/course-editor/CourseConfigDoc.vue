@@ -17,8 +17,8 @@
  * Uses: UIButton, UITextInput, `useMessage` (loading toasts), `useMessageHandle` (error toast), `saveFiles`
  * (uploads the working copy), `apis/course#generatePlaygroundCourseCopilotContext`.
  */
-import { computed } from 'vue'
-import { useMessageHandle } from '@/utils/exception'
+import { computed, onUnmounted } from 'vue'
+import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { generatePlaygroundCourseCopilotContext } from '@/apis/course'
 import { saveFiles } from '@/models/common/cloud'
@@ -56,29 +56,78 @@ const config = computed(() => {
  * Called by: `components/course-editor/CourseConfigDoc.vue#template` ("Generate with Copilot" button
  * `@click="handleGenerateCopilotContext.fn"`; its `isLoading` drives the button's `:loading`)
  */
+/**
+ * Purpose: the in-flight generation request, so it can be aborted when this document goes away. The result of a
+ * request that outlives the document must never be written into the course.
+ * Written by: `handleGenerateCopilotContext` (set on start, cleared on settle); read by `onUnmounted`.
+ */
+let generateController: AbortController | null = null
+
 const handleGenerateCopilotContext = useMessageHandle(
   async () => {
-    // The endpoint reads the author's current (unsaved) work, so the working copy is uploaded first.
-    const { metadata, files } = await props.project.snapshot()
-    // Phase 1: upload every record; yields the file collection the backend can read.
-    const { fileCollection } = await m.withLoading(
-      saveFiles(files),
-      t({ en: 'Uploading course files...', zh: '上传课程文件中...' })
-    )
-    // Phase 2: ask the backend to generate the context from title, thumbnail and content.
-    const { copilotContext } = await m.withLoading(
-      generatePlaygroundCourseCopilotContext({
-        title: metadata.title,
-        thumbnail: metadata.thumbnail,
-        content: fileCollection
-      }),
-      t({ en: 'Generating Copilot context...', zh: '生成 Copilot 上下文中...' })
-    )
-    // Write the result into the config; the textarea below reflects it and the course becomes unsaved.
-    props.project.setConfig({ copilotContext })
+    // One request at a time, bound to this document instance: aborted on unmount, see `onUnmounted` below.
+    const controller = new AbortController()
+    generateController = controller
+    const { signal } = controller
+    // Remember what the author had when the request started; a result only replaces that exact text.
+    const contextBefore = config.value.copilotContext
+    try {
+      // The endpoint reads the author's current (unsaved) work, so the working copy is uploaded first.
+      const { metadata, files } = await props.project.snapshot()
+      // Phase 1: upload every record; yields the file collection the backend can read.
+      const { fileCollection } = await m.withLoading(
+        saveFiles(files, signal),
+        t({ en: 'Uploading course files...', zh: '上传课程文件中...' })
+      )
+      // Phase 2: ask the backend to generate the context from title, thumbnail and content.
+      const { copilotContext } = await m.withLoading(
+        generatePlaygroundCourseCopilotContext(
+          {
+            title: metadata.title,
+            thumbnail: metadata.thumbnail,
+            content: fileCollection
+          },
+          signal
+        ),
+        t({ en: 'Generating Copilot context...', zh: '生成 Copilot 上下文中...' })
+      )
+      // Never write a result that arrived after the document was left (belt and braces next to the abort).
+      signal.throwIfAborted()
+      // The inputs are disabled while generating, so a changed value means another path edited the course
+      // meanwhile; refuse to overwrite it silently.
+      if (config.value.copilotContext !== contextBefore) {
+        throw new DefaultException({
+          en: 'The Copilot context changed while generating, so the generated text was not applied',
+          zh: '生成期间 Copilot 上下文已被修改，生成结果未应用'
+        })
+      }
+      // Write the result into the config; the textarea below reflects it and the course becomes unsaved.
+      props.project.setConfig({ copilotContext })
+    } catch (error) {
+      // Whatever a layer turned the abort into, an aborted generation is a cancellation, not a failure.
+      if (signal.aborted) throw new Cancelled('unmounted')
+      throw error
+    } finally {
+      if (generateController === controller) generateController = null
+    }
   },
   { en: 'Failed to generate Copilot context', zh: '生成 Copilot 上下文失败' }
 )
+
+/**
+ * Purpose: whether a generation is in flight; the inputs are locked meanwhile so the result cannot race an edit.
+ * Read by: `CourseConfigDoc.vue#template` (`disabled` of the inputs, `loading` of the button).
+ */
+const generating = computed(() => handleGenerateCopilotContext.isLoading.value)
+
+/**
+ * Purpose: abort the in-flight generation when the document is closed (another node opened, preview entered,
+ * editor left). `Cancelled` is ignored by `useMessageHandle`, so no error toast follows.
+ * Called by: Vue lifecycle (onUnmounted).
+ */
+onUnmounted(() => {
+  generateController?.abort(new Cancelled('unmounted'))
+})
 </script>
 
 <template>
@@ -108,6 +157,7 @@ const handleGenerateCopilotContext = useMessageHandle(
           desc: 'Input for the in-editor path opened when the course starts'
         }"
         :value="config.inEditorPath"
+        :disabled="generating"
         placeholder="/sprites/Lita/code"
         @update:value="(v) => project.setConfig({ inEditorPath: v })"
       />
@@ -120,6 +170,7 @@ const handleGenerateCopilotContext = useMessageHandle(
         type="textarea"
         :rows="10"
         :value="config.copilotContext"
+        :disabled="generating"
         @update:value="(v) => project.setConfig({ copilotContext: v })"
       />
     </label>
@@ -131,7 +182,7 @@ const handleGenerateCopilotContext = useMessageHandle(
       }"
       type="secondary"
       size="small"
-      :loading="handleGenerateCopilotContext.isLoading.value"
+      :loading="generating"
       @click="handleGenerateCopilotContext.fn"
     >
       {{ $t({ en: 'Generate with Copilot', zh: '用 Copilot 生成' }) }}
