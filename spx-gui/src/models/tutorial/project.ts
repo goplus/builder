@@ -242,7 +242,7 @@ export class TutorialProject {
   private prepareAddResource(resource: Resource) {
     // Rename first (validated against this project), then attach: the resource is not in `resources` yet, so
     // its own current name cannot be reported as a conflict.
-    const name = ensureValidResourceName(resource.kind, resource.name, this)
+    const name = ensureValidResourceName(resource, this)
     resource.setName(name)
     resource.setProject(this)
   }
