@@ -143,8 +143,8 @@ const routes: Array<RouteRecordRaw> = [
   },
   // TODO: Remove this temporary Tutorial v2 development page before merging to dev.
   {
-    path: '/debug/xgoexec',
-    component: () => import('./pages/debug/xgoexec.vue')
+    path: '/debug/tutorial-courses',
+    component: () => import('./pages/debug/tutorial-courses.vue')
   },
   {
     path: '/share/:owner/:name',

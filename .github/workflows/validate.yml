@@ -44,6 +44,9 @@ jobs:
             tools/spxls/go.sum
             tools/ispx/go.sum
             tools/ai/go.sum
+            tools/xgoexec/go.sum
+            tools/tutorial/go.sum
+            tools/xgoexec-bundle/go.sum
 
       - name: Build WASM
         run: ./build-wasm.sh
@@ -71,3 +74,36 @@ jobs:
 
       - name: Run unit test cases
         run: go test -v -race ./...
+
+  tools-tutorial-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: 1.25.x
+          cache: true
+          cache-dependency-path: |
+            tools/tutorial/go.sum
+            tools/xgoexec-bundle/go.sum
+
+      # The committed qexp export file must match the tutorial package's
+      # public API. build-wasm.sh regenerates it before building, so a stale
+      # file never fails a build — it only breaks course execution inside the
+      # wasm interpreter. Check it here, before the bundle tests compile
+      # against it, so staleness fails with a precise message.
+      - name: Check qexp exports are up to date
+        working-directory: tools/xgoexec-bundle
+        run: |
+          go generate ./...
+          git diff --exit-code -- internal/
+
+      - name: Run tutorial unit tests
+        working-directory: tools/tutorial
+        run: go test -v -race ./...
+
+      - name: Run executor bundle tests
+        working-directory: tools/xgoexec-bundle
+        run: go test -v ./...

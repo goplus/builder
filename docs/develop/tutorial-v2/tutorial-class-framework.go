@@ -1,5 +1,17 @@
 package tutorial
 
+// Execution model: callbacks run one at a time, so shared variables in Course
+// code never race. While a callback waits on the learner (showPrelude,
+// showMessage, showVideo) or on generation (generateText, generateJSON),
+// other callbacks keep running. Each registered callback is its own serial
+// unit: its triggers are processed strictly one after another in arrival
+// order and it never re-enters, while different callbacks — including several
+// registered on the same event — run independently and may interleave at
+// waiting points. Course start is delivered like any other event, so several
+// onStart callbacks also run independently, with no ordering promise between
+// them. Presentation waits from different callbacks are serialized: at most
+// one is presented at a time.
+
 type Course struct {
 	CourseAbilities
 	Editor    Editor
@@ -9,6 +21,8 @@ type Course struct {
 
 type CourseAbilities interface {
 	// onStart registers a callback that is called when the course starts.
+	// Several callbacks may be registered; they run independently of each
+	// other. Opening steps that must happen in order belong in one callback.
 	onStart(callback func())
 	// showPrelude displays the Course opening guide with the given message and
 	// returns after the learner dismisses it. Unlike showMessage, the host
@@ -23,11 +37,11 @@ type CourseAbilities interface {
 	// name and returns after the learner finishes watching or closes it.
 	// Presentation never advances automatically.
 	showVideo(videoName string)
-	// complete marks the course as completed and ends the Course program: after
-	// the current callback returns, no further events are processed and the
-	// program exits. Remaining statements in the same callback still run, but
-	// presentation calls after a completion are ignored by the host. Calling
-	// complete or completeWith again has no effect.
+	// complete marks the course as completed and ends the Course program: no
+	// further events are processed, callbacks already running or waiting still
+	// run to their end (presentation calls after a completion are ignored by
+	// the host), and the program then exits. Calling complete or completeWith
+	// again has no effect.
 	complete()
 	// completeWith is complete with the given feedback displayed to the learner.
 	completeWith(message string)
