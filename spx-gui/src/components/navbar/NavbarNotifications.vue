@@ -44,6 +44,10 @@ function updateNotificationCenterPosition() {
 
 function openNotificationCenter(event: MouseEvent) {
   closeActiveDropdown()
+  if (feedbackDemo.notificationCenterOpen.value) {
+    feedbackDemo.closeNotificationCenter()
+    return
+  }
   const trigger = event.currentTarget as HTMLElement
   const rect = trigger.getBoundingClientRect()
   feedbackDemo.openNotificationCenter({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
@@ -71,7 +75,11 @@ onScopeDispose(() => {
 </script>
 
 <template>
-  <UITooltip v-if="!route.path.startsWith('/admin') && signedIn" placement="bottom">
+  <UITooltip
+    v-if="!route.path.startsWith('/admin') && signedIn"
+    placement="bottom"
+    :disabled="feedbackDemo.notificationCenterOpen.value"
+  >
     <template #trigger>
       <button
         ref="notificationTriggerRef"

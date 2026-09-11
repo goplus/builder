@@ -155,6 +155,24 @@ describe('UIModal', () => {
       expect(surface.style.top).toBe('56px')
       expect(surface.style.right).toBe('24px')
     })
+
+    it('lets clicks pass through the root when the modal has no mask', async () => {
+      mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () => h(UIModal, { visible: true, mask: false }, { default: () => h('div', 'Notifications') })
+              })
+          }
+        })
+      )
+
+      await flushModal()
+
+      const modalRoot = document.body.querySelector('.fixed.inset-0') as HTMLElement | null
+      expect(modalRoot?.className).toContain('pointer-events-none')
+    })
   })
 
   describe('attrs and interaction', () => {
@@ -233,6 +251,26 @@ describe('UIModal', () => {
       await new DOMWrapper(backdrop!).trigger('click')
       await flushModal()
       expect(modal.emitted('update:visible')).toEqual([[false]])
+    })
+
+    it('closes an unmasked modal when clicking outside its surface', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () => h(UIModal, { visible: true, mask: false }, { default: () => h('div', 'Notifications') })
+              })
+          }
+        })
+      )
+
+      await flushModal()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await flushModal()
+
+      expect(wrapper.findComponent(UIModal).emitted('update:visible')).toEqual([[false]])
     })
 
     it('closes on Escape when the key event originates from inside the modal', async () => {

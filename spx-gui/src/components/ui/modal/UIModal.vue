@@ -4,7 +4,7 @@
       <div
         v-if="visible"
         class="fixed inset-0 z-1100"
-        :class="mask ? 'bg-overlay-modal' : 'bg-transparent'"
+        :class="mask ? 'bg-overlay-modal' : 'pointer-events-none bg-transparent'"
         @click="handleMaskClick"
       >
         <div
@@ -53,7 +53,7 @@ export type ModalAnchor = {
 import { computed, mergeProps, ref, useAttrs, watch } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { getCleanupSignal } from '@/utils/disposable'
-import { untilNotNull } from '@/utils/utils'
+import { timeout, untilNotNull } from '@/utils/utils'
 import {
   cn,
   type ClassValue,
@@ -175,6 +175,28 @@ watch(
     const container = await untilNotNull(containerRef, signal)
     const focusTarget = getFirstFocusableElement(container) ?? container
     focusTarget.focus()
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [props.visible, props.mask] as const,
+  async ([visible, mask], _, onCleanup) => {
+    if (!visible || mask) return
+
+    const signal = getCleanupSignal(onCleanup)
+    await timeout(0)
+    if (signal.aborted) return
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Node) || containerRef.value?.contains(target)) return
+      handleUpdateShow(false)
+    }
+
+    // Run after the clicked control's own handler. This lets trigger buttons toggle
+    // an unmasked modal before the outside-click fallback observes the same event.
+    document.addEventListener('click', handleDocumentClick, { signal })
   },
   { immediate: true }
 )
