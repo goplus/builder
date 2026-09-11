@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import type { Course } from '@/apis/course'
+import type { GuidedCourse } from '@/apis/course'
 import { UITextInput, UIIcon, UIEmpty, UILoading } from '@/components/ui'
 import CourseItemMini from './CourseItemMini.vue'
 
 const props = defineProps<{
-  courses: Course[]
+  courses: GuidedCourse[]
   selectedIds: string[]
   loading?: boolean
 }>()

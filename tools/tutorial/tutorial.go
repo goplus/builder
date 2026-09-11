@@ -16,6 +16,7 @@ const XGoPackage = true
 type Course struct {
 	Editor  Editor
 	onStart func()
+	done    chan struct{}
 }
 
 type Editor struct {
@@ -32,6 +33,10 @@ type CourseProto interface {
 
 type messageRequest struct {
 	Content string `json:"content"`
+}
+
+type completionWithRequest struct {
+	Feedback string `json:"feedback"`
 }
 
 type runtimeLogEvent struct {
@@ -55,11 +60,37 @@ func (p *Course) ShowMessage(content string) {
 	mustCallCapability("course_showMessage", messageRequest{Content: content}, nil)
 }
 
+func (p *Course) Complete() {
+	mustCallCapability("course_complete", nil, nil)
+	p.finish()
+}
+
+func (p *Course) CompleteWith(feedback string) {
+	mustCallCapability("course_completeWith", completionWithRequest{Feedback: feedback}, nil)
+	p.finish()
+}
+
 func (p *Course) Start() {
+	p.ensureDone()
 	if p.onStart != nil {
 		p.onStart()
 	}
-	select {}
+	<-p.done
+}
+
+func (p *Course) ensureDone() {
+	if p.done == nil {
+		p.done = make(chan struct{})
+	}
+}
+
+func (p *Course) finish() {
+	p.ensureDone()
+	select {
+	case <-p.done:
+	default:
+		close(p.done)
+	}
 }
 
 func Gopt_Course_Main(course CourseProto) {
