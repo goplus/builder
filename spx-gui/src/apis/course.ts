@@ -54,7 +54,21 @@ export function getCourse(id: string, signal?: AbortSignal) {
 export type AddCourseParams =
   | Pick<GuidedCourse, 'kind' | 'title' | 'thumbnail' | 'content'>
   | Pick<PlaygroundCourse, 'kind' | 'title' | 'thumbnail' | 'content'>
-/** Fields to update; the endpoint patches only the fields given. */
+/**
+ * Fields to update; the endpoint patches only the fields given.
+ *
+ * Every field is optional (`Partial`) because `updateCourse` issues `PATCH /courses/:id` and the backend patches
+ * only the fields present in the request body: an omitted field keeps its stored value. A caller can therefore
+ * update `content` alone without re-sending `title` and `thumbnail`, and vice versa. The union keeps the `content`
+ * shape tied to the course kind (`GuidedCourse`: entrypoint + prompt; `PlaygroundCourse`: file collection);
+ * `kind` itself is not part of the params and cannot be changed through this endpoint.
+ *
+ * Consumed by: apis/course.ts#updateCourse (parameter type).
+ * Callers of `updateCourse` that build these params:
+ * - components/course/management/CourseEditModal.vue#handleSubmit (guided courses: title, thumbnail, content).
+ * - components/course-editor/CourseEditor.vue#save (playground courses: `content` only; title and thumbnail
+ *   belong to course management and are left untouched).
+ */
 export type UpdateCourseParams =
   | Partial<Pick<GuidedCourse, 'title' | 'thumbnail' | 'content'>>
   | Partial<Pick<PlaygroundCourse, 'title' | 'thumbnail' | 'content'>>
