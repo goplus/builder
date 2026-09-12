@@ -1,5 +1,5 @@
 import { createDirectUploadTask } from 'qiniu-js'
-import { filename } from '@/utils/path'
+import { extname, filename } from '@/utils/path'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
 import { mergeSignals } from '@/utils/disposable'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
@@ -306,7 +306,7 @@ export async function saveFile(file: File, signal?: AbortSignal) {
   if (savedUrl != null) return savedUrl
 
   // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
-  const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : uploadToKodo(file, signal))
+  const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
   setUniversalUrl(file, url)
   return url
 }
@@ -328,14 +328,63 @@ type KodoUploadRes = {
   hash: string
 }
 
-const uploadToKodoController = new ConcurrencyLimitController(20)
+const minReusableKodoFileSize = 1024 * 1024
+const qiniuEtagBlockSize = 4 * 1024 * 1024
+const qiniuSingleBlockEtagPrefix = 0x16
+const qiniuMultiBlockEtagPrefix = 0x96
 
-const uploadToKodo = (file: File, signal?: AbortSignal) =>
-  uploadToKodoController.run<UniversalUrl>(async () => {
+async function calculateQiniuEtag(data: ArrayBuffer) {
+  const blockHashes = await Promise.all(
+    Array.from({ length: Math.max(1, Math.ceil(data.byteLength / qiniuEtagBlockSize)) }, (_, index) => {
+      const start = index * qiniuEtagBlockSize
+      return crypto.subtle.digest('SHA-1', data.slice(start, start + qiniuEtagBlockSize))
+    })
+  )
+  const blockHashData = new Uint8Array(blockHashes.length * 20)
+  blockHashes.forEach((blockHash, index) => blockHashData.set(new Uint8Array(blockHash), index * 20))
+  const hash =
+    blockHashes.length === 1
+      ? new Uint8Array(blockHashes[0]!)
+      : new Uint8Array(await crypto.subtle.digest('SHA-1', blockHashData))
+  const etag = new Uint8Array(hash.byteLength + 1)
+  etag[0] = blockHashes.length === 1 ? qiniuSingleBlockEtagPrefix : qiniuMultiBlockEtagPrefix
+  etag.set(hash, 1)
+  return btoa(String.fromCharCode(...etag))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
+}
+
+async function getReusableKodoUrl(
+  file: File,
+  data: ArrayBuffer,
+  bucket: string,
+  signal?: AbortSignal
+): Promise<UniversalUrl | null> {
+  const etag = await calculateQiniuEtag(data)
+  signal?.throwIfAborted()
+  const universalUrl = stringifyKodoUrl(bucket, `files/${etag}-${data.byteLength}${extname(file.name)}`)
+  try {
+    const webUrl = await cloudHelpers.universalUrlToWebUrl(universalUrl)
+    const response = await fetch(webUrl, { method: 'HEAD', signal })
+    return response.ok ? universalUrl : null
+  } catch {
+    signal?.throwIfAborted()
+    return null
+  }
+}
+
+const saveToKodoController = new ConcurrencyLimitController(20)
+
+const saveToKodo = (file: File, signal?: AbortSignal) =>
+  saveToKodoController.run<UniversalUrl>(async () => {
     const ab = await file.arrayBuffer(signal)
     const { token, maxSize, bucket, region } = await getUploadSessionWithCache()
     signal?.throwIfAborted()
     if (ab.byteLength > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
+    const reusableUrl =
+      ab.byteLength >= minReusableKodoFileSize ? await getReusableKodoUrl(file, ab, bucket, signal) : null
+    if (reusableUrl != null) return reusableUrl
     const task = createDirectUploadTask(
       {
         type: 'array-buffer',
