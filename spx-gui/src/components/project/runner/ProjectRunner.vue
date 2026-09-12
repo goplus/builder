@@ -148,7 +148,7 @@ import { throttle } from 'lodash'
 import { computed, onBeforeUnmount, onUnmounted, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { useFontAwareImageUrl } from '@/utils/img-rendering'
 import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
 import type { Files } from '@/models/common/file'
@@ -173,7 +173,7 @@ const emit = defineEmits<{
   exit: [code: number]
 }>()
 
-const [thumbnailUrl, thumbnailUrlLoading] = useRenderableImageUrl(() => props.project.thumbnail)
+const [thumbnailUrl, thumbnailUrlLoading] = useFontAwareImageUrl(() => props.project.thumbnail)
 const signedInStateQuery = useSignedInStateQuery()
 const state = shallowRef<State>({ type: 'initial' })
 const runnerIframeRef = ref<HTMLIFrameElement>()

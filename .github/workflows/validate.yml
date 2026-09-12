@@ -26,15 +26,6 @@ jobs:
       - name: Install Node modules
         run: pnpm install --frozen-lockfile
 
-      - name: Run Vue TSC
-        run: pnpm run type-check
-
-      - name: Run ESLint
-        run: pnpm run lint
-
-      - name: Run format check
-        run: pnpm run format-check
-
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
@@ -45,8 +36,23 @@ jobs:
             tools/ispx/go.sum
             tools/ai/go.sum
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+          targets: wasm32-unknown-unknown
+
       - name: Build WASM
         run: ./build-wasm.sh
+
+      - name: Run Vue TSC
+        run: pnpm run type-check
+
+      - name: Run ESLint
+        run: pnpm run lint
+
+      - name: Run format check
+        run: pnpm run format-check
 
       - name: Run Vitest
         run: pnpm run test

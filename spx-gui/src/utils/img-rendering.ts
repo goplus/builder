@@ -2,56 +2,125 @@
  * Rendering adapter for image `File`s. Low-level image processing helpers live in `utils/img.ts`.
  */
 
-import { computed, ref, watch, type WatchSource } from 'vue'
+import {
+  computed,
+  inject,
+  provide,
+  ref,
+  shallowRef,
+  watch,
+  type InjectionKey,
+  type ShallowRef,
+  type WatchSource
+} from 'vue'
 import { isSvgMimeType } from '@/utils/file'
 import { Cancelled } from '@/utils/exception'
 import type { File } from '@/models/common/file'
-import { injectFontsToSvgText } from './svg-font'
+import { createSvgRenderer, type SvgRenderer } from './resvg'
+import { applyFontPreferencesToSvgText } from './svg-font'
 
-/** Cache for derived rendering SVG blobs with fonts injected (if needed), keyed by source `File`. */
-const derivedSvgCache = new WeakMap<File, Promise<Blob>>()
+export type SvgFontConfig = {
+  fontPreferences: string[]
+  fonts: Map<string, File>
+}
 
-/**
- * Get an image-resource URL for a `File`.
- * SVG files are rendered through a derived blob URL with embedded font faces.
- */
-export async function getRenderableImageUrl(file: File, signal: AbortSignal) {
-  if (!isSvgMimeType(file.type)) return file.url(signal)
+function arrayEq(a: readonly unknown[], b: readonly unknown[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index])
+}
 
-  // SVGs rendered as image resources cannot see page-level font faces, so fonts must be embedded
-  // in the derived rendering blob. The source `File` content stays unchanged.
-  let derivedSvgPromise = derivedSvgCache.get(file)
-  if (derivedSvgPromise == null) {
-    derivedSvgPromise = file
+function configEq(c1: SvgFontConfig, c2: SvgFontConfig) {
+  if (!arrayEq(c1.fontPreferences, c2.fontPreferences)) return false
+  if (c1.fonts.size !== c2.fonts.size) return false
+  for (const [name, file1] of c1.fonts) {
+    const file2 = c2.fonts.get(name)
+    if (file1 !== file2) return false
+  }
+  return true
+}
+
+class SvgFontContext {
+  private cache = new WeakMap<File, Promise<Blob>>()
+  private renderer: Promise<SvgRenderer> | null = null
+  constructor(private config: SvgFontConfig) {}
+
+  private getRenderer() {
+    if (this.renderer == null) {
+      this.renderer = createSvgRenderer(this.config.fonts).catch((error) => {
+        this.renderer = null
+        throw error
+      })
+    }
+    return this.renderer
+  }
+
+  getRenderedImage(file: File): Promise<Blob> {
+    const cached = this.cache.get(file)
+    if (cached != null) return cached
+
+    const promise = file
       .arrayBuffer()
       .then(async (ab) => {
         const svgText = new TextDecoder().decode(ab)
-        // Project font rendering is deferred to https://github.com/goplus/builder/issues/3366,
-        // so this shared path must not embed project fonts yet.
-        const injectedSvgText = await injectFontsToSvgText(svgText, [], new Map())
-        return new Blob([injectedSvgText ?? ab], { type: 'image/svg+xml' })
+        const renderedSvgText = applyFontPreferencesToSvgText(svgText, this.config.fontPreferences)
+        const png = (await this.getRenderer()).render(renderedSvgText)
+        return new Blob([new Uint8Array(png)], { type: 'image/png' })
       })
       .catch((e) => {
-        derivedSvgCache.delete(file)
+        this.cache.delete(file)
         throw e
       })
-    derivedSvgCache.set(file, derivedSvgPromise)
+    this.cache.set(file, promise)
+    return promise
   }
-  const derivedSvg = await derivedSvgPromise
+}
+
+const svgFontContextKey: InjectionKey<ShallowRef<SvgFontContext>> = Symbol('svg-font-context')
+
+/**
+ * Provides SVG font rendering configuration. The source must return a new immutable config whenever
+ * its font preferences or files change.
+ */
+export function provideSvgFontContext(fontConfigSource: WatchSource<SvgFontConfig>) {
+  const ctxRef = shallowRef<SvgFontContext>() as ShallowRef<SvgFontContext>
+  watch(
+    fontConfigSource,
+    (config, oldConfig) => {
+      if (oldConfig != null && configEq(config, oldConfig)) return
+      ctxRef.value = new SvgFontContext(config)
+    },
+    { immediate: true }
+  )
+  provide(svgFontContextKey, ctxRef)
+}
+
+function useSvgFontContext(): ShallowRef<SvgFontContext | null> {
+  const ctxRef = inject(svgFontContextKey)
+  return ctxRef ?? shallowRef(null)
+}
+
+/**
+ * Get an image-resource URL for a `File`.
+ * SVG files are rasterized with their project font faces.
+ */
+export async function getFontAwareImageUrl(file: File, fontContext: SvgFontContext | null, signal: AbortSignal) {
+  if (!isSvgMimeType(file.type) || fontContext == null) return file.url(signal)
+
+  const renderedImage = await fontContext.getRenderedImage(file)
   signal.throwIfAborted()
-  const url = URL.createObjectURL(derivedSvg)
+  const url = URL.createObjectURL(renderedImage)
   signal.addEventListener('abort', () => URL.revokeObjectURL(url), { once: true })
   return url
 }
 
 /** Reactive image-resource URL for a `File`, with SVG-specific rendering fixes when needed. */
-export function useRenderableImageUrl(fileSource: WatchSource<File | undefined | null>) {
+export function useFontAwareImageUrl(fileSource: WatchSource<File | undefined | null>) {
+  const fontContext = useSvgFontContext()
   const urlRef = ref<string | null>(null)
   const loadingRef = ref(false)
 
   watch(
-    fileSource,
-    (file, _, onCleanup) => {
+    [fileSource, fontContext] as const,
+    ([file, ctx], _, onCleanup) => {
       if (file == null) {
         urlRef.value = null
         return
@@ -63,7 +132,7 @@ export function useRenderableImageUrl(fileSource: WatchSource<File | undefined |
         urlRef.value = null
         loadingRef.value = false
       })
-      getRenderableImageUrl(file, ctrl.signal)
+      getFontAwareImageUrl(file, ctx, ctrl.signal)
         .then((url) => {
           urlRef.value = url
         })
@@ -82,8 +151,8 @@ export function useRenderableImageUrl(fileSource: WatchSource<File | undefined |
 }
 
 /** Reactive loaded `HTMLImageElement` for canvas-style consumers. */
-export function useRenderableImage(fileSource: WatchSource<File | undefined | null>) {
-  const [urlRef, urlLoadingRef] = useRenderableImageUrl(fileSource)
+export function useFontAwareImage(fileSource: WatchSource<File | undefined | null>) {
+  const [urlRef, urlLoadingRef] = useFontAwareImageUrl(fileSource)
   const imgRef = ref<HTMLImageElement | null>(null)
   const imgLoadingRef = ref(false)
 

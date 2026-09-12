@@ -1,89 +1,135 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fromText } from '@/models/common/file'
-import { getRenderableImageUrl } from './img-rendering'
-import { injectFontsToSvgText } from './svg-font'
+import { createApp, defineComponent, h, shallowRef, type App, type Ref, type WatchSource } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fromText, type File } from '@/models/common/file'
+import { getFontAwareImageUrl, provideSvgFontContext, useFontAwareImageUrl, type SvgFontConfig } from './img-rendering'
+import { createSvgRenderer } from './resvg'
+import { applyFontPreferencesToSvgText } from './svg-font'
 
-vi.mock('./svg-font', () => ({
-  injectFontsToSvgText: vi.fn(async (svgText: string) =>
-    svgText.includes('font-family="Scratch"') ? '<svg>injected</svg>' : null
-  )
+const render = vi.fn(() => new Uint8Array([1, 2, 3]))
+
+vi.mock('./resvg', () => ({
+  createSvgRenderer: vi.fn(async () => ({ render }))
 }))
 
-describe('getRenderableImageUrl', () => {
+vi.mock('./svg-font', () => ({
+  applyFontPreferencesToSvgText: vi.fn((svgText: string) => svgText)
+}))
+
+describe('font-aware image rendering', () => {
+  const apps: App[] = []
+
   beforeEach(() => {
-    vi.restoreAllMocks()
     vi.clearAllMocks()
     let objectUrlId = 0
     vi.spyOn(URL, 'createObjectURL').mockImplementation(() => `blob:mock-${objectUrlId++}`)
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
   })
 
-  it('reuses injected results for the same source File', async () => {
-    const file = fromText('costume.svg', '<svg><text font-family="Scratch">hello</text></svg>', {
-      type: 'image/svg+xml'
-    })
-    const ctrl1 = new AbortController()
-    const ctrl2 = new AbortController()
+  afterEach(() => apps.splice(0).forEach((app) => app.unmount()))
 
-    await getRenderableImageUrl(file, ctrl1.signal)
-    await getRenderableImageUrl(file, ctrl2.signal)
-    expect(injectFontsToSvgText).toHaveBeenCalledTimes(1)
-  })
-
-  it('does not let one consumer abort the shared derived SVG cache', async () => {
-    const file = fromText('costume.svg', '<svg><text font-family="Scratch">hello</text></svg>', {
-      type: 'image/svg+xml'
+  function mountImageConsumers(fontConfig: WatchSource<SvgFontConfig>, file: File, count = 1) {
+    const urls: Ref<string | null>[] = []
+    const ImageConsumer = defineComponent({
+      setup() {
+        const [url] = useFontAwareImageUrl(() => file)
+        urls.push(url)
+        return () => null
+      }
     })
-    const ctrl1 = new AbortController()
-    const ctrl2 = new AbortController()
-    let resolveInjectedSvg!: (svgText: string) => void
-    vi.mocked(injectFontsToSvgText).mockImplementationOnce(
-      () =>
-        new Promise<string>((resolve) => {
-          resolveInjectedSvg = resolve
-        })
+    const app = createApp(
+      defineComponent({
+        setup() {
+          provideSvgFontContext(fontConfig)
+          return () =>
+            h(
+              'div',
+              Array.from({ length: count }, () => h(ImageConsumer))
+            )
+        }
+      })
     )
+    app.mount(document.createElement('div'))
+    apps.push(app)
+    return { app, urls }
+  }
 
-    const url1 = getRenderableImageUrl(file, ctrl1.signal)
-    await vi.waitFor(() => expect(injectFontsToSvgText).toHaveBeenCalledTimes(1))
-    const url2 = getRenderableImageUrl(file, ctrl2.signal)
-
-    ctrl1.abort()
-    resolveInjectedSvg('<svg>injected</svg>')
-
-    await expect(url1).rejects.toBeDefined()
-    await expect(url2).resolves.toBe('blob:mock-0')
-    expect(injectFontsToSvgText).toHaveBeenCalledTimes(1)
-  })
-
-  it('revokes URLs on abort', async () => {
-    const file = fromText('costume.svg', '<svg><text font-family="Scratch">hello</text></svg>', {
+  it('reuses a rendered image for the same source File', async () => {
+    const file = fromText('costume.svg', '<svg><text font-family="custom">hello</text></svg>', {
       type: 'image/svg+xml'
     })
-    const ctrl1 = new AbortController()
-    const ctrl2 = new AbortController()
+    const config = shallowRef<SvgFontConfig>({ fontPreferences: [], fonts: new Map() })
+    const { urls } = mountImageConsumers(() => config.value, file, 2)
 
-    const url1 = await getRenderableImageUrl(file, ctrl1.signal)
-    const url2 = await getRenderableImageUrl(file, ctrl2.signal)
+    await vi.waitFor(() => expect(urls.map((url) => url.value)).toEqual(['blob:mock-0', 'blob:mock-1']))
 
-    ctrl1.abort()
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith(url1)
-
-    ctrl2.abort()
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith(url2)
+    expect(createSvgRenderer).toHaveBeenCalledTimes(1)
+    expect(render).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps plain SVG URLs on the normal file path', async () => {
-    const file = fromText('costume.svg', '<svg><text font-family="Arial">hello</text></svg>', {
-      type: 'image/svg+xml'
+  it('uses the original URL when no font context is provided', async () => {
+    const file = fromText('costume.svg', '<svg><text>hello</text></svg>', { type: 'image/svg+xml' })
+
+    await expect(getFontAwareImageUrl(file, null, new AbortController().signal)).resolves.toBe('blob:mock-0')
+    expect(createSvgRenderer).not.toHaveBeenCalled()
+  })
+
+  it('passes project font preferences to SVG rendering', async () => {
+    const file = fromText('costume.svg', '<svg><text>你好</text></svg>', { type: 'image/svg+xml' })
+    const config = shallowRef<SvgFontConfig>({
+      fontPreferences: ['basic-chinese', 'default'],
+      fonts: new Map()
     })
-    const ctrl = new AbortController()
+    const { urls } = mountImageConsumers(() => config.value, file)
 
-    const url = await getRenderableImageUrl(file, ctrl.signal)
+    await vi.waitFor(() => expect(urls[0].value).toBe('blob:mock-0'))
 
-    expect(injectFontsToSvgText).toHaveBeenCalled()
-    expect(URL.createObjectURL).toHaveBeenCalledTimes(1)
-    ctrl.abort()
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith(url)
+    expect(applyFontPreferencesToSvgText).toHaveBeenCalledWith('<svg><text>你好</text></svg>', [
+      'basic-chinese',
+      'default'
+    ])
+  })
+
+  it('rerenders the current File when its immutable font config changes', async () => {
+    const file = fromText('costume.svg', '<svg><text>你好</text></svg>', { type: 'image/svg+xml' })
+    const config = shallowRef<SvgFontConfig>({ fontPreferences: ['default'], fonts: new Map() })
+    const { urls } = mountImageConsumers(() => config.value, file)
+
+    await vi.waitFor(() => expect(urls[0].value).toBe('blob:mock-0'))
+    config.value = { fontPreferences: ['basic-chinese', 'default'], fonts: new Map() }
+    await vi.waitFor(() => expect(urls[0].value).toBe('blob:mock-1'))
+
+    expect(createSvgRenderer).toHaveBeenCalledTimes(2)
+    expect(render).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the current URL when an immutable font config has the same content', async () => {
+    const file = fromText('costume.svg', '<svg><text>你好</text></svg>', { type: 'image/svg+xml' })
+    const fontFile = fromText('font.otf', 'font')
+    const config = shallowRef<SvgFontConfig>({
+      fontPreferences: ['custom', 'default'],
+      fonts: new Map([['custom', fontFile]])
+    })
+    const { urls } = mountImageConsumers(() => config.value, file)
+
+    await vi.waitFor(() => expect(urls[0].value).toBe('blob:mock-0'))
+    config.value = {
+      fontPreferences: ['custom', 'default'],
+      fonts: new Map([['custom', fontFile]])
+    }
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(urls[0].value).toBe('blob:mock-0')
+    expect(createSvgRenderer).toHaveBeenCalledTimes(1)
+  })
+
+  it('revokes rendered-image URLs when the consumer is unmounted', async () => {
+    const file = fromText('costume.svg', '<svg><text>hello</text></svg>', { type: 'image/svg+xml' })
+    const config = shallowRef<SvgFontConfig>({ fontPreferences: [], fonts: new Map() })
+    const { app, urls } = mountImageConsumers(() => config.value, file)
+
+    await vi.waitFor(() => expect(urls[0].value).toBe('blob:mock-0'))
+    app.unmount()
+
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-0')
   })
 })
