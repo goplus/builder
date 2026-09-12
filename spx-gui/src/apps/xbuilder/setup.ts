@@ -29,6 +29,6 @@ export function configureXBuilderApp(app: VueApp, router?: Router) {
     showTutorialsEntry: env.showTutorialsEntry
   })
   provideDisableAIGC(app, env.disableAIGC)
-  provideProjectConfig(app, { defaultFontPreferences: env.defaultFontPreferences })
+  provideProjectConfig(app, { defaultProjectTemplate: env.defaultProjectTemplate })
   configureApp(app, router, env)
 }

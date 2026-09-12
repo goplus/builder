@@ -11,10 +11,6 @@ import ProjectPublishModal from './ProjectPublishModal.vue'
 import ProjectPublishedModal from './ProjectPublishedModal.vue'
 import ProjectModifyNameModal from './ProjectModifyNameModal.vue'
 
-/**
- * Default-project assets live in `./default-project` and are assembled by `createDefaultProject`.
- * Update that directory from an exported project, excluding generated project metadata and config.
- */
 export function useCreateProject() {
   const modal = useModal(ProjectCreateModal)
 

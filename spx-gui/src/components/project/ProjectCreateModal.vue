@@ -60,7 +60,6 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { untilLoaded } from '@/utils/query'
 import { useSignedInStateQuery } from '@/stores/user'
-import { cloudHelpers } from '@/models/common/cloud'
 import { useProjectConfig } from './config'
 import { createDefaultProject } from './default-project'
 
@@ -75,7 +74,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { defaultFontPreferences } = useProjectConfig()
+const { defaultProjectTemplate } = useProjectConfig()
 const signedInStateQuery = useSignedInStateQuery()
 const title = computed(() => {
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
@@ -107,12 +106,7 @@ const handleSubmit = useMessageHandle(
     } else {
       const signedInState = await untilLoaded(signedInStateQuery)
       if (!signedInState.isSignedIn) throw new Error('login required')
-      const project = await createDefaultProject(signedInState.user.username, projectName, defaultFontPreferences)
-      project.setDisplayName(projectName)
-      project.setVisibility(Visibility.Private)
-      const exported = await project.export()
-      const saved = await cloudHelpers.save(exported)
-      project.setMetadata(saved.metadata)
+      await createDefaultProject(signedInState.user.username, projectName, defaultProjectTemplate)
     }
     emit('resolved', projectName)
     return projectName

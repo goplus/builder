@@ -1,7 +1,7 @@
 import { inject, type App, type InjectionKey } from 'vue'
 
 export type ProjectConfig = {
-  defaultFontPreferences: string[]
+  defaultProjectTemplate: string | null
 }
 
 const projectConfigKey: InjectionKey<ProjectConfig> = Symbol('project-config')

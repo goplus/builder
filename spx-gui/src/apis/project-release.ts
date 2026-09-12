@@ -41,6 +41,14 @@ export function createProjectRelease(
   }) as Promise<ProjectRelease>
 }
 
+export function getProjectRelease(owner: string, project: string, release: string, signal?: AbortSignal) {
+  return client.get(
+    `/projects/${encodeURIComponent(owner)}/${encodeURIComponent(project)}/releases/${encodeURIComponent(release)}`,
+    undefined,
+    { signal }
+  ) as Promise<ProjectRelease>
+}
+
 export type ListProjectReleasesParams = PaginationParams & {
   orderBy?: 'createdAt' | 'updatedAt' | 'remixCount'
   sortOrder?: 'asc' | 'desc'
