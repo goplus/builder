@@ -646,7 +646,8 @@ onMounted(async () => {
 
 .copilot-panel {
   position: fixed;
-  z-index: 9999;
+  /* Stay above regular popups (1000) without breaking modal dialogs (1100). */
+  z-index: 1050;
   right: 10px;
   bottom: 20px;
   width: 340px;

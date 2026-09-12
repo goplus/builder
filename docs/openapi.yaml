@@ -1034,6 +1034,94 @@ paths:
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
 
+  /user/notifications:
+    get:
+      operationId: listAuthenticatedUserNotifications
+      tags:
+        - Notifications
+      summary: List notifications for the authenticated user
+      description: |
+        Retrieve persistent in-product notifications. Unread notifications are returned before read notifications;
+        each group is ordered from newest to oldest. Both groups share one cursor and pagination sequence.
+
+        To load the next page, pass the opaque `nextCursor` returned by the previous response.
+      parameters:
+        - $ref: "#/components/parameters/PageSize"
+        - name: cursor
+          description: Opaque cursor returned as `nextCursor` by the previous page.
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - hasUnread
+                  - nextCursor
+                  - data
+                properties:
+                  hasUnread:
+                    description: Whether the authenticated user has at least one unread notification.
+                    type: boolean
+                  nextCursor:
+                    description: Opaque cursor for the next page, or null when there are no older notifications.
+                    type:
+                      - string
+                      - "null"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserNotification"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /user/notifications/{notificationID}:
+    patch:
+      operationId: updateAuthenticatedUserNotification
+      tags:
+        - Notifications
+      summary: Mark a notification as read
+      description: Idempotently mark one notification belonging to the authenticated user as read.
+      parameters:
+        - name: notificationID
+          description: Unique identifier of the notification.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - read
+              properties:
+                read:
+                  description: Must be `true`. Notifications cannot be marked unread.
+                  type: boolean
+                  const: true
+      responses:
+        "200":
+          description: Notification marked as read.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserNotification"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /user/followers:
     get:
       operationId: listAuthenticatedUserFollowers
@@ -7169,6 +7257,47 @@ components:
 
             **This field is only present for the authenticated user's own profile.**
           $ref: "#/components/schemas/UserCapabilities"
+
+    UserNotification:
+      description: Persistent in-product notification delivered to a user.
+      type: object
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - title
+        - body
+        - readAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        title:
+          description: User-visible notification title snapshot.
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          description: User-visible notification body snapshot.
+          type: string
+          maxLength: 5000
+        actionPath:
+          description: Optional application-relative destination opened from the notification.
+          type: string
+          minLength: 1
+          maxLength: 2000
+          pattern: '^/(?!/)[^\\\s\u0000-\u001F\u007F-\u009F]*$'
+          examples:
+            - /feedbacks/123
+        readAt:
+          description: Time when the recipient first read the notification, or null when unread.
+          type:
+            - string
+            - "null"
+          format: date-time
 
     AuthenticatedUser:
       description: Authenticated user account information.

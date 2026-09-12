@@ -13,6 +13,7 @@
       </div>
       <div class="basis-[30%] flex items-center justify-end" :class="!centered && 'mr-2'">
         <slot name="right"></slot>
+        <NavbarNotifications />
         <NavbarProfile />
       </div>
     </div>
@@ -21,6 +22,7 @@
 
 <script setup lang="ts">
 import NavbarLogo from './NavbarLogo.vue'
+import NavbarNotifications from './NavbarNotifications.vue'
 import NavbarProfile from './NavbarProfile.vue'
 
 withDefaults(
