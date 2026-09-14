@@ -442,6 +442,30 @@ func TestCourseStartHandlersRunIndependently(t *testing.T) {
 	awaitDone(t, done)
 }
 
+// TestCallbackRegisteredDuringRunReceivesEvents 验证课程运行中（回调里）注册的回调
+// 同样得到 worker：晚注册的 onLog 能收到之后投递的日志。作者会这样写——等开场
+// 说明看完再开始判定。这是 addLane 里 lanesStarted 为 true 的那条路径，没有它，
+// 晚注册的回调会挂进 handlers 却永远无人执行。
+func TestCallbackRegisteredDuringRunReceivesEvents(t *testing.T) {
+	host := newFakeHost()
+	registered := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.OnStart(func() {
+			course.Editor.Runtime.OnLog(func(log string) {
+				if log == "hit" {
+					course.Complete()
+				}
+			})
+			close(registered)
+		})
+	})
+
+	await(t, registered, "the late onLog registration")
+	dispatch(t, "editor.runtime.log", `{"log":"hit"}`)
+	awaitDone(t, done)
+}
+
 // TestSameEventHandlersRunIndependently 验证同一事件上注册的多段回调相互独立：
 // 一段挂在等待类 capability 上时，另一段照常处理同一条触发。
 func TestSameEventHandlersRunIndependently(t *testing.T) {
