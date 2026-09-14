@@ -4,7 +4,7 @@ import { extname } from '@/utils/path'
 import { DefaultException } from '@/utils/exception'
 import { getExtFromMime } from '@/utils/file'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getCourse, addCourse, deleteCourse, type Course } from '@/apis/course'
+import { getCourse, addCourse, deleteCourse, isGuidedCourse, type GuidedCourse } from '@/apis/course'
 import { addCourseSeries, updateCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { getProject, ProjectType, updateProject, Visibility, type UpdateProjectParams } from '@/apis/project'
 import { createProjectRelease } from '@/apis/project-release'
@@ -15,13 +15,13 @@ import type { PartialMetadata } from '@/models/project'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
-const version = 2
+const version = 3
 
 type CourseSeriesFileThumbnail = {
   path: string
 }
 
-type CourseSeriesFileCourse = Pick<Course, 'title' | 'entrypoint' | 'prompt'> & {
+type CourseSeriesFileCourse = Pick<GuidedCourse, 'title' | 'content'> & {
   thumbnail: CourseSeriesFileThumbnail
 }
 
@@ -53,6 +53,7 @@ export type CourseSeriesFileImportInspection = {
 
 export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?: AbortSignal) {
   const courses = await Promise.all(courseSeries.courseIDs.map((id) => getCourse(id, signal)))
+  if (!courses.every(isGuidedCourse)) throw new Error('Guided courses expected')
   const projects = collectEntrypointProjects(courses)
   const zippable: Zippable = {}
 
@@ -66,8 +67,7 @@ export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?
     courses.map(
       async (course, index): Promise<CourseSeriesFileCourse> => ({
         title: course.title,
-        entrypoint: course.entrypoint,
-        prompt: course.prompt,
+        content: course.content,
         thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, zippable, signal)
       })
     )
@@ -173,8 +173,11 @@ async function importCourseSeriesFileData(
         {
           title: course.title,
           thumbnail: await importThumbnail(course.thumbnail, unzipped, signal),
-          entrypoint: rewriteProjectFullNames(course.entrypoint, projectFullNameMap),
-          prompt: course.prompt
+          kind: 'guided',
+          content: {
+            entrypoint: rewriteProjectFullNames(course.content.entrypoint, projectFullNameMap),
+            prompt: course.content.prompt
+          }
         },
         signal
       )
@@ -182,6 +185,7 @@ async function importCourseSeriesFileData(
   }
 
   const params = {
+    kind: courseSeries?.kind ?? 'guided',
     title: manifest.courseSeries.title,
     thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
     description: manifest.courseSeries.description,
@@ -227,10 +231,10 @@ async function importThumbnail(
   return saveFile(createLazyFile(thumbnail.path, data), signal)
 }
 
-function collectEntrypointProjects(courses: Course[]) {
+function collectEntrypointProjects(courses: GuidedCourse[]) {
   const projects = new Map<string, ParsedProjectFullName & { fullName: string }>()
   for (const course of courses) {
-    const entrypointProject = parseEditorProjectFullName(course.entrypoint)
+    const entrypointProject = parseEditorProjectFullName(course.content.entrypoint)
     if (entrypointProject != null) projects.set(entrypointProject.fullName, entrypointProject)
   }
   return [...projects.values()]

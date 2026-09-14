@@ -9,10 +9,11 @@ import {
   courseSeriesDescriptionMaxLength,
   courseSeriesTitleMaxLength,
   updateCourseSeries,
+  type AddCourseSeriesParams,
   type CourseSeries,
-  type AddUpdateCourseSeriesParams
+  type UpdateCourseSeriesParams
 } from '@/apis/course-series'
-import { listSignedInUserCourses, type Course } from '@/apis/course'
+import { isGuidedCourse, listSignedInUserCourses, type GuidedCourse } from '@/apis/course'
 import { useSignedInUser } from '@/stores/user'
 import {
   exportCourseSeriesFile,
@@ -98,7 +99,7 @@ const form = useForm({
   ]
 })
 
-const allCourses = ref<Course[]>([])
+const allCourses = ref<GuidedCourse[]>([])
 const coursesLoading = ref(false)
 
 const loadCourses = useMessageHandle(
@@ -110,10 +111,11 @@ const loadCourses = useMessageHandle(
       // TODO: Consider implementing pagination or infinite scroll when there are more than 100 courses.
       const result = await listSignedInUserCourses({
         pageSize: 100,
+        pageIndex: 1,
         orderBy: 'updatedAt',
         sortOrder: 'desc'
       })
-      allCourses.value = result.data
+      allCourses.value = result.data.filter(isGuidedCourse)
     } finally {
       coursesLoading.value = false
     }
@@ -150,7 +152,7 @@ watch(
 
 const handleSubmit = useMessageHandle(
   async () => {
-    const formData: AddUpdateCourseSeriesParams = {
+    const formData: UpdateCourseSeriesParams = {
       title: form.value.title,
       thumbnail: form.value.thumbnail,
       description: form.value.description,
@@ -165,7 +167,8 @@ const handleSubmit = useMessageHandle(
       )
       m.success(i18n.t({ en: 'Course series updated successfully', zh: '课程系列更新成功' }))
     } else {
-      await m.withLoading(addCourseSeries(formData), i18n.t({ en: 'Creating course series', zh: '创建课程系列中' }))
+      const params: AddCourseSeriesParams = { ...formData, kind: 'guided' }
+      await m.withLoading(addCourseSeries(params), i18n.t({ en: 'Creating course series', zh: '创建课程系列中' }))
       m.success(i18n.t({ en: 'Course series created successfully', zh: '课程系列创建成功' }))
     }
 

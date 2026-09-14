@@ -3,7 +3,7 @@ import { defineComponent, h } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useChildrenWithDefault } from '@/utils/vnode'
-import { useTutorial } from './tutorial'
+import { useGuidedTutorial } from './guided-tutorial'
 
 export const tagName = 'tutorial-course-exit-link'
 
@@ -22,7 +22,7 @@ export type Props = {}
 export default defineComponent<Props>(
   () => {
     const i18n = useI18n()
-    const tutorial = useTutorial()
+    const tutorial = useGuidedTutorial()
     const handleClick = useMessageHandle(
       () => {
         if (!tutorial.currentCourse || !tutorial.currentSeries) {

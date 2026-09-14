@@ -3,7 +3,7 @@ import { computed, shallowRef } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { listSignedInUserCourses, deleteCourse, type Course } from '@/apis/course'
+import { isGuidedCourse, listSignedInUserCourses, deleteCourse, type GuidedCourse } from '@/apis/course'
 import {
   UIIcon,
   UIPagination,
@@ -38,7 +38,7 @@ const queryRet = useQuery(
       pageIndex: page.value,
       orderBy: 'updatedAt',
       sortOrder: 'desc'
-    })
+    }).then((result) => ({ ...result, data: result.data.filter(isGuidedCourse) }))
   },
   {
     en: 'Failed to list courses',
@@ -64,7 +64,7 @@ const handleCreate = useMessageHandle(
 ).fn
 
 const handleEdit = useMessageHandle(
-  async (course: Course) => {
+  async (course: GuidedCourse) => {
     await invokeEditModal({ course })
     queryRet.refetch()
   },
@@ -75,7 +75,7 @@ const handleEdit = useMessageHandle(
 ).fn
 
 const handleRemove = useMessageHandle(
-  async (course: Course) => {
+  async (course: GuidedCourse) => {
     await confirm({
       type: 'warning',
       title: i18n.t({ en: 'Remove course', zh: '删除课程' }),

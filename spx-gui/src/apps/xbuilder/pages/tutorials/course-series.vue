@@ -85,7 +85,7 @@ const { fn: handleCourseClick } = useMessageHandle(
     }
 
     event.preventDefault()
-    tutorial.startCourse(course, courseSeries)
+    return tutorial.startCourse(courseSeries.id, course.id)
   },
   {
     en: 'Failed to start course',

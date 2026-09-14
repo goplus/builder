@@ -7,15 +7,15 @@ import {
   coursePromptMaxLength,
   courseTitleMaxLength,
   updateCourse,
-  type Course,
-  type AddUpdateCourseParams
+  type AddCourseParams,
+  type GuidedCourse
 } from '@/apis/course'
 import { UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useMessage, useForm } from '@/components/ui'
 import ThumbnailUploader from './ThumbnailUploader.vue'
 
 const props = defineProps<{
   visible: boolean
-  course: Course | null
+  course: GuidedCourse | null
 }>()
 
 const emit = defineEmits<{
@@ -45,7 +45,7 @@ const form = useForm({
     }
   ],
   entrypoint: [
-    props.course?.entrypoint || '',
+    props.course?.content.entrypoint || '',
     (v: string) => {
       if (v === '') return i18n.t({ en: 'Please enter entrypoint', zh: '请输入起始地址' })
       if (!/^\/.*$/.test(v)) return i18n.t({ en: 'URL must start with /', zh: 'URL 必须以 / 开头' })
@@ -60,7 +60,7 @@ const form = useForm({
     }
   ],
   prompt: [
-    props.course?.prompt || '',
+    props.course?.content.prompt || '',
     (v: string) => {
       if (v === '') return i18n.t({ en: 'Please enter Copilot prompt', zh: '请输入 Copilot 提示词' })
       if (v.length > coursePromptMaxLength)
@@ -75,18 +75,21 @@ const form = useForm({
 
 const handleSubmit = useMessageHandle(
   async () => {
-    const formData: AddUpdateCourseParams = {
+    const formData = {
       title: form.value.title,
       thumbnail: form.value.thumbnail,
-      entrypoint: form.value.entrypoint,
-      prompt: form.value.prompt
+      content: {
+        entrypoint: form.value.entrypoint,
+        prompt: form.value.prompt
+      }
     }
 
     if (isEditMode.value && props.course) {
       await m.withLoading(updateCourse(props.course.id, formData), i18n.t({ en: 'Updating course', zh: '更新课程中' }))
       m.success(i18n.t({ en: 'Course updated successfully', zh: '课程更新成功' }))
     } else {
-      await m.withLoading(addCourse(formData), i18n.t({ en: 'Creating course', zh: '创建课程中' }))
+      const params: AddCourseParams = { ...formData, kind: 'guided' }
+      await m.withLoading(addCourse(params), i18n.t({ en: 'Creating course', zh: '创建课程中' }))
       m.success(i18n.t({ en: 'Course created successfully', zh: '课程创建成功' }))
     }
 
