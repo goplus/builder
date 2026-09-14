@@ -231,9 +231,11 @@ export class Round {
     round.apiExceptionCode = exported.apiExceptionCode
     round.apiExceptionMeta = exported.apiExceptionMeta
     switch (exported.state) {
+      case RoundState.Initialized:
       case RoundState.Loading:
       case RoundState.InProgress:
-        // We will not resume the ongoing request, so we consider it as cancelled.
+        // We will not resume the ongoing request (nor start one that was still waiting to be sent), so we
+        // consider it as cancelled; the user can retry it.
         round.stateRef.value = RoundState.Cancelled
         break
       default:
@@ -376,6 +378,14 @@ export class Round {
 export type SessionExported = {
   topic: Topic
   rounds: RoundExported[]
+}
+
+/**
+ * Deep-copies an exported session. `SessionExported` is plain JSON data (it is what gets persisted), so a JSON
+ * round trip is a faithful copy; `structuredClone` is not used because the arrays may be reactive proxies.
+ */
+function cloneSessionExported(exported: SessionExported): SessionExported {
+  return JSON.parse(JSON.stringify(exported)) as SessionExported
 }
 
 export class Session {
@@ -758,7 +768,11 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * Returns `null` when there is no current session.
    */
   exportCurrentSession(): SessionExported | null {
-    return this.currentSession?.export() ?? null
+    const session = this.currentSession
+    if (session == null) return null
+    // `Session.export()` hands out the live message arrays; a snapshot must not follow the session's later
+    // changes (a round completing, a retry clearing its messages), so it is copied here.
+    return cloneSessionExported(session.export())
   }
 
   /**
@@ -768,7 +782,8 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    */
   restoreSession(exported: SessionExported): void {
     this.endCurrentSession()
-    this.currentSessionRef.value = Session.load(exported, this)
+    // Load from a copy so the restored session and the caller's snapshot never share mutable state.
+    this.currentSessionRef.value = Session.load(cloneSessionExported(exported), this)
   }
 
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */

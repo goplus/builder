@@ -516,6 +516,59 @@ describe('Copilot', () => {
     expect(copilot.currentSession?.rounds[0].state).toBe(RoundState.Cancelled)
   })
 
+  it('should keep an exported snapshot unaffected by what the live session does afterwards', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('First reply', 'Second reply'), 100)
+    const topic = createBasicTopic('Snapshot')
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('hello', topic)
+    await timeout(50)
+
+    // Exported while the round is still streaming: no result message yet.
+    const exported = copilot.exportCurrentSession()!
+    expect(exported.rounds[0].resultMessages).toEqual([])
+    expect([RoundState.Loading, RoundState.InProgress]).toContain(exported.rounds[0].state)
+
+    // The live round completes, then is retried (which clears its messages before re-sending).
+    await waitForCompletion()
+    const liveRound = copilot.currentSession!.rounds[0]
+    expect(liveRound.resultMessages.length).toBe(1)
+    liveRound.retry()
+    await waitForCompletion()
+
+    // The snapshot did not follow either change, and restoring yields what was exported: a cancelled round
+    // without result messages.
+    expect(exported.rounds[0].resultMessages).toEqual([])
+    copilot.restoreSession(exported)
+    const restored = copilot.currentSession!.rounds[0]
+    expect(restored.state).toBe(RoundState.Cancelled)
+    expect(restored.resultMessages).toEqual([])
+    // Nor does the restored session write back into the snapshot.
+    restored.resultMessages.push({ role: 'copilot', content: 'later' })
+    expect(exported.rounds[0].resultMessages).toEqual([])
+  })
+
+  it('should restore an event round still waiting for its delayed start as cancelled', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Reply', 'Never used'))
+    const topic = createEventTopic('Events')
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('hello', topic)
+    await waitForCompletion()
+
+    // A user event in the middle of a session is sent after a delay; export inside that window.
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, 'User navigated to /somewhere')
+    const pending = copilot.currentSession!.currentRound!
+    expect(pending.state).toBe(RoundState.Initialized)
+    const exported = copilot.exportCurrentSession()!
+    expect(exported.rounds[1].state).toBe(RoundState.Initialized)
+
+    // Another session takes over, then the snapshot is restored: the pending round cannot start in the new
+    // session (its timer belonged to the old one), so it comes back cancelled instead of invisible.
+    await copilot.startSession(createBasicTopic('Other'))
+    copilot.restoreSession(exported)
+    expect(copilot.currentSession?.rounds.length).toBe(2)
+    expect(copilot.currentSession?.rounds[1].state).toBe(RoundState.Cancelled)
+  })
+
   it('should handle user events correctly', async () => {
     const { copilot } = createCopilotWithStorage(createTextStreamBatches('Event received and processed.'))
     const topic = createEventTopic('Event Test Topic')
