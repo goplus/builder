@@ -752,6 +752,25 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.currentSessionRef.value = null
   }
 
+  /**
+   * Export the current session so that it can be brought back later with `restoreSession`, e.g. around a flow
+   * that takes the copilot over with a session of its own (a course preview run from the Course Editor).
+   * Returns `null` when there is no current session.
+   */
+  exportCurrentSession(): SessionExported | null {
+    return this.currentSession?.export() ?? null
+  }
+
+  /**
+   * Restore a previously exported session as the current one, ending the current session first if any.
+   * A round that was in progress when exported comes back as cancelled; it is not resumed.
+   * Restoring is not a user action, so it leaves the copilot panel as it is (neither opens nor closes it).
+   */
+  restoreSession(exported: SessionExported): void {
+    this.endCurrentSession()
+    this.currentSessionRef.value = Session.load(exported, this)
+  }
+
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */
   open() {
     this.checkIdleTimeout()
