@@ -221,8 +221,8 @@ async function checkChangesNotToBeSaved(es: EditorState) {
       zh: '离开编辑器'
     }),
     content: t({
-      en: `Project edits will not be saved if you leave now. Are you sure to leave?`,
-      zh: `若现在离开，对项目的修改将不会被保存。确定要离开吗？`
+      en: `Project edits will not be saved. Are you sure to leave?`,
+      zh: `对项目的修改将不会被保存，确定要离开吗？`
     }),
     cancelText: t({
       en: 'Keep editing',
