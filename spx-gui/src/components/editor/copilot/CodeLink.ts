@@ -16,8 +16,8 @@ export const description = 'Display a link to a code location in the project.'
 
 export const detailedDescription = `Display a link to a code location in the project. By clicking on the link, \
 the user will be navigated to the code location. A location can be a position or a range. For example, \
-<code-link file="NiuXiaoQi.spx" position="10,20">L10,C20</code-link> will create a link to \
-line 10, column 20 in the file "NiuXiaoQi.spx" with text "L10,C20".`
+<code-link file="Kiko.spx" position="10,20">L10,C20</code-link> will create a link to \
+line 10, column 20 in the file "Kiko.spx" with text "L10,C20".`
 
 export const attributes = z.object({
   file: codeFilePathSchema,
@@ -29,7 +29,7 @@ export const attributes = z.object({
 })
 
 export type Props = {
-  /** Code file path, e.g., `NiuXiaoQi.spx` */
+  /** Code file path, e.g., `Kiko.spx` */
   file: string
   /** `${line},${column}`, e.g., `10,20` */
   position?: string

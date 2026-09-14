@@ -27,47 +27,33 @@ const triggerSnapThreshold = 20
 import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
-import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
+import { isRectIntersecting, useContentSize } from '@/utils/dom'
+import { localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { untilLoaded } from '@/utils/query'
-import { useMessageHandle } from '@/utils/exception'
 import { isSignedIn, useSignedInStateQuery } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UIButton, UITooltip } from '@/components/ui'
-import CopilotInput from './CopilotInput.vue'
-import CopilotRound from './CopilotRound.vue'
+import { providePopupContainer, UITooltip } from '@/components/ui'
+import CopilotChat from './CopilotChat.vue'
 import { useCopilot } from './context'
-import { type QuickInput, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
-import type { LocaleMessage } from '@/utils/i18n'
 import { homePageName } from '@/apps/xbuilder/router'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()
 const router = useRouter()
 
-const outputRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
-const inputRef = ref<InstanceType<typeof CopilotInput>>()
 const panelRef = ref<HTMLElement>()
+const chatRef = ref<InstanceType<typeof CopilotChat> | null>(null)
+const chatDraggerRef = computed(() => chatRef.value?.draggerEl ?? null)
 
 const session = computed(() => copilot.currentSession)
 
-const rounds = computed(() => {
-  if (session.value == null || session.value.rounds.length === 0) return null
-  return session.value.rounds
-})
-const activeRound = computed(() => {
-  const lastRound = rounds.value?.at(-1)
-  if (lastRound == null || [RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) {
-    return null
-  }
-  return lastRound
-})
+// The docked presentation (tutorial courses) is owned by the editor (see `EditorCopilot`); this
+// component only renders the floating shell.
+const isFloating = computed(() => copilot.uiMode === 'floating')
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
-
-useBottomSticky(outputRef)
 
 providePopupContainer(panelRef)
 
@@ -88,8 +74,14 @@ function getCurrentSizes() {
   }
 }
 
+const panelStyle = computed(() => {
+  return { right: `${panelStatePosition.value.right}px`, bottom: `${panelStatePosition.value.bottom}px` }
+})
+
 // resize the panel to fit the window size
-watch(windowSize, updatePanelClampedPosition)
+watch(windowSize, () => {
+  updatePanelClampedPosition()
+})
 watch(panelSize, () => {
   if (panelStatePosition.value.state === State.Move) return // close panel
   updatePanelClampedPosition()
@@ -97,6 +89,10 @@ watch(panelSize, () => {
 watch(
   () => copilot.active,
   async (newActive, oldActive) => {
+    // The docked shell drives its visibility directly off `copilot.active`, without the floating
+    // open/close animations & positioning
+    if (!isFloating.value) return
+
     await untilNotNull(panelSize)
 
     // On initialization, update triggerVisibility and panelStatePosition based on the copilot's active state
@@ -184,7 +180,6 @@ function createCSSAnimation(className: string, el?: HTMLElement) {
 }
 
 const position = { right: 0, bottom: 20 }
-const draggerRef = ref<HTMLElement>()
 const panelStatePosition = localStorageRef('spx-gui-copilot-panel-position', {
   right: 10,
   bottom: 20,
@@ -300,6 +295,8 @@ const onDragEnd = () => {
   if (!isPanelOutOfBounds.value) {
     openPanel()
   } else {
+    // Dragging the panel out of bounds is an explicit dismissal, like clicking the fold button
+    copilot.collapse()
     closePanel()
   }
 }
@@ -327,46 +324,12 @@ useDraggable(triggerRef, {
   },
   onDragEnd
 })
-useDraggable(draggerRef, {
+// The dragger at the chat's top moves the whole floating panel
+useDraggable(chatDraggerRef, {
   onDragStart,
   onDragMove,
   onDragEnd
 })
-
-const suggestedQuestions: LocaleMessage[] = [
-  {
-    en: 'What can XBuilder do?',
-    zh: 'XBuilder 可以做什么？'
-  },
-  {
-    en: 'How to create a new project?',
-    zh: '如何创建一个新项目？'
-  },
-  {
-    en: 'Please describe the functions of this page.',
-    zh: '介绍下这个页面有哪些功能。'
-  }
-]
-const handleSuggestedPromptClick = useMessageHandle((message: string) => copilot.addUserTextMessage(message), {
-  en: 'Failed to send message',
-  zh: '发送消息失败'
-}).fn
-
-const quickInputs = computed(() => copilot.getQuickInputs())
-
-const handleQuickInputClick = useMessageHandle(
-  ({ message }: QuickInput) => {
-    switch (message.type) {
-      case 'text':
-        return copilot.addUserTextMessage(message.content)
-      case 'event':
-        return copilot.notifyUserEvent(message.name, message.detail)
-      default:
-        assertNever(message)
-    }
-  },
-  { en: 'Failed to send message', zh: '发送消息失败' }
-).fn
 
 onBeforeUnmount(
   spotlight.on('revealed', async ({ rect }) => {
@@ -448,11 +411,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    ref="panelRef"
-    class="copilot-panel"
-    :style="{ right: `${panelStatePosition.right}px`, bottom: `${panelStatePosition.bottom}px` }"
-  >
+  <div v-if="isFloating" ref="panelRef" class="copilot-panel" :style="panelStyle">
     <div class="body" :class="[triggerState]">
       <UITooltip placement="right" :disabled="triggerTooltipDisabled">
         <template #trigger>
@@ -483,55 +442,8 @@ onMounted(async () => {
         </template>
         <div>{{ $t({ en: 'Copilot', zh: 'Copilot' }) }}</div>
       </UITooltip>
-      <div class="body-wrapper" :class="{ 'out-of-bounds': isPanelOutOfBounds }">
-        <div ref="draggerRef" class="dragger">
-          <svg width="12" height="6" viewBox="0 0 12 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="1.5" cy="1" r="1" fill="#A7B1BB" />
-            <circle cx="6" cy="1" r="1" fill="#A7B1BB" />
-            <circle cx="10.5" cy="1" r="1" fill="#A7B1BB" />
-            <circle cx="1.5" cy="4.5" r="1" fill="#A7B1BB" />
-            <circle cx="6" cy="4.5" r="1" fill="#A7B1BB" />
-            <circle cx="10.5" cy="4.5" r="1" fill="#A7B1BB" />
-          </svg>
-        </div>
-        <div ref="outputRef" class="output">
-          <template v-if="activeRound != null">
-            <CopilotRound :round="activeRound" is-last-round />
-            <div v-if="quickInputs.length > 0" class="quick-inputs">
-              <UITooltip v-for="(qi, i) in quickInputs" :key="i">
-                {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
-                <template #trigger>
-                  <UIButton type="neutral" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UIButton>
-                </template>
-              </UITooltip>
-            </div>
-          </template>
-          <template v-else-if="session == null">
-            <div class="px-2 pb-2">
-              <div class="hi">
-                {{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}
-              </div>
-              <div class="tips">
-                {{
-                  $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
-                }}
-              </div>
-              <div class="suggested-questions-wrapper">
-                <button
-                  v-for="(suggestedQuestion, index) in suggestedQuestions"
-                  :key="index"
-                  class="suggested-question"
-                  @click="handleSuggestedPromptClick($t(suggestedQuestion))"
-                >
-                  {{ $t(suggestedQuestion) }}
-                </button>
-              </div>
-            </div>
-          </template>
-        </div>
-        <div class="divider"></div>
-        <CopilotInput ref="inputRef" class="input" :class="{ 'only-input': activeRound == null }" :copilot="copilot" />
-      </div>
+      <!-- `out-of-bounds` belongs to the floating positioning (set e.g. by the closing animation) -->
+      <CopilotChat ref="chatRef" class="chat" :class="{ 'out-of-bounds': isPanelOutOfBounds }" />
     </div>
     <div class="footer">
       <div class="footer-wrapper">
@@ -541,7 +453,7 @@ onMounted(async () => {
         </template>
         <UITooltip>
           <template #trigger>
-            <div class="fold" :class="[triggerState]" @click="copilot.close()">
+            <div class="fold" :class="[triggerState]" @click="copilot.collapse()">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
                 <path
@@ -646,7 +558,8 @@ onMounted(async () => {
 
 .copilot-panel {
   position: fixed;
-  z-index: 9999;
+  /* Above page content but below modals (backdrop is z-1100), which must cover the copilot. */
+  z-index: 1000;
   right: 10px;
   bottom: 20px;
   width: 340px;
@@ -671,25 +584,18 @@ onMounted(async () => {
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
 }
 
-.body:has(.only-input):has(.visible).left,
-.body:has(.only-input):has(.visible).left .body-wrapper {
+/* When only the input shows and the trigger sticks out of a screen edge, square the shared corner. */
+.body:has(.chat.only-input):has(.visible).left,
+.body:has(.chat.only-input):has(.visible).left .chat {
   border-radius: var(--ui-border-radius-lg) 0 0 var(--ui-border-radius-lg);
 }
 
-.body:has(.only-input):has(.visible).right,
-.body:has(.only-input):has(.visible).right .body-wrapper {
+.body:has(.chat.only-input):has(.visible).right,
+.body:has(.chat.only-input):has(.visible).right .chat {
   border-radius: 0 var(--ui-border-radius-lg) var(--ui-border-radius-lg) 0;
 }
 
-.body-wrapper {
-  position: relative;
-  overflow: hidden;
-  transition: opacity ease 0.4s;
-  border-radius: var(--ui-border-radius-lg);
-  z-index: 2;
-}
-
-.body-wrapper.out-of-bounds::after {
+.chat.out-of-bounds::after {
   content: '';
   position: absolute;
   top: 14px;
@@ -697,102 +603,6 @@ onMounted(async () => {
   bottom: 0;
   left: 0;
   backdrop-filter: blur(1px);
-}
-
-.body-wrapper .dragger {
-  position: absolute;
-  height: 14px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: move;
-  background-color: var(--ui-color-grey-100);
-  transition: background-color ease-in-out 0.3s;
-  z-index: 1;
-}
-
-.body-wrapper .dragger:hover {
-  background-color: var(--ui-color-grey-300);
-}
-
-.body-wrapper .output {
-  background: var(--ui-color-grey-100);
-  max-height: 300px;
-  font-size: var(--ui-font-size-sm);
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.body-wrapper .output:not(:empty) {
-  margin-top: 14px;
-  padding: 12px 16px 16px 16px;
-}
-
-.body-wrapper .output .hi {
-  font-size: var(--ui-font-size-2xl);
-  line-height: 28px;
-  color: var(--ui-color-grey-1000);
-}
-
-.body-wrapper .output .tips {
-  margin-top: 4px;
-  color: var(--ui-color-grey-700);
-}
-
-.body-wrapper .output .suggested-questions-wrapper {
-  width: 100%;
-  margin-top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.body-wrapper .output .quick-inputs {
-  padding-top: 20px;
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  background: var(--ui-color-grey-100);
-}
-
-/**
- * `.suggested-question` here is like UIButton with `size: large` & `type: white`, while with
- * different padding, font style & alignment. So we don't use UIButton here to have better control on the style.
- */
-
-.body-wrapper .output .suggested-question {
-  width: 100%;
-  padding: 10px 12px;
-
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  border: 1px solid var(--ui-color-grey-400);
-  color: var(--ui-color-grey-900);
-  font-size: var(--ui-font-size-sm);
-  line-height: 20px;
-  white-space: normal;
-  text-align: left;
-  transition: 0.3s;
-  cursor: pointer;
-}
-
-.body-wrapper .output .suggested-question:hover {
-  background: var(--ui-color-grey-300);
-}
-
-.body-wrapper .output .suggested-question:active {
-  background: var(--ui-color-grey-400);
-}
-
-.body-wrapper .divider {
-  background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
-  height: 1px;
-}
-
-.body-wrapper .input {
-  height: 62px;
-  overflow: hidden;
 }
 
 .footer {

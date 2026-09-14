@@ -171,16 +171,13 @@ export class HoverController extends Emitter<{
         // Preview for in-place inputs only
         contents.push(makeBasicMarkdownString(`<input-value-preview input="${escapeHTML(JSON.stringify(input))}" />`))
       }
-      return {
-        contents,
-        range: item.range,
-        actions: [
-          {
-            command: builtInCommandInvokeInputHelper,
-            arguments: [item]
-          }
-        ]
-      }
+      // The host may hide the input helper for some input types (e.g. the tutorial's block style),
+      // dropping the "Modify" action; the value preview, if any, still shows.
+      const actions: Action[] = inputHelperController.isHelperHidden(item)
+        ? []
+        : [{ command: builtInCommandInvokeInputHelper, arguments: [item] }]
+      if (contents.length === 0 && actions.length === 0) return null
+      return { contents, range: item.range, actions }
     }
     return null
   }

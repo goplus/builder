@@ -69,7 +69,10 @@
         </UIMenu>
       </NavbarDropdown>
 
-      <NavbarTutorials v-if="showTutorialsEntry" />
+      <!-- Slot for the page to override the tutorials entry (e.g. with an in-course state entry) -->
+      <slot name="tutorials">
+        <NavbarTutorials v-if="showTutorialsEntry" />
+      </slot>
 
       <div class="flex">
         <UITooltip :disabled="undoAction == null">
@@ -99,6 +102,7 @@
     </template>
     <template #right>
       <UIButtonGroup
+        v-if="!isModeSwitchHidden"
         v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
         type="icon"
@@ -178,6 +182,7 @@ import EditorAutoSaveStateIcon from './EditorAutoSaveStateIcon.vue'
 import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
 import EditorCheckoutReleaseButton from './EditorCheckoutReleaseButton.vue'
 import { EditMode, type EditorState } from '../editor-state'
+import { editorWorkspaceLayout } from '../workspace-layout'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
@@ -210,6 +215,7 @@ const canManageProject = computed(() => {
 })
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
+const isModeSwitchHidden = computed(() => editorWorkspaceLayout.isHidden('edit-mode-switch'))
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 
