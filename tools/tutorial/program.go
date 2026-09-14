@@ -188,10 +188,11 @@ func addLane[T any](p *courseProgram, handler func(T), attach func(*handlers, *h
 		queue:   make(chan T, eventQueueSize),
 	}
 	start := func() {
-		// laneWorkers.Add 与终态判断同锁：终态后 awaitShutdown 可能已在 Wait，
-		// 此时不再起新 worker（通道反正已死），避免 Add 与 Wait 竞态。
+		// 终态判断与 laneWorkers.Add 必须在同一把锁内完成：终态后 awaitShutdown
+		// 可能已在 Wait，Add 若落在其后就是 WaitGroup 误用。今天两者都发生在持
+		// 令牌的帧内、撞不到，同锁是为了让这里不依赖那条约定。
 		p.schedulerMu.Lock()
-		dead := p.completed || p.fatal != nil
+		dead := p.terminatedLocked()
 		if !dead {
 			p.laneWorkers.Add(1)
 		}
@@ -320,6 +321,12 @@ func (p *courseProgram) fatalValue() any {
 func (p *courseProgram) terminated() bool {
 	p.schedulerMu.Lock()
 	defer p.schedulerMu.Unlock()
+	return p.terminatedLocked()
+}
+
+// terminatedLocked 是 terminated 的无锁版本，供已经持有 schedulerMu 的调用方在
+// 同一临界区内复用这条判断（如 addLane 里与 laneWorkers.Add 同锁的那一步）。
+func (p *courseProgram) terminatedLocked() bool {
 	return p.completed || p.fatal != nil
 }
 
