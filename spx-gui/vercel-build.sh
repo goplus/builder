@@ -9,5 +9,5 @@ export PATH=/usr/local/go/bin:$PATH
 ./link-spx.sh
 # The install and build phases may use different Vercel environments.
 corepack enable
-corepack install --global pnpm@11.9.0
+corepack install --global pnpm@11.22.0
 pnpm run build

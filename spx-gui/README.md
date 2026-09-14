@@ -3,7 +3,7 @@
 ## Environment Requirements
 
 - **Node.js**: ^24.11.1
-- **pnpm**: ^11.9.0
+- **pnpm**: ^11.22.0
 - **Go**: >= 1.25.0
 
 ## Install Dependencies
