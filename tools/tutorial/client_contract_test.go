@@ -69,6 +69,50 @@ func TestEveryCapabilityIsClassified(t *testing.T) {
 	}
 }
 
+// TestFrameworkRegistersEveryContractEvent 守住事件名契约：框架向执行器注册的
+// 事件名全集（eventDeliverers 的键）必须与契约 module_TutorialFramework.ts 里
+// TutorialEvent 联合类型的 name 全集相等。执行器对未注册的事件名静默忽略，
+// 所以新增事件时漏注册一侧不会有任何报错，只能靠这里变红。
+func TestFrameworkRegistersEveryContractEvent(t *testing.T) {
+	registered := map[string]bool{}
+	for name := range eventDeliverers {
+		registered[name] = true
+	}
+	goNames := sortedKeys(registered)
+	contractNames := collectContractEventNames(t)
+
+	if len(goNames) == 0 || len(contractNames) == 0 {
+		t.Fatalf("extraction broke: %d registered names, %d contract names", len(goNames), len(contractNames))
+	}
+	if fmt.Sprint(goNames) != fmt.Sprint(contractNames) {
+		t.Errorf("event names diverge:\n  framework registers: %v\n  contract declares:   %v", goNames, contractNames)
+	}
+}
+
+// collectContractEventNames 从契约的 TutorialEvent 联合类型里收集 name 字面量。
+func collectContractEventNames(t *testing.T) []string {
+	t.Helper()
+	source, err := os.ReadFile(filepath.Join("..", "..", "docs", "develop", "tutorial-v2", "module_TutorialFramework.ts"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(source)
+	start := strings.Index(text, "export type TutorialEvent =")
+	if start < 0 {
+		t.Fatal("contract has no TutorialEvent union")
+	}
+	block := text[start:]
+	if end := strings.Index(block, "\n\n"); end >= 0 {
+		block = block[:end]
+	}
+	pattern := regexp.MustCompile(`name: "([A-Za-z.]+)"`)
+	names := map[string]bool{}
+	for _, match := range pattern.FindAllStringSubmatch(block, -1) {
+		names[match[1]] = true
+	}
+	return sortedKeys(names)
+}
+
 // collectGoWireNames 从本包全部 Go 源文件里收集 mustCallCapability 的首个字符串实参。
 func collectGoWireNames(t *testing.T) []string {
 	t.Helper()
