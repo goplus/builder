@@ -3358,6 +3358,61 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /file-objects/{hash}:
+    get:
+      operationId: getFileObject
+      tags:
+        - Files
+      summary: Get a content-addressed file object
+      description: Get an existing Kodo file object by its Qiniu ETag, size, and original filename.
+      parameters:
+        - name: hash
+          description: Qiniu ETag of the file content.
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 28
+            maxLength: 28
+            pattern: "^[A-Za-z0-9_-]{28}$"
+            examples:
+              - lm4W-B9xRnQqLLX9MP8Yafji4gmr
+        - name: size
+          description: File size in bytes.
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            maximum: 26214400
+            examples:
+              - 4194305
+        - name: filename
+          description: Original filename used to determine the object-key extension.
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+            pattern: "^[^/\\\\]+$"
+            examples:
+              - basic-chinese.ttf
+      responses:
+        "200":
+          description: File object found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /upload-sessions:
     post:
       operationId: createUploadSession
@@ -7597,6 +7652,20 @@ components:
           format: int32
           examples:
             - 1
+
+    FileObject:
+      description: A content-addressed file object stored in Kodo.
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          description: Universal URL of the file object.
+          type: string
+          format: uri
+          pattern: "^kodo://[^/?#@:]+/[^?#]+$"
+          examples:
+            - kodo://xbuilder-usercontent-test/files/lm4W-B9xRnQqLLX9MP8Yafji4gmr-4194305.ttf
 
     UpInfo:
       description: Upload credentials and configuration.
