@@ -17,7 +17,7 @@ import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 // TODO: Temporary background, replace with the latest assets
 import stageBg from '@/assets/images/stage-bg.svg'
-import { getTutorialChapters } from '@/components/tutorials/tutorial-chapters'
+import { getTutorialChapters, getTutorialSeriesDescription } from '@/components/tutorials/tutorial-chapters'
 
 const coursePadding = 20
 const numInColumn = 4
@@ -61,6 +61,9 @@ const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
 const chapters = computed(() => getTutorialChapters(courseSeries.value))
+const seriesDescription = computed(() =>
+  courseSeries.value == null ? '' : getTutorialSeriesDescription(courseSeries.value)
+)
 const selectedChapter = computed(
   () => chapters.value.find((chapter) => chapter.start === selectedChapterId.value) ?? null
 )
@@ -131,10 +134,7 @@ function selectChapterTab(value: string) {
               }"
               class="flex-auto overflow-auto"
             >
-              <TextView
-                :text="courseSeries.description"
-                :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })"
-              />
+              <TextView :text="seriesDescription" :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })" />
             </div>
           </template>
         </div>

@@ -58,46 +58,54 @@ const litaChapters: TutorialChapter[] = [
     shortTitle: { en: 'Unit 6', zh: '单元六' },
     title: { en: 'Variables, measuring and counting', zh: '变量、测量与计数' },
     start: 43,
-    end: 53
+    end: 56
   },
   {
     id: 'unit-7',
     number: 7,
     shortTitle: { en: 'Unit 7', zh: '单元七' },
     title: { en: 'Arrays and indexing', zh: '数组与索引' },
-    start: 54,
-    end: 59
+    start: 57,
+    end: 62
   },
   {
     id: 'unit-8',
     number: 8,
     shortTitle: { en: 'Unit 8', zh: '单元八' },
     title: { en: 'Iteration and for in', zh: '逐个处理与 for in' },
-    start: 60,
-    end: 65
+    start: 63,
+    end: 68
   },
   {
     id: 'unit-9',
     number: 9,
     shortTitle: { en: 'Unit 9', zh: '单元九' },
     title: { en: 'Keyboard events and interaction', zh: '按键事件与交互程序' },
-    start: 66,
-    end: 69
+    start: 69,
+    end: 72
   },
   {
     id: 'unit-10',
     number: 10,
     shortTitle: { en: 'Unit 10', zh: '单元十' },
     title: { en: 'Final project', zh: '第一阶段毕业设计' },
-    start: 70,
-    end: 70
+    start: 73,
+    end: 73
   }
 ]
+
+const litaSeriesDescription =
+  'Lita 来到一片充满变化的森林，为即将到来的冬天收集松果、蘑菇和各种果实。一路上，她会遇到不同的挑战和竞争对手，也会得到新朋友的帮助。通过代码学习，Lita 将学会规划路线、控制小船、判断目标、记录收获、整理物资，并逐步完成一场充满探索与挑战的森林冒险，迎来属于自己的大丰收。'
 
 export function getTutorialChapters(series: CourseSeries | null | undefined): TutorialChapter[] {
   if (series == null) return []
   const key = `${series.id} ${series.title}`.toLowerCase()
   return key.includes('lita') ? litaChapters : []
+}
+
+export function getTutorialSeriesDescription(series: CourseSeries): string {
+  const key = `${series.id} ${series.title}`.toLowerCase()
+  return key.includes('lita') ? litaSeriesDescription : series.description
 }
 
 export function getTutorialChapter(chapters: TutorialChapter[], sequence: number) {
