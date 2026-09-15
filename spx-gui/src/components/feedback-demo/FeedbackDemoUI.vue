@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
 import { humanizeExactTime } from '@/utils/utils'
-import { UIButton, UIEmpty, UIFormModal, UIModal, UIModalClose, useMessage } from '@/components/ui'
+import { UIButton, UICardHeader, UIEmpty, UIFormModal, UIModal, UIModalClose, useMessage } from '@/components/ui'
 import { useCopilot } from '@/components/copilot/context'
 import { RoundState } from '@/components/copilot/copilot'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -423,15 +423,16 @@ function formatUnreadCount(count: number) {
     @update:visible="handlePreviewVisibleChange"
   >
     <div v-if="selectedPreviewAttachment != null" class="flex max-h-[calc(100vh-2rem)] min-h-[360px] flex-col">
-      <div class="flex items-center justify-between gap-3 border-b border-grey-400 px-6 py-3.5">
+      <UICardHeader class="h-auto min-h-10 justify-between gap-3 px-6 py-2 text-sm">
         <h2 :id="imagePreviewTitleID" class="min-w-0 truncate text-sm font-normal leading-[22px] text-title">
           {{ selectedPreviewAttachment.name }}
         </h2>
         <UIModalClose
+          class="h-8 w-8 shrink-0"
           :aria-label="$t({ en: 'Close image preview', zh: '关闭图片预览' })"
           @click="closeAttachmentPreview"
         />
-      </div>
+      </UICardHeader>
       <div class="min-h-0 flex flex-1 items-center justify-center overflow-y-auto bg-grey-100 p-6">
         <img
           class="block max-h-[calc(100vh-10rem)] max-w-full rounded-lg object-contain"

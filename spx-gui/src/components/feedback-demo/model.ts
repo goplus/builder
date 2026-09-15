@@ -22,6 +22,24 @@ export interface SubmitFeedbackInput {
 
 type FeedbackFormPrefill = Pick<FeedbackDraft, 'title' | 'description'>
 
+function escapeMarkdownLabel(value: string) {
+  return value.replace(/([\\[\]])/g, '\\$1')
+}
+
+function toMarkdownAttachment(attachment: FeedbackAttachment) {
+  if (attachment.url == null) return null
+  const name = escapeMarkdownLabel(attachment.name)
+  const title = attachment.name.replace(/"/g, '\\"')
+  return `[${name}](${attachment.url} "${title}")`
+}
+
+function toQuotedMarkdown(value: string) {
+  return value
+    .split('\n')
+    .map((line) => `> ${line}`)
+    .join('\n')
+}
+
 export interface NotificationCenterAnchor {
   top: number
   right: number
@@ -111,12 +129,21 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     feedback.status = 'replied'
     feedback.reply = reply
     feedback.repliedAt = repliedAt
+    const quotedFeedback = [
+      `> **${feedback.title}**`,
+      '>',
+      toQuotedMarkdown(feedback.description),
+      ...feedback.attachments.flatMap((attachment) => {
+        const link = toMarkdownAttachment(attachment)
+        return link == null ? [] : ['>', `> ${link}`]
+      })
+    ].join('\n')
     data.notifications.unshift({
       id: `notification-${data.notifications.length + 1001}`,
       userID: feedback.userID,
       feedbackID: feedback.id,
       title: '支持团队回复了你的反馈',
-      content: reply,
+      content: `${quotedFeedback}\n\n${reply}`,
       createdAt: repliedAt,
       readAt: null
     })

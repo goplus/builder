@@ -3,12 +3,13 @@ import type { FeedbackContext } from './context'
 import feedbackDemoImageUrl from './assets/xbuilder-loading-screen.jpg'
 
 const releaseGuideUrl = new URL('./assets/release-guide.png', import.meta.url).href
+const projectPageScreenshotUrl = new URL('./assets/xbuilder-project-page.png', import.meta.url).href
 
 export type FeedbackSource = 'globalForm'
 export type FeedbackStatus = 'new' | 'handled' | 'replied'
 export type { FeedbackContext } from './context'
 
-export const feedbackDemoMockVersion = 18
+export const feedbackDemoMockVersion = 19
 
 export interface FeedbackAttachment {
   id: string
@@ -182,15 +183,17 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: 'feedback-1002',
       title: '发布流程问题已修复',
-      content: `发布流程中的状态提示已经优化，请重新发布项目确认效果。若还是不行，请参考下面的操作指引。
-
-[查看附件：发布操作指引](${releaseGuideUrl})
-
-> **运行项目时一直卡在加载界面**
+      content: `> **运行项目时一直卡在加载界面**
 >
 > 点击运行以后加载动画一直没有结束，刷新页面后还是一样。
 >
-> [查看附件：加载界面截图](${feedbackDemoImageUrl})`,
+> [xbuilder-loading-screen.jpg](${feedbackDemoImageUrl} "xbuilder-loading-screen.jpg")
+
+发布流程中的状态提示已经优化，请重新发布项目确认效果。若还是不行，请参考下面的操作指引。
+
+[release-guide.png](${releaseGuideUrl} "release-guide.png")
+
+[xbuilder-project-page.png](${projectPageScreenshotUrl} "xbuilder-project-page.png")`,
       createdAt: '2026-09-10T09:40:00+08:00',
       readAt: null
     },
@@ -226,15 +229,15 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: 'feedback-1007',
       title: '素材上传问题已修复',
-      content: `角色图片上传失败的问题已经修复，现在可以重新上传素材。我们也补充了更清晰的失败提示。
-
-[查看附件：素材上传说明](${releaseGuideUrl})
-
-> **上传角色图片后一直提示失败**
+      content: `> **上传角色图片后一直提示失败**
 >
 > PNG 和 JPG 都试过了，文件大小也没有超过限制。
 >
-> [查看附件：上传失败截图](${feedbackDemoImageUrl})`,
+> [xbuilder-loading-screen.jpg](${feedbackDemoImageUrl} "xbuilder-loading-screen.jpg")
+
+角色图片上传失败的问题已经修复，现在可以重新上传素材。我们也补充了更清晰的失败提示。
+
+[release-guide.png](${releaseGuideUrl} "release-guide.png")`,
       createdAt: '2026-08-26T13:25:00+08:00',
       readAt: null
     },
@@ -270,15 +273,15 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: 'feedback-1003',
       title: '角色动画问题已修复',
-      content: `切换造型时的闪烁问题已经处理。请重新打开项目并运行，确认角色动画是否连续。
-
-[查看附件：动画设置示例](${releaseGuideUrl})
-
-> **角色切换造型时会短暂消失**
+      content: `> **角色切换造型时会短暂消失**
 >
 > 连续播放跑步动画时，每次循环到第一帧都会闪一下。
 >
-> [查看附件：动画异常截图](${feedbackDemoImageUrl})`,
+> [xbuilder-loading-screen.jpg](${feedbackDemoImageUrl} "xbuilder-loading-screen.jpg")
+
+切换造型时的闪烁问题已经处理。请重新打开项目并运行，确认角色动画是否连续。
+
+[release-guide.png](${releaseGuideUrl} "release-guide.png")`,
       createdAt: '2026-03-10T12:20:00+08:00',
       readAt: null
     },

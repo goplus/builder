@@ -116,9 +116,13 @@ describe('feedback demo model', () => {
     })
     expect(model.data.notifications[0]).toMatchObject({
       feedbackID: newFeedback.id,
-      content: 'We fixed this for you.',
       readAt: null
     })
+    expect(model.data.notifications[0].content).toContain('> **运行项目时一直卡在加载界面**')
+    expect(model.data.notifications[0].content).toContain(
+      '> [xbuilder-loading-screen.jpg](/src/components/feedback-demo/assets/xbuilder-loading-screen.jpg "xbuilder-loading-screen.jpg")'
+    )
+    expect(model.data.notifications[0].content).toMatch(/\n\nWe fixed this for you\.$/)
     expect(model.unreadNotificationCount.value).toBe(initialUnreadCount + 1)
 
     expect(model.data.notifications.filter((notification) => notification.feedbackID === newFeedback.id)).toHaveLength(
@@ -190,6 +194,13 @@ describe('feedback demo model', () => {
     model.replyToFeedback(feedback.id, 'Thanks, please check the attached screenshot.')
 
     expect(model.data.notifications[0].title).toBe('支持团队回复了你的反馈')
+    expect(model.data.notifications[0].content).toBe(`> **Image support**
+>
+> Screenshot attached
+>
+> [screen.png](blob:mock "screen.png")
+
+Thanks, please check the attached screenshot.`)
   })
 
   it('keeps feedback notification content as one standard Markdown document', () => {
@@ -198,10 +209,31 @@ describe('feedback demo model', () => {
 
     expect(feedbackReplies).toHaveLength(3)
     for (const notification of feedbackReplies) {
-      expect(notification.content).toMatch(/^> /m)
-      expect(notification.content).toMatch(/\[查看附件：[^\]]+\]\([^)]+\)/)
+      expect(notification.content).toMatch(/^> /)
+      expect(notification.content).toMatch(/\[[^\]]+\]\([^)]+\.(?:jpg|png)(?: "[^"]+")?\)/)
       expect(notification.content).not.toContain('![')
       expect(notification.content).not.toContain('<notification-attachment')
+    }
+
+    const releaseNotification = model.data.notifications.find((notification) => notification.id === 'notification-1011')
+    expect(releaseNotification?.content.match(/^\[[^\]]+\]\([^)]+\)$/gm)).toHaveLength(2)
+    expect(releaseNotification?.content.indexOf('运行项目时一直卡在加载界面')).toBeLessThan(
+      releaseNotification?.content.indexOf('发布流程中的状态提示已经优化') ?? -1
+    )
+  })
+
+  it('keeps message and announcement content independent from title and time metadata', () => {
+    const model = createFeedbackDemoModel()
+    const allNotifications = [...model.data.notifications, ...model.data.systemNotifications]
+
+    expect(allNotifications.length).toBeGreaterThan(0)
+    for (const notification of allNotifications) {
+      expect(typeof notification.content).toBe('string')
+      expect(notification.content.trim()).not.toBe('')
+      expect(notification.title.trim()).not.toBe('')
+      expect(notification.createdAt.trim()).not.toBe('')
+      expect(notification.content).not.toContain(notification.createdAt)
+      expect(notification.content).not.toContain('<notification-time')
     }
   })
 })

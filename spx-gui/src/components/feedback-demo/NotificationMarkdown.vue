@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, defineComponent, h, markRaw } from 'vue'
+import { defineComponent, h, markRaw } from 'vue'
 
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
-import { UIButton } from '@/components/ui'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     value: string
     compact?: boolean
@@ -40,57 +39,42 @@ const NotificationMarkdownLink = defineComponent({
         return h('a', { href: linkProps.href, title: linkProps.title }, slots.default?.())
       }
       return h(
-        UIButton,
+        'a',
         {
-          type: 'white',
-          size: 'small',
+          href: linkProps.href,
+          title: linkProps.title,
+          class: 'notification-attachment-link',
           onClick: (event: MouseEvent) => {
-            const button = event.currentTarget
-            const name = button instanceof HTMLElement ? button.textContent?.trim() : null
+            event.preventDefault()
+            const link = event.currentTarget
+            const name = linkProps.title ?? (link instanceof HTMLElement ? link.textContent?.trim() : null)
             emit('preview', { name: name || 'Attachment', url: linkProps.href })
           }
         },
-        { default: () => slots.default?.() }
+        slots.default?.()
       )
     }
   }
 })
 
-const NotificationMarkdownTime = defineComponent({
-  name: 'NotificationMarkdownTime',
-  setup() {
-    return () =>
-      h(
-        'time',
-        {
-          class: 'notification-time',
-          datetime: props.timeValue ?? undefined,
-          title: props.timeTitle ?? undefined
-        },
-        props.time
-      )
-  }
-})
-
 const markdownComponents = markRaw({
   custom: {
-    a: NotificationMarkdownLink,
-    'notification-time': NotificationMarkdownTime
+    a: NotificationMarkdownLink
   }
-})
-
-const renderedValue = computed(() => {
-  if (props.compact || props.time == null) return props.value
-  const timeMarker = '<notification-time></notification-time>'
-  const quoteStart = props.value.search(/^>/m)
-  if (quoteStart < 0) return `${props.value.trim()}\n\n${timeMarker}`
-  return `${props.value.slice(0, quoteStart).trim()}\n\n${timeMarker}\n\n${props.value.slice(quoteStart).trim()}`
 })
 </script>
 
 <template>
   <div class="notification-content" :class="{ compact }">
-    <MarkdownView class="notification-markdown" :value="renderedValue" :components="markdownComponents" />
+    <MarkdownView class="notification-markdown" :value="value" :components="markdownComponents" />
+    <time
+      v-if="!compact && time != null"
+      class="notification-time"
+      :datetime="timeValue ?? undefined"
+      :title="timeTitle ?? undefined"
+    >
+      {{ time }}
+    </time>
   </div>
 </template>
 
@@ -98,7 +82,7 @@ const renderedValue = computed(() => {
 .notification-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 .notification-markdown {
@@ -114,11 +98,11 @@ const renderedValue = computed(() => {
   margin-top: 16px;
 }
 
-.notification-markdown :deep(> p:has(> button)) {
-  margin-top: 12px;
+.notification-markdown :deep(> p:has(> .notification-attachment-link)) {
+  margin-top: 4px;
 }
 
-.notification-markdown :deep(> p:has(> .notification-time)) {
+.notification-markdown :deep(> :not(p:has(> .notification-attachment-link)) + p:has(> .notification-attachment-link)) {
   margin-top: 8px;
 }
 
@@ -168,7 +152,7 @@ const renderedValue = computed(() => {
 }
 
 .notification-markdown :deep(blockquote) {
-  padding: 12px 16px;
+  padding: 12px;
   border-inline-start: 3px solid var(--ui-color-grey-600);
   border-radius: 0 8px 8px 0;
   background: var(--ui-color-grey-300);
@@ -185,6 +169,15 @@ const renderedValue = computed(() => {
   margin-top: 4px;
 }
 
+.notification-markdown :deep(blockquote > p:has(> .notification-attachment-link)) {
+  margin-top: 4px;
+}
+
+.notification-markdown
+  :deep(blockquote > :not(p:has(> .notification-attachment-link)) + p:has(> .notification-attachment-link)) {
+  margin-top: 8px;
+}
+
 .notification-markdown :deep(blockquote > :first-child) {
   font-size: 14px;
   line-height: 22px;
@@ -196,6 +189,16 @@ const renderedValue = computed(() => {
   text-underline-offset: 2px;
 }
 
+.notification-markdown :deep(.notification-attachment-link) {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: zoom-in;
+}
+
 .notification-markdown :deep(code) {
   padding: 2px 4px;
   border: 1px solid var(--ui-color-grey-500);
@@ -205,7 +208,7 @@ const renderedValue = computed(() => {
   font-size: 0.92em;
 }
 
-.notification-markdown :deep(.notification-time) {
+.notification-time {
   color: var(--ui-color-grey-700);
   font-size: 12px;
   line-height: 18px;
