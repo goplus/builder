@@ -107,7 +107,11 @@ const apiVideoLibrary: Record<string, ApiVideoInfo> = {
   },
   'xgo:?var_declaration': {
     title: { en: 'var', zh: 'var 变量' },
-    src: demoVideoSrc
+    src: `${tutorialVideoAssetBaseUrl}/Code_-Lita-44%E8%AF%BE%E5%BC%95%E5%AF%BC%E8%A7%86%E9%A2%91.webm`
+  },
+  'xgo:github.com/goplus/spx/v2?Sprite.distanceTo#0': {
+    title: { en: 'distanceTo', zh: 'distanceTo 测量目标距离' },
+    src: `${tutorialVideoAssetBaseUrl}/Code_-Lita-50%E8%AF%BE%E5%BC%95%E5%AF%BC%E8%A7%86%E9%A2%91.webm`
   },
   'xgo:?for_iterate': {
     title: { en: 'for in', zh: 'for in 遍历' },

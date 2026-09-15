@@ -47,6 +47,15 @@ describe('getApiVideo', () => {
     expect(getApiVideo('repeatUntil')?.src).toBe(stepVideoSrc)
   })
 
+  it('resolves the dedicated videos used by Lita courses 44 and 50', () => {
+    expect(getApiVideo('var_declaration')?.src).toBe(
+      `${tutorialVideoAssetBaseUrl}/Code_-Lita-44%E8%AF%BE%E5%BC%95%E5%AF%BC%E8%A7%86%E9%A2%91.webm`
+    )
+    expect(getApiVideo('distanceTo')?.src).toBe(
+      `${tutorialVideoAssetBaseUrl}/Code_-Lita-50%E8%AF%BE%E5%BC%95%E5%AF%BC%E8%A7%86%E9%A2%91.webm`
+    )
+  })
+
   it('keeps the two turn notations apart', () => {
     // `turn 90` and `turn Right` are one function (Direction is a float64, Right is 90), so only a
     // knowledge point of its own can separate them — name matching must not collapse the two.
