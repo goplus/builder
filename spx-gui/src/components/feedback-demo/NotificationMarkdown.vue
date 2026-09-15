@@ -152,19 +152,13 @@ const markdownComponents = markRaw({
 }
 
 .notification-markdown :deep(blockquote) {
-  margin-top: 8px;
-  margin-bottom: 8px;
-  padding: 12px;
+  padding: 8px 12px;
   border-inline-start: 3px solid var(--ui-color-grey-600);
   border-radius: 0 8px 8px 0;
   background: var(--ui-color-grey-300);
   color: var(--ui-color-grey-900);
   font-size: 12px;
   line-height: 18px;
-}
-
-.notification-markdown :deep(> blockquote + *) {
-  margin-top: 8px;
 }
 
 .notification-markdown :deep(blockquote > * + *) {

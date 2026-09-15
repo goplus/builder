@@ -215,8 +215,21 @@ Thanks, please check the attached screenshot.`)
       expect(notification.content).not.toContain('<notification-attachment')
     }
 
+    const replyAttachmentCounts = new Map(
+      ['notification-1011', 'notification-1007', 'notification-1003'].map((id) => {
+        const notification = model.data.notifications.find((item) => item.id === id)
+        return [id, notification?.content.match(/^\[[^\]]+\]\([^)]+\)$/gm)?.length ?? 0]
+      })
+    )
+    expect(replyAttachmentCounts).toEqual(
+      new Map([
+        ['notification-1011', 2],
+        ['notification-1007', 0],
+        ['notification-1003', 1]
+      ])
+    )
+
     const releaseNotification = model.data.notifications.find((notification) => notification.id === 'notification-1011')
-    expect(releaseNotification?.content.match(/^\[[^\]]+\]\([^)]+\)$/gm)).toHaveLength(1)
     expect(releaseNotification?.content.indexOf('运行项目时一直卡在加载界面')).toBeLessThan(
       releaseNotification?.content.indexOf('发布流程中的状态提示已经优化') ?? -1
     )

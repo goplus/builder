@@ -9,7 +9,7 @@ export type FeedbackSource = 'globalForm'
 export type FeedbackStatus = 'new' | 'handled' | 'replied'
 export type { FeedbackContext } from './context'
 
-export const feedbackDemoMockVersion = 20
+export const feedbackDemoMockVersion = 21
 
 export interface FeedbackAttachment {
   id: string
@@ -191,6 +191,8 @@ const mockData: FeedbackDemoData = {
 
 发布流程中的状态提示已经优化，请重新发布项目确认效果。若还是不行，请参考下面的操作指引。
 
+[release-guide.png](${releaseGuideUrl} "release-guide.png")
+
 [xbuilder-project-page.png](${projectPageScreenshotUrl} "xbuilder-project-page.png")`,
       createdAt: '2026-09-10T09:40:00+08:00',
       readAt: null
@@ -233,9 +235,7 @@ const mockData: FeedbackDemoData = {
 >
 > [xbuilder-loading-screen.jpg](${feedbackDemoImageUrl} "xbuilder-loading-screen.jpg")
 
-角色图片上传失败的问题已经修复，现在可以重新上传素材。我们也补充了更清晰的失败提示。
-
-[release-guide.png](${releaseGuideUrl} "release-guide.png")`,
+角色图片上传失败的问题已经修复，现在可以重新上传素材。我们也补充了更清晰的失败提示。`,
       createdAt: '2026-08-26T13:25:00+08:00',
       readAt: null
     },
