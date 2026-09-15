@@ -179,8 +179,8 @@ const markdownComponents = markRaw({
 }
 
 .notification-markdown :deep(blockquote > :first-child) {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: 13px;
+  line-height: 20px;
 }
 
 .notification-markdown :deep(a) {

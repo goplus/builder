@@ -291,7 +291,7 @@ function formatUnreadCount(count: number) {
           :class="activeNotificationTab === 'feedback' ? 'text-primary-main' : 'text-grey-800'"
           @click="activeNotificationTab = 'feedback'"
         >
-          <span class="relative inline-block">
+          <span class="relative inline-block text-base">
             {{ $t({ en: 'Messages', zh: '消息' }) }}
             <span
               v-if="activeNotificationTab === 'feedback'"
@@ -311,7 +311,7 @@ function formatUnreadCount(count: number) {
           :class="activeNotificationTab === 'system' ? 'text-primary-main' : 'text-grey-800'"
           @click="activeNotificationTab = 'system'"
         >
-          <span class="relative inline-block">
+          <span class="relative inline-block text-base">
             {{ $t({ en: 'Announcements', zh: '公告' }) }}
             <span
               v-if="activeNotificationTab === 'system'"
