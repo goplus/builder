@@ -258,11 +258,19 @@ Thanks, please check the attached screenshot.`)
 
     for (const notification of socialNotifications) {
       expect(notification.content).toContain(`](${userUrl})`)
+      expect(notification.content).toMatch(/^\[[^\]]+\]\([^)]+\) /)
       if (notification.title.includes('关注')) {
         expect(notification.content).not.toContain(`](${projectUrl})`)
       } else {
         expect(notification.content).toContain(`](${projectUrl})`)
+        expect(notification.content).toContain(`](${projectUrl}) `)
       }
+    }
+
+    for (const notification of socialNotifications.filter((item) => item.title.includes('改编'))) {
+      expect(
+        notification.content.match(new RegExp(projectUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'))
+      ).toHaveLength(1)
     }
   })
 })

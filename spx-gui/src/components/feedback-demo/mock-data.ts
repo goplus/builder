@@ -11,7 +11,7 @@ export type FeedbackSource = 'globalForm'
 export type FeedbackStatus = 'new' | 'handled' | 'replied'
 export type { FeedbackContext } from './context'
 
-export const feedbackDemoMockVersion = 22
+export const feedbackDemoMockVersion = 23
 
 export interface FeedbackAttachment {
   id: string
@@ -204,7 +204,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '林小满改编了你的项目',
-      content: `[林小满](${demoUserUrl})改编了你的项目 [AI-Town-2222](${demoProjectUrl})，并发布了作品 [森林车站的一天](${demoProjectUrl})。`,
+      content: `[林小满](${demoUserUrl}) 改编了你的项目 [AI-Town-2222](${demoProjectUrl}) ，并为它加入了新的玩法与创作思路。`,
       createdAt: '2026-09-09T14:20:00+08:00',
       readAt: null
     },
@@ -213,7 +213,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '阿泽点赞了你的项目',
-      content: `[阿泽](${demoUserUrl})点赞了你的项目 [Match3](${demoProjectUrl})。`,
+      content: `[阿泽](${demoUserUrl}) 点赞了你的项目 [Match3](${demoProjectUrl}) 。`,
       createdAt: '2026-09-07T10:18:00+08:00',
       readAt: null
     },
@@ -222,7 +222,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '南风关注了你',
-      content: `[南风](${demoUserUrl})关注了你。你发布新项目后，对方可以在关注动态中看到。`,
+      content: `[南风](${demoUserUrl}) 关注了你。你发布新项目后，对方可以在关注动态中看到。`,
       createdAt: '2026-09-03T15:42:00+08:00',
       readAt: null
     },
@@ -246,7 +246,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '星河改编了你的项目',
-      content: `[星河](${demoUserUrl})改编了你的项目 [Flappy Fish](${demoProjectUrl})，加入了新的关卡和计分规则。`,
+      content: `[星河](${demoUserUrl}) 改编了你的项目 [Flappy Fish](${demoProjectUrl}) ，正在基于你的创意继续完善关卡和计分规则。`,
       createdAt: '2026-08-10T11:08:00+08:00',
       readAt: null
     },
@@ -255,7 +255,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '小柚点赞了你的项目',
-      content: `[小柚](${demoUserUrl})点赞了你的项目 [太空冒险](${demoProjectUrl})。`,
+      content: `[小柚](${demoUserUrl}) 点赞了你的项目 [太空冒险](${demoProjectUrl}) 。`,
       createdAt: '2026-07-10T16:50:00+08:00',
       readAt: null
     },
@@ -264,7 +264,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '木棉关注了你',
-      content: `[木棉](${demoUserUrl})关注了你。去看看对方正在创作的项目吧。`,
+      content: `[木棉](${demoUserUrl}) 关注了你。去看看对方正在创作的项目吧。`,
       createdAt: '2026-05-10T14:36:00+08:00',
       readAt: null
     },
@@ -290,7 +290,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '可乐点赞了你的项目',
-      content: `[可乐](${demoUserUrl})点赞了你的项目 [AI-Town](${demoProjectUrl})。`,
+      content: `[可乐](${demoUserUrl}) 点赞了你的项目 [AI-Town](${demoProjectUrl}) 。`,
       createdAt: '2025-09-10T10:05:00+08:00',
       readAt: null
     },
@@ -299,7 +299,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '远山改编了你的项目',
-      content: `[远山](${demoUserUrl})改编了你的项目 [Match3](${demoProjectUrl})，并制作了新的主题版本 [水果消消乐](${demoProjectUrl})。`,
+      content: `[远山](${demoUserUrl}) 改编了你的项目 [Match3](${demoProjectUrl}) ，并尝试了新的主题风格与玩法组合。`,
       createdAt: '2024-09-10T16:32:00+08:00',
       readAt: null
     }

@@ -239,6 +239,17 @@ const markdownComponents = markRaw({
   pointer-events: none;
 }
 
+.notification-content.compact :deep(a) {
+  text-decoration: none;
+}
+
+.notification-content.compact :deep(blockquote),
+.notification-content.compact :deep(blockquote > *),
+.notification-content.compact :deep(blockquote > :first-child) {
+  font-size: 12px;
+  line-height: 18px;
+}
+
 .notification-content.compact :deep(blockquote::before) {
   content: ' ';
 }
