@@ -4,7 +4,8 @@ import { computed, nextTick, onMounted, onScopeDispose, ref, useId, watch } from
 import { useRoute } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
-import { UIButton, UIEmpty, UIFormModal, UIModal, UIModalClose, UIPagination, useMessage } from '@/components/ui'
+import { humanizeExactTime } from '@/utils/utils'
+import { UIButton, UIEmpty, UIFormModal, UIModal, UIModalClose, useMessage } from '@/components/ui'
 import { useCopilot } from '@/components/copilot/context'
 import { RoundState } from '@/components/copilot/copilot'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -12,11 +13,10 @@ import { useCodeEditorRef } from '@/components/xgo-code-editor'
 import { createPrepareFeedbackTool, type PreparedFeedbackDraft } from './copilot'
 import { captureFeedbackContext } from './context'
 import FeedbackForm from './FeedbackForm.vue'
+import NotificationMarkdown from './NotificationMarkdown.vue'
 import { useFeedbackDemoModel, type SubmitFeedbackInput } from './model'
 import type { FeedbackAttachment, InProductNotification } from './mock-data'
 import { captureViewport } from '@/components/screenshot/capture'
-import notificationAttachmentIcon from '@/components/ui/icons/notification-attachment.svg'
-import notificationAssociationArrow from '@/components/ui/icons/notification-association-arrow.svg'
 import notificationBackIcon from '@/components/ui/icons/angle-left.svg'
 
 const model = useFeedbackDemoModel()
@@ -37,10 +37,7 @@ const notificationListScrollRef = ref<HTMLElement | null>(null)
 const notificationListHasScroll = ref(false)
 const notificationListScrollbarWidth = ref(0)
 const imagePreviewTitleID = useId()
-type RenderableFeedbackAttachment = FeedbackAttachment & { url: string }
-const selectedPreviewAttachment = ref<RenderableFeedbackAttachment | null>(null)
-const previewAttachments = ref<RenderableFeedbackAttachment[]>([])
-const previewPage = ref(1)
+const selectedPreviewAttachment = ref<{ name: string; url: string } | null>(null)
 const feedbackNotifications = computed(() => model.data.notifications)
 const systemNotifications = computed(() => model.data.systemNotifications)
 const activeNotifications = computed(() =>
@@ -57,28 +54,6 @@ const selectedNotification = computed(
     [...model.data.notifications, ...model.data.systemNotifications].find(
       (notification) => notification.id === selectedNotificationID.value
     ) ?? null
-)
-const selectedSystemNotification = computed(() =>
-  selectedNotification.value?.feedbackID === '' ? selectedNotification.value : null
-)
-const selectedNotificationFeedback = computed(() => {
-  const notification = selectedNotification.value
-  return notification == null
-    ? null
-    : model.data.feedbacks.find((feedback) => feedback.id === notification.feedbackID) ?? null
-})
-const notificationImageAttachmentsMap = computed(() => {
-  const attachmentsMap = new Map<string, RenderableFeedbackAttachment[]>()
-  for (const feedback of model.data.feedbacks) {
-    attachmentsMap.set(feedback.id, feedback.attachments.filter(isRenderableImageAttachment))
-  }
-  return attachmentsMap
-})
-const selectedNotificationImageAttachments = computed(
-  () => notificationImageAttachmentsMap.value.get(selectedNotification.value?.feedbackID ?? '') ?? []
-)
-const selectedNotificationReplyAttachments = computed(() =>
-  (selectedNotification.value?.replyAttachments ?? []).filter(isRenderableImageAttachment)
 )
 
 function updateNotificationListScrollState() {
@@ -141,8 +116,6 @@ watch(model.notificationCenterOpen, (open) => {
   if (!open) {
     selectedNotificationID.value = null
     selectedPreviewAttachment.value = null
-    previewAttachments.value = []
-    previewPage.value = 1
   }
   if (open) {
     activeNotificationTab.value = unreadFeedbackCount.value === 0 && unreadSystemCount.value > 0 ? 'system' : 'feedback'
@@ -230,17 +203,25 @@ async function captureFeedbackScreenshot(): Promise<FeedbackAttachment> {
 
 function openNotification(notification: InProductNotification) {
   selectedPreviewAttachment.value = null
-  previewAttachments.value = []
-  previewPage.value = 1
   selectedNotificationID.value = notification.id
   model.markNotificationRead(notification.id)
 }
 
 function backToNotificationList() {
   selectedPreviewAttachment.value = null
-  previewAttachments.value = []
-  previewPage.value = 1
   selectedNotificationID.value = null
+}
+
+function openAttachmentPreview(attachment: { name: string; url: string }) {
+  selectedPreviewAttachment.value = attachment
+}
+
+function closeAttachmentPreview() {
+  selectedPreviewAttachment.value = null
+}
+
+function handlePreviewVisibleChange(visible: boolean) {
+  if (!visible) closeAttachmentPreview()
 }
 
 function formatTime(value: string) {
@@ -249,61 +230,12 @@ function formatTime(value: string) {
     .fromNow()
 }
 
-function formatImageCount(count: number) {
-  return t({
-    en: `${count} image${count === 1 ? '' : 's'}`,
-    zh: `${count} 张图片`
-  })
+function formatExactTime(value: string) {
+  return t(humanizeExactTime(value))
 }
 
 function formatUnreadCount(count: number) {
   return count > 99 ? '99+' : String(count)
-}
-
-const imageFileExtensionPattern = /\.(apng|avif|bmp|gif|jpe?g|png|svg|webp)(?:[?#].*)?$/i
-
-function isRenderableImageAttachment(attachment: FeedbackAttachment): attachment is RenderableFeedbackAttachment {
-  if (attachment.url == null || attachment.url.trim() === '') return false
-  if (attachment.url.startsWith('blob:') || attachment.url.startsWith('data:image/')) return true
-  return imageFileExtensionPattern.test(attachment.name) || imageFileExtensionPattern.test(attachment.url)
-}
-
-function getAttachmentPreviewAriaLabel(attachment: RenderableFeedbackAttachment) {
-  return t({
-    en: `Preview image: ${attachment.name}`,
-    zh: `预览图片：${attachment.name}`
-  })
-}
-
-function getAttachmentAlt(attachment: RenderableFeedbackAttachment) {
-  return t({
-    en: `Submitted feedback image: ${attachment.name}`,
-    zh: `反馈提交图片：${attachment.name}`
-  })
-}
-
-function openAttachmentPreview(
-  attachment: RenderableFeedbackAttachment,
-  attachments: RenderableFeedbackAttachment[] = selectedNotificationImageAttachments.value
-) {
-  previewAttachments.value = attachments.length > 0 ? attachments : [attachment]
-  previewPage.value = Math.max(1, previewAttachments.value.findIndex((item) => item.id === attachment.id) + 1)
-  selectedPreviewAttachment.value = previewAttachments.value[previewPage.value - 1] ?? attachment
-}
-
-function handlePreviewPageChange(page: number) {
-  previewPage.value = page
-  selectedPreviewAttachment.value = previewAttachments.value[page - 1] ?? null
-}
-
-function closeAttachmentPreview() {
-  selectedPreviewAttachment.value = null
-  previewAttachments.value = []
-  previewPage.value = 1
-}
-
-function handlePreviewVisibleChange(visible: boolean) {
-  if (!visible) closeAttachmentPreview()
 }
 </script>
 
@@ -360,7 +292,7 @@ function handlePreviewVisibleChange(visible: boolean) {
           @click="activeNotificationTab = 'feedback'"
         >
           <span class="relative inline-block">
-            {{ $t({ en: 'Messages', zh: '消息通知' }) }}
+            {{ $t({ en: 'Messages', zh: '消息' }) }}
             <span
               v-if="activeNotificationTab === 'feedback'"
               class="absolute inset-x-0 -bottom-[13px] h-0.5 bg-primary-main"
@@ -380,7 +312,7 @@ function handlePreviewVisibleChange(visible: boolean) {
           @click="activeNotificationTab = 'system'"
         >
           <span class="relative inline-block">
-            {{ $t({ en: 'System messages', zh: '系统消息' }) }}
+            {{ $t({ en: 'Announcements', zh: '公告' }) }}
             <span
               v-if="activeNotificationTab === 'system'"
               class="absolute inset-x-0 -bottom-[13px] h-0.5 bg-primary-main"
@@ -412,8 +344,8 @@ function handlePreviewVisibleChange(visible: boolean) {
             v-for="notification in activeNotifications"
             :key="notification.id"
             v-radar="{
-              name: 'Support notification',
-              desc: notification.readAt == null ? 'Unread reply from XBuilder Support' : 'Reply from XBuilder Support'
+              name: 'Notification',
+              desc: notification.readAt == null ? 'Unread notification' : 'Notification'
             }"
             class="group relative block w-full cursor-pointer rounded-lg border-0 bg-white p-3 text-left transition-colors hover:bg-grey-300 focus-visible:relative focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-primary-main"
             :class="notification.readAt == null ? 'bg-white' : 'bg-white'"
@@ -431,59 +363,35 @@ function handlePreviewVisibleChange(visible: boolean) {
                     class="mt-0.5 size-2 shrink-0 rounded-full bg-[#ef4149]"
                   ></span>
                 </span>
-                <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
-                  formatTime(notification.createdAt)
-                }}</time>
+                <time
+                  class="shrink-0 text-[12px] leading-[18px] text-grey-700"
+                  :datetime="notification.createdAt"
+                  :title="formatExactTime(notification.createdAt)"
+                  >{{ formatTime(notification.createdAt) }}</time
+                >
               </div>
-              <p class="mt-1 line-clamp-1 text-[12px] leading-[18px] text-grey-800">{{ notification.body }}</p>
+              <NotificationMarkdown class="mt-1" compact :value="notification.content" />
             </div>
           </button>
         </div>
       </div>
     </div>
 
-    <div v-else-if="selectedSystemNotification != null" class="flex min-h-0 flex-1 flex-col">
+    <div v-else class="flex min-h-0 flex-1 flex-col">
       <div class="flex shrink-0 items-center gap-2 border-b border-grey-300 px-4 py-3">
         <UIButton
+          v-radar="{ name: 'Back to notifications', desc: 'Return to the notification list' }"
           :aria-label="$t({ en: 'Back to notifications', zh: '返回通知' })"
           type="white"
           shape="square"
           size="medium"
           @click="backToNotificationList"
         >
-          <template #icon><img class="size-4" :src="notificationBackIcon" alt="" aria-hidden="true" /></template>
+          <template #icon>
+            <img class="size-4" :src="notificationBackIcon" alt="" aria-hidden="true" />
+          </template>
         </UIButton>
-        <h2 :id="notificationTitleID" class="truncate text-base font-normal text-title">
-          {{ selectedSystemNotification.title }}
-        </h2>
-      </div>
-      <article class="min-h-0 flex-1 overflow-y-auto p-6">
-        <div class="flex items-start justify-between gap-3">
-          <p class="text-[14px] text-grey-700">{{ $t({ en: 'System notice', zh: '系统消息' }) }}</p>
-          <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
-            formatTime(selectedSystemNotification.createdAt)
-          }}</time>
-        </div>
-        <p class="mt-4 whitespace-pre-wrap text-[14px] leading-[22px] text-grey-1000">
-          {{ selectedSystemNotification.body }}
-        </p>
-      </article>
-    </div>
-    <div v-else class="flex min-h-0 flex-1 flex-col">
-      <div class="flex shrink-0 items-center gap-2 border-b border-grey-300 px-4 py-3">
-        <div class="flex min-w-0 items-center gap-2">
-          <UIButton
-            v-radar="{ name: 'Back to notifications', desc: 'Return to the notification list' }"
-            :aria-label="$t({ en: 'Back to notifications', zh: '返回通知' })"
-            type="white"
-            shape="square"
-            size="medium"
-            @click="backToNotificationList"
-          >
-            <template #icon>
-              <img class="size-4" :src="notificationBackIcon" alt="" aria-hidden="true" />
-            </template>
-          </UIButton>
+        <div class="min-w-0 flex-1">
           <h2
             :id="notificationTitleID"
             class="truncate text-base font-normal text-title"
@@ -494,94 +402,14 @@ function handlePreviewVisibleChange(visible: boolean) {
         </div>
       </div>
 
-      <article class="min-h-0 flex-1 overflow-y-auto p-3">
-        <section class="rounded-lg bg-white px-3">
-          <div class="flex items-start justify-between gap-3">
-            <p class="text-[14px] font-normal leading-[22px] text-grey-700">
-              {{ $t({ en: 'Administrator reply', zh: '管理员回复' }) }}
-            </p>
-            <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
-              formatTime(selectedNotification.createdAt)
-            }}</time>
-          </div>
-          <p class="mt-3 whitespace-pre-wrap text-[14px] font-normal leading-[22px] text-grey-1000">
-            {{ selectedNotification.body }}
-          </p>
-          <UIButton
-            v-if="selectedNotificationReplyAttachments.length > 0"
-            type="white"
-            size="small"
-            class="mt-3"
-            @click="
-              openAttachmentPreview(selectedNotificationReplyAttachments[0], selectedNotificationReplyAttachments)
-            "
-          >
-            <template #icon
-              ><img class="size-[13px]" :src="notificationAttachmentIcon" alt="" aria-hidden="true"
-            /></template>
-            {{ $t({ en: 'View attachment', zh: '查看附件' }) }}
-          </UIButton>
-        </section>
-
-        <section class="relative mt-5 flex gap-2 px-3">
-          <div class="flex shrink-0 items-start justify-center pt-1">
-            <img class="size-4" :src="notificationAssociationArrow" alt="" aria-hidden="true" />
-          </div>
-          <div class="min-w-0 flex-1 rounded-lg bg-grey-300 p-3">
-            <div class="flex items-start justify-between gap-3">
-              <p class="text-[13px] font-normal leading-5 text-title">
-                {{
-                  selectedNotificationFeedback?.title ??
-                  $t({ en: 'The original feedback is not available.', zh: '原始反馈暂不可用。' })
-                }}
-              </p>
-              <time class="shrink-0 text-[12px] leading-[18px] text-grey-700">{{
-                formatTime(selectedNotificationFeedback?.createdAt ?? selectedNotification.createdAt)
-              }}</time>
-            </div>
-            <p
-              v-if="selectedNotificationFeedback?.description != null"
-              class="mt-1 whitespace-pre-wrap text-[12px] leading-[18px] text-grey-900"
-            >
-              {{ selectedNotificationFeedback.description }}
-            </p>
-            <UIButton
-              v-if="selectedNotificationImageAttachments.length > 0"
-              type="white"
-              size="small"
-              class="mt-2"
-              @click="openAttachmentPreview(selectedNotificationImageAttachments[0])"
-            >
-              <template #icon
-                ><img class="size-[13px]" :src="notificationAttachmentIcon" alt="" aria-hidden="true"
-              /></template>
-              {{ $t({ en: 'View attachment', zh: '查看附件' }) }}
-            </UIButton>
-          </div>
-        </section>
-
-        <template v-if="selectedNotificationImageAttachments.length > 1">
-          <div class="mt-5 flex items-center justify-between gap-3">
-            <h3 class="text-sm font-normal text-title">
-              {{ $t({ en: 'Images you submitted', zh: '你提交的图片' }) }}
-            </h3>
-            <span class="text-xs text-grey-800">{{
-              formatImageCount(selectedNotificationImageAttachments.length)
-            }}</span>
-          </div>
-          <div class="mt-3 grid grid-cols-1 gap-3">
-            <button
-              v-for="attachment in selectedNotificationImageAttachments.slice(1)"
-              :key="attachment.id"
-              type="button"
-              class="block w-full cursor-zoom-in overflow-hidden rounded-lg border border-grey-300 bg-grey-100 text-left focus-visible:outline-2 focus-visible:outline-primary-main"
-              :aria-label="getAttachmentPreviewAriaLabel(attachment)"
-              @click="openAttachmentPreview(attachment)"
-            >
-              <img class="h-32 w-full object-contain" :src="attachment.url" :alt="getAttachmentAlt(attachment)" />
-            </button>
-          </div>
-        </template>
+      <article class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        <NotificationMarkdown
+          :value="selectedNotification.content"
+          :time="formatTime(selectedNotification.createdAt)"
+          :time-title="formatExactTime(selectedNotification.createdAt)"
+          :time-value="selectedNotification.createdAt"
+          @preview="openAttachmentPreview"
+        />
       </article>
     </div>
   </UIModal>
@@ -591,35 +419,26 @@ function handlePreviewVisibleChange(visible: boolean) {
     size="large"
     class="w-[min(1040px,calc(100vw-2rem))]"
     :aria-labelledby="imagePreviewTitleID"
-    :radar="{ name: 'Feedback image preview', desc: 'Previewing user-submitted feedback image' }"
+    :radar="{ name: 'Notification attachment preview', desc: 'Previewing an image attached to a notification' }"
     @update:visible="handlePreviewVisibleChange"
   >
     <div v-if="selectedPreviewAttachment != null" class="flex max-h-[calc(100vh-2rem)] min-h-[360px] flex-col">
       <div class="flex items-center justify-between gap-3 border-b border-grey-400 px-6 py-3.5">
-        <div class="min-w-0">
-          <h2 :id="imagePreviewTitleID" class="truncate text-sm font-normal leading-[22px] text-title">
-            {{ selectedPreviewAttachment.name }}
-          </h2>
-        </div>
+        <h2 :id="imagePreviewTitleID" class="min-w-0 truncate text-sm font-normal leading-[22px] text-title">
+          {{ selectedPreviewAttachment.name }}
+        </h2>
         <UIModalClose
           :aria-label="$t({ en: 'Close image preview', zh: '关闭图片预览' })"
           @click="closeAttachmentPreview"
         />
       </div>
-      <div class="min-h-0 flex-1 overflow-y-auto bg-grey-100 p-6">
+      <div class="min-h-0 flex flex-1 items-center justify-center overflow-y-auto bg-grey-100 p-6">
         <img
-          class="block h-auto max-h-[calc(100vh-10rem)] w-full max-w-none rounded-lg object-contain"
+          class="block max-h-[calc(100vh-10rem)] max-w-full rounded-lg object-contain"
           :src="selectedPreviewAttachment.url"
-          :alt="getAttachmentAlt(selectedPreviewAttachment)"
+          :alt="selectedPreviewAttachment.name"
         />
       </div>
-      <UIPagination
-        v-if="previewAttachments.length > 1"
-        :current="previewPage"
-        :total="previewAttachments.length"
-        class="justify-center px-2 pb-10 pt-2.5"
-        @update:current="handlePreviewPageChange"
-      />
     </div>
   </UIModal>
 </template>

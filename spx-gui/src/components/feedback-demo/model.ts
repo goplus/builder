@@ -116,7 +116,7 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
       userID: feedback.userID,
       feedbackID: feedback.id,
       title: '支持团队回复了你的反馈',
-      body: reply,
+      content: reply,
       createdAt: repliedAt,
       readAt: null
     })

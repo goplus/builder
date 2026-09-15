@@ -116,7 +116,7 @@ describe('feedback demo model', () => {
     })
     expect(model.data.notifications[0]).toMatchObject({
       feedbackID: newFeedback.id,
-      body: 'We fixed this for you.',
+      content: 'We fixed this for you.',
       readAt: null
     })
     expect(model.unreadNotificationCount.value).toBe(initialUnreadCount + 1)
@@ -190,5 +190,18 @@ describe('feedback demo model', () => {
     model.replyToFeedback(feedback.id, 'Thanks, please check the attached screenshot.')
 
     expect(model.data.notifications[0].title).toBe('支持团队回复了你的反馈')
+  })
+
+  it('keeps feedback notification content as one standard Markdown document', () => {
+    const model = createFeedbackDemoModel()
+    const feedbackReplies = model.data.notifications.filter((notification) => notification.feedbackID !== '')
+
+    expect(feedbackReplies).toHaveLength(3)
+    for (const notification of feedbackReplies) {
+      expect(notification.content).toMatch(/^> /m)
+      expect(notification.content).toMatch(/\[查看附件：[^\]]+\]\([^)]+\)/)
+      expect(notification.content).not.toContain('![')
+      expect(notification.content).not.toContain('<notification-attachment')
+    }
   })
 })
