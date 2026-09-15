@@ -5,6 +5,7 @@ import { mergeSignals } from '@/utils/disposable'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
+import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import type { ProjectData } from '@/apis/project'
 import {
   isSupportedProjectType,
@@ -20,8 +21,8 @@ import {
   getFileObject,
   type UploadSession as RawUploadSession
 } from '@/apis/file'
-import { DefaultException, TimeoutException } from '@/utils/exception'
-import { getUphostsByRegion } from '@/utils/kodo'
+import { capture, DefaultException, TimeoutException } from '@/utils/exception'
+import { calculateQiniuEtag, getUphostsByRegion } from '@/utils/kodo'
 import type { Metadata, PartialMetadata, ProjectSerialized } from '../project'
 import { File, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
@@ -334,39 +335,17 @@ type KodoUploadRes = {
 }
 
 const minReusableKodoFileSize = 1024 * 1024
-const qiniuEtagBlockSize = 4 * 1024 * 1024
-const qiniuSingleBlockEtagPrefix = 0x16
-const qiniuMultiBlockEtagPrefix = 0x96
 
-async function calculateQiniuEtag(data: ArrayBuffer) {
-  const blockHashes = await Promise.all(
-    Array.from({ length: Math.max(1, Math.ceil(data.byteLength / qiniuEtagBlockSize)) }, (_, index) => {
-      const start = index * qiniuEtagBlockSize
-      return crypto.subtle.digest('SHA-1', data.slice(start, start + qiniuEtagBlockSize))
-    })
-  )
-  const blockHashData = new Uint8Array(blockHashes.length * 20)
-  blockHashes.forEach((blockHash, index) => blockHashData.set(new Uint8Array(blockHash), index * 20))
-  const hash =
-    blockHashes.length === 1
-      ? new Uint8Array(blockHashes[0]!)
-      : new Uint8Array(await crypto.subtle.digest('SHA-1', blockHashData))
-  const etag = new Uint8Array(hash.byteLength + 1)
-  etag[0] = blockHashes.length === 1 ? qiniuSingleBlockEtagPrefix : qiniuMultiBlockEtagPrefix
-  etag.set(hash, 1)
-  return btoa(String.fromCharCode(...etag))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '')
-}
-
-async function getReusableKodoUrl(file: File, data: ArrayBuffer, signal?: AbortSignal): Promise<UniversalUrl | null> {
+async function getExistingKodoUrl(file: File, data: ArrayBuffer, signal?: AbortSignal): Promise<UniversalUrl | null> {
   const hash = await calculateQiniuEtag(data)
   signal?.throwIfAborted()
   try {
     return (await getFileObject(hash, data.byteLength, file.name, signal)).url
-  } catch {
+  } catch (err) {
     signal?.throwIfAborted()
+    if (!(err instanceof ApiException && err.code === ApiExceptionCode.errorNotFound)) {
+      capture(err, 'Failed to get existing Kodo file object')
+    }
     return null
   }
 }
@@ -376,8 +355,8 @@ const saveToKodoController = new ConcurrencyLimitController(20)
 const saveToKodo = (file: File, signal?: AbortSignal) =>
   saveToKodoController.run<UniversalUrl>(async () => {
     const ab = await file.arrayBuffer(signal)
-    const reusableUrl = ab.byteLength >= minReusableKodoFileSize ? await getReusableKodoUrl(file, ab, signal) : null
-    if (reusableUrl != null) return reusableUrl
+    const existingUrl = ab.byteLength >= minReusableKodoFileSize ? await getExistingKodoUrl(file, ab, signal) : null
+    if (existingUrl != null) return existingUrl
     const { token, maxSize, bucket, region } = await getUploadSessionWithCache()
     signal?.throwIfAborted()
     if (ab.byteLength > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)

@@ -3364,10 +3364,10 @@ paths:
       tags:
         - Files
       summary: Get a content-addressed file object
-      description: Get an existing Kodo file object by its Qiniu ETag, size, and original filename.
+      description: Get an existing Kodo file object by its hash (Qiniu ETag), size, and original filename.
       parameters:
         - name: hash
-          description: Qiniu ETag of the file content.
+          description: Hash of the file content in Qiniu ETag format.
           in: path
           required: true
           schema:
@@ -3385,18 +3385,15 @@ paths:
             type: integer
             format: int64
             minimum: 0
-            maximum: 26214400
             examples:
               - 4194305
         - name: filename
-          description: Original filename used to determine the object-key extension.
+          description: Original filename of the file.
           in: query
           required: true
           schema:
             type: string
             minLength: 1
-            maxLength: 255
-            pattern: "^[^/\\\\]+$"
             examples:
               - basic-chinese.ttf
       responses:
