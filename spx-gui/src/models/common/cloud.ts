@@ -334,7 +334,7 @@ type KodoUploadRes = {
   hash: string
 }
 
-// Minimum size for checking an existing Kodo object (1 MiB); for smaller files, hashing and querying cost more than uploading.
+// Minimum size for checking an existing Kodo object (1 MiB); for smaller files, the added hashing and query may not justify the upload saved on a hit.
 const minFileSizeForExistingCheck = 1024 * 1024
 
 async function getExistingKodoUrl(file: File, data: ArrayBuffer, signal?: AbortSignal): Promise<UniversalUrl | null> {
