@@ -4,7 +4,7 @@
     <template #left>
       <NavbarDropdown
         :trigger-radar="{
-          name: 'Project menu',
+          name: 'project-menu',
           desc: 'Hover to see project options (create/open/publish/unpublish/remove project, import/export project file, import Scratch project file, import assets from Scratch, etc.)'
         }"
       >
@@ -99,7 +99,7 @@
     </template>
     <template #right>
       <UIButtonGroup
-        v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
+        v-radar="{ name: 'editor-mode-menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
         type="icon"
         variant="secondary"
@@ -110,7 +110,7 @@
           <template #trigger>
             <UIButtonGroupItem
               v-radar="{
-                name: 'Default mode',
+                name: 'default-mode',
                 desc: 'Editor for defining the behavior and resources of independent entities (Sprites, Sounds, Stage). It features code editing, internal resource (Costumes, Animations, Backdrops, Widgets) management, and game running/debugging'
               }"
               :value="EditMode.Default"
@@ -124,7 +124,7 @@
           <template #trigger>
             <UIButtonGroupItem
               v-radar="{
-                name: 'Map edit mode',
+                name: 'map-edit-mode',
                 desc: 'Map-centric editor for the game\'s spatial arrangement. It features sprite placement on the stage and global configuration (map size, physics, layer sorting, etc.)'
               }"
               :value="EditMode.Map"

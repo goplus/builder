@@ -2,20 +2,20 @@
   <EditorHeader>
     <UITabs
       v-radar="{
-        name: 'Sprite editor tabs',
+        name: 'sprite-editor-tabs',
         desc: 'Navigation tabs for switching between different sprite editing views'
       }"
       :value="state.selected.type"
       @update:value="(type) => state.select(type as SelectedType)"
     >
-      <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">{{
+      <UITab v-radar="{ name: 'code-tab', desc: 'Click to switch to code editing view' }" value="code">{{
         $t({ en: 'Code', zh: '代码' })
       }}</UITab>
-      <UITab v-radar="{ name: 'Costumes tab', desc: 'Click to switch to costumes management view' }" value="costumes">{{
+      <UITab v-radar="{ name: 'costumes-tab', desc: 'Click to switch to costumes management view' }" value="costumes">{{
         $t({ en: 'Costumes', zh: '造型' })
       }}</UITab>
       <UITab
-        v-radar="{ name: 'Animations tab', desc: 'Click to switch to animations management view' }"
+        v-radar="{ name: 'animations-tab', desc: 'Click to switch to animations management view' }"
         value="animations"
         >{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab
       >
@@ -28,7 +28,7 @@
     v-show="state.selected.type === 'code'"
     ref="codeEditor"
     v-radar="{
-      name: 'Code editor',
+      name: 'code-editor',
       desc: 'Code editor for editing code of current sprite',
       visible: state.selected.type === 'code'
     }"

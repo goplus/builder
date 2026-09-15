@@ -190,13 +190,13 @@ const handleSubmit = useMessageHandle(
 
 <template>
   <main
-    v-radar="{ name: 'Sprite generation content phase', desc: 'Sprite costume and animation generation' }"
+    v-radar="{ name: 'sprite-generation-content-phase', desc: 'Sprite costume and animation generation' }"
     class="h-full flex flex-col items-stretch"
   >
     <div class="flex-[1_1_0] flex flex-row items-stretch">
       <aside class="w-102 flex-none bg-grey-100 pt-4 border-r border-grey-400 flex flex-col justify-between">
         <div class="flex-[1_1_0] overflow-y-auto px-4 flex flex-col gap-6">
-          <ListItemWrapper v-radar="{ name: 'Costume list', desc: 'List of costumes' }" @add="handleAddCostume">
+          <ListItemWrapper v-radar="{ name: 'costume-list', desc: 'List of costumes' }" @add="handleAddCostume">
             <template #title>{{ $t({ zh: '造型', en: 'Costume' }) }}</template>
             <CostumeGenItem
               v-for="c in gen.costumes"
@@ -211,7 +211,7 @@ const handleSubmit = useMessageHandle(
             />
           </ListItemWrapper>
 
-          <ListItemWrapper v-radar="{ name: 'Animation list', desc: 'List of animations' }" @add="handleAddAnimation">
+          <ListItemWrapper v-radar="{ name: 'animation-list', desc: 'List of animations' }" @add="handleAddAnimation">
             <template #title>{{ $t({ zh: '动画', en: 'Animation' }) }}</template>
             <AnimationGenItem
               v-for="a in gen.animations"
@@ -246,7 +246,7 @@ const handleSubmit = useMessageHandle(
         <template #trigger>
           <UIButton
             v-radar="{
-              name: 'Minimize',
+              name: 'minimize',
               desc: 'Click to minimize the sprite generation modal'
             }"
             type="secondary"
@@ -259,7 +259,7 @@ const handleSubmit = useMessageHandle(
       </UITooltip>
       <!-- TODO: Consider adding a "cancel" button here to cancel the generation process -->
       <UIButton
-        v-radar="{ name: 'Use', desc: 'Click to finish and use the generated sprite in the project' }"
+        v-radar="{ name: 'use', desc: 'Click to finish and use the generated sprite in the project' }"
         type="primary"
         size="large"
         :loading="handleSubmit.isLoading.value"

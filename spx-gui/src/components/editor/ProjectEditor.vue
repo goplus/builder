@@ -3,7 +3,10 @@
   <!-- Using overflow-visible class to avoid cutting dropdown menu of CodeTextEditor (monaco) -->
   <UICard
     v-show="isPreviewMode"
-    v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
+    v-radar="{
+      name: selected.type === 'sprite' ? 'sprite-editor' : selected.type === 'stage' ? 'stage-editor' : 'empty-editor',
+      desc: `Main editor panel for editing ${selected.type}`
+    }"
     class="relative flex-[1_1_0] min-w-0 flex flex-col overflow-visible!"
   >
     <!--

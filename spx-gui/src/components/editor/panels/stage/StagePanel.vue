@@ -6,7 +6,7 @@
     <main class="flex-[1_1_0] flex flex-col items-center">
       <div class="flex-none p-3">
         <div
-          v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
+          v-radar="{ name: 'stage-overview', desc: 'Overview of the stage, click to view stage details' }"
           class="relative h-14 w-14 cursor-pointer flex items-center justify-center rounded-md border border-grey-400 transition-colors"
           :class="active ? 'p-0 border-2 border-primary-main bg-primary-200' : 'p-0.5 hover:bg-grey-300'"
           @click="activate"
@@ -19,7 +19,7 @@
         <div class="flex flex-col items-start gap-2">
           <button
             v-radar="{
-              name: 'Backdrops quick entry',
+              name: 'backdrops-quick-entry',
               desc: 'Quick entry to open backdrops management tab in stage editor'
             }"
             :class="quickEntryClass"
@@ -31,7 +31,7 @@
             <span>{{ $t({ en: 'Backdrops', zh: '背景' }) }}</span>
           </button>
           <button
-            v-radar="{ name: 'Sounds quick entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
+            v-radar="{ name: 'sounds-quick-entry', desc: 'Quick entry to open sounds management tab in stage editor' }"
             :class="quickEntryClass"
             type="button"
             @click="openTab('sounds')"
@@ -42,7 +42,7 @@
           </button>
           <button
             v-radar="{
-              name: 'Widgets quick entry',
+              name: 'widgets-quick-entry',
               desc: 'Quick entry to open widgets management tab in stage editor'
             }"
             :class="quickEntryClass"

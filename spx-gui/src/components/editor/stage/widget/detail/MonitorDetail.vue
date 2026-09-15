@@ -12,7 +12,7 @@
           <p class="flex items-center gap-2 break-keep">
             {{ $t({ en: 'Label', zh: '标签' }) }}
             <UITextInput
-              v-radar="{ name: 'Label input', desc: 'Input field for monitor label' }"
+              v-radar="{ name: 'label-input', desc: 'Input field for monitor label' }"
               class="w-45"
               :value="monitor.label"
               @update:value="handleLabelUpdate"
@@ -23,7 +23,7 @@
           <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Target', zh: '对象' }) }}
             <UISelect
-              v-radar="{ name: 'Target select', desc: 'Select target for monitor value' }"
+              v-radar="{ name: 'target-select', desc: 'Select target for monitor value' }"
               class="basis-45 shrink"
               :value="monitor.target"
               @update:value="handleTargetUpdate"
@@ -37,7 +37,7 @@
           <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Value', zh: '值' }) }}
             <UISelect
-              v-radar="{ name: 'Property select', desc: 'Select property for monitor value' }"
+              v-radar="{ name: 'property-select', desc: 'Select property for monitor value' }"
               class="basis-45 shrink"
               :value="monitor.variableName || null"
               :placeholder="$t({ en: 'Select property', zh: '选择属性' })"
@@ -55,7 +55,7 @@
           <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Position', zh: '位置' }) }}
             <UINumberInput
-              v-radar="{ name: 'X position input', desc: 'Input field for monitor X position' }"
+              v-radar="{ name: 'x-position-input', desc: 'Input field for monitor X position' }"
               class="basis-45 shrink"
               :value="monitor.x"
               @update:value="handleXUpdate"
@@ -63,7 +63,7 @@
               <template #prefix>X</template>
             </UINumberInput>
             <UINumberInput
-              v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
+              v-radar="{ name: 'y-position-input', desc: 'Input field for monitor Y position' }"
               class="basis-45 shrink"
               :value="monitor.y"
               @update:value="handleYUpdate"
@@ -76,7 +76,7 @@
           <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Size', zh: '大小' }) }}
             <UINumberInput
-              v-radar="{ name: 'Size input', desc: 'Input field for monitor size' }"
+              v-radar="{ name: 'size-input', desc: 'Input field for monitor size' }"
               class="basis-45 shrink"
               :min="0"
               :value="sizePercent"
@@ -90,7 +90,7 @@
           <p class="flex-1 flex items-center gap-2 break-keep">
             {{ $t({ en: 'Show', zh: '显示' }) }}
             <UIButtonGroup
-              v-radar="{ name: 'Visibility control', desc: 'Control to set monitor visibility' }"
+              v-radar="{ name: 'visibility-control', desc: 'Control to set monitor visibility' }"
               :value="monitor.visible ? 'visible' : 'hidden'"
               @update:value="(v) => handleVisibleUpdate(v === 'visible')"
             >

@@ -58,7 +58,7 @@ function handleConfirmCancel() {
   <!-- Release selection step -->
   <UIFormModal
     v-if="!showConfirmDialog"
-    :radar="{ name: 'Release selector modal', desc: 'Modal for selecting a historical release to checkout' }"
+    :radar="{ name: 'release-selector-modal', desc: 'Modal for selecting a historical release to checkout' }"
     :title="title"
     :visible="visible"
     :style="{ width: '560px' }"
@@ -94,7 +94,7 @@ function handleConfirmCancel() {
   <UIFormModal
     v-else
     :radar="{
-      name: 'Release checkout confirm modal',
+      name: 'release-checkout-confirm-modal',
       desc: 'Modal for confirming checkout action after selecting a release'
     }"
     :title="$t({ en: 'Checkout release', zh: '检出版本' })"

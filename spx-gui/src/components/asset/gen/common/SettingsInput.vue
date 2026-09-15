@@ -115,7 +115,7 @@ provide(settingsInputCtxKey, ctx)
           <!-- TODO: Standardize this button variant once the design system specification is finalized. -->
           <button
             v-else-if="enrichShow"
-            v-radar="{ name: 'Enrich details', desc: 'Click to enrich the description' }"
+            v-radar="{ name: 'enrich-details', desc: 'Click to enrich the description' }"
             class="enrich-btn"
             @mousedown.prevent
             @click="emit('enrich')"
@@ -127,7 +127,7 @@ provide(settingsInputCtxKey, ctx)
         </div>
       </div>
       <textarea
-        v-radar="{ name: 'Description', desc: 'Description input field for generation' }"
+        v-radar="{ name: 'description', desc: 'Description input field for generation' }"
         class="description"
         :placeholder="
           !adopted && descriptionPlaceholder != null && descriptionPlaceholder.length > 0

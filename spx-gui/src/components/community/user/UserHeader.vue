@@ -89,7 +89,7 @@ const handleEditProfile = useMessageHandle(
       <div class="flex-[0_0_110px] flex justify-end">
         <UIButton
           v-if="isSignedInUser"
-          v-radar="{ name: 'Edit profile button', desc: 'Click to edit user profile' }"
+          v-radar="{ name: 'edit-profile-button', desc: 'Click to edit user profile' }"
           @click="handleEditProfile"
         >
           {{ $t({ en: 'Edit profile', zh: '编辑' }) }}

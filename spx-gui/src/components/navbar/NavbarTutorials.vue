@@ -2,7 +2,7 @@
   <UITooltip placement="bottom">
     <template #trigger>
       <router-link
-        v-radar="{ name: 'Navbar tutorials link', desc: 'Click to open the tutorials page' }"
+        v-radar="{ name: 'navbar-tutorials-link', desc: 'Click to open the tutorials page' }"
         class="h-full cursor-pointer flex items-center px-3 hover:bg-grey-400"
         to="/tutorials"
       >

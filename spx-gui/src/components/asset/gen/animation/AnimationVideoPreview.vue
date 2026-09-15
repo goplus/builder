@@ -362,7 +362,7 @@ function formatTime(timeInMs: number) {
 
 <template>
   <div
-    v-radar="{ name: 'Animation video preview', desc: 'Preview of the animation video' }"
+    v-radar="{ name: 'animation-video-preview', desc: 'Preview of the animation video' }"
     class="animation-video-preview"
   >
     <div class="preview-area">
@@ -373,7 +373,7 @@ function formatTime(timeInMs: number) {
     </GenLoading>
     <div v-if="videoDurationRef != null" class="controls">
       <PlayControl
-        v-radar="{ name: 'Play button', desc: 'Toggle playback of animation video preview' }"
+        v-radar="{ name: 'play-button', desc: 'Toggle playback of animation video preview' }"
         :playing="isPlaying ? { progress } : null"
         :progress-interval="0"
         :play-handler="play"
@@ -389,13 +389,13 @@ function formatTime(timeInMs: number) {
           >
             <div class="segment" :style="segmentStyle" @pointerdown="handleSegmentPointerDown">
               <button
-                v-radar="{ name: 'Start marker', desc: 'Drag to adjust start time of extracted segment' }"
+                v-radar="{ name: 'start-marker', desc: 'Drag to adjust start time of extracted segment' }"
                 class="segment-marker left"
                 type="button"
                 @pointerdown="handleDragStart('start', $event)"
               ></button>
               <button
-                v-radar="{ name: 'End marker', desc: 'Drag to adjust end time of extracted segment' }"
+                v-radar="{ name: 'end-marker', desc: 'Drag to adjust end time of extracted segment' }"
                 class="segment-marker right"
                 type="button"
                 @pointerdown="handleDragStart('end', $event)"

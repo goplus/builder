@@ -33,9 +33,8 @@ const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 
 const radarNodeMeta = computed(() => {
-  const name = `Animation item "${props.animation.name}"`
   const desc = props.selectable ? 'Click to select the animation and view more options' : ''
-  return { name, desc }
+  return { name: 'animation-item', desc, attrs: { name: props.animation.name } }
 })
 
 const { fn: handleDuplicate } = useMessageHandle(
@@ -92,11 +91,11 @@ const { fn: handleRename } = useMessageHandle(() => renameAnimation(props.animat
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <DuplicateMenuItem
-        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the animation' }"
+        v-radar="{ name: 'duplicate', desc: 'Click to duplicate the animation' }"
         @click="handleDuplicate"
       />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="handleRename" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="handleRemove" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the animation' }" @click="handleRename" />
+      <RemoveMenuItem v-radar="{ name: 'remove', desc: 'Click to remove the animation' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorSpriteItem>
 </template>

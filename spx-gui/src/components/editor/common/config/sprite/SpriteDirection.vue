@@ -63,7 +63,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
 <template>
   <div class="flex items-center gap-3">
     <UIButtonGroup
-      v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }"
+      v-radar="{ name: 'rotation-style-control', desc: 'Control to set sprite rotation style' }"
       :value="sprite.rotationStyle"
       @update:value="(v) => handleRotationStyleUpdate(v as RotationStyle)"
     >
@@ -102,7 +102,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
     >
       <template #trigger>
         <UINumberInput
-          v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
+          v-radar="{ name: 'heading-input', desc: 'Input to set sprite heading angle' }"
           class="flex-1 basis-30"
           :disabled="sprite.rotationStyle === RotationStyle.None"
           :min="-180"
@@ -120,7 +120,7 @@ const handleHeadingUpdate = wrapUpdateHandler(
     </UIDropdown>
     <UIButtonGroup
       v-show="sprite.rotationStyle === RotationStyle.LeftRight"
-      v-radar="{ name: 'Direction control', desc: 'Control to set sprite left or right direction' }"
+      v-radar="{ name: 'direction-control', desc: 'Control to set sprite left or right direction' }"
       type="text"
       :value="headingToLeftRight(sprite.heading)"
       @update:value="(v) => handleHeadingUpdate(leftRightToHeading(v as LeftRight))"

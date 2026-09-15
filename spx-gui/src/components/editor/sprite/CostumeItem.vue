@@ -27,9 +27,8 @@ const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.costume.img)
 
 const radarNodeMeta = computed(() => {
-  const name = `Costume item "${props.costume.name}"`
   const desc = props.selectable ? 'Click to select the costume and view more options' : ''
-  return { name, desc }
+  return { name: 'costume-item', desc, attrs: { name: props.costume.name } }
 })
 
 const parent = computed(() => {
@@ -95,12 +94,12 @@ const { fn: handleRename } = useMessageHandle(() => renameCostume(props.costume)
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <DuplicateMenuItem
-        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the costume' }"
+        v-radar="{ name: 'duplicate', desc: 'Click to duplicate the costume' }"
         @click="handleDuplicate"
       />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="handleRename" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the costume' }" @click="handleRename" />
       <RemoveMenuItem
-        v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"
+        v-radar="{ name: 'remove', desc: 'Click to remove the costume' }"
         :disabled="!removable"
         @click="handleRemove"
       />

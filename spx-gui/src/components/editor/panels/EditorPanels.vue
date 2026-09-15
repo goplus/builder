@@ -1,14 +1,14 @@
 <template>
   <div v-show="running.mode !== 'debug'" class="flex-[1_1_0] flex gap-xl">
     <UICard
-      v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
+      v-radar="{ name: 'sprites-panel', desc: 'Panel containing sprites for the project' }"
       class="flex-[1_1_0] min-w-0 flex"
     >
       <SpritesPanel />
     </UICard>
     <UICard
       v-radar="{
-        name: 'Stage panel',
+        name: 'stage-panel',
         desc: 'Panel for stage of the project, with quick entries to widgets, sounds and backdrops tabs'
       }"
       class="flex-none"
@@ -19,7 +19,7 @@
   <ConsolePanel
     v-show="running.mode === 'debug'"
     v-radar="{
-      name: 'Console panel',
+      name: 'console-panel',
       desc: 'Console panel showing runtime output and errors',
       visible: running.mode === 'debug'
     }"

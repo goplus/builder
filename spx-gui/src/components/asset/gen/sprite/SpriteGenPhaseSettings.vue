@@ -82,7 +82,7 @@ const handleUseAsset = useMessageHandle(
 <template>
   <main
     v-radar="{
-      name: 'Sprite generation settings phase',
+      name: 'sprite-generation-settings-phase',
       desc: 'Generate default costume for the sprite based on settings'
     }"
     class="phase-settings h-full flex flex-col items-stretch"
@@ -145,7 +145,7 @@ const handleUseAsset = useMessageHandle(
       <UIButton
         v-if="selectedAsset != null"
         v-radar="{
-          name: 'Use',
+          name: 'use',
           desc: 'Click to use the selected library asset'
         }"
         type="primary"
@@ -157,7 +157,7 @@ const handleUseAsset = useMessageHandle(
       <UIButton
         v-else
         v-radar="{
-          name: 'Next',
+          name: 'next',
           desc: 'Click to proceed to the next phase of sprite generation (costume & animation generation)'
         }"
         type="primary"

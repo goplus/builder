@@ -6,7 +6,7 @@
     <TutorialsBanner />
 
     <CenteredWrapper
-      v-radar="{ name: 'Course series list', desc: 'Scroll to view the course series' }"
+      v-radar="{ name: 'course-series-list', desc: 'Scroll to view the course series' }"
       class="mt-10 mb-15 flex-1 flex flex-col items-center"
       :style="{ '--num-in-row': numInRow }"
     >

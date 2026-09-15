@@ -28,14 +28,14 @@ const handleHeightChange = debounce((v: number | null) => {
 <template>
   <div class="flex gap-2">
     <UINumberInput
-      v-radar="{ name: 'width input', desc: 'Input to set map width' }"
+      v-radar="{ name: 'width-input', desc: 'Input to set map width' }"
       :value="project.stage.mapWidth"
       @update:value="handleWidthChange"
     >
       <template #prefix>{{ $t({ en: 'Width', zh: '宽' }) }}</template>
     </UINumberInput>
     <UINumberInput
-      v-radar="{ name: 'height input', desc: 'Input to set map height' }"
+      v-radar="{ name: 'height-input', desc: 'Input to set map height' }"
       :value="project.stage.mapHeight"
       @update:value="handleHeightChange"
     >

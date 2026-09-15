@@ -33,7 +33,7 @@ function handleValueUpdate(value: number) {
 <template>
   <div class="h-12 w-91.5 flex items-center justify-center gap-2.5">
     <button
-      v-radar="{ name: 'Zoom out avatar button', desc: 'Click to zoom out the avatar image' }"
+      v-radar="{ name: 'zoom-out-avatar-button', desc: 'Click to zoom out the avatar image' }"
       class="h-6 w-6 flex-none flex items-center justify-center border-none bg-transparent p-0 text-grey-900 enabled:cursor-pointer enabled:hover:text-grey-1000 disabled:cursor-not-allowed disabled:text-grey-700"
       type="button"
       :disabled="props.disabled || props.value <= props.min"
@@ -55,7 +55,7 @@ function handleValueUpdate(value: number) {
     />
 
     <button
-      v-radar="{ name: 'Zoom in avatar button', desc: 'Click to zoom in the avatar image' }"
+      v-radar="{ name: 'zoom-in-avatar-button', desc: 'Click to zoom in the avatar image' }"
       class="h-6 w-6 flex-none flex items-center justify-center border-none bg-transparent p-0 text-grey-900 enabled:cursor-pointer enabled:hover:text-grey-1000 disabled:cursor-not-allowed disabled:text-grey-700"
       type="button"
       :disabled="props.disabled || props.value >= props.max"

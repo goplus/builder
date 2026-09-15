@@ -11,7 +11,7 @@
       <template #trigger>
         <ul class="flex items-center gap-1 rounded-md bg-grey-100 p-1 shadow-sm">
           <li
-            v-radar="{ name: 'Edit duration', desc: 'Click to edit animation duraion' }"
+            v-radar="{ name: 'edit-duration', desc: 'Click to edit animation duraion' }"
             :class="getSummaryItemClass('duration')"
             @click="handleSummaryClick('duration')"
           >
@@ -24,7 +24,7 @@
             </span>
           </li>
           <li
-            v-radar="{ name: 'Edit bound state', desc: 'Click to edit animation bound state' }"
+            v-radar="{ name: 'edit-bound-state', desc: 'Click to edit animation bound state' }"
             :class="getSummaryItemClass('bound-state')"
             @click="handleSummaryClick('bound-state')"
           >
@@ -39,7 +39,7 @@
           </li>
           <li
             v-if="soundEditable"
-            v-radar="{ name: 'Edit sound', desc: 'Click to edit animation sound' }"
+            v-radar="{ name: 'edit-sound', desc: 'Click to edit animation sound' }"
             :class="getSummaryItemClass('sound')"
             @click="handleSummaryClick('sound')"
           >

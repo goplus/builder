@@ -31,9 +31,8 @@ const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.backdrop.img)
 
 const radarNodeMeta = computed(() => {
-  const name = `Backdrop item "${props.backdrop.name}"`
   const desc = props.selectable ? 'Click to select the backdrop and view more options' : ''
-  return { name, desc }
+  return { name: 'backdrop-item', desc, attrs: { name: props.backdrop.name } }
 })
 
 const stageRef = computed(() => {
@@ -89,13 +88,13 @@ const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdro
   >
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <DuplicateMenuItem
-        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the backdrop' }"
+        v-radar="{ name: 'duplicate', desc: 'Click to duplicate the backdrop' }"
         @click="handleDuplicate"
       />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the backdrop' }" @click="handleRename" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the backdrop' }" @click="handleRename" />
       <SaveAssetToLibraryMenuItem :item="backdrop" />
       <RemoveMenuItem
-        v-radar="{ name: 'Remove', desc: 'Click to remove the backdrop' }"
+        v-radar="{ name: 'remove', desc: 'Click to remove the backdrop' }"
         :disabled="!removable"
         @click="handleRemove"
       />

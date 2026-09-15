@@ -1,18 +1,18 @@
 <template>
   <UIMenu>
     <UIMenuItem
-      v-radar="{ name: 'Add from local file', desc: 'Click to add sound from local file' }"
+      v-radar="{ name: 'add-from-local-file', desc: 'Click to add sound from local file' }"
       @click="handleAddFromLocalFile"
     >
       {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
     </UIMenuItem>
     <UIMenuItem
-      v-radar="{ name: 'Add from asset library', desc: 'Click to add sound from asset library' }"
+      v-radar="{ name: 'add-from-asset-library', desc: 'Click to add sound from asset library' }"
       @click="handleAddFromAssetLibrary"
     >
       {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
     </UIMenuItem>
-    <UIMenuItem v-radar="{ name: 'Record sound', desc: 'Click to record a new sound' }" @click="handleRecord">
+    <UIMenuItem v-radar="{ name: 'record-sound', desc: 'Click to record a new sound' }" @click="handleRecord">
       {{ $t({ en: 'Record', zh: '录音' }) }}
     </UIMenuItem>
   </UIMenu>

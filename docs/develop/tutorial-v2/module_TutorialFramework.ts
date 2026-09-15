@@ -136,9 +136,8 @@ export interface TutorialFrameworkHost {
    *
    * A malformed selector fails the capability call, surfacing the authoring
    * mistake during Preview. A well-formed selector that currently matches
-   * nothing — the target is filtered out, or not mounted yet — is not an
-   * error: the host retries briefly, then resolves without showing anything
-   * and logs a warning.
+   * nothing resolves without showing anything and logs a warning. Radar only
+   * resolves current UI state; any future retry policy belongs to the host.
    *
    * `options` is always fully specified here: the author-facing `reveal`
    * defaults are materialized by `createTutorialFramework` before this host

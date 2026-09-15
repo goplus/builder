@@ -102,8 +102,10 @@ class UIContextProvider implements ICopilotContextProvider {
     return this.serializeNode(
       {
         name: node.name,
+        label: node.label,
         id: node.id,
-        desc: node.desc
+        desc: node.desc,
+        ...Object.fromEntries(Object.entries(node.attrs).map(([name, value]) => [`data-${name}`, value]))
       },
       childrenStr
     )

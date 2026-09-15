@@ -27,7 +27,7 @@ const handleVisibleUpdate = wrapUpdateHandler(
 
 <template>
   <UIButtonGroup
-    v-radar="{ name: 'Visibility control', desc: 'Control to toggle sprite visibility' }"
+    v-radar="{ name: 'visibility-control', desc: 'Control to toggle sprite visibility' }"
     :value="sprite.visible ? 'visible' : 'hidden'"
     @update:value="(v) => handleVisibleUpdate(v === 'visible')"
   >

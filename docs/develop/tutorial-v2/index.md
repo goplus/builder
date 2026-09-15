@@ -37,6 +37,15 @@ The Tutorial Class Framework defines the Tutorial-project format and the XGo API
 
 See [Tutorial Class Framework](./module_TutorialFramework.ts), its [Go contract](./tutorial-class-framework.go) and an [example Tutorial Course project](./example-tutorial-course/).
 
+### Radar
+
+Radar records the semantic UI tree used by Spotlight targets. Its node names
+are stable kebab-case UI roles; dynamic instance identity belongs in
+attributes. Courses address current visible nodes with the small Radar selector
+syntax rather than session-local Radar IDs.
+
+See [Radar](./module_Radar.ts).
+
 ### SPX Project Editor
 
 SPX Project Editor provides the learner-facing project editing experience and its editor capabilities. Tutorial learning and Course Preview compose this existing editor around an embedded project model; the editor remains responsible for editing behavior and for turning a learner's work into a regular saved project.

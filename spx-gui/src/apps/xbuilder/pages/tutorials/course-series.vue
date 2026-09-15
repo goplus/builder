@@ -119,7 +119,7 @@ const { fn: handleCourseClick } = useMessageHandle(
 
             <div
               v-radar="{
-                name: 'Course series details',
+                name: 'course-series-details',
                 desc: 'Course series description'
               }"
               class="flex-auto overflow-auto"

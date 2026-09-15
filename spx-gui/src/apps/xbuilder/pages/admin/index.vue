@@ -46,7 +46,7 @@ onMounted(async () => {
         <template #left>
           <NavbarDropdown
             :trigger-radar="{
-              name: $t({ en: 'Account admin menu', zh: '账号管理菜单' }),
+              name: 'account-admin-menu',
               desc: 'Open Account admin navigation'
             }"
           >

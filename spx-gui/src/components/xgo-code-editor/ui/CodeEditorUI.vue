@@ -251,13 +251,13 @@ providePopupContainer(codeEditorEl)
     </aside>
     <div
       ref="resizeHandleEl"
-      v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
+      v-radar="{ name: 'resize-handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
       :class="{ 'bg-black/10': isResizing }"
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
     <MonacoEditorComp
-      v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
+      v-radar="{ name: 'code-text-editor', desc: 'Text editor for code' }"
       class="my-3 min-w-0 flex-[1_1_0]"
       :monaco="codeEditor.monaco"
       :options="monacoEditorOptions"

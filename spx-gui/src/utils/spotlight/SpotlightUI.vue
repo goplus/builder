@@ -67,15 +67,19 @@ const spotlight = useSpotlight()
 
 const spotlightItem = computed(() => spotlight.spotlightItem.value)
 
-function getRect(el: HTMLElement): Rect {
-  const rect = el.getBoundingClientRect()
+function getRect(els: HTMLElement[]): Rect {
+  const rects = els.map((el) => el.getBoundingClientRect())
+  const top = Math.min(...rects.map((rect) => rect.top))
+  const left = Math.min(...rects.map((rect) => rect.left))
+  const bottom = Math.max(...rects.map((rect) => rect.bottom))
+  const right = Math.max(...rects.map((rect) => rect.right))
   return {
-    top: rect.top,
-    left: rect.left,
-    bottom: window.innerHeight - rect.bottom,
-    right: window.innerWidth - rect.right,
-    width: rect.width,
-    height: rect.height
+    top,
+    left,
+    bottom: window.innerHeight - bottom,
+    right: window.innerWidth - right,
+    width: right - left,
+    height: bottom - top
   }
 }
 
@@ -158,12 +162,12 @@ function getRevealPosition(revealRect: Rect, spotlightRect: Rect): Position {
   }
 }
 
-function providerRevealEl() {
-  const revealEl = spotlightItem.value?.el
-  if (!revealEl) {
-    throw new Error('SpotlightUI must have an associated element')
+function providerRevealEls() {
+  const revealEls = spotlightItem.value?.els
+  if (revealEls == null || revealEls.length === 0) {
+    throw new Error('SpotlightUI must have associated elements')
   }
-  return revealEl
+  return revealEls
 }
 
 function providerSpotlightEl() {
@@ -175,10 +179,10 @@ function providerSpotlightEl() {
 }
 
 function syncPlacementAndPosition() {
-  const revealEl = providerRevealEl()
+  const revealEls = providerRevealEls()
   const spotlightEl = providerSpotlightEl()
-  const revealRect = getRect(revealEl)
-  const spotlightRect = getRect(spotlightEl)
+  const revealRect = getRect(revealEls)
+  const spotlightRect = getRect([spotlightEl])
 
   const position = (positionRef.value = getRevealPosition(revealRect, spotlightRect))
   placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
@@ -186,15 +190,19 @@ function syncPlacementAndPosition() {
   spotlightEl.style.transform = `translateX(${position.x}px) translateY(${position.y}px)`
 }
 
-function revealElement(revealEl: HTMLElement) {
-  revealEl.scrollIntoView({ block: 'nearest' })
-  revealEl.classList.add('spotlight-attach-element-highlight')
+function revealElements(revealEls: HTMLElement[]) {
+  revealEls[0].scrollIntoView({ block: 'nearest' })
+  for (const revealEl of revealEls) {
+    revealEl.classList.add('spotlight-attach-element-highlight')
+  }
   spotlightAnimated.value = true
   syncPlacementAndPosition()
 }
 
-function concealElement(revealEl: HTMLElement) {
-  revealEl.classList.remove('spotlight-attach-element-highlight')
+function concealElements(revealEls: HTMLElement[]) {
+  for (const revealEl of revealEls) {
+    revealEl.classList.remove('spotlight-attach-element-highlight')
+  }
 }
 
 const throttledHandleScroll = throttle(() => {
@@ -234,14 +242,24 @@ watch(
       const center = getDefaultPosition()
       const { x: x1, y: y1 } = center
       // reveal position
-      const { x: x2, y: y2, width: revealWidth } = value.el.getBoundingClientRect()
+      const revealRect = getRect(value.els)
+      const {
+        x: x2,
+        y: y2,
+        width: revealWidth
+      } = {
+        x: revealRect.left,
+        y: revealRect.top,
+        width: revealRect.width
+      }
       const len = Math.hypot(x2 - x1, y2 - y1)
       // If the distance is too short, animate from center to reveal
       positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
     }
     requestAnimationFrame(() => {
-      revealElement(value.el)
-      spotlight.emit('revealed', { rect: value.el.getBoundingClientRect() })
+      revealElements(value.els)
+      const rect = getRect(value.els)
+      spotlight.emit('revealed', { rect: new DOMRect(rect.left, rect.top, rect.width, rect.height) })
     })
 
     resizeObserver.observe(document.body)
@@ -251,7 +269,7 @@ watch(
       resizeObserver.disconnect()
       document.body.removeEventListener('scroll', throttledHandleScroll, { capture: true })
       document.body.removeEventListener('scrollend', handleScrollEnd, { capture: true })
-      concealElement(value.el)
+      concealElements(value.els)
     })
   },
   { immediate: true }

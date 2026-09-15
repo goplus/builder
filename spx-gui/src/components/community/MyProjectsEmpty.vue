@@ -26,7 +26,7 @@ const handleNewProject = useMessageHandle(
     }}
     <template #op>
       <UIButton
-        v-radar="{ name: 'New project button', desc: 'Click to create a new project' }"
+        v-radar="{ name: 'new-project-button', desc: 'Click to create a new project' }"
         type="neutral"
         icon="folder"
         size="large"

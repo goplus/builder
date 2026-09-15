@@ -64,7 +64,7 @@ const handleEditPivot = useMessageHandle(
   <div class="h-7 flex items-center text-title">
     <AssetName>{{ sprite.name }}</AssetName>
     <UIIcon
-      v-radar="{ name: 'Rename button', desc: 'Button to rename the sprite' }"
+      v-radar="{ name: 'rename-button', desc: 'Button to rename the sprite' }"
       class="ml-md cursor-pointer text-grey-900 transition-colors hover:text-grey-800 active:text-grey-1000"
       :title="$t({ en: 'Rename', zh: '重命名' })"
       type="edit"
@@ -74,7 +74,7 @@ const handleEditPivot = useMessageHandle(
     <UITooltip>
       <template #trigger>
         <UIIcon
-          v-radar="{ name: 'Collapse button', desc: 'Button to collapse the sprite basic configuration panel' }"
+          v-radar="{ name: 'collapse-button', desc: 'Button to collapse the sprite basic configuration panel' }"
           class="cursor-pointer text-grey-900 transition-colors hover:text-grey-800 active:text-grey-1000"
           type="doubleArrowDown"
           @click="emit('collapse')"

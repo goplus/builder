@@ -1,6 +1,6 @@
 <template>
   <UICard
-    v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
+    v-radar="{ name: 'editor-preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
   >
     <UICardHeader class="gap-3">
@@ -9,7 +9,7 @@
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
-          v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+          v-radar="{ name: 'run-button', desc: 'Click to run the project in debug mode' }"
           type="primary"
           icon="playHollow"
           :loading="handleRun.isLoading.value"
@@ -20,7 +20,7 @@
 
         <UIButton
           v-show="canManageProject"
-          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+          v-radar="{ name: 'publish-button', desc: 'Click to publish the project' }"
           type="secondary"
           icon="publish"
           :disabled="!isOnline"
@@ -31,7 +31,7 @@
       </template>
       <template v-else>
         <UIButton
-          v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
+          v-radar="{ name: 'rerun-button', desc: 'Click to rerun the project' }"
           type="primary"
           icon="rotate"
           :disabled="runnerState !== 'running' || handleStop.isLoading.value"
@@ -41,7 +41,7 @@
           {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+          v-radar="{ name: 'stop-button', desc: 'Click to stop the running project' }"
           type="neutral"
           icon="end"
           :loading="handleStop.isLoading.value"
@@ -52,7 +52,7 @@
         <UITooltip placement="top-end">
           <template #trigger>
             <UIButton
-              v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
+              v-radar="{ name: 'enter-full-screen-button', desc: 'Click to enter full screen for the running project' }"
               type="neutral"
               shape="square"
               icon="enterFullScreen"

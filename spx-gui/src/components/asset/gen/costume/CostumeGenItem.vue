@@ -46,8 +46,9 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
 <template>
   <GenItem
     v-radar="{
-      name: `Costume generation item '${gen.name}'`,
-      desc: `Click to view generation settings and preview for costume '${gen.name}'`
+      name: 'costume-generation-item',
+      desc: `Click to view generation settings and preview for costume '${gen.name}'`,
+      attrs: { name: gen.name }
     }"
     :placeholder="costumeSVG"
     :active="active"
@@ -62,9 +63,9 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
       gen.name
     }}</UIBlockItemTitle>
     <CornerMenu v-if="operable && active">
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="emit('rename')" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the costume' }" @click="emit('rename')" />
       <RemoveMenuItem
-        v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"
+        v-radar="{ name: 'remove', desc: 'Click to remove the costume' }"
         :disabled="!operable.removable"
         @click="emit('remove')"
       />

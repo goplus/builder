@@ -2,7 +2,7 @@
   <div
     ref="container"
     v-radar="{
-      name: 'Stage viewer',
+      name: 'stage-viewer',
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
     class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"

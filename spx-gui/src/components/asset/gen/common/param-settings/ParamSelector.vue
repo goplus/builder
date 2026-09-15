@@ -90,8 +90,9 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             v-for="(item, index) in options"
             :key="index"
             v-radar="{
-              name: `Option '${$t(item.label)}'`,
-              desc: `Select '${$t(item.label)}' as the '${$t(name)}'`
+              name: 'param-option',
+              desc: `Select '${$t(item.label)}' as the '${$t(name)}'`,
+              attrs: { name: $t(item.label) }
             }"
             :active="value === item.value"
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"

@@ -1,6 +1,6 @@
 <template>
   <div
-    v-radar="{ name: 'Animation player', desc: 'Provides preview for animation' }"
+    v-radar="{ name: 'animation-player', desc: 'Provides preview for animation' }"
     class="relative overflow-hidden rounded-sm"
   >
     <CheckerboardBackground class="absolute inset-0" />
