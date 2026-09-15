@@ -31,6 +31,11 @@ export type TutorialProjectFiles = FileCollection;
  * framework registers a handler for every event name below, whether or not
  * the Course code subscribed to it. Event names mirror the author-facing API
  * tree.
+ *
+ * Dispatching is safe as soon as `run()` resolves: the framework holds any
+ * event that arrives before the Course program is ready and delivers it, in
+ * arrival order, once the program starts. Events are never lost to startup
+ * timing.
  */
 export type TutorialEvent =
   /** The learner's project runtime started. */

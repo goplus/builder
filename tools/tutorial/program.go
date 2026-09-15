@@ -330,64 +330,6 @@ func (p *courseProgram) terminatedLocked() bool {
 	return p.completed || p.fatal != nil
 }
 
-// registerEvents 把契约里的四个事件一次性全部注册到执行器。
-//
-// "全部注册"是硬性要求：xgoexec.DispatchEvent 遇到没注册过的事件名会直接返回错误，
-// 进而让 Tutorial 侧的 dispatchEvent 被 reject。如果框架只在课程调用了 onLog 之后
-// 才注册 editor.runtime.log，那么一个没订阅日志的课程会让宿主每次投递都收到错误——
-// 宿主并不知道课程订阅了什么，也不该知道。
-//
-// 注意 xgoexec 的事件注册表本身是进程级的（那是执行器的桥，不是我们的状态）：
-// 每个课程运行在自己的 Worker/WASM 实例里，一个实例只跑一个课程，所以最后一次
-// 注册指向的就是当前这个 courseProgram。
-func (p *courseProgram) registerEvents() {
-	registerEvent(p, "editor.runtime.start", func(struct{}) error {
-		return deliverAll(p, p.handlerSnapshot().runtimeStart, struct{}{})
-	})
-	registerEvent(p, "editor.runtime.exit", func(event runtimeExitEvent) error {
-		return deliverAll(p, p.handlerSnapshot().runtimeExit, event.Code)
-	})
-	registerEvent(p, "editor.runtime.log", func(event runtimeLogEvent) error {
-		return deliverAll(p, p.handlerSnapshot().runtimeLog, event.Log)
-	})
-	registerEvent(p, "copilot.roundFinish", func(round CopilotRound) error {
-		return deliverAll(p, p.handlerSnapshot().copilotRound, round)
-	})
-}
-
-// runtimeExitEvent 对应契约里 editor.runtime.exit 的载荷 {code}。
-type runtimeExitEvent struct {
-	Code int `json:"code"`
-}
-
-// runtimeLogEvent 对应契约里 editor.runtime.log 的载荷 {log}。
-// 契约规定这里只承载 kind=log 的输出，error 输出不进这条判定通道；
-// 过滤由 Tutorial 侧在投递前完成，框架收到什么就交给课程什么。
-type runtimeLogEvent struct {
-	Log string `json:"log"`
-}
-
-// registerEvent 把一个宿主事件接到它的投递逻辑上。
-//
-// 这里有个关键的线程边界：**解码与投递发生在宿主的 goroutine 上，回调执行在
-// 各自通道的 worker goroutine 上**。xgoexec 收到 JS 侧 dispatchEvent 后会直接调用
-// 这里注册的函数，我们在那个 goroutine 里只做两件轻量的事——解码载荷、投递进
-// 各回调通道——然后立刻返回，让宿主的 dispatchEvent 尽快 resolve。
-//
-// 用泛型是为了让四个事件共用这套解码逻辑；T 是各自的载荷类型。
-// payload 为空或 "null"（editor.runtime.start 就是 null）时跳过解码，用零值即可。
-func registerEvent[T any](p *courseProgram, name string, deliver func(T) error) {
-	xgoexec.RegisterEventHandler(name, func(payload json.RawMessage) error {
-		var event T
-		if len(payload) > 0 {
-			if err := json.Unmarshal(payload, &event); err != nil {
-				return fmt.Errorf("decode event %q: %w", name, err)
-			}
-		}
-		return deliver(event)
-	})
-}
-
 // handlerSnapshot 返回回调集合的快照。
 //
 // 取快照（而不是持锁投递）是为了避免投递期间与注册互锁；同时它也让"投递过程中

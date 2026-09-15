@@ -19,6 +19,9 @@ import (
 //  3. schedulerMu 与 eventDeliveryMu 的持锁区间内没有任何可能阻塞的操作
 //     （channel 收发、select、Wait、取令牌、调桥、拿慢锁）。
 //  4. eventDeliveryMu 只在 deliverAll 里使用——eventDeliveryMu→schedulerMu 是唯一的嵌套方向。
+//  5. 事件入口只有一个：向执行器注册 handler 只发生在 init；events.attach 只在
+//     XGot_Course_Main、events.goLive 只在 Start 里调用。registryMu 是叶子锁，持锁
+//     区间只允许字段读写与 len/append/fmt.Errorf/json.RawMessage 这几种调用。
 //
 // 检查基于 AST 而不是运行观察：违规的“写法”在进入仓库时就变红，
 // 不依赖测试恰好踩中那条时序。
@@ -83,6 +86,18 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				if name != deliveryMuHome {
 					report(n.Pos(), "%s touches eventDeliveryMu: delivery serialization belongs to %s only", name, deliveryMuHome)
 				}
+			case strings.HasSuffix(callee, ".RegisterEventHandler"):
+				if name != "init" {
+					report(n.Pos(), "%s registers an event handler: handlers are registered once, in init", name)
+				}
+			case callee == "events.attach":
+				if name != "XGot_Course_Main" {
+					report(n.Pos(), "%s attaches a program to the event registry: only the classfile entry may", name)
+				}
+			case callee == "events.goLive":
+				if name != "Start" {
+					report(n.Pos(), "%s switches the event registry live: only Course.Start may", name)
+				}
 			}
 		case *ast.Ident:
 			if n.Name == "execToken" && !tokenOperators[name] && !tokenPlumbing[name] {
@@ -92,11 +107,23 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 		return true
 	})
 
-	// 规则 3：schedulerMu / eventDeliveryMu 的持锁区间内不得有阻塞操作。
-	for _, guard := range []string{"schedulerMu", "eventDeliveryMu"} {
-		for _, region := range heldRegions(fn, guard) {
+	// 规则 3/5：schedulerMu / eventDeliveryMu 的持锁区间内不得有阻塞操作；
+	// registryMu 的持锁区间内只允许白名单里的调用。
+	recv := receiverName(fn)
+	for _, guard := range []string{"schedulerMu", "eventDeliveryMu", "registryMu"} {
+		for _, region := range heldRegions(fn, recv, guard) {
 			ast.Inspect(fn.Body, func(node ast.Node) bool {
 				if node == nil || node.Pos() < region.from || node.Pos() >= region.to {
+					return true
+				}
+				if guard == "registryMu" {
+					if n, ok := node.(*ast.CallExpr); ok {
+						callee := renderExpr(n.Fun)
+						own := callee == recv+".registryMu.Lock" || callee == recv+".registryMu.Unlock"
+						if !registryMuAllowedCalls[callee] && !own {
+							report(n.Pos(), "%s called inside a registryMu-held region of %s: the registry lock only guards field access", callee, name)
+						}
+					}
 					return true
 				}
 				switch n := node.(type) {
@@ -134,28 +161,42 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 	}
 }
 
+// registryMuAllowedCalls 是 registryMu 持锁区间内唯一允许的调用：都是纯计算、
+// 不可能阻塞，也碰不到别的锁。解码与投递必须在锁外。
+var registryMuAllowedCalls = map[string]bool{
+	"len": true, "append": true, "fmt.Errorf": true, "json.RawMessage": true,
+}
+
 type lockRegion struct {
 	from, to token.Pos
 }
 
-// heldRegions 计算 fn 内 guard（p.<guard>）的持锁区间。
+// receiverName 返回方法接收者的名字；普通函数（如 deliverAll）按惯例用 p 指代程序。
+func receiverName(fn *ast.FuncDecl) string {
+	if fn.Recv != nil && len(fn.Recv.List) > 0 && len(fn.Recv.List[0].Names) > 0 {
+		return fn.Recv.List[0].Names[0].Name
+	}
+	return "p"
+}
+
+// heldRegions 计算 fn 内 guard（<recv>.<guard>）的持锁区间。
 // 两种写法都覆盖：显式 Unlock → [Lock, Unlock)；defer Unlock → [Lock, 函数尾)。
-func heldRegions(fn *ast.FuncDecl, guard string) []lockRegion {
+func heldRegions(fn *ast.FuncDecl, recv, guard string) []lockRegion {
 	var locks, unlocks []token.Pos
 	deferred := false
 
 	ast.Inspect(fn.Body, func(node ast.Node) bool {
 		switch n := node.(type) {
 		case *ast.DeferStmt:
-			if renderExpr(n.Call.Fun) == "p."+guard+".Unlock" {
+			if renderExpr(n.Call.Fun) == recv+"."+guard+".Unlock" {
 				deferred = true
 			}
 			return false // defer 里的 Unlock 不算显式解锁点
 		case *ast.CallExpr:
 			switch renderExpr(n.Fun) {
-			case "p." + guard + ".Lock":
+			case recv + "." + guard + ".Lock":
 				locks = append(locks, n.Pos())
-			case "p." + guard + ".Unlock":
+			case recv + "." + guard + ".Unlock":
 				unlocks = append(unlocks, n.Pos())
 			}
 		}

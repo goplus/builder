@@ -167,6 +167,9 @@ func (p *Course) Start() {
 		// 课程在 MainEntry 里就完成的情况不是错误：投递被静默放弃，开场回调不再执行。
 		program.recordFatal(err)
 	}
+	// 课程开始投递之后才补投就绪前暂存的宿主事件：课程逻辑上先开始、再观察世界。
+	// 各 lane 相互独立，开场帧与事件帧之间本就不承诺顺序。
+	events.goLive(program)
 	program.awaitShutdown()
 }
 
@@ -176,13 +179,13 @@ func (p *Course) Start() {
 // 就把函数注册成 Course 类型上的方法，从而让生成的 Main 能调到它。spx 的同位物是
 // XGot_Game_Main。
 //
-// 顺序很重要：先拿到内嵌实例、初始化状态并注册全部事件，再执行 MainEntry（作者代码
-// 在这里注册各种回调），最后进入 Start。反过来的话，MainEntry 里注册的回调会被
-// initCourse 的重置清掉。MainEntry 也以帧的形式执行——作者在顶层直接调用
-// showMessage 之类的能力同样成立。
+// 顺序很重要：先拿到内嵌实例、初始化状态并接管事件入口（此后到就绪前的投递都会
+// 暂存），再执行 MainEntry（作者代码在这里注册各种回调），最后进入 Start。反过来
+// 的话，MainEntry 里注册的回调会被 initCourse 的重置清掉。MainEntry 也以帧的形式
+// 执行——作者在顶层直接调用 showMessage 之类的能力同样成立。
 func XGot_Course_Main(course CourseProto) {
 	program := &course.initCourse().courseProgram
-	program.registerEvents()
+	events.attach(program)
 	program.runFrame(course.MainEntry)
 	course.Start()
 }

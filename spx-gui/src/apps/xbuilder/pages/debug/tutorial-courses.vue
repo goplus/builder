@@ -29,22 +29,6 @@ function addCasesOutput(message: string) {
   casesOutput.value.push(message)
 }
 
-// The course program registers its event handlers shortly after run()
-// resolves, so a dispatch racing that registration is retried instead of
-// failing the case.
-async function dispatchWithRetry(executor: XGoExecutor, name: string, payload: unknown) {
-  const deadline = Date.now() + 2000
-  for (;;) {
-    try {
-      await executor.dispatchEvent(name, payload)
-      return
-    } catch (error) {
-      if (Date.now() > deadline) throw error
-      await new Promise((resolve) => setTimeout(resolve, 50))
-    }
-  }
-}
-
 async function runCase(index: number) {
   const courseCase = courseCases[index]
   results.value[index] = { status: 'running', detail: null }
@@ -70,8 +54,10 @@ async function runCase(index: number) {
 
   try {
     await executor.run({ 'main_course.gox': courseCase.source })
+    // Dispatching right after run() resolves is safe: the framework holds
+    // events that arrive before the course program is ready and replays them.
     for (const event of courseCase.events) {
-      await dispatchWithRetry(executor, event.name, event.payload)
+      await executor.dispatchEvent(event.name, event.payload)
       log(`event dispatched: ${event.name}`)
     }
     const reason = await Promise.race([exited, timeout])

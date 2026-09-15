@@ -154,20 +154,20 @@ func awaitDone(t *testing.T, done <-chan struct{}) {
 }
 
 // dispatch 从"宿主"投递一个事件，走的是 xgoexec.DispatchEvent 这个真实入口。
-// 短暂重试是因为测试里课程程序是异步启动的，可能还没注册好事件处理器。
+// 事件 handler 在包初始化时就已注册（见 events.go），这里不需要等待或重试。
 func dispatch(t *testing.T, name string, payload string) {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
-	for {
-		err := xgoexec.DispatchEvent(name, []byte(payload))
-		if err == nil {
-			return
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("dispatch %q: %v", name, err)
-		}
-		time.Sleep(time.Millisecond)
+	if err := xgoexec.DispatchEvent(name, []byte(payload)); err != nil {
+		t.Fatalf("dispatch %q: %v", name, err)
 	}
+}
+
+// resetEventRegistry 把进程级事件入口恢复到"还没有任何程序"的状态，
+// 用来模拟一个刚启动、课程程序尚未 attach 的 wasm 实例。
+func resetEventRegistry() {
+	events.registryMu.Lock()
+	defer events.registryMu.Unlock()
+	events.program, events.live, events.pending = nil, false, nil
 }
 
 // await 等一个信号，超时视为测试失败。
@@ -668,6 +668,9 @@ func TestFatalDuringCompletionIsReported(t *testing.T) {
 // 一个事件已出队、其帧正在等令牌，此时别的帧完成了课程——等到令牌的帧
 // 必须放弃执行，而不是在课程结束后又跑一段回调。
 func TestQueuedEventDroppedWhenCompletionWinsTheToken(t *testing.T) {
+	// 本测试从测试 goroutine 投递而不等就绪信号：先把事件入口清成"还没有程序"，
+	// 早到的投递进暂存区、就绪后补投，而不是落到上一个测试留下的程序上。
+	resetEventRegistry()
 	host := newFakeHost()
 	holding := make(chan struct{})
 	proceed := make(chan struct{})
@@ -783,4 +786,59 @@ func TestCompletionSettlesPendingWait(t *testing.T) {
 	releaseMessage()
 	awaitDone(t, done)
 	await(t, resumed, "the suspended callback to finish its remaining statements")
+}
+
+// TestEventsBeforeReadyAreDeliveredInOrder 验证就绪前到达的事件不丢、不乱序：
+// 执行器的 run() 在程序跑到注册回调之前就 resolve，宿主此刻的投递必须在程序
+// 就绪后按到达顺序送达。这里从 MainEntry 里、在 onLog 注册之前投递，模拟的正是
+// 那段窗口——旧实现下这些日志在投递时找不到 lane，会被静默放弃。
+func TestEventsBeforeReadyAreDeliveredInOrder(t *testing.T) {
+	var logs []string
+
+	runCourse(t, newFakeHost(), func(course *testCourse) {
+		dispatch(t, "editor.runtime.log", `{"log":"first"}`)
+		dispatch(t, "editor.runtime.log", `{"log":"second"}`)
+		course.Editor.Runtime.OnLog(func(log string) {
+			logs = append(logs, log)
+			if log == "third" {
+				course.Complete()
+			}
+		})
+		dispatch(t, "editor.runtime.log", `{"log":"third"}`)
+	})
+
+	if got, want := fmt.Sprint(logs), "[first second third]"; got != want {
+		t.Errorf("logs = %s, want %s", got, want)
+	}
+}
+
+// TestEventsBeforeAnyProgramAreHeld 验证进程里还没有程序时的投递同样被暂存：
+// 宿主在 run() resolve 后立刻投递，而解释器还没执行到 XGot_Course_Main。
+func TestEventsBeforeAnyProgramAreHeld(t *testing.T) {
+	resetEventRegistry()
+	dispatch(t, "editor.runtime.log", `{"log":"early"}`)
+
+	runCourse(t, newFakeHost(), func(course *testCourse) {
+		course.Editor.Runtime.OnLog(func(log string) {
+			if log == "early" {
+				course.Complete()
+			}
+		})
+	})
+}
+
+// TestPendingEventsAreBounded 验证暂存区有上限：宿主对一个迟迟不启动的程序狂投，
+// 超限的投递报错而不是无限缓冲。
+func TestPendingEventsAreBounded(t *testing.T) {
+	resetEventRegistry()
+	t.Cleanup(resetEventRegistry)
+
+	for i := 0; i < pendingEventLimit; i++ {
+		if err := xgoexec.DispatchEvent("editor.runtime.log", []byte(`{"log":"x"}`)); err != nil {
+			t.Fatalf("dispatch %d: %v", i, err)
+		}
+	}
+	if err := xgoexec.DispatchEvent("editor.runtime.log", []byte(`{"log":"x"}`)); err == nil {
+		t.Fatal("a dispatch beyond the pending limit must fail")
+	}
 }

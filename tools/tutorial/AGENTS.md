@@ -15,6 +15,10 @@ Course callbacks run as frames under a cooperative scheduler; design rationale l
   the token is released
 - Check the terminal state after acquiring the token, not before. On the completion path, re-check `fatal` after
   `laneWorkers.Wait()`; the delivery gate must consult started, completed, and fatal together
+- Event handlers are registered with xgoexec once, in `init` (`events.go`); the executor's `run()` resolves before
+  the program registers anything, so `events` holds every event that arrives before `goLive` and replays it in
+  order. `attach` belongs to `XGot_Course_Main`, `goLive` to `Start`; `registryMu` regions only touch fields and
+  call `len`/`append`/`fmt.Errorf`/`json.RawMessage`. Decoding and delivery happen outside that lock
 
 # Capabilities and contracts
 
@@ -29,8 +33,10 @@ Course callbacks run as frames under a cooperative scheduler; design rationale l
 # Testing this package
 
 - Inject the fake host only inside `MainEntry` (the `callCapability` field); earlier there is no course state yet
-- The xgoexec event registry is process-global. A test dispatching from outside course code must first await a
-  readiness signal from its own course, or the event is silently swallowed by a previous test's completed program
+- The event registry is process-global and keeps the previous test's program attached until the next course
+  attaches. A test dispatching from outside course code must first await a readiness signal from its own course
+  (or call `resetEventRegistry`), or the event goes to the previous, completed program and is silently dropped.
+  Dispatching from inside `MainEntry` or a callback is always safe: pre-ready events are held and replayed
 - Never block on a channel while holding the token inside a course callback; simulate a slow host with
   `holdCapability` instead
 - Give behavior tests a timeout fallback, and run concurrency-sensitive tests with `-race`
