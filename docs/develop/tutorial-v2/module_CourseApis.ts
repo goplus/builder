@@ -18,12 +18,11 @@ export type GuidedCourse = CourseBase & {
   };
 };
 
-export type GeneratePlaygroundCourseCopilotContextInput = {
-  title: string;
-  thumbnail: string;
-  /** Current unsaved Course content. */
-  content: FileCollection;
-};
+/** Current unsaved Playground Course content used to generate its Copilot context. */
+export type GeneratePlaygroundCourseCopilotContextParams = Pick<
+  PlaygroundCourse,
+  "title" | "thumbnail" | "content"
+>;
 
 export type GeneratePlaygroundCourseCopilotContextResult = {
   copilotContext: string;
@@ -46,26 +45,39 @@ export type CourseSeries = {
   description: string;
   courseIDs: string[];
   order: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
-export type GuidedCourseInput = Omit<GuidedCourse, "id" | "owner">;
-export type PlaygroundCourseInput = Omit<PlaygroundCourse, "id" | "owner">;
-export type CourseInput = GuidedCourseInput | PlaygroundCourseInput;
-export type CourseUpdate =
-  | Omit<GuidedCourseInput, "kind">
-  | Omit<PlaygroundCourseInput, "kind">;
-export type CourseSeriesInput = Omit<CourseSeries, "id" | "owner">;
+export type AddCourseParams =
+  | Pick<GuidedCourse, "kind" | "title" | "thumbnail" | "content">
+  | Pick<PlaygroundCourse, "kind" | "title" | "thumbnail" | "content">;
+export type UpdateCourseParams =
+  | Pick<GuidedCourse, "title" | "thumbnail" | "content">
+  | Pick<PlaygroundCourse, "title" | "thumbnail" | "content">;
+export type AddCourseSeriesParams = Pick<
+  CourseSeries,
+  "kind" | "title" | "thumbnail" | "description" | "courseIDs" | "order"
+>;
+export type UpdateCourseSeriesParams = Pick<
+  CourseSeries,
+  "title" | "thumbnail" | "description" | "courseIDs" | "order"
+>;
 
 export type ListCoursesParams = {
-  courseSeriesID: string | null;
+  courseSeriesID?: string;
   pageIndex: number;
   pageSize: number;
+  orderBy?: "createdAt" | "updatedAt" | "sequenceInCourseSeries";
+  sortOrder?: "asc" | "desc";
 };
 
 export type ListCourseSeriesParams = {
-  kind: CourseKind | null;
+  kind?: CourseKind;
   pageIndex: number;
   pageSize: number;
+  orderBy?: "createdAt" | "updatedAt" | "order";
+  sortOrder?: "asc" | "desc";
 };
 
 export type ByPage<T> = {
@@ -77,7 +89,7 @@ export type ByPage<T> = {
 export interface CourseApis {
   /** `POST /user/courses/playground/copilot-context`. Generates an editable context. */
   generatePlaygroundCourseCopilotContext(
-    input: GeneratePlaygroundCourseCopilotContextInput,
+    params: GeneratePlaygroundCourseCopilotContextParams,
     signal?: AbortSignal,
   ): Promise<GeneratePlaygroundCourseCopilotContextResult>;
 
@@ -97,12 +109,12 @@ export interface CourseApis {
   ): Promise<ByPage<Course>>;
 
   /** `POST /user/courses` */
-  addCourse(input: CourseInput, signal?: AbortSignal): Promise<Course>;
+  addCourse(params: AddCourseParams, signal?: AbortSignal): Promise<Course>;
 
   /** `PATCH /courses/{courseID}`. Course kind cannot be changed. */
   updateCourse(
     id: string,
-    input: CourseUpdate,
+    params: UpdateCourseParams,
     signal?: AbortSignal,
   ): Promise<Course>;
 
@@ -126,14 +138,14 @@ export interface CourseApis {
 
   /** `POST /user/course-series` */
   addCourseSeries(
-    input: CourseSeriesInput,
+    params: AddCourseSeriesParams,
     signal?: AbortSignal,
   ): Promise<CourseSeries>;
 
   /** `PATCH /course-series/{courseSeriesID}` */
   updateCourseSeries(
     id: string,
-    input: CourseSeriesInput,
+    params: UpdateCourseSeriesParams,
     signal?: AbortSignal,
   ): Promise<CourseSeries>;
 

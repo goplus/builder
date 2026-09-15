@@ -1,5 +1,6 @@
 import type { LocaleMessage } from '@/utils/i18n'
 import { assetDisplayNameMaxLength } from '@/apis/asset'
+import { getValidName } from '@/models/common/name'
 import { getStringLengthInCodePoints, lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
 import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/xgo'
 import {
@@ -168,42 +169,6 @@ export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   // 50 should be enough, it will be hard to read with too long name
   // TODO: should we move the truncation to outer layer?
   return unicodeSafeSlice(result, 0, 50)
-}
-
-const numericSuffixRE = /^(.*?)(\d+)$/
-
-function splitNumericSuffix(name: string) {
-  const match = name.match(numericSuffixRE)
-  if (match == null) return null
-  return {
-    base: match[1],
-    num: parseInt(match[2], 10),
-    numWidth: match[2].length
-  }
-}
-
-function formatNumericSuffix(base: string, num: number, numWidth: number) {
-  const suffix = numWidth > 1 ? String(num).padStart(numWidth, '0') : String(num)
-  return base + suffix
-}
-
-function getValidName(initialName: string, isValid: (name: string) => boolean) {
-  if (initialName === '') throw new Error('name must not be blank')
-  if (isValid(initialName)) return initialName
-
-  // Try to add/increment numeric suffix to find a valid name
-  const splitted = splitNumericSuffix(initialName)
-  const base = splitted == null ? initialName : splitted.base
-  const initialNum = splitted == null ? 1 : splitted.num
-  const numWidth = splitted == null ? 1 : splitted.numWidth
-
-  for (let i = initialNum + 1; ; i++) {
-    const name = formatNumericSuffix(base, i, numWidth)
-    if (isValid(name)) return name
-    if (i - initialNum > 10000) {
-      throw new Error(`unexpected infinite loop with base ${initialName}`)
-    }
-  }
 }
 
 export function getSpriteName(parent: SpriteLikeParent | null, base: string) {

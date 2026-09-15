@@ -2,18 +2,18 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { type Tutorial } from './tutorial'
-import { getCourse, type Course } from '@/apis/course'
+import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 
 import { UIButton, UIImg, UIModal, UIModalClose } from '@/components/ui'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import successImg from './success.png'
+
+import { useTutorial } from '../tutorial'
+import successImg from '../success.png'
 
 const props = defineProps<{
   visible: boolean
-  tutorial: Tutorial
   course: Course
   series: CourseSeries
 }>()
@@ -25,6 +25,7 @@ const emit = defineEmits<{
 
 const i18n = useI18n()
 const router = useRouter()
+const tutorial = useTutorial()
 
 const courseCompleteMessage = computed(() => {
   return i18n.t({
@@ -61,10 +62,9 @@ const { fn: handleStartNextCourse } = useMessageHandle(
       })
     }
 
-    const tutorial = props.tutorial
-    const nextCourse = await getCourse(currentSeries.courseIDs[findIndex + 1])
+    const nextCourseID = currentSeries.courseIDs[findIndex + 1]
     emit('cancelled')
-    await tutorial.startCourse(nextCourse, currentSeries)
+    await tutorial.startCourse(currentSeries.id, nextCourseID)
   },
   {
     en: 'Failed to learn next course',

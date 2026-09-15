@@ -1,4 +1,5 @@
 import { client, type ByPage, type PaginationParams } from './common'
+import type { CourseKind } from './course'
 
 export const courseSeriesTitleMaxLength = 200
 export const courseSeriesDescriptionMaxLength = 400
@@ -8,6 +9,8 @@ export type CourseSeries = {
   id: string
   /** Username of the course series's owner */
   owner: string
+  /** Selects the Course kinds included in this series. */
+  kind: CourseKind
   /** Title of the course series */
   title: string
   /** Universal URL of the course series's thumbnail image */
@@ -27,18 +30,19 @@ export function getCourseSeries(id: string, signal?: AbortSignal) {
   return client.get(`/course-series/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<CourseSeries>
 }
 
-export type AddUpdateCourseSeriesParams = Pick<
+export type AddCourseSeriesParams = Pick<
   CourseSeries,
-  'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'
+  'kind' | 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'
 >
+export type UpdateCourseSeriesParams = Pick<CourseSeries, 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'>
 
 /** Add a new course series */
-export function addCourseSeries(params: AddUpdateCourseSeriesParams, signal?: AbortSignal) {
+export function addCourseSeries(params: AddCourseSeriesParams, signal?: AbortSignal) {
   return client.post('/user/course-series', params, { signal }) as Promise<CourseSeries>
 }
 
 /** Update an existing course series */
-export function updateCourseSeries(id: string, params: AddUpdateCourseSeriesParams, signal?: AbortSignal) {
+export function updateCourseSeries(id: string, params: UpdateCourseSeriesParams, signal?: AbortSignal) {
   return client.patch(`/course-series/${encodeURIComponent(id)}`, params, { signal }) as Promise<CourseSeries>
 }
 
@@ -48,6 +52,7 @@ export function deleteCourseSeries(id: string) {
 }
 
 export type ListCourseSeriesParams = PaginationParams & {
+  kind?: CourseKind
   /** Field by which to order the results */
   orderBy?: 'createdAt' | 'updatedAt' | 'order'
   /** Order in which to sort the results */

@@ -4,7 +4,7 @@ import utc from 'dayjs/plugin/utc'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { addCourse, deleteCourse, getCourse, type Course } from '@/apis/course'
+import { addCourse, deleteCourse, getCourse, type GuidedCourse } from '@/apis/course'
 import { addCourseSeries, updateCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { getProject, ProjectType, updateProject, Visibility } from '@/apis/project'
 import { createProjectRelease } from '@/apis/project-release'
@@ -24,7 +24,8 @@ dayjs.extend(timezone)
 vi.mock('@/apis/course', () => ({
   getCourse: vi.fn(),
   addCourse: vi.fn(),
-  deleteCourse: vi.fn()
+  deleteCourse: vi.fn(),
+  isGuidedCourse: (course: GuidedCourse) => course.kind === 'guided'
 }))
 
 vi.mock('@/apis/course-series', () => ({
@@ -61,6 +62,7 @@ vi.mock('@/models/common/xbp', () => ({
 const existingSeries: CourseSeries = {
   id: 'series-id',
   owner: 'alice',
+  kind: 'guided',
   title: '编程 课程',
   thumbnail: 'kodo://bucket/series-thumbnail.png',
   description: 'Course series description',
@@ -70,13 +72,13 @@ const existingSeries: CourseSeries = {
   updatedAt: '2026-01-01T00:00:00Z'
 }
 
-const existingCourse: Course = {
+const existingCourse: GuidedCourse = {
   id: 'course-1',
   owner: 'curator',
+  kind: 'guided',
   title: 'Course 1',
   thumbnail: 'kodo://bucket/course-thumbnail.png',
-  entrypoint: '/editor/curator/EntryProject/lesson?tab=code',
-  prompt: 'Prompt'
+  content: { entrypoint: '/editor/curator/EntryProject/lesson?tab=code', prompt: 'Prompt' }
 }
 
 beforeEach(() => {
@@ -162,16 +164,17 @@ beforeEach(() => {
   vi.mocked(updateCourseSeries).mockImplementation(async (id, params) => ({
     id,
     owner: 'alice',
-    ...params,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z'
+    kind: existingSeries.kind,
+    createdAt: existingSeries.createdAt,
+    updatedAt: existingSeries.updatedAt,
+    ...params
   }))
   vi.mocked(addCourseSeries).mockImplementation(async (params) => ({
     id: 'created-series',
     owner: 'alice',
-    ...params,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z'
+    createdAt: existingSeries.createdAt,
+    updatedAt: existingSeries.updatedAt,
+    ...params
   }))
   vi.mocked(deleteCourse).mockResolvedValue(undefined)
   vi.mocked(updateProject).mockImplementation(
@@ -215,11 +218,10 @@ describe('exportCourseSeriesFile', () => {
     expect(manifest.courseSeries).not.toHaveProperty('order')
     expect(manifest.courses[0]).toEqual({
       title: existingCourse.title,
-      entrypoint: existingCourse.entrypoint,
-      prompt: existingCourse.prompt,
+      content: existingCourse.content,
       thumbnail: { path: 'thumbnails/courses/0.png' }
     })
-    expect(manifest.version).toBe(2)
+    expect(manifest.version).toBe(3)
     expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual(['curator/EntryProject'])
     expect(Object.keys(unzipped)).toEqual(
       expect.arrayContaining([
@@ -244,6 +246,7 @@ describe('importCourseSeriesFile', () => {
 
     expect(addCourseSeries).toHaveBeenCalledWith(
       {
+        kind: 'guided',
         title: 'Imported series',
         thumbnail: 'kodo://imported/thumbnails/course-series.png',
         description: 'Imported description',
@@ -268,10 +271,13 @@ describe('importCourseSeriesFile', () => {
 
     expect(addCourse).toHaveBeenCalledWith(
       {
+        kind: 'guided',
         title: 'Imported course',
         thumbnail: 'kodo://imported/thumbnails/courses/0.png',
-        entrypoint: '/editor/alice/EntryProject/lesson?tab=code',
-        prompt: 'Imported prompt'
+        content: {
+          entrypoint: '/editor/alice/EntryProject/lesson?tab=code',
+          prompt: 'Imported prompt'
+        }
       },
       ctrl.signal
     )
@@ -321,7 +327,7 @@ describe('importCourseSeriesFile', () => {
     )
     expect(addCourse).toHaveBeenCalledWith(
       expect.objectContaining({
-        entrypoint: '/editor/saved-owner/SavedProject/lesson?tab=code'
+        content: { entrypoint: '/editor/saved-owner/SavedProject/lesson?tab=code', prompt: 'Imported prompt' }
       }),
       undefined
     )
@@ -359,7 +365,7 @@ describe('importCourseSeriesFile', () => {
     )
     expect(addCourse).toHaveBeenCalledWith(
       expect.objectContaining({
-        entrypoint: '/editor/final-owner/FinalProject/lesson?tab=code'
+        content: { entrypoint: '/editor/final-owner/FinalProject/lesson?tab=code', prompt: 'Imported prompt' }
       }),
       undefined
     )
@@ -374,7 +380,7 @@ describe('importCourseSeriesFile', () => {
 
     expect(addCourse).toHaveBeenCalledWith(
       expect.objectContaining({
-        entrypoint: '/editor/curator/EntryProjectPlus/lesson?tab=code'
+        content: { entrypoint: '/editor/curator/EntryProjectPlus/lesson?tab=code', prompt: 'Imported prompt' }
       }),
       undefined
     )
@@ -410,7 +416,7 @@ async function makeCourseSeriesFile(entrypoint: string) {
     'course-series.json': new TextEncoder().encode(
       JSON.stringify({
         format: 'xbuilder-course-series',
-        version: 2,
+        version: 3,
         courseSeries: {
           title: 'Imported series',
           description: 'Imported description',
@@ -420,8 +426,7 @@ async function makeCourseSeriesFile(entrypoint: string) {
           {
             title: 'Imported course',
             thumbnail: { path: 'thumbnails/courses/0.png' },
-            entrypoint,
-            prompt: 'Imported prompt'
+            content: { entrypoint, prompt: 'Imported prompt' }
           }
         ],
         projects: [{ fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' }]

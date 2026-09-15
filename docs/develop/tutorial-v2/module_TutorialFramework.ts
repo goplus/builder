@@ -13,8 +13,8 @@ export type TutorialProjectIndex = {
     /** Course-relative path to the project root. */
     root: string;
   };
-  /** Initial route inside Project Editor, including mode and selection. */
-  inEditorRoute: string;
+  /** Initial path inside Project Editor, including mode and selection. */
+  inEditorPath: string;
   /** Course-author-provided instructions not shown in the learner UI. */
   copilotContext: string;
 };
