@@ -249,4 +249,20 @@ Thanks, please check the attached screenshot.`)
       expect(notification.content).not.toContain('<notification-time')
     }
   })
+
+  it('links users and projects in social notification Markdown', () => {
+    const model = createFeedbackDemoModel()
+    const socialNotifications = model.data.notifications.filter((notification) => notification.feedbackID === '')
+    const userUrl = 'http://localhost:5173/user/go-wyvern'
+    const projectUrl = 'http://localhost:5173/project/go-wyvern/AI-Town'
+
+    for (const notification of socialNotifications) {
+      expect(notification.content).toContain(`](${userUrl})`)
+      if (notification.title.includes('关注')) {
+        expect(notification.content).not.toContain(`](${projectUrl})`)
+      } else {
+        expect(notification.content).toContain(`](${projectUrl})`)
+      }
+    }
+  })
 })
