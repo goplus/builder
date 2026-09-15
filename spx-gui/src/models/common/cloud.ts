@@ -334,8 +334,8 @@ type KodoUploadRes = {
   hash: string
 }
 
-// For smaller files, hashing and checking for an existing object costs more than directly uploading.
-const minKodoFileSizeForExistingObjectCheck = 1024 * 1024
+// Minimum size for checking an existing Kodo object (1 MiB); for smaller files, hashing and querying cost more than uploading.
+const minFileSizeForExistingCheck = 1024 * 1024
 
 async function getExistingKodoUrl(file: File, data: ArrayBuffer, signal?: AbortSignal): Promise<UniversalUrl | null> {
   const hash = await calculateQiniuEtag(data)
@@ -356,7 +356,7 @@ const saveToKodoController = new ConcurrencyLimitController(20)
 const saveToKodo = (file: File, signal?: AbortSignal) =>
   saveToKodoController.run<UniversalUrl>(async () => {
     const ab = await file.arrayBuffer(signal)
-    if (ab.byteLength >= minKodoFileSizeForExistingObjectCheck) {
+    if (ab.byteLength >= minFileSizeForExistingCheck) {
       const existingUrl = await getExistingKodoUrl(file, ab, signal)
       if (existingUrl != null) return existingUrl
     }
