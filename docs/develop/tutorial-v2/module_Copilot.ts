@@ -16,11 +16,11 @@ export type CopilotRound = {
 
 /**
  * Serializable snapshot of a session. Consumers treat it as opaque: it is produced by `exportCurrentSession`
- * and only ever passed back to `restoreSession`.
+ * and only ever passed back to `restoreSession`; the shape of its rounds is the module's own business.
  */
 export type CopilotSessionExported = {
   topic: CopilotTopic;
-  rounds: CopilotRound[];
+  rounds: unknown[];
 };
 
 export type CopilotTextRequest = {

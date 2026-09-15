@@ -380,14 +380,6 @@ export type SessionExported = {
   rounds: RoundExported[]
 }
 
-/**
- * Deep-copies an exported session. `SessionExported` is plain JSON data (it is what gets persisted), so a JSON
- * round trip is a faithful copy; `structuredClone` is not used because the arrays may be reactive proxies.
- */
-function cloneSessionExported(exported: SessionExported): SessionExported {
-  return JSON.parse(JSON.stringify(exported)) as SessionExported
-}
-
 export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
@@ -766,13 +758,11 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * Export the current session so that it can be brought back later with `restoreSession`, e.g. around a flow
    * that takes the copilot over with a session of its own (a course preview run from the Course Editor).
    * Returns `null` when there is no current session.
+   * The snapshot shares its message data with the session it came from (nothing is copied), so take it right
+   * before that session gets replaced rather than while it keeps running.
    */
   exportCurrentSession(): SessionExported | null {
-    const session = this.currentSession
-    if (session == null) return null
-    // `Session.export()` hands out the live message arrays; a snapshot must not follow the session's later
-    // changes (a round completing, a retry clearing its messages), so it is copied here.
-    return cloneSessionExported(session.export())
+    return this.currentSession?.export() ?? null
   }
 
   /**
@@ -782,8 +772,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    */
   restoreSession(exported: SessionExported): void {
     this.endCurrentSession()
-    // Load from a copy so the restored session and the caller's snapshot never share mutable state.
-    this.currentSessionRef.value = Session.load(cloneSessionExported(exported), this)
+    this.currentSessionRef.value = Session.load(exported, this)
   }
 
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */
