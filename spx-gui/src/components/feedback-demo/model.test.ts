@@ -216,7 +216,7 @@ Thanks, please check the attached screenshot.`)
     }
 
     const releaseNotification = model.data.notifications.find((notification) => notification.id === 'notification-1011')
-    expect(releaseNotification?.content.match(/^\[[^\]]+\]\([^)]+\)$/gm)).toHaveLength(2)
+    expect(releaseNotification?.content.match(/^\[[^\]]+\]\([^)]+\)$/gm)).toHaveLength(1)
     expect(releaseNotification?.content.indexOf('运行项目时一直卡在加载界面')).toBeLessThan(
       releaseNotification?.content.indexOf('发布流程中的状态提示已经优化') ?? -1
     )

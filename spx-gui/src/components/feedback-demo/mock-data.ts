@@ -9,7 +9,7 @@ export type FeedbackSource = 'globalForm'
 export type FeedbackStatus = 'new' | 'handled' | 'replied'
 export type { FeedbackContext } from './context'
 
-export const feedbackDemoMockVersion = 19
+export const feedbackDemoMockVersion = 20
 
 export interface FeedbackAttachment {
   id: string
@@ -190,8 +190,6 @@ const mockData: FeedbackDemoData = {
 > [xbuilder-loading-screen.jpg](${feedbackDemoImageUrl} "xbuilder-loading-screen.jpg")
 
 发布流程中的状态提示已经优化，请重新发布项目确认效果。若还是不行，请参考下面的操作指引。
-
-[release-guide.png](${releaseGuideUrl} "release-guide.png")
 
 [xbuilder-project-page.png](${projectPageScreenshotUrl} "xbuilder-project-page.png")`,
       createdAt: '2026-09-10T09:40:00+08:00',
