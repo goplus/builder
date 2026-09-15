@@ -1,8 +1,9 @@
 import { reactive, computed } from 'vue'
 import { composeQuery, useQuery, useQueryCache, useQueryWithCache } from '@/utils/query'
 import { capture, useAction } from '@/utils/exception'
-import { OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
+import { OAuthErrorCode, OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
 import { normalizeLang, useI18n } from '@/utils/i18n'
+import { OAuthException } from '@/apis/common/exception'
 import * as userApis from '@/apis/user'
 import { accountOAuthApisForXBuilder as oauthApis } from '@/apis/account/oauth'
 import { getUserQueryKey } from './query-keys'
@@ -68,8 +69,11 @@ async function getSignedInUsernameByAccessToken(accessToken: string) {
   return user.username
 }
 
-async function handleTokenResponse(resp: OAuthTokenResponse) {
-  const username = await getSignedInUsernameByAccessToken(resp.access_token)
+/**
+ * Persists OAuth tokens, retrieving the username only when one was not already available.
+ */
+async function handleTokenResponse(resp: OAuthTokenResponse, username: string | null = null) {
+  username ??= await getSignedInUsernameByAccessToken(resp.access_token)
   setUserState({
     accessToken: resp.access_token,
     accessTokenExpiresAt: resp.expires_in != null ? Date.now() + resp.expires_in * 1000 : null,
@@ -117,6 +121,12 @@ export async function signOut() {
   ).catch((e) => capture(e, 'Failed to revoke tokens during sign out'))
 }
 
+/**
+ * Returns a valid access token, or null when the user is not signed in.
+ *
+ * Clears state and resolves null when the refresh token is invalid; preserves state and rejects
+ * for other refresh failures.
+ */
 export async function ensureAccessToken(): Promise<string | null> {
   if (isAccessTokenValid()) return userState.accessToken
 
@@ -132,10 +142,15 @@ export async function ensureAccessToken(): Promise<string | null> {
     const refreshTokenBeforeRefresh = userState.refreshToken
     try {
       const token = await ensureOAuthFlow().refreshToken(refreshTokenBeforeRefresh)
-      await handleTokenResponse(token)
+      // Reuse the cached username so a failing GET /user cannot prevent persisting rotated tokens.
+      await handleTokenResponse(token, userState.username)
     } catch (e) {
       capture(e, 'Failed to refresh access token')
-      clearUserState()
+      if (e instanceof OAuthException && e.error === OAuthErrorCode.InvalidGrant) {
+        clearUserState()
+        return
+      }
+      throw e
     }
   })
   return userState.accessToken

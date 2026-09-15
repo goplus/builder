@@ -1,8 +1,9 @@
 import { reactive } from 'vue'
 
-import { join } from '@/utils/path'
+import { extname, join } from '@/utils/path'
 import { createFileWithWebUrl } from '../common/cloud'
 import { File, fromConfig, listDirs, toConfig, type Files } from '../common/file'
+import { validateFontName } from './common/asset-name'
 
 export const fontAssetPath = 'assets/fonts'
 const fontConfigFileName = 'index.json'
@@ -11,24 +12,21 @@ type RawFontConfig = {
   faces?: { path?: string }[]
 }
 
-function validateFontFamilyName(name: string) {
-  if (name === '') throw new Error('font family name must not be empty')
-  if (name === 'default') throw new Error('font family default is reserved')
-}
-
 export class FontFamily {
   name: string
   file: File
 
   constructor(name: string, file: File) {
-    validateFontFamilyName(name)
+    const err = validateFontName(name)
+    if (err != null) throw new Error(`invalid font family name ${name}: ${err.en}`)
     this.name = name
     this.file = file
     return reactive(this) as this
   }
 
   static async load(name: string, files: Files) {
-    validateFontFamilyName(name)
+    const err = validateFontName(name)
+    if (err != null) throw new Error(`invalid font family name ${name}: ${err.en}`)
     const prefix = join(fontAssetPath, name)
     const configFile = files[join(prefix, fontConfigFileName)]
     if (configFile == null) throw new Error(`font configuration not found for ${name}`)
@@ -48,10 +46,11 @@ export class FontFamily {
 
   export(): Files {
     const prefix = join(fontAssetPath, this.name)
-    const config: RawFontConfig = { faces: [{ path: this.file.name }] }
+    const filename = `font${extname(this.file.name)}`
+    const config: RawFontConfig = { faces: [{ path: filename }] }
     return {
       [join(prefix, fontConfigFileName)]: fromConfig(fontConfigFileName, config),
-      [join(prefix, this.file.name)]: this.file
+      [join(prefix, filename)]: this.file
     }
   }
 }

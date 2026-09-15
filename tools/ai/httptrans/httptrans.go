@@ -143,23 +143,49 @@ func handleResponse(resp *http.Response, target any) error {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read http response body: %w", err)
+		responseErr := fmt.Errorf("failed to read http response body: %w", err)
+		if resp.StatusCode != http.StatusOK {
+			return classifyResponseError(resp, responseErr)
+		}
+		return responseErr
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusTooManyRequests {
-			retryAfter := ai.RetryAfterFromHeader(resp.Header.Get("Retry-After"))
-			return &ai.TooManyRequestsError{
-				RetryAfter: retryAfter,
-				Err:        fmt.Errorf("failed to fetch with status: %s: %s", resp.Status, body),
-			}
-		}
-		return fmt.Errorf("failed to fetch with status: %s: %s", resp.Status, body)
+		return classifyResponseError(resp, fmt.Errorf("failed to fetch with status: %s: %s", resp.Status, body))
 	}
 
-	if err := json.Unmarshal(body, target); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+	if err := decoder.Decode(target); err != nil {
+		return fmt.Errorf("failed to unmarshal response json: %w", err)
+	}
+	if err := decoder.Decode(new(any)); err != io.EOF {
+		if err == nil {
+			return fmt.Errorf("failed to unmarshal response json: unexpected trailing data at byte %d", decoder.InputOffset())
+		}
 		return fmt.Errorf("failed to unmarshal response json: %w", err)
 	}
 
 	return nil
+}
+
+// classifyResponseError classifies a failed HTTP response for retry handling.
+func classifyResponseError(resp *http.Response, err error) error {
+	switch {
+	case resp.StatusCode == http.StatusTooManyRequests:
+		return &ai.TooManyRequestsError{
+			RetryAfter: ai.RetryAfterFromHeader(resp.Header.Get("Retry-After")),
+			Err:        err,
+		}
+	case resp.StatusCode >= http.StatusBadRequest && resp.StatusCode < http.StatusInternalServerError:
+		return &ai.ClientError{
+			StatusCode: resp.StatusCode,
+			RetryAfter: ai.RetryAfterFromHeader(resp.Header.Get("Retry-After")),
+			Err:        err,
+		}
+	case resp.StatusCode >= http.StatusInternalServerError:
+		return &ai.RetryableError{Err: err}
+	default:
+		return err
+	}
 }

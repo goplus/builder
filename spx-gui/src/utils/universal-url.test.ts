@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   UniversalUrlScheme,
   getUniversalUrlScheme,
+  getUniversalUrlFilename,
   parseUniversalUrl,
   stringifyDataUrl,
   stringifyKodoUrl,
@@ -40,6 +41,16 @@ describe('getUniversalUrlScheme', () => {
     expect(() => getUniversalUrlScheme('ftp://example.com')).toThrow('unsupported universal url scheme: ftp')
     expect(() => getUniversalUrlScheme('file:///path/to/file')).toThrow('unsupported universal url scheme: file')
     expect(() => getUniversalUrlScheme('custom://something')).toThrow('unsupported universal url scheme: custom')
+  })
+})
+
+describe('getUniversalUrlFilename', () => {
+  it('extracts the POSIX path before reading HTTP URL filenames', () => {
+    expect(getUniversalUrlFilename('https://example.com/path/file.png?version=1')).toBe('file.png')
+  })
+
+  it('ignores Kodo FOP operations after the object key', () => {
+    expect(getUniversalUrlFilename('kodo://bucket/path/to/file.png?imageView2/0/w/100')).toBe('file.png')
   })
 })
 
@@ -115,6 +126,11 @@ describe('parseUniversalUrl', () => {
       expect(result.scheme).toBe(UniversalUrlScheme.Kodo)
       expect(result.bucket).toBe('test-bucket')
       expect(result.key).toBe('deep/nested/path/file-name.jpg')
+    })
+
+    it('keeps FOP operations with the Kodo key', () => {
+      const result = parseUniversalUrl('kodo://bucket/path/file.png?imageView2/0/w/100') as KodoUrlParsed
+      expect(result.key).toBe('path/file.png?imageView2/0/w/100')
     })
 
     it('should throw error for invalid kodo url without slash', () => {

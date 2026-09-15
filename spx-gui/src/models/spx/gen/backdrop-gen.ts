@@ -3,7 +3,7 @@ import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import type { Prettify } from '@/utils/types'
 import type { I18n } from '@/utils/i18n'
-import { extname } from '@/utils/path'
+import { encodePathSegment, extname } from '@/utils/path'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
 import {
   adoptAsset,
@@ -46,7 +46,7 @@ export const backdropGenAssetPath = 'assets/backdrop-gens'
 const backdropGenConfigFileName = 'index.json'
 
 function assetsPathFor(name: string) {
-  return `gen/assets/backdrops/${name}`
+  return `gen/assets/backdrops/${encodePathSegment(name)}`
 }
 
 export class BackdropGen extends Disposable {
@@ -227,7 +227,7 @@ export class BackdropGen extends Disposable {
       config.resultConfig = resultConfig
       Object.assign(files, resultFiles)
     }
-    files[`${backdropGenAssetPath}/${this.name}/${backdropGenConfigFileName}`] = fromConfig(
+    files[`${backdropGenAssetPath}/${encodePathSegment(this.name)}/${backdropGenConfigFileName}`] = fromConfig(
       backdropGenConfigFileName,
       config
     )

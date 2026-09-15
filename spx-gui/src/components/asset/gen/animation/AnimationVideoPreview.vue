@@ -159,14 +159,14 @@ const cutStartRef = ref(0)
 /** Timepoint in ms to cut end */
 const cutEndRef = ref(0)
 
+/** Interval in ms between extracted animation frames */
+const frameInterval = 100
+
 function notifyFramesConfigChanged() {
-  const duration = cutEndRef.value - cutStartRef.value
-  // TODO: We may improve the interval calculation logic later
-  const interval = duration >= 2000 ? 300 : 100
   emit('update:framesConfig', {
     startTime: cutStartRef.value,
     duration: cutEndRef.value - cutStartRef.value,
-    interval
+    interval: frameInterval
   })
 }
 
@@ -200,7 +200,7 @@ watch(
     // to persist the cut range across animation / costume selections. TODO: Improve this later
     if (newDuration > 0 && cutEndRef.value === 0) {
       cutStartRef.value = 0
-      cutEndRef.value = newDuration
+      cutEndRef.value = snapDown(newDuration)
       notifyFramesConfigChanged()
     }
   },
@@ -335,16 +335,19 @@ function adjustStartTime(newTime: number, withSnap = false) {
 
 function adjustEndTime(newTime: number, videoDuration: number, withSnap = false) {
   const time = withSnap ? snap(newTime) : newTime
-  return clamp(time, cutStartRef.value + minDuration, videoDuration)
+  const maxTime = withSnap ? snapDown(videoDuration) : videoDuration
+  return clamp(time, cutStartRef.value + minDuration, maxTime)
 }
 
-/** Precision for snapping in ms */
-const precision = 100
 /** Minimum allowed segment duration in ms */
-const minDuration = precision
+const minDuration = frameInterval
 
 function snap(timeInMs: number) {
-  return Math.round(timeInMs / precision) * precision
+  return Math.round(timeInMs / frameInterval) * frameInterval
+}
+
+function snapDown(timeInMs: number) {
+  return Math.floor(timeInMs / frameInterval) * frameInterval
 }
 
 function clamp(timeInMs: number, min: number, max: number) {
