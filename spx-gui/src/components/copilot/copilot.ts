@@ -711,7 +711,10 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   async generateResponse(request: CopilotTextRequest, signal?: AbortSignal): Promise<string>
   async generateResponse(request: CopilotJSONRequest, signal?: AbortSignal): Promise<unknown>
-  async generateResponse(request: CopilotTextRequest | CopilotJSONRequest, signal?: AbortSignal): Promise<string | unknown> {
+  async generateResponse(
+    request: CopilotTextRequest | CopilotJSONRequest,
+    signal?: AbortSignal
+  ): Promise<string | unknown> {
     const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
     messages.push(await this.getContextMessage())
 
