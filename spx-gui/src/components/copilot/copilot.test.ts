@@ -452,6 +452,120 @@ describe('Copilot', () => {
     expect(newCopilot.currentSession?.rounds[0].state).toBe(RoundState.Completed)
   })
 
+  it('should export the current session and restore it after another session took over', async () => {
+    const { copilot, storage } = createCopilotWithStorage(createTextStreamBatches('Author reply', 'Learner reply'))
+
+    // Nothing to export without a session.
+    expect(copilot.exportCurrentSession()).toBe(null)
+
+    // The author's session, with one completed round.
+    const authorTopic = createBasicTopic('Author chat', 'Helping the author')
+    await copilot.startSession(authorTopic)
+    copilot.addUserTextMessage('How do I show a video?', authorTopic)
+    await waitForCompletion()
+    const exported = copilot.exportCurrentSession()
+    expect(exported).not.toBe(null)
+    expect(exported!.topic).toEqual(authorTopic)
+    expect(exported!.rounds.length).toBe(1)
+
+    // Another flow takes the copilot over with its own session (e.g. a course preview), then the panel is closed.
+    const learnerTopic = createBasicTopic('Learner chat', 'Course context')
+    await copilot.startSession(learnerTopic)
+    copilot.addUserTextMessage('Hi', learnerTopic)
+    await waitForCompletion()
+    expect(copilot.currentSession?.topic).toEqual(learnerTopic)
+    copilot.close()
+
+    // Bring the author's session back: same topic and rounds, panel untouched, storage follows.
+    copilot.restoreSession(exported!)
+    expect(copilot.currentSession?.topic).toEqual(authorTopic)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+    const round = copilot.currentSession!.rounds[0]
+    expect(round.state).toBe(RoundState.Completed)
+    expect(round.userMessage.type === 'text' && round.userMessage.content).toBe('How do I show a video?')
+    const reply = round.resultMessages[0]
+    expect(reply.role === 'copilot' && reply.content).toBe('Author reply')
+    expect(copilot.active).toBe(false)
+    await waitForThrottledSave()
+    expect(storage.get()?.topic).toEqual(authorTopic)
+  })
+
+  it('should restore an in-progress round as cancelled and abort the round of the replaced session', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('never'), 0, true)
+
+    const topicA = createBasicTopic('A')
+    await copilot.startSession(topicA)
+    copilot.addUserTextMessage('a', topicA)
+    await timeout(50)
+    const exported = copilot.exportCurrentSession()!
+    expect([RoundState.Loading, RoundState.InProgress]).toContain(exported.rounds[0].state)
+
+    const topicB = createBasicTopic('B')
+    await copilot.startSession(topicB)
+    copilot.addUserTextMessage('b', topicB)
+    await timeout(50)
+    const roundB = copilot.currentSession!.currentRound!
+    expect([RoundState.Loading, RoundState.InProgress]).toContain(roundB.state)
+
+    copilot.restoreSession(exported)
+    // The replaced session's request is aborted (the mock generator notices the signal on its next poll), and the
+    // restored request is not resumed.
+    await timeout(200)
+    expect(roundB.state).toBe(RoundState.Cancelled)
+    expect(copilot.currentSession?.topic).toEqual(topicA)
+    expect(copilot.currentSession?.rounds[0].state).toBe(RoundState.Cancelled)
+  })
+
+  it('should export rounds whose messages do not follow the live round afterwards', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('First reply', 'Second reply'), 100)
+    const topic = createBasicTopic('Snapshot')
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('hello', topic)
+    await timeout(50)
+
+    // Exported while the round is still streaming: no result message yet.
+    const exported = copilot.exportCurrentSession()!
+    expect(exported.rounds[0].resultMessages).toEqual([])
+
+    // The live round completes, then is retried (which clears its messages before re-sending).
+    await waitForCompletion()
+    const liveRound = copilot.currentSession!.rounds[0]
+    expect(liveRound.resultMessages.length).toBe(1)
+    liveRound.retry()
+    await waitForCompletion()
+    expect(liveRound.resultMessages.length).toBe(1)
+
+    // The export kept its own array, and so does a session restored from it.
+    expect(exported.rounds[0].resultMessages).toEqual([])
+    copilot.restoreSession(exported)
+    expect(copilot.currentSession!.rounds[0].resultMessages).toEqual([])
+    copilot.currentSession!.rounds[0].resultMessages.push({ role: 'copilot', content: 'later' })
+    expect(exported.rounds[0].resultMessages).toEqual([])
+  })
+
+  it('should restore an event round still waiting for its delayed start as it is, without sending it', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Reply', 'Never used'))
+    const topic = createEventTopic('Events')
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('hello', topic)
+    await waitForCompletion()
+
+    // A user event in the middle of a session is sent after a delay; export inside that window.
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, 'User navigated to /somewhere')
+    expect(copilot.currentSession!.currentRound!.state).toBe(RoundState.Initialized)
+    const exported = copilot.exportCurrentSession()!
+
+    // Another session takes over, then the snapshot is restored: the event stays part of the history as
+    // `Initialized` (like events superseded by a later one); the restored round is never sent.
+    await copilot.startSession(createBasicTopic('Other'))
+    copilot.restoreSession(exported)
+    await timeout(1200)
+    const restored = copilot.currentSession!.rounds[1]
+    expect(copilot.currentSession?.rounds.length).toBe(2)
+    expect(restored.state).toBe(RoundState.Initialized)
+    expect(restored.resultMessages).toEqual([])
+  })
+
   it('should handle user events correctly', async () => {
     const { copilot } = createCopilotWithStorage(createTextStreamBatches('Event received and processed.'))
     const topic = createEventTopic('Event Test Topic')
