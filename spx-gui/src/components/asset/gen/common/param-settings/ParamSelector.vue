@@ -60,8 +60,9 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
       <!-- TODO: Standardize this button variant once the design system specification is finalized. -->
       <button
         v-radar="{
-          name: $t(name),
-          desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
+          name: 'param-selector',
+          desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`,
+          attrs: { name: $t(name) }
         }"
         class="h-8 flex items-center justify-center gap-1 rounded-md border border-grey-400 bg-grey-100 pr-2 pl-1 text-sm text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
         :class="{ 'aspect-square px-0!': iconOnly }"

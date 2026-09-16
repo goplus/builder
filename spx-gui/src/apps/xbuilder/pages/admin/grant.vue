@@ -256,7 +256,7 @@ function dismissCreatedToken() {
         </div>
         <UIButton
           v-radar="{
-            name: $t({ en: 'Refresh grant details', zh: '刷新授权详情' }),
+            name: 'refresh-grant-details',
             desc: 'Reload app grant and token data'
           }"
           icon="reload"

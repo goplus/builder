@@ -25,7 +25,7 @@ async function handleCopy() {
     {{ $t(label) }}
     <template #trigger>
       <button
-        v-radar="{ name: $t(label), desc: 'Copy value to clipboard' }"
+        v-radar="{ name: 'copy-button', label: $t(label), desc: 'Copy value to clipboard' }"
         class="inline-flex h-5 w-5 flex-none cursor-pointer items-center justify-center rounded border-0 bg-transparent p-0 text-grey-700 transition-colors hover:bg-grey-300 hover:text-primary-main focus-visible:outline-2 focus-visible:outline-primary-main"
         type="button"
         :aria-label="$t(label)"
