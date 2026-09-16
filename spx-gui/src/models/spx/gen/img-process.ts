@@ -53,7 +53,7 @@ export async function removeImageBackground(inputFile: File, signal?: AbortSigna
   }
 }
 
-/** Apply the same Kodo image processing used by generated costumes. */
+/** Apply the Kodo image processing that the backend attaches to generated costumes. */
 export function toCostumeReferenceImageUrl(url: string) {
   const parsed = parseUniversalUrl(url)
   if (parsed.scheme !== UniversalUrlScheme.Kodo || parsed.key.includes('?')) {

@@ -375,7 +375,8 @@ export class AnimationGen extends Disposable {
   cancel() {
     this.abortGenerateVideo()
     const referenceImageTask = this.referenceImageTask
-    // Do not resume cancelled preprocessing, even if background removal finished before canvas processing was cancelled.
+    // With no video task yet, generation is still preparing the local reference.
+    // Drop its removal task before aborting so export cannot resume a generation the user cancelled.
     if (this.generateVideoState.status === 'running' && this.generateVideoTask == null) this.referenceImageTask = null
     return Promise.all([
       referenceImageTask?.tryCancel(),
