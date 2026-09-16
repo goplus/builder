@@ -4,7 +4,7 @@ import { TaskType } from '@/apis/aigc'
 import * as canvasUtils from '@/utils/canvas'
 import * as cloudHelpers from '@/models/common/cloud'
 import { mockFile } from '../../common/test'
-import { fitImageToCanvasWithContrastBg, prepareAnimationReferenceImage } from './img-process'
+import { fitImageToCanvasWithContrastBg, removeImageBackground } from './img-process'
 
 const aigcMock = setupAigcMock()
 
@@ -74,28 +74,29 @@ describe('img-process', () => {
     expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 512, 512)
   })
 
-  it('removes the background before fitting an animation reference frame', async () => {
+  it('removes the background and returns the task ID', async () => {
     vi.spyOn(cloudHelpers, 'saveFile').mockResolvedValue('kodo://mock-bucket/test.png')
-    mockImage(300, 400)
-    const ctx = mockCanvas(new Uint8ClampedArray([0, 0, 0, 255]))
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(8))
-      })
-    )
-
     const input = mockFile('hero.png')
-    const result = await prepareAnimationReferenceImage(input)
+    const result = await removeImageBackground(input)
 
     const [taskRecord] = [...aigcMock.tasks.values()]
     expect(taskRecord.task.type).toBe(TaskType.RemoveBackground)
     expect(taskRecord.params).toEqual({ imageUrl: 'kodo://mock-bucket/test.png' })
     expect(result.taskId).toBe(taskRecord.task.id)
-    expect(result.file.name).toBe('hero.jpg')
-    expect(ctx.drawImage).toHaveBeenNthCalledWith(1, expect.anything(), 64, 0, 384, 512)
-    expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 512, 512)
+    expect(result.file.name).toBe('hero.png')
+  })
+
+  it('does not start background removal if cancelled during upload', async () => {
+    let resolveUpload!: (url: string) => void
+    const upload = new Promise<string>((resolve) => {
+      resolveUpload = resolve
+    })
+    vi.spyOn(cloudHelpers, 'saveFile').mockReturnValueOnce(upload)
+    const ctrl = new AbortController()
+    const pending = removeImageBackground(mockFile('reference.png'), ctrl.signal).catch((error) => error)
+    ctrl.abort()
+    resolveUpload('kodo://mock-bucket/reference.png')
+    expect(await pending).toBe(ctrl.signal.reason)
+    expect(aigcMock.tasks.size).toBe(0)
   })
 })

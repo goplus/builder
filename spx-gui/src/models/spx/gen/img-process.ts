@@ -13,7 +13,7 @@ import { Task } from './common'
  * Adapt image file to fit AIGC remove background.
  * Unsupported image files will be converted to jpeg.
  */
-async function adaptImgForBackgroundRemoval(file: File): Promise<File> {
+export async function adaptImgForBackgroundRemoval(file: File): Promise<File> {
   for (const ext of taskRemoveBackgroundSupportedImgExts) {
     if (file.type === getMimeFromExt(ext)) return file
   }
@@ -29,6 +29,7 @@ export async function removeImageBackground(inputFile: File, signal?: AbortSigna
   signal?.throwIfAborted()
   const adaptedFile = await adaptImgForBackgroundRemoval(inputFile)
   const universalUrl = await saveFile(adaptedFile, signal)
+  signal?.throwIfAborted()
   const task = new Task(TaskType.RemoveBackground)
   const cancelTask = () => {
     void task.tryCancel()
@@ -135,19 +136,5 @@ export async function fitImageToCanvasWithContrastBg(
   } finally {
     signal?.removeEventListener('abort', disposeOnAbort)
     disposable.dispose()
-  }
-}
-
-/**
- * Process a user local image for animation reference frame:
- * 1. Remove background
- * 2. Proportional scale and center into 512x512
- * 3. Fill solid contrasting background (black if subject is light, white if dark)
- */
-export async function prepareAnimationReferenceImage(file: File, signal?: AbortSignal) {
-  const { file: noBgFile, taskId } = await removeImageBackground(file, signal)
-  return {
-    file: await fitImageToCanvasWithContrastBg(noBgFile, 512, 512, signal),
-    taskId
   }
 }

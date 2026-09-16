@@ -2,7 +2,8 @@ import { nanoid } from 'nanoid'
 import { reactive, watch } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { encodePathSegment, extname } from '@/utils/path'
-import { Disposable } from '@/utils/disposable'
+import { Disposable, mergeSignals, promiseForSignal } from '@/utils/disposable'
+import { Cancelled } from '@/utils/exception'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
 import { getContentBoundingRect } from '@/utils/img'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
@@ -94,6 +95,7 @@ export class SpriteGen extends Disposable {
   private enrichPhase: Phase<SpriteSettings>
   private genImagesTask: Task<TaskType.GenerateCostume> | null
   private genImagesPhase: Phase<File[]>
+  private genImagesCtrl: AbortController | null = null
   private prepareContentPhase: Phase<void>
   private animationGenIdBindings: Partial<Record<State, string>> = {}
 
@@ -106,6 +108,7 @@ export class SpriteGen extends Disposable {
     this.project = project
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich sprite settings', zh: '丰富角色设置' })
     this.genImagesTask = inits.genImagesTask ?? null
+    this.genImagesTask?.disposeOnSignal(this.getSignal())
     this.genImagesPhase = inits.genImagesPhase ?? new Phase({ en: 'generate sprite images', zh: '生成角色图片' })
     this.prepareContentPhase =
       inits.prepareContentPhase ?? new Phase({ en: 'prepare sprite content', zh: '准备角色内容' })
@@ -213,17 +216,32 @@ export class SpriteGen extends Disposable {
   }
   async genImages() {
     this.setImageIndex(null)
-    return this.genImagesPhase.run(async (reporter) => {
-      const settings = this.getDefaultCostumeSettings()
-      if (this.referenceImage != null) {
-        settings.referenceImageUrl = await saveFile(this.referenceImage)
-      }
-      this.genImagesTask?.tryCancel()
-      this.genImagesTask = new Task(TaskType.GenerateCostume)
-      await this.genImagesTask.start({ settings, n: 4 })
-      const { imageUrls } = await this.genImagesTask.untilCompleted(reporter)
-      return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    })
+    this.genImagesCtrl?.abort(new Cancelled('sprite image generation cancelled'))
+    this.genImagesTask?.tryCancel()
+    this.genImagesTask?.dispose()
+    this.genImagesTask = null
+    const ctrl = new AbortController()
+    this.genImagesCtrl = ctrl
+    const signal = mergeSignals(this.getSignal(), ctrl.signal)
+    try {
+      return await this.genImagesPhase.run(async (reporter) => {
+        signal.throwIfAborted()
+        const settings = this.getDefaultCostumeSettings()
+        if (this.referenceImage != null) {
+          settings.referenceImageUrl = await saveFile(this.referenceImage, signal)
+        }
+        signal.throwIfAborted()
+        this.genImagesTask = new Task(TaskType.GenerateCostume)
+        const task = this.genImagesTask
+        task.disposeOnSignal(signal)
+        await task.start({ settings, n: 4 })
+        signal.throwIfAborted()
+        const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
+        return imageUrls.map((url) => createFileWithUniversalUrl(url))
+      })
+    } finally {
+      if (this.genImagesCtrl === ctrl) this.genImagesCtrl = null
+    }
   }
   private restoreGenImagesTask() {
     const task = this.genImagesTask
@@ -504,6 +522,7 @@ export class SpriteGen extends Disposable {
    * - No exception will be thrown even if the cancellation requests fail.
    */
   cancel() {
+    this.genImagesCtrl?.abort(new Cancelled('sprite image generation cancelled'))
     return Promise.all([
       this.genImagesTask?.tryCancel(),
       ...this.costumes.map((c) => c.cancel()),

@@ -1,11 +1,11 @@
 import { shallowMount } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { File } from '@/models/common/file'
 import ReferenceImageButton from './ReferenceImageButton.vue'
 
 vi.mock('@/utils/file', () => ({
-  useFileUrl: () => [{ value: 'reference-url' }, { value: false }]
+  useFileUrl: () => [ref('reference-url'), ref(false)]
 }))
 
 vi.mock('../common/useReferenceImageUpload', () => ({
@@ -40,6 +40,7 @@ const CornerIconStub = defineComponent({
 })
 
 const stubs = {
+  ImageOption: false,
   UIDropdownWithTooltip: DropdownStub,
   UITooltip: TooltipStub,
   UICornerIcon: CornerIconStub,
@@ -68,7 +69,7 @@ describe('ReferenceImageButton', () => {
     expect(wrapper.get('[data-test-id="tooltip"]').text()).toBe('上传参考图片')
   })
 
-  it('keeps the file name out of the toolbar and removes it from the popover', async () => {
+  it('shows the reference image label in the tooltip and removes the file from the popover', async () => {
     const wrapper = shallowMount(ReferenceImageButton, {
       props: { file: { name: 'reference.png' } as File },
       global
@@ -77,8 +78,10 @@ describe('ReferenceImageButton', () => {
     const toolbar = wrapper.get('[data-test-id="toolbar"]')
     expect(toolbar.text()).not.toContain('reference.png')
     expect(toolbar.find('[data-test-id="remove"]').exists()).toBe(false)
-    expect(wrapper.get('[data-test-id="tooltip"]').text()).toBe('reference.png')
+    expect(wrapper.get('[data-test-id="tooltip"]').text()).toBe('参考图片')
     expect(wrapper.get('[data-test-id="popover"]').text()).toContain('reference.png')
+    expect(wrapper.get('[data-test-id="popover"]').text()).toContain('参考图片')
+    expect(wrapper.get('[data-test-id="remove"]').attributes('type')).toBe('trash')
 
     await wrapper.get('[data-test-id="remove"]').trigger('click')
 

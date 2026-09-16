@@ -374,6 +374,38 @@ describe('CostumeGen', () => {
     expect(loadedGen.image?.meta.universalUrl).toBe(gen.image?.meta.universalUrl)
   })
 
+  describe.each(['local-image', 'costume'])('uploading a %s reference', (reference) => {
+    it.each(['cancel', 'dispose', 'cancel-and-dispose'])('does not create a task after %s', async (action) => {
+      let resolveUpload!: (url: string) => void
+      const upload = new Promise<string>((resolve) => {
+        resolveUpload = resolve
+      })
+      const saveFile = mockSaveFile().mockReturnValueOnce(upload)
+      const sprite = Sprite.create('TestSprite', '')
+      const costume = new Costume('default', mockFile('default.png'))
+      sprite.addCostume(costume)
+      const gen = new CostumeGen(i18n, sprite, makeSpxProject())
+      if (reference === 'local-image') gen.setReferenceImage(mockFile('reference.png'))
+      else gen.setReferenceCostume(costume.id)
+      const pending = gen.generate().catch((error) => error)
+      await flushPromises()
+
+      if (action !== 'dispose') await gen.cancel()
+      if (action !== 'cancel') gen.dispose()
+      expect(saveFile.mock.calls[0][1]?.aborted).toBe(true)
+      resolveUpload('kodo://mock-bucket/reference.png')
+      expect(await pending).toBeInstanceOf(Error)
+      expect(aigcMock.tasks.size).toBe(0)
+      expect(gen.image).toBeNull()
+      if (action === 'cancel') {
+        await gen.generate()
+        expect(gen.generateState.status).toBe('finished')
+        expect(aigcMock.tasks.size).toBe(1)
+      }
+      gen.dispose()
+    })
+  })
+
   it('supports selecting, retaining, clearing, and removing reference images', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')

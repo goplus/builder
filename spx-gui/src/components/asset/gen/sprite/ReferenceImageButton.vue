@@ -2,15 +2,8 @@
 import { ref } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
-import {
-  UIButton,
-  UIBlockItem,
-  UIBlockItemTitle,
-  UICornerIcon,
-  UIDropdownWithTooltip,
-  UIImg,
-  UITooltip
-} from '@/components/ui'
+import { UIButton, UIDropdownWithTooltip, UIImg, UITooltip } from '@/components/ui'
+import ImageOption from '../common/ImageOption.vue'
 import { useReferenceImageUpload } from '../common/useReferenceImageUpload'
 
 const props = withDefaults(
@@ -57,26 +50,19 @@ function removeReferenceImage() {
       </UIButton>
     </template>
     <template #dropdown-content>
-      <div class="p-4">
-        <UIBlockItem :active="true" :interactive="false">
-          <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
-            <UIImg class="h-15 w-20 rounded-sm" :src="fileUrl" />
-          </div>
-          <UIBlockItemTitle size="medium" :title="file.name">
-            {{ file.name }}
-          </UIBlockItemTitle>
-          <UICornerIcon
-            v-radar="{
-              name: $t({ en: 'Remove reference image', zh: '移除参考图片' }),
-              desc: 'Click to remove the reference image'
-            }"
-            type="minus"
-            @click="removeReferenceImage"
-          />
-        </UIBlockItem>
+      <div class="flex flex-col gap-3 p-4">
+        <div>{{ $t({ en: 'Reference image', zh: '参考图片' }) }}</div>
+        <ImageOption
+          :active="true"
+          :interactive="false"
+          :removable="true"
+          :label="file.name"
+          :image="fileUrl"
+          @remove="removeReferenceImage"
+        />
       </div>
     </template>
-    <template #tooltip-content>{{ file.name }}</template>
+    <template #tooltip-content>{{ $t({ en: 'Reference image', zh: '参考图片' }) }}</template>
   </UIDropdownWithTooltip>
   <UITooltip v-else placement="top">
     <template #trigger>

@@ -6,6 +6,7 @@ import { TaskStatus } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as imgHelpers from '@/utils/img'
 import * as fileHelpers from '@/models/common/file'
+import * as cloud from '@/models/common/cloud'
 import { sndFiles } from '@/models/common/test'
 import { GenState } from '@/components/editor/gen'
 import { CollisionShapeType, RotationStyle, State } from '../sprite'
@@ -672,6 +673,34 @@ describe('SpriteGen', () => {
       expect(loadedWizard.imagesGenState.status).toBe('initial')
     })
   })
+
+  it.each(['cancel', 'dispose', 'cancel-and-dispose'])(
+    'does not generate after %s during reference upload',
+    async (action) => {
+      let resolveUpload!: (url: string) => void
+      const upload = new Promise<string>((resolve) => {
+        resolveUpload = resolve
+      })
+      const saveFile = vi.spyOn(cloud, 'saveFile').mockReturnValueOnce(upload)
+      const gen = new SpriteGen(i18n, makeSpxProject(), { referenceImage: mockFile('reference.png') })
+      const pending = gen.genImages().catch((error) => error)
+      await flushPromises()
+
+      if (action !== 'dispose') await gen.cancel()
+      if (action !== 'cancel') gen.dispose()
+      expect(saveFile.mock.calls[0][1]?.aborted).toBe(true)
+      resolveUpload('kodo://mock-bucket/reference.png')
+
+      expect(await pending).toBeInstanceOf(Error)
+      expect(aigcMock.tasks.size).toBe(0)
+      if (action === 'cancel') {
+        await gen.genImages()
+        expect(gen.imagesGenState.status).toBe('finished')
+        expect(aigcMock.tasks.size).toBe(1)
+      }
+      gen.dispose()
+    }
+  )
 
   it('uses and persists a local reference image for default costume generation', async () => {
     const project = makeSpxProject()

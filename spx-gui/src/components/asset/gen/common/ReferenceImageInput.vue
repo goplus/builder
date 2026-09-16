@@ -91,7 +91,10 @@ const handleUpload = useReferenceImageUpload((file) => emit('update:referenceIma
   <ParamSelector
     v-if="costumeOptions != null"
     :name="name"
-    :tips="{ en: 'Select a costume or local image', zh: '请选择造型或本地图片' }"
+    :tips="{
+      en: 'Select a costume or upload a local image as reference',
+      zh: '请选择造型或上传本地图片作为参考'
+    }"
     :options="options"
     :placeholder="placeholder"
     :clearable="clearable"

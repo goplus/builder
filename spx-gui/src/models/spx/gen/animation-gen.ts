@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { encodePathSegment, extname } from '@/utils/path'
-import { Disposable } from '@/utils/disposable'
+import { Disposable, mergeSignals, promiseForSignal } from '@/utils/disposable'
 import { Cancelled } from '@/utils/exception'
 import type { I18n } from '@/utils/i18n'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
@@ -31,7 +31,7 @@ import {
   type TaskSerialized
 } from './common'
 import type { SpriteGen } from './sprite-gen'
-import { prepareAnimationReferenceImage } from './img-process'
+import { adaptImgForBackgroundRemoval, fitImageToCanvasWithContrastBg } from './img-process'
 import {
   loadReferenceImageFile,
   resolveInitialReferenceImageSelection,
@@ -48,7 +48,7 @@ export type AnimationGenInits = {
   referenceCostumeId?: string | null
   referenceImage?: File | null
   referenceImageSelection?: ReferenceImageSelection
-  referenceImageTaskId?: string | null
+  referenceImageTask?: Task<TaskType.RemoveBackground>
   video?: File
   framesConfig?: FramesConfig
   enrichPhase?: Phase<AnimationSettings>
@@ -70,13 +70,13 @@ export type RawAnimationGenConfig = Prettify<
     | 'referenceCostumeId'
     | 'referenceImage'
     | 'referenceImageSelection'
-    | 'referenceImageTaskId'
+    | 'referenceImageTask'
   > & {
     videoPath?: string
     reference?: ReferenceImageSelection
     referenceCostumeId?: string
     referenceImagePath?: string
-    referenceImageTaskId?: string
+    referenceImageTaskSerialized?: TaskSerialized<TaskType.RemoveBackground>
     enrichPhaseSerialized?: PhaseSerialized<AnimationSettings>
     generateVideoTaskSerialized?: TaskSerialized<TaskType.GenerateAnimationVideo>
     generateVideoPhaseSerialized?: PhaseSerialized<string>
@@ -124,7 +124,8 @@ export class AnimationGen extends Disposable {
       ...inits.settings
     }
     this.referenceImage = inits.referenceImage ?? null
-    this.referenceImageTaskId = inits.referenceImageTaskId ?? null
+    this.referenceImageTask = inits.referenceImageTask ?? null
+    this.referenceImageTask?.disposeOnSignal(this.getSignal())
     this.referenceImageSelection = resolveInitialReferenceImageSelection(
       inits.referenceImageSelection,
       inits.referenceCostumeId,
@@ -132,6 +133,7 @@ export class AnimationGen extends Disposable {
     )
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich animation settings', zh: '丰富动画设置' })
     this.generateVideoTask = inits.generateVideoTask ?? null
+    this.generateVideoTask?.disposeOnSignal(this.getSignal())
     this.generateVideoPhase =
       inits.generateVideoPhase ?? new Phase({ en: 'generate animation video', zh: '生成动画视频' })
     this.video = inits.video ?? null
@@ -144,10 +146,9 @@ export class AnimationGen extends Disposable {
 
   /** Get IDs for (completed) tasks. */
   getTaskIds() {
-    const taskIds = [this.generateVideoTask, this.extractFramesTask].flatMap((task) =>
+    return [this.referenceImageTask, this.generateVideoTask, this.extractFramesTask].flatMap((task) =>
       task?.data?.status === TaskStatus.Completed ? [task.data.id] : []
     )
-    return this.referenceImageTaskId == null ? taskIds : [this.referenceImageTaskId, ...taskIds]
   }
 
   get name() {
@@ -214,11 +215,18 @@ export class AnimationGen extends Disposable {
     this.referenceImage = file
   }
 
-  private referenceImagePreparationCtrl: AbortController | null = null
-  private referenceImageTaskId: string | null = null
-  private abortReferenceImagePreparation() {
-    this.referenceImagePreparationCtrl?.abort(new Cancelled('reference image preparation cancelled'))
-    this.referenceImagePreparationCtrl = null
+  private generateVideoCtrl: AbortController | null = null
+  private referenceImageTask: Task<TaskType.RemoveBackground> | null
+  private abortGenerateVideo() {
+    this.generateVideoCtrl?.abort(new Cancelled('animation video generation cancelled'))
+    this.generateVideoCtrl = null
+  }
+  private get restorableReferenceImageTask() {
+    const status = this.referenceImageTask?.data?.status
+    if (status === TaskStatus.Pending || status === TaskStatus.Processing || status === TaskStatus.Completed) {
+      return this.referenceImageTask
+    }
+    return null
   }
 
   get generateVideoState() {
@@ -227,37 +235,68 @@ export class AnimationGen extends Disposable {
   async generateVideo() {
     this.setVideo(null)
     this.setFramesConfig(null)
-    this.abortReferenceImagePreparation()
-    this.referenceImageTaskId = null
-    const preparationCtrl = new AbortController()
-    this.referenceImagePreparationCtrl = preparationCtrl
+    this.abortGenerateVideo()
+    this.referenceImageTask?.tryCancel()
+    this.referenceImageTask?.dispose()
+    this.referenceImageTask = null
+    this.generateVideoTask?.tryCancel()
+    this.generateVideoTask?.dispose()
+    this.generateVideoTask = null
+    return this.runGenerateVideo()
+  }
+  private async prepareReferenceFrameUrl(signal: AbortSignal): Promise<string> {
+    if (this.referenceImageSelection?.type !== 'local-image') {
+      const costume = this.referenceCostume
+      if (costume == null) throw new Error('reference image or costume expected')
+      return saveFile(costume.img, signal)
+    }
+    const file = this.referenceImage
+    if (file == null) throw new Error('reference image expected')
+    this.referenceImageTask ??= new Task(TaskType.RemoveBackground)
+    const task = this.referenceImageTask
+    task.disposeOnSignal(signal)
+    if (task.data == null) {
+      const adaptedFile = await adaptImgForBackgroundRemoval(file)
+      const imageUrl = await saveFile(adaptedFile, signal)
+      signal.throwIfAborted()
+      await task.start({ imageUrl })
+    }
+    signal.throwIfAborted()
+    const { imageUrl } = await Promise.race([task.untilCompleted(), promiseForSignal(signal)])
+    signal.throwIfAborted()
+    const processedFile = await fitImageToCanvasWithContrastBg(createFileWithUniversalUrl(imageUrl), 512, 512, signal)
+    signal.throwIfAborted()
+    return saveFile(processedFile, signal)
+  }
+  private async runGenerateVideo() {
+    const ctrl = new AbortController()
+    this.generateVideoCtrl = ctrl
+    const signal = mergeSignals(this.getSignal(), ctrl.signal)
     try {
       const video = await this.generateVideoPhase.run(async (reporter) => {
-        let referenceFrameUrl: string
-        if (this.referenceImageSelection?.type === 'local-image') {
-          if (this.referenceImage == null) throw new Error('reference image expected')
-          const processedRef = await prepareAnimationReferenceImage(this.referenceImage, preparationCtrl.signal)
-          this.referenceImageTaskId = processedRef.taskId
-          referenceFrameUrl = await saveFile(processedRef.file, preparationCtrl.signal)
-        } else if (this.referenceCostume != null) {
-          referenceFrameUrl = await saveFile(this.referenceCostume.img)
-        } else {
-          throw new Error('reference image or costume expected')
-        }
+        signal.throwIfAborted()
+        const referenceFrameUrl = await this.prepareReferenceFrameUrl(signal)
+        signal.throwIfAborted()
         const settings = { ...this.settings, referenceFrameUrl }
-        this.generateVideoTask?.tryCancel()
         this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
-        await this.generateVideoTask.start({ settings })
-        const { videoUrl } = await this.generateVideoTask.untilCompleted(reporter)
+        const task = this.generateVideoTask
+        task.disposeOnSignal(signal)
+        await task.start({ settings })
+        signal.throwIfAborted()
+        const { videoUrl } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
         return createFileWithUniversalUrl(videoUrl)
       })
       this.setVideo(video)
     } finally {
-      if (this.referenceImagePreparationCtrl === preparationCtrl) this.referenceImagePreparationCtrl = null
+      if (this.generateVideoCtrl === ctrl) this.generateVideoCtrl = null
     }
   }
   restoreGenerateVideoTask() {
     const task = this.generateVideoTask
+    if (task == null && this.restorableReferenceImageTask != null) {
+      void this.runGenerateVideo().catch(() => {})
+      return
+    }
     if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
     this.generateVideoPhase.run(async (reporter) => {
       const { videoUrl } = await task.untilCompleted(reporter)
@@ -330,13 +369,15 @@ export class AnimationGen extends Disposable {
    * - No exception will be thrown even if the cancellation requests fail.
    */
   cancel() {
-    this.abortReferenceImagePreparation()
-    return Promise.all([this.generateVideoTask?.tryCancel(), this.extractFramesTask?.tryCancel()])
-  }
-
-  override dispose() {
-    this.abortReferenceImagePreparation()
-    super.dispose()
+    this.abortGenerateVideo()
+    const referenceImageTask = this.referenceImageTask
+    // Do not resume cancelled preprocessing, even if background removal finished before canvas processing was cancelled.
+    if (this.generateVideoState.status === 'running' && this.generateVideoTask == null) this.referenceImageTask = null
+    return Promise.all([
+      referenceImageTask?.tryCancel(),
+      this.generateVideoTask?.tryCancel(),
+      this.extractFramesTask?.tryCancel()
+    ])
   }
 
   export(basePath = 'gen/assets'): [RawAnimationGenConfig, Files] {
@@ -349,7 +390,7 @@ export class AnimationGen extends Disposable {
       settings: this.settings,
       reference: this.referenceImageSelection,
       referenceImagePath: referenceImagePath ?? undefined,
-      referenceImageTaskId: this.referenceImageTaskId ?? undefined,
+      referenceImageTaskSerialized: this.restorableReferenceImageTask?.export(),
       framesConfig: this.framesConfig ?? undefined,
       enrichPhaseSerialized: this.enrichPhase.export(),
       generateVideoTaskSerialized: this.generateVideoTask?.export(),
@@ -392,7 +433,7 @@ export class AnimationGen extends Disposable {
       reference,
       referenceCostumeId,
       referenceImagePath,
-      referenceImageTaskId,
+      referenceImageTaskSerialized,
       framesConfig,
       videoPath,
       enrichPhaseSerialized,
@@ -412,7 +453,7 @@ export class AnimationGen extends Disposable {
     if (referenceImagePath != null) {
       inits.referenceImage = loadReferenceImageFile(referenceImagePath, assetsPath, files, `animation gen ${genId}`)
     }
-    if (referenceImageTaskId != null) inits.referenceImageTaskId = referenceImageTaskId
+    if (referenceImageTaskSerialized != null) inits.referenceImageTask = Task.load(referenceImageTaskSerialized)
     if (reference !== undefined) inits.referenceImageSelection = reference
     if (referenceCostumeId != null) inits.referenceCostumeId = referenceCostumeId
     if (framesConfig != null) inits.framesConfig = framesConfig
