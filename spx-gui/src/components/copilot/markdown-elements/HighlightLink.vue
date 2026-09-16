@@ -9,7 +9,7 @@ export const isRaw = false
 export const description = 'Create a link that reveals & highlights a specific node in the UI when clicked.'
 
 export const detailedDescription = `Create a link that reveals & highlights a specific node in the UI when clicked. \
-Use a Radar selector to specify exactly one visible target node. \
+Use a Radar selector to specify a visible target node. When it matches multiple nodes, the first one in document order is used. \
 Use this element in your output to help users to find the relevant UI element quickly. \
 For example, <highlight-link selector="save-button" tip="Click this button to submit">Submit button</highlight-link> \
 will create a link with text "Submit button", when clicked, reveals the selected node and shows the tip "Click this button to submit".`
@@ -41,9 +41,8 @@ const text = useSlotText()
 
 const { fn: handleClick } = useMessageHandle(
   () => {
-    const nodeInfos = radar.selectAll(props.selector)
-    if (nodeInfos.length !== 1) throw new Error(`Radar selector must match exactly one visible node: ${props.selector}`)
-    const nodeInfo = nodeInfos[0]
+    const nodeInfo = radar.selectAll(props.selector)[0]
+    if (nodeInfo == null) throw new Error(`No visible Radar node matches selector: ${props.selector}`)
     const element = nodeInfo.getElement()
     spotlight.reveal(element, props.tip ?? text.value)
   },
