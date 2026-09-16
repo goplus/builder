@@ -46,7 +46,9 @@ attribute names follow the same kebab-case rule, and attributes whose value is
 `label` is optional. By default Radar converts the name to readable text and,
 when `attrs.name` is present, appends that value in quotes. For example,
 `sound-item` with `{ name: 'meow' }` becomes `Sound item "meow"`. Supply
-`label` only when this default is not appropriate.
+`label` only when this default is not appropriate. The generated label is
+sentence-cased, so `api-reference` becomes `Api reference`; supply `label`
+when a different capitalization, such as `API Reference`, is needed.
 
 ```html
 <div v-radar="{ name: 'sound-item', desc: 'A project sound', attrs: { name: sound.name } }"></div>

@@ -130,7 +130,11 @@ export class Radar {
   /** Select visible nodes matching a Radar selector in document order. */
   selectAll(selector: string): RadarNodeInfo[] {
     const compounds = parseRadarSelector(selector)
-    return [...this.iterateVisibleNodes(this.rootNode)].filter((node) => this.matchesSelector(node, compounds))
+    const result: RadarNodeInfo[] = []
+    for (const node of this.iterateVisibleNodes(this.rootNode)) {
+      if (this.matchesSelector(node, compounds)) result.push(node)
+    }
+    return result
   }
 
   private *iterateVisibleNodes(parent: RadarNodeInfo): Iterable<RadarNodeInfo> {

@@ -29,6 +29,8 @@ export declare class RadarSelectorSyntaxError extends SyntaxError {}
 export interface Radar {
   getRootNodes(): RadarNodeInfo[]
   getNodeById(id: string): RadarNodeInfo | null
+  /** Returns the first visible match in document order, or null. */
+  select(selector: string): RadarNodeInfo | null
   /** Returns visible matches in document order. */
   selectAll(selector: string): RadarNodeInfo[]
 }
@@ -46,8 +48,8 @@ export declare function useRadar(): Radar
  * attribute-name    = kebab-case-identifier ;
  *
  * Whitespace is a descendant combinator. All name and attribute comparisons
- * are exact and case-sensitive. Selectors return every matching visible node;
- * an invalid selector throws `RadarSelectorSyntaxError`, while a valid
- * selector with no match returns an empty array.
+ * are exact and case-sensitive. An invalid selector throws
+ * `RadarSelectorSyntaxError`; `select` returns the first matching visible node
+ * or null, and `selectAll` returns every matching visible node.
  */
 export type RadarSelector = string
