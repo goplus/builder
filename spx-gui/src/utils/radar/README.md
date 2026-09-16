@@ -52,6 +52,63 @@ when `attrs.name` is present, appends that value in quotes. For example,
 <div v-radar="{ name: 'sound-item', desc: 'A project sound', attrs: { name: sound.name } }"></div>
 ```
 
+### Business UI metadata guide
+
+Mark UI elements that have a meaningful role in a user task: a panel, a
+repeated item, or an action the user may need to find. Do not add Radar
+metadata solely to mirror every DOM wrapper.
+
+- `name` identifies the stable UI role. Use a concise kebab-case noun, or a
+  noun with its role: `costume-item`, `save-button`, `sprite-editor`. The name
+  is shared by equivalent instances; never interpolate a user value into it.
+  Interpolating a closed application enum is appropriate, for example
+  `` `${selected.type}-editor` `` for `sprite`, `stage`, and `empty` editors.
+- `attrs` distinguishes repeated or dynamic instances. Prefer stable domain
+  fields and kebab-case keys. `attrs.name` is the usual choice for an item
+  named by the user. Include only fields needed to select the specific
+  instance; nullish fields can be passed directly and Radar ignores them.
+- `label` overrides the accessible label that Radar writes as `aria-label`.
+  Usually omit it and use the derived label. Supply it when the UI has a more
+  useful readable label than the role plus `attrs.name`, such as an API's full
+  signature.
+- `desc` is written as `aria-description`. Describe the action or context that
+  is not apparent from the label; use `''` when it adds no useful information.
+
+For a static action, only the role and action description are needed:
+
+```html
+<UIButton v-radar="{ name: 'save-button', desc: 'Save the current project' }">Save</UIButton>
+```
+
+For an item in a user-named list, keep the role stable and put the name in an
+attribute. This yields the selector `costume-item[name="hero"]` and the default
+accessible label `Costume item "hero"`.
+
+```ts
+const radarMeta = computed(() => ({
+  name: 'costume-item',
+  desc: 'Project costume',
+  attrs: { name: props.costume.name }
+}))
+```
+
+For an API item, its `DefinitionIdentifier` fields are useful attributes. The
+explicit label preserves the complete rendered signature for accessibility;
+the API overview needs no additional description.
+
+```ts
+{
+  name: 'api-reference',
+  label: parsed.overview,
+  desc: '',
+  attrs: {
+    package: item.definition.package,
+    name: item.definition.name,
+    'overload-id': item.definition.overloadId
+  }
+}
+```
+
 ### Selector strings
 
 `select` and `selectAll` accept the following grammar:
