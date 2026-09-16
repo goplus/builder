@@ -212,7 +212,8 @@ export class Round {
   export(): RoundExported {
     return {
       userMessage: this.userMessage,
-      resultMessages: this.resultMessages,
+      // `resultMessages` keeps changing while the round runs (and is cleared on retry); the export must not.
+      resultMessages: [...this.resultMessages],
       inProgressCopilotMessageContent: this.inProgressCopilotMessageContent,
       error: this.error,
       state: this.state,
@@ -231,11 +232,9 @@ export class Round {
     round.apiExceptionCode = exported.apiExceptionCode
     round.apiExceptionMeta = exported.apiExceptionMeta
     switch (exported.state) {
-      case RoundState.Initialized:
       case RoundState.Loading:
       case RoundState.InProgress:
-        // We will not resume the ongoing request (nor start one that was still waiting to be sent), so we
-        // consider it as cancelled; the user can retry it.
+        // We will not resume the ongoing request, so we consider it as cancelled.
         round.stateRef.value = RoundState.Cancelled
         break
       default:
@@ -754,21 +753,14 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.currentSessionRef.value = null
   }
 
-  /**
-   * Export the current session so that it can be brought back later with `restoreSession`, e.g. around a flow
-   * that takes the copilot over with a session of its own (a course preview run from the Course Editor).
-   * Returns `null` when there is no current session.
-   * The snapshot shares its message data with the session it came from (nothing is copied), so take it right
-   * before that session gets replaced rather than while it keeps running.
-   */
+  /** Export the current session (`null` if none) so that it can be brought back later with `restoreSession`. */
   exportCurrentSession(): SessionExported | null {
     return this.currentSession?.export() ?? null
   }
 
   /**
-   * Restore a previously exported session as the current one, ending the current session first if any.
-   * A round that was in progress when exported comes back as cancelled; it is not resumed.
-   * Restoring is not a user action, so it leaves the copilot panel as it is (neither opens nor closes it).
+   * Restore an exported session as the current one, ending the current session first. In-progress rounds come
+   * back cancelled (not resumed). The panel is left as it is.
    */
   restoreSession(exported: SessionExported): void {
     this.endCurrentSession()
