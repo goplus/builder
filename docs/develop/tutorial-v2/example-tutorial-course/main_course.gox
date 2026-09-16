@@ -7,8 +7,13 @@ onStart => {
 	Spotlight.reveal "API References", "Here is stepTo, the only block you need in this lesson."
 }
 
+// Only the latest "reached-target" matters: a newer signal cancels a
+// judgement that is still waiting on Copilot.
+judging := newRunGroup(CancelPrevious)
+
 Editor.Runtime.onLog log => {
 	if log == "reached-target" {
+		judging.enter()
 		code := Editor.Project.getCode("Lita")
 		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
 		completeWith feedback

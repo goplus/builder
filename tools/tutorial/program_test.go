@@ -167,16 +167,25 @@ func dispatch(t *testing.T, name string, payload string) {
 func resetEventRegistry() {
 	events.registryMu.Lock()
 	defer events.registryMu.Unlock()
-	events.program, events.live, events.pending = nil, false, nil
+	events.program, events.pending = nil, nil
 }
 
 // await 等一个信号，超时视为测试失败。
 func await(t *testing.T, signal <-chan struct{}, what string) {
 	t.Helper()
+	awaitOne(t, signal, what)
+}
+
+// awaitOne 等一个带值的信号并返回它，超时视为测试失败。
+func awaitOne[T any](t *testing.T, signal <-chan T, what string) T {
+	t.Helper()
 	select {
-	case <-signal:
+	case value := <-signal:
+		return value
 	case <-time.After(5 * time.Second):
 		t.Fatalf("timed out waiting for %s", what)
+		var zero T
+		return zero
 	}
 }
 
@@ -221,7 +230,7 @@ func TestRuntimeLogsArriveInOrder(t *testing.T) {
 	var logs []string
 
 	runCourse(t, newFakeHost(), func(course *testCourse) {
-		course.Editor.Runtime.OnLog(func(log string) {
+		course.Editor.Runtime.OnLog__0(func(log string) {
 			logs = append(logs, log)
 			if log == "third" {
 				course.Complete()
@@ -243,7 +252,7 @@ func TestEventsAfterCompletionAreNotDelivered(t *testing.T) {
 	var logs []string
 
 	runCourse(t, newFakeHost(), func(course *testCourse) {
-		course.Editor.Runtime.OnLog(func(log string) {
+		course.Editor.Runtime.OnLog__0(func(log string) {
 			logs = append(logs, log)
 			course.Complete()
 		})
@@ -285,11 +294,11 @@ func TestRuntimeExitAndCopilotRoundPayloads(t *testing.T) {
 				course.Complete()
 			}
 		}
-		course.Editor.Runtime.OnExit(func(code int) {
+		course.Editor.Runtime.OnExit__0(func(code int) {
 			exitCode = code
 			note()
 		})
-		course.Copilot.OnRoundFinish(func(finished CopilotRound) {
+		course.Copilot.OnRoundFinish__0(func(finished CopilotRound) {
 			round = finished
 			note()
 		})
@@ -311,11 +320,11 @@ func TestEventQueueOverflowIsReported(t *testing.T) {
 	overflow := make(chan error, 1)
 
 	runCourse(t, newFakeHost(), func(course *testCourse) {
-		course.Editor.Runtime.OnLog(func(log string) {})
+		course.Editor.Runtime.OnLog__0(func(log string) {})
 		course.OnStart(func() {
-			// 开场回调全程持有执行令牌，onLog 的帧无法开始，队列只进不出。
+			// 开场回调全程持有执行令牌，onLog 的运行无法开始，投递方等不到它让出，队列只进不出。
 			var err error
-			for i := 0; err == nil && i < eventQueueSize*2; i++ {
+			for i := 0; err == nil && i < pendingEventLimit*2; i++ {
 				err = xgoexec.DispatchEvent("editor.runtime.log", []byte(`{"log":"flood"}`))
 			}
 			overflow <- err
@@ -365,11 +374,11 @@ func TestCoursesDoNotShareState(t *testing.T) {
 	// 只初始化不运行：此时两者都还没完成，各自的回调也只登记在自己身上。
 	first.initCourse()
 	second.initCourse()
-	first.courseProgram.runFrame(first.MainEntry)
-	second.courseProgram.runFrame(second.MainEntry)
+	first.courseProgram.runFrame(newRun(), first.MainEntry)
+	second.courseProgram.runFrame(newRun(), second.MainEntry)
 
-	for _, lane := range first.courseProgram.handlerSnapshot().courseStart {
-		first.courseProgram.runFrame(func() { lane.handler(struct{}{}) })
+	for _, reg := range first.courseProgram.handlerSnapshot().courseStart {
+		first.courseProgram.runFrame(newRun(), func() { reg.handler(struct{}{}) })
 	}
 	if !first.courseProgram.markCompleted() {
 		t.Fatal("the first course was already completed")
@@ -405,8 +414,8 @@ func TestHandlersAccumulate(t *testing.T) {
 			note("start-2")
 			dispatch(t, "editor.runtime.log", `{"log":"hit"}`)
 		})
-		course.Editor.Runtime.OnLog(func(log string) { note("log-A:" + log) })
-		course.Editor.Runtime.OnLog(func(log string) { note("log-B:" + log) })
+		course.Editor.Runtime.OnLog__0(func(log string) { note("log-A:" + log) })
+		course.Editor.Runtime.OnLog__0(func(log string) { note("log-B:" + log) })
 	})
 
 	if len(trace) != 4 {
@@ -452,7 +461,7 @@ func TestCallbackRegisteredDuringRunReceivesEvents(t *testing.T) {
 
 	done := startCourse(host, func(course *testCourse) {
 		course.OnStart(func() {
-			course.Editor.Runtime.OnLog(func(log string) {
+			course.Editor.Runtime.OnLog__0(func(log string) {
 				if log == "hit" {
 					course.Complete()
 				}
@@ -476,11 +485,11 @@ func TestSameEventHandlersRunIndependently(t *testing.T) {
 	ready := make(chan struct{})
 
 	done := startCourse(host, func(course *testCourse) {
-		course.Editor.Runtime.OnLog(func(log string) {
+		course.Editor.Runtime.OnLog__0(func(log string) {
 			course.Copilot.GenerateText("judge " + log)
 			course.Complete()
 		})
-		course.Editor.Runtime.OnLog(func(string) {
+		course.Editor.Runtime.OnLog__0(func(string) {
 			otherSeen <- struct{}{}
 		})
 		course.OnStart(func() { close(ready) })
@@ -490,7 +499,7 @@ func TestSameEventHandlersRunIndependently(t *testing.T) {
 	dispatch(t, "editor.runtime.log", `{"log":"go"}`)
 	await(t, generateStarted, "the first handler to suspend in generateText")
 	// 第一段还挂着，第二段必须已经（或照常能够）处理同一条日志。
-	await(t, otherSeen, "the second handler to run independently")
+	awaitOne(t, otherSeen, "the second handler to run independently")
 	releaseGenerate()
 	awaitDone(t, done)
 }
@@ -508,11 +517,11 @@ func TestWaitingCapabilityYieldsToOtherEvents(t *testing.T) {
 	ready := make(chan struct{})
 
 	done := startCourse(host, func(course *testCourse) {
-		course.Editor.Runtime.OnLog(func(log string) {
+		course.Editor.Runtime.OnLog__0(func(log string) {
 			logNum++
 			logSeen <- struct{}{}
 		})
-		course.Copilot.OnRoundFinish(func(CopilotRound) {
+		course.Copilot.OnRoundFinish__0(func(CopilotRound) {
 			course.ShowMessage("look at this")
 			observed = logNum
 			course.Complete()
@@ -540,18 +549,63 @@ func TestWaitingCapabilityYieldsToOtherEvents(t *testing.T) {
 	}
 }
 
-// TestSameEventStaysSerialized 验证同一事件的触发严格排队：前一次处理还挂在
-// 等待类 capability 上时，后一次不会开始——判定回调因此不需要任何防重入守卫。
-func TestSameEventStaysSerialized(t *testing.T) {
+// TestRunsOfOneCallbackOverlapByDefault 验证没有策略时同一段回调的多次运行可以并存：
+// 前一次挂在等待类 capability 上时，后一次照常开始并跑完（spx 语义）。
+func TestRunsOfOneCallbackOverlapByDefault(t *testing.T) {
 	host := newFakeHost()
 	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
 
 	var order []string
+	fastDone := make(chan struct{}, 1)
 	ready := make(chan struct{})
 
 	done := startCourse(host, func(course *testCourse) {
-		course.Editor.Runtime.OnLog(func(log string) {
+		course.Editor.Runtime.OnLog__0(func(log string) {
 			order = append(order, "begin:"+log)
+			if log == "slow" {
+				course.Copilot.GenerateText("judge")
+			}
+			order = append(order, "end:"+log)
+			if log == "fast" {
+				fastDone <- struct{}{}
+			}
+			if log == "slow" {
+				course.Complete()
+			}
+		})
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"slow"}`)
+	await(t, generateStarted, "generateText to reach the host")
+	dispatch(t, "editor.runtime.log", `{"log":"fast"}`)
+	await(t, fastDone, "the second run to finish while the first is suspended")
+	releaseGenerate()
+	awaitDone(t, done)
+
+	want := "[begin:slow begin:fast end:fast end:slow]"
+	if got := fmt.Sprint(order); got != want {
+		t.Errorf("order = %s, want %s", got, want)
+	}
+}
+
+// TestOneAtATimeRunsInOrder 验证 OneAtATime：前一次运行还挂在等待类 capability 上时，
+// 后一次排队，等前一次结束才开始，因此完成顺序等于触发顺序。
+func TestOneAtATimeRunsInOrder(t *testing.T) {
+	host := newFakeHost()
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
+
+	var order []string
+	fastBegan := make(chan struct{}, 1)
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog__1(OneAtATime, func(log string) {
+			order = append(order, "begin:"+log)
+			if log == "fast" {
+				fastBegan <- struct{}{}
+			}
 			if log == "slow" {
 				course.Copilot.GenerateText("judge")
 			}
@@ -567,6 +621,11 @@ func TestSameEventStaysSerialized(t *testing.T) {
 	dispatch(t, "editor.runtime.log", `{"log":"slow"}`)
 	await(t, generateStarted, "generateText to reach the host")
 	dispatch(t, "editor.runtime.log", `{"log":"fast"}`)
+	select {
+	case <-fastBegan:
+		t.Fatal("the queued run began while the earlier run was still going")
+	case <-time.After(50 * time.Millisecond):
+	}
 	releaseGenerate()
 	awaitDone(t, done)
 
@@ -576,18 +635,262 @@ func TestSameEventStaysSerialized(t *testing.T) {
 	}
 }
 
-// TestPresentationCallsAreSerialized 验证展示串行通道：两个回调各自要弹窗时，
-// 第二个展示调用等第一个结束才到达宿主——宿主永远不用处理并发弹窗。
-func TestPresentationCallsAreSerialized(t *testing.T) {
+// TestOneAtATimeQueuedRunYields 验证 OneAtATime 的排队是让出令牌的等待：
+// 一段回调的运行在排队时，同一条日志的其他回调照常处理。
+func TestOneAtATimeQueuedRunYields(t *testing.T) {
+	host := newFakeHost()
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
+
+	otherSeen := make(chan string, 4)
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog__1(OneAtATime, func(log string) {
+			course.Copilot.GenerateText("judge " + log)
+			if log == "second" {
+				course.Complete()
+			}
+		})
+		course.Editor.Runtime.OnLog__0(func(log string) { otherSeen <- log })
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"first"}`)
+	await(t, generateStarted, "the first run to suspend in generateText")
+	dispatch(t, "editor.runtime.log", `{"log":"second"}`)
+	// 第二次运行在 OneAtATime 的队列里等着，另一段回调必须已经处理了两条日志。
+	awaitOne(t, otherSeen, "the other callback to see the first log")
+	awaitOne(t, otherSeen, "the other callback to see the second log while a run is queued")
+	releaseGenerate()
+	await(t, generateStarted, "the queued run to proceed once the earlier run ends")
+	releaseGenerate()
+	awaitDone(t, done)
+}
+
+// TestCancelPreviousEndsTheStaleRun 验证 CancelPrevious：新触发的运行开始时，
+// 上一次还挂在等待上的运行被取消，等待返回后它的剩余语句不再执行。
+func TestCancelPreviousEndsTheStaleRun(t *testing.T) {
+	host := newFakeHost()
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
+
+	var trace []string
+	ready := make(chan struct{})
+	newDone := make(chan struct{}, 1)
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog__1(CancelPrevious, func(log string) {
+			trace = append(trace, "begin:"+log)
+			course.Copilot.GenerateText("judge " + log)
+			trace = append(trace, "after:"+log)
+			if log == "new" {
+				newDone <- struct{}{}
+			}
+		})
+		course.Editor.Runtime.OnExit__0(func(int) { course.Complete() })
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"old"}`)
+	await(t, generateStarted, "the old run to suspend in generateText")
+	dispatch(t, "editor.runtime.log", `{"log":"new"}`)
+	await(t, generateStarted, "the new run to suspend in generateText")
+	releaseGenerate()
+	releaseGenerate()
+	await(t, newDone, "the new run to finish")
+	dispatch(t, "editor.runtime.exit", `{"code":0}`)
+	awaitDone(t, done)
+
+	got := fmt.Sprint(trace)
+	if strings.Contains(got, "after:old") || !strings.Contains(got, "after:new") {
+		t.Errorf("trace = %s: the cancelled run must stop at its wait, the new run must finish", got)
+	}
+}
+
+// TestCancelledRunDiscardsPendingResult 验证被取消的运行不回填等待返回的结果：
+// 作者传给 generateJSON 的结构体在取消后保持原样。
+func TestCancelledRunDiscardsPendingResult(t *testing.T) {
+	type verdict struct {
+		Praise string `json:"praise"`
+	}
+	host := newFakeHost()
+	host.responses["copilot_generateJSON"] = `{"praise":"filled"}`
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateJSON")
+
+	oldResult, newResult := &verdict{}, &verdict{}
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog__1(CancelPrevious, func(log string) {
+			target := newResult
+			if log == "old" {
+				target = oldResult
+			}
+			course.Copilot.GenerateJSON("judge "+log, target)
+			if log == "new" {
+				course.Complete()
+			}
+		})
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"old"}`)
+	await(t, generateStarted, "the old run to suspend in generateJSON")
+	dispatch(t, "editor.runtime.log", `{"log":"new"}`)
+	await(t, generateStarted, "the new run to suspend in generateJSON")
+	releaseGenerate()
+	releaseGenerate()
+	awaitDone(t, done)
+
+	if oldResult.Praise != "" {
+		t.Errorf("cancelled run filled its result with %q; the pending result must be discarded", oldResult.Praise)
+	}
+	if newResult.Praise != "filled" {
+		t.Errorf("newResult.Praise = %q, want the generated value", newResult.Praise)
+	}
+}
+
+// TestSkipWhileBusyDropsTriggers 验证 SkipWhileBusy：有运行在途时新触发的运行就地结束，
+// 回调体不执行；在途运行结束后新触发又照常处理。
+func TestSkipWhileBusyDropsTriggers(t *testing.T) {
+	host := newFakeHost()
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
+
+	var trace []string
+	seen := make(chan string, 4)
+	firstEnded := make(chan struct{}, 1)
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog__1(SkipWhileBusy, func(log string) {
+			trace = append(trace, "begin:"+log)
+			course.Copilot.GenerateText("judge " + log)
+			trace = append(trace, "end:"+log)
+			if log == "first" {
+				firstEnded <- struct{}{} // 组在运行结束、归还令牌之前释放，之后的触发不会再被跳过
+			}
+			if log == "third" {
+				course.Complete()
+			}
+		})
+		// 注册在后的这段回调看到日志时，前一段对同一条日志的加入决定已经做出。
+		course.Editor.Runtime.OnLog__0(func(log string) { seen <- log })
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"first"}`)
+	await(t, generateStarted, "the first run to suspend in generateText")
+	awaitOne(t, seen, "the observer to see the first log")
+	dispatch(t, "editor.runtime.log", `{"log":"second"}`)
+	awaitOne(t, seen, "the observer to see the second log")
+	releaseGenerate()
+	await(t, firstEnded, "the first run to end and free the group")
+	dispatch(t, "editor.runtime.log", `{"log":"third"}`)
+	await(t, generateStarted, "the third run to suspend in generateText")
+	releaseGenerate()
+	awaitDone(t, done)
+
+	want := "[begin:first end:first begin:third end:third]"
+	if got := fmt.Sprint(trace); got != want {
+		t.Errorf("trace = %s, want %s", got, want)
+	}
+}
+
+// TestRunGroupSharedAcrossCallbacks 验证作者建的运行组可以跨事件共用，且在过滤之后
+// 加入：onLog 的判定在途时，onExit 的判定就地结束；无关日志不受影响。
+func TestRunGroupSharedAcrossCallbacks(t *testing.T) {
+	host := newFakeHost()
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
+
+	var trace []string
+	exitSeen := make(chan struct{}, 2)
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		judging := course.NewRunGroup(SkipWhileBusy)
+		course.Editor.Runtime.OnLog__0(func(log string) {
+			if log != "reached" {
+				trace = append(trace, "ignored:"+log)
+				return
+			}
+			judging.Enter()
+			trace = append(trace, "judging:log")
+			course.Copilot.GenerateText("judge")
+			course.Complete()
+		})
+		course.Editor.Runtime.OnExit__0(func(int) {
+			judging.Enter()
+			trace = append(trace, "judging:exit")
+		})
+		course.Editor.Runtime.OnExit__0(func(int) { exitSeen <- struct{}{} })
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"reached"}`)
+	await(t, generateStarted, "the log judgement to suspend in generateText")
+	dispatch(t, "editor.runtime.log", `{"log":"noise"}`)
+	dispatch(t, "editor.runtime.exit", `{"code":0}`)
+	await(t, exitSeen, "the exit to be processed while the log judgement is in flight")
+	releaseGenerate()
+	awaitDone(t, done)
+
+	want := "[judging:log ignored:noise]"
+	if got := fmt.Sprint(trace); got != want {
+		t.Errorf("trace = %s, want %s", got, want)
+	}
+}
+
+// TestCallbacksStartInRegistrationOrder 验证同一触发内各段回调按注册顺序启动，
+// 前一段跑到第一次等待后下一段才开始，且下一段在前一段挂起期间照常运行。
+func TestCallbacksStartInRegistrationOrder(t *testing.T) {
+	host := newFakeHost()
+	messageShown, releaseMessage := host.holdCapability("course_showMessage")
+
+	var trace []string
+	secondRan := make(chan struct{}, 1)
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog__0(func(string) {
+			trace = append(trace, "first")
+			course.ShowMessage("look")
+		})
+		course.Editor.Runtime.OnLog__0(func(string) {
+			trace = append(trace, "second")
+			secondRan <- struct{}{}
+			course.Complete()
+		})
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"go"}`)
+	await(t, messageShown, "the first callback to suspend in showMessage")
+	await(t, secondRan, "the second callback to run while the first is suspended")
+	releaseMessage()
+	awaitDone(t, done)
+
+	if got, want := fmt.Sprint(trace), "[first second]"; got != want {
+		t.Errorf("trace = %s, want %s", got, want)
+	}
+}
+
+// TestPresentationCallsMayOverlap 验证框架不再串行展示类调用：两个回调各自弹窗时，
+// 两个 showMessage 同时挂在宿主上，怎么处理重叠是宿主 capability 的策略。
+func TestPresentationCallsMayOverlap(t *testing.T) {
 	host := newFakeHost()
 	messageShown, releaseMessage := host.holdCapability("course_showMessage")
 
 	ready := make(chan struct{})
 	done := startCourse(host, func(course *testCourse) {
-		course.Editor.Runtime.OnStart(func() {
+		course.Editor.Runtime.OnStart__0(func() {
 			course.ShowMessage("first")
 		})
-		course.Editor.Runtime.OnExit(func(int) {
+		course.Editor.Runtime.OnExit__0(func(int) {
 			course.ShowMessage("second")
 			course.Complete()
 		})
@@ -596,16 +899,10 @@ func TestPresentationCallsAreSerialized(t *testing.T) {
 
 	await(t, ready, "the course to start")
 	dispatch(t, "editor.runtime.start", `null`)
-	await(t, messageShown, "the first showMessage to reach the host")
 	dispatch(t, "editor.runtime.exit", `{"code":0}`)
-	// 第二个弹窗必须还没到达宿主：它在展示通道上排队。
-	select {
-	case <-messageShown:
-		t.Fatal("the second showMessage reached the host while the first dialog was open")
-	case <-time.After(50 * time.Millisecond):
-	}
+	await(t, messageShown, "the first showMessage to reach the host")
+	await(t, messageShown, "the second showMessage to reach the host while the first is open")
 	releaseMessage()
-	await(t, messageShown, "the second showMessage to reach the host")
 	releaseMessage()
 	awaitDone(t, done)
 }
@@ -618,10 +915,10 @@ func TestSlowCapabilitiesRunConcurrently(t *testing.T) {
 
 	ready := make(chan struct{})
 	done := startCourse(host, func(course *testCourse) {
-		course.Editor.Runtime.OnStart(func() {
+		course.Editor.Runtime.OnStart__0(func() {
 			course.Copilot.GenerateText("first")
 		})
-		course.Editor.Runtime.OnExit(func(int) {
+		course.Editor.Runtime.OnExit__0(func(int) {
 			course.Copilot.GenerateText("second")
 			course.Complete()
 		})
@@ -676,38 +973,24 @@ func TestQueuedEventDroppedWhenCompletionWinsTheToken(t *testing.T) {
 	proceed := make(chan struct{})
 	exitRan := make(chan struct{}, 1)
 
-	var program *courseProgram
 	done := startCourse(host, func(course *testCourse) {
-		program = &course.courseProgram
-		course.Editor.Runtime.OnStart(func() {
-			close(holding) // 本帧持有令牌，等测试放行
+		course.Editor.Runtime.OnStart__0(func() {
+			close(holding) // 本次运行持有令牌，等测试放行
 			<-proceed
 			course.Complete()
 		})
-		course.Editor.Runtime.OnExit(func(int) {
+		course.Editor.Runtime.OnExit__0(func(int) {
 			exitRan <- struct{}{}
 		})
 		course.OnStart(func() {})
 	})
 
-	// 等 runtime.start 的帧持有令牌后，再投递 exit：它的 worker 会出队、
-	// 阻塞在取令牌上。
+	// 等 runtime.start 的运行持有令牌后，再投递 exit：它的运行要么已在等令牌，
+	// 要么还没被投递方启动——两种情况下完成之后都不该再执行。
 	dispatch(t, "editor.runtime.start", `null`)
 	await(t, holding, "the start callback to hold the token")
 	dispatch(t, "editor.runtime.exit", `{"code":0}`)
-	// 轮询到 exit 事件已被 worker 取走（队列排空），此刻它只可能在等令牌。
-	deadline := time.Now().Add(2 * time.Second)
-	for {
-		lanes := program.handlerSnapshot().runtimeExit
-		if len(lanes) == 1 && len(lanes[0].queue) == 0 {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatal("exit event was not dequeued")
-		}
-		time.Sleep(time.Millisecond)
-	}
-	close(proceed) // 持令牌的帧现在完成课程并归还令牌
+	close(proceed) // 持令牌的运行现在完成课程并归还令牌
 	awaitDone(t, done)
 
 	select {
@@ -733,11 +1016,11 @@ func TestGenerateJSONDecodesUnderTheToken(t *testing.T) {
 	ready := make(chan struct{})
 
 	done := startCourse(host, func(course *testCourse) {
-		course.Editor.Runtime.OnStart(func() {
+		course.Editor.Runtime.OnStart__0(func() {
 			course.Copilot.GenerateJSON("judge", shared)
 			course.Complete()
 		})
-		course.Editor.Runtime.OnLog(func(string) {
+		course.Editor.Runtime.OnLog__0(func(string) {
 			shared.Praise = "poked by another callback"
 			touched <- struct{}{}
 		})
@@ -768,11 +1051,11 @@ func TestCompletionSettlesPendingWait(t *testing.T) {
 	ready := make(chan struct{})
 
 	done := startCourse(host, func(course *testCourse) {
-		course.Editor.Runtime.OnStart(func() {
+		course.Editor.Runtime.OnStart__0(func() {
 			course.ShowMessage("still open")
 			resumed <- struct{}{}
 		})
-		course.Editor.Runtime.OnExit(func(int) {
+		course.Editor.Runtime.OnExit__0(func(int) {
 			course.Complete()
 		})
 		course.OnStart(func() { close(ready) })
@@ -798,7 +1081,7 @@ func TestEventsBeforeReadyAreDeliveredInOrder(t *testing.T) {
 	runCourse(t, newFakeHost(), func(course *testCourse) {
 		dispatch(t, "editor.runtime.log", `{"log":"first"}`)
 		dispatch(t, "editor.runtime.log", `{"log":"second"}`)
-		course.Editor.Runtime.OnLog(func(log string) {
+		course.Editor.Runtime.OnLog__0(func(log string) {
 			logs = append(logs, log)
 			if log == "third" {
 				course.Complete()
@@ -819,7 +1102,7 @@ func TestEventsBeforeAnyProgramAreHeld(t *testing.T) {
 	dispatch(t, "editor.runtime.log", `{"log":"early"}`)
 
 	runCourse(t, newFakeHost(), func(course *testCourse) {
-		course.Editor.Runtime.OnLog(func(log string) {
+		course.Editor.Runtime.OnLog__0(func(log string) {
 			if log == "early" {
 				course.Complete()
 			}

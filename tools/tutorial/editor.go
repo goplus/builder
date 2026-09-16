@@ -57,37 +57,85 @@ func (p *Project) ListSprites() []string {
 
 // Runtime 观察学习者项目的运行状态。
 //
-// 这三个 OnXxx 只是把回调登记到课程的运行状态里，真正的事件注册在程序启动时就一次性
-// 完成了（见 program.go 的 registerEvents）。因此"课程没订阅某事件"和"课程订阅了"
-// 对宿主而言毫无区别，宿主不需要知道课程内部订阅了什么。
+// 这些 OnXxx 只是把回调登记到课程的运行状态里，真正的事件注册在包初始化时就一次性
+// 完成了（见 events.go）。因此"课程没订阅某事件"和"课程订阅了"对宿主而言毫无区别，
+// 宿主不需要知道课程内部订阅了什么。
+//
+// 每个事件有三个重载（XGo 按 __N 后缀归组）：只给回调；先给 RunPolicy 再给回调，
+// 该段回调的每次运行从第一条语句起就在一个私有的组里；先给 RunGroup 再给回调，
+// 每次运行一开始就加入那个共享的组。回调里有过滤时应在过滤之后 enter()，
+// 注册时给策略只适合低频、无过滤的事件——见 policy.go。
 type Runtime struct {
 	courseProgram *courseProgram
 }
 
-// OnStart 注册"学习者的项目开始运行"的回调。可注册多段，各段独立生效（见 handlerLane）。
-func (p *Runtime) OnStart(handler func()) {
-	addLane(p.courseProgram, func(struct{}) { handler() },
-		func(h *handlers, l *handlerLane[struct{}]) { h.runtimeStart = append(h.runtimeStart, l) })
+// OnStart__0 注册"学习者的项目开始运行"的回调。可注册多段。
+func (p *Runtime) OnStart__0(handler func()) {
+	p.onStart(nil, handler)
 }
 
-// OnExit 注册"学习者的项目退出"的回调，code 是退出码。可注册多段。
-func (p *Runtime) OnExit(handler func(code int)) {
-	addLane(p.courseProgram, handler,
-		func(h *handlers, l *handlerLane[int]) { h.runtimeExit = append(h.runtimeExit, l) })
+// OnStart__1 是带运行策略的 OnStart。
+func (p *Runtime) OnStart__1(policy RunPolicy, handler func()) {
+	p.onStart(&runGroup{p: p.courseProgram, policy: policy}, handler)
 }
 
-// OnLog 注册"学习者的项目输出了一条日志"的回调，每条恰好触发一次、按输出顺序。
+// OnStart__2 是加入运行组的 OnStart。
+func (p *Runtime) OnStart__2(group RunGroup, handler func()) {
+	p.onStart(groupOf(group), handler)
+}
+
+func (p *Runtime) onStart(group *runGroup, handler func()) {
+	register(p.courseProgram, group, func(struct{}) { handler() },
+		func(h *handlers, r *registration[struct{}]) { h.runtimeStart = append(h.runtimeStart, r) })
+}
+
+// OnExit__0 注册"学习者的项目退出"的回调，code 是退出码。可注册多段。
+func (p *Runtime) OnExit__0(handler func(code int)) {
+	p.onExit(nil, handler)
+}
+
+// OnExit__1 是带运行策略的 OnExit。
+func (p *Runtime) OnExit__1(policy RunPolicy, handler func(code int)) {
+	p.onExit(&runGroup{p: p.courseProgram, policy: policy}, handler)
+}
+
+// OnExit__2 是加入运行组的 OnExit。
+func (p *Runtime) OnExit__2(group RunGroup, handler func(code int)) {
+	p.onExit(groupOf(group), handler)
+}
+
+func (p *Runtime) onExit(group *runGroup, handler func(code int)) {
+	register(p.courseProgram, group, handler,
+		func(h *handlers, r *registration[int]) { h.runtimeExit = append(h.runtimeExit, r) })
+}
+
+// OnLog__0 注册"学习者的项目输出了一条日志"的回调：每条日志启动一次运行，
+// 运行按输出顺序启动。
 //
 // 这是判定的主通道：课程项目的场景代码在关键事件发生时 println 一个约定好的字符串
 // （比如 "reached-target"），课程代码在这里等这个信号，就能知道学习者"做到了什么"。
 // 只有 kind=log 的输出会进来，运行错误不走这条通道，以免污染判定。
 //
 // 可以注册多段：一节课有两条判定线索时，分开写两段比挤在一个 if-else 里清楚。
-// 每段各自收到每一条日志、按输出顺序处理；一段挂在等待类能力上时不阻塞另一段
-// （各段独立串行，见 handlerLane）。
-func (p *Runtime) OnLog(handler func(log string)) {
-	addLane(p.courseProgram, handler,
-		func(h *handlers, l *handlerLane[string]) { h.runtimeLog = append(h.runtimeLog, l) })
+// 同一段回调的多次运行可以并存；要"以最新为准"或"忙时忽略"，在过滤之后 enter()
+// 一个相应策略的运行组。
+func (p *Runtime) OnLog__0(handler func(log string)) {
+	p.onLog(nil, handler)
+}
+
+// OnLog__1 是带运行策略的 OnLog。
+func (p *Runtime) OnLog__1(policy RunPolicy, handler func(log string)) {
+	p.onLog(&runGroup{p: p.courseProgram, policy: policy}, handler)
+}
+
+// OnLog__2 是加入运行组的 OnLog。
+func (p *Runtime) OnLog__2(group RunGroup, handler func(log string)) {
+	p.onLog(groupOf(group), handler)
+}
+
+func (p *Runtime) onLog(group *runGroup, handler func(log string)) {
+	register(p.courseProgram, group, handler,
+		func(h *handlers, r *registration[string]) { h.runtimeLog = append(h.runtimeLog, r) })
 }
 
 // CodeEditor 控制学习者写代码的编辑器。

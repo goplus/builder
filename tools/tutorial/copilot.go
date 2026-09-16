@@ -16,11 +16,26 @@ type CopilotRound struct {
 	ResultMessages []string `json:"resultMessages"`
 }
 
-// OnRoundFinish 注册"学习者完成了一轮 Copilot 对话"的回调，可注册多段。
+// OnRoundFinish__0 注册"学习者完成了一轮 Copilot 对话"的回调，可注册多段。
 // 课程可以据此感知学习者求助了什么（例如求助过多时给点额外提示）。
-func (p *Copilot) OnRoundFinish(handler func(round CopilotRound)) {
-	addLane(p.courseProgram, handler,
-		func(h *handlers, l *handlerLane[CopilotRound]) { h.copilotRound = append(h.copilotRound, l) })
+// 三个重载的含义见 editor.go 的 Runtime。
+func (p *Copilot) OnRoundFinish__0(handler func(round CopilotRound)) {
+	p.onRoundFinish(nil, handler)
+}
+
+// OnRoundFinish__1 是带运行策略的 OnRoundFinish。
+func (p *Copilot) OnRoundFinish__1(policy RunPolicy, handler func(round CopilotRound)) {
+	p.onRoundFinish(&runGroup{p: p.courseProgram, policy: policy}, handler)
+}
+
+// OnRoundFinish__2 是加入运行组的 OnRoundFinish。
+func (p *Copilot) OnRoundFinish__2(group RunGroup, handler func(round CopilotRound)) {
+	p.onRoundFinish(groupOf(group), handler)
+}
+
+func (p *Copilot) onRoundFinish(group *runGroup, handler func(round CopilotRound)) {
+	register(p.courseProgram, group, handler,
+		func(h *handlers, r *registration[CopilotRound]) { h.copilotRound = append(h.copilotRound, r) })
 }
 
 // GenerateText 让 Copilot 生成一段纯文本并返回。

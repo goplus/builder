@@ -12,16 +12,17 @@ import (
 
 // 本文件把调度器的持锁纪律从注释升级为机器检查。被守护的规则：
 //
-//  1. 执行令牌（execToken）只经 acquireExec/releaseExec 流转，且只有 runFrame 与 mustCallCapability
-//     有资格调它们——不存在散落在别处的临时让位。
-//  2. 可能长时间阻塞的等待（presentationMu、桥的 callCapability）只出现在
-//     mustCallCapability 里——那里的固定顺序保证等待前已交还令牌。
-//  3. schedulerMu 与 eventDeliveryMu 的持锁区间内没有任何可能阻塞的操作
-//     （channel 收发、select、Wait、取令牌、调桥、拿慢锁）。
-//  4. eventDeliveryMu 只在 deliverAll 里使用——eventDeliveryMu→schedulerMu 是唯一的嵌套方向。
+//  1. 执行令牌（execToken）只经 acquireExec/releaseExec 流转，且只有 runFrame 与
+//     yieldWhile 有资格调它们——运行只有一个让出点，不存在散落在别处的临时让位。
+//  2. yieldWhile 只从 mustCallCapability（等宿主）与 join（OneAtATime 排队）进入；
+//     桥的 callCapability 只出现在 mustCallCapability 里。
+//  3. schedulerMu 的持锁区间内没有任何可能阻塞的操作（channel 收发、select、Wait、
+//     取令牌、调桥）；registryMu 与 groupMu 是叶子锁，持锁区间只允许白名单里的调用。
+//  4. 运行的生命周期入口唯一：startRuns 只由 Start（与包级的事件投递闭包）调用；
+//     admitRun 只在 startRuns 与 goLive；cancel 只在 join；markYielded 只在 runFrame
+//     与 yieldWhile。
 //  5. 事件入口只有一个：向执行器注册 handler 只发生在 init；events.attach 只在
-//     XGot_Course_Main、events.goLive 只在 Start 里调用。registryMu 是叶子锁，持锁
-//     区间只允许字段读写与 len/append/fmt.Errorf/json.RawMessage 这几种调用。
+//     XGot_Course_Main、events.goLive 只在 Start 里调用。
 //
 // 检查基于 AST 而不是运行观察：违规的“写法”在进入仓库时就变红，
 // 不依赖测试恰好踩中那条时序。
@@ -52,10 +53,12 @@ func TestSchedulingInvariants(t *testing.T) {
 
 // 各规则的豁免名单：唯一有资格出现这些操作的函数。
 var (
-	tokenOperators   = map[string]bool{"runFrame": true, "mustCallCapability": true}
+	tokenOperators   = map[string]bool{"runFrame": true, "yieldWhile": true}
 	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
+	yieldCallers     = map[string]bool{"mustCallCapability": true, "join": true}
 	blockingWaitHome = "mustCallCapability"
-	deliveryMuHome   = "deliverAll"
+	admitCallers     = map[string]bool{"startRuns": true, "goLive": true}
+	yieldMarkers     = map[string]bool{"runFrame": true, "yieldWhile": true}
 )
 
 func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
@@ -72,19 +75,31 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 			switch {
 			case strings.HasSuffix(callee, ".acquireExec"), strings.HasSuffix(callee, ".releaseExec"):
 				if !tokenOperators[name] {
-					report(n.Pos(), "%s calls %s: only runFrame and mustCallCapability may operate the token", name, callee)
+					report(n.Pos(), "%s calls %s: only runFrame and yieldWhile may operate the token", name, callee)
 				}
-			case strings.Contains(callee, "presentationMu."):
-				if name != blockingWaitHome {
-					report(n.Pos(), "%s touches presentationMu: waiting on it is only legal in %s, after the token is released", name, blockingWaitHome)
+			case strings.HasSuffix(callee, ".yieldWhile"):
+				if !yieldCallers[name] {
+					report(n.Pos(), "%s yields the token: only mustCallCapability and join may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
 				if name != blockingWaitHome {
 					report(n.Pos(), "%s calls the capability bridge directly: all bridge waits must go through %s", name, blockingWaitHome)
 				}
-			case strings.Contains(callee, "eventDeliveryMu."):
-				if name != deliveryMuHome {
-					report(n.Pos(), "%s touches eventDeliveryMu: delivery serialization belongs to %s only", name, deliveryMuHome)
+			case callee == "startRuns":
+				if name != "Start" {
+					report(n.Pos(), "%s starts runs: only Course.Start and the event deliverers may", name)
+				}
+			case strings.HasSuffix(callee, ".admitRun"):
+				if !admitCallers[name] {
+					report(n.Pos(), "%s admits a goroutine to runs: only startRuns and goLive may", name)
+				}
+			case strings.HasSuffix(callee, ".cancel"):
+				if name != "join" {
+					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only join may", name)
+				}
+			case strings.HasSuffix(callee, ".markYielded"):
+				if !yieldMarkers[name] {
+					report(n.Pos(), "%s marks a run yielded: only runFrame and yieldWhile may", name)
 				}
 			case strings.HasSuffix(callee, ".RegisterEventHandler"):
 				if name != "init" {
@@ -107,33 +122,27 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 		return true
 	})
 
-	// 规则 3/5：schedulerMu / eventDeliveryMu 的持锁区间内不得有阻塞操作；
-	// registryMu 的持锁区间内只允许白名单里的调用。
+	// 规则 3：schedulerMu 的持锁区间内不得有阻塞操作；registryMu / groupMu 是叶子锁，
+	// 持锁区间内只允许白名单里的调用。
 	recv := receiverName(fn)
-	for _, guard := range []string{"schedulerMu", "eventDeliveryMu", "registryMu"} {
+	for _, guard := range []string{"schedulerMu", "registryMu", "groupMu"} {
 		for _, region := range heldRegions(fn, recv, guard) {
 			ast.Inspect(fn.Body, func(node ast.Node) bool {
 				if node == nil || node.Pos() < region.from || node.Pos() >= region.to {
 					return true
 				}
-				if guard == "registryMu" {
+				if allowed, leaf := leafLockAllowedCalls[guard]; leaf {
 					if n, ok := node.(*ast.CallExpr); ok {
 						callee := renderExpr(n.Fun)
-						own := callee == recv+".registryMu.Lock" || callee == recv+".registryMu.Unlock"
-						if !registryMuAllowedCalls[callee] && !own {
-							report(n.Pos(), "%s called inside a registryMu-held region of %s: the registry lock only guards field access", callee, name)
+						own := callee == recv+"."+guard+".Lock" || callee == recv+"."+guard+".Unlock"
+						if !allowed[callee] && !own {
+							report(n.Pos(), "%s called inside a %s-held region of %s: this leaf lock only guards field access", callee, guard, name)
 						}
 					}
 					return true
 				}
 				switch n := node.(type) {
 				case *ast.SendStmt:
-					// 唯一豁免：deliverAll 在 eventDeliveryMu 区间内向 lane.queue 发送。
-					// 它可证明不阻塞——同一把 eventDeliveryMu 下刚做完全量容量预检，
-					// 而队列只有投递方会填充。这正是全有或全无投递的机制本身。
-					if guard == "eventDeliveryMu" && name == deliveryMuHome && renderExpr(n.Chan) == "lane.queue" {
-						return true
-					}
 					report(n.Pos(), "channel send inside a %s-held region of %s", guard, name)
 				case *ast.UnaryExpr:
 					if n.Op == token.ARROW {
@@ -146,11 +155,9 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 					blocking := strings.HasSuffix(callee, ".Wait") ||
 						strings.HasSuffix(callee, ".acquireExec") ||
 						strings.HasSuffix(callee, ".releaseExec") ||
+						strings.HasSuffix(callee, ".yieldWhile") ||
 						strings.HasSuffix(callee, ".callCapability") ||
-						strings.Contains(callee, "presentationMu.Lock")
-					if guard == "schedulerMu" && strings.Contains(callee, "eventDeliveryMu.Lock") {
-						blocking = true // 嵌套方向只允许 eventDeliveryMu→schedulerMu
-					}
+						(strings.HasSuffix(callee, ".Lock") && callee != recv+"."+guard+".Lock") // schedulerMu 是最内层的锁，不嵌套别的锁
 					if blocking {
 						report(n.Pos(), "%s called inside a %s-held region of %s", callee, guard, name)
 					}
@@ -161,10 +168,11 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 	}
 }
 
-// registryMuAllowedCalls 是 registryMu 持锁区间内唯一允许的调用：都是纯计算、
-// 不可能阻塞，也碰不到别的锁。解码与投递必须在锁外。
-var registryMuAllowedCalls = map[string]bool{
-	"len": true, "append": true, "fmt.Errorf": true, "json.RawMessage": true,
+// leafLockAllowedCalls 列出各叶子锁持锁区间内唯一允许的调用：都是纯计算、
+// 不可能阻塞，也碰不到别的锁。解码、投递、取消与等待必须在锁外。
+var leafLockAllowedCalls = map[string]map[string]bool{
+	"registryMu": {"len": true, "append": true, "make": true, "fmt.Errorf": true, "json.RawMessage": true},
+	"groupMu":    {"len": true, "append": true, "close": true},
 }
 
 type lockRegion struct {

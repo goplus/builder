@@ -16,6 +16,8 @@
 // tutorial-class-framework.go 是作者侧 API，两者要与本包保持一致。
 package tutorial
 
+import "fmt"
+
 // XGoPackage 标记本包是一个 XGo 包（新式写法，旧式为 GopPackage）。
 // classfile 机制依赖它来识别可作为工程类框架使用的包。
 const XGoPackage = true
@@ -79,11 +81,25 @@ func (p *Course) initCourse() *Course {
 // 放心地在 onStart 里立刻做判定相关的事，不用担心此时事件回调还没挂上。
 //
 // 课程开始就是一个只触发一次的事件，与其他 onXxx 走同一条路：可以注册多段，
-// 各段独立生效、可在等待点交错（见 handlerLane）。多段之间不承诺先后顺序，
-// 需要顺序的开场步骤写在同一段里。课程开始之后再注册的开场回调不会被调用。
+// 按注册顺序启动、各自跑到第一次等待后下一段才启动，之后各自独立（见 startRuns）。
+// 课程开始之后再注册的开场回调不会被调用。
 func (p *Course) OnStart(handler func()) {
-	addLane(&p.courseProgram, func(struct{}) { handler() },
-		func(h *handlers, l *handlerLane[struct{}]) { h.courseStart = append(h.courseStart, l) })
+	register(&p.courseProgram, nil, func(struct{}) { handler() },
+		func(h *handlers, r *registration[struct{}]) { h.courseStart = append(h.courseStart, r) })
+}
+
+// NewRunGroup 创建一个运行组，见 RunPolicy 与 RunGroup。课程代码里写 newRunGroup。
+func (p *Course) NewRunGroup(policy RunPolicy) RunGroup {
+	return &runGroup{p: &p.courseProgram, policy: policy}
+}
+
+// groupOf 把注册时给的 RunGroup 参数还原成内部类型；只有本包会实现这个接口。
+func groupOf(group RunGroup) *runGroup {
+	g, ok := group.(*runGroup)
+	if !ok {
+		panic(fmt.Sprintf("tutorial: %T is not a RunGroup created by newRunGroup", group))
+	}
+	return g
 }
 
 // ShowPrelude 展示开场任务引导，等学习者确认后才返回。
@@ -141,34 +157,28 @@ func (p *Course) CompleteWith(message string) {
 	p.courseProgram.mustCallCapability("course_completeWith", contentRequest{Content: message}, nil)
 }
 
-// Start 运行课程程序：启动各回调通道，投递"课程开始"事件，然后等课程结束。
+// Start 运行课程程序：启动课程开始的运行，起投递 goroutine，然后等课程结束。
 //
-// 课程开始与宿主事件走同一条路：各段 onStart 各占一条通道（handlerLane），
-// 由这里投递唯一的一次触发。作者回调因此只有两条执行路径——通道 worker 上的帧，
-// 以及主 goroutine 上唯一的 MainEntry 帧。
+// 课程开始与宿主事件走同一条路：各段 onStart 由这里作为唯一的一次触发启动。
+// 作者回调因此只有两条执行路径——运行 goroutine 上的 runFrame，以及主 goroutine
+// 上唯一的 MainEntry 帧。
 //
-// 执行模型的三条约束（详见 courseProgram 与 handlerLane 的注释）：
+// 执行模型的三条约束（详见 courseProgram、runGroup 与 startRuns 的注释）：
 //   - **单执行、多在途**：任一瞬间只有执行令牌的持有者在跑课程代码（共享变量
-//     因此没有数据竞争）；回调在等待类 capability（展示、LLM）期间让出令牌挂起，
-//     其他回调照常执行。
-//   - **保序**：串行的单位是单段注册的回调——同一段回调的多次触发严格按到达
-//     顺序处理、绝不重入，契约里 editor.runtime.log "按追加顺序、每条恰好一次"
-//     对每段 onLog 回调各自成立。不同回调（包括同一事件上注册的多段、多段
-//     onStart）相互独立，可能在等待点交错。
-//   - **完成即收尾**：complete 之后新事件不再投递、积压事件被放弃；已在执行或
-//     挂起的回调把剩余语句执行完（此时宿主对展示类 capability no-op 即回），
-//     全部收尾后程序结束。
+//     因此没有数据竞争）；运行在等待类 capability（展示、LLM）期间让出令牌挂起，
+//     其他运行照常执行，同一段回调的多次运行可以并存，由运行组的策略约束。
+//   - **启动有序**：触发按到达顺序处理，一次触发内各段回调按注册顺序启动，
+//     每段跑到第一次等待或结束再启动下一段；契约里 editor.runtime.log
+//     "每条启动一次运行、按追加顺序启动"由此保证。
+//   - **完成即收尾**：complete 之后新触发不再启动运行；已在执行或挂起的运行
+//     把剩余语句执行完（此时宿主对展示类 capability no-op 即回），排队中的运行
+//     直接退出，全部收尾后程序结束。
 func (p *Course) Start() {
 	program := &p.courseProgram
-	program.startLanes()
-	if err := deliverAll(program, program.handlerSnapshot().courseStart, struct{}{}); err != nil {
-		// 投递被拒只有一种现实原因：MainEntry 帧已记下致命错误。recordFatal 保留
-		// 最早的那个，这里的 err 不会盖掉真正的原因，最终由 awaitShutdown 抛出。
-		// 课程在 MainEntry 里就完成的情况不是错误：投递被静默放弃，开场回调不再执行。
-		program.recordFatal(err)
-	}
-	// 课程开始投递之后才补投就绪前暂存的宿主事件：课程逻辑上先开始、再观察世界。
-	// 各 lane 相互独立，开场帧与事件帧之间本就不承诺顺序。
+	// 课程开始的运行由主 goroutine 亲自启动，之后才起投递 goroutine 处理宿主事件：
+	// 课程逻辑上先开始、再观察世界。课程在 MainEntry 里就完成的情况下，admitRun
+	// 会拒绝启动，开场回调不再执行。
+	startRuns(program, program.handlerSnapshot().courseStart, struct{}{})
 	events.goLive(program)
 	program.awaitShutdown()
 }
@@ -186,6 +196,6 @@ func (p *Course) Start() {
 func XGot_Course_Main(course CourseProto) {
 	program := &course.initCourse().courseProgram
 	events.attach(program)
-	program.runFrame(course.MainEntry)
+	program.runFrame(newRun(), course.MainEntry)
 	course.Start()
 }
