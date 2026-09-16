@@ -1,10 +1,10 @@
-import { nextTick, reactive, shallowReactive } from 'vue'
+import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
-import { RoundState, type Round, type Topic } from '@/components/copilot/copilot'
+import { type CopilotRound, type Topic } from '@/components/copilot/copilot'
 import { Runtime, RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
 import type { Copilot } from '@/components/copilot/copilot'
@@ -52,8 +52,9 @@ function makeProject() {
 }
 
 function makeCopilot() {
-  const session = shallowReactive<{ currentRound: Round | null }>({ currentRound: null })
-  let currentSession: { currentRound: Round | null } | null = null
+  const session = {}
+  let currentSession: object | null = null
+  const roundFinishListeners = new Set<(round: CopilotRound) => void>()
   return {
     session,
     controller: {
@@ -65,7 +66,15 @@ function makeCopilot() {
       }),
       endCurrentSession: vi.fn(() => {
         currentSession = null
-      })
+      }),
+      on: vi.fn((_event: 'roundFinish', listener: (round: CopilotRound) => void) => {
+        roundFinishListeners.add(listener)
+        return () => roundFinishListeners.delete(listener)
+      }),
+      emitRoundFinish(round: CopilotRound) {
+        roundFinishListeners.forEach((listener) => listener(round))
+      },
+      generateResponse: vi.fn()
     }
   }
 }
@@ -110,9 +119,10 @@ describe('PlaygroundCourseRunner', () => {
 
     expect(harness.copilot.startSession).toHaveBeenCalledWith({
       title: { en: 'Build a game', zh: 'Build a game' },
-      description: 'Help with this Course',
+      description: 'You are assisting the learner in the Playground Course: Build a game.\n\nHelp with this Course',
       reactToEvents: false,
-      endable: true
+      endable: true,
+      allowCodeHelper: false
     })
     expect(harness.executor.run).toHaveBeenCalledWith({
       [mainCourseFilePath]: 'onStart => { complete }'
@@ -138,11 +148,7 @@ describe('PlaygroundCourseRunner', () => {
     await vi.waitFor(() => expect(harness.executor.dispatchEvent).toHaveBeenCalledTimes(3))
 
     harness.editorRuntime.emit('didExit', 0)
-    harness.session.currentRound = reactive({
-      state: RoundState.Completed,
-      userMessage: { type: 'text', role: 'user', content: 'help' },
-      resultMessages: [{ role: 'copilot', content: 'done' }]
-    }) as Round
+    harness.copilot.emitRoundFinish({ userMessage: 'help', resultMessages: ['done'] })
 
     await vi.waitFor(() => expect(harness.executor.dispatchEvent).toHaveBeenCalledTimes(5))
     expect(harness.executor.dispatchEvent.mock.calls).toEqual([
@@ -153,12 +159,37 @@ describe('PlaygroundCourseRunner', () => {
       [
         'copilot.roundFinish',
         {
-          userMessage: { type: 'text', role: 'user', content: 'help' },
-          resultMessages: [{ role: 'copilot', content: 'done' }]
+          userMessage: 'help',
+          resultMessages: ['done']
         }
       ]
     ])
     vi.unstubAllGlobals()
+  })
+
+  it('provides Copilot generation without adding a learner round', async () => {
+    const harness = makeHarness()
+    await harness.runner.start()
+    harness.copilot.generateResponse.mockResolvedValueOnce('Great work').mockResolvedValueOnce({ complete: true })
+
+    const capabilities = harness.getExecutorOptions().framework?.capabilities
+    const generateText = capabilities?.copilot_generateText
+    const generateJSON = capabilities?.copilot_generateJSON
+    if (generateText == null || generateJSON == null) throw new Error('Copilot capabilities not found')
+
+    await expect(generateText({ message: 'Give feedback' })).resolves.toBe('Great work')
+    await expect(generateJSON({ message: 'Is the goal complete?', schema: { type: 'object' } })).resolves.toEqual({
+      complete: true
+    })
+    expect(harness.copilot.generateResponse).toHaveBeenNthCalledWith(1, {
+      response: 'text',
+      message: 'Give feedback'
+    })
+    expect(harness.copilot.generateResponse).toHaveBeenNthCalledWith(2, {
+      response: 'json',
+      message: 'Is the goal complete?',
+      schema: { type: 'object' }
+    })
   })
 
   it('publishes completion for its owner to dispose', async () => {

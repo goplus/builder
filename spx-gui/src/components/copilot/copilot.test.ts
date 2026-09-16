@@ -303,6 +303,59 @@ class MockBatchedMessageEventGenerator implements IMessageEventGenerator {
 }
 
 describe('Copilot', () => {
+  it('emits completed rounds as plain text', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Done'))
+    const rounds: Array<{ userMessage: string; resultMessages: string[] }> = []
+    copilot.on('roundFinish', (round) => rounds.push(round))
+
+    await copilot.startSession(createBasicTopic())
+    copilot.addUserTextMessage('Help me')
+    await waitForCompletion()
+
+    expect(rounds).toEqual([{ userMessage: 'Help me', resultMessages: ['Done'] }])
+  })
+
+  it('generates text and JSON responses without adding a conversation round', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      createTextStreamBatch('Nice work'),
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'return_json_1',
+          function: { name: 'return_json', arguments: '{"complete":true}' }
+        }),
+        createDoneEvent('tool_calls')
+      ]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    await copilot.startSession(createBasicTopic())
+
+    await expect(copilot.generateResponse({ response: 'text', message: 'Give feedback' })).resolves.toBe('Nice work')
+    await expect(
+      copilot.generateResponse({
+        response: 'json',
+        message: 'Is the goal complete?',
+        schema: { type: 'object' }
+      })
+    ).resolves.toEqual({ complete: true })
+
+    expect(copilot.currentSession?.rounds).toEqual([])
+    expect(generator.calls[0]?.at(-1)).toEqual({
+      role: 'user',
+      content: { type: 'text', text: 'Give feedback' }
+    })
+    expect(generator.callOptions[1]?.tools).toEqual([
+      {
+        type: apis.ToolType.Function,
+        function: {
+          name: 'return_json',
+          description: 'Return the requested JSON response.',
+          parameters: { type: 'object' }
+        }
+      }
+    ])
+  })
+
   it('should convert copilot messages with text and tool calls to structured api messages', () => {
     expect(
       toApiMessage({

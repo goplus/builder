@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
+import { useCopilot } from '../context'
 import BlockWrapper from './common/BlockWrapper.vue'
 import BlockFooter from './common/BlockFooter.vue'
 import BlockActionBtn from './common/BlockActionBtn.vue'
@@ -11,6 +13,8 @@ defineProps<{
 }>()
 
 const code = useSlotText()
+const copilot = useCopilot()
+const allowCodeHelper = computed(() => copilot.currentSession?.topic.allowCodeHelper !== false)
 
 const handleCopy = useMessageHandle(
   () => navigator.clipboard.writeText(code.value),
@@ -28,7 +32,7 @@ const handleCopy = useMessageHandle(
     </div>
     <BlockFooter>
       <slot name="actions" :code="code"></slot>
-      <BlockActionBtn icon="copy" @click="handleCopy">
+      <BlockActionBtn v-if="allowCodeHelper" icon="copy" @click="handleCopy">
         {{ $t({ en: 'Copy', zh: '复制' }) }}
       </BlockActionBtn>
     </BlockFooter>

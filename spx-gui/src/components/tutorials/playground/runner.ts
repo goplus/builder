@@ -1,12 +1,10 @@
 import { watch } from 'vue'
-import type { WatchStopHandle } from 'vue'
 
 import Emitter from '@/utils/emitter'
 import { XGoExecutor, type XGoExitReason, type XGoFramework } from '@/utils/xgoexec'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import type { TutorialProject } from '@/models/tutorial/project'
-import type { Copilot, Round, Session, Topic } from '@/components/copilot/copilot'
-import { RoundState } from '@/components/copilot/copilot'
+import type { Copilot, Session, Topic } from '@/components/copilot/copilot'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
 
@@ -94,17 +92,25 @@ export class PlaygroundCourseRunner extends Emitter<{
         course_showMessage: (request) =>
           this.options.presentation.showMessage((request as { content: string }).content),
         course_complete: () => this.acceptCompletion(null),
-        course_completeWith: (request) => this.acceptCompletion((request as { feedback: string }).feedback)
+        course_completeWith: (request) => this.acceptCompletion((request as { feedback: string }).feedback),
+        copilot_generateText: (request) =>
+          this.options.copilot.generateResponse({ response: 'text', message: (request as { message: string }).message }),
+        copilot_generateJSON: (request) => {
+          const { message, schema } = request as { message: string; schema: Record<string, unknown> }
+          return this.options.copilot.generateResponse({ response: 'json', message, schema })
+        }
       }
     }
   }
 
   private createCopilotTopic(project: TutorialProject): Topic {
+    const context = project.config?.copilotContext ?? ''
     return {
       title: { en: project.title, zh: project.title },
-      description: project.config?.copilotContext ?? '',
+      description: `You are assisting the learner in the Playground Course: ${project.title}.\n\n${context}`,
       reactToEvents: false,
-      endable: true
+      endable: true,
+      allowCodeHelper: false
     }
   }
 
@@ -131,20 +137,10 @@ export class PlaygroundCourseRunner extends Emitter<{
         { immediate: true }
       )
     )
-    this.addDisposer(this.watchCopilotRoundFinish())
-  }
-
-  private watchCopilotRoundFinish(): WatchStopHandle {
-    const session = this.session
-    return watch(
-      () => {
-        const round = session?.currentRound ?? null
-        return [round, round?.state ?? null] as const
-      },
-      ([round, state]) => {
-        if (round == null || state !== RoundState.Completed) return
-        this.dispatchEvent('copilot.roundFinish', serializeRound(round))
-      }
+    this.addDisposer(
+      this.options.copilot.on('roundFinish', (round) => {
+        if (this.options.copilot.currentSession === this.session) this.dispatchEvent('copilot.roundFinish', round)
+      })
     )
   }
 
@@ -192,15 +188,6 @@ export class PlaygroundCourseRunner extends Emitter<{
     this.settled = true
     this.emit('failed', error)
   }
-}
-
-function serializeRound(round: Round) {
-  return JSON.parse(
-    JSON.stringify({
-      userMessage: round.userMessage,
-      resultMessages: round.resultMessages
-    })
-  )
 }
 
 function errorOf(value: unknown) {
