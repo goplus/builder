@@ -49,6 +49,7 @@ export interface ILSPClient {
   // -- Standard LSP methods --
   textDocumentHover(ctx: RequestContext, params: lsp.HoverParams): Promise<lsp.Hover | null>
   textDocumentDefinition(ctx: RequestContext, params: lsp.DefinitionParams): Promise<lsp.Definition | null>
+  textDocumentReferences(ctx: RequestContext, params: lsp.ReferenceParams): Promise<lsp.Location[] | null>
   textDocumentTypeDefinition(ctx: RequestContext, params: lsp.TypeDefinitionParams): Promise<lsp.Definition | null>
   textDocumentPrepareRename(
     ctx: RequestContext,

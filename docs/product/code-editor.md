@@ -45,7 +45,7 @@ Hover is an interaction mode where, when the user hovers the mouse over an eleme
 
 * A set of related actions, including:
 
-  - Go to Definition
+  - View Definition at a symbol use, or View References at its declaration (one navigation action at a time).
   - Rename
   - Explain, which invokes Copilot to explain the location, function, etc., of the current element.
   - Modify Reference, which provides an entry to modify the reference for Resource References.
@@ -65,6 +65,18 @@ The specific correspondence between element types and floating layer content is 
 | **identifier for a method name**                | `func {name}({parameters}) {result}` (omit receiver)<br>func foo(a int) b int<br><br>NOTE: If there's multiple overloads and can't decide which one is used here (sometimes it can be decided if in a call expression), repeat all overload signatures | Document, if there is | Yes, if defined in project | Yes, if defined in project | Yes               | No                         |
 | **string-literal as a resource-reference**      | `{resourceType} {name}`<br>Sound ""explosion""                                                                                                                                                                                                     | Preview for resource  | Yes, select the resource   | Yes                        | No                | Yes                        |
 | **identifier as a resource-reference**          | `{resourceType} {name}`<br>Sprite ""NiuXiaoQi""                                                                                                                                                                                                    | Preview for resource  | Yes, select the resource   | Yes                        | No                | No                         |
+
+### Definition and Reference Navigation
+
+View Definition opens an editable Peek below the source editor. Peek uses the same project text model and editing history as the main editor; closing it does not discard edits or introduce a separate save confirmation. Cloud saving still follows the existing project permissions and save status.
+
+The Peek header shows the current document and line, a reference-count button, Open in Editor, and Close. View References at a declaration opens the same Peek with its reference picker visible. The picker groups all project references by document and shows the line and a code excerpt for each result. Declaration locations are not counted as references; self-recursive and mutually recursive calls are ordinary references. Selecting a result previews that location in the same Peek, and Back to Definition restores its definition.
+
+Open in Editor promotes the currently previewed definition or reference to the main editor, preserving its cursor and scroll state. The return bar restores the source view captured before Peek opened. Repeated openings form a return stack; choosing references inside Peek does not add entries to that stack. No persistent document list is introduced.
+
+Reference results come from the language service, not text matching. Editing refreshes them; loading, no results, and failure with retry are distinct states. Automatic saving is not automatic refactoring: use Rename to update a symbol name and its references together. Hovering a renameable symbol inside Peek also offers Rename, using the existing dialog, project-error warning, and editing history without navigating away from Peek.
+
+Editing a parameter list directly in Peek starts a call review that retains previously known references. Users fix and mark each location; argument values, conversions, and argument reordering are not inferred. Closing or expanding Peek preserves the review. Finish Review ends manual inspection, not saving or compilation validation. While reviewing, Undo Adjustment restores parameter and reference-line edits together; other mixed code edits disable this bulk operation to preserve them, leaving normal project undo available. Review progress does not persist across page reloads.
 
 ### Marker
 

@@ -44,6 +44,7 @@ import { CompletionProvider } from './completion'
 import { DiagnosticsProvider } from './diagnostics'
 import { SnippetVariablesProvider } from './snippet-variables'
 import type { ICopilot } from './copilot'
+import type { FunctionChangeReview } from './ui/function-change-review'
 
 const formatTabSize = 4
 const formatInsertSpaces = false
@@ -58,6 +59,14 @@ export type CodeEditorParams = {
 }
 
 export class CodeEditor extends Disposable {
+  private functionChangeReviewRef = shallowRef<FunctionChangeReview | null>(null)
+  get functionChangeReview() {
+    return this.functionChangeReviewRef.value
+  }
+  setFunctionChangeReview(review: FunctionChangeReview | null) {
+    this.functionChangeReviewRef.value?.dispose()
+    this.functionChangeReviewRef.value = review
+  }
   readonly monaco: Monaco
   readonly project: IXGoProject
   readonly history: History
@@ -85,6 +94,7 @@ export class CodeEditor extends Disposable {
     )
     this.diagnosticsProviderRef = shallowRef(new DiagnosticsProvider(params.lspClient, params.project))
     this.snippetVariablesProviderRef = shallowRef(new SnippetVariablesProvider())
+    this.addDisposer(() => this.setFunctionChangeReview(null))
   }
 
   private hoverProviderRef: ShallowRef<IHoverProvider>
@@ -206,15 +216,25 @@ export class CodeEditor extends Disposable {
     await Promise.all(textDocuments.map((td) => this.formatTextDocument(td.id)))
   }
 
+  private applyingWorkspaceEdit = false
+  get isApplyingWorkspaceEdit() {
+    return this.applyingWorkspaceEdit
+  }
+
   private applyWorkspaceEdit(workspaceEdit: lsp.WorkspaceEdit) {
     if (workspaceEdit.changes == null) return // For now, we support `changes` only
-    for (const [uri, edits] of Object.entries(workspaceEdit.changes)) {
-      const textDocument = this.getTextDocument({ uri })
-      if (textDocument == null) {
-        console.warn(`Text document not found for uri: ${uri}`)
-        continue
+    this.applyingWorkspaceEdit = true
+    try {
+      for (const [uri, edits] of Object.entries(workspaceEdit.changes)) {
+        const textDocument = this.getTextDocument({ uri })
+        if (textDocument == null) {
+          console.warn(`Text document not found for uri: ${uri}`)
+          continue
+        }
+        textDocument.pushEdits(edits.map(fromLSPTextEdit))
       }
-      textDocument.pushEdits(edits.map(fromLSPTextEdit))
+    } finally {
+      this.applyingWorkspaceEdit = false
     }
   }
 

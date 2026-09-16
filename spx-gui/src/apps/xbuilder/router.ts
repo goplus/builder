@@ -1,6 +1,7 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import type { ExploreOrder } from '@/apis/project'
+import { previewDefaultRoute } from './env'
 import { searchKeywordQueryParamName } from './pages/community/search.vue'
 
 export function getProjectEditorRoute(ownerName: string, projectName: string, publish = false) {
@@ -40,6 +41,22 @@ export function getExploreRoute(order?: ExploreOrder) {
 
 export const homePageName = 'home'
 
+export function getHomePageRoute(defaultRoute: string | null): RouteRecordRaw {
+  return defaultRoute == null
+    ? {
+        path: '/',
+        name: homePageName,
+        component: () => import('./pages/community/home.vue')
+      }
+    : {
+        path: '/',
+        name: homePageName,
+        redirect: defaultRoute
+      }
+}
+
+const homePageRoute = getHomePageRoute(previewDefaultRoute)
+
 declare module 'vue-router' {
   interface RouteMeta {
     /** Whether the route is a search page */
@@ -52,11 +69,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/',
     component: () => import('./pages/community/index.vue'),
     children: [
-      {
-        path: '/',
-        name: homePageName,
-        component: () => import('./pages/community/home.vue')
-      },
+      homePageRoute,
       {
         path: '/explore',
         component: () => import('./pages/community/explore.vue')
