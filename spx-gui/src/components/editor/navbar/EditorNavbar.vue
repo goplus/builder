@@ -136,6 +136,16 @@
         </UITooltip>
       </UIButtonGroup>
     </template>
+    <template v-if="previewFocused != null" #profile-menu>
+      <div
+        v-radar="{ name: 'Simplified preview toggle', desc: 'Toggle the simplified preview layout' }"
+        class="min-w-52 flex items-center justify-between gap-4 px-2 py-2 text-sm text-grey-1000"
+        @click.stop
+      >
+        <span>{{ $t({ en: 'Simplified preview', zh: '简化预览' }) }}</span>
+        <UISwitch :value="previewFocused" @update:value="setPreviewFocused" />
+      </div>
+    </template>
   </NavbarWrapper>
 </template>
 
@@ -153,7 +163,8 @@ import {
   useMessage,
   UIButtonGroup,
   UIButtonGroupItem,
-  UITag
+  UITag,
+  UISwitch
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -196,6 +207,11 @@ const { showTutorialsEntry } = useCommunityConfig()
 const props = defineProps<{
   project: SpxProject | null
   state: EditorState | null
+  previewFocused?: boolean
+}>()
+
+const emit = defineEmits<{
+  'update:previewFocused': [boolean]
 }>()
 
 const { isOnline } = useNetwork()
@@ -210,6 +226,11 @@ const canManageProject = computed(() => {
 })
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
+
+function setPreviewFocused(value: boolean) {
+  if (value) props.state?.selectEditMode(EditMode.Default)
+  emit('update:previewFocused', value)
+}
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 

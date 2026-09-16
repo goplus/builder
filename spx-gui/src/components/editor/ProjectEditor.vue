@@ -1,4 +1,22 @@
 <template>
+  <div
+    v-show="isPreviewMode"
+    ref="previewColumnRef"
+    class="min-w-0 flex flex-none gap-xl"
+    :class="[isPortraitRailLayout ? 'flex-row' : 'flex-col', { 'pointer-events-none': resizing != null }]"
+    :style="previewColumnStyle"
+  >
+    <EditorPreview
+      class="min-w-0"
+      :class="{ 'flex-[1_1_0] self-start': isPortraitRailLayout }"
+      :fill-container="isFocusedLayout"
+    />
+    <EditorPanels
+      v-if="!isFocusedLayout"
+      :layout="isPortraitRailLayout ? 'portrait' : 'default'"
+      :rail-width="paneLayout?.railWidth"
+    />
+  </div>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
   <!-- Using overflow-visible class to avoid cutting dropdown menu of CodeTextEditor (monaco) -->
   <UICard
@@ -33,7 +51,7 @@
       :aria-valuenow="Math.round(paneLayout?.codeWidth ?? 0)"
       :title="$t({ en: 'Drag to resize; double-click to reset', zh: '拖动调整宽度，双击恢复自动布局' })"
       tabindex="0"
-      class="group absolute inset-y-0 -right-4 z-10 w-4 touch-none cursor-col-resize select-none flex items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-primary-main"
+      class="group absolute inset-y-0 -left-4 z-10 w-4 touch-none cursor-col-resize select-none flex items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-primary-main"
       @pointerdown="startResizing"
       @keydown="handleResizeKey"
       @dblclick="preferredCodeWidths[props.layout] = null"
@@ -46,24 +64,6 @@
   </UICard>
   <!-- Prevent the runner iframe from swallowing pointer events during a drag. -->
   <div v-if="resizing?.moved" class="fixed inset-0 z-50 cursor-col-resize select-none"></div>
-  <div
-    v-show="isPreviewMode"
-    ref="previewColumnRef"
-    class="min-w-0 flex flex-none gap-xl"
-    :class="[isPortraitRailLayout ? 'flex-row' : 'flex-col', { 'pointer-events-none': resizing != null }]"
-    :style="previewColumnStyle"
-  >
-    <EditorPreview
-      class="min-w-0"
-      :class="{ 'flex-[1_1_0] self-start': isPortraitRailLayout }"
-      :fill-container="isFocusedLayout"
-    />
-    <EditorPanels
-      v-if="!isFocusedLayout"
-      :layout="isPortraitRailLayout ? 'portrait' : 'default'"
-      :rail-width="paneLayout?.railWidth"
-    />
-  </div>
   <MapEditor
     v-if="!isPreviewMode"
     :project="editorCtx.project"
@@ -112,7 +112,7 @@ const paneLayout = computed(() => {
   return getPaneLayout(size, project.value.viewportSize, props.layout, preferredCodeWidths[props.layout])
 })
 const isPortraitRailLayout = computed(() => paneLayout.value?.portraitRail ?? false)
-const previewColumnStyle = computed(() => ({ width: `${paneLayout.value?.rightWidth ?? 496}px` }))
+const previewColumnStyle = computed(() => ({ width: `${paneLayout.value?.previewWidth ?? 496}px` }))
 const resizing = ref<{ pointerId: number; startX: number; codeWidth: number; moved: boolean } | null>(null)
 
 function setCodeWidth(width: number) {
@@ -138,7 +138,7 @@ function resizePanes(event: PointerEvent) {
   if (drag == null || event.pointerId !== drag.pointerId) return
   if (!drag.moved && Math.abs(event.clientX - drag.startX) < 3) return
   drag.moved = true
-  setCodeWidth(drag.codeWidth + event.clientX - drag.startX)
+  setCodeWidth(drag.codeWidth - (event.clientX - drag.startX))
 }
 
 function stopResizing() {
@@ -168,7 +168,7 @@ function handleResizeKey(event: KeyboardEvent) {
       ? layout.minCodeWidth
       : event.key === 'End'
         ? layout.maxCodeWidth
-        : layout.codeWidth + (event.key === 'ArrowRight' ? 16 : -16)
+        : layout.codeWidth + (event.key === 'ArrowRight' ? -16 : 16)
   )
 }
 
