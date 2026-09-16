@@ -146,7 +146,7 @@ export class Sound extends Disposable {
 
   // config is included in files
   export({ includeId = true, includeAssetMetadata = true }: SoundExportLoadOptions = {}): Files {
-    const filename = this.name + extname(this.file.name)
+    const filename = `sound${extname(this.file.name)}`
     const config: RawSoundConfig = {
       rate: this.rate,
       sampleCount: this.sampleCount,

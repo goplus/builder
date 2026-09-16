@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolve, filename, stripExt, extname } from './path'
+import { encodeFilename, encodePathSegment, resolve, filename, stripExt, extname, validatePathSegment } from './path'
 
 describe('resolve', () => {
   it('should work well with path', () => {
@@ -8,15 +8,8 @@ describe('resolve', () => {
     expect(resolve('/foo/bar', 'baz')).toBe('/foo/bar/baz')
     expect(resolve('/foo/bar', 'baz', 'qux')).toBe('/foo/bar/baz/qux')
   })
-  it('should work well with url', () => {
-    expect(resolve('https://test.com/foo', 'bar')).toBe('https://test.com/foo/bar')
-    expect(resolve('https://test.com/foo', 'bar', 'baz')).toBe('https://test.com/foo/bar/baz')
-    expect(resolve('https://test.com/foo/bar', 'baz')).toBe('https://test.com/foo/bar/baz')
-    expect(resolve('https://test.com/foo/bar', 'baz', 'qux')).toBe('https://test.com/foo/bar/baz/qux')
-  })
   it('should work well with no path', () => {
     expect(resolve('foo')).toBe('foo')
-    expect(resolve('https://test.com/foo')).toBe('https://test.com/foo')
   })
   it('should work well with complex path', () => {
     expect(resolve('foo', 'bar/baz')).toBe('foo/bar/baz')
@@ -38,14 +31,9 @@ describe('filename', () => {
     expect(filename('你好/世界.png')).toBe('世界.png')
     expect(filename('src/你好/世界.png')).toBe('世界.png')
   })
-  it('should work well with url', () => {
-    expect(filename('https://test.com/abc.txt')).toBe('abc.txt')
-    expect(filename('https://test.com/foo/%E4%B8%AD%E6%96%87.png')).toBe('%E4%B8%AD%E6%96%87.png')
-  })
   it('should work well with no ext', () => {
     expect(filename('abc')).toBe('abc')
     expect(filename('/foo/.git/a')).toBe('a')
-    expect(filename('https://test.com/project/foo')).toBe('foo')
   })
   it('should work well with complex ext', () => {
     expect(filename('foo/abc.d.ts')).toBe('abc.d.ts')
@@ -55,9 +43,8 @@ describe('filename', () => {
   it('should work well with special characters', () => {
     expect(filename('foo/Artificial Axolotl 😡.svg')).toBe('Artificial Axolotl 😡.svg')
   })
-  it('should work well with url containing search', () => {
-    expect(filename('https://test.com/abc.txt?version=1.2.3')).toBe('abc.txt')
-    expect(filename('https://test.com/foo?bar')).toBe('foo')
+  it('keeps question marks in POSIX paths', () => {
+    expect(filename('foo/image?draft.png')).toBe('image?draft.png')
   })
 })
 
@@ -67,14 +54,9 @@ describe('stripExt', () => {
     expect(stripExt('中文.png')).toBe('中文')
     expect(stripExt('src/你好/世界.png')).toBe('src/你好/世界')
   })
-  it('should work well with url', () => {
-    expect(stripExt('https://test.com/abc.txt')).toBe('https://test.com/abc')
-    expect(stripExt('https://test.com/foo/%E4%B8%AD%E6%96%87.png')).toBe('https://test.com/foo/%E4%B8%AD%E6%96%87')
-  })
   it('should work well with no ext', () => {
     expect(stripExt('abc')).toBe('abc')
     expect(stripExt('/foo/.git/a')).toBe('/foo/.git/a')
-    expect(stripExt('https://test.com/project/foo')).toBe('https://test.com/project/foo')
   })
   it('should work well with complex ext', () => {
     expect(stripExt('abc.d.ts')).toBe('abc.d')
@@ -84,9 +66,8 @@ describe('stripExt', () => {
   it('should work well with special characters', () => {
     expect(stripExt('foo/Artificial Axolotl 😡.svg')).toBe('foo/Artificial Axolotl 😡')
   })
-  it('should work well with url containing search', () => {
-    expect(stripExt('https://test.com/abc.txt?version=1.2.3')).toBe('https://test.com/abc')
-    expect(stripExt('https://test.com/foo?bar')).toBe('https://test.com/foo')
+  it('keeps question marks in POSIX paths', () => {
+    expect(stripExt('foo/image?draft.png')).toBe('foo/image?draft')
   })
 })
 
@@ -96,14 +77,9 @@ describe('extname', () => {
     expect(extname('中文.png')).toBe('.png')
     expect(extname('src/你好/世界.png')).toBe('.png')
   })
-  it('should work well with url', () => {
-    expect(extname('https://test.com/abc.txt')).toBe('.txt')
-    expect(extname('https://test.com/foo/%E4%B8%AD%E6%96%87.png')).toBe('.png')
-  })
   it('should work well with no ext', () => {
     expect(extname('abc')).toBe('')
     expect(extname('/foo/.git/a')).toBe('')
-    expect(extname('https://test.com/project/foo')).toBe('')
   })
   it('should work well with complex ext', () => {
     expect(extname('abc.d.ts')).toBe('.ts')
@@ -113,8 +89,40 @@ describe('extname', () => {
   it('should work well with special characters', () => {
     expect(extname('foo/Artificial Axolotl 😡.svg')).toBe('.svg')
   })
-  it('should work well with url containing search', () => {
-    expect(extname('https://test.com/abc.txt?version=1.2.3')).toBe('.txt')
-    expect(extname('https://test.com/foo?bar')).toBe('')
+  it('keeps question marks in POSIX paths', () => {
+    expect(extname('foo/image?draft.png')).toBe('.png')
+  })
+})
+
+describe('validatePathSegment', () => {
+  it.each([
+    ['.', 'The value cannot be . or ..'],
+    ['..', 'The value cannot be . or ..'],
+    ['a/b', 'The value must not contain /'],
+    ['a\0b', 'The value contains an unsupported character']
+  ])('explains why %j is rejected', (value, message) => {
+    expect(validatePathSegment(value)).toMatchObject({ en: message })
+  })
+
+  it('accepts ordinary names', () => {
+    expect(validatePathSegment('中文 😀')).toBeUndefined()
+    expect(validatePathSegment('CON')).toBeUndefined()
+    expect(validatePathSegment('a\\b')).toBeUndefined()
+  })
+})
+
+describe('encodePathSegment', () => {
+  it('escapes only path syntax and the escape marker', () => {
+    expect(encodePathSegment('=/')).toBe('=%2F')
+    expect(encodePathSegment('中文 😀')).toBe('中文 😀')
+    expect(encodePathSegment('%2F')).toBe('%252F')
+    expect(encodePathSegment('.')).toBe('%2E')
+    expect(encodePathSegment('..')).toBe('%2E%2E')
+  })
+})
+
+describe('encodeFilename', () => {
+  it('uses path segment encoding after the extension is appended', () => {
+    expect(encodeFilename('=/.svg')).toBe('=%2F.svg')
   })
 })

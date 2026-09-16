@@ -142,6 +142,14 @@ describe('Backdrop', () => {
     expect(rawSize).toEqual({ width: 512, height: 288 })
   })
 
+  it('should export a slash-containing name with a safe path', () => {
+    const backdrop = new Backdrop('a/b', fromText('backdrop.svg', '<svg />'))
+    const [config, files] = backdrop.export()
+
+    expect(config).toMatchObject({ name: 'a/b', path: 'a%2Fb.svg' })
+    expect(Object.keys(files)).toEqual(['assets/a%2Fb.svg'])
+  })
+
   it('should get size divided by bitmap resolution', async () => {
     const file = new File('stage.png', async () => new ArrayBuffer(0), {
       type: 'image/png',

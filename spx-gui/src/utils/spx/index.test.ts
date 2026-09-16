@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { File } from '@/models/common/file'
-import { adaptAudio, getSpxProjectKnowledge } from './index'
+import { adaptAudio, adaptImg, getSpxProjectKnowledge } from './index'
 
 function makeImaAdpcmWav() {
   const output = new ArrayBuffer(54)
@@ -56,5 +56,13 @@ describe('adaptAudio', () => {
     const file = new File('sound.wav', async () => content)
 
     await expect(adaptAudio(file)).resolves.toBe(file)
+  })
+})
+
+describe('adaptImg', () => {
+  it('keeps WebP files unchanged', async () => {
+    const file = new File('frame.webp', async () => new ArrayBuffer(0))
+
+    await expect(adaptImg(file)).resolves.toBe(file)
   })
 })

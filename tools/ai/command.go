@@ -1,12 +1,34 @@
 package ai
 
 import (
+	"bytes"
 	"context"
+	"encoding"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"reflect"
+	"unicode/utf8"
 
 	"github.com/goplus/spx/v3/pkg/spx"
+)
+
+const (
+	// maxCommandCount is the maximum number of commands in one interaction request.
+	maxCommandCount = 128
+
+	// maxCommandDescriptionLength is the maximum number of characters in a
+	// command or parameter description.
+	maxCommandDescriptionLength = 1024
+
+	// maxCommandParameterCount is the maximum number of parameters or
+	// properties in one collection.
+	maxCommandParameterCount = 128
+
+	// maxCommandValueSchemaDepth is the maximum number of value schema
+	// levels beneath a command's parameter object.
+	maxCommandValueSchemaDepth = 9
 )
 
 // CommandSpec describes an available AI command, derived from a command registration.
@@ -21,16 +43,34 @@ type CommandSpec struct {
 	Parameters []CommandParamSpec `json:"parameters,omitempty"`
 }
 
-// CommandParamSpec describes a parameter for an AI command.
+// CommandParamSpec describes a parameter or object property accepted by an AI command.
 type CommandParamSpec struct {
 	// Name is the parameter name (e.g., struct field name).
 	Name string `json:"name"`
 
-	// Type is the Go type name of the parameter (e.g., "string", "int", "[]float64").
-	Type string `json:"type"`
-
 	// Description explains the purpose of the parameter.
 	Description string `json:"description,omitempty"`
+
+	// Schema describes the values accepted by the parameter.
+	Schema CommandValueSpec `json:"schema"`
+}
+
+// CommandValueSpec describes a value accepted by an AI command.
+type CommandValueSpec struct {
+	// Type is the JSON data type of the value.
+	Type string `json:"type"`
+
+	// Items describes the values accepted as array elements.
+	Items *CommandValueSpec `json:"items,omitempty"`
+
+	// MinItems is the minimum number of items accepted by an array.
+	MinItems *int `json:"minItems,omitempty"`
+
+	// MaxItems is the maximum number of items accepted by an array.
+	MaxItems *int `json:"maxItems,omitempty"`
+
+	// Properties lists all properties of an object value. Every property is required.
+	Properties []CommandParamSpec `json:"properties,omitempty"`
 }
 
 // CommandResult represents the outcome of executing an AI-requested command.
@@ -43,8 +83,8 @@ type CommandResult struct {
 	// returned an error other than the [Break]).
 	ErrorMessage string `json:"errorMessage,omitempty"`
 
-	// IsBreak indicates if the command handler returned [Break] to terminate
-	// interaction.
+	// IsBreak indicates whether the command handler returned [Break] to terminate
+	// the current interaction sequence.
 	IsBreak bool `json:"isBreak,omitempty"`
 }
 
@@ -56,35 +96,184 @@ type commandInfo struct {
 }
 
 // extractCommandSpec uses reflection to build a [CommandSpec] from a command
-// struct type. It assumes cmdType is already validated to be a named struct type.
-func extractCommandSpec(cmdType reflect.Type) CommandSpec {
+// struct type. It returns an error when the command cannot be represented by
+// the public contract. It assumes cmdType is already validated to be a named struct.
+func extractCommandSpec(cmdType reflect.Type) (CommandSpec, error) {
+	name := cmdType.Name()
+	if err := validateCommandName(name); err != nil {
+		return CommandSpec{}, fmt.Errorf("invalid AI command name %q: %w", name, err)
+	}
+	parameters, err := commandStructParameters(cmdType, make(map[reflect.Type]struct{}), 1)
+	if err != nil {
+		return CommandSpec{}, fmt.Errorf("invalid AI command %q: %w", name, err)
+	}
 	spec := CommandSpec{
-		Name:       cmdType.Name(),
-		Parameters: []CommandParamSpec{},
+		Name:        name,
+		Description: "Command " + name,
+		Parameters:  parameters,
 	}
 
-	// Extract parameters from exported struct fields.
-	for i := range cmdType.NumField() {
-		field := cmdType.Field(i)
-		if field.IsExported() {
-			paramSpec := CommandParamSpec{
-				Name:        field.Name,
-				Type:        field.Type.String(),
-				Description: field.Tag.Get("desc"),
-			}
-			spec.Parameters = append(spec.Parameters, paramSpec)
-		}
-	}
-
-	// Extract command description from "Desc() string" method if available,
-	// otherwise fall back to a default one.
+	// Extract the command description from a "Desc() string" method if available.
 	if describer, ok := reflect.New(cmdType).Interface().(interface{ Desc() string }); ok {
 		spec.Description = describer.Desc()
-	} else {
-		spec.Description = "Command " + spec.Name
+	}
+	if err := validateCommandDescription(spec.Description); err != nil {
+		return CommandSpec{}, fmt.Errorf("invalid AI command %q description: %w", name, err)
 	}
 
-	return spec
+	return spec, nil
+}
+
+// commandStructParameters returns specifications for the exported fields of a command object.
+func commandStructParameters(structType reflect.Type, visiting map[reflect.Type]struct{}, valueDepth int) ([]CommandParamSpec, error) {
+	parameters := make([]CommandParamSpec, 0, structType.NumField())
+	for i := range structType.NumField() {
+		field := structType.Field(i)
+		if field.Anonymous {
+			return nil, fmt.Errorf("field %q: anonymous fields are unsupported", field.Name)
+		}
+		if !field.IsExported() {
+			continue
+		}
+		parameter, err := commandParameterSpec(field, visiting, valueDepth)
+		if err != nil {
+			return nil, fmt.Errorf("field %q: %w", field.Name, err)
+		}
+		parameters = append(parameters, parameter)
+	}
+	if len(parameters) > maxCommandParameterCount {
+		return nil, fmt.Errorf("has %d exported fields, want at most %d", len(parameters), maxCommandParameterCount)
+	}
+	return parameters, nil
+}
+
+// commandParameterSpec returns the public specification for a command struct field.
+func commandParameterSpec(field reflect.StructField, visiting map[reflect.Type]struct{}, valueDepth int) (CommandParamSpec, error) {
+	if err := validateCommandName(field.Name); err != nil {
+		return CommandParamSpec{}, fmt.Errorf("invalid name %q: %w", field.Name, err)
+	}
+	if _, ok := field.Tag.Lookup("json"); ok {
+		return CommandParamSpec{}, errors.New("json tags are unsupported")
+	}
+	description := field.Tag.Get("desc")
+	if err := validateCommandDescription(description); err != nil {
+		return CommandParamSpec{}, fmt.Errorf("invalid description: %w", err)
+	}
+	schema, err := commandValueSpec(field.Type, visiting, valueDepth)
+	if err != nil {
+		return CommandParamSpec{}, err
+	}
+	return CommandParamSpec{
+		Name:        field.Name,
+		Description: description,
+		Schema:      schema,
+	}, nil
+}
+
+// commandValueSpec returns the public value schema for a supported Go type.
+func commandValueSpec(goType reflect.Type, visiting map[reflect.Type]struct{}, depth int) (CommandValueSpec, error) {
+	if depth > maxCommandValueSchemaDepth {
+		return CommandValueSpec{}, fmt.Errorf("schema exceeds %d levels", maxCommandValueSchemaDepth)
+	}
+	if hasCustomJSONCodec(goType) {
+		return CommandValueSpec{}, fmt.Errorf("type %s has a custom JSON representation", goType)
+	}
+
+	switch goType.Kind() {
+	case reflect.String:
+		return CommandValueSpec{Type: "string"}, nil
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return CommandValueSpec{Type: "integer"}, nil
+	case reflect.Float32, reflect.Float64:
+		return CommandValueSpec{Type: "number"}, nil
+	case reflect.Bool:
+		return CommandValueSpec{Type: "boolean"}, nil
+	case reflect.Array, reflect.Slice:
+		if err := beginCommandValueSpec(goType, visiting); err != nil {
+			return CommandValueSpec{}, err
+		}
+		defer delete(visiting, goType)
+
+		items, err := commandValueSpec(goType.Elem(), visiting, depth+1)
+		if err != nil {
+			return CommandValueSpec{}, fmt.Errorf("array item: %w", err)
+		}
+		schema := CommandValueSpec{Type: "array", Items: &items}
+		if goType.Kind() == reflect.Array {
+			length := goType.Len()
+			schema.MinItems = &length
+			schema.MaxItems = &length
+		}
+		return schema, nil
+	case reflect.Struct:
+		if err := beginCommandValueSpec(goType, visiting); err != nil {
+			return CommandValueSpec{}, err
+		}
+		defer delete(visiting, goType)
+
+		properties, err := commandStructParameters(goType, visiting, depth+1)
+		if err != nil {
+			return CommandValueSpec{}, err
+		}
+		return CommandValueSpec{Type: "object", Properties: properties}, nil
+	default:
+		return CommandValueSpec{}, fmt.Errorf("unsupported type %s", goType)
+	}
+}
+
+// validateCommandDescription validates a description against the public contract.
+func validateCommandDescription(description string) error {
+	if utf8.RuneCountInString(description) > maxCommandDescriptionLength {
+		return fmt.Errorf("must not exceed %d characters", maxCommandDescriptionLength)
+	}
+	return nil
+}
+
+// beginCommandValueSpec marks a composite type as being visited while its schema is built.
+func beginCommandValueSpec(goType reflect.Type, visiting map[reflect.Type]struct{}) error {
+	if _, ok := visiting[goType]; ok {
+		return fmt.Errorf("cyclic type %s is unsupported", goType)
+	}
+	visiting[goType] = struct{}{}
+	return nil
+}
+
+// hasCustomJSONCodec reports whether a type can override its default JSON representation.
+func hasCustomJSONCodec(goType reflect.Type) bool {
+	return typeOrPointerImplements(goType, reflect.TypeFor[json.Marshaler]()) ||
+		typeOrPointerImplements(goType, reflect.TypeFor[json.Unmarshaler]()) ||
+		typeOrPointerImplements(goType, reflect.TypeFor[encoding.TextMarshaler]()) ||
+		typeOrPointerImplements(goType, reflect.TypeFor[encoding.TextUnmarshaler]())
+}
+
+// typeOrPointerImplements reports whether a type or its pointer implements an interface.
+func typeOrPointerImplements(goType, interfaceType reflect.Type) bool {
+	return goType.Implements(interfaceType) ||
+		(goType.Kind() != reflect.Pointer && reflect.PointerTo(goType).Implements(interfaceType))
+}
+
+// validateCommandName validates a command or parameter name against the API contract.
+func validateCommandName(name string) error {
+	const maxLength = 64
+
+	if name == "" {
+		return errors.New("must not be empty")
+	}
+	for _, char := range name {
+		switch {
+		case char >= 'A' && char <= 'Z',
+			char >= 'a' && char <= 'z',
+			char >= '0' && char <= '9',
+			char == '_', char == '-':
+		default:
+			return errors.New("must contain only ASCII letters, digits, underscores, and hyphens")
+		}
+	}
+	if len(name) > maxLength {
+		return fmt.Errorf("must not exceed %d characters", maxLength)
+	}
+	return nil
 }
 
 // callCommandHandler handles the overall logic for executing a command
@@ -92,13 +281,13 @@ func extractCommandSpec(cmdType reflect.Type) CommandSpec {
 // handler, and processes the result.
 func callCommandHandler(owner any, info commandInfo, args map[string]any) (*CommandResult, error) {
 	// Create a new zero value of the command struct type (T).
-	cmdType := info.typ
-	cmdPtrVal := reflect.New(cmdType)
-	cmdVal := cmdPtrVal.Elem()
+	cmdVal := reflect.New(info.typ).Elem()
 
-	// Populate struct fields from args.
-	if err := populateCommandFields(cmdVal, args); err != nil {
-		return nil, fmt.Errorf("failed to populate command fields for %s: %w", info.spec.Name, err)
+	// Decode command arguments into struct fields.
+	if err := decodeCommandArgs(cmdVal, info.spec, args); err != nil {
+		return &CommandResult{
+			ErrorMessage: fmt.Sprintf("invalid command arguments for %s: %v", info.spec.Name, err),
+		}, nil
 	}
 
 	// Call the actual handler function.
@@ -135,205 +324,169 @@ func callCommandHandler(owner any, info commandInfo, args map[string]any) (*Comm
 	}
 
 	// Construct [CommandResult] based on handlerErr.
-	result := &CommandResult{}
-	if handlerErr == nil {
-		result.Success = true
-	} else if errors.Is(handlerErr, Break) {
-		result.Success = true // Break is considered a successful termination.
-		result.IsBreak = true
-	} else {
-		result.Success = false
-		result.ErrorMessage = handlerErr.Error()
-	}
-	return result, nil
-}
-
-// populateCommandFields iterates through command struct fields and populates
-// them from args.
-func populateCommandFields(cmdVal reflect.Value, args map[string]any) error {
-	if args == nil {
-		return nil
-	}
-	cmdType := cmdVal.Type()
-	for i := range cmdType.NumField() {
-		fieldStruct := cmdType.Field(i)
-		if !fieldStruct.IsExported() {
-			continue
-		}
-
-		fieldName := fieldStruct.Name
-		fieldVal := cmdVal.FieldByName(fieldName)
-		if !fieldVal.IsValid() || !fieldVal.CanSet() {
-			// This should never happen, but just in case.
-			continue
-		}
-
-		argValRaw, ok := args[fieldName]
-		if !ok {
-			continue
-		}
-		argReflectVal := reflect.ValueOf(argValRaw)
-
-		if err := setField(fieldName, fieldVal, argReflectVal); err != nil {
-			return fmt.Errorf("field %s: %w", fieldName, err)
-		}
-	}
-	return nil
-}
-
-// setField handles setting a single field value with type checking and
-// conversion. It takes the target field value, the argument value (as
-// [reflect.Value]), and the field name.
-func setField(fieldName string, fieldVal, argVal reflect.Value) error {
-	// Handle invalid arg value (e.g., from reflect.ValueOf(nil)).
-	if !argVal.IsValid() {
-		switch fieldVal.Kind() {
-		case reflect.Interface, reflect.Pointer, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func:
-			if fieldVal.CanSet() {
-				nilValue := reflect.Zero(fieldVal.Type())
-				fieldVal.Set(nilValue)
-				return nil
-			}
-		}
-		return fmt.Errorf("cannot set field %s to nil", fieldName)
-	}
-
-	fieldType := fieldVal.Type()
-	argType := argVal.Type()
-
-	// Direct assignment.
-	if argType.AssignableTo(fieldType) {
-		fieldVal.Set(argVal)
-		return nil
-	}
-
-	// Float64 to integer conversion.
-	if argType.Kind() == reflect.Float64 && isIntKind(fieldType.Kind()) {
-		return setIntFieldFromFloat(fieldVal, argVal)
-	}
-
-	// Slice assignment.
-	if fieldType.Kind() == reflect.Slice && argType.Kind() == reflect.Slice {
-		return convertAndSetSlice(fieldVal, argVal, fieldName)
-	}
-
-	// General conversion.
-	if argType.ConvertibleTo(fieldType) {
-		convertedVal := argVal.Convert(fieldType)
-		fieldVal.Set(convertedVal)
-		return nil
-	}
-
-	return fmt.Errorf("type mismatch: got %s, want %s", argType, fieldType)
-}
-
-// setIntFieldFromFloat handles the specific case of converting a float64 arg
-// to an integer field.
-func setIntFieldFromFloat(fieldVal, argVal reflect.Value) error {
-	fieldType := fieldVal.Type()
-	floatVal := argVal.Float()
-	switch fieldType.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		intVal := int64(floatVal)
-		if fieldVal.OverflowInt(intVal) {
-			return fmt.Errorf("integer overflow converting %f", floatVal)
-		}
-		fieldVal.SetInt(intVal)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		if floatVal < 0 {
-			return fmt.Errorf("cannot assign negative float %f to unsigned integer", floatVal)
-		}
-		uintVal := uint64(floatVal)
-		if fieldVal.OverflowUint(uintVal) {
-			return fmt.Errorf("unsigned integer overflow converting %f", floatVal)
-		}
-		fieldVal.SetUint(uintVal)
+	switch {
+	case handlerErr == nil:
+		return &CommandResult{Success: true}, nil
+	case errors.Is(handlerErr, Break):
+		return &CommandResult{Success: true, IsBreak: true}, nil
 	default:
-		return fmt.Errorf("unexpected target integer kind %s", fieldType.Kind())
+		return &CommandResult{ErrorMessage: handlerErr.Error()}, nil
+	}
+}
+
+// decodeCommandArgs validates and decodes command arguments into their
+// corresponding struct fields.
+func decodeCommandArgs(cmdVal reflect.Value, spec CommandSpec, args map[string]any) error {
+	parameterNames := make(map[string]struct{}, len(spec.Parameters))
+	for _, parameter := range spec.Parameters {
+		parameterNames[parameter.Name] = struct{}{}
+	}
+	for name := range args {
+		if _, ok := parameterNames[name]; !ok {
+			return fmt.Errorf("unexpected parameter %q", name)
+		}
+	}
+	for _, parameter := range spec.Parameters {
+		value, ok := args[parameter.Name]
+		if !ok {
+			return fmt.Errorf("missing required parameter %q", parameter.Name)
+		}
+		if err := decodeCommandValue(
+			cmdVal.FieldByName(parameter.Name),
+			parameter.Schema,
+			value,
+			fmt.Sprintf("parameter %q", parameter.Name),
+		); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-// convertAndSetSlice handles converting and setting slice types. It iterates
-// through the input slice (argSliceVal, likely []any) and converts each
-// element to the target slice's element type (elemType).
-func convertAndSetSlice(fieldVal, argSliceVal reflect.Value, fieldName string) error {
-	elemType := fieldVal.Type().Elem()
-	outSlice := reflect.MakeSlice(fieldVal.Type(), 0, argSliceVal.Len())
-	for i := range argSliceVal.Len() {
-		elemVal := argSliceVal.Index(i)
-		if !elemVal.IsValid() {
-			return fmt.Errorf("invalid nil element at index %d", i)
-		} else if elemVal.Kind() == reflect.Interface {
-			if elemVal.IsNil() {
-				return fmt.Errorf("nil element at index %d", i)
+// decodeCommandValue validates and decodes a single command value.
+func decodeCommandValue(target reflect.Value, schema CommandValueSpec, value any, path string) error {
+	valueJSON, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("%s: failed to encode value: %w", path, err)
+	}
+	decoder := json.NewDecoder(bytes.NewReader(valueJSON))
+	decoder.UseNumber()
+	var canonicalValue any
+	if err := decoder.Decode(&canonicalValue); err != nil {
+		return fmt.Errorf("%s: failed to decode JSON value: %w", path, err)
+	}
+	normalizedValue, err := normalizeCommandValue(schema, canonicalValue, path)
+	if err != nil {
+		return err
+	}
+	valueJSON, err = json.Marshal(normalizedValue)
+	if err != nil {
+		return fmt.Errorf("%s: failed to encode normalized value: %w", path, err)
+	}
+	if err := json.Unmarshal(valueJSON, target.Addr().Interface()); err != nil {
+		return fmt.Errorf("%s: failed to decode value: %w", path, err)
+	}
+	return nil
+}
+
+// normalizeCommandValue validates a canonical JSON value and normalizes integer
+// representations for Go decoding.
+func normalizeCommandValue(schema CommandValueSpec, value any, path string) (any, error) {
+	if value == nil {
+		return nil, fmt.Errorf("%s: got null, want %s", path, schema.Type)
+	}
+
+	switch schema.Type {
+	case "string":
+		if _, ok := value.(string); !ok {
+			return nil, commandValueTypeError(path, value, schema.Type)
+		}
+	case "integer":
+		number, ok := value.(json.Number)
+		if !ok {
+			return nil, commandValueTypeError(path, value, schema.Type)
+		}
+		rational, ok := new(big.Rat).SetString(number.String())
+		if !ok || !rational.IsInt() {
+			return nil, commandValueTypeError(path, value, schema.Type)
+		}
+		return json.Number(rational.Num().String()), nil
+	case "number":
+		if _, ok := value.(json.Number); !ok {
+			return nil, commandValueTypeError(path, value, schema.Type)
+		}
+	case "boolean":
+		if _, ok := value.(bool); !ok {
+			return nil, commandValueTypeError(path, value, schema.Type)
+		}
+	case "array":
+		items, ok := value.([]any)
+		if !ok {
+			return nil, commandValueTypeError(path, value, schema.Type)
+		}
+		if schema.MinItems != nil && len(items) < *schema.MinItems {
+			return nil, fmt.Errorf("%s: got %d items, want at least %d", path, len(items), *schema.MinItems)
+		}
+		if schema.MaxItems != nil && len(items) > *schema.MaxItems {
+			return nil, fmt.Errorf("%s: got %d items, want at most %d", path, len(items), *schema.MaxItems)
+		}
+		for i, item := range items {
+			normalized, err := normalizeCommandValue(*schema.Items, item, fmt.Sprintf("%s[%d]", path, i))
+			if err != nil {
+				return nil, err
 			}
-			elemVal = elemVal.Elem()
+			items[i] = normalized
 		}
-
-		convertedElem, err := convertSliceElement(elemVal, elemType)
-		if err != nil {
-			return fmt.Errorf("element at index %d: %w", i, err)
+	case "object":
+		object, ok := value.(map[string]any)
+		if !ok {
+			return nil, commandValueTypeError(path, value, schema.Type)
 		}
-		outSlice = reflect.Append(outSlice, convertedElem)
+		propertyNames := make(map[string]struct{}, len(schema.Properties))
+		for _, property := range schema.Properties {
+			propertyNames[property.Name] = struct{}{}
+			propertyValue, ok := object[property.Name]
+			if !ok {
+				return nil, fmt.Errorf("%s: missing required property %q", path, property.Name)
+			}
+			normalized, err := normalizeCommandValue(property.Schema, propertyValue, path+"."+property.Name)
+			if err != nil {
+				return nil, err
+			}
+			object[property.Name] = normalized
+		}
+		for name := range object {
+			if _, ok := propertyNames[name]; !ok {
+				return nil, fmt.Errorf("%s: unexpected property %q", path, name)
+			}
+		}
+	default:
+		return nil, fmt.Errorf("%s: unsupported schema type %q", path, schema.Type)
 	}
-	fieldVal.Set(outSlice)
-	return nil
+	return value, nil
 }
 
-// convertSliceElement handles conversion for a single slice element.
-func convertSliceElement(elemVal reflect.Value, elemType reflect.Type) (reflect.Value, error) {
-	elemConcreteType := elemVal.Type()
-
-	// Direct assignment.
-	if elemConcreteType.AssignableTo(elemType) {
-		return elemVal, nil
-	}
-
-	// Float64 to integer conversion.
-	if elemConcreteType.Kind() == reflect.Float64 && isIntKind(elemType.Kind()) {
-		return convertFloatToSliceIntElement(elemVal, elemType)
-	}
-
-	// General conversion.
-	if elemConcreteType.ConvertibleTo(elemType) {
-		return elemVal.Convert(elemType), nil
-	}
-
-	return reflect.Value{}, fmt.Errorf("type mismatch: got %s, want %s", elemConcreteType, elemType)
+// commandValueTypeError returns a consistent JSON type mismatch error.
+func commandValueTypeError(path string, value any, want string) error {
+	return fmt.Errorf("%s: got %s, want %s", path, commandJSONType(value), want)
 }
 
-// convertFloatToSliceIntElement handles float to int conversion for slice elements.
-func convertFloatToSliceIntElement(elemVal reflect.Value, elemType reflect.Type) (reflect.Value, error) {
-	floatElemVal := elemVal.Float()
-	elemZero := reflect.Zero(elemType)
-	switch elemType.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		intElemVal := int64(floatElemVal)
-		if elemZero.OverflowInt(intElemVal) {
-			return reflect.Value{}, fmt.Errorf("integer overflow converting %f", floatElemVal)
-		}
-		return reflect.ValueOf(intElemVal).Convert(elemType), nil
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		if floatElemVal < 0 {
-			return reflect.Value{}, fmt.Errorf("cannot assign negative float %f to unsigned integer", floatElemVal)
-		}
-		uintElemVal := uint64(floatElemVal)
-		if elemZero.OverflowUint(uintElemVal) {
-			return reflect.Value{}, fmt.Errorf("unsigned integer overflow converting %f", floatElemVal)
-		}
-		return reflect.ValueOf(uintElemVal).Convert(elemType), nil
+// commandJSONType returns the JSON type of a canonical command value.
+func commandJSONType(value any) string {
+	switch value.(type) {
+	case nil:
+		return "null"
+	case string:
+		return "string"
+	case json.Number:
+		return "number"
+	case bool:
+		return "boolean"
+	case []any:
+		return "array"
+	case map[string]any:
+		return "object"
+	default:
+		return "unknown"
 	}
-	return reflect.Value{}, fmt.Errorf("unexpected integer kind %s for slice element", elemType.Kind())
-}
-
-// isIntKind reports whether the kind is one of the integer types.
-func isIntKind(kind reflect.Kind) bool {
-	switch kind {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-		reflect.Uintptr:
-		return true
-	}
-	return false
 }
