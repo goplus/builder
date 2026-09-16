@@ -7,7 +7,7 @@ export type RadarSelectorCompound = {
 
 export class RadarSelectorSyntaxError extends SyntaxError {}
 
-export function isRadarIdentifier(value: string) {
+function isRadarIdentifier(value: string) {
   return radarIdentifierPattern.test(value)
 }
 

@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
 import { inject, reactive, type App, type Directive, type InjectionKey } from 'vue'
-import { isRadarIdentifier, parseRadarSelector, type RadarSelectorCompound } from './selector'
+import { parseRadarSelector, type RadarSelectorCompound } from './selector'
 
 export { RadarSelectorSyntaxError } from './selector'
 
@@ -24,34 +24,6 @@ export type RadarNodeMeta = {
 export type RadarNodeDirectiveValue = RadarNodeMeta
 
 export type RadarNodeDirective = Directive<HTMLElement, RadarNodeDirectiveValue>
-
-function assertRadarName(name: string, kind: 'name' | 'attribute name') {
-  if (isRadarIdentifier(name)) return
-  throw new Error(`Invalid Radar ${kind}: ${name}`)
-}
-
-function humanizeRadarName(name: string) {
-  const [firstWord, ...restWords] = name.split('-')
-  return `${firstWord[0].toUpperCase()}${firstWord.slice(1)}${restWords.length > 0 ? ` ${restWords.join(' ')}` : ''}`
-}
-
-function normalizeAttrs(attrs: RadarNodeAttributes | undefined): Record<string, string> {
-  if (attrs == null) return {}
-  const normalized: Record<string, string> = {}
-  for (const [name, value] of Object.entries(attrs)) {
-    if (value == null) continue
-    assertRadarName(name, 'attribute name')
-    normalized[name] = value
-  }
-  return normalized
-}
-
-function getLabel(meta: RadarNodeMeta, attrs: Record<string, string>) {
-  if (meta.label != null) return meta.label
-  const label = humanizeRadarName(meta.name)
-  if (attrs.name == null) return label
-  return `${label} "${attrs.name}"`
-}
 
 declare module '@vue/runtime-core' {
   interface GlobalDirectives {
@@ -78,7 +50,6 @@ export class RadarNodeInfo {
 
   constructor(element: HTMLElement, meta: RadarNodeMeta) {
     this.id = nanoid(8)
-    assertRadarName(meta.name, 'name')
     this.name = meta.name
     this.attrs = normalizeAttrs(meta.attrs)
     this.label = getLabel(meta, this.attrs)
@@ -89,7 +60,6 @@ export class RadarNodeInfo {
   }
 
   updateMeta(meta: RadarNodeMeta) {
-    assertRadarName(meta.name, 'name')
     this.name = meta.name
     this.attrs = normalizeAttrs(meta.attrs)
     this.label = getLabel(meta, this.attrs)
@@ -265,4 +235,26 @@ export function useRadar(): Radar {
 
 export function createRadar() {
   return new Radar()
+}
+
+function humanizeRadarName(name: string) {
+  const [firstWord, ...restWords] = name.split('-')
+  return `${firstWord[0].toUpperCase()}${firstWord.slice(1)}${restWords.length > 0 ? ` ${restWords.join(' ')}` : ''}`
+}
+
+function normalizeAttrs(attrs: RadarNodeAttributes | undefined): Record<string, string> {
+  if (attrs == null) return {}
+  const normalized: Record<string, string> = {}
+  for (const [name, value] of Object.entries(attrs)) {
+    if (value == null) continue
+    normalized[name] = value
+  }
+  return normalized
+}
+
+function getLabel(meta: RadarNodeMeta, attrs: Record<string, string>) {
+  if (meta.label != null) return meta.label
+  const label = humanizeRadarName(meta.name)
+  if (attrs.name == null) return label
+  return `${label} "${attrs.name}"`
 }

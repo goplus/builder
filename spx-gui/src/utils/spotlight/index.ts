@@ -5,7 +5,7 @@ import Emitter from '@/utils/emitter'
 export { default as SpotlightUI } from './SpotlightUI.vue'
 
 export type SpotlightItem = {
-  els: HTMLElement[]
+  el: HTMLElement
   timer: NodeJS.Timeout
   tips: string
   dispose: () => void
@@ -33,9 +33,7 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
     return setTimeout(() => this.conceal(), timeout)
   }
 
-  reveal(target: HTMLElement | HTMLElement[], tips = '') {
-    const els = Array.isArray(target) ? target : [target]
-    if (els.length === 0) return
+  reveal(el: HTMLElement, tips = '') {
     this.conceal() // Clear any previous spotlight
 
     const autoConcealTimer = this.createTimeoutConceal()
@@ -44,18 +42,14 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
     this.spotlightItem.value = {
       timer: autoConcealTimer,
       tips,
-      els,
+      el,
       dispose: () => {
         clearTimeout(autoConcealTimer)
         clearTimeout(mouseEnterConcealTimer)
-        for (const el of els) {
-          el.removeEventListener('mouseenter', handleMouseEnter)
-        }
+        el.removeEventListener('mouseenter', handleMouseEnter)
       }
     }
-    for (const el of els) {
-      el.addEventListener('mouseenter', handleMouseEnter, { once: true })
-    }
+    el.addEventListener('mouseenter', handleMouseEnter, { once: true })
   }
 
   conceal() {

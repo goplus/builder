@@ -117,9 +117,9 @@ type Spotlight interface {
 	// Radar module design for its syntax. A selector matching several elements
 	// reveals them together as one group.
 	// A malformed selector fails the Course program, so mistakes surface
-	// during Preview. A well-formed selector that currently matches nothing is
-	// not an error: the host skips the highlight and logs a warning. Any future
-	// retry policy belongs to the host rather than Radar.
+	// during Preview. A well-formed selector that currently matches nothing
+	// (for example an API filtered out by filterAPIs) is not an error: the
+	// host retries briefly, then skips the highlight and logs a warning.
 	reveal(target, tip string)
 	// revealWith is reveal with explicit presentation options.
 	revealWith(target, tip string, options SpotlightOptions)
