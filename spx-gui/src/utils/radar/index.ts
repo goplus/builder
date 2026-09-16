@@ -121,34 +121,23 @@ export class Radar {
   /** Select the first visible node matching a Radar selector in document order. */
   select(selector: string): RadarNodeInfo | null {
     const compounds = parseRadarSelector(selector)
-    let result: RadarNodeInfo | null = null
-    this.walkVisibleNodes((node) => {
-      if (!this.matchesSelector(node, compounds)) return false
-      result = node
-      return true
-    })
-    return result
+    for (const node of this.iterateVisibleNodes(this.rootNode)) {
+      if (this.matchesSelector(node, compounds)) return node
+    }
+    return null
   }
 
   /** Select visible nodes matching a Radar selector in document order. */
   selectAll(selector: string): RadarNodeInfo[] {
     const compounds = parseRadarSelector(selector)
-    const result: RadarNodeInfo[] = []
-    this.walkVisibleNodes((node) => {
-      if (this.matchesSelector(node, compounds)) result.push(node)
-      return false
-    })
-    return result
+    return [...this.iterateVisibleNodes(this.rootNode)].filter((node) => this.matchesSelector(node, compounds))
   }
 
-  private walkVisibleNodes(visitor: (node: RadarNodeInfo) => boolean) {
-    const visit = (parent: RadarNodeInfo): boolean => {
-      for (const child of parent.getChildren()) {
-        if (visitor(child) || visit(child)) return true
-      }
-      return false
+  private *iterateVisibleNodes(parent: RadarNodeInfo): Iterable<RadarNodeInfo> {
+    for (const child of parent.getChildren()) {
+      yield child
+      yield* this.iterateVisibleNodes(child)
     }
-    visit(this.rootNode)
   }
 
   private sortNodesByDocumentOrder(nodes: RadarNodeInfo[]) {
