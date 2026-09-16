@@ -9,13 +9,13 @@ export const isRaw = false
 export const description = 'Create a link that reveals & highlights a specific node in the UI when clicked.'
 
 export const detailedDescription = `Create a link that reveals & highlights a specific node in the UI when clicked. \
-Use the node ID provided in the UI information to specify the target node. \
+Use a Radar selector to specify exactly one visible target node. \
 Use this element in your output to help users to find the relevant UI element quickly. \
-For example, <highlight-link target-id="xxxyyy" tip="Click this button to submit">Submit button</highlight-link> \
-will create a link with text "Submit button", when clicked, reveals the node with ID "xxxyyy" and shows the tip "Click this button to submit".`
+For example, <highlight-link selector="save-button" tip="Click this button to submit">Submit button</highlight-link> \
+will create a link with text "Submit button", when clicked, reveals the selected node and shows the tip "Click this button to submit".`
 
 export const attributes = z.object({
-  'target-id': z.string().describe('ID for the linked node'),
+  selector: z.string().describe('Radar selector for the linked node'),
   tip: z
     .string()
     .optional()
@@ -29,8 +29,8 @@ import { useSpotlight } from '@/utils/spotlight'
 import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
-  /** ID for the linked node (from module `Radar`) */
-  targetId: string
+  /** Radar selector for the linked node. */
+  selector: string
   /** Tip to show when node revealed */
   tip?: string
 }>()
@@ -41,18 +41,11 @@ const text = useSlotText()
 
 const { fn: handleClick } = useMessageHandle(
   () => {
-    const nodeInfo = radar.getNodeById(props.targetId)
-    if (!nodeInfo) {
-      throw new Error(`Radar node with ID ${props.targetId} not found.`)
-    }
-
-    const { visible } = nodeInfo
+    const nodeInfos = radar.selectAll(props.selector)
+    if (nodeInfos.length !== 1) throw new Error(`Radar selector must match exactly one visible node: ${props.selector}`)
+    const nodeInfo = nodeInfos[0]
     const element = nodeInfo.getElement()
-    if (visible) {
-      spotlight.reveal(element, props.tip ?? text.value)
-    } else {
-      spotlight.conceal()
-    }
+    spotlight.reveal(element, props.tip ?? text.value)
   },
   { en: 'Failed to find the corresponding node.', zh: '未找到对应的节点' }
 )

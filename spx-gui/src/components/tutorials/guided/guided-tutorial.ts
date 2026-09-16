@@ -118,9 +118,9 @@ First do some preparation:
 
   Each step should be clear and simple. For example:
 
-  - Click <${highlightLinkTagName} target-id="2oK65oKh" tip="Click to remove">button remove</${highlightLinkTagName}>
-  - Drag API <${highlightLinkTagName} target-id="g4Vgrb2e" tip="Drag into code editor">say "Hi"</${highlightLinkTagName}> from API References into the code editor
-  - Hover <${highlightLinkTagName} target-id="13gEUydc" tip="Hover to see the dropdown menu">card of project A</${highlightLinkTagName}> and select menu item "edit"
+  - Click <${highlightLinkTagName} selector='project-item[name="project-a"] remove' tip="Click to remove">button remove</${highlightLinkTagName}>
+  - Drag API <${highlightLinkTagName} selector='api-references api-reference[name="Sprite.say"]' tip="Drag into code editor">say "Hi"</${highlightLinkTagName}> from API References into the code editor
+  - Hover <${highlightLinkTagName} selector='project-item[name="project-a"]' tip="Hover to see the dropdown menu">card of project A</${highlightLinkTagName}> and select menu item "edit"
 
   If there's already defined steps in the course, divide them into smaller steps as needed.
 
@@ -173,7 +173,7 @@ This is an example for messages between you and the user in a course:
   2. Hover the first project in list and click the "Remove" in corner menu.
   3. Confirm the removal in the popup dialog.
 
-  Now let's start with the first step. Please click <${highlightLinkTagName} target-id="DgdwNmp8" tip="Click to go to My projects">My projects</${highlightLinkTagName}> to go to the "my projects" page.
+  Now let's start with the first step. Please click <${highlightLinkTagName} selector="projects-link" tip="Click to go to My projects">My projects</${highlightLinkTagName}> to go to the "my projects" page.
 
 - User event
 
@@ -181,7 +181,7 @@ This is an example for messages between you and the user in a course:
 
 - Copilot message
 
-  Great! You are now on the "my projects" page. Please hover <${highlightLinkTagName} target-id="U41-JvCA" tip="Hover to see the corner menu">the first project in the list</${highlightLinkTagName}> and click the "Remove" in the corner menu.
+  Great! You are now on the "my projects" page. Please hover <${highlightLinkTagName} selector='project-item[name="project-a"]' tip="Hover to see the corner menu">the first project in the list</${highlightLinkTagName}> and click the "Remove" in the corner menu.
 
 - User event
 
@@ -189,7 +189,7 @@ This is an example for messages between you and the user in a course:
 
 - Copilot message
 
-  Please confirm the removal of the project by clicking <${highlightLinkTagName} target-id="U41-JvCA" tip="Click to confirm">the confirm button</${highlightLinkTagName}>.
+  Please confirm the removal of the project by clicking <${highlightLinkTagName} selector="continue-button" tip="Click to confirm">the confirm button</${highlightLinkTagName}>.
 
 - User event
 

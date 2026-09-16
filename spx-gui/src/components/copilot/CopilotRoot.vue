@@ -61,19 +61,20 @@ const listProjectsTool: ToolDefinition = {
 }
 
 const getUINodeTextContentParamsSchema = z.object({
-  targetId: z.string().describe('ID of the UI node to get content')
+  selector: z.string().describe('Radar selector of the UI node to get content')
 })
 
 class GetUINodeTextContentTool implements ToolDefinition {
   name = 'get_ui_node_text_content'
-  description = 'Get text content of a UI node by its ID.'
+  description = 'Get text content of exactly one visible UI node selected by a Radar selector.'
   parameters = getUINodeTextContentParamsSchema
 
   constructor(private radar: Radar) {}
 
-  async implementation({ targetId }: z.infer<typeof getUINodeTextContentParamsSchema>) {
-    const nodeInfo = this.radar.getNodeById(targetId)
-    if (nodeInfo == null) throw new Error(`Radar node with ID ${targetId} not found.`)
+  async implementation({ selector }: z.infer<typeof getUINodeTextContentParamsSchema>) {
+    const nodeInfos = this.radar.selectAll(selector)
+    if (nodeInfos.length !== 1) throw new Error(`Radar selector must match exactly one visible node: ${selector}`)
+    const nodeInfo = nodeInfos[0]
     const textContent = nodeInfo.getElement()?.textContent ?? ''
     const textContentPreview = unicodeSafeSlice(textContent, 0, 500)
     return textContentPreview === textContent ? textContent : textContentPreview + '...'
@@ -86,29 +87,20 @@ class UIContextProvider implements ICopilotContextProvider {
     private i18n: I18n
   ) {}
 
-  private serializeNode(attrs: Record<string, string>, childrenStr: string) {
+  private serializeNode(name: string, attrs: Record<string, string>, childrenStr: string) {
     const attrsStr = Object.entries(attrs)
-      .filter(([_, value]) => value != null && value !== '')
       .map(([key, value]) => `${key}="${escapeHTML(value)}"`)
       .join(' ')
+    const openTag = `<${name}${attrsStr === '' ? '' : ` ${attrsStr}`}`
     if (childrenStr.trim() === '') {
-      return `<n ${attrsStr}/>`
+      return `${openTag}/>`
     }
-    return `<n ${attrsStr}>${childrenStr}</n>`
+    return `${openTag}>${childrenStr}</${name}>`
   }
 
   private stringifyNode(node: RadarNodeInfo): string {
     const childrenStr = this.stringifyNodes(node.getChildren())
-    return this.serializeNode(
-      {
-        name: node.name,
-        label: node.label,
-        id: node.id,
-        desc: node.desc,
-        ...Object.fromEntries(Object.entries(node.attrs).map(([name, value]) => [`data-${name}`, value]))
-      },
-      childrenStr
-    )
+    return this.serializeNode(node.name, node.attrs, childrenStr)
   }
 
   private stringifyNodes(nodes: RadarNodeInfo[]): string {
@@ -125,11 +117,13 @@ class UIContextProvider implements ICopilotContextProvider {
 
 Current UI language: ${lang}.
 
-Current UI structure (\`n\` for \`node\`):
+Current UI structure:
 
 <xbuilder>${this.stringifyNodes(this.radar.getRootNodes())}</xbuilder>
 
-DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly mentioned in the description.
+Each UI element's tag and attributes form a Radar selector. Use a selector whenever you refer to a UI element; do not use internal node IDs. Select descendants with whitespace, and filter attributes with JSON strings, for example \`costume-item[name="foo"]\`.
+
+DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly represented in the UI structure.
 
 If there's an API References UI in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
   }
