@@ -731,6 +731,65 @@ describe('AnimationGen', () => {
     loaded.dispose()
   })
 
+  it.each(['missing-path', 'missing-file', 'unsupported-file'])(
+    'loads generated video with a %s reference',
+    async (failure) => {
+      const project = makeSpxProject()
+      const sprite = Sprite.create('TestSprite', '')
+      const gen = new AnimationGen(i18n, sprite, project, {
+        settings: { name: 'walk' },
+        referenceImage: mockFile('reference.png')
+      })
+      await gen.generateVideo()
+      const [rawConfig, rawFiles] = gen.export()
+      const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+      if (failure === 'missing-path') delete config.referenceImagePath
+      else if (failure === 'missing-file') delete files[config.referenceImagePath!]
+      else files[config.referenceImagePath!] = mockFile('invalid.txt')
+      const loaded = AnimationGen.load(i18n, sprite, project, config, files)
+      expect(loaded.referenceImage).toBeNull()
+      expect(loaded.referenceImageSelection).toBeNull()
+      expect(loaded.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
+      expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
+      gen.dispose()
+      loaded.dispose()
+    }
+  )
+
+  it.each([true, false])('handles restored reference preparation with missing image=%s', async (missingImage) => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: 'walk' },
+      referenceImage: mockFile('reference.png')
+    })
+    await gen.generateVideo()
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    delete config.generateVideoTaskSerialized
+    delete config.generateVideoPhaseSerialized
+    delete config.videoPath
+    if (missingImage) delete files[config.referenceImagePath!]
+    vi.mocked(imageProcess.fitImageToCanvasWithContrastBg).mockClear()
+    if (!missingImage) {
+      vi.mocked(imageProcess.fitImageToCanvasWithContrastBg).mockRejectedValueOnce(
+        new Error('Cannot prepare reference')
+      )
+    }
+    const loaded = AnimationGen.load(i18n, sprite, project, config, files)
+    await flushPromises()
+    if (missingImage) {
+      expect(loaded.generateVideoState.status).toBe('initial')
+      expect(imageProcess.fitImageToCanvasWithContrastBg).not.toHaveBeenCalled()
+    } else {
+      expect(loaded.generateVideoState.status).toBe('failed')
+      expect(loaded.generateVideoState.error).toBeInstanceOf(Error)
+    }
+    expect(aigcMock.tasks.size).toBe(2)
+    gen.dispose()
+    loaded.dispose()
+  })
+
   it('does not restore cancelled canvas processing even before it settles', async () => {
     let resume!: () => void
     const paused = new Promise<void>((resolve) => {

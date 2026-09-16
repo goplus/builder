@@ -91,6 +91,7 @@ function canvasToJpeg(canvas: HTMLCanvasElement | OffscreenCanvas) {
   })
 }
 
+/** Center and proportionally fit the image over black for light subjects, or white otherwise, and export JPEG. */
 export async function fitImageToCanvasWithContrastBg(
   file: File,
   targetWidth = 512,

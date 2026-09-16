@@ -702,6 +702,25 @@ describe('SpriteGen', () => {
     }
   )
 
+  it('loads generated sprite images when the local reference file is missing', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(i18n, project, {
+      settings: { name: 'hero' },
+      referenceImage: mockFile('reference.png')
+    })
+    await gen.genImages()
+    const files = sndFiles(gen.export())
+    const referencePath = Object.keys(files).find((path) => path.endsWith('/reference_image.png'))!
+    expect(referencePath).toBeDefined()
+    delete files[referencePath]
+    const loaded = await SpriteGen.load(gen.name, i18n, project, files)
+    expect(loaded.referenceImage).toBeNull()
+    expect(loaded.imagesGenState.status).toBe('finished')
+    expect(loaded.imagesGenState.result?.length).toBe(4)
+    gen.dispose()
+    loaded.dispose()
+  })
+
   it('uses and persists a local reference image for default costume generation', async () => {
     const project = makeSpxProject()
     const gen = new SpriteGen(i18n, project, { settings: { description: 'A test sprite with ref' } })

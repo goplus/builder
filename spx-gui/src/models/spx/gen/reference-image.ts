@@ -1,5 +1,6 @@
 import { getExtFromMime, imgExts } from '@/utils/file'
 import { extname } from '@/utils/path'
+import { capture } from '@/utils/exception'
 import type { File, Files } from '../../common/file'
 
 export type ReferenceImageSelection =
@@ -24,6 +25,7 @@ export function validateReferenceImage(file: File) {
   if (!isImageFile(file)) throw new Error(`unsupported reference image type: ${file.type}`)
 }
 
+/** Explicit selection (including null) takes precedence over legacy costume ID, then local image. */
 export function resolveInitialReferenceImageSelection(
   selection: ReferenceImageSelection | undefined,
   legacyCostumeId: string | null | undefined,
@@ -57,6 +59,7 @@ export function resolveSelectionAfterReferenceImageChange(
   return fallbackCostumeId == null ? null : { type: 'costume', costumeId: fallbackCostumeId }
 }
 
+/** Store the optional reference as reference_image.<ext> within the generation's asset directory. */
 export function saveReferenceImageFile(files: Files, basePath: string, file: File | null) {
   if (file == null) return null
   validateReferenceImage(file)
@@ -66,13 +69,16 @@ export function saveReferenceImageFile(files: Files, basePath: string, file: Fil
   return path
 }
 
-export function loadReferenceImageFile(path: string, basePath: string, files: Files, owner: string) {
-  const expectedPrefix = `${basePath}/reference_image.`
-  if (!path.startsWith(expectedPrefix) || path.slice(expectedPrefix.length).includes('/')) {
-    throw new Error(`invalid reference image path for ${owner}`)
+/** Reject invalid paths; report and omit missing or unsupported reference files when loading a saved generation. */
+export function loadReferenceImageFile(path: string | null, basePath: string, files: Files, owner: string) {
+  if (path != null) {
+    const expectedPrefix = `${basePath}/reference_image.`
+    if (!path.startsWith(expectedPrefix) || path.slice(expectedPrefix.length).includes('/')) {
+      throw new Error(`invalid reference image path for ${owner}`)
+    }
+    const file = files[path]
+    if (file != null && isImageFile(file)) return file
   }
-  const file = files[path]
-  if (file == null) throw new Error(`file ${path} not found for ${owner}`)
-  if (!isImageFile(file)) throw new Error(`invalid reference image file ${path} for ${owner}`)
-  return file
+  capture(new Error(`missing or unsupported reference image ${path ?? '(no path)'} for ${owner}`))
+  return null
 }

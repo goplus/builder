@@ -74,6 +74,7 @@ export type RawAnimationGenConfig = Prettify<
   > & {
     videoPath?: string
     reference?: ReferenceImageSelection
+    /** Read only for migration; new saves use reference. */
     referenceCostumeId?: string
     referenceImagePath?: string
     referenceImageTaskSerialized?: TaskSerialized<TaskType.RemoveBackground>
@@ -293,7 +294,12 @@ export class AnimationGen extends Disposable {
   }
   restoreGenerateVideoTask() {
     const task = this.generateVideoTask
-    if (task == null && this.restorableReferenceImageTask != null) {
+    if (
+      task == null &&
+      this.restorableReferenceImageTask != null &&
+      this.referenceImageSelection?.type === 'local-image'
+    ) {
+      // Continue the interrupted generation after reference preparation; Phase already records and reports failures.
       void this.runGenerateVideo().catch(() => {})
       return
     }
@@ -450,11 +456,19 @@ export class AnimationGen extends Disposable {
 
     const inits: AnimationGenInits = { id: genId }
     inits.settings = settings
-    if (referenceImagePath != null) {
-      inits.referenceImage = loadReferenceImageFile(referenceImagePath, assetsPath, files, `animation gen ${genId}`)
+    if (referenceImagePath != null || reference?.type === 'local-image') {
+      inits.referenceImage = loadReferenceImageFile(
+        referenceImagePath ?? null,
+        assetsPath,
+        files,
+        `animation gen ${genId}`
+      )
     }
     if (referenceImageTaskSerialized != null) inits.referenceImageTask = Task.load(referenceImageTaskSerialized)
-    if (reference !== undefined) inits.referenceImageSelection = reference
+    if (reference !== undefined) {
+      inits.referenceImageSelection =
+        reference?.type === 'local-image' && inits.referenceImage == null ? null : reference
+    }
     if (referenceCostumeId != null) inits.referenceCostumeId = referenceCostumeId
     if (framesConfig != null) inits.framesConfig = framesConfig
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
