@@ -1,4 +1,5 @@
 import type { LocaleMessage } from '@/utils/i18n'
+import { validatePathSegment } from '@/utils/path'
 import { assetDisplayNameMaxLength } from '@/apis/asset'
 import { getStringLengthInCodePoints, lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
 import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/xgo'
@@ -123,8 +124,18 @@ export interface SoundLikeParent {
 export function validateSoundName(name: string, parent: SoundLikeParent | null) {
   const err = validateAssetName(name)
   if (err != null) return err
+  const pathErr = validatePathSegment(name)
+  if (pathErr != null) return pathErr
   if (parent != null && parent.sounds.find((s) => s.name === name))
     return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
+}
+
+export function validateFontName(name: string) {
+  const err = validateAssetName(name)
+  if (err != null) return err
+  if (name === 'default') return { en: 'font family default is reserved', zh: '字体名称 default 已被保留' }
+  const pathErr = validatePathSegment(name)
+  if (pathErr != null) return pathErr
 }
 
 export const backdropNameTip = getAssetNameTip(resourceBackdropName)

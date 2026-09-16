@@ -4,7 +4,7 @@ import { ArtStyle, Perspective } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
 import { Facing, TaskStatus, TaskType } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
-import { sndConfig, sndFiles } from '@/models/common/test'
+import { mockFile, sndConfig, sndFiles } from '@/models/common/test'
 import { makeSpxProject } from '../common/test'
 import { Sprite } from '../sprite'
 import { createI18n } from '@/utils/i18n'
@@ -18,6 +18,38 @@ vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 1
 describe('CostumeGen', () => {
   beforeEach(() => {
     aigcMock.reset()
+  })
+
+  it('encodes a costume name when using it as a directory', () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: 'a/b' },
+      image: mockFile('image.png')
+    })
+
+    const [, files] = gen.export('gen/assets/sprites/TestSprite')
+    expect(Object.keys(files)).toContain('gen/assets/sprites/TestSprite/costumes/a%2Fb/image.png')
+  })
+
+  it('does not repeatedly encode a costume name across export/load cycles', () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const basePath = 'gen/assets/sprites/TestSprite'
+    let gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: 'a/b' },
+      image: mockFile('image.png')
+    })
+
+    for (let i = 0; i < 3; i++) {
+      const [rawConfig, rawFiles] = gen.export(basePath)
+      const files = sndFiles(rawFiles)
+      expect(Object.keys(files)).toContain(`${basePath}/costumes/a%2Fb/image.png`)
+      expect(Object.keys(files)).not.toContain(`${basePath}/costumes/a%252Fb/image.png`)
+
+      gen = CostumeGen.load(i18n, sprite, project, sndConfig(rawConfig), files, basePath)
+      expect(gen.name).toBe('a/b')
+    }
   })
 
   it('should work well', async () => {

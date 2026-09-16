@@ -5,6 +5,8 @@
  * Check https://github.com/goplus/builder/issues/369#issuecomment-2167100296 for details.
  */
 
+import { filename } from './path'
+
 /** Universal URL schemes */
 export const enum UniversalUrlScheme {
   /** Standard HTTP URLs, for resources stored in third-party services */
@@ -13,13 +15,18 @@ export const enum UniversalUrlScheme {
   Https = 'https',
   /** For inlineable data, usually plain text or json, e.g. `data:text/plain,hello%20world` */
   Data = 'data',
-  /** For objects stored in Qiniu Kodo, e.g. `kodo://bucket/key` */
+  /** For objects stored in Qiniu Kodo, e.g. `kodo://bucket/key?fop` */
   Kodo = 'kodo'
 }
 
 export type HttpUrlParsed = { scheme: UniversalUrlScheme.Http | UniversalUrlScheme.Https; url: string }
 export type DataUrlParsed = { scheme: UniversalUrlScheme.Data; url: string }
-export type KodoUrlParsed = { scheme: UniversalUrlScheme.Kodo; bucket: string; key: string }
+export type KodoUrlParsed = {
+  scheme: UniversalUrlScheme.Kodo
+  bucket: string
+  /** Object key, optionally followed by Qiniu FOP operations after `?`. */
+  key: string
+}
 
 export type UniversalUrlParsed = HttpUrlParsed | DataUrlParsed | KodoUrlParsed
 
@@ -61,6 +68,20 @@ export function parseUniversalUrl(urlStr: string): UniversalUrlParsed {
     }
     default:
       throw new Error(`unsupported universal url scheme: ${scheme} in url: ${urlStr.slice(0, 200)}`)
+  }
+}
+
+/** Get the filename from an HTTP URL pathname or the object-key part of a Kodo URL. */
+export function getUniversalUrlFilename(urlStr: string) {
+  const parsed = parseUniversalUrl(urlStr)
+  switch (parsed.scheme) {
+    case UniversalUrlScheme.Http:
+    case UniversalUrlScheme.Https:
+      return filename(new URL(parsed.url).pathname)
+    case UniversalUrlScheme.Kodo:
+      return filename(parsed.key.split('?', 1)[0])
+    case UniversalUrlScheme.Data:
+      return ''
   }
 }
 
