@@ -5,6 +5,7 @@ import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { useExternalUrl } from '@/utils/utils'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
+import { canAccessAdminConsole } from '@/apps/xbuilder/admin'
 import { AssetType } from '@/apis/asset'
 import { signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
@@ -22,11 +23,7 @@ const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
-const canUseAccountAdmin = computed(
-  () =>
-    signedInUser.value?.capabilities.canManageAccount === true ||
-    signedInUser.value?.capabilities.canManageAuthorization === true
-)
+const canUseAdminConsole = computed(() => canAccessAdminConsole(signedInUser.value?.capabilities))
 const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
@@ -42,7 +39,7 @@ function handleProjects() {
   router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
 }
 
-function handleAccountAdmin() {
+function handleAdminConsole() {
   router.push('/admin')
 }
 
@@ -126,9 +123,9 @@ async function handleSignOut() {
           {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="canUseAccountAdmin">
-        <UIMenuItem @click="handleAccountAdmin">
-          {{ $t({ en: 'Account admin', zh: '账号管理' }) }}
+      <UIMenuGroup v-if="canUseAdminConsole">
+        <UIMenuItem @click="handleAdminConsole">
+          {{ $t({ en: 'Admin Console', zh: '后台管理' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
