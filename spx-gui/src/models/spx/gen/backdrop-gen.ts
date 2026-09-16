@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
-import { Disposable } from '@/utils/disposable'
+import { Disposable, mergeSignals, promiseForSignal } from '@/utils/disposable'
+import { Cancelled } from '@/utils/exception'
 import type { Prettify } from '@/utils/types'
 import type { I18n } from '@/utils/i18n'
 import { encodePathSegment, extname } from '@/utils/path'
@@ -15,16 +16,18 @@ import {
 } from '@/apis/aigc'
 import type { File, Files } from '../../common/file'
 import { fromConfig, toConfig, listDirs } from '../../common/file'
-import { createFileWithUniversalUrl } from '../../common/cloud'
+import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
 import { ensureValidBackdropName, validateBackdropName, type BackdropLikeParent } from '../common/asset-name'
 import { backdrop2Asset } from '../common/asset'
 import type { SpxProject } from '../project'
 import { Backdrop, type RawBackdropConfig } from '../backdrop'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
+import { loadReferenceImageFile, saveReferenceImageFile, validateReferenceImage } from './reference-image'
 
 export type BackdropGenInits = {
   id?: string
   settings?: Partial<BackdropSettings>
+  referenceImage?: File | null
   imageIndex?: number
   result?: Backdrop
   enrichPhase?: Phase<BackdropSettings>
@@ -34,7 +37,8 @@ export type BackdropGenInits = {
 
 /** The raw config data used for exporting or loading a BackdropGen instance. */
 export type RawBackdropGenConfig = Prettify<
-  Omit<BackdropGenInits, 'result' | 'enrichPhase' | 'generateTask' | 'generatePhase'> & {
+  Omit<BackdropGenInits, 'result' | 'enrichPhase' | 'generateTask' | 'generatePhase' | 'referenceImage'> & {
+    referenceImagePath?: string
     resultConfig?: RawBackdropConfig
     enrichPhaseSerialized?: PhaseSerialized<BackdropSettings>
     generateTaskSerialized?: TaskSerialized<TaskType.GenerateBackdrop>
@@ -56,6 +60,7 @@ export class BackdropGen extends Disposable {
   private enrichPhase: Phase<BackdropSettings>
   private generateTask: Task<TaskType.GenerateBackdrop> | null
   private generatePhase: Phase<File[]>
+  private generateCtrl: AbortController | null = null
 
   constructor(i18n: I18n, project: SpxProject, inits: BackdropGenInits = {}) {
     super()
@@ -64,6 +69,7 @@ export class BackdropGen extends Disposable {
     this.project = project
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich backdrop settings', zh: '丰富背景设置' })
     this.generateTask = inits.generateTask ?? null
+    this.generateTask?.disposeOnSignal(this.getSignal())
     this.generatePhase = inits.generatePhase ?? new Phase({ en: 'generate backdrop images', zh: '生成背景图片' })
     this.settings = {
       name: '',
@@ -71,8 +77,11 @@ export class BackdropGen extends Disposable {
       description: '',
       artStyle: ArtStyle.Unspecified,
       perspective: Perspective.Unspecified,
+      referenceImageUrl: null,
       ...inits.settings
     }
+    this.referenceImage = inits.referenceImage ?? null
+    if (this.referenceImage != null) validateReferenceImage(this.referenceImage)
     this.imageIndex = inits.imageIndex ?? null
     this.result = inits.result ?? null
     return reactive(this) as this
@@ -123,19 +132,37 @@ export class BackdropGen extends Disposable {
   get imagesGenState() {
     return this.generatePhase.state
   }
-  genImages() {
-    return this.generatePhase.run(async (reporter) => {
-      this.setImageIndex(null)
-
-      this.generateTask?.tryCancel()
-      this.generateTask = new Task(TaskType.GenerateBackdrop)
-      await this.generateTask.start({
-        settings: this.settings,
-        n: 4
+  async genImages() {
+    this.setImageIndex(null)
+    this.generateCtrl?.abort(new Cancelled('backdrop generation cancelled'))
+    this.generateTask?.tryCancel()
+    this.generateTask?.dispose()
+    this.generateTask = null
+    const ctrl = new AbortController()
+    this.generateCtrl = ctrl
+    const signal = mergeSignals(this.getSignal(), ctrl.signal)
+    try {
+      return await this.generatePhase.run(async (reporter) => {
+        signal.throwIfAborted()
+        const referenceImageUrl = this.referenceImage == null ? null : await saveFile(this.referenceImage, signal)
+        signal.throwIfAborted()
+        const task = new Task(TaskType.GenerateBackdrop)
+        task.disposeOnSignal(signal)
+        this.generateTask = task
+        await task.start({ settings: { ...this.settings, referenceImageUrl }, n: 4 })
+        signal.throwIfAborted()
+        const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
+        return imageUrls.map((url) => createFileWithUniversalUrl(url))
       })
-      const { imageUrls } = await this.generateTask.untilCompleted(reporter)
-      return imageUrls.map((url) => createFileWithUniversalUrl(url))
-    })
+    } finally {
+      if (this.generateCtrl === ctrl) this.generateCtrl = null
+    }
+  }
+
+  referenceImage: File | null = null
+  setReferenceImage(file: File | null) {
+    if (file != null) validateReferenceImage(file)
+    this.referenceImage = file
   }
   restoreGenerateTask() {
     const task = this.generateTask
@@ -199,6 +226,7 @@ export class BackdropGen extends Disposable {
    * - No exception will be thrown even if the cancellation requests fail.
    */
   cancel() {
+    this.generateCtrl?.abort(new Cancelled('backdrop generation cancelled'))
     return this.generateTask?.tryCancel()
   }
 
@@ -215,6 +243,7 @@ export class BackdropGen extends Disposable {
     const config: RawBackdropGenConfig = {
       id: this.id,
       settings: this.settings,
+      referenceImagePath: saveReferenceImageFile(files, assetsPath, this.referenceImage) ?? undefined,
       enrichPhaseSerialized: this.enrichPhase.export(),
       generateTaskSerialized: this.generateTask?.export(),
       generatePhaseSerialized
@@ -245,9 +274,18 @@ export class BackdropGen extends Disposable {
     const config = (await toConfig(configFile)) as RawBackdropGenConfig
     if (config.settings?.name == null) throw new Error('settings name expected in backdrop gen config')
     const assetsPath = assetsPathFor(config.settings.name)
-    const { resultConfig, enrichPhaseSerialized, generateTaskSerialized, generatePhaseSerialized, ...extraConfig } =
-      config
+    const {
+      resultConfig,
+      referenceImagePath,
+      enrichPhaseSerialized,
+      generateTaskSerialized,
+      generatePhaseSerialized,
+      ...extraConfig
+    } = config
     const inits: BackdropGenInits = extraConfig
+    if (referenceImagePath != null) {
+      inits.referenceImage = loadReferenceImageFile(referenceImagePath, assetsPath, files, `backdrop gen ${config.id}`)
+    }
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (generateTaskSerialized != null) inits.generateTask = Task.load(generateTaskSerialized)
     if (generatePhaseSerialized != null) {

@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import { UIButton, UIDropdownWithTooltip, UIImg, UITooltip } from '@/components/ui'
-import ImageOption from '../common/ImageOption.vue'
-import { useReferenceImageUpload } from '../common/useReferenceImageUpload'
+import ImageOption from './ImageOption.vue'
+import { useReferenceImageUpload } from './useReferenceImageUpload'
 
 const props = withDefaults(
   defineProps<{
@@ -39,7 +39,7 @@ function removeReferenceImage() {
       <UIButton
         v-radar="{
           name: $t({ en: 'Reference image', zh: '参考图片' }),
-          desc: 'Click to manage the local reference image for sprite generation'
+          desc: 'Click to manage the local reference image'
         }"
         type="white"
         shape="square"
@@ -69,7 +69,7 @@ function removeReferenceImage() {
       <UIButton
         v-radar="{
           name: $t({ en: 'Reference image', zh: '参考图片' }),
-          desc: 'Click to upload a local reference image for sprite generation'
+          desc: 'Click to upload a local reference image'
         }"
         type="white"
         :shape="iconOnly ? 'square' : 'default'"

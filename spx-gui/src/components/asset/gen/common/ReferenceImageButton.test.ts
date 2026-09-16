@@ -8,7 +8,7 @@ vi.mock('@/utils/file', () => ({
   useFileUrl: () => [ref('reference-url'), ref(false)]
 }))
 
-vi.mock('../common/useReferenceImageUpload', () => ({
+vi.mock('./useReferenceImageUpload', () => ({
   useReferenceImageUpload: () => () => undefined
 }))
 
