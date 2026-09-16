@@ -3,7 +3,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { UIButton } from '@/components/ui'
 import type { FunctionChangeReview } from './function-change-review'
 
-const props = defineProps<{ review: FunctionChangeReview }>()
+const props = defineProps<{ review: FunctionChangeReview; checkingCall?: boolean }>()
 defineEmits<{ inspect: [] }>()
 const undo = useMessageHandle(() => props.review.undo(), {
   en: 'Failed to undo function adjustment',
@@ -73,7 +73,9 @@ const undo = useMessageHandle(() => props.review.undo(), {
       >
         {{
           $t(
-            review.remaining.length === 0
+            checkingCall
+              ? { en: 'Checked · Next call', zh: '已检查，查看下一处' }
+              : review.remaining.length === 0
               ? { en: 'View definition', zh: '查看定义' }
               : { en: 'Check calls', zh: '检查调用' }
           )

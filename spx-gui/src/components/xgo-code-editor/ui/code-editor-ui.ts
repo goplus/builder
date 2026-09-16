@@ -43,7 +43,7 @@ import {
   type ICopilot
 } from '../copilot'
 import type { CodeEditor } from '../code-editor'
-import type { PeekReference } from './definition-peek'
+import { DefinitionPeekController, type PeekReference } from './definition-peek'
 
 export * from './hover'
 export * from './completion'
@@ -91,7 +91,10 @@ export const builtInCommandCut: Command<[], void> = 'editor.action.cut'
 export const builtInCommandPaste: Command<[], void> = 'editor.action.paste'
 export const builtInCommandViewDefinition: Command<[target: TextDocumentRange, source: TextDocumentPosition], void> =
   'xgo.viewDefinition'
-export const builtInCommandViewReferences: typeof builtInCommandViewDefinition = 'xgo.viewReferences'
+export const builtInCommandViewReferences: Command<
+  [target: TextDocumentRange, source: TextDocumentPosition, references: TextDocumentRange[]],
+  void
+> = 'xgo.viewReferences'
 export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = 'xgo.goToResource'
 export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentRange], void> = 'xgo.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'xgo.renameResource'
@@ -104,12 +107,9 @@ export type InternalAction<A extends any[] = any, R = any> = {
   arguments: A
 }
 
-export type DefinitionPeek = {
-  textDocument: TextDocument
-  range: Range
+export type ReferenceSelection = {
   source: CodeNavigationEntry
-  showReferences: boolean
-  reference: PeekReference | null
+  references: PeekReference[]
 }
 
 export type CodeNavigationEntry = {
@@ -192,52 +192,123 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   dropIndicatorController = new DropIndicatorController(this)
   snippetParser = new SnippetParser(this)
 
-  private definitionPeekRef = shallowRef<DefinitionPeek | null>(null)
-  get definitionPeek() {
-    return this.definitionPeekRef.value
+  private referenceSelectionRef = shallowRef<ReferenceSelection | null>(null)
+  get referenceSelection() {
+    return this.referenceSelectionRef.value
   }
 
-  private openDefinitionPeek(target: TextDocumentRange, source: TextDocumentPosition, showReferences = false) {
-    const textDocument = this.codeEditor.getTextDocument(target.textDocument)
+  private definitionObservers = new Map<string, DefinitionPeekController>()
+
+  private observeDefinition(target: TextDocumentRange, references?: PeekReference[]) {
+    const key = `${target.textDocument.uri}:${target.range.start.line}:${target.range.start.column}`
+    let observer = this.definitionObservers.get(key)
+    if (observer == null) {
+      const textDocument = this.codeEditor.getTextDocument(target.textDocument)
+      if (textDocument == null) return
+      observer = new DefinitionPeekController(this.codeEditor, textDocument, target.range)
+      this.definitionObservers.set(key, observer)
+      if (references == null) void observer.loadReferences()
+    }
+    if (references != null) observer.setReferences(references)
+  }
+
+  private disposeDefinitionObservers() {
+    this.definitionObservers.forEach((observer) => observer.dispose())
+    this.definitionObservers.clear()
+  }
+
+  private captureNavigationEntry(source: TextDocumentPosition): CodeNavigationEntry | null {
     const sourceDocument = this.activeTextDocument
-    if (textDocument == null || sourceDocument == null) return
-    this.definitionPeekRef.value = {
-      textDocument,
-      range: target.range,
-      showReferences,
-      reference: null,
-      source: {
-        textDocument: sourceDocument,
-        position: source.position,
-        viewState: this.editor.saveViewState()
-      }
+    if (sourceDocument == null) return null
+    return {
+      textDocument: sourceDocument,
+      position: source.position,
+      viewState: this.editor.saveViewState()
     }
   }
 
-  closeDefinitionPeek() {
-    this.definitionPeekRef.value = null
+  private navigateTo(target: TextDocumentRange, source: CodeNavigationEntry) {
+    if (this.codeEditor.getTextDocument(target.textDocument) == null) return
+    this.navigationStack.push(source)
+    this.referenceSelectionRef.value = null
+    this.open(target.textDocument, target.range)
+  }
+
+  private openDefinition(target: TextDocumentRange, source: TextDocumentPosition) {
+    const entry = this.captureNavigationEntry(source)
+    if (entry == null) return
+    this.observeDefinition(target)
+    this.navigateTo(target, entry)
+  }
+
+  private resolveReferences(references: TextDocumentRange[]) {
+    return references.flatMap<PeekReference>((reference) => {
+      const textDocument = this.codeEditor.getTextDocument(reference.textDocument)
+      if (textDocument == null) return []
+      return [
+        {
+          textDocument,
+          range: reference.range,
+          code: textDocument.getLineContent(reference.range.start.line).trim()
+        }
+      ]
+    })
+  }
+
+  private openReferences(
+    definition: TextDocumentRange,
+    source: TextDocumentPosition,
+    referenceLocations: TextDocumentRange[]
+  ) {
+    const entry = this.captureNavigationEntry(source)
+    if (entry == null) return
+    const references = this.resolveReferences(referenceLocations)
+    if (references.length === 0) return
+    this.observeDefinition(definition, references)
+    if (references.length === 1) {
+      this.navigateTo({ textDocument: references[0].textDocument.id, range: references[0].range }, entry)
+      return
+    }
+    this.referenceSelectionRef.value = { source: entry, references }
+  }
+
+  closeReferenceSelection() {
+    this.referenceSelectionRef.value = null
     this.editor.focus()
+  }
+
+  openSelectedReference(reference: PeekReference) {
+    const selection = this.referenceSelection
+    if (selection == null) return
+    this.navigateTo({ textDocument: reference.textDocument.id, range: reference.range }, selection.source)
+  }
+
+  private reviewingCallId: number | null = null
+  get isReviewingFunctionCall() {
+    return this.reviewingCallId != null
   }
 
   continueFunctionReview() {
     const review = this.codeEditor.functionChangeReview
     const source = this.activeTextDocument
     if (review == null || source == null) return
-    this.openDefinitionPeek(review.definition.target, {
+    if (this.reviewingCallId != null) {
+      const current = review.calls.find((call) => call.id === this.reviewingCallId)
+      if (current != null) review.markChecked(current)
+      this.reviewingCallId = null
+    }
+    const entry = this.captureNavigationEntry({
       textDocument: source.id,
       position: this.cursorPosition ?? { line: 1, column: 1 }
     })
+    if (entry == null) return
     const call = review.remaining[0]
-    if (call != null && this.definitionPeekRef.value != null) {
-      this.definitionPeekRef.value = {
-        ...this.definitionPeekRef.value,
-        reference: {
-          textDocument: call.location.textDocument,
-          range: call.location.range,
-          code: call.location.textDocument.getLineContent(call.location.range.start.line)
-        }
-      }
+    if (call == null) {
+      this.navigateTo(review.definition.target, entry)
+      return
     }
+    this.reviewingCallId = call.id
+    this.navigateTo(call.location.target, entry)
   }
 
   private navigationStack = shallowReactive<CodeNavigationEntry[]>([])
@@ -245,22 +316,26 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     return this.navigationStack[this.navigationStack.length - 1] ?? null
   }
 
-  openPeekInEditor(target: TextDocumentRange, viewState: monaco.editor.ICodeEditorViewState | null) {
-    const peek = this.definitionPeek
-    if (peek == null || this.codeEditor.getTextDocument(target.textDocument) == null) return
-    this.navigationStack.push(peek.source)
-    this.definitionPeekRef.value = null
-    this.open(target.textDocument, target.range)
-    if (viewState != null) this.editor.restoreViewState(viewState)
-    this.editor.focus()
-  }
-
   goBack() {
     const previous = this.navigationStack.pop()
     if (previous == null) return
-    this.definitionPeekRef.value = null
+    this.referenceSelectionRef.value = null
+    this.reviewingCallId = null
     this.setActiveTextDocument(previous.textDocument.id)
     if (previous.viewState != null) this.editor.restoreViewState(previous.viewState)
+    this.editor.focus()
+    if (this.navigationStack.length === 0) this.disposeDefinitionObservers()
+  }
+
+  exitNavigation() {
+    const origin = this.navigationStack[0]
+    if (origin == null) return
+    this.navigationStack.splice(0)
+    this.referenceSelectionRef.value = null
+    this.reviewingCallId = null
+    this.setActiveTextDocument(origin.textDocument.id)
+    if (origin.viewState != null) this.editor.restoreViewState(origin.viewState)
+    this.disposeDefinitionObservers()
     this.editor.focus()
   }
 
@@ -677,13 +752,13 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.registerCommand(builtInCommandViewDefinition, {
       icon: 'view',
       title: { en: 'View definition', zh: '查看定义' },
-      handler: (target, source) => this.openDefinitionPeek(target, source)
+      handler: (target, source) => this.openDefinition(target, source)
     })
 
     this.registerCommand(builtInCommandViewReferences, {
       icon: 'view',
       title: { en: 'View references', zh: '查看引用' },
-      handler: (target, source) => this.openDefinitionPeek(target, source, true)
+      handler: (target, source, references) => this.openReferences(target, source, references)
     })
 
     this.registerCommand(builtInCommandInvokeInputHelper, {
@@ -779,6 +854,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   dispose() {
+    this.disposeDefinitionObservers()
     this.snippetParser.dispose()
     this.dropIndicatorController.dispose()
     this.inlayHintController.dispose()

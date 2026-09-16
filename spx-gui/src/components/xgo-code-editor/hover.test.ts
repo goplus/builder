@@ -23,6 +23,15 @@ function makeLSPClient(targetUri: string) {
       }
     }),
     textDocumentTypeDefinition: vi.fn().mockResolvedValue(null),
+    textDocumentReferences: vi.fn().mockResolvedValue([
+      {
+        uri: 'file:///caller.spx',
+        range: {
+          start: { line: 8, character: 2 },
+          end: { line: 8, character: 10 }
+        }
+      }
+    ]),
     textDocumentPrepareRename: vi.fn().mockResolvedValue(null)
   } as unknown as ILSPClient
 }
@@ -72,6 +81,29 @@ describe('HoverProvider definition actions', () => {
     )
 
     expect(hover?.actions.map((action) => action.command)).toEqual([builtInCommandViewReferences])
+    expect(hover?.actions[0].arguments[2]).toEqual([
+      {
+        textDocument: { uri: 'file:///caller.spx' },
+        range: {
+          start: { line: 9, column: 3 },
+          end: { line: 9, column: 11 }
+        }
+      }
+    ])
+  })
+
+  it('omits view references when the declaration has no references', async () => {
+    const sourceUri = 'file:///source.spx'
+    const client = makeLSPClient(sourceUri)
+    vi.mocked(client.textDocumentReferences).mockResolvedValue([])
+    const provider = new HoverProvider(client, documentBase)
+
+    const hover = await provider.provideHover(
+      { textDocument: makeTextDocument(sourceUri), signal: new AbortController().signal },
+      { line: 5, column: 2 }
+    )
+
+    expect(hover?.actions).toEqual([])
   })
 
   it('offers view definition for a recursive call in the same document', async () => {

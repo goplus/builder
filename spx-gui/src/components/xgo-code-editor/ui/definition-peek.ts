@@ -173,17 +173,14 @@ export class DefinitionPeekController extends Disposable implements IHoverProvid
         const key = `${location.uri}:${range.start.line}:${range.start.column}:${range.end.line}:${range.end.column}`
         references.set(key, { textDocument, range, code: textDocument.getLineContent(range.start.line).trim() })
       }
-      this.referencesRef.value = [...references.values()].sort(
-        (a, b) =>
-          a.textDocument.id.uri.localeCompare(b.textDocument.id.uri) ||
-          a.range.start.line - b.range.start.line ||
-          a.range.start.column - b.range.start.column
+      this.setReferences(
+        [...references.values()].sort(
+          (a, b) =>
+            a.textDocument.id.uri.localeCompare(b.textDocument.id.uri) ||
+            a.range.start.line - b.range.start.line ||
+            a.range.start.column - b.range.start.column
+        )
       )
-      this.referenceAnchors.forEach((anchor) => anchor.dispose())
-      this.referenceAnchors = this.referencesRef.value.map(
-        (reference) => new PeekLocation(reference.textDocument, reference.range, this.codeEditor.monaco)
-      )
-      this.review?.mergeReferences(this.referencesRef.value)
     } catch (error) {
       if (request.signal.aborted) return
       console.warn('Failed to load symbol references', error)
@@ -192,5 +189,16 @@ export class DefinitionPeekController extends Disposable implements IHoverProvid
     } finally {
       if (!request.signal.aborted) this.loadingRef.value = false
     }
+  }
+
+  setReferences(references: PeekReference[]) {
+    this.referencesRef.value = references
+    this.referenceAnchors.forEach((anchor) => anchor.dispose())
+    this.referenceAnchors = references.map(
+      (reference) => new PeekLocation(reference.textDocument, reference.range, this.codeEditor.monaco)
+    )
+    this.review?.mergeReferences(references)
+    this.loadingRef.value = false
+    this.failedRef.value = false
   }
 }

@@ -18,7 +18,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { useI18n } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/xgo'
 import { theme, tabSize, insertSpaces } from '@/utils/xgo/highlighter'
-import { providePopupContainer, UIIcon, useModal } from '@/components/ui'
+import { providePopupContainer, UIIcon, UITooltip, useModal } from '@/components/ui'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { useCodeEditor } from '../context'
 import { getDdiDragData, getTextDocumentId, type Position, type Range, type TextDocumentIdentifier } from '../common'
@@ -34,7 +34,7 @@ import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
 import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
-import DefinitionPeek from './DefinitionPeek.vue'
+import ReferenceSelectionModal from './ReferenceSelectionModal.vue'
 import FunctionChangeReview from './FunctionChangeReview.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
@@ -82,12 +82,13 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   contextmenu: false
 }))
 
-const definitionPeekEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
+const referencePreviewEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   ...monacoEditorOptions.value,
-  readOnly: false,
+  readOnly: true,
+  domReadOnly: true,
   glyphMargin: false,
   folding: false,
-  lineDecorationsWidth: 12,
+  lineDecorationsWidth: 16,
   lineNumbersMinChars: 4,
   selectOnLineNumbers: false
 }))
@@ -271,6 +272,7 @@ providePopupContainer(codeEditorEl)
       <FunctionChangeReview
         v-if="codeEditor.functionChangeReview != null"
         :review="codeEditor.functionChangeReview"
+        :checking-call="uiRef.isReviewingFunctionCall"
         @inspect="uiRef.continueFunctionReview()"
       />
       <div
@@ -297,17 +299,32 @@ providePopupContainer(codeEditorEl)
             </template>
           </span>
         </button>
-        <span v-if="uiRef.activeTextDocument != null" class="ml-3 truncate text-grey-800">
-          {{
-            $t({
-              en: `Current: ${$t(uiRef.activeTextDocument.displayName)}`,
-              zh: `当前位置：${$t(uiRef.activeTextDocument.displayName)}`
-            })
-          }}
-        </span>
+        <div class="ml-3 min-w-0 flex items-center gap-2">
+          <span v-if="uiRef.activeTextDocument != null" class="truncate text-grey-800">
+            {{
+              $t({
+                en: `Current: ${$t(uiRef.activeTextDocument.displayName)}`,
+                zh: `当前位置：${$t(uiRef.activeTextDocument.displayName)}`
+              })
+            }}
+          </span>
+          <UITooltip>
+            <template #trigger>
+              <button
+                v-radar="{ name: 'Exit code navigation', desc: 'Return to the location where navigation started' }"
+                class="h-7 w-7 flex flex-none cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent text-grey-900 hover:bg-grey-300"
+                :aria-label="$t({ en: 'Exit navigation', zh: '退出导航' })"
+                @click="uiRef.exitNavigation()"
+              >
+                <UIIcon class="h-4 w-4" type="close" />
+              </button>
+            </template>
+            {{ $t({ en: 'Exit navigation', zh: '退出导航' }) }}
+          </UITooltip>
+        </div>
       </div>
       <div class="min-h-0 min-w-0 flex flex-[1_1_0]">
-        <div class="min-h-0 min-w-0 flex flex-[1_1_0] flex-col">
+        <div class="min-h-0 min-w-0 flex flex-[1_1_0]">
           <MonacoEditorComp
             v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
             class="min-h-0 min-w-0 flex-[1_1_0]"
@@ -317,15 +334,6 @@ providePopupContainer(codeEditorEl)
             @dragover="handleMonacoEditorDragOver"
             @dragleave="handleMonacoEditorDragLeave"
             @drop="handleMonacoEditorDrop"
-          />
-          <DefinitionPeek
-            v-if="uiRef.definitionPeek != null"
-            class="ml-3 mt-2 min-h-0 flex-[0_1_45%]"
-            :monaco="codeEditor.monaco"
-            :options="definitionPeekEditorOptions"
-            :peek="uiRef.definitionPeek"
-            @close="uiRef.closeDefinitionPeek()"
-            @open="(target, viewState) => uiRef.openPeekInEditor(target, viewState)"
           />
         </div>
         <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-end px-2">
@@ -340,5 +348,12 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
+    <ReferenceSelectionModal
+      :monaco="codeEditor.monaco"
+      :options="referencePreviewEditorOptions"
+      :selection="uiRef.referenceSelection"
+      @close="uiRef.closeReferenceSelection()"
+      @open="uiRef.openSelectedReference($event)"
+    />
   </div>
 </template>

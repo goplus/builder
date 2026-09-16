@@ -70,9 +70,44 @@ export class HoverProvider implements IHoverProvider {
       textDocument: { uri: location.uri },
       range
     }
+    if (isDeclaration) {
+      const locations = await this.lspClient.textDocumentReferences(
+        { signal: ctx.signal },
+        {
+          ...lspParams,
+          context: { includeDeclaration: false }
+        }
+      )
+      const references = new Map<string, { textDocument: { uri: string }; range: Range }>()
+      for (const reference of locations ?? []) {
+        const referenceRange = fromLSPRange(reference.range)
+        const key = `${reference.uri}:${referenceRange.start.line}:${referenceRange.start.column}:${referenceRange.end.line}:${referenceRange.end.column}`
+        references.set(key, { textDocument: { uri: reference.uri }, range: referenceRange })
+      }
+      if (references.size === 0) return []
+      const referenceLocations = [...references.values()].sort(
+        (a, b) =>
+          a.textDocument.uri.localeCompare(b.textDocument.uri) ||
+          a.range.start.line - b.range.start.line ||
+          a.range.start.column - b.range.start.column
+      )
+      return [
+        {
+          command: builtInCommandViewReferences,
+          arguments: [
+            target,
+            {
+              textDocument: lspParams.textDocument,
+              position
+            },
+            referenceLocations
+          ] satisfies CommandArgs<typeof builtInCommandViewReferences>
+        }
+      ]
+    }
     return [
       {
-        command: isDeclaration ? builtInCommandViewReferences : builtInCommandViewDefinition,
+        command: builtInCommandViewDefinition,
         arguments: [
           target,
           {
