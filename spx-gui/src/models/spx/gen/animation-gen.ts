@@ -31,7 +31,7 @@ import {
   type TaskSerialized
 } from './common'
 import type { SpriteGen } from './sprite-gen'
-import { adaptImgForBackgroundRemoval, fitImageToCanvasWithContrastBg } from './img-process'
+import { adaptImgForBackgroundRemoval, toCostumeReferenceImageUrl } from './img-process'
 import {
   loadReferenceImageFile,
   resolveInitialReferenceImageSelection,
@@ -265,9 +265,7 @@ export class AnimationGen extends Disposable {
     signal.throwIfAborted()
     const { imageUrl } = await Promise.race([task.untilCompleted(), promiseForSignal(signal)])
     signal.throwIfAborted()
-    const processedFile = await fitImageToCanvasWithContrastBg(createFileWithUniversalUrl(imageUrl), 512, 512, signal)
-    signal.throwIfAborted()
-    return saveFile(processedFile, signal)
+    return toCostumeReferenceImageUrl(imageUrl)
   }
   private async runGenerateVideo() {
     const ctrl = new AbortController()
