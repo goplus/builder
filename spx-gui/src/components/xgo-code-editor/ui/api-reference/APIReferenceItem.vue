@@ -105,7 +105,7 @@ function handleMouseUp(e: MouseEvent) {
         v-radar="{
           name: 'api-reference',
           label: parsed.overview,
-          desc: 'API reference item',
+          desc: '',
           attrs: {
             package: item.definition.package,
             name: item.definition.name,
