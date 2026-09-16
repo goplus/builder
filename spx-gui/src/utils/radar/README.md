@@ -31,6 +31,7 @@ const radar = useRadar()
 const rootNodes = radar.getRootNodes()
 const node = radar.getNodeById('some-node-id')
 const children = node.getChildren()
+const button = radar.select('project-editor save-button')
 const buttons = radar.selectAll('project-editor save-button')
 ```
 
@@ -53,7 +54,7 @@ when `attrs.name` is present, appends that value in quotes. For example,
 
 ### Selector strings
 
-`selectAll` accepts the following grammar:
+`select` and `selectAll` accept the following grammar:
 
 ```text
 selector       = compound, { whitespace, compound } ;
@@ -76,5 +77,6 @@ radar.selectAll('sound-item[name="meow"]')
 radar.selectAll('api-references api-reference[name="Sprite.stepTo"][overload-id="1"]')
 ```
 
-Malformed selectors throw `RadarSelectorSyntaxError`; valid selectors with no
-matches return an empty array. Matches are visible nodes, in document order.
+Malformed selectors throw `RadarSelectorSyntaxError`. `select` returns the
+first visible match in document order, or `null`; `selectAll` returns every
+visible match in document order.

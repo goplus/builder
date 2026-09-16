@@ -118,20 +118,22 @@ export class Radar {
     return this.idNodeMap.get(id) ?? null
   }
 
+  /** Select the first visible node matching a Radar selector in document order. */
+  select(selector: string): RadarNodeInfo | null {
+    const compounds = parseRadarSelector(selector)
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT)
+    let current: Node | null
+    while ((current = walker.nextNode()) != null) {
+      const node = this.elNodeMap.get(current as HTMLElement)
+      if (node != null && this.isVisibleNode(node) && this.matchesSelector(node, compounds)) return node
+    }
+    return null
+  }
+
   /** Select visible nodes matching a Radar selector in document order. */
   selectAll(selector: string): RadarNodeInfo[] {
     const compounds = parseRadarSelector(selector)
-    const visibleNodes = this.getVisibleNodes()
-    let matches = visibleNodes.filter((node) => this.matchesCompound(node, compounds[0]))
-    for (const compound of compounds.slice(1)) {
-      const parentMatches = matches
-      matches = visibleNodes.filter(
-        (node) =>
-          this.matchesCompound(node, compound) &&
-          parentMatches.some((parent) => parent.getElement().contains(node.getElement()))
-      )
-    }
-    return matches
+    return this.getVisibleNodes().filter((node) => this.matchesSelector(node, compounds))
   }
 
   private getVisibleNodes(): RadarNodeInfo[] {
@@ -154,6 +156,29 @@ export class Radar {
   private matchesCompound(node: RadarNodeInfo, compound: RadarSelectorCompound) {
     if (node.name !== compound.name) return false
     return Object.entries(compound.attrs).every(([name, value]) => node.attrs[name] === value)
+  }
+
+  private matchesSelector(node: RadarNodeInfo, compounds: RadarSelectorCompound[]) {
+    let compoundIndex = compounds.length - 1
+    if (!this.matchesCompound(node, compounds[compoundIndex])) return false
+    let ancestor = this.findParentNode(node)
+    while (--compoundIndex >= 0) {
+      while (ancestor != null && !this.matchesCompound(ancestor, compounds[compoundIndex])) {
+        ancestor = this.findParentNode(ancestor)
+      }
+      if (ancestor == null) return false
+      ancestor = this.findParentNode(ancestor)
+    }
+    return true
+  }
+
+  private isVisibleNode(node: RadarNodeInfo) {
+    let current: RadarNodeInfo | null = node
+    while (current != null && current !== this.rootNode) {
+      if (!current.visible) return false
+      current = this.findParentNode(current)
+    }
+    return true
   }
 
   /** Find the parent node of a given node in current tree */

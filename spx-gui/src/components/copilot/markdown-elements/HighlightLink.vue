@@ -41,7 +41,7 @@ const text = useSlotText()
 
 const { fn: handleClick } = useMessageHandle(
   () => {
-    const nodeInfo = radar.selectAll(props.selector)[0]
+    const nodeInfo = radar.select(props.selector)
     if (nodeInfo == null) throw new Error(`No visible Radar node matches selector: ${props.selector}`)
     const element = nodeInfo.getElement()
     spotlight.reveal(element, props.tip ?? text.value)

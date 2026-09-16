@@ -423,6 +423,9 @@ describe('Radar', () => {
         .selectAll('api-references api-reference[name="Sprite.stepTo"][overload-id="1"]')
         .map((node) => node.getElement().id)
     ).toEqual(['second'])
+    expect(radar.select('api-reference[name="Sprite.stepTo"]')?.getElement().id).toBe('first')
+    expect(radar.select('api-references api-reference[overload-id="1"]')?.getElement().id).toBe('second')
+    expect(radar.select('api-reference[overload-id="2"]')).toBeNull()
   })
 
   it('updates labels and normalized attributes with metadata changes', async () => {
@@ -478,5 +481,6 @@ describe('Radar', () => {
     expect(() => radar.selectAll('api-reference > button')).toThrow(RadarSelectorSyntaxError)
     expect(() => radar.selectAll('api-reference[name=Sprite.stepTo]')).toThrow(RadarSelectorSyntaxError)
     expect(() => radar.selectAll('api-reference[overload-id="1"')).toThrow(RadarSelectorSyntaxError)
+    expect(() => radar.select('api-reference > button')).toThrow(RadarSelectorSyntaxError)
   })
 })
