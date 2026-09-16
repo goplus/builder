@@ -1,17 +1,19 @@
-export const accountAdminRoles = ['accountAdmin', 'authorizationAdmin', 'assetAdmin', 'courseAdmin'] as const
+export const accountAdminRole = 'accountAdmin'
+export const authorizationAdminRole = 'authorizationAdmin'
+export const managedAdminRoles = [accountAdminRole, authorizationAdminRole, 'assetAdmin', 'courseAdmin'] as const
 
-export type AccountAdminRole = (typeof accountAdminRoles)[number]
+export type ManagedAdminRole = (typeof managedAdminRoles)[number]
 
-export function isAccountAdminRole(role: string): role is AccountAdminRole {
-  return accountAdminRoles.includes(role as AccountAdminRole)
+export function isManagedAdminRole(role: string): role is ManagedAdminRole {
+  return managedAdminRoles.includes(role as ManagedAdminRole)
 }
 
 export function isAccountAdminRequired(roles: readonly string[]) {
-  return roles.includes('authorizationAdmin')
+  return roles.includes(authorizationAdminRole)
 }
 
 export function normalizeAdminRoles(roles: readonly string[]) {
-  const selectedRoles = new Set(roles.filter(isAccountAdminRole))
-  if (selectedRoles.has('authorizationAdmin')) selectedRoles.add('accountAdmin')
-  return accountAdminRoles.filter((role) => selectedRoles.has(role))
+  const selectedRoles = new Set(roles.filter(isManagedAdminRole))
+  if (selectedRoles.has(authorizationAdminRole)) selectedRoles.add(accountAdminRole)
+  return managedAdminRoles.filter((role) => selectedRoles.has(role))
 }

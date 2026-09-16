@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
-import { isAccountAdminRequired, normalizeAdminRoles } from './authorization-role'
+import {
+  isAccountAdminRequired,
+  isManagedAdminRole,
+  managedAdminRoles,
+  normalizeAdminRoles
+} from './authorization-role'
 
 describe('Admin authorization role dependency', () => {
+  it('recognizes the admin roles managed by this form', () => {
+    expect(managedAdminRoles).toEqual(['accountAdmin', 'authorizationAdmin', 'assetAdmin', 'courseAdmin'])
+    expect(isManagedAdminRole('assetAdmin')).toBe(true)
+    expect(isManagedAdminRole('unknownRole')).toBe(false)
+  })
+
   it('adds Account admin when Authorization admin is selected', () => {
     expect(normalizeAdminRoles(['authorizationAdmin'])).toEqual(['accountAdmin', 'authorizationAdmin'])
   })

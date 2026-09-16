@@ -5,7 +5,7 @@ import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { useExternalUrl } from '@/utils/utils'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
-import { canAccessAdminConsole } from '@/apps/xbuilder/admin'
+import { canUseAdminConsole as checkCanUseAdminConsole } from '@/apps/xbuilder/admin'
 import { AssetType } from '@/apis/asset'
 import { signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
@@ -23,7 +23,7 @@ const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
-const canUseAdminConsole = computed(() => canAccessAdminConsole(signedInUser.value?.capabilities))
+const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
 const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
@@ -125,7 +125,7 @@ async function handleSignOut() {
       </UIMenuGroup>
       <UIMenuGroup v-if="canUseAdminConsole">
         <UIMenuItem @click="handleAdminConsole">
-          {{ $t({ en: 'Admin Console', zh: '后台管理' }) }}
+          {{ $t({ en: 'Admin Console', zh: '管理后台' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>

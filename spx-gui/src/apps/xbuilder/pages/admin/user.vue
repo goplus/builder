@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { LocaleMessage } from '@/utils/i18n'
 import type { AccountIdentityProviderName } from '@/apis/account/common'
-import { accountAdminRoles, type AccountAdminRole } from './authorization-role'
+import { managedAdminRoles, type ManagedAdminRole } from './authorization-role'
 
 const accountIdentityProviderLabels: Record<AccountIdentityProviderName, LocaleMessage> = {
   wechat: { en: 'WeChat', zh: '微信' },
@@ -12,7 +12,7 @@ const accountIdentityProviderLabels: Record<AccountIdentityProviderName, LocaleM
   x: { en: 'X', zh: 'X' }
 }
 
-const accountAdminRoleLabels: Record<AccountAdminRole, LocaleMessage> = {
+const adminRoleLabels: Record<ManagedAdminRole, LocaleMessage> = {
   accountAdmin: { en: 'Account admin', zh: '账号管理员' },
   authorizationAdmin: { en: 'Authorization admin', zh: '授权管理员' },
   assetAdmin: { en: 'Asset admin', zh: '素材管理员' },
@@ -48,7 +48,7 @@ import * as accountAdminApis from '@/apis/admin/account'
 import * as authorizationAdminApis from '@/apis/admin/authorization'
 import { validateAccountUserPassword } from '@/components/account/admin/password'
 import { formatJSON, formatTime } from './common'
-import { isAccountAdminRequired, isAccountAdminRole, normalizeAdminRoles } from './authorization-role'
+import { accountAdminRole, isAccountAdminRequired, isManagedAdminRole, normalizeAdminRoles } from './authorization-role'
 
 const avatarSize = 512
 const maxAvatarFileSize = 5 * 1024 * 1024
@@ -64,6 +64,7 @@ const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.cap
 const canManageAuthorization = computed(
   () => signedInStateQuery.data.value?.user?.capabilities.canManageAuthorization === true
 )
+const canEditUserAuthorization = computed(() => canManageAccount.value && canManageAuthorization.value)
 
 const userQuery = useQuery(
   async () => {
@@ -134,16 +135,17 @@ const grantsPageTotal = computed(() => Math.ceil((grantsQuery.data.value?.total 
 
 const authorizationQuery = useQuery(
   async () => {
-    if (!canManageAccount.value || !canManageAuthorization.value) return null
+    if (!canEditUserAuthorization.value) return null
     return authorizationAdminApis.getUserAuthorization(props.userID)
   },
   { en: 'Failed to load user authorization', zh: '加载用户授权失败' }
 )
 
-const roles = ref<AccountAdminRole[]>([])
+const roles = ref<ManagedAdminRole[]>([])
 const plan = ref<authorizationAdminApis.UserPlan>('free')
+const accountAdminRequirementTooltipVisible = ref(false)
 const unmanagedRoles = computed(
-  () => authorizationQuery.data.value?.roles.filter((role) => !isAccountAdminRole(role)) ?? []
+  () => authorizationQuery.data.value?.roles.filter((role) => !isManagedAdminRole(role)) ?? []
 )
 watch(
   () => authorizationQuery.data.value,
@@ -168,7 +170,7 @@ const planOptions = [
   }
 ] as const
 
-const accountAdminRoleDescriptions: Record<AccountAdminRole, { en: string; zh: string }> = {
+const adminRoleDescriptions: Record<ManagedAdminRole, { en: string; zh: string }> = {
   accountAdmin: {
     en: 'Manage Account users, apps, identities, and sessions.',
     zh: '管理账号用户、应用、第三方身份与会话。'
@@ -213,7 +215,7 @@ const hasQuotaPolicies = computed(() => {
 const isAuthorizationChanged = computed(() => {
   const authorization = authorizationQuery.data.value
   if (authorization == null) return false
-  const currentRoles = authorization.roles.filter(isAccountAdminRole)
+  const currentRoles = authorization.roles.filter(isManagedAdminRole)
   return (
     plan.value !== authorization.plan ||
     roles.value.some((role) => !currentRoles.includes(role)) ||
@@ -427,7 +429,7 @@ function revokeAllSessions() {
 
       <div
         class="grid grid-cols-1 items-start gap-5"
-        :class="canManageAuthorization ? 'desktop:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]' : null"
+        :class="canEditUserAuthorization ? 'desktop:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]' : null"
       >
         <div class="flex min-w-0 flex-col gap-5">
           <section class="rounded-lg border border-grey-400 bg-white p-5">
@@ -509,10 +511,7 @@ function revokeAllSessions() {
             </div>
           </section>
 
-          <section
-            v-if="canManageAccount && canManageAuthorization"
-            class="rounded-lg border border-grey-400 bg-white p-5"
-          >
+          <section v-if="canEditUserAuthorization" class="rounded-lg border border-grey-400 bg-white p-5">
             <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 class="m-0 text-lg font-semibold text-title">{{ $t({ en: 'Authorization', zh: '授权配置' }) }}</h3>
@@ -559,18 +558,22 @@ function revokeAllSessions() {
                   class="grid grid-cols-1 gap-3 tablet:grid-cols-2"
                   @update:value="handleRolesChange"
                 >
-                  <div v-for="role in accountAdminRoles" :key="role" class="relative min-w-0">
+                  <div v-for="role in managedAdminRoles" :key="role" class="relative min-w-0">
                     <UICheckbox
                       :value="role"
-                      :disabled="role === 'accountAdmin' && isAccountAdminRequired(roles)"
+                      :disabled="role === accountAdminRole && isAccountAdminRequired(roles)"
                       class="h-full w-full items-start rounded-md border border-grey-400 p-3 has-[:checked]:border-primary-main has-[:checked]:bg-primary-100"
                     >
                       <span class="flex min-w-0 flex-col gap-1">
-                        <span class="font-medium text-title">{{ $t(accountAdminRoleLabels[role]) }}</span>
-                        <span class="text-xs text-grey-700">{{ $t(accountAdminRoleDescriptions[role]) }}</span>
+                        <span class="font-medium text-title">{{ $t(adminRoleLabels[role]) }}</span>
+                        <span class="text-xs text-grey-700">{{ $t(adminRoleDescriptions[role]) }}</span>
                       </span>
                     </UICheckbox>
-                    <UITooltip v-if="role === 'accountAdmin' && isAccountAdminRequired(roles)" placement="top">
+                    <UITooltip
+                      v-if="role === accountAdminRole && isAccountAdminRequired(roles)"
+                      v-model:visible="accountAdminRequirementTooltipVisible"
+                      placement="top"
+                    >
                       {{
                         $t({
                           en: 'Required while Authorization admin is selected.',
@@ -587,6 +590,8 @@ function revokeAllSessions() {
                               zh: '为何必须保留账号管理员'
                             })
                           "
+                          @focus="accountAdminRequirementTooltipVisible = true"
+                          @blur="accountAdminRequirementTooltipVisible = false"
                         >
                           !
                         </button>

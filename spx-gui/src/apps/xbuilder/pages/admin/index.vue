@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import { untilNotNull, usePageTitle } from '@/utils/utils'
@@ -8,9 +8,9 @@ import { UIError, UILoading, UIMenu, UIMenuGroup, UIMenuItem } from '@/component
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
-import { canAccessAdminConsole, canReadAdminAuditLogs, getAdminDefaultRoute } from '@/apps/xbuilder/admin'
+import { canUseAdminConsole as checkCanUseAdminConsole, getAdminDefaultRoute } from '@/apps/xbuilder/admin'
 
-usePageTitle({ en: 'Admin Console', zh: '后台管理' })
+usePageTitle({ en: 'Admin Console', zh: '管理后台' })
 
 const route = useRoute()
 const router = useRouter()
@@ -18,8 +18,7 @@ const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
 const canManageAccount = computed(() => signedInUser.value?.capabilities.canManageAccount === true)
-const canUseAdminConsole = computed(() => canAccessAdminConsole(signedInUser.value?.capabilities))
-const canReadAuditLogs = computed(() => canReadAdminAuditLogs(signedInUser.value?.capabilities))
+const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
 
 const accountNavItems = [
   { to: '/admin/users', label: { en: 'Users', zh: '用户' } },
@@ -27,16 +26,21 @@ const accountNavItems = [
 ]
 const isAccountRoute = computed(() => accountNavItems.some((item) => route.path.startsWith(item.to)))
 
-onMounted(async () => {
-  const signedInState = await untilNotNull(signedInStateQuery.data)
-  if (!signedInState.isSignedIn) {
-    signIn(route.fullPath)
-    return
-  }
-  if (route.path !== '/admin' && route.path !== '/admin/') return
-  const defaultRoute = getAdminDefaultRoute(signedInState.user.capabilities)
-  if (defaultRoute != null) await router.replace(defaultRoute)
-})
+watch(
+  () => route.path,
+  async (path) => {
+    if (path !== '/admin' && path !== '/admin/') return
+
+    const signedInState = await untilNotNull(signedInStateQuery.data)
+    if (!signedInState.isSignedIn) {
+      signIn(route.fullPath)
+      return
+    }
+    const defaultRoute = getAdminDefaultRoute(signedInState.user.capabilities)
+    if (defaultRoute != null) await router.replace(defaultRoute)
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -73,7 +77,7 @@ onMounted(async () => {
               </UIMenu>
             </NavbarDropdown>
             <button
-              v-if="canReadAuditLogs"
+              v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
               class="border-0 bg-transparent px-3 text-sm font-medium hover:bg-grey-400"
               :class="route.path.startsWith('/admin/audit-logs') ? 'text-primary-main' : null"
@@ -98,8 +102,8 @@ onMounted(async () => {
         <template #sub-message>
           {{
             $t({
-              en: 'This page is only available to administrators with a supported management capability.',
-              zh: '此页面仅对具有相应管理能力的管理员开放。'
+              en: 'This page is only available to administrators.',
+              zh: '此页面仅管理员可访问。'
             })
           }}
         </template>
