@@ -73,10 +73,16 @@ export type SpotlightOptions = {
  * mirror the author-facing API tree.
  *
  * Calls may overlap: while a presentation or generation call is pending, the
- * Course program keeps handling events and may issue further calls. The
- * framework serializes presentation (`course.show*`) — at most one is pending
- * at a time — but other calls, including multiple generations, can be pending
+ * Course program keeps handling events and may issue further calls,
+ * including further presentation calls. The framework does not serialize
+ * presentation: when a `course.show*` call arrives while another is pending,
+ * the host's capability decides whether to queue it, reject it, or dismiss
+ * the earlier one, and documents that choice. Generation calls can be pending
  * concurrently.
+ *
+ * The framework may discard a call's result after the fact (the run that
+ * made it was cancelled by a `RunPolicy`); the host settles every call
+ * exactly as usual and needs no cancellation protocol.
  *
  * On completion the host must promptly settle every still-pending call (for
  * presentation, resolving as a no-op is fine): the program only exits after
