@@ -12,7 +12,7 @@
       </UIError>
       <EditorContextProvider v-else :project="state!.project" :state="state!">
         <CodeEditorProvider :monaco="monacoQueryRet.data.value!">
-          <ProjectEditor />
+          <ProjectEditor :layout="editorLayout" />
         </CodeEditorProvider>
       </EditorContextProvider>
     </main>
@@ -138,6 +138,10 @@ const stateQueryRet = useQuery(
 )
 
 const state = stateQueryRet.data
+const editorLayout = computed(() => {
+  const viewportSize = state.value?.project.viewportSize
+  return viewportSize != null && viewportSize.height > viewportSize.width ? 'portrait' : 'landscape'
+})
 const currentProjectIdentifier = computed(() =>
   toProjectIdentifier(state.value?.project.owner, state.value?.project.name)
 )

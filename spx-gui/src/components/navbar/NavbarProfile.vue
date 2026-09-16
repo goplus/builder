@@ -7,7 +7,7 @@ import { useExternalUrl } from '@/utils/utils'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
-import { UIButton, UIDropdown, UIIcon, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { useI18n } from '@/utils/i18n'
@@ -18,13 +18,6 @@ const { isOnline } = useNetwork()
 const router = useRouter()
 const i18n = useI18n()
 const signIn = useSignIn()
-
-withDefaults(
-  defineProps<{
-    demoMenu?: boolean
-  }>(),
-  { demoMenu: false }
-)
 
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
@@ -70,7 +63,7 @@ async function handleSignOut() {
 
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div v-if="!loading && signedInUser == null && !demoMenu" class="h-full flex items-center px-3 whitespace-nowrap">
+  <div v-if="!loading && signedInUser == null" class="h-full flex items-center px-3 whitespace-nowrap">
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       type="secondary"
@@ -81,20 +74,12 @@ async function handleSignOut() {
   </div>
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
-      <div
-        v-radar="
-          signedInUser == null
-            ? { name: 'Demo options', desc: 'Open auxiliary demo options' }
-            : { name: 'Profile menu', desc: 'Open profile and account options' }
-        "
-        class="h-full flex items-center justify-center px-3 hover:bg-grey-400"
-      >
-        <img v-if="signedInUser != null" class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
-        <UIIcon v-else class="h-5 w-5" type="setting" />
+      <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
+        <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
       </div>
     </template>
     <UIMenu class="min-w-30">
-      <UIMenuGroup v-if="signedInUser != null">
+      <UIMenuGroup>
         <UIMenuItem :interactive="false">
           <div class="user-info-wrapper">
             {{ signedInUser?.displayName }}
@@ -114,10 +99,7 @@ async function handleSignOut() {
           {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
         </UITooltip>
       </UIMenuGroup>
-      <UIMenuGroup v-if="$slots.default">
-        <slot></slot>
-      </UIMenuGroup>
-      <UIMenuGroup v-if="signedInUser != null">
+      <UIMenuGroup>
         <UIMenuItem @click="handleUserPage">
           {{ $t({ en: 'Profile', zh: '个人主页' }) }}
         </UIMenuItem>
@@ -149,7 +131,7 @@ async function handleSignOut() {
           {{ $t({ en: 'Account admin', zh: '账号管理' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="signedInUser != null">
+      <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
     </UIMenu>
