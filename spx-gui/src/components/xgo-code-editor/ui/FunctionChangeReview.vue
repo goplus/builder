@@ -76,8 +76,8 @@ const undo = useMessageHandle(() => props.review.undo(), {
             checkingCall
               ? { en: 'Checked · Next call', zh: '已检查，查看下一处' }
               : review.remaining.length === 0
-              ? { en: 'View definition', zh: '查看定义' }
-              : { en: 'Check calls', zh: '检查调用' }
+                ? { en: 'View definition', zh: '查看定义' }
+                : { en: 'Check calls', zh: '检查调用' }
           )
         }}
       </UIButton>

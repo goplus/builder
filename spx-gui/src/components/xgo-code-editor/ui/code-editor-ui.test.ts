@@ -52,7 +52,10 @@ function sourceAt(textDocument: TextDocument, line = 4): TextDocumentPosition {
 }
 
 function targetAt(textDocument: TextDocument, line = 5): TextDocumentRange {
-  return { textDocument: textDocument.id, range: { ...targetRange, start: { line, column: 1 }, end: { line, column: 7 } } }
+  return {
+    textDocument: textDocument.id,
+    range: { ...targetRange, start: { line, column: 1 }, end: { line, column: 7 } }
+  }
 }
 
 describe('CodeEditorUIController definition navigation', () => {
@@ -115,7 +118,6 @@ describe('CodeEditorUIController definition navigation', () => {
     controller.goBack()
     expect(controller.activeTextDocument).toBe(target)
     expect(controller.previousNavigationLocation?.textDocument).toBe(source)
-
     ;(controller as any).openDefinition(targetAt(other, 9), sourceAt(target, 5))
     controller.exitNavigation()
     expect(controller.activeTextDocument).toBe(source)
