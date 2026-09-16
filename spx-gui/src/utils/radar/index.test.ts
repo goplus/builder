@@ -428,6 +428,32 @@ describe('Radar', () => {
     expect(radar.select('api-reference[overload-id="2"]')).toBeNull()
   })
 
+  it('keeps the Radar tree in document order when a preceding node mounts later', async () => {
+    const { radar, container } = createTestEnvironment()
+    const showFirst = ref(false)
+
+    const TestComponent = defineComponent({
+      setup() {
+        return { showFirst }
+      },
+      template: `
+        <div>
+          <div v-if="showFirst" id="first" v-radar="{ name: 'item', desc: '' }"></div>
+          <div id="second" v-radar="{ name: 'item', desc: '' }"></div>
+        </div>
+      `
+    })
+
+    mountComponent(TestComponent, radar, container)
+    await nextTick()
+    showFirst.value = true
+    await nextTick()
+
+    expect(radar.getRootNodes().map((node) => node.getElement().id)).toEqual(['first', 'second'])
+    expect(radar.select('item')?.getElement().id).toBe('first')
+    expect(radar.selectAll('item').map((node) => node.getElement().id)).toEqual(['first', 'second'])
+  })
+
   it('updates labels and normalized attributes with metadata changes', async () => {
     const { radar, container } = createTestEnvironment()
     const nodeData = ref({

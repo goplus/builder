@@ -121,13 +121,7 @@ export class Radar {
   /** Select the first visible node matching a Radar selector in document order. */
   select(selector: string): RadarNodeInfo | null {
     const compounds = parseRadarSelector(selector)
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT)
-    let current: Node | null
-    while ((current = walker.nextNode()) != null) {
-      const node = this.elNodeMap.get(current as HTMLElement)
-      if (node != null && this.isVisibleNode(node) && this.matchesSelector(node, compounds)) return node
-    }
-    return null
+    return this.findFirstVisibleNode(this.rootNode, compounds)
   }
 
   /** Select visible nodes matching a Radar selector in document order. */
@@ -145,6 +139,19 @@ export class Radar {
       }
     }
     visit(this.rootNode)
+    return nodes
+  }
+
+  private findFirstVisibleNode(parent: RadarNodeInfo, compounds: RadarSelectorCompound[]): RadarNodeInfo | null {
+    for (const child of parent.getChildren()) {
+      if (this.matchesSelector(child, compounds)) return child
+      const matchedDescendant = this.findFirstVisibleNode(child, compounds)
+      if (matchedDescendant != null) return matchedDescendant
+    }
+    return null
+  }
+
+  private sortNodesByDocumentOrder(nodes: RadarNodeInfo[]) {
     return nodes.sort((a, b) => {
       const position = a.getElement().compareDocumentPosition(b.getElement())
       if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1
@@ -168,15 +175,6 @@ export class Radar {
       }
       if (ancestor == null) return false
       ancestor = this.findParentNode(ancestor)
-    }
-    return true
-  }
-
-  private isVisibleNode(node: RadarNodeInfo) {
-    let current: RadarNodeInfo | null = node
-    while (current != null && current !== this.rootNode) {
-      if (!current.visible) return false
-      current = this.findParentNode(current)
     }
     return true
   }
@@ -209,8 +207,8 @@ export class Radar {
     })
 
     newSiblings.push(node)
-    parent.setChildren(newSiblings)
-    node.setChildren(newChildren)
+    parent.setChildren(this.sortNodesByDocumentOrder(newSiblings))
+    node.setChildren(this.sortNodesByDocumentOrder(newChildren))
   }
 
   private registerWithEl(el: HTMLElement, meta: RadarNodeMeta) {
