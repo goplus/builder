@@ -84,29 +84,8 @@ For an item in a user-named list, keep the role stable and put the name in an
 attribute. This yields the selector `costume-item[name="hero"]` and the default
 accessible label `Costume item "hero"`.
 
-```ts
-const radarMeta = computed(() => ({
-  name: 'costume-item',
-  desc: 'Project costume',
-  attrs: { name: props.costume.name }
-}))
-```
-
-For an API item, its `DefinitionIdentifier` fields are useful attributes. The
-explicit label preserves the complete rendered signature for accessibility;
-the API overview needs no additional description.
-
-```ts
-{
-  name: 'api-reference',
-  label: parsed.overview,
-  desc: '',
-  attrs: {
-    package: item.definition.package,
-    name: item.definition.name,
-    'overload-id': item.definition.overloadId
-  }
-}
+```html
+<UIEditorSpriteItem v-radar="{ name: 'costume-item', desc: 'Project costume', attrs: { name: costume.name } }" />
 ```
 
 ### Selector strings
