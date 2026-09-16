@@ -66,15 +66,14 @@ const getUINodeTextContentParamsSchema = z.object({
 
 class GetUINodeTextContentTool implements ToolDefinition {
   name = 'get_ui_node_text_content'
-  description = 'Get text content of exactly one visible UI node selected by a Radar selector.'
+  description = 'Get text content of the first visible UI node selected by a Radar selector.'
   parameters = getUINodeTextContentParamsSchema
 
   constructor(private radar: Radar) {}
 
   async implementation({ selector }: z.infer<typeof getUINodeTextContentParamsSchema>) {
-    const nodeInfos = this.radar.selectAll(selector)
-    if (nodeInfos.length !== 1) throw new Error(`Radar selector must match exactly one visible node: ${selector}`)
-    const nodeInfo = nodeInfos[0]
+    const nodeInfo = this.radar.select(selector)
+    if (nodeInfo == null) throw new Error(`No visible Radar node matches selector: ${selector}`)
     const textContent = nodeInfo.getElement()?.textContent ?? ''
     const textContentPreview = unicodeSafeSlice(textContent, 0, 500)
     return textContentPreview === textContent ? textContent : textContentPreview + '...'

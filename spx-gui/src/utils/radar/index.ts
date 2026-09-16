@@ -121,34 +121,34 @@ export class Radar {
   /** Select the first visible node matching a Radar selector in document order. */
   select(selector: string): RadarNodeInfo | null {
     const compounds = parseRadarSelector(selector)
-    return this.findFirstVisibleNode(this.rootNode, compounds)
+    let result: RadarNodeInfo | null = null
+    this.walkVisibleNodes((node) => {
+      if (!this.matchesSelector(node, compounds)) return false
+      result = node
+      return true
+    })
+    return result
   }
 
   /** Select visible nodes matching a Radar selector in document order. */
   selectAll(selector: string): RadarNodeInfo[] {
     const compounds = parseRadarSelector(selector)
-    return this.getVisibleNodes().filter((node) => this.matchesSelector(node, compounds))
+    const result: RadarNodeInfo[] = []
+    this.walkVisibleNodes((node) => {
+      if (this.matchesSelector(node, compounds)) result.push(node)
+      return false
+    })
+    return result
   }
 
-  private getVisibleNodes(): RadarNodeInfo[] {
-    const nodes: RadarNodeInfo[] = []
-    const visit = (parent: RadarNodeInfo) => {
+  private walkVisibleNodes(visitor: (node: RadarNodeInfo) => boolean) {
+    const visit = (parent: RadarNodeInfo): boolean => {
       for (const child of parent.getChildren()) {
-        nodes.push(child)
-        visit(child)
+        if (visitor(child) || visit(child)) return true
       }
+      return false
     }
     visit(this.rootNode)
-    return nodes
-  }
-
-  private findFirstVisibleNode(parent: RadarNodeInfo, compounds: RadarSelectorCompound[]): RadarNodeInfo | null {
-    for (const child of parent.getChildren()) {
-      if (this.matchesSelector(child, compounds)) return child
-      const matchedDescendant = this.findFirstVisibleNode(child, compounds)
-      if (matchedDescendant != null) return matchedDescendant
-    }
-    return null
   }
 
   private sortNodesByDocumentOrder(nodes: RadarNodeInfo[]) {
