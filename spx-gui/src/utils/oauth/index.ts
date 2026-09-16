@@ -125,6 +125,15 @@ export type OAuthRefreshTokenParams = {
   refresh_token: string
 }
 
+export enum OAuthErrorCode {
+  InvalidRequest = 'invalid_request',
+  InvalidClient = 'invalid_client',
+  InvalidGrant = 'invalid_grant',
+  UnauthorizedClient = 'unauthorized_client',
+  InvalidScope = 'invalid_scope',
+  UnsupportedGrantType = 'unsupported_grant_type'
+}
+
 export type OAuthTokenResponse = {
   /** Access token returned by the token endpoint. */
   access_token: string

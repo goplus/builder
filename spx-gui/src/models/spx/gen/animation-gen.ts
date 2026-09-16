@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
-import { extname } from '@/utils/path'
+import { encodePathSegment, extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
@@ -64,7 +64,7 @@ export type RawAnimationGenConfig = Prettify<
 >
 
 function assetsPathFor(basePath: string, name: string) {
-  return `${basePath}/animations/${name}`
+  return `${basePath}/animations/${encodePathSegment(name)}`
 }
 
 export class AnimationGen extends Disposable {

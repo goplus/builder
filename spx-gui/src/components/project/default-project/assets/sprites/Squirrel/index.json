@@ -1,0 +1,190 @@
+{
+  "heading": 90,
+  "x": 0,
+  "y": 0,
+  "size": 0.19,
+  "rotationStyle": "normal",
+  "physicsMode": "no",
+  "costumeIndex": 0,
+  "visible": true,
+  "isDraggable": false,
+  "collisionPivot": { "x": 0, "y": 0 },
+  "collisionShapeType": "none",
+  "collisionShapeParams": [],
+  "costumes": [
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "Idle",
+      "path": "Idle.svg",
+      "builder_id": "ykwKbDnCIa585bfVVKS0l",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Idle_默认1",
+      "path": "__animation_Idle_默认1.svg",
+      "builder_id": "co88gANU8OOEvNSvesGR9",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Idle_默认2",
+      "path": "__animation_Idle_默认2.svg",
+      "builder_id": "zkXy5SLjFMh2Y4W5ml25f",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Walk_行走1",
+      "path": "__animation_Walk_行走1.svg",
+      "builder_id": "7DSL-e4eSkBlT7v-QYCxI",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Walk_行走2",
+      "path": "__animation_Walk_行走2.svg",
+      "builder_id": "vvZwJkqWiJEBNrAP-q8JW",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Walk_行走3",
+      "path": "__animation_Walk_行走3.svg",
+      "builder_id": "CsdhZg79APH6ubbRe4E57",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Fall_晕倒1",
+      "path": "__animation_Fall_晕倒1.svg",
+      "builder_id": "JRHg9mDoznkv9KSAaQHJN",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 372,
+      "y": 372,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Fall_晕倒2",
+      "path": "__animation_Fall_晕倒2.svg",
+      "builder_id": "lbvvmXq3MRulgEwC2fi8a",
+      "imageWidth": 744,
+      "imageHeight": 744
+    },
+    {
+      "x": 372,
+      "y": 372,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Fall_晕倒3",
+      "path": "__animation_Fall_晕倒3.svg",
+      "builder_id": "OqH9gyjMu7lDNQK8CB6hn",
+      "imageWidth": 744,
+      "imageHeight": 744
+    },
+    {
+      "x": 372,
+      "y": 372,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Fall_晕倒4",
+      "path": "__animation_Fall_晕倒4.svg",
+      "builder_id": "qvO2tikoXtrKPJJCZwr4Q",
+      "imageWidth": 744,
+      "imageHeight": 744
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Jump_跳跃1",
+      "path": "__animation_Jump_跳跃1.svg",
+      "builder_id": "y2s41st_XbgMBFPuQWr12",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Jump_跳跃2",
+      "path": "__animation_Jump_跳跃2.svg",
+      "builder_id": "JKlx-uz3MreUJtDcM0U4e",
+      "imageWidth": 749,
+      "imageHeight": 749
+    },
+    {
+      "x": 374.5,
+      "y": 374.5,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "name": "__animation_Jump_跳跃3",
+      "path": "__animation_Jump_跳跃3.svg",
+      "builder_id": "fbNKfvt9r_1ppBe8MWu5I",
+      "imageWidth": 749,
+      "imageHeight": 749
+    }
+  ],
+  "fAnimations": {
+    "Idle": {
+      "frameFrom": "__animation_Idle_默认1",
+      "frameTo": "__animation_Idle_默认2",
+      "frameFps": 5,
+      "builder_id": "7g-yKt9GSMpDxR6z_FUpL"
+    },
+    "Walk": {
+      "frameFrom": "__animation_Walk_行走1",
+      "frameTo": "__animation_Walk_行走3",
+      "frameFps": 5,
+      "onPlay": { "play": "grass footsteps" },
+      "builder_id": "vEHgtR8TkLPj6Lx_IlqmJ"
+    },
+    "Fall": {
+      "frameFrom": "__animation_Fall_晕倒1",
+      "frameTo": "__animation_Fall_晕倒4",
+      "frameFps": 5,
+      "onStart": { "play": "fainting" },
+      "builder_id": "NcaWRyXVxXHJdkqk5TLbD"
+    },
+    "Jump": {
+      "frameFrom": "__animation_Jump_跳跃1",
+      "frameTo": "__animation_Jump_跳跃3",
+      "frameFps": 5,
+      "builder_id": "RfgIer3Ps3AqqcntY_ksg"
+    }
+  },
+  "defaultAnimation": "Idle",
+  "animBindings": { "die": "Fall", "step": "Walk" },
+  "builder_id": "Rxudg8J-J24ms_aPB9-Yj"
+}

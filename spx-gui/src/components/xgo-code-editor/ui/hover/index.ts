@@ -17,6 +17,7 @@ import {
 import type { monaco } from '../../monaco'
 import type { Hover } from '../../hover'
 import type { CodeEditor } from '../../code-editor'
+import type { InlayHintItem } from '../../inlay-hint'
 
 export type { Hover, HoverContext, IHoverProvider } from '../../hover'
 import {
@@ -29,22 +30,41 @@ import {
 import { fromMonacoPosition } from '../common'
 import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
 
-export type InternalHover = Hover & {
+type TextHover = Hover & {
   range: Range
 }
 
 type HoverEditorContext = Pick<CodeEditorUIController, 'editor' | 'monaco' | 'activeTextDocument'> &
   Partial<
-    Pick<CodeEditorUIController, 'diagnosticsController' | 'resourceReferenceController' | 'inputHelperController'>
+    Pick<
+      CodeEditorUIController,
+      'diagnosticsController' | 'resourceReferenceController' | 'inputHelperController' | 'inlayHintController'
+    >
   > & {
     codeEditor: Pick<CodeEditor, 'hoverProvider'>
   }
 
-type HoverTarget =
+export type InternalHover =
+  | TextHover
+  | (Omit<Hover, 'range'> & {
+      range: null
+      anchorRect: DOMRect
+      inlayHint: InlayHintItem
+    })
+
+type HoverRequest =
   | {
       type: 'text'
       position: Position
     }
+  | {
+      type: 'inlay-hint'
+      item: InlayHintItem
+      anchorRect: DOMRect
+    }
+
+type HoverTarget =
+  | HoverRequest
   | {
       type: 'hover-card'
     }
@@ -64,29 +84,41 @@ export class HoverController extends Emitter<{
     return this.ui.editor
   }
 
-  private hoverMgr = new TaskManager(async (signal, position: Position) => {
-    const provider = this.ui.codeEditor.hoverProvider
+  private hoverMgr = new TaskManager(async (signal, target: HoverRequest): Promise<InternalHover | null> => {
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return null
+    if (target.type === 'inlay-hint') {
+      const { tooltip } = target.item
+      if (tooltip == null) return null
+      return {
+        contents: [tooltip],
+        range: null,
+        anchorRect: target.anchorRect,
+        inlayHint: target.item,
+        actions: []
+      }
+    }
 
+    const provider = this.ui.codeEditor.hoverProvider
+    const position = target.position
     const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
     const providedHover = await provider.provideHover({ textDocument, signal }, position)
-    let providedInternalHover: InternalHover | null = null
+    let providedTextHover: TextHover | null = null
     if (providedHover != null) {
       const range = providedHover.range ?? textDocument.getDefaultRange(position)
-      providedInternalHover = { ...providedHover, range }
+      providedTextHover = { ...providedHover, range }
     }
     const resourceReferenceHover = this.getResourceReferenceHover(position)
     const inputHelperHover = this.getInputHelperHover(position)
 
-    let hover: InternalHover | null = null
+    let hover: TextHover | null = null
     for (const hoverItem of [
       // These three items from high priority to low priority are checked in order:
       // * Contents from higher-priority item will be used
       // * Actions from all items (with the same range) will be merged
       inputHelperHover,
       resourceReferenceHover,
-      providedInternalHover
+      providedTextHover
     ]) {
       if (hoverItem == null) continue
       if (hover == null) {
@@ -119,7 +151,17 @@ export class HoverController extends Emitter<{
     this.hoverMgr.stop()
   }
 
-  private getDiagnosticsHover(textDocument: ITextDocument, position: Position): InternalHover | null {
+  private hasHoverFor(target: HoverRequest) {
+    const hover = this.hover
+    if (hover == null) return false
+
+    if (target.type === 'inlay-hint') {
+      return hover.range == null && hover.inlayHint === target.item
+    }
+    return hover.range != null && containsPosition(hover.range, target.position)
+  }
+
+  private getDiagnosticsHover(textDocument: ITextDocument, position: Position): TextHover | null {
     const diagnosticsController = this.ui.diagnosticsController
     if (diagnosticsController?.diagnostics == null) return null
     for (const diagnostic of diagnosticsController.diagnostics) {
@@ -147,7 +189,7 @@ export class HoverController extends Emitter<{
     return null
   }
 
-  private getResourceReferenceHover(position: Position): InternalHover | null {
+  private getResourceReferenceHover(position: Position): TextHover | null {
     const resourceReferenceController = this.ui.resourceReferenceController
     if (resourceReferenceController?.items == null) return null
     for (const reference of resourceReferenceController.items) {
@@ -170,7 +212,7 @@ export class HoverController extends Emitter<{
     return null
   }
 
-  private getInputHelperHover(position: Position): InternalHover | null {
+  private getInputHelperHover(position: Position): TextHover | null {
     const inputHelperController = this.ui.inputHelperController
     if (inputHelperController?.slots == null) return null
     const textDocument = this.ui.activeTextDocument
@@ -198,7 +240,7 @@ export class HoverController extends Emitter<{
   }
 
   init() {
-    const { monaco, editor, resourceReferenceController } = this.ui
+    const { monaco, editor, resourceReferenceController, inlayHintController } = this.ui
 
     const hideHoverWithDebounce = debounce(() => this.hideHover(), 100)
 
@@ -215,16 +257,14 @@ export class HoverController extends Emitter<{
         return
       }
       hideHoverWithDebounce.cancel()
-      if (target.type !== 'text') return
-      const position = target.position
-      const currentHover = this.hover
-      if (currentHover != null && containsPosition(currentHover.range, position)) return
+      if (target.type === 'hover-card') return
+      if (this.hasHoverFor(target)) return
 
       // Do not trigger hover when input helper is active
       if (this.ui.inputHelperController?.inputingSlot != null) return
 
       startCodeHoveredTransaction()
-      this.hoverMgr.start(position)
+      this.hoverMgr.start(target)
     }, 50)
 
     const clearPendingHover = () => {
@@ -241,8 +281,17 @@ export class HoverController extends Emitter<{
         return
       }
       if (target.detail.mightBeForeignElement) {
-        // `mightBeForeignElement` indicates injected or foreign content like inlay hint decorations.
-        handleMouseEnter({ type: 'other' })
+        const attachedData = target.detail.injectedText?.options.attachedData
+        const item = inlayHintController?.items?.find((item) => item === attachedData)
+        if (item?.tooltip == null || target.element == null) {
+          handleMouseEnter({ type: 'other' })
+          return
+        }
+        handleMouseEnter({
+          type: 'inlay-hint',
+          item,
+          anchorRect: target.element.getBoundingClientRect()
+        })
         return
       }
       // Here we use start position of `target.range` instead of `target.position`, as hovering happens on one character instead of between two characters.
