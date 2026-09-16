@@ -271,7 +271,7 @@ export function makeMCPMarkdownString(value: string | LocaleMessage): MCPMarkdow
   return { value, flag: 'mcp' }
 }
 
-export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename' | 'copy' | 'copilot'
+export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename' | 'copy' | 'copilot' | 'view'
 
 /**
  * Documentation string for a definition. Typically:

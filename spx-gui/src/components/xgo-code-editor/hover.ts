@@ -12,6 +12,7 @@ import {
   builtInCommandCopilotExplain,
   CopilotExplainKind,
   builtInCommandGoToDefinition,
+  builtInCommandViewDefinition,
   builtInCommandRename
 } from './ui/code-editor-ui'
 
@@ -50,7 +51,7 @@ export class HoverProvider implements IHoverProvider {
     }
   }
 
-  private async getGoToDefinitionAction(position: Position, lspParams: lsp.TextDocumentPositionParams) {
+  private async getDefinitionActions(position: Position, lspParams: lsp.TextDocumentPositionParams) {
     const [definition, typeDefinition] = (
       await Promise.all([
         this.lspClient.textDocumentDefinition({}, lspParams),
@@ -64,16 +65,27 @@ export class HoverProvider implements IHoverProvider {
     const location = definition ?? typeDefinition
     if (location == null) return null
     const range = fromLSPRange(location.range)
-    if (containsPosition(range, position)) return null
-    return {
-      command: builtInCommandGoToDefinition,
-      arguments: [
-        {
-          textDocument: { uri: location.uri },
-          range
-        }
-      ] satisfies CommandArgs<typeof builtInCommandGoToDefinition>
+    if (location.uri === lspParams.textDocument.uri && containsPosition(range, position)) return null
+    const target = {
+      textDocument: { uri: location.uri },
+      range
     }
+    return [
+      {
+        command: builtInCommandViewDefinition,
+        arguments: [target] satisfies CommandArgs<typeof builtInCommandViewDefinition>
+      },
+      {
+        command: builtInCommandGoToDefinition,
+        arguments: [
+          target,
+          {
+            textDocument: lspParams.textDocument,
+            position
+          }
+        ] satisfies CommandArgs<typeof builtInCommandGoToDefinition>
+      }
+    ]
   }
 
   private async getRenameAction(ctx: HoverContext, position: Position, lspParams: lsp.TextDocumentPositionParams) {
@@ -105,12 +117,12 @@ export class HoverProvider implements IHoverProvider {
     }
     let range: Range | undefined = undefined
     if (lspHover.range != null) range = fromLSPRange(lspHover.range)
-    const maybeActions = await Promise.all([
+    const [explainAction, definitionActions, renameAction] = await Promise.all([
       this.getExplainAction(ctx, position),
-      this.getGoToDefinitionAction(position, lspParams),
+      this.getDefinitionActions(position, lspParams),
       this.getRenameAction(ctx, position, lspParams)
     ])
-    const actions = maybeActions.filter((a) => a != null) as Action[]
+    const actions = [explainAction, ...(definitionActions ?? []), renameAction].filter((a) => a != null) as Action[]
     return { contents, range, actions }
   }
 }
