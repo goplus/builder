@@ -3,6 +3,7 @@ import ModificationWarningModal from '@/components/common/ModificationWarningMod
 import { Visibility, deleteProject } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import type { SpxProject } from '@/models/spx/project'
+import type { ProjectSerialized } from '@/models/project'
 import { cloudHelpers } from '@/models/common/cloud'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
@@ -20,6 +21,15 @@ export function useCreateProject() {
 
   return function createProject(remixSource?: string) {
     return modal({ remixSource })
+  }
+}
+
+/** Saves an existing project snapshot as a new owned project. */
+export function useSaveProjectAs() {
+  const modal = useModal(ProjectCreateModal)
+
+  return function saveProjectAs(project: ProjectSerialized) {
+    return modal({ sourceProject: project })
   }
 }
 

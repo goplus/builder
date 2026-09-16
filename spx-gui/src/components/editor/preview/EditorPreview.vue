@@ -3,8 +3,8 @@
     v-radar="{ name: 'editor-preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
   >
-    <UICardHeader class="gap-3">
-      <div class="flex-1 text-title">
+    <UICardHeader :class="simpleMode ? 'gap-3 justify-center' : 'gap-3'">
+      <div v-if="!simpleMode" class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
@@ -16,6 +16,15 @@
           @click="handleRun.fn"
         >
           {{ $t({ en: 'Run', zh: '运行' }) }}
+        </UIButton>
+
+        <UIButton
+          v-if="simpleMode"
+          v-radar="{ name: 'Ask Copilot button', desc: 'Open Copilot for course help' }"
+          type="secondary"
+          @click="copilot.open()"
+        >
+          {{ $t({ en: 'Ask Copilot', zh: '询问 Copilot' }) }}
         </UIButton>
 
         <UIButton
@@ -71,7 +80,12 @@
         class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
         :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
       >
-        <StageViewer class="stage-viewer" />
+        <StageViewer
+          class="stage-viewer"
+          :simple-mode="simpleMode"
+          :ruler-visible="rulerVisible"
+          @sprite-name-click="emit('spriteNameClick', $event)"
+        />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
           class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
@@ -181,12 +195,32 @@ import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
+import { useCopilot } from '@/components/copilot/context'
+
+const props = withDefaults(
+  defineProps<{
+    simpleMode?: boolean
+    rulerVisible?: boolean
+  }>(),
+  {
+    simpleMode: false,
+    rulerVisible: false
+  }
+)
+
+const emit = defineEmits<{
+  spriteNameClick: [spriteName: string]
+}>()
+
+const simpleMode = computed(() => props.simpleMode)
+const rulerVisible = computed(() => props.rulerVisible)
 
 // Code Editor operations may take a long time for some projects and block project execution.
 const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
 
 const editorCtx = useEditorCtx()
 const codeEditor = useCodeEditor()
+const copilot = useCopilot()
 const { isOnline } = useNetwork()
 const signedInUser = useSignedInUser()
 

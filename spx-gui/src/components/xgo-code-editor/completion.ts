@@ -4,7 +4,7 @@
  */
 
 import * as lsp from 'vscode-languageserver-protocol'
-import type { BaseContext, DefinitionDocumentationString, Position } from './common'
+import type { BaseContext, DefinitionDocumentationString, DefinitionIdentifier, Position } from './common'
 import { DefinitionKind, fromLSPTextEdit, makeAdvancedMarkdownString, toLSPPosition, type TextEdit } from './common'
 import type { ILSPClient } from './lsp/types'
 import type { IDocumentBase } from './document-base'
@@ -18,6 +18,8 @@ export enum InsertTextFormat {
 }
 
 export type CompletionItem = {
+  /** Definition backing this item, if the language server supplied one. */
+  definition: DefinitionIdentifier | null
   label: string
   kind: DefinitionKind
   filterSortText: string
@@ -96,6 +98,7 @@ export class CompletionProvider implements ICompletionProvider {
     const maybeItems = await Promise.all(
       lspCompletionList.items.map(async (item) => {
         const result: CompletionItem = {
+          definition: item.data?.definition ?? null,
           label: item.label,
           kind: this.getCompletionItemKind(item.kind),
           filterSortText: item.filterText || item.label,

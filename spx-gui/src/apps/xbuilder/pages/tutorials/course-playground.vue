@@ -19,6 +19,7 @@ import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 defineProps<{
   courseSeriesIdInput: string
   courseIdInput: string
+  inEditorPath?: string[]
 }>()
 
 const tutorial = useTutorial()
@@ -164,6 +165,7 @@ onUnmounted(() => void disposeSession())
     v-else-if="session != null"
     :key="session.course.id"
     :project="session.project"
+    :in-editor-path="inEditorPath"
     @course-completed="handleCompleted"
     @failed="runtimeError = $event"
   />

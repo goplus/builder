@@ -40,6 +40,7 @@ import { userLocalStorageRef } from '@/utils/user-storage'
 
 const props = defineProps<{
   codeFilePath: string
+  simpleMode?: boolean
 }>()
 
 const i18n = useI18n()
@@ -69,8 +70,11 @@ const uiRef = computed(() => {
   return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, rename)
 })
 
-const initialFontSize = 12
-const fontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
+const initialFontSize = props.simpleMode ? 16 : 12
+const fontSize = userLocalStorageRef(
+  props.simpleMode ? 'builder-simple-code-font-size' : 'spx-gui-code-font-size',
+  initialFontSize
+)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
@@ -176,12 +180,15 @@ const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
 provide(codeEditorUICtxInjectionKey, codeEditorUICtx)
 
 // TOOD: use percentage instead of px as default width
-const defaultSidebarWidth = 280 // px
+const defaultSidebarWidth = props.simpleMode ? 360 : 280 // px
 const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
-const sidebarWidth = userLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
+const sidebarWidth = userLocalStorageRef(
+  props.simpleMode ? 'builder-simple-code-editor-sidebar-width' : 'spx-code-editor-sidebar-width',
+  defaultSidebarWidth
+)
 const isResizing = ref(false)
 
 watchEffect((onCleanup) => {

@@ -12,11 +12,16 @@
           <UIIcon class="h-5 w-5" type="file" />
         </template>
         <UIMenu>
-          <UIMenuGroup :disabled="!isOnline">
+          <UIMenuGroup v-if="!isSimpleMode" :disabled="!isOnline">
             <NavbarNewProjectItem />
             <NavbarOpenProjectItem />
           </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null">
+          <UIMenuGroup v-if="saveAsMyProject != null" :disabled="!isOnline">
+            <UIMenuItem @click="handleSaveAsMyProject">
+              {{ $t({ en: 'Save as my project...', zh: '另存为我的项目...' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup v-if="!isSimpleMode" :disabled="project == null">
             <UIMenuItem @click="handleImportProjectFile">
               <template #icon><img :src="importProjectSvg" /></template>
               {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
@@ -33,13 +38,13 @@
               {{ $t({ en: 'Import assets from Scratch...', zh: '从 Scratch 项目文件导入素材...' }) }}
             </UIMenuItem>
           </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null">
+          <UIMenuGroup v-if="!isSimpleMode" :disabled="project == null">
             <UIMenuItem @click="handleExportProjectFile">
               <template #icon><img :src="exportProjectSvg" /></template>
               {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
             </UIMenuItem>
           </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null || !isOnline">
+          <UIMenuGroup v-if="!isSimpleMode" :disabled="project == null || !isOnline">
             <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
               <template #icon><img :src="publishSvg" /></template>
               {{ $t({ en: 'Publish project...', zh: '发布项目...' }) }}
@@ -60,7 +65,7 @@
               {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
             </UIMenuItem>
           </UIMenuGroup>
-          <UIMenuGroup v-if="canManageProject" :disabled="project == null">
+          <UIMenuGroup v-if="!isSimpleMode && canManageProject" :disabled="project == null">
             <UIMenuItem @click="handleRemoveProject">
               <template #icon><img :src="removeProjectSvg" /></template>
               {{ $t({ en: 'Remove project...', zh: '删除项目...' }) }}
@@ -99,6 +104,7 @@
     </template>
     <template #right>
       <UIButtonGroup
+        v-if="!isSimpleMode"
         v-radar="{ name: 'editor-mode-menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
         type="icon"
@@ -196,6 +202,7 @@ const { showTutorialsEntry } = useCommunityConfig()
 const props = defineProps<{
   project: SpxProject | null
   state: EditorState | null
+  saveAsMyProject?: (() => Promise<void>) | null
 }>()
 
 const { isOnline } = useNetwork()
@@ -210,8 +217,17 @@ const canManageProject = computed(() => {
 })
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
+const isSimpleMode = computed(() => selectedEditMode.value === EditMode.Simple)
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
+
+const handleSaveAsMyProject = useMessageHandle(
+  async () => {
+    if (props.saveAsMyProject == null) return
+    await props.saveAsMyProject()
+  },
+  { en: 'Failed to save project', zh: '保存项目失败' }
+).fn
 
 const handleImportProjectFile = useMessageHandle(
   async () => {

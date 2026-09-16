@@ -63,9 +63,11 @@ import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import { useProjectConfig } from './config'
 import { createDefaultProject } from './default-project'
+import type { ProjectSerialized } from '@/models/project'
 
 const props = defineProps<{
   remixSource?: string
+  sourceProject?: ProjectSerialized
   visible: boolean
 }>()
 
@@ -78,6 +80,7 @@ const { t } = useI18n()
 const { defaultFontPreferences } = useProjectConfig()
 const signedInStateQuery = useSignedInStateQuery()
 const title = computed(() => {
+  if (props.sourceProject != null) return { en: 'Save as my project', zh: '另存为我的项目' }
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
   return { en: `Remix ${props.remixSource}`, zh: `改编 ${props.remixSource}` }
 })
@@ -95,7 +98,22 @@ function handleCancel() {
 const handleSubmit = useMessageHandle(
   async () => {
     const projectName = form.value.name.trim()
-    if (props.remixSource != null) {
+    if (props.sourceProject != null) {
+      const signedInState = await untilLoaded(signedInStateQuery)
+      if (!signedInState.isSignedIn) throw new Error('login required')
+      const { files, metadata } = props.sourceProject
+      await cloudHelpers.save({
+        files,
+        metadata: {
+          owner: signedInState.user.username,
+          name: projectName,
+          displayName: projectName,
+          type: metadata.type ?? ProjectType.Game,
+          visibility: Visibility.Private,
+          thumbnail: metadata.thumbnail
+        }
+      })
+    } else if (props.remixSource != null) {
       await addProject({
         name: projectName,
         displayName: projectName,
