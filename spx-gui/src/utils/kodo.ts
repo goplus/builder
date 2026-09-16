@@ -58,17 +58,21 @@ export function getUphostsByRegion(region: string) {
 const qiniuEtagBlockSize = 4 * 1024 * 1024
 const qiniuSingleBlockEtagPrefix = 0x16
 const qiniuMultiBlockEtagPrefix = 0x96
+const sha1DigestSize = 20
 
 /** Calculate the Qiniu ETag. See https://github.com/qiniu/qetag. */
 export async function calculateQiniuEtag(data: ArrayBuffer) {
+  // Empty files still have one SHA-1 block.
+  const blockCount = Math.max(1, Math.ceil(data.byteLength / qiniuEtagBlockSize))
   const blockHashes = await Promise.all(
-    Array.from({ length: Math.max(1, Math.ceil(data.byteLength / qiniuEtagBlockSize)) }, (_, index) => {
+    Array.from({ length: blockCount }, (_, index) => {
       const start = index * qiniuEtagBlockSize
-      return crypto.subtle.digest('SHA-1', data.slice(start, start + qiniuEtagBlockSize))
+      const length = Math.min(qiniuEtagBlockSize, data.byteLength - start)
+      return crypto.subtle.digest('SHA-1', new Uint8Array(data, start, length))
     })
   )
-  const blockHashData = new Uint8Array(blockHashes.length * 20)
-  blockHashes.forEach((blockHash, index) => blockHashData.set(new Uint8Array(blockHash), index * 20))
+  const blockHashData = new Uint8Array(blockHashes.length * sha1DigestSize)
+  blockHashes.forEach((blockHash, index) => blockHashData.set(new Uint8Array(blockHash), index * sha1DigestSize))
   const hash =
     blockHashes.length === 1
       ? new Uint8Array(blockHashes[0]!)
