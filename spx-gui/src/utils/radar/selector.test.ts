@@ -15,4 +15,10 @@ describe('parseRadarSelector', () => {
     expect(() => parseRadarSelector('api-reference[name="\\q"]')).toThrow(RadarSelectorSyntaxError)
     expect(() => parseRadarSelector('api-reference[name="unterminated\\"]')).toThrow(RadarSelectorSyntaxError)
   })
+
+  it('reports unexpected characters after a compound', () => {
+    for (const character of ['_', '.', ',', ':']) {
+      expect(() => parseRadarSelector(`foo${character}bar`)).toThrow(`unexpected character "${character}"`)
+    }
+  })
 })

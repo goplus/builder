@@ -78,7 +78,7 @@ export function parseRadarSelector(selector: string): RadarSelectorCompound[] {
     compounds.push({ name, attrs })
 
     if (index === selector.length) break
-    if (!skipWhitespace()) error('expected whitespace')
+    if (!skipWhitespace()) error(`unexpected character ${JSON.stringify(selector[index])}`)
     if (index === selector.length) break
   }
   return compounds
