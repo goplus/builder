@@ -125,7 +125,7 @@ async function handleSignOut() {
       </UIMenuGroup>
       <UIMenuGroup v-if="canUseAdminConsole">
         <UIMenuItem @click="handleAdminConsole">
-          {{ $t({ en: 'Admin Console', zh: '管理后台' }) }}
+          {{ $t({ en: 'Admin console', zh: '管理后台' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>

@@ -10,7 +10,7 @@ import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import { canUseAdminConsole as checkCanUseAdminConsole, getAdminDefaultRoute } from '@/apps/xbuilder/admin'
 
-usePageTitle({ en: 'Admin Console', zh: '管理后台' })
+usePageTitle({ en: 'Admin console', zh: '管理后台' })
 
 const route = useRoute()
 const router = useRouter()
@@ -79,7 +79,7 @@ watch(
             <button
               v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
-              class="border-0 bg-transparent px-3 text-sm font-medium hover:bg-grey-400"
+              class="whitespace-nowrap border-0 bg-transparent px-3 text-sm font-medium hover:bg-grey-400"
               :class="route.path.startsWith('/admin/audit-logs') ? 'text-primary-main' : null"
               type="button"
               @click="router.push('/admin/audit-logs')"
