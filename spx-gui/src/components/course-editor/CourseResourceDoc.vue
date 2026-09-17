@@ -208,14 +208,14 @@ function handleDelete() {
     <div class="flex flex-none items-center gap-2">
       <span class="flex-none text-sm text-grey-700">{{ kind }} /</span>
       <UITextInput
-        v-radar="{ name: 'Resource name input', desc: 'Input for the resource name used by the course program' }"
+        v-radar="{ name: 'resource-name-input', desc: 'Input for the resource name used by the course program' }"
         class="flex-1"
         :value="nameInput"
         @update:value="(v) => (nameInput = v)"
         @keydown.enter="handleRename.fn"
       />
       <UIButton
-        v-radar="{ name: 'Rename resource button', desc: 'Click to apply the new resource name' }"
+        v-radar="{ name: 'rename-button', desc: 'Click to apply the new resource name' }"
         type="secondary"
         size="small"
         :disabled="nameInput.trim() === resource.name"
@@ -224,7 +224,7 @@ function handleDelete() {
         {{ $t({ en: 'Rename', zh: '重命名' }) }}
       </UIButton>
       <UIButton
-        v-radar="{ name: 'Delete resource button', desc: 'Click to remove this resource from the course' }"
+        v-radar="{ name: 'delete-button', desc: 'Click to remove this resource from the course' }"
         type="neutral"
         size="small"
         @click="handleDelete"

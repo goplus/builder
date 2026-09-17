@@ -153,7 +153,7 @@ onUnmounted(() => {
       }}</span>
       <UITextInput
         v-radar="{
-          name: 'Initial editor path input',
+          name: 'initial-editor-path-input',
           desc: 'Input for the in-editor path opened when the course starts'
         }"
         :value="config.inEditorPath"
@@ -166,7 +166,7 @@ onUnmounted(() => {
     <label class="flex flex-col gap-1">
       <span class="text-grey-700">{{ $t({ en: 'Copilot context', zh: 'Copilot 上下文' }) }}</span>
       <UITextInput
-        v-radar="{ name: 'Copilot context input', desc: 'Input for the course-author-provided Copilot instructions' }"
+        v-radar="{ name: 'copilot-context-input', desc: 'Input for the course-author-provided Copilot instructions' }"
         type="textarea"
         :rows="10"
         :value="config.copilotContext"
@@ -177,7 +177,7 @@ onUnmounted(() => {
     <!-- Generate button: runs `handleGenerateCopilotContext`; shows a spinner while it runs. -->
     <UIButton
       v-radar="{
-        name: 'Generate Copilot context button',
+        name: 'generate-copilot-context-button',
         desc: 'Click to generate the Copilot context from the current course content'
       }"
       type="secondary"

@@ -64,7 +64,7 @@ const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPath
   <!-- Scrollable column: the root row first, then one `CourseExplorerNode` per top-level node. -->
   <nav
     v-radar="{
-      name: 'Course explorer',
+      name: 'course-explorer',
       desc: 'Tree of the course records: the course itself, its program, videos, other files and the embedded project'
     }"
     class="flex h-full flex-col gap-0.5 overflow-y-auto p-2"
@@ -74,7 +74,7 @@ const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPath
       <!-- The course itself is the root: its settings live in `index.json`, its title and thumbnail in course management. -->
       <!-- Highlighted when `activePath` is empty; clicking emits `select('')`; the dot shows `rootDirty`. -->
       <button
-        v-radar="{ name: 'Course root node', desc: 'Click to edit the course settings' }"
+        v-radar="{ name: 'explorer-root-node', desc: 'Click to edit the course settings' }"
         :class="[explorerNodeClass, 'min-w-0 flex-1 pl-2 font-semibold', activePath === '' && explorerActiveNodeClass]"
         :title="project.title"
         @click="emit('select', '')"
@@ -85,7 +85,7 @@ const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPath
       </button>
       <!-- Upload entry point: emits `upload`; the parent opens the modal with a proposed target folder. -->
       <UIButton
-        v-radar="{ name: 'Upload files button', desc: 'Click to upload files into the course' }"
+        v-radar="{ name: 'upload-button', desc: 'Click to upload files into the course' }"
         class="flex-none"
         type="secondary"
         size="small"

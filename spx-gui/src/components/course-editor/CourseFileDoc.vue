@@ -153,7 +153,7 @@ const handleDelete = useMessageHandle(
       <h2 class="m-0 min-w-0 flex-1 truncate text-base font-semibold" :title="node.path">{{ node.path }}</h2>
       <UITag color="warning">{{ $t({ en: 'The course does not use this file', zh: '课程不会使用此文件' }) }}</UITag>
       <UIButton
-        v-radar="{ name: 'Delete file button', desc: 'Click to remove this file from the course' }"
+        v-radar="{ name: 'delete-button', desc: 'Click to remove this file from the course' }"
         type="neutral"
         size="small"
         @click="handleDelete.fn"
