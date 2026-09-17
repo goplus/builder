@@ -114,8 +114,14 @@ const stopRunnerStart = watch([() => monacoQueryRet.data.value, state], async ([
     copilot,
     presentation
   })
-  nextRunner.on('completed', (completion) => emit('courseCompleted', completion))
-  nextRunner.on('failed', (error) => emit('failed', error))
+  nextRunner.on('completed', (completion) => {
+    nextRunner.dispose()
+    emit('courseCompleted', completion)
+  })
+  nextRunner.on('failed', (error) => {
+    nextRunner.dispose()
+    emit('failed', error)
+  })
   runner = nextRunner
   void nextRunner.start().catch(() => {})
 })
