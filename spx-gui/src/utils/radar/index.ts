@@ -72,10 +72,16 @@ export class RadarNodeInfo {
     return this.element
   }
 
-  /** Get the children of the node */
+  /**
+   * Get children in current DOM document order.
+   *
+   * The returned array is a query-time snapshot. Radar does not reactively
+   * observe DOM reordering.
+   */
   getChildren(includeInvisible = false): RadarNodeInfo[] {
-    if (includeInvisible) return this.children
-    return this.children.filter((child) => child.visible)
+    const children = sortNodesByDocumentOrder(this.children)
+    if (includeInvisible) return children
+    return children.filter((child) => child.visible)
   }
 
   setChildren(children: RadarNodeInfo[]) {
@@ -144,15 +150,6 @@ export class Radar {
     }
   }
 
-  private sortNodesByDocumentOrder(nodes: RadarNodeInfo[]) {
-    return nodes.sort((a, b) => {
-      const position = a.getElement().compareDocumentPosition(b.getElement())
-      if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1
-      if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1
-      return 0
-    })
-  }
-
   private matchesCompound(node: RadarNodeInfo, compound: RadarSelectorCompound) {
     if (node.name !== compound.name) return false
     return Object.entries(compound.attrs).every(([name, value]) => node.attrs[name] === value)
@@ -200,8 +197,8 @@ export class Radar {
     })
 
     newSiblings.push(node)
-    parent.setChildren(this.sortNodesByDocumentOrder(newSiblings))
-    node.setChildren(this.sortNodesByDocumentOrder(newChildren))
+    parent.setChildren(newSiblings)
+    node.setChildren(newChildren)
   }
 
   private registerWithEl(el: HTMLElement, meta: RadarNodeMeta) {
@@ -273,4 +270,13 @@ function getLabel(meta: RadarNodeMeta, attrs: Record<string, string>) {
   const label = humanizeRadarName(meta.name)
   if (attrs.name == null) return label
   return `${label} "${attrs.name}"`
+}
+
+function sortNodesByDocumentOrder(nodes: RadarNodeInfo[]) {
+  return [...nodes].sort((a, b) => {
+    const position = a.getElement().compareDocumentPosition(b.getElement())
+    if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1
+    if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1
+    return 0
+  })
 }

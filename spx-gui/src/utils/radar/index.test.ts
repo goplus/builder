@@ -454,6 +454,33 @@ describe('Radar', () => {
     expect(radar.selectAll('item').map((node) => node.getElement().id)).toEqual(['first', 'second'])
   })
 
+  it('keeps the Radar tree in document order when a keyed list is reordered', async () => {
+    const { radar, container } = createTestEnvironment()
+    const items = ref(['first', 'second', 'third'])
+
+    const TestComponent = defineComponent({
+      setup() {
+        return { items }
+      },
+      template: `
+        <div>
+          <div v-for="item in items" :id="item" :key="item" v-radar="{ name: 'item', desc: '', attrs: { name: item } }"></div>
+        </div>
+      `
+    })
+
+    mountComponent(TestComponent, radar, container)
+    await nextTick()
+
+    items.value = ['third', 'first', 'second']
+    await nextTick()
+
+    expect([...container.querySelectorAll('[id]')].map((element) => element.id)).toEqual(['third', 'first', 'second'])
+    expect(radar.getRootNodes().map((node) => node.attrs.name)).toEqual(['third', 'first', 'second'])
+    expect(radar.select('item')?.attrs.name).toBe('third')
+    expect(radar.selectAll('item').map((node) => node.attrs.name)).toEqual(['third', 'first', 'second'])
+  })
+
   it('updates labels and normalized attributes with metadata changes', async () => {
     const { radar, container } = createTestEnvironment()
     const nodeData = ref({

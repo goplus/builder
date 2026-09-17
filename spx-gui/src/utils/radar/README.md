@@ -35,6 +35,16 @@ const button = radar.select('project-editor save-button')
 const buttons = radar.selectAll('project-editor save-button')
 ```
 
+### Tree ordering and reactivity
+
+`getRootNodes()` and `getChildren()` return a new snapshot in the current DOM
+document order. Do not treat a returned array as a reactive source of later DOM
+reordering: Radar currently does not observe reordering continuously.
+
+This keeps Radar lightweight for its current query-oriented uses and avoids the
+cost of globally observing DOM mutations. If a future consumer needs a
+reactively observed UI tree, we can reconsider adding that capability.
+
 ### Metadata
 
 `name` is a stable semantic UI role and must match
