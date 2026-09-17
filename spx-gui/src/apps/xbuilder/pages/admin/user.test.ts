@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  isAccountAdminRequired,
-  isManagedAdminRole,
-  managedAdminRoles,
-  normalizeAdminRoles
-} from './authorization-role'
+import { isAccountAdminRequired, isManagedAdminRole, managedAdminRoles, normalizeAdminRoles } from './user.vue'
 
 describe('Admin authorization role dependency', () => {
   it('recognizes the admin roles managed by this form', () => {

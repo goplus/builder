@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { RouterView, useRoute, useRouter } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 import { untilNotNull, usePageTitle } from '@/utils/utils'
-import { useSignIn, useSignedInStateQuery } from '@/stores/user'
+import { canUseAdminConsole as checkCanUseAdminConsole, useSignIn, useSignedInStateQuery } from '@/stores/user'
 import { UIError, UILoading, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
-import { canUseAdminConsole as checkCanUseAdminConsole, getAdminDefaultRoute } from '@/apps/xbuilder/admin'
 
 usePageTitle({ en: 'Admin console', zh: '管理后台' })
 
@@ -26,16 +25,29 @@ const accountNavItems = [
 ]
 const isAccountRoute = computed(() => accountNavItems.some((item) => route.path.startsWith(item.to)))
 
+function getAdminDefaultRoute(capabilities: { canManageAccount: boolean; canManageAuthorization: boolean }) {
+  if (capabilities.canManageAccount) return '/admin/users'
+  if (capabilities.canManageAuthorization) return '/admin/audit-logs'
+  return null
+}
+
 watch(
   () => route.path,
-  async (path) => {
-    if (path !== '/admin' && path !== '/admin/') return
+  async (path, _previousPath, onCleanup) => {
+    let stale = false
+    onCleanup(() => {
+      stale = true
+    })
 
     const signedInState = await untilNotNull(signedInStateQuery.data)
+    if (stale) return
+
     if (!signedInState.isSignedIn) {
-      signIn(route.fullPath)
+      await signIn(route.fullPath)
       return
     }
+
+    if (path !== '/admin' && path !== '/admin/') return
     const defaultRoute = getAdminDefaultRoute(signedInState.user.capabilities)
     if (defaultRoute != null) await router.replace(defaultRoute)
   },
@@ -49,43 +61,43 @@ watch(
       <NavbarWrapper class="border-b border-grey-400" centered>
         <template #left>
           <div class="flex items-stretch">
-            <NavbarDropdown
-              v-if="canManageAccount"
-              :trigger-radar="{
-                name: $t({ en: 'Account admin menu', zh: '账号管理菜单' }),
-                desc: 'Open Account admin navigation'
-              }"
-            >
-              <template #trigger>
-                <span
-                  class="whitespace-nowrap text-sm font-medium"
-                  :class="isAccountRoute ? 'text-primary-main' : null"
-                  >{{ $t({ en: 'Account admin', zh: '账号管理' }) }}</span
-                >
-              </template>
-              <UIMenu class="min-w-36">
-                <UIMenuGroup>
-                  <UIMenuItem
-                    v-for="item in accountNavItems"
-                    :key="item.to"
-                    :class="route.path.startsWith(item.to) ? 'bg-primary-100 text-primary-main' : null"
-                    @click="router.push(item.to)"
+            <div v-if="canManageAccount" class="h-full w-36 shrink-0">
+              <NavbarDropdown
+                :trigger-radar="{
+                  name: $t({ en: 'Account admin menu', zh: '账号管理菜单' }),
+                  desc: 'Open Account admin navigation'
+                }"
+              >
+                <template #trigger>
+                  <span
+                    class="whitespace-nowrap text-sm font-medium"
+                    :class="isAccountRoute ? 'text-primary-main' : null"
+                    >{{ $t({ en: 'Account admin', zh: '账号管理' }) }}</span
                   >
-                    {{ $t(item.label) }}
-                  </UIMenuItem>
-                </UIMenuGroup>
-              </UIMenu>
-            </NavbarDropdown>
-            <button
+                </template>
+                <UIMenu class="w-36">
+                  <UIMenuGroup>
+                    <UIMenuItem
+                      v-for="item in accountNavItems"
+                      :key="item.to"
+                      :class="route.path.startsWith(item.to) ? 'bg-primary-100 text-primary-main' : null"
+                      @click="router.push(item.to)"
+                    >
+                      {{ $t(item.label) }}
+                    </UIMenuItem>
+                  </UIMenuGroup>
+                </UIMenu>
+              </NavbarDropdown>
+            </div>
+            <RouterLink
               v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
               class="whitespace-nowrap border-0 bg-transparent px-3 text-sm font-medium hover:bg-grey-400"
               :class="route.path.startsWith('/admin/audit-logs') ? 'text-primary-main' : null"
-              type="button"
-              @click="router.push('/admin/audit-logs')"
+              to="/admin/audit-logs"
             >
               {{ $t({ en: 'Audit logs', zh: '审计日志' }) }}
-            </button>
+            </RouterLink>
           </div>
         </template>
       </NavbarWrapper>

@@ -1,7 +1,26 @@
 <script lang="ts">
 import type { LocaleMessage } from '@/utils/i18n'
 import type { AccountIdentityProviderName } from '@/apis/account/common'
-import { managedAdminRoles, type ManagedAdminRole } from './authorization-role'
+
+export const accountAdminRole = 'accountAdmin'
+export const authorizationAdminRole = 'authorizationAdmin'
+export const managedAdminRoles = [accountAdminRole, authorizationAdminRole, 'assetAdmin', 'courseAdmin'] as const
+
+export type ManagedAdminRole = (typeof managedAdminRoles)[number]
+
+export function isManagedAdminRole(role: string): role is ManagedAdminRole {
+  return managedAdminRoles.some((managedRole) => managedRole === role)
+}
+
+export function isAccountAdminRequired(roles: readonly string[]) {
+  return roles.includes(authorizationAdminRole)
+}
+
+export function normalizeAdminRoles(roles: readonly string[]) {
+  const selectedRoles = new Set(roles.filter(isManagedAdminRole))
+  if (selectedRoles.has(authorizationAdminRole)) selectedRoles.add(accountAdminRole)
+  return managedAdminRoles.filter((role) => selectedRoles.has(role))
+}
 
 const accountIdentityProviderLabels: Record<AccountIdentityProviderName, LocaleMessage> = {
   wechat: { en: 'WeChat', zh: '微信' },
@@ -48,7 +67,6 @@ import * as accountAdminApis from '@/apis/admin/account'
 import * as authorizationAdminApis from '@/apis/admin/authorization'
 import { validateAccountUserPassword } from '@/components/account/admin/password'
 import { formatJSON, formatTime } from './common'
-import { accountAdminRole, isAccountAdminRequired, isManagedAdminRole, normalizeAdminRoles } from './authorization-role'
 
 const avatarSize = 512
 const maxAvatarFileSize = 5 * 1024 * 1024
