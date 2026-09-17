@@ -35,6 +35,8 @@ import { saveFiles } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
+import { useCopilot } from '@/components/copilot/context'
+import type { SessionExported } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
@@ -88,6 +90,7 @@ const route = useRoute()
 const router = useRouter()
 const confirm = useConfirmDialogWithResult()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
+const copilot = useCopilot()
 const openUploadModal = useModal(CourseUploadModal)
 
 /**
@@ -477,26 +480,67 @@ async function enterPreviewFromRoute() {
 }
 
 /**
- * Keep the preview state in step with the route: leaving the preview route drops the snapshot and the error;
- * entering it without a snapshot (URL / history) loads one. `immediate` covers landing directly on the preview
- * URL.
+ * The author's copilot conversation and panel state, stashed while a preview runs. The playground's runner takes
+ * the copilot over with the learner's session (`startSession` ends whatever is current), so the author's session
+ * is exported before the playground mounts and restored after the preview is left.
+ * Written by: `stashAuthorCopilot` / `restoreAuthorCopilot`. Read by: `restoreAuthorCopilot`.
+ */
+let authorCopilot: { session: SessionExported | null; active: boolean } | null = null
+
+/**
+ * Stash the author's copilot session and panel state before the preview takes the copilot over. Idempotent
+ * while a preview is running.
+ * @returns void; side effects: sets `authorCopilot`.
+ * Called by: the `watch(isPreviewRoute)` below (entering the preview)
+ */
+function stashAuthorCopilot() {
+  if (authorCopilot != null) return
+  authorCopilot = { session: copilot.exportCurrentSession(), active: copilot.active }
+}
+
+/**
+ * Give the author their copilot back after a preview: restore the stashed session (or end the learner's, when the
+ * author had none) and put the panel back the way it was. The runner ends its own session on dispose only if it
+ * is still current, so restoring first is safe.
+ * @returns void; side effects: replaces the copilot's current session, opens or closes the panel, clears
+ * `authorCopilot`.
+ * Called by: the `watch(isPreviewRoute)` below (leaving the preview), `onUnmounted`
+ */
+function restoreAuthorCopilot() {
+  const stashed = authorCopilot
+  if (stashed == null) return
+  authorCopilot = null
+  if (stashed.session != null) copilot.restoreSession(stashed.session)
+  else copilot.endCurrentSession()
+  if (stashed.active) copilot.open()
+  else copilot.close()
+}
+
+/**
+ * Keep the preview state in step with the route: leaving the preview route drops the snapshot and the error and
+ * gives the author their copilot back; entering it stashes the author's copilot and, without a snapshot
+ * (URL / history), loads one. `immediate` covers landing directly on the preview URL.
  * @param isPreview - New value of `isPreviewRoute`.
- * @returns void; side effects: clears `preview` / `previewError`, or kicks off `enterPreviewFromRoute`.
+ * @returns void; side effects: clears `preview` / `previewError` and restores the copilot, or stashes the copilot
+ * and kicks off `enterPreviewFromRoute`.
  * Called by: Vue (watch on `isPreviewRoute`, immediate)
  */
 watch(
   isPreviewRoute,
   (isPreview) => {
     // Leaving the preview (Back to editor, history, completion modal): release the snapshot so the playground
-    // unmounts and disposes its project.
+    // unmounts and disposes its project, and bring the author's copilot back.
     if (!isPreview) {
       // Any load still in flight belongs to a preview that is over: let it discard its snapshot.
       previewGeneration++
       preview.value = null
       previewError.value = null
+      restoreAuthorCopilot()
       return
     }
-    // Entering the preview: `handlePreview` already set the snapshot; otherwise load it from the route.
+    // Entering the preview: this runs before the playground mounts and its runner replaces the copilot session.
+    stashAuthorCopilot()
+    // `handlePreview` already set the snapshot; otherwise load it from the route.
     if (preview.value == null) void enterPreviewFromRoute()
   },
   { immediate: true }
@@ -659,6 +703,8 @@ onUnmounted(() => {
   sessionAlive = false
   // A preview load in flight is orphaned too.
   previewGeneration++
+  // Leaving the editor from the preview route: the author's copilot must not stay replaced by the learner's.
+  restoreAuthorCopilot()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('keydown', handleSaveShortcut)
   // The guard is router-global, so it must be removed explicitly.
