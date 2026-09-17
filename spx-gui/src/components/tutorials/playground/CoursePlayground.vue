@@ -11,6 +11,9 @@ import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { useCopilot } from '@/components/copilot/context'
+import { useRadar } from '@/utils/radar'
+import { useSpotlight } from '@/utils/spotlight'
+import type { SpotlightOptions } from '@/utils/tutorial-framework'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import type { ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
@@ -44,6 +47,8 @@ const localCache: ILocalCache = {
 const i18n = useI18n()
 const router = useRouter()
 const copilot = useCopilot()
+const radar = useRadar()
+const spotlight = useSpotlight()
 const { isOnline } = useNetwork()
 const signedInStateQuery = useSignedInStateQuery()
 
@@ -111,9 +116,33 @@ const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
 })
 
 const openMessage = useModal(CoursePlaygroundMessageModal)
+const spotlightRetryDelay = 50
+const spotlightRetryTimeout = 1_000
+
+function wait(delay: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, delay))
+}
+
 const presentation = {
   showMessage(content: string) {
     return openMessage({ content })
+  },
+  async revealSpotlight(target: string, tip: string, options: SpotlightOptions) {
+    const deadline = Date.now() + spotlightRetryTimeout
+    let nodes = radar.selectAll(target)
+    while (nodes.length === 0 && Date.now() < deadline) {
+      await wait(spotlightRetryDelay)
+      nodes = radar.selectAll(target)
+    }
+    if (nodes.length === 0) {
+      console.warn(`Tutorial Spotlight target not found: ${target}`)
+      return
+    }
+    spotlight.reveal(
+      nodes.map((node) => node.getElement()),
+      tip,
+      options
+    )
   }
 }
 

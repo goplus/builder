@@ -20,7 +20,7 @@
 
         <UIButton
           v-if="simpleMode"
-          v-radar="{ name: 'Ask Copilot button', desc: 'Open Copilot for course help' }"
+          v-radar="{ name: 'ask-copilot-button', desc: 'Open Copilot for course help' }"
           type="secondary"
           @click="copilot.open()"
         >

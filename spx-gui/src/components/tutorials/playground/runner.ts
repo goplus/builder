@@ -9,9 +9,11 @@ import type { Copilot, Round, Session, Topic } from '@/components/copilot/copilo
 import { RoundState } from '@/components/copilot/copilot'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
+import type { SpotlightOptions } from '@/utils/tutorial-framework'
 
 export type PlaygroundCoursePresentation = {
   showMessage(content: string): Promise<void>
+  revealSpotlight(target: string, tip: string, options: SpotlightOptions): Promise<void>
 }
 
 export type PlaygroundCourseCompletion = {
@@ -94,7 +96,15 @@ export class PlaygroundCourseRunner extends Emitter<{
         course_showMessage: (request) =>
           this.options.presentation.showMessage((request as { content: string }).content),
         course_complete: () => this.acceptCompletion(null),
-        course_completeWith: (request) => this.acceptCompletion((request as { feedback: string }).feedback)
+        course_completeWith: (request) => this.acceptCompletion((request as { feedback: string }).feedback),
+        spotlight_reveal: (request) => {
+          const { target, tip, options } = request as {
+            target: string
+            tip: string
+            options: SpotlightOptions
+          }
+          return this.options.presentation.revealSpotlight(target, tip, options)
+        }
       }
     }
   }

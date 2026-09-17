@@ -2,7 +2,7 @@
   <template v-if="isSimpleMode">
     <UICard
       v-if="simpleSprite != null"
-      v-radar="{ name: 'Simple code editor', desc: 'Focused code editor for the selected course sprite' }"
+      v-radar="{ name: 'simple-code-editor', desc: 'Focused code editor for the selected course sprite' }"
       class="relative flex-[1_1_0] min-w-0 flex flex-col overflow-visible!"
     >
       <CodeEditorUI :code-file-path="simpleSprite.codeFilePath" simple-mode />

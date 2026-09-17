@@ -76,7 +76,8 @@ function makeHarness() {
   const editorState = { runtime: editorRuntime } as EditorState
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
-    showMessage: vi.fn().mockResolvedValue(undefined)
+    showMessage: vi.fn().mockResolvedValue(undefined),
+    revealSpotlight: vi.fn().mockResolvedValue(undefined)
   }
   const runner = new PlaygroundCourseRunner({
     project,
@@ -179,6 +180,19 @@ describe('PlaygroundCourseRunner', () => {
 
     expect(harness.executor.stop).toHaveBeenCalledOnce()
     expect(harness.copilot.endCurrentSession).toHaveBeenCalledOnce()
+  })
+
+  it('forwards Spotlight requests to the course presentation', async () => {
+    const harness = makeHarness()
+    const reveal = harness.getExecutorOptions().framework?.capabilities.spotlight_reveal
+    if (reveal == null) throw new Error('spotlight_reveal capability not found')
+
+    await reveal({ target: 'api-references', tip: 'Use this block.', options: { mask: true, duration: 0 } })
+
+    expect(harness.presentation.revealSpotlight).toHaveBeenCalledWith('api-references', 'Use this block.', {
+      mask: true,
+      duration: 0
+    })
   })
 
   it('publishes executor failures for its owner to dispose', async () => {

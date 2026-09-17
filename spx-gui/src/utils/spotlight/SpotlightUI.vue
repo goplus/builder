@@ -159,7 +159,7 @@ function getRevealPosition(revealRect: Rect, spotlightRect: Rect): Position {
 }
 
 function providerRevealEl() {
-  const revealEl = spotlightItem.value?.el
+  const revealEl = spotlightItem.value?.elements[0]
   if (!revealEl) {
     throw new Error('SpotlightUI must have an associated element')
   }
@@ -193,8 +193,13 @@ function revealElement(revealEl: HTMLElement) {
   syncPlacementAndPosition()
 }
 
-function concealElement(revealEl: HTMLElement) {
-  revealEl.classList.remove('spotlight-attach-element-highlight')
+function revealElements(elements: HTMLElement[]) {
+  for (const element of elements) element.classList.add('spotlight-attach-element-highlight')
+  revealElement(elements[0]!)
+}
+
+function concealElements(elements: HTMLElement[]) {
+  for (const element of elements) element.classList.remove('spotlight-attach-element-highlight')
 }
 
 const throttledHandleScroll = throttle(() => {
@@ -234,14 +239,14 @@ watch(
       const center = getDefaultPosition()
       const { x: x1, y: y1 } = center
       // reveal position
-      const { x: x2, y: y2, width: revealWidth } = value.el.getBoundingClientRect()
+      const { x: x2, y: y2, width: revealWidth } = value.elements[0]!.getBoundingClientRect()
       const len = Math.hypot(x2 - x1, y2 - y1)
       // If the distance is too short, animate from center to reveal
       positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
     }
     requestAnimationFrame(() => {
-      revealElement(value.el)
-      spotlight.emit('revealed', { rect: value.el.getBoundingClientRect() })
+      revealElements(value.elements)
+      spotlight.emit('revealed', { rect: value.elements[0]!.getBoundingClientRect() })
     })
 
     resizeObserver.observe(document.body)
@@ -251,7 +256,7 @@ watch(
       resizeObserver.disconnect()
       document.body.removeEventListener('scroll', throttledHandleScroll, { capture: true })
       document.body.removeEventListener('scrollend', handleScrollEnd, { capture: true })
-      concealElement(value.el)
+      concealElements(value.elements)
     })
   },
   { immediate: true }
@@ -260,6 +265,7 @@ watch(
 
 <template>
   <div class="spotlight-ui">
+    <div v-if="spotlightItem?.mask" class="spotlight-mask"></div>
     <Transition>
       <div
         v-if="spotlightItem"
@@ -279,6 +285,8 @@ watch(
 
 <style scoped>
 :global(.spotlight-attach-element-highlight) {
+  position: relative;
+  z-index: 10001;
   box-shadow: var(--ui-box-shadow-sm);
 }
 
@@ -313,6 +321,12 @@ watch(
 
 .spotlight-ui .spotlight-item {
   position: absolute;
+}
+
+.spotlight-ui .spotlight-mask {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
 }
 
 .spotlight-ui .spotlight-item.animated {
