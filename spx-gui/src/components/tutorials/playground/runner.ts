@@ -97,8 +97,9 @@ export class PlaygroundCourseRunner extends Emitter<{
         copilot_generateText: (request) =>
           this.options.copilot.generateTextResponse((request as { content: string }).content),
         copilot_generateJSON: (request) => {
-          const { content, schema } = request as { content: string; schema: Record<string, unknown> }
-          return this.options.copilot.generateJSONResponse(content, schema as JsonSchema7Type)
+          const { content, schema } = request as { content: string; schema: unknown }
+          if (!validateJSONSchema(schema)) throw new Error('Invalid JSON Schema')
+          return this.options.copilot.generateJSONResponse(content, schema)
         }
       }
     }
@@ -189,6 +190,69 @@ export class PlaygroundCourseRunner extends Emitter<{
     this.settled = true
     this.emit('failed', error)
   }
+}
+
+function isSchemaRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value != null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function isSchemaMap(value: unknown): value is Record<string, JsonSchema7Type> {
+  return isSchemaRecord(value) && Object.values(value).every(validateJSONSchema)
+}
+
+/** Checks the JSON Schema shapes emitted by the Tutorial framework before sending them to Copilot. */
+export function validateJSONSchema(value: unknown): value is JsonSchema7Type {
+  if (!isSchemaRecord(value)) return false
+
+  const schema = value as Record<string, unknown>
+  const stringKeys = ['$schema', '$id', '$ref', 'title', 'description', 'format', 'pattern']
+  if (stringKeys.some((key) => schema[key] != null && typeof schema[key] !== 'string')) return false
+
+  const numberKeys = [
+    'multipleOf',
+    'maximum',
+    'exclusiveMaximum',
+    'minimum',
+    'exclusiveMinimum',
+    'maxLength',
+    'minLength',
+    'maxItems',
+    'minItems',
+    'maxProperties',
+    'minProperties'
+  ]
+  if (numberKeys.some((key) => schema[key] != null && typeof schema[key] !== 'number')) return false
+
+  if (schema.type != null && typeof schema.type !== 'string' && !isStringArray(schema.type)) return false
+  if (schema.enum != null && !Array.isArray(schema.enum)) return false
+  if (schema.required != null && !isStringArray(schema.required)) return false
+  if (schema.properties != null && !isSchemaMap(schema.properties)) return false
+  if (schema.patternProperties != null && !isSchemaMap(schema.patternProperties)) return false
+  if (schema.definitions != null && !isSchemaMap(schema.definitions)) return false
+
+  const schemaKeys = ['additionalProperties', 'additionalItems', 'not', 'if', 'then', 'else']
+  if (
+    schemaKeys.some(
+      (key) => schema[key] != null && typeof schema[key] !== 'boolean' && !validateJSONSchema(schema[key])
+    )
+  )
+    return false
+
+  if (
+    schema.items != null &&
+    !validateJSONSchema(schema.items) &&
+    !(Array.isArray(schema.items) && schema.items.every(validateJSONSchema))
+  )
+    return false
+
+  const schemaArrayKeys = ['allOf', 'anyOf', 'oneOf']
+  return schemaArrayKeys.every(
+    (key) => schema[key] == null || (Array.isArray(schema[key]) && schema[key].every(validateJSONSchema))
+  )
 }
 
 function errorOf(value: unknown) {

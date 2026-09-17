@@ -9,7 +9,7 @@ import { Runtime, RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
 import type { Copilot } from '@/components/copilot/copilot'
 
-import { PlaygroundCourseRunner } from './runner'
+import { PlaygroundCourseRunner, validateJSONSchema } from './runner'
 
 const executorMocks = vi.hoisted(() => ({
   instances: [] as Array<{
@@ -185,6 +185,9 @@ describe('PlaygroundCourseRunner', () => {
     })
     expect(harness.copilot.generateTextResponse).toHaveBeenCalledWith('Give feedback')
     expect(harness.copilot.generateJSONResponse).toHaveBeenCalledWith('Is the goal complete?', { type: 'object' })
+    expect(() => generateJSON({ content: 'Check this', schema: { properties: { complete: 'boolean' } } })).toThrow(
+      'Invalid JSON Schema'
+    )
   })
 
   it('publishes completion for its owner to dispose', async () => {
@@ -221,5 +224,27 @@ describe('PlaygroundCourseRunner', () => {
     harness.runner.dispose()
 
     expect(harness.executor.stop).toHaveBeenCalledOnce()
+  })
+})
+
+describe('validateJSONSchema', () => {
+  it('accepts Tutorial framework schemas', () => {
+    expect(
+      validateJSONSchema({
+        type: 'object',
+        properties: {
+          complete: { type: 'boolean' }
+        },
+        required: ['complete'],
+        additionalProperties: false
+      })
+    ).toBe(true)
+  })
+
+  it('rejects malformed schema keywords', () => {
+    expect(validateJSONSchema(null)).toBe(false)
+    expect(validateJSONSchema({ $ref: 1 })).toBe(false)
+    expect(validateJSONSchema({ required: ['complete', 1] })).toBe(false)
+    expect(validateJSONSchema({ properties: { complete: 'boolean' } })).toBe(false)
   })
 })
