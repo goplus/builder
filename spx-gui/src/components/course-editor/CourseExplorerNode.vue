@@ -141,6 +141,22 @@ const hint = computed<LocaleMessage | null>(() => {
       return null
   }
 })
+
+/**
+ * Radar metadata of the row. The role is the same for every node; which node this is belongs in attributes, so
+ * that a course or the Copilot can address one with a selector such as `explorer-node[path="assets/videos"]`.
+ * @returns A `RadarNodeMeta` for `v-radar`.
+ * Read by: `CourseExplorerNode.vue#template`.
+ * Called by: Vue (computed; re-evaluated when `props.node` changes)
+ */
+const radarNodeMeta = computed(() => {
+  const node = props.node
+  return {
+    name: 'explorer-node',
+    desc: `Click to open ${node.type} ${node.path}`,
+    attrs: { name: label.value, type: node.type, path: node.path }
+  }
+})
 </script>
 
 <template>
@@ -148,7 +164,7 @@ const hint = computed<LocaleMessage | null>(() => {
   <div>
     <!-- Row button: indented by `depth`, highlighted when `active`; clicking emits `select(node.path)`. -->
     <button
-      v-radar="{ name: `Explorer node ${node.path}`, desc: `Click to open ${node.type} ${node.path}` }"
+      v-radar="radarNodeMeta"
       :class="[explorerNodeClass, active && explorerActiveNodeClass]"
       :style="{ paddingLeft: `${depth * 12 + 8}px` }"
       :title="node.path"
@@ -157,7 +173,11 @@ const hint = computed<LocaleMessage | null>(() => {
       <!-- Folder toggle glyph: flips `expanded` without opening the folder (`@click.stop`). -->
       <span
         v-if="node.type === 'folder'"
-        v-radar="{ name: `Toggle folder ${node.path}`, desc: 'Click to expand or collapse this folder' }"
+        v-radar="{
+          name: 'toggle-folder-button',
+          desc: 'Click to expand or collapse this folder',
+          attrs: { path: node.path }
+        }"
         class="w-4 flex-none text-xs text-grey-700"
         @click.stop="expanded = !expanded"
         >{{ expanded ? '▾' : '▸' }}</span

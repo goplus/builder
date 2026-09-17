@@ -204,7 +204,7 @@ function dirLabel(candidate: string) {
     emits `cancelled`, which rejects the promise awaited in CourseEditor.vue#handleUpload.
   -->
   <UIFormModal
-    :radar="{ name: 'Upload files modal', desc: 'Choose where uploaded files go in the course' }"
+    :radar="{ name: 'upload-files-modal', desc: 'Choose where uploaded files go in the course' }"
     :title="$t({ en: 'Upload files', zh: '上传文件' })"
     :visible="visible"
     style="width: 640px"
@@ -217,7 +217,7 @@ function dirLabel(candidate: string) {
           <span class="text-grey-700">{{ $t({ en: 'Files', zh: '文件' }) }}</span>
           <!-- Opens the native picker; the label switches once files are chosen; busy while the picker is open. -->
           <UIButton
-            v-radar="{ name: 'Select files button', desc: 'Click to choose the files to upload' }"
+            v-radar="{ name: 'select-files-button', desc: 'Click to choose the files to upload' }"
             type="secondary"
             size="small"
             :loading="handleSelectFiles.isLoading.value"
@@ -246,7 +246,11 @@ function dirLabel(candidate: string) {
           <button
             v-for="candidate in knownDirs"
             :key="candidate"
-            v-radar="{ name: `Target folder ${dirLabel(candidate)}`, desc: 'Click to upload into this folder' }"
+            v-radar="{
+              name: 'target-folder-option',
+              desc: 'Click to upload into this folder',
+              attrs: { name: dirLabel(candidate) }
+            }"
             class="w-full cursor-pointer rounded border-none bg-transparent px-2 py-1 text-left hover:bg-grey-400"
             :class="candidate === dir && 'bg-primary-100 text-primary-main hover:bg-primary-100'"
             @click="dirInput = candidate"
@@ -257,7 +261,7 @@ function dirLabel(candidate: string) {
         <!-- Free-text target; `dir` normalizes it on the fly, so stray slashes are forgiven. -->
         <UITextInput
           v-radar="{
-            name: 'Target folder input',
+            name: 'target-folder-input',
             desc: 'Input for the folder to upload into; new folders are created as needed'
           }"
           :value="dirInput"
@@ -296,7 +300,7 @@ function dirLabel(candidate: string) {
         <UIButton type="neutral" @click="emit('cancelled')">{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton>
         <!-- Disabled until there are files and no policy error. -->
         <UIButton
-          v-radar="{ name: 'Confirm upload button', desc: 'Click to upload the files into the chosen folder' }"
+          v-radar="{ name: 'confirm-button', desc: 'Click to upload the files into the chosen folder' }"
           type="primary"
           :disabled="error != null || files.length === 0"
           @click="emit('resolved', { dir, files })"
