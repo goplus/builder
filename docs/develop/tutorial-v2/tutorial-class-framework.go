@@ -1,5 +1,22 @@
 package tutorial
 
+// Execution model: callbacks run one at a time, so shared variables in Course
+// code never race. A callback run yields while it waits on the learner
+// (showPrelude, showMessage, showVideo) or on generation (generateText,
+// generateJSON); other runs proceed meanwhile. Every trigger starts a new run
+// of each callback registered for it, so runs of one callback may overlap
+// when a trigger arrives while an earlier run is still waiting. Course start
+// is delivered like any other event.
+//
+// TODO(#3509): how overlapping runs of one callback relate (cancelling the
+// stale one, running one at a time, ignoring triggers while busy) is not yet
+// specified; until it is, Course code handles that race itself. The order in
+// which runs start is not promised either.
+//
+// Overlapping presentation calls from different runs are the host's business:
+// the framework does not serialize them, and the host's capability decides
+// whether to queue the later call, reject it, or dismiss the earlier one.
+
 type Course struct {
 	CourseAbilities
 	Editor    Editor
@@ -9,6 +26,8 @@ type Course struct {
 
 type CourseAbilities interface {
 	// onStart registers a callback that is called when the course starts.
+	// Several callbacks may be registered; they run independently of each
+	// other. Opening steps that must happen in order belong in one callback.
 	onStart(callback func())
 	// showPrelude displays the Course opening guide with the given message and
 	// returns after the learner dismisses it. Unlike showMessage, the host
@@ -23,11 +42,11 @@ type CourseAbilities interface {
 	// name and returns after the learner finishes watching or closes it.
 	// Presentation never advances automatically.
 	showVideo(videoName string)
-	// complete marks the course as completed and ends the Course program: after
-	// the current callback returns, no further events are processed and the
-	// program exits. Remaining statements in the same callback still run, but
-	// presentation calls after a completion are ignored by the host. Calling
-	// complete or completeWith again has no effect.
+	// complete marks the course as completed and ends the Course program: no
+	// further events are processed, callbacks already running or waiting still
+	// run to their end (presentation calls after a completion are ignored by
+	// the host), and the program then exits. Calling complete or completeWith
+	// again has no effect.
 	complete()
 	// completeWith is complete with the given feedback displayed to the learner.
 	completeWith(message string)
@@ -60,8 +79,9 @@ type Runtime interface {
 	onStart(callback func())
 	// onExit registers a callback that is called when the project runtime exits.
 	onExit(callback func(code int))
-	// onLog registers a callback that is called once for every newly appended
-	// runtime log, in append order. Error output is not part of this channel.
+	// onLog registers a callback that is called for every newly appended
+	// runtime log: each entry starts one run. Error output is not part of this
+	// channel.
 	onLog(callback func(log string))
 }
 
@@ -83,7 +103,8 @@ type Ruler interface {
 }
 
 type Copilot interface {
-	// onRoundFinish registers a callback that is called when a Copilot round finishes.
+	// onRoundFinish registers a callback that is called when a Copilot round
+	// finishes.
 	onRoundFinish(callback func(round CopilotRound))
 	// generateText asks Copilot to generate text without adding a conversation round.
 	generateText(message string) string
@@ -92,9 +113,12 @@ type Copilot interface {
 	generateJSON(message string, result any)
 }
 
+// CopilotRound is what onRoundFinish receives. Its fields are read as
+// written here (round.UserMessage): XGo lowercases method calls, not field
+// access.
 type CopilotRound struct {
-	userMessage    string
-	resultMessages []string
+	UserMessage    string
+	ResultMessages []string
 }
 
 // SpotlightOptions controls how the spotlight presents a UI target.
