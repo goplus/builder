@@ -1,5 +1,5 @@
 import type { ZodObject, ZodTypeAny } from 'zod'
-import { zodToJsonSchema } from 'zod-to-json-schema'
+import { zodToJsonSchema, type JsonSchema7Type } from 'zod-to-json-schema'
 import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
 import { localStorageRef } from '@/utils/utils'
@@ -111,6 +111,19 @@ export function toApiMessage(m: Message): apis.Message {
   }
 }
 
+async function streamResponse(
+  generator: IMessageEventGenerator,
+  messages: Message[],
+  options: apis.GenerateCopilotMessageOptions,
+  handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
+) {
+  const result = generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
+  for await (const event of result) {
+    if (event.type === 'error') throw new Error(event.data.message)
+    handleEvent(event)
+  }
+}
+
 export type Topic = {
   /** Name of the topic, for display purpose. */
   title: LocaleMessage
@@ -149,7 +162,7 @@ export interface IMessageEventGenerator {
   generateCopilotMessage: typeof apis.generateCopilotMessage
 }
 
-export type JSONSchema = Record<string, unknown>
+export type JSONSchema = JsonSchema7Type
 
 export type CopilotRound = {
   userMessage: string
@@ -329,33 +342,32 @@ export class Round {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
       messages.push(await this.copilot.getContextMessage())
-      const apiMessages = messages.map(toApiMessage)
-      // TODO: history summarization with LLM instead of truncation
-      const sampledApiMessages = sampleApiMessages(apiMessages)
       const toolCalls: Array<ToolCallDraft | null> = []
-      const result = this.copilot.generator.generateCopilotMessage(sampledApiMessages, {
-        signal: this.ctrl.signal,
-        tools: this.copilot.getTools().map(toApiTool)
-      })
-      for await (const event of result) {
-        switch (event.type) {
-          case 'text_delta':
-            if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
-            if (this.inProgressCopilotMessageContentRef.value == null) {
-              this.inProgressCopilotMessageContentRef.value = ''
-            }
-            this.inProgressCopilotMessageContentRef.value += event.data.text
-            break
-          case 'tool_call_delta':
-            if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
-            accumulateToolCallDelta(toolCalls, event)
-            break
-          case 'done':
-            break
-          case 'error':
-            throw new Error(event.data.message)
+      await streamResponse(
+        this.copilot.generator,
+        messages,
+        {
+          signal: this.ctrl.signal,
+          tools: this.copilot.getTools().map(toApiTool)
+        },
+        (event) => {
+          switch (event.type) {
+            case 'text_delta':
+              if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
+              if (this.inProgressCopilotMessageContentRef.value == null) {
+                this.inProgressCopilotMessageContentRef.value = ''
+              }
+              this.inProgressCopilotMessageContentRef.value += event.data.text
+              break
+            case 'tool_call_delta':
+              if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
+              accumulateToolCallDelta(toolCalls, event)
+              break
+            case 'done':
+              break
+          }
         }
-      }
+      )
       const message = this.sealInProgressCopilotMessage(toolCalls)
       this.handleCopilotMessage(message)
     } catch (err) {
@@ -697,7 +709,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   async generateTextResponse(message: string, signal?: AbortSignal): Promise<string> {
     let content = ''
-    await this.streamResponse(message, { signal }, (event) => {
+    await streamResponse(this.generator, await this.getResponseMessages(message), { signal }, (event) => {
       switch (event.type) {
         case 'text_delta':
           content += event.data.text
@@ -713,8 +725,9 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   async generateJSONResponse(message: string, schema: JSONSchema, signal?: AbortSignal): Promise<unknown> {
     const toolCalls: Array<ToolCallDraft | null> = []
-    await this.streamResponse(
-      `${message}\n\nReturn the result through the return_json tool.`,
+    await streamResponse(
+      this.generator,
+      await this.getResponseMessages(`${message}\n\nReturn the result through the return_json tool.`),
       {
         signal,
         tools: [
@@ -723,7 +736,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
             function: {
               name: 'return_json',
               description: 'Return the requested JSON response.',
-              parameters: schema as apis.FunctionDefinition['parameters']
+              parameters: schema
             }
           }
         ]
@@ -868,18 +881,10 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.currentSession.addUserMessage(userEventMessage)
   }
 
-  private async streamResponse(
-    message: string,
-    options: apis.GenerateCopilotMessageOptions,
-    handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
-  ) {
+  private async getResponseMessages(message: string): Promise<Message[]> {
     const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
     messages.push(await this.getContextMessage(), { type: 'text', role: 'user', content: message })
-    const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
-    for await (const event of result) {
-      if (event.type === 'error') throw new Error(event.data.message)
-      handleEvent(event)
-    }
+    return messages
   }
 
   /** Register a context provider for the copilot. */

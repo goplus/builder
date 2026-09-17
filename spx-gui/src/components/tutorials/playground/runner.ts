@@ -1,4 +1,5 @@
 import { watch } from 'vue'
+import type { JsonSchema7Type } from 'zod-to-json-schema'
 
 import Emitter from '@/utils/emitter'
 import { XGoExecutor, type XGoExitReason, type XGoFramework } from '@/utils/xgoexec'
@@ -97,7 +98,7 @@ export class PlaygroundCourseRunner extends Emitter<{
           this.options.copilot.generateTextResponse((request as { content: string }).content),
         copilot_generateJSON: (request) => {
           const { content, schema } = request as { content: string; schema: Record<string, unknown> }
-          return this.options.copilot.generateJSONResponse(content, schema)
+          return this.options.copilot.generateJSONResponse(content, schema as JsonSchema7Type)
         }
       }
     }
