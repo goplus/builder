@@ -98,7 +98,7 @@ const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
     <UITooltip :disabled="undoAction == null">
       <template #trigger>
         <button
-          v-radar="{ name: 'Undo button', desc: 'Click to undo the last edit' }"
+          v-radar="{ name: 'undo-button', desc: 'Click to undo the last edit' }"
           :class="historyBtnClz"
           :disabled="undoAction == null"
           @click="handleUndo.fn"
@@ -112,7 +112,7 @@ const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
     <UITooltip :disabled="redoAction == null">
       <template #trigger>
         <button
-          v-radar="{ name: 'Redo button', desc: 'Click to redo the last undone edit' }"
+          v-radar="{ name: 'redo-button', desc: 'Click to redo the last undone edit' }"
           :class="historyBtnClz"
           :disabled="redoAction == null"
           @click="handleRedo.fn"

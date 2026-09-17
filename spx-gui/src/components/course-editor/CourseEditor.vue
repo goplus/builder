@@ -717,10 +717,16 @@ onUnmounted(() => {
 
 <template>
   <!-- Root of the editor: a full-height column (header + main); `relative` anchors the saving mask. -->
-  <section class="relative min-h-full w-full flex flex-col bg-grey-300">
+  <section
+    v-radar="{
+      name: 'course-editor',
+      desc: 'Editor for a Playground Course: its explorer, the open document and the preview'
+    }"
+    class="relative min-h-full w-full flex flex-col bg-grey-300"
+  >
     <!-- Saving mask: covers everything (z-50) while `saving`, so nothing is edited or clicked under the upload. -->
     <UILoading
-      v-radar="{ name: 'Saving course mask', desc: 'Covers the editor while the course is being saved' }"
+      v-radar="{ name: 'saving-mask', desc: 'Covers the editor while the course is being saved' }"
       class="z-50"
       cover
       :visible="saving"
@@ -732,7 +738,7 @@ onUnmounted(() => {
       <div
         v-if="isPreviewRoute"
         v-radar="{
-          name: 'Course preview banner',
+          name: 'preview-banner',
           desc: 'Shows that the course is being previewed, with a button to go back to the editor'
         }"
         class="flex items-center gap-3 bg-primary-100 px-4 py-1 text-sm"
@@ -741,7 +747,7 @@ onUnmounted(() => {
           $t({ en: 'Previewing the course as a learner', zh: '正在以学习者视角预览课程' })
         }}</span>
         <UIButton
-          v-radar="{ name: 'Back to editor button', desc: 'Click to stop previewing and return to the course editor' }"
+          v-radar="{ name: 'back-to-editor-button', desc: 'Click to stop previewing and return to the course editor' }"
           type="secondary"
           size="small"
           @click="exitPreview"
@@ -759,7 +765,7 @@ onUnmounted(() => {
         <template #center>
           <div
             v-radar="{
-              name: 'Course editor title',
+              name: 'course-title',
               desc: 'Title of the course being edited, its series and unsaved state'
             }"
             class="flex min-w-0 items-center gap-2"
@@ -774,7 +780,7 @@ onUnmounted(() => {
         <template #right>
           <EditorModeSwitch v-if="doc.type === 'project'" :state="editorState" />
           <UIButton
-            v-radar="{ name: 'Preview course button', desc: 'Click to preview the course as a learner' }"
+            v-radar="{ name: 'preview-button', desc: 'Click to preview the course as a learner' }"
             class="mr-2"
             type="secondary"
             size="small"
@@ -785,7 +791,7 @@ onUnmounted(() => {
             {{ $t({ en: 'Preview', zh: '预览' }) }}
           </UIButton>
           <UIButton
-            v-radar="{ name: 'Save course button', desc: 'Click to save the course' }"
+            v-radar="{ name: 'save-button', desc: 'Click to save the course' }"
             class="mr-3"
             type="primary"
             size="small"

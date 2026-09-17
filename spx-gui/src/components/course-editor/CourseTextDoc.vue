@@ -138,7 +138,7 @@ function handleEditorInit(editor: MonacoEditor) {
   <!-- Monaco is ready: the editor fills the document; `@init` hands the created instance to `handleEditorInit`. -->
   <MonacoEditorComp
     v-else-if="monacoQueryRet.data.value != null"
-    v-radar="{ name: 'Text editor', desc: 'Code editor for the open text file' }"
+    v-radar="{ name: 'text-editor', desc: 'Code editor for the open text file' }"
     class="h-full w-full"
     :monaco="monacoQueryRet.data.value"
     :options="editorOptions"

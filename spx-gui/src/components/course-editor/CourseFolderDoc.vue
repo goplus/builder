@@ -96,7 +96,7 @@ function childLabel(child: CourseNode) {
       <!-- Shown only when the policy accepts uploads here; the label is specialized for the videos folder. -->
       <UIButton
         v-if="canUpload"
-        v-radar="{ name: 'Upload into folder button', desc: 'Click to upload files into this folder' }"
+        v-radar="{ name: 'upload-button', desc: 'Click to upload files into this folder' }"
         type="secondary"
         size="small"
         @click="emit('upload', node.path)"
@@ -131,7 +131,11 @@ function childLabel(child: CourseNode) {
     <ul v-else class="m-0 flex list-none flex-col gap-1 p-0">
       <li v-for="child in node.children" :key="child.path">
         <button
-          v-radar="{ name: `Open ${child.path}`, desc: 'Click to open this item' }"
+          v-radar="{
+            name: 'folder-item',
+            desc: 'Click to open this item',
+            attrs: { name: childLabel(child), type: child.type, path: child.path }
+          }"
           class="flex w-full cursor-pointer items-center gap-2 rounded border border-line bg-transparent px-3 py-2 text-left text-sm hover:bg-grey-400"
           @click="emit('open', child.path)"
         >
