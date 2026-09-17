@@ -111,19 +111,6 @@ export function toApiMessage(m: Message): apis.Message {
   }
 }
 
-async function streamResponse(
-  generator: IMessageEventGenerator,
-  messages: Message[],
-  options: apis.GenerateCopilotMessageOptions,
-  handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
-) {
-  const result = generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
-  for await (const event of result) {
-    if (event.type === 'error') throw new Error(event.data.message)
-    handleEvent(event)
-  }
-}
-
 export type Topic = {
   /** Name of the topic, for display purpose. */
   title: LocaleMessage
@@ -710,7 +697,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   async generateTextResponse(message: string, signal?: AbortSignal): Promise<string> {
     let content = ''
-    await streamResponse(this.generator, await this.getResponseMessages(message), { signal }, (event) => {
+    await this.streamResponse(message, { signal }, (event) => {
       switch (event.type) {
         case 'text_delta':
           content += event.data.text
@@ -726,9 +713,8 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   async generateJSONResponse(message: string, schema: JSONSchema, signal?: AbortSignal): Promise<unknown> {
     const toolCalls: Array<ToolCallDraft | null> = []
-    await streamResponse(
-      this.generator,
-      await this.getResponseMessages(`${message}\n\nReturn the result through the return_json tool.`),
+    await this.streamResponse(
+      `${message}\n\nReturn the result through the return_json tool.`,
       {
         signal,
         tools: [
@@ -882,10 +868,18 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.currentSession.addUserMessage(userEventMessage)
   }
 
-  private async getResponseMessages(message: string): Promise<Message[]> {
+  private async streamResponse(
+    message: string,
+    options: apis.GenerateCopilotMessageOptions,
+    handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
+  ) {
     const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
     messages.push(await this.getContextMessage(), { type: 'text', role: 'user', content: message })
-    return messages
+    const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
+    for await (const event of result) {
+      if (event.type === 'error') throw new Error(event.data.message)
+      handleEvent(event)
+    }
   }
 
   /** Register a context provider for the copilot. */
