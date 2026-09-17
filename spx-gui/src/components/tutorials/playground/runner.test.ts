@@ -177,8 +177,8 @@ describe('PlaygroundCourseRunner', () => {
     const generateJSON = capabilities?.copilot_generateJSON
     if (generateText == null || generateJSON == null) throw new Error('Copilot capabilities not found')
 
-    await expect(generateText({ message: 'Give feedback' })).resolves.toBe('Great work')
-    await expect(generateJSON({ message: 'Is the goal complete?', schema: { type: 'object' } })).resolves.toEqual({
+    await expect(generateText({ content: 'Give feedback' })).resolves.toBe('Great work')
+    await expect(generateJSON({ content: 'Is the goal complete?', schema: { type: 'object' } })).resolves.toEqual({
       complete: true
     })
     expect(harness.copilot.generateResponse).toHaveBeenNthCalledWith(1, {
@@ -200,7 +200,7 @@ describe('PlaygroundCourseRunner', () => {
     const completeWith = harness.getExecutorOptions().framework?.capabilities.course_completeWith
     if (completeWith == null) throw new Error('course_completeWith capability not found')
 
-    await completeWith({ feedback: 'Nice work' })
+    await completeWith({ content: 'Nice work' })
 
     await vi.waitFor(() => expect(completed).toHaveBeenCalledWith({ feedback: 'Nice work' }))
     expect(harness.executor.stop).not.toHaveBeenCalled()

@@ -92,15 +92,15 @@ export class PlaygroundCourseRunner extends Emitter<{
         course_showMessage: (request) =>
           this.options.presentation.showMessage((request as { content: string }).content),
         course_complete: () => this.acceptCompletion(null),
-        course_completeWith: (request) => this.acceptCompletion((request as { feedback: string }).feedback),
+        course_completeWith: (request) => this.acceptCompletion((request as { content: string }).content),
         copilot_generateText: (request) =>
           this.options.copilot.generateResponse({
             response: 'text',
-            message: (request as { message: string }).message
+            message: (request as { content: string }).content
           }),
         copilot_generateJSON: (request) => {
-          const { message, schema } = request as { message: string; schema: Record<string, unknown> }
-          return this.options.copilot.generateResponse({ response: 'json', message, schema })
+          const { content, schema } = request as { content: string; schema: Record<string, unknown> }
+          return this.options.copilot.generateResponse({ response: 'json', message: content, schema })
         }
       }
     }
