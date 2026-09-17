@@ -55,17 +55,11 @@ Editor.Runtime.onStart => {
 	showMessage "Running!"
 }
 
-judging := newRunGroup(SkipWhileBusy)
-
-Editor.Runtime.onExit OneAtATime, code => {
+Editor.Runtime.onExit code => {
 	echo "exit code", code
 }
 
-Editor.Runtime.onExit judging, code => {
-	echo "judging exit", code
-}
-
-Copilot.onRoundFinish CancelPrevious, round => {
+Copilot.onRoundFinish round => {
 	echo "round", round.UserMessage
 }
 
@@ -73,7 +67,6 @@ Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.enter()
 	for sprite <- Editor.Project.listSprites() {
 		echo Editor.Project.getCode(sprite)
 	}

@@ -80,10 +80,6 @@ export type SpotlightOptions = {
  * the earlier one, and documents that choice. Generation calls can be pending
  * concurrently.
  *
- * The framework may discard a call's result after the fact (the run that
- * made it was cancelled by a `RunPolicy`); the host settles every call
- * exactly as usual and needs no cancellation protocol.
- *
  * On completion the host must promptly settle every still-pending call (for
  * presentation, resolving as a no-op is fine): the program only exits after
  * pending callbacks finish, so an unsettled call would hold the exit open.

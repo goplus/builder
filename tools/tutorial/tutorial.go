@@ -16,8 +16,6 @@
 // tutorial-class-framework.go 是作者侧 API，两者要与本包保持一致。
 package tutorial
 
-import "fmt"
-
 // XGoPackage 标记本包是一个 XGo 包（新式写法，旧式为 GopPackage）。
 // classfile 机制依赖它来识别可作为工程类框架使用的包。
 const XGoPackage = true
@@ -81,25 +79,10 @@ func (p *Course) initCourse() *Course {
 // 放心地在 onStart 里立刻做判定相关的事，不用担心此时事件回调还没挂上。
 //
 // 课程开始就是一个只触发一次的事件，与其他 onXxx 走同一条路：可以注册多段，
-// 按注册顺序启动、各自跑到第一次等待后下一段才启动，之后各自独立（见 startRuns）。
-// 课程开始之后再注册的开场回调不会被调用。
+// 各段相互独立，契约不承诺它们之间的顺序。课程开始之后再注册的开场回调不会被调用。
 func (p *Course) OnStart(handler func()) {
-	register(&p.courseProgram, nil, func(struct{}) { handler() },
+	register(&p.courseProgram, func(struct{}) { handler() },
 		func(h *handlers, r *registration[struct{}]) { h.courseStart = append(h.courseStart, r) })
-}
-
-// NewRunGroup 创建一个运行组，见 RunPolicy 与 RunGroup。课程代码里写 newRunGroup。
-func (p *Course) NewRunGroup(policy RunPolicy) RunGroup {
-	return &runGroup{p: &p.courseProgram, policy: policy}
-}
-
-// groupOf 把注册时给的 RunGroup 参数还原成内部类型；只有本包会实现这个接口。
-func groupOf(group RunGroup) *runGroup {
-	g, ok := group.(*runGroup)
-	if !ok {
-		panic(fmt.Sprintf("tutorial: %T is not a RunGroup created by newRunGroup", group))
-	}
-	return g
 }
 
 // ShowPrelude 展示开场任务引导，等学习者确认后才返回。
@@ -163,16 +146,16 @@ func (p *Course) CompleteWith(message string) {
 // 作者回调因此只有两条执行路径——运行 goroutine 上的 runFrame，以及主 goroutine
 // 上唯一的 MainEntry 帧。
 //
-// 执行模型的三条约束（详见 courseProgram、runGroup 与 startRuns 的注释）：
+// 执行模型的两条约束（详见 courseProgram 与 startRuns 的注释）：
 //   - **单执行、多在途**：任一瞬间只有执行令牌的持有者在跑课程代码（共享变量
 //     因此没有数据竞争）；运行在等待类 capability（展示、LLM）期间让出令牌挂起，
-//     其他运行照常执行，同一段回调的多次运行可以并存，由运行组的策略约束。
-//   - **启动有序**：触发按到达顺序处理，一次触发内各段回调按注册顺序启动，
-//     每段跑到第一次等待或结束再启动下一段；契约里 editor.runtime.log
-//     "每条启动一次运行、按追加顺序启动"由此保证。
+//     其他运行照常执行，同一段回调的多次运行可以并存（如何相处见 #3509）。
 //   - **完成即收尾**：complete 之后新触发不再启动运行；已在执行或挂起的运行
-//     把剩余语句执行完（此时宿主对展示类 capability no-op 即回），排队中的运行
-//     直接退出，全部收尾后程序结束。
+//     把剩余语句执行完（此时宿主对展示类 capability no-op 即回），全部收尾后
+//     程序结束。
+//
+// 触发按到达顺序处理、一次触发内各段回调按注册顺序启动，是当前实现的行为，
+// 契约不承诺。
 func (p *Course) Start() {
 	program := &p.courseProgram
 	// 课程开始的运行由主 goroutine 亲自启动，之后才起投递 goroutine 处理宿主事件：

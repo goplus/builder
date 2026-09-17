@@ -14,13 +14,12 @@ import (
 //
 //  1. 执行令牌（execToken）只经 acquireExec/releaseExec 流转，且只有 runFrame 与
 //     yieldWhile 有资格调它们——运行只有一个让出点，不存在散落在别处的临时让位。
-//  2. yieldWhile 只从 mustCallCapability（等宿主）与 join（OneAtATime 排队）进入；
-//     桥的 callCapability 只出现在 mustCallCapability 里。
+//  2. yieldWhile 只从 mustCallCapability（等宿主）进入；桥的 callCapability 只出现在
+//     mustCallCapability 里。
 //  3. schedulerMu 的持锁区间内没有任何可能阻塞的操作（channel 收发、select、Wait、
-//     取令牌、调桥）；registryMu 与 groupMu 是叶子锁，持锁区间只允许白名单里的调用。
+//     取令牌、调桥）；registryMu 是叶子锁，持锁区间只允许白名单里的调用。
 //  4. 运行的生命周期入口唯一：startRuns 只由 Start（与包级的事件投递闭包）调用；
-//     admitRun 只在 startRuns 与 goLive；cancel 只在 join；markYielded 只在 runFrame
-//     与 yieldWhile。
+//     admitRun 只在 startRuns 与 goLive；markYielded 只在 runFrame 与 yieldWhile。
 //  5. 事件入口只有一个：向执行器注册 handler 只发生在 init；events.attach 只在
 //     XGot_Course_Main、events.goLive 只在 Start 里调用。
 //
@@ -55,7 +54,7 @@ func TestSchedulingInvariants(t *testing.T) {
 var (
 	tokenOperators   = map[string]bool{"runFrame": true, "yieldWhile": true}
 	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
-	yieldCallers     = map[string]bool{"mustCallCapability": true, "join": true}
+	yieldCallers     = map[string]bool{"mustCallCapability": true}
 	blockingWaitHome = "mustCallCapability"
 	admitCallers     = map[string]bool{"startRuns": true, "goLive": true}
 	yieldMarkers     = map[string]bool{"runFrame": true, "yieldWhile": true}
@@ -79,7 +78,7 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				}
 			case strings.HasSuffix(callee, ".yieldWhile"):
 				if !yieldCallers[name] {
-					report(n.Pos(), "%s yields the token: only mustCallCapability and join may wait", name)
+					report(n.Pos(), "%s yields the token: only mustCallCapability may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
 				if name != blockingWaitHome {
@@ -92,10 +91,6 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 			case strings.HasSuffix(callee, ".admitRun"):
 				if !admitCallers[name] {
 					report(n.Pos(), "%s admits a goroutine to runs: only startRuns and goLive may", name)
-				}
-			case strings.HasSuffix(callee, ".cancel"):
-				if name != "join" {
-					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only join may", name)
 				}
 			case strings.HasSuffix(callee, ".markYielded"):
 				if !yieldMarkers[name] {
@@ -122,10 +117,10 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 		return true
 	})
 
-	// 规则 3：schedulerMu 的持锁区间内不得有阻塞操作；registryMu / groupMu 是叶子锁，
+	// 规则 3：schedulerMu 的持锁区间内不得有阻塞操作；registryMu 是叶子锁，
 	// 持锁区间内只允许白名单里的调用。
 	recv := receiverName(fn)
-	for _, guard := range []string{"schedulerMu", "registryMu", "groupMu"} {
+	for _, guard := range []string{"schedulerMu", "registryMu"} {
 		for _, region := range heldRegions(fn, recv, guard) {
 			ast.Inspect(fn.Body, func(node ast.Node) bool {
 				if node == nil || node.Pos() < region.from || node.Pos() >= region.to {
@@ -169,10 +164,9 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 }
 
 // leafLockAllowedCalls 列出各叶子锁持锁区间内唯一允许的调用：都是纯计算、
-// 不可能阻塞，也碰不到别的锁。解码、投递、取消与等待必须在锁外。
+// 不可能阻塞，也碰不到别的锁。解码、投递与等待必须在锁外。
 var leafLockAllowedCalls = map[string]map[string]bool{
 	"registryMu": {"len": true, "append": true, "make": true, "fmt.Errorf": true, "json.RawMessage": true},
-	"groupMu":    {"len": true, "append": true, "close": true},
 }
 
 type lockRegion struct {

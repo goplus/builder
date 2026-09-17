@@ -5,70 +5,17 @@ package tutorial
 // (showPrelude, showMessage, showVideo) or on generation (generateText,
 // generateJSON); other runs proceed meanwhile. Every trigger starts a new run
 // of each callback registered for it, so runs of one callback may overlap
-// when a trigger arrives while an earlier run is still waiting. A RunPolicy
-// given at registration, or a RunGroup the run joins, decides how such runs
-// relate; without either they run independently. Runs start in a fixed
-// order: triggers are handled in arrival order, and within one trigger the
-// callbacks start in registration order, each running to its first wait or
-// its end before the next starts (a run held back by OneAtATime does not
-// delay the others). Course start is delivered like any other event.
+// when a trigger arrives while an earlier run is still waiting. Course start
+// is delivered like any other event.
+//
+// TODO(#3509): how overlapping runs of one callback relate (cancelling the
+// stale one, running one at a time, ignoring triggers while busy) is not yet
+// specified; until it is, Course code handles that race itself. The order in
+// which runs start is not promised either.
 //
 // Overlapping presentation calls from different runs are the host's business:
 // the framework does not serialize them, and the host's capability decides
 // whether to queue the later call, reject it, or dismiss the earlier one.
-
-// RunPolicy decides how runs that share a run group relate when a run joins
-// the group while an earlier run still holds it. A policy given directly at
-// registration (`onExit OneAtATime, code => {...}`) puts every run of that
-// callback in a private group from its first statement. When a callback
-// filters its triggers, or when several callbacks must share one policy,
-// create a RunGroup and join it where it matters.
-type RunPolicy int
-
-const (
-	// CancelPrevious cancels the run holding the group so the joining run
-	// proceeds. A cancelled run ends at its next waiting point: if it is
-	// waiting, the result of that call is discarded when the host settles it;
-	// otherwise it ends before making its next waiting call. Statements
-	// between waits still run, and the host may still finish presenting what
-	// it was asked. Use it when only the latest trigger matters, such as
-	// judging the latest output.
-	CancelPrevious RunPolicy = iota + 1
-	// OneAtATime lets runs through one after another in arrival order: a
-	// joining run waits, yielding like a waiting call, until the run holding
-	// the group ends. Use it when every trigger must be handled in full and in
-	// order, such as showing a hint for each failed run.
-	OneAtATime
-	// SkipWhileBusy ends the joining run on the spot while another run holds
-	// the group; the statements after the join point do not execute. Use it
-	// to react once to a burst of triggers, such as judging once while a
-	// signal repeats every frame.
-	SkipWhileBusy
-)
-
-// RunGroup is a shared policy scope for runs. A run holds the group from the
-// moment it joins until the run ends; the group's RunPolicy decides what
-// happens when a run joins while another still holds it. One group may be
-// shared by callbacks of different events, for example an onLog and an
-// onExit that both judge completion:
-//
-//	judging := newRunGroup(SkipWhileBusy)
-//	Editor.Runtime.onLog log => {
-//		if log != "reached" { return }
-//		judging.enter() // join here, after the filter
-//		...
-//	}
-//	Editor.Runtime.onExit code => {
-//		judging.enter()
-//		...
-//	}
-type RunGroup interface {
-	// enter joins the current run to the group at this point. It never needs
-	// a checked result: under SkipWhileBusy the run may end here, under
-	// OneAtATime it may wait here, under CancelPrevious the run holding the
-	// group is cancelled. Joining a group the run already holds has no effect.
-	enter()
-}
 
 type Course struct {
 	CourseAbilities
@@ -79,10 +26,8 @@ type Course struct {
 
 type CourseAbilities interface {
 	// onStart registers a callback that is called when the course starts.
-	// Several callbacks may be registered: they start in registration order,
-	// each running to its first wait before the next starts, then proceed
-	// independently. Opening steps that must happen in order belong in one
-	// callback.
+	// Several callbacks may be registered; they run independently of each
+	// other. Opening steps that must happen in order belong in one callback.
 	onStart(callback func())
 	// showPrelude displays the Course opening guide with the given message and
 	// returns after the learner dismisses it. Unlike showMessage, the host
@@ -105,8 +50,6 @@ type CourseAbilities interface {
 	complete()
 	// completeWith is complete with the given feedback displayed to the learner.
 	completeWith(message string)
-	// newRunGroup creates a run group with the given policy; see RunGroup.
-	newRunGroup(policy RunPolicy) RunGroup
 }
 
 type Editor struct {
@@ -131,19 +74,14 @@ type Project interface {
 	listSprites() []string
 }
 
-// Every event registration below accepts an optional RunPolicy or RunGroup
-// before the callback (`onExit OneAtATime, code => {...}`,
-// `onLog judging, log => {...}`); it applies from the run's first statement.
-// A callback that filters its triggers should join a RunGroup after the
-// filter instead. See RunPolicy and RunGroup.
 type Runtime interface {
 	// onStart registers a callback that is called when the project runtime starts.
 	onStart(callback func())
 	// onExit registers a callback that is called when the project runtime exits.
 	onExit(callback func(code int))
 	// onLog registers a callback that is called for every newly appended
-	// runtime log: each entry starts one run, and runs start in append order.
-	// Error output is not part of this channel.
+	// runtime log: each entry starts one run. Error output is not part of this
+	// channel.
 	onLog(callback func(log string))
 }
 
@@ -166,8 +104,7 @@ type Ruler interface {
 
 type Copilot interface {
 	// onRoundFinish registers a callback that is called when a Copilot round
-	// finishes. An optional RunPolicy or RunGroup may precede the callback;
-	// see RunPolicy and RunGroup.
+	// finishes.
 	onRoundFinish(callback func(round CopilotRound))
 	// generateText asks Copilot to generate text without adding a conversation round.
 	generateText(message string) string
