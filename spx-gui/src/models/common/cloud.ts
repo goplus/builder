@@ -21,7 +21,13 @@ import type { Metadata, PartialMetadata, ProjectSerialized } from '../project'
 import { File, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
 import { createAIDescriptionFiles, extractAIDescription } from './'
-import { getUniversalUrlScheme, stringifyDataUrl, stringifyKodoUrl, UniversalUrlScheme } from '@/utils/universal-url'
+import {
+  getUniversalUrlFilename,
+  getUniversalUrlScheme,
+  stringifyDataUrl,
+  stringifyKodoUrl,
+  UniversalUrlScheme
+} from '@/utils/universal-url'
 
 export type PreferPublishedContent = boolean | ((project: ProjectData) => boolean | Promise<boolean>)
 
@@ -196,7 +202,7 @@ function getUniversalUrl(file: File): UniversalUrl | null {
   return file.meta.universalUrl ?? null
 }
 
-export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
+export function createFileWithUniversalUrl(url: UniversalUrl, name = getUniversalUrlFilename(url)) {
   const file = new File(name, async (signal) => {
     const webUrl = await cloudHelpers.universalUrlToWebUrl(url)
     signal?.throwIfAborted()
@@ -206,7 +212,7 @@ export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(ur
   return file
 }
 
-export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
+export function createFileWithWebUrl(url: WebUrl, name = getUniversalUrlFilename(url)) {
   return new File(name, async (signal) => fetchFile(url, signal))
 }
 

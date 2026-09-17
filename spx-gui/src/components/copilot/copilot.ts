@@ -212,7 +212,8 @@ export class Round {
   export(): RoundExported {
     return {
       userMessage: this.userMessage,
-      resultMessages: this.resultMessages,
+      // `resultMessages` keeps changing while the round runs (and is cleared on retry); the export must not.
+      resultMessages: [...this.resultMessages],
       inProgressCopilotMessageContent: this.inProgressCopilotMessageContent,
       error: this.error,
       state: this.state,
@@ -750,6 +751,20 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   endCurrentSession(): void {
     this.currentSession?.abortCurrentRound()
     this.currentSessionRef.value = null
+  }
+
+  /** Export the current session (`null` if none) so that it can be brought back later with `restoreSession`. */
+  exportCurrentSession(): SessionExported | null {
+    return this.currentSession?.export() ?? null
+  }
+
+  /**
+   * Restore an exported session as the current one, ending the current session first. In-progress rounds come
+   * back cancelled (not resumed). The panel is left as it is.
+   */
+  restoreSession(exported: SessionExported): void {
+    this.endCurrentSession()
+    this.currentSessionRef.value = Session.load(exported, this)
   }
 
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */

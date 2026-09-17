@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getSoundName, getSpriteName, normalizeAssetName } from './asset-name'
+import { getSoundName, getSpriteName, normalizeAssetName, validateFontName, validateSoundName } from './asset-name'
 import { SpxProject } from '../project'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
@@ -91,6 +91,22 @@ describe('getSoundName', () => {
     expect(getSoundName(project, '')).toBe('sound1')
     project.addSound(new Sound('sound1', mockFile()))
     expect(getSoundName(project, '')).toBe('sound2')
+  })
+})
+
+describe('validateSoundName', () => {
+  it('rejects names that cannot be sound resource directories', () => {
+    expect(validateSoundName('a/b', null)).toMatchObject({ en: 'The value must not contain /' })
+    expect(validateSoundName('CON', null)).toBeUndefined()
+    expect(validateSoundName('sound', null)).toBeUndefined()
+  })
+})
+
+describe('validateFontName', () => {
+  it('shares the path segment requirement with sound names', () => {
+    expect(validateFontName('a/b')).toMatchObject({ en: 'The value must not contain /' })
+    expect(validateFontName('default')).toMatchObject({ en: 'font family default is reserved' })
+    expect(validateFontName('font')).toBeUndefined()
   })
 })
 
