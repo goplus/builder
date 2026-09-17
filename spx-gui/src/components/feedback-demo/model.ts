@@ -40,6 +40,21 @@ function toQuotedMarkdown(value: string) {
     .join('\n')
 }
 
+function formatQuotedFeedbackTime(value: string) {
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(new Date(value))
+  const getPart = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${getPart('year')}年${getPart('month')}月${getPart('day')}日 ${getPart('weekday')} ${getPart('hour')}:${getPart('minute')}`
+}
+
 export interface NotificationCenterAnchor {
   top: number
   right: number
@@ -130,7 +145,7 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     feedback.reply = reply
     feedback.repliedAt = repliedAt
     const quotedFeedback = [
-      `> **${feedback.title}**`,
+      `> ${feedback.userDisplayName} 在 ${formatQuotedFeedbackTime(feedback.createdAt)} 写道：`,
       '>',
       toQuotedMarkdown(feedback.description),
       ...feedback.attachments.flatMap((attachment) => {
@@ -142,8 +157,8 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
       id: `notification-${data.notifications.length + 1001}`,
       userID: feedback.userID,
       feedbackID: feedback.id,
-      title: '支持团队回复了你的反馈',
-      content: `${quotedFeedback}\n\n${reply}`,
+      title: `回复：${feedback.title}`,
+      content: `${reply}\n\n${quotedFeedback}`,
       createdAt: repliedAt,
       readAt: null
     })

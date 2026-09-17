@@ -3,17 +3,17 @@ import { describe, expect, it } from 'vitest'
 
 import NotificationMarkdown from './NotificationMarkdown.vue'
 
-const content = `> **运行项目时一直卡在加载界面**
->
-> 点击运行以后加载动画一直没有结束。
->
-> [loading-screen.png](https://example.com/loading-screen.png "loading-screen.png")
-
-问题已经修复。
+const content = `问题已经修复。
 
 [guide.png](https://example.com/guide.png "guide.png")
 
-[project-page.png](https://example.com/project-page.png "project-page.png")`
+[project-page.png](https://example.com/project-page.png "project-page.png")
+
+> 小宇 在 2026年8月3日 周一 09:25 写道：
+>
+> 点击运行以后加载动画一直没有结束。
+>
+> [loading-screen.png](https://example.com/loading-screen.png "loading-screen.png")`
 
 describe('NotificationMarkdown', () => {
   it('keeps the quoted feedback, reply, attachments, and time in document order', () => {
@@ -27,10 +27,14 @@ describe('NotificationMarkdown', () => {
     })
     const text = wrapper.text()
 
-    expect(text.indexOf('运行项目时一直卡在加载界面')).toBeLessThan(text.indexOf('问题已经修复'))
     expect(text.indexOf('问题已经修复')).toBeLessThan(text.indexOf('guide.png'))
     expect(text.indexOf('guide.png')).toBeLessThan(text.indexOf('project-page.png'))
-    expect(text.indexOf('project-page.png')).toBeLessThan(text.indexOf('4 天前'))
+    expect(text.indexOf('project-page.png')).toBeLessThan(text.indexOf('小宇 在 2026年8月3日 周一 09:25 写道：'))
+    expect(text.indexOf('小宇 在 2026年8月3日 周一 09:25 写道：')).toBeLessThan(
+      text.indexOf('点击运行以后加载动画一直没有结束。')
+    )
+    expect(text.indexOf('loading-screen.png')).toBeLessThan(text.indexOf('4 天前'))
+    expect(text).not.toContain('运行项目时一直卡在加载界面')
     expect(wrapper.findAll('.notification-markdown')).toHaveLength(1)
     expect(wrapper.get('.notification-markdown').text()).not.toContain('4 天前')
     expect(wrapper.get('time').element.previousElementSibling).toBe(wrapper.get('.notification-markdown').element)
@@ -46,12 +50,12 @@ describe('NotificationMarkdown', () => {
     })
 
     const attachmentLinks = wrapper.findAll('a.notification-attachment-link')
-    expect(attachmentLinks.map((link) => link.text())).toEqual(['loading-screen.png', 'guide.png', 'project-page.png'])
+    expect(attachmentLinks.map((link) => link.text())).toEqual(['guide.png', 'project-page.png', 'loading-screen.png'])
     expect(attachmentLinks.every((link) => link.element.parentElement?.tagName === 'P')).toBe(true)
     expect(new Set(attachmentLinks.map((link) => link.element.parentElement)).size).toBe(3)
     expect(wrapper.find('button').exists()).toBe(false)
 
-    await attachmentLinks[2].trigger('click')
+    await attachmentLinks[1].trigger('click')
 
     expect(wrapper.emitted('preview')).toEqual([
       [{ name: 'project-page.png', url: 'https://example.com/project-page.png' }]

@@ -116,13 +116,16 @@ describe('feedback demo model', () => {
     })
     expect(model.data.notifications[0]).toMatchObject({
       feedbackID: newFeedback.id,
+      title: '回复：运行项目时一直卡在加载界面',
       readAt: null
     })
-    expect(model.data.notifications[0].content).toContain('> **运行项目时一直卡在加载界面**')
+    expect(model.data.notifications[0].content).toMatch(/^We fixed this for you\./)
+    expect(model.data.notifications[0].content).toContain('> 小宇 在 2026年8月3日 周一 09:25 写道：')
+    expect(model.data.notifications[0].content).not.toContain('运行项目时一直卡在加载界面')
     expect(model.data.notifications[0].content).toContain(
       '> [xbuilder-loading-screen.jpg](/src/components/feedback-demo/assets/xbuilder-loading-screen.jpg "xbuilder-loading-screen.jpg")'
     )
-    expect(model.data.notifications[0].content).toMatch(/\n\nWe fixed this for you\.$/)
+    expect(model.data.notifications[0].content).toMatch(/xbuilder-loading-screen\.jpg"\)$/)
     expect(model.unreadNotificationCount.value).toBe(initialUnreadCount + 1)
 
     expect(model.data.notifications.filter((notification) => notification.feedbackID === newFeedback.id)).toHaveLength(
@@ -193,14 +196,10 @@ describe('feedback demo model', () => {
 
     model.replyToFeedback(feedback.id, 'Thanks, please check the attached screenshot.')
 
-    expect(model.data.notifications[0].title).toBe('支持团队回复了你的反馈')
-    expect(model.data.notifications[0].content).toBe(`> **Image support**
->
-> Screenshot attached
->
-> [screen.png](blob:mock "screen.png")
-
-Thanks, please check the attached screenshot.`)
+    expect(model.data.notifications[0].title).toBe('回复：Image support')
+    expect(model.data.notifications[0].content).toMatch(
+      /^Thanks, please check the attached screenshot\.\n\n> 小宇 在 .+ 写道：\n>\n> Screenshot attached\n>\n> \[screen\.png\]\(blob:mock "screen\.png"\)$/
+    )
   })
 
   it('keeps feedback notification content as one standard Markdown document', () => {
@@ -209,7 +208,9 @@ Thanks, please check the attached screenshot.`)
 
     expect(feedbackReplies).toHaveLength(3)
     for (const notification of feedbackReplies) {
-      expect(notification.content).toMatch(/^> /)
+      expect(notification.title).toMatch(/^回复：/)
+      expect(notification.content).not.toMatch(/^> /)
+      expect(notification.content).toMatch(/\n\n> 小宇 在 .+ 写道：/)
       expect(notification.content).toMatch(/\[[^\]]+\]\([^)]+\.(?:jpg|png)(?: "[^"]+")?\)/)
       expect(notification.content).not.toContain('![')
       expect(notification.content).not.toContain('<notification-attachment')
@@ -230,8 +231,9 @@ Thanks, please check the attached screenshot.`)
     )
 
     const releaseNotification = model.data.notifications.find((notification) => notification.id === 'notification-1011')
-    expect(releaseNotification?.content.indexOf('运行项目时一直卡在加载界面')).toBeLessThan(
-      releaseNotification?.content.indexOf('发布流程中的状态提示已经优化') ?? -1
+    expect(releaseNotification?.content).not.toContain('运行项目时一直卡在加载界面')
+    expect(releaseNotification?.content.indexOf('发布流程中的状态提示已经优化')).toBeLessThan(
+      releaseNotification?.content.indexOf('小宇 在 2026年8月3日 周一 09:25 写道：') ?? -1
     )
   })
 
