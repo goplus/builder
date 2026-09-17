@@ -4,7 +4,7 @@ import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
 import { localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import type { Disposer } from '@/utils/disposable'
+import { mergeSignals, type Disposer } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
@@ -269,7 +269,9 @@ export class Round {
     this.setState(RoundState.Completed)
     this.copilot.emit('roundComplete', {
       userMessage: getUserMessageText(this.userMessage),
-      resultMessages: this.resultMessages.map((message) => toApiMessage(message).content?.text ?? '')
+      resultMessages: this.resultMessages.flatMap((message) =>
+        message.role === 'copilot' && message.content != null ? [message.content] : []
+      )
     })
   }
 
@@ -648,11 +650,10 @@ These skills are already preloaded. Avoid calling \`load_skill\` for them again.
 ${skillContents.join('\n\n')}`
   }
 
-  private async getContext(): Promise<string> {
+  private async getContext(includeSkills = true): Promise<string> {
     const contextParts = await Promise.all([
       ...this.contextProviders.map((p) => p.provideContext?.()),
-      this.getSkillCatalogContext(),
-      this.getPreloadSkillsContext()
+      ...(includeSkills ? [this.getSkillCatalogContext(), this.getPreloadSkillsContext()] : [])
     ])
     return contextParts.filter((s) => s != null && s.trim() !== '').join('\n\n')
   }
@@ -683,8 +684,8 @@ ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
 ${topic.description}`
   }
 
-  async getContextMessage(): Promise<UserTextMessage> {
-    const parts = [this.getCustomElementsPrompt(), await this.getContext(), this.getTopicPrompt()]
+  async getContextMessage(includeSkills = true): Promise<UserTextMessage> {
+    const parts = [this.getCustomElementsPrompt(), await this.getContext(includeSkills), this.getTopicPrompt()]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`
@@ -697,12 +698,14 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   async generateTextResponse(message: string, signal?: AbortSignal): Promise<string> {
     let content = ''
-    await this.streamResponse(message, { signal }, (event) => {
+    const ctrl = new AbortController()
+    await this.streamResponse(message, { signal: mergeSignals(ctrl.signal, signal) }, (event) => {
       switch (event.type) {
         case 'text_delta':
           content += event.data.text
           break
         case 'tool_call_delta':
+          ctrl.abort()
           throw new Error('Unexpected tool call in text response')
         case 'done':
           break
@@ -734,7 +737,11 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     )
     const call = finalizeToolCalls(toolCalls).find((item) => item.function.name === 'return_json')
     if (call == null) throw new Error('Copilot did not return JSON')
-    return JSON.parse(call.function.arguments)
+    try {
+      return JSON.parse(call.function.arguments)
+    } catch {
+      throw new Error('Copilot returned invalid JSON')
+    }
   }
 
   getCustomElements(): CustomElementDefinition[] {
@@ -874,7 +881,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
   ) {
     const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
-    messages.push(await this.getContextMessage(), { type: 'text', role: 'user', content: message })
+    messages.push(await this.getContextMessage(false), { type: 'text', role: 'user', content: message })
     const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
     for await (const event of result) {
       if (event.type === 'error') throw new Error(event.data.message)
