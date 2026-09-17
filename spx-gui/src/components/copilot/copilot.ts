@@ -342,32 +342,33 @@ export class Round {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
       messages.push(await this.copilot.getContextMessage())
+      const apiMessages = messages.map(toApiMessage)
+      // TODO: history summarization with LLM instead of truncation
+      const sampledApiMessages = sampleApiMessages(apiMessages)
       const toolCalls: Array<ToolCallDraft | null> = []
-      await streamResponse(
-        this.copilot.generator,
-        messages,
-        {
-          signal: this.ctrl.signal,
-          tools: this.copilot.getTools().map(toApiTool)
-        },
-        (event) => {
-          switch (event.type) {
-            case 'text_delta':
-              if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
-              if (this.inProgressCopilotMessageContentRef.value == null) {
-                this.inProgressCopilotMessageContentRef.value = ''
-              }
-              this.inProgressCopilotMessageContentRef.value += event.data.text
-              break
-            case 'tool_call_delta':
-              if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
-              accumulateToolCallDelta(toolCalls, event)
-              break
-            case 'done':
-              break
-          }
+      const result = this.copilot.generator.generateCopilotMessage(sampledApiMessages, {
+        signal: this.ctrl.signal,
+        tools: this.copilot.getTools().map(toApiTool)
+      })
+      for await (const event of result) {
+        switch (event.type) {
+          case 'text_delta':
+            if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
+            if (this.inProgressCopilotMessageContentRef.value == null) {
+              this.inProgressCopilotMessageContentRef.value = ''
+            }
+            this.inProgressCopilotMessageContentRef.value += event.data.text
+            break
+          case 'tool_call_delta':
+            if (this.state === RoundState.Loading) this.setState(RoundState.InProgress)
+            accumulateToolCallDelta(toolCalls, event)
+            break
+          case 'done':
+            break
+          case 'error':
+            throw new Error(event.data.message)
         }
-      )
+      }
       const message = this.sealInProgressCopilotMessage(toolCalls)
       this.handleCopilotMessage(message)
     } catch (err) {
