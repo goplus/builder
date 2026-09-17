@@ -103,9 +103,9 @@ type Ruler interface {
 }
 
 type Copilot interface {
-	// onRoundFinish registers a callback that is called when a Copilot round
-	// finishes.
-	onRoundFinish(callback func(round CopilotRound))
+	// onRoundComplete registers a callback that is called when a Copilot round
+	// completes.
+	onRoundComplete(callback func(round CopilotRound))
 	// generateText asks Copilot to generate text without adding a conversation round.
 	generateText(message string) string
 	// generateJSON derives a JSON Schema from result's struct type and fills result with the generated value.
@@ -113,7 +113,7 @@ type Copilot interface {
 	generateJSON(message string, result any)
 }
 
-// CopilotRound is what onRoundFinish receives. Its fields are read as
+// CopilotRound is what onRoundComplete receives. Its fields are read as
 // written here (round.UserMessage): XGo lowercases method calls, not field
 // access.
 type CopilotRound struct {

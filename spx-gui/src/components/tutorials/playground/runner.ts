@@ -94,13 +94,10 @@ export class PlaygroundCourseRunner extends Emitter<{
         course_complete: () => this.acceptCompletion(null),
         course_completeWith: (request) => this.acceptCompletion((request as { content: string }).content),
         copilot_generateText: (request) =>
-          this.options.copilot.generateResponse({
-            response: 'text',
-            message: (request as { content: string }).content
-          }),
+          this.options.copilot.generateTextResponse((request as { content: string }).content),
         copilot_generateJSON: (request) => {
           const { content, schema } = request as { content: string; schema: Record<string, unknown> }
-          return this.options.copilot.generateResponse({ response: 'json', message: content, schema })
+          return this.options.copilot.generateJSONResponse(content, schema)
         }
       }
     }
@@ -113,7 +110,7 @@ export class PlaygroundCourseRunner extends Emitter<{
       description: `You are assisting the learner in the Playground Course: ${project.title}.\n\n${context}`,
       reactToEvents: false,
       endable: true,
-      allowCodeHelper: false
+      codeHelperEnabled: false
     }
   }
 
@@ -141,8 +138,8 @@ export class PlaygroundCourseRunner extends Emitter<{
       )
     )
     this.addDisposer(
-      this.options.copilot.on('roundFinish', (round) => {
-        if (this.options.copilot.currentSession === this.session) this.dispatchEvent('copilot.roundFinish', round)
+      this.options.copilot.on('roundComplete', (round) => {
+        if (this.options.copilot.currentSession === this.session) this.dispatchEvent('copilot.roundComplete', round)
       })
     )
   }

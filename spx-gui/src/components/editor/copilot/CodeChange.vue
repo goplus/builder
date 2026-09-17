@@ -49,7 +49,7 @@ const props = defineProps<{
 const editorCtxRef = useEditorCtxRef()
 const codeEditorRef = useCodeEditorRef()
 const copilot = useCopilot()
-const allowCodeHelper = computed(() => copilot.currentSession?.topic.allowCodeHelper !== false)
+const codeHelperEnabled = computed(() => copilot.currentSession?.topic.codeHelperEnabled !== false)
 
 const childrenText = useSlotText()
 const codeToAdd = computed(() => {
@@ -117,7 +117,7 @@ const handleApply = useMessageHandle(
         </div>
       </div>
       <BlockFooter>
-        <BlockActionBtn v-if="allowCodeHelper" icon="apply" @click="handleApply">
+        <BlockActionBtn v-if="codeHelperEnabled" icon="apply" @click="handleApply">
           {{ $t({ en: 'Apply', zh: '应用' }) }}
         </BlockActionBtn>
       </BlockFooter>

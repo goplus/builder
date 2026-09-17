@@ -306,7 +306,7 @@ describe('Copilot', () => {
   it('emits completed rounds as plain text', async () => {
     const { copilot } = createCopilotWithStorage(createTextStreamBatches('Done'))
     const rounds: Array<{ userMessage: string; resultMessages: string[] }> = []
-    copilot.on('roundFinish', (round) => rounds.push(round))
+    copilot.on('roundComplete', (round) => rounds.push(round))
 
     await copilot.startSession(createBasicTopic())
     copilot.addUserTextMessage('Help me')
@@ -330,14 +330,10 @@ describe('Copilot', () => {
     const copilot = new Copilot(createTestSkillRegistry(), generator)
     await copilot.startSession(createBasicTopic())
 
-    await expect(copilot.generateResponse({ response: 'text', message: 'Give feedback' })).resolves.toBe('Nice work')
-    await expect(
-      copilot.generateResponse({
-        response: 'json',
-        message: 'Is the goal complete?',
-        schema: { type: 'object' }
-      })
-    ).resolves.toEqual({ complete: true })
+    await expect(copilot.generateTextResponse('Give feedback')).resolves.toBe('Nice work')
+    await expect(copilot.generateJSONResponse('Is the goal complete?', { type: 'object' })).resolves.toEqual({
+      complete: true
+    })
 
     expect(copilot.currentSession?.rounds).toEqual([])
     expect(generator.calls[0]?.at(-1)).toEqual({

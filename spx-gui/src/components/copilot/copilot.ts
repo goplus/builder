@@ -4,7 +4,7 @@ import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
 import { localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import { Disposable, type Disposer } from '@/utils/disposable'
+import type { Disposer } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
@@ -124,8 +124,8 @@ export type Topic = {
   reactToEvents: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
   endable?: boolean
-  /** Whether code-block Copy and code-change Apply helpers are available, defaults to `true`. */
-  allowCodeHelper?: boolean
+  /** Whether code-block Copy and code-change Apply helpers are enabled, defaults to `true`. */
+  codeHelperEnabled?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
 }
@@ -154,17 +154,6 @@ export type JSONSchema = Record<string, unknown>
 export type CopilotRound = {
   userMessage: string
   resultMessages: string[]
-}
-
-export type CopilotTextRequest = {
-  response: 'text'
-  message: string
-}
-
-export type CopilotJSONRequest = {
-  response: 'json'
-  message: string
-  schema: JSONSchema
 }
 
 // NOTE: Keep backward compatibility of `RoundExported` to avoid errors when loading old sessions.
@@ -278,7 +267,7 @@ export class Round {
 
   private completeRound() {
     this.setState(RoundState.Completed)
-    this.copilot.emitRoundFinish({
+    this.copilot.emit('roundComplete', {
       userMessage: getUserMessageText(this.userMessage),
       resultMessages: this.resultMessages.map((message) => toApiMessage(message).content?.text ?? '')
     })
@@ -570,15 +559,13 @@ const defaultTopic: Topic = {
   reactToEvents: false
 }
 
-export class Copilot extends Disposable {
+export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
   private contextProviders: ICopilotContextProvider[] = shallowReactive([])
   private quickInputProviders: IQuickInputProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
   markdownElements = shallowReactive<MarkdownElementDefinitions>({})
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
-  private emitter = new Emitter<{ roundFinish: CopilotRound }>()
-
   getTools(): ToolDefinition[] {
     return Array.from(this.toolMap.values())
   }
@@ -596,7 +583,6 @@ export class Copilot extends Disposable {
     public generator: IMessageEventGenerator = apis
   ) {
     super()
-    this.addDisposable(this.emitter)
     this.registerTool(
       createLoadSkillTool(this.skillRegistry, (skillName) => this.getPreloadSkillNames().includes(skillName))
     )
@@ -709,26 +695,46 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
   }
 
-  async generateResponse(request: CopilotTextRequest, signal?: AbortSignal): Promise<string>
-  async generateResponse(request: CopilotJSONRequest, signal?: AbortSignal): Promise<unknown>
-  async generateResponse(
-    request: CopilotTextRequest | CopilotJSONRequest,
-    signal?: AbortSignal
-  ): Promise<string | unknown> {
-    const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
-    messages.push(await this.getContextMessage())
-
-    if (request.response === 'text') {
-      messages.push({ type: 'text', role: 'user', content: request.message })
-      return this.generateTextResponse(messages, signal)
-    }
-
-    messages.push({
-      type: 'text',
-      role: 'user',
-      content: `${request.message}\n\nReturn the result through the return_json tool.`
+  async generateTextResponse(message: string, signal?: AbortSignal): Promise<string> {
+    let content = ''
+    await this.streamResponse(message, { signal }, (event) => {
+      switch (event.type) {
+        case 'text_delta':
+          content += event.data.text
+          break
+        case 'tool_call_delta':
+          throw new Error('Unexpected tool call in text response')
+        case 'done':
+          break
+      }
     })
-    return this.generateJSONResponse(messages, request.schema, signal)
+    return content
+  }
+
+  async generateJSONResponse(message: string, schema: JSONSchema, signal?: AbortSignal): Promise<unknown> {
+    const toolCalls: Array<ToolCallDraft | null> = []
+    await this.streamResponse(
+      `${message}\n\nReturn the result through the return_json tool.`,
+      {
+        signal,
+        tools: [
+          {
+            type: apis.ToolType.Function,
+            function: {
+              name: 'return_json',
+              description: 'Return the requested JSON response.',
+              parameters: schema as apis.FunctionDefinition['parameters']
+            }
+          }
+        ]
+      },
+      (event) => {
+        if (event.type === 'tool_call_delta') accumulateToolCallDelta(toolCalls, event)
+      }
+    )
+    const call = finalizeToolCalls(toolCalls).find((item) => item.function.name === 'return_json')
+    if (call == null) throw new Error('Copilot did not return JSON')
+    return JSON.parse(call.function.arguments)
   }
 
   getCustomElements(): CustomElementDefinition[] {
@@ -862,64 +868,18 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.currentSession.addUserMessage(userEventMessage)
   }
 
-  on(event: 'roundFinish', listener: (round: CopilotRound) => void): Disposer {
-    return this.emitter.on(event, listener)
-  }
-
-  emitRoundFinish(round: CopilotRound) {
-    this.emitter.emit('roundFinish', round)
-  }
-
-  private async generateTextResponse(messages: Message[], signal?: AbortSignal): Promise<string> {
-    let content = ''
-    const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), { signal })
+  private async streamResponse(
+    message: string,
+    options: apis.GenerateCopilotMessageOptions,
+    handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
+  ) {
+    const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
+    messages.push(await this.getContextMessage(), { type: 'text', role: 'user', content: message })
+    const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
     for await (const event of result) {
-      switch (event.type) {
-        case 'text_delta':
-          content += event.data.text
-          break
-        case 'tool_call_delta':
-          throw new Error('Unexpected tool call in text response')
-        case 'done':
-          break
-        case 'error':
-          throw new Error(event.data.message)
-      }
+      if (event.type === 'error') throw new Error(event.data.message)
+      handleEvent(event)
     }
-    return content
-  }
-
-  private async generateJSONResponse(messages: Message[], schema: JSONSchema, signal?: AbortSignal): Promise<unknown> {
-    const toolCalls: Array<ToolCallDraft | null> = []
-    const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), {
-      signal,
-      tools: [
-        {
-          type: apis.ToolType.Function,
-          function: {
-            name: 'return_json',
-            description: 'Return the requested JSON response.',
-            parameters: schema as apis.FunctionDefinition['parameters']
-          }
-        }
-      ]
-    })
-    for await (const event of result) {
-      switch (event.type) {
-        case 'text_delta':
-          break
-        case 'tool_call_delta':
-          accumulateToolCallDelta(toolCalls, event)
-          break
-        case 'done':
-          break
-        case 'error':
-          throw new Error(event.data.message)
-      }
-    }
-    const call = finalizeToolCalls(toolCalls).find((item) => item.function.name === 'return_json')
-    if (call == null) throw new Error('Copilot did not return JSON')
-    return JSON.parse(call.function.arguments)
   }
 
   /** Register a context provider for the copilot. */

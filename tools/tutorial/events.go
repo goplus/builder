@@ -44,7 +44,7 @@ var eventDeliverers = map[string]eventDeliverer{
 		startRuns(p, p.handlerSnapshot().runtimeLog, event.Log)
 		return nil
 	}),
-	"copilot.roundFinish": decodeThen("copilot.roundFinish", func(p *courseProgram, round CopilotRound) error {
+	"copilot.roundComplete": decodeThen("copilot.roundComplete", func(p *courseProgram, round CopilotRound) error {
 		startRuns(p, p.handlerSnapshot().copilotRound, round)
 		return nil
 	}),

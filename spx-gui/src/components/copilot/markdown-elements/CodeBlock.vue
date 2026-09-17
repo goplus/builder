@@ -14,7 +14,7 @@ defineProps<{
 
 const code = useSlotText()
 const copilot = useCopilot()
-const allowCodeHelper = computed(() => copilot.currentSession?.topic.allowCodeHelper !== false)
+const codeHelperEnabled = computed(() => copilot.currentSession?.topic.codeHelperEnabled !== false)
 
 const handleCopy = useMessageHandle(
   () => navigator.clipboard.writeText(code.value),
@@ -32,7 +32,7 @@ const handleCopy = useMessageHandle(
     </div>
     <BlockFooter>
       <slot name="actions" :code="code"></slot>
-      <BlockActionBtn v-if="allowCodeHelper" icon="copy" @click="handleCopy">
+      <BlockActionBtn v-if="codeHelperEnabled" icon="copy" @click="handleCopy">
         {{ $t({ en: 'Copy', zh: '复制' }) }}
       </BlockActionBtn>
     </BlockFooter>
