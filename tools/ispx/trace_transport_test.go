@@ -34,7 +34,7 @@ func TestTraceTransportInteractPropagatesHeadersAndFinishes(t *testing.T) {
 	base := &fakeAITransport{
 		interact: func(ctx context.Context, _ ai.Request) (ai.Response, error) {
 			gotHeaders = ai.ExtraHeadersFromContext(ctx)
-			return ai.Response{Text: "done"}, nil
+			return ai.Response{CommandName: "Done"}, nil
 		},
 	}
 	var gotName, gotOperation, gotStatus string
@@ -47,8 +47,8 @@ func TestTraceTransportInteractPropagatesHeadersAndFinishes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Interact() error = %v", err)
 	}
-	if resp.Text != "done" {
-		t.Fatalf("Interact() response = %+v; want text done", resp)
+	if resp.CommandName != "Done" {
+		t.Fatalf("Interact() response = %+v; want command Done", resp)
 	}
 	if gotName != interactTraceName {
 		t.Fatalf("trace name = %q; want %q", gotName, interactTraceName)
@@ -69,7 +69,7 @@ func TestTraceTransportContinuesWhenHookReturnsNoOperation(t *testing.T) {
 	base := &fakeAITransport{
 		interact: func(context.Context, ai.Request) (ai.Response, error) {
 			called = true
-			return ai.Response{Text: "done"}, nil
+			return ai.Response{CommandName: "Done"}, nil
 		},
 	}
 	transport := newTraceTransport(base, func(string, string) (map[string]string, func(string)) {
@@ -80,7 +80,7 @@ func TestTraceTransportContinuesWhenHookReturnsNoOperation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Interact() error = %v", err)
 	}
-	if !called || resp.Text != "done" {
+	if !called || resp.CommandName != "Done" {
 		t.Fatalf("underlying transport was not used: called = %v, response = %+v", called, resp)
 	}
 }

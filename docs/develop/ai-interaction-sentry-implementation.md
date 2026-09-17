@@ -13,7 +13,7 @@
 | `tools/ai/wasmtrans/wasmtrans.go` | 构造 HTTP 请求、调用原生 fetch、读取和解析响应 |
 | `tools/ai/wasmtrans/headers.go` | 合并 extra headers，保护凭据和 HTTP 控制字段 |
 | `tools/ai/wasmtrans/promise.go` | 等待 JS Promise，返回结果、拒绝原因或 context 错误 |
-| `tools/ai/httperr.go` | 将 API 的 quota、429 和其他 HTTP 失败转换为 Go 错误 |
+| `tools/ai/transport.go` | 定义 Transport 契约，以及客户端错误和可重试错误的分类 |
 | `tools/ispx/ai.go` | 接收 AI 配置，组装 `wasmtrans` 和 `traceTransport` |
 | `tools/ispx/trace_transport.go` | 在 Interact / Archive 调用前后执行监控，传递 headers 和结束状态 |
 | `tools/ispx/trace_hook_wasm.go` | 保存并直接调用页面 Hook，将 JavaScript 异常隔离在监控层 |

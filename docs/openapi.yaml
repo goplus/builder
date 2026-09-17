@@ -35,8 +35,6 @@ info:
 
     Server-Sent Events endpoints may emit a stream-level `error` event after the HTTP response has already started.
 
-    Quota and rate-limit responses include `Retry-After` when the server can compute a retry time.
-
 security:
   - bearerAuth: []
 
@@ -3504,13 +3502,7 @@ paths:
         A successful stream may contain any number of `text_delta` and `tool_call_delta` events before the final `done`
         event. Assistant responses may be text-only, tool-call-only, or contain both.
 
-        Quota and rate limits:
-
-        - Each message consumes 1 quota from the authenticated user's allowance.
-        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
-        - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
-          time in seconds.
+        Each message consumes 1 quota from the authenticated user's Copilot message allowance.
       requestBody:
         required: true
         content:
@@ -3572,16 +3564,11 @@ paths:
         - AI Interaction
       summary: Perform an AI interaction turn
       description: |
-        Send a message and context to the AI and receive a response that includes text and an optional command.
+        Start or continue an AI interaction sequence and receive the AI's next command, if any.
 
-        Quota and rate limits:
-
-        - Each turn consumes 1 quota from the authenticated user's AI interaction turn allowance.
-        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
-        - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
-          time in seconds.
+        Each turn consumes 1 quota from the authenticated user's AI interaction turn allowance.
       requestBody:
+        description: Encoded JSON request body, limited to 1 MiB.
         required: true
         content:
           application/json:
@@ -3610,6 +3597,10 @@ paths:
                     required:
                       - history
                     properties:
+                      content:
+                        maxLength: 0
+                      context:
+                        maxProperties: 0
                       history:
                         minItems: 1
               properties:
@@ -3646,53 +3637,41 @@ paths:
                     - worldName: TestWorld
                       gravity: 9.8
                 commandSpecs:
-                  description: Commands the AI is allowed to call.
+                  description: |
+                    Commands the AI is allowed to call.
+
+                    Command names must be unique within the array.
                   type: array
                   minItems: 1
+                  maxItems: 128
                   items:
                     type: object
                     required:
                       - name
                     properties:
                       name:
-                        description: Unique identifier for the command.
-                        type: string
-                        minLength: 1
-                        examples:
-                          - Move
+                        $ref: "#/components/schemas/AIInteractionCommandName"
                       description:
                         description: Explanation of what the command does.
                         type: string
+                        maxLength: 1024
                         examples:
                           - Move the character
                       parameters:
-                        description: Parameters the command accepts.
+                        description: |
+                          Complete set of parameters accepted by the command.
+
+                          Every parameter is required, and parameter names must be unique within the array.
                         type: array
+                        maxItems: 128
                         items:
-                          type: object
-                          required:
-                            - name
-                            - type
-                          properties:
-                            name:
-                              description: Parameter name.
-                              type: string
-                              minLength: 1
-                              examples:
-                                - Direction
-                            type:
-                              description: Go type name of the parameter.
-                              type: string
-                              minLength: 1
-                              examples:
-                                - string
-                            description:
-                              description: Purpose of the parameter.
-                              type: string
-                              examples:
-                                - "Direction to move: up, down, left, right"
+                          $ref: "#/components/schemas/AIInteractionCommandParameter"
                 history:
-                  description: Record of previous interactions in this session.
+                  description: |
+                    Completed interaction turns recorded after their requested commands were executed.
+
+                    The first turn must have `isInitial` set to `true`. A turn whose `executedCommandResult.isBreak` is
+                    `true` must end its interaction sequence. Each interaction sequence may contain at most 20 turns.
                   type: array
                   items:
                     $ref: "#/components/schemas/AIInteractionTurn"
@@ -3705,51 +3684,45 @@ paths:
                   description: |
                     Current turn number in a multi-turn interaction sequence.
 
-                    Turn values:
-
                     - 0 means this is the initial turn from user input.
-                    - Values greater than 0 indicate continuation turns where the AI continues the current interaction
-                      sequence based on command outcomes.
+                    - Values greater than 0 indicate continuation turns and must equal the number of completed turns in
+                      the current interaction sequence, including its initial turn.
+                    - For a continuation turn, the latest completed turn must not have `executedCommandResult.isBreak`
+                      set to `true`.
                   type: integer
                   format: int32
                   minimum: 0
+                  maximum: 19
                   default: 0
                   examples:
                     - 0
       responses:
         "200":
-          description: Successful AI interaction.
+          description: |
+            Successful AI interaction.
+
+            The response to an initial turn must include `commandName`. For a continuation turn, an empty JSON object
+            indicates that the AI requested no further command.
           content:
             application/json:
               schema:
                 type: object
-                required:
-                  - text
-                properties:
-                  text:
-                    description: Textual part of the AI's response.
-                    type: string
-                    examples:
-                      - Okay, I suggest moving to (1, 1).
-                  commandName:
-                    description: Name of the command the AI wants to execute.
-                    type: string
-                    examples:
-                      - MakeMove
+                dependentRequired:
                   commandArgs:
-                    description: Arguments for the command to be executed.
-                    type: object
-                    additionalProperties: true
-                    examples:
-                      - Row: 1
-                        Col: 1
-                        Result: ""
+                    - commandName
+                properties:
+                  commandName:
+                    $ref: "#/components/schemas/AIInteractionCommandName"
+                  commandArgs:
+                    $ref: "#/components/schemas/AIInteractionCommandArguments"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
         "429":
           $ref: "#/components/responses/RateLimitExceeded"
 
@@ -3762,14 +3735,9 @@ paths:
       description: |
         Archive a batch of interaction turns into a condensed summary for future context.
 
-        Quota and rate limits:
-
-        - Each archive request consumes 1 quota from the authenticated user's AI interaction archive allowance.
-        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
-        - Long-window quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
-          time in seconds.
+        Each archive request consumes 1 quota from the authenticated user's AI interaction archive allowance.
       requestBody:
+        description: Encoded JSON request body, limited to 1 MiB.
         required: true
         content:
           application/json:
@@ -3779,7 +3747,11 @@ paths:
                 - turns
               properties:
                 turns:
-                  description: Interaction turns to be archived.
+                  description: |
+                    Completed interaction turns to be archived at an interaction sequence boundary.
+
+                    The first turn must have `isInitial` set to `true`. A turn whose `executedCommandResult.isBreak` is
+                    `true` must end its interaction sequence. Each interaction sequence may contain at most 20 turns.
                   type: array
                   minItems: 1
                   maxItems: 50
@@ -3813,6 +3785,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
         "429":
           $ref: "#/components/responses/RateLimitExceeded"
 
@@ -3839,10 +3813,7 @@ paths:
         | `extractVideoFrames` | Extract frames from video |
         | `generateBackdrop` | Generate backdrop image |
 
-        Quota and rate limits:
-
-        - Each task consumes quota from the authenticated user's AIGC allowance based on the task type.
-        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+        Each task consumes quota from the authenticated user's AIGC allowance based on the task type.
       requestBody:
         required: true
         content:
@@ -4214,13 +4185,7 @@ paths:
         Generate an AI-powered descriptive summary of a game from the player's perspective based on provided game
         content such as spx source code and project structure.
 
-        Quota and rate limits:
-
-        - Each request consumes 1 quota from the authenticated user's AI description allowance.
-        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
-        - Quota limits vary based on the authenticated user's plan.
-        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
-          time in seconds.
+        Each request consumes 1 quota from the authenticated user's AI description allowance.
       requestBody:
         required: true
         content:
@@ -4310,10 +4275,7 @@ paths:
         - Images must be provided as base64-encoded data URLs.
         - Other formats must be converted to PNG before sending.
 
-        Quota and rate limits:
-
-        - Each request consumes 1 quota from the authenticated user's AIGC allowance.
-        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+        Each request consumes 1 quota from the authenticated user's AIGC allowance.
       requestBody:
         required: true
         content:
@@ -4379,10 +4341,7 @@ paths:
       description: |
         Use AI to enrich partial asset settings with detailed descriptions and parameters.
 
-        Quota and rate limits:
-
-        - Each request consumes 1 quota from the authenticated user's AIGC allowance.
-        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+        Each request consumes 1 quota from the authenticated user's AIGC allowance.
       requestBody:
         required: true
         content:
@@ -4496,10 +4455,7 @@ paths:
       description: |
         Generate costume and animation settings for a sprite based on its settings.
 
-        Quota and rate limits:
-
-        - Each request consumes 1 quota from the authenticated user's AIGC allowance.
-        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+        Each request consumes 1 quota from the authenticated user's AIGC allowance.
       requestBody:
         required: true
         content:
@@ -5900,37 +5856,15 @@ components:
               value:
                 code: 40300
                 msg: Forbidden
-    QuotaExceeded:
-      description: The authenticated user exceeded a long-window quota for this operation.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-            format: int64
-            minimum: 1
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/APIError"
-          examples:
-            quotaExceeded:
-              value:
-                code: 40301
-                msg: aigc:image quota exceeded
     ForbiddenOrQuotaExceeded:
       description: |
         The authenticated principal does not have permission to perform this operation, or a long-window quota was
         exceeded.
 
-        When `code` is `40301`, `Retry-After` is included if the server can compute a retry time.
+        When `code` is `40301`, the response may include `Retry-After`.
       headers:
         Retry-After:
-          description: Seconds to wait before retrying after a quota failure.
-          schema:
-            type: integer
-            format: int64
-            minimum: 1
+          $ref: "#/components/headers/RetryAfter"
       content:
         application/json:
           schema:
@@ -5992,11 +5926,7 @@ components:
       description: Too many requests.
       headers:
         Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-            format: int64
-            minimum: 1
+          $ref: "#/components/headers/RetryAfter"
       content:
         application/json:
           schema:
@@ -6010,11 +5940,7 @@ components:
       description: The authenticated user exceeded a short-window rate limit for this operation.
       headers:
         Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-            format: int64
-            minimum: 1
+          $ref: "#/components/headers/RetryAfter"
       content:
         application/json:
           schema:
@@ -6176,6 +6102,17 @@ components:
               value:
                 code: 40100
                 msg: Unauthorized
+
+  headers:
+    RetryAfter:
+      description: |
+        Number of seconds to wait before retrying.
+
+        The header is included when the server can compute a retry time.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
 
   schemas:
     APIError:
@@ -8038,12 +7975,36 @@ components:
             - stream failed
 
     AIInteractionTurn:
-      description: Single turn in an AI interaction session.
+      description: Completed turn recorded after the command requested by the AI was executed.
       type: object
+      required:
+        - responseCommandName
+        - executedCommandResult
+      additionalProperties: false
+      allOf:
+        - if:
+            required:
+              - isInitial
+            properties:
+              isInitial:
+                const: true
+          then:
+            required:
+              - requestContent
+            properties:
+              requestContent:
+                minLength: 1
+          else:
+            properties:
+              requestContent:
+                maxLength: 0
+              context:
+                maxProperties: 0
       properties:
         requestContent:
           description: User's input text for the turn.
           type: string
+          maxLength: 280
           examples:
             - It's your turn.
         context:
@@ -8053,50 +8014,173 @@ components:
           examples:
             - position: [10, 20]
               health: 80
-        responseText:
-          description: AI's text output for the turn.
-          type: string
-          examples:
-            - Okay, let me see...
         responseCommandName:
-          description: Command requested by the AI in the response.
-          type: string
-          examples:
-            - MakeMove
+          $ref: "#/components/schemas/AIInteractionCommandName"
         responseCommandArgs:
-          description: Arguments for the command requested by the AI.
-          type: object
-          additionalProperties: true
-          examples:
-            - Row: 1
-              Col: 1
-              Result: ""
+          $ref: "#/components/schemas/AIInteractionCommandArguments"
         executedCommandResult:
-          description: Result of executing the command requested in the response.
-          type:
-            - object
-            - "null"
-          properties:
-            success:
-              description: Indicates if the command execution was successful.
-              type: boolean
-              examples:
-                - true
-            errorMessage:
-              description: Error details if execution failed.
-              type: string
-              examples:
-                - Invalid move parameters
-            isBreak:
-              description: Indicates if the interaction should be terminated.
-              type: boolean
-              examples:
-                - false
+          $ref: "#/components/schemas/AIInteractionCommandResult"
         isInitial:
           description: Indicates whether this turn is the initial turn of an interaction sequence.
           type: boolean
           examples:
             - true
+
+    AIInteractionCommandName:
+      description: Name of an AI command.
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: "^[A-Za-z0-9_-]+$"
+      examples:
+        - MakeMove
+
+    AIInteractionCommandParameter:
+      description: Parameter or object property accepted by an AI command.
+      type: object
+      required:
+        - name
+        - schema
+      additionalProperties: false
+      properties:
+        name:
+          $ref: "#/components/schemas/AIInteractionCommandParameterName"
+        description:
+          description: Purpose of the parameter or object property.
+          type: string
+          maxLength: 1024
+          examples:
+            - "Direction to move: up, down, left, right"
+        schema:
+          $ref: "#/components/schemas/AIInteractionCommandValueSchema"
+
+    AIInteractionCommandParameterName:
+      description: Name of an AI command parameter or object property.
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: "^[A-Za-z0-9_-]+$"
+      examples:
+        - Direction
+
+    AIInteractionCommandValueSchema:
+      description: |
+        Schema of a value accepted by an AI command.
+
+        A parameter's value schema may contain at most 9 levels, counting its outermost schema as the first level.
+      oneOf:
+        - type: object
+          required:
+            - type
+          additionalProperties: false
+          properties:
+            type:
+              type: string
+              enum:
+                - string
+                - integer
+                - number
+                - boolean
+              examples:
+                - string
+        - type: object
+          required:
+            - type
+            - items
+          additionalProperties: false
+          properties:
+            type:
+              type: string
+              const: array
+              examples:
+                - array
+            items:
+              $ref: "#/components/schemas/AIInteractionCommandValueSchema"
+            minItems:
+              description: Minimum number of items accepted by the array.
+              type: integer
+              minimum: 0
+            maxItems:
+              description: |
+                Maximum number of items accepted by the array.
+
+                When both are specified, `maxItems` must be greater than or equal to `minItems`.
+              type: integer
+              minimum: 0
+        - type: object
+          required:
+            - type
+          additionalProperties: false
+          properties:
+            type:
+              type: string
+              const: object
+              examples:
+                - object
+            properties:
+              description: |
+                Complete set of properties accepted by the object.
+
+                Every property is required, and property names must be unique within the array.
+              type: array
+              maxItems: 128
+              items:
+                $ref: "#/components/schemas/AIInteractionCommandParameter"
+
+    AIInteractionCommandArguments:
+      description: Arguments for an AI command.
+      type: object
+      propertyNames:
+        $ref: "#/components/schemas/AIInteractionCommandParameterName"
+      additionalProperties: true
+      examples:
+        - Row: 1
+          Col: 1
+          Result: ""
+
+    AIInteractionCommandResult:
+      description: Result of executing the command requested by the AI.
+      type: object
+      required:
+        - success
+      additionalProperties: false
+      allOf:
+        - if:
+            required:
+              - success
+            properties:
+              success:
+                const: true
+          then:
+            not:
+              required:
+                - errorMessage
+        - if:
+            required:
+              - success
+            properties:
+              success:
+                const: false
+          then:
+            properties:
+              isBreak:
+                const: false
+      properties:
+        success:
+          description: Indicates whether the command execution was successful.
+          type: boolean
+          examples:
+            - true
+        errorMessage:
+          description: Error details if execution failed.
+          type: string
+          examples:
+            - Invalid move parameters
+        isBreak:
+          description: Indicates whether the current interaction sequence should be terminated.
+          type: boolean
+          examples:
+            - false
 
     AIGCTask:
       description: AIGC task object.

@@ -4,8 +4,8 @@
  */
 
 import * as lsp from 'vscode-languageserver-protocol'
-import type { BaseContext, Position } from './common'
-import { fromLSPPosition, toLSPRange } from './common'
+import type { BaseContext, BasicMarkdownString, Position } from './common'
+import { fromLSPPosition, makeBasicMarkdownString, toLSPRange } from './common'
 import type { ILSPClient } from './lsp/types'
 
 export enum InlayHintKind {
@@ -16,12 +16,18 @@ export type InlayHintItem = {
   label: string
   kind: InlayHintKind
   position: Position
+  tooltip: BasicMarkdownString | null
 }
 
 export type InlayHintContext = BaseContext
 
 export interface IInlayHintProvider {
   provideInlayHints(ctx: InlayHintContext): Promise<InlayHintItem[]>
+}
+
+function inlayHintTooltip(tooltip: lsp.InlayHint['tooltip']) {
+  if (tooltip == null) return null
+  return makeBasicMarkdownString(typeof tooltip === 'string' ? tooltip : tooltip.value)
 }
 
 export class InlayHintProvider implements IInlayHintProvider {
@@ -43,7 +49,8 @@ export class InlayHintProvider implements IInlayHintProvider {
         result.push({
           label: ih.label,
           kind: InlayHintKind.Parameter,
-          position: fromLSPPosition(ih.position)
+          position: fromLSPPosition(ih.position),
+          tooltip: inlayHintTooltip(ih.tooltip)
         })
       }
     }
