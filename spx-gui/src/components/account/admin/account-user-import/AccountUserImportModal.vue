@@ -143,7 +143,7 @@ function formatImportError(error: AccountUserImportError) {
 
 <template>
   <UIModal
-    :radar="{ name: 'Account user import modal', desc: 'Modal for importing Account users from CSV' }"
+    :radar="{ name: 'account-user-import-modal', desc: 'Modal for importing Account users from CSV' }"
     style="width: 900px; max-height: calc(100vh - 32px)"
     :visible="visible"
     :mask-closable="!isCreating"

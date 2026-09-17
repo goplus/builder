@@ -328,7 +328,7 @@ const title = computed(() => {
 <template>
   <UIModal
     ref="modalRef"
-    :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
+    :radar="{ name: 'asset-library-modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
     style="width: 1076px; height: 800px"
     :visible="visible"
     mask-closable
@@ -382,7 +382,7 @@ const title = computed(() => {
             <!-- No right padding here to allow the optional scrollbar. -->
             <div
               v-radar="{
-                name: 'Asset list',
+                name: 'asset-list',
                 desc: `List of ${entityMessage.en}s containing keyword ${keyword}`
               }"
               class="flex-[1_1_0] flex flex-col gap-5 pt-5 pl-6"
@@ -461,7 +461,7 @@ const title = computed(() => {
             }}
           </span>
           <UIButton
-            v-radar="{ name: 'Confirm button', desc: 'Click to confirm asset selection' }"
+            v-radar="{ name: 'confirm-button', desc: 'Click to confirm asset selection' }"
             size="large"
             :disabled="selected.length === 0"
             :loading="handleConfirm.isLoading.value"

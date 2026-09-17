@@ -39,7 +39,7 @@ async function moveZorder(direction: MoveAction) {
 <template>
   <ConfigPanel
     v-radar="{
-      name: 'Sprite Quick Config Panel',
+      name: 'sprite-quick-config-panel',
       desc: 'Quick config for sprite position, rotation, size and layer order'
     }"
   >

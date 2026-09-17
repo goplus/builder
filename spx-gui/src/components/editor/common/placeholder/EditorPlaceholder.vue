@@ -7,7 +7,7 @@
     {{ $t({ en: 'Add a sprite to start', zh: '添加一个精灵' }) }}
     <template #op>
       <UIButton
-        v-radar="{ name: 'Add sprite from local file', desc: 'Click to add sprite from local file' }"
+        v-radar="{ name: 'add-sprite-from-local-file', desc: 'Click to add sprite from local file' }"
         type="neutral"
         size="large"
         icon="localFile"
@@ -17,7 +17,7 @@
         {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
       </UIButton>
       <UIButton
-        v-radar="{ name: 'Add sprite from asset library', desc: 'Click to add sprite from asset library' }"
+        v-radar="{ name: 'add-sprite-from-asset-library', desc: 'Click to add sprite from asset library' }"
         type="neutral"
         size="large"
         icon="assetLibrary"

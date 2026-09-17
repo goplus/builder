@@ -2,7 +2,7 @@
 
 <template>
   <UIDropdownForm
-    v-radar="{ name: 'Bound state editor dropdown form', desc: 'Dropdown form for editing animation bound state' }"
+    v-radar="{ name: 'bound-state-editor-dropdown-form', desc: 'Dropdown form for editing animation bound state' }"
     :title="$t(actionName)"
     style="width: 320px"
     @cancel="emit('close')"
@@ -10,7 +10,7 @@
   >
     <ul class="flex-[1_1_0] flex flex-wrap content-start gap-3">
       <UIBlockItem
-        v-radar="{ name: 'State default', desc: 'Click to select state \u0022default\u0022' }"
+        v-radar="{ name: 'state-default', desc: 'Click to select state \u0022default\u0022' }"
         :active="isBound(State.Default)"
         @click="handleStateItemClick(State.Default)"
       >
@@ -23,7 +23,7 @@
         <UICornerIcon v-show="isBound(State.Default)" type="check" />
       </UIBlockItem>
       <UIBlockItem
-        v-radar="{ name: 'State step', desc: 'Click to select state \u0022step\u0022' }"
+        v-radar="{ name: 'state-step', desc: 'Click to select state \u0022step\u0022' }"
         :active="isBound(State.Step)"
         @click="handleStateItemClick(State.Step)"
       >
@@ -36,7 +36,7 @@
         <UICornerIcon v-show="isBound(State.Step)" type="check" />
       </UIBlockItem>
       <UIBlockItem
-        v-radar="{ name: 'State die', desc: 'Click to select state \u0022die\u0022' }"
+        v-radar="{ name: 'state-die', desc: 'Click to select state \u0022die\u0022' }"
         :active="isBound(State.Die)"
         @click="handleStateItemClick(State.Die)"
       >

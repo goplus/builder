@@ -11,7 +11,7 @@ const emit = defineEmits<{
 <template>
   <div class="flex flex-col items-center gap-1">
     <UIButton
-      v-radar="{ name: 'Zoom in', desc: 'Zoom in the code editor' }"
+      v-radar="{ name: 'zoom-in', desc: 'Zoom in the code editor' }"
       type="white"
       icon="zoomIn"
       shape="square"
@@ -20,7 +20,7 @@ const emit = defineEmits<{
       @click="emit('in')"
     />
     <UIButton
-      v-radar="{ name: 'Zoom out', desc: 'Zoom out the code editor' }"
+      v-radar="{ name: 'zoom-out', desc: 'Zoom out the code editor' }"
       type="white"
       icon="zoomOut"
       shape="square"
@@ -29,7 +29,7 @@ const emit = defineEmits<{
       @click="emit('out')"
     />
     <UIButton
-      v-radar="{ name: 'Reset zoom', desc: 'Reset code editor zoom to default' }"
+      v-radar="{ name: 'reset-zoom', desc: 'Reset code editor zoom to default' }"
       type="white"
       icon="zoomReset"
       shape="square"

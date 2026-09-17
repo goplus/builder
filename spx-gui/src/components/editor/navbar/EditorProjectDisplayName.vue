@@ -119,7 +119,7 @@ function handleInputEsc() {
     <template v-else>
       <div
         v-radar="{
-          name: 'Project display name trigger',
+          name: 'project-display-name-trigger',
           desc: 'Click to start inline editing for project display name'
         }"
         class="flex-1 min-w-0 group px-3 py-0.75 flex items-center gap-2 rounded-md cursor-pointer transition-colors hover:bg-grey-400"
@@ -143,7 +143,7 @@ function handleInputEsc() {
         <UITextInput
           ref="inputRef"
           v-model:value="displayName"
-          v-radar="{ name: 'Project display name input', desc: 'Input field for project display name' }"
+          v-radar="{ name: 'project-display-name-input', desc: 'Input field for project display name' }"
           class="w-62 text-xl"
           :maxlength="projectDisplayNameMaxLength"
           @keydown.esc.prevent="handleInputEsc"

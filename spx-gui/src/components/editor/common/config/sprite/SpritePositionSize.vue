@@ -37,21 +37,21 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
 <template>
   <div class="flex items-center gap-3">
     <UINumberInput
-      v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
+      v-radar="{ name: 'x-position-input', desc: 'Input to set sprite X position' }"
       :value="sprite.x"
       @update:value="handleXUpdate"
     >
       <template #prefix>X</template>
     </UINumberInput>
     <UINumberInput
-      v-radar="{ name: 'Y position input', desc: 'Input to set sprite Y position' }"
+      v-radar="{ name: 'y-position-input', desc: 'Input to set sprite Y position' }"
       :value="sprite.y"
       @update:value="handleYUpdate"
     >
       <template #prefix>Y</template>
     </UINumberInput>
     <UINumberInput
-      v-radar="{ name: 'Size input', desc: 'Input to set sprite size percentage' }"
+      v-radar="{ name: 'size-input', desc: 'Input to set sprite size percentage' }"
       :min="0"
       :value="sizePercent"
       @update:value="handleSizePercentUpdate"

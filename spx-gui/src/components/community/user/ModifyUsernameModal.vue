@@ -74,7 +74,7 @@ const handleSubmit = useMessageHandle(async () => {
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Username input modal', desc: 'Modal for modifying username' }"
+    :radar="{ name: 'username-input-modal', desc: 'Modal for modifying username' }"
     :title="$t({ en: 'Modify username', zh: '修改用户名' })"
     :style="{ width: '560px' }"
     :visible="props.visible"
@@ -85,21 +85,21 @@ const handleSubmit = useMessageHandle(async () => {
       <UIFormItem path="username">
         <UITextInput
           v-model:value="form.value.username"
-          v-radar="{ name: 'Username input', desc: 'Input field for username' }"
+          v-radar="{ name: 'username-input', desc: 'Input field for username' }"
           :placeholder="$t({ en: 'Please enter the username', zh: '请输入用户名' })"
           autofocus
         />
       </UIFormItem>
       <footer class="mt-6 flex justify-end gap-xl pb-1">
         <UIButton
-          v-radar="{ name: 'Cancel button', desc: 'Click to cancel modifying username' }"
+          v-radar="{ name: 'cancel-button', desc: 'Click to cancel modifying username' }"
           type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Confirm button', desc: 'Click to confirm modifying username' }"
+          v-radar="{ name: 'confirm-button', desc: 'Click to confirm modifying username' }"
           type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"

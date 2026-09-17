@@ -1,7 +1,7 @@
 <template>
   <UIFormModal
     :radar="{
-      name: 'Preprocess modal',
+      name: 'preprocess-modal',
       desc: 'Modal for preprocessing image for costumes. This modal allows users to apply various preprocessing methods to images before creating costumes with them.'
     }"
     style="width: 780px"
@@ -13,14 +13,14 @@
     <main class="flex items-stretch" style="height: 475px">
       <div
         v-radar="{
-          name: 'Preprocessing method entries',
+          name: 'preprocessing-method-entries',
           desc: 'Sidebar which contains entries for preprocessing methods'
         }"
         class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-4 py-3"
       >
         <ProcessItem
           v-radar="{
-            name: 'Original image',
+            name: 'original-image',
             desc: 'Click to view the original image before any processing'
           }"
           :img-src="originalThumbnail"
@@ -48,7 +48,7 @@
         <ProcessDetail
           v-show="activeMethod == null"
           v-radar="{
-            name: 'Original image',
+            name: 'original-image',
             desc: 'Click to view the original image before any processing'
           }"
         >
@@ -89,7 +89,7 @@
         </div>
       </div>
       <UIButton
-        v-radar="{ name: 'Confirm button', desc: 'Click to confirm preprocessing' }"
+        v-radar="{ name: 'confirm-button', desc: 'Click to confirm preprocessing' }"
         size="large"
         :disabled="selectedCostumes.length === 0"
         :loading="handleConfirm.isLoading.value"

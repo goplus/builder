@@ -3,7 +3,7 @@
     <header class="h-11 flex flex-none items-center px-4">
       <h4 class="flex-1 text-xl text-title">{{ title }}</h4>
       <div
-        v-radar="{ name: 'Close button', desc: 'Click to close the dropdown' }"
+        v-radar="{ name: 'close-button', desc: 'Click to close the dropdown' }"
         class="-mr-1 h-7 w-7 flex items-center justify-center rounded-full text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500"
         @click="emit('cancel')"
       >
@@ -20,14 +20,14 @@
       </div>
       <div class="flex justify-end gap-3">
         <UIButton
-          v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in dropdown' }"
+          v-radar="{ name: 'cancel-button', desc: 'Click to cancel the operation in dropdown' }"
           type="neutral"
           @click="emit('cancel')"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Confirm button', desc: 'Click to submit the dropdown' }"
+          v-radar="{ name: 'confirm-button', desc: 'Click to submit the dropdown' }"
           type="primary"
           html-type="submit"
         >

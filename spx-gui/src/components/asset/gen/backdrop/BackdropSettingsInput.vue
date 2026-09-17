@@ -51,7 +51,7 @@ const submitText = computed(() => {
 <template>
   <SettingsInput
     v-radar="{
-      name: 'Backdrop generation settings',
+      name: 'backdrop-generation-settings',
       desc: 'Enter a backdrop description, or enrich details to generate a backdrop'
     }"
     :description="gen.settings.description"
@@ -68,7 +68,7 @@ const submitText = computed(() => {
     </template>
     <template #submit>
       <EnrichableSubmitButton
-        :radar="{ name: 'Submit', desc: 'Click to generate backdrop images' }"
+        :radar="{ name: 'submit', desc: 'Click to generate backdrop images' }"
         :enriched="gen.enrichState.status === 'finished'"
         :enriching="enriching"
         :disabled="submitDisabled"

@@ -401,7 +401,7 @@ defineExpose({
     <div v-if="overlayActive" class="h-full w-full"></div>
     <div
       ref="wrapperRef"
-      v-radar="{ name: 'Project runner surface', desc: 'Container hosting project runner' }"
+      v-radar="{ name: 'project-runner-surface', desc: 'Container hosting project runner' }"
       class="runner-wrapper"
       :class="{
         fullscreen: overlayActive,
@@ -426,7 +426,7 @@ defineExpose({
         <div class="flex-[1_1_30%] grid grid-flow-col items-center justify-end justify-items-end gap-3">
           <UIButton
             v-if="runnerState === 'initial'"
-            v-radar="{ name: 'Run button', desc: 'Click to run the project in overlay' }"
+            v-radar="{ name: 'run-button', desc: 'Click to run the project in overlay' }"
             type="primary"
             icon="playHollow"
             :loading="runButtonLoading"
@@ -436,7 +436,7 @@ defineExpose({
           </UIButton>
           <UIButton
             v-else
-            v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in overlay' }"
+            v-radar="{ name: 'rerun-button', desc: 'Click to rerun the project in overlay' }"
             icon="rotate"
             :disabled="runnerState !== 'running' || stopButtonLoading"
             :loading="rerunButtonLoading && !stopButtonLoading"
@@ -446,7 +446,7 @@ defineExpose({
           </UIButton>
           <UIButton
             v-if="runnerState !== 'initial'"
-            v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
+            v-radar="{ name: 'stop-button', desc: 'Click to stop the project' }"
             type="neutral"
             icon="end"
             :loading="stopButtonLoading"
@@ -458,7 +458,7 @@ defineExpose({
             <template #trigger>
               <UIButton
                 v-radar="{
-                  name: 'Exit full screen button',
+                  name: 'exit-full-screen-button',
                   desc: 'Click to exit full screen for the running project'
                 }"
                 type="neutral"

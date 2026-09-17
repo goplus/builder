@@ -420,7 +420,7 @@ function revokeAllSessions() {
         </div>
         <UIButton
           v-radar="{
-            name: $t({ en: 'Refresh user details', zh: '刷新用户详情' }),
+            name: 'refresh-user-details',
             desc: 'Reload all user administration data'
           }"
           icon="reload"

@@ -76,7 +76,7 @@ const { fn: handleStartNextCourse } = useMessageHandle(
 <template>
   <UIModal
     v-radar="{
-      name: 'Tutorial Course Success Modal',
+      name: 'tutorial-course-success-modal',
       desc: 'Modal shown when a tutorial course is successfully completed'
     }"
     :visible="visible"

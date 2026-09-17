@@ -1,6 +1,6 @@
 <template>
   <UIDropdownForm
-    v-radar="{ name: 'Sound editor dropdown form', desc: 'Dropdown form for selecting animation sound' }"
+    v-radar="{ name: 'sound-editor-dropdown-form', desc: 'Dropdown form for selecting animation sound' }"
     :title="$t(actionName)"
     style="width: 408px; max-height: 400px"
     @cancel="emit('close')"
@@ -17,7 +17,7 @@
       <UIDropdown trigger="click" placement="top">
         <template #trigger>
           <UIBlockItem
-            v-radar="{ name: 'Add sound button', desc: 'Click to add a new sound' }"
+            v-radar="{ name: 'add-sound-button', desc: 'Click to add a new sound' }"
             class="text-primary-main justify-center"
           >
             <UIIcon class="w-6 h-6" type="plus" />
@@ -25,18 +25,18 @@
         </template>
         <UIMenu>
           <UIMenuItem
-            v-radar="{ name: 'Add from local file', desc: 'Click to add sound from local file' }"
+            v-radar="{ name: 'add-from-local-file', desc: 'Click to add sound from local file' }"
             @click="handleAddFromLocalFile"
           >
             {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
           </UIMenuItem>
           <UIMenuItem
-            v-radar="{ name: 'Add from asset library', desc: 'Click to add sound from asset library' }"
+            v-radar="{ name: 'add-from-asset-library', desc: 'Click to add sound from asset library' }"
             @click="handleAddFromAssetLibrary"
           >
             {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
           </UIMenuItem>
-          <UIMenuItem v-radar="{ name: 'Record sound', desc: 'Click to record a new sound' }" @click="handleRecord">
+          <UIMenuItem v-radar="{ name: 'record-sound', desc: 'Click to record a new sound' }" @click="handleRecord">
             {{ $t({ en: 'Record', zh: '录音' }) }}
           </UIMenuItem>
         </UIMenu>
@@ -64,7 +64,7 @@
           <template #trigger>
             <UISelect
               v-radar="{
-                name: 'Animation sound playback selector',
+                name: 'animation-sound-playback-selector',
                 desc: 'Select how the selected sound plays with the animation'
               }"
               :value="selectedPlayback"

@@ -27,8 +27,9 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
 <template>
   <GenItem
     v-radar="{
-      name: `Sprite generation item '${gen.settings.name}'`,
-      desc: `Click to view generation phase details for sprite '${gen.settings.name}'`
+      name: 'sprite-generation-item',
+      desc: `Click to view generation phase details for sprite '${gen.settings.name}'`,
+      attrs: { name: gen.settings.name }
     }"
     :loading="isLoading"
     :highlight="highlight"

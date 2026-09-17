@@ -13,7 +13,7 @@ const [fileUrl, fileUrlLoading] = useRenderableImageUrl(() => props.file)
 
 <template>
   <div
-    v-radar="{ name: 'Image preview', desc: 'Preview of the selected generated image' }"
+    v-radar="{ name: 'image-preview', desc: 'Preview of the selected generated image' }"
     class="relative h-full w-full overflow-hidden rounded-sm"
   >
     <CheckerboardBackground class="absolute inset-0" />

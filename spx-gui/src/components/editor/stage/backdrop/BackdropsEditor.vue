@@ -1,6 +1,6 @@
 <template>
   <EditorList
-    v-radar="{ name: 'Backdrops management', desc: 'Managing backdrops of stage' }"
+    v-radar="{ name: 'backdrops-management', desc: 'Managing backdrops of stage' }"
     resource-type="backdrop"
     :sortable="{ list: stage.backdrops }"
     @sorted="handleSorted"
@@ -16,19 +16,19 @@
     <template #add-options>
       <UIMenu>
         <UIMenuItem
-          v-radar="{ name: 'Add from local file', desc: 'Click to add backdrop from local file' }"
+          v-radar="{ name: 'add-from-local-file', desc: 'Click to add backdrop from local file' }"
           @click="handleAddFromLocalFile"
         >
           {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
         </UIMenuItem>
         <UIMenuItem
-          v-radar="{ name: 'Add from asset library', desc: 'Click to add backdrop from asset library' }"
+          v-radar="{ name: 'add-from-asset-library', desc: 'Click to add backdrop from asset library' }"
           @click="handleAddFromAssetLibrary"
         >
           {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
         </UIMenuItem>
         <UIMenuItem
-          v-radar="{ name: 'Generate backdrop', desc: 'Click to generate backdrop with AI' }"
+          v-radar="{ name: 'generate-backdrop', desc: 'Click to generate backdrop with AI' }"
           @click="handleGenerate"
         >
           {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}

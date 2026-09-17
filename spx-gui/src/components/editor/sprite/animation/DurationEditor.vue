@@ -1,6 +1,6 @@
 <template>
   <UIDropdownForm
-    v-radar="{ name: 'Duration editor dropdown form', desc: 'Dropdown form for editing animation duration' }"
+    v-radar="{ name: 'duration-editor-dropdown-form', desc: 'Dropdown form for editing animation duration' }"
     :title="$t(actionName)"
     style="width: 280px"
     @cancel="emit('close')"

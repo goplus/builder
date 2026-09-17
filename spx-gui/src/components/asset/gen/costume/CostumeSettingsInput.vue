@@ -31,7 +31,7 @@ const submitText = computed(() => {
 <template>
   <SettingsInput
     v-radar="{
-      name: 'Costume generation settings',
+      name: 'costume-generation-settings',
       desc: 'Enter a costume description, or enrich details to generate a costume'
     }"
     :description="gen.settings.description"
@@ -54,7 +54,7 @@ const submitText = computed(() => {
     <template #submit>
       <UIButton
         v-radar="{
-          name: 'Submit',
+          name: 'submit',
           desc: 'Click to generate a costume'
         }"
         :disabled="buttonDisabled"

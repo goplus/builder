@@ -46,8 +46,9 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
   <GenItem
     ref="wrapperRef"
     v-radar="{
-      name: `Animation generation item '${gen.name}'`,
-      desc: `Click to view generation settings and preview for animation '${gen.name}'`
+      name: 'animation-generation-item',
+      desc: `Click to view generation settings and preview for animation '${gen.name}'`,
+      attrs: { name: gen.name }
     }"
     :placeholder="animationSVG"
     :loading="isLoading"
@@ -67,8 +68,8 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
     </template>
     <UIBlockItemTitle size="medium" :title="gen.name">{{ gen.name }}</UIBlockItemTitle>
     <CornerMenu v-if="active">
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="emit('rename')" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="emit('remove')" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the animation' }" @click="emit('rename')" />
+      <RemoveMenuItem v-radar="{ name: 'remove', desc: 'Click to remove the animation' }" @click="emit('remove')" />
     </CornerMenu>
   </GenItem>
 </template>

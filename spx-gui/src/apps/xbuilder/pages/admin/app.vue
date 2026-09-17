@@ -239,7 +239,7 @@ function revokeSecret(secretID: string) {
         </div>
         <UIButton
           v-radar="{
-            name: $t({ en: 'Refresh app details', zh: '刷新应用详情' }),
+            name: 'refresh-app-details',
             desc: 'Reload app configuration and credentials'
           }"
           icon="reload"
@@ -390,7 +390,7 @@ function revokeSecret(secretID: string) {
               </div>
               <UISwitch
                 v-radar="{
-                  name: $t({ en: 'App availability', zh: '应用可用状态' }),
+                  name: 'app-availability',
                   desc: 'Enable or disable OAuth flows for this app'
                 }"
                 :value="isActive"
@@ -495,7 +495,7 @@ function revokeSecret(secretID: string) {
                 }}</pre>
                 <div class="mt-3 flex flex-wrap justify-end gap-2">
                   <UIButton
-                    v-radar="{ name: 'Copy app secret', desc: 'Copy the newly created app secret to clipboard' }"
+                    v-radar="{ name: 'copy-app-secret', desc: 'Copy the newly created app secret to clipboard' }"
                     icon="copy"
                     type="white"
                     size="small"

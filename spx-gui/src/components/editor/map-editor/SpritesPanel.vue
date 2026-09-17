@@ -78,7 +78,7 @@ const handleGenerate = useMessageHandle(
 
 <template>
   <UICard
-    v-radar="{ name: 'Map Editor\'s Sprite List', desc: 'List of all sprites in the Map Editor' }"
+    v-radar="{ name: 'map-editor-sprite-list', desc: 'List of all sprites in the Map Editor' }"
     class="relative flex flex-col"
   >
     <PanelHeader class="flex-none" :active="selectedSprite != null">
@@ -86,19 +86,19 @@ const handleGenerate = useMessageHandle(
       <template #add-options>
         <UIMenu>
           <UIMenuItem
-            v-radar="{ name: 'Add from local file', desc: 'Click to add sprite from local file' }"
+            v-radar="{ name: 'add-from-local-file', desc: 'Click to add sprite from local file' }"
             @click="handleAddFromLocalFile"
           >
             {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
           </UIMenuItem>
           <UIMenuItem
-            v-radar="{ name: 'Add from asset library', desc: 'Click to add sprite from asset library' }"
+            v-radar="{ name: 'add-from-asset-library', desc: 'Click to add sprite from asset library' }"
             @click="handleAddFromAssetLibrary"
           >
             {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
           </UIMenuItem>
           <UIMenuItem
-            v-radar="{ name: 'Generate sprite', desc: 'Click to generate sprite with AI' }"
+            v-radar="{ name: 'generate-sprite', desc: 'Click to generate sprite with AI' }"
             @click="handleGenerate"
           >
             {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
@@ -112,7 +112,7 @@ const handleGenerate = useMessageHandle(
     <PanelFooter
       v-if="footerExpanded && selectedSprite != null"
       v-radar="{
-        name: `Basic configuration for selected sprite`,
+        name: 'sprite-basic-configuration',
         desc: 'Panel for configuring sprite basic settings'
       }"
       class="p-4"
@@ -124,7 +124,7 @@ const handleGenerate = useMessageHandle(
       <template #trigger>
         <div
           v-radar="{
-            name: 'Expand button',
+            name: 'expand-button',
             desc: 'Button to expand the basic configuration panel for selected sprite'
           }"
           class="absolute right-3 bottom-0 h-6 w-6 cursor-pointer flex items-center justify-center bg-grey-300 shadow-sm"

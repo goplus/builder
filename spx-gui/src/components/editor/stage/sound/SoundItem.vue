@@ -33,9 +33,8 @@ const [audioSrc] = useFileUrl(() => props.sound.file)
 const editorCtx = useEditorCtx()
 
 const radarNodeMeta = computed(() => {
-  const name = `Sound item "${props.sound.name}"`
   const desc = props.selectable ? 'Click to select the sound and view more options' : ''
-  return { name, desc }
+  return { name: 'sound-item', desc, attrs: { name: props.sound.name } }
 })
 
 const { fn: handleDuplicate } = useMessageHandle(
@@ -80,12 +79,12 @@ const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <DuplicateMenuItem
-        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sound' }"
+        v-radar="{ name: 'duplicate', desc: 'Click to duplicate the sound' }"
         @click="handleDuplicate"
       />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sound' }" @click="handleRename" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the sound' }" @click="handleRename" />
       <SaveAssetToLibraryMenuItem :item="sound" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sound' }" @click="handleRemove" />
+      <RemoveMenuItem v-radar="{ name: 'remove', desc: 'Click to remove the sound' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorSoundItem>
 </template>

@@ -551,7 +551,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
   <div
     ref="container"
     v-radar="{
-      name: 'Map viewer',
+      name: 'map-viewer',
       desc: 'View and manipulate the map and sprites on the map. Click on sprite to select it.'
     }"
     class="relative h-full w-full flex items-center justify-center overflow-hidden rounded-lg bg-center bg-repeat bg-contain"

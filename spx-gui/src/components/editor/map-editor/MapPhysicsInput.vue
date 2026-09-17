@@ -26,7 +26,7 @@ const handlePhysicsEnabledChange = (v: boolean) => {
 
 <template>
   <UISwitch
-    v-radar="{ name: 'physics input', desc: 'Input to set map physics' }"
+    v-radar="{ name: 'physics-input', desc: 'Input to set map physics' }"
     :value="project.stage.physics?.enabled"
     @update:value="handlePhysicsEnabledChange"
   />

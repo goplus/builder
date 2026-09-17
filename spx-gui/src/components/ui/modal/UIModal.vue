@@ -9,7 +9,7 @@
             <div
               v-bind="surfaceAttrs"
               ref="containerRef"
-              v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
+              v-radar="radar ?? { name: 'modal', desc: 'A modal dialog for specific purpose' }"
               role="dialog"
               aria-modal="true"
               tabindex="-1"

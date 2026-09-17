@@ -1,5 +1,5 @@
 <template>
-  <nav v-radar="{ name: 'Navbar', desc: 'Top navigation bar' }" class="w-full flex justify-center text-grey-1000">
+  <nav v-radar="{ name: 'navbar', desc: 'Top navigation bar' }" class="w-full flex justify-center text-grey-1000">
     <div
       class="h-12 flex items-stretch justify-between gap-3"
       :class="centered ? 'w-310 desktop-large:w-373' : 'w-full'"

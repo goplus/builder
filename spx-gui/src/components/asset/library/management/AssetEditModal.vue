@@ -38,7 +38,7 @@ const handleSubmit = useMessageHandle(
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Asset edit modal', desc: 'Modal for editing asset in the library' }"
+    :radar="{ name: 'asset-edit-modal', desc: 'Modal for editing asset in the library' }"
     :title="$t({ en: 'Update asset library', zh: '更新素材' })"
     :visible="visible"
     @update:visible="emit('cancelled')"
@@ -62,14 +62,14 @@ const handleSubmit = useMessageHandle(
           <UIFormItem path="name">
             <UITextInput
               v-model:value="form.value.name"
-              v-radar="{ name: 'Asset name input', desc: 'Input field for asset display name' }"
+              v-radar="{ name: 'asset-name-input', desc: 'Input field for asset display name' }"
             />
           </UIFormItem>
         </div>
       </main>
       <footer class="flex justify-center">
         <UIButton
-          v-radar="{ name: 'Save button', desc: 'Click to save asset changes' }"
+          v-radar="{ name: 'save-button', desc: 'Click to save asset changes' }"
           type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"

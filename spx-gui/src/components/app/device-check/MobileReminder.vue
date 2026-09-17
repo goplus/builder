@@ -18,7 +18,7 @@
     </div>
     <UIButton
       v-if="isClipboardSupported"
-      v-radar="{ name: 'Copy Link', desc: 'Button to copy the page URL' }"
+      v-radar="{ name: 'copy-link', desc: 'Button to copy the page URL' }"
       size="large"
       icon="copy"
       @click="handleCopy"

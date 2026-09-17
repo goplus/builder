@@ -103,8 +103,14 @@ function handleMouseUp(e: MouseEvent) {
     <template #trigger>
       <li
         v-radar="{
-          name: parsed.overview,
-          desc: ''
+          name: 'api-reference',
+          label: parsed.overview,
+          desc: '',
+          attrs: {
+            package: item.definition.package,
+            name: item.definition.name,
+            'overload-id': item.definition.overloadId
+          }
         }"
         class="api-reference-item"
         draggable="true"

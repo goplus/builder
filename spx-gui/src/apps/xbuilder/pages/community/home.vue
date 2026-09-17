@@ -3,7 +3,7 @@
     <GuestBanner v-if="!isSignedIn()" class="my-3 mb-8" />
     <ProjectsSection
       v-else
-      v-radar="{ name: 'Your projects', desc: 'Section showing user\'s own projects' }"
+      v-radar="{ name: 'your-projects', desc: 'Section showing user\'s own projects' }"
       context="home"
       :num-in-row="numInRow"
       :link-to="isSignedIn() ? myProjectsRoute : null"
@@ -37,7 +37,7 @@
       />
     </ProjectsSection>
     <ProjectsSection
-      v-radar="{ name: 'Community liking', desc: 'Section showing projects liked by the community' }"
+      v-radar="{ name: 'community-liking', desc: 'Section showing projects liked by the community' }"
       :link-to="communityLikingRoute"
       context="home"
       :num-in-row="numInRow"
@@ -62,7 +62,7 @@
       <ProjectItem v-for="project in communityLikingProjects.data.value" :key="project.id" :project="project" />
     </ProjectsSection>
     <ProjectsSection
-      v-radar="{ name: 'Community remixing', desc: 'Section showing projects being remixed by the community' }"
+      v-radar="{ name: 'community-remixing', desc: 'Section showing projects being remixed by the community' }"
       :link-to="communityRemixingRoute"
       context="home"
       :num-in-row="numInRow"
@@ -88,7 +88,7 @@
     </ProjectsSection>
     <ProjectsSection
       v-if="isSignedIn()"
-      v-radar="{ name: 'Following created', desc: 'Section showing projects created by users you follow' }"
+      v-radar="{ name: 'following-created', desc: 'Section showing projects created by users you follow' }"
       context="home"
       :num-in-row="numInRow"
       :link-to="followingCreatedRoute"

@@ -66,7 +66,7 @@ export function useModifyProjectName() {
 
   return async function modifyProjectName(project: SpxProject) {
     await warningModal({
-      radar: { name: 'Project name warning modal', desc: 'Warning modal shown before editing project name' },
+      radar: { name: 'project-name-warning-modal', desc: 'Warning modal shown before editing project name' },
       title: { en: 'Modify project name', zh: '修改项目名' },
       tip: { en: 'Changing the project name may have the following impacts.', zh: '修改项目名，可能造成以下影响。' },
       items: [
@@ -84,7 +84,7 @@ export function useModifyProjectName() {
         }
       ],
       confirmText: { en: 'I understand, let me change the project name', zh: '我已知晓，让我更改项目名' },
-      confirmRadar: { name: 'Continue button', desc: 'Click to continue editing project name' }
+      confirmRadar: { name: 'continue-button', desc: 'Click to continue editing project name' }
     })
     return modifyNameModal({ project })
   }

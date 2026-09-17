@@ -65,7 +65,7 @@ async function handleSignOut() {
 <template>
   <div v-if="!loading && signedInUser == null" class="h-full flex items-center px-3 whitespace-nowrap">
     <UIButton
-      v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
+      v-radar="{ name: 'sign-in-button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
       @click="signIn()"
@@ -88,7 +88,7 @@ async function handleSignOut() {
         <UITooltip placement="left">
           <template #trigger>
             <UIMenuItem
-              v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
+              v-radar="{ name: 'language-switcher', desc: 'Click to switch between English and Chinese' }"
               class="justify-between p-2"
               @click="toggleLang"
             >

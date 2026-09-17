@@ -33,8 +33,9 @@ const updatedAtTitle = computed(() => {
 <template>
   <li
     v-radar="{
-      name: `Course series item \u0022${props.courseSeries.title}\u0022`,
-      desc: 'Click to view the course series'
+      name: 'course-series-item',
+      desc: 'Click to view the course series',
+      attrs: { name: props.courseSeries.title }
     }"
     class="w-58 overflow-hidden rounded-md border border-grey-400 transition-all duration-200 hover:cursor-pointer hover:shadow-sm"
     :style="{ height: `${courseSeriesItemHeight}px`, backgroundImage: `url(${stageBgUrl})` }"

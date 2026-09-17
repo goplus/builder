@@ -16,8 +16,9 @@ const emit = defineEmits<{
 <template>
   <div
     v-radar="{
-      name: `Preview for '${name}'`,
-      desc: `Preview for the generation item '${name}'`
+      name: 'generation-preview',
+      desc: `Preview for the generation item '${name}'`,
+      attrs: { name }
     }"
     class="flex-[1_1_0] flex flex-col gap-5 px-5 py-6"
   >
@@ -27,7 +28,7 @@ const emit = defineEmits<{
         <!-- TODO: confirm style details with @qingqing-ux here -->
         <AssetName>{{ name }}</AssetName>
         <UIIcon
-          v-radar="{ name: 'Rename', desc: 'Click to rename the generation item' }"
+          v-radar="{ name: 'rename', desc: 'Click to rename the generation item' }"
           class="cursor-pointer text-grey-900 hover:text-grey-800 active:text-grey-1000"
           :title="$t({ en: 'Rename', zh: '重命名' })"
           type="edit"

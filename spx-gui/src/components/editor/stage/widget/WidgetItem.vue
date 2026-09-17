@@ -24,9 +24,8 @@ const props = withDefaults(
 const editorCtx = useEditorCtx()
 
 const radarNodeMeta = computed(() => {
-  const name = `Widget item "${props.widget.name}"`
   const desc = props.selectable ? 'Click to select the widget and view more options' : ''
-  return { name, desc }
+  return { name: 'widget-item', desc, attrs: { name: props.widget.name } }
 })
 
 function toggleWidgetVisible() {
@@ -82,17 +81,17 @@ const { fn: handleRename } = useMessageHandle(() => renameWidget(props.widget), 
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <UIMenuItem
-        v-radar="{ name: 'Visibility control', desc: 'Control to toggle widget visibility' }"
+        v-radar="{ name: 'visibility-control', desc: 'Control to toggle widget visibility' }"
         @click="toggleWidgetVisible"
       >
         {{ $t({ en: `${widget.visible ? 'Hide' : 'Show'} Widget`, zh: `${widget.visible ? '隐藏' : '显示'}控件` }) }}
       </UIMenuItem>
       <DuplicateMenuItem
-        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the widget' }"
+        v-radar="{ name: 'duplicate', desc: 'Click to duplicate the widget' }"
         @click="handleDuplicate"
       />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the widget' }" @click="handleRename" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the widget' }" @click="handleRemove" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the widget' }" @click="handleRename" />
+      <RemoveMenuItem v-radar="{ name: 'remove', desc: 'Click to remove the widget' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorWidgetItem>
 </template>

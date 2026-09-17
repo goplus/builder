@@ -29,25 +29,25 @@ function moveZorder(action: MoveAction) {
     </template>
     <UIMenu>
       <UIMenuItem
-        v-radar="{ name: 'Move up', desc: `Click to move ${type} up in z-order` }"
+        v-radar="{ name: 'move-up', desc: `Click to move ${type} up in z-order` }"
         class="w-full whitespace-nowrap"
         @click="moveZorder('up')"
         >{{ $t(moveActionNames.up) }}</UIMenuItem
       >
       <UIMenuItem
-        v-radar="{ name: 'Move to top', desc: `Click to move ${type} to top in z-order` }"
+        v-radar="{ name: 'move-to-top', desc: `Click to move ${type} to top in z-order` }"
         class="w-full whitespace-nowrap"
         @click="moveZorder('top')"
         >{{ $t(moveActionNames.top) }}</UIMenuItem
       >
       <UIMenuItem
-        v-radar="{ name: 'Move down', desc: `Click to move ${type} down in z-order` }"
+        v-radar="{ name: 'move-down', desc: `Click to move ${type} down in z-order` }"
         class="w-full whitespace-nowrap"
         @click="moveZorder('down')"
         >{{ $t(moveActionNames.down) }}</UIMenuItem
       >
       <UIMenuItem
-        v-radar="{ name: 'Move to bottom', desc: `Click to move ${type} to bottom in z-order` }"
+        v-radar="{ name: 'move-to-bottom', desc: `Click to move ${type} to bottom in z-order` }"
         class="w-full whitespace-nowrap"
         @click="moveZorder('bottom')"
         >{{ $t(moveActionNames.bottom) }}</UIMenuItem

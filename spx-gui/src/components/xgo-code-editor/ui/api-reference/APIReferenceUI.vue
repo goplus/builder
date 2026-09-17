@@ -147,7 +147,8 @@ function handleCategoryClick(id: string) {
 <template>
   <section
     v-radar="{
-      name: 'API References',
+      name: 'api-references',
+      label: 'API References',
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
     class="flex min-h-0"

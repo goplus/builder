@@ -48,7 +48,7 @@ const submitText = computed(() => {
 <template>
   <SettingsInput
     v-radar="{
-      name: 'Sprite generation settings',
+      name: 'sprite-generation-settings',
       desc: 'Enter a sprite description, or enrich details to generate a sprite'
     }"
     :description="gen.settings.description"
@@ -66,7 +66,7 @@ const submitText = computed(() => {
     </template>
     <template #submit>
       <EnrichableSubmitButton
-        :radar="{ name: 'Submit', desc: 'Click to generate sprite images' }"
+        :radar="{ name: 'submit', desc: 'Click to generate sprite images' }"
         :enriched="gen.enrichState.status === 'finished'"
         :enriching="enriching"
         :disabled="buttonDisabled"

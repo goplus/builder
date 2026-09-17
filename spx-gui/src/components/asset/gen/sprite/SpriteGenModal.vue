@@ -74,7 +74,7 @@ const handleModalClose = useMessageHandle(
 <template>
   <UIModal
     ref="modalRef"
-    :radar="{ name: 'Sprite generation modal', desc: 'Modal for sprite generation' }"
+    :radar="{ name: 'sprite-generation-modal', desc: 'Modal for sprite generation' }"
     style="width: 1076px; height: 800px"
     :visible="visible"
     mask-closable
