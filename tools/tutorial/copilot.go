@@ -19,12 +19,27 @@ type CopilotRound struct {
 	ResultMessages []string `json:"resultMessages"`
 }
 
-// OnRoundFinish registers a callback for the learner finishing a round of
+// OnRoundFinish__0 registers a callback for the learner finishing a round of
 // conversation with Copilot; several may be registered. It lets the Course
 // notice what the learner asked for help with, for example to offer an extra
-// hint after too many questions.
-func (p *Copilot) OnRoundFinish(handler func(round CopilotRound)) {
-	register(p.courseProgram, handler,
+// hint after too many questions. See Runtime in editor.go for what the three
+// overloads mean.
+func (p *Copilot) OnRoundFinish__0(handler func(round CopilotRound)) {
+	p.onRoundFinish(nil, handler)
+}
+
+// OnRoundFinish__1 is OnRoundFinish with a run policy.
+func (p *Copilot) OnRoundFinish__1(policy RunPolicy, handler func(round CopilotRound)) {
+	p.onRoundFinish(&runGroup{p: p.courseProgram, policy: policy}, handler)
+}
+
+// OnRoundFinish__2 is OnRoundFinish joining a run group.
+func (p *Copilot) OnRoundFinish__2(group RunGroup, handler func(round CopilotRound)) {
+	p.onRoundFinish(groupOf(group), handler)
+}
+
+func (p *Copilot) onRoundFinish(group *runGroup, handler func(round CopilotRound)) {
+	register(p.courseProgram, group, handler,
 		func(h *handlers, r *registration[CopilotRound]) { h.copilotRound = append(h.copilotRound, r) })
 }
 

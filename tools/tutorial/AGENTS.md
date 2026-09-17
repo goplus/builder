@@ -4,16 +4,16 @@ Course callbacks execute as runs under a cooperative scheduler; design rationale
 These are the rules of change.
 
 - Course callbacks execute only through `runFrame`. At any instant, only the `execToken` holder runs course code.
-  Every trigger starts a new run of each registered callback, so runs of one callback may overlap. How such runs
-  relate (run policies and run groups) is deferred to #3509; do not add ad-hoc guards in the framework meanwhile
-- `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long and
-  restores `current` afterwards. Only `mustCallCapability` may call it
+  Every trigger starts a new run of each registered callback, so runs of one callback may overlap; a `runGroup`'s
+  `RunPolicy` (CancelPrevious, OneAtATime, SkipWhileBusy) is the only thing that relates them
+- `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long, restores
+  `current` afterwards, and is where cancellation takes effect (checked before the wait and after it, so a cancelled
+  run never uses a pending result). Only `mustCallCapability` and `join` may call it
 - Runs are started only by `startRuns`, from `Course.Start` and the event deliverers, in registration order, each to
-  its first yield (`yielded`) before the next. That order is an implementation detail the contract does not promise
-  (see #3509); keep `startRuns` the sole start path and never spawn course code elsewhere
+  its first yield (`yielded`) before the next. Keep that the sole start path; never spawn course code elsewhere
 - Hold no lock across a blocking operation: `schedulerMu` regions stay free of channel ops, `select`, `Wait`, token
-  ops, and other locks; `registryMu` is a leaf lock whose regions may only touch fields and call the allowlisted
-  builtins. Waiting, decoding, and delivery happen outside every lock
+  ops, and other locks; `registryMu` and `groupMu` are leaf locks whose regions may only touch fields and call the
+  allowlisted builtins. Cancellation, waiting, decoding, and delivery happen outside every lock
 - `scheduling_invariants_test.go` machine-checks these rules by identifier name. When it fails, suspect your change
   first; when a locking change is legitimate, update the checker's rules in the same commit
 - Decode a waiting capability's response only after reacquiring `execToken`. Never write course-visible memory while
@@ -43,7 +43,7 @@ These are the rules of change.
   (or call `resetEventRegistry`), or the event goes to the previous, completed program and is silently dropped.
   Dispatching from inside `MainEntry` or a callback is always safe: the queue accumulates until the dispatcher starts
 - After releasing a held capability, do not assume the run has ended: synchronize on a signal the run sends at its
-  end before dispatching a trigger whose outcome depends on that run having released the token
+  end before dispatching a trigger whose outcome depends on that run having released its group or the token
 - A test that fails by timeout leaves its course alive; a later test that sees events vanish should suspect that
   zombie first
 - Never block on a channel while holding the token inside a course callback; simulate a slow host with
