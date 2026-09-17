@@ -1,31 +1,42 @@
 /**
- * Tutorial Class Framework 的前端半边。
+ * The frontend half of the Tutorial Class Framework.
  *
- * 本文件与同目录的 Go 包共同构成一个完整的框架单元：Go 半边把课程作者的调用变成
- * capability 名 + JSON 请求，这里把这些名字接到宿主（Tutorial 模块）的类型化方法上。
- * wire 名与请求字段是框架的内部契约，两端都在本目录内演进，宿主永远不需要碰 JSON。
+ * Together with the Go package in this directory it forms one complete
+ * framework unit: the Go half turns a Course author's calls into capability
+ * names plus JSON requests, and this file connects those names to the typed
+ * methods of the host, the Tutorial module. The wire names and request fields
+ * are the framework's internal contract, both ends evolve inside this
+ * directory, and the host never touches JSON.
  *
- * 刻意零依赖：不 import spx-gui 里的任何东西（executor 要的 XGoFramework 形状用
- * 结构化类型在本地声明即可兼容），这样整个 tools/tutorial 目录将来可以原样搬成
- * 独立仓库。spx-gui 通过符号链接 src/utils/tutorial-framework.ts 引用本文件，
- * 与 tools/spxls 的 index.d.ts 是同一种消费方式。
+ * Deliberately dependency-free: nothing is imported from spx-gui, since the
+ * XGoFramework shape the executor wants can be declared locally as a
+ * structural type, which keeps the whole tools/tutorial directory movable into
+ * a repository of its own. spx-gui reaches this file through the symlink
+ * src/utils/tutorial-framework.ts, the same way it consumes tools/spxls's
+ * index.d.ts.
  */
 
-/** JSON Schema 的宽松表示，与契约 base.ts 中的 JSONSchema 结构一致。 */
+/** A loose representation of a JSON Schema, structurally identical to
+ * JSONSchema in the contract's base.ts. */
 export type JSONSchema = Record<string, unknown>;
 
-/** 控制 spotlight 的呈现方式，与契约 module_TutorialFramework.ts 中的同名类型一致。 */
+/** Controls how a spotlight is presented; structurally identical to the type
+ * of the same name in the contract's module_TutorialFramework.ts. */
 export type SpotlightOptions = {
-  /** 是否用不阻挡交互的遮罩压暗目标以外的界面。 */
+  /** Whether to dim everything outside the target with an overlay that does
+   * not block interaction. */
   mask: boolean;
-  /** 自动消隐延时（秒）；0 表示留到学习者点击任意处。 */
+  /** Auto-conceal delay in seconds; 0 keeps it until the learner clicks
+   * anywhere. */
   duration: number;
 };
 
 /**
- * 宿主为课程程序提供的全部能力，由 Tutorial 模块组装并实现。
- * 按作者侧 API 树分层组织（course / editor / copilot / spotlight），
- * 逐条语义（resolve 时机、失败语义）见 docs/develop/tutorial-v2/module_TutorialFramework.ts。
+ * Every capability the host provides to a Course program, assembled and
+ * implemented by the Tutorial module. It is organized along the author-side
+ * API tree (course / editor / copilot / spotlight); for the semantics of each
+ * one, when it resolves and how it fails, see
+ * docs/develop/tutorial-v2/module_TutorialFramework.ts.
  */
 export interface TutorialFrameworkHost {
   course: {
@@ -62,13 +73,15 @@ export interface TutorialFrameworkHost {
   };
 }
 
-// 与 spx-gui/src/utils/xgoexec 的 XGoFramework/XGoCapability 结构相同；
-// 本地声明以保持零依赖，TypeScript 的结构化类型保证两者互相兼容。
+// Structurally the same as XGoFramework/XGoCapability in
+// spx-gui/src/utils/xgoexec, declared locally to stay dependency-free;
+// TypeScript's structural typing keeps the two compatible.
 type Capability = (request: unknown) => unknown | Promise<unknown>;
 type Framework = { name: string; capabilities: Record<string, Capability> };
 
-// 各 capability 的请求形状，与 Go 侧（tutorial.go / editor.go / copilot.go / spotlight.go）
-// 的序列化结构一一对应。改任何一边都必须同步另一边。
+// The request shape of each capability, corresponding one to one with what
+// the Go side serializes (tutorial.go / editor.go / copilot.go /
+// spotlight.go). Changing either side requires changing the other.
 type ContentRequest = { content: string };
 type VideoRequest = { videoName: string };
 type SpriteRequest = { sprite: string };
@@ -81,12 +94,14 @@ type SpotlightRevealRequest = {
 };
 
 /**
- * 把宿主实现包装成执行器需要的 framework。
+ * Wraps a host implementation into the framework the executor expects.
  *
- * 每个条目只做三件事：按 wire 形状解出参数、调用宿主方法、透传返回值——
- * 返回 Promise 的能力由执行器等 resolve 后才回 Go（同步返回则立即回），
- * 这里不需要任何异步处理。spotlight 的 reveal 默认值由 Go 半边物化，
- * 到达这里的 options 一定是完整的，宿主无需了解课程场景的默认是什么。
+ * Each entry does only three things: unpack the arguments from the wire shape,
+ * call the host method, pass the result through. A capability returning a
+ * promise is awaited by the executor before it answers Go, and a synchronous
+ * one answers immediately, so no asynchrony is handled here. The Go half
+ * materializes spotlight reveal's defaults, so the options arriving here are
+ * always complete and the host need not know what a Course's defaults are.
  */
 export function createTutorialFramework(
   host: TutorialFrameworkHost,

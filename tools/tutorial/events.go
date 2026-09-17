@@ -8,20 +8,29 @@ import (
 	"github.com/goplus/builder/tools/xgoexec"
 )
 
-// pendingEventLimit 是投递队列的容量。回调在等待类 capability 期间会让出执行权，
-// 投递 goroutine 因此能持续把队列排空，正常课程远够不着这个上限。打满意味着课程
-// 程序真的失控（比如某个运行死循环不让出，投递方等不到它的 yielded），此时必须
-// 报错给宿主而不是静默丢弃：丢掉的可能正是课程在等的判定信号，那是最难排查的一类故障。
+// pendingEventLimit is the capacity of the dispatch queue. Callbacks release
+// the execution token while waiting on a waiting capability, so the dispatcher
+// keeps draining the queue and a healthy Course stays far below this limit.
+// Hitting it means the Course program really is out of control — a run looping
+// forever without yielding, leaving the dispatcher waiting for its yielded
+// signal. That must be reported to the host rather than dropped silently: what
+// gets dropped may be the very judging signal the Course waits for, which is
+// the hardest kind of failure to diagnose.
 const pendingEventLimit = 1024
 
-// eventDeliverer 把一条原始载荷解码并为它启动运行，跑在投递 goroutine 上。
+// eventDeliverer decodes one raw payload and starts the runs for it, on the
+// dispatcher goroutine.
 type eventDeliverer func(p *courseProgram, payload json.RawMessage) error
 
-// eventDeliverers 是契约里全部事件的解码与启动逻辑。键的集合就是框架向执行器
-// 注册的事件名全集，client_contract_test.go 会核对它与契约一致。
+// eventDeliverers holds the decoding and starting logic for every event in
+// the contract. Its key set is exactly the set of event names the framework
+// registers with the executor, and client_contract_test.go checks that set
+// against the contract.
 //
-// "全部注册"是硬性要求：宿主并不知道课程订阅了什么，也不该知道；课程没订阅的
-// 事件没有回调可起，自然被放弃，这与作者的直觉一致。
+// Registering all of them is a hard requirement: the host does not know what
+// the Course subscribed to, and should not need to. An event the Course did
+// not subscribe to has no callback to start and is simply abandoned, which
+// matches the author's intuition.
 var eventDeliverers = map[string]eventDeliverer{
 	"editor.runtime.start": decodeThen("editor.runtime.start", func(p *courseProgram, _ struct{}) error {
 		startRuns(p, p.handlerSnapshot().runtimeStart, struct{}{})
@@ -41,20 +50,23 @@ var eventDeliverers = map[string]eventDeliverer{
 	}),
 }
 
-// runtimeExitEvent 对应契约里 editor.runtime.exit 的载荷 {code}。
+// runtimeExitEvent is the {code} payload of editor.runtime.exit in the
+// contract.
 type runtimeExitEvent struct {
 	Code int `json:"code"`
 }
 
-// runtimeLogEvent 对应契约里 editor.runtime.log 的载荷 {log}。
-// 契约规定这里只承载 kind=log 的输出，error 输出不进这条判定通道；
-// 过滤由 Tutorial 侧在投递前完成，框架收到什么就交给课程什么。
+// runtimeLogEvent is the {log} payload of editor.runtime.log in the contract.
+// The contract restricts this channel to kind=log output; error output does
+// not enter the judging channel. The Tutorial module filters before
+// dispatching, and the framework hands the Course whatever it receives.
 type runtimeLogEvent struct {
 	Log string `json:"log"`
 }
 
-// decodeThen 让四个事件共用同一套解码逻辑；T 是各自的载荷类型。
-// payload 为空或 "null"（editor.runtime.start 就是 null）时跳过解码，用零值即可。
+// decodeThen lets the four events share one decoding path, with T as each
+// one's payload type. An empty payload, or "null" as editor.runtime.start
+// sends, skips decoding and uses the zero value.
 func decodeThen[T any](name string, deliver func(*courseProgram, T) error) eventDeliverer {
 	return func(p *courseProgram, payload json.RawMessage) error {
 		var event T
@@ -67,16 +79,22 @@ func decodeThen[T any](name string, deliver func(*courseProgram, T) error) event
 	}
 }
 
-// events 是进程级的事件入口。
+// events is the process-level event entry.
 //
-// handler 在包初始化时就向执行器注册好：本包是原生编进 xgoexec.wasm 的，init 早于
-// 任何课程程序的 build 与 run。于是宿主的 run() 一 resolve，投递就一定有人接——
-// 而执行器的 run() 在解释器 goroutine 起来的那一刻就 resolve，那时课程程序还没跑到
-// 注册回调。落在这段窗口里的投递不能丢，也不能插队：它们和之后的投递一起躺在同一条
-// 队列里，等课程程序就绪后由投递 goroutine 按到达顺序处理。
+// The handlers are registered with the executor during package
+// initialization: this package is compiled natively into xgoexec.wasm, so init
+// runs before any Course program is built or run. Once the host's run()
+// resolves, something is therefore always there to receive a dispatch — and
+// the executor's run() resolves the moment the interpreter goroutine starts,
+// well before the Course program registers any callback. Dispatches landing in
+// that window must be neither lost nor reordered: they sit in the same queue
+// as later ones and the dispatcher goroutine handles them in arrival order
+// once the Course program is ready.
 //
-// 执行器的注册表本身是进程级的（那是执行器的桥，不是我们的状态）：每个课程运行在
-// 自己的 Worker/WASM 实例里，一个实例只跑一个课程；同一进程跑多个程序只发生在测试里。
+// The executor's own registry is process-level (that is the executor's bridge,
+// not our state): each Course runs in its own Worker/WASM instance and an
+// instance runs a single Course; several programs in one process only happen
+// in tests.
 var events = &eventRegistry{}
 
 func init() {
@@ -87,21 +105,27 @@ func init() {
 	}
 }
 
-// eventRegistry 记录当前课程程序，并持有唯一的投递队列。
+// eventRegistry records the current Course program and owns the single
+// dispatch queue.
 //
-// 宿主的投递只入队（宿主 goroutine 立刻返回）；就绪后由 goLive 起的投递 goroutine
-// 按到达顺序取出、解码并启动运行。这条队列同时就是"就绪前暂存区"：attach 之前
-// 与 goLive 之前入队的事件，等投递 goroutine 起来后第一批处理。
+// A dispatch from the host only enqueues, so the host goroutine returns
+// immediately; the dispatcher goroutine that goLive starts then takes events
+// in arrival order, decodes them and starts the runs. That queue doubles as
+// the pre-ready buffer: events enqueued before attach and before goLive are
+// simply the first batch the dispatcher handles.
 //
-// registryMu 是叶子锁：持锁区间只读写字段、操作切片，解码与投递都在锁外进行；
-// scheduling_invariants_test.go 用调用白名单守住这一点。
+// registryMu is a leaf lock: its regions only read and write fields and
+// manipulate the slice, with decoding and dispatching left outside;
+// scheduling_invariants_test.go enforces that with a call allowlist.
 type eventRegistry struct {
 	registryMu sync.Mutex
 	program    *courseProgram
 	pending    []pendingEvent
-	// wake 是给当前程序的投递 goroutine 的"有新事件"信号，cap-1 且非阻塞发送：
-	// 只表示"该看一眼队列"，不承载事件本身。每次 attach 换一条新的，被取代的
-	// 程序若还留有投递 goroutine，也只会等在旧通道上，不会吞掉新程序的信号。
+	// wake signals "there is new work" to the current program's dispatcher.
+	// It is cap-1 and sent to without blocking: it only means "take a look at
+	// the queue" and carries no event itself. Every attach installs a fresh
+	// one, so a dispatcher left over from a replaced program waits on the old
+	// channel and cannot swallow the new program's signals.
 	wake chan struct{}
 }
 
@@ -111,11 +135,14 @@ type pendingEvent struct {
 	payload json.RawMessage
 }
 
-// attach 让 p 成为当前程序。只由 XGot_Course_Main 在 MainEntry 之前调用。
+// attach makes p the current program. Only XGot_Course_Main calls it, before
+// MainEntry.
 //
-// 进程里还没有程序时，队列里是就绪前暂存的事件，留给 p；已有程序（同一进程跑
-// 多个程序，只在测试里发生）时，队列里是上一个程序结束后没来得及处理的事件，
-// 属于它而不属于 p，丢掉。
+// With no program in the process yet, the queue holds events buffered before
+// the program was ready and they belong to p. With one already there — several
+// programs in one process, which only happens in tests — the queue holds
+// events the previous program never got to, which belong to it rather than to
+// p, so they are dropped.
 func (r *eventRegistry) attach(p *courseProgram) {
 	r.registryMu.Lock()
 	defer r.registryMu.Unlock()
@@ -126,9 +153,12 @@ func (r *eventRegistry) attach(p *courseProgram) {
 	r.wake = make(chan struct{}, 1)
 }
 
-// dispatch 是执行器回调进来的入口，跑在宿主的 goroutine 上：入队并唤醒投递方。
-// 当前程序已进终态时静默放弃——学习者的游戏可能还在输出日志，宿主没做错什么。
-// 队列满说明宿主在一个不消费的程序上狂投，报错让它知道，而不是无限缓冲。
+// dispatch is where the executor calls in, on the host's goroutine: enqueue
+// and wake the dispatcher. Once the current program reached its terminal
+// state, the event is dropped silently — the learner's game may well still be
+// printing logs, and the host did nothing wrong. A full queue means the host
+// is flooding a program that does not consume, which is worth an error rather
+// than unbounded buffering.
 func (r *eventRegistry) dispatch(name string, deliver eventDeliverer, payload json.RawMessage) error {
 	if p := r.current(); p != nil && p.terminated() {
 		return nil
@@ -152,24 +182,29 @@ func (r *eventRegistry) current() *courseProgram {
 	return r.program
 }
 
-// enqueue 在锁内入队，并返回该唤醒的通道（还没有程序时为 nil，事件等 attach 后处理）。
+// enqueue appends under the lock and returns the channel to wake, or nil when
+// there is no program yet and the event waits for attach.
 func (r *eventRegistry) enqueue(name string, deliver eventDeliverer, payload json.RawMessage) (chan struct{}, error) {
 	r.registryMu.Lock()
 	defer r.registryMu.Unlock()
 	if len(r.pending) >= pendingEventLimit {
 		return nil, fmt.Errorf("course event queue is full: the course program is not consuming events")
 	}
-	// 载荷来自执行器的桥，不假设它在返回后仍然有效，复制一份。
+	// The payload comes from the executor's bridge; copy it rather than
+	// assuming it stays valid after this call returns.
 	r.pending = append(r.pending, pendingEvent{name: name, deliver: deliver, payload: append(json.RawMessage(nil), payload...)})
 	return r.wake, nil
 }
 
-// goLive 为 p 启动投递 goroutine：按到达顺序处理队列里的事件，直到课程进入终态或
-// p 被别的程序取代（只会发生在同一进程跑多个程序的测试里）。只由 Course.Start
-// 在投递课程开始之后调用，所以课程开始的运行一定先于任何宿主事件的运行启动。
+// goLive starts p's dispatcher goroutine: handle the queued events in arrival
+// order until the Course reaches its terminal state or p is replaced by
+// another program, which only happens in tests running several programs in one
+// process. Only Course.Start calls it, after starting the course-start runs,
+// so those always precede the runs of any host event.
 //
-// 投递失败（载荷解码不了）记为致命错误：那是宿主的 bug，静默吞掉只会让课程
-// 看起来"没反应"。
+// A failed delivery — a payload that will not decode — is recorded as fatal:
+// that is a host bug, and swallowing it would just make the Course look
+// unresponsive.
 func (r *eventRegistry) goLive(p *courseProgram) {
 	if !p.admitRun() {
 		return
@@ -196,7 +231,8 @@ func (r *eventRegistry) goLive(p *courseProgram) {
 	}()
 }
 
-// takePending 在锁内取走整条队列，连同 p 的唤醒通道；p 已被别的程序取代时返回 ok=false。
+// takePending takes the whole queue under the lock, along with p's wake
+// channel; ok is false once p has been replaced by another program.
 func (r *eventRegistry) takePending(p *courseProgram) (batch []pendingEvent, wake chan struct{}, ok bool) {
 	r.registryMu.Lock()
 	defer r.registryMu.Unlock()

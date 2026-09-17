@@ -10,11 +10,15 @@ import (
 	"testing"
 )
 
-// TestClientCoversAllWireNames 守住框架两个半边的 wire 契约：Go 侧（本包）发送的
-// 每个 capability 名，TS 侧（client.ts 的 capabilities 表）都必须接住，反之亦然。
+// TestClientCoversAllWireNames guards the wire contract between the
+// framework's two halves: every capability name the Go side (this package)
+// sends must be received by the TS side (client.ts's capabilities table), and
+// the other way round.
 //
-// 两侧名单都从源码提取而不是手写清单——此前 spx-gui 里的 vitest 版靠手写的
-// 名字数组，两边一起忘改时照样绿；这里改任何一侧的 wire 名，测试立刻红。
+// Both lists are extracted from the sources rather than hand-written. The
+// earlier vitest version in spx-gui relied on a hand-written array of names
+// and stayed green whenever both sides were forgotten together; here, changing
+// a wire name on either side turns the test red at once.
 func TestClientCoversAllWireNames(t *testing.T) {
 	goNames := collectGoWireNames(t)
 	tsNames := collectClientCapabilityNames(t)
@@ -26,8 +30,9 @@ func TestClientCoversAllWireNames(t *testing.T) {
 		t.Errorf("wire names diverge:\n  Go sends:  %v\n  client.ts: %v", goNames, tsNames)
 	}
 
-	// capabilityKinds 是能力名 → 执行语义的登记表，键必须都是真实存在的
-	// capability——表里的拼写错误会变成无效登记（静默退化为不让位）。
+	// capabilityKinds maps capability names onto execution semantics, so
+	// every key must name a capability that really exists: a typo there
+	// becomes a dead entry that silently degrades to not yielding.
 	known := map[string]bool{}
 	for _, name := range goNames {
 		known[name] = true
@@ -39,9 +44,12 @@ func TestClientCoversAllWireNames(t *testing.T) {
 	}
 }
 
-// fastCapabilities 是**有意**不让位的能力清单：只等宿主自身计算，或按契约
-// 受理/显示即返。运行时对未登记能力的默认虽然是安全的不让位，但分类必须是
-// 有意识的决定——新增能力时要么进 capabilityKinds，要么进这里。
+// fastCapabilities lists the capabilities that deliberately do not yield:
+// they either wait only on the host's own computation, or, per the contract,
+// return as soon as the request is accepted or shown. The runtime default for
+// an unregistered capability is the safe one, not yielding, but the
+// classification must still be a conscious decision: a new capability goes
+// either into capabilityKinds or here.
 var fastCapabilities = map[string]bool{
 	"course_complete":                   true,
 	"course_completeWith":               true,
@@ -54,8 +62,9 @@ var fastCapabilities = map[string]bool{
 	"spotlight_reveal":                  true,
 }
 
-// TestEveryCapabilityIsClassified 强制每个 capability 都被显式分类过：
-// 运行时的保守默认（未登记=不让位）不能成为漏分类的藏身处。
+// TestEveryCapabilityIsClassified requires every capability to be classified
+// explicitly: the conservative runtime default, unregistered meaning no
+// yielding, must not become a hiding place for one that was overlooked.
 func TestEveryCapabilityIsClassified(t *testing.T) {
 	for _, name := range collectGoWireNames(t) {
 		_, waiting := capabilityKinds[name]
@@ -69,10 +78,12 @@ func TestEveryCapabilityIsClassified(t *testing.T) {
 	}
 }
 
-// TestFrameworkRegistersEveryContractEvent 守住事件名契约：框架向执行器注册的
-// 事件名全集（eventDeliverers 的键）必须与契约 module_TutorialFramework.ts 里
-// TutorialEvent 联合类型的 name 全集相等。执行器对未注册的事件名静默忽略，
-// 所以新增事件时漏注册一侧不会有任何报错，只能靠这里变红。
+// TestFrameworkRegistersEveryContractEvent guards the event-name contract:
+// the set of event names the framework registers with the executor (the keys
+// of eventDeliverers) must equal the set of names in the TutorialEvent union
+// in the contract's module_TutorialFramework.ts. The executor silently ignores
+// an unregistered event name, so forgetting one side when adding an event
+// produces no error at all and only turning red here catches it.
 func TestFrameworkRegistersEveryContractEvent(t *testing.T) {
 	registered := map[string]bool{}
 	for name := range eventDeliverers {
@@ -89,7 +100,8 @@ func TestFrameworkRegistersEveryContractEvent(t *testing.T) {
 	}
 }
 
-// collectContractEventNames 从契约的 TutorialEvent 联合类型里收集 name 字面量。
+// collectContractEventNames collects the name literals from the contract's
+// TutorialEvent union.
 func collectContractEventNames(t *testing.T) []string {
 	t.Helper()
 	source, err := os.ReadFile(filepath.Join("..", "..", "docs", "develop", "tutorial-v2", "module_TutorialFramework.ts"))
@@ -113,7 +125,8 @@ func collectContractEventNames(t *testing.T) []string {
 	return sortedKeys(names)
 }
 
-// collectGoWireNames 从本包全部 Go 源文件里收集 mustCallCapability 的首个字符串实参。
+// collectGoWireNames collects the first string argument of every
+// mustCallCapability call across this package's Go sources.
 func collectGoWireNames(t *testing.T) []string {
 	t.Helper()
 	pattern := regexp.MustCompile(`mustCallCapability\("([A-Za-z_]+)"`)
@@ -138,8 +151,8 @@ func collectGoWireNames(t *testing.T) []string {
 	return sortedKeys(names)
 }
 
-// collectClientCapabilityNames 从 client.ts 的 capabilities 字面量里收集键名
-// （形如行首缩进后的 `name: (`）。
+// collectClientCapabilityNames collects the keys of client.ts's capabilities
+// literal, which appear as an indented `name: (` at the start of a line.
 func collectClientCapabilityNames(t *testing.T) []string {
 	t.Helper()
 	source, err := os.ReadFile("client.ts")

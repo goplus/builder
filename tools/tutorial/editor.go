@@ -1,17 +1,21 @@
 package tutorial
 
-// Editor 汇集与"学习者所在的项目编辑器"有关的能力。
+// Editor gathers the capabilities around the project editor the learner works
+// in.
 //
-// 四个子 namespace 的分工是评审里逐条谈定的：
-//   - Project：读**项目模型**的内容，按业务概念（精灵名）寻址；
-//   - Runtime：观察学习者项目的**运行**（启动、退出、日志）；
-//   - CodeEditor：控制**编辑器 UI**本身（过滤 API、格式化）；
-//   - Ruler：舞台上的度量教具。
+// The split between the four namespaces was settled point by point in review:
+//   - Project reads the project model, addressed by domain concepts (sprite
+//     names);
+//   - Runtime observes the learner's project running (start, exit, logs);
+//   - CodeEditor controls the editor UI itself (filtering APIs, formatting);
+//   - Ruler is the measuring aid on the stage.
 //
-// 特别注意 Project 与 CodeEditor 的边界：读代码归 Project（因为 SpxProject 的既有
-// 接口都是围绕业务概念及其名字定义的），控 UI 归 CodeEditor。"读学习者当前正在编辑的
-// 那份代码"这个语义**刻意还没提供**——它取决于 code-editor 如何暴露 attached UI 与
-// active document，等那边定了再补。
+// Mind the Project/CodeEditor boundary in particular: reading code belongs to
+// Project, because SpxProject's existing interfaces are all defined around
+// domain concepts and their names, while controlling the UI belongs to
+// CodeEditor. Reading whichever code the learner happens to be editing is
+// deliberately not offered yet: it depends on how the code editor exposes its
+// attached UIs and their active document, and waits for that to settle.
 type Editor struct {
 	Project    Project
 	Runtime    Runtime
@@ -19,7 +23,8 @@ type Editor struct {
 	Ruler      Ruler
 }
 
-// init 把四个子 namespace 接到课程的运行状态上，由 Course.initCourse 调用。
+// init points the four namespaces at the Course's run state; Course.initCourse
+// calls it.
 func (p *Editor) init(program *courseProgram) {
 	p.Project.courseProgram = program
 	p.Runtime.courseProgram = program
@@ -27,16 +32,19 @@ func (p *Editor) init(program *courseProgram) {
 	p.Ruler.courseProgram = program
 }
 
-// Project 读取学习者正在编辑的会话项目。
+// Project reads the session project the learner is editing.
 type Project struct {
 	courseProgram *courseProgram
 }
 
-// GetCode 返回指定精灵在会话项目中的当前代码。
+// GetCode returns the given sprite's current code in the session project.
 //
-// 用精灵名而不是文件路径寻址，是为了跟 SpxProject 的既有接口风格一致；作者不需要知道
-// "Lita" 对应的是 Lita.spx 这个 spx 约定。精灵不存在时 capability 会失败 → panic，
-// 这样作者拼错名字会在 Preview 阶段就炸出来，而不是拿到空串继续跑。
+// Addressing by sprite name rather than file path matches the style of
+// SpxProject's existing interfaces: the author need not know the spx
+// convention that "Lita" lives in Lita.spx. A sprite that does not exist fails
+// the capability and therefore panics, so a misspelled name blows up during
+// Preview instead of silently yielding an empty string the Course carries on
+// with.
 func (p *Project) GetCode(sprite string) string {
 	var code string
 	p.courseProgram.mustCallCapability("editor_project_getCode", struct {
@@ -45,85 +53,99 @@ func (p *Project) GetCode(sprite string) string {
 	return code
 }
 
-// ListSprites 列出会话项目里的精灵名。
+// ListSprites lists the sprite names in the session project.
 //
-// 存在的理由是一类具体课程：目标是"让学习者自己创建一个精灵"时，作者无法预知学习者
-// 会起什么名字，只能运行时问项目要。
+// It exists for one concrete kind of Course: when the goal is for the learner
+// to create a sprite themselves, the author cannot know the name they will
+// choose and has to ask the project at run time.
 func (p *Project) ListSprites() []string {
 	var sprites []string
 	p.courseProgram.mustCallCapability("editor_project_listSprites", struct{}{}, &sprites)
 	return sprites
 }
 
-// Runtime 观察学习者项目的运行状态。
+// Runtime observes the learner's project as it runs.
 //
-// 这些 OnXxx 只是把回调登记到课程的运行状态里，真正的事件注册在包初始化时就一次性
-// 完成了（见 events.go）。因此"课程没订阅某事件"和"课程订阅了"对宿主而言毫无区别，
-// 宿主不需要知道课程内部订阅了什么。
+// These OnXxx only record the callback in the Course's run state; the actual
+// event registration happens once, during package initialization (see
+// events.go). Whether the Course subscribed to an event therefore makes no
+// difference to the host, which need not know what the Course subscribed to.
 type Runtime struct {
 	courseProgram *courseProgram
 }
 
-// OnStart 注册"学习者的项目开始运行"的回调。可注册多段。
+// OnStart registers a callback for the learner's project starting to run.
+// Several may be registered.
 func (p *Runtime) OnStart(handler func()) {
 	register(p.courseProgram, func(struct{}) { handler() },
 		func(h *handlers, r *registration[struct{}]) { h.runtimeStart = append(h.runtimeStart, r) })
 }
 
-// OnExit 注册"学习者的项目退出"的回调，code 是退出码。可注册多段。
+// OnExit registers a callback for the learner's project exiting, where code
+// is the exit code. Several may be registered.
 func (p *Runtime) OnExit(handler func(code int)) {
 	register(p.courseProgram, handler,
 		func(h *handlers, r *registration[int]) { h.runtimeExit = append(h.runtimeExit, r) })
 }
 
-// OnLog 注册"学习者的项目输出了一条日志"的回调：每条日志启动一次运行。
+// OnLog registers a callback for the learner's project appending a log entry:
+// each entry starts one run.
 //
-// 这是判定的主通道：课程项目的场景代码在关键事件发生时 println 一个约定好的字符串
-// （比如 "reached-target"），课程代码在这里等这个信号，就能知道学习者"做到了什么"。
-// 只有 kind=log 的输出会进来，运行错误不走这条通道，以免污染判定。
+// This is the main judging channel: the Course project's scene code prints an
+// agreed string when something important happens (say "reached-target"), and
+// Course code waiting for that signal here learns what the learner achieved.
+// Only kind=log output arrives; runtime errors take another path, so they
+// cannot pollute judging.
 //
-// 可以注册多段：一节课有两条判定线索时，分开写两段比挤在一个 if-else 里清楚。
-// 同一段回调的多次运行可以并存；如何相处（以最新为准、排队、忙时忽略）见 #3509。
+// Several callbacks may be registered: with two judging clues in one Course,
+// writing two handlers reads better than cramming both into one if-else.
+// Runs of one callback may overlap; how they should relate (latest wins,
+// one at a time, ignore while busy) is discussed in #3509.
 func (p *Runtime) OnLog(handler func(log string)) {
 	register(p.courseProgram, handler,
 		func(h *handlers, r *registration[string]) { h.runtimeLog = append(h.runtimeLog, r) })
 }
 
-// CodeEditor 控制学习者写代码的编辑器。
+// CodeEditor controls the editor the learner writes code in.
 type CodeEditor struct {
 	courseProgram *courseProgram
 }
 
-// FilterAPIs 限制编辑器辅助（API Reference、补全等）里出现的 API，
-// 让一节课只暴露它要教的东西，降低认知负担。
+// FilterAPIs limits which APIs appear in the editor's assistance (API
+// Reference, completion and so on), so one Course exposes only what it
+// teaches and the cognitive load stays low.
 //
-// 每个条目是完整的 definition identifier，形如
-// "xgo:github.com/goplus/spx/v3?Sprite.stepTo"；省略 #<overloadId> 表示该名字的
-// 全部重载。之所以不支持 "stepTo" 这样的简写，是因为把简写解析成完整标识需要一份
-// 映射逻辑，而那份逻辑无法可靠地假定 package 一定是 spx、receiver 一定是 Sprite。
-// 作者的书写负担由 Course Editor 的写课辅助来解决。
+// Each entry is a full definition identifier, of the form
+// "xgo:github.com/goplus/spx/v3?Sprite.stepTo"; omitting #<overloadId>
+// addresses every overload of the name. A shorthand like "stepTo" is
+// deliberately not supported: resolving one into a full identifier needs
+// mapping logic, and that logic cannot reliably assume the package is spx and
+// the receiver is Sprite. The typing burden on authors is for the Course
+// Editor's authoring assistance to solve.
 func (p *CodeEditor) FilterAPIs(apis []string) {
 	p.courseProgram.mustCallCapability("editor_codeEditor_filterAPIs", struct {
 		APIs []string `json:"apis"`
 	}{APIs: apis}, nil)
 }
 
-// FormatWorkspace 格式化学习者的代码，格式化完成后返回。
+// FormatWorkspace formats the learner's code and returns once formatting is
+// done.
 func (p *CodeEditor) FormatWorkspace() {
 	p.courseProgram.mustCallCapability("editor_codeEditor_formatWorkspace", struct{}{}, nil)
 }
 
-// Ruler 是舞台上的标尺——帮学习者建立坐标与距离直觉的教具。
+// Ruler is the ruler on the stage, a teaching aid that builds the learner's
+// intuition for coordinates and distances.
 type Ruler struct {
 	courseProgram *courseProgram
 }
 
-// Show 在舞台上显示标尺。
+// Show displays the ruler over the stage.
 func (p *Ruler) Show() {
 	p.courseProgram.mustCallCapability("editor_ruler_show", struct{}{}, nil)
 }
 
-// Hide 收起标尺。
+// Hide removes the ruler from the stage.
 func (p *Ruler) Hide() {
 	p.courseProgram.mustCallCapability("editor_ruler_hide", struct{}{}, nil)
 }

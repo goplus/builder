@@ -10,21 +10,27 @@ import (
 	"testing"
 )
 
-// 本文件把调度器的持锁纪律从注释升级为机器检查。被守护的规则：
+// This file promotes the scheduler's locking discipline from comments to
+// mechanical checks. The rules it guards:
 //
-//  1. 执行令牌（execToken）只经 acquireExec/releaseExec 流转，且只有 runFrame 与
-//     yieldWhile 有资格调它们——运行只有一个让出点，不存在散落在别处的临时让位。
-//  2. yieldWhile 只从 mustCallCapability（等宿主）进入；桥的 callCapability 只出现在
-//     mustCallCapability 里。
-//  3. schedulerMu 的持锁区间内没有任何可能阻塞的操作（channel 收发、select、Wait、
-//     取令牌、调桥）；registryMu 是叶子锁，持锁区间只允许白名单里的调用。
-//  4. 运行的生命周期入口唯一：startRuns 只由 Start（与包级的事件投递闭包）调用；
-//     admitRun 只在 startRuns 与 goLive；markYielded 只在 runFrame 与 yieldWhile。
-//  5. 事件入口只有一个：向执行器注册 handler 只发生在 init；events.attach 只在
-//     XGot_Course_Main、events.goLive 只在 Start 里调用。
+//  1. The execution token flows only through acquireExec/releaseExec, and only
+//     runFrame and yieldWhile may call them: a run has exactly one yield
+//     point, with no ad-hoc yielding scattered elsewhere.
+//  2. yieldWhile is entered only from mustCallCapability, which waits on the
+//     host; the bridge's callCapability appears only in mustCallCapability.
+//  3. No operation that can block appears while schedulerMu is held (channel
+//     send or receive, select, Wait, taking the token, calling the bridge);
+//     registryMu is a leaf lock whose regions allow only allowlisted calls.
+//  4. Runs have a single lifecycle entry: startRuns is called only by Start
+//     and the package-level event deliverers; admitRun only by startRuns and
+//     goLive; markYielded only by runFrame and yieldWhile.
+//  5. Events have a single entry: handlers are registered with the executor
+//     only in init; events.attach is called only by XGot_Course_Main and
+//     events.goLive only by Start.
 //
-// 检查基于 AST 而不是运行观察：违规的“写法”在进入仓库时就变红，
-// 不依赖测试恰好踩中那条时序。
+// The checks work on the AST rather than on observed behavior, so a violating
+// way of writing things turns red as it enters the repository instead of
+// waiting for a test to happen to hit that interleaving.
 func TestSchedulingInvariants(t *testing.T) {
 	fset := token.NewFileSet()
 	files, err := filepath.Glob("*.go")
@@ -50,7 +56,8 @@ func TestSchedulingInvariants(t *testing.T) {
 	}
 }
 
-// 各规则的豁免名单：唯一有资格出现这些操作的函数。
+// The allowlists for the rules above: the only functions entitled to perform
+// each operation.
 var (
 	tokenOperators   = map[string]bool{"runFrame": true, "yieldWhile": true}
 	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
@@ -66,7 +73,7 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 		t.Errorf("%s: %s", fset.Position(pos), fmt.Sprintf(format, args...))
 	}
 
-	// 规则 1/2/4：按标识符归属检查调用点资格。
+	// Rules 1, 2 and 4: check by identifier who is entitled to call what.
 	ast.Inspect(fn.Body, func(node ast.Node) bool {
 		switch n := node.(type) {
 		case *ast.CallExpr:
@@ -117,8 +124,8 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 		return true
 	})
 
-	// 规则 3：schedulerMu 的持锁区间内不得有阻塞操作；registryMu 是叶子锁，
-	// 持锁区间内只允许白名单里的调用。
+	// Rule 3: no blocking operation while schedulerMu is held; registryMu is a
+	// leaf lock whose regions allow only allowlisted calls.
 	recv := receiverName(fn)
 	for _, guard := range []string{"schedulerMu", "registryMu"} {
 		for _, region := range heldRegions(fn, recv, guard) {
@@ -152,7 +159,7 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 						strings.HasSuffix(callee, ".releaseExec") ||
 						strings.HasSuffix(callee, ".yieldWhile") ||
 						strings.HasSuffix(callee, ".callCapability") ||
-						(strings.HasSuffix(callee, ".Lock") && callee != recv+"."+guard+".Lock") // schedulerMu 是最内层的锁，不嵌套别的锁
+						(strings.HasSuffix(callee, ".Lock") && callee != recv+"."+guard+".Lock") // schedulerMu is innermost and nests no other lock
 					if blocking {
 						report(n.Pos(), "%s called inside a %s-held region of %s", callee, guard, name)
 					}
@@ -163,8 +170,9 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 	}
 }
 
-// leafLockAllowedCalls 列出各叶子锁持锁区间内唯一允许的调用：都是纯计算、
-// 不可能阻塞，也碰不到别的锁。解码、投递与等待必须在锁外。
+// leafLockAllowedCalls lists the only calls allowed while each leaf lock is
+// held: all pure computation, unable to block and unable to reach another
+// lock. Decoding, dispatching and waiting must happen outside the lock.
 var leafLockAllowedCalls = map[string]map[string]bool{
 	"registryMu": {"len": true, "append": true, "make": true, "fmt.Errorf": true, "json.RawMessage": true},
 }
@@ -173,7 +181,8 @@ type lockRegion struct {
 	from, to token.Pos
 }
 
-// receiverName 返回方法接收者的名字；普通函数（如 deliverAll）按惯例用 p 指代程序。
+// receiverName returns the method receiver's name; a plain function such as
+// startRuns refers to the program as p by convention.
 func receiverName(fn *ast.FuncDecl) string {
 	if fn.Recv != nil && len(fn.Recv.List) > 0 && len(fn.Recv.List[0].Names) > 0 {
 		return fn.Recv.List[0].Names[0].Name
@@ -181,8 +190,9 @@ func receiverName(fn *ast.FuncDecl) string {
 	return "p"
 }
 
-// heldRegions 计算 fn 内 guard（<recv>.<guard>）的持锁区间。
-// 两种写法都覆盖：显式 Unlock → [Lock, Unlock)；defer Unlock → [Lock, 函数尾)。
+// heldRegions computes the regions of fn where guard (<recv>.<guard>) is
+// held. Both spellings are covered: an explicit Unlock gives [Lock, Unlock),
+// a deferred Unlock gives [Lock, end of function).
 func heldRegions(fn *ast.FuncDecl, recv, guard string) []lockRegion {
 	var locks, unlocks []token.Pos
 	deferred := false
@@ -193,7 +203,7 @@ func heldRegions(fn *ast.FuncDecl, recv, guard string) []lockRegion {
 			if renderExpr(n.Call.Fun) == recv+"."+guard+".Unlock" {
 				deferred = true
 			}
-			return false // defer 里的 Unlock 不算显式解锁点
+			return false // an Unlock inside defer is not an explicit unlock point
 		case *ast.CallExpr:
 			switch renderExpr(n.Fun) {
 			case recv + "." + guard + ".Lock":
@@ -214,7 +224,8 @@ func heldRegions(fn *ast.FuncDecl, recv, guard string) []lockRegion {
 			}
 		}
 		if end == fn.Body.End() && !deferred && len(unlocks) > 0 {
-			// 所有显式 Unlock 都在 Lock 之前（分支写法）：保守地取函数尾。
+			// Every explicit Unlock precedes the Lock, which happens with
+			// branching code: conservatively take the end of the function.
 			end = fn.Body.End()
 		}
 		regions = append(regions, lockRegion{from: lock, to: end})
@@ -222,7 +233,8 @@ func heldRegions(fn *ast.FuncDecl, recv, guard string) []lockRegion {
 	return regions
 }
 
-// renderExpr 把选择器链渲染成 "p.schedulerMu.Lock" 形式的字符串，便于按名匹配。
+// renderExpr renders a selector chain as a string like "p.schedulerMu.Lock",
+// so the rules above can match on names.
 func renderExpr(expr ast.Expr) string {
 	switch n := expr.(type) {
 	case *ast.Ident:

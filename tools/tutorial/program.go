@@ -8,25 +8,31 @@ import (
 	"github.com/goplus/builder/tools/xgoexec"
 )
 
-// capabilityKind 决定一次 capability 调用期间的执行语义。
+// capabilityKind decides what happens during one capability call.
 //
-// 划分标准是"调用在等待谁"：只等宿主自身计算的调用有界且很快，持有执行令牌
-// 直接调即可；等待外部主体（学习者、LLM）的调用无界，必须让出执行令牌，
-// 让其他运行在等待期间照常执行。展示类调用之间不由框架串行：重叠时怎么办
-// 是宿主 capability 自己的策略（见契约 module_TutorialFramework.ts）。
+// The dividing line is who the call waits for: a call that only waits on the
+// host's own computation is bounded and quick, so it may hold the execution
+// token throughout; a call that waits on an outside party (the learner, the
+// LLM) is unbounded and must release the token so other runs keep going.
+// Presentation calls are not serialized by the framework: what happens when
+// they overlap is the host capability's own policy (see the contract in
+// module_TutorialFramework.ts).
 type capabilityKind int
 
 const (
-	// kindFast 只等宿主自身计算：持令牌直接调用，全程不让位。
-	// 未在 capabilityKinds 登记的能力取零值即此类——忘记登记的退化方向是
-	// "少了交错"而不是"多了重入"，错也错在保守侧。
+	// kindFast waits only on the host's own computation: called while holding
+	// the token, never yielding. Capabilities missing from capabilityKinds get
+	// this zero value, so forgetting to register one costs interleaving rather
+	// than admitting re-entrancy: the failure mode stays on the safe side.
 	kindFast capabilityKind = iota
-	// kindWaiting 等待外部主体（学习者或 LLM）：调用期间让出执行令牌。
+	// kindWaiting waits on an outside party (the learner or the LLM): the
+	// execution token is released for the duration of the call.
 	kindWaiting
 )
 
-// capabilityKinds 是能力的执行语义登记表，新增能力时在这里显式分类。
-// client_contract_test.go 会核对表中键名都是真实存在的 capability。
+// capabilityKinds records each capability's execution semantics; classify new
+// capabilities here. client_contract_test.go checks that every key names a
+// capability that actually exists.
 var capabilityKinds = map[string]capabilityKind{
 	"course_showPrelude":   kindWaiting,
 	"course_showMessage":   kindWaiting,
@@ -35,22 +41,31 @@ var capabilityKinds = map[string]capabilityKind{
 	"copilot_generateJSON": kindWaiting,
 }
 
-// courseProgram 是一次课程运行的全部状态：注册的回调、执行令牌、
-// 完成/致命错误标志，以及调用 capability 的方式。
+// courseProgram is everything one Course run owns: the registered callbacks,
+// the execution token, the completion and fatal-error flags, and the way to
+// call a capability.
 //
-// 执行模型：课程回调以"运行"为单位执行，任一瞬间**只有执行令牌的持有者**在跑课程
-// 代码——令牌的 release→acquire 构成 happens-before 链，课程代码里的共享变量
-// 因此没有数据竞争，作者不需要任何同步原语。每次触发为每段回调起一个新运行，
-// 运行在等待类 capability 期间让出令牌挂起，同一段回调的多次运行因此可能并存。
+// Execution model: Course callbacks execute as "runs", and at any instant only
+// the holder of the execution token runs Course code. The token's
+// release-then-acquire pairs form a happens-before chain, so shared variables
+// in Course code never race and the author needs no synchronization at all.
+// Every trigger starts a new run of each registered callback; a run releases
+// the token while it waits on a waiting capability, so runs of one callback
+// may overlap.
 //
-// TODO(#3509): 同一段回调的多次运行如何相处（取消过期的、排队、忙时忽略）尚未规定，
-// 契约也不承诺；运行策略与运行组的设计在 #3509 讨论，已有实现在分支
-// issue-3417-run-policies。在此之前，并存运行之间的竞态由课程代码自己处理。
+// TODO(#3509): how overlapping runs of one callback relate (cancelling the
+// stale one, running one at a time, ignoring triggers while busy) is not
+// specified yet, and the contract does not promise anything either. Run
+// policies and run groups are being discussed in #3509, with an
+// implementation on branch issue-3417-run-policies. Until then, Course code
+// handles that race itself.
 //
-// 运行的启动顺序目前是投递方的实现细节（见 startRuns），契约同样不承诺。
+// The order in which runs start is currently the dispatcher's implementation
+// detail (see startRuns); the contract does not promise it either.
 //
-// 它挂在 Course 实例上（而不是做成包级单例），各 namespace 通过指针共享它——
-// 这与 spx 的做法一致：spx 的回调也存在 Game 实例持有的 scriptEventRegistry 里。
+// This lives on the Course instance rather than in a package-level singleton,
+// and the namespaces share it by pointer. spx does the same: its callbacks
+// live in the scriptEventRegistry held by the Game instance.
 type courseProgram struct {
 	schedulerMu sync.Mutex
 	handlers    handlers
@@ -58,30 +73,38 @@ type courseProgram struct {
 	completed   bool
 	fatal       any
 
-	// execToken 是执行令牌：cap-1 channel 做二元信号量，初始含一枚。
-	// 等待者由 runtime 排队唤醒；框架不依赖任何跨运行的唤醒顺序承诺。
+	// execToken is the execution token: a cap-1 channel used as a binary
+	// semaphore, holding one token to start with. Waiters are woken by the
+	// runtime; the framework relies on no wake-up order across runs.
 	execToken chan struct{}
-	// current 是令牌持有者的运行。只在持令牌时读写，因此不需要锁：
-	// runFrame 进入时设置，yieldWhile 拿回令牌后恢复。
+	// current is the run holding the token. Only read and written while the
+	// token is held, hence no lock: runFrame sets it on entry, yieldWhile
+	// restores it after reacquiring the token.
 	current *run
-	// shutdown 在完成或致命错误时关闭一次，通知投递 goroutine 退出。
+	// shutdown is closed once, on completion or on a fatal error, to tell the
+	// dispatcher goroutine to exit.
 	shutdown     chan struct{}
 	shutdownOnce sync.Once
-	// runs 计数在途的运行 goroutine 与投递 goroutine，awaitShutdown 用它等收尾。
+	// runs counts the in-flight run goroutines plus the dispatcher goroutine;
+	// awaitShutdown uses it to wait for them to finish.
 	runs sync.WaitGroup
 
-	// callCapability 是通往前端的桥。做成字段而不是直接调 xgoexec.CallCapability，
-	// 是为了给测试留缝隙：真实的桥只在 js/wasm 构建下可用（非 wasm 构建里 xgoexec
-	// 提供的是一个直接报错的 stub），单测得能把它换成假的宿主实现。
+	// callCapability is the bridge to the frontend. It is a field rather than
+	// a direct call to xgoexec.CallCapability to leave a seam for tests: the
+	// real bridge only exists in js/wasm builds (off-wasm, xgoexec provides a
+	// stub that just fails), so unit tests must be able to swap in a fake host.
 	callCapability func(name string, request, result any) error
 }
 
-// handlers 保存课程程序注册的全部回调。课程自己的 onStart 也在其中：课程开始
-// 就是一个由 Course.Start 投递一次的事件，与宿主事件走同一条路，不做特殊处理。
+// handlers holds every callback the Course program registered, the Course's
+// own onStart included: course start is an event that Course.Start delivers
+// once, taking the same path as host events rather than a special one.
 //
-// 每个事件存的是一**串**回调而不是一个：课程代码里的 onXxx 就是普通方法调用，作者
-// 完全可能对同一个事件写两段处理（比如两条判定各写一段），此时两段都该生效。
-// 这与 spx 一致——spx 的 OnStart 等每次调用都往 sinks 里加一个，而不是覆盖。
+// Each event holds a list of callbacks rather than a single one: onXxx in
+// Course code is an ordinary method call, and an author may well write two
+// handlers for one event (say one per judging clue), in which case both must
+// take effect. spx works the same way: each call to its OnStart and friends
+// appends a sink instead of replacing it.
 type handlers struct {
 	courseStart  []*registration[struct{}]
 	runtimeStart []*registration[struct{}]
@@ -90,13 +113,14 @@ type handlers struct {
 	copilotRound []*registration[CopilotRound]
 }
 
-// registration 是一段注册的回调。
+// registration is one registered callback.
 type registration[T any] struct {
 	handler func(T)
 }
 
-// register 登记一段回调。可以在课程运行中（回调里）调用：本次触发按快照投递，
-// 新注册的从下一次触发开始生效。
+// register records one callback. It may be called while the Course runs (from
+// inside a callback): the trigger being delivered uses the snapshot it already
+// took, so a newly registered callback takes effect from the next trigger on.
 func register[T any](p *courseProgram, handler func(T), attach func(*handlers, *registration[T])) {
 	p.schedulerMu.Lock()
 	defer p.schedulerMu.Unlock()
@@ -104,8 +128,9 @@ func register[T any](p *courseProgram, handler func(T), attach func(*handlers, *
 }
 
 func (p *courseProgram) init() {
-	// 令牌在进入锁区之前就填好：schedulerMu 的持锁区间内不做任何 channel 操作，
-	// 这是 scheduling_invariants_test.go 机器检查的不变式之一。
+	// Fill the token before entering the locked region: no channel operation
+	// may happen while schedulerMu is held, one of the invariants that
+	// scheduling_invariants_test.go checks mechanically.
 	execToken := make(chan struct{}, 1)
 	execToken <- struct{}{}
 
@@ -124,9 +149,10 @@ func (p *courseProgram) init() {
 
 func (p *courseProgram) acquireExec() { <-p.execToken }
 
-// releaseExec 归还执行令牌。非阻塞发送兼作动态断言：令牌槽已满说明出现了
-// "未持有却归还"（配对错误），这是框架 bug，立刻炸出来比默默多出一枚
-// 令牌（互斥失效）好。
+// releaseExec returns the execution token. The non-blocking send doubles as a
+// runtime assertion: a full slot means something released a token it never
+// acquired, which is a framework bug. Failing loudly beats quietly ending up
+// with two tokens, which would break mutual exclusion.
 func (p *courseProgram) releaseExec() {
 	select {
 	case p.execToken <- struct{}{}:
@@ -135,10 +161,12 @@ func (p *courseProgram) releaseExec() {
 	}
 }
 
-// run 是回调的一次运行：投递方为每次触发、每段回调各起一个，跑在自己的 goroutine 上。
+// run is one run of a callback: the dispatcher starts one per trigger per
+// registered callback, each on its own goroutine.
 type run struct {
-	// yielded 在运行第一次让出令牌或结束时关闭：投递方据此启动下一段回调
-	// （见 startRuns）。
+	// yielded is closed when the run first releases the token or ends,
+	// whichever comes first; the dispatcher waits on it before starting the
+	// next callback (see startRuns).
 	yielded   chan struct{}
 	yieldOnce sync.Once
 }
@@ -147,27 +175,35 @@ func newRun() *run {
 	return &run{yielded: make(chan struct{})}
 }
 
-// markYielded 只由 runFrame（结束）与 yieldWhile（第一次让出）调用。
+// markYielded is called only by runFrame (on the run's end) and yieldWhile (on
+// the first yield).
 func (r *run) markYielded() {
 	r.yieldOnce.Do(func() { close(r.yielded) })
 }
 
-// runFrame 执行一次运行：取得执行令牌、准入检查、执行回调、归还令牌。
+// runFrame executes one run: acquire the execution token, check admission, run
+// the callback, release the token.
 //
-// panic（capability 失败或课程代码自身的错误）在这里兜住并记为致命错误：运行跑在
-// 自己的 goroutine 上，直接放任 panic 会绕过主 goroutine 的退出路径；统一记下来由
-// awaitShutdown 在主 goroutine 上重新抛出，执行器看到的仍然是"课程程序 panic →
-// exit error"。
+// A panic — a failed capability, or a mistake in the Course code itself — is
+// caught here and recorded as a fatal error. Runs execute on their own
+// goroutines, so letting a panic through would bypass the main goroutine's
+// exit path; recording it lets awaitShutdown re-raise it on the main
+// goroutine, and the executor still sees "the Course program panicked, exit
+// with an error".
 //
-// 注意 defer 的顺序：markYielded 最先登记、最后执行——运行结束一定放行投递方；
-// releaseExec 其次；收尾闭包最后登记、最先执行，因此 recover 与清 current 都发生在
-// 持令牌期间，失败的运行不会把令牌带走冻结整个课程。
+// Mind the defer order: markYielded is registered first and therefore runs
+// last, so the dispatcher is always released when a run ends; releaseExec
+// comes next; the closure registered last runs first, which puts both the
+// recover and clearing current inside the token-holding window, so a failing
+// run never carries the token away and freezes the whole Course.
 func (p *courseProgram) runFrame(r *run, body func()) {
 	defer r.markYielded()
 	p.acquireExec()
 	defer p.releaseExec()
-	// 准入检查必须在**拿到令牌之后**：出队时的检查在等令牌期间可能过期——
-	// 别的运行在这段等待里完成了课程或记了致命错误，此时这一次不该再开始。
+	// The admission check must come after acquiring the token: a check made
+	// before waiting for it may be stale by the time the wait ends, because
+	// another run may have completed the Course or recorded a fatal error
+	// meanwhile, and this run must then not start at all.
 	if p.terminated() {
 		return
 	}
@@ -182,8 +218,10 @@ func (p *courseProgram) runFrame(r *run, body func()) {
 	body()
 }
 
-// yieldWhile 是运行**唯一**的让出点：交还执行令牌、执行 wait、拿回令牌并恢复 current。
-// 令牌一定在 wait 之前交还：等待类调用可能长达分钟，持着令牌等就是冻结全部回调。
+// yieldWhile is a run's only yield point: return the execution token, perform
+// wait, then take the token back and restore current. The token is always
+// returned before the wait, because a waiting call may take minutes and
+// holding the token through one would freeze every callback.
 func (p *courseProgram) yieldWhile(wait func()) {
 	r := p.current
 	if r != nil {
@@ -197,8 +235,10 @@ func (p *courseProgram) yieldWhile(wait func()) {
 	p.current = r
 }
 
-// admitRun 在同一把锁内判断终态并登记一个 goroutine 到 runs：终态后 awaitShutdown
-// 可能已在 Wait，Add 若落在其后就是 WaitGroup 误用。返回 false 表示不该再起。
+// admitRun checks the terminal state and registers a goroutine with runs under
+// one lock: after the terminal state, awaitShutdown may already be inside
+// Wait, and an Add landing after that is a WaitGroup misuse. A false result
+// means no goroutine should start.
 func (p *courseProgram) admitRun() bool {
 	p.schedulerMu.Lock()
 	defer p.schedulerMu.Unlock()
@@ -209,12 +249,15 @@ func (p *courseProgram) admitRun() bool {
 	return true
 }
 
-// startRuns 为一次触发启动全部注册回调的运行，只由投递 goroutine 与 Course.Start 调用。
+// startRuns starts the runs of every registered callback for one trigger. Only
+// the dispatcher goroutine and Course.Start call it.
 //
-// 当前的启动方式是按注册顺序，每个运行跑到第一次让出或结束（yielded）之后再起
-// 下一个。这样投递方总能在一段回调挂起后继续处理后续触发，课程开始的运行也一定
-// 先于宿主事件的运行启动。这是实现细节：契约不承诺同一触发内各段回调的启动顺序，
-// 课程代码不应依赖它（相关设计见 #3509）。
+// Runs currently start in registration order, each running to its first yield
+// or its end (yielded) before the next one starts. That way the dispatcher can
+// keep handling later triggers once a callback suspends, and the runs of
+// course start always precede the runs of host events. This is an
+// implementation detail: the contract promises no order among the callbacks of
+// one trigger, and Course code must not depend on it (see #3509).
 func startRuns[T any](p *courseProgram, regs []*registration[T], event T) {
 	for _, reg := range regs {
 		if !p.admitRun() {
@@ -233,20 +276,24 @@ func startRuns[T any](p *courseProgram, regs []*registration[T], event T) {
 	}
 }
 
-// awaitShutdown 等课程结束：完成或致命错误。
+// awaitShutdown waits for the Course to end, by completion or a fatal error.
 //
-// 完成路径上等全部在途运行自然收尾——挂起的运行在其等待的 capability 返回后
-// （完成后宿主对展示类 no-op 即回，所以很快）把剩余语句执行完；投递 goroutine
-// 退出。致命错误路径不等：直接在主 goroutine 上重新抛出，挂起的运行随进程终止。
+// The completion path waits for every in-flight run to finish on its own: a
+// suspended run resumes once the capability it waits on returns (after a
+// completion the host no-ops presentation, so that is quick) and executes its
+// remaining statements; the dispatcher goroutine exits. The fatal path does
+// not wait: it re-raises on the main goroutine right away, and suspended runs
+// die with the process.
 func (p *courseProgram) awaitShutdown() {
 	<-p.shutdown
 	if fatal := p.fatalValue(); fatal != nil {
 		panic(fatal)
 	}
 	p.runs.Wait()
-	// 完成路径上收尾的运行仍可能失败（最典型：course_complete 本身失败——
-	// Complete 先关 shutdown 再调 capability）。收尾结束后再查一次，
-	// 迟到的致命错误不能被吞成 completed。
+	// A run finishing on the completion path can still fail — most typically
+	// course_complete itself failing, since Complete closes shutdown before
+	// calling the capability. Check once more afterwards: a late fatal error
+	// must not be swallowed into a "completed" result.
 	if fatal := p.fatalValue(); fatal != nil {
 		panic(fatal)
 	}
@@ -271,35 +318,41 @@ func (p *courseProgram) fatalValue() any {
 	return p.fatal
 }
 
-// terminated 表示课程已进入终态（完成或致命错误），新的运行不该再开始。
+// terminated reports whether the Course reached its terminal state (completed
+// or failed), after which no new run should start.
 func (p *courseProgram) terminated() bool {
 	p.schedulerMu.Lock()
 	defer p.schedulerMu.Unlock()
 	return p.terminatedLocked()
 }
 
-// terminatedLocked 是 terminated 的无锁版本，供已经持有 schedulerMu 的调用方在
-// 同一临界区内复用这条判断（如 admitRun 里与 runs.Add 同锁的那一步）。
+// terminatedLocked is the lock-free half of terminated, so a caller already
+// holding schedulerMu can reuse the check inside its own critical section (as
+// admitRun does, next to runs.Add).
 func (p *courseProgram) terminatedLocked() bool {
 	return p.completed || p.fatal != nil
 }
 
-// handlerSnapshot 返回回调集合的快照。
+// handlerSnapshot returns a snapshot of the registered callbacks.
 //
-// 取快照（而不是持锁投递）是为了避免投递期间与注册互锁；同时它也让"投递过程中
-// 又注册了新回调"这件事有确定的语义：本次触发按快照投递，新注册的从下一次
-// 触发开始生效。
+// Snapshotting instead of delivering under the lock avoids deadlocking
+// delivery against registration, and it gives "a callback registered while a
+// trigger is being delivered" a definite meaning: this trigger uses the
+// snapshot, and the new callback takes effect from the next trigger on.
 func (p *courseProgram) handlerSnapshot() handlers {
 	p.schedulerMu.Lock()
 	defer p.schedulerMu.Unlock()
 	return p.handlers
 }
 
-// markCompleted 把课程标记为已完成，返回值表示"这是不是第一次完成"。
+// markCompleted marks the Course completed and reports whether this was the
+// first completion.
 //
-// 幂等在这里是刚需：契约允许课程在同一个回调里 complete 之后继续执行剩余语句，
-// 而并存的运行也可能各自判定成功；没有这道闸，学习者就会看到两次完成弹窗。
-// 先置位再调 capability，这样即使 capability panic 了，重复完成依然被挡住。
+// Idempotence is required here: the contract lets a Course keep executing the
+// statements after complete inside the same callback, and overlapping runs may
+// each judge the goal reached. Without this gate the learner would see two
+// completion dialogs. The flag is set before the capability call, so even a
+// panicking capability cannot reopen the gate.
 func (p *courseProgram) markCompleted() bool {
 	p.schedulerMu.Lock()
 	if p.completed {
@@ -318,13 +371,16 @@ func (p *courseProgram) isCompleted() bool {
 	return p.completed
 }
 
-// mustCallCapability 按 capabilityKinds 的登记执行一次 capability 调用，
-// 失败视为课程程序的致命错误。
+// mustCallCapability performs one capability call with the execution semantics
+// registered in capabilityKinds, treating a failure as fatal to the Course
+// program.
 //
-// 为什么失败是 panic 而不是返回 error：作者侧 API 里没有错误通道（DSL 要保持
-// "看起来就是顺序代码"），而一次失败意味着课程要求的展示/编辑器操作**没有发生**。
-// 此时继续往下跑，等于在一个错误的前提上判定学习者。panic 由 runFrame 兜住记为
-// 致命错误，最终在主 goroutine 上重新抛出，执行器据此报 runtime 阶段错误。
+// Why a panic rather than a returned error: the author-facing API has no error
+// channel, because the DSL must keep reading like straight-line code, and a
+// failure means the presentation or editor operation the Course asked for did
+// not happen. Carrying on would judge the learner on a false premise. runFrame
+// catches the panic and records it as fatal; it is re-raised on the main
+// goroutine, and the executor reports a runtime-stage error.
 func (p *courseProgram) mustCallCapability(name string, request, result any) {
 	if capabilityKinds[name] == kindFast {
 		if err := p.callCapability(name, request, result); err != nil {
@@ -333,9 +389,11 @@ func (p *courseProgram) mustCallCapability(name string, request, result any) {
 		return
 	}
 
-	// 等待类调用在让位期间**不允许写课程可见的内存**：result 可能是作者传入的
-	// 共享结构体（generateJSON），而此刻令牌在别的运行手里，桥直接解码进去就是
-	// 数据竞争。先解码进私有缓冲，拿回令牌后再回填。
+	// While the token is released, a waiting call must not write memory the
+	// Course can see: result may be a struct the author shares (generateJSON),
+	// and with the token in another run's hands, letting the bridge decode
+	// straight into it is a data race. Decode into a private buffer first and
+	// fill result in after the token is back.
 	var raw json.RawMessage
 	var target any
 	if result != nil {

@@ -11,25 +11,29 @@ import (
 	"github.com/goplus/builder/tools/xgoexec"
 )
 
-// capabilityCall 记录课程程序发起过的一次 capability 调用。
+// capabilityCall records one capability call the Course program made.
 type capabilityCall struct {
 	name    string
 	request string
 }
 
-// capabilityHold 让测试把某个 capability 变成"挂起直到放行"：
-// 每次调用到达时向 started 发一个信号，然后阻塞等 release 放行一次。
-// 用它模拟展示类能力等学习者、LLM 能力等生成的真实节奏。
+// capabilityHold lets a test turn a capability into one that suspends until
+// released: each arriving call signals started, then blocks until release lets
+// one through. It reproduces the real rhythm of presentation waiting on the
+// learner and of LLM capabilities waiting on generation.
 type capabilityHold struct {
 	started chan struct{}
 	release chan struct{}
 }
 
-// fakeHost 冒充前端宿主：记录课程发起的 capability 调用，并用预设的响应作答，
-// 从而让课程程序能脱离 Worker/WASM 在普通的 go test 里跑起来。
+// fakeHost stands in for the frontend host: it records the capability calls a
+// Course makes and answers them with canned responses, which lets a Course
+// program run under plain go test, outside a Worker or WASM.
 //
-// 这正是 courseProgram.callCapability 做成字段的意义所在——真实的桥只在 js/wasm
-// 下可用，没有这个缝隙，执行模型和完成语义就只能靠浏览器手工验证。
+// This is exactly what courseProgram.callCapability being a field is for: the
+// real bridge only exists under js/wasm, and without that seam the execution
+// model and the completion semantics could only be verified by hand in a
+// browser.
 type fakeHost struct {
 	mu        sync.Mutex
 	calls     []capabilityCall
@@ -46,8 +50,8 @@ func newFakeHost() *fakeHost {
 	}
 }
 
-// holdCapability 让 name 的每次调用挂起：started 上出现一个信号表示一次调用
-// 已经到达并挂起，release() 放行一次调用。
+// holdCapability makes every call to name suspend: a signal on started means
+// one call arrived and is suspended, and release() lets one call through.
 func (p *fakeHost) holdCapability(name string) (started <-chan struct{}, release func()) {
 	hold := &capabilityHold{
 		started: make(chan struct{}, 16),
@@ -106,9 +110,10 @@ func (p *fakeHost) requestOf(name string) (string, bool) {
 	return "", false
 }
 
-// testCourse 手工复刻 XGo 为课程程序生成的形状：框架的 Course 被嵌进一个类里，
-// 该类的 MainEntry 承载作者写的课程代码。测试用闭包充当 MainEntry，
-// 这样每个用例都能像写课程一样注册回调。
+// testCourse reproduces by hand the shape XGo generates for a Course program:
+// the framework's Course embedded in a class whose MainEntry carries the code
+// the author wrote. Tests pass a closure as MainEntry, so each case registers
+// callbacks the way a Course would.
 type testCourse struct {
 	Course
 	mainEntry func(*testCourse)
@@ -116,10 +121,13 @@ type testCourse struct {
 
 func (p *testCourse) MainEntry() { p.mainEntry(p) }
 
-// newTestCourse 组装一个课程程序，并把它的 capability 桥换成假宿主。
+// newTestCourse assembles a Course program and swaps its capability bridge
+// for a fake host.
 //
-// 换桥的时机只能是 MainEntry：initCourse 在那之前刚把运行状态（含真实的桥）初始化好，
-// 而课程代码要到 MainEntry 才开始跑，所以这里是最早、也是唯一合适的注入点。
+// MainEntry is the only place to swap it: initCourse has just initialized the
+// run state, the real bridge included, and Course code does not start running
+// until MainEntry, which makes this the earliest and only suitable injection
+// point.
 func newTestCourse(host *fakeHost, mainEntry func(*testCourse)) *testCourse {
 	return &testCourse{mainEntry: func(course *testCourse) {
 		course.courseProgram.callCapability = host.call
@@ -127,7 +135,8 @@ func newTestCourse(host *fakeHost, mainEntry func(*testCourse)) *testCourse {
 	}}
 }
 
-// startCourse 异步启动一个课程程序，返回其结束信号。
+// startCourse starts a Course program asynchronously and returns the signal
+// for its end.
 func startCourse(host *fakeHost, mainEntry func(*testCourse)) <-chan struct{} {
 	done := make(chan struct{})
 	go func() {
@@ -137,8 +146,9 @@ func startCourse(host *fakeHost, mainEntry func(*testCourse)) <-chan struct{} {
 	return done
 }
 
-// runCourse 按执行器的方式跑一个课程程序，并在程序退出后返回。超时兜底是为了
-// 让"程序没能正常退出"表现为一条测试失败，而不是把整个 go test 挂死。
+// runCourse runs a Course program the way the executor does and returns once
+// it exits. The timeout fallback turns "the program failed to exit" into a
+// test failure rather than a hung go test.
 func runCourse(t *testing.T, host *fakeHost, mainEntry func(*testCourse)) {
 	t.Helper()
 	awaitDone(t, startCourse(host, mainEntry))
@@ -153,8 +163,9 @@ func awaitDone(t *testing.T, done <-chan struct{}) {
 	}
 }
 
-// dispatch 从"宿主"投递一个事件，走的是 xgoexec.DispatchEvent 这个真实入口。
-// 事件 handler 在包初始化时就已注册（见 events.go），这里不需要等待或重试。
+// dispatch delivers an event from the "host" through xgoexec.DispatchEvent,
+// the real entry point. The event handlers are registered during package
+// initialization (see events.go), so nothing here has to wait or retry.
 func dispatch(t *testing.T, name string, payload string) {
 	t.Helper()
 	if err := xgoexec.DispatchEvent(name, []byte(payload)); err != nil {
@@ -162,21 +173,23 @@ func dispatch(t *testing.T, name string, payload string) {
 	}
 }
 
-// resetEventRegistry 把进程级事件入口恢复到"还没有任何程序"的状态，
-// 用来模拟一个刚启动、课程程序尚未 attach 的 wasm 实例。
+// resetEventRegistry returns the process-level event entry to its "no program
+// yet" state, simulating a freshly started wasm instance whose Course program
+// has not attached.
 func resetEventRegistry() {
 	events.registryMu.Lock()
 	defer events.registryMu.Unlock()
 	events.program, events.pending = nil, nil
 }
 
-// await 等一个信号，超时视为测试失败。
+// await waits for a signal, treating a timeout as a test failure.
 func await(t *testing.T, signal <-chan struct{}, what string) {
 	t.Helper()
 	awaitOne(t, signal, what)
 }
 
-// awaitOne 等一个带值的信号并返回它，超时视为测试失败。
+// awaitOne waits for a signal carrying a value and returns it, treating a
+// timeout as a test failure.
 func awaitOne[T any](t *testing.T, signal <-chan T, what string) T {
 	t.Helper()
 	select {
@@ -215,8 +228,9 @@ func TestCompletionIsIdempotent(t *testing.T) {
 	runCourse(t, host, func(course *testCourse) {
 		course.OnStart(func() {
 			course.Complete()
-			// 课程代码漏写 else、或积压事件让判定回调再触发一次时，
-			// 不能出现第二次完成（学习者会看到两次完成弹窗）。
+			// When Course code forgets an else, or a queued event triggers the
+			// judging callback once more, there must be no second completion:
+			// the learner would see two completion dialogs.
 			course.CompleteWith("second")
 		})
 	})
@@ -270,8 +284,10 @@ func TestEventsAfterCompletionAreNotDelivered(t *testing.T) {
 func TestUnsubscribedEventsAreAccepted(t *testing.T) {
 	runCourse(t, newFakeHost(), func(course *testCourse) {
 		course.OnStart(func() {
-			// 课程什么都没订阅：宿主依然要能投递成功，事件被安静地丢掉。
-			// 宿主并不知道课程订阅了什么，也不该因此收到错误。
+			// The Course subscribed to nothing: the host must still be able to
+			// dispatch successfully, with the events quietly dropped. The host
+			// does not know what the Course subscribed to and must not get an
+			// error over it.
 			dispatch(t, "editor.runtime.start", `null`)
 			dispatch(t, "editor.runtime.exit", `{"code":0}`)
 			dispatch(t, "copilot.roundFinish", `{"userMessage":"hi","resultMessages":["hello"]}`)
@@ -286,8 +302,9 @@ func TestRuntimeExitAndCopilotRoundPayloads(t *testing.T) {
 	seen := 0
 
 	runCourse(t, newFakeHost(), func(course *testCourse) {
-		// 两段回调相互独立、完成顺序不承诺；回调都在执行令牌下运行，
-		// 共享计数的读改写是安全的。两段都执行过才完成。
+		// The two callbacks are independent and their finishing order is not
+		// promised; both run under the execution token, so reading and
+		// writing the shared counter is safe. Complete once both have run.
 		note := func() {
 			seen++
 			if seen == 2 {
@@ -322,7 +339,9 @@ func TestEventQueueOverflowIsReported(t *testing.T) {
 	runCourse(t, newFakeHost(), func(course *testCourse) {
 		course.Editor.Runtime.OnLog(func(log string) {})
 		course.OnStart(func() {
-			// 开场回调全程持有执行令牌，onLog 的运行无法开始，投递方等不到它让出，队列只进不出。
+			// The start callback holds the execution token throughout, so the
+			// onLog run cannot begin, the dispatcher never sees it yield, and
+			// the queue only ever fills.
 			var err error
 			for i := 0; err == nil && i < pendingEventLimit*2; i++ {
 				err = xgoexec.DispatchEvent("editor.runtime.log", []byte(`{"log":"flood"}`))
@@ -359,8 +378,10 @@ func TestCapabilityFailureStopsTheCourse(t *testing.T) {
 	}
 }
 
-// TestCoursesDoNotShareState 验证运行状态确实是实例级的：两个课程实例各自持有
-// 自己的回调与完成标志，互不干扰。这是从包级状态改成实例级之后最该守住的性质。
+// TestCoursesDoNotShareState checks that the run state really is per
+// instance: two Course instances hold their own callbacks and completion flag
+// and do not interfere. That is the property most worth guarding after the
+// move from package-level state to instance-level.
 func TestCoursesDoNotShareState(t *testing.T) {
 	firstHost, secondHost := newFakeHost(), newFakeHost()
 
@@ -371,7 +392,8 @@ func TestCoursesDoNotShareState(t *testing.T) {
 		course.OnStart(func() { course.ShowMessage("second") })
 	})
 
-	// 只初始化不运行：此时两者都还没完成，各自的回调也只登记在自己身上。
+	// Initialize without running: neither has completed yet, and each one's
+	// callbacks are registered only on itself.
 	first.initCourse()
 	second.initCourse()
 	first.courseProgram.runFrame(newRun(), first.MainEntry)
@@ -394,11 +416,15 @@ func TestCoursesDoNotShareState(t *testing.T) {
 	}
 }
 
-// TestHandlersAccumulate 验证同一事件上注册的多段处理都会生效，课程开始也不例外。
-// 课程代码里的 onXxx 就是普通方法调用，作者对同一事件写两段是自然写法（例如两条
-// 判定线索分开写），任何一段被静默丢掉都是难查的故障。spx 的事件注册同样是累加的。
-// 各段回调相互独立、完成顺序不承诺（多段 onStart 之间也一样），所以只断言每段都
-// 恰好执行了一次；完成要等四段都到齐，否则先完成的一方会让尚未开始的帧被准入检查放弃。
+// TestHandlersAccumulate checks that every handler registered for one event
+// takes effect, course start included. onXxx in Course code is an ordinary
+// method call, and writing two handlers for one event is natural — say one per
+// judging clue — so silently dropping either would be a hard failure to
+// diagnose. spx's event registration accumulates the same way. The handlers
+// are independent and their finishing order is not promised, between several
+// onStart callbacks too, so the assertion is only that each ran exactly once.
+// Completion waits for all four, because completing earlier would let the
+// admission check discard the runs that have not started yet.
 func TestHandlersAccumulate(t *testing.T) {
 	var trace []string
 
@@ -428,10 +454,13 @@ func TestHandlersAccumulate(t *testing.T) {
 	}
 }
 
-// TestCourseStartHandlersRunIndependently 验证课程开始与其他事件走同一条路：
-// 一段 onStart 挂在展示类 capability 上等学习者时，另一段 onStart 不必等它返回。
-// 两段谁先拿到令牌不承诺，但无论哪种顺序，第二段的信号都必须在放行展示之前到达；
-// 开场回调若仍在主 goroutine 上顺序执行，这个等待会超时。
+// TestCourseStartHandlersRunIndependently checks that course start takes the
+// same path as other events: while one onStart waits on a presentation
+// capability for the learner, another onStart need not wait for it to return.
+// Which of the two gets the token first is not promised, but either way the
+// second one's signal must arrive before the presentation is released; were
+// the start callbacks still running sequentially on the main goroutine, this
+// wait would time out.
 func TestCourseStartHandlersRunIndependently(t *testing.T) {
 	host := newFakeHost()
 	preludeShown, releasePrelude := host.holdCapability("course_showPrelude")
@@ -451,10 +480,12 @@ func TestCourseStartHandlersRunIndependently(t *testing.T) {
 	awaitDone(t, done)
 }
 
-// TestCallbackRegisteredDuringRunReceivesEvents 验证课程运行中（回调里）注册的回调
-// 同样得到 worker：晚注册的 onLog 能收到之后投递的日志。作者会这样写——等开场
-// 说明看完再开始判定。这是 addLane 里 lanesStarted 为 true 的那条路径，没有它，
-// 晚注册的回调会挂进 handlers 却永远无人执行。
+// TestCallbackRegisteredDuringRunReceivesEvents checks that a callback
+// registered while the Course runs, from inside another callback, receives
+// events too: an onLog registered late gets the logs dispatched after it. That
+// is how an author writes "start judging once the prelude has been read".
+// Registration takes the same path at any time, and without that the late
+// callback would sit in handlers with nothing ever running it.
 func TestCallbackRegisteredDuringRunReceivesEvents(t *testing.T) {
 	host := newFakeHost()
 	registered := make(chan struct{})
@@ -475,8 +506,9 @@ func TestCallbackRegisteredDuringRunReceivesEvents(t *testing.T) {
 	awaitDone(t, done)
 }
 
-// TestSameEventHandlersRunIndependently 验证同一事件上注册的多段回调相互独立：
-// 一段挂在等待类 capability 上时，另一段照常处理同一条触发。
+// TestSameEventHandlersRunIndependently checks that the handlers registered
+// for one event are independent: while one waits on a waiting capability, the
+// other handles the same trigger as usual.
 func TestSameEventHandlersRunIndependently(t *testing.T) {
 	host := newFakeHost()
 	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
@@ -498,15 +530,17 @@ func TestSameEventHandlersRunIndependently(t *testing.T) {
 	await(t, ready, "the course to start")
 	dispatch(t, "editor.runtime.log", `{"log":"go"}`)
 	await(t, generateStarted, "the first handler to suspend in generateText")
-	// 第一段还挂着，第二段必须已经（或照常能够）处理同一条日志。
+	// The first handler is still suspended, so the second must already have
+	// handled — or still be able to handle — the same log.
 	awaitOne(t, otherSeen, "the second handler to run independently")
 	releaseGenerate()
 	awaitDone(t, done)
 }
 
-// TestWaitingCapabilityYieldsToOtherEvents 验证执行模型的核心承诺：一个回调
-// 挂在展示类 capability 上等学习者时，其他事件的回调照常执行；挂起的回调恢复后
-// 读到的共享状态是新鲜的。
+// TestWaitingCapabilityYieldsToOtherEvents checks the execution model's
+// central promise: while one callback waits on a presentation capability for
+// the learner, the callbacks of other events run as usual, and the suspended
+// callback reads fresh shared state once it resumes.
 func TestWaitingCapabilityYieldsToOtherEvents(t *testing.T) {
 	host := newFakeHost()
 	messageShown, releaseMessage := host.holdCapability("course_showMessage")
@@ -526,15 +560,17 @@ func TestWaitingCapabilityYieldsToOtherEvents(t *testing.T) {
 			observed = logNum
 			course.Complete()
 		})
-		// xgoexec 的事件注册表是进程级的：等本课程真的跑起来再投递，
-		// 免得事件被上一个测试留下的已完成程序静默吞掉。
+		// xgoexec's event registry is process-level: wait until this Course is
+		// really running before dispatching, or the event is silently
+		// swallowed by a completed program left over from a previous test.
 		course.OnStart(func() { close(ready) })
 	})
 
 	await(t, ready, "the course to start")
 	dispatch(t, "copilot.roundFinish", `{"userMessage":"hi","resultMessages":["hello"]}`)
 	await(t, messageShown, "showMessage to reach the host")
-	// 弹窗仍在挂起中，日志事件必须照常被处理。
+	// The dialog is still suspended, so the log event must be handled as
+	// usual.
 	for i := 0; i < 3; i++ {
 		dispatch(t, "editor.runtime.log", `{"log":"tick"}`)
 	}
@@ -549,8 +585,9 @@ func TestWaitingCapabilityYieldsToOtherEvents(t *testing.T) {
 	}
 }
 
-// TestRunsOfOneCallbackOverlapByDefault 验证没有策略时同一段回调的多次运行可以并存：
-// 前一次挂在等待类 capability 上时，后一次照常开始并跑完（spx 语义）。
+// TestRunsOfOneCallbackOverlapByDefault checks that runs of one callback may
+// overlap: while an earlier run waits on a waiting capability, a later one
+// starts and finishes as usual, which is spx's semantics.
 func TestRunsOfOneCallbackOverlapByDefault(t *testing.T) {
 	host := newFakeHost()
 	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
@@ -590,10 +627,12 @@ func TestRunsOfOneCallbackOverlapByDefault(t *testing.T) {
 	}
 }
 
-// TestCallbacksStartInRegistrationOrder 钉住 startRuns 当前的启动机制：同一触发内
-// 各段回调按注册顺序启动，前一段跑到第一次等待后下一段才开始，且下一段在前一段
-// 挂起期间照常运行。这是实现细节而非契约（见 #3509）；测试存在是为了让改动它的人
-// 有意识地改，而不是让课程代码依赖它。
+// TestCallbacksStartInRegistrationOrder pins down what startRuns currently
+// does: within one trigger the callbacks start in registration order, the next
+// one starting only once the previous reached its first wait, and running as
+// usual while that one stays suspended. This is an implementation detail
+// rather than a contract (see #3509); the test exists so that whoever changes
+// it does so deliberately, not so that Course code may depend on it.
 func TestCallbacksStartInRegistrationOrder(t *testing.T) {
 	host := newFakeHost()
 	messageShown, releaseMessage := host.holdCapability("course_showMessage")
@@ -627,8 +666,10 @@ func TestCallbacksStartInRegistrationOrder(t *testing.T) {
 	}
 }
 
-// TestPresentationCallsMayOverlap 验证框架不再串行展示类调用：两个回调各自弹窗时，
-// 两个 showMessage 同时挂在宿主上，怎么处理重叠是宿主 capability 的策略。
+// TestPresentationCallsMayOverlap checks that the framework does not
+// serialize presentation calls: with two callbacks each showing a dialog, both
+// showMessage calls are pending on the host at once, and what to do about the
+// overlap is the host capability's policy.
 func TestPresentationCallsMayOverlap(t *testing.T) {
 	host := newFakeHost()
 	messageShown, releaseMessage := host.holdCapability("course_showMessage")
@@ -655,8 +696,9 @@ func TestPresentationCallsMayOverlap(t *testing.T) {
 	awaitDone(t, done)
 }
 
-// TestSlowCapabilitiesRunConcurrently 验证非展示类的等待能力可以并发在途：
-// 两个回调各自等一次 LLM 生成时，两个请求同时挂在宿主上。
+// TestSlowCapabilitiesRunConcurrently checks that non-presentation waiting
+// capabilities can be in flight concurrently: with two callbacks each waiting
+// on one LLM generation, both requests are pending on the host at once.
 func TestSlowCapabilitiesRunConcurrently(t *testing.T) {
 	host := newFakeHost()
 	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
@@ -676,7 +718,8 @@ func TestSlowCapabilitiesRunConcurrently(t *testing.T) {
 	await(t, ready, "the course to start")
 	dispatch(t, "editor.runtime.start", `null`)
 	dispatch(t, "editor.runtime.exit", `{"code":0}`)
-	// 两个 generateText 必须都在宿主上挂起——等待类能力互不阻塞。
+	// Both generateText calls must be suspended on the host: waiting
+	// capabilities do not block one another.
 	await(t, generateStarted, "the first generateText to reach the host")
 	await(t, generateStarted, "the second generateText to reach the host")
 	releaseGenerate()
@@ -684,9 +727,10 @@ func TestSlowCapabilitiesRunConcurrently(t *testing.T) {
 	awaitDone(t, done)
 }
 
-// TestFatalDuringCompletionIsReported 验证完成路径上迟到的致命错误不被吞掉：
-// Complete 先进入终态再调 course_complete，这一下若失败，程序必须以错误退出
-// 而不是被报成 completed。
+// TestFatalDuringCompletionIsReported checks that a fatal error arriving late
+// on the completion path is not swallowed: Complete enters the terminal state
+// before calling course_complete, and if that call fails the program must exit
+// with an error rather than be reported as completed.
 func TestFatalDuringCompletionIsReported(t *testing.T) {
 	host := newFakeHost()
 	host.fail["course_complete"] = fmt.Errorf("completion rejected")
@@ -709,12 +753,16 @@ func TestFatalDuringCompletionIsReported(t *testing.T) {
 	}
 }
 
-// TestQueuedEventDroppedWhenCompletionWinsTheToken 验证令牌后的准入检查：
-// 一个事件已出队、其帧正在等令牌，此时别的帧完成了课程——等到令牌的帧
-// 必须放弃执行，而不是在课程结束后又跑一段回调。
+// TestQueuedEventDroppedWhenCompletionWinsTheToken checks the admission check
+// that happens after acquiring the token: an event's run is waiting for the
+// token when another run completes the Course, and the waiting run must then
+// give up rather than execute a callback after the Course has ended.
 func TestQueuedEventDroppedWhenCompletionWinsTheToken(t *testing.T) {
-	// 本测试从测试 goroutine 投递而不等就绪信号：先把事件入口清成"还没有程序"，
-	// 早到的投递进暂存区、就绪后补投，而不是落到上一个测试留下的程序上。
+	// This test dispatches from the test goroutine without awaiting a
+	// readiness signal, so it first clears the event entry to "no program
+	// yet": early dispatches are then buffered and handled once this Course
+	// is ready, instead of landing on a program left over from a previous
+	// test.
 	resetEventRegistry()
 	host := newFakeHost()
 	holding := make(chan struct{})
@@ -723,7 +771,7 @@ func TestQueuedEventDroppedWhenCompletionWinsTheToken(t *testing.T) {
 
 	done := startCourse(host, func(course *testCourse) {
 		course.Editor.Runtime.OnStart(func() {
-			close(holding) // 本次运行持有令牌，等测试放行
+			close(holding) // this run holds the token and waits for the test
 			<-proceed
 			course.Complete()
 		})
@@ -733,12 +781,13 @@ func TestQueuedEventDroppedWhenCompletionWinsTheToken(t *testing.T) {
 		course.OnStart(func() {})
 	})
 
-	// 等 runtime.start 的运行持有令牌后，再投递 exit：它的运行要么已在等令牌，
-	// 要么还没被投递方启动——两种情况下完成之后都不该再执行。
+	// Dispatch exit once the runtime.start run holds the token: the exit run
+	// is then either already waiting for the token or not yet started by the
+	// dispatcher, and in neither case may it execute after completion.
 	dispatch(t, "editor.runtime.start", `null`)
 	await(t, holding, "the start callback to hold the token")
 	dispatch(t, "editor.runtime.exit", `{"code":0}`)
-	close(proceed) // 持令牌的运行现在完成课程并归还令牌
+	close(proceed) // the token holder now completes the Course and returns the token
 	awaitDone(t, done)
 
 	select {
@@ -748,9 +797,11 @@ func TestQueuedEventDroppedWhenCompletionWinsTheToken(t *testing.T) {
 	}
 }
 
-// TestGenerateJSONDecodesUnderTheToken 验证等待类调用的响应回填发生在令牌之下：
-// 作者把同一个结构体共享给两段回调时，让位期间另一段的写入与桥的解码
-// 不构成数据竞争（本用例主要靠 -race 守护），且生成结果最终写入成功。
+// TestGenerateJSONDecodesUnderTheToken checks that a waiting call's response
+// is filled in while the token is held: when the author shares one struct
+// between two callbacks, the other one's writes during the yield do not race
+// with the bridge's decoding — this case is mainly guarded by -race — and the
+// generated value does end up written.
 func TestGenerateJSONDecodesUnderTheToken(t *testing.T) {
 	type feedback struct {
 		Praise string `json:"praise"`
@@ -778,7 +829,8 @@ func TestGenerateJSONDecodesUnderTheToken(t *testing.T) {
 	await(t, ready, "the course to start")
 	dispatch(t, "editor.runtime.start", `null`)
 	await(t, generateStarted, "generateJSON to reach the host")
-	// 生成挂起期间，另一段回调写同一个结构体——解码若不回到令牌下，这里就是竞态。
+	// While generation is suspended, the other callback writes the same
+	// struct: were decoding not back under the token, this would race.
 	dispatch(t, "editor.runtime.log", `{"log":"poke"}`)
 	await(t, touched, "the other callback to write the shared struct")
 	releaseGenerate()
@@ -789,9 +841,11 @@ func TestGenerateJSONDecodesUnderTheToken(t *testing.T) {
 	}
 }
 
-// TestCompletionSettlesPendingWait 验证完成时已在途的等待调用被宿主 settle 后，
-// 挂起的帧把剩余语句执行完、程序正常以 completed 收尾（契约要求宿主在完成后
-// 尽快 settle 全部在途调用）。
+// TestCompletionSettlesPendingWait checks that once the host settles a
+// waiting call that was in flight at completion, the suspended run executes
+// its remaining statements and the program winds down as completed. The
+// contract requires the host to settle every pending call promptly after a
+// completion.
 func TestCompletionSettlesPendingWait(t *testing.T) {
 	host := newFakeHost()
 	messageShown, releaseMessage := host.holdCapability("course_showMessage")
@@ -813,16 +867,20 @@ func TestCompletionSettlesPendingWait(t *testing.T) {
 	dispatch(t, "editor.runtime.start", `null`)
 	await(t, messageShown, "showMessage to reach the host")
 	dispatch(t, "editor.runtime.exit", `{"code":0}`)
-	// 课程已完成，但 showMessage 还挂着；宿主按契约 settle 它。
+	// The Course has completed while showMessage is still suspended; the
+	// host settles it as the contract requires.
 	releaseMessage()
 	awaitDone(t, done)
 	await(t, resumed, "the suspended callback to finish its remaining statements")
 }
 
-// TestEventsBeforeReadyAreDeliveredInOrder 验证就绪前到达的事件不丢、不乱序：
-// 执行器的 run() 在程序跑到注册回调之前就 resolve，宿主此刻的投递必须在程序
-// 就绪后按到达顺序送达。这里从 MainEntry 里、在 onLog 注册之前投递，模拟的正是
-// 那段窗口——旧实现下这些日志在投递时找不到 lane，会被静默放弃。
+// TestEventsBeforeReadyAreDeliveredInOrder checks that events arriving before
+// the program is ready are neither lost nor reordered: the executor's run()
+// resolves before the program registers its callbacks, and a dispatch made in
+// that window must still be delivered, in arrival order, once the program is
+// ready. Dispatching from inside MainEntry before onLog is registered
+// reproduces exactly that window; an earlier implementation found no receiver
+// for these logs and dropped them silently.
 func TestEventsBeforeReadyAreDeliveredInOrder(t *testing.T) {
 	var logs []string
 
@@ -843,8 +901,9 @@ func TestEventsBeforeReadyAreDeliveredInOrder(t *testing.T) {
 	}
 }
 
-// TestEventsBeforeAnyProgramAreHeld 验证进程里还没有程序时的投递同样被暂存：
-// 宿主在 run() resolve 后立刻投递，而解释器还没执行到 XGot_Course_Main。
+// TestEventsBeforeAnyProgramAreHeld checks that a dispatch made while the
+// process has no program yet is buffered too: the host dispatches as soon as
+// run() resolves, before the interpreter has reached XGot_Course_Main.
 func TestEventsBeforeAnyProgramAreHeld(t *testing.T) {
 	resetEventRegistry()
 	dispatch(t, "editor.runtime.log", `{"log":"early"}`)
@@ -858,8 +917,9 @@ func TestEventsBeforeAnyProgramAreHeld(t *testing.T) {
 	})
 }
 
-// TestPendingEventsAreBounded 验证暂存区有上限：宿主对一个迟迟不启动的程序狂投，
-// 超限的投递报错而不是无限缓冲。
+// TestPendingEventsAreBounded checks that the buffer is bounded: when the
+// host floods a program that never gets going, a dispatch beyond the limit
+// fails instead of buffering without end.
 func TestPendingEventsAreBounded(t *testing.T) {
 	resetEventRegistry()
 	t.Cleanup(resetEventRegistry)

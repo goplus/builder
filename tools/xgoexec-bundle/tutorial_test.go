@@ -10,14 +10,16 @@ import (
 	"github.com/goplus/builder/tools/xgoexec"
 )
 
-// courseSource 是一段"用满全部作者可见 API"的课程程序。
+// courseSource is a Course program that exercises every author-facing API.
 //
-// 它同时守住两件事：
-//  1. classfile 绑定是否还正常——课程代码能不能按 XGo 的写法调到框架
-//     （字段大写、方法小写、onXxx 事件写法、SpotlightOptions 字面量等）；
-//  2. qexp 导出有没有忘记重新生成——新增的类型（如 SpotlightOptions）若没进
-//     ixgo 的注册表，这里编译/准备执行就会失败。第二点尤其容易漏，
-//     因为它平时只在运行期才暴露。
+// It guards two things at once:
+//  1. that the classfile binding still works — whether Course code can reach
+//     the framework the way XGo spells it (capitalized fields, lower-cased
+//     methods, the onXxx event form, SpotlightOptions literals and so on);
+//  2. that the qexp export was regenerated — a newly added type such as
+//     SpotlightOptions missing from ixgo's registry makes compiling or
+//     preparing this fail. The second one is especially easy to miss, since
+//     it otherwise only surfaces at run time.
 const courseSource = `
 type Feedback struct {
 	Praise string
@@ -65,11 +67,14 @@ Editor.Runtime.onLog log => {
 }
 `
 
-// buildCourse 按运行时的真实管线编译一段课程程序：注册 classfile 工程、
-// 预载标准包、xgobuild 编译、ixgo 装载。
+// buildCourse compiles a Course program through the real runtime pipeline:
+// register the classfile project, preload the standard packages, compile with
+// xgobuild, load with ixgo.
 //
-// 只准备到"可执行"为止，不真的跑：真正运行会调 capability，而 capability 桥
-// 只在 js/wasm 下存在。运行期行为由 tools/tutorial 的单测用假宿主覆盖。
+// It only goes as far as "ready to execute" and never actually runs: running
+// would call capabilities, and the capability bridge exists only under
+// js/wasm. Run-time behavior is covered by tools/tutorial's unit tests against
+// a fake host.
 func buildCourse(t *testing.T, courseSource []byte) {
 	t.Helper()
 
@@ -103,9 +108,11 @@ func TestTutorialCourseBuilds(t *testing.T) {
 	buildCourse(t, []byte(courseSource))
 }
 
-// TestExampleCourseBuilds 编译 docs 里的示例课程，保证文档示例与框架实现不脱节。
-// 示例此前是纯手写、从未被编译验证的，实际带着一处语法错误
-// （无括号命令式调用不能作表达式）躺了很久——这条测试防止它再次腐烂。
+// TestExampleCourseBuilds compiles the example Course from docs, keeping the
+// documented example in step with the framework implementation. That example
+// used to be written entirely by hand and never compiled, and sat for a long
+// time with a syntax error in it — a paren-less command call cannot be used as
+// an expression. This test stops it rotting again.
 func TestExampleCourseBuilds(t *testing.T) {
 	source, err := os.ReadFile("../../docs/develop/tutorial-v2/example-tutorial-course/main_course.gox")
 	if err != nil {

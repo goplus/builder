@@ -6,20 +6,25 @@ import (
 	"strings"
 )
 
-// deriveSchema 从课程传给 GenerateJSON 的值派生出 JSON Schema。
+// deriveSchema derives a JSON Schema from the value a Course passed to
+// GenerateJSON.
 //
-// 前提（做过验证实验确认）：XGo 把课程代码编译成普通的 package main，作者定义的
-// struct 就是普通的 main 包类型，因此 reflect 的行为与面对原生类型完全一致——
-// 字段枚举、tag 读取、encoding/json 的回填可设置性都正常。
+// What makes this work, confirmed by a dedicated experiment: XGo compiles
+// Course code into an ordinary package main, so a struct the author defines is
+// an ordinary type of that main package and reflect behaves exactly as it does
+// on native types — enumerating fields, reading tags and the settability
+// encoding/json needs to fill values back in all work normally.
 //
-// 这里刻意只做一个"足够用"的 schema：课程判定要的是让 LLM 输出固定形状的 JSON，
-// 不是完整的 JSON Schema 规范实现。
+// The schema produced here is deliberately only good enough: Course judging
+// needs the LLM to emit JSON of a fixed shape, not a complete implementation
+// of the JSON Schema specification.
 func deriveSchema(result any) (map[string]any, error) {
 	if result == nil {
 		return nil, fmt.Errorf("generateJSON: result must be a non-nil pointer to a struct")
 	}
 	value := reflect.ValueOf(result)
-	// 必须是指针：否则解码回填改的是副本，课程读到的还是零值。
+	// A pointer is required: otherwise decoding fills in a copy and the
+	// Course still reads the zero value.
 	if value.Kind() != reflect.Pointer {
 		return nil, fmt.Errorf("generateJSON: result must be a pointer to a struct, got %s", value.Type())
 	}
@@ -33,12 +38,16 @@ func deriveSchema(result any) (map[string]any, error) {
 	return schemaOfStruct(elem, map[reflect.Type]bool{})
 }
 
-// schemaOfStruct 把结构体描述成一个 object schema。
-// 所有字段都进 required：课程判定通常要读全部字段，让 LLM 少省略一个是一个。
+// schemaOfStruct describes a struct as an object schema. Every field goes
+// into required: Course judging usually reads all of them, and every field the
+// LLM might otherwise omit is one problem less.
 //
-// visiting 记录当前展开路径上的结构体类型。JSON Schema 要靠 $ref 才能表达递归结构，
-// 我们不生成 $ref，因此自引用类型（如 type Step struct { Next *Step }）只能拒绝——
-// 不拦的话这里会无限递归下去，在 WASM 里表现为解释器爆栈，而不是一条能看懂的错误。
+// visiting records the struct types on the current expansion path. Expressing
+// a recursive structure in JSON Schema requires $ref, which we do not
+// generate, so a self-referencing type such as type Step struct { Next *Step }
+// can only be rejected. Letting it through would recurse forever, which in
+// WASM surfaces as the interpreter blowing its stack rather than as an error
+// anyone can read.
 func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]any, error) {
 	if visiting[t] {
 		return nil, fmt.Errorf("generateJSON: %s refers to itself; a generated value cannot be recursive", t)
@@ -51,16 +60,21 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if field.Anonymous && !hasJSONName(field) {
-			// 未带 json 标签的匿名嵌入字段：encoding/json 会把内层导出字段**提升**
-			// 到外层对象，而这里若生成一个嵌套属性，宿主按 schema 生成的结果就
-			// 填不回去（回填走提升规则，读不到嵌套键）。完整复刻提升与冲突规则
-			// 不值得，明确拒绝：作者给字段起个名字或加 json 标签即可。
+			// An anonymous embedded field with no json tag: encoding/json
+			// promotes the inner exported fields into the outer object, so
+			// generating a nested property here would produce a value that
+			// cannot be filled back in, because filling follows the promotion
+			// rules and never looks at the nested key. Reproducing the
+			// promotion and conflict rules in full is not worth it, so this is
+			// rejected outright: the author only has to name the field or give
+			// it a json tag.
 			return nil, fmt.Errorf(
 				"generateJSON: %s embeds %s without a json tag; embedded fields are not supported — use a named field or give it an explicit json name",
 				t, field.Type)
 		}
 		if field.PkgPath != "" {
-			// 未导出字段：encoding/json 既读不到也填不进，放进 schema 只会误导 LLM。
+			// An unexported field: encoding/json can neither read nor fill it,
+			// so putting it in the schema would only mislead the LLM.
 			continue
 		}
 		name, omitted := jsonFieldName(field)
@@ -75,9 +89,12 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 		required = append(required, name)
 	}
 	if len(properties) == 0 {
-		// 一个字段都没有可用的——最常见的原因是作者按 XGo 的习惯把字段名写成了小写，
-		// 也可能是仅有的导出字段都被 json:"-" 排除了。这种情况下生成的值永远填不回去，
-		// 课程会读到全零值却毫无提示，所以必须报错，而不是回一个空 schema 让它悄悄失败。
+		// Not one usable field. The most common cause is an author following
+		// XGo habits and writing the field names in lower case; the only
+		// exported fields being excluded by json:"-" does it too. Either way
+		// the generated value could never be filled in, leaving the Course
+		// reading an all-zero value with no hint as to why, so this has to be
+		// an error rather than an empty schema that fails quietly.
 		return nil, fmt.Errorf("generateJSON: %s has no serializable exported fields to fill", t)
 	}
 	return map[string]any{
@@ -87,9 +104,11 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 	}, nil
 }
 
-// schemaOfType 把一个字段类型映射成 schema 片段。
-// 支持的范围覆盖课程判定会用到的形状：标量、切片/数组、嵌套结构体、以及指针（透传到元素类型）。
-// 其余类型（map、interface、chan 等）直接报错，好过生成一个 LLM 无从遵守的 schema。
+// schemaOfType maps one field type onto a schema fragment. What it supports
+// covers the shapes Course judging uses: scalars, slices and arrays, nested
+// structs, and pointers, which pass through to the element type. Everything
+// else — maps, interfaces, channels — is an error, which beats generating a
+// schema the LLM has no way to satisfy.
 func schemaOfType(t reflect.Type, visiting map[reflect.Type]bool) (map[string]any, error) {
 	switch t.Kind() {
 	case reflect.String:
@@ -116,16 +135,18 @@ func schemaOfType(t reflect.Type, visiting map[reflect.Type]bool) (map[string]an
 	}
 }
 
-// hasJSONName 判断字段是否带显式的 json 名字标签。
-// 带名字的匿名字段被 encoding/json 当普通命名字段处理（不做提升），可以正常支持。
+// hasJSONName reports whether a field carries an explicit json name tag.
+// encoding/json treats a named anonymous field as an ordinary named field,
+// without promotion, so those are supported normally.
 func hasJSONName(field reflect.StructField) bool {
 	name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
 	return name != "" && name != "-"
 }
 
-// jsonFieldName 按 encoding/json 的规则决定字段在 JSON 里的名字。
-// 与 encoding/json 保持一致很重要：schema 里的键名必须和实际解码时用的键名相同，
-// 否则 LLM 按 schema 输出的字段会填不进去。
+// jsonFieldName decides a field's name in JSON by encoding/json's rules.
+// Matching encoding/json matters: a key in the schema must be the key
+// decoding actually looks for, or the field the LLM emits per the schema will
+// not be filled in.
 func jsonFieldName(field reflect.StructField) (name string, omitted bool) {
 	tag := field.Tag.Get("json")
 	if tag == "-" {

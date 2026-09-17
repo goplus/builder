@@ -47,8 +47,10 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		praise string
 	}
 
-	// 自引用与互相引用：JSON Schema 要靠 $ref 才能表达递归，我们不生成 $ref，
-	// 所以必须报错。不拦的话是无限递归——在 WASM 里就是解释器爆栈。
+	// Self-reference and mutual reference: expressing recursion in JSON
+	// Schema needs $ref, which we do not generate, so this has to be an
+	// error. Letting it through means infinite recursion, which in WASM
+	// is the interpreter blowing its stack.
 	type node struct {
 		Label string
 		Next  *node
@@ -57,8 +59,10 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		Children []tree
 	}
 
-	// 无标签的匿名嵌入：encoding/json 会把内层字段提升到外层，与嵌套 schema
-	// 背离（宿主按嵌套键生成，回填走提升规则读不到）——必须显式拒绝。
+	// Untagged anonymous embedding: encoding/json promotes the inner
+	// fields into the outer object, which contradicts a nested schema —
+	// the host would generate nested keys that filling, following the
+	// promotion rules, never reads. Reject it explicitly.
 	type common struct {
 		Comment string
 	}
@@ -124,13 +128,17 @@ func TestGenerateJSONFillsTheResult(t *testing.T) {
 	}
 }
 
-// left 与 right 互相引用，用来验证环检测不只认直接自引用。
-// 互相引用的类型必须声明在包级：Go 的局部类型声明是顺序的，彼此看不见对方。
+// left and right reference each other, to check that cycle detection is not
+// limited to direct self-reference. Mutually referencing types have to be
+// declared at package level: local type declarations in Go are sequential and
+// cannot see each other.
 type left struct{ Right *right }
 type right struct{ Left *left }
 
-// TestDeriveSchemaAcceptsTaggedEmbedding 验证带 json 标签的匿名字段被当作普通
-// 命名字段（encoding/json 对带名字的匿名字段不做提升），schema 生成嵌套对象。
+// TestDeriveSchemaAcceptsTaggedEmbedding checks that an anonymous field with
+// a json tag is treated as an ordinary named field — encoding/json does not
+// promote a named anonymous field — and that the schema nests an object for
+// it.
 func TestDeriveSchemaAcceptsTaggedEmbedding(t *testing.T) {
 	type Common struct {
 		Comment string `json:"comment"`
@@ -149,7 +157,8 @@ func TestDeriveSchemaAcceptsTaggedEmbedding(t *testing.T) {
 		t.Errorf("schema should nest the tagged embedded field under its json name: %v", properties)
 	}
 
-	// 与 encoding/json 的实际行为对照：嵌套键真的能回填。
+	// Check against what encoding/json actually does: the nested key really
+	// can be filled in.
 	var filled feedback
 	if err := json.Unmarshal([]byte(`{"common":{"comment":"nice"},"score":4}`), &filled); err != nil {
 		t.Fatal(err)
