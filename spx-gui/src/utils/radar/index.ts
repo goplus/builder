@@ -79,9 +79,8 @@ export class RadarNodeInfo {
    * observe DOM reordering.
    */
   getChildren(includeInvisible = false): RadarNodeInfo[] {
-    const children = sortNodesByDocumentOrder(this.children)
-    if (includeInvisible) return children
-    return children.filter((child) => child.visible)
+    const children = includeInvisible ? this.children : this.children.filter((child) => child.visible)
+    return sortNodesByDocumentOrder(children)
   }
 
   setChildren(children: RadarNodeInfo[]) {
