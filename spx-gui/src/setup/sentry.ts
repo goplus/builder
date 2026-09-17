@@ -2,7 +2,7 @@ import type { App as VueApp } from 'vue'
 import * as Sentry from '@sentry/vue'
 import type { Router } from 'vue-router'
 
-import { isAIOperation, isCodeEditorOperation, isLSPOperation } from '@/utils/tracing'
+import { isCodeEditorOperation, isLSPOperation } from '@/utils/tracing'
 
 const ignoreErrorTypes = [
   'AbortError',
@@ -17,7 +17,6 @@ export type SentryConfig = {
   dsn: string
   tracesSampleRate: number
   lspSampleRate: number
-  ispxSampleRate: number
 }
 
 export function initSentry(app: VueApp<Element>, router: Router | undefined, config: SentryConfig) {
@@ -45,10 +44,6 @@ export function initSentry(app: VueApp<Element>, router: Router | undefined, con
     environment: process.env.NODE_ENV,
     tracesSampler: (samplingContext) => {
       const { name, inheritOrSampleWith } = samplingContext
-      // Independent iSPX roots must not inherit pageload sampling (#1826).
-      if (isAIOperation(name)) {
-        return config.ispxSampleRate
-      }
       if (isLSPOperation(name) || isCodeEditorOperation(name)) {
         return config.lspSampleRate
       }

@@ -84,7 +84,7 @@ server transaction 的 `http.first_byte_ms` 记录从 HTTP transaction 开始到
 
 ## 采样与查看
 
-页面 Sentry 使用 `VITE_SENTRY_ISPX_SAMPLE_RATE` 配置 AI 请求 root 的采样率，当前默认值为 `1`。每个 root 使用独立 trace；页面自动 fetch tracing 排除两个 AI URL，由 iSPX 负责创建请求记录。后端启用 tracing，通过 `SENTRY_SAMPLE_RATE` 提供默认采样率，并续接传入的 trace 和采样信息。前后端 Sentry 初始化均依据运行环境执行，开发环境会跳过初始化。
+页面 Sentry 使用通用的 `VITE_SENTRY_TRACES_SAMPLE_RATE` 配置 AI 请求 root 的采样率。每个 root 使用独立 trace；页面自动 fetch tracing 排除两个 AI URL，由 iSPX 负责创建请求记录。后端启用 tracing，通过 `SENTRY_SAMPLE_RATE` 提供默认采样率，并续接传入的 trace 和采样信息。前后端 Sentry 初始化均依据运行环境执行，开发环境会跳过初始化。
 
 在 Sentry 中按 `POST /ai-interaction/turns` 或 `POST /ai-interaction/archives` 查找浏览器 transaction，沿相同 trace 查看后端请求。浏览器记录展示本次 Transport 调用耗时及状态，后端记录提供 HTTP 处理过程和已配置的 API 请求现场。
 
