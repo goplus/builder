@@ -325,7 +325,7 @@ export class CodeEditor extends Disposable {
   async insertText(text: string) {
     const ui = this.getAttachedUI()
     if (ui == null) throw new Error('No code editor UI is attached')
-    await this.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () => ui.insertInlineText(text))
+    await ui.insertInlineText(text)
   }
 
   dispose(): void {

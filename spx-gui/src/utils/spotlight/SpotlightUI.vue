@@ -159,7 +159,7 @@ function getRevealPosition(revealRect: Rect, spotlightRect: Rect): Position {
 }
 
 function providerRevealEl() {
-  const revealEl = spotlightItem.value?.elements[0]
+  const revealEl = spotlightItem.value?.el
   if (!revealEl) {
     throw new Error('SpotlightUI must have an associated element')
   }
@@ -193,13 +193,8 @@ function revealElement(revealEl: HTMLElement) {
   syncPlacementAndPosition()
 }
 
-function revealElements(elements: HTMLElement[]) {
-  for (const element of elements) element.classList.add('spotlight-attach-element-highlight')
-  revealElement(elements[0]!)
-}
-
-function concealElements(elements: HTMLElement[]) {
-  for (const element of elements) element.classList.remove('spotlight-attach-element-highlight')
+function concealElement(revealEl: HTMLElement) {
+  revealEl.classList.remove('spotlight-attach-element-highlight')
 }
 
 const throttledHandleScroll = throttle(() => {
@@ -239,14 +234,14 @@ watch(
       const center = getDefaultPosition()
       const { x: x1, y: y1 } = center
       // reveal position
-      const { x: x2, y: y2, width: revealWidth } = value.elements[0]!.getBoundingClientRect()
+      const { x: x2, y: y2, width: revealWidth } = value.el.getBoundingClientRect()
       const len = Math.hypot(x2 - x1, y2 - y1)
       // If the distance is too short, animate from center to reveal
       positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
     }
     requestAnimationFrame(() => {
-      revealElements(value.elements)
-      spotlight.emit('revealed', { rect: value.elements[0]!.getBoundingClientRect() })
+      revealElement(value.el)
+      spotlight.emit('revealed', { rect: value.el.getBoundingClientRect() })
     })
 
     resizeObserver.observe(document.body)
@@ -256,7 +251,7 @@ watch(
       resizeObserver.disconnect()
       document.body.removeEventListener('scroll', throttledHandleScroll, { capture: true })
       document.body.removeEventListener('scrollend', handleScrollEnd, { capture: true })
-      concealElements(value.elements)
+      concealElement(value.el)
     })
   },
   { immediate: true }

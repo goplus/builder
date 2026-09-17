@@ -5,7 +5,7 @@ import Emitter from '@/utils/emitter'
 export { default as SpotlightUI } from './SpotlightUI.vue'
 
 export type SpotlightItem = {
-  elements: HTMLElement[]
+  el: HTMLElement
   timer: ReturnType<typeof setTimeout> | null
   tips: string
   mask: boolean
@@ -39,11 +39,9 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
     return setTimeout(() => this.conceal(), timeout)
   }
 
-  reveal(elements: HTMLElement | HTMLElement[], tips = '', options: SpotlightOptions = {}) {
+  reveal(el: HTMLElement, tips = '', options: SpotlightOptions = {}) {
     this.conceal() // Clear any previous spotlight
 
-    const targetElements = Array.isArray(elements) ? elements : [elements]
-    if (targetElements.length === 0) return
     const duration = options.duration == null ? autoConcealDelay : options.duration * 1_000
     const autoConcealTimer = duration > 0 ? this.createTimeoutConceal(duration) : null
     let mouseEnterConcealTimer: ReturnType<typeof setTimeout> | null = null
@@ -52,17 +50,17 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
     this.spotlightItem.value = {
       timer: autoConcealTimer,
       tips,
-      elements: targetElements,
+      el,
       mask: options.mask ?? false,
       dispose: () => {
         if (autoConcealTimer != null) clearTimeout(autoConcealTimer)
         if (mouseEnterConcealTimer != null) clearTimeout(mouseEnterConcealTimer)
-        for (const element of targetElements) element.removeEventListener('mouseenter', handleMouseEnter)
+        el.removeEventListener('mouseenter', handleMouseEnter)
         document.removeEventListener('click', handleDocumentClick, { capture: true })
       }
     }
     if (duration > 0) {
-      for (const element of targetElements) element.addEventListener('mouseenter', handleMouseEnter, { once: true })
+      el.addEventListener('mouseenter', handleMouseEnter, { once: true })
     }
     if (duration === 0) document.addEventListener('click', handleDocumentClick, { capture: true, once: true })
   }

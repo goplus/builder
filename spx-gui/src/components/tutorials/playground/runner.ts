@@ -14,6 +14,7 @@ import type { SpotlightOptions } from '@/utils/tutorial-framework'
 export type PlaygroundCoursePresentation = {
   showMessage(content: string): Promise<void>
   revealSpotlight(target: string, tip: string, options: SpotlightOptions): Promise<void>
+  setRulerVisible(visible: boolean): void
 }
 
 export type PlaygroundCourseCompletion = {
@@ -104,7 +105,9 @@ export class PlaygroundCourseRunner extends Emitter<{
             options: SpotlightOptions
           }
           return this.options.presentation.revealSpotlight(target, tip, options)
-        }
+        },
+        editor_ruler_show: () => this.options.presentation.setRulerVisible(true),
+        editor_ruler_hide: () => this.options.presentation.setRulerVisible(false)
       }
     }
   }

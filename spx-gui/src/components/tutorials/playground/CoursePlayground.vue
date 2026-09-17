@@ -22,6 +22,7 @@ import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 import { useSaveProjectAs } from '@/components/project'
+import { useProjectConfig } from '@/components/project/config'
 
 import { PlaygroundCourseRunner, type PlaygroundCourseCompletion } from './runner'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
@@ -51,10 +52,10 @@ const radar = useRadar()
 const spotlight = useSpotlight()
 const { isOnline } = useNetwork()
 const signedInStateQuery = useSignedInStateQuery()
+const { rulerVisible } = useProjectConfig()
 
 const state = shallowRef<EditorState | null>(null)
 const initializationError = ref<Error | null>(null)
-const rulerVisible = ref(false)
 const ensureSignedIn = useEnsureSignedIn()
 const saveProjectAs = useSaveProjectAs()
 
@@ -116,33 +117,21 @@ const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
 })
 
 const openMessage = useModal(CoursePlaygroundMessageModal)
-const spotlightRetryDelay = 50
-const spotlightRetryTimeout = 1_000
-
-function wait(delay: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, delay))
-}
 
 const presentation = {
   showMessage(content: string) {
     return openMessage({ content })
   },
   async revealSpotlight(target: string, tip: string, options: SpotlightOptions) {
-    const deadline = Date.now() + spotlightRetryTimeout
-    let nodes = radar.selectAll(target)
-    while (nodes.length === 0 && Date.now() < deadline) {
-      await wait(spotlightRetryDelay)
-      nodes = radar.selectAll(target)
-    }
-    if (nodes.length === 0) {
+    const node = radar.select(target)
+    if (node == null) {
       console.warn(`Tutorial Spotlight target not found: ${target}`)
       return
     }
-    spotlight.reveal(
-      nodes.map((node) => node.getElement()),
-      tip,
-      options
-    )
+    spotlight.reveal(node.getElement(), tip, options)
+  },
+  setRulerVisible(visible: boolean) {
+    rulerVisible.value = visible
   }
 }
 
@@ -170,6 +159,7 @@ onUnmounted(() => {
   stopRunnerStart()
   runner?.dispose()
   state.value?.dispose()
+  rulerVisible.value = false
   props.project.project.dispose()
 })
 </script>
@@ -202,7 +192,7 @@ onUnmounted(() => {
       </UIError>
       <EditorContextProvider v-else-if="state != null" :project="state.project" :state="state">
         <CodeEditorProvider :monaco="monacoQueryRet.data.value!">
-          <ProjectEditor :ruler-visible="rulerVisible" />
+          <ProjectEditor />
         </CodeEditorProvider>
       </EditorContextProvider>
     </main>

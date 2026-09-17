@@ -1,7 +1,9 @@
-import { inject, type App, type InjectionKey } from 'vue'
+import { inject, type App, type InjectionKey, type Ref } from 'vue'
 
 export type ProjectConfig = {
   defaultFontPreferences: string[]
+  /** Course-controlled visibility for the editor stage ruler. */
+  rulerVisible: Ref<boolean>
 }
 
 const projectConfigKey: InjectionKey<ProjectConfig> = Symbol('project-config')

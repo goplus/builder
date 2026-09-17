@@ -22,6 +22,7 @@ const props = withDefaults(
     mapSize: Size
     nodeReadyMap: Map<string, boolean>
     mapScale?: number
+    /** Enables selection and drag interactions for editor mode. */
     editable?: boolean
   }>(),
   {

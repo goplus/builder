@@ -19,15 +19,6 @@
         </UIButton>
 
         <UIButton
-          v-if="simpleMode"
-          v-radar="{ name: 'ask-copilot-button', desc: 'Open Copilot for course help' }"
-          type="secondary"
-          @click="copilot.open()"
-        >
-          {{ $t({ en: 'Ask Copilot', zh: '询问 Copilot' }) }}
-        </UIButton>
-
-        <UIButton
           v-show="canManageProject"
           v-radar="{ name: 'publish-button', desc: 'Click to publish the project' }"
           type="secondary"
@@ -80,12 +71,7 @@
         class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
         :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
       >
-        <StageViewer
-          class="stage-viewer"
-          :simple-mode="simpleMode"
-          :ruler-visible="rulerVisible"
-          @sprite-name-click="emit('spriteNameClick', $event)"
-        />
+        <StageViewer class="stage-viewer" :simple-mode="simpleMode" />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
           class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
@@ -195,32 +181,23 @@ import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '
 import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
-import { useCopilot } from '@/components/copilot/context'
 
 const props = withDefaults(
   defineProps<{
     simpleMode?: boolean
-    rulerVisible?: boolean
   }>(),
   {
-    simpleMode: false,
-    rulerVisible: false
+    simpleMode: false
   }
 )
 
-const emit = defineEmits<{
-  spriteNameClick: [spriteName: string]
-}>()
-
 const simpleMode = computed(() => props.simpleMode)
-const rulerVisible = computed(() => props.rulerVisible)
 
 // Code Editor operations may take a long time for some projects and block project execution.
 const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
 
 const editorCtx = useEditorCtx()
 const codeEditor = useCodeEditor()
-const copilot = useCopilot()
 const { isOnline } = useNetwork()
 const signedInUser = useSignedInUser()
 

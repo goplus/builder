@@ -35,11 +35,11 @@
             :ref="setSpriteNodeRef(localConfig.id)"
             :key="localConfig.id"
             :local-config="localConfig"
-            :selected="!simpleMode && editorCtx.state.selectedSprite?.id === localConfig.id"
+            :selected="!props.simpleMode && editorCtx.state.selectedSprite?.id === localConfig.id"
             :project="editorCtx.project"
             :map-size="mapSize"
             :node-ready-map="nodeReadyMap"
-            :editable="!simpleMode"
+            :editable="!props.simpleMode"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(localConfig)"
@@ -48,7 +48,7 @@
           />
         </v-group>
       </v-layer>
-      <v-layer v-if="!simpleMode">
+      <v-layer v-if="!props.simpleMode">
         <WidgetNode
           v-for="localConfig in visibleWidgetLocalConfigs"
           :key="localConfig.id"
@@ -58,7 +58,7 @@
           @update-transform-op="handleSpriteUpdateTransformOp"
         />
       </v-layer>
-      <v-layer v-if="!simpleMode">
+      <v-layer v-if="!props.simpleMode">
         <NodeTransformer
           ref="nodeTransformerRef"
           :node-ready-map="nodeReadyMap"
@@ -66,33 +66,13 @@
         />
       </v-layer>
     </v-stage>
-    <svg
+    <StageRuler
       v-if="rulerVisible && stageScale != null"
-      class="pointer-events-none absolute top-0 left-0 z-5 overflow-visible"
-      :width="viewportSize.width * stageScale"
-      :height="viewportSize.height * stageScale"
-    >
-      <template v-for="tick in rulerXTicks" :key="`x-${tick.value}`">
-        <line
-          :x1="tick.position"
-          :x2="tick.position"
-          y1="0"
-          :y2="viewportSize.height * stageScale"
-          stroke="rgba(37, 99, 235, 0.22)"
-        />
-        <text :x="tick.position + 3" y="13" fill="#1d4ed8" font-size="10">{{ tick.value }}</text>
-      </template>
-      <template v-for="tick in rulerYTicks" :key="`y-${tick.value}`">
-        <line
-          x1="0"
-          :x2="viewportSize.width * stageScale"
-          :y1="tick.position"
-          :y2="tick.position"
-          stroke="rgba(37, 99, 235, 0.22)"
-        />
-        <text x="3" :y="tick.position - 3" fill="#1d4ed8" font-size="10">{{ tick.value }}</text>
-      </template>
-    </svg>
+      :map-pos="mapPos"
+      :map-size="mapSize"
+      :viewport-size="viewportSize"
+      :stage-scale="stageScale"
+    />
     <button
       v-for="label in spriteNameLabels"
       :key="label.id"
@@ -100,11 +80,11 @@
       :style="{ left: `${label.x}px`, top: `${label.y}px` }"
       @mouseenter="keepSpriteNameVisible(label.id)"
       @mouseleave="hideSpriteName(label.id)"
-      @click="emit('spriteNameClick', label.name)"
+      @click="handleSpriteNameClick(label.name)"
     >
       {{ label.name }}
     </button>
-    <div v-if="!simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
+    <div v-if="!props.simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
       <QuickConfigWrapper ref="quickConfigRef">
         <SpriteQuickConfig
           v-if="localConfigRef instanceof SpriteLocalConfig"
@@ -144,6 +124,7 @@ import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
@@ -151,6 +132,8 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/spx/stage'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { useCodeEditor } from '@/components/editor/spx-code-editor'
+import { useProjectConfig } from '@/components/project/config'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
@@ -164,24 +147,20 @@ import QuickConfigWrapper, {
 } from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
 import { SpriteLocalConfig, WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
 import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
+import StageRuler from './StageRuler.vue'
 
 const props = withDefaults(
   defineProps<{
     simpleMode?: boolean
-    rulerVisible?: boolean
   }>(),
   {
-    simpleMode: false,
-    rulerVisible: false
+    simpleMode: false
   }
 )
 
-const emit = defineEmits<{
-  spriteNameClick: [spriteName: string]
-}>()
-
 const editorCtx = useEditorCtx()
-const simpleMode = computed(() => props.simpleMode)
+const codeEditor = useCodeEditor()
+const { rulerVisible } = useProjectConfig()
 const container = ref<HTMLDivElement | null>(null)
 const containerSizeRef = useContentSize(container)
 // Konva canvas cannot have a width or height of zero
@@ -472,7 +451,7 @@ const hoveredSpriteId = ref<string | null>(null)
 let hideSpriteNameTimer: ReturnType<typeof setTimeout> | null = null
 
 function handleSpriteHover(id: string, hovered: boolean) {
-  if (!simpleMode.value) return
+  if (!props.simpleMode) return
   if (hovered) {
     keepSpriteNameVisible(id)
     return
@@ -496,7 +475,7 @@ function hideSpriteName(id: string) {
 }
 
 const spriteNameLabels = computed(() => {
-  if (!simpleMode.value || hoveredSpriteId.value == null || stageScale.value == null) return []
+  if (!props.simpleMode || hoveredSpriteId.value == null || stageScale.value == null) return []
   const sprite = editorCtx.project.sprites.find((item) => item.id === hoveredSpriteId.value)
   if (sprite == null) return []
   const scale = stageScale.value
@@ -510,31 +489,13 @@ const spriteNameLabels = computed(() => {
   ]
 })
 
-type RulerTick = { value: number; position: number }
-
-function getRulerTicks(min: number, max: number, toPosition: (value: number) => number): RulerTick[] {
-  const step = 50
-  const start = Math.ceil(min / step) * step
-  const ticks: RulerTick[] = []
-  for (let value = start; value <= max; value += step) {
-    ticks.push({ value, position: toPosition(value) })
-  }
-  return ticks
-}
-
-const rulerXTicks = computed(() => {
-  if (!props.rulerVisible || stageScale.value == null) return []
-  const min = -mapSize.value.width / 2 - mapPos.value.x
-  const max = min + viewportSize.value.width
-  return getRulerTicks(min, max, (x) => (mapSize.value.width / 2 + x + mapPos.value.x) * stageScale.value!)
-})
-
-const rulerYTicks = computed(() => {
-  if (!props.rulerVisible || stageScale.value == null) return []
-  const max = mapSize.value.height / 2 + mapPos.value.y
-  const min = max - viewportSize.value.height
-  return getRulerTicks(min, max, (y) => (mapSize.value.height / 2 - y + mapPos.value.y) * stageScale.value!)
-})
+const handleSpriteNameClick = useMessageHandle(
+  (spriteName: string) =>
+    editorCtx.state.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+      codeEditor.insertText(spriteName)
+    ),
+  { en: 'Failed to insert sprite name', zh: '插入精灵名称失败' }
+).fn
 
 const visibleWidgetLocalConfigs = computed(() => {
   const { widgetsZorder, widgets } = editorCtx.project.stage

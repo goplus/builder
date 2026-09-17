@@ -77,7 +77,8 @@ function makeHarness() {
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
     showMessage: vi.fn().mockResolvedValue(undefined),
-    revealSpotlight: vi.fn().mockResolvedValue(undefined)
+    revealSpotlight: vi.fn().mockResolvedValue(undefined),
+    setRulerVisible: vi.fn()
   }
   const runner = new PlaygroundCourseRunner({
     project,
@@ -193,6 +194,19 @@ describe('PlaygroundCourseRunner', () => {
       mask: true,
       duration: 0
     })
+  })
+
+  it('forwards ruler visibility requests to the course presentation', async () => {
+    const harness = makeHarness()
+    const { editor_ruler_hide: hide, editor_ruler_show: show } =
+      harness.getExecutorOptions().framework?.capabilities ?? {}
+    if (show == null || hide == null) throw new Error('ruler capabilities not found')
+
+    await show(null)
+    await hide(null)
+
+    expect(harness.presentation.setRulerVisible).toHaveBeenNthCalledWith(1, true)
+    expect(harness.presentation.setRulerVisible).toHaveBeenNthCalledWith(2, false)
   })
 
   it('publishes executor failures for its owner to dispose', async () => {

@@ -3,16 +3,15 @@ import { describe, expect, it } from 'vitest'
 import { Spotlight } from '.'
 
 describe('Spotlight', () => {
-  it('reveals all targets and conceals a persistent spotlight after a click', () => {
-    const first = document.createElement('button')
-    const second = document.createElement('button')
-    document.body.append(first, second)
+  it('conceals a persistent spotlight after a click', () => {
+    const element = document.createElement('button')
+    document.body.append(element)
     const spotlight = new Spotlight()
 
-    spotlight.reveal([first, second], 'Focus here', { mask: true, duration: 0 })
+    spotlight.reveal(element, 'Focus here', { mask: true, duration: 0 })
 
     expect(spotlight.spotlightItem.value).toMatchObject({
-      elements: [first, second],
+      el: element,
       tips: 'Focus here',
       mask: true,
       timer: null
@@ -22,7 +21,6 @@ describe('Spotlight', () => {
 
     expect(spotlight.spotlightItem.value).toBeNull()
     spotlight.dispose()
-    first.remove()
-    second.remove()
+    element.remove()
   })
 })

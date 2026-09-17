@@ -70,11 +70,8 @@ const uiRef = computed(() => {
   return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, rename)
 })
 
-const initialFontSize = props.simpleMode ? 16 : 12
-const fontSize = userLocalStorageRef(
-  props.simpleMode ? 'builder-simple-code-font-size' : 'spx-gui-code-font-size',
-  initialFontSize
-)
+const initialFontSize = 12
+const fontSize = props.simpleMode ? ref(16) : userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
@@ -282,7 +279,7 @@ providePopupContainer(codeEditorEl)
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
     <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+      <ZoomControl v-if="!props.simpleMode" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>

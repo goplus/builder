@@ -66,7 +66,9 @@ import { createDefaultProject } from './default-project'
 import type { ProjectSerialized } from '@/models/project'
 
 const props = defineProps<{
+  /** Existing cloud project reference used by the server-side remix flow. */
   remixSource?: string
+  /** Serialized local project copied into a new private project owned by the current user. */
   sourceProject?: ProjectSerialized
   visible: boolean
 }>()
@@ -98,9 +100,9 @@ function handleCancel() {
 const handleSubmit = useMessageHandle(
   async () => {
     const projectName = form.value.name.trim()
+    const signedInState = await untilLoaded(signedInStateQuery)
+    if (!signedInState.isSignedIn) throw new Error('login required')
     if (props.sourceProject != null) {
-      const signedInState = await untilLoaded(signedInStateQuery)
-      if (!signedInState.isSignedIn) throw new Error('login required')
       const { files, metadata } = props.sourceProject
       await cloudHelpers.save({
         files,
@@ -123,8 +125,6 @@ const handleSubmit = useMessageHandle(
         remixSource: props.remixSource
       })
     } else {
-      const signedInState = await untilLoaded(signedInStateQuery)
-      if (!signedInState.isSignedIn) throw new Error('login required')
       const project = await createDefaultProject(signedInState.user.username, projectName, defaultFontPreferences)
       project.setDisplayName(projectName)
       project.setVisibility(Visibility.Private)
