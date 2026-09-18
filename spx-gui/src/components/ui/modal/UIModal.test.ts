@@ -125,6 +125,54 @@ describe('UIModal', () => {
       if (popupContainerRef == null) throw new Error('Expected popup container ref')
       expect((popupContainerRef as Ref<HTMLElement | undefined>).value).toBe(surface)
     })
+
+    it('positions a top-right surface from its trigger anchor', async () => {
+      mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () =>
+                  h(
+                    UIModal,
+                    {
+                      visible: true,
+                      mask: false,
+                      placement: 'top-right',
+                      anchor: { top: 56, right: 24 }
+                    },
+                    { default: () => h('div', 'Notifications') }
+                  )
+              })
+          }
+        })
+      )
+
+      await flushModal()
+
+      const surface = getLatestElement('.ui-modal-surface') as HTMLElement
+      expect(surface.style.position).toBe('absolute')
+      expect(surface.style.top).toBe('56px')
+      expect(surface.style.right).toBe('24px')
+    })
+
+    it('lets clicks pass through the root when the modal has no mask', async () => {
+      mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () => h(UIModal, { visible: true, mask: false }, { default: () => h('div', 'Notifications') })
+              })
+          }
+        })
+      )
+
+      await flushModal()
+
+      const modalRoot = document.body.querySelector('.fixed.inset-0') as HTMLElement | null
+      expect(modalRoot?.className).toContain('pointer-events-none')
+    })
   })
 
   describe('attrs and interaction', () => {
@@ -203,6 +251,26 @@ describe('UIModal', () => {
       await new DOMWrapper(backdrop!).trigger('click')
       await flushModal()
       expect(modal.emitted('update:visible')).toEqual([[false]])
+    })
+
+    it('closes an unmasked modal when clicking outside its surface', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () => h(UIModal, { visible: true, mask: false }, { default: () => h('div', 'Notifications') })
+              })
+          }
+        })
+      )
+
+      await flushModal()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await flushModal()
+
+      expect(wrapper.findComponent(UIModal).emitted('update:visible')).toEqual([[false]])
     })
 
     it('closes on Escape when the key event originates from inside the modal', async () => {
@@ -389,6 +457,54 @@ describe('UIModal', () => {
       expect(surface.getAttribute('tabindex')).toBe('-1')
       expect(surface.tabIndex).toBe(-1)
       expect(document.activeElement).toBe(firstFocusable)
+    })
+
+    it('traps Tab within the modal and restores focus to the trigger on close', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            const visible = ref(false)
+            return { visible }
+          },
+          render() {
+            return h(ModalTestProvider, null, {
+              default: () => [
+                h('button', { 'data-test-id': 'trigger' }, 'Open'),
+                h(
+                  UIModal,
+                  {
+                    visible: this.visible,
+                    'onUpdate:visible': (nextVisible: boolean) => (this.visible = nextVisible)
+                  },
+                  {
+                    default: () => [
+                      h('button', { 'data-test-id': 'first' }, 'First'),
+                      h('button', { 'data-test-id': 'last' }, 'Last')
+                    ]
+                  }
+                )
+              ]
+            })
+          }
+        })
+      )
+
+      const trigger = wrapper.get('[data-test-id="trigger"]').element as HTMLButtonElement
+      trigger.focus()
+      ;(wrapper.vm as unknown as { visible: boolean }).visible = true
+      await flushModal()
+
+      const first = getLatestElement('[data-test-id="first"]') as HTMLButtonElement
+      const last = getLatestElement('[data-test-id="last"]') as HTMLButtonElement
+      last.focus()
+      last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+      expect(document.activeElement).toBe(first)
+
+      first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+      expect(document.activeElement).toBe(last)
+      ;(wrapper.vm as unknown as { visible: boolean }).visible = false
+      await flushModal()
+      expect(document.activeElement).toBe(trigger)
     })
   })
 })

@@ -1,11 +1,19 @@
 <template>
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-modal">
-      <div v-if="visible" class="fixed inset-0 z-1100 bg-overlay-modal" @click="handleMaskClick">
+      <div
+        v-if="visible"
+        class="fixed inset-0 z-1100"
+        :class="mask ? 'bg-overlay-modal' : 'pointer-events-none bg-transparent'"
+        @click="handleMaskClick"
+      >
         <div
           class="h-full w-full overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div class="min-h-full w-full flex p-4">
+          <div
+            class="min-h-full w-full flex overscroll-contain p-4"
+            :class="placement === 'top-right' ? 'items-start justify-end pt-14' : ''"
+          >
             <div
               v-bind="surfaceAttrs"
               ref="containerRef"
@@ -15,7 +23,7 @@
               tabindex="-1"
               class="ui-modal-surface"
               :class="surfaceClass"
-              :style="{ transformOrigin: 'var(--ui-modal-transform-origin, center)' }"
+              :style="surfaceStyle"
               @click.stop
             >
               <slot></slot>
@@ -34,13 +42,18 @@ export type ModalTransformOrigin = {
   x: number
   y: number
 }
+
+export type ModalAnchor = {
+  top: number
+  right: number
+}
 </script>
 
 <script setup lang="ts">
 import { computed, mergeProps, ref, useAttrs, watch } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { getCleanupSignal } from '@/utils/disposable'
-import { untilNotNull } from '@/utils/utils'
+import { timeout, untilNotNull } from '@/utils/utils'
 import {
   cn,
   type ClassValue,
@@ -63,6 +76,12 @@ const props = withDefaults(
     /** Whether to focus the first focusable element inside modal. */
     autoFocus?: boolean
     maskClosable?: boolean
+    /** Whether to render the backdrop. Dropdown-like surfaces can opt out. */
+    mask?: boolean
+    /** Align the surface to the viewport's top-right corner. */
+    placement?: 'center' | 'top-right'
+    /** Position a top-right surface relative to a viewport trigger. */
+    anchor?: ModalAnchor | null
     class?: ClassValue
     /**
      * Metadata for radar, equivalent to applying `v-radar` on the dialog surface.
@@ -79,6 +98,9 @@ const props = withDefaults(
     visible: false,
     autoFocus: true,
     maskClosable: true,
+    mask: true,
+    placement: 'center',
+    anchor: null,
     active: true,
     class: undefined,
     radar: undefined
@@ -102,6 +124,7 @@ function handleMaskClick() {
 
 const attachTo = useModalContainer()
 const containerRef = ref<HTMLElement | undefined>(undefined)
+const restoreFocusTarget = ref<HTMLElement | null>(null)
 providePopupContainer(containerRef)
 
 const modalRegistration = useLayerRegistration(computed(() => props.visible))
@@ -110,9 +133,21 @@ const modalRegistration = useLayerRegistration(computed(() => props.visible))
 // - surfaceRootAttrs marks the actual modal root for stack/popup lookup
 // - attrs preserves external style/data-* on the dialog container
 const surfaceAttrs = computed(() => mergeProps(modalRegistration.rootAttrs, attrs))
+const surfaceStyle = computed(() => ({
+  transformOrigin: 'var(--ui-modal-transform-origin, center)',
+  ...(props.placement === 'top-right' && props.anchor != null
+    ? {
+        position: 'absolute' as const,
+        top: `${props.anchor.top}px`,
+        right: `${props.anchor.right}px`
+      }
+    : {})
+}))
 const surfaceClass = computed(() =>
   cn(
-    'm-auto max-w-full overflow-hidden outline-none bg-white rounded-lg shadow-lg',
+    'max-w-full overflow-hidden outline-none bg-white rounded-lg shadow-lg',
+    props.placement === 'top-right' ? 'mt-0 mr-0 mb-auto ml-auto' : 'm-auto',
+    !props.mask ? 'pointer-events-auto' : null,
     {
       'w-[480px]': props.size === 'small',
       'w-[640px]': props.size === 'medium',
@@ -127,12 +162,41 @@ const surfaceClass = computed(() =>
 watch(
   () => props.visible,
   async (visible, _, onCleanup) => {
-    if (!visible || !props.autoFocus) return
+    if (!visible) {
+      restoreFocus()
+      return
+    }
+
+    restoreFocusTarget.value =
+      typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null
+    if (!props.autoFocus) return
 
     const signal = getCleanupSignal(onCleanup)
     const container = await untilNotNull(containerRef, signal)
-    const focusTarget = getFirstFocusableElement(container)
-    if (focusTarget != null) focusTarget.focus()
+    const focusTarget = getFirstFocusableElement(container) ?? container
+    focusTarget.focus()
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [props.visible, props.mask] as const,
+  async ([visible, mask], _, onCleanup) => {
+    if (!visible || mask) return
+
+    const signal = getCleanupSignal(onCleanup)
+    await timeout(0)
+    if (signal.aborted) return
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Node) || containerRef.value?.contains(target)) return
+      handleUpdateShow(false)
+    }
+
+    // Run after the clicked control's own handler. This lets trigger buttons toggle
+    // an unmasked modal before the outside-click fallback observes the same event.
+    document.addEventListener('click', handleDocumentClick, { signal })
   },
   { immediate: true }
 )
@@ -148,10 +212,22 @@ const focusableSelector = [
 ].join(',')
 
 function getFirstFocusableElement(container: HTMLElement) {
-  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).find((element) => {
+  return getFocusableElements(container)[0]
+}
+
+function getFocusableElements(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter((element) => {
     if (element.hidden || element.getAttribute('aria-hidden') === 'true') return false
-    return element.tabIndex >= 0
+    const style = element.ownerDocument.defaultView?.getComputedStyle(element)
+    return element.tabIndex >= 0 && style?.display !== 'none' && style?.visibility !== 'hidden'
   })
+}
+
+function restoreFocus() {
+  const target = restoreFocusTarget.value
+  restoreFocusTarget.value = null
+  if (target == null || !target.isConnected || target.hasAttribute('disabled')) return
+  target.focus()
 }
 
 watch(
@@ -163,9 +239,35 @@ watch(
     const container = await untilNotNull(containerRef, signal)
 
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if (!isEscTargetWithinModalScope(container, e.target)) return
-      emit('update:visible', false)
+      if (e.key === 'Escape') {
+        if (!isEscTargetWithinModalScope(container, e.target)) return
+        emit('update:visible', false)
+        return
+      }
+
+      if (e.key !== 'Tab') return
+
+      const focusable = getFocusableElements(container)
+      if (focusable.length === 0) {
+        e.preventDefault()
+        container.focus()
+        return
+      }
+
+      const currentIndex = focusable.indexOf(document.activeElement as HTMLElement)
+      if (currentIndex === -1) {
+        e.preventDefault()
+        focusable[e.shiftKey ? focusable.length - 1 : 0]?.focus()
+        return
+      }
+
+      if (!e.shiftKey && currentIndex === focusable.length - 1) {
+        e.preventDefault()
+        focusable[0]?.focus()
+      } else if (e.shiftKey && currentIndex === 0) {
+        e.preventDefault()
+        focusable[focusable.length - 1]?.focus()
+      }
     }
 
     document.addEventListener('keydown', handleKeydown, { signal })
@@ -255,6 +357,23 @@ defineExpose({
   .ui-modal-enter-from .ui-modal-surface,
   .ui-modal-leave-to .ui-modal-surface {
     transform: scale(0.5);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-modal-enter-active,
+    .ui-modal-leave-active {
+      transition: opacity 120ms ease;
+    }
+
+    .ui-modal-enter-active .ui-modal-surface,
+    .ui-modal-leave-active .ui-modal-surface {
+      transition: none;
+    }
+
+    .ui-modal-enter-from .ui-modal-surface,
+    .ui-modal-leave-to .ui-modal-surface {
+      transform: none;
+    }
   }
 }
 </style>

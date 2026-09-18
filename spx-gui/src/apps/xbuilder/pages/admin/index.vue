@@ -16,6 +16,7 @@ const router = useRouter()
 const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
+const isFeedbackDemoRoute = computed(() => route.path.startsWith('/admin/feedbacks'))
 const canManageAccount = computed(() => signedInUser.value?.capabilities.canManageAccount === true)
 const canUseAccountAdmin = computed(
   () =>
@@ -24,6 +25,7 @@ const canUseAccountAdmin = computed(
 )
 
 const navItems = computed(() => [
+  { to: '/admin/feedbacks', label: { en: 'Feedback', zh: '用户反馈' } },
   ...(canManageAccount.value
     ? [
         { to: '/admin/users', label: { en: 'Users', zh: '用户' } },
@@ -34,6 +36,7 @@ const navItems = computed(() => [
 ])
 
 onMounted(async () => {
+  if (isFeedbackDemoRoute.value) return
   const { isSignedIn } = await untilNotNull(signedInStateQuery.data)
   if (!isSignedIn) signIn(route.fullPath)
 })
@@ -72,13 +75,16 @@ onMounted(async () => {
       </NavbarWrapper>
     </div>
     <main class="flex-1">
-      <div v-if="signedInStateQuery.isLoading.value" class="h-full min-h-80 flex items-center justify-center">
+      <div
+        v-if="!isFeedbackDemoRoute && signedInStateQuery.isLoading.value"
+        class="h-full min-h-80 flex items-center justify-center"
+      >
         <UILoading />
       </div>
-      <UIError v-else-if="signedInStateQuery.error.value != null" class="h-full min-h-80">
+      <UIError v-else-if="!isFeedbackDemoRoute && signedInStateQuery.error.value != null" class="h-full min-h-80">
         {{ $t(signedInStateQuery.error.value.userMessage) }}
       </UIError>
-      <UIError v-else-if="!canUseAccountAdmin" class="h-full min-h-80">
+      <UIError v-else-if="!isFeedbackDemoRoute && !canUseAccountAdmin" class="h-full min-h-80">
         {{ $t({ en: 'Access denied', zh: '没有访问权限' }) }}
         <template #sub-message>
           {{ $t({ en: 'This page is only available to Account administrators.', zh: '此页面仅账号管理员可访问。' }) }}

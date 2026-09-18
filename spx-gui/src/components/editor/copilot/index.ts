@@ -7,17 +7,17 @@ import { type ICopilotContextProvider, type ToolDefinition } from '@/components/
 import { skillSpxProject, skillXgoLanguage } from '@/components/copilot/skills/built-in'
 import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 import { SpxProject } from '@/models/spx/project'
-import type { Sprite } from '@/models/spx/sprite'
 import { Disposable } from '@/utils/disposable'
 import { useEditorCtx, type EditorCtx } from '../EditorContextProvider.vue'
+import { CodeEditor, useCodeEditor } from '../spx-code-editor'
 import {
-  CodeEditor,
-  getCodeFilePath,
-  isSelectionEmpty,
-  textDocumentId2CodeFileName,
-  useCodeEditor,
-  type TextDocument
-} from '../spx-code-editor'
+  getActiveCodeDiagnosticContext,
+  getProjectDiagnosticContext,
+  getRuntimeOutputsDiagnosticContext,
+  getSpriteDiagnosticContext,
+  sampleCode,
+  type ProjectContentDiagnosticContext
+} from '../diagnostic-context'
 import * as codeLink from './CodeLink'
 import * as codeChange from './CodeChange.vue'
 import CodeBlock from './CodeBlock.vue'
@@ -44,50 +44,17 @@ class Retriever {
   }
 }
 
-function getProjectContent(project: SpxProject) {
-  const physics = project.stage.physics
+function formatProjectContent(content: ProjectContentDiagnosticContext) {
   return `\
-### Sprites (num: ${project.sprites.length})
-${project.sprites.map((sprite) => `- ${sprite.name}`).join('\n')}
-### Sounds (num: ${project.sounds.length})
-${project.sounds.map((sound) => `- ${sound.name}`).join('\n')}
-### Backdrops (num: ${project.stage.backdrops.length})
-${project.stage.backdrops.map((backdrop) => `- ${backdrop.name}`).join('\n')}
-### Widgets (num: ${project.stage.widgets.length})
-${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}
-### Physics: ${physics.enabled ? 'Enabled' : 'Disabled'}`
-}
-
-function getSpriteContent(sprite: Sprite) {
-  return {
-    name: sprite.name,
-    costumes: sprite.costumes.map((costume) => costume.name),
-    animations: sprite.animations.map((animation) => animation.name),
-    heading: sprite.heading,
-    x: sprite.x,
-    y: sprite.y,
-    size: sprite.size,
-    rotationStyle: sprite.rotationStyle,
-    visible: sprite.visible,
-    codeLinesNum: sprite.code.split(/\r?\n/).length
-  }
-}
-
-type LineRangeParams = {
-  lineStart?: number
-  lineEnd?: number
-}
-
-function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) {
-  const allLines = code.split(/\r?\n/)
-  const sampledLines = allLines.slice(lineStart - 1, lineEnd).reduce<Record<string, string>>((result, line, index) => {
-    result[index + lineStart] = line
-    return result
-  }, {})
-  return {
-    lineCount: allLines.length,
-    sampledLines
-  }
+### Sprites (num: ${content.sprites.length})
+${content.sprites.map((name) => `- ${name}`).join('\n')}
+### Sounds (num: ${content.sounds.length})
+${content.sounds.map((name) => `- ${name}`).join('\n')}
+### Backdrops (num: ${content.backdrops.length})
+${content.backdrops.map((name) => `- ${name}`).join('\n')}
+### Widgets (num: ${content.widgets.length})
+${content.widgets.map((name) => `- ${name}`).join('\n')}
+### Physics: ${content.physicsEnabled ? 'Enabled' : 'Disabled'}`
 }
 
 const getProjectMetadataParamsSchema = z.object({
@@ -121,7 +88,7 @@ class GetProjectContentTool implements ToolDefinition {
 
   async implementation({ project }: z.infer<typeof getProjectContentParamsSchema>, signal?: AbortSignal) {
     const loadedProject = await this.retriever.getProject(project, signal)
-    return getProjectContent(loadedProject)
+    return formatProjectContent(getProjectDiagnosticContext(loadedProject).content)
   }
 }
 
@@ -141,7 +108,7 @@ class GetSpriteContentTool implements ToolDefinition {
     const loadedProject = await this.retriever.getProject(project, signal)
     const sprite = loadedProject.sprites.find((item) => item.name === spriteName)
     if (sprite == null) throw new Error(`Sprite "${spriteName}" not found in project "${project}"`)
-    return getSpriteContent(sprite)
+    return getSpriteDiagnosticContext(sprite)
   }
 }
 
@@ -167,10 +134,10 @@ class GetProjectCodeTool implements ToolDefinition {
     signal?: AbortSignal
   ) {
     const loadedProject = await this.retriever.getProject(project, signal)
-    if (loadedProject.stage.codeFilePath === file) return processCode(loadedProject.stage.code, { lineStart, lineEnd })
+    if (loadedProject.stage.codeFilePath === file) return sampleCode(loadedProject.stage.code, { lineStart, lineEnd })
     const sprite = loadedProject.sprites.find((item) => item.codeFilePath === file)
     if (sprite == null) throw new Error(`Code file ${file} not found in project ${project}`)
-    return processCode(sprite.code, { lineStart, lineEnd })
+    return sampleCode(sprite.code, { lineStart, lineEnd })
   }
 }
 
@@ -193,11 +160,12 @@ class ProjectContextProvider implements ICopilotContextProvider {
 
   provideContext(): string {
     const project = this.editorCtx.project
+    const context = getProjectDiagnosticContext(project)
     return `# Current project
-The user is now working on project: ${project.displayName} (${project.owner}/${project.name})
+The user is now working on project: ${context.displayName} (${context.identifier ?? `${project.owner}/${project.name}`})
 Class framework ID: spx
 ## Project content
-${getProjectContent(project)}`
+${formatProjectContent(context.content)}`
   }
 }
 
@@ -208,40 +176,29 @@ class SpriteContextProvider implements ICopilotContextProvider {
     const sprite = this.editorCtx.state.selectedSprite
     if (sprite == null) return ''
     return `# Current sprite content
-${JSON.stringify(getSpriteContent(sprite))}`
+${JSON.stringify(getSpriteDiagnosticContext(sprite))}`
   }
 }
 
 class CodeContextProvider implements ICopilotContextProvider {
   constructor(private codeEditor: CodeEditor) {}
 
-  private sampleCode(activeTextDocument: TextDocument, line: number) {
-    const threshold = 10
-    const lineStart = Math.max(line - threshold, 1)
-    const lineEnd = lineStart + threshold * 2
-    return processCode(activeTextDocument.getValue(), { lineStart, lineEnd })
-  }
-
   provideContext(): string {
-    const codeEditorUI = this.codeEditor.getAttachedUI()
-    if (codeEditorUI == null) return ''
-    const { activeTextDocument, cursorPosition, selection } = codeEditorUI
-    if (activeTextDocument == null) return ''
-    const codeFilePath = getCodeFilePath(activeTextDocument.id.uri)
+    const context = getActiveCodeDiagnosticContext(this.codeEditor)
+    if (context == null) return ''
     const cursorPositionStr =
-      cursorPosition == null ? 'None' : `Line ${cursorPosition.line}, Column ${cursorPosition.column}`
+      context.cursor == null ? 'None' : `Line ${context.cursor.line}, Column ${context.cursor.column}`
     const selectionStr =
-      selection == null || isSelectionEmpty(selection)
+      context.selection == null
         ? 'None'
-        : `From Line ${selection.start.line}, Column ${selection.start.column} to Line ${selection.position.line}, Column ${selection.position.column}`
+        : `From Line ${context.selection.start.line}, Column ${context.selection.start.column} to Line ${context.selection.end.line}, Column ${context.selection.end.column}`
     let result = `# Current code
-The user is now viewing / editing code of file \`${codeFilePath}\`. \
+The user is now viewing / editing code of file \`${context.file}\`. \
 Cursor position: ${cursorPositionStr}. \
 Selection: ${selectionStr}.`
-    const code = this.sampleCode(activeTextDocument, cursorPosition?.line ?? 1)
     result += `
-Code content of \`${codeFilePath}\`:
-${JSON.stringify(code)}`
+Code content of \`${context.file}\`:
+${JSON.stringify(context.sample)}`
     return result
   }
 }
@@ -250,22 +207,18 @@ class RuntimeContextProvider implements ICopilotContextProvider {
   constructor(private editorCtx: EditorCtx) {}
 
   provideContext(): string {
-    const runtime = this.editorCtx.state.runtime
-    const outputs = runtime.outputs
-    if (outputs.length === 0) return ''
-    const recentOutputs = outputs.slice(-50)
-    const outputsStr = recentOutputs
+    const context = getRuntimeOutputsDiagnosticContext(this.editorCtx)
+    if (context.outputs.length === 0) return ''
+    const outputsStr = context.outputs
       .map((output) => {
         const time = dayjs(output.time).format('HH:mm:ss.SSS')
         const kindStr = output.kind === 'error' ? 'ERROR' : 'LOG'
-        const sourceStr = output.source
-          ? ` [${textDocumentId2CodeFileName(output.source.textDocument).en}:${output.source.range.start.line}]`
-          : ''
+        const sourceStr = output.file == null ? '' : ` [${output.file}:${output.line}]`
         return `[${time}] ${kindStr}${sourceStr}: ${output.message.trim()}`
       })
       .join('\n')
     return `# Game runtime output
-Recent game runtime outputs (last ${recentOutputs.length} of ${outputs.length}):
+Recent game runtime outputs (last ${context.outputs.length} of ${context.total}):
 ${outputsStr}`
   }
 }

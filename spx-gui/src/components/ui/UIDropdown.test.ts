@@ -140,7 +140,7 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).not.toContain('Dropdown content')
   })
 
-  it('stays open when clicking the trigger again without emitting clickOutside', async () => {
+  it('toggles closed when clicking the trigger again without emitting clickOutside', async () => {
     const wrapper = mount(
       defineComponent({
         setup() {
@@ -171,9 +171,9 @@ describe('UIDropdown', () => {
 
     await wrapper.get('[data-test-id="trigger"]').trigger('click')
     await flushDropdown()
-    expect(dropdown.emitted('update:visible')).toEqual([[true]])
+    expect(dropdown.emitted('update:visible')).toEqual([[true], [false]])
     expect(dropdown.emitted('clickOutside')).toBeUndefined()
-    expect(popupContainer.text()).toContain('Dropdown content')
+    expect(popupContainer.text()).not.toContain('Dropdown content')
   })
 
   it('does not open while disabled', async () => {

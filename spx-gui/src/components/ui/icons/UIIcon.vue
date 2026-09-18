@@ -46,6 +46,7 @@ import volumeOff from './volume-off.svg?raw'
 import statePublic from './state-public.svg?raw'
 import statePrivate from './state-private.svg?raw'
 import heart from './heart.svg?raw'
+import bell from './bell.svg?raw'
 import calendar from './calendar.svg?raw'
 import remix from './remix.svg?raw'
 import heartHollow from './heart-hollow.svg?raw'
@@ -127,6 +128,7 @@ const typeIconMap = {
   statePublic,
   statePrivate,
   heart,
+  bell,
   calendar,
   remix,
   heartHollow,
