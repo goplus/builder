@@ -138,7 +138,7 @@ describe('TutorialProject', () => {
     // exists so that such a bug fails loudly instead of dropping one of the two records.
     tutorial.extraFiles['assets/videos/step-to/step-to.mp4'] = fromText('step-to.mp4', 'other')
 
-    expect(() => tutorial.exportFiles()).toThrow('claimed by both')
+    expect(() => tutorial.exportFiles()).toThrow('claimed by more than one part')
   })
 
   it('reloads a course whose resources were renamed, added and edited', async () => {
@@ -200,6 +200,106 @@ describe('TutorialProject', () => {
       expect(await toText(tutorial.getResource('data', 'index3')!.file)).toBe('renamed')
       // Still in the order the course lists them.
       expect(tutorial.resources.filter((r) => r.kind === 'data').map((r) => r.name)).toEqual(['index3', 'index2'])
+    })
+  })
+
+  describe('package identity', () => {
+    function withDuplicateIds() {
+      // A package directory copied along with its manifest: both carry the same `builder_id`.
+      const files = makeFiles()
+      files['assets/texts/first/index.json'] = fromConfig('index.json', { path: 'first.txt', builder_id: 'DUP' })
+      files['assets/texts/first/first.txt'] = fromText('first.txt', 'FIRST')
+      files['assets/texts/second/index.json'] = fromConfig('index.json', { path: 'second.txt', builder_id: 'DUP' })
+      files['assets/texts/second/second.txt'] = fromText('second.txt', 'SECOND')
+      return files
+    }
+
+    it('gives packages that share an id distinct ids on load', async () => {
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files: withDuplicateIds() })
+
+      const ids = tutorial.resources.map((r) => r.id)
+      expect(new Set(ids).size).toBe(ids.length)
+    })
+
+    it('removes the package that was asked for', async () => {
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files: withDuplicateIds() })
+
+      tutorial.removeResource(tutorial.getResource('texts', 'second')!.id)
+
+      expect(tutorial.resources.filter((r) => r.kind === 'texts').map((r) => r.name)).toEqual(['first'])
+    })
+
+    it('refuses a rename onto another package even when they came with the same id', async () => {
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files: withDuplicateIds() })
+
+      expect(() => tutorial.getResource('texts', 'second')!.setName('first')).toThrow('already exists')
+      expect(await toText(tutorial.exportFiles()['assets/texts/first/first.txt']!)).toBe('FIRST')
+    })
+
+    it('refuses to export two packages in one directory', async () => {
+      const tutorial = await loadProject()
+      // Only reachable by reaching past `addResource`: the check makes such a bug fail loudly instead of
+      // silently keeping one of the two packages.
+      tutorial.resources.push(new Resource('videos', 'step-to', fromText('step-to.mp4', 'other')))
+
+      expect(() => tutorial.exportFiles()).toThrow('claimed by more than one part')
+    })
+  })
+
+  describe('records named like object properties', () => {
+    it('keeps and exports records named constructor or toString', async () => {
+      const files = makeFiles()
+      files['constructor'] = fromText('constructor', 'C')
+      files['toString'] = fromText('toString', 'T')
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files })
+
+      const exported = tutorial.exportFiles()
+      expect(await toText(exported['constructor']!)).toBe('C')
+      expect(await toText(exported['toString']!)).toBe('T')
+    })
+
+    it('does not report inherited properties as records', async () => {
+      const tutorial = await loadProject()
+      expect(tutorial.getExtraFile('toString')).toBeNull()
+      expect(tutorial.getExtraFile('constructor')).toBeNull()
+      expect(() => tutorial.removeExtraFile('toString')).toThrow('not found')
+    })
+
+    it('refuses __proto__, which a plain object would swallow', async () => {
+      const tutorial = await loadProject()
+      expect(() => tutorial.setExtraFile('__proto__', fromText('__proto__', 'x'))).toThrow('reserved')
+    })
+  })
+
+  describe('files and folders', () => {
+    it('refuses a record below a file', async () => {
+      const tutorial = await loadProject()
+      tutorial.setExtraFile('notes.md', fromText('notes.md', 'NOTES'))
+      expect(() => tutorial.setExtraFile('notes.md/child.txt', fromText('child.txt', 'x'))).toThrow(
+        'conflicts with record notes.md'
+      )
+      // `index.json` and `main_course.gox` are files too.
+      expect(() => tutorial.setExtraFile('index.json/x', fromText('x', 'x'))).toThrow('conflicts with record')
+    })
+
+    it('refuses a file where a folder is', async () => {
+      const tutorial = await loadProject()
+      tutorial.setExtraFile('docs/a.md', fromText('a.md', 'A'))
+      expect(() => tutorial.setExtraFile('docs', fromText('docs', 'x'))).toThrow('conflicts with record docs/a.md')
+      // The embedded project's root and resource folders are folders as well.
+      expect(() => tutorial.setExtraFile('project', fromText('project', 'x'))).toThrow('conflicts with record')
+      expect(() => tutorial.setExtraFile('assets/videos', fromText('videos', 'x'))).toThrow('conflicts with record')
+    })
+
+    it('still lets a record be replaced at its own path', async () => {
+      const tutorial = await loadProject()
+      tutorial.setExtraFile('notes.md', fromText('notes.md', 'OLD'))
+      tutorial.setExtraFile('notes.md', fromText('notes.md', 'NEW'))
+      expect(await toText(tutorial.getExtraFile('notes.md')!)).toBe('NEW')
     })
   })
 
