@@ -120,7 +120,7 @@ describe('feedback demo model', () => {
       readAt: null
     })
     expect(model.data.notifications[0].content).toMatch(/^We fixed this for you\./)
-    expect(model.data.notifications[0].content).toContain('> 小宇 在 2026年8月3日 周一 09:25 写道：')
+    expect(model.data.notifications[0].content).toContain('小宇 在 2026年8月3日 09:25 写道：\n\n> 点击运行')
     expect(model.data.notifications[0].content).not.toContain('运行项目时一直卡在加载界面')
     expect(model.data.notifications[0].content).toContain(
       '> [xbuilder-loading-screen.jpg](/src/components/feedback-demo/assets/xbuilder-loading-screen.jpg "xbuilder-loading-screen.jpg")'
@@ -198,7 +198,7 @@ describe('feedback demo model', () => {
 
     expect(model.data.notifications[0].title).toBe('回复：Image support')
     expect(model.data.notifications[0].content).toMatch(
-      /^Thanks, please check the attached screenshot\.\n\n> 小宇 在 .+ 写道：\n>\n> Screenshot attached\n>\n> \[screen\.png\]\(blob:mock "screen\.png"\)$/
+      /^Thanks, please check the attached screenshot\.\n\n小宇 在 .+ 写道：\n\n> Screenshot attached\n>\n> \[screen\.png\]\(blob:mock "screen\.png"\)$/
     )
   })
 
@@ -210,7 +210,7 @@ describe('feedback demo model', () => {
     for (const notification of feedbackReplies) {
       expect(notification.title).toMatch(/^回复：/)
       expect(notification.content).not.toMatch(/^> /)
-      expect(notification.content).toMatch(/\n\n> 小宇 在 .+ 写道：/)
+      expect(notification.content).toMatch(/\n\n小宇 在 .+ 写道：\n\n> /)
       expect(notification.content).toMatch(/\[[^\]]+\]\([^)]+\.(?:jpg|png)(?: "[^"]+")?\)/)
       expect(notification.content).not.toContain('![')
       expect(notification.content).not.toContain('<notification-attachment')
@@ -233,7 +233,7 @@ describe('feedback demo model', () => {
     const releaseNotification = model.data.notifications.find((notification) => notification.id === 'notification-1011')
     expect(releaseNotification?.content).not.toContain('运行项目时一直卡在加载界面')
     expect(releaseNotification?.content.indexOf('发布流程中的状态提示已经优化')).toBeLessThan(
-      releaseNotification?.content.indexOf('小宇 在 2026年8月3日 周一 09:25 写道：') ?? -1
+      releaseNotification?.content.indexOf('小宇 在 2026年8月3日 09:25 写道：') ?? -1
     )
   })
 
@@ -269,10 +269,15 @@ describe('feedback demo model', () => {
       }
     }
 
-    for (const notification of socialNotifications.filter((item) => item.title.includes('改编'))) {
+    const remixNotifications = socialNotifications.filter((item) => item.title.includes('改编'))
+    for (const notification of remixNotifications) {
       expect(
         notification.content.match(new RegExp(projectUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'))
       ).toHaveLength(1)
+      expect(notification.content).toMatch(/\]\([^)]+\) 。$/)
     }
+    expect(remixNotifications.map((notification) => notification.content).join('\n')).not.toMatch(
+      /新的玩法与创作思路|继续完善关卡和计分规则|新的主题风格与玩法组合/
+    )
   })
 })

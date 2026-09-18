@@ -46,13 +46,12 @@ function formatQuotedFeedbackTime(value: string) {
     year: 'numeric',
     month: 'numeric',
     day: 'numeric',
-    weekday: 'short',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false
   }).formatToParts(new Date(value))
   const getPart = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? ''
-  return `${getPart('year')}年${getPart('month')}月${getPart('day')}日 ${getPart('weekday')} ${getPart('hour')}:${getPart('minute')}`
+  return `${getPart('year')}年${getPart('month')}月${getPart('day')}日 ${getPart('hour')}:${getPart('minute')}`
 }
 
 export interface NotificationCenterAnchor {
@@ -145,8 +144,8 @@ export function createFeedbackDemoModel(initialData = createMockFeedbackDemoData
     feedback.reply = reply
     feedback.repliedAt = repliedAt
     const quotedFeedback = [
-      `> ${feedback.userDisplayName} 在 ${formatQuotedFeedbackTime(feedback.createdAt)} 写道：`,
-      '>',
+      `${feedback.userDisplayName} 在 ${formatQuotedFeedbackTime(feedback.createdAt)} 写道：`,
+      '',
       toQuotedMarkdown(feedback.description),
       ...feedback.attachments.flatMap((attachment) => {
         const link = toMarkdownAttachment(attachment)

@@ -9,8 +9,8 @@ const content = `问题已经修复。
 
 [project-page.png](https://example.com/project-page.png "project-page.png")
 
-> 小宇 在 2026年8月3日 周一 09:25 写道：
->
+小宇 在 2026年8月3日 09:25 写道：
+
 > 点击运行以后加载动画一直没有结束。
 >
 > [loading-screen.png](https://example.com/loading-screen.png "loading-screen.png")`
@@ -29,14 +29,15 @@ describe('NotificationMarkdown', () => {
 
     expect(text.indexOf('问题已经修复')).toBeLessThan(text.indexOf('guide.png'))
     expect(text.indexOf('guide.png')).toBeLessThan(text.indexOf('project-page.png'))
-    expect(text.indexOf('project-page.png')).toBeLessThan(text.indexOf('小宇 在 2026年8月3日 周一 09:25 写道：'))
-    expect(text.indexOf('小宇 在 2026年8月3日 周一 09:25 写道：')).toBeLessThan(
+    expect(text.indexOf('project-page.png')).toBeLessThan(text.indexOf('小宇 在 2026年8月3日 09:25 写道：'))
+    expect(text.indexOf('小宇 在 2026年8月3日 09:25 写道：')).toBeLessThan(
       text.indexOf('点击运行以后加载动画一直没有结束。')
     )
     expect(text.indexOf('loading-screen.png')).toBeLessThan(text.indexOf('4 天前'))
     expect(text).not.toContain('运行项目时一直卡在加载界面')
     expect(wrapper.findAll('.notification-markdown')).toHaveLength(1)
     expect(wrapper.get('.notification-markdown').text()).not.toContain('4 天前')
+    expect(wrapper.get('blockquote').text()).not.toContain('小宇 在 2026年8月3日 09:25 写道：')
     expect(wrapper.get('time').element.previousElementSibling).toBe(wrapper.get('.notification-markdown').element)
     expect(wrapper.get('time').attributes()).toMatchObject({
       title: '2026年9月10日上午9点40分',

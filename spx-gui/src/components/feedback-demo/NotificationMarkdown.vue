@@ -82,7 +82,7 @@ const markdownComponents = markRaw({
 .notification-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .notification-markdown {
@@ -103,6 +103,20 @@ const markdownComponents = markRaw({
 }
 
 .notification-markdown :deep(> :not(p:has(> .notification-attachment-link)) + p:has(> .notification-attachment-link)) {
+  margin-top: 8px;
+}
+
+.notification-markdown :deep(> * + p:has(+ blockquote)) {
+  margin-top: 24px;
+}
+
+.notification-markdown :deep(> p:has(+ blockquote)) {
+  color: var(--ui-color-grey-700);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.notification-markdown :deep(> p + blockquote) {
   margin-top: 8px;
 }
 
@@ -152,13 +166,13 @@ const markdownComponents = markRaw({
 }
 
 .notification-markdown :deep(blockquote) {
-  padding: 8px 12px;
-  border-inline-start: 3px solid var(--ui-color-grey-600);
+  padding: 4px 12px;
+  border-inline-start: 3px solid var(--ui-color-grey-400);
   border-radius: 0 8px 8px 0;
   background: transparent;
   color: var(--ui-color-grey-900);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 13px;
+  line-height: 20px;
 }
 
 .notification-markdown :deep(blockquote > * + *) {
@@ -176,12 +190,6 @@ const markdownComponents = markRaw({
 .notification-markdown
   :deep(blockquote > :not(p:has(> .notification-attachment-link)) + p:has(> .notification-attachment-link)) {
   margin-top: 8px;
-}
-
-.notification-markdown :deep(blockquote > :first-child) {
-  color: var(--ui-color-grey-700);
-  font-size: 12px;
-  line-height: 18px;
 }
 
 .notification-markdown :deep(a) {

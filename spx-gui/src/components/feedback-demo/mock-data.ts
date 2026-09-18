@@ -11,7 +11,7 @@ export type FeedbackSource = 'globalForm'
 export type FeedbackStatus = 'new' | 'handled' | 'replied'
 export type { FeedbackContext } from './context'
 
-export const feedbackDemoMockVersion = 24
+export const feedbackDemoMockVersion = 26
 
 export interface FeedbackAttachment {
   id: string
@@ -191,8 +191,8 @@ const mockData: FeedbackDemoData = {
 
 [xbuilder-project-page.png](${projectPageScreenshotUrl} "xbuilder-project-page.png")
 
-> 小宇 在 2026年8月3日 周一 09:25 写道：
->
+小宇 在 2026年8月3日 09:25 写道：
+
 > 点击运行以后加载动画一直没有结束，刷新页面后还是一样。
 >
 > [xbuilder-loading-screen.jpg](${feedbackDemoImageUrl} "xbuilder-loading-screen.jpg")`,
@@ -204,7 +204,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '林小满改编了你的项目',
-      content: `[林小满](${demoUserUrl}) 改编了你的项目 [AI-Town-2222](${demoProjectUrl}) ，并为它加入了新的玩法与创作思路。`,
+      content: `[林小满](${demoUserUrl}) 改编了你的项目 [AI-Town-2222](${demoProjectUrl}) 。`,
       createdAt: '2026-09-09T14:20:00+08:00',
       readAt: null
     },
@@ -233,8 +233,8 @@ const mockData: FeedbackDemoData = {
       title: '回复：上传角色图片后一直提示失败',
       content: `角色图片上传失败的问题已经修复，现在可以重新上传素材。我们也补充了更清晰的失败提示。
 
-> 小宇 在 2026年8月19日 周三 14:08 写道：
->
+小宇 在 2026年8月19日 14:08 写道：
+
 > PNG 和 JPG 都试过了，文件大小也没有超过限制。
 >
 > [xbuilder-loading-screen.jpg](${feedbackDemoImageUrl} "xbuilder-loading-screen.jpg")`,
@@ -246,7 +246,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '星河改编了你的项目',
-      content: `[星河](${demoUserUrl}) 改编了你的项目 [Flappy Fish](${demoProjectUrl}) ，正在基于你的创意继续完善关卡和计分规则。`,
+      content: `[星河](${demoUserUrl}) 改编了你的项目 [Flappy Fish](${demoProjectUrl}) 。`,
       createdAt: '2026-08-10T11:08:00+08:00',
       readAt: null
     },
@@ -277,8 +277,8 @@ const mockData: FeedbackDemoData = {
 
 [release-guide.png](${releaseGuideUrl} "release-guide.png")
 
-> 小宇 在 2026年3月3日 周二 10:42 写道：
->
+小宇 在 2026年3月3日 10:42 写道：
+
 > 连续播放跑步动画时，每次循环到第一帧都会闪一下。
 >
 > [xbuilder-loading-screen.jpg](${feedbackDemoImageUrl} "xbuilder-loading-screen.jpg")`,
@@ -299,7 +299,7 @@ const mockData: FeedbackDemoData = {
       userID: 'user-xiaoyu',
       feedbackID: '',
       title: '远山改编了你的项目',
-      content: `[远山](${demoUserUrl}) 改编了你的项目 [Match3](${demoProjectUrl}) ，并尝试了新的主题风格与玩法组合。`,
+      content: `[远山](${demoUserUrl}) 改编了你的项目 [Match3](${demoProjectUrl}) 。`,
       createdAt: '2024-09-10T16:32:00+08:00',
       readAt: null
     }
