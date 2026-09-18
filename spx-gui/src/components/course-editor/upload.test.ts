@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { fromConfig, fromText, toText, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
@@ -26,8 +26,8 @@ async function loadProject() {
   return project
 }
 
-function nativeFile(name: string) {
-  return new File(['content'], name)
+function nativeFile(name: string, content = 'content') {
+  return new File([content], name)
 }
 
 describe('validateUploadDir', () => {
@@ -108,6 +108,62 @@ describe('addUploadedFiles', () => {
     const exported = project.exportFiles()
     expect(await toText(exported['assets/texts/orphan/orphan.txt']!)).toBe('precious original')
     expect(exported['assets/texts/orphan2/orphan2.txt']).toBeDefined()
+  })
+
+  it('de-duplicates a name at the length limit instead of giving up', async () => {
+    const project = await loadProject()
+    const long = 'a'.repeat(100)
+
+    addUploadedFiles(project, 'assets/texts', [nativeFile(long + '.txt')])
+    const [path] = addUploadedFiles(project, 'assets/texts', [nativeFile(long + '.txt')])
+
+    const name = path.slice('assets/texts/'.length)
+    expect(name).not.toBe(long)
+    expect(Array.from(name).length).toBeLessThanOrEqual(100)
+    expect(project.resources.filter((r) => r.kind === 'texts')).toHaveLength(2)
+  })
+
+  it('adds no package when one of the files fails', async () => {
+    const project = await loadProject()
+    const addResource = project.addResource.bind(project)
+    let calls = 0
+    vi.spyOn(project, 'addResource').mockImplementation((resource) => {
+      if (++calls === 2) throw new Error('boom')
+      addResource(resource)
+    })
+
+    expect(() => addUploadedFiles(project, 'assets/texts', [nativeFile('one.txt'), nativeFile('two.txt')])).toThrow(
+      'boom'
+    )
+    expect(project.resources.filter((r) => r.kind === 'texts')).toEqual([])
+  })
+
+  it('adds no record when one of the files fails, and restores the ones it replaced', async () => {
+    const project = await loadProject()
+    project.setExtraFile('docs/a.md', fromText('a.md', 'A'))
+    // `docs` is a folder, so the second file cannot be written; the first one must not stay behind.
+    expect(() => addUploadedFiles(project, '', [nativeFile('notes.md', 'NEW'), nativeFile('docs')])).toThrow()
+
+    expect(await toText(project.getExtraFile('notes.md')!)).toBe('# notes')
+  })
+
+  it('refuses a target folder that is a file, and a file where a folder is', async () => {
+    const project = await loadProject()
+    project.setExtraFile('docs/a.md', fromText('a.md', 'A'))
+
+    expect(validateUploadDir(project, 'notes.md')?.en).toContain('notes.md is a file')
+    expect(validateUploadDir(project, 'notes.md/deeper')?.en).toContain('notes.md is a file')
+    expect(validateUploadPath(project, '', 'docs')?.en).toContain('docs is a folder')
+    expect(validateUploadDir(project, 'docs')).toBeNull()
+  })
+
+  it('refuses __proto__ and keeps files named like other object properties', async () => {
+    const project = await loadProject()
+    expect(validateUploadPath(project, '', '__proto__')?.en).toContain('cannot be used as a file name')
+    expect(validateUploadPath(project, '', 'constructor')).toBeNull()
+
+    addUploadedFiles(project, '', [nativeFile('constructor', 'C')])
+    expect(await toText(project.exportFiles()['constructor']!)).toBe('C')
   })
 
   it('stores files uploaded elsewhere as plain records, creating folders implicitly', async () => {

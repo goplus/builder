@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 
 import type { PlaygroundCourse } from '@/apis/course'
@@ -8,7 +9,7 @@ import { SpxProject } from '@/models/spx/project'
 
 import { Course, mainCourseFilePath } from './course'
 import { DerivedFile } from './derived-file'
-import { ensureValidResourceName, Resource, validateResourceLayout } from './resource'
+import { ensureValidResourceName, hasRecord, Resource, validateResourceLayout } from './resource'
 
 /**
  * Path (relative to the Tutorial-project root) of the course configuration record.
@@ -251,6 +252,9 @@ export class TutorialProject {
    * Called by: models/tutorial/project.ts#TutorialProject.addResource.
    */
   private prepareAddResource(resource: Resource) {
+    // Ids tell packages apart (deleting one, for example), so they must be unique within the course. They come
+    // from the manifests, and a package directory copied along with its manifest carries the same one.
+    if (this.resources.some((other) => other.id === resource.id)) resource.id = nanoid()
     // Rename first (validated against this project), then attach: the resource is not in `resources` yet, so
     // its own current name cannot be reported as a conflict.
     const name = ensureValidResourceName(resource, this)
@@ -305,7 +309,7 @@ export class TutorialProject {
    * components/course-editor/upload.test.ts.
    */
   getExtraFile(path: string): File | null {
-    return this.extraFiles[path] ?? null
+    return hasRecord(this.extraFiles, path) ? this.extraFiles[path]! : null
   }
 
   /**
@@ -318,7 +322,15 @@ export class TutorialProject {
    * components/course-editor/upload.ts#addUploadedFiles, models/tutorial/project.test.ts.
    */
   setExtraFile(path: string, file: File) {
+    // Assigning this key to a plain object sets its prototype instead of adding an entry: the file would vanish.
+    if (path === '__proto__') throw new Error(`path ${path} is reserved`)
     if (this.isClaimedPath(path)) throw new Error(`path ${path} is claimed by the course model`)
+    // A new path must not make a file and a directory share a path. Replacing the record already at this path
+    // (every edit of a text record does) cannot, so that common case skips the check.
+    if (!hasRecord(this.extraFiles, path)) {
+      const conflict = this.getRecordPathConflict(path)
+      if (conflict != null) throw new Error(`path ${path} conflicts with record ${conflict}`)
+    }
     this.extraFiles[path] = file
   }
 
@@ -331,8 +343,28 @@ export class TutorialProject {
    * components/course-editor/course-tree.test.ts.
    */
   removeExtraFile(path: string) {
-    if (this.extraFiles[path] == null) throw new Error(`file ${path} not found`)
+    if (!hasRecord(this.extraFiles, path)) throw new Error(`file ${path} not found`)
     delete this.extraFiles[path]
+  }
+
+  /**
+   * The record that keeps `path` from being used as a file (or, with `asDirectory`, as a directory), or null.
+   * A path cannot be both: nothing may sit below a file, and a file may not sit where records exist below it.
+   * A record already at `path` is not a conflict for a file (it is the one being replaced).
+   * @param path - The path to check, relative to the course root.
+   * @param asDirectory - Check `path` as a directory to write into, rather than as a file.
+   * @returns The conflicting record's path, or null.
+   * Called by: models/tutorial/project.ts#setExtraFile, components/course-editor/upload.ts (validation).
+   */
+  getRecordPathConflict(path: string, asDirectory = false): string | null {
+    const ancestors = new Set(getAncestorPaths(path))
+    for (const record of Object.keys(this.exportFiles())) {
+      // Something would sit below a file.
+      if (ancestors.has(record)) return record
+      // As a directory, `path` itself must not be a file; as a file, nothing may be below it.
+      if (asDirectory ? record === path : record.startsWith(path + '/')) return record
+    }
+    return null
   }
 
   /**
@@ -359,24 +391,23 @@ export class TutorialProject {
    */
   exportFiles() {
     if (this.config == null) throw new Error('Tutorial project has not been loaded')
-    // Typed parts first; the embedded project's paths are moved back under its root directory.
     const files: Files = {}
-    Object.assign(
-      files,
-      this.exportConfig(),
-      prefixFiles(this.project.exportFiles(), this.config.project.root),
-      this.mainCourse.export(),
-      ...this.resources.map((resource) => resource.export())
-    )
-    // Then the records nobody claimed. Every mutation validates that a package's directory is free, so a path
-    // claimed by both is a programming error: fail loudly instead of silently dropping one of the two records.
-    for (const [path, file] of Object.entries(this.extraFiles)) {
-      if (file == null) continue
-      if (files[path] != null) {
-        throw new Error(`record ${path} is claimed by both the course model and an extra file`)
+    // Every part goes through `claim`, which refuses a path another part already took. The rules keep the parts
+    // apart, so a clash is a programming error, and failing loudly beats silently dropping one of the records.
+    const claim = (part: Files) => {
+      for (const [path, file] of Object.entries(part)) {
+        if (file == null) continue
+        if (hasRecord(files, path)) throw new Error(`record ${path} is claimed by more than one part of the course`)
+        files[path] = file
       }
-      files[path] = file
     }
+    claim(this.exportConfig())
+    // The embedded project's paths are moved back under its root directory.
+    claim(prefixFiles(this.project.exportFiles(), this.config.project.root))
+    claim(this.mainCourse.export())
+    for (const resource of this.resources) claim(resource.export())
+    // Last, the records nobody claimed.
+    claim(this.extraFiles)
     return files
   }
 
@@ -422,6 +453,12 @@ export class TutorialProject {
  * Called by: models/tutorial/project.ts#TutorialProject.loadFiles,
  * models/tutorial/project.ts#TutorialProject.isClaimedPath.
  */
+/** The directories `path` lies in, outermost first: `a/b/c` gives `a` and `a/b`; a top-level path gives none. */
+function getAncestorPaths(path: string) {
+  const segments = path.split('/')
+  return segments.slice(1).map((_, i) => segments.slice(0, i + 1).join('/'))
+}
+
 function isClaimedPath(path: string, config: TutorialProjectConfig, resources: Resource[]) {
   if (path === configFilePath || path === mainCourseFilePath) return true
   if (path.startsWith(config.project.root + '/')) return true
