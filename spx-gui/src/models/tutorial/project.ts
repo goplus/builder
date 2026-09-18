@@ -8,7 +8,7 @@ import { SpxProject } from '@/models/spx/project'
 
 import { Course, mainCourseFilePath } from './course'
 import { DerivedFile } from './derived-file'
-import { ensureValidResourceName, Resource } from './resource'
+import { ensureValidResourceName, Resource, validateResourceLayout } from './resource'
 
 /**
  * Path (relative to the Tutorial-project root) of the course configuration record.
@@ -217,8 +217,19 @@ export class TutorialProject {
     this.config = config
     // Detach the old resources before attaching the new ones: each resource tracks its owning project.
     this.resources.splice(0).forEach((resource) => resource.setProject(null))
-    resources.forEach((resource) => this.addResource(resource))
+    // This course's unclaimed records go in before any resource is named, so naming checks directory occupancy
+    // against them rather than against the previous load's (whose orphans could rename a valid package here).
     this.extraFiles = extraFiles
+    // A loaded package can only be invalid by itself (a malformed name, a payload that would shadow its
+    // manifest), never because of another loaded package: they come from distinct directories. So the intact
+    // ones are added first and keep their names, and only then are the others renamed, around all of them;
+    // otherwise a package renamed early could take the name of a valid one listed after it.
+    const isIntact = (resource: Resource) => validateResourceLayout(resource, null) == null
+    resources.filter(isIntact).forEach((resource) => this.addResource(resource))
+    resources.filter((resource) => !isIntact(resource)).forEach((resource) => this.addResource(resource))
+    // Keep them in the order the course lists them.
+    const order = new Map(resources.map((resource, index) => [resource, index]))
+    this.resources.sort((a, b) => order.get(a)! - order.get(b)!)
   }
 
   /**
