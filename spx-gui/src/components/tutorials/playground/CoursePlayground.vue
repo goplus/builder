@@ -19,13 +19,14 @@ import type { ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
-import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
+import { type CodeEditor, CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 import { useSaveProjectAs } from '@/components/project'
 import { useProjectConfig } from '@/components/project/config'
 
-import { PlaygroundCourseRunner, type PlaygroundCourseCompletion } from './runner'
+import type { PlaygroundCourseCompletion } from './runner'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
+import { PlaygroundCourseRunner } from './runner'
 
 const props = defineProps<{
   project: TutorialProject
@@ -137,27 +138,24 @@ const presentation = {
 }
 
 let runner: PlaygroundCourseRunner | null = null
-const stopRunnerStart = watch([() => monacoQueryRet.data.value, state], async ([monaco, editorState]) => {
-  if (monaco == null || editorState == null) return
-  stopRunnerStart()
-  await nextTick()
-  if (disposed) return
+function handleCodeEditorReady(codeEditor: CodeEditor) {
+  if (disposed || state.value == null) return
   runner?.dispose()
   const nextRunner = new PlaygroundCourseRunner({
     project: props.project,
-    editorState,
+    editorState: state.value,
     copilot,
+    codeEditor,
     presentation
   })
   nextRunner.on('completed', (completion) => emit('courseCompleted', completion))
   nextRunner.on('failed', (error) => emit('failed', error))
   runner = nextRunner
   void nextRunner.start().catch(() => {})
-})
+}
 
 onUnmounted(() => {
   disposed = true
-  stopRunnerStart()
   runner?.dispose()
   state.value?.dispose()
   rulerVisible.value = false
@@ -192,7 +190,7 @@ onUnmounted(() => {
         {{ $t(monacoQueryRet.error.value.userMessage) }}
       </UIError>
       <EditorContextProvider v-else-if="state != null" :project="state.project" :state="state">
-        <CodeEditorProvider :monaco="monacoQueryRet.data.value!">
+        <CodeEditorProvider :monaco="monacoQueryRet.data.value!" @ready="handleCodeEditorReady">
           <ProjectEditor />
         </CodeEditorProvider>
       </EditorContextProvider>

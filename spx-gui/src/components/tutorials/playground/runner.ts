@@ -9,6 +9,7 @@ import type { Copilot, Round, Session, Topic } from '@/components/copilot/copilo
 import { RoundState } from '@/components/copilot/copilot'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
+import type { CodeEditor } from '@/components/editor/spx-code-editor'
 import type { SpotlightOptions } from '@/utils/tutorial-framework'
 
 export type PlaygroundCoursePresentation = {
@@ -25,6 +26,7 @@ export type PlaygroundCourseRunnerOptions = {
   project: TutorialProject
   editorState: EditorState
   copilot: Copilot
+  codeEditor: CodeEditor
   presentation: PlaygroundCoursePresentation
 }
 
@@ -107,7 +109,9 @@ export class PlaygroundCourseRunner extends Emitter<{
           return this.options.presentation.revealSpotlight(target, tip, options)
         },
         editor_ruler_show: () => this.options.presentation.setRulerVisible(true),
-        editor_ruler_hide: () => this.options.presentation.setRulerVisible(false)
+        editor_ruler_hide: () => this.options.presentation.setRulerVisible(false),
+        editor_codeEditor_filterAPIs: (request) =>
+          this.options.codeEditor.filterAPIs((request as { apis: string[] }).apis)
       }
     }
   }

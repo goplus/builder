@@ -80,10 +80,12 @@ function makeHarness() {
     revealSpotlight: vi.fn().mockResolvedValue(undefined),
     setRulerVisible: vi.fn()
   }
+  const codeEditor = { filterAPIs: vi.fn() }
   const runner = new PlaygroundCourseRunner({
     project,
     editorState,
     copilot: copilot as unknown as Copilot,
+    codeEditor: codeEditor as never,
     presentation
   })
   const executor = executorMocks.instances.at(-1)!
@@ -95,6 +97,7 @@ function makeHarness() {
     copilot,
     executor,
     presentation,
+    codeEditor,
     runner,
     getExecutorOptions: () => executor.options
   }
@@ -119,6 +122,17 @@ describe('PlaygroundCourseRunner', () => {
     expect(harness.executor.run).toHaveBeenCalledWith({
       [mainCourseFilePath]: 'onStart => { complete }'
     })
+  })
+
+  it('filters API reference and completion through the code editor', async () => {
+    const harness = makeHarness()
+    await harness.runner.start()
+    const filterAPIs = harness.getExecutorOptions().framework?.capabilities.editor_codeEditor_filterAPIs
+    if (filterAPIs == null) throw new Error('editor_codeEditor_filterAPIs capability not found')
+
+    await filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'] })
+
+    expect(harness.codeEditor.filterAPIs).toHaveBeenCalledWith(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
   })
 
   it('forwards editor and Copilot events in source order', async () => {
