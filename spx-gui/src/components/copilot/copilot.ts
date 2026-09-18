@@ -650,11 +650,11 @@ These skills are already preloaded. Avoid calling \`load_skill\` for them again.
 ${skillContents.join('\n\n')}`
   }
 
-  private async getContext(toolsEnabled = false): Promise<string> {
+  private async getContext(toolsEnabled = true): Promise<string> {
     const contextParts = await Promise.all([
       ...this.contextProviders.map((p) => p.provideContext?.()),
-      this.getPreloadSkillsContext(),
-      ...(toolsEnabled ? [this.getSkillCatalogContext()] : [])
+      ...(toolsEnabled ? [this.getSkillCatalogContext()] : []),
+      this.getPreloadSkillsContext()
     ])
     return contextParts.filter((s) => s != null && s.trim() !== '').join('\n\n')
   }
@@ -685,7 +685,7 @@ ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
 ${topic.description}`
   }
 
-  async getContextMessage(toolsCustomElementsEnabled = false): Promise<UserTextMessage> {
+  async getContextMessage(toolsCustomElementsEnabled = true): Promise<UserTextMessage> {
     const parts = [
       toolsCustomElementsEnabled ? this.getCustomElementsPrompt() : '',
       await this.getContext(toolsCustomElementsEnabled),
@@ -886,7 +886,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
   ) {
     const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
-    messages.push(await this.getContextMessage(), { type: 'text', role: 'user', content: message })
+    messages.push(await this.getContextMessage(false), { type: 'text', role: 'user', content: message })
     const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
     for await (const event of result) {
       if (event.type === 'error') throw new Error(event.data.message)

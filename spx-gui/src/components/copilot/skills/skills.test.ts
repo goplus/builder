@@ -75,15 +75,14 @@ describe('copilot skill catalog context', () => {
     const registry = createBuiltInSkillRegistry()
     const copilot = new Copilot(registry)
 
-    expect((await copilot.getContextMessage()).content).not.toContain('# Skills')
-    expect((await copilot.getContextMessage(true)).content).toContain('# Skills')
-    expect((await copilot.getContextMessage(true)).content).toContain(
+    expect((await copilot.getContextMessage()).content).toContain('# Skills')
+    expect((await copilot.getContextMessage()).content).toContain(
       'call `load_skill` with the exact skill name to read the skill'
     )
-    expect((await copilot.getContextMessage(true)).content).toContain(
+    expect((await copilot.getContextMessage()).content).toContain(
       'You can also read resources in a skill by calling `load_skill_resource` with the skill name and the resource path'
     )
-    expect((await copilot.getContextMessage(true)).content).toContain('Skill name: spx-project')
+    expect((await copilot.getContextMessage()).content).toContain('Skill name: spx-project')
   })
 })
 

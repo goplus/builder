@@ -1324,7 +1324,7 @@ describe('Copilot', () => {
     })
     const topic = createBasicTopic('Prompt migration test', 'Testing prompt context without injected tools')
 
-    expect((await copilot.getContextMessage()).content).not.toContain('# Available custom elements')
+    expect((await copilot.getContextMessage(false)).content).not.toContain('# Available custom elements')
     await copilot.startSession(topic)
     copilot.addUserTextMessage('Find my projects', topic)
 
