@@ -3,13 +3,14 @@
     <UICard
       v-if="selectedSprite != null"
       v-radar="{ name: 'simple-code-editor', desc: 'Focused code editor for the selected course sprite' }"
-      class="relative flex-[1_1_0] min-w-0 flex flex-col overflow-visible!"
+      class="relative min-w-0 flex-[3.5_1_0] flex flex-col overflow-visible!"
     >
       <CodeEditorUI :code-file-path="selectedSprite.codeFilePath" simple-mode />
+      <div ref="simpleControlsAnchor" class="absolute right-3 bottom-4 z-10"></div>
     </UICard>
     <EditorPlaceholder v-else />
-    <div class="min-w-0 flex-[0_0_560px] flex flex-col">
-      <EditorPreview simple-mode />
+    <div class="min-w-0 flex-[3_1_0] flex flex-col">
+      <EditorPreview simple-mode :controls-anchor="simpleControlsAnchor" />
     </div>
   </template>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
@@ -56,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { UICard } from '@/components/ui'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
@@ -74,6 +75,7 @@ const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const mode = computed(() => editorCtx.state.selectedEditMode)
 const selectedSprite = computed(() => (selected.value.type === 'sprite' ? selected.value.sprite : null))
+const simpleControlsAnchor = ref<HTMLElement | null>(null)
 
 useSpxEditorCopilot()
 

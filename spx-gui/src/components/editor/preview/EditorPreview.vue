@@ -2,9 +2,10 @@
   <UICard
     v-radar="{ name: 'editor-preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
+    :class="{ 'flex-[1_1_0] min-h-0': simpleMode }"
   >
-    <UICardHeader :class="simpleMode ? 'gap-3 justify-center' : 'gap-3'">
-      <div v-if="!simpleMode" class="flex-1 text-title">
+    <UICardHeader v-if="!simpleMode" class="gap-3">
+      <div class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
@@ -65,11 +66,14 @@
       </template>
     </UICardHeader>
 
-    <div class="flex grow justify-center overflow-hidden p-3">
+    <div class="flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': simpleMode }">
       <div
         ref="stageContainerRef"
         class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
-        :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
+        :class="{
+          'stage-viewer-container-running': runnerState !== 'initial',
+          'stage-viewer-container-simple': simpleMode
+        }"
       >
         <StageViewer class="stage-viewer" :simple-mode="simpleMode" />
         <div
@@ -96,6 +100,28 @@
       </div>
     </div>
   </UICard>
+  <Teleport v-if="simpleMode && controlsAnchor != null" :to="controlsAnchor">
+    <UIButton
+      v-if="runnerState === 'initial'"
+      v-radar="{ name: 'run-button', desc: 'Click to run the project in debug mode' }"
+      type="primary"
+      icon="playHollow"
+      :loading="handleRun.isLoading.value"
+      @click="handleRun.fn"
+    >
+      {{ $t({ en: 'Run', zh: '运行' }) }}
+    </UIButton>
+    <UIButton
+      v-else
+      v-radar="{ name: 'stop-button', desc: 'Click to stop the running project' }"
+      type="neutral"
+      icon="end"
+      :loading="handleStop.isLoading.value"
+      @click="handleStop.fn"
+    >
+      {{ $t({ en: 'Stop', zh: '停止' }) }}
+    </UIButton>
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -185,9 +211,11 @@ import { usePublishProject } from '@/components/project'
 const props = withDefaults(
   defineProps<{
     simpleMode?: boolean
+    controlsAnchor?: HTMLElement | null
   }>(),
   {
-    simpleMode: false
+    simpleMode: false,
+    controlsAnchor: null
   }
 )
 
@@ -466,6 +494,15 @@ function getStageInlineAnchor() {
   filter: blur(4px);
   pointer-events: none;
   user-select: none;
+}
+
+.stage-viewer-container-simple {
+  height: 100%;
+}
+
+.stage-viewer-container-simple :deep(.stage-viewer) {
+  height: 100%;
+  aspect-ratio: auto;
 }
 
 .runner-host :deep(.project-runner-surface) {
