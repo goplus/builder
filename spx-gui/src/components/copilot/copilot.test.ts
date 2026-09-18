@@ -303,6 +303,82 @@ class MockBatchedMessageEventGenerator implements IMessageEventGenerator {
 }
 
 describe('Copilot', () => {
+  it('emits completed rounds as plain text', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Done'))
+    const rounds: Array<{ userMessage: string; resultMessages: string[] }> = []
+    copilot.on('roundComplete', (round) => rounds.push(round))
+
+    await copilot.startSession(createBasicTopic())
+    copilot.addUserTextMessage('Help me')
+    await waitForCompletion()
+
+    expect(rounds).toEqual([{ userMessage: 'Help me', resultMessages: ['Done'] }])
+  })
+
+  it('generates text and JSON responses without adding a conversation round', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      createTextStreamBatch('Nice work'),
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'return_json_1',
+          function: { name: 'return_json', arguments: '{"complete":true}' }
+        }),
+        createDoneEvent('tool_calls')
+      ]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    await copilot.startSession(createBasicTopic())
+
+    await expect(copilot.generateTextResponse('Give feedback')).resolves.toBe('Nice work')
+    await expect(copilot.generateJSONResponse('Is the goal complete?', { type: 'object' })).resolves.toEqual({
+      complete: true
+    })
+
+    expect(copilot.currentSession?.rounds).toEqual([])
+    expect(generator.calls[0]?.at(-1)).toEqual({
+      role: 'user',
+      content: { type: 'text', text: 'Give feedback' }
+    })
+    expect(generator.callOptions[1]?.tools).toEqual([
+      {
+        type: apis.ToolType.Function,
+        function: {
+          name: 'return_json',
+          description: 'Return the requested JSON response.',
+          parameters: { type: 'object' }
+        }
+      }
+    ])
+  })
+
+  it('aborts text responses that attempt to call a tool', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [createToolCallDeltaEvent({ index: 0, function: { name: 'unexpected', arguments: '' } })]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+
+    await expect(copilot.generateTextResponse('Give feedback')).rejects.toThrow('Unexpected tool call in text response')
+    expect(generator.callOptions[0]?.signal?.aborted).toBe(true)
+  })
+
+  it('rejects invalid JSON responses', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'return_json_1',
+          function: { name: 'return_json', arguments: '{invalid' }
+        })
+      ]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+
+    await expect(copilot.generateJSONResponse('Return JSON', { type: 'object' })).rejects.toThrow(
+      'Copilot returned invalid JSON'
+    )
+  })
+
   it('should convert copilot messages with text and tool calls to structured api messages', () => {
     expect(
       toApiMessage({
@@ -825,7 +901,7 @@ describe('Copilot', () => {
     })
 
     expect(generator.calls).toHaveLength(2)
-    const contextMessage = await copilot.getContextMessage()
+    const contextMessage = await copilot.getContextMessage(true)
 
     expect(generator.calls[1]).toEqual([
       {
@@ -903,6 +979,8 @@ describe('Copilot', () => {
       })
     })
     const topic = createBasicTopic('Tool-call only assistant test', 'Testing tool-call only finalization')
+    const completedRounds: Array<{ userMessage: string; resultMessages: string[] }> = []
+    copilot.on('roundComplete', (round) => completedRounds.push(round))
 
     await copilot.startSession(topic)
     copilot.addUserTextMessage('Find my projects', topic)
@@ -940,6 +1018,7 @@ describe('Copilot', () => {
       content: 'Here are your projects.',
       toolCalls: []
     })
+    expect(completedRounds).toEqual([{ userMessage: 'Find my projects', resultMessages: ['Here are your projects.'] }])
     const message = currentRound?.resultMessages[0]
     expect(message?.role).toBe('copilot')
     if (message?.role !== 'copilot') throw new Error('Expected a copilot message')
@@ -1015,7 +1094,7 @@ describe('Copilot', () => {
     const currentRound = copilot.currentSession?.currentRound
     expect(currentRound?.state).toBe(RoundState.Completed)
     expect(generator.calls).toHaveLength(2)
-    const contextMessage = await copilot.getContextMessage()
+    const contextMessage = await copilot.getContextMessage(true)
 
     expect(generator.calls[1]).toEqual([
       {
@@ -1206,7 +1285,7 @@ describe('Copilot', () => {
         }
       }
     ])
-    const contextMessage = await copilot.getContextMessage()
+    const contextMessage = await copilot.getContextMessage(true)
 
     expect(sampledMessages?.at(-1)).toEqual({
       role: 'user',
@@ -1245,6 +1324,7 @@ describe('Copilot', () => {
     })
     const topic = createBasicTopic('Prompt migration test', 'Testing prompt context without injected tools')
 
+    expect((await copilot.getContextMessage(false)).content).not.toContain('# Available custom elements')
     await copilot.startSession(topic)
     copilot.addUserTextMessage('Find my projects', topic)
 
@@ -1254,7 +1334,7 @@ describe('Copilot', () => {
     expect(generator.callOptions).toHaveLength(1)
 
     const contextMessage = generator.calls[0].at(-1)
-    const expectedContextMessage = await copilot.getContextMessage()
+    const expectedContextMessage = await copilot.getContextMessage(true)
 
     expect(contextMessage).toEqual({
       role: 'user',

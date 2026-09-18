@@ -6,7 +6,7 @@ export type CopilotTopic = {
   reactToEvents: boolean;
   endable: boolean;
   /** Controls both code-block Copy and code-change Apply helpers in this session. */
-  allowCodeHelper: boolean;
+  codeHelperEnabled: boolean;
 };
 
 export type CopilotRound = {
@@ -21,17 +21,6 @@ export type CopilotRound = {
 export type CopilotSessionExported = {
   topic: CopilotTopic;
   rounds: unknown[];
-};
-
-export type CopilotTextRequest = {
-  response: "text";
-  message: string;
-};
-
-export type CopilotJSONRequest = {
-  response: "json";
-  message: string;
-  schema: JSONSchema;
 };
 
 /** Generic Copilot capabilities. This interface has no Course or Tutorial concepts. */
@@ -54,17 +43,18 @@ export interface Copilot {
   restoreSession(session: CopilotSessionExported): void;
 
   /** Generates one plain-text response without adding a round to the current session. */
-  generateResponse(
-    request: CopilotTextRequest,
+  generateTextResponse(
+    message: string,
     signal?: AbortSignal,
   ): Promise<string>;
 
   /** Generates one JSON response conforming to the supplied schema. */
-  generateResponse(
-    request: CopilotJSONRequest,
+  generateJSONResponse(
+    message: string,
+    schema: JSONSchema,
     signal?: AbortSignal,
   ): Promise<unknown>;
 
   /** Subscribes to completed rounds through the module's event-emitter API. */
-  on(event: "roundFinish", listener: (round: CopilotRound) => void): Disposer;
+  on(event: "roundComplete", listener: (round: CopilotRound) => void): Disposer;
 }

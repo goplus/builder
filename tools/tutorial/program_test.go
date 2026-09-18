@@ -290,7 +290,7 @@ func TestUnsubscribedEventsAreAccepted(t *testing.T) {
 			// error over it.
 			dispatch(t, "editor.runtime.start", `null`)
 			dispatch(t, "editor.runtime.exit", `{"code":0}`)
-			dispatch(t, "copilot.roundFinish", `{"userMessage":"hi","resultMessages":["hello"]}`)
+			dispatch(t, "copilot.roundComplete", `{"userMessage":"hi","resultMessages":["hello"]}`)
 			course.Complete()
 		})
 	})
@@ -315,13 +315,13 @@ func TestRuntimeExitAndCopilotRoundPayloads(t *testing.T) {
 			exitCode = code
 			note()
 		})
-		course.Copilot.OnRoundFinish(func(finished CopilotRound) {
+		course.Copilot.OnRoundComplete(func(finished CopilotRound) {
 			round = finished
 			note()
 		})
 		course.OnStart(func() {
 			dispatch(t, "editor.runtime.exit", `{"code":2}`)
-			dispatch(t, "copilot.roundFinish", `{"userMessage":"why","resultMessages":["because","ok"]}`)
+			dispatch(t, "copilot.roundComplete", `{"userMessage":"why","resultMessages":["because","ok"]}`)
 		})
 	})
 
@@ -555,7 +555,7 @@ func TestWaitingCapabilityYieldsToOtherEvents(t *testing.T) {
 			logNum++
 			logSeen <- struct{}{}
 		})
-		course.Copilot.OnRoundFinish(func(CopilotRound) {
+		course.Copilot.OnRoundComplete(func(CopilotRound) {
 			course.ShowMessage("look at this")
 			observed = logNum
 			course.Complete()
@@ -567,7 +567,7 @@ func TestWaitingCapabilityYieldsToOtherEvents(t *testing.T) {
 	})
 
 	await(t, ready, "the course to start")
-	dispatch(t, "copilot.roundFinish", `{"userMessage":"hi","resultMessages":["hello"]}`)
+	dispatch(t, "copilot.roundComplete", `{"userMessage":"hi","resultMessages":["hello"]}`)
 	await(t, messageShown, "showMessage to reach the host")
 	// The dialog is still suspended, so the log event must be handled as
 	// usual.

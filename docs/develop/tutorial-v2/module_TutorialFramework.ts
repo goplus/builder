@@ -48,9 +48,9 @@ export type TutorialEvent =
    * of this channel.
    */
   | { name: "editor.runtime.log"; payload: { log: string } }
-  /** A Copilot conversation round finished. */
+  /** A Copilot conversation round completed. */
   | {
-      name: "copilot.roundFinish";
+      name: "copilot.roundComplete";
       payload: { userMessage: string; resultMessages: string[] };
     };
 

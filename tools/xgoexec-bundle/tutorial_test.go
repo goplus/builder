@@ -43,7 +43,7 @@ Editor.Runtime.onExit code => {
 	echo code
 }
 
-Copilot.onRoundFinish round => {
+Copilot.onRoundComplete round => {
 	echo round.UserMessage
 }
 
