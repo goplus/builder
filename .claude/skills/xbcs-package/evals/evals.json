@@ -1,0 +1,54 @@
+{
+  "skill_name": "xbcs-package",
+  "notes": "Fixtures live in /Users/lita/lita-workdir/xbcs-package-workspace/fixtures. 'Code_ Lita (designer upload).xbcs.zip' is a 31-course package repacked the way a filesystem zip tool does it (directory entries in every .xbp, a stray .DS_Store) plus three hand-edit faults: course 3's thumbnail path points at a non-existent 'thumbnails/courses/2.PNG', course 5's entrypoint names a project absent from projects[], and course 7's jsonc config block has a syntax error. 'Code_ Lita.xbcs.zip' is the same series, clean.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "diagnose-and-fix-failed-upload",
+      "prompt": "设计师改了课程以后上传失败了，包在 /Users/lita/lita-workdir/xbcs-package-workspace/fixtures/Code_ Lita (designer upload).xbcs.zip 。帮我看看问题出在哪里。能修的话就修好，给我一个能直接上传的包，放到 OUTPUT_DIR 。",
+      "expected_output": "A diagnosis naming directory entries inside the .xbp payloads as the reason the import breaks (each becomes a bogus zero-byte project file), plus the three manifest faults, and a repacked .xbcs.zip in OUTPUT_DIR with all of them fixed and the course content otherwise untouched.",
+      "files": ["fixtures/Code_ Lita (designer upload).xbcs.zip"],
+      "assertions": [
+        "Identifies directory entries inside the .xbp files as the cause of the failed upload",
+        "Output package exists in OUTPUT_DIR and its filename ends in .xbcs.zip",
+        "No .xbp in the output contains any directory entry",
+        "The stray projects/.DS_Store entry is gone from the output",
+        "Course 3's declared thumbnail path resolves to an entry that exists in the output",
+        "Course 5's entrypoint project appears in the manifest's projects[] list",
+        "Course 7's jsonc config block parses as JSON after comment stripping",
+        "The output still has 31 courses and 31 projects",
+        "Course prompts and titles are unchanged apart from course 7's syntax fix"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "edit-course-config-and-repack",
+      "prompt": "基于 /Users/lita/lita-workdir/xbcs-package-workspace/fixtures/Code_ Lita.xbcs.zip 改两处课程配置：第 13 课的 complete.count 改成 6；第 5 课的 apis 加上 turnTo（原来的 step 和 turn 要保留）。改完重新打包成 OUTPUT_DIR/Code_ Lita.xbcs.zip，我要上传。",
+      "expected_output": "A repacked archive where course 13's complete.count is 6 and course 5's apis contains step, turn and turnTo, with everything else — including all 31 project payloads — byte-for-byte unchanged and no directory entries introduced.",
+      "files": ["fixtures/Code_ Lita.xbcs.zip"],
+      "assertions": [
+        "Output archive exists at OUTPUT_DIR/Code_ Lita.xbcs.zip",
+        "Course 13's config block has complete.count == 6",
+        "Course 5's apis list contains turnTo and still contains step and turn",
+        "No other course's jsonc config block changed",
+        "No .xbp in the output contains any directory entry",
+        "Every project payload's file set and bytes match the input package"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "replace-thumbnail-and-repack",
+      "prompt": "设计师重做了第 3 课的封面，新图在 /Users/lita/lita-workdir/xbcs-package-workspace/fixtures/course-3-new-cover.png 。把它换进 /Users/lita/lita-workdir/xbcs-package-workspace/fixtures/Code_ Lita.xbcs.zip 的第 3 课缩略图，重新打包到 OUTPUT_DIR/ 。",
+      "expected_output": "A repacked archive whose course-3 thumbnail is the new PNG, with the manifest's declared path and the entry's extension both reflecting PNG (the extension is what decides the uploaded MIME type, so leaving it as .jpeg mislabels the file). No dangling old thumbnail entry, nothing else changed.",
+      "files": ["fixtures/Code_ Lita.xbcs.zip", "fixtures/course-3-new-cover.png"],
+      "assertions": [
+        "Output archive exists in OUTPUT_DIR with a .xbcs.zip filename",
+        "The entry at course 3's declared thumbnail path is byte-identical to course-3-new-cover.png",
+        "Course 3's declared thumbnail path ends in .png, matching the actual PNG bytes",
+        "The old thumbnails/courses/2.jpeg entry is not left in the archive unreferenced",
+        "No other course's thumbnail bytes changed",
+        "No .xbp in the output contains any directory entry"
+      ]
+    }
+  ]
+}

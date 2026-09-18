@@ -4,6 +4,8 @@ export const usercontentBucket = import.meta.env.VITE_USERCONTENT_BUCKET as stri
 export const disableAIGC = import.meta.env.VITE_DISABLE_AIGC === 'true'
 export const showLicense = import.meta.env.VITE_SHOW_LICENSE === 'true'
 export const showTutorialsEntry = import.meta.env.VITE_SHOW_TUTORIALS_ENTRY === 'true'
+/** URL of the story video shown before a tutorial course starts, or `null` to start courses directly. */
+export const tutorialStoryVideoUrl = (import.meta.env.VITE_TUTORIAL_STORY_VIDEO_URL as string) || null
 export const defaultLang = (import.meta.env.VITE_DEFAULT_LANG as string) || 'en'
 export const defaultFontPreferences = (import.meta.env.VITE_DEFAULT_FONT_PREFERENCES as string)
   .split(',')

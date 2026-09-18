@@ -4,7 +4,8 @@
   <UICard
     v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
-    class="relative flex-[1_1_0] min-w-0 flex flex-col overflow-visible!"
+    class="relative min-w-0 flex flex-col overflow-visible!"
+    :class="isFocused ? 'flex-[3.5_1_0]' : 'flex-[1_1_0]'"
   >
     <!--
       TODO: optimize performance for switching between editors, which corresponds to selection change.
@@ -21,10 +22,20 @@
     />
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
+    <!-- The focused layout's control row at the code column's bottom-right corner: the Run/Stop
+         control (teleported here by the preview, which owns the runner) beside the copilot. -->
+    <div v-if="isFocused" class="absolute bottom-4 right-3 z-1000 flex items-center gap-4">
+      <div ref="focusedControlsAnchorRef" class="flex"></div>
+      <EditorCopilot />
+    </div>
   </UICard>
-  <div v-show="isPreviewMode" class="min-w-0 flex-[0_0_496px] flex flex-col gap-xl">
+  <div
+    v-show="isPreviewMode"
+    class="min-w-0 flex flex-col gap-xl"
+    :class="isFocused ? 'flex-[3_1_0] min-w-[660px]' : 'flex-[0_0_496px]'"
+  >
     <EditorPreview />
-    <EditorPanels />
+    <EditorPanels v-if="!isPanelsHidden" />
   </div>
   <MapEditor
     v-if="!isPreviewMode"
@@ -35,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { UICard } from '@/components/ui'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
@@ -46,11 +57,19 @@ import { useEditorCtx } from './EditorContextProvider.vue'
 import { EditMode } from './editor-state'
 import MapEditor from './map-editor/MapEditor.vue'
 import { useSpxEditorCopilot } from './copilot'
+import EditorCopilot from './copilot/EditorCopilot.vue'
+import { editorWorkspaceLayout } from './workspace-layout'
+import { provideFocusedControlsAnchor } from './focused-controls'
 
 const editorCtx = useEditorCtx()
+
+const focusedControlsAnchorRef = ref<HTMLElement | null>(null)
+provideFocusedControlsAnchor(focusedControlsAnchorRef)
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
+const isPanelsHidden = computed(() => editorWorkspaceLayout.isHidden('editor-panels'))
 
 useSpxEditorCopilot()
 

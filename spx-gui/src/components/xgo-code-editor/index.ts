@@ -30,3 +30,5 @@ export { default as ResourceInput } from './ui/input-helper/ResourceInput.vue'
 
 export type { ICopilot, CopilotTopic } from './copilot'
 export type { CodeEditorUIController } from './ui/code-editor-ui'
+export type { CodeGuide } from './ui/code-guide'
+export { normalizeCode, diffEdges, trimCommonLines, leadingIdentifier, isContiguousDiff } from './ui/code-guide'
