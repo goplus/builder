@@ -29,7 +29,7 @@ import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 
 const props = defineProps<{
   project: TutorialProject
-  inEditorPath?: string[]
+  inEditorPath?: string | string[]
 }>()
 
 const emit = defineEmits<{
@@ -77,7 +77,8 @@ async function initialize() {
   previousState?.dispose()
 
   try {
-    const inEditorPath = props.inEditorPath?.join('/') || props.project.config?.inEditorPath || ''
+    const routeInEditorPath = Array.isArray(props.inEditorPath) ? props.inEditorPath.join('/') : props.inEditorPath
+    const inEditorPath = routeInEditorPath || props.project.config?.inEditorPath || ''
     await router.replace({
       params: {
         ...router.currentRoute.value.params,

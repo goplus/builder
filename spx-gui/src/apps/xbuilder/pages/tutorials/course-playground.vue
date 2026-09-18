@@ -19,7 +19,7 @@ import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 defineProps<{
   courseSeriesIdInput: string
   courseIdInput: string
-  inEditorPath?: string[]
+  inEditorPath?: string | string[]
 }>()
 
 const tutorial = useTutorial()
