@@ -5,7 +5,7 @@ import type { History } from '@/components/editor/history'
 import type { IXGoProject } from './project'
 import { type IDocumentBase, DocumentBase } from './document-base'
 import type { ILSPClient } from './lsp/types'
-import { EmptyAPIReferenceProvider } from './api-reference'
+import { EmptyAPIReferenceProvider, type APIReferenceContext, type APIReferenceItem } from './api-reference'
 import {
   type ICodeEditorUIController,
   type IDiagnosticsProvider,
@@ -24,6 +24,8 @@ import {
   type ResourceIdentifier,
   fromLSPTextEdit,
   type Position,
+  type DefinitionIdentifier,
+  parseDefinitionId,
   getTextDocumentId,
   getCodeFilePath,
   type WorkspaceDiagnostics,
@@ -40,7 +42,7 @@ import { ContextMenuProvider } from './context-menu'
 import { InlayHintProvider } from './inlay-hint'
 import { ResourceAdapter } from './resource'
 import { InputHelperProvider } from './input-helper'
-import { CompletionProvider } from './completion'
+import { CompletionProvider, type CompletionContext, type CompletionList } from './completion'
 import { DiagnosticsProvider } from './diagnostics'
 import { SnippetVariablesProvider } from './snippet-variables'
 import type { ICopilot } from './copilot'
@@ -79,10 +81,12 @@ export class CodeEditor extends Disposable {
     this.contextMenuProviderRef = shallowRef(new ContextMenuProvider(params.lspClient, documentBase))
     this.inlayHintProviderRef = shallowRef(new InlayHintProvider(params.lspClient))
     this.inputHelperProviderRef = shallowRef(new InputHelperProvider(params.lspClient, () => this.resourceAdapter))
-    this.apiReferenceProviderRef = shallowRef(new EmptyAPIReferenceProvider())
-    this.completionProviderRef = shallowRef(
+    this.apiReferenceProviderBaseRef = shallowRef(new EmptyAPIReferenceProvider())
+    this.apiReferenceProviderRef = shallowRef(this.apiReferenceProviderBaseRef.value)
+    this.completionProviderBaseRef = shallowRef(
       new CompletionProvider(params.lspClient, documentBase, params.project.classFramework)
     )
+    this.completionProviderRef = shallowRef(this.completionProviderBaseRef.value)
     this.diagnosticsProviderRef = shallowRef(new DiagnosticsProvider(params.lspClient, params.project))
     this.snippetVariablesProviderRef = shallowRef(new SnippetVariablesProvider())
   }
@@ -127,20 +131,45 @@ export class CodeEditor extends Disposable {
     this.inlayHintProviderRef.value = provider
   }
 
+  private apiReferenceProviderBaseRef: ShallowRef<IAPIReferenceProvider>
   private apiReferenceProviderRef: ShallowRef<IAPIReferenceProvider>
   get apiReferenceProvider() {
     return this.apiReferenceProviderRef.value
   }
   registerAPIReferenceProvider(provider: IAPIReferenceProvider) {
-    this.apiReferenceProviderRef.value = provider
+    this.apiReferenceProviderBaseRef.value = provider
+    this.updateAPIProviders()
   }
 
+  private completionProviderBaseRef: ShallowRef<ICompletionProvider>
   private completionProviderRef: ShallowRef<ICompletionProvider>
   get completionProvider() {
     return this.completionProviderRef.value
   }
   registerCompletionProvider(provider: ICompletionProvider) {
-    this.completionProviderRef.value = provider
+    this.completionProviderBaseRef.value = provider
+    this.updateAPIProviders()
+  }
+
+  private apiFilter: DefinitionIdentifier[] | null = null
+
+  /**
+   * Limits API Reference and language-server completion entries to the supplied
+   * definition IDs. An ID without an overload matches every overload of that API.
+   */
+  filterAPIs(apis: string[]) {
+    this.apiFilter = apis.map(parseDefinitionId)
+    this.updateAPIProviders()
+  }
+
+  private updateAPIProviders() {
+    const filter = this.apiFilter
+    const apiReferenceProvider = this.apiReferenceProviderBaseRef.value
+    const completionProvider = this.completionProviderBaseRef.value
+    this.apiReferenceProviderRef.value =
+      filter == null ? apiReferenceProvider : new FilteredAPIReferenceProvider(apiReferenceProvider, filter)
+    this.completionProviderRef.value =
+      filter == null ? completionProvider : new FilteredCompletionProvider(completionProvider, filter)
   }
 
   private diagnosticsProviderRef: ShallowRef<IDiagnosticsProvider>
@@ -289,10 +318,62 @@ export class CodeEditor extends Disposable {
     return this.uis[this.uis.length - 1]
   }
 
+  getCurrentCode() {
+    return this.getAttachedUI()?.activeTextDocument?.getValue() ?? null
+  }
+
+  async insertText(text: string) {
+    const ui = this.getAttachedUI()
+    if (ui == null) throw new Error('No code editor UI is attached')
+    await ui.insertInlineText(text)
+  }
+
   dispose(): void {
     this.uis = []
     this.lspClient.dispose()
     this.diagnosticsProvider.dispose()
     super.dispose()
+  }
+}
+
+function matchesAPI(definition: DefinitionIdentifier, filter: DefinitionIdentifier[]) {
+  return filter.some(
+    (allowed) =>
+      allowed.package === definition.package &&
+      allowed.name === definition.name &&
+      (allowed.overloadId == null || allowed.overloadId === definition.overloadId)
+  )
+}
+
+class FilteredAPIReferenceProvider implements IAPIReferenceProvider {
+  constructor(
+    private provider: IAPIReferenceProvider,
+    private filter: DefinitionIdentifier[]
+  ) {}
+
+  async provideAPIReference(ctx: APIReferenceContext): Promise<APIReferenceItem[]> {
+    const items = await this.provider.provideAPIReference(ctx)
+    return items.filter((item) => matchesAPI(item.definition, this.filter))
+  }
+
+  provideCategoryViewInfos() {
+    return this.provider.provideCategoryViewInfos()
+  }
+}
+
+class FilteredCompletionProvider implements ICompletionProvider {
+  constructor(
+    private provider: ICompletionProvider,
+    private filter: DefinitionIdentifier[]
+  ) {}
+
+  async provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionList> {
+    const result = await this.provider.provideCompletion(ctx, position)
+    return {
+      ...result,
+      // Language keywords and synthesized argument snippets have no definition
+      // ID, so they are not API suggestions and remain available.
+      items: result.items.filter((item) => item.definition == null || matchesAPI(item.definition, this.filter))
+    }
   }
 }

@@ -260,6 +260,7 @@ watch(
 
 <template>
   <div class="spotlight-ui">
+    <div v-if="spotlightItem?.mask" class="spotlight-mask"></div>
     <Transition>
       <div
         v-if="spotlightItem"
@@ -279,6 +280,8 @@ watch(
 
 <style scoped>
 :global(.spotlight-attach-element-highlight) {
+  position: relative;
+  z-index: 10001;
   box-shadow: var(--ui-box-shadow-sm);
 }
 
@@ -313,6 +316,12 @@ watch(
 
 .spotlight-ui .spotlight-item {
   position: absolute;
+}
+
+.spotlight-ui .spotlight-mask {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
 }
 
 .spotlight-ui .spotlight-item.animated {

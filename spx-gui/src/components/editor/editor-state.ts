@@ -43,7 +43,8 @@ export interface IRouter {
 
 export enum EditMode {
   Default = 'default',
-  Map = 'map'
+  Map = 'map',
+  Simple = 'simple'
 }
 
 class SpxProjectWithGens implements IProject {
@@ -289,6 +290,9 @@ export class EditorState extends Disposable {
       case EditMode.Map:
         this.selectEditMode(EditMode.Map)
         break
+      case EditMode.Simple:
+        this.selectEditMode(EditMode.Simple)
+        break
       default:
         this.selectEditMode(EditMode.Default)
         break
@@ -296,6 +300,12 @@ export class EditorState extends Disposable {
 
     if (this.selectedEditMode !== EditMode.Default) {
       ;[segment, extra] = shiftPath(extra)
+    }
+
+    if (this.selectedEditMode === EditMode.Simple && segment !== 'sprites') {
+      this.selectByName({ type: 'sprite' })
+      this.spriteState?.select('code')
+      return
     }
 
     switch (segment) {

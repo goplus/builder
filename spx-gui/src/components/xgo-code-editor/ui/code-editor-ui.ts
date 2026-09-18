@@ -77,6 +77,7 @@ export interface ICodeEditorUIController {
   open(textDocument: TextDocumentIdentifier, range: Range): void
 
   insertBlockText(text: string, range?: Range): Promise<void>
+  insertInlineText(text: string, range?: Range): Promise<void>
 
   dispose(): void
 }

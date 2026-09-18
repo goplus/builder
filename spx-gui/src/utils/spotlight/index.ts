@@ -6,9 +6,15 @@ export { default as SpotlightUI } from './SpotlightUI.vue'
 
 export type SpotlightItem = {
   el: HTMLElement
-  timer: NodeJS.Timeout
+  timer: ReturnType<typeof setTimeout> | null
   tips: string
+  mask: boolean
   dispose: () => void
+}
+
+export type SpotlightOptions = {
+  mask?: boolean
+  duration?: number
 }
 
 export type RevealEvent = {
@@ -33,23 +39,30 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
     return setTimeout(() => this.conceal(), timeout)
   }
 
-  reveal(el: HTMLElement, tips = '') {
+  reveal(el: HTMLElement, tips = '', options: SpotlightOptions = {}) {
     this.conceal() // Clear any previous spotlight
 
-    const autoConcealTimer = this.createTimeoutConceal()
-    let mouseEnterConcealTimer: NodeJS.Timeout
+    const duration = options.duration == null ? autoConcealDelay : options.duration * 1_000
+    const autoConcealTimer = duration > 0 ? this.createTimeoutConceal(duration) : null
+    let mouseEnterConcealTimer: ReturnType<typeof setTimeout> | null = null
     const handleMouseEnter = () => (mouseEnterConcealTimer = this.createTimeoutConceal(mouseEnterConcealDelay))
+    const handleDocumentClick = () => this.conceal()
     this.spotlightItem.value = {
       timer: autoConcealTimer,
       tips,
       el,
+      mask: options.mask ?? false,
       dispose: () => {
-        clearTimeout(autoConcealTimer)
-        clearTimeout(mouseEnterConcealTimer)
+        if (autoConcealTimer != null) clearTimeout(autoConcealTimer)
+        if (mouseEnterConcealTimer != null) clearTimeout(mouseEnterConcealTimer)
         el.removeEventListener('mouseenter', handleMouseEnter)
+        document.removeEventListener('click', handleDocumentClick, { capture: true })
       }
     }
-    el.addEventListener('mouseenter', handleMouseEnter, { once: true })
+    if (duration > 0) {
+      el.addEventListener('mouseenter', handleMouseEnter, { once: true })
+    }
+    if (duration === 0) document.addEventListener('click', handleDocumentClick, { capture: true, once: true })
   }
 
   conceal() {

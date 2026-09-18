@@ -22,9 +22,12 @@ const props = withDefaults(
     mapSize: Size
     nodeReadyMap: Map<string, boolean>
     mapScale?: number
+    /** Enables selection and drag interactions for editor mode. */
+    editable?: boolean
   }>(),
   {
-    mapScale: 1
+    mapScale: 1,
+    editable: true
   }
 )
 
@@ -44,6 +47,7 @@ type ConfigGetter = {
 
 const emit = defineEmits<{
   selected: []
+  hover: [hovered: boolean]
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
   updateTransformOp: [op: TransformOp | null]
@@ -208,7 +212,7 @@ const config = computed<ImageConfig>(() => {
     image: image.value ?? undefined,
     width: rawSize.value?.width ?? 0,
     height: rawSize.value?.height ?? 0,
-    draggable: props.selected,
+    draggable: props.editable && props.selected,
     offsetX: costumePivot.x * bitmapResolution.value,
     offsetY: costumePivot.y * bitmapResolution.value,
     visible: visible,
@@ -261,7 +265,7 @@ function toSize(node: Konva.Node) {
 }
 
 function handleClick() {
-  emit('selected')
+  if (props.editable) emit('selected')
 }
 
 defineExpose({
@@ -286,6 +290,8 @@ defineExpose({
     @transform="handleTransform"
     @transformend="handleTransformEnd"
     @click="handleClick"
+    @mouseenter="emit('hover', true)"
+    @mouseleave="emit('hover', false)"
   />
   <v-group v-if="selected" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
     <v-group :config="pivotMarkerConfigs.drawingGroup">

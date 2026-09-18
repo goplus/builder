@@ -40,6 +40,7 @@ import { userLocalStorageRef } from '@/utils/user-storage'
 
 const props = defineProps<{
   codeFilePath: string
+  simpleMode?: boolean
 }>()
 
 const i18n = useI18n()
@@ -70,7 +71,7 @@ const uiRef = computed(() => {
 })
 
 const initialFontSize = 12
-const fontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
+const fontSize = props.simpleMode ? ref(16) : userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
@@ -176,12 +177,15 @@ const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
 provide(codeEditorUICtxInjectionKey, codeEditorUICtx)
 
 // TOOD: use percentage instead of px as default width
-const defaultSidebarWidth = 280 // px
+const defaultSidebarWidth = props.simpleMode ? 360 : 280 // px
 const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
-const sidebarWidth = userLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
+const sidebarWidth = userLocalStorageRef(
+  props.simpleMode ? 'builder-simple-code-editor-sidebar-width' : 'spx-code-editor-sidebar-width',
+  defaultSidebarWidth
+)
 const isResizing = ref(false)
 
 watchEffect((onCleanup) => {
@@ -275,7 +279,7 @@ providePopupContainer(codeEditorEl)
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
     <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+      <ZoomControl v-if="!props.simpleMode" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>

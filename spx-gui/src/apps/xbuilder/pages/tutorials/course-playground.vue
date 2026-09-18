@@ -19,6 +19,7 @@ import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 defineProps<{
   courseSeriesIdInput: string
   courseIdInput: string
+  inEditorPath?: string | string[]
 }>()
 
 const tutorial = useTutorial()
@@ -54,8 +55,11 @@ async function createMockSession(): Promise<MockSession> {
     'main_course.gox': fromText(
       'main_course.gox',
       `onStart => {
+	apis := make([]string, 0)
+	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.stepTo#0")
+	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.turn#0")
+	Editor.CodeEditor.filterAPIs apis
 	showMessage "Welcome to the Playground Course mock."
-	completeWith "You have completed the Playground Course mock."
 }`
     ),
     ...prefixFiles(project.exportFiles(), 'project')
@@ -164,6 +168,7 @@ onUnmounted(() => void disposeSession())
     v-else-if="session != null"
     :key="session.course.id"
     :project="session.project"
+    :in-editor-path="inEditorPath"
     @course-completed="handleCompleted"
     @failed="runtimeError = $event"
   />

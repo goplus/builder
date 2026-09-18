@@ -308,7 +308,7 @@ Playground runner     XGo, Copilot session, framework host, event bridge, termin
 The prototype still exposes implementation questions that do not change the public boundary:
 
 1. Concurrent `startCourse` calls need serialization or a generation/abort token so an older API response cannot replace a newer Course.
-2. The temporary framework host implements only `showMessage`, `complete`, and `completeWith`. It should be replaced by `createTutorialFramework` and the full capabilities from #3417 rather than expanded independently here.
+2. The temporary framework host implements `showMessage`, completion, and Spotlight. It should be replaced by `createTutorialFramework` and the full capabilities from #3417 rather than expanded independently here.
 3. Copilot round completion is currently observed from reactive session state because #3421's explicit round-finish event is not present on this branch. The ownership stays route-local when that event replaces the prototype watch.
 4. The current Copilot Topic can disable proactive event reactions, but this branch does not yet expose #3421's code-helper controls.
 5. Direct refresh intentionally reloads Course data. Guided restoration, by contrast, remains isolated in `GuidedTutorial` session storage rather than serializing unified facade state.

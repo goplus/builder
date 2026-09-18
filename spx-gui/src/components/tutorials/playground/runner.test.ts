@@ -76,12 +76,16 @@ function makeHarness() {
   const editorState = { runtime: editorRuntime } as EditorState
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
-    showMessage: vi.fn().mockResolvedValue(undefined)
+    showMessage: vi.fn().mockResolvedValue(undefined),
+    revealSpotlight: vi.fn().mockResolvedValue(undefined),
+    setRulerVisible: vi.fn()
   }
+  const codeEditor = { filterAPIs: vi.fn() }
   const runner = new PlaygroundCourseRunner({
     project,
     editorState,
     copilot: copilot as unknown as Copilot,
+    codeEditor: codeEditor as never,
     presentation
   })
   const executor = executorMocks.instances.at(-1)!
@@ -93,6 +97,7 @@ function makeHarness() {
     copilot,
     executor,
     presentation,
+    codeEditor,
     runner,
     getExecutorOptions: () => executor.options
   }
@@ -117,6 +122,17 @@ describe('PlaygroundCourseRunner', () => {
     expect(harness.executor.run).toHaveBeenCalledWith({
       [mainCourseFilePath]: 'onStart => { complete }'
     })
+  })
+
+  it('filters API reference and completion through the code editor', async () => {
+    const harness = makeHarness()
+    await harness.runner.start()
+    const filterAPIs = harness.getExecutorOptions().framework?.capabilities.editor_codeEditor_filterAPIs
+    if (filterAPIs == null) throw new Error('editor_codeEditor_filterAPIs capability not found')
+
+    await filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'] })
+
+    expect(harness.codeEditor.filterAPIs).toHaveBeenCalledWith(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
   })
 
   it('forwards editor and Copilot events in source order', async () => {
@@ -179,6 +195,32 @@ describe('PlaygroundCourseRunner', () => {
 
     expect(harness.executor.stop).toHaveBeenCalledOnce()
     expect(harness.copilot.endCurrentSession).toHaveBeenCalledOnce()
+  })
+
+  it('forwards Spotlight requests to the course presentation', async () => {
+    const harness = makeHarness()
+    const reveal = harness.getExecutorOptions().framework?.capabilities.spotlight_reveal
+    if (reveal == null) throw new Error('spotlight_reveal capability not found')
+
+    await reveal({ target: 'api-references', tip: 'Use this block.', options: { mask: true, duration: 0 } })
+
+    expect(harness.presentation.revealSpotlight).toHaveBeenCalledWith('api-references', 'Use this block.', {
+      mask: true,
+      duration: 0
+    })
+  })
+
+  it('forwards ruler visibility requests to the course presentation', async () => {
+    const harness = makeHarness()
+    const { editor_ruler_hide: hide, editor_ruler_show: show } =
+      harness.getExecutorOptions().framework?.capabilities ?? {}
+    if (show == null || hide == null) throw new Error('ruler capabilities not found')
+
+    await show(null)
+    await hide(null)
+
+    expect(harness.presentation.setRulerVisible).toHaveBeenNthCalledWith(1, true)
+    expect(harness.presentation.setRulerVisible).toHaveBeenNthCalledWith(2, false)
   })
 
   it('publishes executor failures for its owner to dispose', async () => {

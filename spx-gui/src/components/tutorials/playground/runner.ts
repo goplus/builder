@@ -9,9 +9,13 @@ import type { Copilot, Round, Session, Topic } from '@/components/copilot/copilo
 import { RoundState } from '@/components/copilot/copilot'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
+import type { CodeEditor } from '@/components/editor/spx-code-editor'
+import type { SpotlightOptions } from '@/utils/tutorial-framework'
 
 export type PlaygroundCoursePresentation = {
   showMessage(content: string): Promise<void>
+  revealSpotlight(target: string, tip: string, options: SpotlightOptions): Promise<void>
+  setRulerVisible(visible: boolean): void
 }
 
 export type PlaygroundCourseCompletion = {
@@ -22,6 +26,7 @@ export type PlaygroundCourseRunnerOptions = {
   project: TutorialProject
   editorState: EditorState
   copilot: Copilot
+  codeEditor: CodeEditor
   presentation: PlaygroundCoursePresentation
 }
 
@@ -94,7 +99,19 @@ export class PlaygroundCourseRunner extends Emitter<{
         course_showMessage: (request) =>
           this.options.presentation.showMessage((request as { content: string }).content),
         course_complete: () => this.acceptCompletion(null),
-        course_completeWith: (request) => this.acceptCompletion((request as { feedback: string }).feedback)
+        course_completeWith: (request) => this.acceptCompletion((request as { feedback: string }).feedback),
+        spotlight_reveal: (request) => {
+          const { target, tip, options } = request as {
+            target: string
+            tip: string
+            options: SpotlightOptions
+          }
+          return this.options.presentation.revealSpotlight(target, tip, options)
+        },
+        editor_ruler_show: () => this.options.presentation.setRulerVisible(true),
+        editor_ruler_hide: () => this.options.presentation.setRulerVisible(false),
+        editor_codeEditor_filterAPIs: (request) =>
+          this.options.codeEditor.filterAPIs((request as { apis: string[] }).apis)
       }
     }
   }

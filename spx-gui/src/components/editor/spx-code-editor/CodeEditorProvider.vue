@@ -15,6 +15,10 @@ const props = defineProps<{
   monaco: Monaco
 }>()
 
+const emit = defineEmits<{
+  ready: [codeEditor: CodeEditor]
+}>()
+
 const copilot = useCopilot()
 const editorCtx = useEditorCtx()
 const i18n = useI18n()
@@ -46,6 +50,7 @@ watch(
       documentBase
     })
     codeEditorRef.value = codeEditor
+    emit('ready', codeEditor)
     onCleanup(() => {
       if (codeEditorRef.value === codeEditor) codeEditorRef.value = null
       codeEditor.dispose()

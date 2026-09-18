@@ -14,7 +14,7 @@ import { mockFile } from '@/models/common/test'
 import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
 import type { SignedInState } from '@/stores/user'
 import type * as editing from './editing'
-import { EditorState, type IRouter, type Selected } from './editor-state'
+import { EditMode, EditorState, type IRouter, type Selected } from './editor-state'
 
 function makeCloudHelpers(): editing.CloudHelpers {
   return {
@@ -612,6 +612,38 @@ describe('EditorState', () => {
           costume: project.sprites[0].costumes[1]
         }
       } satisfies Selected)
+
+      editorState.dispose()
+    })
+
+    it('should select the focused sprite for a Simple Mode route', async () => {
+      const project = makeProjectWithResources()
+      const editorState = makeEditorState(project)
+      const router = makeRouter(project.owner, project.name)
+
+      editorState.syncWithRouter(router)
+      router.currentRoute.value = {
+        ...router.currentRoute.value,
+        params: {
+          ...router.currentRoute.value.params,
+          inEditorPath: ['simple', 'sprites', 'sprite2']
+        }
+      }
+      await flushPromises()
+
+      expect(editorState.selectedEditMode).toBe(EditMode.Simple)
+      expect(editorState.selected).toEqual({
+        type: 'sprite',
+        sprite: project.sprites[1],
+        spriteSelected: { type: 'code' }
+      } satisfies Selected)
+      expect(router.push).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({
+            inEditorPath: ['simple', 'sprites', 'sprite2', 'code']
+          })
+        })
+      )
 
       editorState.dispose()
     })

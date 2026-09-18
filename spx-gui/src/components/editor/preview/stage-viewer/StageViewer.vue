@@ -35,18 +35,20 @@
             :ref="setSpriteNodeRef(localConfig.id)"
             :key="localConfig.id"
             :local-config="localConfig"
-            :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
+            :selected="!simpleMode && editorCtx.state.selectedSprite?.id === localConfig.id"
             :project="editorCtx.project"
             :map-size="mapSize"
             :node-ready-map="nodeReadyMap"
+            :editable="!simpleMode"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(localConfig)"
+            @hover="handleSpriteHover(localConfig.id, $event)"
             @update-transform-op="handleSpriteUpdateTransformOp"
           />
         </v-group>
       </v-layer>
-      <v-layer>
+      <v-layer v-if="!simpleMode">
         <WidgetNode
           v-for="localConfig in visibleWidgetLocalConfigs"
           :key="localConfig.id"
@@ -56,7 +58,7 @@
           @update-transform-op="handleSpriteUpdateTransformOp"
         />
       </v-layer>
-      <v-layer>
+      <v-layer v-if="!simpleMode">
         <NodeTransformer
           ref="nodeTransformerRef"
           :node-ready-map="nodeReadyMap"
@@ -64,7 +66,25 @@
         />
       </v-layer>
     </v-stage>
-    <div v-if="localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
+    <StageRuler
+      v-if="rulerVisible && stageScale != null"
+      :map-pos="mapPos"
+      :map-size="mapSize"
+      :viewport-size="viewportSize"
+      :stage-scale="stageScale"
+    />
+    <button
+      v-for="label in spriteNameLabels"
+      :key="label.id"
+      class="absolute z-10 -translate-x-1/2 -translate-y-full rounded bg-grey-1000 px-2 py-1 text-xs text-white shadow-sm"
+      :style="{ left: `${label.x}px`, top: `${label.y}px` }"
+      @mouseenter="keepSpriteNameVisible(label.id)"
+      @mouseleave="hideSpriteName(label.id)"
+      @click="handleSpriteNameClick(label.name)"
+    >
+      {{ label.name }}
+    </button>
+    <div v-if="!simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
       <QuickConfigWrapper ref="quickConfigRef">
         <SpriteQuickConfig
           v-if="localConfigRef instanceof SpriteLocalConfig"
@@ -104,6 +124,7 @@ import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
@@ -111,6 +132,8 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/spx/stage'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { useCodeEditor } from '@/components/editor/spx-code-editor'
+import { useProjectConfig } from '@/components/project/config'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
@@ -124,8 +147,20 @@ import QuickConfigWrapper, {
 } from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
 import { SpriteLocalConfig, WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
 import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
+import StageRuler from './StageRuler.vue'
+
+const props = withDefaults(
+  defineProps<{
+    simpleMode?: boolean
+  }>(),
+  {
+    simpleMode: false
+  }
+)
 
 const editorCtx = useEditorCtx()
+const codeEditor = useCodeEditor()
+const { rulerVisible } = useProjectConfig()
 const container = ref<HTMLDivElement | null>(null)
 const containerSizeRef = useContentSize(container)
 // Konva canvas cannot have a width or height of zero
@@ -411,6 +446,56 @@ const visibleSpriteLocalConfigs = computed(() => {
     .filter(Boolean)
     .map((sprite) => new SpriteLocalConfig(sprite!, editorCtx.state.history)) as SpriteLocalConfig[]
 })
+
+const hoveredSpriteId = ref<string | null>(null)
+let hideSpriteNameTimer: ReturnType<typeof setTimeout> | null = null
+
+function handleSpriteHover(id: string, hovered: boolean) {
+  if (!props.simpleMode) return
+  if (hovered) {
+    keepSpriteNameVisible(id)
+    return
+  }
+  hideSpriteName(id)
+}
+
+function keepSpriteNameVisible(id: string) {
+  if (hideSpriteNameTimer != null) clearTimeout(hideSpriteNameTimer)
+  hideSpriteNameTimer = null
+  hoveredSpriteId.value = id
+}
+
+function hideSpriteName(id: string) {
+  if (hoveredSpriteId.value !== id) return
+  if (hideSpriteNameTimer != null) clearTimeout(hideSpriteNameTimer)
+  hideSpriteNameTimer = setTimeout(() => {
+    hoveredSpriteId.value = null
+    hideSpriteNameTimer = null
+  }, 120)
+}
+
+const spriteNameLabels = computed(() => {
+  if (!props.simpleMode || hoveredSpriteId.value == null || stageScale.value == null) return []
+  const sprite = editorCtx.project.sprites.find((item) => item.id === hoveredSpriteId.value)
+  if (sprite == null) return []
+  const scale = stageScale.value
+  return [
+    {
+      id: sprite.id,
+      name: sprite.name,
+      x: (mapSize.value.width / 2 + sprite.x + mapPos.value.x) * scale,
+      y: (mapSize.value.height / 2 - sprite.y + mapPos.value.y) * scale - 8
+    }
+  ]
+})
+
+const handleSpriteNameClick = useMessageHandle(
+  (spriteName: string) =>
+    editorCtx.state.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+      codeEditor.insertText(spriteName)
+    ),
+  { en: 'Failed to insert sprite name', zh: '插入精灵名称失败' }
+).fn
 
 const visibleWidgetLocalConfigs = computed(() => {
   const { widgetsZorder, widgets } = editorCtx.project.stage

@@ -39,6 +39,9 @@ const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue
   return props.controller.items ?? oldValue ?? null
 })
 
+const categoryBarThreshold = 5
+const categoryBarVisible = computed(() => (itemsForDisplay.value?.length ?? 0) >= categoryBarThreshold)
+
 const loaded = ref(false)
 // APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial)
 // Register a provider with PageLoaded to notify dependent modules that APIReferenceUI has finished loading
@@ -157,7 +160,7 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
+      <ul v-if="categoryBarVisible" class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
