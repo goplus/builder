@@ -53,6 +53,11 @@ export const videosKind = 'videos'
 const resourceConfigFileName = 'index.json'
 /** Upper bound of a resource name, counted in Unicode code points. */
 const resourceNameMaxLength = 100
+/**
+ * Room kept for the numeric suffix appended to de-duplicate a name: `getValidName` tries a bounded number of
+ * candidates, so the suffix stays within a few digits (plus one for a carry).
+ */
+const resourceNameSuffixRoom = 6
 
 /**
  * Directory holding the resources of `kind`, without trailing slash.
@@ -145,7 +150,7 @@ export class Resource {
   setName(name: string) {
     // The whole layout is re-validated: the new name also moves the payload path (see `getPayloadFileName`).
     const error = validateResourceLayout(
-      { id: this.id, kind: this.kind, name, file: this.file, extraFiles: this.extraFiles },
+      { self: this, kind: this.kind, name, file: this.file, extraFiles: this.extraFiles },
       this._project
     )
     if (error != null) throw new Error(`invalid ${this.kind} resource name ${name}: ${error.en}`)
@@ -164,7 +169,7 @@ export class Resource {
    */
   setFile(file: File) {
     const error = validateResourceLayout(
-      { id: this.id, kind: this.kind, name: this.name, file, extraFiles: this.extraFiles },
+      { self: this, kind: this.kind, name: this.name, file, extraFiles: this.extraFiles },
       this._project
     )
     if (error != null) throw new Error(`invalid payload for ${this.kind} resource ${this.name}: ${error.en}`)
@@ -278,7 +283,7 @@ export class Resource {
     const filename = getPayloadFileName(this.name, this.file)
     // Every mutation path validates the layout, so a clash here is a programming error: fail loudly instead of
     // letting one record silently overwrite another.
-    if (filename === resourceConfigFileName || this.extraFiles[filename] != null) {
+    if (filename === resourceConfigFileName || hasRecord(this.extraFiles, filename)) {
       throw new Error(`payload ${filename} of ${this.kind} resource ${this.name} would overwrite another record`)
     }
     const config: RawResourceConfig = { path: filename }
@@ -313,10 +318,25 @@ export function validateResourceKind(kind: string): LocaleMessage | null {
  */
 export type ResourceLayout = Pick<Resource, 'kind' | 'name' | 'file' | 'extraFiles'> & {
   /**
-   * Identity of the resource this layout describes, when it already exists. Uniqueness rules use it to ignore
-   * the resource being renamed or updated; omit it for a layout that is not (yet) a resource of the project.
+   * The resource this layout describes, when it already exists. Uniqueness rules ignore it, so a resource being
+   * renamed or updated is not a clash with itself. Compared by instance: ids come from manifests and are only
+   * as unique as the course that was loaded.
    */
-  id?: string
+  self?: Resource
+}
+
+/**
+ * Whether `files` holds a record at `path` as its own entry. A record map is a plain object, so `files[path]`
+ * alone would also find what it inherits: a file named `constructor` or `toString` would look present.
+ * @param files - A record map (path to `File`).
+ * @param path - Path of the record.
+ * @returns True when `files` has its own non-null entry at `path`.
+ * Called by: models/tutorial/resource.ts (payload rule, `Resource.export`), models/tutorial/project.ts.
+ */
+export function hasRecord(files: Files, path: string) {
+  // Read first, so that a reactive map tracks the key even while it is absent.
+  const file = files[path]
+  return file != null && Object.prototype.hasOwnProperty.call(files, path)
 }
 
 /**
@@ -358,9 +378,9 @@ const nameIsWellFormed: LayoutRule = ({ name }) => {
  * The resource the layout describes is ignored, so updating a package (a payload edit, or a rename to the name it
  * already has) is not rejected as a clash with itself.
  */
-const nameIsUniqueInKind: LayoutRule = ({ id, kind, name }, project) => {
+const nameIsUniqueInKind: LayoutRule = ({ self, kind, name }, project) => {
   const existing = project?.getResource(kind, name)
-  if (existing != null && existing.id !== id) {
+  if (existing != null && existing !== self) {
     return { en: `${kind} resource with name ${name} already exists`, zh: '存在同名的资源' }
   }
   return null
@@ -391,7 +411,7 @@ const payloadDoesNotShadowManifest: LayoutRule = ({ name, file }) => {
 /** Rule: the payload path never equals one of the package's extra records, or that record would be overwritten. */
 const payloadDoesNotShadowExtraRecord: LayoutRule = ({ name, file, extraFiles }) => {
   const payload = getPayloadFileName(name, file)
-  if (extraFiles[payload] == null) return null
+  if (!hasRecord(extraFiles, payload)) return null
   return { en: `The name conflicts with file ${payload} in the package`, zh: `名字与包内文件 ${payload} 冲突` }
 }
 
@@ -471,6 +491,12 @@ export function ensureValidResourceName(layout: ResourceLayout, project: Tutoria
  * Called by: models/tutorial/resource.ts#ensureValidResourceName,
  * components/course-editor/upload.ts#deriveResourceName.
  */
+/** `value` cut to at most `max` code points (never inside a surrogate pair). */
+function truncateCodePoints(value: string, max: number) {
+  const points = Array.from(value)
+  return points.length <= max ? value : points.slice(0, max).join('')
+}
+
 export function getResourceName(
   project: TutorialProject | null,
   kind: string,
@@ -483,9 +509,12 @@ export function getResourceName(
   }
   // Only the payload parts are taken from `payload`: a live `Resource` passed here must not leak its current name.
   const { file, extraFiles } = payload ?? {}
-  return getValidName(base, (name) =>
+  const isValid = (name: string) =>
     file == null || extraFiles == null
       ? validateResourceName(kind, name, project) == null
       : validateResourceLayout({ kind, name, file, extraFiles }, project) == null
-  )
+  if (isValid(base)) return base
+  // De-duplicate from a base short enough for the suffix: at the length limit, every suffixed candidate of the
+  // full base would be too long, and no name would ever be found.
+  return getValidName(truncateCodePoints(base, resourceNameMaxLength - resourceNameSuffixRoom), isValid)
 }

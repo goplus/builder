@@ -123,6 +123,11 @@ export function validateUploadDir(project: TutorialProject, dir: string): Locale
       zh: `${assetsDir} 下的包由编辑器管理，上传到 ${assetsDir}/<类型> 即可新增一个`
     }
   }
+  // A folder cannot be where a file is: nothing could be opened at that path any more.
+  const fileInTheWay = dir === '' ? null : project.getRecordPathConflict(dir, true)
+  if (fileInTheWay != null) {
+    return { en: `${fileInTheWay} is a file, not a folder`, zh: `${fileInTheWay} 是文件，不是目录` }
+  }
   return null
 }
 
@@ -155,6 +160,18 @@ export function validateUploadPath(project: TutorialProject, dir: string, name: 
   // Anything a typed part of the model claims (inside a package, say) cannot hold an extra file.
   if (project.isClaimedPath(path)) {
     return { en: `${path} is managed by the course`, zh: `${path} 由课程管理，不能上传到这里` }
+  }
+  // Loading a course keys its files by path in a plain object, where this key would not survive.
+  if (path === '__proto__') {
+    return { en: `${path} cannot be used as a file name`, zh: `${path} 不能用作文件名` }
+  }
+  // A file cannot be where a folder is.
+  const conflict = project.getRecordPathConflict(path)
+  if (conflict != null) {
+    return {
+      en: `${path} is a folder in the course (it holds ${conflict})`,
+      zh: `${path} 是课程里的目录（其中有 ${conflict}）`
+    }
   }
   return null
 }
@@ -220,21 +237,37 @@ export function deriveResourceName(project: TutorialProject, kind: string, file:
 export function addUploadedFiles(project: TutorialProject, dir: string, files: globalThis.File[]): string[] {
   const kind = getUploadResourceKind(dir)
   if (kind != null) {
-    // A kind that is one non-empty segment is always valid; this guard documents the invariant.
     if (validateResourceKind(kind) != null) throw new Error(`invalid resource kind ${kind}`)
-    // One package per file: name derived from the file, payload wrapped as a `File`. `addResource` re-validates
-    // the name against packages added earlier in this same loop, so two uploads of `a.mov` yield `a` and `a2`.
-    return files.map((nativeFile) => {
-      const file = fromNativeFile(nativeFile)
-      const resource = new Resource(kind, deriveResourceName(project, kind, file), file)
-      project.addResource(resource)
-      return resource.assetPath
-    })
+    const added: Resource[] = []
+    try {
+      return files.map((nativeFile) => {
+        const file = fromNativeFile(nativeFile)
+        const resource = new Resource(kind, deriveResourceName(project, kind, file), file)
+        project.addResource(resource)
+        added.push(resource)
+        return resource.assetPath
+      })
+    } catch (error) {
+      // All or nothing: a failure part-way leaves the course as it was before this upload.
+      for (const resource of added) project.removeResource(resource.id)
+      throw error
+    }
   }
-  // Plain records: written under their own name; an existing extra file at that path is replaced.
-  return files.map((nativeFile) => {
-    const path = joinPath(dir, nativeFile.name)
-    project.setExtraFile(path, fromNativeFile(nativeFile))
-    return path
-  })
+  // What each path held before, to undo the upload should one of the files fail.
+  const previous: Array<[path: string, file: File | null]> = []
+  try {
+    return files.map((nativeFile) => {
+      const path = joinPath(dir, nativeFile.name)
+      previous.push([path, project.getExtraFile(path)])
+      project.setExtraFile(path, fromNativeFile(nativeFile))
+      return path
+    })
+  } catch (error) {
+    // Undo in reverse, so two files uploaded to one path end up as that path was before either of them.
+    for (const [path, file] of previous.reverse()) {
+      if (file != null) project.setExtraFile(path, file)
+      else if (project.getExtraFile(path) != null) project.removeExtraFile(path)
+    }
+    throw error
+  }
 }
