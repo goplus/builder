@@ -250,6 +250,18 @@ describe('TutorialProject', () => {
   })
 
   describe('records named like object properties', () => {
+    it('keeps a package record named __proto__ through a save and a reload', async () => {
+      const files = makeFiles()
+      files['assets/videos/step-to/__proto__'] = fromText('__proto__', 'helper')
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files })
+
+      const reloaded = new TutorialProject()
+      await reloaded.loadFiles(tutorial.exportFiles())
+
+      expect(await toText(reloaded.exportFiles()['assets/videos/step-to/__proto__']!)).toBe('helper')
+    })
+
     it('keeps and exports records named constructor or toString', async () => {
       const files = makeFiles()
       files['constructor'] = fromText('constructor', 'C')

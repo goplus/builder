@@ -44,6 +44,17 @@ describe('Resource', () => {
     ])
   })
 
+  it('keeps a package record named __proto__', async () => {
+    const files = makeFiles()
+    // Assigning this key to a plain object would set its prototype and drop the record.
+    files['assets/videos/step-to/__proto__'] = fromText('__proto__', 'helper')
+    const video = await Resource.load('videos', 'step-to', files)
+    if (video == null) throw new Error('resource expected')
+
+    expect(Object.keys(video.extraFiles)).toContain('__proto__')
+    expect(await toText(video.export()['assets/videos/step-to/__proto__']!)).toBe('helper')
+  })
+
   it('carries unknown records of the package directory along, also when renamed', async () => {
     const files = makeFiles()
     files['assets/videos/step-to/captions.vtt'] = fromText('captions.vtt', 'WEBVTT')
@@ -112,6 +123,20 @@ describe('Resource', () => {
       for (const kind of ['', '.', '..', 'a/b']) {
         expect(() => new Resource(kind, 'x', fromText('x.png', 'png')), `kind ${JSON.stringify(kind)}`).toThrow()
       }
+    })
+
+    it('keeps the payload path clear of folders in the package', async () => {
+      const files = makeFiles()
+      // A folder `intro.mp4` inside the package: renaming to `intro` would make the payload that same path.
+      files['assets/videos/step-to/intro.mp4/child.txt'] = fromText('child.txt', 'child')
+      const video = await Resource.load('videos', 'step-to', files)
+      if (video == null) throw new Error('resource expected')
+
+      expect(() => video.setName('intro')).toThrow('conflicts with folder intro.mp4')
+      // So would a payload whose extension turns its path into such a folder.
+      files['assets/videos/step-to/step-to.txt/child.txt'] = fromText('child.txt', 'child')
+      const other = await Resource.load('videos', 'step-to', files)
+      expect(() => other!.setFile(fromText('new.txt', 'x'))).toThrow('conflicts with folder step-to.txt')
     })
 
     it('derives names that satisfy the whole layout, so index.json becomes the resource index2', () => {

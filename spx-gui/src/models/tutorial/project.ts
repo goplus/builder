@@ -394,6 +394,9 @@ export class TutorialProject {
     const files: Files = {}
     // Every part goes through `claim`, which refuses a path another part already took. The rules keep the parts
     // apart, so a clash is a programming error, and failing loudly beats silently dropping one of the records.
+    // It checks exact paths only, on purpose: a file and a folder sharing a path is refused where records are
+    // written, but may already exist in a course as loaded, and refusing to export would leave that course
+    // impossible to open (the editor exports on setup). Loaded data cannot hold one path twice, so this is safe.
     const claim = (part: Files) => {
       for (const [path, file] of Object.entries(part)) {
         if (file == null) continue
