@@ -35,11 +35,11 @@
             :ref="setSpriteNodeRef(localConfig.id)"
             :key="localConfig.id"
             :local-config="localConfig"
-            :selected="!props.simpleMode && editorCtx.state.selectedSprite?.id === localConfig.id"
+            :selected="!simpleMode && editorCtx.state.selectedSprite?.id === localConfig.id"
             :project="editorCtx.project"
             :map-size="mapSize"
             :node-ready-map="nodeReadyMap"
-            :editable="!props.simpleMode"
+            :editable="!simpleMode"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(localConfig)"
@@ -48,7 +48,7 @@
           />
         </v-group>
       </v-layer>
-      <v-layer v-if="!props.simpleMode">
+      <v-layer v-if="!simpleMode">
         <WidgetNode
           v-for="localConfig in visibleWidgetLocalConfigs"
           :key="localConfig.id"
@@ -58,7 +58,7 @@
           @update-transform-op="handleSpriteUpdateTransformOp"
         />
       </v-layer>
-      <v-layer v-if="!props.simpleMode">
+      <v-layer v-if="!simpleMode">
         <NodeTransformer
           ref="nodeTransformerRef"
           :node-ready-map="nodeReadyMap"
@@ -84,7 +84,7 @@
     >
       {{ label.name }}
     </button>
-    <div v-if="!props.simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
+    <div v-if="!simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
       <QuickConfigWrapper ref="quickConfigRef">
         <SpriteQuickConfig
           v-if="localConfigRef instanceof SpriteLocalConfig"

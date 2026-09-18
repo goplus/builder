@@ -1,4 +1,4 @@
-import { ref, type App as VueApp } from 'vue'
+import type { App as VueApp } from 'vue'
 import type { Router } from 'vue-router'
 
 import { client } from '@/apis/common'
@@ -29,6 +29,6 @@ export function configureXBuilderApp(app: VueApp, router?: Router) {
     showTutorialsEntry: env.showTutorialsEntry
   })
   provideDisableAIGC(app, env.disableAIGC)
-  provideProjectConfig(app, { defaultFontPreferences: env.defaultFontPreferences, rulerVisible: ref(false) })
+  provideProjectConfig(app, { defaultFontPreferences: env.defaultFontPreferences })
   configureApp(app, router, env)
 }

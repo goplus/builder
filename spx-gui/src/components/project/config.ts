@@ -1,15 +1,16 @@
-import { inject, type App, type InjectionKey, type Ref } from 'vue'
+import { inject, ref, type App, type InjectionKey, type Ref } from 'vue'
 
 export type ProjectConfig = {
   defaultFontPreferences: string[]
-  /** Course-controlled visibility for the editor stage ruler. */
-  rulerVisible: Ref<boolean>
+  rulerVisible?: Ref<boolean>
 }
 
-const projectConfigKey: InjectionKey<ProjectConfig> = Symbol('project-config')
+type ResolvedProjectConfig = Required<ProjectConfig>
+
+const projectConfigKey: InjectionKey<ResolvedProjectConfig> = Symbol('project-config')
 
 export function provideProjectConfig(app: App, config: ProjectConfig) {
-  app.provide(projectConfigKey, config)
+  app.provide(projectConfigKey, { rulerVisible: ref(false), ...config })
 }
 
 export function useProjectConfig() {
