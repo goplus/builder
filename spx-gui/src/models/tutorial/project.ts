@@ -9,7 +9,15 @@ import { SpxProject } from '@/models/spx/project'
 
 import { Course, mainCourseFilePath } from './course'
 import { DerivedFile } from './derived-file'
-import { ensureValidResourceName, hasRecord, Resource, validateResourceLayout } from './resource'
+import {
+  assetsDir,
+  ensureValidResourceName,
+  getResourceKindDir,
+  hasRecord,
+  Resource,
+  validateResourceLayout,
+  videosKind
+} from './resource'
 
 /**
  * Path (relative to the Tutorial-project root) of the course configuration record.
@@ -114,8 +122,12 @@ export class TutorialProject {
   mainCourse: Course
   /** Course-local resource packages under `assets/` (videos, and whatever other kinds the author added). */
   resources: Resource[] = []
-  /** Records claimed by no part of the model, keyed by path. */
-  extraFiles: Files = {}
+  /**
+   * Records claimed by no part of the model, keyed by path. A `Map` and not an object: file names are chosen by
+   * authors, and as object properties some of them are special (`__proto__`, `constructor`, or Vue's `__v_skip`
+   * and `__v_isReactive` on this reactive model, which would stop change tracking or read back a flag).
+   */
+  extraFiles = new Map<string, File>()
 
   /** Memo generating the `index.json` record from `config`; see `DerivedFile` for why identity matters. */
   private configFile = new DerivedFile((json) => fromText(configFilePath, json))
@@ -208,9 +220,9 @@ export class TutorialProject {
     const resources = await Resource.loadAll(files)
 
     // Whatever no typed part claimed is kept verbatim so it is written back unchanged.
-    const extraFiles: Files = {}
+    const extraFiles = new Map<string, File>()
     for (const [path, file] of Object.entries(files)) {
-      if (file != null && !isClaimedPath(path, config, resources)) extraFiles[path] = file
+      if (file != null && !isClaimedPath(path, config, resources)) extraFiles.set(path, file)
     }
 
     // Commit the tutorial-level state only after every await succeeded (the embedded project and the program
@@ -309,7 +321,7 @@ export class TutorialProject {
    * components/course-editor/upload.test.ts.
    */
   getExtraFile(path: string): File | null {
-    return hasRecord(this.extraFiles, path) ? this.extraFiles[path]! : null
+    return this.extraFiles.get(path) ?? null
   }
 
   /**
@@ -322,16 +334,18 @@ export class TutorialProject {
    * components/course-editor/upload.ts#addUploadedFiles, models/tutorial/project.test.ts.
    */
   setExtraFile(path: string, file: File) {
-    // Assigning this key to a plain object sets its prototype instead of adding an entry: the file would vanish.
+    // Kept here fine, but loading a course keys its files by path in a plain object (shared `getFiles`), where
+    // this key sets the object's prototype instead of adding an entry: the file would not survive a reload.
     if (path === '__proto__') throw new Error(`path ${path} is reserved`)
     if (this.isClaimedPath(path)) throw new Error(`path ${path} is claimed by the course model`)
     // A new path must not make a file and a directory share a path. Replacing the record already at this path
-    // (every edit of a text record does) cannot, so that common case skips the check.
-    if (!hasRecord(this.extraFiles, path)) {
+    // (every edit of a text record does) cannot, so that common case skips the checks.
+    if (!this.extraFiles.has(path)) {
+      if (this.isReservedDirectory(path)) throw new Error(`path ${path} is a folder the course keeps`)
       const conflict = this.getRecordPathConflict(path)
       if (conflict != null) throw new Error(`path ${path} conflicts with record ${conflict}`)
     }
-    this.extraFiles[path] = file
+    this.extraFiles.set(path, file)
   }
 
   /**
@@ -343,8 +357,19 @@ export class TutorialProject {
    * components/course-editor/course-tree.test.ts.
    */
   removeExtraFile(path: string) {
-    if (!hasRecord(this.extraFiles, path)) throw new Error(`file ${path} not found`)
-    delete this.extraFiles[path]
+    if (!this.extraFiles.delete(path)) throw new Error(`file ${path} not found`)
+  }
+
+  /**
+   * Whether `path` is a directory the course always treats as a folder, even while it holds nothing: the
+   * resources root and the videos folder the explorer always shows. The record-based check cannot see them
+   * while they are empty, so without this a file named `assets` could take their place.
+   * @param path - Path relative to the course root.
+   * @returns True for `assets` and `assets/videos`.
+   * Called by: models/tutorial/project.ts#setExtraFile, components/course-editor/upload.ts#validateUploadPath.
+   */
+  isReservedDirectory(path: string) {
+    return path === assetsDir || path === getResourceKindDir(videosKind)
   }
 
   /**
@@ -397,18 +422,18 @@ export class TutorialProject {
     // It checks exact paths only, on purpose: a file and a folder sharing a path is refused where records are
     // written, but may already exist in a course as loaded, and refusing to export would leave that course
     // impossible to open (the editor exports on setup). Loaded data cannot hold one path twice, so this is safe.
-    const claim = (part: Files) => {
-      for (const [path, file] of Object.entries(part)) {
+    const claim = (entries: Iterable<[string, File | undefined]>) => {
+      for (const [path, file] of entries) {
         if (file == null) continue
         if (hasRecord(files, path)) throw new Error(`record ${path} is claimed by more than one part of the course`)
         files[path] = file
       }
     }
-    claim(this.exportConfig())
+    claim(Object.entries(this.exportConfig()))
     // The embedded project's paths are moved back under its root directory.
-    claim(prefixFiles(this.project.exportFiles(), this.config.project.root))
-    claim(this.mainCourse.export())
-    for (const resource of this.resources) claim(resource.export())
+    claim(Object.entries(prefixFiles(this.project.exportFiles(), this.config.project.root)))
+    claim(Object.entries(this.mainCourse.export()))
+    for (const resource of this.resources) claim(Object.entries(resource.export()))
     // Last, the records nobody claimed.
     claim(this.extraFiles)
     return files

@@ -51,7 +51,7 @@ describe('Resource', () => {
     const video = await Resource.load('videos', 'step-to', files)
     if (video == null) throw new Error('resource expected')
 
-    expect(Object.keys(video.extraFiles)).toContain('__proto__')
+    expect([...video.extraFiles.keys()]).toContain('__proto__')
     expect(await toText(video.export()['assets/videos/step-to/__proto__']!)).toBe('helper')
   })
 
@@ -61,7 +61,7 @@ describe('Resource', () => {
     const video = await Resource.load('videos', 'step-to', files)
     if (video == null) throw new Error('resource expected')
 
-    expect(Object.keys(video.extraFiles)).toEqual(['captions.vtt'])
+    expect([...video.extraFiles.keys()]).toEqual(['captions.vtt'])
     expect(video.export()['assets/videos/step-to/captions.vtt']).toBe(files['assets/videos/step-to/captions.vtt'])
 
     video.setName('intro')
@@ -90,7 +90,7 @@ describe('Resource', () => {
 
       expect(() => data.setName('index')).toThrow('conflicts with the package manifest')
       expect(
-        validateResourceLayout({ kind: 'data', name: 'index', file: data.file, extraFiles: {} }, null)?.en
+        validateResourceLayout({ kind: 'data', name: 'index', file: data.file, extraFiles: new Map() }, null)?.en
       ).toContain('manifest')
       // Another extension is fine: only `index` + `.json` would be the manifest path.
       expect(() => new Resource('data', 'index', fromText('index.txt', 'x')).setName('index')).not.toThrow()
@@ -141,7 +141,7 @@ describe('Resource', () => {
 
     it('derives names that satisfy the whole layout, so index.json becomes the resource index2', () => {
       const file = fromText('index.json', '{}')
-      expect(getResourceName(null, 'data', 'index', { file, extraFiles: {} })).toBe('index2')
+      expect(getResourceName(null, 'data', 'index', { file, extraFiles: new Map() })).toBe('index2')
       expect(getResourceName(null, 'data', 'index')).toBe('index')
     })
 

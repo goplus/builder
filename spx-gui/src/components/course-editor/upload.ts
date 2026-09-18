@@ -165,7 +165,10 @@ export function validateUploadPath(project: TutorialProject, dir: string, name: 
   if (path === '__proto__') {
     return { en: `${path} cannot be used as a file name`, zh: `${path} 不能用作文件名` }
   }
-  // A file cannot be where a folder is.
+  // A file cannot be where a folder is, including the folders the course keeps while they are still empty.
+  if (project.isReservedDirectory(path)) {
+    return { en: `${path} is a folder the course keeps for its resources`, zh: `${path} 是课程为资源保留的目录` }
+  }
   const conflict = project.getRecordPathConflict(path)
   if (conflict != null) {
     return {
@@ -214,7 +217,7 @@ export function deriveResourceName(project: TutorialProject, kind: string, file:
   // `getResourceName` then appends a suffix until the whole layout (uniqueness, payload path) is valid.
   return getResourceName(project, kind, validateResourceName(kind, base, null) == null ? base : kind, {
     file,
-    extraFiles: {}
+    extraFiles: new Map()
   })
 }
 
