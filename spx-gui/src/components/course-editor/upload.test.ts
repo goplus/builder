@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fromConfig, fromText, type Files } from '@/models/common/file'
+import { fromConfig, fromText, toText, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
 import { addUploadedFiles, getUploadConflicts, normalizeDir, validateUploadDir, validateUploadPath } from './upload'
@@ -94,6 +94,20 @@ describe('addUploadedFiles', () => {
     const reloaded = new TutorialProject()
     await reloaded.loadFiles(exported)
     expect(reloaded.getResource('data', 'index2')).not.toBeNull()
+  })
+
+  it('picks a free directory when an unclaimed record occupies the obvious one', async () => {
+    const files = makeFiles()
+    files['assets/texts/orphan/orphan.txt'] = fromText('orphan.txt', 'precious original')
+    const project = new TutorialProject()
+    await project.loadFiles(files)
+
+    const paths = addUploadedFiles(project, 'assets/texts', [nativeFile('orphan.txt')])
+
+    expect(paths).toEqual(['assets/texts/orphan2'])
+    const exported = project.exportFiles()
+    expect(await toText(exported['assets/texts/orphan/orphan.txt']!)).toBe('precious original')
+    expect(exported['assets/texts/orphan2/orphan2.txt']).toBeDefined()
   })
 
   it('stores files uploaded elsewhere as plain records, creating folders implicitly', async () => {

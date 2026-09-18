@@ -65,7 +65,7 @@ describe('Resource', () => {
   it('rejects names that cannot identify a package directory', () => {
     const video = new Resource('videos', 'step-to', fromText('step-to.mp4', 'video'))
 
-    expect(() => video.setName('assets/step-to')).toThrow('The name must not contain /')
+    expect(() => video.setName('assets/step-to')).toThrow('must not contain /')
     expect(() => new Resource('a/b', 'x', fromText('x.png', 'png'))).toThrow('must not contain /')
   })
 
@@ -99,6 +99,19 @@ describe('Resource', () => {
         'assets/videos/captions/captions.vtt',
         'assets/videos/captions/index.json'
       ])
+    })
+
+    it('rejects names and kinds that cannot be a path segment', () => {
+      // `.` and `..` would make `export()` write paths that `Resource.load` resolves to other keys, leaving a
+      // course that cannot be loaded at all; the shared `validatePathSegment` covers them.
+      const video = new Resource('videos', 'step-to', fromText('step-to.mp4', 'video'))
+      for (const name of ['', '.', '..', 'a/b', 'a\0b']) {
+        expect(validateResourceName('videos', name, null), `name ${JSON.stringify(name)}`).not.toBeNull()
+        expect(() => video.setName(name)).toThrow()
+      }
+      for (const kind of ['', '.', '..', 'a/b']) {
+        expect(() => new Resource(kind, 'x', fromText('x.png', 'png')), `kind ${JSON.stringify(kind)}`).toThrow()
+      }
     })
 
     it('derives names that satisfy the whole layout, so index.json becomes the resource index2', () => {
