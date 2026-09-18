@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 
-import { extname, join, resolve } from '@/utils/path'
+import { extname, join, resolve, validatePathSegment } from '@/utils/path'
 import type { LocaleMessage } from '@/utils/i18n'
 import { getStringLengthInCodePoints } from '@/utils/utils'
 import { File, fromText, listDirs, toConfig, type Files } from '@/models/common/file'
@@ -145,7 +145,7 @@ export class Resource {
   setName(name: string) {
     // The whole layout is re-validated: the new name also moves the payload path (see `getPayloadFileName`).
     const error = validateResourceLayout(
-      { kind: this.kind, name, file: this.file, extraFiles: this.extraFiles },
+      { id: this.id, kind: this.kind, name, file: this.file, extraFiles: this.extraFiles },
       this._project
     )
     if (error != null) throw new Error(`invalid ${this.kind} resource name ${name}: ${error.en}`)
@@ -164,7 +164,7 @@ export class Resource {
    */
   setFile(file: File) {
     const error = validateResourceLayout(
-      { kind: this.kind, name: this.name, file, extraFiles: this.extraFiles },
+      { id: this.id, kind: this.kind, name: this.name, file, extraFiles: this.extraFiles },
       this._project
     )
     if (error != null) throw new Error(`invalid payload for ${this.kind} resource ${this.name}: ${error.en}`)
@@ -303,16 +303,21 @@ export class Resource {
  * Called by: models/tutorial/resource.ts#Resource.constructor, components/course-editor/upload.ts#addUploadedFiles.
  */
 export function validateResourceKind(kind: string): LocaleMessage | null {
-  if (kind === '') return { en: 'The resource kind must not be blank', zh: '资源类型不可为空' }
-  if (kind.includes('/')) return { en: 'The resource kind must not contain /', zh: '资源类型不可包含 /' }
-  return null
+  // The kind becomes the directory under `assets/`, so it has to be a usable path segment as well.
+  return validatePathSegment(kind) ?? null
 }
 
 /**
  * The parts of a package the layout rules look at: the package as it would be after a change. `Resource` itself
  * satisfies this shape, so a live package can be passed as is.
  */
-export type ResourceLayout = Pick<Resource, 'kind' | 'name' | 'file' | 'extraFiles'>
+export type ResourceLayout = Pick<Resource, 'kind' | 'name' | 'file' | 'extraFiles'> & {
+  /**
+   * Identity of the resource this layout describes, when it already exists. Uniqueness rules use it to ignore
+   * the resource being renamed or updated; omit it for a layout that is not (yet) a resource of the project.
+   */
+  id?: string
+}
 
 /**
  * A layout rule: returns the problem it finds with a candidate layout, or null. Rules are pure and ordered; the
@@ -332,25 +337,46 @@ export function getPayloadFileName(name: string, file: File) {
   return name + extname(file.name)
 }
 
-/** Rule: the name is non-blank, bounded (in code points, so CJK and emoji count as one) and a single segment. */
+/**
+ * Rule: the name can be a directory name and is bounded in length. The name becomes a path segment, so it goes
+ * through the same `validatePathSegment` as SPX asset names: blank, `.`, `..`, `/` and NUL are all rejected.
+ * Without the `.` and `..` check, `export()` would write paths that `Resource.load` resolves to different keys,
+ * leaving a course that cannot be loaded at all.
+ */
 const nameIsWellFormed: LayoutRule = ({ name }) => {
-  if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
   if (getStringLengthInCodePoints(name) > resourceNameMaxLength) {
     return {
       en: `The name is too long (maximum is ${resourceNameMaxLength} characters)`,
       zh: `名字长度超出限制（最多 ${resourceNameMaxLength} 个字符）`
     }
   }
-  if (name.includes('/')) return { en: 'The name must not contain /', zh: '名字不可包含 /' }
-  return null
+  return validatePathSegment(name) ?? null
 }
 
-/** Rule: no other package of the same kind in the project uses the name (two packages never share a directory). */
-const nameIsUniqueInKind: LayoutRule = ({ kind, name }, project) => {
-  if (project?.getResource(kind, name) != null) {
+/**
+ * Rule: no *other* package of the same kind in the project uses the name (two packages never share a directory).
+ * The resource the layout describes is ignored, so updating a package (a payload edit, or a rename to the name it
+ * already has) is not rejected as a clash with itself.
+ */
+const nameIsUniqueInKind: LayoutRule = ({ id, kind, name }, project) => {
+  const existing = project?.getResource(kind, name)
+  if (existing != null && existing.id !== id) {
     return { en: `${kind} resource with name ${name} already exists`, zh: '存在同名的资源' }
   }
   return null
+}
+
+/**
+ * Rule: the package's directory holds no record the course keeps outside the model. Such a record (an `assets`
+ * directory without a manifest, kept as an extra file) is not part of any package, so a package taking its
+ * directory would overwrite it on export. Records of packages are claimed at load time and never appear here.
+ */
+const directoryIsFree: LayoutRule = ({ kind, name }, project) => {
+  if (project == null) return null
+  const dir = getResourceAssetPath(kind, name)
+  const occupied = Object.keys(project.extraFiles).find((path) => path === dir || path.startsWith(dir + '/'))
+  if (occupied == null) return null
+  return { en: `The name conflicts with file ${occupied} in the course`, zh: `名字与课程中的文件 ${occupied} 冲突` }
 }
 
 /** Rule: the payload path never equals the manifest path, or the manifest would be overwritten on export. */
@@ -370,7 +396,7 @@ const payloadDoesNotShadowExtraRecord: LayoutRule = ({ name, file, extraFiles })
 }
 
 /** Rules about the name alone, checkable without a payload. */
-const nameRules: LayoutRule[] = [nameIsWellFormed, nameIsUniqueInKind]
+const nameRules: LayoutRule[] = [nameIsWellFormed, nameIsUniqueInKind, directoryIsFree]
 /** Rules about the payload path; they need the payload file and the extra records. */
 const payloadRules: LayoutRule[] = [payloadDoesNotShadowManifest, payloadDoesNotShadowExtraRecord]
 
@@ -401,7 +427,8 @@ export function validateResourceName(
   name: string,
   project: TutorialProject | null
 ): LocaleMessage | null {
-  // The payload rules are skipped: a placeholder layout without a file is not available here.
+  // The payload rules are skipped: a placeholder layout without a file is not available here. No `id` either,
+  // so an existing resource with this name always counts as a clash.
   return runLayoutRules(nameRules, { kind, name, file: null as unknown as File, extraFiles: {} }, project)
 }
 
