@@ -104,6 +104,56 @@ describe('TutorialProject', () => {
     expect(Object.keys(tutorial.exportFiles())).toContain('assets/images/step-to/step-to.png')
   })
 
+  it('replaces the payload of a resource that belongs to the project', async () => {
+    const tutorial = await loadProject()
+    const note = new Resource('texts', 'note', fromText('note.txt', 'original'))
+    tutorial.addResource(note)
+
+    // Uniqueness must not treat the resource itself as a clash, or no payload could ever be edited.
+    note.setFile(fromText('note.txt', 'edited'))
+
+    expect(await toText(tutorial.exportFiles()['assets/texts/note/note.txt']!)).toBe('edited')
+    // Renaming to the name it already has is the same situation.
+    expect(() => note.setName('note')).not.toThrow()
+  })
+
+  it('refuses to give a package the directory of a record nobody claims', async () => {
+    const files = makeFiles()
+    // A directory under `assets` without a manifest: not a package, kept as an extra file.
+    files['assets/texts/orphan/orphan.txt'] = fromText('orphan.txt', 'precious original')
+    const tutorial = new TutorialProject()
+    await tutorial.load({ metadata: makeMetadata(), files })
+    const note = new Resource('texts', 'note', fromText('note.txt', 'resource payload'))
+    tutorial.addResource(note)
+
+    expect(() => note.setName('orphan')).toThrow('conflicts with file assets/texts/orphan/orphan.txt')
+
+    // The record is still the author's, with its own content.
+    expect(await toText(tutorial.exportFiles()['assets/texts/orphan/orphan.txt']!)).toBe('precious original')
+  })
+
+  it('refuses to export a path claimed by both a package and an extra file', async () => {
+    const tutorial = await loadProject()
+    // Every mutation validates the directory is free, so this state is only reachable by reaching in; the check
+    // exists so that such a bug fails loudly instead of dropping one of the two records.
+    tutorial.extraFiles['assets/videos/step-to/step-to.mp4'] = fromText('step-to.mp4', 'other')
+
+    expect(() => tutorial.exportFiles()).toThrow('claimed by both')
+  })
+
+  it('reloads a course whose resources were renamed, added and edited', async () => {
+    const tutorial = await loadProject()
+    tutorial.getResource('videos', 'step-to')!.setName('intro')
+    tutorial.addResource(new Resource('texts', 'note', fromText('note.txt', 'hello')))
+
+    const reloaded = new TutorialProject()
+    await reloaded.loadFiles(tutorial.exportFiles())
+
+    expect(reloaded.resources.map((r) => `${r.kind}/${r.name}`).sort()).toEqual(['texts/note', 'videos/intro'])
+    expect(await toText(reloaded.getResource('texts', 'note')!.file)).toBe('hello')
+    expect(await toText(reloaded.getResource('videos', 'intro')!.file)).toBe('video')
+  })
+
   it('keeps records nobody claims and writes them back', async () => {
     const files = makeFiles()
     files['notes.md'] = fromText('notes.md', '# notes')

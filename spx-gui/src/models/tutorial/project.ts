@@ -348,12 +348,8 @@ export class TutorialProject {
    */
   exportFiles() {
     if (this.config == null) throw new Error('Tutorial project has not been loaded')
+    // Typed parts first; the embedded project's paths are moved back under its root directory.
     const files: Files = {}
-    // Extra files first, so the typed parts merged below win should a path ever overlap.
-    for (const [path, file] of Object.entries(this.extraFiles)) {
-      if (file != null) files[path] = file
-    }
-    // Merge every typed part; the embedded project's paths are moved back under its root directory.
     Object.assign(
       files,
       this.exportConfig(),
@@ -361,6 +357,15 @@ export class TutorialProject {
       this.mainCourse.export(),
       ...this.resources.map((resource) => resource.export())
     )
+    // Then the records nobody claimed. Every mutation validates that a package's directory is free, so a path
+    // claimed by both is a programming error: fail loudly instead of silently dropping one of the two records.
+    for (const [path, file] of Object.entries(this.extraFiles)) {
+      if (file == null) continue
+      if (files[path] != null) {
+        throw new Error(`record ${path} is claimed by both the course model and an extra file`)
+      }
+      files[path] = file
+    }
     return files
   }
 
