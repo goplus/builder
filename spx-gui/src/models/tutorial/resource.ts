@@ -241,13 +241,16 @@ export class Resource {
     const file = files[filePath]
     if (file == null) throw new Error(`file ${path} for ${kind} resource ${name} not found`)
     // Everything else under the package directory is carried along verbatim, keyed relative to the package.
-    const extraFiles: Files = {}
     const dirPrefix = pathPrefix + '/'
+    const extraEntries: Array<[string, File]> = []
     for (const [recordPath, record] of Object.entries(files)) {
       if (record == null || !recordPath.startsWith(dirPrefix)) continue
       if (recordPath === configFilePath || recordPath === filePath) continue
-      extraFiles[recordPath.slice(dirPrefix.length)] = record
+      extraEntries.push([recordPath.slice(dirPrefix.length), record])
     }
+    // `fromEntries` defines each entry, where assigning `extraFiles[path] = record` would, for a record named
+    // `__proto__`, set the object's prototype instead: the record would be dropped without a trace.
+    const extraFiles: Files = Object.fromEntries(extraEntries)
     return new Resource(kind, name, file, { id: includeId ? id : undefined, extraFiles })
   }
 
@@ -408,11 +411,24 @@ const payloadDoesNotShadowManifest: LayoutRule = ({ name, file }) => {
   }
 }
 
-/** Rule: the payload path never equals one of the package's extra records, or that record would be overwritten. */
+/**
+ * Rule: the payload path is not taken by the package's other records. It must not equal one (that record would
+ * be overwritten) nor be a folder of some (a path cannot be both a file and a folder). The payload sits directly
+ * in the package directory, so none of its ancestors lies inside the package and only those two cases remain.
+ */
 const payloadDoesNotShadowExtraRecord: LayoutRule = ({ name, file, extraFiles }) => {
   const payload = getPayloadFileName(name, file)
-  if (!hasRecord(extraFiles, payload)) return null
-  return { en: `The name conflicts with file ${payload} in the package`, zh: `名字与包内文件 ${payload} 冲突` }
+  if (hasRecord(extraFiles, payload)) {
+    return { en: `The name conflicts with file ${payload} in the package`, zh: `名字与包内文件 ${payload} 冲突` }
+  }
+  const below = Object.keys(extraFiles).find((path) => path.startsWith(payload + '/'))
+  if (below != null) {
+    return {
+      en: `The name conflicts with folder ${payload} in the package (it holds ${below})`,
+      zh: `名字与包内目录 ${payload} 冲突（其中有 ${below}）`
+    }
+  }
+  return null
 }
 
 /** Rules about the name alone, checkable without a payload. */
