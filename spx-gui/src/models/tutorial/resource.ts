@@ -18,7 +18,7 @@ export type ResourceInits = {
   /** Stable identifier persisted as `builder_id` in the manifest; a fresh nanoid is generated when omitted. */
   id?: string
   /** Records in the resource's directory other than its manifest and payload, keyed by path relative to it. */
-  extraFiles?: Files
+  extraFiles?: ReadonlyMap<string, File>
 }
 
 /**
@@ -176,8 +176,12 @@ export class Resource {
     this.file = file
   }
 
-  /** Records in the package directory other than the manifest and the payload, keyed by relative path. */
-  extraFiles: Files
+  /**
+   * Records in the package directory other than the manifest and the payload, keyed by relative path. A `Map`
+   * and not an object: file names are chosen by authors, and as object properties some of them are special
+   * (`__proto__`, `constructor`, or Vue's `__v_skip` and `__v_isReactive` on this reactive model).
+   */
+  extraFiles: Map<string, File>
 
   /** Memo generating the manifest record from its JSON; see `DerivedFile` for why identity matters. */
   private configFile = new DerivedFile((json) => fromText(resourceConfigFileName, json))
@@ -203,7 +207,7 @@ export class Resource {
     this.name = name
     this.file = file
     // Copy so that later mutations of the caller's map do not leak into the package.
-    this.extraFiles = { ...inits?.extraFiles }
+    this.extraFiles = new Map(inits?.extraFiles)
     return reactive(this) as this
   }
 
@@ -248,10 +252,7 @@ export class Resource {
       if (recordPath === configFilePath || recordPath === filePath) continue
       extraEntries.push([recordPath.slice(dirPrefix.length), record])
     }
-    // `fromEntries` defines each entry, where assigning `extraFiles[path] = record` would, for a record named
-    // `__proto__`, set the object's prototype instead: the record would be dropped without a trace.
-    const extraFiles: Files = Object.fromEntries(extraEntries)
-    return new Resource(kind, name, file, { id: includeId ? id : undefined, extraFiles })
+    return new Resource(kind, name, file, { id: includeId ? id : undefined, extraFiles: new Map(extraEntries) })
   }
 
   /**
@@ -286,7 +287,7 @@ export class Resource {
     const filename = getPayloadFileName(this.name, this.file)
     // Every mutation path validates the layout, so a clash here is a programming error: fail loudly instead of
     // letting one record silently overwrite another.
-    if (filename === resourceConfigFileName || hasRecord(this.extraFiles, filename)) {
+    if (filename === resourceConfigFileName || this.extraFiles.has(filename)) {
       throw new Error(`payload ${filename} of ${this.kind} resource ${this.name} would overwrite another record`)
     }
     const config: RawResourceConfig = { path: filename }
@@ -294,8 +295,8 @@ export class Resource {
     const assetPath = this.assetPath
     const files: Files = {}
     // Extra records first, so that the manifest and payload written below win on a (theoretical) path clash.
-    for (const [relativePath, record] of Object.entries(this.extraFiles)) {
-      if (record != null) files[join(assetPath, relativePath)] = record
+    for (const [relativePath, record] of this.extraFiles) {
+      files[join(assetPath, relativePath)] = record
     }
     // The manifest is memoized by its JSON; the payload is the `File` instance itself.
     files[join(assetPath, resourceConfigFileName)] = this.configFile.get(JSON.stringify(config))
@@ -397,7 +398,7 @@ const nameIsUniqueInKind: LayoutRule = ({ self, kind, name }, project) => {
 const directoryIsFree: LayoutRule = ({ kind, name }, project) => {
   if (project == null) return null
   const dir = getResourceAssetPath(kind, name)
-  const occupied = Object.keys(project.extraFiles).find((path) => path === dir || path.startsWith(dir + '/'))
+  const occupied = [...project.extraFiles.keys()].find((path) => path === dir || path.startsWith(dir + '/'))
   if (occupied == null) return null
   return { en: `The name conflicts with file ${occupied} in the course`, zh: `名字与课程中的文件 ${occupied} 冲突` }
 }
@@ -418,10 +419,10 @@ const payloadDoesNotShadowManifest: LayoutRule = ({ name, file }) => {
  */
 const payloadDoesNotShadowExtraRecord: LayoutRule = ({ name, file, extraFiles }) => {
   const payload = getPayloadFileName(name, file)
-  if (hasRecord(extraFiles, payload)) {
+  if (extraFiles.has(payload)) {
     return { en: `The name conflicts with file ${payload} in the package`, zh: `名字与包内文件 ${payload} 冲突` }
   }
-  const below = Object.keys(extraFiles).find((path) => path.startsWith(payload + '/'))
+  const below = [...extraFiles.keys()].find((path) => path.startsWith(payload + '/'))
   if (below != null) {
     return {
       en: `The name conflicts with folder ${payload} in the package (it holds ${below})`,
@@ -465,7 +466,7 @@ export function validateResourceName(
 ): LocaleMessage | null {
   // The payload rules are skipped: a placeholder layout without a file is not available here. No `id` either,
   // so an existing resource with this name always counts as a clash.
-  return runLayoutRules(nameRules, { kind, name, file: null as unknown as File, extraFiles: {} }, project)
+  return runLayoutRules(nameRules, { kind, name, file: null as unknown as File, extraFiles: new Map() }, project)
 }
 
 /**
@@ -520,7 +521,7 @@ export function getResourceName(
   payload?: Pick<ResourceLayout, 'file' | 'extraFiles'>
 ) {
   // Only conflicts can be fixed by renaming; a malformed base is a programming error.
-  if (nameIsWellFormed({ kind, name: base, file: null as unknown as File, extraFiles: {} }, null) != null) {
+  if (nameIsWellFormed({ kind, name: base, file: null as unknown as File, extraFiles: new Map() }, null) != null) {
     throw new Error(`invalid resource name ${base}`)
   }
   // Only the payload parts are taken from `payload`: a live `Resource` passed here must not leak its current name.

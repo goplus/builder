@@ -236,7 +236,7 @@ export function buildCourseTree(project: TutorialProject): CourseNode[] {
   })
 
   // Every unclaimed record becomes a plain file node so nothing that will be saved is hidden from the author.
-  for (const [path, file] of Object.entries(project.extraFiles)) {
+  for (const [path, file] of project.extraFiles) {
     if (file == null) continue
     folder(dirname(path)).children.push({
       type: 'file',

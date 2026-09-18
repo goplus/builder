@@ -105,7 +105,7 @@ function languageOf(path: string) {
  * `extraFiles` at the same path. The new record is what gets saved and what marks the node as changed.
  *
  * @param next - The full text after the edit.
- * @returns Nothing; mutates `text` and `project.extraFiles[node.path]`.
+ * @returns Nothing; mutates `text` and the record at `node.path` in `project.extraFiles`.
  * @throws Error from `setExtraFile` if the path has become claimed by the model (not expected for an extra file).
  *
  * Called by:
