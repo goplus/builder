@@ -10,15 +10,10 @@
 <script setup lang="ts">
 import { onScopeDispose, ref } from 'vue'
 import { loadImg } from '@/utils/dom'
-import { extname, stripExt } from '@/utils/path'
 import { memoizeAsync } from '@/utils/utils'
-import { getMimeFromExt } from '@/utils/file'
-import { toJpeg } from '@/utils/img'
 import { getImgDrawingCtx } from '@/utils/canvas'
-import { taskRemoveBackgroundSupportedImgExts, TaskType } from '@/apis/aigc'
-import { createFileWithUniversalUrl, saveFile } from '@/models/common/cloud'
-import { fromBlob, toNativeFile, File } from '@/models/common/file'
-import { Task } from '@/models/spx/gen/common'
+import { File } from '@/models/common/file'
+import { removeImageBackground } from '@/models/spx/gen/img-process'
 import type { MethodComponentEmits, MethodComponentProps } from '../common/types'
 import ProcessDetail from '../common/ProcessDetail.vue'
 import ImgPreview from '../common/ImgPreview.vue'
@@ -28,19 +23,9 @@ const emit = defineEmits<MethodComponentEmits>()
 
 const imgPreviewRefs = ref<Array<InstanceType<typeof ImgPreview>>>([])
 
-const removeBackground = memoizeAsync(async (inputFile: File, signal?: AbortSignal) => {
-  inputFile = await adaptImgForBackgroundRemoval(inputFile)
-  const universalUrl = await saveFile(inputFile, signal)
-  const task = new Task(TaskType.RemoveBackground)
-  signal?.addEventListener('abort', () => task.tryCancel(), { once: true })
-  try {
-    await task.start({ imageUrl: universalUrl })
-    const { imageUrl: resultUniversalUrl } = await task.untilCompleted()
-    const name = stripExt(inputFile.name) + extname(resultUniversalUrl)
-    return createFileWithUniversalUrl(resultUniversalUrl, name)
-  } finally {
-    task.dispose()
-  }
+const removeBackground = memoizeAsync(async (file: File, signal?: AbortSignal) => {
+  const result = await removeImageBackground(file, signal)
+  return result.file
 })
 
 let applyingCtrl: AbortController | null = null
@@ -131,16 +116,5 @@ function drawTransitionFrame(
       canvas.height
     )
   }
-}
-
-/** Adapt image file to fit AIGC remove background. Unsupported image files will be converted to jpeg. */
-async function adaptImgForBackgroundRemoval(file: File): Promise<File> {
-  /** Image file formats supported by AIGC remove background */
-  for (const ext of taskRemoveBackgroundSupportedImgExts) {
-    if (file.type === getMimeFromExt(ext)) return file
-  }
-  const jpegBlob = await toJpeg(await toNativeFile(file))
-  const jpegFileName = stripExt(file.name) + '.jpeg'
-  return fromBlob(jpegFileName, jpegBlob)
 }
 </script>
