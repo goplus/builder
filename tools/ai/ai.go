@@ -7,6 +7,7 @@
 package ai
 
 import (
+	"cmp"
 	stdContext "context"
 	"errors"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"slices"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/goplus/spx/v3/pkg/spx"
 )
@@ -22,7 +24,7 @@ import (
 // GopPackage indicates that this package is a XGo package.
 const GopPackage = true
 
-// Break is a special error that signals the AI interaction should be terminated.
+// Break is a special error that signals the current AI interaction sequence should be terminated.
 var Break = errors.New("break interaction")
 
 // Player represents an AI agent capable of interacting with the game. Each
@@ -40,6 +42,7 @@ type Player struct {
 	history           []Turn
 	archivedHistory   string
 	archiveInProgress bool
+	archiveRetryAt    time.Time
 }
 
 // knowledgeBase returns the knowledge base used for AI interactions.
@@ -60,6 +63,7 @@ func (p *Player) SetRole__0(role string, context map[string]any) {
 	p.role = role
 	p.roleContext = context
 }
+
 func (p *Player) SetRole__1(role string) {
 	p.SetRole__0(role, nil)
 }
@@ -79,21 +83,23 @@ func PlayerOnCmd_(p *Player, cmd any, handler any) {
 	if typ.Kind() != reflect.Struct {
 		panic("AI command must be a struct type")
 	}
-	typeName := typ.Name()
-	if typeName == "" {
-		panic("AI command struct must have a name")
-	}
 
-	id := typeName
-	spec := extractCommandSpec(typ)
+	spec, err := extractCommandSpec(typ)
+	if err != nil {
+		panic(err)
+	}
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	if _, ok := p.commands[spec.Name]; !ok && len(p.commands) >= maxCommandCount {
+		panic(fmt.Errorf("cannot register more than %d AI commands", maxCommandCount))
+	}
+
 	if p.commands == nil {
 		p.commands = make(map[string]commandInfo)
 	}
-	p.commands[id] = commandInfo{
+	p.commands[spec.Name] = commandInfo{
 		typ:     typ,
 		handler: handler,
 		spec:    spec,
@@ -105,12 +111,13 @@ func PlayerOnCmd_(p *Player, cmd any, handler any) {
 //
 // Think implements an iterative loop, continuing interaction with the AI based
 // on command execution results until the AI signals completion (no command) or
-// an [Break] is encountered, or a critical error occurs.
+// a [Break] is encountered, or a critical error occurs.
 func (p *Player) Think__0(msg string, context map[string]any) {
 	spx.ExecuteNative(func(ctx stdContext.Context, owner any) {
 		p.think(ctx, owner, msg, context)
 	})
 }
+
 func (p *Player) Think__1(msg string) {
 	p.Think__0(msg, nil)
 }
@@ -122,8 +129,24 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 		maxTurns             = 20                     // Maximum number of turns in a single call to prevent infinite loops.
 		backoffBase          = 100 * time.Millisecond // Base time for exponential backoff calculation.
 		backoffCap           = 2 * time.Second        // Maximum backoff time cap.
-		rateLimitWaitTimeout = 2 * time.Minute        // Maximum wait time for rate limiting.
+		maxContentLength     = 280                    // Maximum number of characters in the initial user input.
 	)
+
+	if msg == "" {
+		p.handleError(owner, errors.New("missing content"))
+		return
+	}
+	if utf8.RuneCountInString(msg) > maxContentLength {
+		p.handleError(owner, fmt.Errorf("content length exceeds %d characters", maxContentLength))
+		return
+	}
+	p.mu.RLock()
+	hasCommands := len(p.commands) > 0
+	p.mu.RUnlock()
+	if !hasCommands {
+		p.handleError(owner, errors.New("no available commands"))
+		return
+	}
 
 	p.beginInteraction()
 	defer func() {
@@ -134,27 +157,23 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 		p.scheduleHistoryManagement(owner)
 	}()
 
-	var (
-		currentMsg     = msg
-		currentContext = context
-
-		hasExecutedAtLeastOneCommandInThisCall bool
-	)
+	currentMsg := msg
+	currentContext := context
 	for i := range maxTurns {
 		// Prepare request.
 		p.mu.RLock()
 		currentRole := p.role
 		currentRoleContext := p.roleContext
+		currentKnowledgeBase := p.knowledgeBase()
+		currentCommandSpecs := make([]CommandSpec, 0, len(p.commands))
+		for _, info := range p.commands {
+			currentCommandSpecs = append(currentCommandSpecs, info.spec)
+		}
+		slices.SortFunc(currentCommandSpecs, func(a, b CommandSpec) int {
+			return cmp.Compare(a.Name, b.Name)
+		})
 		currentHistory := slices.Clone(p.history)
 		currentArchivedHistory := p.archivedHistory
-		var currentCommandSpecs []CommandSpec
-		if len(p.commands) > 0 {
-			currentCommandSpecs = make([]CommandSpec, 0, len(p.commands))
-			for _, info := range p.commands {
-				currentCommandSpecs = append(currentCommandSpecs, info.spec)
-			}
-		}
-		currentKnowledgeBase := p.knowledgeBase()
 		currentTransport := p.transport()
 		p.mu.RUnlock()
 
@@ -163,64 +182,44 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 			Context:          currentContext,
 			Role:             currentRole,
 			RoleContext:      currentRoleContext,
+			KnowledgeBase:    currentKnowledgeBase,
+			CommandSpecs:     currentCommandSpecs,
 			History:          currentHistory,
 			ArchivedHistory:  currentArchivedHistory,
-			CommandSpecs:     currentCommandSpecs,
-			KnowledgeBase:    currentKnowledgeBase,
 			ContinuationTurn: i,
 		}
 
 		// Call AI transport with retries.
-		var (
-			resp     Response
-			lastErr  error
-			rateGate rateLimitGate
+		resp, lastErr := retryTransportCall(
+			ctx,
+			maxTransportAttempts,
+			backoffBase,
+			backoffCap,
+			transportTimeout,
+			func(ctx stdContext.Context) (Response, error) {
+				return currentTransport.Interact(ctx, request)
+			},
 		)
-		for range backoffAttempts(ctx, maxTransportAttempts, backoffBase, backoffCap) {
-			waitCtx, waitCancel := stdContext.WithTimeout(ctx, rateLimitWaitTimeout)
-			waitErr := rateGate.Wait(waitCtx)
-			waitCancel()
-			if waitErr != nil {
-				lastErr = fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout)
-				break
-			}
-
-			timeoutCtx, cancel := stdContext.WithTimeout(ctx, transportTimeout)
-			resp, lastErr = currentTransport.Interact(timeoutCtx, request)
-			cancel()
-			if lastErr == nil {
-				break
-			}
-
-			rateGate.Observe(lastErr)
-		}
 		if err := ctx.Err(); err != nil {
 			p.handleError(owner, fmt.Errorf("ai interaction canceled: %w", err))
 			return
 		}
 		if lastErr != nil {
+			if !isRetryableTransportError(lastErr) {
+				p.handleError(owner, fmt.Errorf("ai interaction failed: %w", lastErr))
+				return
+			}
 			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport attempts: %w", maxTransportAttempts, lastErr))
 			return
 		}
 
 		// Process AI response.
 		if resp.CommandName == "" {
-			// AI returned no command. This signifies the end of the current interaction
-			// sequence from AI's perspective. Record this "no command" turn.
-			noCmdTurn := Turn{
-				RequestContent: request.Content,
-				RequestContext: request.Context,
-				ResponseText:   resp.Text,
-				IsInitial:      i == 0,
-			}
-			p.appendHistory(noCmdTurn)
-
-			if !hasExecutedAtLeastOneCommandInThisCall {
-				p.handleError(owner, errors.New("ai did not provide an initial command or any command during the interaction"))
+			if i == 0 {
+				p.handleError(owner, errors.New("ai did not provide a command for the initial turn"))
 			}
 			return
 		}
-		hasExecutedAtLeastOneCommandInThisCall = true
 
 		var executedResult *CommandResult
 		p.mu.RLock()
@@ -237,23 +236,19 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 			// AI requested a command that is not registered by the game. This is an error
 			// from AI's behavior/request, report back via executedResult.
 			executedResult = &CommandResult{
-				Success:      false,
 				ErrorMessage: fmt.Sprintf("ai requested unknown command: %s", resp.CommandName),
-				IsBreak:      false,
 			}
 		}
 
 		// Update history and player's state.
-		currentTurn := Turn{
+		p.appendHistory(Turn{
 			RequestContent:        request.Content,
 			RequestContext:        request.Context,
-			ResponseText:          resp.Text,
 			ResponseCommandName:   resp.CommandName,
 			ResponseCommandArgs:   resp.CommandArgs,
 			ExecutedCommandResult: executedResult,
 			IsInitial:             i == 0,
-		}
-		p.appendHistory(currentTurn)
+		})
 
 		// Check for [Break].
 		if executedResult.IsBreak {
@@ -299,6 +294,7 @@ func (p *Player) OnErr__0(handler func(err error)) {
 	defer p.mu.Unlock()
 	p.errorHandler = handler
 }
+
 func (p *Player) OnErr__1(handler func()) {
 	p.OnErr__0(func(err error) {
 		handler()
@@ -344,11 +340,10 @@ func (p *Player) scheduleHistoryManagement(owner any) {
 // manageHistory checks if archiving is needed and performs it if necessary.
 func (p *Player) manageHistory(ctx stdContext.Context) {
 	const (
-		archiveTimeout       = 120 * time.Second      // Timeout for archive operation.
-		maxArchiveAttempts   = 3                      // Maximum number of archive attempts.
-		backoffBase          = 500 * time.Millisecond // Base time for exponential backoff.
-		backoffCap           = 5 * time.Second        // Maximum backoff time cap.
-		rateLimitWaitTimeout = 2 * time.Minute        // Maximum wait time for rate limiting.
+		archiveTimeout     = 120 * time.Second      // Timeout for archive operation.
+		maxArchiveAttempts = 3                      // Maximum number of archive attempts.
+		backoffBase        = 500 * time.Millisecond // Base time for exponential backoff.
+		backoffCap         = 5 * time.Second        // Maximum backoff time cap.
 	)
 
 	// Prepare archive if needed.
@@ -359,35 +354,27 @@ func (p *Player) manageHistory(ctx stdContext.Context) {
 
 	// Perform archive with retries.
 	transport := p.transport()
-	var (
-		archived ArchivedHistory
-		lastErr  error
-		rateGate rateLimitGate
+	archived, lastErr := retryTransportCall(
+		ctx,
+		maxArchiveAttempts,
+		backoffBase,
+		backoffCap,
+		archiveTimeout,
+		func(ctx stdContext.Context) (ArchivedHistory, error) {
+			return transport.Archive(ctx, turnsToArchive, existingArchive)
+		},
 	)
-	for range backoffAttempts(ctx, maxArchiveAttempts, backoffBase, backoffCap) {
-		waitCtx, waitCancel := stdContext.WithTimeout(ctx, rateLimitWaitTimeout)
-		waitErr := rateGate.Wait(waitCtx)
-		waitCancel()
-		if waitErr != nil {
-			lastErr = fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout)
-			break
-		}
-
-		archiveCtx, cancel := stdContext.WithTimeout(ctx, archiveTimeout)
-		archived, lastErr = transport.Archive(archiveCtx, turnsToArchive, existingArchive)
-		cancel()
-		if lastErr == nil {
-			break
-		}
-
-		rateGate.Observe(lastErr)
-	}
 	if err := ctx.Err(); err != nil {
 		log.Printf("archive history canceled: %v", err)
 		p.cancelArchive()
 		return
 	}
 	if lastErr != nil {
+		if !isRetryableTransportError(lastErr) {
+			log.Printf("failed to archive history: %v", lastErr)
+			p.deferArchiveRetry(lastErr)
+			return
+		}
 		log.Printf("failed to archive history after %d attempts: %v", maxArchiveAttempts, lastErr)
 		p.cancelArchive()
 		return
@@ -401,30 +388,26 @@ func (p *Player) manageHistory(ctx stdContext.Context) {
 // archiving. It returns nil if archiving is not needed or already in progress.
 func (p *Player) prepareArchive() (turnsToArchive []Turn, existingArchive string) {
 	const (
-		threshold   = 30 // Trigger archive when history reaches this many turns.
-		minRetained = 15 // Keep at least this many most recent turns after archiving.
+		threshold          = 30 // Trigger archive when history reaches this many turns.
+		minRetained        = 15 // Keep at least this many most recent turns after archiving.
+		maxTurnsPerArchive = 50 // Match the maximum archive request size accepted by the backend.
 	)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if len(p.history) < threshold || p.archiveInProgress {
+	if len(p.history) < threshold || p.archiveInProgress || time.Now().Before(p.archiveRetryAt) {
 		return nil, ""
 	}
 
-	// Ensure we keep at least minRetained turns.
-	if len(p.history) <= minRetained {
-		return nil, ""
-	}
-
-	// Find the archive boundary to preserve complete interaction sequences.
-	// We look for the last IsInitial=true before the retention boundary to
-	// ensure we don't split an interaction sequence.
+	// Find the latest sequence boundary that preserves the retained history and
+	// stays within the backend's archive request limit.
 	maxArchivable := len(p.history) - minRetained
+	searchStart := min(maxArchivable-1, maxTurnsPerArchive)
 	boundary := 0
 
-	// Start from the most recent archivable position and go backwards.
-	for i := maxArchivable - 1; i >= 0; i-- {
+	// Start from the latest eligible position and go backwards.
+	for i := searchStart; i >= 0; i-- {
 		if p.history[i].IsInitial {
 			// Found a sequence start, archive everything before this sequence.
 			boundary = i
@@ -454,6 +437,21 @@ func (p *Player) applyArchive(archived string, turnCount int) {
 	p.archivedHistory = archived
 	p.history = p.history[turnCount:]
 	p.archiveInProgress = false
+	p.archiveRetryAt = time.Time{}
+}
+
+// deferArchiveRetry completes the current archive attempt and honors a future
+// retry time from a client error.
+func (p *Player) deferArchiveRetry(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.archiveInProgress = false
+	p.archiveRetryAt = time.Time{}
+	var clientErr *ClientError
+	if errors.As(err, &clientErr) && clientErr.RetryAfter > 0 {
+		p.archiveRetryAt = time.Now().Add(clientErr.RetryAfter)
+	}
 }
 
 // cancelArchive resets the archive in progress flag.
@@ -461,4 +459,5 @@ func (p *Player) cancelArchive() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.archiveInProgress = false
+	p.archiveRetryAt = time.Time{}
 }
