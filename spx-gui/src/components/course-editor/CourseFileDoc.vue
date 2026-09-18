@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useAsyncComputed } from '@/utils/utils'
 import { extname } from '@/utils/path'
-import { fromText, toText } from '@/models/common/file'
+import { fromText, toText, type File } from '@/models/common/file'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { UIButton, UITag } from '@/components/ui'
 import type { FileNode } from './course-tree'
@@ -45,32 +45,35 @@ const emit = defineEmits<{
   deleted: []
 }>()
 
-// Text is loaded once per path. Edits produce new `File` records, which must not reload the editor.
+// Text follows the record's `File`: reloaded when it is replaced from outside, left alone for the document's own
+// edits (which also produce new `File` records, and must not reset the editor under the author).
 /** The decoded text of a text record; `null` while loading and for non-text records. */
 const text = ref<string | null>(null)
 /**
- * Load the record's text when the document opens. Keyed on `node.path` rather than `node.file` on purpose: after
- * `handleTextChange` the node carries a new `File`, and reloading it would reset the editor under the author.
- * Since `CourseEditor.vue` keys the component by path, this runs once per instance in practice; the path check
- * after the `await` guards against a stale load landing on a different path.
- *
- * @param path - The watched value, `props.node.path`.
- * @returns Nothing; sets `text` to the decoded content (or leaves it `null` for non-text records).
- *
- * Called by:
- * - Vue, immediately on setup and whenever `props.node.path` changes
+ * The `File` this document last wrote itself (see `handleTextChange`). Its arrival through `props.node.file` is an
+ * echo of the author's own edit, which must not reload the editor; any other `File` is an outside replacement.
+ */
+let lastWrittenFile: File | null = null
+
+/**
+ * Load the text of the record, again whenever the record's `File` is replaced from outside. The document is keyed
+ * by path, so an upload that replaces the record at this same path neither remounts it nor changes the path:
+ * watching only the path left the old text in the editor, and the next keystroke wrote it back over the upload.
+ * @returns void; side effects: resets and then sets `text`.
+ * Called by: Vue (watch on `props.node.file`, immediate)
  */
 watch(
-  () => props.node.path,
-  async (path) => {
-    // Reset first so the editor is not shown with the previous path's text.
+  () => props.node.file,
+  async (file) => {
+    // Our own edit coming back through the model: the editor already shows it.
+    if (file === lastWrittenFile) return
+    // Reset first, so nothing can be typed into the old text while the new one loads.
     text.value = null
-    const { kind, file } = props.node
     // Only text records are decoded; images and others never populate `text`.
-    if (kind !== 'text') return
-    // Decode the record; drop the result if the path moved on meanwhile.
+    if (props.node.kind !== 'text') return
     const loaded = await toText(file)
-    if (props.node.path === path) text.value = loaded
+    // Drop the result if the record was replaced again meanwhile.
+    if (props.node.file === file) text.value = loaded
   },
   { immediate: true }
 )
@@ -110,7 +113,10 @@ function languageOf(path: string) {
  */
 function handleTextChange(next: string) {
   text.value = next
-  props.project.setExtraFile(props.node.path, fromText(props.node.name, next))
+  const file = fromText(props.node.name, next)
+  // Remember it, so the watch recognizes the echo of this edit.
+  lastWrittenFile = file
+  props.project.setExtraFile(props.node.path, file)
 }
 
 /**

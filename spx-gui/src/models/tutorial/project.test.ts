@@ -154,6 +154,55 @@ describe('TutorialProject', () => {
     expect(await toText(reloaded.getResource('videos', 'intro')!.file)).toBe('video')
   })
 
+  describe('naming packages on load', () => {
+    it('renames a package around the unclaimed records of the course being loaded', async () => {
+      const files = makeFiles()
+      // `data/index` with a .json payload would export its payload as `index.json`, over its own manifest, so it
+      // has to be renamed; `index2` is taken by a record nobody claims.
+      files['assets/data/index/index.json'] = fromConfig('index.json', { path: 'payload.json' })
+      files['assets/data/index/payload.json'] = fromText('payload.json', '{"a":1}')
+      files['assets/data/index2/index2.json'] = fromText('index2.json', 'orphan')
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files })
+
+      expect(tutorial.getResource('data', 'index3')).not.toBeNull()
+      const exported = tutorial.exportFiles()
+      expect(await toText(exported['assets/data/index2/index2.json']!)).toBe('orphan')
+      expect(await toText(exported['assets/data/index3/index3.json']!)).toBe('{"a":1}')
+    })
+
+    it('does not let the previous load rename a valid package when reloading', async () => {
+      const first = makeFiles()
+      first['assets/texts/note/note.txt'] = fromText('note.txt', 'an orphan') // no manifest: an extra file
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files: first })
+
+      const second = makeFiles()
+      second['assets/texts/note/index.json'] = fromConfig('index.json', { path: 'note.txt' }) // now a real package
+      second['assets/texts/note/note.txt'] = fromText('note.txt', 'a package')
+      await tutorial.loadFiles(second)
+
+      expect(tutorial.getResource('texts', 'note')).not.toBeNull()
+      expect(tutorial.resources.map((r) => r.name)).not.toContain('note2')
+    })
+
+    it('keeps the name of a valid package that a renamed one would otherwise take', async () => {
+      const files = makeFiles()
+      // Listed first (keys are sorted), `index` needs renaming and would pick `index2` if it came first.
+      files['assets/data/index/index.json'] = fromConfig('index.json', { path: 'payload.json' })
+      files['assets/data/index/payload.json'] = fromText('payload.json', 'renamed')
+      files['assets/data/index2/index.json'] = fromConfig('index.json', { path: 'index2.txt' })
+      files['assets/data/index2/index2.txt'] = fromText('index2.txt', 'valid')
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files })
+
+      expect(await toText(tutorial.getResource('data', 'index2')!.file)).toBe('valid')
+      expect(await toText(tutorial.getResource('data', 'index3')!.file)).toBe('renamed')
+      // Still in the order the course lists them.
+      expect(tutorial.resources.filter((r) => r.kind === 'data').map((r) => r.name)).toEqual(['index3', 'index2'])
+    })
+  })
+
   it('keeps records nobody claims and writes them back', async () => {
     const files = makeFiles()
     files['notes.md'] = fromText('notes.md', '# notes')
