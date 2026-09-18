@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { nextTick, watch } from 'vue'
 
 import type { TutorialProjectMetadata } from './project'
 import { fromConfig, fromText, toConfig, toText, type Files } from '@/models/common/file'
@@ -136,7 +137,7 @@ describe('TutorialProject', () => {
     const tutorial = await loadProject()
     // Every mutation validates the directory is free, so this state is only reachable by reaching in; the check
     // exists so that such a bug fails loudly instead of dropping one of the two records.
-    tutorial.extraFiles['assets/videos/step-to/step-to.mp4'] = fromText('step-to.mp4', 'other')
+    tutorial.extraFiles.set('assets/videos/step-to/step-to.mp4', fromText('step-to.mp4', 'other'))
 
     expect(() => tutorial.exportFiles()).toThrow('claimed by more than one part')
   })
@@ -287,7 +288,64 @@ describe('TutorialProject', () => {
     })
   })
 
+  describe("records named after Vue's internal flags", () => {
+    // On a reactive object these names are Vue's: reading one returns a flag, and a truthy `__v_skip` makes Vue
+    // stop wrapping the object, so later changes go unnoticed.
+    const flags = ['__v_isReactive', '__v_isReadonly', '__v_isShallow', '__v_raw', '__v_skip']
+
+    it('keeps them as ordinary records', async () => {
+      // One course per name: a `__v_skip` in the same course would stop Vue wrapping the map and hide the others.
+      for (const name of flags) {
+        const tutorial = await loadProject()
+        tutorial.setExtraFile(name, fromText(name, name))
+
+        const exported = tutorial.exportFiles()[name]
+        expect(exported instanceof Object && 'arrayBuffer' in exported, name).toBe(true)
+        expect(await toText(exported!), name).toBe(name)
+      }
+    })
+
+    it('keeps tracking changes after a record named __v_skip', async () => {
+      const tutorial = await loadProject()
+      let changes = 0
+      watch(
+        () => tutorial.exportFiles(),
+        () => changes++
+      )
+      tutorial.setExtraFile('__v_skip', fromText('__v_skip', 'x'))
+      await nextTick()
+      const before = changes
+
+      // What decides whether the course shows as unsaved.
+      tutorial.setExtraFile('notes.txt', fromText('notes.txt', 'x'))
+      await nextTick()
+
+      expect(changes).toBeGreaterThan(before)
+    })
+
+    it('keeps them inside a package', async () => {
+      const files = makeFiles()
+      files['assets/videos/step-to/__v_isReactive'] = fromText('__v_isReactive', 'helper')
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files })
+
+      expect(await toText(tutorial.exportFiles()['assets/videos/step-to/__v_isReactive']!)).toBe('helper')
+    })
+  })
+
   describe('files and folders', () => {
+    it('refuses a file where the course keeps a folder, even while it is empty', async () => {
+      const files = makeFiles()
+      delete files['assets/videos/step-to/index.json']
+      delete files['assets/videos/step-to/step-to.mp4']
+      const tutorial = new TutorialProject()
+      await tutorial.load({ metadata: makeMetadata(), files })
+
+      // Nothing is under `assets` yet, but the explorer shows `assets/videos` and uploads go there.
+      expect(() => tutorial.setExtraFile('assets', fromText('assets', 'x'))).toThrow('a folder the course keeps')
+      expect(() => tutorial.setExtraFile('assets/videos', fromText('videos', 'x'))).toThrow('a folder the course keeps')
+    })
+
     it('refuses a record below a file', async () => {
       const tutorial = await loadProject()
       tutorial.setExtraFile('notes.md', fromText('notes.md', 'NOTES'))
@@ -304,7 +362,7 @@ describe('TutorialProject', () => {
       expect(() => tutorial.setExtraFile('docs', fromText('docs', 'x'))).toThrow('conflicts with record docs/a.md')
       // The embedded project's root and resource folders are folders as well.
       expect(() => tutorial.setExtraFile('project', fromText('project', 'x'))).toThrow('conflicts with record')
-      expect(() => tutorial.setExtraFile('assets/videos', fromText('videos', 'x'))).toThrow('conflicts with record')
+      expect(() => tutorial.setExtraFile('assets/videos', fromText('videos', 'x'))).toThrow('a folder the course keeps')
     })
 
     it('still lets a record be replaced at its own path', async () => {
@@ -324,7 +382,7 @@ describe('TutorialProject', () => {
     await tutorial.load({ metadata: makeMetadata(), files })
 
     expect(tutorial.resources.map((resource) => resource.name)).toEqual(['step-to'])
-    expect(Object.keys(tutorial.extraFiles).sort()).toEqual(['assets/videos/orphan/orphan.mp4', 'notes.md'])
+    expect([...tutorial.extraFiles.keys()].sort()).toEqual(['assets/videos/orphan/orphan.mp4', 'notes.md'])
 
     const exported = tutorial.exportFiles()
     expect(exported['notes.md']).toBe(files['notes.md'])

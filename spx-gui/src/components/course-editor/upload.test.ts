@@ -157,6 +157,17 @@ describe('addUploadedFiles', () => {
     expect(validateUploadDir(project, 'docs')).toBeNull()
   })
 
+  it('refuses a file named like a folder the course keeps, even in a course without resources', async () => {
+    const files = makeFiles()
+    for (const path of Object.keys(files)) if (path.startsWith('assets/')) delete files[path]
+    const project = new TutorialProject()
+    await project.loadFiles(files)
+
+    expect(validateUploadPath(project, '', 'assets')?.en).toContain('a folder the course keeps')
+    // And video uploads stay possible.
+    expect(validateUploadDir(project, 'assets/videos')).toBeNull()
+  })
+
   it('refuses __proto__ and keeps files named like other object properties', async () => {
     const project = await loadProject()
     expect(validateUploadPath(project, '', '__proto__')?.en).toContain('cannot be used as a file name')
