@@ -101,26 +101,32 @@
     </div>
   </UICard>
   <Teleport v-if="simpleMode && controlsAnchor != null" :to="controlsAnchor">
-    <UIButton
+    <button
       v-if="runnerState === 'initial'"
       v-radar="{ name: 'run-button', desc: 'Click to run the project in debug mode' }"
-      type="primary"
-      icon="playHollow"
-      :loading="handleRun.isLoading.value"
+      class="simple-run-control simple-run-control-run"
+      :disabled="handleRun.isLoading.value"
+      type="button"
       @click="handleRun.fn"
     >
-      {{ $t({ en: 'Run', zh: '运行' }) }}
-    </UIButton>
-    <UIButton
+      <span class="simple-run-control-face">
+        <UIIcon :type="handleRun.isLoading.value ? 'loading' : 'playHollow'" />
+        {{ $t({ en: 'Run', zh: '运行' }) }}
+      </span>
+    </button>
+    <button
       v-else
       v-radar="{ name: 'stop-button', desc: 'Click to stop the running project' }"
-      type="neutral"
-      icon="end"
-      :loading="handleStop.isLoading.value"
+      class="simple-run-control simple-run-control-stop"
+      :disabled="handleStop.isLoading.value"
+      type="button"
       @click="handleStop.fn"
     >
-      {{ $t({ en: 'Stop', zh: '停止' }) }}
-    </UIButton>
+      <span class="simple-run-control-face">
+        <UIIcon :type="handleStop.isLoading.value ? 'loading' : 'end'" />
+        {{ $t({ en: 'Stop', zh: '停止' }) }}
+      </span>
+    </button>
   </Teleport>
 </template>
 
@@ -194,7 +200,7 @@ import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useSignedInUser } from '@/stores/user'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
@@ -503,6 +509,52 @@ function getStageInlineAnchor() {
 .stage-viewer-container-simple :deep(.stage-viewer) {
   height: 100%;
   aspect-ratio: auto;
+}
+
+.simple-run-control {
+  padding: 6px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ui-color-grey-100);
+  box-shadow: var(--ui-box-shadow-sm);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.simple-run-control-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 12px;
+  color: var(--ui-color-grey-100);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.simple-run-control-run .simple-run-control-face {
+  background: var(--ui-color-turquoise-500);
+}
+
+.simple-run-control-stop .simple-run-control-face {
+  background: var(--ui-color-red-500);
+}
+
+.simple-run-control-face :deep(.ui-icon) {
+  width: 20px;
+  height: 20px;
+}
+
+.simple-run-control:not(:disabled):hover {
+  filter: brightness(1.04);
+}
+
+.simple-run-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
 }
 
 .runner-host :deep(.project-runner-surface) {
