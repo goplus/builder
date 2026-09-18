@@ -901,7 +901,7 @@ describe('Copilot', () => {
     })
 
     expect(generator.calls).toHaveLength(2)
-    const contextMessage = await copilot.getContextMessage()
+    const contextMessage = await copilot.getContextMessage(true)
 
     expect(generator.calls[1]).toEqual([
       {
@@ -1094,7 +1094,7 @@ describe('Copilot', () => {
     const currentRound = copilot.currentSession?.currentRound
     expect(currentRound?.state).toBe(RoundState.Completed)
     expect(generator.calls).toHaveLength(2)
-    const contextMessage = await copilot.getContextMessage()
+    const contextMessage = await copilot.getContextMessage(true)
 
     expect(generator.calls[1]).toEqual([
       {
@@ -1285,7 +1285,7 @@ describe('Copilot', () => {
         }
       }
     ])
-    const contextMessage = await copilot.getContextMessage()
+    const contextMessage = await copilot.getContextMessage(true)
 
     expect(sampledMessages?.at(-1)).toEqual({
       role: 'user',
@@ -1324,6 +1324,7 @@ describe('Copilot', () => {
     })
     const topic = createBasicTopic('Prompt migration test', 'Testing prompt context without injected tools')
 
+    expect((await copilot.getContextMessage()).content).not.toContain('# Available custom elements')
     await copilot.startSession(topic)
     copilot.addUserTextMessage('Find my projects', topic)
 
@@ -1333,7 +1334,7 @@ describe('Copilot', () => {
     expect(generator.callOptions).toHaveLength(1)
 
     const contextMessage = generator.calls[0].at(-1)
-    const expectedContextMessage = await copilot.getContextMessage()
+    const expectedContextMessage = await copilot.getContextMessage(true)
 
     expect(contextMessage).toEqual({
       role: 'user',

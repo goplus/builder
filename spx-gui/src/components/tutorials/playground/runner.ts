@@ -97,8 +97,7 @@ export class PlaygroundCourseRunner extends Emitter<{
         copilot_generateText: (request) =>
           this.options.copilot.generateTextResponse((request as { content: string }).content),
         copilot_generateJSON: (request) => {
-          const { content, schema } = request as { content: string; schema: unknown }
-          if (!validateJSONSchema(schema)) throw new Error('Invalid JSON Schema')
+          const { content, schema } = request as { content: string; schema: JsonSchema7Type }
           return this.options.copilot.generateJSONResponse(content, schema)
         }
       }
@@ -190,25 +189,6 @@ export class PlaygroundCourseRunner extends Emitter<{
     this.settled = true
     this.emit('failed', error)
   }
-}
-
-/** Performs a basic JSON Schema shape check. */
-export function validateJSONSchema(value: unknown): value is JsonSchema7Type {
-  if (typeof value !== 'object' || value == null || Array.isArray(value)) return false
-  const schema = value as Record<string, unknown>
-  if (schema.type != null && typeof schema.type !== 'string') return false
-  if (schema.$ref != null && typeof schema.$ref !== 'string') return false
-  if (
-    schema.required != null &&
-    (!Array.isArray(schema.required) || !schema.required.every((item) => typeof item === 'string'))
-  )
-    return false
-  return (
-    schema.properties == null ||
-    (typeof schema.properties === 'object' &&
-      !Array.isArray(schema.properties) &&
-      Object.values(schema.properties).every((property) => typeof property === 'object' && property != null))
-  )
 }
 
 function errorOf(value: unknown) {

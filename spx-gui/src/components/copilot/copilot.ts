@@ -330,7 +330,7 @@ export class Round {
   private async generateCopilotMessage() {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      messages.push(await this.copilot.getContextMessage())
+      messages.push(await this.copilot.getContextMessage(true))
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
@@ -650,10 +650,11 @@ These skills are already preloaded. Avoid calling \`load_skill\` for them again.
 ${skillContents.join('\n\n')}`
   }
 
-  private async getContext(includeSkills = true): Promise<string> {
+  private async getContext(toolsEnabled = false): Promise<string> {
     const contextParts = await Promise.all([
       ...this.contextProviders.map((p) => p.provideContext?.()),
-      ...(includeSkills ? [this.getSkillCatalogContext(), this.getPreloadSkillsContext()] : [])
+      this.getPreloadSkillsContext(),
+      ...(toolsEnabled ? [this.getSkillCatalogContext()] : [])
     ])
     return contextParts.filter((s) => s != null && s.trim() !== '').join('\n\n')
   }
@@ -684,8 +685,12 @@ ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
 ${topic.description}`
   }
 
-  async getContextMessage(includeSkills = true): Promise<UserTextMessage> {
-    const parts = [this.getCustomElementsPrompt(), await this.getContext(includeSkills), this.getTopicPrompt()]
+  async getContextMessage(toolsCustomElementsEnabled = false): Promise<UserTextMessage> {
+    const parts = [
+      toolsCustomElementsEnabled ? this.getCustomElementsPrompt() : '',
+      await this.getContext(toolsCustomElementsEnabled),
+      this.getTopicPrompt()
+    ]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`
@@ -699,7 +704,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   async generateTextResponse(message: string, signal?: AbortSignal): Promise<string> {
     let content = ''
     const ctrl = new AbortController()
-    await this.streamResponse(message, { signal: mergeSignals(ctrl.signal, signal) }, (event) => {
+    await this.streamOneShotResponse(message, { signal: mergeSignals(ctrl.signal, signal) }, (event) => {
       switch (event.type) {
         case 'text_delta':
           content += event.data.text
@@ -716,7 +721,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   async generateJSONResponse(message: string, schema: JSONSchema, signal?: AbortSignal): Promise<unknown> {
     const toolCalls: Array<ToolCallDraft | null> = []
-    await this.streamResponse(
+    await this.streamOneShotResponse(
       `${message}\n\nReturn the result through the return_json tool.`,
       {
         signal,
@@ -875,13 +880,13 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.currentSession.addUserMessage(userEventMessage)
   }
 
-  private async streamResponse(
+  private async streamOneShotResponse(
     message: string,
     options: apis.GenerateCopilotMessageOptions,
     handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
   ) {
     const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
-    messages.push(await this.getContextMessage(false), { type: 'text', role: 'user', content: message })
+    messages.push(await this.getContextMessage(), { type: 'text', role: 'user', content: message })
     const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
     for await (const event of result) {
       if (event.type === 'error') throw new Error(event.data.message)
