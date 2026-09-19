@@ -207,6 +207,39 @@ func TestPlayerThink(t *testing.T) {
 		}
 	})
 
+	t.Run("KeepsTransportForCompleteInteraction", func(t *testing.T) {
+		type ContinueCommand struct{}
+
+		originalTransport := DefaultTransport()
+		t.Cleanup(func() { SetDefaultTransport(originalTransport) })
+
+		var firstCalls, replacementCalls int
+		replacement := &mockTransport{InteractFunc: func(context.Context, Request) (Response, error) {
+			replacementCalls++
+			return Response{}, nil
+		}}
+		first := &mockTransport{InteractFunc: func(context.Context, Request) (Response, error) {
+			firstCalls++
+			if firstCalls == 1 {
+				SetDefaultTransport(replacement)
+				return Response{CommandName: "ContinueCommand"}, nil
+			}
+			return Response{}, nil
+		}}
+		SetDefaultTransport(first)
+
+		p := &Player{errorHandler: func(err error) { t.Errorf("unexpected interaction error: %v", err) }}
+		PlayerOnCmd_(p, ContinueCommand{}, func(ContinueCommand) error { return nil })
+		p.think(t.Context(), nil, "continue", nil)
+
+		if got, want := firstCalls, 2; got != want {
+			t.Errorf("got %d original transport calls, want %d", got, want)
+		}
+		if replacementCalls != 0 {
+			t.Errorf("got %d replacement transport calls, want 0", replacementCalls)
+		}
+	})
+
 	t.Run("DoesNotRetryOrdinaryTransportError", func(t *testing.T) {
 		type testCommand struct{}
 
@@ -381,12 +414,13 @@ func TestPlayerManageHistoryDoesNotRetryOrdinaryTransportError(t *testing.T) {
 	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
 
 	archiveCalls := 0
-	SetDefaultTransport(&mockTransport{
+	transport := &mockTransport{
 		ArchiveFunc: func(_ context.Context, _ []Turn, _ string) (ArchivedHistory, error) {
 			archiveCalls++
 			return ArchivedHistory{}, errors.New("forbidden")
 		},
-	})
+	}
+	SetDefaultTransport(transport)
 
 	history := make([]Turn, 35)
 	for i := range history {
@@ -394,7 +428,7 @@ func TestPlayerManageHistoryDoesNotRetryOrdinaryTransportError(t *testing.T) {
 	}
 	p := &Player{history: history}
 
-	p.manageHistory(t.Context())
+	p.manageHistory(t.Context(), transport)
 
 	if got, want := archiveCalls, 1; got != want {
 		t.Errorf("got %d archive calls, want %d", got, want)
@@ -412,7 +446,7 @@ func TestPlayerManageHistoryDefersClientErrorRetry(t *testing.T) {
 	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
 
 	archiveCalls := 0
-	SetDefaultTransport(&mockTransport{
+	transport := &mockTransport{
 		ArchiveFunc: func(_ context.Context, _ []Turn, _ string) (ArchivedHistory, error) {
 			archiveCalls++
 			return ArchivedHistory{}, &ClientError{
@@ -421,7 +455,8 @@ func TestPlayerManageHistoryDefersClientErrorRetry(t *testing.T) {
 				Err:        errors.New("quota exceeded"),
 			}
 		},
-	})
+	}
+	SetDefaultTransport(transport)
 
 	history := make([]Turn, 35)
 	for i := range history {
@@ -429,8 +464,8 @@ func TestPlayerManageHistoryDefersClientErrorRetry(t *testing.T) {
 	}
 	p := &Player{history: history}
 
-	p.manageHistory(t.Context())
-	p.manageHistory(t.Context())
+	p.manageHistory(t.Context(), transport)
+	p.manageHistory(t.Context(), transport)
 
 	if got, want := archiveCalls, 1; got != want {
 		t.Errorf("got %d archive calls, want %d", got, want)
