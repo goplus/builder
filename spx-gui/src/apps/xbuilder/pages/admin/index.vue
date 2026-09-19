@@ -92,8 +92,8 @@ watch(
             <RouterLink
               v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
-              class="whitespace-nowrap border-0 bg-transparent px-3 text-sm font-medium hover:bg-grey-400"
-              :class="route.path.startsWith('/admin/audit-logs') ? 'text-primary-main' : null"
+              class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
+              :class="route.path.startsWith('/admin/audit-logs') ? 'text-primary-main' : 'text-inherit'"
               to="/admin/audit-logs"
             >
               {{ $t({ en: 'Audit logs', zh: '审计日志' }) }}
