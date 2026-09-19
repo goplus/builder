@@ -21,7 +21,7 @@ import {
   getFileObject,
   type UploadSession as RawUploadSession
 } from '@/apis/file'
-import { capture, DefaultException, TimeoutException } from '@/utils/exception'
+import { ActionException, Cancelled, capture, DefaultException, TimeoutException } from '@/utils/exception'
 import { calculateQiniuEtag, getUphostsByRegion } from '@/utils/kodo'
 import type { Metadata, PartialMetadata, ProjectSerialized } from '../project'
 import { File, toText, type Files, isText } from './file'
@@ -181,10 +181,22 @@ export async function saveFiles(
   signal?: AbortSignal
 ): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
   const fileCollection = Object.fromEntries(
-    await Promise.all(Object.keys(files).map(async (path) => [path, await saveFile(files[path]!, signal)] as const))
+    await Promise.all(Object.keys(files).map((path) => saveFileAtPath(path, files[path]!, signal)))
   )
   const fileCollectionHash = await hashFileCollection(fileCollection)
   return { fileCollection, fileCollectionHash }
+}
+
+async function saveFileAtPath(path: string, file: File, signal?: AbortSignal): Promise<[string, UniversalUrl]> {
+  try {
+    return [path, await saveFile(file, signal)]
+  } catch (e) {
+    if (e instanceof Cancelled) throw e
+    throw new ActionException(e, {
+      en: `Failed to save file ${path}`,
+      zh: `保存文件 ${path} 失败`
+    })
+  }
 }
 
 export function getFiles(fileCollection: FileCollection): Files {
@@ -362,7 +374,11 @@ const saveToKodo = (file: File, signal?: AbortSignal) =>
     }
     const { token, maxSize, bucket, region } = await getUploadSessionWithCache()
     signal?.throwIfAborted()
-    if (ab.byteLength > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
+    if (ab.byteLength > maxSize)
+      throw new DefaultException({
+        en: `Single file size must not exceed ${humanizeFileSize(maxSize).en}`,
+        zh: `单个文件尺寸不得超过 ${humanizeFileSize(maxSize).zh}`
+      })
     const task = createDirectUploadTask(
       {
         type: 'array-buffer',
