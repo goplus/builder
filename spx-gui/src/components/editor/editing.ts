@@ -26,6 +26,7 @@ export type CloudHelpers = Pick<RawCloudHelpers, 'load' | 'save'>
 
 export class Saving {
   private stateRef = ref(SavingState.Pending)
+  private saveToCloudPromise: Promise<void> | null = null
   get state() {
     return this.stateRef.value
   }
@@ -50,7 +51,7 @@ export class Saving {
     try {
       await timeout(1500, this.signal)
       await until(this.isOnline, this.signal) // Wait until online
-      this.saveToCloud()
+      this.retrySaveToCloud()
     } catch (e) {
       if (e instanceof Cancelled) return
       throw e
@@ -59,26 +60,52 @@ export class Saving {
 
   private async saveToCloud(): Promise<void> {
     const signal = this.signal
-    try {
-      this.stateRef.value = SavingState.InProgress
-      const serialized = await this.project.export(signal)
-      const saved = await this.cloudHelper.save(serialized, signal)
-      this.project.setMetadata(saved.metadata)
-      signal.throwIfAborted()
-      this.stateRef.value = SavingState.Completed
-      this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
-    } catch (err) {
-      if (err instanceof Cancelled) return
-      capture(err, 'Failed to save project to cloud')
-      this.stateRef.value = SavingState.Failed
-      await timeout(5000, signal)
-      return this.saveToCloud()
+    this.stateRef.value = SavingState.InProgress
+    const serialized = await this.project.export(signal)
+    const saved = await this.cloudHelper.save(serialized, signal)
+    this.project.setMetadata(saved.metadata)
+    signal.throwIfAborted()
+    this.stateRef.value = SavingState.Completed
+    this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
+  }
+
+  private saveToCloudOnce(): Promise<void> {
+    if (this.saveToCloudPromise != null) return this.saveToCloudPromise
+    const promise = this.saveToCloud()
+    this.saveToCloudPromise = promise
+    void promise.then(
+      () => {
+        if (this.saveToCloudPromise === promise) this.saveToCloudPromise = null
+      },
+      () => {
+        if (this.saveToCloudPromise === promise) this.saveToCloudPromise = null
+      }
+    )
+    return promise
+  }
+
+  private async retrySaveToCloud(): Promise<void> {
+    const signal = this.signal
+    while (!signal.aborted) {
+      try {
+        await this.saveToCloudOnce()
+        return
+      } catch (err) {
+        if (err instanceof Cancelled) return
+        capture(err, 'Failed to save project to cloud')
+        this.stateRef.value = SavingState.Failed
+        try {
+          await timeout(5000, signal)
+        } catch (err) {
+          if (err instanceof Cancelled) return
+          throw err
+        }
+      }
     }
   }
 
   flush() {
-    // TODO: if `saveToCloud` already in progress, wait for it
-    return this.saveToCloud()
+    return this.saveToCloudOnce()
   }
 }
 
@@ -178,17 +205,23 @@ export class Editing extends Disposable {
     return this.savingRef.value
   }
 
+  private restoredFromLocalCache = false
+
   private startAutoSave() {
     this.addDisposer(
-      watch([() => this.project.exportFiles(), () => this.mode], ([, mode], __, onCleanup) => {
-        if (mode === EditingMode.EffectFree || !this.dirty) return
+      watch(
+        [() => this.project.exportFiles(), () => this.mode],
+        ([, mode], __, onCleanup) => {
+          if (mode === EditingMode.EffectFree || !this.dirty) return
 
-        const signal = getCleanupSignal(onCleanup)
-        const saving = new Saving(this.project, this.cloudHelpers, this.localCacheHelper, this.isOnline, signal)
+          const signal = getCleanupSignal(onCleanup)
+          const saving = new Saving(this.project, this.cloudHelpers, this.localCacheHelper, this.isOnline, signal)
 
-        this.savingRef.value = saving
-        signal.addEventListener('abort', () => (this.savingRef.value = null))
-      })
+          this.savingRef.value = saving
+          signal.addEventListener('abort', () => (this.savingRef.value = null))
+        },
+        { immediate: true }
+      )
     )
   }
 
@@ -262,6 +295,7 @@ export class Editing extends Disposable {
         this.localCacheHelper.clear().catch((e) => capture(e, 'Failed to clear local cache'))
       } else {
         finalData = localData
+        this.restoredFromLocalCache = true
       }
     }
     await this.project.load(finalData, signal)
@@ -271,6 +305,7 @@ export class Editing extends Disposable {
 
   startEditing() {
     this.startDirtyMonitoring()
+    if (this.restoredFromLocalCache) this.dirtyRef.value = true
     this.startAutoPreload()
     this.startAutoSave()
   }
