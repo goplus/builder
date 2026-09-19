@@ -39,7 +39,7 @@ function configEq(c1: SvgFontConfig, c2: SvgFontConfig) {
 }
 
 class SvgFontContext {
-  private cache = new WeakMap<File, Promise<Blob>>()
+  private cache = new WeakMap<File, Promise<Blob | null>>()
   private renderer: Promise<SvgRenderer> | null = null
   constructor(private config: SvgFontConfig) {}
 
@@ -53,7 +53,7 @@ class SvgFontContext {
     return this.renderer
   }
 
-  getRenderedImage(file: File): Promise<Blob> {
+  getRenderedImage(file: File): Promise<Blob | null> {
     const cached = this.cache.get(file)
     if (cached != null) return cached
 
@@ -66,8 +66,8 @@ class SvgFontContext {
         return new Blob([new Uint8Array(png)], { type: 'image/png' })
       })
       .catch((e) => {
-        this.cache.delete(file)
-        throw e
+        console.warn('Failed to render SVG with project fonts. Using the original SVG instead.', e)
+        return null
       })
     this.cache.set(file, promise)
     return promise
@@ -106,6 +106,7 @@ export async function getFontAwareImageUrl(file: File, fontContext: SvgFontConte
   if (!isSvgMimeType(file.type) || fontContext == null) return file.url(signal)
 
   const renderedImage = await fontContext.getRenderedImage(file)
+  if (renderedImage == null) return file.url(signal)
   signal.throwIfAborted()
   const url = URL.createObjectURL(renderedImage)
   signal.addEventListener('abort', () => URL.revokeObjectURL(url), { once: true })
