@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { useFontAwareImageUrl } from '@/utils/img-rendering'
 import type { File } from '@/models/common/file'
 import { UIBlockItem, UIImg } from '@/components/ui'
 import { useImageSelectorCompact, useImageSelectorDisabled } from '../common/ImageSelector.vue'
@@ -21,7 +21,7 @@ const props = withDefaults(
 
 const disabled = useImageSelectorDisabled()
 const compact = useImageSelectorCompact()
-const [url, fileLoading] = useRenderableImageUrl(() => props.file)
+const [url, fileLoading] = useFontAwareImageUrl(() => props.file)
 const loading = computed(() => props.loading || fileLoading.value)
 </script>
 

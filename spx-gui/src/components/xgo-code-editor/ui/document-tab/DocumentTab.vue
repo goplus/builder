@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { useFontAwareImageUrl } from '@/utils/img-rendering'
 import type { LocaleMessage } from '@/utils/i18n'
 import { UIImg, UITooltip } from '@/components/ui'
 import type { TextDocument } from '../../text-document'
@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 const name = computed<LocaleMessage>(() => props.textDocument.displayName)
 
-const [thumbnailUrl] = useRenderableImageUrl(() => props.textDocument.thumbnailFile)
+const [thumbnailUrl] = useFontAwareImageUrl(() => props.textDocument.thumbnailFile)
 </script>
 
 <template>

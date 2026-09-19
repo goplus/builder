@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { useFontAwareImageUrl } from '@/utils/img-rendering'
 import { humanizeTimeLeft } from '../common/time-left'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { UIImg, UIButton, UIError } from '@/components/ui'
@@ -39,7 +39,7 @@ function handleSaveErrorBack() {
   props.gen.resetFinishState()
 }
 
-const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.gen.image)
+const [imgSrc, imgLoading] = useFontAwareImageUrl(() => props.gen.image)
 </script>
 
 <template>
