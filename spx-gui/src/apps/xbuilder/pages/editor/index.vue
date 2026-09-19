@@ -58,7 +58,7 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
-import { EditingMode, type ILocalCache } from '@/components/editor/editing'
+import { EditingMode, SavingState, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
@@ -204,8 +204,7 @@ onBeforeRouteLeave(async () => {
   if (es == null) return true
   const okToLeave = await checkChangesNotToBeSaved(es)
   if (!okToLeave) return false
-  await ensureAutoSaved(es)
-  return true
+  return ensureAutoSaved(es)
 })
 
 /**
@@ -235,22 +234,44 @@ async function checkChangesNotToBeSaved(es: EditorState) {
   })
 }
 
-/** Ensure the changes to be auto-saved are saved */
-function ensureAutoSaved(es: EditorState) {
+/** Ensure the changes to be auto-saved are saved. */
+async function ensureAutoSaved(es: EditorState): Promise<boolean> {
   const editing = es.editing
-  if (!editing.dirty || editing.mode !== EditingMode.AutoSave || editing.saving == null) return
-  return m
-    .withLoading(
+  if (!editing.dirty || editing.mode !== EditingMode.AutoSave || editing.saving == null) return true
+  if (editing.saving.state === SavingState.Failed) return confirmLeaveWithLocalChanges()
+  try {
+    await m.withLoading(
       editing.saving.flush(),
       t({
         en: 'Saving project...',
         zh: '保存项目中...'
       })
     )
-    .catch((e) => {
-      m.error(t({ en: 'Failed to save project', zh: '保存项目失败' }))
-      throw e
+    return true
+  } catch {
+    return confirmLeaveWithLocalChanges()
+  }
+}
+
+function confirmLeaveWithLocalChanges(): Promise<boolean> {
+  return confirm({
+    title: t({
+      en: 'Leave editor',
+      zh: '离开编辑器'
+    }),
+    content: t({
+      en: 'Your latest changes are saved only in this browser and have not been uploaded to the cloud. They will not be available on other devices and may be lost if browser data is cleared. Leave anyway?',
+      zh: '最新修改仅保存在当前浏览器中，尚未上传到云端。在其他设备上无法访问；若清除浏览器数据，修改可能丢失。仍要离开吗？'
+    }),
+    cancelText: t({
+      en: 'Keep editing',
+      zh: '继续编辑'
+    }),
+    confirmText: t({
+      en: 'Leave anyway',
+      zh: '仍然离开'
     })
+  })
 }
 
 function handleBeforeUnload(event: BeforeUnloadEvent) {
