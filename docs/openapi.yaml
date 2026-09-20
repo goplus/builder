@@ -2941,12 +2941,9 @@ paths:
                 thumbnail:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
                 content:
-                  description: Current, possibly unsaved, playground course content mapping file paths to universal URLs.
-                  type: object
+                  description: Current, possibly unsaved, playground course content.
+                  $ref: "#/components/schemas/PlaygroundCourseContent"
                   minProperties: 1
-                  additionalProperties:
-                    type: string
-                    format: uri-reference
       responses:
         "200":
           description: Successfully generated the copilot context.
@@ -7624,6 +7621,15 @@ components:
         visibility:
           $ref: "#/components/schemas/Visibility"
 
+    CourseKind:
+      description: Kind of a course, deciding how the course is driven and what its content holds.
+      type: string
+      enum:
+        - guided
+        - playground
+      examples:
+        - guided
+
     Course:
       description: Educational course with learning content.
       type: object
@@ -7668,13 +7674,8 @@ components:
           description: Username of the course's owner.
           $ref: "#/components/schemas/User/properties/username"
         kind:
-          description: Kind of the course, deciding how the course is driven and what its content holds. Immutable after creation.
-          type: string
-          enum:
-            - guided
-            - playground
-          examples:
-            - guided
+          description: Kind of the course. Immutable after creation.
+          $ref: "#/components/schemas/CourseKind"
         title:
           description: Title of the course.
           type: string
@@ -7693,7 +7694,8 @@ components:
           description: |
             Kind-specific course content, selected by `kind`: `GuidedCourseContent` for a `guided` course,
             `PlaygroundCourseContent` for a `playground` course. The API validates only the top-level shape; internals
-            follow the Tutorial content-format contract and stay opaque to the API and storage.
+            follow the [Tutorial content-format contract](./develop/tutorial-v2/course-storage.md) and stay opaque to
+            the API and storage.
           type: object
 
     GuidedCourseContent:
@@ -7720,8 +7722,9 @@ components:
     PlaygroundCourseContent:
       description: |
         Content of a `playground` course, driven by course code: a file collection mapping file paths to universal URLs.
-        The referenced files form the Tutorial project; its layout is owned by the Tutorial Class Framework contract. An
-        empty collection is valid, so a course can be created before its files are uploaded.
+        The referenced files form the Tutorial project; its layout is owned by the
+        [Tutorial Class Framework contract](./develop/tutorial-v2/tutorial-class-framework.go). An empty collection is
+        valid, so a course can be created before its files are uploaded.
       type: object
       additionalProperties:
         type: string
@@ -7759,12 +7762,7 @@ components:
           description: |
             Kind of the courses in this series; a course series holds courses of exactly one kind. Changing it requires
             every course in the series to have the new kind.
-          type: string
-          enum:
-            - guided
-            - playground
-          examples:
-            - guided
+          $ref: "#/components/schemas/CourseKind"
         title:
           description: Title of the course series.
           type: string
