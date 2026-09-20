@@ -169,7 +169,7 @@ watch(
   () => authorizationQuery.data.value,
   (authorization) => {
     if (authorization == null) return
-    roles.value = normalizeAdminRoles(authorization.roles)
+    roles.value = authorization.roles.filter(isManagedAdminRole)
     plan.value = authorization.plan
   },
   { immediate: true }
