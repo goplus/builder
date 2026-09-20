@@ -1,7 +1,8 @@
 import { createApp, defineComponent, h, shallowRef, type App, type Ref, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { capture } from '@/utils/exception'
 import { fromText, type File } from '@/models/common/file'
-import { getFontAwareImageUrl, provideSvgFontContext, useFontAwareImageUrl, type SvgFontConfig } from './img-rendering'
+import { getRenderableImageUrl, provideSvgFontContext, useRenderableImageUrl, type SvgFontConfig } from './img-rendering'
 import { createSvgRenderer } from './resvg'
 import { applyFontPreferencesToSvgText } from './svg-font'
 
@@ -13,6 +14,11 @@ vi.mock('./resvg', () => ({
 
 vi.mock('./svg-font', () => ({
   applyFontPreferencesToSvgText: vi.fn((svgText: string) => svgText)
+}))
+
+vi.mock('@/utils/exception', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/exception')>()),
+  capture: vi.fn()
 }))
 
 describe('font-aware image rendering', () => {
@@ -34,7 +40,7 @@ describe('font-aware image rendering', () => {
     const urls: Ref<string | null>[] = []
     const ImageConsumer = defineComponent({
       setup() {
-        const [url] = useFontAwareImageUrl(() => file)
+        const [url] = useRenderableImageUrl(() => file)
         urls.push(url)
         return () => null
       }
@@ -72,7 +78,7 @@ describe('font-aware image rendering', () => {
   it('uses the original URL when no font context is provided', async () => {
     const file = fromText('costume.svg', '<svg><text>hello</text></svg>', { type: 'image/svg+xml' })
 
-    await expect(getFontAwareImageUrl(file, null, new AbortController().signal)).resolves.toBe('blob:mock-0')
+    await expect(getRenderableImageUrl(file, null, new AbortController().signal)).resolves.toBe('blob:mock-0')
     expect(createSvgRenderer).not.toHaveBeenCalled()
   })
 
@@ -82,14 +88,13 @@ describe('font-aware image rendering', () => {
     render.mockImplementationOnce(() => {
       throw new Error('SVG has an invalid size')
     })
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const { urls } = mountImageConsumers(() => config.value, file, 2)
 
     await vi.waitFor(() => expect(urls.map((url) => url.value)).toEqual(['blob:mock-0', 'blob:mock-1']))
 
-    expect(warn).toHaveBeenCalledWith(
-      'Failed to render SVG with project fonts. Using the original SVG instead.',
-      expect.any(Error)
+    expect(capture).toHaveBeenCalledWith(
+      expect.any(Error),
+      'Failed to render SVG with project fonts. Using the original SVG instead.'
     )
     expect(render).toHaveBeenCalledTimes(1)
   })

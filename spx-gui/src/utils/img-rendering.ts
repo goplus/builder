@@ -14,7 +14,7 @@ import {
   type WatchSource
 } from 'vue'
 import { isSvgMimeType } from '@/utils/file'
-import { Cancelled } from '@/utils/exception'
+import { Cancelled, capture } from '@/utils/exception'
 import type { File } from '@/models/common/file'
 import { createSvgRenderer, type SvgRenderer } from './resvg'
 import { applyFontPreferencesToSvgText } from './svg-font'
@@ -23,6 +23,8 @@ export type SvgFontConfig = {
   fontPreferences: string[]
   fonts: Map<string, File>
 }
+
+const maxSvgRenderSize = 1024
 
 function arrayEq(a: readonly unknown[], b: readonly unknown[]) {
   return a.length === b.length && a.every((value, index) => value === b[index])
@@ -62,11 +64,11 @@ class SvgFontContext {
       .then(async (ab) => {
         const svgText = new TextDecoder().decode(ab)
         const renderedSvgText = applyFontPreferencesToSvgText(svgText, this.config.fontPreferences)
-        const png = (await this.getRenderer()).render(renderedSvgText)
+        const png = (await this.getRenderer()).render(renderedSvgText, { maxSize: maxSvgRenderSize })
         return new Blob([new Uint8Array(png)], { type: 'image/png' })
       })
       .catch((e) => {
-        console.warn('Failed to render SVG with project fonts. Using the original SVG instead.', e)
+        capture(e, 'Failed to render SVG with project fonts. Using the original SVG instead.')
         return null
       })
     this.cache.set(file, promise)
@@ -102,7 +104,7 @@ function useSvgFontContext(): ShallowRef<SvgFontContext | null> {
  * Get an image-resource URL for a `File`.
  * SVG files are rasterized with their project font faces.
  */
-export async function getFontAwareImageUrl(file: File, fontContext: SvgFontContext | null, signal: AbortSignal) {
+export async function getRenderableImageUrl(file: File, fontContext: SvgFontContext | null, signal: AbortSignal) {
   if (!isSvgMimeType(file.type) || fontContext == null) return file.url(signal)
 
   const renderedImage = await fontContext.getRenderedImage(file)
@@ -114,7 +116,7 @@ export async function getFontAwareImageUrl(file: File, fontContext: SvgFontConte
 }
 
 /** Reactive image-resource URL for a `File`, with SVG-specific rendering fixes when needed. */
-export function useFontAwareImageUrl(fileSource: WatchSource<File | undefined | null>) {
+export function useRenderableImageUrl(fileSource: WatchSource<File | undefined | null>) {
   const fontContext = useSvgFontContext()
   const urlRef = ref<string | null>(null)
   const loadingRef = ref(false)
@@ -133,7 +135,7 @@ export function useFontAwareImageUrl(fileSource: WatchSource<File | undefined | 
         urlRef.value = null
         loadingRef.value = false
       })
-      getFontAwareImageUrl(file, ctx, ctrl.signal)
+      getRenderableImageUrl(file, ctx, ctrl.signal)
         .then((url) => {
           urlRef.value = url
         })
@@ -152,8 +154,8 @@ export function useFontAwareImageUrl(fileSource: WatchSource<File | undefined | 
 }
 
 /** Reactive loaded `HTMLImageElement` for canvas-style consumers. */
-export function useFontAwareImage(fileSource: WatchSource<File | undefined | null>) {
-  const [urlRef, urlLoadingRef] = useFontAwareImageUrl(fileSource)
+export function useRenderableImage(fileSource: WatchSource<File | undefined | null>) {
+  const [urlRef, urlLoadingRef] = useRenderableImageUrl(fileSource)
   const imgRef = ref<HTMLImageElement | null>(null)
   const imgLoadingRef = ref(false)
 

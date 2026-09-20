@@ -1,8 +1,12 @@
-import init, { Renderer } from '@/assets/wasm/resvg.js'
+import init, { Renderer, RenderOptions } from '@/assets/wasm/resvg.js'
 import type { File } from '@/models/common/file'
 
+export type SvgRenderOptions = {
+  maxSize: number
+}
+
 export type SvgRenderer = {
-  render(svg: string): Uint8Array
+  render(svg: string, options: SvgRenderOptions): Uint8Array
 }
 
 let initialization: Promise<void> | null = null
@@ -18,5 +22,10 @@ export async function createSvgRenderer(fonts: Map<string, File>): Promise<SvgRe
   const entries = Array.from(fonts)
   const fontNames = entries.map(([name]) => name)
   const fontBuffers = await Promise.all(entries.map(([, file]) => file.arrayBuffer()))
-  return new Renderer(fontNames, fontBuffers)
+  const renderer = new Renderer(fontNames, fontBuffers)
+  return {
+    render(svg, options) {
+      return renderer.render(svg, new RenderOptions(options.maxSize))
+    }
+  }
 }

@@ -8,7 +8,7 @@ The wrapper accepts project font family names and font buffers. It maps those na
 
 Requirements:
 
-- Rust `1.87` or newer with the `wasm32-unknown-unknown` target;
+- Rust `1.88` or newer with the `wasm32-unknown-unknown` target;
 - `wasm-bindgen-cli 0.2.126`.
 
 Run:

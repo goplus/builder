@@ -40,7 +40,7 @@ vi.mock('@/utils/i18n', () => ({
 }))
 
 vi.mock('@/utils/img-rendering', () => ({
-  useFontAwareImageUrl: () => ['', false]
+  useRenderableImageUrl: () => ['', false]
 }))
 
 vi.mock('@/utils/project', () => ({

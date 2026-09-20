@@ -8,8 +8,32 @@ use resvg::usvg::{self, fontdb::ID};
 use svgtypes::FontFamily;
 use wasm_bindgen::prelude::*;
 
+#[wasm_bindgen]
+pub struct RenderOptions {
+    max_size: u32,
+}
+
+#[wasm_bindgen]
+impl RenderOptions {
+    #[wasm_bindgen(constructor)]
+    pub fn new(max_size: u32) -> RenderOptions {
+        RenderOptions { max_size }
+    }
+}
+
 fn error(message: impl std::fmt::Display) -> JsValue {
     JsValue::from_str(&message.to_string())
+}
+
+fn render_size(width: u32, height: u32, max_size: u32) -> (u32, u32, f32) {
+    let scale = (max_size as f32 / width as f32)
+        .min(max_size as f32 / height as f32)
+        .min(1.0);
+    (
+        (width as f32 * scale).ceil() as u32,
+        (height as f32 * scale).ceil() as u32,
+        scale,
+    )
 }
 
 fn font_has_char(fontdb: &usvg::fontdb::Database, id: ID, character: char) -> bool {
@@ -43,6 +67,8 @@ impl Renderer {
             let ids = fontdb.load_font_source(usvg::fontdb::Source::Binary(Arc::new(font_data)));
             if let Some(id) = ids.first() {
                 aliases.insert(name, *id);
+            } else {
+                return Err(error(format!("failed to load font family {name}")));
             }
         }
 
@@ -52,7 +78,7 @@ impl Renderer {
         })
     }
 
-    pub fn render(&self, svg: &str) -> Result<Vec<u8>, JsValue> {
+    pub fn render(&self, svg: &str, render_options: &RenderOptions) -> Result<Vec<u8>, JsValue> {
         let aliases = self.aliases.clone();
         let fallbacks = Arc::new(Mutex::new(HashMap::<ID, Vec<ID>>::new()));
         let default_select_font = usvg::FontResolver::default_font_selector();
@@ -104,13 +130,30 @@ impl Renderer {
 
         let tree = usvg::Tree::from_str(svg, &options).map_err(error)?;
         let size = tree.size().to_int_size();
-        let mut pixmap = resvg::tiny_skia::Pixmap::new(size.width(), size.height())
+        let (width, height, scale) =
+            render_size(size.width(), size.height(), render_options.max_size);
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(width, height)
             .ok_or_else(|| error("failed to create SVG render target"))?;
         resvg::render(
             &tree,
-            resvg::tiny_skia::Transform::default(),
+            resvg::tiny_skia::Transform::from_scale(scale, scale),
             &mut pixmap.as_mut(),
         );
         pixmap.encode_png().map_err(error)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render_size;
+
+    #[test]
+    fn render_size_preserves_a_small_svg() {
+        assert_eq!(render_size(800, 600, 1024), (800, 600, 1.0));
+    }
+
+    #[test]
+    fn render_size_downscales_a_large_svg() {
+        assert_eq!(render_size(2048, 1024, 1024), (1024, 512, 0.5));
     }
 }
