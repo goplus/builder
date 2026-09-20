@@ -6,7 +6,7 @@ tool github.com/goplus/xgolsw/cmd/pkgdatagen
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/xgolsw v0.22.2-0.20260916151844-52de41187bed
+	github.com/goplus/xgolsw v0.22.2-0.20260918115620-80f35c293dff
 )
 
 require (
