@@ -32,5 +32,8 @@ describe('reference image loading', () => {
       'reference image expected'
     )
     expect(() => validateReferenceImage(fromText('invalid.txt', ''))).toThrow('unsupported reference image type')
+    expect(() => validateReferenceImage(fromText('reference.svg', '<svg />'))).toThrow(
+      'unsupported reference image type'
+    )
   })
 })

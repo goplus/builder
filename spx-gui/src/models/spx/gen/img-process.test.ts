@@ -41,8 +41,7 @@ describe('img-process', () => {
     const [taskRecord] = [...aigcMock.tasks.values()]
     expect(taskRecord.task.type).toBe(TaskType.RemoveBackground)
     expect(taskRecord.params).toEqual({ imageUrl: 'kodo://mock-bucket/test.png' })
-    expect(result.taskId).toBe(taskRecord.task.id)
-    expect(result.file.name).toBe('hero.png')
+    expect(result.name).toBe('hero.png')
   })
 
   it('does not start background removal if cancelled during upload', async () => {

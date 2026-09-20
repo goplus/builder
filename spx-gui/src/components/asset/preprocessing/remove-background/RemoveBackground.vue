@@ -24,8 +24,7 @@ const emit = defineEmits<MethodComponentEmits>()
 const imgPreviewRefs = ref<Array<InstanceType<typeof ImgPreview>>>([])
 
 const removeBackground = memoizeAsync(async (file: File, signal?: AbortSignal) => {
-  const result = await removeImageBackground(file, signal)
-  return result.file
+  return removeImageBackground(file, signal)
 })
 
 let applyingCtrl: AbortController | null = null

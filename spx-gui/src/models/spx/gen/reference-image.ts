@@ -3,6 +3,8 @@ import { extname } from '@/utils/path'
 import { capture } from '@/utils/exception'
 import type { File, Files } from '../../common/file'
 
+export const referenceImageExts = imgExts.filter((ext) => ext !== 'svg')
+
 export type ReferenceImageSelection =
   | {
       type: 'costume'
@@ -18,7 +20,7 @@ function getImageExtension(file: File) {
 }
 
 function isImageFile(file: File) {
-  return imgExts.includes(getImageExtension(file))
+  return referenceImageExts.includes(getImageExtension(file))
 }
 
 export function validateReferenceImage(file: File) {

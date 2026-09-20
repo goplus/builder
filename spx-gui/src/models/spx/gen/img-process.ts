@@ -7,7 +7,7 @@ import { createFileWithUniversalUrl, saveFile } from '@/models/common/cloud'
 import { fromBlob, toNativeFile, type File } from '@/models/common/file'
 import { Task } from './common'
 
-// The animation backend recognizes this exact costume FOP and adds the contrasting opaque background.
+// The animation backend recognizes this exact FOP and normalizes the image to generated-costume dimensions.
 const costumeReferenceFop = 'imageView2/1/w/512/h/512/format/png/colors/256'
 
 /**
@@ -40,13 +40,8 @@ export async function removeImageBackground(inputFile: File, signal?: AbortSigna
   try {
     await task.start({ imageUrl: universalUrl })
     const { imageUrl: resultUniversalUrl } = await task.untilCompleted()
-    const taskId = task.data?.id
-    if (taskId == null) throw new Error('remove background task ID expected')
     const name = stripExt(inputFile.name) + extname(resultUniversalUrl)
-    return {
-      file: createFileWithUniversalUrl(resultUniversalUrl, name),
-      taskId
-    }
+    return createFileWithUniversalUrl(resultUniversalUrl, name)
   } finally {
     signal?.removeEventListener('abort', cancelTask)
     task.dispose()
