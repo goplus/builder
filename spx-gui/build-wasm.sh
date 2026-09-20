@@ -16,6 +16,7 @@ cp ../tools/spxls/spxls-pkgdata.zip src/assets/wasm/spxls-pkgdata.zip
 cp ../tools/ispx/ispx.wasm src/assets/wasm/ispx.wasm
 
 # Build and copy Resvg WebAssembly renderer.
+# The Docker build prebuilds this in its Rust stage and sets RESVG_WASM_SKIP_BUILD to avoid recompiling it.
 if [[ "${RESVG_WASM_SKIP_BUILD:-}" != "1" ]]; then
   ( cd ../tools/resvg-wasm && ./build.sh )
 fi

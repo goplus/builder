@@ -16,15 +16,29 @@ import {
 import { isSvgMimeType } from '@/utils/file'
 import { Cancelled, capture } from '@/utils/exception'
 import type { File } from '@/models/common/file'
+import { parseSVGText } from './img'
 import { createSvgRenderer, type SvgRenderer } from './resvg'
-import { applyFontPreferencesToSvgText } from './svg-font'
 
 export type SvgFontConfig = {
   fontPreferences: string[]
   fonts: Map<string, File>
 }
 
+// Resvg allocates an RGBA pixmap using the SVG's intrinsic dimensions. Limit previews to avoid
+// excessive WebAssembly memory use from project-provided SVGs.
 const maxSvgRenderSize = 1024
+
+function applyFontPreferences(svgText: string, fontPreferences: string[]) {
+  if (fontPreferences.length === 0) return svgText
+
+  const svg = parseSVGText(svgText)
+  if (svg.hasAttribute('font-family')) return svgText
+
+  const style = svg.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'style')
+  style.textContent = `svg { font-family: ${fontPreferences.map((font) => JSON.stringify(font)).join(', ')}; }`
+  svg.insertBefore(style, svg.firstChild)
+  return new XMLSerializer().serializeToString(svg)
+}
 
 function arrayEq(a: readonly unknown[], b: readonly unknown[]) {
   return a.length === b.length && a.every((value, index) => value === b[index])
@@ -63,8 +77,8 @@ class SvgFontContext {
       .arrayBuffer()
       .then(async (ab) => {
         const svgText = new TextDecoder().decode(ab)
-        const renderedSvgText = applyFontPreferencesToSvgText(svgText, this.config.fontPreferences)
-        const png = (await this.getRenderer()).render(renderedSvgText, { maxSize: maxSvgRenderSize })
+        const svgTextWithFontPreferences = applyFontPreferences(svgText, this.config.fontPreferences)
+        const png = (await this.getRenderer()).render(svgTextWithFontPreferences, { maxSize: maxSvgRenderSize })
         return new Blob([new Uint8Array(png)], { type: 'image/png' })
       })
       .catch((e) => {

@@ -1,8 +1,13 @@
-# Resvg WebAssembly renderer
+# Resvg WebAssembly binding
 
-This tool builds the WebAssembly SVG renderer used by the XBuilder editor for SVG images that need project-font rendering. It is an editor-preview adapter only: project export and the SPX runtime continue to consume the original SVG files.
+This tool exposes Resvg to browser JavaScript through wasm-bindgen. It rasterizes SVG strings to PNG while allowing callers to provide font buffers under explicit font-family aliases.
 
-The wrapper accepts project font family names and font buffers. It maps those names directly to the loaded faces, applies the SVG font-family fallback order, and rasterizes the SVG to PNG. This lets canvas-based editor consumers render project fonts without embedding large font files in every SVG.
+## Behavior
+
+- `Renderer` maps each supplied font-family name to its corresponding font buffer, regardless of the font's internal family name.
+- SVG font-family fallback order is preserved, including fallback after variation selectors and ZWJ emoji clusters.
+- `Renderer.render` takes a maximum output size and proportionally scales the rendered PNG to fit it. Callers should always supply a size appropriate for their memory budget.
+- Rendering is synchronous. Callers that render many or large SVGs should schedule work to avoid blocking their UI.
 
 ## Build
 
@@ -23,7 +28,7 @@ The script installs the required `wasm-bindgen-cli` version when necessary, then
 - `resvg.d.ts`
 - `resvg_bg.wasm`
 
-`pkg/` and `target/` are generated and ignored. `spx-gui/build-wasm.sh` invokes this tool and copies the three files into `spx-gui/src/assets/wasm/` for Vite to bundle.
+`pkg/` and `target/` are generated and ignored.
 
 Useful checks:
 
