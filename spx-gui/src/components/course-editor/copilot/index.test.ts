@@ -60,9 +60,9 @@ function preloadedSkills() {
 }
 
 /** Run the composable in its own scope, as a mounted `CourseEditor` would. */
-function runInScope(project: TutorialProject, doc: () => CourseDoc) {
+function runInScope(project: TutorialProject, doc: () => CourseDoc, isPreviewing: () => boolean = () => false) {
   const scope = effectScope()
-  scope.run(() => useCourseEditorCopilot(() => project, doc))
+  scope.run(() => useCourseEditorCopilot(() => project, doc, isPreviewing))
   return scope
 }
 
@@ -118,5 +118,27 @@ describe('useCourseEditorCopilot', () => {
     scope.stop()
 
     expect(providers).toEqual([])
+  })
+
+  it('says nothing while the course is being previewed', async () => {
+    const project = await loadProject()
+    // The editor stays mounted through a preview, where the Copilot belongs to the learner's session: it must see
+    // what a learner's would, not the author's course, program or authoring skill.
+    const previewing = { value: true }
+    const scope = runInScope(
+      project,
+      () => ({ type: 'root' }),
+      () => previewing.value
+    )
+
+    expect(currentContext()).toBe('')
+    expect(preloadedSkills()).toEqual([])
+
+    // Leaving the preview brings the author's context back, without re-registering anything.
+    previewing.value = false
+    expect(currentContext()).toContain('Move Lita to Mushroom')
+    expect(preloadedSkills()).toEqual([skillTutorialCourse])
+
+    scope.stop()
   })
 })

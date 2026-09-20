@@ -155,13 +155,6 @@ const activePath = computed(() => segmentsToPath(paramToSegments(route.params[in
  * Called by: Vue (computed; re-evaluated when `tree`, the project root or `activePath` changes)
  */
 const doc = computed(() => resolveCourseDoc(tree.value, config.value.project.root, activePath.value))
-
-// Tell the Copilot what course this is, what its program says and what the author has open, and start it with
-// the course-authoring skill. Registered here (after `doc`) and disposed with this component.
-useCourseEditorCopilot(
-  () => props.project,
-  () => doc.value
-)
 /**
  * Whether the current route is the preview route record (`course-editor-preview`) rather than the editing one.
  * @returns `true` while previewing.
@@ -170,6 +163,15 @@ useCourseEditorCopilot(
  * Called by: Vue (computed; re-evaluated when `route.name` changes)
  */
 const isPreviewRoute = computed(() => route.name === courseEditorPreviewRouteName)
+
+// Tell the Copilot what course this is, what its program says and what the author has open, and start it with
+// the course-authoring skill. Disposed with this component; silent while previewing, where the Copilot belongs
+// to the learner's session and must see exactly what a learner's would.
+useCourseEditorCopilot(
+  () => props.project,
+  () => doc.value,
+  () => isPreviewRoute.value
+)
 
 /**
  * The route params identifying this course (series id and course id inputs), reused for every navigation inside
