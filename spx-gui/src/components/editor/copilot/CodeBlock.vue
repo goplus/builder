@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import BaseCodeBlock from '@/components/copilot/markdown-elements/CodeBlock.vue'
 import BlockActionBtn from '@/components/copilot/markdown-elements/common/BlockActionBtn.vue'
+import { useCopilot } from '@/components/copilot/context'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorRef } from '@/components/editor/spx-code-editor'
 
@@ -11,6 +13,8 @@ defineProps<{
 
 const editorCtxRef = useEditorCtxRef()
 const codeEditorRef = useCodeEditorRef()
+const copilot = useCopilot()
+const codeHelperEnabled = computed(() => copilot.currentSession?.topic.codeHelperEnabled !== false)
 
 const handleInsert = useMessageHandle(
   (code: string) => {
@@ -30,7 +34,7 @@ const handleInsert = useMessageHandle(
   <BaseCodeBlock :language="language">
     <slot></slot>
     <template #actions="{ code }">
-      <BlockActionBtn icon="insert" @click="handleInsert(code)">
+      <BlockActionBtn v-if="codeHelperEnabled" icon="insert" @click="handleInsert(code)">
         {{ $t({ en: 'Insert', zh: '插入' }) }}
       </BlockActionBtn>
     </template>

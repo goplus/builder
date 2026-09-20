@@ -1,10 +1,11 @@
 import type { ZodObject, ZodTypeAny } from 'zod'
-import { zodToJsonSchema } from 'zod-to-json-schema'
+import { zodToJsonSchema, type JsonSchema7Type } from 'zod-to-json-schema'
 import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
 import { localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import { Disposable, type Disposer } from '@/utils/disposable'
+import { mergeSignals, type Disposer } from '@/utils/disposable'
+import Emitter from '@/utils/emitter'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
 import { wrapSkillContent } from './skills/content'
@@ -60,6 +61,11 @@ export type ToolMessage = {
 
 export type Message = UserMessage | CopilotMessage | ToolMessage
 
+type ContextMessageOptions = {
+  toolsCustomElementsEnabled?: boolean
+  extraContext?: string
+}
+
 function getToolExecutionText(execution: ToolExecution): string {
   switch (execution.state) {
     case 'executing':
@@ -78,23 +84,22 @@ function toMessageContent(text: string): apis.MessageContent {
   return { type: 'text', text }
 }
 
+function getUserMessageText(message: UserMessage): string {
+  switch (message.type) {
+    case 'text':
+      return message.content
+    case 'event':
+      return `<event>${message.detail}</event>`
+  }
+}
+
 export function toApiMessage(m: Message): apis.Message {
   switch (m.role) {
-    case 'user': {
-      let textContent: string
-      switch (m.type) {
-        case 'text':
-          textContent = m.content
-          break
-        case 'event':
-          textContent = `<event>${m.detail}</event>`
-          break
-      }
+    case 'user':
       return {
         role: m.role,
-        content: toMessageContent(textContent)
+        content: toMessageContent(getUserMessageText(m))
       }
-    }
     case 'copilot': {
       return {
         role: 'copilot',
@@ -124,6 +129,8 @@ export type Topic = {
   reactToEvents: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
   endable?: boolean
+  /** Whether code-block Copy/Insert and code-change Apply helpers are enabled, defaults to `true`. */
+  codeHelperEnabled?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
 }
@@ -145,6 +152,13 @@ export enum RoundState {
 
 export interface IMessageEventGenerator {
   generateCopilotMessage: typeof apis.generateCopilotMessage
+}
+
+export type JSONSchema = JsonSchema7Type
+
+export type CopilotRound = {
+  userMessage: string
+  resultMessages: string[]
 }
 
 // NOTE: Keep backward compatibility of `RoundExported` to avoid errors when loading old sessions.
@@ -258,6 +272,12 @@ export class Round {
 
   private completeRound() {
     this.setState(RoundState.Completed)
+    this.copilot.emit('roundComplete', {
+      userMessage: getUserMessageText(this.userMessage),
+      resultMessages: this.resultMessages.flatMap((message) =>
+        message.role === 'copilot' && message.content != null ? [message.content] : []
+      )
+    })
   }
 
   private handleResponseError(err: unknown) {
@@ -546,14 +566,13 @@ const defaultTopic: Topic = {
   reactToEvents: false
 }
 
-export class Copilot extends Disposable {
+export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
   private contextProviders: ICopilotContextProvider[] = shallowReactive([])
   private quickInputProviders: IQuickInputProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
   markdownElements = shallowReactive<MarkdownElementDefinitions>({})
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
-
   getTools(): ToolDefinition[] {
     return Array.from(this.toolMap.values())
   }
@@ -636,10 +655,10 @@ These skills are already preloaded. Avoid calling \`load_skill\` for them again.
 ${skillContents.join('\n\n')}`
   }
 
-  private async getContext(): Promise<string> {
+  private async getContext(toolsEnabled = true): Promise<string> {
     const contextParts = await Promise.all([
       ...this.contextProviders.map((p) => p.provideContext?.()),
-      this.getSkillCatalogContext(),
+      ...(toolsEnabled ? [this.getSkillCatalogContext()] : []),
       this.getPreloadSkillsContext()
     ])
     return contextParts.filter((s) => s != null && s.trim() !== '').join('\n\n')
@@ -671,8 +690,16 @@ ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
 ${topic.description}`
   }
 
-  async getContextMessage(): Promise<UserTextMessage> {
-    const parts = [this.getCustomElementsPrompt(), await this.getContext(), this.getTopicPrompt()]
+  async getContextMessage({
+    toolsCustomElementsEnabled = true,
+    extraContext = ''
+  }: ContextMessageOptions = {}): Promise<UserTextMessage> {
+    const parts = [
+      toolsCustomElementsEnabled ? this.getCustomElementsPrompt() : '',
+      await this.getContext(toolsCustomElementsEnabled),
+      this.getTopicPrompt(),
+      extraContext
+    ]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`
@@ -680,6 +707,62 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       type: 'text',
       role: 'user',
       content
+    }
+  }
+
+  /**
+   * Generates a one-shot text response without adding a session round.
+   * Existing Builder user conversation is provided as reference context, separately from this request.
+   */
+  async generateTextResponse(message: string, signal?: AbortSignal): Promise<string> {
+    let content = ''
+    const ctrl = new AbortController()
+    await this.streamOneShotResponse(message, { signal: mergeSignals(ctrl.signal, signal) }, (event) => {
+      switch (event.type) {
+        case 'text_delta':
+          content += event.data.text
+          break
+        case 'tool_call_delta':
+          ctrl.abort()
+          throw new Error('Unexpected tool call in text response')
+        case 'done':
+          break
+      }
+    })
+    return content
+  }
+
+  /**
+   * Generates a one-shot JSON response without adding a session round.
+   * Existing Builder user conversation is provided as reference context, separately from this request.
+   */
+  async generateJSONResponse(message: string, schema: JSONSchema, signal?: AbortSignal): Promise<unknown> {
+    const toolCalls: Array<ToolCallDraft | null> = []
+    await this.streamOneShotResponse(
+      `${message}\n\nReturn the result through the return_json tool.`,
+      {
+        signal,
+        tools: [
+          {
+            type: apis.ToolType.Function,
+            function: {
+              name: 'return_json',
+              description: 'Return the requested JSON response.',
+              parameters: schema
+            }
+          }
+        ]
+      },
+      (event) => {
+        if (event.type === 'tool_call_delta') accumulateToolCallDelta(toolCalls, event)
+      }
+    )
+    const call = finalizeToolCalls(toolCalls).find((item) => item.function.name === 'return_json')
+    if (call == null) throw new Error('Copilot did not return JSON')
+    try {
+      return JSON.parse(call.function.arguments)
+    } catch {
+      throw new Error('Copilot returned invalid JSON')
     }
   }
 
@@ -812,6 +895,46 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       detail
     }
     this.currentSession.addUserMessage(userEventMessage)
+  }
+
+  private async streamOneShotResponse(
+    message: string,
+    options: apis.GenerateCopilotMessageOptions,
+    handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
+  ) {
+    const messages: Message[] = [
+      await this.getContextMessage({
+        toolsCustomElementsEnabled: false,
+        extraContext: this.getUserConversationContext()
+      }),
+      { type: 'text', role: 'user', content: message }
+    ]
+    const result = this.generator.generateCopilotMessage(messages.map(toApiMessage), options)
+    for await (const event of result) {
+      if (event.type === 'error') throw new Error(event.data.message)
+      handleEvent(event)
+    }
+  }
+
+  private getUserConversationContext(): string {
+    const conversation: apis.Message[] = []
+    for (const round of this.currentSession?.rounds ?? []) {
+      conversation.push(toApiMessage(round.userMessage))
+      for (const message of round.resultMessages) {
+        if (message.role === 'copilot' && message.content != null) {
+          conversation.push({ role: 'copilot', content: toMessageContent(message.content) })
+        }
+      }
+    }
+    if (conversation.length === 0) return ''
+    const messages = sampleApiMessages(conversation)
+    return `# User conversation context
+
+The following is an existing conversation between the Builder user and Copilot. It is reference context only. The following user-role message is a separate request and may come from a different identity.
+
+<conversation>
+${messages.map((message) => `<${message.role}>${message.content?.text ?? ''}</${message.role}>`).join('\n')}
+</conversation>`
   }
 
   /** Register a context provider for the copilot. */

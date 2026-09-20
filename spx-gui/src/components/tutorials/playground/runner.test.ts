@@ -1,10 +1,10 @@
-import { nextTick, reactive, shallowReactive } from 'vue'
+import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
-import { RoundState, type Round, type Topic } from '@/components/copilot/copilot'
+import { type CopilotRound, type Topic } from '@/components/copilot/copilot'
 import { Runtime, RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
 import type { Copilot } from '@/components/copilot/copilot'
@@ -52,8 +52,9 @@ function makeProject() {
 }
 
 function makeCopilot() {
-  const session = shallowReactive<{ currentRound: Round | null }>({ currentRound: null })
-  let currentSession: { currentRound: Round | null } | null = null
+  const session = {}
+  let currentSession: object | null = null
+  const roundCompleteListeners = new Set<(round: CopilotRound) => void>()
   return {
     session,
     controller: {
@@ -65,7 +66,16 @@ function makeCopilot() {
       }),
       endCurrentSession: vi.fn(() => {
         currentSession = null
-      })
+      }),
+      on: vi.fn((_event: 'roundComplete', listener: (round: CopilotRound) => void) => {
+        roundCompleteListeners.add(listener)
+        return () => roundCompleteListeners.delete(listener)
+      }),
+      emitRoundComplete(round: CopilotRound) {
+        roundCompleteListeners.forEach((listener) => listener(round))
+      },
+      generateTextResponse: vi.fn(),
+      generateJSONResponse: vi.fn()
     }
   }
 }
@@ -110,9 +120,10 @@ describe('PlaygroundCourseRunner', () => {
 
     expect(harness.copilot.startSession).toHaveBeenCalledWith({
       title: { en: 'Build a game', zh: 'Build a game' },
-      description: 'Help with this Course',
+      description: 'You are assisting the learner in the Playground Course: Build a game.\n\nHelp with this Course',
       reactToEvents: false,
-      endable: true
+      endable: true,
+      codeHelperEnabled: false
     })
     expect(harness.executor.run).toHaveBeenCalledWith({
       [mainCourseFilePath]: 'onStart => { complete }'
@@ -138,11 +149,7 @@ describe('PlaygroundCourseRunner', () => {
     await vi.waitFor(() => expect(harness.executor.dispatchEvent).toHaveBeenCalledTimes(3))
 
     harness.editorRuntime.emit('didExit', 0)
-    harness.session.currentRound = reactive({
-      state: RoundState.Completed,
-      userMessage: { type: 'text', role: 'user', content: 'help' },
-      resultMessages: [{ role: 'copilot', content: 'done' }]
-    }) as Round
+    harness.copilot.emitRoundComplete({ userMessage: 'help', resultMessages: ['done'] })
 
     await vi.waitFor(() => expect(harness.executor.dispatchEvent).toHaveBeenCalledTimes(5))
     expect(harness.executor.dispatchEvent.mock.calls).toEqual([
@@ -151,14 +158,33 @@ describe('PlaygroundCourseRunner', () => {
       ['editor.runtime.log', { log: 'second' }],
       ['editor.runtime.exit', { code: 0 }],
       [
-        'copilot.roundFinish',
+        'copilot.roundComplete',
         {
-          userMessage: { type: 'text', role: 'user', content: 'help' },
-          resultMessages: [{ role: 'copilot', content: 'done' }]
+          userMessage: 'help',
+          resultMessages: ['done']
         }
       ]
     ])
     vi.unstubAllGlobals()
+  })
+
+  it('provides Copilot generation without adding a learner round', async () => {
+    const harness = makeHarness()
+    await harness.runner.start()
+    harness.copilot.generateTextResponse.mockResolvedValueOnce('Great work')
+    harness.copilot.generateJSONResponse.mockResolvedValueOnce({ complete: true })
+
+    const capabilities = harness.getExecutorOptions().framework?.capabilities
+    const generateText = capabilities?.copilot_generateText
+    const generateJSON = capabilities?.copilot_generateJSON
+    if (generateText == null || generateJSON == null) throw new Error('Copilot capabilities not found')
+
+    await expect(generateText({ content: 'Give feedback' })).resolves.toBe('Great work')
+    await expect(generateJSON({ content: 'Is the goal complete?', schema: { type: 'object' } })).resolves.toEqual({
+      complete: true
+    })
+    expect(harness.copilot.generateTextResponse).toHaveBeenCalledWith('Give feedback')
+    expect(harness.copilot.generateJSONResponse).toHaveBeenCalledWith('Is the goal complete?', { type: 'object' })
   })
 
   it('publishes completion for its owner to dispose', async () => {
@@ -169,7 +195,7 @@ describe('PlaygroundCourseRunner', () => {
     const completeWith = harness.getExecutorOptions().framework?.capabilities.course_completeWith
     if (completeWith == null) throw new Error('course_completeWith capability not found')
 
-    await completeWith({ feedback: 'Nice work' })
+    await completeWith({ content: 'Nice work' })
 
     await vi.waitFor(() => expect(completed).toHaveBeenCalledWith({ feedback: 'Nice work' }))
     expect(harness.executor.stop).not.toHaveBeenCalled()

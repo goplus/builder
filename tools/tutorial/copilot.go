@@ -12,18 +12,18 @@ type Copilot struct {
 }
 
 // CopilotRound is one complete round of conversation between the learner and
-// Copilot. The json tags map directly onto the copilot.roundFinish payload in
+// Copilot. The json tags map directly onto the copilot.roundComplete payload in
 // the contract, and the decoded value is handed to the Course as is.
 type CopilotRound struct {
 	UserMessage    string   `json:"userMessage"`
 	ResultMessages []string `json:"resultMessages"`
 }
 
-// OnRoundFinish registers a callback for the learner finishing a round of
+// OnRoundComplete registers a callback for the learner completing a round of
 // conversation with Copilot; several may be registered. It lets the Course
 // notice what the learner asked for help with, for example to offer an extra
 // hint after too many questions.
-func (p *Copilot) OnRoundFinish(handler func(round CopilotRound)) {
+func (p *Copilot) OnRoundComplete(handler func(round CopilotRound)) {
 	register(p.courseProgram, handler,
 		func(h *handlers, r *registration[CopilotRound]) { h.copilotRound = append(h.copilotRound, r) })
 }

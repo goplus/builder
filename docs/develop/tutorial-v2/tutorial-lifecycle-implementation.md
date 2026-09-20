@@ -210,7 +210,7 @@ The route-local runtime forwards:
 | Runtime starts            | `editor.runtime.start` with `null`                      |
 | Runtime exits             | `editor.runtime.exit` with `{ code }`                   |
 | Newly appended log output | `editor.runtime.log` with `{ log }`                     |
-| Copilot round finishes    | `copilot.roundFinish` with its user and result messages |
+| Copilot round completes   | `copilot.roundComplete` with its user and result messages |
 
 Runtime exposes cumulative output. The Playground runtime keeps the last forwarded output ID and sends every new `log` entry exactly once and in order. Error output is not part of the judging channel.
 

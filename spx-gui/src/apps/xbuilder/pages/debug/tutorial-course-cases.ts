@@ -59,7 +59,7 @@ Editor.Runtime.onExit code => {
 	echo "exit code", code
 }
 
-Copilot.onRoundFinish round => {
+Copilot.onRoundComplete round => {
 	echo "round", round.UserMessage
 }
 
@@ -107,7 +107,7 @@ export const courseCases: CourseCase[] = [
     source: fullApiCourseSource,
     events: [
       { name: 'editor.runtime.start', payload: null },
-      { name: 'copilot.roundFinish', payload: { userMessage: 'why', resultMessages: ['because'] } },
+      { name: 'copilot.roundComplete', payload: { userMessage: 'why', resultMessages: ['because'] } },
       { name: 'editor.runtime.exit', payload: { code: 0 } },
       { name: 'editor.runtime.log', payload: { log: 'reached-target' } }
     ]
@@ -124,7 +124,7 @@ export const courseCases: CourseCase[] = [
     source: unsubscribedEventsCourseSource,
     events: [
       { name: 'editor.runtime.start', payload: null },
-      { name: 'copilot.roundFinish', payload: { userMessage: 'hi', resultMessages: ['hello'] } },
+      { name: 'copilot.roundComplete', payload: { userMessage: 'hi', resultMessages: ['hello'] } },
       { name: 'editor.runtime.log', payload: { log: 'done' } }
     ]
   }
