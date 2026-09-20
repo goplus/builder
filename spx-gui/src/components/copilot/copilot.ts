@@ -124,7 +124,7 @@ export type Topic = {
   reactToEvents: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
   endable?: boolean
-  /** Whether code-block Copy and code-change Apply helpers are enabled, defaults to `true`. */
+  /** Whether code-block Copy/Insert and code-change Apply helpers are enabled, defaults to `true`. */
   codeHelperEnabled?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string

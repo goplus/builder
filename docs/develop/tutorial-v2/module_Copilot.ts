@@ -5,7 +5,7 @@ export type CopilotTopic = {
   description: string;
   reactToEvents: boolean;
   endable: boolean;
-  /** Controls both code-block Copy and code-change Apply helpers in this session. */
+  /** Controls code-block Copy/Insert and code-change Apply helpers in this session. */
   codeHelperEnabled: boolean;
 };
 
