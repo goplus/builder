@@ -1,7 +1,12 @@
 <template>
-  <div v-radar="{ name: 'Close button', desc: 'Click to close the modal' }" :class="rootClass">
+  <button
+    v-radar="{ name: 'Close button', desc: 'Click to close the modal' }"
+    type="button"
+    :aria-label="props.ariaLabel"
+    :class="rootClass"
+  >
     <UIIcon type="close" :class="size === 'large' ? 'h-6 w-6' : 'h-5 w-5'" />
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -13,17 +18,19 @@ const props = withDefaults(
   defineProps<{
     size?: 'medium' | 'large'
     class?: ClassValue
+    ariaLabel?: string
   }>(),
   {
     size: 'medium',
-    class: undefined
+    class: undefined,
+    ariaLabel: 'Close'
   }
 )
 
 const rootClass = computed(() =>
   cn(
-    'flex items-center justify-center rounded-full text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500',
-    props.size === 'large' ? 'h-8 w-8' : 'h-7 w-7',
+    'relative flex cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-grey-800 transition-colors duration-200 hover:bg-grey-400 active:bg-grey-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main',
+    'h-10 w-10',
     props.class
   )
 )

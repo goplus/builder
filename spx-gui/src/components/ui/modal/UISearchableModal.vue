@@ -10,7 +10,11 @@
           {{ title }}
         </h4>
         <slot name="input"></slot>
-        <UIModalClose class="ml-2 -mr-1" @click="handleCloseButton" />
+        <UIModalClose
+          class="ml-2 -mr-1"
+          :aria-label="$t({ en: 'Close dialog', zh: '关闭对话框' })"
+          @click="handleCloseButton"
+        />
       </div>
       <UIDivider />
       <slot></slot>

@@ -30,12 +30,21 @@ import type { LocaleMessage } from '@/utils/i18n'
 import { spacingLocaleZhMessage, useInterval } from '@/utils/utils'
 import RetryableWrapper from '../RetryableWrapper.vue'
 import { isQuotaExceededMeta } from '@/apis/common/exception'
-import { UIIcon } from '@/components/ui'
+import { UIButton, UIIcon } from '@/components/ui'
 
 // TODO: Consider using the `QuotaExceededCountdown` component directly in the future
-const props = defineProps<{
-  round: Round
-  isLastRound: boolean
+const props = withDefaults(
+  defineProps<{
+    round: Round
+    isLastRound: boolean
+    feedbackMode?: 'default' | 'guidance' | 'action'
+  }>(),
+  {
+    feedbackMode: 'default'
+  }
+)
+const emit = defineEmits<{
+  feedback: []
 }>()
 
 const retryAfterTime = ref<LocaleMessage | null>(null)
@@ -73,17 +82,44 @@ onMounted(updateRetryAfterTime)
 
 <template>
   <RetryableWrapper class="text-yellow-main" :round="round" :is-last-round="isLastRound">
-    <UIIcon type="warning" />
-    {{
-      $t({
-        en: 'Quota exceeded.',
-        zh: '配额已超限。'
-      })
-    }}
-    <template v-if="retryAfterTime != null">
-      {{
-        $t(spacingLocaleZhMessage({ en: `Please try again ${retryAfterTime.en}`, zh: `请${retryAfterTime.zh}尝试` }))
-      }}
+    <UIIcon aria-hidden="true" class="mt-0.5 shrink-0 self-start" type="warning" />
+    <span class="min-w-0 leading-5">
+      <span>
+        {{
+          $t({
+            en: 'Quota exceeded.',
+            zh: '配额已超限。'
+          })
+        }}
+        <template v-if="retryAfterTime != null">
+          {{
+            $t(
+              spacingLocaleZhMessage({ en: `Please try again ${retryAfterTime.en}`, zh: `请${retryAfterTime.zh}尝试` })
+            )
+          }}
+        </template>
+      </span>
+      <span v-if="feedbackMode === 'guidance'" class="mt-1 block text-grey-800">
+        {{
+          $t({
+            en: 'To send feedback, choose “Send feedback” from the profile menu in the top-right corner.',
+            zh: '如需反馈，请在右上角头像菜单中选择“提交反馈”。'
+          })
+        }}
+      </span>
+    </span>
+    <template #actions>
+      <UIButton
+        v-if="feedbackMode === 'action'"
+        v-radar="{ name: 'Send feedback', desc: 'Open the feedback form' }"
+        data-test-id="quota-feedback"
+        class="text-xs/[18px]"
+        type="neutral"
+        size="small"
+        @click="emit('feedback')"
+      >
+        {{ $t({ en: 'Send feedback', zh: '提交反馈' }) }}
+      </UIButton>
     </template>
   </RetryableWrapper>
 </template>
