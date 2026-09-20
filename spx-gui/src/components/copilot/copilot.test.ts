@@ -352,6 +352,33 @@ describe('Copilot', () => {
     ])
   })
 
+  it('provides user conversation as context for one-shot responses', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      createTextStreamBatch('Hello learner'),
+      createTextStreamBatch('Course feedback')
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    await copilot.startSession(createBasicTopic())
+    copilot.addUserTextMessage('How do I make a sprite move?')
+    await waitForCompletion()
+
+    await expect(copilot.generateTextResponse('Summarize the learner progress.')).resolves.toBe('Course feedback')
+
+    expect(generator.calls[1]).toEqual([
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: expect.stringContaining('<user>How do I make a sprite move?</user>\n<copilot>Hello learner</copilot>')
+        }
+      },
+      {
+        role: 'user',
+        content: { type: 'text', text: 'Summarize the learner progress.' }
+      }
+    ])
+  })
+
   it('aborts text responses that attempt to call a tool', async () => {
     const generator = new MockBatchedMessageEventGenerator([
       [createToolCallDeltaEvent({ index: 0, function: { name: 'unexpected', arguments: '' } })]
@@ -901,7 +928,7 @@ describe('Copilot', () => {
     })
 
     expect(generator.calls).toHaveLength(2)
-    const contextMessage = await copilot.getContextMessage(true)
+    const contextMessage = await copilot.getContextMessage()
 
     expect(generator.calls[1]).toEqual([
       {
@@ -1094,7 +1121,7 @@ describe('Copilot', () => {
     const currentRound = copilot.currentSession?.currentRound
     expect(currentRound?.state).toBe(RoundState.Completed)
     expect(generator.calls).toHaveLength(2)
-    const contextMessage = await copilot.getContextMessage(true)
+    const contextMessage = await copilot.getContextMessage()
 
     expect(generator.calls[1]).toEqual([
       {
@@ -1285,7 +1312,7 @@ describe('Copilot', () => {
         }
       }
     ])
-    const contextMessage = await copilot.getContextMessage(true)
+    const contextMessage = await copilot.getContextMessage()
 
     expect(sampledMessages?.at(-1)).toEqual({
       role: 'user',
@@ -1324,7 +1351,9 @@ describe('Copilot', () => {
     })
     const topic = createBasicTopic('Prompt migration test', 'Testing prompt context without injected tools')
 
-    expect((await copilot.getContextMessage(false)).content).not.toContain('# Available custom elements')
+    expect((await copilot.getContextMessage({ toolsCustomElementsEnabled: false })).content).not.toContain(
+      '# Available custom elements'
+    )
     await copilot.startSession(topic)
     copilot.addUserTextMessage('Find my projects', topic)
 
@@ -1334,7 +1363,7 @@ describe('Copilot', () => {
     expect(generator.callOptions).toHaveLength(1)
 
     const contextMessage = generator.calls[0].at(-1)
-    const expectedContextMessage = await copilot.getContextMessage(true)
+    const expectedContextMessage = await copilot.getContextMessage()
 
     expect(contextMessage).toEqual({
       role: 'user',

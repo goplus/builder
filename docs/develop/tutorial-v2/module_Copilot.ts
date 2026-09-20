@@ -42,13 +42,19 @@ export interface Copilot {
    */
   restoreSession(session: CopilotSessionExported): void;
 
-  /** Generates one plain-text response without adding a round to the current session. */
+  /**
+   * Generates one plain-text response without adding a round to the current session.
+   * Existing Builder user conversation is reference context, separately from this request.
+   */
   generateTextResponse(
     message: string,
     signal?: AbortSignal,
   ): Promise<string>;
 
-  /** Generates one JSON response conforming to the supplied schema. */
+  /**
+   * Generates one JSON response conforming to the supplied schema without adding a round to the current session.
+   * Existing Builder user conversation is reference context, separately from this request.
+   */
   generateJSONResponse(
     message: string,
     schema: JSONSchema,

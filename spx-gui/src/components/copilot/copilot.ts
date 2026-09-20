@@ -61,6 +61,11 @@ export type ToolMessage = {
 
 export type Message = UserMessage | CopilotMessage | ToolMessage
 
+type ContextMessageOptions = {
+  toolsCustomElementsEnabled?: boolean
+  extraContext?: string
+}
+
 function getToolExecutionText(execution: ToolExecution): string {
   switch (execution.state) {
     case 'executing':
@@ -330,7 +335,7 @@ export class Round {
   private async generateCopilotMessage() {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      messages.push(await this.copilot.getContextMessage(true))
+      messages.push(await this.copilot.getContextMessage())
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
@@ -685,11 +690,15 @@ ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
 ${topic.description}`
   }
 
-  async getContextMessage(toolsCustomElementsEnabled = true): Promise<UserTextMessage> {
+  async getContextMessage({
+    toolsCustomElementsEnabled = true,
+    extraContext = ''
+  }: ContextMessageOptions = {}): Promise<UserTextMessage> {
     const parts = [
       toolsCustomElementsEnabled ? this.getCustomElementsPrompt() : '',
       await this.getContext(toolsCustomElementsEnabled),
-      this.getTopicPrompt()
+      this.getTopicPrompt(),
+      extraContext
     ]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
@@ -701,6 +710,10 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
   }
 
+  /**
+   * Generates a one-shot text response without adding a session round.
+   * Existing Builder user conversation is provided as reference context, separately from this request.
+   */
   async generateTextResponse(message: string, signal?: AbortSignal): Promise<string> {
     let content = ''
     const ctrl = new AbortController()
@@ -719,6 +732,10 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     return content
   }
 
+  /**
+   * Generates a one-shot JSON response without adding a session round.
+   * Existing Builder user conversation is provided as reference context, separately from this request.
+   */
   async generateJSONResponse(message: string, schema: JSONSchema, signal?: AbortSignal): Promise<unknown> {
     const toolCalls: Array<ToolCallDraft | null> = []
     await this.streamOneShotResponse(
@@ -885,13 +902,39 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     options: apis.GenerateCopilotMessageOptions,
     handleEvent: (event: Exclude<apis.MessageEvent, { type: 'error' }>) => void
   ) {
-    const messages = this.currentSession?.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages]) ?? []
-    messages.push(await this.getContextMessage(false), { type: 'text', role: 'user', content: message })
-    const result = this.generator.generateCopilotMessage(sampleApiMessages(messages.map(toApiMessage)), options)
+    const messages: Message[] = [
+      await this.getContextMessage({
+        toolsCustomElementsEnabled: false,
+        extraContext: this.getUserConversationContext()
+      }),
+      { type: 'text', role: 'user', content: message }
+    ]
+    const result = this.generator.generateCopilotMessage(messages.map(toApiMessage), options)
     for await (const event of result) {
       if (event.type === 'error') throw new Error(event.data.message)
       handleEvent(event)
     }
+  }
+
+  private getUserConversationContext(): string {
+    const conversation: apis.Message[] = []
+    for (const round of this.currentSession?.rounds ?? []) {
+      conversation.push(toApiMessage(round.userMessage))
+      for (const message of round.resultMessages) {
+        if (message.role === 'copilot' && message.content != null) {
+          conversation.push({ role: 'copilot', content: toMessageContent(message.content) })
+        }
+      }
+    }
+    if (conversation.length === 0) return ''
+    const messages = sampleApiMessages(conversation)
+    return `# User conversation context
+
+The following is an existing conversation between the Builder user and Copilot. It is reference context only. The following user-role message is a separate request and may come from a different identity.
+
+<conversation>
+${messages.map((message) => `<${message.role}>${message.content?.text ?? ''}</${message.role}>`).join('\n')}
+</conversation>`
   }
 
   /** Register a context provider for the copilot. */

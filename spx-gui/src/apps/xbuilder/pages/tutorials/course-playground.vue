@@ -54,13 +54,14 @@ async function createMockSession(): Promise<MockSession> {
     'main_course.gox': fromText(
       'main_course.gox',
       `onStart => {
-	message := Copilot.generateText("Welcome the learner and invite them to ask Copilot a question about their project. Less than 50 words. Use a friendly tone.")
+	message := Copilot.generateText("Generate a welcome message. Less than 50 words. Use the same language as the current UI language.")
 	showMessage message
 }
 
 Copilot.onRoundComplete round => {
-	if round.UserMessage == "111" {
-		complete
+	if round.UserMessage == "结束" {
+		conclusion := Copilot.generateText("Generate a short conclusion for the learning process (including user conversation with Copilot). Less than 50 words. Use the same language as the current UI language.")
+		completeWith conclusion
 	}
 }`
     ),
