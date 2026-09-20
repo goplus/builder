@@ -8509,7 +8509,7 @@ components:
           description: ID of the user.
           $ref: "#/components/schemas/Model/properties/id"
         roles:
-          description: Roles assigned to the user.
+          description: Roles assigned to the user. The `authorizationAdmin` role requires the `accountAdmin` role.
           type: array
           items:
             type: string
