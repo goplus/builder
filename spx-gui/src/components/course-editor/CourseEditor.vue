@@ -62,6 +62,7 @@ import CourseFileDoc from './CourseFileDoc.vue'
 import CourseFolderDoc from './CourseFolderDoc.vue'
 import CourseTextDoc from './CourseTextDoc.vue'
 import CourseUploadModal from './CourseUploadModal.vue'
+import { useCourseEditorCopilot } from './copilot'
 import CourseResourceDoc from './CourseResourceDoc.vue'
 import { getProjectEditorHost } from './project'
 import { dirname, inCourseEditorPathParam, paramToSegments, pathToSegments, segmentsToPath } from './route'
@@ -154,6 +155,13 @@ const activePath = computed(() => segmentsToPath(paramToSegments(route.params[in
  * Called by: Vue (computed; re-evaluated when `tree`, the project root or `activePath` changes)
  */
 const doc = computed(() => resolveCourseDoc(tree.value, config.value.project.root, activePath.value))
+
+// Tell the Copilot what course this is, what its program says and what the author has open, and start it with
+// the course-authoring skill. Registered here (after `doc`) and disposed with this component.
+useCourseEditorCopilot(
+  () => props.project,
+  () => doc.value
+)
 /**
  * Whether the current route is the preview route record (`course-editor-preview`) rather than the editing one.
  * @returns `true` while previewing.
