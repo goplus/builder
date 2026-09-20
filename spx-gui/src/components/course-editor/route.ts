@@ -62,7 +62,6 @@ export function paramToSegments(param: unknown): string[] {
  * Called by:
  * - components/course-editor/course-tree.ts#resolveCourseDoc (the tail under the project root)
  * - components/course-editor/CourseEditor.vue#openPath (the segments written into the route param)
- * - components/course-editor/upload.ts#normalizeDir
  * - components/course-editor/upload.ts#getUploadResourceKind
  */
 export function pathToSegments(path: string): string[] {
@@ -78,7 +77,6 @@ export function pathToSegments(path: string): string[] {
  *
  * Called by:
  * - components/course-editor/CourseEditor.vue#activePath
- * - components/course-editor/upload.ts#normalizeDir
  */
 export function segmentsToPath(segments: string[]): string {
   return segments.join('/')

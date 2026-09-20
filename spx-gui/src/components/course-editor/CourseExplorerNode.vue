@@ -24,13 +24,14 @@ export const explorerDotClass = 'ml-1 text-primary-main'
 
 <script setup lang="ts">
 /**
- * Purpose: One row of the course explorer tree, rendered recursively for folders. It shows the node's label, a
- * type hint (project type, resource kind, package count, "Course program"), an "Unused" tag for records the
- * course format gives no role to, and the unsaved dot; folders can be collapsed locally. Clicking a row reports
- * the node's path upwards; the parent chain forwards it unchanged to `CourseEditor`, which navigates.
+ * Purpose: One row of the course explorer tree, rendered recursively for the rows that hold others. It shows what
+ * the node is (`getNodeLabel`: the course program, a resource group, a package's name, the project, or the
+ * heading collecting unused records), a count or the project type as a hint, and the unsaved dot. Clicking a row
+ * reports the node's path upwards; the parent chain forwards it unchanged to `CourseEditor`, which navigates. The
+ * heading of unused records stands for no record, so clicking it only folds it away.
  *
  * Props:
- * - `node`: the `CourseNode` this row stands for (project, resource, file or folder).
+ * - `node`: the `CourseNode` this row stands for (project, resource, file, resource group or unused heading).
  * - `depth`: nesting level starting at 1 for top-level nodes; drives the left indentation.
  * - `activePath`: path of the open node (from the route); used to highlight this row.
  * - `changedPaths`: paths with unsaved records; used to show the dot.
@@ -41,18 +42,13 @@ export const explorerDotClass = 'ml-1 text-primary-main'
  *   `components/course-editor/CourseExplorerNode.vue#template` (which re-emits it).
  *
  * Used by: `components/course-editor/CourseExplorer.vue#template` (top-level nodes),
- * `components/course-editor/CourseExplorerNode.vue#template` (children of an expanded folder).
+ * `components/course-editor/CourseExplorerNode.vue#template` (children of an expanded row).
  *
- * Uses: UITag, `course-tree.ts#isNodeDirty`, `route.ts#isPathWithin`, `upload.ts#getUploadResourceKind`,
- * `models/tutorial/resource.ts#getResourceKindDir` / `videosKind`, `utils/path#filename`.
+ * Uses: `course-tree.ts#getNodeLabel` / `#getNodeKey` / `#isNodeDirty`, `route.ts#isPathWithin`.
  */
 import { computed, ref } from 'vue'
 import type { LocaleMessage } from '@/utils/i18n'
-import { filename } from '@/utils/path'
-import { getResourceKindDir, videosKind } from '@/models/tutorial/resource'
-import { getUploadResourceKind } from './upload'
-import { UITag } from '@/components/ui'
-import { isNodeDirty, type CourseNode } from './course-tree'
+import { getNodeKey, getNodeLabel, isNodeDirty, type CourseNode } from './course-tree'
 import { isPathWithin } from './route'
 
 const props = defineProps<{
@@ -72,16 +68,34 @@ const emit = defineEmits<{
 }>()
 
 /**
- * Whether a folder row shows its children. Local UI state only (not in the route); starts expanded.
- * Written by: `CourseExplorerNode.vue#template` (the toggle glyph's `@click.stop`).
+ * Whether a row that holds others shows them. Local UI state only (not in the route); starts expanded.
+ * Written by: `CourseExplorerNode.vue#template` (the toggle glyph, and clicking a group row).
  * Read by: `CourseExplorerNode.vue#template` (the glyph and the children block).
  */
 const expanded = ref(true)
 
 /**
- * Whether this node has unsaved records: any changed path equal to or under the node's path (folders and
- * packages are dirty when anything inside them is).
- * @returns `true` when the node should show the unsaved dot.
+ * Whether this row holds other rows: a resource group or the heading of unused records.
+ * @returns `true` when the row has children of its own.
+ * Read by: `CourseExplorerNode.vue#template`.
+ * Called by: Vue (computed; re-evaluated when `props.node` changes)
+ */
+const branch = computed(() => props.node.type === 'folder' || props.node.type === 'group')
+
+/**
+ * The rows nested under this one; empty for every node that holds none.
+ * @returns The node's children, or `[]`.
+ * Read by: `CourseExplorerNode.vue#template`.
+ * Called by: Vue (computed; re-evaluated when `props.node` changes)
+ */
+const children = computed<CourseNode[]>(() =>
+  props.node.type === 'folder' || props.node.type === 'group' ? props.node.children : []
+)
+
+/**
+ * Whether this node has unsaved records: any changed path equal to or under the node's path (a group, a resource
+ * group or the project is dirty when anything inside it is).
+ * @returns `true` when the row should show the unsaved dot.
  * Read by: `CourseExplorerNode.vue#template`.
  * Called by: Vue (computed; re-evaluated when `props.node` or `props.changedPaths` changes)
  */
@@ -89,28 +103,30 @@ const dirty = computed(() => isNodeDirty(props.node, props.changedPaths))
 
 // The project node stands for everything under its root, including the Project Editor's own in-editor path.
 /**
- * Whether this row is the open one. Exact path match for every node except the project node, which is active
- * for any path at or under its root (the tail is the Project Editor's in-editor path).
+ * Whether this row is the open one. Exact path match for every node except the project node, which is active for
+ * any path at or under its root (the tail is the Project Editor's in-editor path). The unused heading has no path
+ * and is never active.
  * @returns `true` when the row should be highlighted.
  * Read by: `CourseExplorerNode.vue#template` (`explorerActiveNodeClass`).
  * Called by: Vue (computed; re-evaluated when `props.node` or `props.activePath` changes)
  */
 const active = computed(() => {
   const node = props.node
+  if (node.type === 'group') return false
   return node.type === 'project' ? isPathWithin(props.activePath, node.path) : props.activePath === node.path
 })
 
 /**
- * The row label: the last path segment for the project node (it has no `name`), the node's name otherwise.
- * @returns The text shown in the row.
- * Read by: `CourseExplorerNode.vue#template`.
+ * What this row is called: what the node is, not where its records sit (`getNodeLabel`).
+ * @returns A `LocaleMessage` for `$t`.
+ * Read by: `CourseExplorerNode.vue#template`, `radarNodeMeta`.
  * Called by: Vue (computed; re-evaluated when `props.node` changes)
  */
-const label = computed(() => (props.node.type === 'project' ? filename(props.node.path) : props.node.name))
+const label = computed(() => getNodeLabel(props.node))
 
 /**
- * A short, localized type hint shown after the label, or null when the node needs none (plain folders, unused
- * files). Resource kind folders (`assets/<kind>`) show the kind and how many packages they hold.
+ * A short hint after the label, or null when the label says everything: the project's type, and how many things a
+ * resource group or the unused heading holds.
  * @returns A `LocaleMessage` for `$t`, or null.
  * Read by: `CourseExplorerNode.vue#template`.
  * Called by: Vue (computed; re-evaluated when `props.node` or its children change)
@@ -118,25 +134,14 @@ const label = computed(() => (props.node.type === 'project' ? filename(props.nod
 const hint = computed<LocaleMessage | null>(() => {
   const node = props.node
   switch (node.type) {
-    // The embedded learner project, labelled with its type from `index.json` (only `spx` today).
+    // The embedded learner project, hinted with its type from `index.json` (only `spx` today).
     case 'project':
-      return { en: `Project (${node.projectType})`, zh: `工程（${node.projectType}）` }
-    // A resource package: "Video" for the kind the course program can address, the raw kind name otherwise.
-    case 'resource':
-      return node.kind === videosKind ? { en: 'Video', zh: '视频' } : { en: node.kind, zh: node.kind }
-    case 'folder': {
-      // `assets/<kind>` folders hold packages of that kind.
-      const kind = getUploadResourceKind(node.path)
-      // Any other folder gets no hint.
-      if (kind == null) return null
-      // Count only the packages, not stray files that may sit next to them.
-      const count = node.children.filter((child) => child.type === 'resource').length
-      if (node.path === getResourceKindDir(videosKind)) return { en: `Videos (${count})`, zh: `视频（${count}）` }
-      return { en: `${kind} (${count})`, zh: `${kind}（${count}）` }
+      return { en: node.projectType, zh: node.projectType }
+    case 'folder':
+    case 'group': {
+      const count = node.children.length
+      return { en: `${count}`, zh: `${count}` }
     }
-    // The only known file is the course program; unused records show the "Unused" tag instead of a hint.
-    case 'file':
-      return node.known ? { en: 'Course program', zh: '课程程序' } : null
     default:
       return null
   }
@@ -145,64 +150,68 @@ const hint = computed<LocaleMessage | null>(() => {
 /**
  * Radar metadata of the row. The role is the same for every node; which node this is belongs in attributes, so
  * that a course or the Copilot can address one with a selector such as `explorer-node[path="assets/videos"]`.
+ * The English label is used as the name so selectors do not change with the interface language.
  * @returns A `RadarNodeMeta` for `v-radar`.
  * Read by: `CourseExplorerNode.vue#template`.
  * Called by: Vue (computed; re-evaluated when `props.node` changes)
  */
-const radarNodeMeta = computed(() => {
-  const node = props.node
-  return {
-    name: 'explorer-node',
-    desc: `Click to open ${node.type} ${node.path}`,
-    attrs: { name: label.value, type: node.type, path: node.path }
+const radarNodeMeta = computed(() => ({
+  name: 'explorer-node',
+  desc: `Click to open ${props.node.type} ${getNodeKey(props.node)}`,
+  attrs: { name: label.value.en, type: props.node.type, path: getNodeKey(props.node) }
+}))
+
+/**
+ * Handle a click on the row: open the node, or fold the unused heading (it stands for no record, so there is
+ * nothing to open).
+ * @returns Nothing; either emits `select` or flips `expanded`.
+ * Called by: `CourseExplorerNode.vue#template` (the row button).
+ */
+function handleClick() {
+  if (props.node.type === 'group') {
+    expanded.value = !expanded.value
+    return
   }
-})
+  emit('select', props.node.path)
+}
 </script>
 
 <template>
-  <!-- One node: its row button, then (for an expanded folder) the child rows one level deeper. -->
+  <!-- One node: its row button, then (while expanded) the child rows one level deeper. -->
   <div>
-    <!-- Row button: indented by `depth`, highlighted when `active`; clicking emits `select(node.path)`. -->
+    <!-- Row button: indented by `depth`, highlighted when `active`; clicking opens the node or folds a group. -->
     <button
       v-radar="radarNodeMeta"
       :class="[explorerNodeClass, active && explorerActiveNodeClass]"
       :style="{ paddingLeft: `${depth * 12 + 8}px` }"
-      :title="node.path"
-      @click="emit('select', node.path)"
+      :title="$t(label)"
+      @click="handleClick"
     >
-      <!-- Folder toggle glyph: flips `expanded` without opening the folder (`@click.stop`). -->
+      <!-- Toggle glyph of a row that holds others; flips `expanded` without opening the node (`@click.stop`). -->
       <span
-        v-if="node.type === 'folder'"
+        v-if="branch"
         v-radar="{
           name: 'toggle-folder-button',
-          desc: 'Click to expand or collapse this folder',
-          attrs: { path: node.path }
+          desc: 'Click to expand or collapse this group',
+          attrs: { path: getNodeKey(node) }
         }"
         class="w-4 flex-none text-xs text-grey-700"
         @click.stop="expanded = !expanded"
         >{{ expanded ? '▾' : '▸' }}</span
       >
-      <!-- Non-folders get an empty spacer of the same width so labels line up. -->
+      <!-- Other rows get an empty spacer of the same width so labels line up. -->
       <span v-else class="w-4 flex-none"></span>
-      <span class="truncate">{{ label }}</span>
-      <!-- Type hint (project type, resource kind, package count, "Course program"), when the node has one. -->
+      <span class="truncate">{{ $t(label) }}</span>
+      <!-- Hint (project type, or how many things this row holds), when the node has one. -->
       <span v-if="hint != null" class="flex-none text-xs text-grey-700">{{ $t(hint) }}</span>
-      <!-- "Unused" tag: a record the course format gives no role to (kept on save, never read by the course). -->
-      <UITag
-        v-if="node.type === 'file' && !node.known"
-        class="flex-none"
-        color="warning"
-        :title="$t({ en: 'The course does not use this file', zh: '课程不会使用此文件' })"
-        >{{ $t({ en: 'Unused', zh: '未使用' }) }}</UITag
-      >
       <!-- Unsaved dot. -->
       <span v-if="dirty" :class="explorerDotClass">•</span>
     </button>
-    <!-- Children: only for folders, only while expanded; each child is a nested row that re-emits `select`. -->
-    <template v-if="node.type === 'folder' && expanded">
+    <!-- Children: only for rows that hold others, only while expanded; each re-emits `select`. -->
+    <template v-if="branch && expanded">
       <CourseExplorerNode
-        v-for="child in node.children"
-        :key="child.path"
+        v-for="child in children"
+        :key="getNodeKey(child)"
         :node="child"
         :depth="depth + 1"
         :active-path="activePath"

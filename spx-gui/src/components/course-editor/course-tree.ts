@@ -5,16 +5,22 @@
  * config record plus the course metadata. Records nobody claims appear as plain files, so whatever the explorer
  * shows is exactly what gets saved.
  *
+ * The shape follows the parts of a course, not the directories its records export to: the top level is the course
+ * program, one group per resource kind, the embedded project, and a heading collecting the records the format
+ * gives no role to. Paths stay in the nodes, because the route addresses a node by path and the model writes
+ * records by path, but the author is not asked to think in them: `getNodeLabel` names every node by what it is.
+ *
  * The projection is pure: `buildCourseTree` reads the model and returns fresh node objects every time, and
  * `CourseEditor.vue` wraps it in a `computed` so the tree follows the model. The other exports answer questions
  * about a built tree (lookup, route resolution, unsaved marks) without touching the model.
  */
 
+import type { LocaleMessage } from '@/utils/i18n'
 import { extname, filename } from '@/utils/path'
 import { isText, type File, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { configFilePath, type TutorialProject } from '@/models/tutorial/project'
-import { getResourceKindDir, videosKind } from '@/models/tutorial/resource'
+import { getResourceKindDir, imagesKind, videosKind } from '@/models/tutorial/resource'
 import { dirname, isPathWithin, pathToSegments } from './route'
 
 /**
@@ -59,29 +65,37 @@ export type FileNode = {
   known: boolean
 }
 /**
- * A directory. Directories are not records: one exists exactly when some node's path lies under it (plus the
- * always-present videos folder).
- * - `path`: the directory path; `''` only for the internal root of `buildCourseTree`, which is never returned.
- * - `name`: the last path segment.
- * - `children`: sorted by `sortChildren` (folders and the project first, then packages, then known files, then
- *   unclaimed files; alphabetical within each group).
+ * A resource group: all packages of one kind, shown as a folder of the tree. Its `path` is the kind's directory,
+ * which is where uploads of that kind land, but the author never sees it: the explorer labels the node by kind.
+ * - `path`: `assets/<kind>`.
+ * - `name`: the kind (`videos`, `images`, ...), used for the label and for radar identity.
+ * - `children`: the packages of that kind, sorted by name.
  */
 export type FolderNode = { type: 'folder'; path: string; name: string; children: CourseNode[] }
+/**
+ * The records the course format gives no role to, collected under one heading instead of being scattered over
+ * the directories they happen to sit in. A group stands for no record and has no path: it cannot be opened, and
+ * the explorer renders it as a heading that folds its children away.
+ * - `key`: identifies the group (only `'unused'` today); used as the Vue key and in radar attributes.
+ * - `children`: the unclaimed records as file nodes, sorted by path.
+ */
+export type GroupNode = { type: 'group'; key: 'unused'; children: CourseNode[] }
 /** Any node of the course tree; discriminated by `type`. */
-export type CourseNode = ProjectNode | ResourceNode | FileNode | FolderNode
+export type CourseNode = ProjectNode | ResourceNode | FileNode | FolderNode | GroupNode
 
 /**
  * What the explorer opens: the course itself (root), the embedded project, one of the tree's nodes, or nothing.
  * - `root`: the empty path; `CourseEditor.vue` shows `CourseConfigDoc`.
  * - `project`: a path at or under the project root; `inEditorPath` is the tail after the root as segments and is
  *   what the SPX Project Editor sees as its own in-editor path.
- * - `node`: a folder, resource or file node of the tree (never the project node, which is `project` above).
+ * - `node`: a folder, resource or file node of the tree (never the project node, which is `project` above, and
+ *   never a group, which stands for no record and has no path).
  * - `missing`: a path with no node; `CourseEditor.vue` shows a "does not exist" placeholder.
  */
 export type CourseDoc =
   | { type: 'root' }
   | { type: 'project'; inEditorPath: string[] }
-  | { type: 'node'; node: Exclude<CourseNode, ProjectNode> }
+  | { type: 'node'; node: Exclude<CourseNode, ProjectNode | GroupNode> }
   | { type: 'missing'; path: string }
 
 // Extensions of text records that have no MIME type in the file table, or none that marks them as text.
@@ -109,68 +123,130 @@ export function getFileKind(file: File, path: string): FileKind {
 }
 
 /**
- * Sort group of a node within its folder: containers first, then packages, then the file the course uses, then
- * files it does not. Lower ranks come first.
+ * What a node is called in the explorer and in its document header. The author is shown what the node is, not
+ * where its records sit: the course program, a resource group, the embedded project, or one of the records the
+ * course does not use. Only those last ones are named by path, because they have nothing else to go by and the
+ * author may well want to know where an unused file came from.
  *
- * @param node - Any node.
- * @returns 0 for folders and the project, 1 for resources, 2 for known files, 3 for unclaimed files.
+ * @param node - Any node of the tree.
+ * @returns A localized label; names (packages) and paths (unclaimed records) are the same in both languages.
  *
  * Called by:
- * - components/course-editor/course-tree.ts#sortChildren
+ * - components/course-editor/CourseExplorerNode.vue#label
+ * - components/course-editor/CourseFolderDoc.vue#template (the group header)
+ * - components/course-editor/course-tree.test.ts
  */
-function rank(node: CourseNode) {
+export function getNodeLabel(node: CourseNode): LocaleMessage {
   switch (node.type) {
-    case 'folder':
     case 'project':
-      return 0
+      return { en: 'Project', zh: '工程' }
     case 'resource':
-      return 1
+      return { en: node.name, zh: node.name }
     case 'file':
-      return node.known ? 2 : 3
+      // The course program is the only record the format names; the rest are shown by path.
+      return node.known ? { en: 'Course program', zh: '课程程序' } : { en: node.path, zh: node.path }
+    case 'folder':
+      return getResourceKindLabel(node.name)
+    case 'group':
+      return { en: 'Files the course does not use', zh: '课程不使用的文件' }
   }
 }
 
 /**
- * The display name used for alphabetical ordering. The project node has no `name` field, so its root directory
- * name is used.
+ * What a resource kind is called. The kinds the editor knows get a word; any other kind a course carries is
+ * shown by its directory name, which is the only thing known about it.
+ *
+ * @param kind - The resource kind (`videos`, `images`, or whatever a course brought along).
+ * @returns A localized label.
+ *
+ * Called by:
+ * - components/course-editor/course-tree.ts#getNodeLabel
+ * - components/course-editor/CourseFolderDoc.vue#template, components/course-editor/CourseUploadModal.vue
+ * - components/course-editor/upload.ts#uploadTypes
+ */
+export function getResourceKindLabel(kind: string): LocaleMessage {
+  switch (kind) {
+    case videosKind:
+      return { en: 'Videos', zh: '视频' }
+    case imagesKind:
+      return { en: 'Pictures', zh: '图片' }
+    default:
+      return { en: kind, zh: kind }
+  }
+}
+
+/**
+ * A stable key for a node, for `v-for` and for looking one up. Every node but a group is identified by its path;
+ * a group stands for no record, so its own key is used.
+ *
+ * @param node - Any node of the tree.
+ * @returns The node's path, or `group:<key>` for a group.
+ *
+ * Called by:
+ * - components/course-editor/CourseExplorer.vue#template, components/course-editor/CourseExplorerNode.vue#template
+ * - components/course-editor/CourseFolderDoc.vue#template
+ */
+export function getNodeKey(node: CourseNode) {
+  return node.type === 'group' ? `group:${node.key}` : node.path
+}
+
+/**
+ * The display name used for ordering siblings: packages and known files by name, unclaimed records by path (that
+ * is what the explorer shows for them), the project by its root directory. Groups are never sorted among
+ * siblings, since the top level keeps the order `buildCourseTree` gives it.
  *
  * @param node - Any node.
- * @returns The node's `name`, or the last segment of the project's root path.
+ * @returns The text to order this node by.
  *
  * Called by:
  * - components/course-editor/course-tree.ts#sortChildren
  */
 function nodeName(node: CourseNode) {
-  return node.type === 'project' ? filename(node.path) : node.name
+  switch (node.type) {
+    case 'project':
+      return filename(node.path)
+    case 'group':
+      return node.key
+    case 'file':
+      return node.known ? node.name : node.path
+    default:
+      return node.name
+  }
 }
 
 /**
- * Sort a list of sibling nodes in place, then recurse into every folder. Order is by `rank`, then by name using
- * `localeCompare` so the explorer reads naturally for the author.
+ * Sort a list of sibling nodes in place, then recurse into folders and groups. Siblings inside a folder or a
+ * group are all of one kind (the packages of a resource kind, or the unclaimed records), so the localized name
+ * order is the only rule needed here; the top level keeps the fixed order `buildCourseTree` gives it.
  *
  * @param children - The siblings to sort; mutated in place.
- * @returns Nothing; `children` and every nested `FolderNode.children` end up sorted.
+ * @returns Nothing; `children` and the children of every nested folder or group end up sorted.
  *
  * Called by:
- * - components/course-editor/course-tree.ts#buildCourseTree (on the root's children)
- * - components/course-editor/course-tree.ts#sortChildren (recursively, for each folder)
+ * - components/course-editor/course-tree.ts#buildCourseTree (per resource kind and for the unclaimed records)
+ * - components/course-editor/course-tree.ts#sortChildren (recursively)
  */
 function sortChildren(children: CourseNode[]) {
-  // Group by rank first; within a group fall back to the localized name order.
-  children.sort((a, b) => rank(a) - rank(b) || nodeName(a).localeCompare(nodeName(b)))
-  // Folders carry their own child lists, which need the same treatment.
-  for (const child of children) if (child.type === 'folder') sortChildren(child.children)
+  children.sort((a, b) => nodeName(a).localeCompare(nodeName(b)))
+  for (const child of children) if (child.type === 'folder' || child.type === 'group') sortChildren(child.children)
 }
 
 /**
- * The top-level nodes of the course tree. Projects every part of the model into nodes: the embedded project (one
- * node), each resource package (one node), the course program (a known file) and every unclaimed record (a plain
- * file). Folders are created implicitly from the nodes' paths; the config record `index.json` gets no node
- * because the tree root (the course itself) stands for it.
+ * Resource kinds the explorer always shows, so the author can add a video or a picture before the course has
+ * any. `TutorialProject.isReservedDirectory` keeps the matching directories free for exactly this reason.
+ */
+const alwaysShownKinds = [videosKind, imagesKind]
+
+/**
+ * The top-level nodes of the course tree: the course program, one group per resource kind, the embedded project,
+ * and (when the course carries any) the records the format gives no role to. The shape follows what the parts of
+ * the course are, not where their records sit: directories are an export detail, so `assets` never appears and
+ * unclaimed records are collected under one heading instead of the folders they happen to live in. The config
+ * record `index.json` gets no node because the tree root (the course itself) stands for it.
  *
  * @param project - The loaded Tutorial project; its `config`, `resources`, `mainCourse` and `extraFiles` are
  *   read. Reading them inside a `computed` makes the tree reactive to model changes.
- * @returns Fresh node objects for the root's children, sorted by `sortChildren`.
+ * @returns Fresh node objects in display order.
  * @throws Error when the project has not been loaded (`config == null`).
  *
  * Called by:
@@ -182,75 +258,48 @@ export function buildCourseTree(project: TutorialProject): CourseNode[] {
   const config = project.config
   if (config == null) throw new Error('Tutorial project has not been loaded')
 
-  // Folders are memoized by path so every node lands in exactly one `FolderNode`; the empty path is the root.
-  const root: FolderNode = { type: 'folder', path: '', name: '', children: [] }
-  const folders = new Map<string, FolderNode>([['', root]])
-  /**
-   * Get or create the folder node for `path`, creating missing ancestors on the way up. This is what makes
-   * directories exist "as soon as a record's path names them".
-   *
-   * @param path - A directory path; `''` is the root.
-   * @returns The (possibly new) folder node, already attached to its parent.
-   *
-   * Called by:
-   * - components/course-editor/course-tree.ts#buildCourseTree (for every node placed, and recursively)
-   */
-  function folder(path: string): FolderNode {
-    const existing = folders.get(path)
-    if (existing != null) return existing
-    // Create the folder and attach it to its parent, which is created recursively when missing.
-    const created: FolderNode = { type: 'folder', path, name: filename(path), children: [] }
-    folder(dirname(path)).children.push(created)
-    folders.set(path, created)
-    return created
-  }
-
-  // The embedded project: one opaque node placed in the folder containing its root.
-  const projectRoot = config.project.root
-  folder(dirname(projectRoot)).children.push({ type: 'project', path: projectRoot, projectType: config.project.type })
-
-  // The videos folder is where videos get added, so it exists even while there is none.
-  folder(getResourceKindDir(videosKind))
-  // One node per resource package, placed in its kind folder (`assets/<kind>`), which is created on demand.
-  for (const resource of project.resources) {
-    folder(getResourceKindDir(resource.kind)).children.push({
-      type: 'resource',
-      path: resource.assetPath,
-      kind: resource.kind,
-      name: resource.name,
-      id: resource.id,
-      file: resource.file
-    })
-  }
-
-  // The course program is a known text file. Its `File` is taken from the export so it is the same instance
-  // `exportFiles()` reports (`DerivedFile` keeps it while the code is unchanged), which `getChangedPaths` relies on.
-  const mainCourseFile = project.mainCourse.export()[mainCourseFilePath]!
-  folder(dirname(mainCourseFilePath)).children.push({
+  // The course program. Its `File` comes from the export so it is the same instance `exportFiles()` reports
+  // (`DerivedFile` keeps it while the code is unchanged), which `getChangedPaths` relies on.
+  const program: FileNode = {
     type: 'file',
     path: mainCourseFilePath,
     name: filename(mainCourseFilePath),
-    file: mainCourseFile,
+    file: project.mainCourse.export()[mainCourseFilePath]!,
     kind: 'text',
     known: true
-  })
-
-  // Every unclaimed record becomes a plain file node so nothing that will be saved is hidden from the author.
-  for (const [path, file] of project.extraFiles) {
-    if (file == null) continue
-    folder(dirname(path)).children.push({
-      type: 'file',
-      path,
-      name: filename(path),
-      file,
-      kind: getFileKind(file, path),
-      known: false
-    })
   }
 
-  // Order everything for display; the root folder itself is not part of the result.
-  sortChildren(root.children)
-  return root.children
+  // The kinds always offered first, then any other kind the course already carries, in first-seen order.
+  const kinds = [...alwaysShownKinds]
+  for (const resource of project.resources) if (!kinds.includes(resource.kind)) kinds.push(resource.kind)
+  const kindFolders = kinds.map((kind): FolderNode => {
+    const children: CourseNode[] = project.resources
+      .filter((resource) => resource.kind === kind)
+      .map((resource) => ({
+        type: 'resource',
+        path: resource.assetPath,
+        kind: resource.kind,
+        name: resource.name,
+        id: resource.id,
+        file: resource.file
+      }))
+    sortChildren(children)
+    return { type: 'folder', path: getResourceKindDir(kind), name: kind, children }
+  })
+
+  // The embedded learner project: one opaque node, wherever its root directory sits.
+  const projectNode: ProjectNode = { type: 'project', path: config.project.root, projectType: config.project.type }
+
+  // Every unclaimed record, so nothing that will be saved is hidden from the author.
+  const unused: CourseNode[] = []
+  for (const [path, file] of project.extraFiles) {
+    if (file == null) continue
+    unused.push({ type: 'file', path, name: filename(path), file, kind: getFileKind(file, path), known: false })
+  }
+  sortChildren(unused)
+
+  const groups: CourseNode[] = unused.length > 0 ? [{ type: 'group', key: 'unused', children: unused }] : []
+  return [program, ...kindFolders, projectNode, ...groups]
 }
 
 /**
@@ -270,9 +319,15 @@ export function buildCourseTree(project: TutorialProject): CourseNode[] {
  */
 export function findNode(nodes: CourseNode[], path: string): CourseNode | null {
   for (const node of nodes) {
-    if (node.path === path) return node
-    // Only a folder on the way to `path` is worth descending into.
-    if (node.type === 'folder' && isPathWithin(path, node.path)) return findNode(node.children, path)
+    // A group stands for no record and has no path of its own: it is never the answer, only its children are.
+    if (node.type !== 'group' && node.path === path) return node
+    // Look inside anything that holds other nodes. Being under a resource group's directory does not put a node
+    // in that group: a record the course does not use sits in the unused heading wherever its path points, so a
+    // branch that does not have it must not end the search.
+    if (node.type === 'folder' || node.type === 'group') {
+      const found = findNode(node.children, path)
+      if (found != null) return found
+    }
   }
   return null
 }
@@ -318,7 +373,9 @@ export function resolveCourseDoc(tree: CourseNode[], projectRoot: string, path: 
   // Otherwise it must be a tree node. A project node cannot come back here (its path was caught above), but the
   // type system does not know that, so that case is folded into `missing`.
   const node = findNode(tree, path)
-  if (node == null || node.type === 'project') return { type: 'missing', path }
+  // `findNode` returns neither of these (the project's path was caught above, a group has no path), but the
+  // type system does not know that, so both are folded into `missing`.
+  if (node == null || node.type === 'project' || node.type === 'group') return { type: 'missing', path }
   return { type: 'node', node }
 }
 
@@ -358,9 +415,11 @@ export function getChangedPaths(baseline: Files, current: Files): Set<string> {
  * - components/course-editor/CourseExplorerNode.vue#dirty
  * - components/course-editor/course-tree.test.ts
  */
-export function isNodeDirty(node: CourseNode | { type: 'root' }, changedPaths: Set<string>) {
+export function isNodeDirty(node: CourseNode | { type: 'root' }, changedPaths: Set<string>): boolean {
   // The root has no path of its own; it is dirty exactly when `index.json` changed.
   if (node.type === 'root') return changedPaths.has(configFilePath)
+  // A group has no path either; it is dirty when any record it collects is.
+  if (node.type === 'group') return node.children.some((child) => isNodeDirty(child, changedPaths))
   // Any node is dirty when a changed record is the node itself or lives inside it.
   for (const path of changedPaths) if (isPathWithin(path, node.path)) return true
   return false

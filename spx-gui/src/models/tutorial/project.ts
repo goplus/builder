@@ -14,10 +14,17 @@ import {
   ensureValidResourceName,
   getResourceKindDir,
   hasRecord,
+  imagesKind,
   Resource,
   validateResourceLayout,
   videosKind
 } from './resource'
+
+/**
+ * Resource kinds whose directory the course keeps as a folder even while it holds no package, because the
+ * explorer always offers the group. Kept next to `isReservedDirectory`, its only reader.
+ */
+const reservedKinds = [videosKind, imagesKind]
 
 /**
  * Path (relative to the Tutorial-project root) of the course configuration record.
@@ -362,14 +369,14 @@ export class TutorialProject {
 
   /**
    * Whether `path` is a directory the course always treats as a folder, even while it holds nothing: the
-   * resources root and the videos folder the explorer always shows. The record-based check cannot see them
+   * resources root and the resource groups the explorer always shows. The record-based check cannot see them
    * while they are empty, so without this a file named `assets` could take their place.
    * @param path - Path relative to the course root.
-   * @returns True for `assets` and `assets/videos`.
+   * @returns True for `assets`, `assets/videos` and `assets/images`.
    * Called by: models/tutorial/project.ts#setExtraFile, components/course-editor/upload.ts#validateUploadPath.
    */
   isReservedDirectory(path: string) {
-    return path === assetsDir || path === getResourceKindDir(videosKind)
+    return path === assetsDir || reservedKinds.some((kind) => path === getResourceKindDir(kind))
   }
 
   /**

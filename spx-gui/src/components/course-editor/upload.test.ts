@@ -3,7 +3,16 @@ import { describe, expect, it, vi } from 'vitest'
 import { fromConfig, fromText, toText, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
-import { addUploadedFiles, getUploadConflicts, normalizeDir, validateUploadDir, validateUploadPath } from './upload'
+import {
+  addUploadedFiles,
+  addUploadedFilesOfType,
+  getUploadConflicts,
+  getUploadDir,
+  getUploadTypeAt,
+  validateUpload,
+  validateUploadDir,
+  validateUploadPath
+} from './upload'
 
 function makeFiles(): Files {
   return {
@@ -180,7 +189,7 @@ describe('addUploadedFiles', () => {
   it('stores files uploaded elsewhere as plain records, creating folders implicitly', async () => {
     const project = await loadProject()
 
-    const paths = addUploadedFiles(project, normalizeDir('/docs/extra/'), [nativeFile('guide.pdf')])
+    const paths = addUploadedFiles(project, 'docs/extra', [nativeFile('guide.pdf')])
 
     expect(paths).toEqual(['docs/extra/guide.pdf'])
     expect(project.getExtraFile('docs/extra/guide.pdf')).not.toBeNull()
@@ -191,5 +200,43 @@ describe('addUploadedFiles', () => {
     const project = await loadProject()
     expect(getUploadConflicts(project, '', ['notes.md', 'new.md'])).toEqual(['notes.md'])
     expect(getUploadConflicts(project, 'assets/videos', ['step-to.mp4'])).toEqual([])
+  })
+})
+
+describe('upload types', () => {
+  it('sends each type where its files belong', () => {
+    expect(getUploadDir('video')).toBe('assets/videos')
+    expect(getUploadDir('picture')).toBe('assets/images')
+    // Anything else is kept next to the course, which is the only place the author never has to name.
+    expect(getUploadDir('other')).toBe('')
+  })
+
+  it('starts from the group the author is in', () => {
+    expect(getUploadTypeAt('')).toBe('video')
+    expect(getUploadTypeAt('assets/images')).toBe('picture')
+    expect(getUploadTypeAt('assets/images/hint')).toBe('picture')
+    expect(getUploadTypeAt('notes.md')).toBe('video')
+  })
+
+  it('refuses a name only where the name becomes the record', async () => {
+    const project = await loadProject()
+
+    // As a plain record the file would take a path the course already claims.
+    expect(validateUpload(project, 'other', ['index.json'])?.en).toContain('its own editor')
+    // The same file as a picture is packaged under a derived name, so nothing collides.
+    expect(validateUpload(project, 'picture', ['index.json'])).toBeNull()
+    expect(validateUpload(project, 'video', ['step-to.mp4', 'index.json'])).toBeNull()
+  })
+
+  it('packages a picture and keeps another file as it is', async () => {
+    const project = await loadProject()
+
+    expect(addUploadedFilesOfType(project, 'picture', [nativeFile('hint.png', 'png')])).toEqual(['assets/images/hint'])
+    expect(addUploadedFilesOfType(project, 'other', [nativeFile('handout.txt')])).toEqual(['handout.txt'])
+
+    const files = project.exportFiles()
+    expect(Object.keys(files)).toContain('assets/images/hint/index.json')
+    expect(Object.keys(files)).toContain('assets/images/hint/hint.png')
+    expect(await toText(files['handout.txt']!)).toBe('content')
   })
 })

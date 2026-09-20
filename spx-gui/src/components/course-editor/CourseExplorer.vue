@@ -25,7 +25,7 @@
 import { computed } from 'vue'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { UIButton } from '@/components/ui'
-import { isNodeDirty, type CourseNode } from './course-tree'
+import { getNodeKey, isNodeDirty, type CourseNode } from './course-tree'
 import CourseExplorerNode, {
   explorerActiveNodeClass,
   explorerDotClass,
@@ -85,19 +85,19 @@ const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPath
       </button>
       <!-- Upload entry point: emits `upload`; the parent opens the modal with a proposed target folder. -->
       <UIButton
-        v-radar="{ name: 'upload-button', desc: 'Click to upload files into the course' }"
+        v-radar="{ name: 'upload-button', desc: 'Click to add a video, a picture or another file' }"
         class="flex-none"
         type="secondary"
         size="small"
         @click="emit('upload')"
       >
-        {{ $t({ en: 'Upload...', zh: '上传...' }) }}
+        {{ $t({ en: 'Add...', zh: '添加...' }) }}
       </UIButton>
     </div>
     <!-- Tree rows: each top-level node at depth 1; nested selections are re-emitted as `select` unchanged. -->
     <CourseExplorerNode
       v-for="node in tree"
-      :key="node.path"
+      :key="getNodeKey(node)"
       :node="node"
       :depth="1"
       :active-path="activePath"
