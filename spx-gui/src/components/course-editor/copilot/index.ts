@@ -5,6 +5,11 @@
  *
  * Everything here is registered for the lifetime of the calling scope and disposed with it, so a second course
  * opened in the same session never inherits the first one's context.
+ *
+ * None of it applies while the course is being previewed. The Course Editor stays mounted through a preview, but
+ * the Copilot there belongs to the learner's session that the playground runner started, and the whole point of
+ * Preview is to see what a learner sees: an assistant told it is helping an author, handed the course program
+ * and the authoring skill, is not that. `whileAuthoring` is where that rule lives.
  */
 
 import { onScopeDispose } from 'vue'
@@ -21,6 +26,23 @@ import { getNodeLabel, type CourseDoc } from '../course-tree'
  * of the context.
  */
 const programMaxLength = 20000
+
+/**
+ * Wrap a provider so it says nothing while the course is being previewed: the learner's session must see what a
+ * learner's would, and nothing of the author's.
+ *
+ * @param isPreviewing - Whether the editor is showing the preview rather than the editing surface.
+ * @param provider - The provider to gate.
+ * @returns A provider that delegates while authoring and is silent while previewing.
+ *
+ * Called by: components/course-editor/copilot/index.ts#useCourseEditorCopilot (for every registration)
+ */
+function whileAuthoring(isPreviewing: () => boolean, provider: ICopilotContextProvider): ICopilotContextProvider {
+  return {
+    provideContext: () => (isPreviewing() ? '' : provider.provideContext?.() ?? ''),
+    providePreloadSkills: () => (isPreviewing() ? [] : provider.providePreloadSkills?.() ?? [])
+  }
+}
 
 /**
  * What the author is working on: the course's identity, its settings, and what it carries. Read at the start of
@@ -101,24 +123,27 @@ The author has "${getNodeLabel(doc.node).en}" open.`
  *
  * @param getProject - The course being edited; read on every round, so it follows the working copy.
  * @param getDoc - What the author currently has open, from the route.
+ * @param isPreviewing - Whether the editor is previewing the course; everything registered here goes quiet then.
  * @returns Nothing; every registration is disposed with the calling scope.
  *
  * Called by: components/course-editor/CourseEditor.vue (setup)
  */
-export function useCourseEditorCopilot(getProject: () => TutorialProject, getDoc: () => CourseDoc): void {
+export function useCourseEditorCopilot(
+  getProject: () => TutorialProject,
+  getDoc: () => CourseDoc,
+  isPreviewing: () => boolean
+): void {
   const d = new Disposable()
   onScopeDispose(() => d.dispose())
 
   const copilot = useCopilot()
 
-  d.addDisposer(copilot.registerContextProvider(new CourseContextProvider(getProject)))
-  d.addDisposer(copilot.registerContextProvider(new CourseProgramContextProvider(getProject)))
-  d.addDisposer(copilot.registerContextProvider(new OpenDocumentContextProvider(getDoc)))
-  d.addDisposer(
-    copilot.registerContextProvider({
-      providePreloadSkills() {
-        return [skillTutorialCourse]
-      }
-    })
-  )
+  for (const provider of [
+    new CourseContextProvider(getProject),
+    new CourseProgramContextProvider(getProject),
+    new OpenDocumentContextProvider(getDoc),
+    { providePreloadSkills: () => [skillTutorialCourse] }
+  ]) {
+    d.addDisposer(copilot.registerContextProvider(whileAuthoring(isPreviewing, provider)))
+  }
 }
