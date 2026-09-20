@@ -32,7 +32,7 @@ import { fromText, toText } from '@/models/common/file'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { getResourceKindDir, validateResourceLayout, videosKind } from '@/models/tutorial/resource'
 import { UIButton, UIEmpty, UITextInput } from '@/components/ui'
-import { getFileKind } from './course-tree'
+import { getFileKind, getResourceKindLabel } from './course-tree'
 import CourseTextDoc from './CourseTextDoc.vue'
 
 /** A resource package: shown by what its payload is (video, image, text, other), renamed and deleted here. */
@@ -200,13 +200,14 @@ function handleDelete() {
 <template>
   <!-- Missing resource: the model has no `kind/name` (deleted, renamed elsewhere, or a stale URL). -->
   <UIEmpty v-if="resource == null" class="m-auto" size="small">
-    {{ $t({ en: `Resource "${kind}/${name}" does not exist`, zh: `资源“${kind}/${name}”不存在` }) }}
+    {{ $t({ en: `"${name}" does not exist in the course`, zh: `课程中不存在“${name}”` }) }}
   </UIEmpty>
   <!-- Resource document: header row, a reference hint, and the preview area filling the rest. -->
   <div v-else class="flex h-full flex-col gap-3 overflow-hidden p-4">
     <!-- Header row: kind prefix, the editable name, Rename (disabled while the draft equals the name), Delete. -->
     <div class="flex flex-none items-center gap-2">
-      <span class="flex-none text-sm text-grey-700">{{ kind }} /</span>
+      <!-- What kind of thing this is, in words; the group it belongs to is named the same way. -->
+      <span class="flex-none text-sm text-grey-700">{{ $t(getResourceKindLabel(kind)) }}</span>
       <UITextInput
         v-radar="{ name: 'resource-name-input', desc: 'Input for the resource name used by the course program' }"
         class="flex-1"
@@ -241,8 +242,8 @@ function handleDelete() {
     <p v-else class="m-0 flex-none text-sm text-grey-700">
       {{
         $t({
-          en: `The course program cannot address ${kind} resources yet; the package is kept with the course.`,
-          zh: `课程程序目前还不能引用 ${kind} 资源，这个包会随课程保存。`
+          en: 'The course program cannot use this yet; it is kept with the course.',
+          zh: '课程程序目前还不能使用它，但它会随课程一起保存。'
         })
       }}
     </p>

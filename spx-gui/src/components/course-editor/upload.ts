@@ -1,5 +1,9 @@
 /**
- * Upload policy of the course explorer. Where a file may land follows the ownership of the tree:
+ * Upload policy of the course explorer. The author says what they are uploading, never where it goes: an
+ * `UploadType` maps to the directory its files land in (`getUploadDir`), and the rules below decide whether that
+ * is allowed. The types are the layer the upload modal works in; everything under them is the course format.
+ *
+ * Where a file may land follows the ownership of the tree:
  * - `assets/` holds resources addressed by the course program, so it only contains packages: uploading into
  *   `assets/<kind>` creates a package of that kind with its generated manifest, whatever the file's extension (the
  *   kind is just the directory name; which kinds the course program can address is up to the course format).
@@ -20,27 +24,145 @@ import { mainCourseFilePath } from '@/models/tutorial/course'
 import { configFilePath, type TutorialProject } from '@/models/tutorial/project'
 import {
   assetsDir,
+  getResourceKindDir,
   getResourceName,
+  imagesKind,
   Resource,
   validateResourceKind,
   validateResourceName,
   videosKind
 } from '@/models/tutorial/resource'
-import { isPathWithin, pathToSegments, segmentsToPath } from './route'
+import { isPathWithin, pathToSegments } from './route'
 
 /**
- * Normalize a user-typed directory: no leading/trailing/duplicate slashes; the empty string is the course root.
- * Every other function in this module expects directories in this form.
- *
- * @param dir - Raw text, e.g. `/docs/extra/` or `docs//extra`.
- * @returns The normalized directory, e.g. `docs/extra`; `''` for the root.
- *
- * Called by:
- * - components/course-editor/CourseUploadModal.vue#dir
- * - components/course-editor/upload.test.ts
+ * What the author says they are uploading. The type is the whole choice: it decides the directory the files land
+ * in and whether they become resource packages, so no path is ever typed.
+ * - `'video'` / `'picture'`: one package per file under that kind's directory, with a generated manifest.
+ * - `'other'`: the files are kept with the course as they are, and the course does not use them.
+ * Consumed by: components/course-editor/CourseUploadModal.vue, components/course-editor/CourseEditor.vue,
+ * components/course-editor/CourseFolderDoc.vue.
  */
-export function normalizeDir(dir: string) {
-  return segmentsToPath(pathToSegments(dir))
+export type UploadType = 'video' | 'picture' | 'other'
+
+/** The upload types offered, in the order the modal lists them. */
+export const uploadTypes: UploadType[] = ['video', 'picture', 'other']
+
+/**
+ * The resource kind an upload type packages its files as.
+ * @param type - The chosen type.
+ * @returns The kind (`videos`, `images`), or null when the files stay plain records.
+ * Called by: components/course-editor/upload.ts#getUploadDir.
+ */
+export function getUploadTypeKind(type: UploadType): string | null {
+  switch (type) {
+    case 'video':
+      return videosKind
+    case 'picture':
+      return imagesKind
+    case 'other':
+      return null
+  }
+}
+
+/**
+ * Where the files of an upload type go.
+ * @param type - The chosen type.
+ * @returns `assets/<kind>` for a resource type, `''` (the course root) for `'other'`.
+ * Called by: components/course-editor/upload.ts#validateUpload and #addUploadedFilesOfType,
+ * components/course-editor/CourseUploadModal.vue#conflicts, components/course-editor/CourseEditor.vue#handleUpload.
+ */
+export function getUploadDir(type: UploadType) {
+  const kind = getUploadTypeKind(type)
+  return kind == null ? '' : getResourceKindDir(kind)
+}
+
+/**
+ * The name of an upload type, as the author reads it.
+ * @param type - The chosen type.
+ * @returns A localized label.
+ * Called by: components/course-editor/CourseUploadModal.vue#template.
+ */
+export function getUploadTypeLabel(type: UploadType): LocaleMessage {
+  switch (type) {
+    case 'video':
+      return { en: 'Video', zh: '视频' }
+    case 'picture':
+      return { en: 'Picture', zh: '图片' }
+    case 'other':
+      return { en: 'Something else', zh: '其他文件' }
+  }
+}
+
+/**
+ * One line saying what uploading this type will do, shown under the choice.
+ * @param type - The chosen type.
+ * @returns A localized explanation.
+ * Called by: components/course-editor/CourseUploadModal.vue#template.
+ */
+export function getUploadTypeHint(type: UploadType): LocaleMessage {
+  switch (type) {
+    case 'video':
+      return {
+        en: 'The course program can play it by name, for example showVideo "step-to".',
+        zh: '课程程序可以按名字播放它，例如 showVideo "step-to"。'
+      }
+    case 'picture':
+      return {
+        en: 'Kept with the course. No course-program call uses pictures yet.',
+        zh: '随课程一起保存。目前还没有课程程序调用会用到图片。'
+      }
+    case 'other':
+      return {
+        en: 'Kept with the course exactly as it is. The course does not use it.',
+        zh: '原样随课程保存，课程不会使用它。'
+      }
+  }
+}
+
+/**
+ * The type to start the upload modal on, given what the author currently has open. Uploading from inside a
+ * resource group means adding to that group; anywhere else the common case is a video.
+ * @param path - The open node's in-Course-Editor path; `''` for the course itself.
+ * @returns The upload type to preselect.
+ * Called by: components/course-editor/CourseEditor.vue#handleUpload.
+ */
+export function getUploadTypeAt(path: string): UploadType {
+  if (isPathWithin(path, getResourceKindDir(imagesKind))) return 'picture'
+  return 'video'
+}
+
+/**
+ * Why the chosen files cannot be uploaded as `type`, or null when they can. The directory rule is checked once,
+ * then each file's own path; resource types pass the per-file rules by construction (their records are named
+ * after a derived package name, not after the file).
+ * @param project - The loaded Tutorial project.
+ * @param type - The chosen upload type.
+ * @param names - The chosen files' names.
+ * @returns A localized reason to refuse, or null.
+ * Called by: components/course-editor/CourseUploadModal.vue#error, components/course-editor/upload.test.ts.
+ */
+export function validateUpload(project: TutorialProject, type: UploadType, names: string[]): LocaleMessage | null {
+  const dir = getUploadDir(type)
+  const dirError = validateUploadDir(project, dir)
+  if (dirError != null) return dirError
+  for (const name of names) {
+    const pathError = validateUploadPath(project, dir, name)
+    if (pathError != null) return pathError
+  }
+  return null
+}
+
+/**
+ * Put the uploaded files into the course as `type`. A thin wrapper over `addUploadedFiles`, which works in
+ * directories; the UI only ever knows types.
+ * @param project - The loaded Tutorial project; mutated.
+ * @param type - The chosen upload type, already validated.
+ * @param files - The native files chosen by the author.
+ * @returns One path per file, in order (the package path, or the record path).
+ * Called by: components/course-editor/CourseEditor.vue#handleUpload, components/course-editor/upload.test.ts.
+ */
+export function addUploadedFilesOfType(project: TutorialProject, type: UploadType, files: globalThis.File[]) {
+  return addUploadedFiles(project, getUploadDir(type), files)
 }
 
 /**
@@ -71,9 +193,7 @@ export function joinPath(dir: string, name: string) {
  * - components/course-editor/upload.ts#validateUploadPath
  * - components/course-editor/upload.ts#getUploadConflicts
  * - components/course-editor/upload.ts#addUploadedFiles
- * - components/course-editor/CourseUploadModal.vue#packageKind
- * - components/course-editor/CourseFolderDoc.vue#resourceKind
- * - components/course-editor/CourseExplorerNode.vue#hint
+ * - components/course-editor/upload.ts#getUploadTypeKind (through the kinds the types map to)
  */
 export function getUploadResourceKind(dir: string): string | null {
   const segments = pathToSegments(dir)
@@ -93,10 +213,7 @@ export function getUploadResourceKind(dir: string): string | null {
  *
  * Called by:
  * - components/course-editor/upload.ts#validateUploadPath
- * - components/course-editor/CourseEditor.vue#proposedUploadDir
- * - components/course-editor/CourseUploadModal.vue#knownDirs
- * - components/course-editor/CourseUploadModal.vue#error
- * - components/course-editor/CourseFolderDoc.vue#canUpload
+ * - components/course-editor/upload.ts#validateUpload (the rule every upload type goes through)
  * - components/course-editor/upload.test.ts
  */
 export function validateUploadDir(project: TutorialProject, dir: string): LocaleMessage | null {
@@ -143,7 +260,7 @@ export function validateUploadDir(project: TutorialProject, dir: string): Locale
  * @throws Error when the project has not been loaded (via `validateUploadDir` / `isClaimedPath`).
  *
  * Called by:
- * - components/course-editor/CourseUploadModal.vue#error
+ * - components/course-editor/upload.ts#validateUpload
  * - components/course-editor/upload.test.ts
  */
 export function validateUploadPath(project: TutorialProject, dir: string, name: string): LocaleMessage | null {

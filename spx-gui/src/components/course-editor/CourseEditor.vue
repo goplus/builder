@@ -66,7 +66,7 @@ import CourseResourceDoc from './CourseResourceDoc.vue'
 import { getProjectEditorHost } from './project'
 import { dirname, inCourseEditorPathParam, paramToSegments, pathToSegments, segmentsToPath } from './route'
 import { buildCourseTree, getChangedPaths, nearestExistingPath, resolveCourseDoc } from './course-tree'
-import { addUploadedFiles, validateUploadDir } from './upload'
+import { addUploadedFilesOfType, getUploadTypeAt, type UploadType } from './upload'
 
 const props = defineProps<{
   /** The Playground Course being edited: its id is used to save, its title/thumbnail feed the completion modal. */
@@ -194,22 +194,16 @@ function openPath(path: string) {
   })
 }
 
-// Uploading: the modal picks the files and the target folder (proposed from the open node); the first created
-// node is opened afterwards.
+// Uploading: the modal asks what the author is adding (the type decides where it goes) and which files; the
+// first created node is opened afterwards.
 /**
- * The folder proposed as upload target from the open node: a folder itself, the parent folder of an open file or
- * resource, or the course root when nothing suitable is open or the upload policy refuses the proposal (embedded
- * project directory, `assets/` itself, a package directory).
- * @returns A normalized directory path; the empty string is the course root.
- * Called by: `components/course-editor/CourseEditor.vue#handleUpload` (default value of its `dir` parameter)
+ * The upload type proposed from the open node: adding from inside a resource group means adding to that group.
+ * @returns The `UploadType` the modal starts on.
+ * Called by: `components/course-editor/CourseEditor.vue#handleUpload` (default value of its `type` parameter)
  */
-function proposedUploadDir() {
+function proposedUploadType() {
   const current = doc.value
-  let dir = ''
-  // Only tree nodes yield a directory: a folder is used as is, other nodes contribute their parent folder.
-  if (current.type === 'node') dir = current.node.type === 'folder' ? current.node.path : dirname(current.node.path)
-  // Fall back to the root when the upload policy refuses the proposal (see `upload.ts#validateUploadDir`).
-  return validateUploadDir(props.project, dir) == null ? dir : ''
+  return getUploadTypeAt(current.type === 'node' ? current.node.path : '')
 }
 
 /**
@@ -221,29 +215,28 @@ function proposedUploadDir() {
 let sessionAlive = true
 
 /**
- * Upload files into the course: the modal picks the files and confirms the target folder, the files are added to
- * the model (as resource packages under `assets/<kind>`, or as plain records elsewhere) and the first created node
- * is opened. Wrapped by `useMessageHandle` so failures show a toast; closing the modal rejects with `Cancelled`,
- * which the wrapper swallows silently.
- * @param dir - Initial target folder shown in the modal; defaults to `proposedUploadDir()`.
+ * Add files to the course: the modal asks what they are and which files, the files are added to the model (a
+ * resource package each for a video or a picture, plain records otherwise) and the first created node is opened.
+ * Wrapped by `useMessageHandle` so failures show a toast; closing the modal rejects with `Cancelled`, which the
+ * wrapper swallows silently.
+ * @param type - Upload type the modal starts on; defaults to `proposedUploadType()`.
  * @returns Promise<void>; side effects: mutates `props.project` (resources / extra files) and navigates to the
  * first uploaded node.
  * Called by: `components/course-editor/CourseEditor.vue#template` (`CourseExplorer` `@upload` calls
- * `handleUpload.fn()`; `CourseFolderDoc` `@upload` calls `handleUpload.fn(dir)`)
+ * `handleUpload.fn()`; `CourseFolderDoc` `@upload` calls `handleUpload.fn(type)`)
  */
 const handleUpload = useMessageHandle(
-  async (dir: string = proposedUploadDir()) => {
-    // Let the author pick files and adjust the folder; resolves with the normalized dir and the native files.
-    const { dir: targetDir, files } = await openUploadModal({
+  async (type: UploadType = proposedUploadType()) => {
+    // Let the author say what they are adding and pick the files.
+    const { type: chosenType, files } = await openUploadModal({
       project: props.project,
-      tree: tree.value,
-      initialDir: dir
+      initialType: type
     })
     // The modal lives in the app-level provider and survives this editor; a late confirmation must not write into
     // a session that ended (browser history while the modal was open).
     if (!sessionAlive) return
     // Put the files into the model; returns one node path per file (package path or record path).
-    const paths = addUploadedFiles(props.project, targetDir, files)
+    const paths = addUploadedFilesOfType(props.project, chosenType, files)
     // Show the first new node so the author sees the result right away.
     await openPath(paths[0])
   },
@@ -858,10 +851,9 @@ onUnmounted(() => {
           <CourseFolderDoc
             v-else-if="doc.node.type === 'folder'"
             :key="doc.node.path"
-            :project="project"
             :node="doc.node"
             @open="openPath"
-            @upload="(dir) => handleUpload.fn(dir)"
+            @upload="(type) => handleUpload.fn(type)"
           />
           <!-- Resource package (`assets/<kind>/<name>`): preview, rename and delete. Renaming navigates to the
                new package path; deleting navigates to the kind folder. -->

@@ -1,146 +1,142 @@
 <script setup lang="ts">
 /**
- * Document shown when a folder node of the course tree is open. It lists the folder's children as buttons that
- * open them, offers an "Upload..." button when the upload policy allows files to land here, and explains what
- * files put into `assets/<kind>` folders become (videos the course program can address by name; other kinds are
- * packaged the same way but cannot be addressed yet).
+ * Document shown when a resource group of the course tree is open (the videos, the pictures, or a kind some
+ * course brought along). It lists the packages of that kind as buttons that open them, says what the course
+ * program can do with them, and offers adding another one of the same kind.
  *
  * Props:
- * - `project`: the loaded Tutorial project, consulted by `validateUploadDir` (project root, `assets` rules).
- * - `node`: the open `FolderNode`; its `path` names the folder and its `children` are already sorted.
+ * - `node`: the open `FolderNode`; its `name` is the resource kind and its `children` are already sorted.
  *
  * Emits:
- * - `open`: payload is a child's path; `CourseEditor.vue` navigates to it (`@open="openPath"`).
- * - `upload`: payload is this folder's path as the proposed target; `CourseEditor.vue` runs the upload flow with
- *   it (`@upload="(dir) => handleUpload.fn(dir)"`).
+ * - `open`: payload is a package's path; `CourseEditor.vue` navigates to it (`@open="openPath"`).
+ * - `upload`: payload is the upload type of this group; `CourseEditor.vue` opens the upload modal on it
+ *   (`@upload="(type) => handleUpload.fn(type)"`).
  *
  * Used by:
  * - components/course-editor/CourseEditor.vue#template (the `doc.node.type === 'folder'` branch, keyed by path)
  *
  * Uses:
  * - components/ui UIButton, UIEmpty
- * - models/tutorial/resource (getResourceKindDir, videosKind)
- * - components/course-editor/upload.ts (getUploadResourceKind, validateUploadDir)
+ * - models/tutorial/resource (videosKind, imagesKind)
+ * - components/course-editor/course-tree.ts (getNodeLabel, getNodeKey)
+ * - components/course-editor/upload.ts (UploadType)
  */
 import { computed } from 'vue'
-import { filename } from '@/utils/path'
-import type { TutorialProject } from '@/models/tutorial/project'
-import { getResourceKindDir, videosKind } from '@/models/tutorial/resource'
+import { imagesKind, videosKind } from '@/models/tutorial/resource'
 import { UIButton, UIEmpty } from '@/components/ui'
-import type { CourseNode, FolderNode } from './course-tree'
-import { getUploadResourceKind, validateUploadDir } from './upload'
+import { getNodeKey, getNodeLabel, type CourseNode, type FolderNode } from './course-tree'
+import type { UploadType } from './upload'
 
 const props = defineProps<{
-  project: TutorialProject
   node: FolderNode
 }>()
 
 const emit = defineEmits<{
   open: [path: string]
-  /** Upload files into this folder. */
-  upload: [dir: string]
+  /** Add another thing of this group's kind. */
+  upload: [type: UploadType]
 }>()
 
 /**
- * Whether this is the `assets/videos` folder, the one kind the course program can address today. It gets a
- * friendlier title, button label and explanation than other kind folders.
+ * The upload type that adds to this group, or null for a kind the upload modal does not offer (a kind some
+ * course carries that this editor knows nothing about); the add button is hidden then.
  *
- * @returns `true` for `assets/videos`.
- *
- * Called by:
- * - components/course-editor/CourseFolderDoc.vue#template (title, upload button label, explanation)
- */
-const isVideosFolder = computed(() => props.node.path === getResourceKindDir(videosKind))
-/**
- * The resource kind this folder packages uploads as, when it is `assets/<kind>`; null for any other folder.
- *
- * @returns The kind string, or `null`.
+ * @returns `'video'`, `'picture'`, or `null`.
  *
  * Called by:
- * - components/course-editor/CourseFolderDoc.vue#template (the generic kind explanation)
+ * - components/course-editor/CourseFolderDoc.vue#template (the add button and its label)
  */
-const resourceKind = computed(() => getUploadResourceKind(props.node.path))
-/**
- * Whether the upload policy accepts files in this folder; hides the upload button otherwise (the project root,
- * `assets` itself and package directories refuse).
- *
- * @returns `true` when `validateUploadDir` has no complaint.
- *
- * Called by:
- * - components/course-editor/CourseFolderDoc.vue#template (`v-if` on the upload button)
- */
-const canUpload = computed(() => validateUploadDir(props.project, props.node.path) == null)
+const uploadType = computed<UploadType | null>(() => {
+  switch (props.node.name) {
+    case videosKind:
+      return 'video'
+    case imagesKind:
+      return 'picture'
+    default:
+      return null
+  }
+})
 
 /**
- * Display name of a child in the list. The project node has no `name`, so its root directory name is used.
+ * What this group is called (`getNodeLabel`), for the header.
  *
- * @param child - Any child node of this folder.
- * @returns The child's `name`, or the last segment of the project's root path.
+ * @returns A `LocaleMessage` for `$t`.
+ *
+ * Called by:
+ * - components/course-editor/CourseFolderDoc.vue#template (the title)
+ */
+const label = computed(() => getNodeLabel(props.node))
+
+/**
+ * Display name of a child. Only packages live in a resource group, so this is their name; anything else falls
+ * back to its label, which is never empty.
+ *
+ * @param child - A child node of this group.
+ * @returns The text shown on the child's button.
  *
  * Called by:
  * - components/course-editor/CourseFolderDoc.vue#template (each child button)
  */
 function childLabel(child: CourseNode) {
-  return child.type === 'project' ? filename(child.path) : child.name
+  return child.type === 'resource' ? child.name : getNodeLabel(child).en
 }
 </script>
 
 <template>
   <!-- The whole document scrolls vertically. -->
   <div class="flex h-full flex-col gap-3 overflow-y-auto p-4">
-    <!-- Header: the folder path (or "Videos" for assets/videos) and, when allowed, the upload button. -->
+    <!-- Header: what this group is, and (for a kind the editor can add) the add button. -->
     <div class="flex items-center justify-between gap-3">
-      <h2 class="m-0 truncate text-base font-semibold" :title="node.path">
-        {{ isVideosFolder ? $t({ en: 'Videos', zh: '视频' }) : node.path }}
-      </h2>
-      <!-- Shown only when the policy accepts uploads here; the label is specialized for the videos folder. -->
+      <h2 class="m-0 truncate text-base font-semibold">{{ $t(label) }}</h2>
       <UIButton
-        v-if="canUpload"
-        v-radar="{ name: 'upload-button', desc: 'Click to upload files into this folder' }"
+        v-if="uploadType != null"
+        v-radar="{ name: 'upload-button', desc: 'Click to add another one of these to the course' }"
         type="secondary"
         size="small"
-        @click="emit('upload', node.path)"
+        @click="emit('upload', uploadType)"
       >
-        {{ isVideosFolder ? $t({ en: 'Add video...', zh: '添加视频...' }) : $t({ en: 'Upload...', zh: '上传...' }) }}
+        {{
+          uploadType === 'video'
+            ? $t({ en: 'Add video...', zh: '添加视频...' })
+            : $t({ en: 'Add picture...', zh: '添加图片...' })
+        }}
       </UIButton>
     </div>
-    <!-- Explanation for the videos folder: files become videos the course program addresses by name. -->
-    <p v-if="isVideosFolder" class="m-0 text-sm text-grey-700">
+    <!-- What the course program can do with what is in here. -->
+    <p v-if="uploadType === 'video'" class="m-0 text-sm text-grey-700">
       {{
         $t({
-          en: 'Every file added here becomes a video the course program refers to by name, e.g.',
-          zh: '放到这里的每个文件都成为一个视频，课程程序按名字引用它，例如'
+          en: 'The course program plays a video by its name, for example',
+          zh: '课程程序按名字播放视频，例如'
         })
       }}
       <code>showVideo "step-to"</code>
     </p>
-    <!-- Explanation for any other assets/<kind> folder: files are packaged, but the program cannot use them yet. -->
-    <p v-else-if="resourceKind != null" class="m-0 text-sm text-grey-700">
+    <p v-else class="m-0 text-sm text-grey-700">
       {{
         $t({
-          en: `Every file added here becomes a ${resourceKind} resource package. The course program cannot address this kind yet.`,
-          zh: `放到这里的每个文件都成为一个 ${resourceKind} 资源包。课程程序目前还不能引用这种资源。`
+          en: 'These are kept with the course. No course-program call uses them yet.',
+          zh: '这些内容随课程一起保存。目前还没有课程程序调用会用到它们。'
         })
       }}
     </p>
-    <!-- Empty state when the folder has no children (e.g. assets/videos before the first video is added). -->
+    <!-- Empty state: the videos and pictures groups exist before anything is added to them. -->
     <UIEmpty v-if="node.children.length === 0" size="small">
-      {{ $t({ en: 'Empty folder', zh: '空文件夹' }) }}
+      {{ $t({ en: 'Nothing here yet', zh: '这里还什么都没有' }) }}
     </UIEmpty>
-    <!-- Otherwise one button per child (already sorted by the tree), showing its name and node type. -->
+    <!-- Otherwise one button per child (already sorted by the tree). -->
     <ul v-else class="m-0 flex list-none flex-col gap-1 p-0">
-      <li v-for="child in node.children" :key="child.path">
+      <li v-for="child in node.children" :key="getNodeKey(child)">
         <button
           v-radar="{
             name: 'folder-item',
             desc: 'Click to open this item',
-            attrs: { name: childLabel(child), type: child.type, path: child.path }
+            attrs: { name: childLabel(child), type: child.type, path: getNodeKey(child) }
           }"
           class="flex w-full cursor-pointer items-center gap-2 rounded border border-line bg-transparent px-3 py-2 text-left text-sm hover:bg-grey-400"
-          @click="emit('open', child.path)"
+          @click="child.type !== 'group' && emit('open', child.path)"
         >
           <span class="truncate">{{ childLabel(child) }}</span>
-          <span class="flex-none text-xs text-grey-700">{{ child.type }}</span>
         </button>
       </li>
     </ul>

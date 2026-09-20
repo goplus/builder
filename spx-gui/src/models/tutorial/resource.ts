@@ -49,6 +49,13 @@ export const assetsDir = 'assets'
  * components/course-editor/upload.ts#validateUploadDir (example path in messages).
  */
 export const videosKind = 'videos'
+/**
+ * The resource kind for pictures. No course-program call addresses one yet, but the author can already keep them
+ * with the course, so the explorer always offers the group and the upload modal offers the type.
+ * Consumed by: components/course-editor/course-tree.ts#buildCourseTree (always shows the images group),
+ * components/course-editor/upload.ts#uploadTypes, models/tutorial/project.ts#isReservedDirectory.
+ */
+export const imagesKind = 'images'
 /** File name of the manifest inside every resource package directory. */
 const resourceConfigFileName = 'index.json'
 /** Upper bound of a resource name, counted in Unicode code points. */
