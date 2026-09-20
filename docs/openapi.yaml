@@ -8490,11 +8490,13 @@ components:
         - type: object
           properties:
             referenceImageUrl:
-              description: Universal URL of the optional backdrop reference image (e.g. kodo://bucket/key).
+              description: Universal URL of the backdrop reference image.
               type:
                 - string
                 - "null"
               format: uri
+              examples:
+                - kodo://bucket/key
             category:
               description: Backdrop category.
               type: string
