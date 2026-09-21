@@ -5,7 +5,7 @@ This tool exposes Resvg to browser JavaScript through wasm-bindgen. It rasterize
 ## Behavior
 
 - `Renderer` maps each supplied font-family name to its corresponding font buffer, regardless of the font's internal family name.
-- SVG font-family fallback order is preserved, including fallback after variation selectors and ZWJ emoji clusters.
+- SVG font-family fallback order is preserved per text span, including fallback after variation selectors and ZWJ emoji clusters.
 - `Renderer.render` takes a maximum output size and proportionally scales the rendered PNG to fit it. Callers should always supply a size appropriate for their memory budget.
 - Rendering is synchronous. Callers that render many or large SVGs should schedule work to avoid blocking their UI.
 
@@ -40,4 +40,4 @@ cargo test
 
 ## Resvg dependency
 
-The tool currently pins `nighca/resvg` at a specific commit. The fork carries the cluster-aware font-fallback patch from [linebender/resvg#1087](https://github.com/linebender/resvg/pull/1087), which is required for project-font sequences containing variation selectors or ZWJ emoji before a later fallback font. Once that patch ships in upstream Resvg, replace the fork with the corresponding upstream release or revision.
+The tool currently pins `nighca/resvg` at a specific commit. The fork carries the cluster-aware font-fallback patch from [linebender/resvg#1087](https://github.com/linebender/resvg/pull/1087) and the span-aware fallback context proposed by [linebender/resvg#1041](https://github.com/linebender/resvg/pull/1041). Together, these preserve a span's declared fallback list across variation selectors and ZWJ emoji clusters. Once the patches ship upstream, replace the fork with the corresponding upstream release or revision.

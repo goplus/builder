@@ -8,7 +8,7 @@ rust-version = "1.88"
 crate-type = ["cdylib"]
 
 [dependencies]
-resvg = { git = "https://github.com/nighca/resvg", rev = "840374da55f12ed64f45619cd421a7e03c3a27cf", default-features = false, features = ["text", "raster-images"] }
+resvg = { git = "https://github.com/nighca/resvg", rev = "8820eabee04bbc4e9402182ee0590f96cbe40252", default-features = false, features = ["text", "raster-images"] }
 svgtypes = "0.16"
 ttf-parser = "0.25"
 wasm-bindgen = "=0.2.126"

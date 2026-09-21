@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use js_sys::{Array, Uint8Array};
 use resvg::usvg::{self, fontdb::ID};
@@ -80,7 +77,6 @@ impl Renderer {
 
     pub fn render(&self, svg: &str, render_options: &RenderOptions) -> Result<Vec<u8>, JsValue> {
         let aliases = self.aliases.clone();
-        let fallbacks = Arc::new(Mutex::new(HashMap::<ID, Vec<ID>>::new()));
         let default_select_font = usvg::FontResolver::default_font_selector();
         let default_select_fallback = usvg::FontResolver::default_fallback_selector();
         let options = usvg::Options {
@@ -88,7 +84,6 @@ impl Renderer {
             font_resolver: usvg::FontResolver {
                 select_font: {
                     let aliases = aliases.clone();
-                    let fallbacks = fallbacks.clone();
                     Box::new(move |font, fontdb| {
                         let candidate_ids = font
                             .families()
@@ -98,30 +93,34 @@ impl Renderer {
                                 _ => None,
                             })
                             .collect::<Vec<_>>();
-                        if let Some((id, fallback_ids)) = candidate_ids.split_first() {
-                            fallbacks.lock().unwrap().insert(*id, fallback_ids.to_vec());
+                        if let Some(id) = candidate_ids.first() {
                             return Some(*id);
                         }
                         default_select_font(font, fontdb)
                     })
                 },
                 select_fallback: {
-                    let fallbacks = fallbacks.clone();
-                    Box::new(move |character, used_fonts, fontdb| {
-                        if let Some(base_font) = used_fonts.first() {
-                            if let Some(candidate_ids) =
-                                fallbacks.lock().unwrap().get(base_font).cloned()
-                            {
-                                for id in candidate_ids {
-                                    if !used_fonts.contains(&id)
-                                        && font_has_char(fontdb, id, character)
-                                    {
-                                        return Some(id);
-                                    }
+                    Box::new(move |request, fontdb| {
+                        let candidate_ids = request
+                            .font
+                            .families()
+                            .iter()
+                            .filter_map(|family| match family {
+                                FontFamily::Named(name) => aliases.get(name.as_str()).copied(),
+                                _ => None,
+                            })
+                            .collect::<Vec<_>>();
+                        if !candidate_ids.is_empty() {
+                            for id in candidate_ids {
+                                if !request.exclude_fonts.contains(&id)
+                                    && font_has_char(fontdb, id, request.character)
+                                {
+                                    return Some(id);
                                 }
                             }
+                            return None;
                         }
-                        default_select_fallback(character, used_fonts, fontdb)
+                        default_select_fallback(request, fontdb)
                     })
                 },
             },

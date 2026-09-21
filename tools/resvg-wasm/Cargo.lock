@@ -345,7 +345,7 @@ dependencies = [
 [[package]]
 name = "resvg"
 version = "0.48.1"
-source = "git+https://github.com/nighca/resvg?rev=840374da55f12ed64f45619cd421a7e03c3a27cf#840374da55f12ed64f45619cd421a7e03c3a27cf"
+source = "git+https://github.com/nighca/resvg?rev=8820eabee04bbc4e9402182ee0590f96cbe40252#8820eabee04bbc4e9402182ee0590f96cbe40252"
 dependencies = [
  "bytemuck",
  "gif",
@@ -561,7 +561,7 @@ checksum = "b1d386ff53b415b7fe27b50bb44679e2cc4660272694b7b6f3326d8480823a94"
 [[package]]
 name = "usvg"
 version = "0.48.1"
-source = "git+https://github.com/nighca/resvg?rev=840374da55f12ed64f45619cd421a7e03c3a27cf#840374da55f12ed64f45619cd421a7e03c3a27cf"
+source = "git+https://github.com/nighca/resvg?rev=8820eabee04bbc4e9402182ee0590f96cbe40252#8820eabee04bbc4e9402182ee0590f96cbe40252"
 dependencies = [
  "base64",
  "data-url",
