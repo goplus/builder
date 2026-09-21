@@ -106,6 +106,8 @@ export function deleteCourse(id: string) {
 }
 
 export type ListCoursesParams = PaginationParams & {
+  /** Filter courses by kind */
+  kind?: CourseKind
   /** Filter courses by the course series ID */
   courseSeriesID?: string
   /** Field by which to order the results */
