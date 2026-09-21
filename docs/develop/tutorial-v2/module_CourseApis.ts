@@ -65,6 +65,7 @@ export type UpdateCourseSeriesParams = Pick<
 >;
 
 export type ListCoursesParams = {
+  kind?: CourseKind;
   courseSeriesID?: string;
   pageIndex: number;
   pageSize: number;
