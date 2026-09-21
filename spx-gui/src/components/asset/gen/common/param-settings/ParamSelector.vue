@@ -1,5 +1,5 @@
 <script lang="ts" setup generic="T">
-import { computed, inject } from 'vue'
+import { computed, inject, nextTick, ref } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { UIDropdownWithTooltip, UIImg } from '@/components/ui'
 import ImageOption from '../ImageOption.vue'
@@ -58,6 +58,13 @@ if (settingsInputCtx == null) throw new Error('settingsInputCtxKey should be pro
 
 const disabled = computed(() => settingsInputCtx.disabled || settingsInputCtx.readonly)
 const iconOnly = computed(() => settingsInputCtx.iconOnly)
+const triggerRef = ref<HTMLButtonElement | null>(null)
+
+async function removeOption(value: T) {
+  emit('remove:option', value)
+  await nextTick()
+  triggerRef.value?.focus()
+}
 </script>
 
 <template>
@@ -65,6 +72,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
     <template v-if="selectedItem != null" #trigger>
       <!-- TODO: Standardize this button variant once the design system specification is finalized. -->
       <button
+        ref="triggerRef"
         v-radar="{
           name: $t(name),
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
@@ -105,7 +113,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             :removable="item.removable"
             :clearable="clearable"
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"
-            @remove="emit('remove:option', item.value)"
+            @remove="removeOption(item.value)"
             @clear="emit('update:value', null)"
           />
           <slot name="additional-options" :disabled="disabled"></slot>

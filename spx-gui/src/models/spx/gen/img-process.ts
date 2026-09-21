@@ -50,9 +50,17 @@ export async function removeImageBackground(inputFile: File, signal?: AbortSigna
 
 /** Apply the Kodo image processing that the backend attaches to generated costumes. */
 export function toCostumeReferenceImageUrl(url: string) {
+  return withImageFop(url, costumeReferenceFop)
+}
+
+export function toSquareReferenceImageUrl(url: string) {
+  return withImageFop(url, 'imageMogr2/thumbnail/512x512/gravity/Center/background/bm9uZQ==/extent/512x512/format/png')
+}
+
+function withImageFop(url: string, fop: string) {
   const parsed = parseUniversalUrl(url)
   if (parsed.scheme !== UniversalUrlScheme.Kodo || parsed.key.includes('?')) {
     throw new Error('unprocessed Kodo image URL expected')
   }
-  return stringifyKodoUrl(parsed.bucket, `${parsed.key}?${costumeReferenceFop}`)
+  return stringifyKodoUrl(parsed.bucket, `${parsed.key}?${fop}`)
 }

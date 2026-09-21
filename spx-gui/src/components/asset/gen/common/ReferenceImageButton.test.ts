@@ -40,6 +40,7 @@ const CornerIconStub = defineComponent({
 })
 
 const stubs = {
+  UIButton: false,
   ImageOption: false,
   UIDropdownWithTooltip: DropdownStub,
   UITooltip: TooltipStub,
@@ -65,7 +66,7 @@ describe('ReferenceImageButton', () => {
       global
     })
 
-    expect(wrapper.get('u-i-button-stub').attributes('icon')).toBe('upload')
+    expect(wrapper.get('button').attributes('aria-label')).toBe('上传参考图片')
     expect(wrapper.get('[data-test-id="tooltip"]').text()).toBe('上传参考图片')
   })
 
@@ -90,6 +91,6 @@ describe('ReferenceImageButton', () => {
 
     await wrapper.setProps({ file: null })
     expect(wrapper.find('[data-test-id="popover"]').exists()).toBe(false)
-    expect(wrapper.get('u-i-button-stub').attributes('icon')).toBe('upload')
+    expect(wrapper.get('button').attributes('aria-label')).toBe('上传参考图片')
   })
 })

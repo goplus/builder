@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
+import { isEqual } from 'lodash'
 import type { Prettify } from '@/utils/types'
 import { encodePathSegment, extname } from '@/utils/path'
 import { Disposable, mergeSignals, promiseForSignal } from '@/utils/disposable'
@@ -31,7 +32,7 @@ import {
   type TaskSerialized
 } from './common'
 import type { SpriteGen } from './sprite-gen'
-import { adaptImgForBackgroundRemoval, toCostumeReferenceImageUrl } from './img-process'
+import { adaptImgForBackgroundRemoval, toCostumeReferenceImageUrl, toSquareReferenceImageUrl } from './img-process'
 import {
   loadReferenceImageFile,
   resolveInitialReferenceImageSelection,
@@ -203,16 +204,20 @@ export class AnimationGen extends Disposable {
 
   setReferenceImageSelection(selection: ReferenceImageSelection) {
     if (selection?.type === 'local-image' && this.referenceImage == null) throw new Error('reference image expected')
+    if (!isEqual(selection, this.referenceImageSelection)) this.resetGenerateVideoTasks()
     this.referenceImageSelection = selection
   }
 
   referenceImage: File | null = null
   setReferenceImage(file: File | null) {
-    this.referenceImageSelection = resolveSelectionAfterReferenceImageChange(
+    const selection = resolveSelectionAfterReferenceImageChange(
       this.referenceImageSelection,
       file,
       this.sprite.defaultCostume?.id ?? null
     )
+    if (file !== this.referenceImage || !isEqual(selection, this.referenceImageSelection))
+      this.resetGenerateVideoTasks()
+    this.referenceImageSelection = selection
     this.referenceImage = file
   }
 
@@ -236,6 +241,10 @@ export class AnimationGen extends Disposable {
   async generateVideo() {
     this.setVideo(null)
     this.setFramesConfig(null)
+    this.resetGenerateVideoTasks()
+    return this.runGenerateVideo()
+  }
+  private resetGenerateVideoTasks() {
     this.abortGenerateVideo()
     this.referenceImageTask?.tryCancel()
     this.referenceImageTask?.dispose()
@@ -243,7 +252,6 @@ export class AnimationGen extends Disposable {
     this.generateVideoTask?.tryCancel()
     this.generateVideoTask?.dispose()
     this.generateVideoTask = null
-    return this.runGenerateVideo()
   }
   private async prepareReferenceFrameUrl(signal: AbortSignal): Promise<string> {
     if (this.referenceImageSelection?.type !== 'local-image') {
@@ -260,7 +268,7 @@ export class AnimationGen extends Disposable {
       const adaptedFile = await adaptImgForBackgroundRemoval(file)
       const imageUrl = await saveFile(adaptedFile, signal)
       signal.throwIfAborted()
-      await task.start({ imageUrl })
+      await task.start({ imageUrl: toSquareReferenceImageUrl(imageUrl) })
     }
     signal.throwIfAborted()
     const { imageUrl } = await Promise.race([task.untilCompleted(), promiseForSignal(signal)])

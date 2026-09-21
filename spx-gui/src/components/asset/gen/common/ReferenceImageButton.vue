@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import { UIButton, UIDropdownWithTooltip, UIImg, UITooltip } from '@/components/ui'
@@ -24,12 +24,15 @@ const emit = defineEmits<{
 
 const [fileUrl] = useFileUrl(() => props.file)
 const dropdownRef = ref<InstanceType<typeof UIDropdownWithTooltip> | null>(null)
+const buttonRef = ref<InstanceType<typeof UIButton> | null>(null)
 
 const handleUpload = useReferenceImageUpload((file) => emit('update:file', file))
 
-function removeReferenceImage() {
+async function removeReferenceImage() {
   dropdownRef.value?.setVisible(false)
   emit('update:file', null)
+  await nextTick()
+  buttonRef.value?.focus()
 }
 </script>
 
@@ -37,6 +40,7 @@ function removeReferenceImage() {
   <UIDropdownWithTooltip v-if="file != null" ref="dropdownRef" class="rounded-lg" :disabled="disabled" placement="top">
     <template #trigger>
       <UIButton
+        ref="buttonRef"
         v-radar="{
           name: $t({ en: 'Reference image', zh: '参考图片' }),
           desc: 'Click to manage the local reference image'
@@ -67,6 +71,7 @@ function removeReferenceImage() {
   <UITooltip v-else placement="top">
     <template #trigger>
       <UIButton
+        ref="buttonRef"
         v-radar="{
           name: $t({ en: 'Reference image', zh: '参考图片' }),
           desc: 'Click to upload a local reference image'
