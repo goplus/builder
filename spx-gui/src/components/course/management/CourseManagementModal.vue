@@ -33,7 +33,9 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 
 const queryRet = useQuery(
   () => {
+    // The server filters by kind, so pages stay full and `total` matches; `filter` below only narrows the type.
     return listSignedInUserCourses({
+      kind: 'guided',
       pageSize,
       pageIndex: page.value,
       orderBy: 'updatedAt',

@@ -110,11 +110,13 @@ const loadCourses = useMessageHandle(
       //
       // TODO: Consider implementing pagination or infinite scroll when there are more than 100 courses.
       const result = await listSignedInUserCourses({
+        kind: 'guided',
         pageSize: 100,
         pageIndex: 1,
         orderBy: 'updatedAt',
         sortOrder: 'desc'
       })
+      // The server filters by kind; `filter` below only narrows the type.
       allCourses.value = result.data.filter(isGuidedCourse)
     } finally {
       coursesLoading.value = false
