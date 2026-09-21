@@ -3280,6 +3280,8 @@ paths:
       description: |
         Create a new course series owned by the authenticated user.
 
+        Every course named in `courseIDs` must have the series' `kind`.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can create course series.
@@ -3368,6 +3370,9 @@ paths:
       summary: Update a course series
       description: |
         Update the details of a specific course series.
+
+        The course series kind is immutable: a `kind` field is accepted only when it matches the series' current kind.
+        Every course named in `courseIDs` must have that kind.
 
         Permission requirements:
 
@@ -7775,8 +7780,8 @@ components:
           $ref: "#/components/schemas/User/properties/username"
         kind:
           description: |
-            Kind of the courses in this series; a course series holds courses of exactly one kind. Changing it requires
-            every course in the series to have the new kind.
+            Kind of the courses in this series; a course series holds courses of exactly one kind. Immutable after
+            creation.
           $ref: "#/components/schemas/CourseKind"
         title:
           description: Title of the course series.
