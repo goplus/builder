@@ -22,9 +22,13 @@ const props = withDefaults(
     mapSize: Size
     nodeReadyMap: Map<string, boolean>
     mapScale?: number
+    interactive?: boolean
+    showPivotMarker?: boolean
   }>(),
   {
-    mapScale: 1
+    mapScale: 1,
+    interactive: true,
+    showPivotMarker: true
   }
 )
 
@@ -208,7 +212,7 @@ const config = computed<ImageConfig>(() => {
     image: image.value ?? undefined,
     width: rawSize.value?.width ?? 0,
     height: rawSize.value?.height ?? 0,
-    draggable: props.selected,
+    draggable: props.interactive && props.selected,
     offsetX: costumePivot.x * bitmapResolution.value,
     offsetY: costumePivot.y * bitmapResolution.value,
     visible: visible,
@@ -261,6 +265,7 @@ function toSize(node: Konva.Node) {
 }
 
 function handleClick() {
+  if (!props.interactive) return
   emit('selected')
 }
 
@@ -287,7 +292,7 @@ defineExpose({
     @transformend="handleTransformEnd"
     @click="handleClick"
   />
-  <v-group v-if="selected" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
+  <v-group v-if="selected && showPivotMarker" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
     <v-group :config="pivotMarkerConfigs.drawingGroup">
       <template v-for="(shape, idx) in pivotMarkerConfigs.shapes" :key="`sprite-pivot-marker-${idx}`">
         <v-circle v-if="shape.kind === 'circle'" :config="shape.config" />

@@ -1,10 +1,11 @@
 import dayjs from 'dayjs'
 import { z } from 'zod'
-import { onScopeDispose, watch } from 'vue'
+import { onScopeDispose, watchEffect } from 'vue'
 import { useCopilot } from '@/components/copilot/context'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from '@/components/copilot/common'
 import { type ICopilotContextProvider, type ToolDefinition } from '@/components/copilot/copilot'
 import { skillSpxProject, skillXgoLanguage } from '@/components/copilot/skills/built-in'
+import { stringifyDefinitionId } from '@/components/xgo-code-editor'
 import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 import { SpxProject } from '@/models/spx/project'
 import type { Sprite } from '@/models/spx/sprite'
@@ -19,8 +20,13 @@ import {
   type TextDocument
 } from '../spx-code-editor'
 import * as codeLink from './CodeLink'
-import * as codeChange from './CodeChange.vue'
+import * as codeChangeHint from './CodeChange.vue'
+import * as codeDragHint from './CodeDragHint.vue'
+import * as codeTypeHint from './CodeTypeHint.vue'
+import * as codeDeleteHint from './CodeDeleteHint.vue'
 import CodeBlock from './CodeBlock.vue'
+import { editorCopilotCodeGuides } from './code-guides-gate'
+import { setupUserEventNotifications } from './user-events'
 
 class Retriever {
   constructor(
@@ -188,6 +194,30 @@ class GetCodeDiagnosticsTool implements ToolDefinition {
   }
 }
 
+const listApiReferenceItemsParamsSchema = z.object({})
+
+class ListApiReferenceItemsTool implements ToolDefinition {
+  name = 'list_api_reference_items'
+  description =
+    'List the available API reference items (definition id and signature) for the code file the user is currently ' +
+    'editing. Use the returned ids with the `api-reference-filter` element to narrow the "API References" panel.'
+  parameters = listApiReferenceItemsParamsSchema
+
+  constructor(private codeEditor: CodeEditor) {}
+
+  async implementation(_: z.infer<typeof listApiReferenceItemsParamsSchema>, signal?: AbortSignal) {
+    const textDocument = this.codeEditor.getAttachedUI()?.activeTextDocument
+    if (textDocument == null) return []
+    const items = await this.codeEditor.apiReferenceProvider.provideAPIReference({
+      textDocument,
+      signal: signal ?? new AbortController().signal
+    })
+    return items
+      .filter((item) => item.hiddenFromList !== true)
+      .map((item) => ({ id: stringifyDefinitionId(item.definition), overview: item.overview }))
+  }
+}
+
 class ProjectContextProvider implements ICopilotContextProvider {
   constructor(private editorCtx: EditorCtx) {}
 
@@ -242,6 +272,12 @@ Selection: ${selectionStr}.`
     result += `
 Code content of \`${codeFilePath}\`:
 ${JSON.stringify(code)}`
+    // Gated together with the in-editor code guides: while a feature (e.g. a tutorial course)
+    // has code guidance locked, this generic "encourage dragging" advice must not leak either.
+    if (editorCopilotCodeGuides.enabled) {
+      result += `
+When suggesting code edits, prefer guiding the user to insert code by dragging the corresponding item from "API References" into the code editor over typing it manually, whenever such an item exists.`
+    }
     return result
   }
 }
@@ -286,6 +322,7 @@ export function useSpxEditorCopilot(): void {
   d.addDisposer(copilot.registerTool(new GetSpriteContentTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetProjectCodeTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetCodeDiagnosticsTool(codeEditor)))
+  d.addDisposer(copilot.registerTool(new ListApiReferenceItemsTool(codeEditor)))
   d.addDisposer(
     copilot.registerCustomElement({
       tagName: codeLink.tagName,
@@ -295,13 +332,24 @@ export function useSpxEditorCopilot(): void {
       component: codeLink.default
     })
   )
+  // The in-editor code guides are gated (see `editorCopilotCodeGuides`): a driver (e.g. a
+  // tutorial course withholding code guidance until the user is stuck enough) may turn them off,
+  // in which case they are not registered at all, so the copilot never sees them as options.
+  // Ungated, they are always available.
+  const codeGuideElements = [codeChangeHint, codeDragHint, codeTypeHint, codeDeleteHint]
   d.addDisposer(
-    copilot.registerCustomElement({
-      tagName: codeChange.tagName,
-      description: codeChange.detailedDescription,
-      attributes: codeChange.attributes,
-      isRaw: codeChange.isRaw,
-      component: codeChange.default
+    watchEffect((onCleanup) => {
+      if (!editorCopilotCodeGuides.enabled) return
+      const disposers = codeGuideElements.map((el) =>
+        copilot.registerCustomElement({
+          tagName: el.tagName,
+          description: el.detailedDescription,
+          attributes: el.attributes,
+          isRaw: el.isRaw,
+          component: el.default
+        })
+      )
+      onCleanup(() => disposers.forEach((dispose) => dispose()))
     })
   )
   d.addDisposer(copilot.registerContextProvider(new ProjectContextProvider(editorCtx)))
@@ -316,15 +364,5 @@ export function useSpxEditorCopilot(): void {
     })
   )
 
-  watch(
-    () => editorCtx.state.runtime,
-    (editorRuntime, _, onCleanup) => {
-      const unlisten = editorRuntime.on('didExit', (code) => {
-        if (code !== 0) return
-        copilot.notifyUserEvent({ en: 'Game exited with code 0', zh: '游戏正常退出' }, `Game exited with code ${code}`)
-      })
-      onCleanup(unlisten)
-    },
-    { immediate: true }
-  )
+  d.addDisposer(setupUserEventNotifications(editorCtx, codeEditor, copilot))
 }
