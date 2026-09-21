@@ -53,10 +53,15 @@ const legacyValPrefix = 'getVar:'
 export class Monitor extends BaseWidget {
   mode: MonitorMode
   style: MonitorStyle
+  /** Mode 3 slider lower bound; defaults to 0. */
   sliderMin: number
+  /** Mode 3 slider upper bound; defaults to 100. */
   sliderMax: number
+  /** Mode 3 slider uses integer steps when true (default), fractional steps when false. */
   isDiscrete: boolean
+  /** Mode 4 list width; 0 (default) lets spx choose its default width. */
   width: number
+  /** Mode 4 list height; 0 (default) lets spx choose its default height. */
   height: number
 
   label: string
@@ -166,6 +171,8 @@ export class Monitor extends BaseWidget {
   }
 
   export(): RawMonitorConfig {
+    // Match sb2xbp's per-mode output. Inactive mode settings are intentionally omitted;
+    // if mode switching is added to the editor, preserve them across save/load as well.
     return {
       ...super.export(),
       type: 'monitor',
