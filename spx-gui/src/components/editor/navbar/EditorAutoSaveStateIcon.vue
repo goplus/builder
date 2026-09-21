@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { UITooltip } from '@/components/ui'
 import { EditingMode, SavingState, type Editing } from '../editing'
+import { Exception } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import offlineSvg from './icons/offline.svg?raw'
@@ -36,8 +37,16 @@ const icon = computed(() => {
           return { svg: savingSvg, stateClass: 'saving', desc: { en: 'Saving', zh: '保存中' } }
         case SavingState.Completed:
           return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
-        case SavingState.Failed:
-          return { svg: failedToSaveSvg, desc: { en: 'Failed to save', zh: '保存失败' } }
+        case SavingState.Failed: {
+          const errorMessage =
+            editing.saving.error instanceof Exception && editing.saving.error.userMessage != null
+              ? { en: `: ${editing.saving.error.userMessage.en}`, zh: `：${editing.saving.error.userMessage.zh}` }
+              : { en: '', zh: '' }
+          return {
+            svg: failedToSaveSvg,
+            desc: { en: `Failed to save${errorMessage.en}`, zh: `保存失败${errorMessage.zh}` }
+          }
+        }
         default:
           throw new Error('unknown saving state')
       }
