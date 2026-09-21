@@ -2738,6 +2738,11 @@ paths:
         - {}
         - bearerAuth: []
       parameters:
+        - name: kind
+          description: Filter courses by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Course/properties/kind"
         - name: courseSeriesID
           description: Filter courses by the course series ID.
           in: query
@@ -2786,6 +2791,11 @@ paths:
       summary: List courses owned by the authenticated user
       description: Retrieve a list of courses owned by the authenticated user.
       parameters:
+        - name: kind
+          description: Filter courses by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Course/properties/kind"
         - name: courseSeriesID
           description: Filter courses by the course series ID.
           in: query
@@ -3113,6 +3123,11 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
+        - name: kind
+          description: Filter courses by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Course/properties/kind"
         - name: courseSeriesID
           description: Filter courses by the course series ID.
           in: query
