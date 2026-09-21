@@ -6,11 +6,11 @@ import { useQuery } from '@/utils/query'
 import type { CourseKind } from '@/apis/course'
 import { listSignedInUserCourseSeries, deleteCourseSeries, type CourseSeries } from '@/apis/course-series'
 import {
-  UIChipRadio,
-  UIChipRadioGroup,
   UIIcon,
   UIPagination,
   UISearchableModal,
+  UITabRadio,
+  UITabRadioGroup,
   useModal,
   useConfirmDialog,
   useMessage,
@@ -37,6 +37,11 @@ const page = shallowRef(1)
 const pageSize = 12
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 watch(kind, () => (page.value = 1))
+
+/** `UITabRadioGroup` speaks strings; the two tabs are the two course kinds, so anything else is ignored. */
+function handleKindUpdate(value: string) {
+  if (value === 'guided' || value === 'playground') kind.value = value
+}
 
 const queryRet = useQuery(
   () => {
@@ -113,10 +118,17 @@ const handleRemove = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <template #input>
-      <UIChipRadioGroup v-model:value="kind">
-        <UIChipRadio value="guided">{{ $t({ en: 'Guided', zh: '引导式' }) }}</UIChipRadio>
-        <UIChipRadio value="playground">{{ $t({ en: 'Playground', zh: '目标式' }) }}</UIChipRadio>
-      </UIChipRadioGroup>
+      <!-- The two kinds are two views of one list, exactly one of which is shown: a segmented switch, not a set
+           of filters. The header slot lays its content out side by side without spacing, hence the margin. -->
+      <UITabRadioGroup
+        v-radar="{ name: 'course-kind-switch', desc: 'Switch between guided and Playground' }"
+        class="mr-3 w-44"
+        :value="kind"
+        @update:value="handleKindUpdate"
+      >
+        <UITabRadio value="guided">{{ $t({ en: 'Guided', zh: '引导式' }) }}</UITabRadio>
+        <UITabRadio value="playground">{{ $t({ en: 'Playground', zh: '目标式' }) }}</UITabRadio>
+      </UITabRadioGroup>
       <UIButton type="neutral" @click="handleCreate">
         <template #icon>
           <UIIcon type="plus" />
