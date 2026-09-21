@@ -4,7 +4,12 @@
  * own, so opening one has to find its series first.
  */
 
-import { listSignedInUserCourseSeries, type CourseSeries } from '@/apis/course-series'
+import {
+  getCourseSeries,
+  listSignedInUserCourseSeries,
+  updateCourseSeries,
+  type CourseSeries
+} from '@/apis/course-series'
 
 /** How many series are looked through; an author with more Playground Course series than this is not expected. */
 const seriesPageSize = 100
@@ -36,4 +41,25 @@ export async function listPlaygroundSeries(): Promise<CourseSeries[]> {
 export async function findSeriesOfCourse(courseID: string): Promise<CourseSeries | null> {
   const series = await listPlaygroundSeries()
   return series.find((item) => item.courseIDs.includes(courseID)) ?? null
+}
+
+/**
+ * Put a course at the end of a series. The series is read right before it is written, and only its course list is
+ * sent: the list a form loaded minutes ago may have changed since, and writing it back would drop whatever was
+ * added meanwhile, while sending the other fields along would overwrite edits this call has nothing to do with.
+ * What remains is the gap between this read and this write; closing it takes a server-side append, which the
+ * Course APIs do not offer.
+ *
+ * @param courseSeriesID - The series to add to.
+ * @param courseID - The course to add.
+ * @returns The series as it stands afterwards. When the course is already in it (a retry after a response that
+ *   never arrived), nothing is written.
+ *
+ * Called by: components/course/management/playground/creation.ts#PlaygroundCourseCreation.run,
+ * components/course/management/playground/series.test.ts.
+ */
+export async function appendCourseToSeries(courseSeriesID: string, courseID: string): Promise<CourseSeries> {
+  const current = await getCourseSeries(courseSeriesID)
+  if (current.courseIDs.includes(courseID)) return current
+  return updateCourseSeries(courseSeriesID, { courseIDs: [...current.courseIDs, courseID] })
 }

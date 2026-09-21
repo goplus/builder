@@ -162,11 +162,10 @@ beforeEach(() => {
   )
   vi.mocked(addCourse).mockResolvedValue({ ...existingCourse, id: 'imported-course' })
   vi.mocked(updateCourseSeries).mockImplementation(async (id, params) => ({
+    // A patch may carry any subset of the fields; whatever it leaves out stays as it was.
+    ...existingSeries,
     id,
     owner: 'alice',
-    kind: existingSeries.kind,
-    createdAt: existingSeries.createdAt,
-    updatedAt: existingSeries.updatedAt,
     ...params
   }))
   vi.mocked(addCourseSeries).mockImplementation(async (params) => ({
