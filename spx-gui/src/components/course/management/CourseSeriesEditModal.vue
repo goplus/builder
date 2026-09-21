@@ -13,7 +13,7 @@ import {
   type CourseSeries,
   type UpdateCourseSeriesParams
 } from '@/apis/course-series'
-import { isGuidedCourse, listSignedInUserCourses, type GuidedCourse } from '@/apis/course'
+import { listSignedInUserCourses, type Course, type CourseKind } from '@/apis/course'
 import { useSignedInUser } from '@/stores/user'
 import {
   exportCourseSeriesFile,
@@ -39,6 +39,8 @@ import ThumbnailUploader from './ThumbnailUploader.vue'
 const props = defineProps<{
   visible: boolean
   courseSeries: CourseSeries | null
+  /** The kind of series to create. A series being edited keeps its own kind, which cannot change. */
+  kind: CourseKind
 }>()
 
 const emit = defineEmits<{
@@ -52,6 +54,10 @@ const confirm = useConfirmDialog()
 const signedInUser = useSignedInUser()
 
 const isEditMode = computed(() => props.courseSeries !== null)
+// A series only holds courses of its own kind, so the kind decides which courses can be picked.
+const kind = computed(() => props.courseSeries?.kind ?? props.kind)
+// The series file bundles the projects guided courses point at; it has no shape for a Playground Course yet.
+const supportsSeriesFile = computed(() => kind.value === 'guided')
 const modalTitle = computed(() =>
   isEditMode.value
     ? i18n.t({ en: 'Edit course series', zh: '编辑课程系列' })
@@ -93,13 +99,15 @@ const form = useForm({
   courseIDs: [
     [] as string[],
     (v: string[]) => {
-      if (v.length === 0) return i18n.t({ en: 'Please select at least one course', zh: '请至少选择一个课程' })
+      // A Playground Course is created in a series, so its series has to be able to exist before any course does.
+      if (v.length === 0 && kind.value === 'guided')
+        return i18n.t({ en: 'Please select at least one course', zh: '请至少选择一个课程' })
       return null
     }
   ]
 })
 
-const allCourses = ref<GuidedCourse[]>([])
+const allCourses = ref<Course[]>([])
 const coursesLoading = ref(false)
 
 const loadCourses = useMessageHandle(
@@ -110,14 +118,13 @@ const loadCourses = useMessageHandle(
       //
       // TODO: Consider implementing pagination or infinite scroll when there are more than 100 courses.
       const result = await listSignedInUserCourses({
-        kind: 'guided',
+        kind: kind.value,
         pageSize: 100,
         pageIndex: 1,
         orderBy: 'updatedAt',
         sortOrder: 'desc'
       })
-      // The server filters by kind; `filter` below only narrows the type.
-      allCourses.value = result.data.filter(isGuidedCourse)
+      allCourses.value = result.data
     } finally {
       coursesLoading.value = false
     }
@@ -169,7 +176,7 @@ const handleSubmit = useMessageHandle(
       )
       m.success(i18n.t({ en: 'Course series updated successfully', zh: '课程系列更新成功' }))
     } else {
-      const params: AddCourseSeriesParams = { ...formData, kind: 'guided' }
+      const params: AddCourseSeriesParams = { ...formData, kind: kind.value }
       await m.withLoading(addCourseSeries(params), i18n.t({ en: 'Creating course series', zh: '创建课程系列中' }))
       m.success(i18n.t({ en: 'Course series created successfully', zh: '课程系列创建成功' }))
     }
@@ -367,12 +374,14 @@ function formatNameList(names: string[]) {
       </div>
 
       <footer class="mt-5 flex justify-end gap-3 border-t border-dividing-line-2 pt-5">
-        <UIButton v-if="isEditMode" type="neutral" :loading="handleExport.isLoading.value" @click="handleExport.fn">
-          {{ $t({ en: 'Export to file', zh: '导出到文件' }) }}
-        </UIButton>
-        <UIButton type="neutral" :loading="handleImport.isLoading.value" @click="handleImport.fn">
-          {{ $t({ en: 'Import from file...', zh: '从文件导入...' }) }}
-        </UIButton>
+        <template v-if="supportsSeriesFile">
+          <UIButton v-if="isEditMode" type="neutral" :loading="handleExport.isLoading.value" @click="handleExport.fn">
+            {{ $t({ en: 'Export to file', zh: '导出到文件' }) }}
+          </UIButton>
+          <UIButton type="neutral" :loading="handleImport.isLoading.value" @click="handleImport.fn">
+            {{ $t({ en: 'Import from file...', zh: '从文件导入...' }) }}
+          </UIButton>
+        </template>
         <UIButton type="neutral" @click="emit('cancelled')">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
