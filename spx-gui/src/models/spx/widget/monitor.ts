@@ -171,7 +171,7 @@ export class Monitor extends BaseWidget {
   }
 
   export(): RawMonitorConfig {
-    // Match sb2xbp's per-mode output. Inactive mode settings are intentionally omitted;
+    // Follow spx's mode-specific configuration. Inactive mode settings are intentionally omitted;
     // if mode switching is added to the editor, preserve them across save/load as well.
     return {
       ...super.export(),
