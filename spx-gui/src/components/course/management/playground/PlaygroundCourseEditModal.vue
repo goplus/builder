@@ -26,15 +26,8 @@ import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import {
-  addCourse,
-  courseTitleMaxLength,
-  updateCourse,
-  type PlaygroundCourse,
-  type AddCourseParams
-} from '@/apis/course'
-import { updateCourseSeries, type CourseSeries } from '@/apis/course-series'
-import { saveFiles } from '@/models/common/cloud'
+import { courseTitleMaxLength, updateCourse, type PlaygroundCourse } from '@/apis/course'
+import type { CourseSeries } from '@/apis/course-series'
 import { createStarterCourseFiles } from '@/components/course-editor/starter'
 import { createDefaultProject } from '@/components/project/default-project'
 import {
@@ -49,6 +42,7 @@ import {
   useMessage
 } from '@/components/ui'
 import ThumbnailUploader from '../ThumbnailUploader.vue'
+import { PlaygroundCourseCreation } from './creation'
 import { listPlaygroundSeries } from './series'
 
 const props = defineProps<{
@@ -126,6 +120,12 @@ async function buildStarterFiles() {
 }
 
 /**
+ * This modal's one attempt at creating a course. It outlives a failed submit, so that submitting again finishes
+ * what is left instead of creating a second course.
+ */
+const creation = new PlaygroundCourseCreation(buildStarterFiles)
+
+/**
  * Create the course (uploading its starter content first) or update the one being edited, then resolve with it.
  *
  * @returns A `useMessageHandle` wrapper; `fn()` performs the write and emits `resolved`.
@@ -146,23 +146,9 @@ const handleSubmit = useMessageHandle(
       return
     }
 
-    const series = seriesQueryRet.data.value?.find((item) => item.id === form.value.courseSeriesID)
-    if (series == null) throw new Error('course series expected')
+    // The series list loaded with the form only feeds the select; the series is read again when it is written.
     const result = await m.withLoading(
-      (async () => {
-        const { fileCollection } = await saveFiles(await buildStarterFiles())
-        const params: AddCourseParams = { kind: 'playground', title, thumbnail, content: fileCollection }
-        const course = (await addCourse(params)) as PlaygroundCourse
-        // A new course goes last in its series; the API keeps the order of `courseIDs`.
-        const courseSeries = await updateCourseSeries(series.id, {
-          title: series.title,
-          thumbnail: series.thumbnail,
-          description: series.description,
-          order: series.order,
-          courseIDs: [...series.courseIDs, course.id]
-        })
-        return { course, courseSeries }
-      })(),
+      creation.run({ title, thumbnail, courseSeriesID: form.value.courseSeriesID }),
       i18n.t({ en: 'Creating course', zh: '创建课程中' })
     )
     m.success(i18n.t({ en: 'Course created', zh: '课程已创建' }))

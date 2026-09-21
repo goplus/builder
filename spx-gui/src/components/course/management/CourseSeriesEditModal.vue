@@ -161,7 +161,8 @@ watch(
 
 const handleSubmit = useMessageHandle(
   async () => {
-    const formData: UpdateCourseSeriesParams = {
+    // The form always carries every field, which is also what creating a series needs.
+    const formData: Required<UpdateCourseSeriesParams> = {
       title: form.value.title,
       thumbnail: form.value.thumbnail,
       description: form.value.description,
