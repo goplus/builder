@@ -2,6 +2,21 @@ import { describe, expect, it } from 'vitest'
 import { instrumentSpxSource } from './spx-source-instrumentation'
 
 describe('instrumentSpxSource', () => {
+  it('instruments executable statements at the top level', () => {
+    const source = `step 80\nstep 80\nturn 90\nstepTo Mushroom`
+
+    const instrumented = instrumentSpxSource('Lita.spx', source)
+
+    expect(instrumented).toMatch(
+      /fmt\.Println\("__XB_EXEC__start:Lita\.spx:1"\)\nstep 80\nfmt\.Println\("__XB_EXEC__end:Lita\.spx:1"\)/
+    )
+    expect(instrumented).toMatch(
+      /fmt\.Println\("__XB_EXEC__start:Lita\.spx:2"\)\nstep 80\nfmt\.Println\("__XB_EXEC__end:Lita\.spx:2"\)/
+    )
+    expect(instrumented).toContain('fmt.Println("__XB_EXEC__start:Lita.spx:3")')
+    expect(instrumented).toContain('fmt.Println("__XB_EXEC__start:Lita.spx:4")')
+  })
+
   it('keeps top-level classfile declarations valid', () => {
     const source = `// IsMature\nfunc IsMature() bool {\n  return firstMature\n}\nonTouchStart "Lita", sprite => {\n  if IsMature() {\n    die\n  }\n}`
 

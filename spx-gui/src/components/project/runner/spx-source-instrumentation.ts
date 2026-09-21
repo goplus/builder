@@ -30,6 +30,13 @@ function braceDelta(line: string): number {
   return delta
 }
 
+function isTopLevelDeclaration(trimmed: string): boolean {
+  // Keep declarations at the top level. In particular, fmt.Println cannot be
+  // inserted before XGo functions and event handlers without changing the
+  // classfile structure.
+  return /^(?:func|on[A-Za-z0-9_]*|classfile|type|var|const)\b/.test(trimmed)
+}
+
 /**
  * Add source markers without placing expressions before top-level classfile declarations.
  * XGo classfiles require functions and event handlers to remain declarations at the top level.
@@ -43,7 +50,7 @@ export function instrumentSpxSource(path: string, source: string): string {
   lines.forEach((line, index) => {
     const trimmed = line.trim()
     const isExecutable =
-      blockDepth > 0 &&
+      (blockDepth > 0 || !isTopLevelDeclaration(trimmed)) &&
       trimmed !== '' &&
       !trimmed.startsWith('//') &&
       !trimmed.startsWith('/*') &&
@@ -51,7 +58,10 @@ export function instrumentSpxSource(path: string, source: string): string {
       !trimmed.startsWith('import ') &&
       !trimmed.startsWith('package ') &&
       trimmed !== '{' &&
-      trimmed !== '}'
+      trimmed !== '}' &&
+      // A top-level block header is a declaration/control-flow boundary. Its
+      // body is instrumented once blockDepth is incremented below.
+      !(blockDepth === 0 && trimmed.endsWith('{'))
 
     if (!isExecutable) {
       instrumented.push(line)
