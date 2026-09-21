@@ -1,10 +1,13 @@
 <script lang="ts" setup>
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
+import type { CourseKind } from '@/apis/course'
 import { listSignedInUserCourseSeries, deleteCourseSeries, type CourseSeries } from '@/apis/course-series'
 import {
+  UIChipRadio,
+  UIChipRadioGroup,
   UIIcon,
   UIPagination,
   UISearchableModal,
@@ -27,16 +30,20 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
+// Which kind of series is listed; a series only ever holds courses of its own kind.
+const kind = shallowRef<CourseKind>('guided')
+
 const page = shallowRef(1)
 const pageSize = 12
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
+watch(kind, () => (page.value = 1))
 
 const queryRet = useQuery(
   () => {
     return listSignedInUserCourseSeries({
       pageSize,
       pageIndex: page.value,
-      kind: 'guided',
+      kind: kind.value,
       orderBy: 'order',
       sortOrder: 'asc'
     })
@@ -55,7 +62,7 @@ const invokeEditModal = useModal(CourseSeriesEditModal)
 
 const handleCreate = useMessageHandle(
   async () => {
-    await invokeEditModal({ courseSeries: null })
+    await invokeEditModal({ courseSeries: null, kind: kind.value })
     queryRet.refetch()
   },
   {
@@ -66,7 +73,7 @@ const handleCreate = useMessageHandle(
 
 const handleEdit = useMessageHandle(
   async (courseSeries: CourseSeries) => {
-    await invokeEditModal({ courseSeries })
+    await invokeEditModal({ courseSeries, kind: courseSeries.kind })
     queryRet.refetch()
   },
   {
@@ -106,6 +113,10 @@ const handleRemove = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <template #input>
+      <UIChipRadioGroup v-model:value="kind">
+        <UIChipRadio value="guided">{{ $t({ en: 'Guided', zh: '引导式' }) }}</UIChipRadio>
+        <UIChipRadio value="playground">{{ $t({ en: 'Playground', zh: '目标式' }) }}</UIChipRadio>
+      </UIChipRadioGroup>
       <UIButton type="neutral" @click="handleCreate">
         <template #icon>
           <UIIcon type="plus" />

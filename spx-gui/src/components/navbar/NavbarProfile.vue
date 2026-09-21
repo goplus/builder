@@ -9,7 +9,7 @@ import { AssetType } from '@/apis/asset'
 import { signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
-import { useCourseManagement, useCourseSeriesManagement, usePlaygroundManagement } from '@/components/course'
+import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { useI18n } from '@/utils/i18n'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
@@ -54,9 +54,6 @@ const manageCourses = useMessageHandle(manageCoursesFn).fn
 
 const manageCourseSeriesFn = useCourseSeriesManagement()
 const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
-
-const managePlaygroundCoursesFn = usePlaygroundManagement()
-const managePlaygroundCourses = useMessageHandle(managePlaygroundCoursesFn).fn
 
 async function handleSignOut() {
   await signOut()
@@ -127,9 +124,6 @@ async function handleSignOut() {
         </UIMenuItem>
         <UIMenuItem @click="manageCourseSeries()">
           {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="managePlaygroundCourses()">
-          {{ $t({ en: 'Manage Playground Courses', zh: '管理目标式课程' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="canUseAccountAdmin">

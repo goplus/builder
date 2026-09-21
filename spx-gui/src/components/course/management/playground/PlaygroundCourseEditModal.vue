@@ -7,19 +7,25 @@
  * Creating one also gives it something to start from: a default SPX project and a program that already runs (see
  * `components/course-editor/starter`). A course created empty could not be opened, previewed or learned.
  *
+ * A new course is created in a series, chosen here. The Course Editor opens a course through the series it is
+ * written for, so a course in no series could be listed but never edited; asking for the series up front means
+ * every course created here can be opened right away.
+ *
  * Props:
  * - `visible`: whether the modal is shown; set by `UIModalProvider`.
  * - `course`: the course to edit, or null to create one.
  *
  * Emits:
  * - `cancelled`: the author closed the modal.
- * - `resolved`: payload is the created or updated course, so the caller can add it to a series or refresh.
+ * - `resolved`: payload is the created or updated course, plus the series it was created in (null when editing),
+ *   so the caller can open it in the Course Editor.
  *
- * Used by: components/course/management/playground/PlaygroundManagementModal.vue (through `useModal`)
+ * Used by: components/course/management/CourseManagementModal.vue (through `useModal`)
  */
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import {
   addCourse,
   courseTitleMaxLength,
@@ -27,11 +33,23 @@ import {
   type PlaygroundCourse,
   type AddCourseParams
 } from '@/apis/course'
+import { updateCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { saveFiles } from '@/models/common/cloud'
 import { createStarterCourseFiles } from '@/components/course-editor/starter'
 import { createDefaultProject } from '@/components/project/default-project'
-import { UIButton, UIForm, UIFormItem, UIFormModal, UITextInput, useForm, useMessage } from '@/components/ui'
+import {
+  UIButton,
+  UIForm,
+  UIFormItem,
+  UIFormModal,
+  UISelect,
+  UISelectOption,
+  UITextInput,
+  useForm,
+  useMessage
+} from '@/components/ui'
 import ThumbnailUploader from '../ThumbnailUploader.vue'
+import { listPlaygroundSeries } from './series'
 
 const props = defineProps<{
   visible: boolean
@@ -40,7 +58,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [course: PlaygroundCourse]
+  resolved: [result: { course: PlaygroundCourse; courseSeries: CourseSeries | null }]
 }>()
 
 const i18n = useI18n()
@@ -70,7 +88,24 @@ const form = useForm({
       if (v === '') return i18n.t({ en: 'Please upload a thumbnail', zh: '请上传缩略图' })
       return null
     }
+  ],
+  // Only asked when creating: an existing course keeps the series it is in.
+  courseSeriesID: [
+    '',
+    (v: string) => {
+      if (props.course == null && v === '') return i18n.t({ en: 'Please choose a course series', zh: '请选择课程系列' })
+      return null
+    }
   ]
+})
+
+/**
+ * The author's Playground Course series, to create the course in. Loaded only for creation.
+ * Read by: `PlaygroundCourseEditModal.vue#template` (the series select, and the hint when there is none).
+ */
+const seriesQueryRet = useQuery(async () => (props.course == null ? listPlaygroundSeries() : []), {
+  en: 'Failed to list course series',
+  zh: '获取课程系列列表失败'
 })
 
 /**
@@ -107,20 +142,31 @@ const handleSubmit = useMessageHandle(
         i18n.t({ en: 'Updating course', zh: '更新课程中' })
       )
       m.success(i18n.t({ en: 'Course updated', zh: '课程已更新' }))
-      emit('resolved', updated as PlaygroundCourse)
+      emit('resolved', { course: updated as PlaygroundCourse, courseSeries: null })
       return
     }
 
-    const created = await m.withLoading(
+    const series = seriesQueryRet.data.value?.find((item) => item.id === form.value.courseSeriesID)
+    if (series == null) throw new Error('course series expected')
+    const result = await m.withLoading(
       (async () => {
         const { fileCollection } = await saveFiles(await buildStarterFiles())
         const params: AddCourseParams = { kind: 'playground', title, thumbnail, content: fileCollection }
-        return addCourse(params)
+        const course = (await addCourse(params)) as PlaygroundCourse
+        // A new course goes last in its series; the API keeps the order of `courseIDs`.
+        const courseSeries = await updateCourseSeries(series.id, {
+          title: series.title,
+          thumbnail: series.thumbnail,
+          description: series.description,
+          order: series.order,
+          courseIDs: [...series.courseIDs, course.id]
+        })
+        return { course, courseSeries }
       })(),
       i18n.t({ en: 'Creating course', zh: '创建课程中' })
     )
     m.success(i18n.t({ en: 'Course created', zh: '课程已创建' }))
-    emit('resolved', created as PlaygroundCourse)
+    emit('resolved', result)
   },
   {
     en: isEditMode.value ? 'Failed to update course' : 'Failed to create course',
@@ -148,6 +194,27 @@ const handleSubmit = useMessageHandle(
 
       <UIFormItem path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
         <ThumbnailUploader v-model:thumbnail="form.value.thumbnail" class="h-50 w-full" />
+      </UIFormItem>
+
+      <!-- Creation only: the series the course is written for. Without one the course could not be opened. -->
+      <UIFormItem v-if="!isEditMode" path="courseSeriesID" :label="$t({ en: 'Course series', zh: '所属系列' })">
+        <UISelect
+          v-model:value="form.value.courseSeriesID"
+          v-radar="{ name: 'series-select', desc: 'Select the course series to create the course in' }"
+          :placeholder="$t({ en: 'Choose a course series', zh: '选择课程系列' })"
+        >
+          <UISelectOption v-for="series in seriesQueryRet.data.value ?? []" :key="series.id" :value="series.id">
+            {{ series.title }}
+          </UISelectOption>
+        </UISelect>
+        <p v-if="seriesQueryRet.data.value?.length === 0" class="m-0 mt-1 text-sm text-grey-700">
+          {{
+            $t({
+              en: 'No Playground Course series yet. Create one in "Manage course series" first.',
+              zh: '还没有目标式课程系列，请先在"管理课程系列"里创建一个。'
+            })
+          }}
+        </p>
       </UIFormItem>
 
       <!-- Says where the rest of a course is edited, so the short form does not read like the whole thing. -->
