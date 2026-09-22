@@ -1,6 +1,5 @@
 <template>
   <div
-    v-show="running.mode !== 'debug'"
     class="flex gap-xl"
     :class="layout === 'portrait' ? 'h-full flex-none flex-col' : 'flex-[1_1_0]'"
     :style="layout === 'portrait' ? { width: `${railWidth}px` } : null"
@@ -22,25 +21,12 @@
       <StagePanel :layout="layout === 'portrait' ? 'wide' : 'compact'" />
     </UICard>
   </div>
-  <ConsolePanel
-    v-show="running.mode === 'debug'"
-    v-radar="{
-      name: 'Console panel',
-      desc: 'Console panel showing runtime output and errors',
-      visible: running.mode === 'debug'
-    }"
-    :class="layout === 'portrait' ? 'h-full flex-none' : 'flex-[1_1_0]'"
-    :style="layout === 'portrait' ? { width: `${railWidth}px` } : null"
-  />
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { UICard } from '@/components/ui'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpritesPanel from './sprite/SpritesPanel.vue'
 import StagePanel from './stage/StagePanel.vue'
-import ConsolePanel from './ConsolePanel.vue'
 
 withDefaults(
   defineProps<{
@@ -49,7 +35,4 @@ withDefaults(
   }>(),
   { layout: 'default', railWidth: 208 }
 )
-
-const editorCtx = useEditorCtx()
-const running = computed(() => editorCtx.state.runtime.running)
 </script>
