@@ -45,7 +45,6 @@ import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import CodeGuideUI from './code-guide/CodeGuideUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
-import EditingDocumentThumbnail from './EditingDocumentThumbnail.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
 import { editorRuntimeOutputBridge } from '@/components/editor/runtime-output-bridge'
@@ -464,9 +463,7 @@ providePopupContainer(codeEditorEl)
       :class="{ 'bg-black/10': isResizing }"
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
-    <!-- The thumbnail gets its own strip of padding rather than floating over the code: a long line
-         would otherwise run underneath it, and the character it hides is the one being read. -->
-    <div class="relative my-3 min-w-0 flex flex-[1_1_0] justify-stretch" :class="{ 'pr-14': !toolsVisible }">
+    <div class="relative my-3 min-w-0 flex flex-[1_1_0] justify-stretch" :class="{ 'pe-3': !toolsVisible }">
       <MonacoEditorComp
         v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
         class="min-w-0 flex-[1_1_0]"
@@ -477,12 +474,6 @@ providePopupContainer(codeEditorEl)
         @dragleave="handleMonacoEditorDragLeave"
         @drop="handleMonacoEditorDrop"
       />
-      <!-- Only without the tools: the document tabs carry the same image, larger and clickable, so
-           showing both would just be the same thumbnail twice. -->
-      <!-- Placed where the document tabs put the same thumbnail in the standard layout: 8px in from
-           the panel edge (their aside's `px-2`) and 12px down (its `py-3`, which `my-3` above
-           already supplies here). -->
-      <EditingDocumentThumbnail v-if="!toolsVisible" class="absolute right-2 top-0 z-1" />
     </div>
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />

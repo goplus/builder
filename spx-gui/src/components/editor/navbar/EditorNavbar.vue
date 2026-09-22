@@ -94,7 +94,7 @@
       </div>
     </template>
     <template #center>
-      <div v-if="project != null" class="flex items-center justify-center gap-2">
+      <div v-if="project != null && !isFocused" class="flex items-center justify-center gap-2">
         <EditorProjectDisplayName :project="project" />
         <EditorAutoSaveStateIcon :editing="state?.editing ?? null" />
         <EditorCheckoutReleaseButton v-if="isDeveloperMode && canManageProject" :project="project" :state="state" />
@@ -215,6 +215,7 @@ const canManageProject = computed(() => {
 })
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
 const isModeSwitchHidden = computed(() => editorWorkspaceLayout.isHidden('edit-mode-switch'))
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
