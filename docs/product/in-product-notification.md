@@ -1,94 +1,84 @@
 # In-Product Notification
 
-XBuilder uses In-Product Notification to deliver asynchronous product updates to users inside XBuilder. A Notification is a reusable delivery mechanism; the product feature that creates it defines the event and content.
-
-## Background
-
-Some product operations finish after the user has left the page where they started. A persistent entry in XBuilder keeps the result available after the user leaves the original page.
-
-## Goals
-
-* Users can find product updates addressed to them in XBuilder.
-* Users can distinguish unread notifications from notifications they have read.
-* Product features share one Notification List and read-state behavior.
+Users may leave a page before an operation finishes, or receive a like or remix while away from XBuilder. In-Product Notification lets them find these updates later. Product features define when to send a Notification and what it contains; they share the same Notification List and read behavior.
 
 ## Basic Concepts
 
 ### Notification
 
-A Notification delivers a product event in one of two categories:
-
-* Message: addressed to one User.
-* Announcement: addressed to all Users who exist when it is published. Later registrations do not automatically receive historical announcements; retries keep the original audience.
-
-Both categories share the same presentation and independent per-recipient read state.
-
 A Notification contains:
 
-* Recipient: the User who can read the Notification
-* Title: a summary of the update
+* Recipient: the User who can read it
 * Category: Message or Announcement
+* Title: a summary of the update
 * Body: the complete message in Markdown
 * CreatedAt: the creation time
-* ReadAt: the time the Recipient read the Notification; empty while unread
+* ReadAt: the time the Recipient first read it; empty while unread
+
+A Message is addressed to one User. An Announcement is addressed to all Users who exist when it is published. Both use the same content structure, and each Recipient has independent read state.
+
+The page displays Title, Body and CreatedAt. User names, project links, attachments and quoted context belong in Body. We do not introduce separate display fields for each kind of event. Category, identity, Recipient and read state are used to organize and handle Notifications.
+
+Content records the event when it happened. Renaming a User or Project does not rewrite existing Notifications.
 
 ### Notification List
 
-The Notification List is the current user's collection of Notifications, separated into Messages and Announcements tabs. Each tab has its unread count; the navigation entry shows their sum. Each category is ordered newest first, with stable ordering for equal creation times. Reading an item does not move it or cause pagination to skip or duplicate items.
+The Notification List contains the current user's Notifications, divided into Messages and Announcements. Each category has an unread count; the navigation entry shows their sum.
 
-Display content consists only of title, Markdown body and creation time. User names, project links, attachments and quoted context belong in the body, not event-specific display fields. Category, identity, recipient and read state support routing and interaction.
+Notifications are ordered from newest to oldest by CreatedAt, with a stable order when times are equal. Reading a Notification does not change its position. Loading more items should not skip or repeat Notifications because their read state changed.
 
-Render Markdown safely: no executable HTML or unsafe link schemes. Links never grant access to private resources. Content describes the event when it happened and is not rewritten after user or project renames.
+## User Story
 
-## Core Mechanisms
+### View Notifications
 
-### Creating a Notification
+Signed-in users open the Notification List from the navigation bar and select Messages or Announcements. Opening the list or switching categories does not mark Notifications read.
 
-A product feature creates a Notification for its Recipient. A new Notification is unread and appears in the Notification List according to its CreatedAt.
+Opening a Notification shows its details and records ReadAt. The list and unread counts update after the read state is saved. Reopening the same Notification preserves the first-read time. Reading it does not affect another Recipient's read state.
 
-### Reading Notifications
+Users can mark all Notifications read. This includes both categories and items not yet loaded in the panel. Notifications delivered after the operation's snapshot remain unread.
 
-Users open the Notification List from the navigation bar. Opening a Notification shows its details and records the read time. The unread count updates after the read state changes.
+The list should distinguish loading, no Notifications and request failure. If a read update fails, the UI should restore the unread state and allow retry. Users should be able to read long titles and bodies without the panel extending beyond the viewport.
 
-Opening the list or switching tabs does not mark items read. Reopening a detail preserves the first-read time. Mark all as read affects both categories, including items not loaded in the panel; notifications delivered after the operation's snapshot remain unread.
+Markdown rendering must block executable HTML and unsafe link schemes. Links follow the destination's access rules. If a Project becomes private or unavailable, the Notification remains in the list; the destination shows its normal access or unavailable message. Previews must not expose restricted content.
 
-Distinguish loading, empty and failed states. Failed read updates must not leave the UI falsely showing success; allow retry. Long content remains accessible within the viewport. If a linked resource becomes private or unavailable, preserve notification history and use the destination's normal access/unavailable handling without leaking restricted content in previews.
+### Receive a Like or Remix Notification
 
-## Proposed Business Integrations
+We propose starting with project likes and remixes. The following rules need review before implementation. These integrations have not been completed.
 
-These are proposed product decisions for review before implementation, not a description of completed integration. Start with likes and remixes. The [Demo #3493](https://github.com/goplus/builder/pull/3493) illustrates these interactions as well as follows and feedback replies; its mock data is not a production contract.
+#### Like
 
-| Event | Trigger and recipient | Repetition rules |
-| --- | --- | --- |
-| Project like | After a successful like, notify the project owner. | Exclude self-likes. At most once per actor/project pair, including unlike followed by re-like. Unlike does not retract the existing notification. |
-| Project remix | After a new remix project is successfully saved to the cloud, notify the direct source project's owner. | Exclude self-remixes and other ancestors in the remix chain. Once per new remix project; subsequent saves and retries do not notify again. |
+After a User successfully likes a Project, its owner receives a Message. Self-likes do not send Notifications.
 
-Only successful business events create notifications. Failed actions, opening dialogs and unsaved local edits do not. Do not backfill historical likes or remixes at launch.
+For the same User and Project, send at most one Notification. Removing a like does not retract it, and liking the Project again does not send another one. Retrying the request also does not send another Notification.
 
-Under the [Community model](./community.md#remix), a remix starts private. Its notification may identify the actor and link to the original project, but must not expose the private remix's title, content or link. This proposal notifies on successful creation, not publication; publishing later does not send another remix notification.
+For example, Title can be "Alice liked your project." Body contains Alice's name with a link to her profile, the text "liked your project", and a link to the Project.
 
-### Content Examples
+#### Remix
 
-* Like title: “Alice liked your project.” Body: a linked actor name, “liked your project”, and a link to the original project.
-* Remix title: “Alice remixed your project.” Body: a linked actor name, “remixed your project”, and a link to the original project, without private remix details.
-* Announcement title: “Scheduled maintenance.” Body: maintenance time, affected features and preparation instructions in Markdown.
+After a new remix Project is successfully saved to the cloud, the owner of its direct source Project receives a Message. Self-remixes do not send Notifications, nor do we notify every author in the remix chain.
 
-### Deferred Scenarios
+Each new remix Project sends one Notification. Two distinct remixes can therefore send two Messages, but subsequent saves and retries do not send more.
 
-* Sharing: copying a link or opening a share dialog does not prove delivery and has no definite recipient, so neither creates a notification. A future share-with-a-user feature must first define its recipient and successful-delivery event.
-* Follows and feedback replies: demonstrated in the Demo, but their trigger and repetition rules require follow-up product work.
-* This scope does not add direct messaging, email/push delivery, notification preferences, event aggregation or an announcement publishing interface. Announcements are authored by trusted product operators, not ordinary users.
+A remix starts private under the [Community model](./community.md#remix). The Notification can identify the User and link to the original Project, but cannot include the private remix's title, content or link. Publishing it later does not send another remix Notification.
 
-## Acceptance Scenarios
+For example, Title can be "Alice remixed your project." Body contains Alice's profile link and the original Project link, without private remix details.
 
-* A successful like produces one message for the owner; retries, re-likes and self-likes produce no additional messages.
-* Two distinct remixes by another user may produce two messages; saving either again does not. No private remix details are exposed.
-* Reading one item changes only that recipient's corresponding unread count, without reordering it.
-* Mark-all covers both tabs; later deliveries stay unread.
-* Announcements reach the publication-time audience once each; future users receive no historical copy.
-* Copy-link, canceled actions and failed business operations create no notifications.
+Only successful actions send Notifications. Opening a dialog, canceling an action, a failed operation or an unsaved local edit does not. Historical likes and remixes are not backfilled when the feature launches.
 
-## Related Work
+### Receive an Announcement
 
-* [Notification Demo #3493](https://github.com/goplus/builder/pull/3493)
-* [Backend infrastructure #355](https://github.com/goplus/builder-backend/pull/355): storage and read APIs; business triggers and frontend integration are separate work.
+Trusted product operators can send Announcements, such as release or maintenance notices. Ordinary users cannot publish Announcements.
+
+For example, an Announcement titled "Scheduled maintenance" describes the maintenance time, affected features and preparation instructions in its Markdown body.
+
+Each User who exists at publication receives one copy, initially unread. Retrying delivery keeps the original recipients and does not send duplicate copies. Users who register later do not receive this historical Announcement.
+
+## Scope and Related Work
+
+The [Demo #3493](https://github.com/goplus/builder/pull/3493) demonstrates likes, remixes, follows and feedback replies. Its mock data is for the demonstration and does not define the production data contract. Follow and feedback-reply triggers, including their repetition rules, need separate product design.
+
+Copying a link or opening a share dialog does not establish delivery or identify a Recipient, so neither sends a Notification. Before adding sharing with a specified User, we need to define its Recipient and successful-delivery event.
+
+Direct messaging, email or push delivery, notification preferences, event aggregation and an announcement publishing interface are outside this scope.
+
+[Backend infrastructure #355](https://github.com/goplus/builder-backend/pull/355) provides storage and read APIs. Business triggers and frontend integration are separate work. See [Notification Demo #3493](https://github.com/goplus/builder/pull/3493) for the interaction reference.
