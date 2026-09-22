@@ -35,18 +35,21 @@ export const explorerDotClass = 'ml-1 text-primary-main'
  * - `depth`: nesting level starting at 1 for top-level nodes; drives the left indentation.
  * - `activePath`: path of the open node (from the route); used to highlight this row.
  * - `changedPaths`: paths with unsaved records; used to show the dot.
+ * - `collapsedKeys`: keys of the rows folded away, which is where this row learns whether it is folded.
  *
  * Emits:
  * - `select(path)`: this row (or a descendant row) was clicked; `path` is that node's in-Course-Editor path.
  *   Listened by `components/course-editor/CourseExplorer.vue#template` and, for nested rows, by
  *   `components/course-editor/CourseExplorerNode.vue#template` (which re-emits it).
+ * - `toggle(key)`: this row (or a descendant row) is to be folded or unfolded; `key` is that node's key.
+ *   Listened the same way as `select`; `CourseExplorer` owns the folded rows and remembers them.
  *
  * Used by: `components/course-editor/CourseExplorer.vue#template` (top-level nodes),
  * `components/course-editor/CourseExplorerNode.vue#template` (children of an expanded row).
  *
  * Uses: `course-tree.ts#getNodeLabel` / `#getNodeKey` / `#isNodeDirty`, `route.ts#isPathWithin`.
  */
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { LocaleMessage } from '@/utils/i18n'
 import { getNodeKey, getNodeLabel, isNodeDirty, type CourseNode } from './course-tree'
 import { isPathWithin } from './route'
@@ -60,19 +63,25 @@ const props = defineProps<{
   activePath: string
   /** Paths whose record differs from the saved baseline. */
   changedPaths: Set<string>
+  /** Keys of the rows folded away (see `explorer-collapse.ts`). */
+  collapsedKeys: Set<string>
 }>()
 
 const emit = defineEmits<{
   /** This row or a descendant row was clicked; carries that node's path. */
   select: [path: string]
+  /** This row or a descendant row is to be folded or unfolded; carries that node's key. */
+  toggle: [key: string]
 }>()
 
 /**
- * Whether a row that holds others shows them. Local UI state only (not in the route); starts expanded.
- * Written by: `CourseExplorerNode.vue#template` (the toggle glyph, and clicking a group row).
+ * Whether a row that holds others shows them. Rows start expanded and stay as the author leaves them for the
+ * rest of the tab (`explorer-collapse.ts`); it is not part of the route.
+ * @returns `true` unless this row's key is among the folded ones.
  * Read by: `CourseExplorerNode.vue#template` (the glyph and the children block).
+ * Called by: Vue (computed; re-evaluated when `props.node` or `props.collapsedKeys` changes)
  */
-const expanded = ref(true)
+const expanded = computed(() => !props.collapsedKeys.has(getNodeKey(props.node)))
 
 /**
  * Whether this row holds other rows: a resource group or the heading of unused records.
@@ -164,12 +173,12 @@ const radarNodeMeta = computed(() => ({
 /**
  * Handle a click on the row: open the node, or fold the unused heading (it stands for no record, so there is
  * nothing to open).
- * @returns Nothing; either emits `select` or flips `expanded`.
+ * @returns Nothing; emits either `select` or `toggle`.
  * Called by: `CourseExplorerNode.vue#template` (the row button).
  */
 function handleClick() {
   if (props.node.type === 'group') {
-    expanded.value = !expanded.value
+    emit('toggle', getNodeKey(props.node))
     return
   }
   emit('select', props.node.path)
@@ -196,7 +205,7 @@ function handleClick() {
           attrs: { path: getNodeKey(node) }
         }"
         class="w-4 flex-none text-xs text-grey-700"
-        @click.stop="expanded = !expanded"
+        @click.stop="emit('toggle', getNodeKey(node))"
         >{{ expanded ? '▾' : '▸' }}</span
       >
       <!-- Other rows get an empty spacer of the same width so labels line up. -->
@@ -216,7 +225,9 @@ function handleClick() {
         :depth="depth + 1"
         :active-path="activePath"
         :changed-paths="changedPaths"
+        :collapsed-keys="collapsedKeys"
         @select="emit('select', $event)"
+        @toggle="emit('toggle', $event)"
       />
     </template>
   </div>
