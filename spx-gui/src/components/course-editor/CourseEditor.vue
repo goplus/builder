@@ -4,11 +4,12 @@
  * time (right) and the always-mounted Project Editor host for the embedded learner project; it owns saving,
  * unsaved-change tracking, the route-driven learner preview and the leave guards. The open document is derived
  * from the route (`inCourseEditorPath` param), never from local state, so it survives reloads and browser history.
+ * A preview starts at the course being edited, from the author's unsaved work, and finishing it offers the next
+ * course of the series, as a learner would be offered it; those are shown as they were saved.
  *
  * Props:
- * - `course`: the Playground Course being edited (its id is used by `updateCourse`; title/thumbnail feed the
- *   preview completion modal).
- * - `series`: the course series the course belongs to (shown in the navbar, given to the completion modal).
+ * - `course`: the Playground Course being edited (its id is used by `updateCourse`; it is where a preview starts).
+ * - `series`: the course series the course belongs to (shown in the navbar, and the order a preview walks).
  * - `project`: the author's working copy of the Tutorial project; the page owns its lifecycle (load / dispose).
  *
  * Emits:
@@ -24,11 +25,11 @@
  * `./project` (`SpxProjectEditorHost`), the `TutorialProject` model, `saveFiles` + `updateCourse` (persistence)
  * and the helpers in `./course-tree`, `./route` and `./upload`.
  */
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalizedGeneric } from 'vue-router'
-import { Cancelled, useMessageHandle } from '@/utils/exception'
+import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import { updateCourse, type PlaygroundCourse } from '@/apis/course'
+import { getCourse, updateCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { courseEditorPreviewRouteName, courseEditorRouteName } from '@/apps/xbuilder/router'
 import { saveFiles } from '@/models/common/cloud'
@@ -390,6 +391,24 @@ const preview = shallowRef<TutorialProject | null>(null)
  * Read by: `CourseEditor.vue#template` (`UIError` branch of the preview pane).
  */
 const previewError = ref<Error | null>(null)
+
+// A preview is a walk along the series: it starts at the course being edited and "Learn next course" in the
+// completion modal moves it on, the way a learner goes from one course to the next. Only the course being
+// edited has a working copy; the ones after it are shown as they were saved.
+/**
+ * The course the preview is showing, or trying to show. A failed load leaves it on the course that failed, so
+ * `retryPreview` retries that one instead of starting the walk over.
+ * Written by: `previewSavedCourse`, the `watch(isPreviewRoute)` (reset when entering).
+ * Read by: `retryPreview`.
+ */
+const previewCourseID = ref(props.course.id)
+/**
+ * The course the preview is running, assigned only once its snapshot loaded. Feeds the completion modal: its
+ * title, and the position in the series that decides whether there is a next course.
+ * Written by: `previewSavedCourse`, the `watch(isPreviewRoute)` (reset when entering).
+ * Read by: `handlePreviewCompleted`, `nextCourseID`.
+ */
+const previewCourse = shallowRef<PlaygroundCourse>(props.course)
 /**
  * Full path of the editing route the author was on when Preview was clicked, so "Back to editor" returns there;
  * null when the preview was entered by URL or history.
@@ -483,6 +502,100 @@ async function enterPreviewFromRoute() {
 }
 
 /**
+ * Load a saved course of the series into a snapshot the playground can run. These come from the server exactly
+ * as learners get them: only the course being edited is previewed from unsaved work.
+ * @param courseID - The course to load, taken from `series.courseIDs`.
+ * @param generation - The preview generation this load belongs to (see `previewGeneration`).
+ * @throws `DefaultException` when the course is not a Playground Course; `Cancelled` when the session ended or
+ * the generation was superseded while loading (the snapshot is disposed first); rethrows load errors.
+ * @returns Promise resolving to the course and its loaded snapshot.
+ * Called by: `components/course-editor/CourseEditor.vue#previewSavedCourse`
+ */
+async function loadSavedCourseSnapshot(courseID: string, generation: number) {
+  const course = await getCourse(courseID)
+  // A series holds courses of one kind, so this only fires on data the playground could not run anyway.
+  if (course.kind !== 'playground') {
+    throw new DefaultException({
+      en: `Course "${course.title}" is not a Playground Course`,
+      zh: `课程"${course.title}"不是目标式课程`
+    })
+  }
+  const snapshot = await TutorialProject.load(course)
+  // Superseded or orphaned: the author left the preview (or the editor) while the course loaded.
+  if (!sessionAlive || generation !== previewGeneration) {
+    snapshot.project.dispose()
+    throw new Cancelled('preview superseded')
+  }
+  return { course, snapshot }
+}
+
+/**
+ * Show a saved course of the series: release the finished one, then load and publish the next. Failures are
+ * shown in the preview pane rather than as a toast, since the author is inside a walk rather than at a button.
+ * @param courseID - The course of the series to show.
+ * @returns Promise<void>; side effects: sets `previewCourseID`, then `preview` and `previewCourse` on success or
+ * `previewError` on failure.
+ * Called by: `components/course-editor/CourseEditor.vue#handlePreviewCompleted`,
+ * `components/course-editor/CourseEditor.vue#retryPreview`
+ */
+async function previewSavedCourse(courseID: string) {
+  const generation = ++previewGeneration
+  previewCourseID.value = courseID
+  previewError.value = null
+  // Drop the finished course before loading the next: `CoursePlayground` disposes the snapshot it was given when
+  // it unmounts, and `nextTick` lets that happen before this load can publish another one.
+  preview.value = null
+  await nextTick()
+  try {
+    const { course, snapshot } = await loadSavedCourseSnapshot(courseID, generation)
+    previewCourse.value = course
+    preview.value = snapshot
+  } catch (error) {
+    // A superseded load is not an error to show.
+    if (error instanceof Cancelled) return
+    // Normalize non-Error throwables so the template can always show `.message`.
+    previewError.value = error instanceof Error ? error : new Error(String(error))
+  }
+}
+
+/**
+ * Retry whatever the preview pane failed to show: the author's working copy at the start of a walk, or the
+ * saved course the walk had reached.
+ * @returns Promise<void>.
+ * Called by: `components/course-editor/CourseEditor.vue#template` (`UIError :retry` in the preview pane)
+ */
+function retryPreview() {
+  if (previewCourseID.value === props.course.id) return enterPreviewFromRoute()
+  return previewSavedCourse(previewCourseID.value)
+}
+
+/**
+ * The course after the previewed one in the series, or null at its end (also when the previewed course is no
+ * longer in the series that was loaded with the editor).
+ * @returns The next course's id, or null.
+ * Called by: `components/course-editor/CourseEditor.vue#handlePreviewCompleted`
+ */
+function nextCourseID(): string | null {
+  const ids = props.series.courseIDs
+  const index = ids.indexOf(previewCourse.value.id)
+  if (index < 0 || index === ids.length - 1) return null
+  return ids[index + 1]
+}
+
+/**
+ * What the preview banner says: which course is on screen, or a plain sentence while one is being prepared. The
+ * title comes from the snapshot, so the course being edited is named by its unsaved title.
+ * @returns A `LocaleMessage` for `$t`.
+ * Read by: `CourseEditor.vue#template` (the preview banner).
+ * Called by: Vue (computed; re-evaluated when the snapshot or its title changes)
+ */
+const previewBannerText = computed(() => {
+  const title = preview.value?.title
+  if (title == null) return { en: 'Previewing the course as a learner', zh: '正在以学习者视角预览课程' }
+  return { en: `Previewing "${title}" as a learner`, zh: `正在以学习者视角预览"${title}"` }
+})
+
+/**
  * The author's copilot conversation and panel state, stashed while a preview runs. The playground's runner takes
  * the copilot over with the learner's session (`startSession` ends whatever is current), so the author's session
  * is exported before the playground mounts and restored after the preview is left.
@@ -543,6 +656,9 @@ watch(
     }
     // Entering the preview: this runs before the playground mounts and its runner replaces the copilot session.
     stashAuthorCopilot()
+    // Every preview starts at the course being edited; the completion modal walks on from there.
+    previewCourseID.value = props.course.id
+    previewCourse.value = props.course
     // `handlePreview` already set the snapshot; otherwise load it from the route.
     if (preview.value == null) void enterPreviewFromRoute()
   },
@@ -565,24 +681,27 @@ function exitPreview() {
 }
 
 /**
- * The previewed course finished: show the completion modal a learner would see (with the course's feedback), then
- * either stay in the preview ("continue editing") or exit it.
+ * The previewed course finished: show the completion modal a learner would see (with the course's feedback),
+ * then stay in the preview ("continue editing"), walk on to the next course of the series ("next"), or leave.
  * @param completion - Completion payload from the playground runner (`feedback` text or null).
- * @returns Promise<void>; side effects: opens a modal, may navigate out of the preview.
+ * @returns Promise<void>; side effects: opens a modal, may replace the previewed course or navigate out of the
+ * preview.
  * Called by: `components/course-editor/CourseEditor.vue#template` (`CoursePlayground @course-completed`)
  */
 async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
   // The modal resolves with the chosen action ('continueEditing' | 'next' | 'exit').
   const action = await openCompletion({
-    course: props.course,
+    course: previewCourse.value,
     series: props.series,
     feedback: completion.feedback
   })
-  // Both "next" and "exit" leave the preview here: there is no next course to open from the editor.
   if (action === 'continueEditing') return
   // The modal outlives this editor; a late choice must not navigate a session that ended or a preview already
   // left by other means.
   if (!sessionAlive || !isPreviewRoute.value) return
+  // "Next" continues the walk; at the end of the series the modal offers no next course, so this leaves.
+  const next = action === 'next' ? nextCourseID() : null
+  if (next != null) return previewSavedCourse(next)
   await exitPreview()
 }
 
@@ -746,9 +865,7 @@ onUnmounted(() => {
         }"
         class="flex items-center gap-3 bg-primary-100 px-4 py-1 text-sm"
       >
-        <span class="flex-1">{{
-          $t({ en: 'Previewing the course as a learner', zh: '正在以学习者视角预览课程' })
-        }}</span>
+        <span class="flex-1 truncate">{{ $t(previewBannerText) }}</span>
         <UIButton
           v-radar="{ name: 'back-to-editor-button', desc: 'Click to stop previewing and return to the course editor' }"
           type="secondary"
@@ -813,7 +930,7 @@ onUnmounted(() => {
       <!-- Preview pane (`isPreviewRoute`): an error with retry, the playground once the snapshot is ready, or a
            loading placeholder while `enterPreviewFromRoute` runs. -->
       <template v-if="isPreviewRoute">
-        <UIError v-if="previewError != null" class="flex-1" :retry="enterPreviewFromRoute">
+        <UIError v-if="previewError != null" class="flex-1" :retry="retryPreview">
           {{ previewError.message }}
         </UIError>
         <!-- The playground runs the snapshot project; `course-completed` and `failed` are handled above. -->
