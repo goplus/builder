@@ -19,11 +19,7 @@
   </div>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
   <!-- Using overflow-visible class to avoid cutting dropdown menu of CodeTextEditor (monaco) -->
-  <div
-    v-show="isPreviewMode"
-    ref="editorColumnRef"
-    class="relative min-w-0 flex flex-[1_1_0] flex-col gap-xl"
-  >
+  <div v-show="isPreviewMode" ref="editorColumnRef" class="relative min-w-0 flex flex-[1_1_0] flex-col gap-xl">
     <UICard
       id="project-code-pane"
       v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
@@ -42,18 +38,10 @@
         :sprite="selected.sprite"
         :state="editorCtx.state.spriteState!"
       />
-      <StageEditor
-        v-else-if="selected.type === 'stage'"
-        :stage="project.stage"
-        :state="editorCtx.state.stageState"
-      />
+      <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
       <EditorPlaceholder v-else />
     </UICard>
-    <div
-      v-show="running.mode === 'debug'"
-      class="relative min-h-0 flex-none"
-      :style="{ height: `${consoleHeight}px` }"
-    >
+    <div v-show="running.mode === 'debug'" class="relative min-h-0 flex-none" :style="{ height: `${consoleHeight}px` }">
       <div
         v-radar="{ name: 'Console resize handle', desc: 'Drag to resize code and console panels' }"
         role="separator"
@@ -172,9 +160,7 @@ const maxConsoleHeight = computed(() =>
   Math.max(MIN_CONSOLE_HEIGHT, (editorColumnSize.value?.height ?? 672) - MIN_CODE_HEIGHT - PANEL_GAP)
 )
 const consoleHeight = computed(() => Math.min(maxConsoleHeight.value, preferredConsoleHeight.value))
-const consoleResizing = ref<{ pointerId: number; startY: number; consoleHeight: number; moved: boolean } | null>(
-  null
-)
+const consoleResizing = ref<{ pointerId: number; startY: number; consoleHeight: number; moved: boolean } | null>(null)
 
 function setCodeWidth(width: number) {
   const layout = paneLayout.value
