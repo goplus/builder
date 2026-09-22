@@ -19,12 +19,14 @@
   </div>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
   <!-- Using overflow-visible class to avoid cutting dropdown menu of CodeTextEditor (monaco) -->
-  <div v-show="isPreviewMode" ref="editorColumnRef" class="relative min-w-0 flex flex-[1_1_0] flex-col gap-xl">
-    <UICard
-      id="project-code-pane"
-      v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
-      class="relative min-h-0 flex flex-[1_1_0] flex-col overflow-visible!"
-    >
+  <UICard
+    v-show="isPreviewMode"
+    id="project-code-pane"
+    v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
+    class="relative min-w-0 flex flex-[1_1_0] flex-col overflow-visible!"
+    :style="{ userSelect: isConsoleResizing ? 'none' : undefined }"
+  >
+    <div class="min-h-0 flex flex-[1_1_0] flex-col">
       <!--
         TODO: optimize performance for switching between editors, which corresponds to selection change.
         There's known issue with Vue `KeepAlive`:
@@ -40,9 +42,14 @@
       />
       <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
       <EditorPlaceholder v-else />
-    </UICard>
-    <div v-show="running.mode === 'debug'" class="relative min-h-0 flex-none" :style="{ height: `${consoleHeight}px` }">
+    </div>
+    <div
+      v-show="running.mode === 'debug'"
+      class="absolute inset-x-0 bottom-0 z-20 min-h-0 border-t border-t-dividing-line-2 bg-grey-100"
+      :style="{ height: `${consoleHeight}px` }"
+    >
       <div
+        ref="consoleResizeHandleEl"
         v-radar="{ name: 'Console resize handle', desc: 'Drag to resize code and console panels' }"
         role="separator"
         aria-orientation="horizontal"
@@ -52,23 +59,11 @@
         :aria-valuenow="Math.round(consoleHeight)"
         :title="$t({ en: 'Drag to resize', zh: '拖动调整高度' })"
         tabindex="0"
-        class="group absolute inset-x-0 -top-4 z-10 h-4 touch-none cursor-row-resize select-none flex items-center justify-center focus-visible:outline-none"
-        @pointerdown="startConsoleResizing"
+        class="absolute inset-x-0 -top-1.75 z-10 h-3.25 cursor-row-resize transition-colors hover:bg-black/5 focus-visible:bg-black/5 focus-visible:outline-none"
+        :class="{ 'bg-black/10': isConsoleResizing }"
         @keydown="handleConsoleResizeKey"
-      >
-        <div
-          class="h-0.5 w-12 rounded-full bg-grey-500 transition-colors group-hover:bg-primary-main group-focus-visible:bg-primary-main"
-          :class="{ 'bg-primary-main!': consoleResizing?.moved }"
-        ></div>
-      </div>
-      <ConsolePanel
-        v-radar="{
-          name: 'Console panel',
-          desc: 'Console panel showing runtime output and errors',
-          visible: running.mode === 'debug'
-        }"
-        class="h-full"
-      />
+      ></div>
+      <ConsolePanel class="h-full" />
     </div>
     <div
       v-radar="{ name: 'Editor pane resize handle', desc: 'Drag to resize code and preview panels' }"
@@ -91,13 +86,9 @@
         :class="{ 'bg-primary-main!': resizing?.moved }"
       ></div>
     </div>
-  </div>
+  </UICard>
   <!-- Prevent the runner iframe from swallowing pointer events during a drag. -->
-  <div
-    v-if="resizing?.moved || consoleResizing?.moved"
-    class="fixed inset-0 z-50 select-none"
-    :class="resizing?.moved ? 'cursor-col-resize' : 'cursor-row-resize'"
-  ></div>
+  <div v-if="resizing?.moved" class="fixed inset-0 z-50 cursor-col-resize select-none"></div>
   <MapEditor
     v-if="!isPreviewMode"
     :project="editorCtx.project"
@@ -109,6 +100,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watchEffect } from 'vue'
 import { useContentSize } from '@/utils/dom'
+import { getCleanupSignal } from '@/utils/disposable'
 import { UICard } from '@/components/ui'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
@@ -136,9 +128,7 @@ const running = computed(() => editorCtx.state.runtime.running)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
 const isFocusedLayout = computed(() => props.layout === 'focused')
 const previewColumnRef = ref<HTMLElement | null>(null)
-const editorColumnRef = ref<HTMLElement | null>(null)
 const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
-const editorColumnSize = useContentSize(editorColumnRef)
 const preferredCodeWidths = reactive<Record<EditorLayout, number | null>>({
   landscape: null,
   portrait: null,
@@ -154,13 +144,13 @@ const previewColumnStyle = computed(() => ({ width: `${paneLayout.value?.preview
 const resizing = ref<{ pointerId: number; startX: number; codeWidth: number; moved: boolean } | null>(null)
 const MIN_CONSOLE_HEIGHT = 160
 const MIN_CODE_HEIGHT = 240
-const PANEL_GAP = 16
 const preferredConsoleHeight = ref(256)
 const maxConsoleHeight = computed(() =>
-  Math.max(MIN_CONSOLE_HEIGHT, (editorColumnSize.value?.height ?? 672) - MIN_CODE_HEIGHT - PANEL_GAP)
+  Math.max(MIN_CONSOLE_HEIGHT, (editorSize.value?.height ?? 672) - MIN_CODE_HEIGHT)
 )
 const consoleHeight = computed(() => Math.min(maxConsoleHeight.value, preferredConsoleHeight.value))
-const consoleResizing = ref<{ pointerId: number; startY: number; consoleHeight: number; moved: boolean } | null>(null)
+const consoleResizeHandleEl = ref<HTMLDivElement>()
+const isConsoleResizing = ref(false)
 
 function setCodeWidth(width: number) {
   const layout = paneLayout.value
@@ -196,30 +186,6 @@ function setConsoleHeight(height: number) {
   preferredConsoleHeight.value = Math.min(maxConsoleHeight.value, Math.max(MIN_CONSOLE_HEIGHT, height))
 }
 
-function startConsoleResizing(event: PointerEvent) {
-  if (event.button !== 0 || !event.isPrimary) return
-  event.preventDefault()
-  ;(event.currentTarget as HTMLElement).focus({ preventScroll: true })
-  consoleResizing.value = {
-    pointerId: event.pointerId,
-    startY: event.clientY,
-    consoleHeight: consoleHeight.value,
-    moved: false
-  }
-}
-
-function resizeConsole(event: PointerEvent) {
-  const drag = consoleResizing.value
-  if (drag == null || event.pointerId !== drag.pointerId) return
-  if (!drag.moved && Math.abs(event.clientY - drag.startY) < 3) return
-  drag.moved = true
-  setConsoleHeight(drag.consoleHeight - (event.clientY - drag.startY))
-}
-
-function stopConsoleResizing() {
-  consoleResizing.value = null
-}
-
 watchEffect((onCleanup) => {
   if (resizing.value == null) return
   window.addEventListener('pointermove', resizePanes)
@@ -235,17 +201,36 @@ watchEffect((onCleanup) => {
 })
 
 watchEffect((onCleanup) => {
-  if (consoleResizing.value == null) return
-  window.addEventListener('pointermove', resizeConsole)
-  window.addEventListener('pointerup', stopConsoleResizing)
-  window.addEventListener('pointercancel', stopConsoleResizing)
-  window.addEventListener('blur', stopConsoleResizing)
-  onCleanup(() => {
-    window.removeEventListener('pointermove', resizeConsole)
-    window.removeEventListener('pointerup', stopConsoleResizing)
-    window.removeEventListener('pointercancel', stopConsoleResizing)
-    window.removeEventListener('blur', stopConsoleResizing)
-  })
+  if (consoleResizeHandleEl.value == null) return
+  const signal = getCleanupSignal(onCleanup)
+  let resizing = { initialClientY: 0, initialHeight: 0 }
+
+  function handleMouseMove(event: MouseEvent) {
+    setConsoleHeight(resizing.initialHeight - (event.clientY - resizing.initialClientY))
+  }
+
+  function endResizing() {
+    isConsoleResizing.value = false
+    window.removeEventListener('mousemove', handleMouseMove)
+    window.removeEventListener('mouseup', endResizing)
+  }
+
+  consoleResizeHandleEl.value.addEventListener(
+    'mousedown',
+    (event) => {
+      if (event.button !== 0) return
+      event.preventDefault()
+      isConsoleResizing.value = true
+      resizing = {
+        initialClientY: event.clientY,
+        initialHeight: consoleHeight.value
+      }
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', endResizing)
+    },
+    { signal }
+  )
+  signal.addEventListener('abort', endResizing)
 })
 
 function handleResizeKey(event: KeyboardEvent) {
