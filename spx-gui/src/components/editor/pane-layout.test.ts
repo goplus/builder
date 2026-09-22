@@ -14,24 +14,32 @@ describe('editor pane layout', () => {
     expect(resized.previewWidth).toBeCloseTo(initial.previewWidth - 120)
   })
 
-  it.each(['landscape', 'portrait', 'focused'] as EditorLayout[])(
-    'keeps both panes within the container in %s mode',
-    (layout) => {
-      for (const width of [500, 887, 1196, 1480]) {
-        for (const preferred of [-1000, 384, 600, 10000, null]) {
-          const result = getPaneLayout(
-            { width, height: 782 },
-            layout === 'portrait' ? portrait : landscape,
-            layout,
-            preferred
-          )
-          expect(result.codeWidth).toBeGreaterThanOrEqual(384)
-          expect(result.previewWidth).toBeGreaterThanOrEqual(0)
-          expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(width)
-        }
+  it.each(['landscape', 'focused'] as EditorLayout[])('keeps both panes within the container in %s mode', (layout) => {
+    for (const width of [500, 887, 1196, 1480]) {
+      for (const preferred of [-1000, 384, 600, 10000, null]) {
+        const result = getPaneLayout(
+          { width, height: 782 },
+          layout === 'portrait' ? portrait : landscape,
+          layout,
+          preferred
+        )
+        expect(result.codeWidth).toBeGreaterThanOrEqual(384)
+        expect(result.previewWidth).toBeGreaterThanOrEqual(0)
+        expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(width)
       }
     }
-  )
+  })
+
+  it('keeps the portrait editor usable with horizontal overflow in a narrow window', () => {
+    for (const width of [500, 700, 720, 887, 1196, 1480]) {
+      for (const preferred of [-1000, 384, 600, 10000, null]) {
+        const result = getPaneLayout({ width, height: 782 }, portrait, 'portrait', preferred)
+        expect(result.codeWidth).toBeGreaterThanOrEqual(384)
+        expect(result.previewWidth).toBeGreaterThanOrEqual(320)
+        expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(Math.max(width, 720))
+      }
+    }
+  })
 
   it('leaves room for bottom panels when expanding a landscape preview', () => {
     const result = getPaneLayout({ width: 1480, height: 782 }, landscape, 'landscape', 0)
@@ -39,24 +47,7 @@ describe('editor pane layout', () => {
     expect(previewHeight + 16 + 200).toBeLessThanOrEqual(782)
   })
 
-  it('keeps the portrait arrangement stable while dragging and reflows when the browser is narrow', () => {
-    const container = { width: 1480, height: 782 }
-    expect(getPaneLayout(container, portrait, 'portrait', null).portraitRail).toBe(true)
-    const narrow = getPaneLayout(container, portrait, 'portrait', 1100)
-    expect(narrow.portraitRail).toBe(true)
-    expect(narrow.previewWidth).toBe(464)
-    expect(getPaneLayout(container, portrait, 'portrait', 600).portraitRail).toBe(true)
-    expect(getPaneLayout({ width: 887, height: 782 }, portrait, 'portrait', 600).portraitRail).toBe(false)
-  })
-
-  it('uses additional portrait width for the sprite rail once the game reaches the available height', () => {
-    const result = getPaneLayout({ width: 1480, height: 782 }, portrait, 'portrait', 650)
-    expect(result.portraitRail).toBe(true)
-    expect(result.railWidth).toBeGreaterThan(208)
-    expect(result.previewWidth - result.railWidth - 16).toBeCloseTo((782 - 72) * (620 / 900) + 24)
-  })
-
-  it('moves continuously across the portrait drag range without changing the bounds or arrangement', () => {
+  it('moves continuously across the portrait drag range without changing the bounds', () => {
     const container = { width: 1480, height: 782 }
     const initial = getPaneLayout(container, portrait, 'portrait', null)
     for (let width = initial.minCodeWidth; width <= initial.maxCodeWidth; width += 16) {
@@ -64,8 +55,7 @@ describe('editor pane layout', () => {
       expect(resized.codeWidth).toBeCloseTo(width)
       expect(resized.minCodeWidth).toBeCloseTo(initial.minCodeWidth)
       expect(resized.maxCodeWidth).toBeCloseTo(initial.maxCodeWidth)
-      expect(resized.portraitRail).toBe(true)
-      expect(resized.previewWidth - resized.railWidth - 16).toBeGreaterThanOrEqual(240)
+      expect(resized.previewWidth).toBeGreaterThanOrEqual(320)
     }
   })
 

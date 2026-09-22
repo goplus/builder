@@ -169,7 +169,11 @@ function handleCategoryClick(id: string) {
           <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
         </li>
       </ul>
-      <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
+      <ul
+        ref="itemsWrapperRef"
+        class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 [scrollbar-width:thin]"
+        style="padding-bottom: calc(0.75rem + var(--editor-console-safe-area, 0px))"
+      >
         <li
           v-for="c in categoriesForItems"
           :key="c.id"

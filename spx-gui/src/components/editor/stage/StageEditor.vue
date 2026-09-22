@@ -38,6 +38,7 @@
       visible: state.selected.type === 'code'
     }"
     :code-file-path="stage.codeFilePath"
+    :bottom-inset="bottomInset"
   />
   <BackdropsEditor v-if="state.selected.type === 'backdrops'" :state="state.backdropsState" />
   <SoundsEditor v-else-if="state.selected.type === 'sounds'" :state="state.soundsState" />
@@ -191,5 +192,6 @@ import BackdropModeSelector from './backdrop/BackdropModeSelector.vue'
 defineProps<{
   stage: Stage
   state: StageEditorState
+  bottomInset?: number
 }>()
 </script>
