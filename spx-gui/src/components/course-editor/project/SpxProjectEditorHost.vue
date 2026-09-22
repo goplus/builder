@@ -281,23 +281,29 @@ function setState(next: EditorState | null) {
  */
 const lastProjectRoute = shallowRef<RouteSnapshot | null>(null)
 /**
- * Record every real project route while the project is open (immediate, so a reload straight into the project is
- * captured too).
- * @param current - The new live route from `router.currentRoute`.
+ * Remember the live route as the project's own, unless it does not name a path inside the project. Callers are
+ * responsible for only calling this while the project is open, so routes of other documents never leak in.
  * @returns Nothing; side effect is updating `lastProjectRoute` when the route qualifies.
- * Called by: Vue (watch on `router.currentRoute`, immediate)
+ * Called by: the `router.currentRoute` watcher below,
+ * components/course-editor/project/SpxProjectEditorHost.vue#startRouteSync
+ */
+function rememberProjectRoute() {
+  const current = router.currentRoute.value
+  // A bare project root (no tail) is transient: it gets replaced with the last or initial path right away, and a
+  // remembered route has to encode a real selection.
+  if (projectInEditorPath(current, rootSegments.value).length === 0) return
+  lastProjectRoute.value = translateRoute(current, rootSegments.value)
+}
+/**
+ * Record every project route the author navigates to while the project is open.
+ * @returns Nothing; side effect is `rememberProjectRoute`.
+ * Called by: Vue (watch on `router.currentRoute`)
  */
 watch(
   () => router.currentRoute.value,
-  (current) => {
-    // A bare project root (no tail) is transient: it gets replaced with the last or initial path right away.
-    // Only remember routes that (a) were reached while the project is open, so routes of other documents never
-    // leak in, and (b) carry a tail, so a remembered route always encodes a real selection.
-    if (props.active && projectInEditorPath(current, rootSegments.value).length > 0) {
-      lastProjectRoute.value = translateRoute(current, rootSegments.value)
-    }
-  },
-  { immediate: true }
+  () => {
+    if (props.active) rememberProjectRoute()
+  }
 )
 /**
  * The `IRouter` handed to `EditorState.syncWithRouter`: a view of the app router in which the Project Editor's
@@ -430,6 +436,11 @@ async function startRouteSync(editorState: EditorState) {
   await openInitialPath(editorState)
   // The `await` above may span a navigation; do not attach watchers to a state that is about to be disposed.
   if (disposed) return
+  // The project is now open at a path of its own, which is what the watcher above records -- but it only sees
+  // route *changes*, and there was none when the route already named the path to open (a reload straight into
+  // the project). Without this the project would have nothing to come back to, and worse, would be handed a
+  // foreign route the moment the author opens another document.
+  rememberProjectRoute()
   // From here on: URL -> `selectByRoute`, and selection -> `editorRouter.push` (see `editor-state.ts`).
   editorState.syncWithRouter(editorRouter)
   routeSynced = true

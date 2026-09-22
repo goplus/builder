@@ -100,7 +100,8 @@ export const courseEditorRoutes: RouteRecordRaw[] = [
  *   empty (the default) opens the course root.
  * @returns `/course-editor/<series>/<course>/edit`, followed by `/<segment>/...` when a path is given; every part
  *   is URI-encoded.
- * Called by: (not called yet; reserved for links into the Course Editor, e.g. from course management pages).
+ * Called by: components/course/management/CourseManagementModal.vue (opening a Playground Course, and the
+ * course just created), components/course-editor/project/SpxProjectEditorHost.test.ts.
  */
 export function getCourseEditorRoute(courseSeriesID: string, courseID: string, inCourseEditorPath: string[] = []) {
   // Both IDs are user data, so each is encoded as its own path segment.
