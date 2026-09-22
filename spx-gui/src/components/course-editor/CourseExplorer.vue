@@ -2,8 +2,9 @@
 /**
  * Purpose: The left-hand explorer of the Course Editor. It renders the course itself as the root row (with the
  * "Upload..." button next to it) followed by the tree of course nodes, highlights the open node and marks nodes
- * with unsaved changes. It holds no state of its own: what is open comes from `activePath`, what is dirty from
- * `changedPaths`, and every click is reported to the parent, which navigates.
+ * with unsaved changes. What is open comes from `activePath` and what is dirty from `changedPaths`; every click
+ * is reported to the parent, which navigates. The one thing it owns is which rows are folded away: that is the
+ * author's own view of the tree rather than part of the course or the route.
  *
  * Props:
  * - `project`: the Tutorial project, read only for its `title` (the root row label).
@@ -20,12 +21,13 @@
  * Used by: `components/course-editor/CourseEditor.vue#template` (inside the explorer `UICard`).
  *
  * Uses: CourseExplorerNode (one per top-level node, recursive below that) and its exported row classes, UIButton,
- * `course-tree.ts#isNodeDirty`.
+ * `course-tree.ts#isNodeDirty`, `explorer-collapse.ts#useCollapsedNodes`.
  */
 import { computed } from 'vue'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { UIButton } from '@/components/ui'
 import { getNodeKey, isNodeDirty, type CourseNode } from './course-tree'
+import { useCollapsedNodes } from './explorer-collapse'
 import CourseExplorerNode, {
   explorerActiveNodeClass,
   explorerDotClass,
@@ -58,6 +60,12 @@ const emit = defineEmits<{
  * Called by: Vue (computed; re-evaluated when `props.changedPaths` changes)
  */
 const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPaths))
+
+/**
+ * The rows folded away, and the way to fold or unfold one; remembered for the tab.
+ * Read by: `CourseExplorer.vue#template` (passed to every row, and called when one is clicked).
+ */
+const { collapsed, toggle } = useCollapsedNodes()
 </script>
 
 <template>
@@ -102,7 +110,9 @@ const rootDirty = computed(() => isNodeDirty({ type: 'root' }, props.changedPath
       :depth="1"
       :active-path="activePath"
       :changed-paths="changedPaths"
+      :collapsed-keys="collapsed"
       @select="emit('select', $event)"
+      @toggle="toggle"
     />
   </nav>
 </template>
