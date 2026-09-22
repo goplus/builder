@@ -94,7 +94,7 @@
       </div>
     </template>
     <template #center>
-      <div v-if="isFocused && tutorialCourse != null" class="max-w-[50%] truncate text-xl text-title">
+      <div v-if="isCurrentTutorialProject && tutorialCourse != null" class="max-w-[50%] truncate text-xl text-title">
         {{ tutorialCourse.title }}
       </div>
       <div v-else-if="project != null" class="flex items-center justify-center gap-2">
@@ -222,6 +222,18 @@ const canManageProject = computed(() => {
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
 const tutorialCourse = computed(() => tutorial.currentCourse)
+const isCurrentTutorialProject = computed(() => {
+  const project = props.project
+  const course = tutorialCourse.value
+  if (!isFocused.value || project?.owner == null || project.name == null || course == null) return false
+  const match = course.entrypoint.match(/\/editor\/([^/?#]+)\/([^/?#]+)/)
+  if (match == null) return false
+  try {
+    return decodeURIComponent(match[1]) === project.owner && decodeURIComponent(match[2]) === project.name
+  } catch {
+    return false
+  }
+})
 const isModeSwitchHidden = computed(() => editorWorkspaceLayout.isHidden('edit-mode-switch'))
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
