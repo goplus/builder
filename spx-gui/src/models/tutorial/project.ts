@@ -156,15 +156,22 @@ export class TutorialProject {
   /**
    * Builds a Tutorial project from a course fetched from the API.
    * @param course - The Playground Course; its `content` maps record paths to universal URLs.
-   * @throws Error (from `loadFiles`) when the content lacks `index.json` or `main_course.gox`.
+   * @throws Error (from `loadFiles`) when the content lacks `index.json` or `main_course.gox`; the embedded SPX
+   * project is released first, since the caller never gets a reference to it.
    * @returns Promise of the loaded project.
    * Called by: apps/xbuilder/pages/course-editor/index.vue#entryQueryRet (useQuery callback),
    * apps/xbuilder/pages/tutorials/course-playground.vue#entryQueryRet (useQuery callback).
    */
   static async load(course: PlaygroundCourse) {
     const project = new TutorialProject()
-    // `getFiles` turns the universal-URL map into lazy `File` records; nothing is downloaded until read.
-    await project.load({ metadata: course, files: getFiles(course.content) })
+    try {
+      // `getFiles` turns the universal-URL map into lazy `File` records; nothing is downloaded until read.
+      await project.load({ metadata: course, files: getFiles(course.content) })
+    } catch (error) {
+      // The caller never gets this instance, so nobody else can release the SPX project it built.
+      project.project.dispose()
+      throw error
+    }
     return project
   }
 

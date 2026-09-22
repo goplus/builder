@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick, watch } from 'vue'
 
 import type { TutorialProjectMetadata } from './project'
 import { fromConfig, fromText, toConfig, toText, type Files } from '@/models/common/file'
+import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { mainCourseFilePath } from './course'
 import { TutorialProject } from './project'
@@ -39,6 +40,17 @@ async function loadProject() {
 }
 
 describe('TutorialProject', () => {
+  it('releases the SPX project it built when the course cannot be loaded', async () => {
+    const dispose = vi.spyOn(SpxProject.prototype, 'dispose')
+    // Content with no records at all: `loadFiles` rejects, and the caller never gets the instance to release.
+    const course = { ...makeMetadata(), content: {} } as unknown as Parameters<typeof TutorialProject.load>[0]
+
+    await expect(TutorialProject.load(course)).rejects.toThrow()
+
+    expect(dispose).toHaveBeenCalled()
+    dispose.mockRestore()
+  })
+
   it('loads course metadata, code, project and videos', async () => {
     const tutorial = await loadProject()
 
