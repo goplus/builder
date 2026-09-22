@@ -23,7 +23,7 @@
     v-show="isPreviewMode"
     id="project-code-pane"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
-    class="relative min-w-0 flex flex-[1_1_0] flex-col overflow-visible!"
+    class="relative min-h-0 min-w-0 flex flex-[1_1_0] flex-col overflow-visible!"
     :style="{ userSelect: isConsoleResizing ? 'none' : undefined }"
   >
     <div class="min-h-0 flex flex-[1_1_0] flex-col">
