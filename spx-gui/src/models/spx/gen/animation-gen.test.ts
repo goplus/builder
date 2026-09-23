@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { watch } from 'vue'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
-import { TaskStatus, TaskType, TaskEventType, TaskErrorReason, type TaskResult } from '@/apis/aigc'
+import { TaskStatus, TaskType } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { makeSpxProject } from '../common/test'
 import { mockFile, sndConfig, sndFiles } from '../../common/test'
@@ -501,101 +500,81 @@ describe('AnimationGen', () => {
     expect(loadedGen.finishState.result?.duration).toBe(1)
   })
 
-  it('uses a retained local image as the processed animation reference frame', async () => {
+  it('uses a local image directly as the animation reference', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
-    const defaultCostume = new Costume('default', mockFile('default.png'))
-    sprite.addCostume(defaultCostume)
-    project.addSprite(sprite)
-    const gen = new AnimationGen(i18n, sprite, project, { settings: { description: 'Local ref animation' } })
-
+    const costume = new Costume('default', mockFile('default.png'))
+    sprite.addCostume(costume)
+    const gen = new AnimationGen(i18n, sprite, project, { settings: { name: 'walk' } })
     const localFile = mockFile('local_character.png')
     gen.setReferenceImage(localFile)
-    gen.setReferenceCostume(defaultCostume.id)
+    gen.setReferenceCostume(costume.id)
     expect(gen.referenceImage).toBe(localFile)
     gen.setReferenceImageSelection({ type: 'local-image' })
 
     await gen.generateVideo()
-    const [referenceTask, videoTask] = [...aigcMock.tasks.values()]
-    expect(referenceTask.task.type).toBe(TaskType.RemoveBackground)
-    expect(referenceTask.params).toEqual({
-      imageUrl:
-        'kodo://mock-bucket/local_character.png?imageMogr2/thumbnail/512x512/gravity/Center/background/bm9uZQ==/extent/512x512/format/png'
-    })
-    const removedImageUrl = (referenceTask.result as TaskResult<TaskType.RemoveBackground>).imageUrl
-    const referenceImageTaskId = referenceTask.task.id
+    const [videoTask] = [...aigcMock.tasks.values()]
+    expect(aigcMock.tasks.size).toBe(1)
     expect(videoTask.task.type).toBe(TaskType.GenerateAnimationVideo)
     expect(videoTask.params).toMatchObject({
-      settings: {
-        referenceFrameUrl: `${removedImageUrl}?imageView2/1/w/512/h/512/format/png/colors/256`
-      }
+      settings: { referenceFrameUrl: 'kodo://mock-bucket/local_character.png' }
     })
-    expect(gen.getTaskIds()).toEqual([referenceImageTaskId, videoTask.task.id])
+    expect(gen.getTaskIds()).toEqual([videoTask.task.id])
 
     const [rawConfig, rawFiles] = gen.export()
-    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = AnimationGen.load(i18n, sprite, project, config, files)
-    expect(loadedGen.referenceImage?.name).toBe(localFile.name)
-    expect(loadedGen.referenceImageSelection).toEqual({ type: 'local-image' })
-    expect(loadedGen.getTaskIds()).toEqual([referenceImageTaskId, videoTask.task.id])
-  })
-
-  it.each([
-    ['replace', TaskType.RemoveBackground],
-    ['remove', TaskType.RemoveBackground],
-    ['select costume', TaskType.RemoveBackground],
-    ['replace', TaskType.GenerateAnimationVideo]
-  ] as const)('invalidates running tasks on %s during %s', async (change, taskType) => {
-    let resume!: () => void
-    const paused = new Promise<void>((resolve) => {
-      resume = resolve
-    })
-    aigcMock.registerTaskHandler(taskType, async function* (_task, _params, defaultHandler) {
-      await paused
-      yield* defaultHandler()
-    })
-    const project = makeSpxProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const costume = new Costume('default', mockFile())
-    sprite.addCostume(costume)
-    const gen = new AnimationGen(i18n, sprite, project, {
-      settings: { name: 'walk' },
-      referenceImage: mockFile('reference.png')
-    })
-    const pending = gen.generateVideo().catch((error) => error)
-    await vi.waitFor(() => expect([...aigcMock.tasks.values()].some(({ task }) => task.type === taskType)).toBe(true))
-    if (change === 'select costume') gen.setReferenceCostume(costume.id)
-    else gen.setReferenceImage(change === 'remove' ? null : mockFile('replacement.png'))
-    const [config, files] = gen.export()
-    expect(config.referenceImageTaskSerialized).toBeUndefined()
-    expect(config.generateVideoTaskSerialized).toBeUndefined()
-    const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
-    resume()
-    expect(await pending).toBeInstanceOf(Error)
-    await flushPromises()
-    expect(loaded.generateVideoState.status).toBe('initial')
-    expect(gen.video).toBeNull()
-    expect([...aigcMock.tasks.values()].at(-1)?.task.status).toBe(TaskStatus.Cancelled)
-    expect(aigcMock.tasks.size).toBe(taskType === TaskType.RemoveBackground ? 1 : 2)
-    await gen.generateVideo()
-    const videoTask = [...aigcMock.tasks.values()].at(-1)!
-    expect(videoTask.task.type).toBe(TaskType.GenerateAnimationVideo)
-    if (change === 'replace') {
-      const removalTask = [...aigcMock.tasks.values()].at(-2)!
-      expect(removalTask.params).toEqual({
-        imageUrl:
-          'kodo://mock-bucket/replacement.png?imageMogr2/thumbnail/512x512/gravity/Center/background/bm9uZQ==/extent/512x512/format/png'
-      })
-    } else {
-      expect(videoTask.params).toMatchObject({
-        settings: { referenceFrameUrl: `kodo://mock-bucket/${costume.img.name}` }
-      })
-    }
+    const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(rawConfig), sndFiles(rawFiles))
+    expect(loaded.referenceImage?.name).toBe(localFile.name)
+    expect(loaded.referenceImageSelection).toEqual({ type: 'local-image' })
+    expect(loaded.getTaskIds()).toEqual([videoTask.task.id])
     gen.dispose()
     loaded.dispose()
   })
 
-  it('invalidates reference preparation while uploading', async () => {
+  it.each(['replace', 'remove', 'select costume'] as const)(
+    'invalidates a running video task when the reference is %s',
+    async (change) => {
+      let resume!: () => void
+      const paused = new Promise<void>((resolve) => {
+        resume = resolve
+      })
+      aigcMock.registerTaskHandler(TaskType.GenerateAnimationVideo, async function* (_task, _params, defaultHandler) {
+        await paused
+        yield* defaultHandler()
+      })
+      const project = makeSpxProject()
+      const sprite = Sprite.create('TestSprite', '')
+      const costume = new Costume('default', mockFile('default.png'))
+      sprite.addCostume(costume)
+      const gen = new AnimationGen(i18n, sprite, project, {
+        settings: { name: 'walk' },
+        referenceImage: mockFile('reference.png')
+      })
+      const pending = gen.generateVideo().catch((error) => error)
+      await vi.waitFor(() => expect(aigcMock.tasks.size).toBe(1))
+      if (change === 'select costume') gen.setReferenceCostume(costume.id)
+      else gen.setReferenceImage(change === 'remove' ? null : mockFile('replacement.png'))
+      const [config, files] = gen.export()
+      expect(config.generateVideoTaskSerialized).toBeUndefined()
+      const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+      resume()
+      expect(await pending).toBeInstanceOf(Error)
+      expect(gen.video).toBeNull()
+      expect([...aigcMock.tasks.values()][0].task.status).toBe(TaskStatus.Cancelled)
+      expect(loaded.generateVideoState.status).toBe('initial')
+      await gen.generateVideo()
+      const videoTask = [...aigcMock.tasks.values()].at(-1)!
+      expect(videoTask.params).toMatchObject({
+        settings: {
+          referenceFrameUrl:
+            change === 'replace' ? 'kodo://mock-bucket/replacement.png' : 'kodo://mock-bucket/default.png'
+        }
+      })
+      gen.dispose()
+      loaded.dispose()
+    }
+  )
+
+  it('does not start video generation after the reference changes during upload', async () => {
     let resume!: () => void
     const paused = new Promise<void>((resolve) => {
       resume = resolve
@@ -613,195 +592,7 @@ describe('AnimationGen', () => {
     resume()
     expect(await pending).toBeInstanceOf(Error)
     expect(aigcMock.tasks.size).toBe(0)
-    expect(gen.export()[0].referenceImageTaskSerialized).toBeUndefined()
     gen.dispose()
-  })
-
-  it('clears completed reference tasks only when the reference changes', async () => {
-    const file = mockFile('reference.png')
-    const gen = new AnimationGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject(), {
-      referenceImage: file
-    })
-    await gen.generateVideo()
-    gen.setReferenceImage(file)
-    gen.setReferenceImageSelection({ type: 'local-image' })
-    expect(gen.export()[0].referenceImageTaskSerialized?.data?.status).toBe(TaskStatus.Completed)
-    gen.setReferenceImage(mockFile('replacement.png'))
-    expect(gen.export()[0].referenceImageTaskSerialized).toBeUndefined()
-    gen.dispose()
-  })
-
-  it('resumes reference preparation without another removal task', async () => {
-    const project = makeSpxProject()
-    const sprite = Sprite.create('TestSprite', '')
-    let resume!: () => void
-    const paused = new Promise<void>((resolve) => {
-      resume = resolve
-    })
-    aigcMock.registerTaskHandler(TaskType.RemoveBackground, async function* (_task, _params, defaultHandler) {
-      await paused
-      yield* defaultHandler()
-    })
-    const gen = new AnimationGen(i18n, sprite, project, {
-      settings: { name: 'walk' },
-      referenceImage: mockFile('reference.png')
-    })
-    const taskSaved = vi.fn()
-    const stopWatching = watch(() => gen.export()[0].referenceImageTaskSerialized?.data?.id, taskSaved)
-    const pending = gen.generateVideo().catch((error) => error)
-    await flushPromises()
-    expect(gen.generateVideoState.status).toBe('running')
-    const [rawConfig, rawFiles] = gen.export()
-    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const referenceTaskId = config.referenceImageTaskSerialized?.data?.id
-    expect(referenceTaskId).toBeDefined()
-    expect(taskSaved.mock.calls.at(-1)?.[0]).toBe(referenceTaskId)
-    stopWatching()
-    expect(config.referenceImageTaskSerialized?.data?.status).toBe(TaskStatus.Pending)
-    gen.dispose()
-    expect(aigcMock.tasks.get(referenceTaskId!)?.task.status).not.toBe(TaskStatus.Cancelled)
-
-    const loaded = AnimationGen.load(i18n, sprite, project, config, files)
-    expect(loaded.generateVideoState.status).toBe('running')
-    resume()
-    await pending
-    await vi.waitFor(() => expect(loaded.generateVideoState.status).toBe('finished'))
-    const tasks = [...aigcMock.tasks.values()]
-    expect(tasks.map(({ task }) => task.type)).toEqual([TaskType.RemoveBackground, TaskType.GenerateAnimationVideo])
-    expect(loaded.getTaskIds()).toEqual(tasks.map(({ task }) => task.id))
-    loaded.dispose()
-  })
-
-  it('cancels reference preprocessing without starting or restoring video generation', async () => {
-    let resume!: () => void
-    const paused = new Promise<void>((resolve) => {
-      resume = resolve
-    })
-    aigcMock.registerTaskHandler(TaskType.RemoveBackground, async function* (_task, _params, defaultHandler) {
-      await paused
-      yield* defaultHandler()
-    })
-    const project = makeSpxProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const gen = new AnimationGen(i18n, sprite, project, {
-      settings: { name: 'walk' },
-      referenceImage: mockFile('reference.png')
-    })
-    const pending = gen.generateVideo().catch((error) => error)
-    await flushPromises()
-    await gen.cancel()
-    resume()
-    expect(await pending).toBeInstanceOf(Error)
-    const [config, files] = gen.export()
-    const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
-    await flushPromises()
-    expect(loaded.generateVideoState.status).toBe('initial')
-    expect(aigcMock.tasks.size).toBe(1)
-    expect([...aigcMock.tasks.values()][0].task.status).toBe(TaskStatus.Cancelled)
-    gen.dispose()
-    loaded.dispose()
-  })
-
-  it('disconnects a restored reference task before the server finishes cancelling', async () => {
-    let resume!: () => void
-    const paused = new Promise<void>((resolve) => {
-      resume = resolve
-    })
-    aigcMock.registerTaskHandler(TaskType.RemoveBackground, async function* (_task, _params, defaultHandler) {
-      await paused
-      yield* defaultHandler()
-    })
-    const project = makeSpxProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const gen = new AnimationGen(i18n, sprite, project, {
-      settings: { name: 'walk' },
-      referenceImage: mockFile('reference.png')
-    })
-    const pending = gen.generateVideo().catch((error) => error)
-    await flushPromises()
-    const [rawConfig, rawFiles] = gen.export()
-    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    gen.dispose()
-    await pending
-    const loaded = AnimationGen.load(i18n, sprite, project, config, files)
-    await flushPromises()
-    const [referenceTask] = [...aigcMock.tasks.values()]
-    expect(referenceTask.subscribers.size).toBe(1)
-
-    let finishCancellation!: () => void
-    const cancelling = new Promise<void>((resolve) => {
-      finishCancellation = resolve
-    })
-    vi.mocked(aigcMock.cancelTask).mockImplementationOnce(async (taskId) => {
-      await cancelling
-      return aigcMock.getTask(taskId)
-    })
-    const cancellation = loaded.cancel()
-    await flushPromises()
-    expect(referenceTask.subscribers.size).toBe(0)
-    expect(loaded.generateVideoState.status).toBe('failed')
-    finishCancellation()
-    await cancellation
-    resume()
-    await flushPromises()
-    expect(aigcMock.tasks.size).toBe(1)
-    loaded.dispose()
-  })
-
-  it.each([null, TaskStatus.Cancelling, TaskStatus.Cancelled, TaskStatus.Failed])(
-    'does not restore or serialize a reference task with status %s',
-    async (status) => {
-      const project = makeSpxProject()
-      const sprite = Sprite.create('TestSprite', '')
-      const gen = new AnimationGen(i18n, sprite, project, {
-        settings: { name: 'walk' },
-        referenceImage: mockFile('reference.png')
-      })
-      await gen.generateVideo()
-      const [rawConfig, rawFiles] = gen.export()
-      const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-      delete config.generateVideoTaskSerialized
-      delete config.generateVideoPhaseSerialized
-      delete config.videoPath
-      if (status == null) config.referenceImageTaskSerialized!.data = null
-      else config.referenceImageTaskSerialized!.data!.status = status
-      const subscriptions = vi.mocked(aigcMock.subscribeTaskEvents).mock.calls.length
-      const loaded = AnimationGen.load(i18n, sprite, project, config, files)
-      await flushPromises()
-      expect(loaded.generateVideoState.status).toBe('initial')
-      expect(loaded.export()[0].referenceImageTaskSerialized).toBeUndefined()
-      expect(vi.mocked(aigcMock.subscribeTaskEvents).mock.calls).toHaveLength(subscriptions)
-      expect(aigcMock.tasks.size).toBe(2)
-      gen.dispose()
-      loaded.dispose()
-    }
-  )
-
-  it('preserves completed reference tasks when video generation fails', async () => {
-    aigcMock.registerTaskHandler(TaskType.GenerateAnimationVideo, async function* () {
-      yield {
-        type: TaskEventType.Failed,
-        data: { error: { reason: TaskErrorReason.GenerationFailed, message: 'Video generation failed' } }
-      }
-    })
-    const project = makeSpxProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const gen = new AnimationGen(i18n, sprite, project, {
-      settings: { name: 'walk' },
-      referenceImage: mockFile('reference.png')
-    })
-    await expect(gen.generateVideo()).rejects.toThrow('Video generation failed')
-    const [rawConfig, rawFiles] = gen.export()
-    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    expect(config.referenceImageTaskSerialized?.data?.status).toBe(TaskStatus.Completed)
-    const loaded = AnimationGen.load(i18n, sprite, project, config, files)
-    await flushPromises()
-    expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
-    expect(loaded.export()[0].referenceImageTaskSerialized).toEqual(config.referenceImageTaskSerialized)
-    expect(loaded.generateVideoState.status).toBe('initial')
-    expect(aigcMock.tasks.size).toBe(2)
-    gen.dispose()
-    loaded.dispose()
   })
 
   it.each(['missing-path', 'missing-file', 'unsupported-file'])(
@@ -828,51 +619,4 @@ describe('AnimationGen', () => {
       loaded.dispose()
     }
   )
-
-  it('does not resume reference preparation when the saved local image is missing', async () => {
-    const project = makeSpxProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const gen = new AnimationGen(i18n, sprite, project, {
-      settings: { name: 'walk' },
-      referenceImage: mockFile('reference.png')
-    })
-    await gen.generateVideo()
-    const [rawConfig, rawFiles] = gen.export()
-    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    delete config.generateVideoTaskSerialized
-    delete config.generateVideoPhaseSerialized
-    delete config.videoPath
-    delete files[config.referenceImagePath!]
-    const loaded = AnimationGen.load(i18n, sprite, project, config, files)
-    await flushPromises()
-    expect(loaded.generateVideoState.status).toBe('initial')
-    expect(aigcMock.tasks.size).toBe(2)
-    gen.dispose()
-    loaded.dispose()
-  })
-
-  it('records a restored reference URL formatting failure', async () => {
-    const project = makeSpxProject()
-    const sprite = Sprite.create('TestSprite', '')
-    const gen = new AnimationGen(i18n, sprite, project, {
-      settings: { name: 'walk' },
-      referenceImage: mockFile('reference.png')
-    })
-    await gen.generateVideo()
-    const [rawConfig, rawFiles] = gen.export()
-    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    delete config.generateVideoTaskSerialized
-    delete config.generateVideoPhaseSerialized
-    delete config.videoPath
-    const referenceTask = config.referenceImageTaskSerialized?.data
-    expect(referenceTask?.status).toBe(TaskStatus.Completed)
-    if (referenceTask?.result != null) referenceTask.result.imageUrl = 'https://example.com/reference.png'
-    const loaded = AnimationGen.load(i18n, sprite, project, config, files)
-    await flushPromises()
-    expect(loaded.generateVideoState.status).toBe('failed')
-    expect(loaded.generateVideoState.error).toBeInstanceOf(Error)
-    expect(aigcMock.tasks.size).toBe(2)
-    gen.dispose()
-    loaded.dispose()
-  })
 })

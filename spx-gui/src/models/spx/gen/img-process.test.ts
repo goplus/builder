@@ -3,7 +3,7 @@ import { setupAigcMock } from './aigc-mock' // Keep before `@/apis/aigc` so its 
 import { TaskType } from '@/apis/aigc'
 import * as cloudHelpers from '@/models/common/cloud'
 import { mockFile } from '../../common/test'
-import { removeImageBackground, toCostumeReferenceImageUrl, toSquareReferenceImageUrl } from './img-process'
+import { removeImageBackground } from './img-process'
 
 const aigcMock = setupAigcMock()
 
@@ -19,26 +19,6 @@ describe('img-process', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
-
-  it('applies the generated-costume FOP to a background-removed image', () => {
-    expect(toCostumeReferenceImageUrl('kodo://bucket/path/reference.png')).toBe(
-      'kodo://bucket/path/reference.png?imageView2/1/w/512/h/512/format/png/colors/256'
-    )
-  })
-
-  it('fits a local reference into a transparent square without cropping', () => {
-    expect(toSquareReferenceImageUrl('kodo://bucket/path/reference.png')).toBe(
-      'kodo://bucket/path/reference.png?imageMogr2/thumbnail/512x512/gravity/Center/background/bm9uZQ==/extent/512x512/format/png'
-    )
-  })
-
-  it.each(['https://example.com/reference.png', 'kodo://bucket/reference.png?imageView2/0/w/100'])(
-    'rejects a non-raw Kodo URL: %s',
-    (url) => {
-      expect(() => toCostumeReferenceImageUrl(url)).toThrow('unprocessed Kodo image URL expected')
-      expect(() => toSquareReferenceImageUrl(url)).toThrow('unprocessed Kodo image URL expected')
-    }
-  )
 
   it('removes the background and returns the task ID', async () => {
     vi.spyOn(cloudHelpers, 'saveFile').mockResolvedValue('kodo://mock-bucket/test.png')

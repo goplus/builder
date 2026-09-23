@@ -1,7 +1,6 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
-import { Disposable, mergeSignals, promiseForSignal } from '@/utils/disposable'
-import { Cancelled } from '@/utils/exception'
+import { Disposable, promiseForSignal } from '@/utils/disposable'
 import type { Prettify } from '@/utils/types'
 import type { I18n } from '@/utils/i18n'
 import { encodePathSegment, extname } from '@/utils/path'
@@ -60,7 +59,6 @@ export class BackdropGen extends Disposable {
   private enrichPhase: Phase<BackdropSettings>
   private generateTask: Task<TaskType.GenerateBackdrop> | null
   private generatePhase: Phase<File[]>
-  private generateCtrl: AbortController | null = null
 
   constructor(i18n: I18n, project: SpxProject, inits: BackdropGenInits = {}) {
     super()
@@ -134,29 +132,20 @@ export class BackdropGen extends Disposable {
   }
   async genImages() {
     this.setImageIndex(null)
-    this.generateCtrl?.abort(new Cancelled('backdrop generation cancelled'))
     this.generateTask?.tryCancel()
     this.generateTask?.dispose()
-    this.generateTask = null
-    const ctrl = new AbortController()
-    this.generateCtrl = ctrl
-    const signal = mergeSignals(this.getSignal(), ctrl.signal)
-    try {
-      return await this.generatePhase.run(async (reporter) => {
-        signal.throwIfAborted()
-        const referenceImageUrl = this.referenceImage == null ? null : await saveFile(this.referenceImage, signal)
-        signal.throwIfAborted()
-        const task = new Task(TaskType.GenerateBackdrop)
-        task.disposeOnSignal(signal)
-        this.generateTask = task
-        await task.start({ settings: { ...this.settings, referenceImageUrl }, n: 4 })
-        signal.throwIfAborted()
-        const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
-        return imageUrls.map((url) => createFileWithUniversalUrl(url))
-      })
-    } finally {
-      if (this.generateCtrl === ctrl) this.generateCtrl = null
-    }
+    const task = new Task(TaskType.GenerateBackdrop)
+    task.disposeOnSignal(this.getSignal())
+    this.generateTask = task
+    const signal = task.getSignal()
+    return this.generatePhase.run(async (reporter) => {
+      const referenceImageUrl = this.referenceImage == null ? null : await saveFile(this.referenceImage, signal)
+      signal.throwIfAborted()
+      await task.start({ settings: { ...this.settings, referenceImageUrl }, n: 4 })
+      signal.throwIfAborted()
+      const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
+      return imageUrls.map((url) => createFileWithUniversalUrl(url))
+    })
   }
 
   referenceImage: File | null = null
@@ -226,8 +215,10 @@ export class BackdropGen extends Disposable {
    * - No exception will be thrown even if the cancellation requests fail.
    */
   cancel() {
-    this.generateCtrl?.abort(new Cancelled('backdrop generation cancelled'))
-    return this.generateTask?.tryCancel()
+    const task = this.generateTask
+    if (this.generatePhase.state.status === 'running') this.generateTask = null
+    task?.dispose()
+    return task?.tryCancel()
   }
 
   export(): Files {

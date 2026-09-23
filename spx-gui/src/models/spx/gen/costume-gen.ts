@@ -2,8 +2,7 @@ import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { encodePathSegment, extname } from '@/utils/path'
-import { Disposable, mergeSignals, promiseForSignal } from '@/utils/disposable'
-import { Cancelled } from '@/utils/exception'
+import { Disposable, promiseForSignal } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { ArtStyle, Perspective } from '@/apis/common'
 import {
@@ -93,7 +92,6 @@ export class CostumeGen extends Disposable {
   private enrichPhase: Phase<CostumeSettings>
   private generateTask: Task<TaskType.GenerateCostume> | null
   private generatePhase: Phase<File>
-  private generateCtrl: AbortController | null = null
   private finishPhase: Phase<Costume>
 
   constructor(i18n: I18n, parent: Sprite | SpriteGen, project: SpxProject, inits: CostumeGenInits = {}) {
@@ -206,38 +204,28 @@ export class CostumeGen extends Disposable {
   }
   async generate() {
     this.setImage(null)
-    this.generateCtrl?.abort(new Cancelled('costume generation cancelled'))
     this.generateTask?.tryCancel()
     this.generateTask?.dispose()
-    this.generateTask = null
-    const ctrl = new AbortController()
-    this.generateCtrl = ctrl
-    const signal = mergeSignals(this.getSignal(), ctrl.signal)
-    try {
-      const image = await this.generatePhase.run(async (reporter) => {
-        signal.throwIfAborted()
-        let referenceImageUrl: string | null = null
-        if (this.referenceImageSelection?.type === 'local-image') {
-          if (this.referenceImage == null) throw new Error('reference image expected')
-          referenceImageUrl = await saveFile(this.referenceImage, signal)
-        } else if (this.referenceCostume != null) {
-          referenceImageUrl = await saveFile(this.referenceCostume.img, signal)
-        }
-        signal.throwIfAborted()
-        const settings = { ...this.settings, referenceImageUrl }
-        this.generateTask = new Task(TaskType.GenerateCostume)
-        const task = this.generateTask
-        task.disposeOnSignal(signal)
-        await task.start({ settings, n: 1 })
-        signal.throwIfAborted()
-        const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
-        if (imageUrls.length < 1) throw new Error('no costume image generated')
-        return createFileWithUniversalUrl(imageUrls[0])
-      })
-      this.setImage(image)
-    } finally {
-      if (this.generateCtrl === ctrl) this.generateCtrl = null
-    }
+    const task = new Task(TaskType.GenerateCostume)
+    task.disposeOnSignal(this.getSignal())
+    this.generateTask = task
+    const signal = task.getSignal()
+    const image = await this.generatePhase.run(async (reporter) => {
+      let referenceImageUrl: string | null = null
+      if (this.referenceImageSelection?.type === 'local-image') {
+        if (this.referenceImage == null) throw new Error('reference image expected')
+        referenceImageUrl = await saveFile(this.referenceImage, signal)
+      } else if (this.referenceCostume != null) {
+        referenceImageUrl = await saveFile(this.referenceCostume.img, signal)
+      }
+      signal.throwIfAborted()
+      await task.start({ settings: { ...this.settings, referenceImageUrl }, n: 1 })
+      signal.throwIfAborted()
+      const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
+      if (imageUrls.length < 1) throw new Error('no costume image generated')
+      return createFileWithUniversalUrl(imageUrls[0])
+    })
+    this.setImage(image)
   }
   async restoreGenerateTask() {
     const task = this.generateTask
@@ -277,8 +265,10 @@ export class CostumeGen extends Disposable {
    * - No exception will be thrown even if the cancellation requests fail.
    */
   cancel() {
-    this.generateCtrl?.abort(new Cancelled('costume generation cancelled'))
-    return this.generateTask?.tryCancel()
+    const task = this.generateTask
+    if (this.generateState.status === 'running') this.generateTask = null
+    task?.dispose()
+    return task?.tryCancel()
   }
 
   export(basePath = 'gen/assets'): [RawCostumeGenConfig, Files] {

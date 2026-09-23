@@ -1,14 +1,10 @@
 import { extname, stripExt } from '@/utils/path'
 import { getMimeFromExt } from '@/utils/file'
 import { toJpeg } from '@/utils/img'
-import { parseUniversalUrl, stringifyKodoUrl, UniversalUrlScheme } from '@/utils/universal-url'
 import { taskRemoveBackgroundSupportedImgExts, TaskType } from '@/apis/aigc'
 import { createFileWithUniversalUrl, saveFile } from '@/models/common/cloud'
 import { fromBlob, toNativeFile, type File } from '@/models/common/file'
 import { Task } from './common'
-
-// The animation backend recognizes this exact FOP and normalizes the image to generated-costume dimensions.
-const costumeReferenceFop = 'imageView2/1/w/512/h/512/format/png/colors/256'
 
 /**
  * Adapt image file to fit AIGC remove background.
@@ -46,21 +42,4 @@ export async function removeImageBackground(inputFile: File, signal?: AbortSigna
     signal?.removeEventListener('abort', cancelTask)
     task.dispose()
   }
-}
-
-/** Apply the Kodo image processing that the backend attaches to generated costumes. */
-export function toCostumeReferenceImageUrl(url: string) {
-  return withImageFop(url, costumeReferenceFop)
-}
-
-export function toSquareReferenceImageUrl(url: string) {
-  return withImageFop(url, 'imageMogr2/thumbnail/512x512/gravity/Center/background/bm9uZQ==/extent/512x512/format/png')
-}
-
-function withImageFop(url: string, fop: string) {
-  const parsed = parseUniversalUrl(url)
-  if (parsed.scheme !== UniversalUrlScheme.Kodo || parsed.key.includes('?')) {
-    throw new Error('unprocessed Kodo image URL expected')
-  }
-  return stringifyKodoUrl(parsed.bucket, `${parsed.key}?${fop}`)
 }
