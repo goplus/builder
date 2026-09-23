@@ -49,6 +49,31 @@ describe('useQuery', () => {
     expect(ret.data.value).toBe('second')
   })
 
+  it('aborts the failed query signal and allows refetch', async () => {
+    const error = new Error('failed')
+    const signals: AbortSignal[] = []
+    const cleanup = vi.fn()
+    const ret = withSetup(() =>
+      useQuery(async (ctx) => {
+        signals.push(ctx.signal)
+        ctx.signal.addEventListener('abort', cleanup, { once: true })
+        if (signals.length === 1) throw error
+        return 'ok'
+      })
+    )
+
+    await flushPromises()
+    expect(ret.error.value).toBe(error)
+    expect(signals[0].aborted).toBe(true)
+    expect(cleanup).toHaveBeenCalledTimes(1)
+
+    ret.refetch()
+    await flushPromises()
+    expect(ret.data.value).toBe('ok')
+    expect(ret.error.value).toBe(null)
+    expect(signals[1].aborted).toBe(false)
+  })
+
   it('should discard stale results when queryFn ignores abort signal', async () => {
     // This test simulates the race condition where queryFn ignores the abort signal
     let resolveFirst: (value: string) => void
@@ -97,8 +122,10 @@ describe('useQuery', () => {
   it('should discard stale errors when queryFn ignores abort signal', async () => {
     let rejectFirst: (error: Error) => void
     let resolveSecond: (value: string) => void
+    const signals: AbortSignal[] = []
 
-    const queryFn = vi.fn(async () => {
+    const queryFn = vi.fn(async (ctx: QueryContext) => {
+      signals.push(ctx.signal)
       return new Promise<string>((resolve, reject) => {
         if (queryFn.mock.calls.length === 1) {
           rejectFirst = reject
@@ -136,6 +163,7 @@ describe('useQuery', () => {
     expect(ret.data.value).toBe('success')
     expect(ret.error.value).toBe(null)
     expect(ret.isLoading.value).toBe(false)
+    expect(signals[1].aborted).toBe(false)
   })
 
   it('should handle multiple rapid refetches correctly', async () => {
