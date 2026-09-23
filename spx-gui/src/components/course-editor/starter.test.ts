@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { fromConfig, toText, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { configFilePath, TutorialProject } from '@/models/tutorial/project'
-import { buildCourseTree, getNodeLabel } from './course-tree'
 import { createStarterCourseFiles } from './starter'
 
 /** The smallest SPX project that loads, standing in for the default project the app builds. */
@@ -23,14 +22,9 @@ describe('createStarterCourseFiles', () => {
       inEditorPath: '',
       copilotContext: ''
     })
-    // The tree of a new course: its program, the two resource groups, and the embedded project. Nothing is
-    // unclaimed, so there is no heading for records the course does not use.
-    expect(buildCourseTree(project).map((node) => getNodeLabel(node).en)).toEqual([
-      'Course program',
-      'Videos',
-      'Pictures',
-      'Project'
-    ])
+    // Everything a new course carries has a part of the editor to show it: none of it is kept unseen.
+    expect(project.extraFiles.size).toBe(0)
+    expect(project.resources).toEqual([])
   })
 
   it('starts the author with a program that only uses calls a course can rely on', async () => {

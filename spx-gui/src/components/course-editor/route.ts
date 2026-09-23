@@ -1,12 +1,12 @@
 /**
- * The Course Editor route carries an in-Course-Editor path naming the open node of the course explorer. Nodes
- * are addressed by the path of the record(s) they stand for: the empty path is the course itself, `main_course.gox`
- * the course program, `assets/videos/<name>` a video package, and so on. Under the embedded project's root the
- * tail is the SPX Project Editor's own in-editor path (mode and selection). Naming follows "in<Editor>Path":
+ * The Course Editor route carries an in-Course-Editor path naming what is open. A view is addressed by the path of
+ * what it edits (`course-views.ts`): the empty path is the course itself, `main_course.gox` the course program,
+ * `assets/videos` the videos, and so on. Under the embedded project's root the tail is the SPX Project Editor's own
+ * in-editor path (mode and selection). Naming follows "in<Editor>Path":
  * every editor has one, and the Course Editor's path embeds the Project Editor's when the project is open.
  *
  * Everything in this module is pure string/array manipulation with no Vue or vue-router dependency, so it is
- * shared by the tree projection (`course-tree.ts`), the upload policy (`upload.ts`) and the components alike.
+ * shared by the view model (`course-views.ts`), the upload policy (`upload.ts`) and the components alike.
  */
 
 /**
@@ -18,12 +18,12 @@
  *
  * Called by:
  * - components/course-editor/CourseEditor.vue#activePath (reads the param of the current route)
- * - components/course-editor/CourseEditor.vue#openPath (writes the param when navigating to a node)
+ * - components/course-editor/CourseEditor.vue#openPath (writes the param when navigating)
  * - components/course-editor/project/SpxProjectEditorHost.vue#isProjectDocRoute
  * - components/course-editor/project/SpxProjectEditorHost.vue#projectInEditorPath
  * - components/course-editor/project/SpxProjectEditorHost.vue#translateRoute (drops it from the translated route)
  * - components/course-editor/project/SpxProjectEditorHost.vue#editorRouter.push (prefixes the project root)
- * - components/course-editor/project/SpxProjectEditorHost.vue#watch(props.active) (restores the last route)
+ * - components/course-editor/project/SpxProjectEditorHost.vue#restoreProjectRoute (restores the last route)
  */
 export const inCourseEditorPathParam = 'inCourseEditorPath'
 
@@ -41,7 +41,7 @@ export const inCourseEditorPathParam = 'inCourseEditorPath'
  * - components/course-editor/project/SpxProjectEditorHost.vue#isProjectDocRoute
  * - components/course-editor/project/SpxProjectEditorHost.vue#projectInEditorPath
  * - components/course-editor/project/SpxProjectEditorHost.vue#editorRouter.push (on the target's `inEditorPath`)
- * - components/course-editor/project/SpxProjectEditorHost.vue#watch(props.active) (on the remembered route)
+ * - components/course-editor/project/SpxProjectEditorHost.vue#restoreProjectRoute (on the remembered route)
  */
 export function paramToSegments(param: unknown): string[] {
   // An absent param (a route without a tail) is the empty path.
@@ -60,9 +60,8 @@ export function paramToSegments(param: unknown): string[] {
  * @returns The non-empty segments in order; `[]` for the root.
  *
  * Called by:
- * - components/course-editor/course-tree.ts#resolveCourseDoc (the tail under the project root)
+ * - components/course-editor/course-views.ts#resolveView (the tail under the project root)
  * - components/course-editor/CourseEditor.vue#openPath (the segments written into the route param)
- * - components/course-editor/upload.ts#getUploadResourceKind
  */
 export function pathToSegments(path: string): string[] {
   return path.split('/').filter((segment) => segment !== '')
@@ -91,31 +90,10 @@ export function segmentsToPath(segments: string[]): string {
  * @returns `true` when `path` is `dir` itself or a descendant of it.
  *
  * Called by:
- * - components/course-editor/course-tree.ts#findNode (decides whether to descend into a folder)
- * - components/course-editor/course-tree.ts#resolveCourseDoc (paths under the project root open the project)
- * - components/course-editor/course-tree.ts#isNodeDirty (whether a changed record belongs to a node)
- * - components/course-editor/upload.ts#validateUploadDir (project root and `assets` checks)
- * - components/course-editor/CourseExplorerNode.vue#active (the project node covers everything under its root)
+ * - components/course-editor/course-views.ts#resolveView (which view a path belongs to)
+ * - components/course-editor/course-views.ts#getDirtyViews (which view a changed record belongs to)
+ * - components/course-editor/upload.ts#validateResourceUpload (the project root check)
  */
 export function isPathWithin(path: string, dir: string) {
   return dir === '' || path === dir || path.startsWith(dir + '/')
-}
-
-/**
- * The directory part of `path`; the empty string for a top-level path. Kept local (there is no `dirname` in
- * `@/utils/path`) because the tree's root is the empty string, which is exactly what a top-level path maps to.
- *
- * @param path - A normalized path such as `assets/videos/step-to`.
- * @returns Everything before the last slash, or `''` when there is none.
- *
- * Called by:
- * - components/course-editor/course-tree.ts#buildCourseTree (placing each node under its parent folder)
- * - components/course-editor/course-tree.ts#nearestExistingPath (walking up to an existing ancestor)
- * - components/course-editor/CourseEditor.vue#proposedUploadDir (the folder of the open file/resource)
- * - components/course-editor/CourseEditor.vue#template (the `@deleted` handler of `CourseFileDoc`)
- */
-export function dirname(path: string) {
-  // No slash means the record sits directly under the course root.
-  const slash = path.lastIndexOf('/')
-  return slash < 0 ? '' : path.slice(0, slash)
 }

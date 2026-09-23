@@ -37,23 +37,21 @@ export type RawResourceConfig = {
 /**
  * Directory of course-local resources addressed by the course program.
  * Consumed by: models/tutorial/resource.ts#getResourceKindDir, models/tutorial/resource.ts#Resource.loadAll,
- * components/course-editor/upload.ts#getUploadResourceKind and #validateUploadDir (path checks and messages).
+ * models/tutorial/project.ts#isReservedDirectory.
  */
 export const assetsDir = 'assets'
 /**
  * The resource kind the course program can address today (`showVideo`).
- * Consumed by: components/course-editor/course-tree.ts#buildCourseTree (always shows the videos folder),
- * components/course-editor/CourseResourceDoc.vue#preview and #template (video preview),
- * components/course-editor/CourseExplorerNode.vue#hint (labels),
- * components/course-editor/CourseFolderDoc.vue#isVideosFolder,
- * components/course-editor/upload.ts#validateUploadDir (example path in messages).
+ * Consumed by: components/course-editor/course-views.ts#viewResourceKinds (the videos view),
+ * components/course-editor/CourseResourceCard.vue and CourseResourcePreviewModal.vue (a video, not a picture),
+ * models/tutorial/project.ts#isReservedDirectory.
  */
 export const videosKind = 'videos'
 /**
  * The resource kind for pictures. No course-program call addresses one yet, but the author can already keep them
- * with the course, so the explorer always offers the group and the upload modal offers the type.
- * Consumed by: components/course-editor/course-tree.ts#buildCourseTree (always shows the images group),
- * components/course-editor/upload.ts#uploadTypes, models/tutorial/project.ts#isReservedDirectory.
+ * with the course, so the editor always offers a page for them.
+ * Consumed by: components/course-editor/course-views.ts#viewResourceKinds (the pictures view),
+ * models/tutorial/project.ts#isReservedDirectory.
  */
 export const imagesKind = 'images'
 /** File name of the manifest inside every resource package directory. */
@@ -71,9 +69,8 @@ const resourceNameSuffixRoom = 6
  * @param kind - Resource kind, i.e. the directory name under `assets/`.
  * @returns `assets/<kind>`.
  * Called by: models/tutorial/resource.ts#getResourceAssetPath, models/tutorial/resource.ts#Resource.loadAll,
- * components/course-editor/course-tree.ts#buildCourseTree,
- * components/course-editor/CourseResourceDoc.vue#handleDelete, components/course-editor/CourseExplorerNode.vue#hint,
- * components/course-editor/CourseFolderDoc.vue#isVideosFolder.
+ * models/tutorial/project.ts#isReservedDirectory, components/course-editor/course-views.ts#getViewPath,
+ * components/course-editor/upload.ts#validateResourceUpload.
  */
 export function getResourceKindDir(kind: string) {
   return join(assetsDir, kind)
@@ -119,9 +116,8 @@ export type ResourceExportLoadOptions = {
  * - The instance is reactive (`reactive(this)`).
  *
  * Consumed by: models/tutorial/project.ts#TutorialProject (owns the `resources` list),
- * components/course-editor/upload.ts#addUploadedFiles (creates packages from uploads),
- * components/course-editor/CourseResourceDoc.vue (rename, replace payload text, delete),
- * components/course-editor/course-tree.ts#buildCourseTree (one tree node per package),
+ * components/course-editor/upload.ts#addUploadedResources (creates packages from uploads),
+ * components/course-editor/CourseResourceGrid.vue and CourseResourceCard.vue (list, preview, rename, delete),
  * models/tutorial/resource.test.ts and models/tutorial/project.test.ts.
  */
 export class Resource {
@@ -152,7 +148,7 @@ export class Resource {
    * @throws Error carrying the English validation message when `name` is invalid or already taken in `_project`.
    * @returns void; changes `name`, hence `assetPath` and every path written by `export()`.
    * Called by: models/tutorial/project.ts#TutorialProject.prepareAddResource,
-   * components/course-editor/CourseResourceDoc.vue#handleRename, models/tutorial/resource.test.ts.
+   * components/course-editor/CourseResourceGrid.vue#handleRename, models/tutorial/resource.test.ts.
    */
   setName(name: string) {
     // The whole layout is re-validated: the new name also moves the payload path (see `getPayloadFileName`).
@@ -172,7 +168,7 @@ export class Resource {
    * @param file - The new payload `File`.
    * @throws Error carrying the English validation message when the new payload path would shadow another record.
    * @returns void; only `file` changes.
-   * Called by: components/course-editor/CourseResourceDoc.vue#handleTextChange.
+   * Called by: models/tutorial/resource.test.ts, models/tutorial/project.test.ts.
    */
   setFile(file: File) {
     const error = validateResourceLayout(
@@ -201,7 +197,7 @@ export class Resource {
    * @param inits - Optional `id` and `extraFiles` (see `ResourceInits`).
    * @throws Error when `kind` is blank or contains `/`.
    * @returns A reactive `Resource`.
-   * Called by: models/tutorial/resource.ts#Resource.load, components/course-editor/upload.ts#addUploadedFiles,
+   * Called by: models/tutorial/resource.ts#Resource.load, components/course-editor/upload.ts#addUploadedResources,
    * models/tutorial/resource.test.ts, models/tutorial/project.test.ts.
    */
   constructor(kind: string, name: string, file: File, inits?: ResourceInits) {
@@ -222,8 +218,7 @@ export class Resource {
    * Directory of this package (`assets/<kind>/<name>`), without trailing slash.
    * @returns The package directory path.
    * Called by: models/tutorial/resource.ts#Resource.export, models/tutorial/project.ts#isClaimedPath,
-   * components/course-editor/upload.ts#addUploadedFiles, components/course-editor/course-tree.ts#buildCourseTree,
-   * components/course-editor/CourseResourceDoc.vue#handleRename.
+   * components/course-editor/upload.test.ts.
    */
   get assetPath() {
     return getResourceAssetPath(this.kind, this.name)
@@ -316,7 +311,7 @@ export class Resource {
  * Checks that `kind` can be a directory name under `assets/`.
  * @param kind - Resource kind to validate.
  * @returns A bilingual message describing the problem, or null when `kind` is valid.
- * Called by: models/tutorial/resource.ts#Resource.constructor, components/course-editor/upload.ts#addUploadedFiles.
+ * Called by: models/tutorial/resource.ts#Resource.constructor, components/course-editor/upload.ts#addUploadedResources.
  */
 export function validateResourceKind(kind: string): LocaleMessage | null {
   // The kind becomes the directory under `assets/`, so it has to be a usable path segment as well.
@@ -484,7 +479,7 @@ export function validateResourceName(
  * @returns A bilingual message describing the first problem found, or null when the layout is valid.
  * Called by: models/tutorial/resource.ts#Resource.setName, models/tutorial/resource.ts#Resource.setFile,
  * models/tutorial/resource.ts#ensureValidResourceName, models/tutorial/resource.ts#getResourceName,
- * components/course-editor/CourseResourceDoc.vue#handleRename, models/tutorial/resource.test.ts.
+ * components/course-editor/CourseResourceGrid.vue#handleRename, models/tutorial/resource.test.ts.
  */
 export function validateResourceLayout(layout: ResourceLayout, project: TutorialProject | null): LocaleMessage | null {
   return runLayoutRules([...nameRules, ...payloadRules], layout, project)

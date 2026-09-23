@@ -82,8 +82,7 @@ vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
 }))
 vi.mock('./CourseTextDoc.vue', () => ({ default: { name: 'CourseTextDoc', render: () => null } }))
 vi.mock('./CourseConfigDoc.vue', () => ({ default: { name: 'CourseConfigDoc', render: () => null } }))
-vi.mock('./CourseResourceDoc.vue', () => ({ default: { name: 'CourseResourceDoc', render: () => null } }))
-vi.mock('./CourseFileDoc.vue', () => ({ default: { name: 'CourseFileDoc', render: () => null } }))
+vi.mock('./CourseResourceGrid.vue', () => ({ default: { name: 'CourseResourceGrid', render: () => null } }))
 
 const seriesID = '40'
 
@@ -186,7 +185,7 @@ async function mountPreviewing(course: PlaygroundCourse, series: CourseSeries, o
       plugins: [createI18n({ lang: 'en' }), router, VueQueryPlugin],
       directives: { radar: {} },
       stubs: {
-        CourseExplorer: true,
+        CourseActivityBar: true,
         NavbarWrapper: true,
         EditorHistoryButtons: true,
         EditorModeSwitch: true,

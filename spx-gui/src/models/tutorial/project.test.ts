@@ -353,7 +353,7 @@ describe('TutorialProject', () => {
       const tutorial = new TutorialProject()
       await tutorial.load({ metadata: makeMetadata(), files })
 
-      // Nothing is under `assets` yet, but the explorer shows `assets/videos` and uploads go there.
+      // Nothing is under `assets` yet, but the editor has a page for videos and uploads go to `assets/videos`.
       expect(() => tutorial.setExtraFile('assets', fromText('assets', 'x'))).toThrow('a folder the course keeps')
       expect(() => tutorial.setExtraFile('assets/videos', fromText('videos', 'x'))).toThrow('a folder the course keeps')
     })

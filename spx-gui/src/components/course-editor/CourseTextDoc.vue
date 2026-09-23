@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Purpose: A controlled plain-text editor (Monaco) for one text record of the course: the course program
- * (`main_course.gox`), a text resource payload, or an unused text file. It loads Monaco for the current UI
+ * Purpose: A controlled plain-text editor (Monaco) for a text record of the course, which today means the course
+ * program (`main_course.gox`). It loads Monaco for the current UI
  * language, shows loading/error states meanwhile, and keeps the editor content and the `text` prop in sync in
  * both directions: local edits are emitted, external changes to `text` are pushed into the editor. No language
  * server is attached yet (see the note on `editorOptions`).
@@ -13,13 +13,9 @@
  *
  * Emits:
  * - `update:text(text)`: the author edited the content; carries the full new text. Listened by
- *   `components/course-editor/CourseEditor.vue#template` (`project.mainCourse.setCode(text)`),
- *   `components/course-editor/CourseResourceDoc.vue#template` (`handleTextChange`) and
- *   `components/course-editor/CourseFileDoc.vue#template` (`handleTextChange`).
+ *   `components/course-editor/CourseEditor.vue#template` (`project.mainCourse.setCode(text)`).
  *
- * Used by: `components/course-editor/CourseEditor.vue#template` (course program),
- * `components/course-editor/CourseResourceDoc.vue#template` (text payload of a resource package),
- * `components/course-editor/CourseFileDoc.vue#template` (unused text record).
+ * Used by: `components/course-editor/CourseEditor.vue#template` (the program view).
  *
  * Uses: `xgo-code-editor/ui/MonacoEditor.vue` (creates the editor instance and emits `init`),
  * `xgo-code-editor#loadMonaco`, `useQuery`, `useI18n`, UIDetailedLoading, UIError, and the highlighter

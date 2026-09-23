@@ -6,7 +6,7 @@ import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
 import type { ICopilotContextProvider } from '@/components/copilot/copilot'
 import { skillTutorialCourse } from '@/components/copilot/skills/built-in'
-import { buildCourseTree, resolveCourseDoc, type CourseDoc } from '../course-tree'
+import type { OpenView } from '../course-views'
 import { useCourseEditorCopilot } from '.'
 
 // The registered providers, captured from the fake Copilot the composable injects.
@@ -60,17 +60,16 @@ function preloadedSkills() {
 }
 
 /** Run the composable in its own scope, as a mounted `CourseEditor` would. */
-function runInScope(project: TutorialProject, doc: () => CourseDoc, isPreviewing: () => boolean = () => false) {
+function runInScope(project: TutorialProject, open: () => OpenView, isPreviewing: () => boolean = () => false) {
   const scope = effectScope()
-  scope.run(() => useCourseEditorCopilot(() => project, doc, isPreviewing))
+  scope.run(() => useCourseEditorCopilot(() => project, open, isPreviewing))
   return scope
 }
 
 describe('useCourseEditorCopilot', () => {
   it('tells the assistant which course this is, what its program says and what is open', async () => {
     const project = await loadProject()
-    const tree = buildCourseTree(project)
-    const scope = runInScope(project, () => resolveCourseDoc(tree, 'project', mainCourseFilePath))
+    const scope = runInScope(project, () => ({ view: 'program' }))
 
     const context = currentContext()
     expect(context).toContain('Move Lita to Mushroom')
@@ -80,14 +79,14 @@ describe('useCourseEditorCopilot', () => {
     expect(context).toContain('step-to (videos)')
     expect(context).not.toContain('assets/videos/step-to')
     expect(context).toContain('showVideo')
-    expect(context).toContain('The author has "Course program" open.')
+    expect(context).toContain('The author is editing the course program.')
 
     scope.stop()
   })
 
   it('follows the working copy rather than a snapshot taken at registration', async () => {
     const project = await loadProject()
-    const scope = runInScope(project, () => ({ type: 'root' }))
+    const scope = runInScope(project, () => ({ view: 'course' }))
 
     expect(currentContext()).toContain('looking at the course settings')
 
@@ -103,7 +102,7 @@ describe('useCourseEditorCopilot', () => {
 
   it('starts the assistant with the course-authoring skill', async () => {
     const project = await loadProject()
-    const scope = runInScope(project, () => ({ type: 'root' }))
+    const scope = runInScope(project, () => ({ view: 'course' }))
 
     expect(preloadedSkills()).toEqual([skillTutorialCourse])
 
@@ -112,7 +111,7 @@ describe('useCourseEditorCopilot', () => {
 
   it('takes its context away when the editor goes', async () => {
     const project = await loadProject()
-    const scope = runInScope(project, () => ({ type: 'root' }))
+    const scope = runInScope(project, () => ({ view: 'course' }))
     expect(providers.length).toBeGreaterThan(0)
 
     scope.stop()
@@ -127,7 +126,7 @@ describe('useCourseEditorCopilot', () => {
     const previewing = { value: true }
     const scope = runInScope(
       project,
-      () => ({ type: 'root' }),
+      () => ({ view: 'course' }),
       () => previewing.value
     )
 

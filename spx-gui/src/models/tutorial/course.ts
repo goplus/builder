@@ -7,11 +7,11 @@ import { DerivedFile } from './derived-file'
 /**
  * Path (relative to the Tutorial-project root) of the course author's main program. The course format fixes this
  * name: the playground runner feeds this record to the XGo executor and the Course Editor edits it as text.
- * Consumed by: models/tutorial/project.ts#isClaimedPath, components/course-editor/upload.ts#validateUploadPath,
- * components/course-editor/course-tree.ts#buildCourseTree, components/course-editor/CourseEditor.vue#template,
+ * Consumed by: models/tutorial/project.ts#isClaimedPath, components/course-editor/course-views.ts (the program
+ * view lives at this path), components/course-editor/starter.ts,
  * components/tutorials/playground/runner.ts#PlaygroundCourseRunner.start, and the tests
  * models/tutorial/project.test.ts, components/course-editor/upload.test.ts,
- * components/course-editor/course-tree.test.ts, components/tutorials/playground/runner.test.ts.
+ * components/course-editor/course-views.test.ts, components/tutorials/playground/runner.test.ts.
  */
 export const mainCourseFilePath = 'main_course.gox'
 
@@ -30,7 +30,6 @@ export const mainCourseFilePath = 'main_course.gox'
  *
  * Consumed by: models/tutorial/project.ts#TutorialProject (owns one as `mainCourse`),
  * components/course-editor/CourseEditor.vue#template (binds `code` to `CourseTextDoc`),
- * components/course-editor/course-tree.ts#buildCourseTree (exports the record for the tree),
  * components/tutorials/playground/runner.ts#PlaygroundCourseRunner.start (runs `code`),
  * components/tutorials/playground/runner.test.ts (sets `code` directly).
  */
@@ -57,7 +56,7 @@ export class Course {
    * @param code - The new program text.
    * @returns void; sets `code`, which makes the next `export()` produce a new `File` instance.
    * Called by: components/course-editor/CourseEditor.vue#template (`@update:text` of `CourseTextDoc`),
-   * models/tutorial/project.test.ts, components/course-editor/course-tree.test.ts.
+   * models/tutorial/project.test.ts, components/course-editor/course-views.test.ts.
    */
   setCode(code: string) {
     this.code = code
@@ -81,8 +80,7 @@ export class Course {
   /**
    * Produces the program record.
    * @returns A `Files` map holding only `main_course.gox`; the `File` instance is reused while `code` is unchanged.
-   * Called by: models/tutorial/project.ts#TutorialProject.exportFiles,
-   * components/course-editor/course-tree.ts#buildCourseTree.
+   * Called by: models/tutorial/project.ts#TutorialProject.exportFiles.
    */
   export(): Files {
     return { [mainCourseFilePath]: this.codeFile.get(this.code) }

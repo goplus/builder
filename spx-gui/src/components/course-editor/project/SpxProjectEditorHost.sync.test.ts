@@ -18,7 +18,8 @@ import SpxProjectEditorHost from './SpxProjectEditorHost.vue'
 // because the round trip they cover runs through it: shown a route, the state selects what the route names and
 // then navigates to wherever its selection says -- so a route the host lets through can overtake a navigation of
 // the host's own. Only the editor's UI and Monaco are stood in for. The host is mounted the way the Course Editor
-// mounts it, open exactly while the route is inside the project, so tests only move the route, as the explorer does.
+// mounts it, open exactly while the route is inside the project, so tests only move the route, as the activity bar
+// does.
 vi.mock('@/components/editor/ProjectEditor.vue', () => ({ default: { name: 'ProjectEditor', render: () => null } }))
 vi.mock('@/components/editor/EditorContextProvider.vue', () => ({
   default: {
@@ -53,7 +54,7 @@ vi.mock('@/stores/user', async (importOriginal) => {
 
 const rootPath = 'project'
 
-/** The Course Editor path of a course-tree node, e.g. `('project', 'stage')`. */
+/** A Course Editor path, e.g. `('project', 'stage')`. */
 function coursePath(...segments: string[]) {
   return getCourseEditorRoute('40', '2338', segments)
 }
@@ -76,7 +77,7 @@ async function mountInCourseEditor(at: string) {
   await router.isReady()
   const project = makeProject()
   const state = shallowRef<EditorState | null>(null)
-  // What `CourseEditor.vue` does: the project is open while the explorer's path is inside its root.
+  // What `CourseEditor.vue` does: the project is open while the route's path is inside its root.
   const CourseEditorStandIn = defineComponent({
     setup() {
       const route = useRoute()
@@ -104,7 +105,7 @@ async function mountInCourseEditor(at: string) {
   return { wrapper, router, state }
 }
 
-/** Where the explorer takes the author: `router.push`, then whatever the host and the state do about it. */
+/** Where the activity bar takes the author: `router.push`, then whatever the host and the state do about it. */
 async function go(router: Awaited<ReturnType<typeof mountInCourseEditor>>['router'], path: string) {
   await router.push(path)
   await flushPromises()
@@ -122,7 +123,7 @@ describe('SpxProjectEditorHost with a real editor state', () => {
     expect(state.value?.selected.type).toBe('stage')
 
     await go(router, coursePath('main_course.gox'))
-    // The explorer's project node addresses the project itself, with no path of its own.
+    // The activity bar's project button addresses the project itself, with no path of its own.
     await go(router, coursePath('project'))
 
     expect(router.currentRoute.value.fullPath).toBe(left)
@@ -144,7 +145,7 @@ describe('SpxProjectEditorHost with a real editor state', () => {
     wrapper.unmount()
   })
 
-  it('stays where it is when the project node is clicked while the project is already open', async () => {
+  it('stays where it is when the project button is clicked while the project is already open', async () => {
     const { wrapper, router, state } = await mountInCourseEditor(coursePath('project', 'sprites', 'Lita', 'code'))
     await go(router, coursePath('project', 'stage'))
     const at = router.currentRoute.value.fullPath

@@ -6,7 +6,7 @@ import type { File } from '@/models/common/file'
  * the source text is unchanged, so exports of unchanged state keep their identity and can be compared cheaply.
  *
  * Why it exists: the Course Editor decides whether a record is "unsaved" by comparing the `File` instances of two
- * exports (see `components/course-editor/course-tree.ts#getChangedPaths`). Without this memo every export would
+ * exports (see `components/course-editor/course-views.ts#getChangedPaths`). Without this memo every export would
  * create fresh `File` objects for generated records, and every generated record would look changed all the time.
  *
  * Invariants:

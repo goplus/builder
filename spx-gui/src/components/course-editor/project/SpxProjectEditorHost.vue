@@ -5,7 +5,7 @@
  *
  * Route vocabulary used throughout this file:
  * - "Course Editor route": the `course-editor` route record in `apps/xbuilder/router.ts`, whose repeatable
- *   `:inCourseEditorPath*` param names the open node of the course explorer (see `../route.ts`).
+ *   `:inCourseEditorPath*` param names what the Course Editor has open (see `../route.ts`).
  * - "in-editor path" / `inEditorPath`: the Project Editor's own route param (edit mode + selection) that
  *   `EditorState.syncWithRouter` reads and writes through an `IRouter` (see `components/editor/editor-state.ts`).
  * - "root segments": `props.rootPath` split into segments, i.e. the embedded learner project's directory inside
@@ -72,7 +72,7 @@ function startsWithSegments(segments: string[], prefix: string[]) {
 
 /**
  * Whether the route opens the project: its in-Course-Editor path is the project root or lies under it.
- * Mirrors `resolveCourseDoc` in `../course-tree.ts` returning `{ type: 'project' }`, i.e. the condition under which
+ * Mirrors `resolveView` in `../course-views.ts` opening the project view, i.e. the condition under which
  * `CourseEditor.vue` passes `active: true` to this host.
  * @param route - The live Course Editor route (or a snapshot of it).
  * @param rootSegments - The project root split into segments (`rootSegments` computed in `<script setup>`).
@@ -277,7 +277,7 @@ function setState(next: EditorState | null) {
  * 1. While inactive, and on the bare project root, `editorRouter.currentRoute` returns this frozen snapshot, so
  *    the watcher installed by `EditorState.syncWithRouter` never fires with a foreign or empty route and the
  *    selection stays put.
- * 2. When the project is sent to its bare root (the explorer's project node), `restoreProjectRoute` puts its
+ * 2. When the project is sent to its bare root (the activity bar's project button), `restoreProjectRoute` puts its
  *    path back.
  * Written by `rememberProjectRoute` and reset by `initialize()`; read by `editorRouter.currentRoute` and
  * `restoreProjectRoute`.
@@ -304,8 +304,8 @@ function rememberProjectRoute() {
  */
 let restoring: Promise<unknown> | null = null
 /**
- * Send the bare project root back to where the project was left. The bare root is what the explorer's project node
- * addresses -- the project itself, with no path of its own -- and it is transient: the state is never shown it (see
+ * Send the bare project root back to where the project was left. The bare root is what the activity bar's project
+ * button opens -- the project itself, with no path of its own -- and it is transient: the state is never shown it (see
  * `editorRouter.currentRoute`), and it is replaced here with the remembered route, that route's query and hash
  * included. A route with a path of its own (a deep link, history) wins, and a route outside the project is not ours.
  * @returns The replacement's promise (or the one already in flight), or nothing when there is nothing to restore.
@@ -336,7 +336,7 @@ function restoreProjectRoute() {
 }
 /**
  * Follow the route while the project is open: record every project route the author navigates to, and send the
- * bare root, which the explorer's project node addresses, back to where the project was. Before the first sync
+ * bare root, which the activity bar's project button opens, back to where the project was. Before the first sync
  * there is nowhere to send it back to; `startRouteSync` opens the initial path instead.
  * @returns Nothing; side effects are `rememberProjectRoute` and `restoreProjectRoute`.
  * Called by: Vue (watch on `router.currentRoute`)
@@ -559,7 +559,7 @@ watch(
       await startRouteSync(editorState)
       return
     }
-    // Reopened without a path (e.g. from the explorer): return to where the editor was.
+    // Reopened without a path (e.g. from the activity bar): return to where the editor was.
     await restoreProjectRoute()
   }
 )
