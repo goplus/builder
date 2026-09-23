@@ -10,6 +10,12 @@ wget https://go.dev/dl/go1.25.8.linux-amd64.tar.gz
 tar -C /usr/local -xzf ./go1.25.8.linux-amd64.tar.gz
 /usr/local/go/bin/go version
 
+# Install Rust for the Resvg WebAssembly renderer.
+wget -qO- https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.88.0
+source "${CARGO_HOME:-$HOME/.cargo}/env"
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version 0.2.126 --locked
+
 corepack enable
 # Vercel may select pnpm 9 by default, which ignores our required pnpm 11 setup.
 corepack install --global pnpm@11.9.0
