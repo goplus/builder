@@ -52,11 +52,6 @@ const emit = defineEmits<{
   enrich: []
 }>()
 
-defineSlots<{
-  extra(): unknown
-  submit(): unknown
-}>()
-
 const focus = ref(false)
 const enrichShow = computed(() => !ctx.readonly && focus.value && props.description.length > 0)
 

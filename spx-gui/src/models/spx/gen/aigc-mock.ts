@@ -442,7 +442,7 @@ export class MockAigcApis {
     switch (type) {
       case TaskType.RemoveBackground: {
         const p = params as TaskParams<TaskType.RemoveBackground>
-        return { imageUrl: this.url(`bg-removed-${this.sanitize(p.imageUrl.split('?')[0])}`) } as TaskResult<T>
+        return { imageUrl: this.url(`bg-removed-${this.sanitize(p.imageUrl)}`) } as TaskResult<T>
       }
       case TaskType.GenerateCostume: {
         const p = params as TaskParams<TaskType.GenerateCostume>

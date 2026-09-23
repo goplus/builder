@@ -140,9 +140,10 @@ export class AnimationGen extends Disposable {
 
   /** Get IDs for (completed) tasks. */
   getTaskIds() {
-    return [this.generateVideoTask, this.extractFramesTask].flatMap((task) =>
-      task?.data?.status === TaskStatus.Completed ? [task.data.id] : []
-    )
+    return [this.generateVideoTask, this.extractFramesTask]
+      .filter((t): t is Task<TaskType.GenerateAnimationVideo> | Task<TaskType.ExtractVideoFrames> => t != null)
+      .filter((t) => t.data?.status === TaskStatus.Completed)
+      .map((t) => t.data!.id)
   }
 
   get name() {
