@@ -180,19 +180,6 @@ const handleRemove = useMessageHandle(
         }}
       </UIButton>
     </header>
-    <!-- What the course program can do with what is on this page. -->
-    <p v-if="view === 'videos'" class="m-0 flex-none text-sm text-grey-700">
-      {{ $t({ en: 'The course program plays a video by its name, for example', zh: '课程程序按名字播放视频，例如' }) }}
-      <code>showVideo "step-to"</code>
-    </p>
-    <p v-else class="m-0 flex-none text-sm text-grey-700">
-      {{
-        $t({
-          en: 'Pictures are kept with the course. No course-program call uses them yet.',
-          zh: '图片随课程一起保存。目前还没有课程程序调用会用到它们。'
-        })
-      }}
-    </p>
     <UIEmpty v-if="resources.length === 0" class="m-auto" size="small">
       {{
         view === 'videos'
