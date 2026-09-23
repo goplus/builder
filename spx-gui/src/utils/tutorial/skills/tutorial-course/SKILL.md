@@ -56,14 +56,14 @@ the course's mistake; see goplus/builder#3419.
 
 ## Working in the Course Editor
 
-The explorer on the left shows the parts of the course, not its files: the course program, the resource groups,
-the embedded project, and, when the course carries any, the records the format gives no role to. Opening the
+The activity bar along the left edge switches between the five parts of the course: the course itself (its
+settings), the project, the videos, the pictures and the program. Files are never shown by path. Opening the
 project shows the full SPX editor; ask about that project with the spx-project skill instead of this one.
 
-- **Adding a resource**: "Add..." asks what is being added, and the type decides where it goes. The author never
-  types a path.
-- **Settings**: the course's own document edits the initial editor path and the Copilot instructions. The title
-  and the thumbnail belong to course management, not here.
+- **Adding a resource**: the videos and pictures pages each have their own add button, so what is being added
+  is never asked; the author only picks files. Each card's menu renames or deletes that resource.
+- **Settings**: the course page edits the initial editor path and the Copilot instructions. The title and the
+  thumbnail belong to course management, not here.
 - **Copilot instructions** (`copilotContext`) are for the _learner's_ Copilot during the course. They are not
   instructions for the assistant helping the author write the course.
 - **Preview** runs the unsaved working copy through the real learner-side lifecycle. It is the only way to see

@@ -37,9 +37,9 @@ resource's name, and that name is the whole address: `showVideo "step-to"` finds
 whatever its payload is called. The manifest points at the payload and carries an editor-managed id; the editor
 writes both, so a course program never reads a manifest and never needs a path.
 
-Adding a resource in the editor is a matter of saying what it is. The type decides the directory and the
-manifest; the name comes from the file and is made unique. Renaming a resource renames what the program
-addresses, so the program has to be updated with it.
+Adding a resource in the editor happens on the page of its kind, so the kind is never asked: the page decides the
+directory and the manifest, and the name comes from the file and is made unique. Renaming a resource renames what
+the program addresses, so the program has to be updated with it.
 
 Videos are the kind the program can play (`showVideo`). Pictures are kept with the course, and no call addresses
 them yet.
@@ -47,9 +47,9 @@ them yet.
 ## Records the course does not use
 
 A record that no part of the format claims is kept exactly as it is and saved with the course. That covers a
-file uploaded as "something else", a directory under `assets/` without a manifest, and anything a newer format
-version may add. The editor shows these together under one heading, by path, so nothing that will be saved is
-hidden; the course program cannot reach them.
+directory under `assets/` without a manifest, a resource kind other than videos and pictures, and anything a newer
+format version may add. The editor does not show these and does not create them, but it never drops them: saving
+writes them back unchanged. The course program cannot reach them.
 
 Records inside the embedded project belong to that project, and records inside a resource directory belong to
 that resource; neither shows up as a loose file.
