@@ -27,8 +27,6 @@ XBuilder 使用站内通知在产品内传递更新。各产品功能定义何�
 
 页面展示 Title、Body 和 CreatedAt。用户名、作品链接、附件和引用上下文都放在 Body 中，不为每种事件单独增加展示字段。
 
-Markdown 渲染应禁止可执行 HTML 和不安全的链接协议。链接和预览遵循所引用资源的访问权限。
-
 ### 消息 Message
 
 Message 发给某个 User。点赞、Remix、反馈回复等产品事件都可以产生 Message，具体的触发事件和内容由各功能定义。

@@ -27,8 +27,6 @@ A Notification contains:
 
 The page displays Title, Body and CreatedAt. User names, project links, attachments and quoted context belong in Body, without separate display fields for each kind of event.
 
-Markdown rendering must block executable HTML and unsafe link schemes. Links and previews follow the referenced resource's access rules.
-
 ### Message
 
 A Message is addressed to one User. Likes, remixes and feedback replies are examples of product events that may create Messages; each feature defines its own triggering events and content.
