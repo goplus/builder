@@ -926,63 +926,62 @@ onUnmounted(() => {
         </template>
       </NavbarWrapper>
     </header>
-    <!-- Body: the activity bar along the left edge (not while previewing), then the main area. -->
-    <div class="flex-[1_1_0] flex min-h-0">
+    <!-- Main area: a column while previewing (the playground fills it), otherwise a padded row of the activity
+         bar and the open view. The row has no padding on the left, so the activity bar meets the window's edge;
+         being in the same row, it stretches to the height of the view beside it. The project editor host at the
+         end is mounted in both cases. -->
+    <main class="flex-[1_1_0] flex" :class="isPreviewRoute ? 'flex-col' : 'gap-xl p-4 pt-2 pl-0'">
       <!-- Activity bar: one button per view; `select(view)` navigates via `openView`. -->
       <CourseActivityBar v-if="!isPreviewRoute" :open="open.view" :dirty-views="dirtyViews" @select="openView" />
-      <!-- Main area: a column while previewing (the playground fills it), otherwise a padded row holding the open
-           view. The project editor host at the end is mounted in both cases. -->
-      <main class="flex-[1_1_0] flex min-w-0" :class="isPreviewRoute ? 'flex-col' : 'gap-xl p-4 pt-2'">
-        <!-- Preview pane (`isPreviewRoute`): an error with retry, the playground once the snapshot is ready, or a
-             loading placeholder while `enterPreviewFromRoute` runs. -->
-        <template v-if="isPreviewRoute">
-          <UIError v-if="previewError != null" class="flex-1" :retry="retryPreview">
-            {{ previewError.message }}
-          </UIError>
-          <!-- The playground runs the snapshot project; `course-completed` and `failed` are handled above. -->
-          <CoursePlayground
-            v-else-if="preview != null"
-            :project="preview"
-            @course-completed="handlePreviewCompleted"
-            @failed="handlePreviewFailed"
-          />
-          <!-- No snapshot and no error yet: the preview is still being prepared. -->
-          <UIDetailedLoading v-else class="flex-1" :percentage="0">
-            <span>{{ $t({ en: 'Preparing preview...', zh: '准备预览中...' }) }}</span>
-          </UIDetailedLoading>
-        </template>
-        <!-- The open view, in a card; the project is not in here, its UI is the always-mounted host below. -->
-        <UICard v-else-if="open.view !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
-          <!-- The course: its settings, stored in `index.json`. -->
-          <CourseConfigDoc v-if="open.view === 'course'" :project="project" />
-          <!-- Videos or pictures: a grid of cards, and where they are added. Keyed so each page starts fresh. -->
-          <CourseResourceGrid
-            v-else-if="open.view === 'videos' || open.view === 'images'"
-            :key="open.view"
-            :project="project"
-            :view="open.view"
-          />
-          <!-- The course program (`main_course.gox`): a text editor bound directly to `project.mainCourse.code`. -->
-          <CourseTextDoc
-            v-else
-            :text="project.mainCourse.code"
-            language="xgo"
-            @update:text="(text) => project.mainCourse.setCode(text)"
-          />
-        </UICard>
-        <!-- Always mounted: the author's editor state outlives view switches and the preview. -->
-        <!-- The host renders the Project Editor UI only while `active` (editing route + project open) but keeps its
-             `EditorState` alive otherwise; it reports that state through `v-model:editor-state`, and it opens
-             `config.inEditorPath` the first time the project is shown without a path in the route. -->
-        <component
-          :is="projectEditorHost"
-          v-model:editor-state="editorState"
-          :project="project.project"
-          :root-path="config.project.root"
-          :initial-path="config.inEditorPath"
-          :active="!isPreviewRoute && open.view === 'project'"
+      <!-- Preview pane (`isPreviewRoute`): an error with retry, the playground once the snapshot is ready, or a
+           loading placeholder while `enterPreviewFromRoute` runs. -->
+      <template v-if="isPreviewRoute">
+        <UIError v-if="previewError != null" class="flex-1" :retry="retryPreview">
+          {{ previewError.message }}
+        </UIError>
+        <!-- The playground runs the snapshot project; `course-completed` and `failed` are handled above. -->
+        <CoursePlayground
+          v-else-if="preview != null"
+          :project="preview"
+          @course-completed="handlePreviewCompleted"
+          @failed="handlePreviewFailed"
         />
-      </main>
-    </div>
+        <!-- No snapshot and no error yet: the preview is still being prepared. -->
+        <UIDetailedLoading v-else class="flex-1" :percentage="0">
+          <span>{{ $t({ en: 'Preparing preview...', zh: '准备预览中...' }) }}</span>
+        </UIDetailedLoading>
+      </template>
+      <!-- The open view, in a card; the project is not in here, its UI is the always-mounted host below. -->
+      <UICard v-else-if="open.view !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
+        <!-- The course: its settings, stored in `index.json`. -->
+        <CourseConfigDoc v-if="open.view === 'course'" :project="project" />
+        <!-- Videos or pictures: a grid of cards, and where they are added. Keyed so each page starts fresh. -->
+        <CourseResourceGrid
+          v-else-if="open.view === 'videos' || open.view === 'images'"
+          :key="open.view"
+          :project="project"
+          :view="open.view"
+        />
+        <!-- The course program (`main_course.gox`): a text editor bound directly to `project.mainCourse.code`. -->
+        <CourseTextDoc
+          v-else
+          :text="project.mainCourse.code"
+          language="xgo"
+          @update:text="(text) => project.mainCourse.setCode(text)"
+        />
+      </UICard>
+      <!-- Always mounted: the author's editor state outlives view switches and the preview. -->
+      <!-- The host renders the Project Editor UI only while `active` (editing route + project open) but keeps its
+           `EditorState` alive otherwise; it reports that state through `v-model:editor-state`, and it opens
+           `config.inEditorPath` the first time the project is shown without a path in the route. -->
+      <component
+        :is="projectEditorHost"
+        v-model:editor-state="editorState"
+        :project="project.project"
+        :root-path="config.project.root"
+        :initial-path="config.inEditorPath"
+        :active="!isPreviewRoute && open.view === 'project'"
+      />
+    </main>
   </section>
 </template>
