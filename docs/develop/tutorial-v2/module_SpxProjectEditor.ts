@@ -5,6 +5,14 @@ export type SimpleModeInEditorRoute = `/simple/sprites/${string}`;
 
 /** Existing runtime owned by `EditorState`. */
 export interface Runtime {
+  /** Current SPX source location, emitted by ispx at DebugRef granularity. */
+  readonly currentLocation: {
+    textDocument: { uri: string };
+    range: {
+      start: { line: number; column: number };
+      end: { line: number; column: number };
+    };
+  } | null;
   /** Latest 500 outputs for UI rendering, updated on snapshot changes. */
   readonly outputSnapshot: readonly RuntimeOutput[];
   /**
@@ -17,6 +25,7 @@ export interface Runtime {
   on(event: "didAppendOutput", listener: (output: RuntimeOutput) => void): Disposer;
   /** Batched UI snapshot changes; clearing updates it immediately without appending. */
   on(event: "didChangeOutputSnapshot", listener: () => void): Disposer;
+  on(event: "didChangeLocation", listener: () => void): Disposer;
   on(event: "didExit", listener: (code: number) => void): Disposer;
 }
 

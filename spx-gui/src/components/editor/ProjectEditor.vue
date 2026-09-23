@@ -8,6 +8,7 @@
       <CodeEditorUI
         :code-file-path="selectedSprite.codeFilePath"
         :read-only="editorCtx.state.codeReadOnly"
+        :execution-line="executionLine"
         simple-mode
       />
       <div class="absolute right-3 bottom-4 z-10 flex items-center gap-4">
@@ -77,6 +78,7 @@ import { EditMode } from './editor-state'
 import MapEditor from './map-editor/MapEditor.vue'
 import { useSpxEditorCopilot } from './copilot'
 import { CodeEditorUI } from './spx-code-editor'
+import { getSimpleExecutionLine } from './simple-execution-line'
 
 withDefaults(
   defineProps<{
@@ -90,6 +92,9 @@ const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const mode = computed(() => editorCtx.state.selectedEditMode)
 const selectedSprite = computed(() => (selected.value.type === 'sprite' ? selected.value.sprite : null))
+const executionLine = computed(() =>
+  getSimpleExecutionLine(editorCtx.state.runtime.currentLocation, selectedSprite.value?.codeFilePath ?? null)
+)
 const simpleControlsAnchor = ref<HTMLElement | null>(null)
 
 useSpxEditorCopilot()
