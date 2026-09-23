@@ -82,6 +82,11 @@ import camera from './camera.svg?raw'
 import zoomIn from './zoom-in.svg?raw'
 import zoomOut from './zoom-out.svg?raw'
 import zoomReset from './zoom-reset.svg?raw'
+import graduationCap from './graduation-cap.svg?raw'
+import gamepad from './gamepad.svg?raw'
+import video from './video.svg?raw'
+import picture from './picture.svg?raw'
+import code from './code.svg?raw'
 import backdropTile from './backdrop-tile.svg?raw'
 import backdropScale from './backdrop-scale.svg?raw'
 import backdropOriginal from './backdrop-original.svg?raw'
@@ -164,7 +169,12 @@ const typeIconMap = {
   zoomReset,
   backdropTile,
   backdropScale,
-  backdropOriginal
+  backdropOriginal,
+  graduationCap,
+  gamepad,
+  video,
+  picture,
+  code
 }
 
 export type Type = keyof typeof typeIconMap
