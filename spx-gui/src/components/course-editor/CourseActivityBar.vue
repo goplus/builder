@@ -36,7 +36,7 @@ const emit = defineEmits<{
 <template>
   <nav
     v-radar="{ name: 'course-activity-bar', desc: 'Buttons that switch between the parts of the course' }"
-    class="flex w-14 flex-none flex-col border-r border-line bg-grey-100 py-2"
+    class="flex w-14 flex-none flex-col border-r border-dividing-line-2 bg-grey-100 py-2"
   >
     <UITooltip v-for="view in courseViews" :key="view" placement="right">
       <template #trigger>
