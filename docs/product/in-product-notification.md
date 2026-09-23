@@ -1,6 +1,16 @@
 # In-Product Notification
 
-XBuilder uses In-Product Notification to keep product updates available after users leave the original page. Each product feature defines when to send a Notification and what it contains.
+XBuilder uses In-Product Notification to deliver product updates inside XBuilder. Each product feature defines when to send a Notification and what it contains.
+
+## Background
+
+Some product operations finish after users leave the page where they started. Updates from other users or the platform can also arrive while they are away. Users need a place to find these updates when they return.
+
+## Goals
+
+* Users can find Messages addressed to them and Announcements sent to everyone.
+* Users can distinguish unread Notifications from those they have read.
+* Product features share a Notification List, content format and read behavior.
 
 ## Basic Concepts
 
