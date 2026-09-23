@@ -43,7 +43,7 @@ The Notification List contains the current user's Notifications, divided into Me
 
 ### Creating Notifications
 
-Product features create one Message per Recipient. Announcements go to the Users present at publication. New Notifications are unread.
+Product features create one Notification per Recipient and set its Category to Message or Announcement. For an Announcement, the Recipients are the Users present at publication. New Notifications are unread.
 
 ### Listing Notifications
 

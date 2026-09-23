@@ -43,7 +43,7 @@ Notification List 是当前用户收到的 Notification 集合，分为消息和
 
 ### 创建 Notification
 
-产品功能为每位 Recipient 各创建一条 Message。公告发给发布时已存在的用户。新收到的 Notification 为未读状态。
+产品功能为每位 Recipient 各创建一条 Notification，并将其 Category 设置为 Message 或 Announcement。公告的 Recipient 是发布时已存在的用户。新收到的 Notification 为未读状态。
 
 ### 列出通知
 
