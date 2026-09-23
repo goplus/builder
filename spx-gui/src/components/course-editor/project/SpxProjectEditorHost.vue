@@ -77,7 +77,7 @@ function startsWithSegments(segments: string[], prefix: string[]) {
  * @param route - The live Course Editor route (or a snapshot of it).
  * @param rootSegments - The project root split into segments (`rootSegments` computed in `<script setup>`).
  * @returns `true` when the route's `inCourseEditorPath` param starts with `rootSegments` (bare root included).
- * Called by: components/course-editor/project/SpxProjectEditorHost.vue#editorRouter.currentRoute
+ * Called by: components/course-editor/project/SpxProjectEditorHost.vue#restoreProjectRoute
  */
 function isProjectDocRoute(route: RouteSnapshot, rootSegments: string[]) {
   // Normalize the repeatable param (string, string[] or absent) to segments, then test the root prefix.
@@ -92,9 +92,10 @@ function isProjectDocRoute(route: RouteSnapshot, rootSegments: string[]) {
  * @returns The segments after the root, or `[]` when the route does not point into the project at all. Callers
  * cannot distinguish "bare root" from "not a project route" by this value alone; use `isProjectDocRoute` for that.
  * Called by: components/course-editor/project/SpxProjectEditorHost.vue#translateRoute,
- * components/course-editor/project/SpxProjectEditorHost.vue#watch(router.currentRoute),
+ * components/course-editor/project/SpxProjectEditorHost.vue#rememberProjectRoute,
+ * components/course-editor/project/SpxProjectEditorHost.vue#restoreProjectRoute,
  * components/course-editor/project/SpxProjectEditorHost.vue#openInitialPath,
- * components/course-editor/project/SpxProjectEditorHost.vue#watch(props.active)
+ * components/course-editor/project/SpxProjectEditorHost.vue#editorRouter.currentRoute
  */
 function projectInEditorPath(route: RouteSnapshot, rootSegments: string[]) {
   // Normalize the route param once so both the prefix test and the slice work on the same segment list.
@@ -113,7 +114,7 @@ function projectInEditorPath(route: RouteSnapshot, rootSegments: string[]) {
  * @param rootSegments - The project root split into segments.
  * @returns A fresh `RouteSnapshot` whose params have `inCourseEditorPath` removed and `inEditorPath` set to the tail
  * (`[]` when the route is not under the root). A new object on every call: callers that need stability store it.
- * Called by: components/course-editor/project/SpxProjectEditorHost.vue#watch(router.currentRoute),
+ * Called by: components/course-editor/project/SpxProjectEditorHost.vue#rememberProjectRoute,
  * components/course-editor/project/SpxProjectEditorHost.vue#editorRouter.currentRoute
  */
 function translateRoute(route: RouteSnapshot, rootSegments: string[]): RouteSnapshot {
@@ -273,11 +274,13 @@ function setState(next: EditorState | null) {
 /**
  * The last route (already translated to the Project Editor's shape) that really opened the project with a
  * non-empty in-editor path, or `null` if none was seen yet. It has two jobs:
- * 1. While inactive, `editorRouter.currentRoute` returns this frozen snapshot, so the watcher installed by
- *    `EditorState.syncWithRouter` never fires with a foreign route and the selection stays put.
- * 2. When the project is reopened on a bare root (explorer click), the `active` watcher restores its path.
- * Written by the `router.currentRoute` watcher below (only while active) and reset by `initialize()`; read by
- * `editorRouter.currentRoute` and the `active` watcher.
+ * 1. While inactive, and on the bare project root, `editorRouter.currentRoute` returns this frozen snapshot, so
+ *    the watcher installed by `EditorState.syncWithRouter` never fires with a foreign or empty route and the
+ *    selection stays put.
+ * 2. When the project is sent to its bare root (the explorer's project node), `restoreProjectRoute` puts its
+ *    path back.
+ * Written by `rememberProjectRoute` and reset by `initialize()`; read by `editorRouter.currentRoute` and
+ * `restoreProjectRoute`.
  */
 const lastProjectRoute = shallowRef<RouteSnapshot | null>(null)
 /**
@@ -295,14 +298,55 @@ function rememberProjectRoute() {
   lastProjectRoute.value = translateRoute(current, rootSegments.value)
 }
 /**
- * Record every project route the author navigates to while the project is open.
- * @returns Nothing; side effect is `rememberProjectRoute`.
+ * A replacement of the bare project root in flight, or null. Both watchers that restore the project's route can
+ * ask for one for the same navigation; the second finds this one and leaves the work to it.
+ * Written and read by `restoreProjectRoute`.
+ */
+let restoring: Promise<unknown> | null = null
+/**
+ * Send the bare project root back to where the project was left. The bare root is what the explorer's project node
+ * addresses -- the project itself, with no path of its own -- and it is transient: the state is never shown it (see
+ * `editorRouter.currentRoute`), and it is replaced here with the remembered route, that route's query and hash
+ * included. A route with a path of its own (a deep link, history) wins, and a route outside the project is not ours.
+ * @returns The replacement's promise (or the one already in flight), or nothing when there is nothing to restore.
+ * Called by: the `router.currentRoute` watcher below (sent to the bare root while the project is open), the
+ * `props.active` watcher (the project reopened on it).
+ */
+function restoreProjectRoute() {
+  if (restoring != null) return restoring
+  const last = lastProjectRoute.value
+  if (last == null) return
+  const current = router.currentRoute.value
+  if (!isProjectDocRoute(current, rootSegments.value)) return
+  if (projectInEditorPath(current, rootSegments.value).length > 0) return
+  const lastPath = paramToSegments(last.params.inEditorPath)
+  if (lastPath.length === 0) return
+  // `replace` (not push) so the transient bare root is not kept in history. Built directly on the app router (not
+  // `editorRouter.push`) to use `last`'s query/hash.
+  restoring = router
+    .replace({
+      params: { ...current.params, [inCourseEditorPathParam]: [...rootSegments.value, ...lastPath] },
+      query: last.query,
+      hash: last.hash
+    })
+    .finally(() => {
+      restoring = null
+    })
+  return restoring
+}
+/**
+ * Follow the route while the project is open: record every project route the author navigates to, and send the
+ * bare root, which the explorer's project node addresses, back to where the project was. Before the first sync
+ * there is nowhere to send it back to; `startRouteSync` opens the initial path instead.
+ * @returns Nothing; side effects are `rememberProjectRoute` and `restoreProjectRoute`.
  * Called by: Vue (watch on `router.currentRoute`)
  */
 watch(
   () => router.currentRoute.value,
   () => {
-    if (props.active) rememberProjectRoute()
+    if (!props.active) return
+    rememberProjectRoute()
+    if (routeSynced) void restoreProjectRoute()
   }
 )
 /**
@@ -314,20 +358,23 @@ watch(
 const editorRouter: IRouter = {
   /**
    * The route as seen by the Project Editor state.
-   * - Active and pointing into the project: the live route, translated (a new snapshot per route change, so the
-   *   state's watcher fires and `selectByRoute` follows the URL).
-   * - Otherwise: the frozen `lastProjectRoute` (same object every time, so the watcher stays silent) or, before any
-   *   project route was recorded, a translation of the current route (which then has an empty `inEditorPath`).
+   * - Active and naming a path inside the project: the live route, translated (a new snapshot per route change, so
+   *   the state's watcher fires and `selectByRoute` follows the URL).
+   * - Otherwise, including on the bare project root: the frozen `lastProjectRoute` (same object every time, so the
+   *   watcher stays silent) or, before any project route was recorded, a translation of the current route (which
+   *   then has an empty `inEditorPath`). The bare root is kept from the state because it is transient, about to be
+   *   replaced with that very route (`restoreProjectRoute`); shown an empty path, the state would select its default
+   *   and navigate there, overtaking the replacement.
    * @returns A `Ref<RouteSnapshot>` (computed) matching `IRouter.currentRoute`.
    * Called by: components/editor/editor-state.ts#EditorState.syncWithRouter (watch source),
    * components/editor/editor-state.ts#EditorState.updateRouter (reads `.value.params`/`.value.query`)
    */
   currentRoute: computed(() => {
     const current = router.currentRoute.value
-    // Live translation only while the project is open AND the route really addresses it (root or below).
-    if (props.active && isProjectDocRoute(current, rootSegments.value))
+    // Live translation only while the project is open AND the route names a path inside it.
+    if (props.active && projectInEditorPath(current, rootSegments.value).length > 0)
       return translateRoute(current, rootSegments.value)
-    // Detached: keep presenting the last project route so no route change reaches the state.
+    // Detached, or on the transient bare root: keep presenting the last project route.
     return lastProjectRoute.value ?? translateRoute(current, rootSegments.value)
   }),
   /**
@@ -513,20 +560,7 @@ watch(
       return
     }
     // Reopened without a path (e.g. from the explorer): return to where the editor was.
-    const last = lastProjectRoute.value
-    if (last == null) return
-    const lastPath = paramToSegments(last.params.inEditorPath)
-    // Only when the URL is the bare root and a real path is remembered; a deep link with its own tail wins.
-    if (projectInEditorPath(router.currentRoute.value, rootSegments.value).length === 0 && lastPath.length > 0) {
-      const current = router.currentRoute.value
-      // `replace` (not push) so the transient bare root is not kept in history; restore the remembered query/hash
-      // along with the path. Built directly on the app router (not `editorRouter.push`) to use `last`'s query/hash.
-      await router.replace({
-        params: { ...current.params, [inCourseEditorPathParam]: [...rootSegments.value, ...lastPath] },
-        query: last.query,
-        hash: last.hash
-      })
-    }
+    await restoreProjectRoute()
   }
 )
 
