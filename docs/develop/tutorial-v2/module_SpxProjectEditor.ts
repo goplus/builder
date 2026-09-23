@@ -25,26 +25,22 @@ export type SpxProjectEditorContext = {
   state: EditorState;
 };
 
-/**
- * Relevant API of the existing generic `CodeEditor` class. The last three
- * methods are the additions needed by Tutorial Class Framework and Simple Mode.
- */
+/** Relevant API of the existing generic `CodeEditor` class. */
 export interface CodeEditor {
   /** Existing workspace formatter. */
   formatWorkspace(): Promise<void>;
   /** Existing workspace diagnostics API. */
   diagnosticWorkspace(signal?: AbortSignal): Promise<unknown>;
-  /** Restricts the APIs offered by editor assistance for the current Course. */
-  filterAPIs(apis: string[]): void;
-  /** Reads the code opened in the currently attached Code Editor UI. */
-  getCurrentCode(): string | null;
-  /** Inserts text at the current selection in the attached Code Editor UI. */
-  insertText(text: string): Promise<void>;
+  /** Accesses the currently attached Code Editor UI for UI-specific operations. */
+  getAttachedUI(): {
+    activeTextDocument: { getValue(): string } | null;
+    insertInlineText(text: string): Promise<void>;
+  } | null;
 }
 
 export type StageViewerProps = {
-  /** Whether the Ruler overlay is visible. */
-  rulerVisible: boolean;
+  /** Whether the Ruler overlay is enabled. */
+  rulerEnabled: boolean;
 };
 
 export type StageViewerEmits = {

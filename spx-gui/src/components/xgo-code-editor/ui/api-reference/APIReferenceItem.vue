@@ -14,10 +14,16 @@ import HoverCard from '../hover/HoverCard.vue'
 import HoverCardContent from '../hover/HoverCardContent.vue'
 import type { APIReferenceItem } from '.'
 
-const props = defineProps<{
-  item: APIReferenceItem
-  interactionDisabled: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    item: APIReferenceItem
+    interactionDisabled: boolean
+    blockStyle?: boolean
+  }>(),
+  {
+    blockStyle: false
+  }
+)
 
 const codeEditor = useCodeEditor()
 const codeEditorUICtx = useCodeEditorUICtx()
@@ -112,14 +118,24 @@ function handleMouseUp(e: MouseEvent) {
             'overload-id': item.definition.overloadId
           }
         }"
-        class="api-reference-item"
+        class="api-reference-item max-w-full cursor-pointer self-start translate-x-0 rounded-sm bg-grey-100 px-1.5 transition-all duration-200 hover:bg-grey-300 [scroll-margin-bottom:16px] [scroll-margin-top:42px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
+        :class="{
+          'block-style relative flex min-h-9 w-fit max-w-none items-center rounded-md border border-grey-500 py-1.5 pr-2.5 pl-6.5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] hover:border-primary-main hover:bg-grey-100 hover:shadow-[0_4px_12px_rgba(15,23,42,0.12)]':
+            props.blockStyle,
+          'cursor-grab [&.before-dragging]:cursor-grabbing': props.blockStyle,
+          '[&_.overview]:break-normal': props.blockStyle
+        }"
         draggable="true"
         @dragstart="handleDragStart"
         @mousedown.passive="handleMouseDown"
         @mouseup.passive="handleMouseUp"
         @click="handleInsert"
       >
-        <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">
+        <DefinitionOverviewWrapper
+          class="overview break-all pt-0.5 pb-px"
+          :kind="item.kind"
+          :inlay-hints="parsed.inlayHints"
+        >
           {{ parsed.overview }}
         </DefinitionOverviewWrapper>
       </li>
@@ -138,39 +154,22 @@ function handleMouseUp(e: MouseEvent) {
 </template>
 
 <style scoped>
-.api-reference-item {
-  align-self: flex-start;
-  max-width: 100%;
-  padding: 0 6px;
-  border-radius: var(--ui-border-radius-sm);
-  background: var(--ui-color-grey-100);
-  transition: all 0.2s;
-  cursor: pointer;
-  /* 42px for sticky title, to ensure the item correctly scrolled into view. */
-  scroll-margin-top: 42px;
-  /* With 16px offset it is easier to find when scrolled into view. */
-  scroll-margin-bottom: 16px;
-  /* Preserve `border-radius` when dragging, see details: https://github.com/react-dnd/react-dnd/issues/788 */
-  transform: translate(0, 0);
+.api-reference-item.block-style::before {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  width: 8px;
+  height: 16px;
+  content: '';
+  background-image: radial-gradient(circle, var(--ui-color-grey-700) 1.5px, transparent 1.5px);
+  background-size: 4px 5px;
+  opacity: 0.65;
+  transform: translateY(-50%);
 }
 
-.api-reference-item:hover {
-  background: var(--ui-color-grey-300);
-}
-
-.api-reference-item.before-dragging {
-  /* Adjust transparency for dragging to avoid visual obstruction */
-  background-color: rgba(from var(--ui-color-grey-300) r g b / 0.6);
-}
-
-.api-reference-item.before-dragging .overview {
-  opacity: 0.6;
-}
-
-.overview {
-  padding-top: 2px;
-  padding-bottom: 1px;
-  word-break: break-all;
+.api-reference-item.block-style .overview :deep(> code) {
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .overview :deep(> code) {

@@ -74,6 +74,7 @@ export class GuidedTutorial {
         await timeout(100) // Wait for detailed UI rendering
       }
 
+      this.copilot.open()
       await this.copilot.startSession(this.generateTopic(course))
 
       this.copilot.notifyUserEvent(

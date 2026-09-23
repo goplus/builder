@@ -89,6 +89,11 @@ export function useRouteQueryParamStrEnum<K extends string, E extends StrEnumTyp
 /** Matched route segments (URL-decoded). */
 export type PathSegments = string[]
 
+/** Normalize a repeatable route param without splitting decoded segments. */
+export function repeatableParamToPathSegments(param: string | string[]): PathSegments {
+  return Array.isArray(param) ? param : param === '' ? [] : [param]
+}
+
 /** Shift the first segment off the path segments. */
 export function shiftPath(path: PathSegments): [segment: string | null, extra: PathSegments] {
   const [first, ...rest] = path

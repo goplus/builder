@@ -44,7 +44,7 @@ type Feedback struct {
 
 onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
-	Editor.Ruler.show
+	Editor.Ruler.enable
 	showPrelude "Move Lita to Mushroom."
 	showVideo "step-to"
 	Spotlight.reveal "Code editor > Code text editor", "Write your code here"
@@ -71,7 +71,7 @@ Editor.Runtime.onLog log => {
 		echo Editor.Project.getCode(sprite)
 	}
 	Editor.CodeEditor.formatWorkspace
-	Editor.Ruler.hide
+	Editor.Ruler.disable
 
 	feedback := &Feedback{}
 	Copilot.generateJSON "judge this", feedback

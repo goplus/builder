@@ -56,8 +56,8 @@ export interface TutorialFrameworkHost {
       listSprites(): string[];
     };
     ruler: {
-      show(): void;
-      hide(): void;
+      enable(): void;
+      disable(): void;
     };
   };
   copilot: {
@@ -125,8 +125,8 @@ export function createTutorialFramework(
       editor_project_getCode: (request) =>
         host.editor.project.getCode((request as SpriteRequest).sprite),
       editor_project_listSprites: () => host.editor.project.listSprites(),
-      editor_ruler_show: () => host.editor.ruler.show(),
-      editor_ruler_hide: () => host.editor.ruler.hide(),
+      editor_ruler_enable: () => host.editor.ruler.enable(),
+      editor_ruler_disable: () => host.editor.ruler.disable(),
       copilot_generateText: (request) =>
         host.copilot.generateText((request as ContentRequest).content),
       copilot_generateJSON: (request) => {

@@ -8,9 +8,13 @@ import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot, Session, Topic } from '@/components/copilot/copilot'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
+import type { CodeEditor } from '@/components/editor/spx-code-editor'
+import type { SpotlightOptions } from '@/utils/tutorial-framework'
 
 export type PlaygroundCoursePresentation = {
   showMessage(content: string): Promise<void>
+  revealSpotlight(target: string, tip: string, options: SpotlightOptions): Promise<void>
+  setRulerEnabled(enabled: boolean): void
 }
 
 export type PlaygroundCourseCompletion = {
@@ -21,6 +25,8 @@ export type PlaygroundCourseRunnerOptions = {
   project: TutorialProject
   editorState: EditorState
   copilot: Copilot
+  codeEditor: CodeEditor
+  setAPIWhitelist(apis: string[]): void
   presentation: PlaygroundCoursePresentation
 }
 
@@ -99,7 +105,18 @@ export class PlaygroundCourseRunner extends Emitter<{
         copilot_generateJSON: (request) => {
           const { content, schema } = request as { content: string; schema: JsonSchema7Type }
           return this.options.copilot.generateJSONResponse(content, schema)
-        }
+        },
+        spotlight_reveal: (request) => {
+          const { target, tip, options } = request as {
+            target: string
+            tip: string
+            options: SpotlightOptions
+          }
+          return this.options.presentation.revealSpotlight(target, tip, options)
+        },
+        editor_ruler_enable: () => this.options.presentation.setRulerEnabled(true),
+        editor_ruler_disable: () => this.options.presentation.setRulerEnabled(false),
+        editor_codeEditor_filterAPIs: (request) => this.options.setAPIWhitelist((request as { apis: string[] }).apis)
       }
     }
   }

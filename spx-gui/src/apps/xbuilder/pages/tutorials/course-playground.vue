@@ -8,6 +8,7 @@ import { createDefaultProject } from '@/components/project/default-project'
 import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/models/common/file'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useQuery } from '@/utils/query'
+import { repeatableParamToPathSegments } from '@/utils/route'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
@@ -16,9 +17,10 @@ import type { PlaygroundCourseCompletion } from '@/components/tutorials/playgrou
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 
-defineProps<{
+const props = defineProps<{
   courseSeriesIdInput: string
   courseIdInput: string
+  inEditorPath: string | string[]
 }>()
 
 const tutorial = useTutorial()
@@ -45,17 +47,27 @@ function getMockSession() {
 
 async function createMockSession(): Promise<MockSession> {
   const project = await createDefaultProject('', '', [])
+  const secondSprite = project.sprites[0]?.clone()
+  if (secondSprite == null) throw new Error('default sprite not found')
+  secondSprite.setX(-120)
+  secondSprite.setY(80)
+  project.addSprite(secondSprite)
   const files: Files = {
     'index.json': fromConfig('index.json', {
       project: { type: 'spx', root: 'project' },
-      inEditorPath: '/stage/code',
+      inEditorPath: '/simple',
       copilotContext: 'Help the learner explore the Playground Course.'
     }),
     'main_course.gox': fromText(
       'main_course.gox',
       `onStart => {
-	message := Copilot.generateText("Generate a welcome message. Less than 50 words. Use the same language as the current UI language.")
-	showMessage message
+	// TODO: Use an XGo List literal when the tutorial runtime supports it.
+	apis := make([]string, 0)
+	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.stepTo#0")
+	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.turn#0")
+	Editor.CodeEditor.filterAPIs apis
+	Editor.Ruler.enable
+	// showMessage "Hi, this is a sample course."
 }
 
 Copilot.onRoundComplete round => {
@@ -128,6 +140,17 @@ async function disposeSession() {
 
 watch(entryQueryRet.data, async (next) => {
   await disposeSession()
+  if (next != null && repeatableParamToPathSegments(props.inEditorPath).length === 0) {
+    const inEditorPath = (next.project.config?.inEditorPath ?? '').split('/').filter((segment) => segment !== '')
+    if (inEditorPath.length > 0) {
+      const currentRoute = router.currentRoute.value
+      await router.replace({
+        params: { ...currentRoute.params, inEditorPath },
+        query: currentRoute.query,
+        hash: currentRoute.hash
+      })
+    }
+  }
   session.value = next
 })
 

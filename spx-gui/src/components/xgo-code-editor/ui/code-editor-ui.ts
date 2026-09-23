@@ -77,6 +77,7 @@ export interface ICodeEditorUIController {
   open(textDocument: TextDocumentIdentifier, range: Range): void
 
   insertBlockText(text: string, range?: Range): Promise<void>
+  insertInlineText(text: string, range?: Range): Promise<void>
 
   dispose(): void
 }
@@ -101,6 +102,11 @@ export type InternalAction<A extends any[] = any, R = any> = {
   command: Command<A, R>
   commandInfo: CommandInfo<A, R>
   arguments: A
+}
+
+type CodeEditorUIOptions = {
+  renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>
+  simpleMode?: boolean
 }
 
 export class CodeEditorUIController extends Disposable implements ICodeEditorUIController {
@@ -153,7 +159,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     private mainTextDocumentId: TextDocumentIdentifier,
     readonly codeEditor: CodeEditor,
     public i18n: I18n,
-    private renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>
+    private options: CodeEditorUIOptions
   ) {
     super()
   }
@@ -615,14 +621,16 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       }
     })
 
-    this.registerCommand(builtInCommandGoToDefinition, {
-      icon: 'goto',
-      title: { en: 'Go to definition', zh: '跳转到定义' },
-      handler: async (params) => {
-        if ('position' in params) this.open(params.textDocument, params.position)
-        else this.open(params.textDocument, params.range)
-      }
-    })
+    if (!this.options.simpleMode) {
+      this.registerCommand(builtInCommandGoToDefinition, {
+        icon: 'goto',
+        title: { en: 'Go to definition', zh: '跳转到定义' },
+        handler: async (params) => {
+          if ('position' in params) this.open(params.textDocument, params.position)
+          else this.open(params.textDocument, params.range)
+        }
+      })
+    }
 
     this.registerCommand(builtInCommandInvokeInputHelper, {
       icon: 'modify',
@@ -632,20 +640,22 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       }
     })
 
-    this.registerCommand(builtInCommandRename, {
-      icon: 'rename',
-      title: { en: 'Rename', zh: '重命名' },
-      handler: async (params) => {
-        const { textDocument, position, range } = params
-        await this.renameHandler(textDocument, position, range)
-      }
-    })
+    if (!this.options.simpleMode) {
+      this.registerCommand(builtInCommandRename, {
+        icon: 'rename',
+        title: { en: 'Rename', zh: '重命名' },
+        handler: async (params) => {
+          const { textDocument, position, range } = params
+          await this.options.renameHandler(textDocument, position, range)
+        }
+      })
+    }
 
     this.addDisposer(
       watch(
         () => this.codeEditor.resourceAdapter,
         (adapter, _, onCleanup) => {
-          if (adapter.openResource != null) {
+          if (!this.options.simpleMode && adapter.openResource != null) {
             this.registerCommand(builtInCommandGoToResource, {
               icon: 'goto',
               title: { en: 'View detail', zh: '查看详情' },
@@ -655,7 +665,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
               this.unregisterCommand(builtInCommandGoToResource)
             })
           }
-          if (adapter.requestResourceRename != null) {
+          if (!this.options.simpleMode && adapter.requestResourceRename != null) {
             this.registerCommand(builtInCommandRenameResource, {
               icon: 'rename',
               title: { en: 'Rename', zh: '重命名' },

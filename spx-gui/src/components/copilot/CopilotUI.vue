@@ -27,54 +27,35 @@ const triggerSnapThreshold = 20
 import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
-import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
+import { isRectIntersecting, useContentSize } from '@/utils/dom'
+import { localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { untilLoaded } from '@/utils/query'
-import { useMessageHandle } from '@/utils/exception'
 import { isSignedIn, useSignedInStateQuery } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UIButton, UITooltip } from '@/components/ui'
-import CopilotInput from './CopilotInput.vue'
-import CopilotRound from './CopilotRound.vue'
+import { providePopupContainer, UITooltip } from '@/components/ui'
+import CopilotChat from './CopilotChat.vue'
+import CopilotTrigger from './CopilotTrigger.vue'
 import { useCopilot } from './context'
-import { type QuickInput, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
-import type { LocaleMessage } from '@/utils/i18n'
 import { homePageName } from '@/apps/xbuilder/router'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()
 const router = useRouter()
 
-const outputRef = ref<HTMLElement | null>(null)
-const triggerRef = ref<HTMLElement | null>(null)
-const inputRef = ref<InstanceType<typeof CopilotInput>>()
+const triggerRef = ref<InstanceType<typeof CopilotTrigger> | null>(null)
 const panelRef = ref<HTMLElement>()
 
 const session = computed(() => copilot.currentSession)
 
-const rounds = computed(() => {
-  if (session.value == null || session.value.rounds.length === 0) return null
-  return session.value.rounds
-})
-const activeRound = computed(() => {
-  const lastRound = rounds.value?.at(-1)
-  if (lastRound == null || [RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) {
-    return null
-  }
-  return lastRound
-})
-
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
-
-useBottomSticky(outputRef)
 
 providePopupContainer(panelRef)
 
 // resize the panel when the window size changes
 const documentElementRef = ref(document.documentElement)
 const windowSize = useContentSize(documentElementRef)
-const triggerSize = useContentSize(triggerRef)
+const triggerSize = useContentSize(() => triggerRef.value?.el ?? null)
 const panelSize = useContentSize(panelRef as WatchSource<HTMLElement | null>)
 
 function getCurrentSizes() {
@@ -95,18 +76,21 @@ watch(panelSize, () => {
   updatePanelClampedPosition()
 })
 watch(
-  () => copilot.active,
-  async (newActive, oldActive) => {
+  () => [copilot.globalUIEnabled, copilot.active] as const,
+  async ([enabled, active], previous) => {
+    if (!enabled) return
     await untilNotNull(panelSize)
+    if (!copilot.globalUIEnabled) return
 
     // On initialization, update triggerVisibility and panelStatePosition based on the copilot's active state
-    if (oldActive == null) {
+    if (previous == null || !previous[0]) {
       updateTriggerVisibility()
       updatePanelClampedPosition()
+      if (active) isPanelOutOfBounds.value = false
       return
     }
 
-    if (newActive) {
+    if (active) {
       openPanel()
     } else {
       closePanel()
@@ -303,7 +287,7 @@ const onDragEnd = () => {
     closePanel()
   }
 }
-useDraggable(triggerRef, {
+useDraggable(() => triggerRef.value?.el, {
   onDragStart,
   onDragMove: (offset: Offset) => {
     const { windowW, panelW } = getCurrentSizes()
@@ -332,41 +316,6 @@ useDraggable(draggerRef, {
   onDragMove,
   onDragEnd
 })
-
-const suggestedQuestions: LocaleMessage[] = [
-  {
-    en: 'What can XBuilder do?',
-    zh: 'XBuilder 可以做什么？'
-  },
-  {
-    en: 'How to create a new project?',
-    zh: '如何创建一个新项目？'
-  },
-  {
-    en: 'Please describe the functions of this page.',
-    zh: '介绍下这个页面有哪些功能。'
-  }
-]
-const handleSuggestedPromptClick = useMessageHandle((message: string) => copilot.addUserTextMessage(message), {
-  en: 'Failed to send message',
-  zh: '发送消息失败'
-}).fn
-
-const quickInputs = computed(() => copilot.getQuickInputs())
-
-const handleQuickInputClick = useMessageHandle(
-  ({ message }: QuickInput) => {
-    switch (message.type) {
-      case 'text':
-        return copilot.addUserTextMessage(message.content)
-      case 'event':
-        return copilot.notifyUserEvent(message.name, message.detail)
-      default:
-        assertNever(message)
-    }
-  },
-  { en: 'Failed to send message', zh: '发送消息失败' }
-).fn
 
 onBeforeUnmount(
   spotlight.on('revealed', async ({ rect }) => {
@@ -449,6 +398,7 @@ onMounted(async () => {
 
 <template>
   <div
+    v-if="copilot.globalUIEnabled"
     ref="panelRef"
     class="copilot-panel"
     :style="{ right: `${panelStatePosition.right}px`, bottom: `${panelStatePosition.bottom}px` }"
@@ -456,30 +406,12 @@ onMounted(async () => {
     <div class="body" :class="[triggerState]">
       <UITooltip placement="right" :disabled="triggerTooltipDisabled">
         <template #trigger>
-          <div ref="triggerRef" :class="['copilot-trigger', triggerState, triggerVisibility]" @click="openPanel()">
-            <div class="copilot-trigger-content">
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="40" height="40" rx="12" fill="url(#paint0_linear_931_4390)" />
-                <path
-                  d="M27.1326 16.4061C27.6217 17.2175 28.4776 17.7029 29.4224 17.7029C30.6229 17.714 31.7456 16.8507 32.005 15.6613C32.1791 14.9277 32.0383 14.1644 31.6381 13.5346C27.6773 6.67626 17.5584 5.32387 11.9784 10.9817C10.9521 11.9784 10.1369 13.0862 9.51075 14.2867H9.50704L9.43294 14.4386C9.4033 14.4979 9.36995 14.5572 9.34402 14.6165C9.34402 14.6165 9.34772 14.6165 9.35143 14.6128V14.6202C9.35143 14.6202 9.34772 14.6202 9.34402 14.6202C9.33661 14.635 9.3292 14.6535 9.32179 14.6721L9.26991 14.7795C8.6215 16.143 8.21023 17.5436 8.08055 19.1479C7.99162 20.215 8.0472 21.2784 8.23246 22.301C8.43254 23.3607 8.75119 24.3648 9.17358 25.2985L9.20322 25.3615C9.20692 25.3726 9.21433 25.3838 9.21804 25.3949C9.22916 25.4208 9.24398 25.4468 9.25509 25.469L9.32179 25.6098H9.3292C11.8858 30.7526 17.8585 33.6612 23.4867 32.3088C26.6324 31.727 32.3829 27.9589 31.916 24.4019C31.4121 22.038 28.0923 21.6378 26.9511 23.7609C26.173 24.9984 25.1022 25.8914 23.8721 26.5398C22.8939 27.014 21.812 27.2771 20.693 27.2771C20.2743 27.2771 19.8482 27.2364 19.437 27.1623C19.3517 27.1474 19.2628 27.1326 19.1887 27.1326C19.1183 27.1326 19.0664 27.1474 19.0071 27.1808C18.4588 27.492 18.355 27.5476 17.8104 27.8292L17.2138 28.1552C16.5951 28.5221 15.7318 28.9815 15.3538 28.1404V28.1293C15.2983 27.8996 15.3575 27.681 15.3872 27.5735C15.4316 27.4142 15.4761 27.2512 15.5243 27.0696C15.628 26.6806 15.7355 26.273 15.8837 25.8766C15.9541 25.695 15.9689 25.6394 15.7355 25.4208C13.831 23.6275 13.0788 21.397 13.5012 18.8071C13.7569 17.2361 14.4868 15.88 15.6725 14.7721C17.1212 13.4234 18.7885 12.7417 20.6152 12.7417C21.0932 12.7417 21.5934 12.7898 22.0973 12.8862C22.1825 12.901 22.2751 12.9195 22.3603 12.938H22.3826C24.4056 13.3827 26.0025 14.5461 27.1252 16.4024L27.1326 16.4061Z"
-                  fill="white"
-                />
-                <defs>
-                  <linearGradient
-                    id="paint0_linear_931_4390"
-                    x1="20"
-                    y1="0"
-                    x2="20"
-                    y2="40"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop class="stop-start" />
-                    <stop offset="1" class="stop-end" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </div>
+          <CopilotTrigger
+            ref="triggerRef"
+            :class="['trigger', triggerState, triggerVisibility]"
+            :attached-to="triggerState === State.Move ? null : triggerState"
+            @click="openPanel()"
+          />
         </template>
         <div>{{ $t({ en: 'Copilot', zh: 'Copilot' }) }}</div>
       </UITooltip>
@@ -494,43 +426,7 @@ onMounted(async () => {
             <circle cx="10.5" cy="4.5" r="1" fill="#A7B1BB" />
           </svg>
         </div>
-        <div ref="outputRef" class="output">
-          <template v-if="activeRound != null">
-            <CopilotRound :round="activeRound" is-last-round />
-            <div v-if="quickInputs.length > 0" class="quick-inputs">
-              <UITooltip v-for="(qi, i) in quickInputs" :key="i">
-                {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
-                <template #trigger>
-                  <UIButton type="neutral" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UIButton>
-                </template>
-              </UITooltip>
-            </div>
-          </template>
-          <template v-else-if="session == null">
-            <div class="px-2 pb-2">
-              <div class="hi">
-                {{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}
-              </div>
-              <div class="tips">
-                {{
-                  $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
-                }}
-              </div>
-              <div class="suggested-questions-wrapper">
-                <button
-                  v-for="(suggestedQuestion, index) in suggestedQuestions"
-                  :key="index"
-                  class="suggested-question"
-                  @click="handleSuggestedPromptClick($t(suggestedQuestion))"
-                >
-                  {{ $t(suggestedQuestion) }}
-                </button>
-              </div>
-            </div>
-          </template>
-        </div>
-        <div class="divider"></div>
-        <CopilotInput ref="inputRef" class="input" :class="{ 'only-input': activeRound == null }" :copilot="copilot" />
+        <CopilotChat />
       </div>
     </div>
     <div class="footer">
@@ -562,88 +458,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.copilot-trigger {
-  position: absolute;
-  width: fit-content;
-  height: 50px;
-  top: 50%;
-  padding: 1px;
-  cursor: pointer;
-  transform: translate(0, -50%);
-  pointer-events: none;
-  border-radius: 16px;
-  opacity: 0;
-  box-shadow: var(--ui-box-shadow-lg);
-  transition:
-    transform ease 0.4s,
-    opacity ease 0.4s;
-}
-
-.copilot-trigger .stop-start {
-  stop-color: #9a77ff;
-}
-
-.copilot-trigger .stop-end {
-  stop-color: #735ffa;
-}
-
-.copilot-trigger:hover .stop-start {
-  stop-color: #ae92ff;
-}
-
-.copilot-trigger:hover .stop-end {
-  stop-color: #9181fb;
-}
-
-.copilot-trigger.visible {
-  pointer-events: all;
-  opacity: 1;
-}
-
-.copilot-trigger.left {
-  background: linear-gradient(90deg, #c390ff 0%, #72bbff 100%);
-  padding-left: 0;
-  right: 1px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.copilot-trigger.left.visible {
-  transform: translate(100%, -50%);
-}
-
-.copilot-trigger.left .copilot-trigger-content {
-  padding: 0 5px 0 10px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.copilot-trigger.right {
-  background: linear-gradient(90deg, #c390ff 0%, #72bbff 100%);
-  padding-right: 0;
-  left: 1px;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.copilot-trigger.right.visible {
-  transform: translate(-100%, -50%);
-}
-
-.copilot-trigger.right .copilot-trigger-content {
-  padding: 0 10px 0 5px;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.copilot-trigger .copilot-trigger-content {
-  display: flex;
-  border-radius: 16px;
-  height: 100%;
-  align-items: center;
-  background: var(--ui-color-grey-100);
-}
-
 .copilot-panel {
   position: fixed;
   z-index: 9999;
@@ -669,6 +483,30 @@ onMounted(async () => {
   box-shadow: var(--ui-box-shadow-lg);
   padding: 1px;
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
+}
+
+.trigger {
+  position: absolute;
+  top: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(0, -50%);
+  transition:
+    transform ease 0.4s,
+    opacity ease 0.4s;
+}
+
+.trigger.visible {
+  pointer-events: all;
+  opacity: 1;
+}
+
+.trigger.left.visible {
+  transform: translate(100%, -50%);
+}
+
+.trigger.right.visible {
+  transform: translate(-100%, -50%);
 }
 
 .body:has(.only-input):has(.visible).left,
@@ -700,7 +538,7 @@ onMounted(async () => {
 }
 
 .body-wrapper .dragger {
-  position: absolute;
+  position: relative;
   height: 14px;
   width: 100%;
   display: flex;

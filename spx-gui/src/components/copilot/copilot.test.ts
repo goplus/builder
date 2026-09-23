@@ -303,6 +303,15 @@ class MockBatchedMessageEventGenerator implements IMessageEventGenerator {
 }
 
 describe('Copilot', () => {
+  it('starts sessions without changing the UI state', async () => {
+    const { copilot } = createCopilotWithStorage()
+    copilot.close()
+
+    await copilot.startSession(createBasicTopic())
+
+    expect(copilot.active).toBe(false)
+  })
+
   it('emits completed rounds as plain text', async () => {
     const { copilot } = createCopilotWithStorage(createTextStreamBatches('Done'))
     const rounds: Array<{ userMessage: string; resultMessages: string[] }> = []

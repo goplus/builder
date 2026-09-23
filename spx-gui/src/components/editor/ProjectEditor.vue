@@ -1,8 +1,26 @@
 <template>
+  <template v-if="mode === EditMode.Simple">
+    <UICard
+      v-if="selectedSprite != null"
+      v-radar="{ name: 'simple-code-editor', desc: 'Focused code editor for the selected course sprite' }"
+      class="relative min-w-0 flex-[3.5_1_0] flex flex-col overflow-visible!"
+    >
+      <CodeEditorUI :code-file-path="selectedSprite.codeFilePath" simple-mode />
+      <div class="absolute right-3 bottom-4 z-10 flex items-center gap-4">
+        <div ref="simpleControlsAnchor"></div>
+        <DockedCopilotUI />
+      </div>
+    </UICard>
+    <EditorPlaceholder v-else />
+    <div class="min-w-[660px] flex-[3_1_0] flex flex-col">
+      <EditorPreview simple-mode :controls-anchor="simpleControlsAnchor" :ruler-enabled="rulerEnabled" />
+    </div>
+  </template>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
   <!-- Using overflow-visible class to avoid cutting dropdown menu of CodeTextEditor (monaco) -->
   <UICard
-    v-show="isPreviewMode"
+    v-if="mode !== EditMode.Simple"
+    v-show="mode === EditMode.Default"
     v-radar="{
       name: `${selected.type}-editor`,
       desc: `Main editor panel for editing ${selected.type}`
@@ -25,12 +43,16 @@
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
   </UICard>
-  <div v-show="isPreviewMode" class="min-w-0 flex-[0_0_496px] flex flex-col gap-xl">
-    <EditorPreview />
+  <div
+    v-if="mode !== EditMode.Simple"
+    v-show="mode === EditMode.Default"
+    class="min-w-0 flex-[0_0_496px] flex flex-col gap-xl"
+  >
+    <EditorPreview :ruler-enabled="rulerEnabled" />
     <EditorPanels />
   </div>
   <MapEditor
-    v-if="!isPreviewMode"
+    v-if="mode === EditMode.Map"
     :project="editorCtx.project"
     :selected-sprite-id="editorCtx.state.selectedSprite?.id ?? null"
     @update:selected-sprite-id="handleSpriteSelect"
@@ -38,8 +60,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { UICard } from '@/components/ui'
+import DockedCopilotUI from '@/components/copilot/DockedCopilotUI.vue'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
 import EditorPreview from './preview/EditorPreview.vue'
@@ -49,11 +72,21 @@ import { useEditorCtx } from './EditorContextProvider.vue'
 import { EditMode } from './editor-state'
 import MapEditor from './map-editor/MapEditor.vue'
 import { useSpxEditorCopilot } from './copilot'
+import { CodeEditorUI } from './spx-code-editor'
+
+withDefaults(
+  defineProps<{
+    rulerEnabled?: boolean
+  }>(),
+  { rulerEnabled: false }
+)
 
 const editorCtx = useEditorCtx()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
-const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
+const mode = computed(() => editorCtx.state.selectedEditMode)
+const selectedSprite = computed(() => (selected.value.type === 'sprite' ? selected.value.sprite : null))
+const simpleControlsAnchor = ref<HTMLElement | null>(null)
 
 useSpxEditorCopilot()
 

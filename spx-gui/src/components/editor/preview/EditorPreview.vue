@@ -2,8 +2,9 @@
   <UICard
     v-radar="{ name: 'editor-preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
+    :class="{ 'flex-[1_1_0] min-h-0': simpleMode }"
   >
-    <UICardHeader class="gap-3">
+    <UICardHeader v-if="!simpleMode" class="gap-3">
       <div class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
@@ -65,13 +66,35 @@
       </template>
     </UICardHeader>
 
-    <div class="flex grow justify-center overflow-hidden p-3">
+    <div v-if="rulerEnabled" class="flex flex-none items-start bg-grey-100 pt-3 pr-3 pl-3">
+      <UITooltip placement="bottom-start">
+        <template #trigger>
+          <RulerToggle
+            v-radar="{ name: 'ruler', desc: 'Toggle the ruler, which measures distance and angle on the stage' }"
+            :active="rulerActive"
+            :disabled="runnerState !== 'initial'"
+            @click="rulerActive = !rulerActive"
+          />
+        </template>
+        {{ $t(rulerTip) }}
+      </UITooltip>
+    </div>
+
+    <div class="flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': simpleMode }">
       <div
         ref="stageContainerRef"
         class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
-        :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
+        :class="{
+          'stage-viewer-container-running': runnerState !== 'initial',
+          'h-full': simpleMode
+        }"
       >
-        <StageViewer class="stage-viewer" />
+        <StageViewer
+          class="stage-viewer"
+          :class="{ 'h-full aspect-auto': simpleMode }"
+          :simple-mode="simpleMode"
+          :ruler-active="rulerActive"
+        />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
           class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
@@ -96,6 +119,38 @@
       </div>
     </div>
   </UICard>
+  <Teleport v-if="simpleMode && controlsAnchor != null" :to="controlsAnchor">
+    <button
+      v-if="runnerState === 'initial'"
+      v-radar="{ name: 'run-button', desc: 'Click to run the project in debug mode' }"
+      class="cursor-pointer rounded-[16px] border-0 bg-grey-100 p-1.5 shadow-sm transition-[filter] duration-150 hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-75"
+      :disabled="handleRun.isLoading.value"
+      type="button"
+      @click="handleRun.fn"
+    >
+      <span
+        class="flex h-10 items-center justify-center gap-2 rounded-[12px] bg-turquoise-500 px-6 text-[15px] text-grey-100 font-medium leading-6"
+      >
+        <UIIcon class="h-5 w-5" :type="handleRun.isLoading.value ? 'loading' : 'playHollow'" />
+        {{ $t({ en: 'Run', zh: '运行' }) }}
+      </span>
+    </button>
+    <button
+      v-else
+      v-radar="{ name: 'stop-button', desc: 'Click to stop the running project' }"
+      class="cursor-pointer rounded-[16px] border-0 bg-grey-100 p-1.5 shadow-sm transition-[filter] duration-150 hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-75"
+      :disabled="handleStop.isLoading.value"
+      type="button"
+      @click="handleStop.fn"
+    >
+      <span
+        class="flex h-10 items-center justify-center gap-2 rounded-[12px] bg-red-500 px-6 text-[15px] text-grey-100 font-medium leading-6"
+      >
+        <UIIcon class="h-5 w-5" :type="handleStop.isLoading.value ? 'loading' : 'end'" />
+        {{ $t({ en: 'Stop', zh: '停止' }) }}
+      </span>
+    </button>
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -168,7 +223,7 @@ import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useSignedInUser } from '@/stores/user'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
@@ -179,8 +234,25 @@ import {
 } from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
+import RulerToggle from './stage-viewer/ruler/RulerToggle.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
+
+const props = withDefaults(
+  defineProps<{
+    simpleMode?: boolean
+    /** Where simple-mode Run/Stop controls are rendered beside the docked Copilot UI. */
+    controlsAnchor?: HTMLElement | null
+    rulerEnabled?: boolean
+  }>(),
+  {
+    simpleMode: false,
+    controlsAnchor: null,
+    rulerEnabled: false
+  }
+)
+
+const simpleMode = computed(() => props.simpleMode)
 
 // Code Editor operations may take a long time for some projects and block project execution.
 const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
@@ -192,6 +264,17 @@ const signedInUser = useSignedInUser()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
+const rulerActive = ref(false)
+const rulerTip = computed(() => {
+  if (runnerState.value !== 'initial') return { en: 'Stop the run to measure', zh: '停止运行后才能测量' }
+  return rulerActive.value
+    ? { en: 'Put the ruler away', zh: '收起尺子' }
+    : { en: 'Measure distance and angle', zh: '测量距离和角度' }
+})
+
+watch([() => props.rulerEnabled, runnerState], ([enabled, state]) => {
+  if (!enabled || state !== 'initial') rulerActive.value = false
+})
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
@@ -464,6 +547,12 @@ function getStageInlineAnchor() {
 }
 
 .runner-host :deep(.project-runner-surface:not(.fullscreen)) {
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-host :deep(.project-runner-surface:not(.fullscreen) .runner-area) {
+  display: flex;
   align-items: center;
   justify-content: center;
 }
