@@ -6,9 +6,18 @@ export type SimpleModeInEditorRoute = `/simple/sprites/${string}`;
 /** Existing runtime owned by `EditorState`. */
 export interface Runtime {
   readonly outputs: readonly RuntimeOutput[];
+  /** Current SPX source location, emitted by ispx at DebugRef granularity. */
+  readonly currentLocation: {
+    textDocument: { uri: string };
+    range: {
+      start: { line: number; column: number };
+      end: { line: number; column: number };
+    };
+  } | null;
   /** New event needed by the Tutorial Class Framework runtime namespace. */
   on(event: "didStart", listener: () => void): Disposer;
   on(event: "didChangeOutput", listener: () => void): Disposer;
+  on(event: "didChangeLocation", listener: () => void): Disposer;
   on(event: "didExit", listener: (code: number) => void): Disposer;
 }
 

@@ -11,6 +11,7 @@ type RunnerState = 'initial' | 'loading' | 'running'
 const props = withDefaults(
   defineProps<{
     project: SpxProject
+    trackExecutionLocation?: boolean
     fullscreen?: boolean
     inlineAnchor?: () => HTMLElement | null
     onRun?: () => void | Promise<void>
@@ -474,6 +475,7 @@ defineExpose({
       <div class="runner-area">
         <ProjectRunner
           ref="runnerRef"
+          :track-execution-location="props.trackExecutionLocation"
           class="runner"
           :project="project"
           @console="(type, args) => emit('console', type, args)"
