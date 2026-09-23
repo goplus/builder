@@ -3542,6 +3542,8 @@ paths:
 
         The response contains only the translated text. Clients are responsible for presenting it alongside the
         original content when a bilingual view is needed.
+
+        This operation is subject to a dedicated translation quota and rate limits that are separate from Copilot.
       requestBody:
         description: Encoded JSON request body, limited to 128 KiB.
         required: true
@@ -3599,8 +3601,12 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
         "413":
           $ref: "#/components/responses/ContentTooLarge"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /copilot/messages:
     post:
