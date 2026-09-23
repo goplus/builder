@@ -41,6 +41,7 @@ export class Runtime extends Emitter<{
   didChangeOutputSnapshot: void
   /** Emitted once after a run or rerun succeeds. */
   didStart: void
+  didChangeLocation: void
   didExit: number
 }> {
   static readonly defaultMaxOutputs = 500
@@ -48,6 +49,9 @@ export class Runtime extends Emitter<{
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
   private outputSnapshotRef = shallowRef<RuntimeOutput[]>([])
+  private currentLocationRef = shallowRef<TextDocumentRange | null>(null)
+  private scheduledLocationFlush: number | null = null
+  private locationAvailable = false
 
   get running() {
     return this.runningRef.value
@@ -66,7 +70,40 @@ export class Runtime extends Emitter<{
     return this.outputSnapshotRef.value
   }
 
+  get currentLocation(): TextDocumentRange | null {
+    return this.currentLocationRef.value
+  }
+
+  setCurrentLocation(location: TextDocumentRange | null) {
+    if ((this.running.mode !== 'debug' || !this.locationAvailable) && location != null) return
+    const current = this.currentLocationRef.value
+    if (
+      current?.textDocument.uri === location?.textDocument.uri &&
+      current?.range.start.line === location?.range.start.line
+    )
+      return
+    this.currentLocationRef.value = location
+    if (this.scheduledLocationFlush != null) cancelAnimationFrame(this.scheduledLocationFlush)
+    if (location == null) {
+      this.scheduledLocationFlush = null
+      this.emit('didChangeLocation')
+    } else {
+      this.scheduledLocationFlush = requestAnimationFrame(() => {
+        this.scheduledLocationFlush = null
+        this.emit('didChangeLocation')
+      })
+    }
+  }
+
+  invalidateCurrentLocation() {
+    this.locationAvailable = false
+    this.setCurrentLocation(null)
+  }
+
   setRunning(running: RunningState, filesHash?: string) {
+    if (running.mode === 'none') this.invalidateCurrentLocation()
+    else if (running.initializing) this.setCurrentLocation(null)
+    if (running.mode === 'debug' && running.initializing) this.locationAvailable = true
     this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
       const nextHash = filesHash ?? this.filesHash
@@ -132,6 +169,7 @@ export class Runtime extends Emitter<{
   }
 
   clearOutputs() {
+    this.setCurrentLocation(null)
     this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
@@ -149,6 +187,7 @@ export class Runtime extends Emitter<{
       watch(
         () => this.project.exportFiles(),
         async () => {
+          this.invalidateCurrentLocation()
           await until(() => this.running.mode !== 'debug')
           this.clearOutputs()
         }
@@ -156,6 +195,9 @@ export class Runtime extends Emitter<{
     })
     this.addDisposer(() => {
       this.cancelScheduledDidChangeOutputSnapshot()
+      if (this.scheduledLocationFlush != null) cancelAnimationFrame(this.scheduledLocationFlush)
+      this.scheduledLocationFlush = null
+      this.currentLocationRef.value = null
     })
     this.addDisposer(() => scope.stop())
   }
