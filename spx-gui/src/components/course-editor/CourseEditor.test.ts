@@ -20,7 +20,9 @@ const { mocks } = vi.hoisted(() => ({
     /** What the completion modal resolves with, i.e. which button the learner is taken to have pressed. */
     completionAction: 'exit' as 'continueEditing' | 'next' | 'exit',
     /** The props the completion modal was opened with, one entry per completed course. */
-    completionProps: [] as Array<{ course: PlaygroundCourse }>
+    completionProps: [] as Array<{ course: PlaygroundCourse }>,
+    /** When set, the modal is answered only when the test settles this promise, not right away. */
+    completionAnswer: null as Promise<'continueEditing' | 'next' | 'exit'> | null
   }
 }))
 
@@ -44,7 +46,7 @@ vi.mock('@/components/ui', async (importOriginal) => ({
       throw new Error(`unexpected modal in this test: ${component.__name}`)
     }
     mocks.completionProps.push(props)
-    return mocks.completionAction
+    return mocks.completionAnswer ?? mocks.completionAction
   }
 }))
 
@@ -131,13 +133,51 @@ async function loadProject(course: PlaygroundCourse) {
   return project
 }
 
-/** Mount the editor for `course` of `series`, already showing the preview of the course being edited. */
-async function mountPreviewing(course: PlaygroundCourse, series: CourseSeries) {
-  const router = createRouter({ history: createMemoryHistory(), routes: courseEditorRoutes })
+type TestRouter = ReturnType<typeof createRouter>
+
+/** Go to the preview of `course`, the way the Preview button or browser history does. */
+async function enterPreview(router: TestRouter, course: PlaygroundCourse) {
   await router.push({
     name: courseEditorPreviewRouteName,
-    params: { courseSeriesIdInput: series.id, courseIdInput: course.id, inEditorPath: [] }
+    params: { courseSeriesIdInput: seriesID, courseIdInput: course.id, inEditorPath: [] }
   })
+  await flushPromises()
+}
+
+/** Go back to editing `course`, the way "Back to editor" or the browser's Back button does. */
+async function leavePreview(router: TestRouter, course: PlaygroundCourse) {
+  await router.push({
+    name: courseEditorRouteName,
+    params: { courseSeriesIdInput: seriesID, courseIdInput: course.id, inCourseEditorPath: [] }
+  })
+  await flushPromises()
+}
+
+/** A promise the test settles when it chooses, to make a request finish late. */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+/** Mount the editor for `course` of `series`, already showing the preview of the course being edited. */
+async function mountPreviewing(course: PlaygroundCourse, series: CourseSeries, options?: { editing?: boolean }) {
+  const router = createRouter({ history: createMemoryHistory(), routes: courseEditorRoutes })
+  if (options?.editing) {
+    await router.push({
+      name: courseEditorRouteName,
+      params: { courseSeriesIdInput: series.id, courseIdInput: course.id, inCourseEditorPath: [] }
+    })
+  } else {
+    await router.push({
+      name: courseEditorPreviewRouteName,
+      params: { courseSeriesIdInput: series.id, courseIdInput: course.id, inEditorPath: [] }
+    })
+  }
   await router.isReady()
   const project = await loadProject(course)
   const wrapper = mount(CourseEditor, {
@@ -171,6 +211,7 @@ describe('CourseEditor preview', () => {
     mocks.getCourse.mockReset()
     mocks.completionProps.length = 0
     mocks.completionAction = 'exit'
+    mocks.completionAnswer = null
   })
 
   it('runs the course being edited, from the author unsaved work', async () => {
@@ -251,6 +292,91 @@ describe('CourseEditor preview', () => {
 
     expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(false)
     expect(wrapper.findComponent({ name: 'UIError' }).exists()).toBe(true)
+    expect(router.currentRoute.value.name).toBe(courseEditorPreviewRouteName)
+  })
+})
+
+// A preview is left and entered again freely (Back to editor, browser history), and what it started can still be
+// in flight when it is. What belongs to a preview the author has left must not reach the one they are in.
+describe('CourseEditor preview, entered again', () => {
+  beforeEach(() => {
+    mocks.getCourse.mockReset()
+    mocks.completionProps.length = 0
+    mocks.completionAction = 'exit'
+    mocks.completionAnswer = null
+  })
+
+  it('keeps the running preview when a course it walked away from fails to load later', async () => {
+    const first = makeCourse('2338', 'First')
+    const abandoned = deferred<PlaygroundCourse>()
+    mocks.getCourse.mockReturnValue(abandoned.promise)
+    mocks.completionAction = 'next'
+    const { wrapper, router } = await mountPreviewing(first, makeSeries(['2338', '2339']))
+
+    // Walking on to the next course starts loading it; the author goes back to the editor meanwhile, and in again.
+    await completePreviewedCourse(wrapper)
+    await leavePreview(router, first)
+    await enterPreview(router, first)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(true)
+
+    abandoned.reject(new Error('Network error'))
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'UIError' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(true)
+  })
+
+  it('keeps the running preview when a snapshot it walked away from fails later', async () => {
+    const first = makeCourse('2338', 'First')
+    const { wrapper, router, project } = await mountPreviewing(first, makeSeries(['2338']), { editing: true })
+    const abandoned = deferred<Awaited<ReturnType<TutorialProject['snapshot']>>>()
+    // The first preview's snapshot hangs; the one after it is taken as usual.
+    vi.spyOn(project, 'snapshot').mockReturnValueOnce(abandoned.promise)
+
+    await enterPreview(router, first)
+    await leavePreview(router, first)
+    await enterPreview(router, first)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(true)
+
+    abandoned.reject(new Error('Export failed'))
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'UIError' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(true)
+  })
+
+  it('does not let a completion modal answered after the author came back walk the new preview on', async () => {
+    const first = makeCourse('2338', 'First')
+    const answer = deferred<'continueEditing' | 'next' | 'exit'>()
+    mocks.completionAnswer = answer.promise
+    const { wrapper, router } = await mountPreviewing(first, makeSeries(['2338', '2339']))
+
+    // The modal is still open when the author steps Back out of the preview, and Forward into it again.
+    await completePreviewedCourse(wrapper)
+    await leavePreview(router, first)
+    await enterPreview(router, first)
+    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('project')
+
+    answer.resolve('next')
+    await flushPromises()
+
+    expect(mocks.getCourse).not.toHaveBeenCalled()
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('project')).toBe(running)
+  })
+
+  it('does not let a completion modal answered after the author came back end the new preview', async () => {
+    const first = makeCourse('2338', 'First')
+    const answer = deferred<'continueEditing' | 'next' | 'exit'>()
+    mocks.completionAnswer = answer.promise
+    const { wrapper, router } = await mountPreviewing(first, makeSeries(['2338', '2339']))
+
+    await completePreviewedCourse(wrapper)
+    await leavePreview(router, first)
+    await enterPreview(router, first)
+
+    answer.resolve('exit')
+    await flushPromises()
+
     expect(router.currentRoute.value.name).toBe(courseEditorPreviewRouteName)
   })
 })

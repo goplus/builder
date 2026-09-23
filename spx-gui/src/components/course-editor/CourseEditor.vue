@@ -419,10 +419,25 @@ let routeBeforePreview: string | null = null
 /**
  * Generation counter of preview loads. Starting a load takes the next number; leaving the preview bumps it. A load
  * whose number is no longer current when it finishes was superseded (exit, re-enter, unmount) and is discarded.
- * Written by: `handlePreview`, `enterPreviewFromRoute` (take), the `watch(isPreviewRoute)` (bump on leave).
- * Read by: `loadPreviewSnapshot`.
+ * Written by: `handlePreview`, `enterPreviewFromRoute`, `previewSavedCourse` (take), the `watch(isPreviewRoute)`
+ * (bump on leave), `onUnmounted` (bump).
+ * Read by: `isCurrentPreview`, `handlePreviewCompleted` (takes it before opening the completion modal).
  */
 let previewGeneration = 0
+
+/**
+ * Whether work started for preview generation `generation` still belongs to the preview on screen: the editor is
+ * still mounted, and neither leaving the preview nor a later load has moved on since. What a preview the author has
+ * left produces -- a snapshot, a failed load, the answer to its completion modal -- must not reach the one they are
+ * in now, including when it is the same course entered again.
+ * @param generation - The generation taken when the work started.
+ * @returns `true` while that preview is the one on screen.
+ * Called by: `loadPreviewSnapshot`, `loadSavedCourseSnapshot`, `enterPreviewFromRoute`, `previewSavedCourse`,
+ * `handlePreviewCompleted`.
+ */
+function isCurrentPreview(generation: number) {
+  return sessionAlive && generation === previewGeneration
+}
 
 /**
  * Build a fresh `TutorialProject` loaded from a snapshot of the working copy, for the playground to run. The
@@ -447,7 +462,7 @@ async function loadPreviewSnapshot(generation: number) {
     throw error
   }
   // Superseded or orphaned: the author left the preview (or the editor) while the snapshot loaded.
-  if (!sessionAlive || generation !== previewGeneration) {
+  if (!isCurrentPreview(generation)) {
     snapshot.project.dispose()
     throw new Cancelled('preview superseded')
   }
@@ -487,15 +502,17 @@ const handlePreview = useMessageHandle(
  * (`UIError :retry` in the preview pane)
  */
 async function enterPreviewFromRoute() {
+  const generation = ++previewGeneration
   try {
     // Leaving the preview route bumps the generation (see the watch below), so a load that finishes after the
     // author left is discarded by `loadPreviewSnapshot` itself.
-    const snapshot = await loadPreviewSnapshot(++previewGeneration)
+    const snapshot = await loadPreviewSnapshot(generation)
     previewError.value = null
     preview.value = snapshot
   } catch (error) {
-    // A superseded load is not an error to show.
-    if (error instanceof Cancelled) return
+    // Only the preview on screen shows its errors: a load superseded while it ran (`Cancelled`), or one that failed
+    // only after the author had left it, would otherwise replace a preview that is running fine.
+    if (error instanceof Cancelled || !isCurrentPreview(generation)) return
     // Normalize non-Error throwables so the template can always show `.message`.
     previewError.value = error instanceof Error ? error : new Error(String(error))
   }
@@ -522,7 +539,7 @@ async function loadSavedCourseSnapshot(courseID: string, generation: number) {
   }
   const snapshot = await TutorialProject.load(course)
   // Superseded or orphaned: the author left the preview (or the editor) while the course loaded.
-  if (!sessionAlive || generation !== previewGeneration) {
+  if (!isCurrentPreview(generation)) {
     snapshot.project.dispose()
     throw new Cancelled('preview superseded')
   }
@@ -551,8 +568,8 @@ async function previewSavedCourse(courseID: string) {
     previewCourse.value = course
     preview.value = snapshot
   } catch (error) {
-    // A superseded load is not an error to show.
-    if (error instanceof Cancelled) return
+    // Only the preview on screen shows its errors (see `enterPreviewFromRoute`).
+    if (error instanceof Cancelled || !isCurrentPreview(generation)) return
     // Normalize non-Error throwables so the template can always show `.message`.
     previewError.value = error instanceof Error ? error : new Error(String(error))
   }
@@ -689,6 +706,9 @@ function exitPreview() {
  * Called by: `components/course-editor/CourseEditor.vue#template` (`CoursePlayground @course-completed`)
  */
 async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
+  // The preview this completion belongs to. The modal outlives it: stepping out of the preview (the browser's Back
+  // button does not close the modal) and into it again leaves the modal open over a preview it knows nothing of.
+  const generation = previewGeneration
   // The modal resolves with the chosen action ('continueEditing' | 'next' | 'exit').
   const action = await openCompletion({
     course: previewCourse.value,
@@ -696,9 +716,9 @@ async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
     feedback: completion.feedback
   })
   if (action === 'continueEditing') return
-  // The modal outlives this editor; a late choice must not navigate a session that ended or a preview already
-  // left by other means.
-  if (!sessionAlive || !isPreviewRoute.value) return
+  // An answer about a preview no longer on screen -- the editor has gone, or the author left that preview, whether
+  // or not they have entered another since -- must neither walk on nor end the one they are in.
+  if (!isCurrentPreview(generation)) return
   // "Next" continues the walk; at the end of the series the modal offers no next course, so this leaves.
   const next = action === 'next' ? nextCourseID() : null
   if (next != null) return previewSavedCourse(next)
