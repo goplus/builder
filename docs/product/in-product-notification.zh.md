@@ -45,7 +45,7 @@ Notification List 是当前用户收到的 Notification 集合，分为消息和
 
 ### 创建 Notification
 
-产品功能为 Recipient 创建 Message。公告发给发布时已存在的用户。新收到的 Notification 为未读状态。
+产品功能为每位 Recipient 各创建一条 Message。公告发给发布时已存在的用户。新收到的 Notification 为未读状态。
 
 ### 列出通知
 
@@ -55,7 +55,7 @@ Notification List 是当前用户收到的 Notification 集合，分为消息和
 
 打开列表或切换类别不标记已读。打开某条 Notification 时展示详情并记录 ReadAt。阅读状态保存后，更新列表和未读数量。再次打开时保留首次阅读时间。
 
-全部标为已读会包含两个类别，以及尚未加载到面板中的通知。操作快照之后送达的通知仍为未读。
+系统处理“全部标为已读”时，会将两个类别中已送达的通知标为已读，包括尚未加载到面板中的通知。这些通知不再计入未读数量；之后送达的通知仍为未读，并计入对应类别的未读数量。
 
 ## User Story
 

@@ -45,7 +45,7 @@ The Notification List contains the current user's Notifications, divided into Me
 
 ### Creating Notifications
 
-Product features create Messages for their Recipients. Announcements go to the Users present at publication. New Notifications are unread.
+Product features create one Message per Recipient. Announcements go to the Users present at publication. New Notifications are unread.
 
 ### Listing Notifications
 
@@ -55,7 +55,7 @@ Each category has an unread count; the navigation entry shows their sum. Notific
 
 Opening the list or switching categories does not mark Notifications read. Opening a Notification shows its details and records ReadAt. The list and unread counts update after the read state is saved. Reopening it preserves the first-read time.
 
-Mark all as read includes both categories and items not yet loaded in the panel. Notifications delivered after the operation's snapshot remain unread.
+When mark all as read is processed, it covers Notifications already delivered in both categories, including items not yet loaded in the panel. Those Notifications no longer count as unread; Notifications delivered afterward remain unread and increase the count for their category.
 
 ## User Story
 
