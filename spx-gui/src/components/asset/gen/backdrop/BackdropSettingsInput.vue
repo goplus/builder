@@ -62,13 +62,8 @@ const submitText = computed(() => {
     @update:description="gen.setSettings({ description: $event })"
     @enrich="handleEnrich"
   >
-    <template #extra="{ disabled: inputDisabled, iconOnly }">
-      <ReferenceImageButton
-        :file="gen.referenceImage"
-        :disabled="inputDisabled"
-        :icon-only="iconOnly"
-        @update:file="gen.setReferenceImage($event)"
-      />
+    <template #extra>
+      <ReferenceImageButton :file="gen.referenceImage" @update:file="gen.setReferenceImage($event)" />
       <BackdropCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />

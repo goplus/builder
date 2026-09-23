@@ -595,7 +595,7 @@ describe('AnimationGen', () => {
     gen.dispose()
   })
 
-  it.each(['missing-path', 'missing-file', 'unsupported-file'])(
+  it.each(['missing-path', 'missing-file'])(
     'loads generated video with a %s reference',
     async (failure) => {
       const project = makeSpxProject()
@@ -608,8 +608,7 @@ describe('AnimationGen', () => {
       const [rawConfig, rawFiles] = gen.export()
       const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
       if (failure === 'missing-path') delete config.referenceImagePath
-      else if (failure === 'missing-file') delete files[config.referenceImagePath!]
-      else files[config.referenceImagePath!] = mockFile('invalid.txt')
+      else delete files[config.referenceImagePath!]
       const loaded = AnimationGen.load(i18n, sprite, project, config, files)
       expect(loaded.referenceImage).toBeNull()
       expect(loaded.referenceImageSelection).toBeNull()

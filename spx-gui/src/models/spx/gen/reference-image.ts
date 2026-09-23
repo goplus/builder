@@ -1,6 +1,5 @@
 import { getExtFromMime, imgExts } from '@/utils/file'
 import { extname } from '@/utils/path'
-import { capture } from '@/utils/exception'
 import type { File, Files } from '../../common/file'
 
 export const referenceImageExts = imgExts.filter((ext) => ext !== 'svg')
@@ -33,7 +32,6 @@ export function resolveInitialReferenceImageSelection(
   legacyCostumeId: string | null | undefined,
   referenceImage: File | null
 ): ReferenceImageSelection {
-  if (referenceImage != null) validateReferenceImage(referenceImage)
   const resolvedSelection =
     selection !== undefined
       ? selection
@@ -69,18 +67,4 @@ export function saveReferenceImageFile(files: Files, basePath: string, file: Fil
   const path = `${basePath}/reference_image.${extension}`
   files[path] = file
   return path
-}
-
-/** Reject invalid paths; report and omit missing or unsupported reference files when loading a saved generation. */
-export function loadReferenceImageFile(path: string | null, basePath: string, files: Files, owner: string) {
-  if (path != null) {
-    const expectedPrefix = `${basePath}/reference_image.`
-    if (!path.startsWith(expectedPrefix) || path.slice(expectedPrefix.length).includes('/')) {
-      throw new Error(`invalid reference image path for ${owner}`)
-    }
-    const file = files[path]
-    if (file != null && isImageFile(file)) return file
-  }
-  capture(new Error(`missing or unsupported reference image ${path ?? '(no path)'} for ${owner}`))
-  return null
 }

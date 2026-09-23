@@ -9,25 +9,30 @@ function mountOption(removable = true, interactive = true) {
       stubs: { UIBlockItem: false, UICornerIcon: false },
       renderStubDefaultSlot: true,
       mocks: { $t: (message: { zh: string }) => message.zh },
-      directives: { radar: () => undefined }
+      directives: {
+        radar: {
+          mounted: (element: HTMLElement, binding: { value: { name: string } }) => {
+            element.setAttribute('aria-label', binding.value.name)
+          }
+        }
+      }
     }
   })
 }
 
-describe('ImageOption keyboard actions', () => {
-  it.each(['Enter', ' '])('removes an image with %s without selecting the card', async (key) => {
+describe('ImageOption actions', () => {
+  it('removes an image through a native button without selecting the card', async () => {
     const wrapper = mountOption()
-    const remove = wrapper.get('[role="button"]')
-    expect(remove.attributes('tabindex')).toBe('0')
+    const remove = wrapper.findAll('button')[1]
     expect(remove.attributes('aria-label')).toBe('移除图片')
-    await remove.trigger('keydown', { key })
+    await remove.trigger('click')
     expect(wrapper.emitted('remove')).toEqual([[]])
     expect(wrapper.emitted('click')).toBeUndefined()
   })
 
-  it('allows deselecting a costume with the keyboard', async () => {
+  it('deselects a costume through a native button', async () => {
     const wrapper = mountOption(false)
-    await wrapper.get('[role="button"]').trigger('keydown', { key: 'Enter' })
+    await wrapper.findAll('button')[1].trigger('click')
     expect(wrapper.emitted('clear')).toEqual([[]])
     expect(wrapper.emitted('remove')).toBeUndefined()
   })
@@ -37,7 +42,6 @@ describe('ImageOption keyboard actions', () => {
     expect(wrapper.get('button').attributes('aria-label')).toBe('reference.png')
     expect(wrapper.get('button').attributes('aria-pressed')).toBe('true')
     await wrapper.setProps({ interactive: false })
-    expect(wrapper.find('button').exists()).toBe(false)
-    expect(wrapper.get('[role="button"]').attributes('tabindex')).toBe('0')
+    expect(wrapper.findAll('button')).toHaveLength(1)
   })
 })

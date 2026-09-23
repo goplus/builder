@@ -53,7 +53,7 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  extra(props: Pick<SettingsInputCtx, 'disabled' | 'iconOnly'>): unknown
+  extra(): unknown
   submit(): unknown
 }>()
 
@@ -149,7 +149,7 @@ provide(settingsInputCtxKey, ctx)
     </div>
     <div class="footer">
       <div ref="extraRef" class="extra">
-        <slot name="extra" :icon-only="ctx.iconOnly" :disabled="ctx.disabled"></slot>
+        <slot name="extra"></slot>
       </div>
       <slot v-if="!ctx.readonly" name="submit"></slot>
     </div>

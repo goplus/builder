@@ -1,8 +1,9 @@
 import { shallowMount } from '@vue/test-utils'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h, reactive, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { File } from '@/models/common/file'
 import ReferenceImageButton from './ReferenceImageButton.vue'
+import { settingsInputCtxKey } from './SettingsInput.vue'
 
 vi.mock('@/utils/file', () => ({
   useFileUrl: () => [ref('reference-url'), ref(false)]
@@ -48,16 +49,27 @@ const stubs = {
   UIImg: true
 }
 
+const settingsInputCtx = reactive({ disabled: false, readonly: false, iconOnly: false })
 const global = {
+  provide: { [settingsInputCtxKey as symbol]: settingsInputCtx },
   stubs,
   renderStubDefaultSlot: true,
   mocks: { $t: (message: string | { zh: string }) => (typeof message === 'string' ? message : message.zh) },
-  directives: { radar: () => undefined }
+  directives: {
+    radar: {
+      mounted: (element: HTMLElement, binding: { value: { name: string } }) => {
+        element.setAttribute('aria-label', binding.value.name)
+      }
+    }
+  }
 }
 
 describe('ReferenceImageButton', () => {
   beforeEach(() => {
     setDropdownVisible.mockClear()
+    settingsInputCtx.disabled = false
+    settingsInputCtx.readonly = false
+    settingsInputCtx.iconOnly = false
   })
 
   it('shows an upload action before selecting an image', () => {
@@ -68,6 +80,15 @@ describe('ReferenceImageButton', () => {
 
     expect(wrapper.get('button').attributes('aria-label')).toBe('上传参考图片')
     expect(wrapper.get('[data-test-id="tooltip"]').text()).toBe('上传参考图片')
+  })
+
+  it('uses the settings context for readonly and compact display', () => {
+    settingsInputCtx.readonly = true
+    settingsInputCtx.iconOnly = true
+    const wrapper = shallowMount(ReferenceImageButton, { props: { file: null }, global })
+
+    expect(wrapper.get('button').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('button').text()).toBe('')
   })
 
   it('shows the reference image label in the tooltip and removes the file from the popover', async () => {

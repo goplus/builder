@@ -1,22 +1,16 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { computed, inject, nextTick, ref } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import { UIButton, UIDropdownWithTooltip, UIImg, UITooltip } from '@/components/ui'
 import ImageOption from './ImageOption.vue'
+import { settingsInputCtxKey } from './SettingsInput.vue'
 import { useReferenceImageUpload } from './useReferenceImageUpload'
 
-const props = withDefaults(
-  defineProps<{
-    file: File | null
-    disabled?: boolean
-    iconOnly?: boolean
-  }>(),
-  {
-    disabled: false,
-    iconOnly: false
-  }
-)
+const props = defineProps<{ file: File | null }>()
+const settingsInputCtx = inject(settingsInputCtxKey)
+if (settingsInputCtx == null) throw new Error('settingsInputCtxKey should be provided')
+const disabled = computed(() => settingsInputCtx.disabled || settingsInputCtx.readonly)
 
 const emit = defineEmits<{
   'update:file': [file: File | null]
@@ -42,13 +36,12 @@ async function removeReferenceImage() {
       <UIButton
         ref="buttonRef"
         v-radar="{
-          name: $t({ en: 'Reference image', zh: '参考图片' }),
+          name: $t({ en: 'Manage reference image', zh: '管理参考图片' }),
           desc: 'Click to manage the local reference image'
         }"
         type="white"
         shape="square"
         :disabled="disabled"
-        :aria-label="$t({ en: 'Manage reference image', zh: '管理参考图片' })"
       >
         <UIImg class="h-6 w-6 rounded-sm" :src="fileUrl" size="cover" />
       </UIButton>
@@ -73,18 +66,17 @@ async function removeReferenceImage() {
       <UIButton
         ref="buttonRef"
         v-radar="{
-          name: $t({ en: 'Reference image', zh: '参考图片' }),
+          name: $t({ en: 'Upload reference image', zh: '上传参考图片' }),
           desc: 'Click to upload a local reference image'
         }"
         type="white"
-        :shape="iconOnly ? 'square' : 'default'"
+        :shape="settingsInputCtx.iconOnly ? 'square' : 'default'"
         icon="upload"
-        :class="!iconOnly && 'px-2! text-sm!'"
+        :class="!settingsInputCtx.iconOnly && 'px-2! text-sm!'"
         :disabled="disabled"
-        :aria-label="$t({ en: 'Upload reference image', zh: '上传参考图片' })"
         @click="handleUpload"
       >
-        <template v-if="!iconOnly">{{ $t({ en: 'Reference image', zh: '参考图片' }) }}</template>
+        <template v-if="!settingsInputCtx.iconOnly">{{ $t({ en: 'Reference image', zh: '参考图片' }) }}</template>
       </UIButton>
     </template>
     {{ $t({ en: 'Upload reference image', zh: '上传参考图片' }) }}

@@ -24,7 +24,7 @@ import type { Animation } from '../animation'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
 import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
 import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
-import { loadReferenceImageFile, saveReferenceImageFile, validateReferenceImage } from './reference-image'
+import { saveReferenceImageFile, validateReferenceImage } from './reference-image'
 import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
 import type { File, Files } from '../../common/file'
 import { fromConfig, toConfig, listDirs, toNativeFile } from '../../common/file'
@@ -552,7 +552,7 @@ export class SpriteGen extends Disposable {
     const inits: SpriteGenInits = { id: genId }
     inits.settings = settings
     if (referenceImagePath != null) {
-      inits.referenceImage = loadReferenceImageFile(referenceImagePath, basePath, files, `sprite gen ${genId}`)
+      inits.referenceImage = files[referenceImagePath] ?? null
     }
     if (imageIndex != null) inits.imageIndex = imageIndex
     if (selectedItem != null) inits.selectedItem = selectedItem

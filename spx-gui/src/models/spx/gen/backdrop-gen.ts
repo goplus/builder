@@ -21,7 +21,7 @@ import { backdrop2Asset } from '../common/asset'
 import type { SpxProject } from '../project'
 import { Backdrop, type RawBackdropConfig } from '../backdrop'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
-import { loadReferenceImageFile, saveReferenceImageFile, validateReferenceImage } from './reference-image'
+import { saveReferenceImageFile, validateReferenceImage } from './reference-image'
 
 export type BackdropGenInits = {
   id?: string
@@ -275,7 +275,7 @@ export class BackdropGen extends Disposable {
     } = config
     const inits: BackdropGenInits = extraConfig
     if (referenceImagePath != null) {
-      inits.referenceImage = loadReferenceImageFile(referenceImagePath, assetsPath, files, `backdrop gen ${config.id}`)
+      inits.referenceImage = files[referenceImagePath] ?? null
     }
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (generateTaskSerialized != null) inits.generateTask = Task.load(generateTaskSerialized)

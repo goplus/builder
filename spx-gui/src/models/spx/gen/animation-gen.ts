@@ -32,7 +32,6 @@ import {
 } from './common'
 import type { SpriteGen } from './sprite-gen'
 import {
-  loadReferenceImageFile,
   resolveInitialReferenceImageSelection,
   resolveSelectionAfterReferenceImageChange,
   saveReferenceImageFile,
@@ -392,12 +391,7 @@ export class AnimationGen extends Disposable {
     const inits: AnimationGenInits = { id: genId }
     inits.settings = settings
     if (referenceImagePath != null || reference?.type === 'local-image') {
-      inits.referenceImage = loadReferenceImageFile(
-        referenceImagePath ?? null,
-        assetsPath,
-        files,
-        `animation gen ${genId}`
-      )
+      inits.referenceImage = referenceImagePath == null ? null : (files[referenceImagePath] ?? null)
     }
     if (reference !== undefined) {
       inits.referenceImageSelection =
