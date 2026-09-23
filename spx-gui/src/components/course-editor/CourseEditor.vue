@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Purpose: The Course Editor for one Playground Course. It renders the course explorer (left), one document at a
- * time (right) and the always-mounted Project Editor host for the embedded learner project; it owns saving,
- * unsaved-change tracking, the route-driven learner preview and the leave guards. The open document is derived
+ * Purpose: The Course Editor for one Playground Course. An activity bar on the left switches between the five views
+ * of the course (its settings, the learner's project, the videos, the pictures and the course program), the view
+ * fills the rest, and the Project Editor host for the embedded learner project stays mounted throughout; it owns
+ * saving, unsaved-change tracking, the route-driven learner preview and the leave guards. The open view is derived
  * from the route (`inCourseEditorPath` param), never from local state, so it survives reloads and browser history.
  * A preview starts at the course being edited, from the author's unsaved work, and finishing it offers the next
  * course of the series, as a learner would be offered it; those are shown as they were saved.
@@ -19,11 +20,10 @@
  * Used by: `apps/xbuilder/pages/course-editor/index.vue#template` (rendered once the session is loaded, keyed by
  * `session.course.id`).
  *
- * Uses: CourseExplorer, CourseConfigDoc, CourseFolderDoc, CourseResourceDoc, CourseTextDoc, CourseFileDoc,
- * CourseUploadModal (through `useModal`), CoursePlayground and CoursePlaygroundCompletionModal (preview),
- * EditorHistoryButtons / EditorModeSwitch / NavbarWrapper (navbar), the project editor host resolved from
- * `./project` (`SpxProjectEditorHost`), the `TutorialProject` model, `saveFiles` + `updateCourse` (persistence)
- * and the helpers in `./course-tree`, `./route` and `./upload`.
+ * Uses: CourseActivityBar, CourseConfigDoc, CourseResourceGrid, CourseTextDoc, CoursePlayground and
+ * CoursePlaygroundCompletionModal (preview), EditorHistoryButtons / EditorModeSwitch / NavbarWrapper (navbar), the
+ * project editor host resolved from `./project` (`SpxProjectEditorHost`), the `TutorialProject` model, `saveFiles`
+ * + `updateCourse` (persistence) and the helpers in `./course-views` and `./route`.
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalizedGeneric } from 'vue-router'
@@ -34,7 +34,6 @@ import type { CourseSeries } from '@/apis/course-series'
 import { courseEditorPreviewRouteName, courseEditorRouteName } from '@/apps/xbuilder/router'
 import { saveFiles } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
-import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useCopilot } from '@/components/copilot/context'
 import type { SessionExported } from '@/components/copilot/copilot'
@@ -49,7 +48,6 @@ import {
   UIButton,
   UICard,
   UIDetailedLoading,
-  UIEmpty,
   UIError,
   UILoading,
   UITag,
@@ -57,18 +55,14 @@ import {
   useMessage,
   useModal
 } from '@/components/ui'
-import CourseExplorer from './CourseExplorer.vue'
+import CourseActivityBar from './CourseActivityBar.vue'
 import CourseConfigDoc from './CourseConfigDoc.vue'
-import CourseFileDoc from './CourseFileDoc.vue'
-import CourseFolderDoc from './CourseFolderDoc.vue'
+import CourseResourceGrid from './CourseResourceGrid.vue'
 import CourseTextDoc from './CourseTextDoc.vue'
-import CourseUploadModal from './CourseUploadModal.vue'
 import { useCourseEditorCopilot } from './copilot'
-import CourseResourceDoc from './CourseResourceDoc.vue'
 import { getProjectEditorHost } from './project'
-import { dirname, inCourseEditorPathParam, paramToSegments, pathToSegments, segmentsToPath } from './route'
-import { buildCourseTree, getChangedPaths, nearestExistingPath, resolveCourseDoc } from './course-tree'
-import { addUploadedFilesOfType, getUploadTypeAt, type UploadType } from './upload'
+import { inCourseEditorPathParam, paramToSegments, pathToSegments, segmentsToPath } from './route'
+import { getChangedPaths, getDirtyViews, getViewPath, resolveView, type CourseView } from './course-views'
 
 const props = defineProps<{
   /** The Playground Course being edited: its id is used to save, its title/thumbnail feed the completion modal. */
@@ -84,8 +78,8 @@ const emit = defineEmits<{
   saved: [course: PlaygroundCourse]
 }>()
 
-// Composables: i18n, toast messages, the current route/router (the open document lives in the route), a confirm
-// dialog resolving to a boolean, and the two programmatic modals (preview completion, upload target picker).
+// Composables: i18n, toast messages, the current route/router (the open view lives in the route), a confirm dialog
+// resolving to a boolean, and the programmatic preview completion modal.
 const { t } = useI18n()
 const m = useMessage()
 const route = useRoute()
@@ -93,7 +87,6 @@ const router = useRouter()
 const confirm = useConfirmDialogWithResult()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const copilot = useCopilot()
-const openUploadModal = useModal(CourseUploadModal)
 
 /**
  * The Tutorial project's config (`index.json`), narrowed to non-null: the page only renders this component once
@@ -101,7 +94,8 @@ const openUploadModal = useModal(CourseUploadModal)
  * `TutorialProject.setConfig()`, which replaces the object.
  * @returns The current `TutorialProjectConfig` (embedded project type/root, `inEditorPath`, `copilotContext`).
  * @throws Error when the project has not been loaded (`config == null`).
- * Read by: `projectEditorHost`, `doc`, `CourseEditor.vue#template` (`config.project.root`, `config.inEditorPath`).
+ * Read by: `projectEditorHost`, `resolved`, `dirtyViews`, `openView`, `CourseEditor.vue#template`
+ * (`config.project.root`, `config.inEditorPath`).
  * Called by: Vue (computed; re-evaluated when `props.project.config` changes)
  */
 const config = computed(() => {
@@ -129,33 +123,30 @@ const projectEditorHost = computed(() => getProjectEditorHost(config.value.proje
  */
 const editorState = shallowRef<EditorState | null>(null)
 
-// The explorer tree is a projection of the project's records, and the open node comes from the route (so it
-// survives reloads and works with browser history).
+// The open view comes from the route, so it survives reloads and works with browser history.
 /**
- * The course explorer tree built from the Tutorial project's records (see `course-tree.ts#buildCourseTree`).
- * @returns The sorted top-level `CourseNode[]` (folders, the project node, resource packages, files).
- * Read by: `doc`, `handleUpload` (passed to the upload modal), `CourseEditor.vue#template` (`CourseExplorer`
- * `:tree`, `nearestExistingPath(tree, ...)` after a file deletion).
- * Called by: Vue (computed; re-evaluated when any record read by `buildCourseTree` changes)
- */
-const tree = computed(() => buildCourseTree(props.project))
-/**
- * The in-Course-Editor path of the open node, normalized from the `inCourseEditorPath` route param (a string or
- * string array) to the `a/b/c` form; the empty string is the course itself.
+ * The in-Course-Editor path from the route, normalized from the `inCourseEditorPath` param (a string or string
+ * array) to the `a/b/c` form; the empty string is the course itself.
  * @returns The normalized path string.
- * Read by: `doc`, `CourseEditor.vue#template` (`CourseExplorer` `:active-path`, `dirname(activePath)` on deletion).
+ * Read by: `resolved`, the watch that keeps the route on a view's own path.
  * Called by: Vue (computed; re-evaluated when the route param changes)
  */
 const activePath = computed(() => segmentsToPath(paramToSegments(route.params[inCourseEditorPathParam])))
 /**
- * What the right pane shows for `activePath`: the course root, the embedded project (carrying the Project
- * Editor's in-editor tail), one tree node, or `missing` when the path names nothing in the tree.
- * @returns A `CourseDoc` discriminated union (see `course-tree.ts#resolveCourseDoc`).
- * Read by: `proposedUploadDir`, `CourseEditor.vue#template` (every `doc.type` / `doc.node.type` branch and the
- * `active` flag of the project editor host).
- * Called by: Vue (computed; re-evaluated when `tree`, the project root or `activePath` changes)
+ * The view `activePath` opens, and the path the route should say for it (`course-views.ts#resolveView`).
+ * @returns `{ open, path }`.
+ * Read by: `open`, the watch that keeps the route on a view's own path.
+ * Called by: Vue (computed; re-evaluated when the project root or `activePath` changes)
  */
-const doc = computed(() => resolveCourseDoc(tree.value, config.value.project.root, activePath.value))
+const resolved = computed(() => resolveView(activePath.value, config.value.project.root))
+/**
+ * The view on screen, and for the project the Project Editor's own path inside it.
+ * @returns An `OpenView`.
+ * Read by: the Copilot's open-document context, `CourseEditor.vue#template` (the activity bar, the view branches,
+ * the navbar's project controls and the `active` flag of the project editor host).
+ * Called by: Vue (computed; re-evaluated when `resolved` changes)
+ */
+const open = computed(() => resolved.value.open)
 /**
  * Whether the current route is the preview route record (`course-editor-preview`) rather than the editing one.
  * @returns `true` while previewing.
@@ -170,7 +161,7 @@ const isPreviewRoute = computed(() => route.name === courseEditorPreviewRouteNam
 // to the learner's session and must see exactly what a learner's would.
 useCourseEditorCopilot(
   () => props.project,
-  () => doc.value,
+  () => open.value,
   () => isPreviewRoute.value
 )
 
@@ -186,73 +177,57 @@ function courseRouteParams() {
 }
 
 /**
- * Open a node of the course explorer by navigating the editing route to its path. Navigation (not local state) is
- * the single way to switch documents, so the URL, browser history and the `doc` computed always agree.
- * @param path - In-Course-Editor path of the node to open; the empty string opens the course settings (root).
- * @returns The `router.push` promise (settles once navigation is done; the leave guard lets same-course
- * navigations pass).
- * Called by: `components/course-editor/CourseEditor.vue#handleUpload`,
- * `components/course-editor/CourseEditor.vue#exitPreview`, `components/course-editor/CourseEditor.vue#template`
- * (`CourseExplorer` `@select`, the "Back to course" button, `CourseFolderDoc` `@open`, `CourseResourceDoc`
- * `@renamed` and `@deleted`, `CourseFileDoc` `@deleted`)
+ * Open a path of the course by navigating the editing route to it. Navigation (not local state) is the single way
+ * to switch views, so the URL, browser history and the `open` computed always agree.
+ * @param path - In-Course-Editor path to open; the empty string opens the course settings.
+ * @param replace - Replace the current history entry instead of adding one.
+ * @returns The navigation promise (settles once navigation is done; the leave guard lets same-course navigations
+ * pass).
+ * Called by: `components/course-editor/CourseEditor.vue#openView`, `components/course-editor/CourseEditor.vue#exitPreview`,
+ * the watch that keeps the route on a view's own path.
  */
-function openPath(path: string) {
-  // Always push the editing route record (never the preview one), keeping the course params and encoding the
-  // path as route segments.
-  return router.push({
+function openPath(path: string, replace = false) {
+  // Always the editing route record (never the preview one), keeping the course params and encoding the path as
+  // route segments.
+  const location = {
     name: courseEditorRouteName,
     params: { ...courseRouteParams(), [inCourseEditorPathParam]: pathToSegments(path) }
-  })
+  }
+  return replace ? router.replace(location) : router.push(location)
 }
 
-// Uploading: the modal asks what the author is adding (the type decides where it goes) and which files; the
-// first created node is opened afterwards.
 /**
- * The upload type proposed from the open node: adding from inside a resource group means adding to that group.
- * @returns The `UploadType` the modal starts on.
- * Called by: `components/course-editor/CourseEditor.vue#handleUpload` (default value of its `type` parameter)
+ * Open a view of the course, at the path it lives at.
+ * @param view - The view chosen in the activity bar.
+ * @returns The navigation promise.
+ * Called by: `components/course-editor/CourseEditor.vue#template` (`CourseActivityBar @select`).
  */
-function proposedUploadType() {
-  const current = doc.value
-  return getUploadTypeAt(current.type === 'node' ? current.node.path : '')
+function openView(view: CourseView) {
+  return openPath(getViewPath(view, config.value.project.root))
 }
+
+/**
+ * Keep the route on the path of the view it shows. A path inside a view (a single video, as earlier versions of the
+ * editor addressed one) or one no view edits (a file the course does not use) is shown by the view that takes it,
+ * and the URL is brought in line, replacing the history entry, so it always says what is on screen. Only the
+ * editing route: the preview's path belongs to the playground.
+ * @param target - The view's own path when the route's differs, otherwise null.
+ * Called by: Vue (watch, immediate)
+ */
+watch(
+  () => (isPreviewRoute.value || resolved.value.path === activePath.value ? null : resolved.value.path),
+  (target) => {
+    if (target != null) void openPath(target, true)
+  },
+  { immediate: true }
+)
 
 /**
  * Whether this editor session is still mounted. Every await that can outlive the component (modals, snapshot
  * loads) checks it before touching the model or navigating: results that arrive after unmount are dropped.
- * Written by: `onUnmounted` (set to false). Read by: `handleUpload`, `loadPreviewSnapshot`,
- * `handlePreviewCompleted`.
+ * Written by: `onUnmounted` (set to false). Read by: `isCurrentPreview`.
  */
 let sessionAlive = true
-
-/**
- * Add files to the course: the modal asks what they are and which files, the files are added to the model (a
- * resource package each for a video or a picture, plain records otherwise) and the first created node is opened.
- * Wrapped by `useMessageHandle` so failures show a toast; closing the modal rejects with `Cancelled`, which the
- * wrapper swallows silently.
- * @param type - Upload type the modal starts on; defaults to `proposedUploadType()`.
- * @returns Promise<void>; side effects: mutates `props.project` (resources / extra files) and navigates to the
- * first uploaded node.
- * Called by: `components/course-editor/CourseEditor.vue#template` (`CourseExplorer` `@upload` calls
- * `handleUpload.fn()`; `CourseFolderDoc` `@upload` calls `handleUpload.fn(type)`)
- */
-const handleUpload = useMessageHandle(
-  async (type: UploadType = proposedUploadType()) => {
-    // Let the author say what they are adding and pick the files.
-    const { type: chosenType, files } = await openUploadModal({
-      project: props.project,
-      initialType: type
-    })
-    // The modal lives in the app-level provider and survives this editor; a late confirmation must not write into
-    // a session that ended (browser history while the modal was open).
-    if (!sessionAlive) return
-    // Put the files into the model; returns one node path per file (package path or record path).
-    const paths = addUploadedFilesOfType(props.project, chosenType, files)
-    // Show the first new node so the author sees the result right away.
-    await openPath(paths[0])
-  },
-  { en: 'Failed to upload files', zh: '上传文件失败' }
-)
 
 // Track unsaved changes across everything the Tutorial project exports.
 // `revision` tells a save whether edits happened after its snapshot was taken.
@@ -284,21 +259,28 @@ watch(
   }
 )
 
-// Per-node unsaved marks for the explorer: records are compared with the baseline taken at load and after every
-// successful save, so a save made while editing still shows what remains unsaved. Generated records keep their
-// identity while their source is unchanged, so comparing `File` instances is enough.
+// Per-view unsaved marks for the activity bar: records are compared with the baseline taken at load and after
+// every successful save, so a save made while editing still shows what remains unsaved. Generated records keep
+// their identity while their source is unchanged, so comparing `File` instances is enough.
 /**
- * The exported records as of the load or the last successful save; the reference point for per-node dirty marks.
+ * The exported records as of the load or the last successful save; the reference point for per-view dirty marks.
  * Written by: setup (initial export), `save` (after a successful save). Read by: `changedPaths`.
  */
 const filesBaseline = shallowRef<Files>(props.project.exportFiles())
 /**
  * Paths whose record differs from the baseline (added, removed or replaced by another `File` instance).
- * @returns A `Set` of in-Course-Editor paths (see `course-tree.ts#getChangedPaths`).
- * Read by: `CourseEditor.vue#template` (`CourseExplorer` `:changed-paths`, which marks nodes with a dot).
+ * @returns A `Set` of in-Course-Editor paths (see `course-views.ts#getChangedPaths`).
+ * Read by: `dirtyViews`.
  * Called by: Vue (computed; re-evaluated when `filesBaseline` or any exported record changes)
  */
 const changedPaths = computed(() => getChangedPaths(filesBaseline.value, props.project.exportFiles()))
+/**
+ * The views with unsaved changes (`course-views.ts#getDirtyViews`).
+ * @returns A `Set` of views.
+ * Read by: `CourseEditor.vue#template` (`CourseActivityBar :dirty-views`, which marks them with a dot).
+ * Called by: Vue (computed; re-evaluated when `changedPaths` or the project root changes)
+ */
+const dirtyViews = computed(() => getDirtyViews(changedPaths.value, config.value.project.root))
 
 // Saving blocks the editor (mask + route guards) so nothing changes underneath the upload. The abort
 // controller is the safety net for the paths that bypass the guards (programmatic session end, page close):
@@ -334,7 +316,7 @@ async function save(signal: AbortSignal) {
   const saved = (await updateCourse(props.course.id, { content: fileCollection }, signal)) as PlaygroundCourse
   // Clear the global dirty flag only if no edit happened after the snapshot; otherwise those edits stay unsaved.
   if (revision.value === savedRevision) dirty.value = false
-  // The saved snapshot becomes the baseline for per-node marks (records edited since keep their dot).
+  // The saved snapshot becomes the baseline for per-view marks (records edited since keep their dot).
   filesBaseline.value = files
   // Pick up metadata edited elsewhere in the meantime.
   props.project.setMetadata({ title: saved.title, thumbnail: saved.thumbnail })
@@ -862,7 +844,7 @@ onUnmounted(() => {
   <section
     v-radar="{
       name: 'course-editor',
-      desc: 'Editor for a Playground Course: its explorer, the open document and the preview'
+      desc: 'Editor for a Playground Course: its views, the open one and the preview'
     }"
     class="relative min-h-full w-full flex flex-col bg-grey-300"
   >
@@ -897,9 +879,9 @@ onUnmounted(() => {
       </div>
       <!-- Editor navbar (not previewing): three slots of `NavbarWrapper`. -->
       <NavbarWrapper v-else>
-        <!-- Left slot: undo/redo of the embedded Project Editor, only while the project document is open. -->
+        <!-- Left slot: undo/redo of the embedded Project Editor, only while the project is open. -->
         <template #left>
-          <EditorHistoryButtons v-if="doc.type === 'project'" :state="editorState" />
+          <EditorHistoryButtons v-if="open.view === 'project'" :state="editorState" />
         </template>
         <!-- Center slot: course title, series title, and the "Unsaved" tag driven by `dirty`. -->
         <template #center>
@@ -915,10 +897,10 @@ onUnmounted(() => {
             <UITag v-if="dirty">{{ $t({ en: 'Unsaved', zh: '未保存' }) }}</UITag>
           </div>
         </template>
-        <!-- Right slot: Project Editor mode switch (project document only), then the Preview and Save buttons.
+        <!-- Right slot: Project Editor mode switch (project only), then the Preview and Save buttons.
              Preview is disabled while saving; Save is disabled while clean and shows a spinner while saving. -->
         <template #right>
-          <EditorModeSwitch v-if="doc.type === 'project'" :state="editorState" />
+          <EditorModeSwitch v-if="open.view === 'project'" :state="editorState" />
           <UIButton
             v-radar="{ name: 'preview-button', desc: 'Click to preview the course as a learner' }"
             class="mr-2"
@@ -944,106 +926,63 @@ onUnmounted(() => {
         </template>
       </NavbarWrapper>
     </header>
-    <!-- Main area: a column while previewing (the playground fills it), otherwise a padded row of explorer card +
-         document card. The project editor host at the end is mounted in both cases. -->
-    <main class="flex-[1_1_0] flex" :class="isPreviewRoute ? 'flex-col' : 'gap-xl p-4 pt-2'">
-      <!-- Preview pane (`isPreviewRoute`): an error with retry, the playground once the snapshot is ready, or a
-           loading placeholder while `enterPreviewFromRoute` runs. -->
-      <template v-if="isPreviewRoute">
-        <UIError v-if="previewError != null" class="flex-1" :retry="retryPreview">
-          {{ previewError.message }}
-        </UIError>
-        <!-- The playground runs the snapshot project; `course-completed` and `failed` are handled above. -->
-        <CoursePlayground
-          v-else-if="preview != null"
-          :project="preview"
-          @course-completed="handlePreviewCompleted"
-          @failed="handlePreviewFailed"
-        />
-        <!-- No snapshot and no error yet: the preview is still being prepared. -->
-        <UIDetailedLoading v-else class="flex-1" :percentage="0">
-          <span>{{ $t({ en: 'Preparing preview...', zh: '准备预览中...' }) }}</span>
-        </UIDetailedLoading>
-      </template>
-      <template v-else>
-        <!-- Editing pane: the explorer card on the left and one document card on the right. The document card is
-             skipped for the project document, whose UI is the always-mounted host below. -->
-        <!-- Course explorer + one document at a time. Layout is a placeholder for design to iterate on. -->
-        <UICard class="min-w-0 flex-[0_0_260px] overflow-hidden">
-          <!-- Explorer: `select(path)` navigates via `openPath`; `upload` opens the upload modal with the target
-               folder proposed from the open node (`handleUpload.fn()` with no argument). -->
-          <CourseExplorer
-            :project="project"
-            :tree="tree"
-            :active-path="activePath"
-            :changed-paths="changedPaths"
-            @select="openPath"
-            @upload="handleUpload.fn()"
+    <!-- Body: the activity bar along the left edge (not while previewing), then the main area. -->
+    <div class="flex-[1_1_0] flex min-h-0">
+      <!-- Activity bar: one button per view; `select(view)` navigates via `openView`. -->
+      <CourseActivityBar v-if="!isPreviewRoute" :open="open.view" :dirty-views="dirtyViews" @select="openView" />
+      <!-- Main area: a column while previewing (the playground fills it), otherwise a padded row holding the open
+           view. The project editor host at the end is mounted in both cases. -->
+      <main class="flex-[1_1_0] flex min-w-0" :class="isPreviewRoute ? 'flex-col' : 'gap-xl p-4 pt-2'">
+        <!-- Preview pane (`isPreviewRoute`): an error with retry, the playground once the snapshot is ready, or a
+             loading placeholder while `enterPreviewFromRoute` runs. -->
+        <template v-if="isPreviewRoute">
+          <UIError v-if="previewError != null" class="flex-1" :retry="retryPreview">
+            {{ previewError.message }}
+          </UIError>
+          <!-- The playground runs the snapshot project; `course-completed` and `failed` are handled above. -->
+          <CoursePlayground
+            v-else-if="preview != null"
+            :project="preview"
+            @course-completed="handlePreviewCompleted"
+            @failed="handlePreviewFailed"
           />
-        </UICard>
-        <!-- Document card: one branch per `CourseDoc` shape, except `project` (see the host below). -->
-        <UICard v-if="doc.type !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
-          <!-- Root document: the course settings stored in `index.json`. -->
-          <CourseConfigDoc v-if="doc.type === 'root'" :project="project" />
-          <!-- Missing: the route names a path the tree has no node for (deleted, renamed or typed by hand);
-               offers a way back to the course root. -->
-          <UIEmpty v-else-if="doc.type === 'missing'" class="m-auto" size="small">
-            {{ $t({ en: `"${doc.path}" does not exist in the course`, zh: `课程中不存在“${doc.path}”` }) }}
-            <UIButton type="secondary" size="small" class="mt-2" @click="openPath('')">
-              {{ $t({ en: 'Back to course', zh: '回到课程' }) }}
-            </UIButton>
-          </UIEmpty>
-          <!-- Each document is keyed by its path so switching nodes starts the document fresh. -->
-          <!-- Folder node: lists its children and offers uploading into that folder (`handleUpload.fn(dir)`). -->
-          <CourseFolderDoc
-            v-else-if="doc.node.type === 'folder'"
-            :key="doc.node.path"
-            :node="doc.node"
-            @open="openPath"
-            @upload="(type) => handleUpload.fn(type)"
-          />
-          <!-- Resource package (`assets/<kind>/<name>`): preview, rename and delete. Renaming navigates to the
-               new package path; deleting navigates to the kind folder. -->
-          <CourseResourceDoc
-            v-else-if="doc.node.type === 'resource'"
-            :key="doc.node.path"
+          <!-- No snapshot and no error yet: the preview is still being prepared. -->
+          <UIDetailedLoading v-else class="flex-1" :percentage="0">
+            <span>{{ $t({ en: 'Preparing preview...', zh: '准备预览中...' }) }}</span>
+          </UIDetailedLoading>
+        </template>
+        <!-- The open view, in a card; the project is not in here, its UI is the always-mounted host below. -->
+        <UICard v-else-if="open.view !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
+          <!-- The course: its settings, stored in `index.json`. -->
+          <CourseConfigDoc v-if="open.view === 'course'" :project="project" />
+          <!-- Videos or pictures: a grid of cards, and where they are added. Keyed so each page starts fresh. -->
+          <CourseResourceGrid
+            v-else-if="open.view === 'videos' || open.view === 'images'"
+            :key="open.view"
             :project="project"
-            :kind="doc.node.kind"
-            :name="doc.node.name"
-            @renamed="openPath"
-            @deleted="openPath"
+            :view="open.view"
           />
           <!-- The course program (`main_course.gox`): a text editor bound directly to `project.mainCourse.code`. -->
           <CourseTextDoc
-            v-else-if="doc.node.path === mainCourseFilePath"
-            :key="doc.node.path"
+            v-else
             :text="project.mainCourse.code"
             language="xgo"
             @update:text="(text) => project.mainCourse.setCode(text)"
           />
-          <!-- Any other record (a file the course does not use): view/edit/delete. After deletion the nearest
-               ancestor that still exists is opened. -->
-          <CourseFileDoc
-            v-else
-            :key="doc.node.path"
-            :project="project"
-            :node="doc.node"
-            @deleted="openPath(nearestExistingPath(tree, dirname(activePath)))"
-          />
         </UICard>
-      </template>
-      <!-- Always mounted: the author's editor state outlives document switches and the preview. -->
-      <!-- The host renders the Project Editor UI only while `active` (editing route + project document open) but
-           keeps its `EditorState` alive otherwise; it reports that state through `v-model:editor-state`, and it
-           opens `config.inEditorPath` the first time the project is shown without a path in the route. -->
-      <component
-        :is="projectEditorHost"
-        v-model:editor-state="editorState"
-        :project="project.project"
-        :root-path="config.project.root"
-        :initial-path="config.inEditorPath"
-        :active="!isPreviewRoute && doc.type === 'project'"
-      />
-    </main>
+        <!-- Always mounted: the author's editor state outlives view switches and the preview. -->
+        <!-- The host renders the Project Editor UI only while `active` (editing route + project open) but keeps its
+             `EditorState` alive otherwise; it reports that state through `v-model:editor-state`, and it opens
+             `config.inEditorPath` the first time the project is shown without a path in the route. -->
+        <component
+          :is="projectEditorHost"
+          v-model:editor-state="editorState"
+          :project="project.project"
+          :root-path="config.project.root"
+          :initial-path="config.inEditorPath"
+          :active="!isPreviewRoute && open.view === 'project'"
+        />
+      </main>
+    </div>
   </section>
 </template>

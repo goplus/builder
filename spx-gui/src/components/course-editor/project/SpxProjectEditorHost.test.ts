@@ -70,7 +70,7 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
 const rootPath = 'project'
 const initialPath = '/sprites/Lita/code'
 
-/** The Course Editor path of a course-tree node, e.g. `['project', 'sprites', 'Bird']`. */
+/** A Course Editor path, e.g. `('project', 'sprites', 'Bird')`. */
 function coursePath(...segments: string[]) {
   return getCourseEditorRoute('40', '2338', segments)
 }
@@ -165,7 +165,7 @@ describe('SpxProjectEditorHost', () => {
     await wrapper.setProps({ active: false })
     await router.push(coursePath('main_course.gox'))
     await flushPromises()
-    // Reopening from the explorer addresses the project itself, with no path of its own.
+    // Reopening from the activity bar addresses the project itself, with no path of its own.
     await router.push(coursePath('project'))
     await wrapper.setProps({ active: true })
     await flushPromises()

@@ -21,16 +21,16 @@ import {
 } from './resource'
 
 /**
- * Resource kinds whose directory the course keeps as a folder even while it holds no package, because the
- * explorer always offers the group. Kept next to `isReservedDirectory`, its only reader.
+ * Resource kinds whose directory the course keeps as a folder even while it holds no package, because the editor
+ * always has a page to add them from. Kept next to `isReservedDirectory`, its only reader.
  */
 const reservedKinds = [videosKind, imagesKind]
 
 /**
  * Path (relative to the Tutorial-project root) of the course configuration record.
  * Consumed by: models/tutorial/project.ts#TutorialProject (`configFile`, `loadFiles`, `exportConfig`),
- * models/tutorial/project.ts#isClaimedPath, components/course-editor/upload.ts#validateUploadPath,
- * components/course-editor/course-tree.ts#isNodeDirty (the root node stands for this record).
+ * models/tutorial/project.ts#isClaimedPath, components/course-editor/course-views.ts#getDirtyViews (the course view
+ * stands for this record).
  */
 export const configFilePath = 'index.json'
 
@@ -103,11 +103,10 @@ export { Course } from './course'
  * Consumed by: apps/xbuilder/pages/course-editor/index.vue (loads the course to edit),
  * apps/xbuilder/pages/tutorials/course-playground.vue (loads the course to learn),
  * components/course-editor/CourseEditor.vue (save, preview snapshot, dirty tracking, program editing),
- * components/course-editor/CourseConfigDoc.vue, CourseResourceDoc.vue, CourseFileDoc.vue, CourseFolderDoc.vue,
- * CourseExplorer.vue and CourseUploadModal.vue (document editors), components/course-editor/upload.ts,
- * components/course-editor/course-tree.ts, components/tutorials/playground/CoursePlayground.vue and runner.ts,
- * and the tests models/tutorial/project.test.ts, components/course-editor/upload.test.ts,
- * components/course-editor/course-tree.test.ts, components/tutorials/playground/runner.test.ts.
+ * components/course-editor/CourseConfigDoc.vue and CourseResourceGrid.vue (the views that edit it),
+ * components/course-editor/upload.ts, components/tutorials/playground/CoursePlayground.vue and runner.ts, and the
+ * tests models/tutorial/project.test.ts, components/course-editor/upload.test.ts,
+ * components/course-editor/course-views.test.ts, components/tutorials/playground/runner.test.ts.
  */
 export class TutorialProject {
   /** Course id from the API; empty until metadata is set. */
@@ -144,7 +143,7 @@ export class TutorialProject {
    * @returns A reactive `TutorialProject`; call `load()` or `loadFiles()` before using it.
    * Called by: models/tutorial/project.ts#TutorialProject.load (static),
    * components/course-editor/CourseEditor.vue#loadPreviewSnapshot, and the tests models/tutorial/project.test.ts,
-   * components/course-editor/upload.test.ts, components/course-editor/course-tree.test.ts,
+   * components/course-editor/upload.test.ts, components/course-editor/course-views.test.ts,
    * components/tutorials/playground/runner.test.ts.
    */
   constructor() {
@@ -193,7 +192,7 @@ export class TutorialProject {
    * @throws Error when the project has not been loaded yet (`config` is null).
    * @returns void; replaces `config` with a new object so watchers of `config` fire.
    * Called by: components/course-editor/CourseConfigDoc.vue#handleGenerateCopilotContext and #template,
-   * models/tutorial/project.test.ts, components/course-editor/course-tree.test.ts.
+   * models/tutorial/project.test.ts, components/course-editor/course-views.test.ts.
    */
   setConfig(config: Partial<TutorialProjectConfig>) {
     if (this.config == null) throw new Error('Tutorial project has not been loaded')
@@ -221,7 +220,7 @@ export class TutorialProject {
    * @throws Error when `index.json` is missing, or (from `Course.loadFiles`) when `main_course.gox` is missing.
    * @returns Promise resolving once `config`, `project`, `mainCourse`, `resources` and `extraFiles` are set.
    * Called by: models/tutorial/project.ts#TutorialProject.load, models/tutorial/project.test.ts,
-   * components/course-editor/upload.test.ts, components/course-editor/course-tree.test.ts.
+   * components/course-editor/upload.test.ts, components/course-editor/course-views.test.ts.
    */
   async loadFiles(files: Files) {
     // The config comes first: it tells where the embedded project lives.
@@ -265,7 +264,7 @@ export class TutorialProject {
    * @param name - Resource name.
    * @returns The matching `Resource`, or null when there is none.
    * Called by: models/tutorial/resource.ts#validateResourceName (uniqueness check),
-   * components/course-editor/CourseResourceDoc.vue#resource (computed), models/tutorial/project.test.ts.
+   * models/tutorial/project.test.ts, components/course-editor/upload.test.ts.
    */
   getResource(kind: string, name: string): Resource | null {
     return this.resources.find((resource) => resource.kind === kind && resource.name === name) ?? null
@@ -293,7 +292,7 @@ export class TutorialProject {
    * @param resource - The resource to add.
    * @returns void; appends to `resources`.
    * Called by: models/tutorial/project.ts#TutorialProject.loadFiles,
-   * components/course-editor/upload.ts#addUploadedFiles, models/tutorial/project.test.ts.
+   * components/course-editor/upload.ts#addUploadedResources, models/tutorial/project.test.ts.
    */
   addResource(resource: Resource) {
     this.prepareAddResource(resource)
@@ -305,7 +304,8 @@ export class TutorialProject {
    * @param id - The resource's `id`.
    * @throws Error when no resource has that id.
    * @returns void; removes from `resources` and sets the resource's owning project to null.
-   * Called by: components/course-editor/CourseResourceDoc.vue#handleDelete, models/tutorial/project.test.ts.
+   * Called by: components/course-editor/CourseResourceGrid.vue#handleRemove,
+   * components/course-editor/upload.ts#addUploadedResources (undoing a failed upload), models/tutorial/project.test.ts.
    */
   removeResource(id: string) {
     const index = this.resources.findIndex((resource) => resource.id === id)
@@ -319,8 +319,8 @@ export class TutorialProject {
    * @param path - Record path relative to the Tutorial-project root.
    * @throws Error when the project has not been loaded yet.
    * @returns `true` for `index.json`, `main_course.gox`, anything under the project root or a package directory.
-   * Called by: models/tutorial/project.ts#TutorialProject.setExtraFile,
-   * components/course-editor/upload.ts#validateUploadPath.
+   * Called by: models/tutorial/project.ts#TutorialProject.setExtraFile, models/tutorial/course.ts and
+   * models/tutorial/resource.ts (where their records may go).
    */
   isClaimedPath(path: string) {
     if (this.config == null) throw new Error('Tutorial project has not been loaded')
@@ -331,8 +331,7 @@ export class TutorialProject {
    * Reads an unclaimed record.
    * @param path - Record path relative to the Tutorial-project root.
    * @returns The `File`, or null when there is no extra file at `path`.
-   * Called by: components/course-editor/upload.ts#getUploadConflicts, models/tutorial/project.test.ts,
-   * components/course-editor/upload.test.ts.
+   * Called by: models/tutorial/project.test.ts.
    */
   getExtraFile(path: string): File | null {
     return this.extraFiles.get(path) ?? null
@@ -344,8 +343,8 @@ export class TutorialProject {
    * @param file - The record content.
    * @throws Error when `path` is claimed by the model (config, program, project root or a package directory).
    * @returns void; writes into `extraFiles`.
-   * Called by: components/course-editor/CourseFileDoc.vue#handleTextChange,
-   * components/course-editor/upload.ts#addUploadedFiles, models/tutorial/project.test.ts.
+   * Called by: models/tutorial/project.test.ts. The Course Editor does not create unclaimed records; a course
+   * that carries some keeps them through `loadFiles` and `exportFiles`.
    */
   setExtraFile(path: string, file: File) {
     // Kept here fine, but loading a course keys its files by path in a plain object (shared `getFiles`), where
@@ -367,8 +366,7 @@ export class TutorialProject {
    * @param path - Record path relative to the Tutorial-project root.
    * @throws Error when there is no extra file at `path`.
    * @returns void; deletes the key from `extraFiles`.
-   * Called by: components/course-editor/CourseFileDoc.vue#handleDelete, models/tutorial/project.test.ts,
-   * components/course-editor/course-tree.test.ts.
+   * Called by: models/tutorial/project.test.ts.
    */
   removeExtraFile(path: string) {
     if (!this.extraFiles.delete(path)) throw new Error(`file ${path} not found`)
@@ -376,11 +374,11 @@ export class TutorialProject {
 
   /**
    * Whether `path` is a directory the course always treats as a folder, even while it holds nothing: the
-   * resources root and the resource groups the explorer always shows. The record-based check cannot see them
+   * resources root and the resource folders the editor always has a page for. The record-based check cannot see them
    * while they are empty, so without this a file named `assets` could take their place.
    * @param path - Path relative to the course root.
    * @returns True for `assets`, `assets/videos` and `assets/images`.
-   * Called by: models/tutorial/project.ts#setExtraFile, components/course-editor/upload.ts#validateUploadPath.
+   * Called by: models/tutorial/project.ts#setExtraFile, models/tutorial/resource.ts.
    */
   isReservedDirectory(path: string) {
     return path === assetsDir || reservedKinds.some((kind) => path === getResourceKindDir(kind))
@@ -426,7 +424,7 @@ export class TutorialProject {
    * Called by: models/tutorial/project.ts#TutorialProject.export,
    * components/course-editor/CourseEditor.vue (dirty watch source, `filesBaseline`, `changedPaths`),
    * models/tutorial/project.test.ts, components/course-editor/upload.test.ts,
-   * components/course-editor/course-tree.test.ts.
+   * components/course-editor/course-views.test.ts.
    */
   exportFiles() {
     if (this.config == null) throw new Error('Tutorial project has not been loaded')

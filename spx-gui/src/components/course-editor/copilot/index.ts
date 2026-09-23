@@ -18,7 +18,7 @@ import { useCopilot } from '@/components/copilot/context'
 import type { ICopilotContextProvider } from '@/components/copilot/copilot'
 import { skillTutorialCourse } from '@/components/copilot/skills/built-in'
 import type { TutorialProject } from '@/models/tutorial/project'
-import { getNodeLabel, type CourseDoc } from '../course-tree'
+import type { OpenView } from '../course-views'
 
 /**
  * How much of the course program is passed as context, in characters. A course program is short by nature (it
@@ -93,26 +93,30 @@ ${JSON.stringify(shown)}`
 }
 
 /**
- * Which document the author has open, so the assistant can tell "fix this video's name" from "fix the program".
+ * Which view of the course the author has open, so the assistant can tell "fix this video's name" from "fix the
+ * program".
  */
-class OpenDocumentContextProvider implements ICopilotContextProvider {
-  constructor(private getDoc: () => CourseDoc) {}
+class OpenViewContextProvider implements ICopilotContextProvider {
+  constructor(private getOpen: () => OpenView) {}
 
   provideContext(): string {
-    const doc = this.getDoc()
-    switch (doc.type) {
-      case 'root':
-        return `# Open document
+    const open = this.getOpen()
+    switch (open.view) {
+      case 'course':
+        return `# Open view
 The author is looking at the course settings.`
       case 'project':
-        return `# Open document
+        return `# Open view
 The author is working inside the embedded project, which the learner will edit during the course.`
-      case 'node':
-        return `# Open document
-The author has "${getNodeLabel(doc.node).en}" open.`
-      // A path with no node: the author sees a "does not exist" placeholder, which says nothing worth passing on.
-      case 'missing':
-        return ''
+      case 'videos':
+        return `# Open view
+The author is looking at the course's videos, which the course program plays by name.`
+      case 'images':
+        return `# Open view
+The author is looking at the course's pictures.`
+      case 'program':
+        return `# Open view
+The author is editing the course program.`
     }
   }
 }
@@ -122,7 +126,7 @@ The author has "${getNodeLabel(doc.node).en}" open.`
  * course-authoring skill.
  *
  * @param getProject - The course being edited; read on every round, so it follows the working copy.
- * @param getDoc - What the author currently has open, from the route.
+ * @param getOpen - The view the author has open, from the route.
  * @param isPreviewing - Whether the editor is previewing the course; everything registered here goes quiet then.
  * @returns Nothing; every registration is disposed with the calling scope.
  *
@@ -130,7 +134,7 @@ The author has "${getNodeLabel(doc.node).en}" open.`
  */
 export function useCourseEditorCopilot(
   getProject: () => TutorialProject,
-  getDoc: () => CourseDoc,
+  getOpen: () => OpenView,
   isPreviewing: () => boolean
 ): void {
   const d = new Disposable()
@@ -141,7 +145,7 @@ export function useCourseEditorCopilot(
   for (const provider of [
     new CourseContextProvider(getProject),
     new CourseProgramContextProvider(getProject),
-    new OpenDocumentContextProvider(getDoc),
+    new OpenViewContextProvider(getOpen),
     { providePreloadSkills: () => [skillTutorialCourse] }
   ]) {
     d.addDisposer(copilot.registerContextProvider(whileAuthoring(isPreviewing, provider)))

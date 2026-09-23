@@ -3,16 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { fromConfig, fromText, toText, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject } from '@/models/tutorial/project'
-import {
-  addUploadedFiles,
-  addUploadedFilesOfType,
-  getUploadConflicts,
-  getUploadDir,
-  getUploadTypeAt,
-  validateUpload,
-  validateUploadDir,
-  validateUploadPath
-} from './upload'
+import { addUploadedResources, validateResourceUpload } from './upload'
 
 function makeFiles(): Files {
   return {
@@ -29,9 +20,9 @@ function makeFiles(): Files {
   }
 }
 
-async function loadProject() {
+async function loadProject(files = makeFiles()) {
   const project = new TutorialProject()
-  await project.loadFiles(makeFiles())
+  await project.loadFiles(files)
   return project
 }
 
@@ -39,44 +30,54 @@ function nativeFile(name: string, content = 'content') {
   return new File([content], name)
 }
 
-describe('validateUploadDir', () => {
-  it('accepts the course root, workspace folders and any resource type folder', async () => {
-    const project = await loadProject()
-    expect(validateUploadDir(project, '')).toBeNull()
-    expect(validateUploadDir(project, 'docs/notes')).toBeNull()
-    expect(validateUploadDir(project, 'assets/videos')).toBeNull()
-    expect(validateUploadDir(project, 'assets/images')).toBeNull()
+function pathsOf(resources: { assetPath: string }[]) {
+  return resources.map((resource) => resource.assetPath)
+}
+
+describe('validateResourceUpload', () => {
+  it('accepts videos and pictures, including before the course has any', async () => {
+    const files = makeFiles()
+    for (const path of Object.keys(files)) if (path.startsWith('assets/')) delete files[path]
+    const project = await loadProject(files)
+
+    expect(validateResourceUpload(project, 'videos')).toBeNull()
+    expect(validateResourceUpload(project, 'images')).toBeNull()
   })
 
-  it('refuses the project, assets itself and package directories', async () => {
-    const project = await loadProject()
-    expect(validateUploadDir(project, 'project')?.en).toContain('Project Editor')
-    expect(validateUploadDir(project, 'project/assets')?.en).toContain('Project Editor')
-    expect(validateUploadDir(project, 'assets')?.en).toContain('resource type folder')
-    expect(validateUploadDir(project, 'assets/videos/step-to')?.en).toContain('managed by the editor')
-    expect(validateUploadDir(project, 'assets/videos/new-package')?.en).toContain('managed by the editor')
+  it('refuses a kind whose folder a file occupies', async () => {
+    const files = makeFiles()
+    files['assets/images'] = fromText('images', 'not a folder')
+    const project = await loadProject(files)
+
+    expect(validateResourceUpload(project, 'images')?.en).toContain('assets/images is a file')
+    expect(validateResourceUpload(project, 'videos')).toBeNull()
+  })
+
+  it('refuses a kind whose folder the embedded project occupies', async () => {
+    const files = makeFiles()
+    files['index.json'] = fromConfig('index.json', {
+      project: { type: 'spx', root: 'assets' },
+      inEditorPath: '',
+      copilotContext: ''
+    })
+    for (const path of Object.keys(files))
+      if (path.startsWith('assets/') || path.startsWith('project/')) delete files[path]
+    files['assets/assets/index.json'] = fromConfig('index.json', {})
+    const project = await loadProject(files)
+
+    expect(validateResourceUpload(project, 'videos')?.en).toContain('embedded project')
   })
 })
 
-describe('validateUploadPath', () => {
-  it('refuses fixed-path records and accepts anything else in the workspace', async () => {
-    const project = await loadProject()
-    expect(validateUploadPath(project, '', 'index.json')?.en).toContain('its own editor')
-    expect(validateUploadPath(project, '', mainCourseFilePath)?.en).toContain('its own editor')
-    expect(validateUploadPath(project, '', 'readme.md')).toBeNull()
-    expect(validateUploadPath(project, 'assets/videos', 'index.json')).toBeNull()
-  })
-})
-
-describe('addUploadedFiles', () => {
-  it('packages files uploaded into assets/<kind>, whatever the kind and extension', async () => {
+describe('addUploadedResources', () => {
+  it('packages each file as a resource of the kind, whatever its extension', async () => {
     const project = await loadProject()
 
-    const videos = addUploadedFiles(project, 'assets/videos', [nativeFile('step-to.mov'), nativeFile('Intro clip.mkv')])
-    const images = addUploadedFiles(project, 'assets/images', [nativeFile('hint.png')])
+    const videos = addUploadedResources(project, 'videos', [nativeFile('step-to.mov'), nativeFile('Intro clip.mkv')])
+    const images = addUploadedResources(project, 'images', [nativeFile('hint.png')])
 
-    expect(videos).toEqual(['assets/videos/step-to2', 'assets/videos/Intro clip'])
-    expect(images).toEqual(['assets/images/hint'])
+    expect(pathsOf(videos)).toEqual(['assets/videos/step-to2', 'assets/videos/Intro clip'])
+    expect(pathsOf(images)).toEqual(['assets/images/hint'])
     expect(project.resources.map((r) => `${r.kind}/${r.name}`)).toEqual([
       'videos/step-to',
       'videos/step-to2',
@@ -94,45 +95,43 @@ describe('addUploadedFiles', () => {
   it('packages a file named index.json without shadowing the manifest, and the course reloads', async () => {
     const project = await loadProject()
 
-    const paths = addUploadedFiles(project, 'assets/data', [nativeFile('index.json')])
+    const added = addUploadedResources(project, 'images', [nativeFile('index.json')])
 
-    expect(paths).toEqual(['assets/data/index2'])
+    expect(pathsOf(added)).toEqual(['assets/images/index2'])
     const exported = project.exportFiles()
-    expect(exported['assets/data/index2/index2.json']).toBeDefined()
-    expect(exported['assets/data/index2/index.json']).toBeDefined()
+    expect(exported['assets/images/index2/index2.json']).toBeDefined()
+    expect(exported['assets/images/index2/index.json']).toBeDefined()
     const reloaded = new TutorialProject()
     await reloaded.loadFiles(exported)
-    expect(reloaded.getResource('data', 'index2')).not.toBeNull()
+    expect(reloaded.getResource('images', 'index2')).not.toBeNull()
   })
 
   it('picks a free directory when an unclaimed record occupies the obvious one', async () => {
     const files = makeFiles()
-    files['assets/texts/orphan/orphan.txt'] = fromText('orphan.txt', 'precious original')
-    const project = new TutorialProject()
-    await project.loadFiles(files)
+    files['assets/images/orphan/orphan.png'] = fromText('orphan.png', 'precious original')
+    const project = await loadProject(files)
 
-    const paths = addUploadedFiles(project, 'assets/texts', [nativeFile('orphan.txt')])
+    const added = addUploadedResources(project, 'images', [nativeFile('orphan.png')])
 
-    expect(paths).toEqual(['assets/texts/orphan2'])
+    expect(pathsOf(added)).toEqual(['assets/images/orphan2'])
     const exported = project.exportFiles()
-    expect(await toText(exported['assets/texts/orphan/orphan.txt']!)).toBe('precious original')
-    expect(exported['assets/texts/orphan2/orphan2.txt']).toBeDefined()
+    expect(await toText(exported['assets/images/orphan/orphan.png']!)).toBe('precious original')
+    expect(exported['assets/images/orphan2/orphan2.png']).toBeDefined()
   })
 
   it('de-duplicates a name at the length limit instead of giving up', async () => {
     const project = await loadProject()
     const long = 'a'.repeat(100)
 
-    addUploadedFiles(project, 'assets/texts', [nativeFile(long + '.txt')])
-    const [path] = addUploadedFiles(project, 'assets/texts', [nativeFile(long + '.txt')])
+    addUploadedResources(project, 'images', [nativeFile(long + '.png')])
+    const [added] = addUploadedResources(project, 'images', [nativeFile(long + '.png')])
 
-    const name = path.slice('assets/texts/'.length)
-    expect(name).not.toBe(long)
-    expect(Array.from(name).length).toBeLessThanOrEqual(100)
-    expect(project.resources.filter((r) => r.kind === 'texts')).toHaveLength(2)
+    expect(added.name).not.toBe(long)
+    expect(Array.from(added.name).length).toBeLessThanOrEqual(100)
+    expect(project.resources.filter((r) => r.kind === 'images')).toHaveLength(2)
   })
 
-  it('adds no package when one of the files fails', async () => {
+  it('adds nothing when one of the files fails', async () => {
     const project = await loadProject()
     const addResource = project.addResource.bind(project)
     let calls = 0
@@ -141,102 +140,9 @@ describe('addUploadedFiles', () => {
       addResource(resource)
     })
 
-    expect(() => addUploadedFiles(project, 'assets/texts', [nativeFile('one.txt'), nativeFile('two.txt')])).toThrow(
+    expect(() => addUploadedResources(project, 'images', [nativeFile('one.png'), nativeFile('two.png')])).toThrow(
       'boom'
     )
-    expect(project.resources.filter((r) => r.kind === 'texts')).toEqual([])
-  })
-
-  it('adds no record when one of the files fails, and restores the ones it replaced', async () => {
-    const project = await loadProject()
-    project.setExtraFile('docs/a.md', fromText('a.md', 'A'))
-    // `docs` is a folder, so the second file cannot be written; the first one must not stay behind.
-    expect(() => addUploadedFiles(project, '', [nativeFile('notes.md', 'NEW'), nativeFile('docs')])).toThrow()
-
-    expect(await toText(project.getExtraFile('notes.md')!)).toBe('# notes')
-  })
-
-  it('refuses a target folder that is a file, and a file where a folder is', async () => {
-    const project = await loadProject()
-    project.setExtraFile('docs/a.md', fromText('a.md', 'A'))
-
-    expect(validateUploadDir(project, 'notes.md')?.en).toContain('notes.md is a file')
-    expect(validateUploadDir(project, 'notes.md/deeper')?.en).toContain('notes.md is a file')
-    expect(validateUploadPath(project, '', 'docs')?.en).toContain('docs is a folder')
-    expect(validateUploadDir(project, 'docs')).toBeNull()
-  })
-
-  it('refuses a file named like a folder the course keeps, even in a course without resources', async () => {
-    const files = makeFiles()
-    for (const path of Object.keys(files)) if (path.startsWith('assets/')) delete files[path]
-    const project = new TutorialProject()
-    await project.loadFiles(files)
-
-    expect(validateUploadPath(project, '', 'assets')?.en).toContain('a folder the course keeps')
-    // And video uploads stay possible.
-    expect(validateUploadDir(project, 'assets/videos')).toBeNull()
-  })
-
-  it('refuses __proto__ and keeps files named like other object properties', async () => {
-    const project = await loadProject()
-    expect(validateUploadPath(project, '', '__proto__')?.en).toContain('cannot be used as a file name')
-    expect(validateUploadPath(project, '', 'constructor')).toBeNull()
-
-    addUploadedFiles(project, '', [nativeFile('constructor', 'C')])
-    expect(await toText(project.exportFiles()['constructor']!)).toBe('C')
-  })
-
-  it('stores files uploaded elsewhere as plain records, creating folders implicitly', async () => {
-    const project = await loadProject()
-
-    const paths = addUploadedFiles(project, 'docs/extra', [nativeFile('guide.pdf')])
-
-    expect(paths).toEqual(['docs/extra/guide.pdf'])
-    expect(project.getExtraFile('docs/extra/guide.pdf')).not.toBeNull()
-    expect(project.exportFiles()['docs/extra/guide.pdf']).toBeDefined()
-  })
-
-  it('reports plain records that would be replaced', async () => {
-    const project = await loadProject()
-    expect(getUploadConflicts(project, '', ['notes.md', 'new.md'])).toEqual(['notes.md'])
-    expect(getUploadConflicts(project, 'assets/videos', ['step-to.mp4'])).toEqual([])
-  })
-})
-
-describe('upload types', () => {
-  it('sends each type where its files belong', () => {
-    expect(getUploadDir('video')).toBe('assets/videos')
-    expect(getUploadDir('picture')).toBe('assets/images')
-    // Anything else is kept next to the course, which is the only place the author never has to name.
-    expect(getUploadDir('other')).toBe('')
-  })
-
-  it('starts from the group the author is in', () => {
-    expect(getUploadTypeAt('')).toBe('video')
-    expect(getUploadTypeAt('assets/images')).toBe('picture')
-    expect(getUploadTypeAt('assets/images/hint')).toBe('picture')
-    expect(getUploadTypeAt('notes.md')).toBe('video')
-  })
-
-  it('refuses a name only where the name becomes the record', async () => {
-    const project = await loadProject()
-
-    // As a plain record the file would take a path the course already claims.
-    expect(validateUpload(project, 'other', ['index.json'])?.en).toContain('its own editor')
-    // The same file as a picture is packaged under a derived name, so nothing collides.
-    expect(validateUpload(project, 'picture', ['index.json'])).toBeNull()
-    expect(validateUpload(project, 'video', ['step-to.mp4', 'index.json'])).toBeNull()
-  })
-
-  it('packages a picture and keeps another file as it is', async () => {
-    const project = await loadProject()
-
-    expect(addUploadedFilesOfType(project, 'picture', [nativeFile('hint.png', 'png')])).toEqual(['assets/images/hint'])
-    expect(addUploadedFilesOfType(project, 'other', [nativeFile('handout.txt')])).toEqual(['handout.txt'])
-
-    const files = project.exportFiles()
-    expect(Object.keys(files)).toContain('assets/images/hint/index.json')
-    expect(Object.keys(files)).toContain('assets/images/hint/hint.png')
-    expect(await toText(files['handout.txt']!)).toBe('content')
+    expect(project.resources.filter((r) => r.kind === 'images')).toEqual([])
   })
 })

@@ -75,8 +75,9 @@ export const courseEditorRoutes: RouteRecordRaw[] = [
     // Route params are passed to the page as props (`courseSeriesIdInput`, `courseIdInput` are declared there).
     props: true
   },
-  // The editing record. `:inCourseEditorPath*` is the course-tree node being edited (the course root when
-  // empty); when it points into the embedded project, `SpxProjectEditorHost.vue` translates the tail after the
+  // The editing record. `:inCourseEditorPath*` is the path of the view being edited (the course itself when
+  // empty; see `components/course-editor/course-views.ts`); when it points into the embedded project,
+  // `SpxProjectEditorHost.vue` translates the tail after the
   // project root into the Project Editor's own `inEditorPath`.
   {
     path: '/course-editor/:courseSeriesIdInput/:courseIdInput/edit/:inCourseEditorPath*',
@@ -96,7 +97,7 @@ export const courseEditorRoutes: RouteRecordRaw[] = [
  * Builds the Course Editor path for a course inside a series, optionally opening a node of the course tree.
  * @param courseSeriesID - ID of the course series the course belongs to (becomes the `courseSeriesIdInput` param).
  * @param courseID - ID of the course to edit (becomes the `courseIdInput` param).
- * @param inCourseEditorPath - Segments of the course-tree path to open (e.g. `['project', 'sprites', 'Bird']`);
+ * @param inCourseEditorPath - Segments of the path to open (e.g. `['project', 'sprites', 'Bird']`);
  *   empty (the default) opens the course root.
  * @returns `/course-editor/<series>/<course>/edit`, followed by `/<segment>/...` when a path is given; every part
  *   is URI-encoded.
