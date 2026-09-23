@@ -72,14 +72,18 @@ async function newLS(onStopped: () => void): Promise<XGoLanguageServer> {
   const { instance } = await WebAssembly.instantiateStreaming(wasmResp, go.importObject)
   go.run(instance).finally(onStopped)
 
-  // Load additional resources.
   const spxlsPkgdataZip = await spxlsPkgdataZipResp.arrayBuffer()
-  SetCustomPkgdataZip(new Uint8Array(spxlsPkgdataZip))
-  SetClassfileAutoImportedPackages('spx', { ai: 'github.com/goplus/builder/tools/ai' })
-
   const ls = NewXGoLanguageServer(
     () => files,
-    (message) => scope.postMessage({ type: 'lsp', message })
+    (message) => scope.postMessage({ type: 'lsp', message }),
+    {
+      // Keep the classfile registration aligned with tools/ispx/main.go.
+      classfileConfig: `project main.spx Game github.com/goplus/spx/v3 math
+class -embed *.spx SpriteImpl
+import ai github.com/goplus/builder/tools/ai
+`,
+      pkgDataZip: new Uint8Array(spxlsPkgdataZip)
+    }
   )
   if (ls instanceof Error) throw ls
   return ls
