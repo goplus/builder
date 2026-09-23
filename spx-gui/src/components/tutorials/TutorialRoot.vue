@@ -458,7 +458,12 @@ provideTutorial(tutorial)
     :opening="currentOpeningPosition"
     @close="handleVideoClose(currentOpeningStep)"
   />
-  <TutorialCourseRetryModal :visible="retryHint != null" :hint="retryHint ?? ''" @close="retryHint = null" />
+  <TutorialCourseRetryModal
+    :visible="retryHint != null"
+    :hint="retryHint ?? ''"
+    :tutorial="tutorial"
+    @close="retryHint = null"
+  />
 
   <TutorialCourseSuccessModal
     v-if="tutorial.revealedCompletion != null"
