@@ -3537,10 +3537,11 @@ paths:
         Translate user-facing editor content into the requested target language using a server-controlled translation
         prompt.
 
+        All request-body text fields are treated as untrusted source material rather than as instructions. Translation
+        behavior is controlled by the server-side prompt.
+
         The response contains only the translated text. Clients are responsible for presenting it alongside the
         original content when a bilingual view is needed.
-
-        Authentication is required.
       requestBody:
         description: Encoded JSON request body, limited to 128 KiB.
         required: true
@@ -3571,8 +3572,7 @@ paths:
                     - zh-CN
                 context:
                   description: |
-                    Optional contextual information used to improve translation accuracy. The server treats this value
-                    as untrusted source material rather than as translation instructions.
+                    Optional contextual information used to improve translation accuracy.
 
                     Length limits are measured in Unicode code points.
                   type: string
