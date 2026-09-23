@@ -406,29 +406,26 @@ describe('CostumeGen', () => {
     })
   })
 
-  it.each(['missing-path', 'missing-file'])(
-    'loads generated costume with a %s reference',
-    async (failure) => {
-      const project = makeSpxProject()
-      const sprite = Sprite.create('TestSprite', '')
-      const gen = new CostumeGen(i18n, sprite, project, {
-        settings: { name: 'idle' },
-        referenceImage: mockFile('reference.png')
-      })
-      await gen.generate()
-      const [rawConfig, rawFiles] = gen.export()
-      const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-      if (failure === 'missing-path') delete config.referenceImagePath
-      else delete files[config.referenceImagePath!]
-      const loaded = CostumeGen.load(i18n, sprite, project, config, files)
-      expect(loaded.referenceImage).toBeNull()
-      expect(loaded.referenceImageSelection).toBeNull()
-      expect(loaded.image?.meta.universalUrl).toBe(gen.image?.meta.universalUrl)
-      expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
-      gen.dispose()
-      loaded.dispose()
-    }
-  )
+  it.each(['missing-path', 'missing-file'])('loads generated costume with a %s reference', async (failure) => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: 'idle' },
+      referenceImage: mockFile('reference.png')
+    })
+    await gen.generate()
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    if (failure === 'missing-path') delete config.referenceImagePath
+    else delete files[config.referenceImagePath!]
+    const loaded = CostumeGen.load(i18n, sprite, project, config, files)
+    expect(loaded.referenceImage).toBeNull()
+    expect(loaded.referenceImageSelection).toBeNull()
+    expect(loaded.image?.meta.universalUrl).toBe(gen.image?.meta.universalUrl)
+    expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
+    gen.dispose()
+    loaded.dispose()
+  })
 
   it('supports selecting, retaining, clearing, and removing reference images', async () => {
     const project = makeSpxProject()

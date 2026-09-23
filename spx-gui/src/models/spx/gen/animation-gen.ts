@@ -391,7 +391,7 @@ export class AnimationGen extends Disposable {
     const inits: AnimationGenInits = { id: genId }
     inits.settings = settings
     if (referenceImagePath != null || reference?.type === 'local-image') {
-      inits.referenceImage = referenceImagePath == null ? null : (files[referenceImagePath] ?? null)
+      inits.referenceImage = referenceImagePath == null ? null : files[referenceImagePath] ?? null
     }
     if (reference !== undefined) {
       inits.referenceImageSelection =

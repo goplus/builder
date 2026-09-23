@@ -595,27 +595,24 @@ describe('AnimationGen', () => {
     gen.dispose()
   })
 
-  it.each(['missing-path', 'missing-file'])(
-    'loads generated video with a %s reference',
-    async (failure) => {
-      const project = makeSpxProject()
-      const sprite = Sprite.create('TestSprite', '')
-      const gen = new AnimationGen(i18n, sprite, project, {
-        settings: { name: 'walk' },
-        referenceImage: mockFile('reference.png')
-      })
-      await gen.generateVideo()
-      const [rawConfig, rawFiles] = gen.export()
-      const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-      if (failure === 'missing-path') delete config.referenceImagePath
-      else delete files[config.referenceImagePath!]
-      const loaded = AnimationGen.load(i18n, sprite, project, config, files)
-      expect(loaded.referenceImage).toBeNull()
-      expect(loaded.referenceImageSelection).toBeNull()
-      expect(loaded.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
-      expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
-      gen.dispose()
-      loaded.dispose()
-    }
-  )
+  it.each(['missing-path', 'missing-file'])('loads generated video with a %s reference', async (failure) => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: 'walk' },
+      referenceImage: mockFile('reference.png')
+    })
+    await gen.generateVideo()
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    if (failure === 'missing-path') delete config.referenceImagePath
+    else delete files[config.referenceImagePath!]
+    const loaded = AnimationGen.load(i18n, sprite, project, config, files)
+    expect(loaded.referenceImage).toBeNull()
+    expect(loaded.referenceImageSelection).toBeNull()
+    expect(loaded.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
+    expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
+    gen.dispose()
+    loaded.dispose()
+  })
 })
