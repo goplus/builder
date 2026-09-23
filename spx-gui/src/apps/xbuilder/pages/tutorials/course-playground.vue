@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import type { PlaygroundCourse } from '@/apis/course'
@@ -15,6 +16,7 @@ import CoursePlaygroundCompletionModal, {
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/runner'
 import { useTutorial } from '@/components/tutorials/tutorial'
+import { useTutorialStatus } from '@/components/tutorials/status'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 
 const props = defineProps<{
@@ -24,6 +26,7 @@ const props = defineProps<{
 }>()
 
 const tutorial = useTutorial()
+const tutorialStatus = useTutorialStatus()
 const router = useRouter()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 
@@ -134,9 +137,20 @@ const sessionQueryRet = useQuery(
 
 const session = sessionQueryRet.data
 
+watch(
+  session,
+  (currentSession, _, onCleanup) => {
+    if (currentSession == null) return
+    tutorialStatus.setCurrentCourse(currentSession.course, currentSession.series)
+    onCleanup(() => tutorialStatus.clearCurrentCourse('playground', currentSession.course.id))
+  },
+  { immediate: true }
+)
+
 async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const completedSession = session.value
   if (completedSession == null) return
+  tutorialStatus.markCurrentCourseCompleted('playground', completedSession.course.id)
 
   const action: CompletionAction = await openCompletion({
     course: completedSession.course,
