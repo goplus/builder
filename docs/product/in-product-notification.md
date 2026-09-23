@@ -1,6 +1,6 @@
 # In-Product Notification
 
-XBuilder uses In-Product Notification to keep product updates available after users leave the original page. Features such as likes, remixes and feedback replies can use Notifications; each feature defines its own triggering events and content.
+XBuilder uses In-Product Notification to keep product updates available after users leave the original page. Each product feature defines when to send a Notification and what it contains.
 
 ## Basic Concepts
 
@@ -15,30 +15,40 @@ A Notification contains:
 * CreatedAt: the creation time
 * ReadAt: the time the Recipient first read it; empty while unread
 
-A Message is addressed to one User. An Announcement is addressed to all Users who exist when it is published. Users who register later do not automatically receive historical Announcements.
-
-Both categories use the same content structure. Each Recipient has independent read state, and new Notifications are unread.
-
 The page displays Title, Body and CreatedAt. User names, project links, attachments and quoted context belong in Body, without separate display fields for each kind of event.
+
+Markdown rendering must block executable HTML and unsafe link schemes. Links and previews follow the referenced resource's access rules.
+
+### Message
+
+A Message is addressed to one User. Likes, remixes and feedback replies are examples of product events that may create Messages; each feature defines its own triggering events and content.
+
+### Announcement
+
+An Announcement is addressed to all Users who exist when it is published. Users who register later do not automatically receive historical Announcements. Messages and Announcements use the same content structure, and each Recipient has independent read state.
 
 ### Notification List
 
-The Notification List contains the current user's Notifications, divided into Messages and Announcements. Each category has an unread count; the navigation entry shows their sum.
+The Notification List contains the current user's Notifications, divided into Messages and Announcements.
 
-Notifications are ordered from newest to oldest by CreatedAt, with a stable order when times are equal. Reading a Notification does not change its position or cause items to be skipped or repeated when loading more.
+## Core Mechanisms
+
+### Creating Notifications
+
+Product features create Messages for their Recipients. Announcements go to the Users present at publication. New Notifications are unread.
+
+### Listing Notifications
+
+Each category has an unread count; the navigation entry shows their sum. Notifications are ordered from newest to oldest by CreatedAt, with a stable order when times are equal. Reading one does not change its position or cause items to be skipped or repeated when loading more.
+
+### Reading Notifications
+
+Opening the list or switching categories does not mark Notifications read. Opening a Notification shows its details and records ReadAt. The list and unread counts update after the read state is saved. Reopening it preserves the first-read time.
+
+Mark all as read includes both categories and items not yet loaded in the panel. Notifications delivered after the operation's snapshot remain unread.
 
 ## User Story
 
 ### View Notifications
 
-Signed-in users open the Notification List from the navigation bar and select Messages or Announcements. Opening the list or switching categories does not mark Notifications read.
-
-Opening a Notification shows its details and records ReadAt. The list and unread counts update after the read state is saved. Reopening the same Notification preserves the first-read time.
-
-The list should distinguish loading, no Notifications and request failure. If a read update fails, the UI should restore the unread state and allow retry. Long titles and bodies should remain accessible within the viewport.
-
-Markdown rendering must block executable HTML and unsafe link schemes. Links and previews follow the referenced resource's access rules.
-
-### Mark All Notifications Read
-
-Users can mark all Notifications read. This includes both categories and items not yet loaded in the panel. Notifications delivered after the operation's snapshot remain unread.
+A User returns to XBuilder and sees that they have unread Messages. They open the Notification List from the navigation bar, read one Message, and then switch to Announcements. After checking both categories, they mark the remaining Notifications read.
