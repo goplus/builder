@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { nextTick, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { useQuery } from '@/utils/query'
 import { useEnsureSignedIn } from '@/utils/user'
-import { useMessageHandle } from '@/utils/exception'
+import { type Exception, useMessageHandle } from '@/utils/exception'
 import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -20,7 +20,7 @@ import type { ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
-import { type CodeEditor, CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
+import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { UIDetailedLoading, UIError, UIMenuGroup, UIMenuItem, useModal } from '@/components/ui'
 import { useSaveProjectAs } from '@/components/project'
 
@@ -34,16 +34,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   courseCompleted: [completion: PlaygroundCourseCompletion]
-  failed: [error: Error]
 }>()
-
-const localCache: ILocalCache = {
-  async load() {
-    return null
-  },
-  async save() {},
-  async clear() {}
-}
 
 const i18n = useI18n()
 const router = useRouter()
@@ -52,11 +43,6 @@ const radar = useRadar()
 const spotlight = useSpotlight()
 const { isOnline } = useNetwork()
 const signedInStateQuery = useSignedInStateQuery()
-const rulerEnabled = ref(false)
-const apiWhitelist = shallowRef<string[] | null>(null)
-
-const state = shallowRef<EditorState | null>(null)
-const initializationError = ref<Error | null>(null)
 const ensureSignedIn = useEnsureSignedIn()
 const saveProjectAs = useSaveProjectAs()
 
@@ -71,39 +57,6 @@ const handleSaveAsMyProject = useMessageHandle(
   },
   { en: 'Failed to save project', zh: '保存项目失败' }
 ).fn
-
-let disposed = false
-async function initialize() {
-  const previousState = state.value
-  state.value = null
-  initializationError.value = null
-  apiWhitelist.value = null
-  await nextTick()
-  previousState?.dispose()
-
-  try {
-    const nextState = new EditorState(
-      i18n,
-      props.project.project,
-      isOnline,
-      signedInStateQuery,
-      cloudHelpers,
-      localCache
-    )
-    nextState.editing.startEditing()
-    nextState.syncWithRouter(router)
-    state.value = nextState
-  } catch (error) {
-    if (disposed) return
-    initializationError.value = error instanceof Error ? error : new Error(String(error))
-  }
-}
-
-watch(
-  () => props.project,
-  () => void initialize(),
-  { immediate: true }
-)
 
 const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
   en: 'Failed to load code editor',
@@ -123,50 +76,69 @@ const presentation = {
       return
     }
     spotlight.reveal(node.getElement(), { tip, ...options })
-  },
-  setRulerEnabled(enabled: boolean) {
-    rulerEnabled.value = enabled
   }
 }
 
-let runner: PlaygroundCourseRunner | null = null
-function handleCodeEditorReady(codeEditor: CodeEditor) {
-  if (disposed || state.value == null) return
-  runner?.dispose()
-  const nextRunner = new PlaygroundCourseRunner({
-    project: props.project,
-    editorState: state.value,
-    copilot,
-    codeEditor,
-    setAPIWhitelist: (apis) => {
-      apiWhitelist.value = apis
-    },
-    presentation
-  })
-  nextRunner.on('completed', (completion) => {
-    nextRunner.dispose()
-    emit('courseCompleted', completion)
-  })
-  nextRunner.on('failed', (error) => {
-    nextRunner.dispose()
-    emit('failed', error)
-  })
-  runner = nextRunner
-  void nextRunner.start().catch(() => {})
+const noLocalCache: ILocalCache = {
+  async load() {
+    return null
+  },
+  async save() {},
+  async clear() {}
 }
 
-onUnmounted(() => {
-  disposed = true
-  runner?.dispose()
-  state.value?.dispose()
-  props.project.project.dispose()
-})
+const runningErr = ref<Exception | null>(null)
+
+const runnerQueryRet = useQuery(
+  async (ctx) => {
+    runningErr.value = null
+    const project = props.project
+    const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
+    editorState.disposeOnSignal(ctx.signal)
+    editorState.editing.startEditing()
+    editorState.syncWithRouter(router)
+    const runner = new PlaygroundCourseRunner({
+      project,
+      editorState,
+      copilot,
+      presentation
+    })
+    runner.disposeOnSignal(ctx.signal)
+    runner.on('completed', (completion) => {
+      runner.dispose()
+      emit('courseCompleted', completion)
+    })
+    runner.on('failed', (e) => {
+      runner.dispose()
+      runningErr.value = e
+    })
+    // Give the editor time to mount before the course accesses UI targets such as Spotlight.
+    // TODO: Replace this fixed delay with a reliable editor-ready signal.
+    const startTimer = setTimeout(() => {
+      void runner.start().catch(() => {})
+    }, 300)
+    runner.addDisposer(() => clearTimeout(startTimer))
+    return runner
+  },
+  {
+    en: 'Failed to start course',
+    zh: '启动课程失败'
+  },
+  { clearDataOnFetch: true }
+)
+
+const runner = runnerQueryRet.data
 </script>
 
 <template>
   <section class="relative min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
-      <EditorNavbar v-if="state != null" :project="state.project" :state="state" :title="project.title">
+      <EditorNavbar
+        v-if="runner != null"
+        :project="runner.project.project"
+        :state="runner.editorState"
+        :title="project.title"
+      >
         <template #project-menu>
           <UIMenuGroup :disabled="!isOnline">
             <UIMenuItem @click="handleSaveAsMyProject">
@@ -177,11 +149,11 @@ onUnmounted(() => {
       </EditorNavbar>
     </header>
     <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
-      <UIDetailedLoading v-if="state == null && initializationError == null" :percentage="0">
+      <UIDetailedLoading v-if="runnerQueryRet.isLoading.value" :percentage="runnerQueryRet.progress.value.percentage">
         <span>{{ $t({ en: 'Preparing course...', zh: '准备课程中...' }) }}</span>
       </UIDetailedLoading>
-      <UIError v-else-if="initializationError != null" :retry="initialize">
-        {{ initializationError.message }}
+      <UIError v-else-if="runnerQueryRet.error.value != null" :retry="runnerQueryRet.refetch">
+        {{ $t(runnerQueryRet.error.value.userMessage) }}
       </UIError>
       <UIDetailedLoading
         v-else-if="monacoQueryRet.isLoading.value"
@@ -192,13 +164,12 @@ onUnmounted(() => {
       <UIError v-else-if="monacoQueryRet.error.value != null" :retry="monacoQueryRet.refetch">
         {{ $t(monacoQueryRet.error.value.userMessage) }}
       </UIError>
-      <EditorContextProvider v-else-if="state != null" :project="state.project" :state="state">
-        <CodeEditorProvider
-          :monaco="monacoQueryRet.data.value!"
-          :api-whitelist="apiWhitelist"
-          @ready="handleCodeEditorReady"
-        >
-          <ProjectEditor :ruler-enabled="rulerEnabled" />
+      <UIError v-else-if="runningErr != null" :retry="runnerQueryRet.refetch">
+        {{ $t(runningErr.userMessage) }}
+      </UIError>
+      <EditorContextProvider v-else-if="runner != null" :project="runner.project.project" :state="runner.editorState">
+        <CodeEditorProvider :monaco="monacoQueryRet.data.value!" :api-whitelist="runner.apiWhitelist">
+          <ProjectEditor :ruler-enabled="runner.rulerEnabled" />
         </CodeEditorProvider>
       </EditorContextProvider>
     </main>

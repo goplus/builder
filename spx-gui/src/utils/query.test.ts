@@ -7,6 +7,48 @@ import { withSetup } from './test'
 import { timeout } from './utils'
 
 describe('useQuery', () => {
+  it('keeps previous data during refetch by default', async () => {
+    let resolveNext!: (value: string) => void
+    let callCount = 0
+    const ret = withSetup(() =>
+      useQuery(async () => {
+        if (++callCount === 1) return 'first'
+        return new Promise<string>((resolve) => (resolveNext = resolve))
+      })
+    )
+
+    await flushPromises()
+    ret.refetch()
+    expect(ret.data.value).toBe('first')
+
+    resolveNext('second')
+    await flushPromises()
+    expect(ret.data.value).toBe('second')
+  })
+
+  it('clears previous data when clearDataOnFetch is enabled', async () => {
+    let resolveNext!: (value: string) => void
+    let callCount = 0
+    const ret = withSetup(() =>
+      useQuery(
+        async () => {
+          if (++callCount === 1) return 'first'
+          return new Promise<string>((resolve) => (resolveNext = resolve))
+        },
+        { en: 'Failed to load data', zh: '加载数据失败' },
+        { clearDataOnFetch: true }
+      )
+    )
+
+    await flushPromises()
+    ret.refetch()
+    expect(ret.data.value).toBe(null)
+
+    resolveNext('second')
+    await flushPromises()
+    expect(ret.data.value).toBe('second')
+  })
+
   it('should discard stale results when queryFn ignores abort signal', async () => {
     // This test simulates the race condition where queryFn ignores the abort signal
     let resolveFirst: (value: string) => void

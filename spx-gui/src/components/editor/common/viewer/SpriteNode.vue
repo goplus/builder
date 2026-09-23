@@ -232,9 +232,6 @@ const config = computed<ImageConfig>(() => {
   return config
 })
 
-const spriteName = computed(
-  () => props.project.sprites.find((sprite) => sprite.id === props.localConfig.id)?.name ?? null
-)
 const nameLabelAnchor = ref<{ x: number; y: number } | null>(null)
 const nameLabelRef = ref<InstanceType<typeof SpriteNameLabel> | null>(null)
 
@@ -322,7 +319,7 @@ defineExpose({
   <SpriteNameLabel
     v-if="simpleMode"
     ref="nameLabelRef"
-    :name="spriteName"
+    :name="localConfig.name"
     :anchor="nameLabelAnchor"
     :selected="selected"
     :map-scale="mapScale"

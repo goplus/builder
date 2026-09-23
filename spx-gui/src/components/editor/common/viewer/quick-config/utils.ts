@@ -94,6 +94,10 @@ export class SpriteLocalConfig extends LocalConfig<{
     super(sprite, history, { name: { en: `Configure sprite ${sprite.name}`, zh: `修改精灵 ${sprite.name} 配置` } })
   }
 
+  get name() {
+    return this.sprite.name
+  }
+
   get heading() {
     return this.changes.value.heading ?? this.sprite.heading
   }

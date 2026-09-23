@@ -8,6 +8,7 @@ import { type CopilotRound, type Topic } from '@/components/copilot/copilot'
 import { Runtime, RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
 import type { Copilot } from '@/components/copilot/copilot'
+import { DefaultException } from '@/utils/exception'
 
 import { PlaygroundCourseRunner } from './runner'
 
@@ -87,16 +88,12 @@ function makeHarness() {
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
     showMessage: vi.fn().mockResolvedValue(undefined),
-    revealSpotlight: vi.fn().mockResolvedValue(undefined),
-    setRulerEnabled: vi.fn()
+    revealSpotlight: vi.fn().mockResolvedValue(undefined)
   }
-  const setAPIWhitelist = vi.fn()
   const runner = new PlaygroundCourseRunner({
     project,
     editorState,
     copilot: copilot as unknown as Copilot,
-    codeEditor: {} as never,
-    setAPIWhitelist,
     presentation
   })
   const executor = executorMocks.instances.at(-1)!
@@ -108,7 +105,6 @@ function makeHarness() {
     copilot,
     executor,
     presentation,
-    setAPIWhitelist,
     runner,
     getExecutorOptions: () => executor.options
   }
@@ -144,7 +140,7 @@ describe('PlaygroundCourseRunner', () => {
 
     await filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'] })
 
-    expect(harness.setAPIWhitelist).toHaveBeenCalledWith(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
+    expect(harness.runner.apiWhitelist).toEqual(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
   })
 
   it('forwards editor and Copilot events in source order', async () => {
@@ -244,10 +240,9 @@ describe('PlaygroundCourseRunner', () => {
     if (enable == null || disable == null) throw new Error('ruler capabilities not found')
 
     await enable(null)
+    expect(harness.runner.rulerEnabled).toBe(true)
     await disable(null)
-
-    expect(harness.presentation.setRulerEnabled).toHaveBeenNthCalledWith(1, true)
-    expect(harness.presentation.setRulerEnabled).toHaveBeenNthCalledWith(2, false)
+    expect(harness.runner.rulerEnabled).toBe(false)
   })
 
   it('publishes executor failures for its owner to dispose', async () => {
@@ -258,7 +253,11 @@ describe('PlaygroundCourseRunner', () => {
 
     harness.getExecutorOptions().onExit?.('error')
 
-    await vi.waitFor(() => expect(failed).toHaveBeenCalledWith(new Error('Tutorial Course failed')))
+    await vi.waitFor(() =>
+      expect(failed).toHaveBeenCalledWith(
+        new DefaultException({ en: 'Tutorial Course exited with error', zh: '课程运行时发生错误' })
+      )
+    )
     expect(harness.executor.stop).not.toHaveBeenCalled()
 
     harness.runner.dispose()
