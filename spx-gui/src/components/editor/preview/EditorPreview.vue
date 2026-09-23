@@ -102,6 +102,7 @@
           <ProjectRunnerSurface
             ref="projectRunnerSurfaceRef"
             v-model:fullscreen="fullscreen"
+            :track-execution-location="simpleMode"
             :project="editorCtx.project"
             :runner-state="runnerState"
             :on-run="handleRun.fn"
@@ -194,7 +195,7 @@ type SpxInfoLog = SpxLog & {
 }
 
 function isSpxInfoLog(obj: SpxLog): obj is SpxInfoLog {
-  return obj.level === 'INFO'
+  return obj.level === 'INFO' && obj.msg !== '__spx_loc__'
 }
 
 type SpxPanicLog = SpxLog & {
@@ -235,6 +236,7 @@ import {
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import RulerToggle from './stage-viewer/ruler/RulerToggle.vue'
+import { isSpxLocationLog } from './spx-location'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
 
@@ -326,7 +328,16 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   if (type !== 'log' || typeof args[0] !== 'string') return
   const spxLog = parseSpxLog(args[0])
   if (spxLog == null) return
-  if (isSpxInfoLog(spxLog)) {
+  if (spxLog.msg === '__spx_loc__') {
+    if (!isSpxLocationLog(spxLog)) return
+    runtime.value.setCurrentLocation({
+      textDocument: { uri: `file:///${spxLog.file}` },
+      range: {
+        start: { line: spxLog.line, column: 1 },
+        end: { line: spxLog.line, column: 1 }
+      }
+    })
+  } else if (isSpxInfoLog(spxLog)) {
     appendRuntimeOutput({
       kind: RuntimeOutputKind.Log,
       time: dayjs(spxLog.time).valueOf(),
@@ -362,6 +373,7 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
 }
 
 function handleExit(code: number) {
+  runtime.value.invalidateCurrentLocation()
   runtime.value.emit('didExit', code)
   if (exitGuard.value === 'manualStopPending') {
     exitGuard.value = 'idle'

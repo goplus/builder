@@ -41,6 +41,43 @@ function withMockedAnimationFrame() {
 }
 
 describe('Runtime', () => {
+  it('batches location updates and clears immediately on stop and restart', () => {
+    vi.useFakeTimers()
+    withMockedAnimationFrame()
+    const runtime = makeRuntime()
+    const events: Array<number | null> = []
+    runtime.on('didChangeLocation', () => events.push(runtime.currentLocation?.range.start.line ?? null))
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    const location = (line: number) => ({
+      textDocument: { uri: 'file:///Sprite.spx' },
+      range: { start: { line, column: 1 }, end: { line, column: 1 } }
+    })
+
+    runtime.setCurrentLocation(location(1))
+    runtime.setCurrentLocation(location(2))
+    flushOutputs()
+    expect(events).toEqual([2])
+
+    runtime.setCurrentLocation(location(3))
+    runtime.setRunning({ mode: 'none' })
+    expect(events).toEqual([2, null])
+    flushOutputs()
+    expect(events).toEqual([2, null])
+
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    runtime.setCurrentLocation(location(4))
+    runtime.invalidateCurrentLocation()
+    runtime.setCurrentLocation(location(5))
+    expect(runtime.currentLocation).toBeNull()
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    runtime.setCurrentLocation(location(6))
+    runtime.clearOutputs()
+    expect(runtime.currentLocation).toBeNull()
+    runtime.dispose()
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
   it('should keep latest outputs within default max size and assign stable ids', () => {
     vi.useFakeTimers()
     withMockedAnimationFrame()

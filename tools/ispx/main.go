@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"syscall/js"
 
 	"github.com/goplus/ixgo"
 	"github.com/goplus/ixgo/xgobuild"
@@ -27,6 +28,10 @@ func ispxInit() error {
 	ixgoCtx := ixgo.NewContext(ixgo.SupportMultipleInterp | ixgo.EnableCachedReg)
 	ixgoCtx.Lookup = nil // Let [ispx.Init] handle the lookup.
 	ixgoCtx.SetPanic(logWithPanicInfo)
+	trackLocation := js.Global().Get("__xb_track_execution_location")
+	if trackLocation.Type() == js.TypeBoolean && trackLocation.Bool() {
+		ixgoCtx.SetDebug(logExecutionLocation)
+	}
 
 	// Override fmt.Print* functions to log with caller info.
 	ixgoCtx.RegisterExternal("fmt.Print", func(frame *ixgo.Frame, a ...any) (n int, err error) {

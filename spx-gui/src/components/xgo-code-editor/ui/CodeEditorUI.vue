@@ -34,6 +34,7 @@ import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
 import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
+import ExecutionLineUI from './execution-line/ExecutionLineUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
@@ -41,6 +42,7 @@ import { userLocalStorageRef } from '@/utils/user-storage'
 const props = defineProps<{
   codeFilePath: string
   simpleMode?: boolean
+  executionLine?: number | null
 }>()
 
 const i18n = useI18n()
@@ -73,6 +75,14 @@ const uiRef = computed(() => {
   })
 })
 
+watch(
+  [uiRef, () => props.executionLine],
+  ([ui, line]) => {
+    ui.executionLineController.setPosition(line == null ? null : { line, column: 1 })
+  },
+  { immediate: true }
+)
+
 const initialFontSize = 12
 const fontSize = props.simpleMode ? ref(16) : userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
 
@@ -86,6 +96,7 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
+const initializedUiRef = shallowRef<CodeEditorUIController | null>(null)
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor
@@ -158,6 +169,7 @@ watch(
 
     await untilTaskScheduled('user-visible', signal)
     ui.init(editor)
+    initializedUiRef.value = ui
 
     ui.editor.onDidChangeConfiguration((e) => {
       const fontSizeId = ui.monaco.editor.EditorOption.fontSize
@@ -168,6 +180,7 @@ watch(
 
     codeEditor.attachUI(ui)
     signal.addEventListener('abort', () => {
+      if (initializedUiRef.value === ui) initializedUiRef.value = null
       codeEditor.detachUI(ui)
     })
   },
@@ -280,6 +293,10 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
+    <ExecutionLineUI
+      v-if="props.simpleMode && initializedUiRef === uiRef"
+      :controller="uiRef.executionLineController"
+    />
     <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
       <ZoomControl v-if="!props.simpleMode" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
