@@ -8,7 +8,7 @@ XBuilder 使用站内通知在产品内传递更新。各产品功能定义何�
 
 ## 目标
 
-* 用户可以找到发给自己的消息和发给全体用户的公告。
+* 用户可以找到与自己相关的产品更新。
 * 用户可以区分未读和已读通知。
 * 各产品功能共用 Notification List、内容格式和已读行为。
 
@@ -19,7 +19,7 @@ XBuilder 使用站内通知在产品内传递更新。各产品功能定义何�
 一个 Notification 包含：
 
 * Recipient：可以查看它的 User
-* Category：消息 Message 或公告 Announcement
+* Category：Notification 的类别，例如 Message、Announcement
 * Title：更新摘要
 * Body：Markdown 格式的完整消息
 * CreatedAt：创建时间
@@ -27,23 +27,15 @@ XBuilder 使用站内通知在产品内传递更新。各产品功能定义何�
 
 页面展示 Title、Body 和 CreatedAt。用户名、作品链接、附件和引用上下文都放在 Body 中，不为每种事件单独增加展示字段。
 
-### 消息 Message
-
-Message 发给某个 User。点赞、Remix、反馈回复等产品事件都可以产生 Message，具体的触发事件和内容由各功能定义。
-
-### 公告 Announcement
-
-Announcement 发给发布时已存在的全体 User。之后注册的用户不会自动收到历史公告。消息与公告使用相同的内容结构，每个 Recipient 的已读状态相互独立。
-
 ### 通知列表 Notification List
 
-Notification List 是当前用户收到的 Notification 集合，分为消息和公告。
+Notification List 是当前用户收到的 Notification 集合，按 Category 分组。
 
 ## 核心机制
 
 ### 创建 Notification
 
-产品功能为每位 Recipient 各创建一条 Notification，并将其 Category 设置为 Message 或 Announcement。新收到的 Notification 为未读状态。
+产品功能为 Recipient 创建 Notification，并根据前端的展示方式设置 Category。新收到的 Notification 为未读状态。
 
 ### 列出通知
 
@@ -59,4 +51,4 @@ Notification List 是当前用户收到的 Notification 集合，分为消息和
 
 ### 查看通知
 
-用户回到 XBuilder 后，发现有未读消息。他从导航栏打开 Notification List，读完一条消息后切换到公告。查看完两个类别后，他将剩余通知全部标为已读。
+用户回到 XBuilder 后，发现有未读 Notification。他从导航栏打开 Notification List。Category 为 Message 的 Notification 显示在消息 Tab，Category 为 Announcement 的 Notification 显示在公告 Tab。查看完两个 Tab 后，用户将剩余 Notification 全部标为已读。
