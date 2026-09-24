@@ -15,7 +15,6 @@ import CoursePlaygroundCompletionModal, {
   type CompletionAction
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/runner'
-import { useTutorial } from '@/components/tutorials/tutorial'
 import { useTutorialStatus } from '@/components/tutorials/status'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 
@@ -25,7 +24,6 @@ const props = defineProps<{
   inEditorPath: string | string[]
 }>()
 
-const tutorial = useTutorial()
 const tutorialStatus = useTutorialStatus()
 const router = useRouter()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
@@ -69,27 +67,49 @@ Copilot.onRoundComplete round => {
   }
   project.dispose()
 
-  const course: PlaygroundCourse = {
-    id: 'playground-demo-course',
-    owner: 'tutorial-demo',
-    kind: 'playground',
-    title: 'Playground Demo',
-    thumbnail: '',
-    content: await toFileCollection(files)
-  }
+  const content = await toFileCollection(files)
+  const courses: PlaygroundCourse[] = [
+    {
+      id: 'playground-demo-course-1',
+      owner: 'tutorial-demo',
+      kind: 'playground',
+      title: 'Playground Demo 1',
+      thumbnail: '',
+      content
+    },
+    {
+      id: 'playground-demo-course-2',
+      owner: 'tutorial-demo',
+      kind: 'playground',
+      title: 'Playground Demo 2',
+      thumbnail: '',
+      content
+    },
+    {
+      id: 'playground-demo-course-3',
+      owner: 'tutorial-demo',
+      kind: 'playground',
+      title: 'Playground Demo 3',
+      thumbnail: '',
+      content
+    }
+  ]
   const series: CourseSeries = {
-    id: 'playground-demo-series',
+    id: props.courseSeriesIdInput,
     owner: 'tutorial-demo',
     kind: 'playground',
     title: 'Playground Demo Series',
     thumbnail: '',
     description: 'A temporary Course playground for Tutorial v2 development.',
-    courseIDs: [course.id],
+    courseIDs: courses.map(({ id }) => id),
     order: 1,
     createdAt: '2026-08-26T00:00:00Z',
     updatedAt: '2026-08-26T00:00:00Z'
   }
-  return { course, series }
+  const course = courses.find(({ id }) => id === props.courseIdInput) ?? courses[1]
+  if (course == null) throw new Error('mock course not found')
+
+  return { course, courses, series }
 }
 
 async function toFileCollection(files: Files) {
@@ -108,7 +128,7 @@ async function toDataUrl(file: File) {
 const sessionQueryRet = useQuery(
   async (ctx) => {
     // TODO: Load the Course and Course Series from Course APIs once the Tutorial v2 backend data is available.
-    const { course, series } = await getMockData()
+    const { course, courses, series } = await getMockData()
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
     if (!series.courseIDs.includes(course.id)) throw new Error(`course ${course.id} is not in series ${series.id}`)
 
@@ -126,7 +146,7 @@ const sessionQueryRet = useQuery(
       }
     }
 
-    return { course, series, project }
+    return { course, courses, series, project }
   },
   {
     en: 'Failed to start course',
@@ -135,13 +155,18 @@ const sessionQueryRet = useQuery(
   { clearDataOnFetch: true }
 )
 
+watch(
+  () => [props.courseSeriesIdInput, props.courseIdInput],
+  () => sessionQueryRet.refetch()
+)
+
 const session = sessionQueryRet.data
 
 watch(
   session,
   (currentSession, _, onCleanup) => {
     if (currentSession == null) return
-    tutorialStatus.setCurrentCourse(currentSession.course, currentSession.series)
+    tutorialStatus.setCurrentCourse(currentSession.course, currentSession.series, currentSession.courses)
     onCleanup(() => tutorialStatus.clearCurrentCourse('playground', currentSession.course.id))
   },
   { immediate: true }
@@ -162,7 +187,10 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
   const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
   if (action === 'next' && nextCourseID != null) {
-    await tutorial.startCourse(completedSession.series.id, nextCourseID)
+    const inEditorPath = repeatableParamToPathSegments(props.inEditorPath).map(encodeURIComponent).join('/')
+    await router.push(
+      `/course/${encodeURIComponent(completedSession.series.id)}/${encodeURIComponent(nextCourseID)}/playground/${inEditorPath}`
+    )
   } else {
     await router.push(`/course-series/${encodeURIComponent(completedSession.series.id)}`)
   }

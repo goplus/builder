@@ -8,11 +8,16 @@ export type TutorialCourseStatus = {
   courseID: string
   courseKind: CourseKind
   courseTitle: string
+  seriesID: string
   seriesTitle: string
+  seriesCourseIDs: string[]
+  seriesCourses: TutorialCoursePreview[] | null
   courseIndex: number | null
   courseCount: number
   state: 'in-progress' | 'completed'
 }
+
+export type TutorialCoursePreview = Pick<Course, 'id' | 'title' | 'thumbnail'>
 
 const tutorialStatusKey: InjectionKey<TutorialStatus> = Symbol('tutorial-status')
 
@@ -33,13 +38,16 @@ export class TutorialStatus {
     return this.currentCourseRef.value
   }
 
-  setCurrentCourse(course: Course, series: CourseSeries) {
+  setCurrentCourse(course: Course, series: CourseSeries, seriesCourses?: Course[]) {
     const courseIndex = series.courseIDs.indexOf(course.id)
     this.currentCourseRef.value = {
       courseID: course.id,
       courseKind: course.kind,
       courseTitle: course.title,
+      seriesID: series.id,
       seriesTitle: series.title,
+      seriesCourseIDs: [...series.courseIDs],
+      seriesCourses: seriesCourses?.map(({ id, title, thumbnail }) => ({ id, title, thumbnail })) ?? null,
       courseIndex: courseIndex < 0 ? null : courseIndex + 1,
       courseCount: series.courseIDs.length,
       state: 'in-progress'

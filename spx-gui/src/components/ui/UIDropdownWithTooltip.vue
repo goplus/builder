@@ -3,7 +3,7 @@
     <template #trigger>
       <UITooltip :visible="tooltipVisible" @update:visible="handleTooltipVisibleChange">
         <template #trigger>
-          <slot name="trigger"></slot>
+          <slot name="trigger" :dropdown-visible="dropdownVisible"></slot>
         </template>
         <slot name="tooltip-content"></slot>
       </UITooltip>
