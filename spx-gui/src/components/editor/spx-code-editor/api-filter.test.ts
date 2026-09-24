@@ -37,9 +37,17 @@ describe('API whitelist', () => {
     expect(await new SpxAPIReferenceProvider(documentBase, []).provideAPIReference(ctx)).toEqual([])
   })
 
-  it('filters completion APIs but keeps items without a definition', async () => {
+  it('filters completion APIs but keeps project definitions and items without a definition', async () => {
+    const sprite = parseDefinitionId('xgo:main?MySprite')
+    const variable = parseDefinitionId('xgo:main?score')
     const result = {
-      items: [{ definition: stepTo }, { definition: turn }, { definition: null }],
+      items: [
+        { definition: stepTo },
+        { definition: turn },
+        { definition: sprite },
+        { definition: variable },
+        { definition: null }
+      ],
       isIncomplete: false
     } as CompletionList
     const provider: ICompletionProvider = { provideCompletion: vi.fn().mockResolvedValue(result) }
@@ -47,7 +55,9 @@ describe('API whitelist', () => {
 
     expect((await filtered.provideCompletion({} as never, { line: 1, column: 1 })).items).toEqual([
       result.items[0],
-      result.items[2]
+      result.items[2],
+      result.items[3],
+      result.items[4]
     ])
   })
 })

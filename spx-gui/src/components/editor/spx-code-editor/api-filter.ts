@@ -25,8 +25,10 @@ export class FilteredCompletionProvider implements ICompletionProvider {
     const result = await this.provider.provideCompletion(ctx, position)
     return {
       ...result,
-      // Keywords and synthesized argument snippets have no definition ID.
-      items: result.items.filter((item) => item.definition == null || matchesAPI(item.definition, this.whitelist))
+      items: result.items.filter(
+        (item) =>
+          item.definition == null || item.definition.package === 'main' || matchesAPI(item.definition, this.whitelist)
+      )
     }
   }
 }
