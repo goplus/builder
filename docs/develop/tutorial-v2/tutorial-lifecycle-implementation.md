@@ -176,7 +176,7 @@ One route-local runtime owns:
 
 It creates a Playground Copilot Topic with the Course title and `copilotContext`, proactive reactions disabled, and code Copy/Apply helpers disabled. Project, code, and runtime context still come from the normal editor context providers.
 
-It currently passes a route-local framework adapter to `XGoExecutor` and runs exactly:
+It passes `createTutorialFramework(host)` to `XGoExecutor` and runs exactly:
 
 ```ts
 {
@@ -186,18 +186,18 @@ It currently passes a route-local framework adapter to `XGoExecutor` and runs ex
 
 SPX files and video files are not executor input. Supporting additional Course-program source files is out of scope for the initial release.
 
-## Current Playground capability mapping
+## Framework host mapping
 
-| Framework host area | Concrete owner and behavior                                                        |
-| ------------------- | ---------------------------------------------------------------------------------- |
-| Message             | Route-local Tutorial presentation; resolves after learner dismissal                |
-| Completion          | Runtime records the first completion request; repeated requests are ignored        |
-| Code Editor         | Delegates API filtering to the matching Code Editor                                |
-| Ruler               | Delegates visible state to the mounted Project Editor support from #3416           |
-| Copilot generation  | Delegates text/JSON generation to generic Copilot APIs from #3421                  |
-| Spotlight           | Delegates target resolution and presentation to Radar/Spotlight support from #3416 |
-
-`createTutorialFramework` and its full `TutorialFrameworkHost` contract from #3417 are now available on this branch. The Playground adapter has not adopted that factory yet, so Prelude, named video, project code queries, and workspace formatting are not wired in Playground. When those capabilities are needed, replace the direct adapter with `createTutorialFramework` backed by one route-local host rather than extending the direct adapter.
+| Framework host area  | Concrete owner and behavior                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| Prelude and message  | Route-local Tutorial presentation; resolves after learner dismissal                                     |
+| Named video          | Resolves `Video` by name from the same `TutorialProject`; resolves after playback finishes or is closed |
+| Completion           | Runtime records the first completion request; repeated requests are ignored                             |
+| Project code queries | Reads the active session `SpxProject`                                                                   |
+| Code Editor          | Delegates API filtering and formatting to the matching Code Editor from #3416                           |
+| Ruler                | Delegates visible state to the mounted Project Editor support from #3416                                |
+| Copilot generation   | Delegates text/JSON generation to generic Copilot APIs from #3421                                       |
+| Spotlight            | Delegates target resolution and presentation to Radar/Spotlight support from #3416                      |
 
 After completion has been accepted, later presentation capabilities are no-ops.
 
@@ -308,7 +308,7 @@ Playground runner     XGo, Copilot session, framework host, event bridge, termin
 The prototype still exposes implementation questions that do not change the public boundary:
 
 1. Concurrent `startCourse` calls need serialization or a generation/abort token so an older API response cannot replace a newer Course.
-2. `createTutorialFramework` and the full host contract from #3417 are available, while the Playground runner still directly adapts its current subset of capabilities. When Playground needs the remaining capabilities, replace that adapter with `createTutorialFramework` backed by a complete route-local host rather than expanding it independently.
+2. The temporary framework host implements only `showMessage`, `complete`, and `completeWith`. It should be replaced by `createTutorialFramework` and the full capabilities from #3417 rather than expanded independently here.
 3. Copilot round completion is currently observed from reactive session state because #3421's explicit round-finish event is not present on this branch. The ownership stays route-local when that event replaces the prototype watch.
 4. The current Copilot Topic can disable proactive event reactions, but this branch does not yet expose #3421's code-helper controls.
 5. Direct refresh intentionally reloads Course data. Guided restoration, by contrast, remains isolated in `GuidedTutorial` session storage rather than serializing unified facade state.
