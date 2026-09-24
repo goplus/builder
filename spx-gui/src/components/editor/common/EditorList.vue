@@ -89,6 +89,7 @@ useDragSortable(sortableList, itemsWrapper, {
   /* Padding no more than `10px` disables the `_ghostIsLast` check. */
   /* See details in https://github.com/SortableJS/Sortable/blob/ddd059717333d07b5b1125b7e1dc89514734bcf0/src/Sortable.js#L1822 */
   padding: 12px 10px;
+  padding-bottom: calc(12px + var(--editor-console-safe-area, 0px));
 }
 
 .items:deep(.sortable-ghost-item) {

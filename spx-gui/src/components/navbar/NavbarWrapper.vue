@@ -13,7 +13,9 @@
       </div>
       <div class="basis-[30%] flex items-center justify-end" :class="!centered && 'mr-2'">
         <slot name="right"></slot>
-        <NavbarProfile />
+        <NavbarProfile>
+          <slot name="profile-menu"></slot>
+        </NavbarProfile>
       </div>
     </div>
   </nav>

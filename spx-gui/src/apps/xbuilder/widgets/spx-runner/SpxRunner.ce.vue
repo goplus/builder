@@ -3,7 +3,8 @@
     <UIMessageProvider>
       <UIModalProvider>
         <div
-          class="relative flex w-full aspect-4/3 flex-col overflow-hidden rounded-md border border-black/15 bg-white"
+          class="relative flex w-full flex-col overflow-hidden rounded-md border border-black/15 bg-white"
+          :style="{ aspectRatio: projectAspectRatio }"
         >
           <div class="absolute top-3 right-3 z-100 flex gap-2">
             <button
@@ -42,6 +43,7 @@ import { useQuery } from '@/utils/query'
 import { useI18n } from '@/utils/i18n'
 import { cloudHelpers } from '@/models/common/cloud'
 import { SpxProject } from '@/models/spx/project'
+import { defaultMapSize } from '@/models/spx/stage'
 import { UIConfigProvider, UIMessageProvider, UIModalProvider, UIError, UILoading, type Config } from '@/components/ui'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import { getUIConfig } from '@/setup'
@@ -76,6 +78,11 @@ const {
 )
 
 const runnable = computed(() => project.value != null && !isLoading.value && error.value == null)
+const projectAspectRatio = computed(() => {
+  const viewportSize = project.value?.viewportSize
+  if (viewportSize == null) return `${defaultMapSize.width} / ${defaultMapSize.height}`
+  return `${viewportSize.width} / ${viewportSize.height}`
+})
 
 function handleRun() {
   if (!runnable.value || runner.value == null) return
