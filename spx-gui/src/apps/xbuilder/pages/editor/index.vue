@@ -69,7 +69,6 @@ import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
 import { editorReload } from '@/components/editor/editor-reload'
 import { EditorState } from '@/components/editor/editor-state'
-import { useTutorial } from '@/components/tutorials/tutorial'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
 import type { ProjectSerialized } from '@/models/project'
@@ -96,7 +95,6 @@ const i18n = useI18n()
 const { t } = i18n
 const { isOnline } = useNetwork()
 const m = useMessage()
-const tutorial = useTutorial()
 
 const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: string): Promise<boolean> => {
   return confirm({
