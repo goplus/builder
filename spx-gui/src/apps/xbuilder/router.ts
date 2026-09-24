@@ -38,6 +38,81 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+/**
+ * Name of the editing route of the Course Editor (`/course-editor/:courseSeriesIdInput/:courseIdInput/edit/...`).
+ * Named so the Course Editor can navigate to it and recognize it in guards, since one editing session spans two
+ * route records (editing and preview).
+ * Consumed by: apps/xbuilder/router.ts (the editing route record's `name`),
+ * components/course-editor/CourseEditor.vue#openPath (named push) and #isThisCourseEditor (leave guard).
+ */
+export const courseEditorRouteName = 'course-editor'
+/**
+ * Name of the preview route of the Course Editor
+ * (`/course-editor/:courseSeriesIdInput/:courseIdInput/preview/...`), where the author sees the course as a learner.
+ * Consumed by: apps/xbuilder/router.ts (the preview route record's `name`),
+ * components/course-editor/CourseEditor.vue#isPreviewRoute (computed), #handlePreview (named push) and
+ * #isThisCourseEditor (leave guard).
+ */
+export const courseEditorPreviewRouteName = 'course-editor-preview'
+
+/**
+ * Route records of the Course Editor. Editing and preview are sibling namespaces under the course,
+ * `/course-editor/<series>/<course>/edit/<node path>` and `…/preview/<in-editor path>`: the node path is course
+ * content (any file or folder name, `preview` included), so it must never share a level with the preview segment,
+ * or a node would be read back as the preview on reload, a shared link or browser history.
+ * Consumed by: apps/xbuilder/router.ts (`routes`), apps/xbuilder/router.test.ts.
+ */
+export const courseEditorRoutes: RouteRecordRaw[] = [
+  // Course preview runs the learner-side playground, which drives `inEditorPath` itself, so it gets its own
+  // route record; both records render the same page so the editing session survives entering preview.
+  {
+    // `:inEditorPath*` is the Project Editor's in-editor path (same param name as `/editor/...` routes), so the
+    // learner-side `EditorState.syncWithRouter` and `CoursePlayground.vue` work unchanged inside the preview.
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/preview/:inEditorPath*',
+    name: courseEditorPreviewRouteName,
+    // Same page component as the editing record: the loaded `TutorialProject` survives switching records.
+    component: () => import('./pages/course-editor/index.vue'),
+    // Route params are passed to the page as props (`courseSeriesIdInput`, `courseIdInput` are declared there).
+    props: true
+  },
+  // The editing record. `:inCourseEditorPath*` is the path of the view being edited (the course itself when
+  // empty; see `components/course-editor/course-views.ts`); when it points into the embedded project,
+  // `SpxProjectEditorHost.vue` translates the tail after the
+  // project root into the Project Editor's own `inEditorPath`.
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/edit/:inCourseEditorPath*',
+    name: courseEditorRouteName,
+    // Same page component as the preview record (see above).
+    component: () => import('./pages/course-editor/index.vue'),
+    props: true
+  },
+  // The course's own address, without a namespace, opens the course root in the editor.
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput',
+    redirect: (to) => ({ name: courseEditorRouteName, params: { ...to.params, inCourseEditorPath: [] } })
+  }
+]
+
+/**
+ * Builds the Course Editor path for a course inside a series, optionally opening a node of the course tree.
+ * @param courseSeriesID - ID of the course series the course belongs to (becomes the `courseSeriesIdInput` param).
+ * @param courseID - ID of the course to edit (becomes the `courseIdInput` param).
+ * @param inCourseEditorPath - Segments of the path to open (e.g. `['project', 'sprites', 'Bird']`);
+ *   empty (the default) opens the course root.
+ * @returns `/course-editor/<series>/<course>/edit`, followed by `/<segment>/...` when a path is given; every part
+ *   is URI-encoded.
+ * Called by: components/course/management/CourseManagementModal.vue (opening a Playground Course, and the
+ * course just created), components/course-editor/project/SpxProjectEditorHost.test.ts.
+ */
+export function getCourseEditorRoute(courseSeriesID: string, courseID: string, inCourseEditorPath: string[] = []) {
+  // Both IDs are user data, so each is encoded as its own path segment.
+  const base = `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/edit`
+  // No path: open the root of the course tree.
+  if (inCourseEditorPath.length === 0) return base
+  // Segments are encoded one by one so a `/` inside a segment cannot create extra segments.
+  return `${base}/${inCourseEditorPath.map(encodeURIComponent).join('/')}`
+}
+
 export const homePageName = 'home'
 
 declare module 'vue-router' {
@@ -133,6 +208,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/tutorials/course-series.vue'),
     props: true
   },
+  ...courseEditorRoutes,
   {
     path: '/editor/:projectNameInput',
     component: () => import('./pages/editor/own-project.vue'),

@@ -1,13 +1,16 @@
 <script lang="ts" setup>
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
+import type { CourseKind } from '@/apis/course'
 import { listSignedInUserCourseSeries, deleteCourseSeries, type CourseSeries } from '@/apis/course-series'
 import {
   UIIcon,
   UIPagination,
   UISearchableModal,
+  UITabRadio,
+  UITabRadioGroup,
   useModal,
   useConfirmDialog,
   useMessage,
@@ -27,16 +30,25 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
+// Which kind of series is listed; a series only ever holds courses of its own kind.
+const kind = shallowRef<CourseKind>('guided')
+
 const page = shallowRef(1)
 const pageSize = 12
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
+watch(kind, () => (page.value = 1))
+
+/** `UITabRadioGroup` speaks strings; the two tabs are the two course kinds, so anything else is ignored. */
+function handleKindUpdate(value: string) {
+  if (value === 'guided' || value === 'playground') kind.value = value
+}
 
 const queryRet = useQuery(
   () => {
     return listSignedInUserCourseSeries({
       pageSize,
       pageIndex: page.value,
-      kind: 'guided',
+      kind: kind.value,
       orderBy: 'order',
       sortOrder: 'asc'
     })
@@ -55,7 +67,7 @@ const invokeEditModal = useModal(CourseSeriesEditModal)
 
 const handleCreate = useMessageHandle(
   async () => {
-    await invokeEditModal({ courseSeries: null })
+    await invokeEditModal({ courseSeries: null, kind: kind.value })
     queryRet.refetch()
   },
   {
@@ -66,7 +78,7 @@ const handleCreate = useMessageHandle(
 
 const handleEdit = useMessageHandle(
   async (courseSeries: CourseSeries) => {
-    await invokeEditModal({ courseSeries })
+    await invokeEditModal({ courseSeries, kind: courseSeries.kind })
     queryRet.refetch()
   },
   {
@@ -106,6 +118,17 @@ const handleRemove = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <template #input>
+      <!-- The two kinds are two views of one list, exactly one of which is shown: a segmented switch, not a set
+           of filters. The header slot lays its content out side by side without spacing, hence the margin. -->
+      <UITabRadioGroup
+        v-radar="{ name: 'course-kind-switch', desc: 'Switch between guided and Playground' }"
+        class="mr-3 w-44"
+        :value="kind"
+        @update:value="handleKindUpdate"
+      >
+        <UITabRadio value="guided">{{ $t({ en: 'Guided', zh: '引导式' }) }}</UITabRadio>
+        <UITabRadio value="playground">{{ $t({ en: 'Playground', zh: '目标式' }) }}</UITabRadio>
+      </UITabRadioGroup>
       <UIButton type="neutral" @click="handleCreate">
         <template #icon>
           <UIIcon type="plus" />

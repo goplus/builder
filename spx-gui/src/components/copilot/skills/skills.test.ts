@@ -48,11 +48,27 @@ describe('built-in skill registry', () => {
           'Guidelines for developing spx projects (games), including file structure, code organization, and best practices. Use this skill when the task is specifically about building or modifying an spx game in XBuilder.'
       },
       {
+        name: 'tutorial-course',
+        description:
+          "Guidelines for authoring a Playground Course in XBuilder's Course Editor, covering what a course is made of, how its program drives the learner's session, and how the editor saves it. Use this skill when the task is about writing or changing a course, its program, its resources or its settings."
+      },
+      {
         name: 'xgo-language',
         description:
           'Handbook for XGo language features, syntax, and classfile concepts. Use this skill to understand how to read and write code in XGo.'
       }
     ])
+
+    expect(await registry.load('tutorial-course')).toEqual({
+      name: 'tutorial-course',
+      description:
+        "Guidelines for authoring a Playground Course in XBuilder's Course Editor, covering what a course is made of, how its program drives the learner's session, and how the editor saves it. Use this skill when the task is about writing or changing a course, its program, its resources or its settings.",
+      instructions: expect.stringContaining('# Authoring a Playground Course'),
+      resourcePaths: ['references/course-format.md', 'references/course-program.md']
+    })
+    expect(await registry.loadResource('tutorial-course', 'references/course-program.md')).toContain(
+      '# The course program'
+    )
 
     expect(await registry.load('spx-project')).toEqual({
       name: 'spx-project',
