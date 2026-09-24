@@ -50,7 +50,7 @@
           />
         </v-group>
       </v-layer>
-      <v-layer v-if="!simpleMode">
+      <v-layer :config="{ listening: !simpleMode }">
         <WidgetNode
           v-for="localConfig in visibleWidgetLocalConfigs"
           :key="localConfig.id"

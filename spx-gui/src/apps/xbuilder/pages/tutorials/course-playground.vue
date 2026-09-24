@@ -5,6 +5,7 @@ import type { PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { createDefaultProject } from '@/components/project/default-project'
 import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/models/common/file'
+import { Monitor } from '@/models/spx/widget/monitor'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
@@ -33,6 +34,9 @@ async function getMockData() {
   secondSprite.setX(-120)
   secondSprite.setY(80)
   project.addSprite(secondSprite)
+  project.stage.addWidget(
+    new Monitor('Score', { x: -220, y: 150, visible: true, label: 'Score', variableName: 'score' })
+  )
   const files: Files = {
     'index.json': fromConfig('index.json', {
       project: { type: 'spx', root: 'project' },
