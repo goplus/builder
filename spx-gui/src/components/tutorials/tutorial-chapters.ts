@@ -74,23 +74,23 @@ const litaChapters: TutorialChapter[] = [
     shortTitle: { en: 'Unit 8', zh: '单元八' },
     title: { en: 'Iteration and for in', zh: '逐个处理与 for in' },
     start: 63,
-    end: 70
+    end: 68
   },
   {
     id: 'unit-9',
     number: 9,
     shortTitle: { en: 'Unit 9', zh: '单元九' },
     title: { en: 'Keyboard events and interaction', zh: '按键事件与交互程序' },
-    start: 71,
-    end: 74
+    start: 69,
+    end: 71
   },
   {
     id: 'unit-10',
     number: 10,
     shortTitle: { en: 'Unit 10', zh: '单元十' },
     title: { en: 'Final project', zh: '第一阶段毕业设计' },
-    start: 75,
-    end: 75
+    start: 72,
+    end: 72
   }
 ]
 

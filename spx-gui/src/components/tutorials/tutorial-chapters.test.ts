@@ -17,20 +17,20 @@ describe('tutorial chapters', () => {
       [31, 42],
       [43, 56],
       [57, 62],
-      [63, 70],
-      [71, 74],
-      [75, 75]
+      [63, 68],
+      [69, 71],
+      [72, 72]
     ])
     expect(getTutorialChapters({ ...litaSeries, id: 'other', title: 'Other' })).toEqual([])
   })
 
-  it('covers all 75 courses exactly once', () => {
+  it('covers all 72 courses exactly once', () => {
     const chapters = getTutorialChapters(litaSeries)
     const sequences = chapters.flatMap((chapter) =>
       Array.from({ length: chapter.end - chapter.start + 1 }, (_, index) => chapter.start + index)
     )
 
-    expect(sequences).toEqual(Array.from({ length: 75 }, (_, index) => index + 1))
+    expect(sequences).toEqual(Array.from({ length: 72 }, (_, index) => index + 1))
   })
 
   it('uses the updated Code: Lita description without changing other series', () => {
@@ -54,10 +54,10 @@ describe('tutorial chapters', () => {
     expect(getTutorialChapter(chapters, 57)?.number).toBe(7)
     expect(getTutorialChapter(chapters, 62)?.number).toBe(7)
     expect(getTutorialChapter(chapters, 63)?.number).toBe(8)
-    expect(getTutorialChapter(chapters, 70)?.number).toBe(8)
+    expect(getTutorialChapter(chapters, 68)?.number).toBe(8)
+    expect(getTutorialChapter(chapters, 69)?.number).toBe(9)
     expect(getTutorialChapter(chapters, 71)?.number).toBe(9)
-    expect(getTutorialChapter(chapters, 74)?.number).toBe(9)
-    expect(getTutorialChapter(chapters, 75)?.number).toBe(10)
-    expect(getTutorialChapter(chapters, 76)).toBeNull()
+    expect(getTutorialChapter(chapters, 72)?.number).toBe(10)
+    expect(getTutorialChapter(chapters, 73)).toBeNull()
   })
 })
