@@ -240,6 +240,7 @@ watch(
       positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
     }
     requestAnimationFrame(() => {
+      if (spotlightItem.value !== value) return
       revealElement(value.el)
       spotlight.emit('revealed', { rect: value.el.getBoundingClientRect() })
     })
@@ -260,6 +261,7 @@ watch(
 
 <template>
   <div class="spotlight-ui">
+    <div v-if="spotlightItem?.mask" class="fixed inset-0 bg-black/45"></div>
     <Transition>
       <div
         v-if="spotlightItem"
@@ -270,7 +272,7 @@ watch(
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="anchor" v-html="anchor"></div>
         <div ref="tipsEl" class="tips">
-          <div class="content">{{ spotlightItem.tips }}</div>
+          <div class="content">{{ spotlightItem.tip }}</div>
         </div>
       </div>
     </Transition>
@@ -279,6 +281,8 @@ watch(
 
 <style scoped>
 :global(.spotlight-attach-element-highlight) {
+  position: relative;
+  z-index: 10001;
   box-shadow: var(--ui-box-shadow-sm);
 }
 

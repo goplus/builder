@@ -8,12 +8,14 @@ import { once } from 'lodash'
 import { packageSpx } from '@/utils/spx'
 import type {
   APICategoryViewInfo,
+  DefinitionIdentifier,
   IDocumentBase,
   IAPIReferenceProvider,
   APIReferenceContext
 } from '@/components/xgo-code-editor'
 import { mainCategories, subCategories, parseDefinitionName } from '@/components/xgo-code-editor/common'
 import { isTextDocumentStageCode } from '../common'
+import { matchesAPI } from '../api-filter'
 import iconEvent from './icons/event.svg?raw'
 import iconLook from './icons/look.svg?raw'
 import iconMotion from './icons/motion.svg?raw'
@@ -292,7 +294,10 @@ const categoryViewInfos: APICategoryViewInfo[] = [
 ]
 
 export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
-  constructor(private documentBase: IDocumentBase) {}
+  constructor(
+    private documentBase: IDocumentBase,
+    private whitelist: DefinitionIdentifier[] | null = null
+  ) {}
 
   private getStageAPIReferenceItems = once(async () => {
     const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
@@ -322,8 +327,9 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
 
   async provideAPIReference(ctx: APIReferenceContext) {
     const isStage = isTextDocumentStageCode(ctx.textDocument.id)
-    if (isStage) return this.getStageAPIReferenceItems()
-    return this.getSpriteAPIReferenceItems()
+    const items = await (isStage ? this.getStageAPIReferenceItems() : this.getSpriteAPIReferenceItems())
+    const whitelist = this.whitelist
+    return whitelist == null ? items : items.filter((item) => matchesAPI(item.definition, whitelist))
   }
 
   provideCategoryViewInfos(): APICategoryViewInfo[] {

@@ -40,6 +40,11 @@ export type QueryContext = {
   reporter: ProgressReporter
 }
 
+export type QueryOptions = {
+  /** Clear previous data when a new fetch starts. */
+  clearDataOnFetch?: boolean
+}
+
 /**
  * `useQuery`
  * - do query automatically
@@ -48,7 +53,8 @@ export type QueryContext = {
  */
 export function useQuery<T>(
   queryFn: (ctx: QueryContext) => Promise<T>,
-  failureSummaryMessage?: LocaleMessage
+  failureSummaryMessage?: LocaleMessage,
+  options: QueryOptions = {}
 ): QueryRet<T> {
   if (failureSummaryMessage != null) {
     queryFn = useAction(queryFn, failureSummaryMessage)
@@ -60,16 +66,18 @@ export function useQuery<T>(
 
   let lastCtrl: AbortController | null = null
   onUnmounted(() => lastCtrl?.abort(new Cancelled('unmounted')))
-  const getSignal = () => {
+  const getCtrl = () => {
     if (lastCtrl != null) lastCtrl.abort(new Cancelled('new query'))
     const ctrl = new AbortController()
     lastCtrl = ctrl
-    return ctrl.signal
+    return ctrl
   }
 
   function fetch(source: QuerySource) {
-    const signal = getSignal()
+    const ctrl = getCtrl()
+    const signal = ctrl.signal
     const reporter = new ProgressReporter((p) => (progress.value = p))
+    if (options.clearDataOnFetch) data.value = null
     isLoading.value = true
     queryFn({ signal, source, reporter }).then(
       (d) => {
@@ -84,6 +92,7 @@ export function useQuery<T>(
         capture(e, 'useQuery error')
         error.value = e
         isLoading.value = false
+        ctrl.abort(e)
       }
     )
   }

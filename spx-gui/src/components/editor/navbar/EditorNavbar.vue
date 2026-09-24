@@ -12,60 +12,62 @@
           <UIIcon class="h-5 w-5" type="file" />
         </template>
         <UIMenu>
-          <UIMenuGroup :disabled="!isOnline">
-            <NavbarNewProjectItem />
-            <NavbarOpenProjectItem />
-          </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null">
-            <UIMenuItem @click="handleImportProjectFile">
-              <template #icon><img :src="importProjectSvg" /></template>
-              {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
-            </UIMenuItem>
-            <UIMenuItem class="p-2" @click="handleImportFromScratch">
-              <template #icon><img :src="importScratchSvg" /></template>
-              <span class="mr-2 flex-1">
-                {{ $t({ en: 'Import Scratch project file...', zh: '导入 Scratch 项目文件...' }) }}
-              </span>
-              <UITag>Beta</UITag>
-            </UIMenuItem>
-            <UIMenuItem @click="handleImportAssetsFromScratch">
-              <template #icon><img :src="importAssetsScratchSvg" /></template>
-              {{ $t({ en: 'Import assets from Scratch...', zh: '从 Scratch 项目文件导入素材...' }) }}
-            </UIMenuItem>
-          </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null">
-            <UIMenuItem @click="handleExportProjectFile">
-              <template #icon><img :src="exportProjectSvg" /></template>
-              {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
-            </UIMenuItem>
-          </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null || !isOnline">
-            <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
-              <template #icon><img :src="publishSvg" /></template>
-              {{ $t({ en: 'Publish project...', zh: '发布项目...' }) }}
-            </UIMenuItem>
-            <UIMenuItem
-              v-if="canManageProject && project?.visibility === Visibility.Public"
-              @click="handleUnpublishProject"
-            >
-              <template #icon><img :src="unpublishSvg" /></template>
-              {{ $t({ en: 'Unpublish project', zh: '取消发布' }) }}
-            </UIMenuItem>
-            <UIMenuItem @click="handleOpenProjectPage">
-              <template #icon><img :src="projectPageSvg" /></template>
-              {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
-            </UIMenuItem>
-            <UIMenuItem v-if="canManageProject" class="w-full" @click="handleModifyProjectName">
-              <template #icon><img :src="modifyProjectNameSvg" /></template>
-              {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
-            </UIMenuItem>
-          </UIMenuGroup>
-          <UIMenuGroup v-if="canManageProject" :disabled="project == null">
-            <UIMenuItem @click="handleRemoveProject">
-              <template #icon><img :src="removeProjectSvg" /></template>
-              {{ $t({ en: 'Remove project...', zh: '删除项目...' }) }}
-            </UIMenuItem>
-          </UIMenuGroup>
+          <slot name="project-menu">
+            <UIMenuGroup :disabled="!isOnline">
+              <NavbarNewProjectItem />
+              <NavbarOpenProjectItem />
+            </UIMenuGroup>
+            <UIMenuGroup :disabled="project == null">
+              <UIMenuItem @click="handleImportProjectFile">
+                <template #icon><img :src="importProjectSvg" /></template>
+                {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
+              </UIMenuItem>
+              <UIMenuItem class="p-2" @click="handleImportFromScratch">
+                <template #icon><img :src="importScratchSvg" /></template>
+                <span class="mr-2 flex-1">
+                  {{ $t({ en: 'Import Scratch project file...', zh: '导入 Scratch 项目文件...' }) }}
+                </span>
+                <UITag>Beta</UITag>
+              </UIMenuItem>
+              <UIMenuItem @click="handleImportAssetsFromScratch">
+                <template #icon><img :src="importAssetsScratchSvg" /></template>
+                {{ $t({ en: 'Import assets from Scratch...', zh: '从 Scratch 项目文件导入素材...' }) }}
+              </UIMenuItem>
+            </UIMenuGroup>
+            <UIMenuGroup :disabled="project == null">
+              <UIMenuItem @click="handleExportProjectFile">
+                <template #icon><img :src="exportProjectSvg" /></template>
+                {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
+              </UIMenuItem>
+            </UIMenuGroup>
+            <UIMenuGroup :disabled="project == null || !isOnline">
+              <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
+                <template #icon><img :src="publishSvg" /></template>
+                {{ $t({ en: 'Publish project...', zh: '发布项目...' }) }}
+              </UIMenuItem>
+              <UIMenuItem
+                v-if="canManageProject && project?.visibility === Visibility.Public"
+                @click="handleUnpublishProject"
+              >
+                <template #icon><img :src="unpublishSvg" /></template>
+                {{ $t({ en: 'Unpublish project', zh: '取消发布' }) }}
+              </UIMenuItem>
+              <UIMenuItem @click="handleOpenProjectPage">
+                <template #icon><img :src="projectPageSvg" /></template>
+                {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
+              </UIMenuItem>
+              <UIMenuItem v-if="canManageProject" class="w-full" @click="handleModifyProjectName">
+                <template #icon><img :src="modifyProjectNameSvg" /></template>
+                {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
+              </UIMenuItem>
+            </UIMenuGroup>
+            <UIMenuGroup v-if="canManageProject" :disabled="project == null">
+              <UIMenuItem @click="handleRemoveProject">
+                <template #icon><img :src="removeProjectSvg" /></template>
+                {{ $t({ en: 'Remove project...', zh: '删除项目...' }) }}
+              </UIMenuItem>
+            </UIMenuGroup>
+          </slot>
         </UIMenu>
       </NavbarDropdown>
 
@@ -92,13 +94,15 @@
     </template>
     <template #center>
       <div v-if="project != null" class="flex items-center justify-center gap-2">
-        <EditorProjectDisplayName :project="project" />
+        <div v-if="title != null" class="max-w-62 truncate text-title text-xl">{{ title }}</div>
+        <EditorProjectDisplayName v-else :project="project" />
         <EditorAutoSaveStateIcon :editing="state?.editing ?? null" />
         <EditorCheckoutReleaseButton v-if="isDeveloperMode && canManageProject" :project="project" :state="state" />
       </div>
     </template>
     <template #right>
       <UIButtonGroup
+        v-if="!isSimpleMode"
         v-radar="{ name: 'editor-mode-menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
         type="icon"
@@ -196,6 +200,7 @@ const { showTutorialsEntry } = useCommunityConfig()
 const props = defineProps<{
   project: SpxProject | null
   state: EditorState | null
+  title?: string
 }>()
 
 const { isOnline } = useNetwork()
@@ -210,6 +215,7 @@ const canManageProject = computed(() => {
 })
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
+const isSimpleMode = computed(() => selectedEditMode.value === EditMode.Simple)
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 

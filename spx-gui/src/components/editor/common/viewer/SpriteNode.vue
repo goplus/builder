@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, ref, watch, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { Group, GroupConfig } from 'konva/lib/Group'
+import Konva from 'konva'
 import type { SpxProject } from '@/models/spx/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading } from '@/models/spx/sprite'
 import type { Size } from '@/models/common'
@@ -12,7 +13,7 @@ import { cancelBubble, getNodeId } from './common'
 import type { SpriteLocalConfig } from './quick-config/utils'
 import type { TransformOp } from './custom-transformer'
 import { getPivotMarkerConfigs } from '../pivot-marker'
-import type Konva from 'konva'
+import SpriteNameLabel from './SpriteNameLabel.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -22,9 +23,11 @@ const props = withDefaults(
     mapSize: Size
     nodeReadyMap: Map<string, boolean>
     mapScale?: number
+    simpleMode?: boolean
   }>(),
   {
-    mapScale: 1
+    mapScale: 1,
+    simpleMode: false
   }
 )
 
@@ -44,6 +47,7 @@ type ConfigGetter = {
 
 const emit = defineEmits<{
   selected: []
+  nameClick: [name: string]
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
   updateTransformOp: [op: TransformOp | null]
@@ -208,7 +212,7 @@ const config = computed<ImageConfig>(() => {
     image: image.value ?? undefined,
     width: rawSize.value?.width ?? 0,
     height: rawSize.value?.height ?? 0,
-    draggable: props.selected,
+    draggable: !props.simpleMode && props.selected,
     offsetX: costumePivot.x * bitmapResolution.value,
     offsetY: costumePivot.y * bitmapResolution.value,
     visible: visible,
@@ -228,8 +232,23 @@ const config = computed<ImageConfig>(() => {
   return config
 })
 
-// In map mode SpriteNode is rendered inside the scaled map layer, so the marker would be
-// zoomed together with the map. Apply the inverse map scale to keep its screen size fixed.
+const nameLabelAnchor = ref<{ x: number; y: number } | null>(null)
+const nameLabelRef = ref<InstanceType<typeof SpriteNameLabel> | null>(null)
+
+watch(
+  config,
+  async () => {
+    await nextTick()
+    const node = nodeRef.value?.getNode()
+    const parent = node?.getParent()
+    const box = node == null || parent == null ? null : node.getClientRect({ relativeTo: parent })
+    nameLabelAnchor.value = box == null ? null : { x: box.x + box.width / 2, y: box.y + box.height }
+  },
+  { flush: 'post', immediate: true }
+)
+
+// SpriteNode is rendered inside the scaled map layer. Apply the inverse map scale to keep
+// editor-only markers at a fixed screen size.
 const pivotMarkerGroupConfig = computed<GroupConfig>(() => {
   const { x, y } = props.localConfig
   const scale = 1 / props.mapScale
@@ -261,7 +280,7 @@ function toSize(node: Konva.Node) {
 }
 
 function handleClick() {
-  emit('selected')
+  if (!props.simpleMode) emit('selected')
 }
 
 defineExpose({
@@ -286,8 +305,10 @@ defineExpose({
     @transform="handleTransform"
     @transformend="handleTransformEnd"
     @click="handleClick"
+    @mouseenter="nameLabelRef?.show()"
+    @mouseleave="nameLabelRef?.hide()"
   />
-  <v-group v-if="selected" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
+  <v-group v-if="selected && !simpleMode" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
     <v-group :config="pivotMarkerConfigs.drawingGroup">
       <template v-for="(shape, idx) in pivotMarkerConfigs.shapes" :key="`sprite-pivot-marker-${idx}`">
         <v-circle v-if="shape.kind === 'circle'" :config="shape.config" />
@@ -295,4 +316,13 @@ defineExpose({
       </template>
     </v-group>
   </v-group>
+  <SpriteNameLabel
+    v-if="simpleMode"
+    ref="nameLabelRef"
+    :name="localConfig.name"
+    :anchor="nameLabelAnchor"
+    :selected="selected"
+    :map-scale="mapScale"
+    @click="emit('nameClick', $event)"
+  />
 </template>

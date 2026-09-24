@@ -11,9 +11,13 @@ import { SpxLSPClient } from './lsp/spx-lsp-client'
 import { SpxCodeEditorProject } from './spx-project'
 import CodeEditorInitializer from './CodeEditorInitializer.vue'
 
-const props = defineProps<{
-  monaco: Monaco
-}>()
+const props = withDefaults(
+  defineProps<{
+    monaco: Monaco
+    apiWhitelist?: string[] | null
+  }>(),
+  { apiWhitelist: null }
+)
 
 const copilot = useCopilot()
 const editorCtx = useEditorCtx()
@@ -59,6 +63,6 @@ useProvideCodeEditor(codeEditorRef)
 </script>
 
 <template>
-  <CodeEditorInitializer v-if="codeEditorRef != null" :code-editor="codeEditorRef" />
+  <CodeEditorInitializer v-if="codeEditorRef != null" :code-editor="codeEditorRef" :api-whitelist="apiWhitelist" />
   <slot></slot>
 </template>

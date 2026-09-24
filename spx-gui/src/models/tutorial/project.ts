@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 
+import { Disposable } from '@/utils/disposable'
 import type { PlaygroundCourse } from '@/apis/course'
 import { getFiles } from '@/models/common/cloud'
 import { assign } from '@/models/common'
@@ -33,7 +34,7 @@ export type TutorialProjectSerialized = {
 export { Video } from './video'
 export { Course } from './course'
 
-export class TutorialProject {
+export class TutorialProject extends Disposable {
   id = ''
   owner = ''
   kind = 'playground' as const
@@ -50,7 +51,9 @@ export class TutorialProject {
   videos: Video[] = []
 
   constructor() {
+    super()
     this.project = new SpxProject()
+    this.addDisposable(this.project)
     this.mainCourse = new Course()
     return reactive(this) as this
   }

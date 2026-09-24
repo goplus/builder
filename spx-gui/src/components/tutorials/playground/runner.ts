@@ -1,8 +1,10 @@
-import { watch } from 'vue'
+import { shallowRef, watch } from 'vue'
 import type { JsonSchema7Type } from 'zod-to-json-schema'
 
 import Emitter from '@/utils/emitter'
 import { XGoExecutor, type XGoExitReason, type XGoFramework } from '@/utils/xgoexec'
+import { ActionException, DefaultException, type Exception } from '@/utils/exception/base'
+import type { SpotlightOptions } from '@/utils/tutorial-framework'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot, Session, Topic } from '@/components/copilot/copilot'
@@ -11,6 +13,7 @@ import type { EditorState } from '@/components/editor/editor-state'
 
 export type PlaygroundCoursePresentation = {
   showMessage(content: string): Promise<void>
+  revealSpotlight(target: string, tip: string, options: SpotlightOptions): Promise<void>
 }
 
 export type PlaygroundCourseCompletion = {
@@ -26,7 +29,7 @@ export type PlaygroundCourseRunnerOptions = {
 
 export class PlaygroundCourseRunner extends Emitter<{
   completed: PlaygroundCourseCompletion
-  failed: Error
+  failed: Exception
 }> {
   private executor: XGoExecutor
   private session: Session | null = null
@@ -34,17 +37,44 @@ export class PlaygroundCourseRunner extends Emitter<{
   private completion: PlaygroundCourseCompletion | null = null
   private completionTimer: ReturnType<typeof setTimeout> | null = null
   private lastRuntimeOutputID = -1
-  private lastError: Error | null = null
+  private lastError: Exception | null = null
   private started = false
   private settled = false
   private executorStarted = deferred<void>()
+  project: TutorialProject
+  editorState: EditorState
+  copilot: Copilot
+  private presentation: PlaygroundCoursePresentation
 
-  constructor(private options: PlaygroundCourseRunnerOptions) {
+  private apiWhitelistRef = shallowRef<string[] | null>(null)
+  get apiWhitelist() {
+    return this.apiWhitelistRef.value
+  }
+  setAPIWhitelist(apis: string[]) {
+    this.apiWhitelistRef.value = apis
+  }
+
+  private rulerEnabledRef = shallowRef(false)
+  get rulerEnabled() {
+    return this.rulerEnabledRef.value
+  }
+  setRulerEnabled(enabled: boolean) {
+    this.rulerEnabledRef.value = enabled
+  }
+
+  constructor(options: PlaygroundCourseRunnerOptions) {
     super()
+    this.project = options.project
+    this.editorState = options.editorState
+    this.copilot = options.copilot
+    this.presentation = options.presentation
     this.executor = new XGoExecutor({
       framework: this.createFramework(),
       onError: (phase, message) => {
-        this.lastError = new Error(`Tutorial ${phase}: ${message}`)
+        this.lastError = new DefaultException({
+          en: `Tutorial Course failed during ${phase}: ${message}`,
+          zh: `教程课程在${phase}阶段失败：${message}`
+        })
       },
       onExit: (reason) => this.handleExecutorExit(reason)
     })
@@ -55,7 +85,7 @@ export class PlaygroundCourseRunner extends Emitter<{
     if (this.started) throw new Error('Playground Course runner has already started')
     this.started = true
 
-    const { project, copilot } = this.options
+    const { project, copilot } = this
     await copilot.startSession(this.createCopilotTopic(project))
     this.session = copilot.currentSession
     if (this.isDisposed) {
@@ -72,10 +102,11 @@ export class PlaygroundCourseRunner extends Emitter<{
       await this.executor.run({ [mainCourseFilePath]: project.mainCourse.code })
       if (this.isDisposed) return
       this.executorStarted.resolve()
-    } catch (error) {
-      this.executorStarted.reject(error)
-      if (!this.isDisposed) this.finishWithFailure(errorOf(error))
-      throw error
+    } catch (e) {
+      this.executorStarted.reject(e)
+      if (!this.isDisposed)
+        this.finishWithFailure(new ActionException(e, { en: 'Failed to start the course', zh: '无法启动课程' }))
+      throw e
     }
   }
 
@@ -90,16 +121,25 @@ export class PlaygroundCourseRunner extends Emitter<{
     return {
       name: 'tutorial',
       capabilities: {
-        course_showMessage: (request) =>
-          this.options.presentation.showMessage((request as { content: string }).content),
+        course_showMessage: (request) => this.presentation.showMessage((request as { content: string }).content),
         course_complete: () => this.acceptCompletion(null),
         course_completeWith: (request) => this.acceptCompletion((request as { content: string }).content),
-        copilot_generateText: (request) =>
-          this.options.copilot.generateTextResponse((request as { content: string }).content),
+        copilot_generateText: (request) => this.copilot.generateTextResponse((request as { content: string }).content),
         copilot_generateJSON: (request) => {
           const { content, schema } = request as { content: string; schema: JsonSchema7Type }
-          return this.options.copilot.generateJSONResponse(content, schema)
-        }
+          return this.copilot.generateJSONResponse(content, schema)
+        },
+        spotlight_reveal: (request) => {
+          const { target, tip, options } = request as {
+            target: string
+            tip: string
+            options: SpotlightOptions
+          }
+          return this.presentation.revealSpotlight(target, tip, options)
+        },
+        editor_ruler_enable: () => this.setRulerEnabled(true),
+        editor_ruler_disable: () => this.setRulerEnabled(false),
+        editor_codeEditor_filterAPIs: (request) => this.setAPIWhitelist((request as { apis: string[] }).apis)
       }
     }
   }
@@ -116,7 +156,7 @@ export class PlaygroundCourseRunner extends Emitter<{
   }
 
   private installEventBridge() {
-    const runtime = this.options.editorState.runtime
+    const runtime = this.editorState.runtime
     this.addDisposer(
       runtime.on('didChangeOutput', () => {
         for (const output of runtime.outputs) {
@@ -139,8 +179,8 @@ export class PlaygroundCourseRunner extends Emitter<{
       )
     )
     this.addDisposer(
-      this.options.copilot.on('roundComplete', (round) => {
-        if (this.options.copilot.currentSession === this.session) this.dispatchEvent('copilot.roundComplete', round)
+      this.copilot.on('roundComplete', (round) => {
+        if (this.copilot.currentSession === this.session) this.dispatchEvent('copilot.roundComplete', round)
       })
     )
   }
@@ -153,7 +193,8 @@ export class PlaygroundCourseRunner extends Emitter<{
         await this.executor.dispatchEvent(name, payload)
       })
       .catch((error) => {
-        if (!this.isDisposed) this.finishWithFailure(errorOf(error))
+        if (!this.isDisposed)
+          this.finishWithFailure(new ActionException(error, { en: 'Failed to dispatch event', zh: '分发事件失败' }))
       })
   }
 
@@ -170,11 +211,16 @@ export class PlaygroundCourseRunner extends Emitter<{
     if (this.isDisposed) return
     if (reason === 'completed') {
       if (this.completion != null) this.finishWithCompletion()
-      else this.finishWithFailure(new Error('Tutorial Course ended without completing'))
+      else
+        this.finishWithFailure(
+          new DefaultException({ en: 'Tutorial Course exited without completion', zh: '课程退出运行，但未完成' })
+        )
       return
     }
     if (reason === 'error') {
-      this.finishWithFailure(this.lastError ?? new Error('Tutorial Course failed'))
+      this.finishWithFailure(
+        this.lastError ?? new DefaultException({ en: 'Tutorial Course exited with error', zh: '课程运行时发生错误' })
+      )
     }
   }
 
@@ -184,15 +230,11 @@ export class PlaygroundCourseRunner extends Emitter<{
     this.emit('completed', this.completion)
   }
 
-  private finishWithFailure(error: Error) {
+  private finishWithFailure(e: Exception) {
     if (this.settled) return
     this.settled = true
-    this.emit('failed', error)
+    this.emit('failed', e)
   }
-}
-
-function errorOf(value: unknown) {
-  return value instanceof Error ? value : new Error(String(value))
 }
 
 function deferred<T>() {

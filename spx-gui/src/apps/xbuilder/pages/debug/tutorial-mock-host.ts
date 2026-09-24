@@ -51,11 +51,11 @@ export function createMockTutorialHost(log: (message: string) => void): Tutorial
         }
       },
       ruler: {
-        show() {
-          log('[host] editor.ruler.show')
+        enable() {
+          log('[host] editor.ruler.enable')
         },
-        hide() {
-          log('[host] editor.ruler.hide')
+        disable() {
+          log('[host] editor.ruler.disable')
         }
       }
     },

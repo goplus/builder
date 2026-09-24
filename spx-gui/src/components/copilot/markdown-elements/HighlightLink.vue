@@ -44,7 +44,7 @@ const { fn: handleClick } = useMessageHandle(
     const nodeInfo = radar.select(props.selector)
     if (nodeInfo == null) throw new Error(`No visible Radar node matches selector: ${props.selector}`)
     const element = nodeInfo.getElement()
-    spotlight.reveal(element, props.tip ?? text.value)
+    spotlight.reveal(element, { tip: props.tip ?? text.value })
   },
   { en: 'Failed to find the corresponding node.', zh: '未找到对应的节点' }
 )

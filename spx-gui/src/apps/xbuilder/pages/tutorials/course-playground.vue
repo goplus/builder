@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { nextTick, onUnmounted, ref, shallowRef, watch } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 import type { PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { createDefaultProject } from '@/components/project/default-project'
 import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/models/common/file'
+import { Monitor } from '@/models/spx/widget/monitor'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useQuery } from '@/utils/query'
+import { repeatableParamToPathSegments } from '@/utils/route'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
@@ -16,46 +17,42 @@ import type { PlaygroundCourseCompletion } from '@/components/tutorials/playgrou
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 
-defineProps<{
+const props = defineProps<{
   courseSeriesIdInput: string
   courseIdInput: string
+  inEditorPath: string | string[]
 }>()
 
 const tutorial = useTutorial()
 const router = useRouter()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
-const runtimeError = ref<Error | null>(null)
 
-type PlaygroundSession = {
-  course: PlaygroundCourse
-  series: CourseSeries
-  project: TutorialProject
-}
-
-const session = shallowRef<PlaygroundSession | null>(null)
-
-type MockSession = Pick<PlaygroundSession, 'course' | 'series'>
-
-let mockSession: Promise<MockSession> | null = null
-
-function getMockSession() {
-  if (mockSession == null) mockSession = createMockSession()
-  return mockSession
-}
-
-async function createMockSession(): Promise<MockSession> {
+async function getMockData() {
   const project = await createDefaultProject('', '', [])
+  const secondSprite = project.sprites[0]?.clone()
+  if (secondSprite == null) throw new Error('default sprite not found')
+  secondSprite.setX(-120)
+  secondSprite.setY(80)
+  project.addSprite(secondSprite)
+  project.stage.addWidget(
+    new Monitor('Score', { x: -220, y: 150, visible: true, label: 'Score', variableName: 'score' })
+  )
   const files: Files = {
     'index.json': fromConfig('index.json', {
       project: { type: 'spx', root: 'project' },
-      inEditorPath: '/stage/code',
+      inEditorPath: '/simple',
       copilotContext: 'Help the learner explore the Playground Course.'
     }),
     'main_course.gox': fromText(
       'main_course.gox',
       `onStart => {
-	message := Copilot.generateText("Generate a welcome message. Less than 50 words. Use the same language as the current UI language.")
-	showMessage message
+	// TODO: Use an XGo List literal when the tutorial runtime supports it.
+	apis := make([]string, 0)
+	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.stepTo#0")
+	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.turn#0")
+	Editor.CodeEditor.filterAPIs apis
+	Editor.Ruler.enable
+	// showMessage "Hi, this is a sample course."
 }
 
 Copilot.onRoundComplete round => {
@@ -105,35 +102,37 @@ async function toDataUrl(file: File) {
   return `data:${file.type};base64,${btoa(content)}`
 }
 
-const entryQueryRet = useQuery(
-  async () => {
+const sessionQueryRet = useQuery(
+  async (ctx) => {
     // TODO: Load the Course and Course Series from Course APIs once the Tutorial v2 backend data is available.
-    const { course, series } = await getMockSession()
+    const { course, series } = await getMockData()
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
     if (!series.courseIDs.includes(course.id)) throw new Error(`course ${course.id} is not in series ${series.id}`)
 
     const project = await TutorialProject.load(course)
+    project.disposeOnSignal(ctx.signal)
+    if (repeatableParamToPathSegments(props.inEditorPath).length === 0) {
+      const inEditorPath = (project.config?.inEditorPath ?? '').split('/').filter((segment) => segment !== '')
+      if (inEditorPath.length > 0) {
+        const currentRoute = router.currentRoute.value
+        await router.replace({
+          params: { ...currentRoute.params, inEditorPath },
+          query: currentRoute.query,
+          hash: currentRoute.hash
+        })
+      }
+    }
+
     return { course, series, project }
   },
   {
     en: 'Failed to start course',
     zh: '启动课程失败'
-  }
+  },
+  { clearDataOnFetch: true }
 )
 
-async function disposeSession() {
-  session.value = null
-  await nextTick()
-}
-
-watch(entryQueryRet.data, async (next) => {
-  await disposeSession()
-  session.value = next
-})
-
-async function retryRuntime() {
-  runtimeError.value = null
-}
+const session = sessionQueryRet.data
 
 async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const completedSession = session.value
@@ -148,38 +147,27 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
 
   const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
   const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
-  await disposeSession()
   if (action === 'next' && nextCourseID != null) {
     await tutorial.startCourse(completedSession.series.id, nextCourseID)
   } else {
     await router.push(`/course-series/${encodeURIComponent(completedSession.series.id)}`)
   }
 }
-
-onBeforeRouteLeave(() => {
-  return disposeSession()
-})
-
-onUnmounted(() => void disposeSession())
 </script>
 
 <template>
-  <UIError v-if="runtimeError != null" class="h-full" :retry="retryRuntime">
-    {{ runtimeError.message }}
-  </UIError>
   <CoursePlayground
-    v-else-if="session != null"
+    v-if="session != null"
     :key="session.course.id"
     :project="session.project"
     @course-completed="handleCompleted"
-    @failed="runtimeError = $event"
   />
   <section v-else class="h-full w-full flex items-center justify-center">
-    <UIDetailedLoading v-if="entryQueryRet.isLoading.value" :percentage="entryQueryRet.progress.value.percentage">
+    <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">
       <span>{{ $t({ zh: '加载课程中...', en: 'Loading course...' }) }}</span>
     </UIDetailedLoading>
-    <UIError v-else-if="entryQueryRet.error.value != null" :retry="entryQueryRet.refetch">
-      {{ $t(entryQueryRet.error.value.userMessage) }}
+    <UIError v-else-if="sessionQueryRet.error.value != null" :retry="sessionQueryRet.refetch">
+      {{ $t(sessionQueryRet.error.value.userMessage) }}
     </UIError>
   </section>
 </template>

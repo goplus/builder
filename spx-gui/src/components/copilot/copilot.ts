@@ -596,10 +596,20 @@ export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
     this.registerTool(createLoadSkillResourceTool(this.skillRegistry))
   }
 
-  /** If copilot is active (the panel is visible) */
   private activeRef = localStorageRef('spx-gui-copilot-active', false)
   get active() {
     return this.activeRef.value
+  }
+
+  private globalUIEnabledRef = ref(true)
+  get globalUIEnabled() {
+    return this.globalUIEnabledRef.value
+  }
+  enableGlobalUI() {
+    this.globalUIEnabledRef.value = true
+  }
+  disableGlobalUI() {
+    this.globalUIEnabledRef.value = false
   }
 
   private currentSessionRef = shallowRef<Session | null>(null)
@@ -783,9 +793,9 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /**
    * Start a new session for the copilot.
    * If a session is already running, it will be ended first.
+   * This does not change the Copilot UI state; callers open it when needed.
    */
   async startSession(topic: Topic, userMessage?: Message): Promise<void> {
-    this.open()
     this.endCurrentSession()
     const session = new Session(topic, this)
     this.currentSessionRef.value = session

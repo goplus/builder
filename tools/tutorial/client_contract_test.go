@@ -57,8 +57,8 @@ var fastCapabilities = map[string]bool{
 	"editor_codeEditor_formatWorkspace": true,
 	"editor_project_getCode":            true,
 	"editor_project_listSprites":        true,
-	"editor_ruler_show":                 true,
-	"editor_ruler_hide":                 true,
+	"editor_ruler_enable":               true,
+	"editor_ruler_disable":              true,
 	"spotlight_reveal":                  true,
 }
 

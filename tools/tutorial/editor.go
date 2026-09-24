@@ -140,12 +140,12 @@ type Ruler struct {
 	courseProgram *courseProgram
 }
 
-// Show displays the ruler over the stage.
-func (p *Ruler) Show() {
-	p.courseProgram.mustCallCapability("editor_ruler_show", struct{}{}, nil)
+// Enable turns on the ruler over the stage.
+func (p *Ruler) Enable() {
+	p.courseProgram.mustCallCapability("editor_ruler_enable", struct{}{}, nil)
 }
 
-// Hide removes the ruler from the stage.
-func (p *Ruler) Hide() {
-	p.courseProgram.mustCallCapability("editor_ruler_hide", struct{}{}, nil)
+// Disable turns off the ruler over the stage.
+func (p *Ruler) Disable() {
+	p.courseProgram.mustCallCapability("editor_ruler_disable", struct{}{}, nil)
 }

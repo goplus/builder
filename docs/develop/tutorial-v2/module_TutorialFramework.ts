@@ -151,10 +151,10 @@ export interface TutorialFrameworkHost {
       listSprites(): string[];
     };
     ruler: {
-      /** Displays the Ruler overlay. */
-      show(): void;
-      /** Hides the Ruler overlay. */
-      hide(): void;
+      /** Enables the Ruler overlay. */
+      enable(): void;
+      /** Disables the Ruler overlay. */
+      disable(): void;
     };
   };
   copilot: {
