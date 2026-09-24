@@ -283,8 +283,9 @@ export class EditorState extends Disposable {
    * Applies an in-editor route (the `inEditorPath` segments after `/editor/<owner>/<project>/`) to the editor
    * state: first the edit mode (a leading `map` segment selects `EditMode.Map`, anything else `EditMode.Default`),
    * then the selected target (`stage/...`, the legacy top-level `sounds/...`, or `sprites/<name>/...`), handing the
-   * remaining segments to the stage or sprite sub-state. Made public on this branch (it was `private`) so that a
-   * host embedding the Project Editor can open an initial path itself, before `syncWithRouter` takes over.
+   * remaining segments to the stage or sprite sub-state. It is public so that a host embedding the Project Editor
+   * can open an initial path itself before `syncWithRouter` takes over, and decide what to do when the path is not
+   * recognized.
    * @param path - Route segments, e.g. `['map', 'sprites', 'Bird', 'code']`; `[]` selects the default target.
    * @throws Error when a sub-state does not recognize its section segment (`StageEditor`/`SpriteEditor`
    *   `selectByRoute` throw `Unknown type: ...`). An unknown sprite name does not throw: `selectByName` then

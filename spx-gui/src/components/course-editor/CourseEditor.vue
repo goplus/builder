@@ -233,7 +233,7 @@ let sessionAlive = true
 // `revision` tells a save whether edits happened after its snapshot was taken.
 /**
  * Whether the working copy has changes not saved yet.
- * Written by: the `watch` on `exportFiles()` below (set), `save` (cleared when no edit happened meanwhile).
+ * Written by: the `watch` on `exportedFiles` below (set), `save` (cleared when no edit happened meanwhile).
  * Read by: `confirmDiscardingUnsavedChanges`, `handleBeforeUnload`, `handleSaveShortcut`,
  * `CourseEditor.vue#template` (the "Unsaved" tag and the Save button's `:disabled`).
  */
@@ -241,23 +241,27 @@ const dirty = ref(false)
 /**
  * Monotonic counter of exported-files changes; a save compares it before and after uploading to decide whether
  * `dirty` may be cleared.
- * Written by: the `watch` on `exportFiles()` below. Read by: `save`.
+ * Written by: the `watch` on `exportedFiles` below. Read by: `save`.
  */
 const revision = ref(0)
+/**
+ * The records the Tutorial project exports right now. `exportFiles()` builds a new map on every call; through this
+ * computed each edit builds one, which the unsaved flag and the per-view marks share.
+ * Read by: the `watch` below, `filesBaseline` (its first value), `changedPaths`.
+ * Called by: Vue (computed; re-evaluated when any exported record changes)
+ */
+const exportedFiles = computed(() => props.project.exportFiles())
 /**
  * Mark the working copy dirty whenever the exported records change. `exportFiles()` reads every record of the
  * model (config, main course, embedded project, resources, extra files), so this one source captures all edits.
  * The callback ignores the new/old `Files` maps: only the fact that something changed matters.
  * @returns void; side effects: sets `dirty` and bumps `revision`.
- * Called by: Vue (watch on `props.project.exportFiles()`)
+ * Called by: Vue (watch on `exportedFiles`)
  */
-watch(
-  () => props.project.exportFiles(),
-  () => {
-    dirty.value = true
-    revision.value++
-  }
-)
+watch(exportedFiles, () => {
+  dirty.value = true
+  revision.value++
+})
 
 // Per-view unsaved marks for the activity bar: records are compared with the baseline taken at load and after
 // every successful save, so a save made while editing still shows what remains unsaved. Generated records keep
@@ -266,14 +270,14 @@ watch(
  * The exported records as of the load or the last successful save; the reference point for per-view dirty marks.
  * Written by: setup (initial export), `save` (after a successful save). Read by: `changedPaths`.
  */
-const filesBaseline = shallowRef<Files>(props.project.exportFiles())
+const filesBaseline = shallowRef<Files>(exportedFiles.value)
 /**
  * Paths whose record differs from the baseline (added, removed or replaced by another `File` instance).
  * @returns A `Set` of in-Course-Editor paths (see `course-views.ts#getChangedPaths`).
  * Read by: `dirtyViews`.
- * Called by: Vue (computed; re-evaluated when `filesBaseline` or any exported record changes)
+ * Called by: Vue (computed; re-evaluated when `filesBaseline` or `exportedFiles` changes)
  */
-const changedPaths = computed(() => getChangedPaths(filesBaseline.value, props.project.exportFiles()))
+const changedPaths = computed(() => getChangedPaths(filesBaseline.value, exportedFiles.value))
 /**
  * The views with unsaved changes (`course-views.ts#getDirtyViews`).
  * @returns A `Set` of views.

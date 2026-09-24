@@ -1,6 +1,6 @@
 import { VueQueryPlugin } from '@tanstack/vue-query'
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { createI18n } from '@/utils/i18n'
@@ -12,8 +12,9 @@ import type { CourseSeries } from '@/apis/course-series'
 import { courseEditorPreviewRouteName, courseEditorRouteName, courseEditorRoutes } from '@/apps/xbuilder/router'
 import CourseEditor from './CourseEditor.vue'
 
-// The preview is what these tests drive, so everything the editing pane is made of is stood in for: the course
-// documents (one of them carries Monaco), the embedded Project Editor, and the Copilot the author writes with.
+// The preview and the tracking of unsaved changes are what these tests drive, so everything the editing pane is made
+// of is stood in for: the course documents (one of them carries Monaco), the embedded Project Editor, and the
+// Copilot the author writes with.
 const { mocks } = vi.hoisted(() => ({
   mocks: {
     getCourse: vi.fn(),
@@ -83,6 +84,9 @@ vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
 vi.mock('./CourseTextDoc.vue', () => ({ default: { name: 'CourseTextDoc', render: () => null } }))
 vi.mock('./CourseConfigDoc.vue', () => ({ default: { name: 'CourseConfigDoc', render: () => null } }))
 vi.mock('./CourseResourceGrid.vue', () => ({ default: { name: 'CourseResourceGrid', render: () => null } }))
+
+// An editor listens on `window` while mounted; unmounting each one keeps a test from hearing the ones before it.
+enableAutoUnmount(afterEach)
 
 const seriesID = '40'
 
@@ -377,5 +381,32 @@ describe('CourseEditor preview, entered again', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.name).toBe(courseEditorPreviewRouteName)
+  })
+})
+
+// What is unsaved is told from everything the course exports, in two places: the navbar's flag, which also holds up
+// closing the page, and the activity bar's mark on each view with changes.
+describe('CourseEditor unsaved changes', () => {
+  /** Whether closing the page now would first ask about unsaved changes. */
+  function holdsPageClose() {
+    const event = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(event)
+    return event.defaultPrevented
+  }
+
+  it('exports the course once per edit, for the unsaved flag and the per-view marks alike', async () => {
+    const course = makeCourse('2338', 'First')
+    const { wrapper, project } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+    const activityBar = wrapper.findComponent({ name: 'CourseActivityBar' })
+    expect(holdsPageClose()).toBe(false)
+    expect(activityBar.props('dirtyViews')).toEqual(new Set())
+    const exportFiles = vi.spyOn(project, 'exportFiles')
+
+    project.mainCourse.setCode('onStart => { completeWith "Well done" }')
+    await flushPromises()
+
+    expect(holdsPageClose()).toBe(true)
+    expect(activityBar.props('dirtyViews')).toEqual(new Set(['program']))
+    expect(exportFiles).toHaveBeenCalledTimes(1)
   })
 })

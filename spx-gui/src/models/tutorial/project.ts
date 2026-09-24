@@ -98,7 +98,7 @@ export { Course } from './course'
  *   place by `loadFiles`, so editor state bound to them survives a reload.
  * - Generated records (`index.json`, `main_course.gox`, resource manifests) keep their `File` identity while their
  *   source is unchanged, so two `exportFiles()` results can be compared instance-wise.
- * - The instance is reactive (`reactive(this)`); `exportFiles()` is used as a watch source by the Course Editor.
+ * - The instance is reactive (`reactive(this)`); the Course Editor tracks `exportFiles()` to detect unsaved changes.
  *
  * Consumed by: apps/xbuilder/pages/course-editor/index.vue (loads the course to edit),
  * apps/xbuilder/pages/tutorials/course-playground.vue (loads the course to learn),
@@ -422,7 +422,8 @@ export class TutorialProject {
    * @throws Error when the project has not been loaded yet.
    * @returns A fresh `Files` map keyed by path relative to the Tutorial-project root.
    * Called by: models/tutorial/project.ts#TutorialProject.export,
-   * components/course-editor/CourseEditor.vue (dirty watch source, `filesBaseline`, `changedPaths`),
+   * models/tutorial/project.ts#TutorialProject.getRecordPathConflict,
+   * components/course-editor/CourseEditor.vue#exportedFiles (shared by its unsaved flag and per-view marks),
    * models/tutorial/project.test.ts, components/course-editor/upload.test.ts,
    * components/course-editor/course-views.test.ts.
    */
@@ -493,14 +494,14 @@ export class TutorialProject {
  * Called by: models/tutorial/project.ts#TutorialProject.loadFiles,
  * models/tutorial/project.ts#TutorialProject.isClaimedPath.
  */
-/** The directories `path` lies in, outermost first: `a/b/c` gives `a` and `a/b`; a top-level path gives none. */
-function getAncestorPaths(path: string) {
-  const segments = path.split('/')
-  return segments.slice(1).map((_, i) => segments.slice(0, i + 1).join('/'))
-}
-
 function isClaimedPath(path: string, config: TutorialProjectConfig, resources: Resource[]) {
   if (path === configFilePath || path === mainCourseFilePath) return true
   if (path.startsWith(config.project.root + '/')) return true
   return resources.some((resource) => path.startsWith(resource.assetPath + '/'))
+}
+
+/** The directories `path` lies in, outermost first: `a/b/c` gives `a` and `a/b`; a top-level path gives none. */
+function getAncestorPaths(path: string) {
+  const segments = path.split('/')
+  return segments.slice(1).map((_, i) => segments.slice(0, i + 1).join('/'))
 }
