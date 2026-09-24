@@ -18,12 +18,12 @@ export const projectTemplates: ProjectTemplate[] = [
   {
     id: 'landscape',
     name: { en: 'Landscape 16:9', zh: '横版 16:9' },
-    viewportSize: { width: 720, height: 405 }
+    viewportSize: { width: 545, height: 307 }
   },
   {
     id: 'portrait',
     name: { en: 'Portrait', zh: '竖版' },
-    viewportSize: { width: 620, height: 900 }
+    viewportSize: { width: 307, height: 545 }
   }
 ]
 

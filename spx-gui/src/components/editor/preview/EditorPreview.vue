@@ -10,16 +10,6 @@
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
-          v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-          type="primary"
-          icon="playHollow"
-          :loading="handleRun.isLoading.value"
-          @click="handleRun.fn"
-        >
-          {{ $t({ en: 'Run', zh: '运行' }) }}
-        </UIButton>
-
-        <UIButton
           v-show="canManageProject"
           v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
           type="secondary"
@@ -30,6 +20,33 @@
           {{ $t({ en: 'Publish', zh: '发布' }) }}
         </UIButton>
       </template>
+      <template v-else>
+        <UITooltip placement="top-end">
+          <template #trigger>
+            <UIButton
+              v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
+              type="neutral"
+              shape="square"
+              icon="enterFullScreen"
+              :disabled="handleStop.isLoading.value"
+              @click="handleEnterFullscreen"
+            ></UIButton>
+          </template>
+          {{ $t({ en: 'Enter full screen', zh: '进入全屏' }) }}
+        </UITooltip>
+      </template>
+    </UICardHeader>
+    <Teleport v-if="runActionsReady" to="#editor-run-actions">
+      <UIButton
+        v-if="runnerState === 'initial'"
+        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+        type="primary"
+        icon="playHollow"
+        :loading="handleRun.isLoading.value"
+        @click="handleRun.fn"
+      >
+        {{ $t({ en: 'Run', zh: '运行' }) }}
+      </UIButton>
       <template v-else>
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
@@ -56,21 +73,8 @@
         >
           <span v-if="!compactControls">{{ $t({ en: 'Stop', zh: '停止' }) }}</span>
         </UIButton>
-        <UITooltip placement="top-end">
-          <template #trigger>
-            <UIButton
-              v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
-              type="neutral"
-              shape="square"
-              icon="enterFullScreen"
-              :disabled="handleStop.isLoading.value"
-              @click="handleEnterFullscreen"
-            ></UIButton>
-          </template>
-          {{ $t({ en: 'Enter full screen', zh: '进入全屏' }) }}
-        </UITooltip>
       </template>
-    </UICardHeader>
+    </Teleport>
 
     <div class="min-h-0 flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': fillContainer }">
       <div
@@ -182,7 +186,7 @@ function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -222,6 +226,7 @@ const signedInUser = useSignedInUser()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
+const runActionsReady = ref(false)
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
@@ -488,6 +493,12 @@ function handleEnterFullscreen() {
   if (runnerState.value === 'initial') return
   handleFullscreenChange(true)
 }
+
+onMounted(() => {
+  nextTick(() => {
+    runActionsReady.value = true
+  })
+})
 
 onBeforeUnmount(() => {
   if (runnerHostReleaseTimer != null) {

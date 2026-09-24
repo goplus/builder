@@ -106,8 +106,14 @@ export type SpxProjectInits = {
 }
 
 const defaultViewportSize: ViewportSize = defaultMapSize
+const legacyPortraitViewportSize: ViewportSize = { width: 620, height: 900 }
+const portraitViewportSize: ViewportSize = { width: 307, height: 545 }
 const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
 const disabledAudioAttenuationFlag = 0
+
+function isLegacyPortraitViewport(width: unknown, height: unknown) {
+  return width === legacyPortraitViewportSize.width && height === legacyPortraitViewportSize.height
+}
 
 export class SpxProject extends Disposable implements IProject {
   id?: string
@@ -457,6 +463,7 @@ export class SpxProject extends Disposable implements IProject {
 
     const runWidth = runConfig?.width
     const runHeight = runConfig?.height
+    const shouldMigrateLegacyPortraitViewport = isLegacyPortraitViewport(runWidth, runHeight)
     if (
       typeof runWidth === 'number' &&
       Number.isFinite(runWidth) &&
@@ -465,8 +472,8 @@ export class SpxProject extends Disposable implements IProject {
       Number.isFinite(runHeight) &&
       runHeight > 0
     ) {
-      this.viewportSize.width = runWidth
-      this.viewportSize.height = runHeight
+      this.viewportSize.width = shouldMigrateLegacyPortraitViewport ? portraitViewportSize.width : runWidth
+      this.viewportSize.height = shouldMigrateLegacyPortraitViewport ? portraitViewportSize.height : runHeight
     }
 
     const sounds = await Sound.loadAll(files)
@@ -504,6 +511,10 @@ export class SpxProject extends Disposable implements IProject {
     this.stage.dispose()
     const stageConfig = { ...rawStageConfig, widgets }
     const stage = await Stage.load(stageConfig, files)
+    if (shouldMigrateLegacyPortraitViewport && isLegacyPortraitViewport(stage.mapWidth, stage.mapHeight)) {
+      stage.setMapWidth(portraitViewportSize.width)
+      stage.setMapHeight(portraitViewportSize.height)
+    }
 
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())

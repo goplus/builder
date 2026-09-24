@@ -3,11 +3,28 @@
     v-show="isPreviewMode"
     ref="previewColumnRef"
     class="min-w-0 flex flex-none flex-col gap-xl"
-    :class="[isCodeFirstLayout ? 'order-2' : 'order-1', { 'pointer-events-none': resizing != null }]"
+    :class="[
+      'order-1',
+      { 'h-full overflow-y-auto': isPortraitLayout, 'pointer-events-none': resizing != null }
+    ]"
     :style="previewColumnStyle"
   >
-    <EditorPreview class="min-w-0" :fill-container="isFocusedLayout" />
-    <EditorPanels v-if="!isFocusedLayout" layout="default" />
+    <div v-if="isPortraitLayout" class="min-h-full flex flex-none gap-xl">
+      <div class="min-w-0 flex flex-[1_1_0] flex-col gap-xl pb-4">
+        <EditorPreview class="min-w-0 flex-none" />
+        <EditorPanels layout="portrait" />
+      </div>
+      <UICard
+        v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
+        class="w-28 min-w-0 flex-none"
+      >
+        <SpritesPanel layout="vertical" header-height="large" />
+      </UICard>
+    </div>
+    <template v-else>
+      <EditorPreview class="min-w-0" :fill-container="isFocusedLayout" />
+      <EditorPanels v-if="!isFocusedLayout" layout="landscape" />
+    </template>
   </div>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
   <!-- Using overflow-visible class to avoid cutting dropdown menu of CodeTextEditor (monaco) -->
@@ -15,8 +32,7 @@
     v-show="isPreviewMode"
     id="project-code-pane"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
-    class="relative min-h-0 min-w-0 flex flex-col overflow-visible!"
-    :class="isCodeFirstLayout ? 'order-1 flex-none' : 'order-2 flex-[1_1_0]'"
+    class="relative order-2 min-h-0 min-w-0 flex flex-[1_1_0] flex-col overflow-visible!"
     :style="editorPaneStyle"
   >
     <div class="min-h-0 flex flex-[1_1_0] flex-col">
@@ -73,10 +89,9 @@
       :aria-valuemin="Math.round(paneLayout?.minCodeWidth ?? 0)"
       :aria-valuemax="Math.round(paneLayout?.maxCodeWidth ?? 0)"
       :aria-valuenow="Math.round(paneLayout?.codeWidth ?? 0)"
-      :title="$t({ en: 'Drag to resize; double-click to reset', zh: '拖动调整宽度，双击恢复自动布局' })"
+      :title="$t({ en: 'Drag to resize; double-click to reset', zh: '拖动调整宽度，双击恢复基准尺寸' })"
       tabindex="0"
-      class="group absolute inset-y-0 z-10 w-4 touch-none cursor-col-resize select-none flex items-center justify-center focus-visible:outline-none"
-      :class="isCodeFirstLayout ? '-right-4' : '-left-4'"
+      class="group absolute inset-y-0 -left-4 z-10 w-4 touch-none cursor-col-resize select-none flex items-center justify-center focus-visible:outline-none"
       @pointerdown="startResizing"
       @keydown="handleResizeKey"
       @dblclick="preferredCodeWidths[props.layout] = null"
@@ -106,6 +121,7 @@ import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
 import EditorPreview from './preview/EditorPreview.vue'
 import EditorPanels from './panels/EditorPanels.vue'
+import SpritesPanel from './panels/sprite/SpritesPanel.vue'
 import ConsolePanel from './panels/ConsolePanel.vue'
 import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
@@ -127,7 +143,7 @@ const selected = computed(() => editorCtx.state.selected)
 const running = computed(() => editorCtx.state.runtime.running)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
 const isFocusedLayout = computed(() => props.layout === 'focused')
-const isCodeFirstLayout = computed(() => !isFocusedLayout.value)
+const isPortraitLayout = computed(() => props.layout === 'portrait')
 const previewColumnRef = ref<HTMLElement | null>(null)
 const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
 const preferredCodeWidths = reactive<Record<EditorLayout, number | null>>({
@@ -142,7 +158,10 @@ const paneLayout = computed(() => {
 })
 const previewColumnStyle = computed(() => ({ width: `${paneLayout.value?.previewWidth ?? 496}px` }))
 const resizing = ref<{ pointerId: number; startX: number; codeWidth: number; moved: boolean } | null>(null)
-const MIN_CONSOLE_HEIGHT = 150
+const CONSOLE_LINE_HEIGHT = 16
+const CONSOLE_ITEM_GAP = 4
+const CONSOLE_VERTICAL_PADDING = 24
+const MIN_CONSOLE_HEIGHT = CONSOLE_LINE_HEIGHT * 3 + CONSOLE_ITEM_GAP * 2 + CONSOLE_VERTICAL_PADDING
 const MIN_CODE_HEIGHT = 240
 const preferredConsoleHeight = ref(MIN_CONSOLE_HEIGHT)
 const maxConsoleHeight = computed(() =>
@@ -154,7 +173,6 @@ const consoleResizeHandleEl = ref<HTMLDivElement>()
 const isConsoleResizing = ref(false)
 const editorPaneStyle = computed(() => ({
   userSelect: isConsoleResizing.value ? 'none' : undefined,
-  width: isCodeFirstLayout.value ? `${paneLayout.value?.codeWidth ?? 384}px` : undefined,
   '--editor-console-safe-area': `${consoleSafeArea.value}px`
 }))
 
@@ -182,7 +200,7 @@ function resizePanes(event: PointerEvent) {
   if (!drag.moved && Math.abs(event.clientX - drag.startX) < 3) return
   drag.moved = true
   const offset = event.clientX - drag.startX
-  setCodeWidth(drag.codeWidth + (isCodeFirstLayout.value ? offset : -offset))
+  setCodeWidth(drag.codeWidth - offset)
 }
 
 function stopResizing() {
@@ -244,13 +262,12 @@ function handleResizeKey(event: KeyboardEvent) {
   const layout = paneLayout.value
   if (layout == null || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
   event.preventDefault()
-  const direction = isCodeFirstLayout.value ? 1 : -1
   setCodeWidth(
     event.key === 'Home'
       ? layout.minCodeWidth
       : event.key === 'End'
         ? layout.maxCodeWidth
-        : layout.codeWidth + (event.key === 'ArrowRight' ? 16 * direction : -16 * direction)
+        : layout.codeWidth + (event.key === 'ArrowRight' ? -16 : 16)
   )
 }
 

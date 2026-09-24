@@ -251,9 +251,9 @@ describe('Project', () => {
 
   it.each([
     { width: 480, height: 360 },
-    { width: 720, height: 405 },
+    { width: 545, height: 307 },
     { width: 360, height: 640 },
-    { width: 620, height: 900 }
+    { width: 307, height: 545 }
   ])('should initialize viewport $width × $height with an equally sized map', async (viewportSize) => {
     const project = new SpxProject(undefined, undefined, { viewportSize })
 
@@ -273,6 +273,31 @@ describe('Project', () => {
     expect(loaded.viewportSize).toEqual(viewportSize)
     const loadedConfig = (await toConfig(loaded.exportFiles()[projectConfigFilePath]!)) as RawProjectConfig
     expect(loadedConfig.run).toEqual(viewportSize)
+  })
+
+  it('should migrate the legacy 620 × 900 portrait viewport and its default map', async () => {
+    const legacy = new SpxProject(undefined, undefined, { viewportSize: { width: 620, height: 900 } })
+    const loaded = new SpxProject()
+
+    await loaded.loadFiles(legacy.exportFiles())
+
+    expect(loaded.viewportSize).toEqual({ width: 307, height: 545 })
+    expect(loaded.stage.getMapSize()).toEqual({ width: 307, height: 545 })
+    const config = (await toConfig(loaded.exportFiles()[projectConfigFilePath]!)) as RawProjectConfig
+    expect(config.run).toEqual({ width: 307, height: 545 })
+    expect(config.map).toMatchObject({ width: 307, height: 545 })
+  })
+
+  it('should retain an expanded map when migrating the legacy portrait viewport', async () => {
+    const legacy = new SpxProject(undefined, undefined, { viewportSize: { width: 620, height: 900 } })
+    legacy.stage.setMapWidth(900)
+    legacy.stage.setMapHeight(1200)
+    const loaded = new SpxProject()
+
+    await loaded.loadFiles(legacy.exportFiles())
+
+    expect(loaded.viewportSize).toEqual({ width: 307, height: 545 })
+    expect(loaded.stage.getMapSize()).toEqual({ width: 900, height: 1200 })
   })
 
   it('should add sprite after correctly', () => {

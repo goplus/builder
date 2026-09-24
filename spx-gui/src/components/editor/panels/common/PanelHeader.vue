@@ -1,7 +1,7 @@
 <!-- Header for Sprite Panel -->
 
 <template>
-  <UICardHeader class="h-11 justify-between">
+  <UICardHeader :class="props.height === 'large' ? 'h-12 justify-between' : 'h-11 justify-between'">
     <slot></slot>
     <UIDropdown trigger="click" placement="bottom-end" :offset="{ x: 0, y: 16 }">
       <template #trigger>
@@ -20,7 +20,11 @@
 <script setup lang="ts">
 import { UICardHeader, UIDropdown, UIIcon } from '@/components/ui'
 
-defineProps<{
+const props = withDefaults(
+  defineProps<{
   active: boolean
-}>()
+  height?: 'default' | 'large'
+  }>(),
+  { height: 'default' }
+)
 </script>

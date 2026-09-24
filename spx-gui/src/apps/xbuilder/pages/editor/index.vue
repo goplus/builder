@@ -8,7 +8,7 @@
         @update:preview-focused="previewFocused = $event"
       />
     </header>
-    <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
+    <main class="min-h-0 flex-[1_1_0] flex gap-xl p-4 pt-2">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
         <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
       </UIDetailedLoading>

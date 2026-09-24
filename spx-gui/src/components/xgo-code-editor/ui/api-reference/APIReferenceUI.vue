@@ -156,11 +156,14 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
+      <ul
+        class="flex-none self-stretch overflow-y-auto flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3 [scrollbar-width:thin]"
+        style="padding-bottom: calc(0.75rem + var(--editor-console-safe-area, 0px))"
+      >
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
-          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
+          class="h-13 w-13 flex-none cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
           :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
           @click="handleCategoryClick(c.id)"
         >

@@ -1,17 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { getPaneLayout, type EditorLayout } from './pane-layout'
 
-const landscape = { width: 720, height: 405 }
-const portrait = { width: 620, height: 900 }
+const landscape = { width: 545, height: 307 }
+const portrait = { width: 307, height: 545 }
+const classic = { width: 480, height: 360 }
 
 describe('editor pane layout', () => {
-  it('preserves the automatic landscape layout until a width is chosen', () => {
+  it('uses the base preview size until a width is chosen', () => {
     const container = { width: 1196, height: 782 }
     const initial = getPaneLayout(container, landscape, 'landscape', null)
-    expect(initial.previewWidth).toBeCloseTo(478.4)
+    expect(initial.previewWidth).toBe(569)
     const resized = getPaneLayout(container, landscape, 'landscape', initial.codeWidth + 120)
     expect(resized.codeWidth).toBeCloseTo(initial.codeWidth + 120)
     expect(resized.previewWidth).toBeCloseTo(initial.previewWidth - 120)
+  })
+
+  it.each([
+    [classic, 'landscape', 496],
+    [landscape, 'landscape', 569],
+    [portrait, 'portrait', 459]
+  ] as const)('uses a %s base preview width of %i', (viewport, layout, previewWidth) => {
+    expect(getPaneLayout({ width: 1408, height: 820 }, viewport, layout, null).previewWidth).toBe(previewWidth)
   })
 
   it.each(['landscape', 'focused'] as EditorLayout[])('keeps both panes within the container in %s mode', (layout) => {
@@ -35,16 +44,19 @@ describe('editor pane layout', () => {
       for (const preferred of [-1000, 384, 600, 10000, null]) {
         const result = getPaneLayout({ width, height: 782 }, portrait, 'portrait', preferred)
         expect(result.codeWidth).toBeGreaterThanOrEqual(384)
-        expect(result.previewWidth).toBeGreaterThanOrEqual(320)
-        expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(Math.max(width, 720))
+        expect(result.previewWidth).toBeGreaterThanOrEqual(448)
+        expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(Math.max(width, 848))
       }
     }
   })
 
-  it('leaves room for bottom panels when expanding a landscape preview', () => {
-    const result = getPaneLayout({ width: 1480, height: 782 }, landscape, 'landscape', 0)
-    const previewHeight = (result.previewWidth - 24) / (720 / 405) + 72
-    expect(previewHeight + 16 + 200).toBeLessThanOrEqual(782)
+  it('keeps the portrait base preview size at the minimum desktop size', () => {
+    const regularDesktop = getPaneLayout({ width: 1408, height: 820 }, portrait, 'portrait', null)
+    expect(regularDesktop.previewWidth).toBe(459)
+
+    const minimumDesktop = getPaneLayout({ width: 1248, height: 720 }, portrait, 'portrait', null)
+    expect(minimumDesktop.codeWidth).toBeGreaterThanOrEqual(384)
+    expect(minimumDesktop.previewWidth).toBe(459)
   })
 
   it('moves continuously across the portrait drag range without changing the bounds', () => {
@@ -55,7 +67,7 @@ describe('editor pane layout', () => {
       expect(resized.codeWidth).toBeCloseTo(width)
       expect(resized.minCodeWidth).toBeCloseTo(initial.minCodeWidth)
       expect(resized.maxCodeWidth).toBeCloseTo(initial.maxCodeWidth)
-      expect(resized.previewWidth).toBeGreaterThanOrEqual(320)
+      expect(resized.previewWidth).toBeGreaterThanOrEqual(448)
     }
   })
 
