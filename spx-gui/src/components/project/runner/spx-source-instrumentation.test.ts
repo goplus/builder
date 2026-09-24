@@ -34,6 +34,71 @@ describe('instrumentSpxSource', () => {
     )
   })
 
+  it('does not instrument grouped top-level declarations', () => {
+    const source = `var (
+  mature bool
+  collected bool
+  mTime float64 = 1
+)
+
+onStart => {
+  mature = true
+}`
+
+    const instrumented = instrumentSpxSource('Mushroom.spx', source)
+
+    expect(instrumented).toContain('var (\n  mature bool\n  collected bool\n  mTime float64 = 1\n)')
+    expect(instrumented).not.toMatch(/var \([\s\S]*__XB_EXEC__[\s\S]*\n\)/)
+    expect(instrumented).toContain('fmt.Println("__XB_EXEC__start:Mushroom.spx:8")')
+  })
+
+  it('does not add a duplicate fmt import for grouped imports', () => {
+    const source = `import (
+  "fmt"
+  "spx"
+)
+
+onStart => {
+  step 10
+}`
+
+    const instrumented = instrumentSpxSource('Stage.spx', source)
+
+    expect(instrumented.match(/^\s*"fmt"\s*$/gm)).toHaveLength(1)
+    expect(instrumented).toContain('fmt.Println("__XB_EXEC__start:Stage.spx:7")')
+  })
+
+  it('does not instrument grouped constants', () => {
+    const source = `const (
+  maxMushrooms = 3
+  maxPinecones = 5
+)
+
+step maxMushrooms`
+
+    const instrumented = instrumentSpxSource('Stage.spx', source)
+
+    expect(instrumented).toContain('const (\n  maxMushrooms = 3\n  maxPinecones = 5\n)')
+    expect(instrumented).toContain('fmt.Println("__XB_EXEC__start:Stage.spx:6")')
+  })
+
+  it('does not instrument fields inside a struct declaration', () => {
+    const source = `type State struct {
+  mature bool
+  collected bool
+}
+
+onStart => {
+  println "ready"
+}`
+
+    const instrumented = instrumentSpxSource('Stage.spx', source)
+
+    expect(instrumented).toContain('type State struct {\n  mature bool\n  collected bool\n}')
+    expect(instrumented).not.toMatch(/mature bool\n\s+fmt\.Println/)
+    expect(instrumented).toContain('fmt.Println("__XB_EXEC__start:Stage.spx:7")')
+  })
+
   it('ignores braces inside strings and comments when tracking blocks', () => {
     const source = `onStart => {\n  println "{not a block}"\n  // }\n  println "done"\n}`
     const instrumented = instrumentSpxSource('Stage.spx', source)
