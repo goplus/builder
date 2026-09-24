@@ -6,6 +6,7 @@ import { TaskStatus } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as imgHelpers from '@/utils/img'
 import * as fileHelpers from '@/models/common/file'
+import * as cloud from '@/models/common/cloud'
 import { sndFiles } from '@/models/common/test'
 import { GenState } from '@/components/editor/gen'
 import { CollisionShapeType, RotationStyle, State } from '../sprite'
@@ -13,8 +14,11 @@ import { makeSpxProject } from '../common/test'
 import type { CostumeGen } from './costume-gen'
 import type { AnimationGen } from './animation-gen'
 import { SpriteGen } from './sprite-gen'
+import { mockSaveFile } from './test-helpers'
+import { mockFile } from '../../common/test'
 
 const aigcMock = setupAigcMock()
+const i18n = createI18n({ lang: 'en' })
 // TODO: Consider replacing this spy by pre-filling file.meta.imgSize in test fixtures.
 vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
 
@@ -44,6 +48,7 @@ async function finishAnimationGen(name: string, gen: AnimationGen) {
 describe('SpriteGen', () => {
   beforeEach(() => {
     aigcMock.reset()
+    mockSaveFile()
   })
 
   it('should work well', async () => {
@@ -667,5 +672,72 @@ describe('SpriteGen', () => {
       expect(loadedWizard.enrichState.status).toBe('finished')
       expect(loadedWizard.imagesGenState.status).toBe('initial')
     })
+  })
+
+  it.each(['cancel', 'dispose', 'cancel-and-dispose'])(
+    'does not generate after %s during reference upload',
+    async (action) => {
+      let resolveUpload!: (url: string) => void
+      const upload = new Promise<string>((resolve) => {
+        resolveUpload = resolve
+      })
+      const saveFile = vi.spyOn(cloud, 'saveFile').mockReturnValueOnce(upload)
+      const gen = new SpriteGen(i18n, makeSpxProject(), { referenceImage: mockFile('reference.png') })
+      const pending = gen.genImages().catch((error) => error)
+      await flushPromises()
+
+      if (action !== 'dispose') await gen.cancel()
+      if (action !== 'cancel') gen.dispose()
+      expect(saveFile.mock.calls[0][1]?.aborted).toBe(true)
+      resolveUpload('kodo://mock-bucket/reference.png')
+
+      expect(await pending).toBeInstanceOf(Error)
+      expect(aigcMock.tasks.size).toBe(0)
+      if (action === 'cancel') {
+        await gen.genImages()
+        expect(gen.imagesGenState.status).toBe('finished')
+        expect(aigcMock.tasks.size).toBe(1)
+      }
+      gen.dispose()
+    }
+  )
+
+  it('loads generated sprite images when the local reference file is missing', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(i18n, project, {
+      settings: { name: 'hero' },
+      referenceImage: mockFile('reference.png')
+    })
+    await gen.genImages()
+    const files = sndFiles(gen.export())
+    const referencePath = Object.keys(files).find((path) => path.endsWith('/reference_image.png'))!
+    expect(referencePath).toBeDefined()
+    delete files[referencePath]
+    const loaded = await SpriteGen.load(gen.name, i18n, project, files)
+    expect(loaded.referenceImage).toBeNull()
+    expect(loaded.imagesGenState.status).toBe('finished')
+    expect(loaded.imagesGenState.result?.length).toBe(4)
+    gen.dispose()
+    loaded.dispose()
+  })
+
+  it('uses and persists a local reference image for default costume generation', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(i18n, project, { settings: { description: 'A test sprite with ref' } })
+
+    const localFile = mockFile('reference.png')
+    gen.setReferenceImage(localFile)
+    expect(gen.referenceImage).toBe(localFile)
+
+    await gen.genImages()
+    const [taskRecord] = [...aigcMock.tasks.values()]
+    expect(taskRecord.params).toMatchObject({
+      settings: { referenceImageUrl: 'kodo://mock-bucket/reference.png' }
+    })
+
+    const rawConfig = gen.export()
+    const files = sndFiles(rawConfig)
+    const loadedGen = await SpriteGen.load(gen.name, i18n, project, files)
+    expect(loadedGen.referenceImage?.name).toBe(localFile.name)
   })
 })

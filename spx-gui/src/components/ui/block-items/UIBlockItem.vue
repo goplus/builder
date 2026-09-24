@@ -8,6 +8,14 @@
       `ui-block-item-${size}`
     ]"
   >
+    <button
+      v-if="buttonLabel != null"
+      type="button"
+      class="absolute inset-0 rounded-md border-0 bg-transparent cursor-pointer focus-visible:outline-2 focus-visible:outline-primary-main"
+      :aria-label="buttonLabel"
+      :title="buttonLabel"
+      :aria-pressed="active"
+    ></button>
     <slot></slot>
   </div>
 </template>
@@ -25,11 +33,13 @@ withDefaults(
     active?: boolean
     size?: 'medium' | 'large'
     interactive?: boolean
+    buttonLabel?: string | null
     droppable?: DroppableState | false
   }>(),
   {
     size: 'medium',
     interactive: true,
+    buttonLabel: null,
     droppable: false
   }
 )

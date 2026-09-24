@@ -1,10 +1,11 @@
 <script lang="ts" setup generic="T">
-import { computed, inject } from 'vue'
-import { UIBlockItem, UIBlockItemTitle, UICornerIcon, UIDropdownWithTooltip, UIImg } from '@/components/ui'
+import { computed, inject, nextTick, ref } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { UIDropdownWithTooltip, UIImg } from '@/components/ui'
+import ImageOption from '../ImageOption.vue'
 import { settingsInputCtxKey } from '../SettingsInput.vue'
 
-type Option = { value: T; label: LocaleMessage; image?: string }
+type Option = { value: T; label: LocaleMessage; image?: string; removable?: boolean }
 
 const props = withDefaults(
   defineProps<{
@@ -22,11 +23,16 @@ const props = withDefaults(
   }
 )
 
-defineEmits<{
+const emit = defineEmits<{
   'update:value': [value: T | null]
+  'remove:option': [value: T]
 }>()
 
 const { t } = useI18n()
+
+defineSlots<{
+  'additional-options'(props: { disabled: boolean }): unknown
+}>()
 
 const showPlaceholder = computed(() => props.value == null && props.placeholder != null)
 const selectedItem = computed(() => {
@@ -52,6 +58,13 @@ if (settingsInputCtx == null) throw new Error('settingsInputCtxKey should be pro
 
 const disabled = computed(() => settingsInputCtx.disabled || settingsInputCtx.readonly)
 const iconOnly = computed(() => settingsInputCtx.iconOnly)
+const triggerRef = ref<HTMLButtonElement | null>(null)
+
+async function removeOption(value: T) {
+  emit('remove:option', value)
+  await nextTick()
+  triggerRef.value?.focus()
+}
 </script>
 
 <template>
@@ -59,6 +72,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
     <template v-if="selectedItem != null" #trigger>
       <!-- TODO: Standardize this button variant once the design system specification is finalized. -->
       <button
+        ref="triggerRef"
         v-radar="{
           name: $t(name),
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
@@ -86,7 +100,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
       <div class="max-w-102 flex flex-col gap-3 p-4">
         <div>{{ $t(tips) }}</div>
         <ul class="flex flex-row flex-wrap gap-2">
-          <UIBlockItem
+          <ImageOption
             v-for="(item, index) in options"
             :key="index"
             v-radar="{
@@ -94,20 +108,15 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
               desc: `Select '${$t(item.label)}' as the '${$t(name)}'`
             }"
             :active="value === item.value"
+            :label="$t(item.label)"
+            :image="item.image"
+            :removable="item.removable"
+            :clearable="clearable"
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"
-          >
-            <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
-              <UIImg class="h-15 w-20 rounded-sm" :src="item.image ?? null" />
-            </div>
-            <UIBlockItemTitle size="medium" :title="$t(item.label)">
-              {{ $t(item.label) }}
-            </UIBlockItemTitle>
-            <UICornerIcon
-              v-show="clearable && value === item.value"
-              type="minus"
-              @click.stop.prevent="$emit('update:value', null)"
-            />
-          </UIBlockItem>
+            @remove="removeOption(item.value)"
+            @clear="emit('update:value', null)"
+          />
+          <slot name="additional-options" :disabled="disabled"></slot>
         </ul>
       </div>
     </template>
