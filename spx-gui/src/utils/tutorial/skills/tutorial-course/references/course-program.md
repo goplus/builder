@@ -91,7 +91,7 @@ Editor.Runtime.onLog log => {
 ## Copilot
 
 ```xgo
-Copilot.onRoundFinish callback          // a Copilot round finished; the callback receives the round
+Copilot.onRoundComplete callback        // the learner completed a round with Copilot; the callback receives the round
 Copilot.generateText(message) string    // generate text without adding a conversation round
 Copilot.generateJSON(message, result)   // fill result from generated JSON
 ```

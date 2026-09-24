@@ -25,7 +25,8 @@ when the question is about files, resources, settings or saving.
 ## How a course runs
 
 The program starts when the learner starts the course. Everything it does is a reaction: to the course starting,
-to the project runtime logging something, to a Copilot round finishing. There is no polling and no main loop.
+to the project runtime logging something, to the learner completing a round with Copilot. There is no polling and
+no main loop.
 
 A typical lesson has the same three parts:
 
