@@ -106,7 +106,7 @@ export class SpriteGen extends Disposable {
     this.project = project
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich sprite settings', zh: '丰富角色设置' })
     this.genImagesTask = inits.genImagesTask ?? null
-    this.genImagesTask?.disposeOnSignal(this.getSignal())
+    if (this.genImagesTask != null) this.addDisposable(this.genImagesTask)
     this.genImagesPhase = inits.genImagesPhase ?? new Phase({ en: 'generate sprite images', zh: '生成角色图片' })
     this.prepareContentPhase =
       inits.prepareContentPhase ?? new Phase({ en: 'prepare sprite content', zh: '准备角色内容' })
@@ -217,7 +217,7 @@ export class SpriteGen extends Disposable {
     this.genImagesTask?.tryCancel()
     this.genImagesTask?.dispose()
     const task = new Task(TaskType.GenerateCostume)
-    task.disposeOnSignal(this.getSignal())
+    this.addDisposable(task)
     this.genImagesTask = task
     const signal = task.getSignal()
     return this.genImagesPhase.run(async (reporter) => {

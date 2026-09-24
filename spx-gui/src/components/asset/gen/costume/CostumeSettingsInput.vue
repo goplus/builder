@@ -43,9 +43,9 @@ const submitText = computed(() => {
   >
     <template #extra>
       <ReferenceImageInput
+        :key="gen.id"
         :costumes="gen.sprite.costumes"
         :selection="gen.referenceImageSelection"
-        :reference-image="gen.referenceImage"
         @update:selection="gen.setReferenceImageSelection($event)"
         @update:reference-image="gen.setReferenceImage($event)"
       />

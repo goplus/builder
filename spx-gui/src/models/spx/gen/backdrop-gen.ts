@@ -67,7 +67,7 @@ export class BackdropGen extends Disposable {
     this.project = project
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich backdrop settings', zh: '丰富背景设置' })
     this.generateTask = inits.generateTask ?? null
-    this.generateTask?.disposeOnSignal(this.getSignal())
+    if (this.generateTask != null) this.addDisposable(this.generateTask)
     this.generatePhase = inits.generatePhase ?? new Phase({ en: 'generate backdrop images', zh: '生成背景图片' })
     this.settings = {
       name: '',
@@ -135,7 +135,7 @@ export class BackdropGen extends Disposable {
     this.generateTask?.tryCancel()
     this.generateTask?.dispose()
     const task = new Task(TaskType.GenerateBackdrop)
-    task.disposeOnSignal(this.getSignal())
+    this.addDisposable(task)
     this.generateTask = task
     const signal = task.getSignal()
     return this.generatePhase.run(async (reporter) => {

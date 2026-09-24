@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import { useAsyncComputed } from '@/utils/utils'
 import type { File } from '@/models/common/file'
@@ -13,7 +13,6 @@ import { useReferenceImageUpload } from './useReferenceImageUpload'
 const props = withDefaults(
   defineProps<{
     selection: ReferenceImageSelection
-    referenceImage: File | null
     costumes: Costume[]
     clearable?: boolean
   }>(),
@@ -45,11 +44,18 @@ const costumeOptions = useAsyncComputed((onCleanup) =>
     }))
   )
 )
-const [referenceImageUrl] = useFileUrl(() => props.referenceImage)
+const localImage = shallowRef<File | null>(props.selection?.type === 'local-image' ? props.selection.file : null)
+watch(
+  () => props.selection,
+  (selection) => {
+    if (selection?.type === 'local-image') localImage.value = selection.file
+  }
+)
+const [referenceImageUrl] = useFileUrl(() => localImage.value)
 
 const options = computed(() => {
   const result = costumeOptions.value ?? []
-  if (props.referenceImage == null) return result
+  if (localImage.value == null) return result
   return [
     ...result,
     {
@@ -74,17 +80,22 @@ function handleSelection(value: OptionValue | null) {
   if (value == null) {
     emit('update:selection', null)
   } else if (isLocalImageOption(value)) {
-    emit('update:selection', localImageOption)
+    if (localImage.value != null) emit('update:selection', { type: 'local-image', file: localImage.value })
   } else {
     emit('update:selection', { type: 'costume', costumeId: value.id })
   }
 }
 
 function handleRemoveOption(value: OptionValue) {
-  if (isLocalImageOption(value)) emit('update:referenceImage', null)
+  if (!isLocalImageOption(value)) return
+  localImage.value = null
+  emit('update:referenceImage', null)
 }
 
-const handleUpload = useReferenceImageUpload((file) => emit('update:referenceImage', file))
+const handleUpload = useReferenceImageUpload((file) => {
+  localImage.value = file
+  emit('update:referenceImage', file)
+})
 </script>
 
 <template>
@@ -102,7 +113,7 @@ const handleUpload = useReferenceImageUpload((file) => emit('update:referenceIma
     @update:value="handleSelection"
     @remove:option="handleRemoveOption"
   >
-    <template v-if="referenceImage == null" #additional-options="{ disabled }">
+    <template v-if="localImage == null" #additional-options="{ disabled }">
       <button
         v-radar="{
           name: 'Upload local reference image',

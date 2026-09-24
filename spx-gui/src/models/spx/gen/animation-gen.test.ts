@@ -509,8 +509,7 @@ describe('AnimationGen', () => {
     const localFile = mockFile('local_character.png')
     gen.setReferenceImage(localFile)
     gen.setReferenceCostume(costume.id)
-    expect(gen.referenceImage).toBe(localFile)
-    gen.setReferenceImageSelection({ type: 'local-image' })
+    gen.setReferenceImageSelection({ type: 'local-image', file: localFile })
 
     await gen.generateVideo()
     const [videoTask] = [...aigcMock.tasks.values()]
@@ -523,8 +522,7 @@ describe('AnimationGen', () => {
 
     const [rawConfig, rawFiles] = gen.export()
     const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(rawConfig), sndFiles(rawFiles))
-    expect(loaded.referenceImage?.name).toBe(localFile.name)
-    expect(loaded.referenceImageSelection).toEqual({ type: 'local-image' })
+    expect(loaded.referenceImageSelection).toMatchObject({ type: 'local-image', file: { name: localFile.name } })
     expect(loaded.getTaskIds()).toEqual([videoTask.task.id])
     gen.dispose()
     loaded.dispose()
@@ -547,7 +545,7 @@ describe('AnimationGen', () => {
       sprite.addCostume(costume)
       const gen = new AnimationGen(i18n, sprite, project, {
         settings: { name: 'walk' },
-        referenceImage: mockFile('reference.png')
+        referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
       })
       const pending = gen.generateVideo().catch((error) => error)
       await vi.waitFor(() => expect(aigcMock.tasks.size).toBe(1))
@@ -584,7 +582,7 @@ describe('AnimationGen', () => {
       return 'kodo://mock-bucket/reference.png'
     })
     const gen = new AnimationGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject(), {
-      referenceImage: mockFile('reference.png')
+      referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
     })
     const pending = gen.generateVideo().catch((error) => error)
     await flushPromises()
@@ -600,7 +598,7 @@ describe('AnimationGen', () => {
     const sprite = Sprite.create('TestSprite', '')
     const gen = new AnimationGen(i18n, sprite, project, {
       settings: { name: 'walk' },
-      referenceImage: mockFile('reference.png')
+      referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
     })
     await gen.generateVideo()
     const [rawConfig, rawFiles] = gen.export()
@@ -608,7 +606,6 @@ describe('AnimationGen', () => {
     if (failure === 'missing-path') delete config.referenceImagePath
     else delete files[config.referenceImagePath!]
     const loaded = AnimationGen.load(i18n, sprite, project, config, files)
-    expect(loaded.referenceImage).toBeNull()
     expect(loaded.referenceImageSelection).toBeNull()
     expect(loaded.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
     expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())

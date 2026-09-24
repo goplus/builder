@@ -29,10 +29,13 @@ import {
   type TaskSerialized
 } from './common'
 import {
+  loadReferenceImageSelection,
   resolveInitialReferenceImageSelection,
   resolveSelectionAfterReferenceImageChange,
   saveReferenceImageFile,
-  type ReferenceImageSelection
+  type ReferenceImageSelection,
+  type StoredReferenceImageSelection,
+  validateReferenceImage
 } from './reference-image'
 import { SpriteGen } from './sprite-gen'
 
@@ -40,7 +43,6 @@ export type CostumeGenInits = {
   id?: string
   settings?: Partial<Omit<CostumeSettings, 'referenceImageUrl'>>
   referenceCostumeId?: string
-  referenceImage?: File | null
   referenceImageSelection?: ReferenceImageSelection
   image?: File
   enrichPhase?: Phase<CostumeSettings>
@@ -59,11 +61,10 @@ export type RawCostumeGenConfig = Prettify<
     | 'finishPhase'
     | 'image'
     | 'referenceCostumeId'
-    | 'referenceImage'
     | 'referenceImageSelection'
   > & {
     imagePath?: string
-    reference?: ReferenceImageSelection
+    reference?: StoredReferenceImageSelection
     /** Read only for migration; new saves use reference. */
     referenceCostumeId?: string
     referenceImagePath?: string
@@ -101,7 +102,7 @@ export class CostumeGen extends Disposable {
     this.project = project
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich costume settings', zh: '丰富造型设置' })
     this.generateTask = inits.generateTask ?? null
-    this.generateTask?.disposeOnSignal(this.getSignal())
+    if (this.generateTask != null) this.addDisposable(this.generateTask)
     this.generatePhase = inits.generatePhase ?? new Phase({ en: 'generate costume image', zh: '生成造型图片' })
     this.finishPhase = inits.finishPhase ?? new Phase({ en: 'save costume', zh: '保存造型' })
     this.settings = {
@@ -113,11 +114,9 @@ export class CostumeGen extends Disposable {
       referenceImageUrl: null,
       ...inits.settings
     }
-    this.referenceImage = inits.referenceImage ?? null
     this.referenceImageSelection = resolveInitialReferenceImageSelection(
       inits.referenceImageSelection,
-      inits.referenceCostumeId,
-      this.referenceImage
+      inits.referenceCostumeId
     )
     this.image = inits.image ?? null
     return reactive(this) as this
@@ -179,18 +178,16 @@ export class CostumeGen extends Disposable {
   }
 
   setReferenceImageSelection(selection: ReferenceImageSelection) {
-    if (selection?.type === 'local-image' && this.referenceImage == null) throw new Error('reference image expected')
+    if (selection?.type === 'local-image') validateReferenceImage(selection.file)
     this.referenceImageSelection = selection
   }
 
-  referenceImage: File | null = null
   setReferenceImage(file: File | null) {
     this.referenceImageSelection = resolveSelectionAfterReferenceImageChange(
       this.referenceImageSelection,
       file,
       this.sprite.defaultCostume?.id ?? null
     )
-    this.referenceImage = file
   }
 
   image: File | null = null
@@ -206,14 +203,13 @@ export class CostumeGen extends Disposable {
     this.generateTask?.tryCancel()
     this.generateTask?.dispose()
     const task = new Task(TaskType.GenerateCostume)
-    task.disposeOnSignal(this.getSignal())
+    this.addDisposable(task)
     this.generateTask = task
     const signal = task.getSignal()
     const image = await this.generatePhase.run(async (reporter) => {
       let referenceImageUrl: string | null = null
       if (this.referenceImageSelection?.type === 'local-image') {
-        if (this.referenceImage == null) throw new Error('reference image expected')
-        referenceImageUrl = await saveFile(this.referenceImage, signal)
+        referenceImageUrl = await saveFile(this.referenceImageSelection.file, signal)
       } else if (this.referenceCostume != null) {
         referenceImageUrl = await saveFile(this.referenceCostume.img, signal)
       }
@@ -283,11 +279,13 @@ export class CostumeGen extends Disposable {
       Object.assign(files, resultFiles)
       return resultConfig
     })
-    const referenceImagePath = saveReferenceImageFile(files, assetsPath, this.referenceImage)
+    const selection = this.referenceImageSelection
+    const referenceImagePath =
+      selection?.type === 'local-image' ? saveReferenceImageFile(files, assetsPath, selection.file) : null
     const config: RawCostumeGenConfig = {
       id: this.id,
       settings: this.settings,
-      reference: this.referenceImageSelection,
+      reference: selection?.type === 'local-image' ? { type: 'local-image' } : selection,
       referenceImagePath: referenceImagePath ?? undefined,
       enrichPhaseSerialized: this.enrichPhase.export(),
       generateTaskSerialized: this.generateTask?.export(),
@@ -327,14 +325,12 @@ export class CostumeGen extends Disposable {
     const assetsPath = assetsPathFor(basePath, settings.name)
     const inits: CostumeGenInits = { id: genId }
     if (settings != null) inits.settings = settings
-    if (referenceImagePath != null || reference?.type === 'local-image') {
-      inits.referenceImage = referenceImagePath == null ? null : files[referenceImagePath] ?? null
-    }
-    if (reference !== undefined) {
-      inits.referenceImageSelection =
-        reference?.type === 'local-image' && inits.referenceImage == null ? null : reference
-    }
-    if (referenceCostumeId != null) inits.referenceCostumeId = referenceCostumeId
+    inits.referenceImageSelection = loadReferenceImageSelection(
+      reference,
+      referenceCostumeId,
+      referenceImagePath,
+      files
+    )
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (generateTaskSerialized != null) inits.generateTask = Task.load(generateTaskSerialized)
     if (generatePhaseSerialized != null) {

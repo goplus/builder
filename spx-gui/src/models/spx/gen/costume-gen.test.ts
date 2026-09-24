@@ -411,7 +411,7 @@ describe('CostumeGen', () => {
     const sprite = Sprite.create('TestSprite', '')
     const gen = new CostumeGen(i18n, sprite, project, {
       settings: { name: 'idle' },
-      referenceImage: mockFile('reference.png')
+      referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
     })
     await gen.generate()
     const [rawConfig, rawFiles] = gen.export()
@@ -419,7 +419,6 @@ describe('CostumeGen', () => {
     if (failure === 'missing-path') delete config.referenceImagePath
     else delete files[config.referenceImagePath!]
     const loaded = CostumeGen.load(i18n, sprite, project, config, files)
-    expect(loaded.referenceImage).toBeNull()
     expect(loaded.referenceImageSelection).toBeNull()
     expect(loaded.image?.meta.universalUrl).toBe(gen.image?.meta.universalUrl)
     expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
@@ -427,7 +426,7 @@ describe('CostumeGen', () => {
     loaded.dispose()
   })
 
-  it('supports selecting, retaining, clearing, and removing reference images', async () => {
+  it('persists only the selected reference image', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     const defaultCostume = new Costume('default', mockFile('default.png'))
@@ -444,24 +443,22 @@ describe('CostumeGen', () => {
     })
 
     gen.setReferenceCostume(defaultCostume.id)
-    expect(gen.referenceImage).toBe(localFile)
     expect(gen.referenceCostume).toBe(defaultCostume)
+    const [config, files] = gen.export()
+    expect(config.referenceImagePath).toBeUndefined()
+    expect(Object.keys(files)).not.toContainEqual(expect.stringContaining('reference_image'))
 
     gen.setReferenceImageSelection(null)
-    expect(gen.referenceImage).toBe(localFile)
     await gen.generate()
     const taskRecords = [...aigcMock.tasks.values()]
     expect(taskRecords[taskRecords.length - 1].params).toMatchObject({ settings: { referenceImageUrl: null } })
 
-    const [rawConfig, rawFiles] = gen.export()
-    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    const loadedGen = CostumeGen.load(i18n, sprite, project, config, files)
-    expect(loadedGen.referenceImage?.name).toBe(localFile.name)
+    const [finalConfig, finalFiles] = gen.export()
+    const loadedGen = CostumeGen.load(i18n, sprite, project, sndConfig(finalConfig), sndFiles(finalFiles))
     expect(loadedGen.referenceImageSelection).toBeNull()
 
-    loadedGen.setReferenceImageSelection({ type: 'local-image' })
+    loadedGen.setReferenceImageSelection({ type: 'local-image', file: localFile })
     loadedGen.setReferenceImage(null)
-    expect(loadedGen.referenceImage).toBeNull()
     expect(loadedGen.referenceCostume).toBe(defaultCostume)
   })
 })

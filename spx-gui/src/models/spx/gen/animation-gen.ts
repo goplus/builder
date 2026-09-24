@@ -1,6 +1,5 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
-import { isEqual } from 'lodash'
 import type { Prettify } from '@/utils/types'
 import { encodePathSegment, extname } from '@/utils/path'
 import { Disposable, promiseForSignal } from '@/utils/disposable'
@@ -32,10 +31,13 @@ import {
 } from './common'
 import type { SpriteGen } from './sprite-gen'
 import {
+  loadReferenceImageSelection,
   resolveInitialReferenceImageSelection,
   resolveSelectionAfterReferenceImageChange,
   saveReferenceImageFile,
-  type ReferenceImageSelection
+  type ReferenceImageSelection,
+  type StoredReferenceImageSelection,
+  validateReferenceImage
 } from './reference-image'
 
 export type FramesConfig = Omit<TaskParamsExtractVideoFrames, 'videoUrl'>
@@ -44,7 +46,6 @@ export type AnimationGenInits = {
   id?: string
   settings?: Partial<Omit<AnimationSettings, 'referenceFrameUrl'>>
   referenceCostumeId?: string | null
-  referenceImage?: File | null
   referenceImageSelection?: ReferenceImageSelection
   video?: File
   framesConfig?: FramesConfig
@@ -65,11 +66,10 @@ export type RawAnimationGenConfig = Prettify<
     | 'finishPhase'
     | 'video'
     | 'referenceCostumeId'
-    | 'referenceImage'
     | 'referenceImageSelection'
   > & {
     videoPath?: string
-    reference?: ReferenceImageSelection
+    reference?: StoredReferenceImageSelection
     /** Read only for migration; new saves use reference. */
     referenceCostumeId?: string
     referenceImagePath?: string
@@ -86,6 +86,13 @@ export type RawAnimationGenConfig = Prettify<
 
 function assetsPathFor(basePath: string, name: string) {
   return `${basePath}/animations/${encodePathSegment(name)}`
+}
+
+function sameReferenceSelection(left: ReferenceImageSelection, right: ReferenceImageSelection) {
+  if (left?.type !== right?.type) return false
+  if (left?.type === 'local-image' && right?.type === 'local-image') return left.file === right.file
+  if (left?.type === 'costume' && right?.type === 'costume') return left.costumeId === right.costumeId
+  return true
 }
 
 export class AnimationGen extends Disposable {
@@ -119,15 +126,13 @@ export class AnimationGen extends Disposable {
       referenceFrameUrl: null,
       ...inits.settings
     }
-    this.referenceImage = inits.referenceImage ?? null
     this.referenceImageSelection = resolveInitialReferenceImageSelection(
       inits.referenceImageSelection,
-      inits.referenceCostumeId,
-      this.referenceImage
+      inits.referenceCostumeId
     )
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich animation settings', zh: '丰富动画设置' })
     this.generateVideoTask = inits.generateVideoTask ?? null
-    this.generateVideoTask?.disposeOnSignal(this.getSignal())
+    if (this.generateVideoTask != null) this.addDisposable(this.generateVideoTask)
     this.generateVideoPhase =
       inits.generateVideoPhase ?? new Phase({ en: 'generate animation video', zh: '生成动画视频' })
     this.video = inits.video ?? null
@@ -196,22 +201,18 @@ export class AnimationGen extends Disposable {
   }
 
   setReferenceImageSelection(selection: ReferenceImageSelection) {
-    if (selection?.type === 'local-image' && this.referenceImage == null) throw new Error('reference image expected')
-    if (!isEqual(selection, this.referenceImageSelection)) this.resetGenerateVideoTasks()
+    if (selection?.type === 'local-image') validateReferenceImage(selection.file)
+    if (!sameReferenceSelection(selection, this.referenceImageSelection)) this.resetGenerateVideoTasks()
     this.referenceImageSelection = selection
   }
 
-  referenceImage: File | null = null
   setReferenceImage(file: File | null) {
     const selection = resolveSelectionAfterReferenceImageChange(
       this.referenceImageSelection,
       file,
       this.sprite.defaultCostume?.id ?? null
     )
-    if (file !== this.referenceImage || !isEqual(selection, this.referenceImageSelection))
-      this.resetGenerateVideoTasks()
-    this.referenceImageSelection = selection
-    this.referenceImage = file
+    this.setReferenceImageSelection(selection)
   }
 
   get generateVideoState() {
@@ -222,12 +223,14 @@ export class AnimationGen extends Disposable {
     this.setFramesConfig(null)
     this.resetGenerateVideoTasks()
     const task = new Task(TaskType.GenerateAnimationVideo)
-    task.disposeOnSignal(this.getSignal())
+    this.addDisposable(task)
     this.generateVideoTask = task
     const signal = task.getSignal()
     const video = await this.generateVideoPhase.run(async (reporter) => {
       const image =
-        this.referenceImageSelection?.type === 'local-image' ? this.referenceImage : this.referenceCostume?.img
+        this.referenceImageSelection?.type === 'local-image'
+          ? this.referenceImageSelection.file
+          : this.referenceCostume?.img
       if (image == null) throw new Error('reference image or costume expected')
       const referenceFrameUrl = await saveFile(image, signal)
       signal.throwIfAborted()
@@ -327,11 +330,13 @@ export class AnimationGen extends Disposable {
     const files: Files = {}
     const assetsPath = assetsPathFor(basePath, this.name)
 
-    const referenceImagePath = saveReferenceImageFile(files, assetsPath, this.referenceImage)
+    const selection = this.referenceImageSelection
+    const referenceImagePath =
+      selection?.type === 'local-image' ? saveReferenceImageFile(files, assetsPath, selection.file) : null
     const config: RawAnimationGenConfig = {
       id: this.id,
       settings: this.settings,
-      reference: this.referenceImageSelection,
+      reference: selection?.type === 'local-image' ? { type: 'local-image' } : selection,
       referenceImagePath: referenceImagePath ?? undefined,
       framesConfig: this.framesConfig ?? undefined,
       enrichPhaseSerialized: this.enrichPhase.export(),
@@ -391,14 +396,12 @@ export class AnimationGen extends Disposable {
 
     const inits: AnimationGenInits = { id: genId }
     inits.settings = settings
-    if (referenceImagePath != null || reference?.type === 'local-image') {
-      inits.referenceImage = referenceImagePath == null ? null : files[referenceImagePath] ?? null
-    }
-    if (reference !== undefined) {
-      inits.referenceImageSelection =
-        reference?.type === 'local-image' && inits.referenceImage == null ? null : reference
-    }
-    if (referenceCostumeId != null) inits.referenceCostumeId = referenceCostumeId
+    inits.referenceImageSelection = loadReferenceImageSelection(
+      reference,
+      referenceCostumeId,
+      referenceImagePath,
+      files
+    )
     if (framesConfig != null) inits.framesConfig = framesConfig
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (generateVideoTaskSerialized != null) inits.generateVideoTask = Task.load(generateVideoTaskSerialized)

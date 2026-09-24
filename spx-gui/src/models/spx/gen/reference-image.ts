@@ -11,8 +11,11 @@ export type ReferenceImageSelection =
     }
   | {
       type: 'local-image'
+      file: File
     }
   | null
+
+export type StoredReferenceImageSelection = { type: 'costume'; costumeId: string } | { type: 'local-image' } | null
 
 function getImageExtension(file: File) {
   return getExtFromMime(file.type) ?? extname(file.name).slice(1).toLowerCase()
@@ -26,24 +29,31 @@ export function validateReferenceImage(file: File) {
   if (!isImageFile(file)) throw new Error(`unsupported reference image type: ${file.type}`)
 }
 
-/** Explicit selection (including null) takes precedence over legacy costume ID, then local image. */
+/** Explicit selection (including null) takes precedence over legacy costume ID. */
 export function resolveInitialReferenceImageSelection(
   selection: ReferenceImageSelection | undefined,
-  legacyCostumeId: string | null | undefined,
-  referenceImage: File | null
+  legacyCostumeId: string | null | undefined
 ): ReferenceImageSelection {
-  const resolvedSelection =
-    selection !== undefined
-      ? selection
-      : legacyCostumeId != null
-        ? { type: 'costume' as const, costumeId: legacyCostumeId }
-        : referenceImage != null
-          ? { type: 'local-image' as const }
-          : null
-  if (resolvedSelection?.type === 'local-image' && referenceImage == null) {
-    throw new Error('reference image expected')
+  return selection !== undefined
+    ? selection
+    : legacyCostumeId == null
+      ? null
+      : { type: 'costume', costumeId: legacyCostumeId }
+}
+
+export function loadReferenceImageSelection(
+  selection: StoredReferenceImageSelection | undefined,
+  legacyCostumeId: string | null | undefined,
+  path: string | undefined,
+  files: Files
+): ReferenceImageSelection {
+  if (selection === undefined) {
+    selection = resolveInitialReferenceImageSelection(undefined, legacyCostumeId)
+    if (selection == null && path != null) selection = { type: 'local-image' }
   }
-  return resolvedSelection
+  if (selection?.type !== 'local-image') return selection
+  const file = path == null ? null : files[path]
+  return file == null ? null : { type: 'local-image', file }
 }
 
 export function resolveSelectionAfterReferenceImageChange(
@@ -53,7 +63,7 @@ export function resolveSelectionAfterReferenceImageChange(
 ): ReferenceImageSelection {
   if (referenceImage != null) {
     validateReferenceImage(referenceImage)
-    return { type: 'local-image' }
+    return { type: 'local-image', file: referenceImage }
   }
   if (selection?.type !== 'local-image') return selection
   return fallbackCostumeId == null ? null : { type: 'costume', costumeId: fallbackCostumeId }
