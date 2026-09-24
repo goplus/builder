@@ -49,6 +49,9 @@ paths:
         Retrieve a list of identity providers available for hosted sign-in.
 
         Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
+
+        For WeChat, `enabled` is `false` if credentials are not configured for the authorization method selected from
+        the request `User-Agent`.
       security: []
       parameters:
         - name: clientID
@@ -92,6 +95,14 @@ paths:
         Redirect the user to the provider authorization endpoint for the current hosted sign-in flow.
 
         Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
+
+        For WeChat, the request `User-Agent` determines the authorization method. WeChat built-in browsers, excluding
+        WeCom, use Official Account webpage authorization. Other browsers use website application authorization.
+
+        Account Web must initiate WeChat authorization from a user click in the current window to avoid webpage
+        snapshot mode.
+
+        If the credentials for the selected authorization method are not configured, the request is rejected.
       security: []
       parameters:
         - name: provider
@@ -136,10 +147,12 @@ paths:
       description: |
         Handle the identity provider callback for hosted sign-in.
 
-        Callback state is used to associate the provider response with the hosted sign-in flow and provide CSRF
-        protection.
+        Callback state is single-use and binds the provider response to the hosted sign-in flow for CSRF protection.
 
         The provider callback includes either an authorization code or an OAuth error.
+
+        WeChat callbacks use the credentials associated with the callback state. Snapshot users and identities without
+        `unionid` are rejected.
       security: []
       parameters:
         - name: provider
@@ -6456,7 +6469,10 @@ components:
         provider:
           $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
         subject:
-          description: Stable provider subject.
+          description: |
+            Stable provider subject.
+
+            For WeChat, this is the `unionid` shared by applications linked to the same WeChat Open Platform account.
           type: string
           minLength: 1
         subjectNamespace:
