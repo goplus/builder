@@ -53,6 +53,7 @@ type RunnerFiles = {
 }
 
 interface RunnerIframeWindow extends Window {
+  __xb_track_execution_location?: boolean
   xbuilder_set_ai_interaction_api_endpoint: (endpoint: string) => void
   xbuilder_set_ai_interaction_api_token_provider: (provider: () => Promise<string>) => void
   xbuilder_set_ai_description: (description: string) => void
@@ -166,7 +167,7 @@ const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
 const aiInteractionEndpoint = client.urlFor('/ai-interaction').toString()
 const assetURLs = getProjectRunnerAssetURLs()
 
-const props = defineProps<{ project: SpxProject }>()
+const props = defineProps<{ project: SpxProject; trackExecutionLocation?: boolean }>()
 
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
@@ -189,9 +190,12 @@ watch(runnerIframeRef, (iframe) => {
 })
 
 function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
+  iframeWindow.__xb_track_execution_location = props.trackExecutionLocation === true
   iframeWindow.console.log = function (...args: unknown[]) {
-    // eslint-disable-next-line no-console
-    console.log(...args)
+    if (typeof args[0] !== 'string' || !args[0].includes('"msg":"__spx_loc__"')) {
+      // eslint-disable-next-line no-console
+      console.log(...args)
+    }
     emit('console', 'log', args)
   }
   iframeWindow.console.warn = function (...args: unknown[]) {
