@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
@@ -93,6 +93,11 @@ const runnerQueryRet = useQuery(
   async (ctx) => {
     runningErr.value = null
     const project = props.project
+
+    // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause unnecessary query fetching.
+    // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
+    await nextTick()
+
     const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
     editorState.disposeOnSignal(ctx.signal)
     editorState.editing.startEditing()
