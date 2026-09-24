@@ -1,68 +1,34 @@
 <template>
   <UIDropdownWithTooltip v-if="currentCourse != null" placement="bottom">
-    <template #trigger>
+    <template #trigger="{ dropdownVisible }">
       <button
-        v-radar="{ name: 'navbar-tutorials-status', desc: 'Show current course status and course actions' }"
+        v-radar="{
+          name: 'Tutorial course entry',
+          desc: 'Shows the course in progress; click to open the tutorial control center'
+        }"
         type="button"
-        :aria-label="
-          $t({
-            en: `${currentCourse.courseTitle}, ${currentCourse.state === 'completed' ? 'completed' : 'in progress'}`,
-            zh: `${currentCourse.courseTitle}，${currentCourse.state === 'completed' ? '已完成' : '学习中'}`
-          })
-        "
-        class="h-full cursor-pointer flex items-center px-3"
+        :aria-label="$t({ en: 'Tutorial course entry', zh: '教程入口' })"
+        class="h-full flex cursor-pointer items-center border-none bg-transparent px-3 outline-none transition-colors hover:bg-grey-300"
+        :class="{ 'bg-grey-400!': dropdownVisible }"
       >
-        <span class="h-7 flex items-center justify-center gap-1 rounded-full bg-primary-200 px-2 hover:bg-primary-300">
-          <UIIcon class="h-5 w-5 text-primary-main" type="tutorial" />
-          <span v-if="currentCourse.courseIndex != null" class="text-primary-main text-sm">
-            {{ currentCourse.courseIndex }}/{{ currentCourse.courseCount }}
+        <span class="flex items-center rounded-full bg-primary-200 py-0 pl-1 pr-2 text-primary-main">
+          <span class="flex h-7 w-7 items-center justify-center">
+            <UIIcon class="h-5 w-5" type="tutorial" />
           </span>
-          <UIIcon class="w-2 text-primary-main" type="arrowMini" />
+          <UIIcon class="h-2 w-2" type="arrowMini" />
         </span>
       </button>
     </template>
 
     <template #dropdown-content>
-      <UIMenu>
-        <UIMenuGroup class="pointer-events-none">
-          <div class="flex flex-col gap-1 px-2 py-1">
-            <div class="text-title">{{ currentCourse.courseTitle }}</div>
-            <div class="text-grey-700 text-sm">{{ currentCourse.seriesTitle }}</div>
-            <div v-if="currentCourse.courseIndex != null" class="text-grey-700 text-sm">
-              {{
-                $t({
-                  en: `Course ${currentCourse.courseIndex} of ${currentCourse.courseCount}`,
-                  zh: `第 ${currentCourse.courseIndex} / ${currentCourse.courseCount} 课`
-                })
-              }}
-            </div>
-            <div class="text-primary-main text-sm">
-              {{
-                $t(
-                  currentCourse.state === 'completed'
-                    ? { en: 'Completed', zh: '已完成' }
-                    : { en: 'In progress', zh: '学习中' }
-                )
-              }}
-            </div>
-          </div>
-        </UIMenuGroup>
-        <UIMenuGroup>
-          <UIMenuItem
-            v-radar="{ name: 'exit-tutorial', desc: 'Click to exit the current tutorial course' }"
-            @click="handleExitTutorial"
-          >
-            {{ $t({ en: 'Exit Tutorial', zh: '退出教程' }) }}
-          </UIMenuItem>
-        </UIMenuGroup>
-      </UIMenu>
+      <TutorialStatusControlCenter />
     </template>
 
     <template #tooltip-content>
       {{
         $t({
-          en: `${currentCourse.courseTitle} · ${currentCourse.state === 'completed' ? 'Completed' : 'In progress'}`,
-          zh: `${currentCourse.courseTitle} · ${currentCourse.state === 'completed' ? '已完成' : '学习中'}`
+          en: `${currentCourse.courseTitle}${currentCourse.state === 'completed' ? ' completed' : ' in progress'}`,
+          zh: `${currentCourse.courseTitle}${currentCourse.state === 'completed' ? '已完成' : '学习中'}`
         })
       }}
     </template>
@@ -85,17 +51,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useMessageHandle } from '@/utils/exception'
-import { UIDropdownWithTooltip, UIIcon, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
+import { UIDropdownWithTooltip, UIIcon, UITooltip } from '@/components/ui'
 import { useTutorialStatus } from '@/components/tutorials/status'
-import { useTutorial } from '@/components/tutorials/tutorial'
+import TutorialStatusControlCenter from '@/components/tutorials/TutorialStatusControlCenter.vue'
 
 const tutorialStatus = useTutorialStatus()
-const tutorial = useTutorial()
 const currentCourse = computed(() => tutorialStatus.currentCourse)
-
-const { fn: handleExitTutorial } = useMessageHandle(() => tutorial.endCurrentCourse(), {
-  zh: '退出课程时遇到问题',
-  en: 'Encountered an issue when exiting the course'
-})
 </script>
