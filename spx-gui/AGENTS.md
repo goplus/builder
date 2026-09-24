@@ -2,9 +2,31 @@
 
 This document provides development guidelines and coding standards for AI agents working on the spx-gui project.
 
-## General Coding Guidelines
+## Comments and JSDoc
 
-* Only add comments to explain the reasoning behind code decisions when the intent is not immediately clear from the code itself.
+* Keep comments sparse and concise. Add them only when the code and types do not clearly convey the information, such as non-obvious behavior, constraints, side effects, compatibility requirements, or the reasoning behind an implementation. Do not restate what the code already says.
+* Use JSDoc where it adds useful context to an API, type, or property. Keep simple descriptions concise, and use a multi-line comment when behavior, limitations, or usage boundaries need explanation.
+* Put property documentation immediately above the property:
+
+  ```ts
+  type ImageOptions = {
+    /** Maximum width in pixels. */
+    maxWidth: number
+  }
+  ```
+
+* Document a function parameter at its definition, next to the parameter, rather than using an `@param` tag:
+
+  ```ts
+  declare function loadImage(
+    /** Optional signal used to cancel loading. */
+    signal?: AbortSignal
+  ): Promise<Image>
+  ```
+
+* Document return values and exceptions only when their caller-facing meaning is not clear from the function description and type. Use `@return` for a meaningful return case that cannot be inferred, and `@throws` for an exceptional error callers need to handle specially. Omit routine return values and errors.
+* Use tags such as `@deprecated` when they convey lifecycle information that callers need to know. Do not add tags mechanically.
+* Use `TODO` for known follow-up work and `NOTE` for important context or caveats. Include an issue or reference link when one is available and useful.
 
 ## TypeScript Development
 
