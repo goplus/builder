@@ -13,6 +13,7 @@ const predictionTagName = 'tutorial-course-abandon-prediction'
 export const tutorialCourseAbandonPrediction: CustomElementDefinition = {
   tagName: predictionTagName,
   isRaw: false,
+  invisible: true,
   description: `When user deviates from the course content, \
 add <${predictionTagName} /> at the beginning of your message to trigger an abandon prediction.`,
   attributes: z.object({}),
@@ -41,6 +42,7 @@ const dismissalTagName = 'tutorial-course-abandon-dismissal'
 export const tutorialCourseAbandonDismissal: CustomElementDefinition = {
   tagName: dismissalTagName,
   isRaw: false,
+  invisible: true,
   description: `When user returns to the course content after an abandon prediction, \
 add <${dismissalTagName} /> at the beginning of your message to dismiss the abandon prediction.`,
   attributes: z.object({}),

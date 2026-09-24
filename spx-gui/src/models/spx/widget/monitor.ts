@@ -3,8 +3,8 @@ import { getWidgetName } from '../common/asset-name'
 import { BaseWidget, type BaseWidgetInits, type BaseRawWidgetConfig } from './widget'
 import { defaultMapSize } from '../stage'
 
-/** Monitor display mode: 1 for the default readout, 2 for the large readout. */
-export type MonitorMode = 1 | 2
+/** Monitor display mode: 1 for the default readout, 2 for the large readout, 3 for the slider, 4 for the list. */
+export type MonitorMode = 1 | 2 | 3 | 4
 
 /** Monitor visual style: `default` for the standard appearance, `scratch` for Scratch-compatible rendering. */
 export type MonitorStyle = 'default' | 'scratch'
@@ -12,6 +12,11 @@ export type MonitorStyle = 'default' | 'scratch'
 export type MonitorInits = BaseWidgetInits & {
   mode?: MonitorMode
   style?: MonitorStyle
+  sliderMin?: number
+  sliderMax?: number
+  isDiscrete?: boolean
+  width?: number
+  height?: number
   label?: string
   /** Target name: empty string for stage, sprite name for sprite */
   target?: string
@@ -23,12 +28,17 @@ export type RawMonitorConfig = BaseRawWidgetConfig & {
   type: 'monitor'
   mode?: number
   style?: string
+  sliderMin?: number
+  sliderMax?: number
+  isDiscrete?: boolean
+  width?: number
+  height?: number
   label?: string
   target?: string
   val?: string
 }
 
-const supportedModes: MonitorMode[] = [1, 2]
+const supportedModes: MonitorMode[] = [1, 2, 3, 4]
 const supportedStyles: MonitorStyle[] = ['default', 'scratch']
 const defaultMonitorStyle = 'default'
 function isMonitorMode(mode: number): mode is MonitorMode {
@@ -43,6 +53,16 @@ const legacyValPrefix = 'getVar:'
 export class Monitor extends BaseWidget {
   mode: MonitorMode
   style: MonitorStyle
+  /** Mode 3 slider lower bound; defaults to 0. */
+  sliderMin: number
+  /** Mode 3 slider upper bound; defaults to 100. */
+  sliderMax: number
+  /** Mode 3 slider uses integer steps when true (default), fractional steps when false. */
+  isDiscrete: boolean
+  /** Mode 4 list width; 0 (default) lets spx choose its default width. */
+  width: number
+  /** Mode 4 list height; 0 (default) lets spx choose its default height. */
+  height: number
 
   label: string
   setLabel(label: string) {
@@ -66,10 +86,30 @@ export class Monitor extends BaseWidget {
     this.variableName = name
   }
 
-  constructor(name: string, { mode, style, label, target, variableName, ...extraInits }: MonitorInits) {
+  constructor(
+    name: string,
+    {
+      mode,
+      style,
+      sliderMin,
+      sliderMax,
+      isDiscrete,
+      width,
+      height,
+      label,
+      target,
+      variableName,
+      ...extraInits
+    }: MonitorInits
+  ) {
     super(name, 'monitor', extraInits)
     this.mode = mode ?? 1
     this.style = style ?? defaultMonitorStyle
+    this.sliderMin = sliderMin ?? 0
+    this.sliderMax = sliderMax ?? 100
+    this.isDiscrete = isDiscrete ?? true
+    this.width = width ?? 0
+    this.height = height ?? 0
     this.label = label ?? ''
     this.target = target ?? ''
     this.variableName = variableName ?? ''
@@ -119,6 +159,11 @@ export class Monitor extends BaseWidget {
       visible: this.visible,
       mode: this.mode,
       style: this.style,
+      sliderMin: this.sliderMin,
+      sliderMax: this.sliderMax,
+      isDiscrete: this.isDiscrete,
+      width: this.width,
+      height: this.height,
       label: this.label,
       target: this.target,
       variableName: this.variableName
@@ -126,6 +171,8 @@ export class Monitor extends BaseWidget {
   }
 
   export(): RawMonitorConfig {
+    // Follow spx's mode-specific configuration. Inactive mode settings are intentionally omitted;
+    // if mode switching is added to the editor, preserve them across save/load as well.
     return {
       ...super.export(),
       type: 'monitor',
@@ -133,7 +180,9 @@ export class Monitor extends BaseWidget {
       mode: this.mode,
       style: this.style,
       target: this.target,
-      val: this.variableName
+      val: this.variableName,
+      ...(this.mode === 3 ? { sliderMin: this.sliderMin, sliderMax: this.sliderMax, isDiscrete: this.isDiscrete } : {}),
+      ...(this.mode === 4 ? { width: this.width, height: this.height } : {})
     }
   }
 }

@@ -5,7 +5,7 @@
       <NavbarDropdown
         :trigger-radar="{
           name: 'Project menu',
-          desc: 'Hover to see project options (create/open/publish/unpublish/remove project, import/export project file, import Scratch project file, import assets from Scratch, etc.)'
+          desc: 'Click to see project options (create/open/publish/unpublish/remove project, import/export project file, import Scratch project file, import assets from Scratch, etc.)'
         }"
       >
         <template #trigger>
@@ -69,7 +69,10 @@
         </UIMenu>
       </NavbarDropdown>
 
-      <NavbarTutorials v-if="showTutorialsEntry" />
+      <!-- Slot for the page to override the tutorials entry (e.g. with an in-course state entry) -->
+      <slot name="tutorials">
+        <NavbarTutorials v-if="showTutorialsEntry" />
+      </slot>
 
       <div class="flex">
         <UITooltip :disabled="undoAction == null">
@@ -91,7 +94,10 @@
       </div>
     </template>
     <template #center>
-      <div v-if="project != null" class="flex items-center justify-center gap-2">
+      <div v-if="isCurrentTutorialProject && tutorialCourse != null" class="max-w-[50%] truncate text-xl text-title">
+        {{ tutorialCourse.title }}
+      </div>
+      <div v-else-if="project != null" class="flex items-center justify-center gap-2">
         <EditorProjectDisplayName :project="project" />
         <EditorAutoSaveStateIcon :editing="state?.editing ?? null" />
         <EditorCheckoutReleaseButton v-if="isDeveloperMode && canManageProject" :project="project" :state="state" />
@@ -99,6 +105,7 @@
     </template>
     <template #right>
       <UIButtonGroup
+        v-if="!isModeSwitchHidden"
         v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
         type="icon"
@@ -174,10 +181,12 @@ import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
+import { useTutorial } from '@/components/tutorials/tutorial'
 import EditorAutoSaveStateIcon from './EditorAutoSaveStateIcon.vue'
 import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
 import EditorCheckoutReleaseButton from './EditorCheckoutReleaseButton.vue'
 import { EditMode, type EditorState } from '../editor-state'
+import { editorWorkspaceLayout } from '../workspace-layout'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
@@ -200,6 +209,7 @@ const props = defineProps<{
 
 const { isOnline } = useNetwork()
 const i18n = useI18n()
+const tutorial = useTutorial()
 const router = useRouter()
 const confirm = useConfirmDialog()
 const signedInUser = useSignedInUser()
@@ -210,6 +220,21 @@ const canManageProject = computed(() => {
 })
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
+const isFocused = computed(() => editorWorkspaceLayout.mode === 'focused')
+const tutorialCourse = computed(() => tutorial.currentCourse)
+const isCurrentTutorialProject = computed(() => {
+  const project = props.project
+  const course = tutorialCourse.value
+  if (!isFocused.value || project?.owner == null || project.name == null || course == null) return false
+  const match = course.entrypoint.match(/\/editor\/([^/?#]+)\/([^/?#]+)/)
+  if (match == null) return false
+  try {
+    return decodeURIComponent(match[1]) === project.owner && decodeURIComponent(match[2]) === project.name
+  } catch {
+    return false
+  }
+})
+const isModeSwitchHidden = computed(() => editorWorkspaceLayout.isHidden('edit-mode-switch'))
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 

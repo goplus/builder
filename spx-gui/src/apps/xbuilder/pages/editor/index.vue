@@ -1,7 +1,11 @@
 <template>
   <section class="min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
-      <EditorNavbar :project="state?.project ?? null" :state="state" />
+      <EditorNavbar :project="state?.project ?? null" :state="state">
+        <template v-if="isInCourse" #tutorials>
+          <TutorialNavbarExit />
+        </template>
+      </EditorNavbar>
     </header>
     <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
@@ -50,15 +54,20 @@ import {
 } from '@/utils/project-route'
 import { composeQuery, useQuery } from '@/utils/query'
 import { UIDetailedLoading, UIError, useConfirmDialogWithResult, useMessage } from '@/components/ui'
-import { useI18n } from '@/utils/i18n'
+import { type LocaleMessage, useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
+import { Exception } from '@/utils/exception'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
+import TutorialNavbarExit from '@/components/tutorials/TutorialNavbarExit.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
+import { useTutorial } from '@/components/tutorials/tutorial'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
+import { editorLeaveConfirm } from '@/components/editor/leave-confirm'
+import { editorReload } from '@/components/editor/editor-reload'
 import { EditorState } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
@@ -72,6 +81,8 @@ const props = defineProps<{
 const localCache = new LocalCache(localHelpers)
 
 const signedInStateQuery = useSignedInStateQuery()
+const tutorial = useTutorial()
+const isInCourse = computed(() => tutorial.currentCourse != null)
 
 const router = useRouter()
 const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
@@ -184,6 +195,13 @@ const allQueryRet = useQuery(
 
 useRegisterUpdateRouteLoaded(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
 
+// Reload the project state on request (e.g. when a tutorial course is restarted), which
+// rebuilds the `EditorState` and reloads the project from the cloud.
+watch(
+  () => editorReload.counter,
+  () => stateQueryRet.refetch()
+)
+
 const publishProject = usePublishProject()
 
 onMounted(async () => {
@@ -204,8 +222,7 @@ onBeforeRouteLeave(async () => {
   if (es == null) return true
   const okToLeave = await checkChangesNotToBeSaved(es)
   if (!okToLeave) return false
-  await ensureAutoSaved(es)
-  return true
+  return ensureAutoSaved(es)
 })
 
 /**
@@ -213,17 +230,29 @@ onBeforeRouteLeave(async () => {
  * If it is OK to leave, return true, otherwise return false.
  */
 async function checkChangesNotToBeSaved(es: EditorState) {
+  if (editorLeaveConfirm.consumeSkipOnce()) return true
   const hasEdits = es.editing.mode === EditingMode.EffectFree && es.editing.dirty
   if (!hasEdits) return true
+  const inTutorial = tutorial.currentCourse != null
+  const content = inTutorial
+    ? {
+        en: `Tutorial edits will not be saved if you leave now. Are you sure to leave?`,
+        zh: `教程中的修改不会被保存，确认要离开吗？`
+      }
+    : {
+        en: `Project edits will not be saved if you leave now. Are you sure to leave?`,
+        zh: `若现在离开，对项目的修改将不会被保存。确定要离开吗？`
+      }
+  return confirmLeaveEditor(content)
+}
+
+function confirmLeaveEditor(content: LocaleMessage): Promise<boolean> {
   return confirm({
     title: t({
       en: 'Leave editor',
       zh: '离开编辑器'
     }),
-    content: t({
-      en: `Project edits will not be saved if you leave now. Are you sure to leave?`,
-      zh: `若现在离开，对项目的修改将不会被保存。确定要离开吗？`
-    }),
+    content: t(content),
     cancelText: t({
       en: 'Keep editing',
       zh: '继续编辑'
@@ -235,10 +264,13 @@ async function checkChangesNotToBeSaved(es: EditorState) {
   })
 }
 
-/** Ensure the changes to be auto-saved are saved */
+/**
+ * Ensure the changes are auto-saved to cloud.
+ * Return whether the navigation should proceed.
+ */
 function ensureAutoSaved(es: EditorState) {
   const editing = es.editing
-  if (!editing.dirty || editing.mode !== EditingMode.AutoSave || editing.saving == null) return
+  if (!editing.dirty || editing.mode !== EditingMode.AutoSave || editing.saving == null) return true
   return m
     .withLoading(
       editing.saving.flush(),
@@ -247,10 +279,19 @@ function ensureAutoSaved(es: EditorState) {
         zh: '保存项目中...'
       })
     )
-    .catch((e) => {
-      m.error(t({ en: 'Failed to save project', zh: '保存项目失败' }))
-      throw e
-    })
+    .then(
+      () => true,
+      (e) => {
+        const errorMessage =
+          e instanceof Exception && e.userMessage != null
+            ? { en: `: ${e.userMessage.en}`, zh: `：${e.userMessage.zh}` }
+            : { en: '', zh: '' }
+        return confirmLeaveEditor({
+          en: `Project edits failed to save${errorMessage.en}. Your latest changes have not been uploaded and may be lost if browser data is cleared. Are you sure to leave?`,
+          zh: `项目修改保存失败${errorMessage.zh}。最新修改尚未上传，清除浏览器数据后可能丢失。确定要离开吗？`
+        })
+      }
+    )
 }
 
 function handleBeforeUnload(event: BeforeUnloadEvent) {
