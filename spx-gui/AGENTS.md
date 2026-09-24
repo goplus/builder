@@ -5,7 +5,7 @@ This document provides development guidelines and coding standards for AI agents
 ## Comments and JSDoc
 
 * Keep comments sparse and concise. Add them only when the code and types do not clearly convey the information, such as non-obvious behavior, constraints, side effects, compatibility requirements, or the reasoning behind an implementation. Do not restate what the code already says.
-* Use JSDoc where it adds useful context to an API, type, or property. Keep simple descriptions concise, and use a multi-line comment when behavior, limitations, or usage boundaries need explanation.
+* Use JSDoc where it adds useful context to an API, type, or property. Keep simple descriptions concise, and use a multi-line JSDoc comment when behavior, limitations, or usage boundaries need explanation.
 * Put property documentation immediately above the property:
 
   ```ts
@@ -19,12 +19,13 @@ This document provides development guidelines and coding standards for AI agents
 
   ```ts
   declare function loadImage(
+    source: string,
     /** Optional signal used to cancel loading. */
     signal?: AbortSignal
   ): Promise<Image>
   ```
 
-* Document return values and exceptions only when their caller-facing meaning is not clear from the function description and type. Use `@return` for a meaningful return case that cannot be inferred, and `@throws` for an exceptional error callers need to handle specially. Omit routine return values and errors.
+* Document return values and exceptions only when their caller-facing meaning is not clear from the function description and type. Use `@returns` for a meaningful return case that cannot be inferred, and `@throws` for an exceptional error callers need to handle specially. Omit routine return values and errors.
 * Use tags such as `@deprecated` when they convey lifecycle information that callers need to know. Do not add tags mechanically.
 * Use `TODO` for known follow-up work and `NOTE` for important context or caveats. Include an issue or reference link when one is available and useful.
 
