@@ -19,6 +19,7 @@ This document provides development guidelines and coding standards for AI agents
 
   ```ts
   declare function loadImage(
+    /** Image URL or data URL to load. */
     source: string,
     /** Optional signal used to cancel loading. */
     signal?: AbortSignal
