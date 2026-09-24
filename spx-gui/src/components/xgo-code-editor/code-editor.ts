@@ -5,7 +5,7 @@ import type { History } from '@/components/editor/history'
 import type { IXGoProject } from './project'
 import { type IDocumentBase, DocumentBase } from './document-base'
 import type { ILSPClient } from './lsp/types'
-import { EmptyAPIReferenceProvider } from './api-reference'
+import { EmptyAPIReferenceProvider, type APIReferenceFilter } from './api-reference'
 import {
   type ICodeEditorUIController,
   type IDiagnosticsProvider,
@@ -80,6 +80,7 @@ export class CodeEditor extends Disposable {
     this.inlayHintProviderRef = shallowRef(new InlayHintProvider(params.lspClient))
     this.inputHelperProviderRef = shallowRef(new InputHelperProvider(params.lspClient, () => this.resourceAdapter))
     this.apiReferenceProviderRef = shallowRef(new EmptyAPIReferenceProvider())
+    this.apiReferenceFilterRef = shallowRef<APIReferenceFilter | null>(null)
     this.completionProviderRef = shallowRef(
       new CompletionProvider(params.lspClient, documentBase, params.project.classFramework)
     )
@@ -133,6 +134,14 @@ export class CodeEditor extends Disposable {
   }
   registerAPIReferenceProvider(provider: IAPIReferenceProvider) {
     this.apiReferenceProviderRef.value = provider
+  }
+
+  private apiReferenceFilterRef: ShallowRef<APIReferenceFilter | null>
+  get apiReferenceFilter() {
+    return this.apiReferenceFilterRef.value
+  }
+  setAPIReferenceFilter(filter: APIReferenceFilter | null) {
+    this.apiReferenceFilterRef.value = filter
   }
 
   private completionProviderRef: ShallowRef<ICompletionProvider>
