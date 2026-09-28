@@ -43,7 +43,6 @@ const sessionQueryRet = useQuery(
       )
     ])
     const courses = coursesPage.data
-    if (!series.courseIDs.includes(courseID)) throw new Error(`course ${courseID} is not in series ${series.id}`)
     const course = courses.find(({ id }) => id === courseID)
     if (course == null) throw new Error(`course ${courseID} not found in series ${series.id}`)
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
