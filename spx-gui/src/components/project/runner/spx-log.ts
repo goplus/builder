@@ -1,7 +1,11 @@
-// Check tools/ispx/log.go for the log source.
-export const spxLocationLogMessage = '__spx_loc__'
+import dayjs from 'dayjs'
+import type { TextDocumentRange } from '@/components/xgo-code-editor'
+import type { ProjectRunnerLocation, ProjectRunnerOutput } from './types'
 
-export type SpxLog = {
+// Check tools/ispx/log.go for the log source.
+const spxLocationLogMessage = '__spx_loc__'
+
+type SpxLog = {
   level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
   /** RFC 3339 date time string, e.g., `2025-12-04T14:17:36.24+08:00` */
   time: string
@@ -19,7 +23,7 @@ function isSpxLog(obj: any): obj is SpxLog {
   )
 }
 
-export function parseSpxLog(jsonStr: string): SpxLog | null {
+function parseSpxLog(jsonStr: string): SpxLog | null {
   try {
     const obj = JSON.parse(jsonStr)
     if (isSpxLog(obj)) return obj
@@ -29,7 +33,7 @@ export function parseSpxLog(jsonStr: string): SpxLog | null {
   return null
 }
 
-export type SpxInfoLog = SpxLog & {
+type SpxInfoLog = SpxLog & {
   level: 'INFO'
   function: string
   /** Source file name, e.g., `NiuXiaoQi.spx` */
@@ -38,11 +42,11 @@ export type SpxInfoLog = SpxLog & {
   line: number
 }
 
-export function isSpxInfoLog(obj: SpxLog): obj is SpxInfoLog {
+function isSpxInfoLog(obj: SpxLog): obj is SpxInfoLog {
   return obj.level === 'INFO' && obj.msg !== spxLocationLogMessage
 }
 
-export type SpxPanicLog = SpxLog & {
+type SpxPanicLog = SpxLog & {
   level: 'ERROR'
   msg: 'panic'
   /** Panic error message */
@@ -55,16 +59,65 @@ export type SpxPanicLog = SpxLog & {
   column: number
 }
 
-export function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
+function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
   return obj.level === 'ERROR' && typeof obj.error === 'string' && obj.msg === 'panic'
 }
 
-export type SpxLocationLog = SpxLog & {
+type SpxLocationLog = SpxLog & {
   msg: typeof spxLocationLogMessage
   file: string
   line: number
 }
 
-export function isSpxLocationLog(log: SpxLog): log is SpxLocationLog {
+function isSpxLocationLog(log: SpxLog): log is SpxLocationLog {
   return log.msg === spxLocationLogMessage && typeof log.file === 'string' && typeof log.line === 'number'
+}
+
+function toSourceRange(file: string, line: number, column: number): TextDocumentRange {
+  return {
+    textDocument: { uri: `file:///${file}` },
+    range: {
+      start: { line, column },
+      end: { line, column }
+    }
+  }
+}
+
+type SpxConsoleLogEvent =
+  | { type: 'output'; output: ProjectRunnerOutput }
+  | { type: 'location'; location: ProjectRunnerLocation }
+  | { type: 'unknown' }
+
+export function parseSpxConsoleLog(jsonStr: string): SpxConsoleLogEvent | null {
+  const log = parseSpxLog(jsonStr)
+  if (log == null) return null
+  if (isSpxLocationLog(log)) {
+    return {
+      type: 'location',
+      location: { textDocument: { uri: `file:///${log.file}` }, line: log.line }
+    }
+  }
+  if (isSpxInfoLog(log)) {
+    return {
+      type: 'output',
+      output: {
+        kind: 'log',
+        time: dayjs(log.time).valueOf(),
+        message: log.msg,
+        source: toSourceRange(log.file, log.line, 1)
+      }
+    }
+  }
+  if (isSpxPanicLog(log)) {
+    return {
+      type: 'output',
+      output: {
+        kind: 'error',
+        time: dayjs(log.time).valueOf(),
+        message: log.error,
+        source: toSourceRange(log.file, log.line, log.column)
+      }
+    }
+  }
+  return { type: 'unknown' }
 }
