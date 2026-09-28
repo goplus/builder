@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  action: []
+  action: [action: InternalAction]
 }>()
 
 const codeEditorCtx = useCodeEditorUICtx()
@@ -24,7 +24,7 @@ const actions = computed(() => {
 const handleAction = useMessageHandle(
   async (action: InternalAction) => {
     await codeEditorCtx.ui.executeCommand(action.command, ...action.arguments)
-    emit('action')
+    emit('action', action)
   },
   { en: 'Failed to execute command', zh: '执行命令失败' }
 ).fn

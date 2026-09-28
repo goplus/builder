@@ -44,6 +44,11 @@ import {
   type ICopilot
 } from '../copilot'
 import type { CodeEditor } from '../code-editor'
+import {
+  mockEditorTranslationProvider,
+  type EditorTranslationProvider,
+  type EditorTranslationRequest
+} from '../translation'
 
 export * from './hover'
 export * from './completion'
@@ -95,6 +100,7 @@ export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = '
 export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentRange], void> = 'xgo.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'xgo.renameResource'
 export const builtInCommandInvokeInputHelper: Command<[InternalInputSlot], void> = 'xgo.invokeInputHelper'
+export const builtInCommandTranslate: Command<[EditorTranslationRequest], void> = 'xgo.translate'
 
 export type InternalAction<A extends any[] = any, R = any> = {
   title: string
@@ -153,7 +159,8 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     private mainTextDocumentId: TextDocumentIdentifier,
     readonly codeEditor: CodeEditor,
     public i18n: I18n,
-    private renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>
+    private renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>,
+    readonly translationProvider: EditorTranslationProvider = mockEditorTranslationProvider
   ) {
     super()
   }
@@ -630,6 +637,12 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       handler: (item) => {
         this.inputHelperController.startInputing(item.id)
       }
+    })
+
+    this.registerCommand(builtInCommandTranslate, {
+      icon: 'translate',
+      title: { en: 'Translate', zh: '翻译' },
+      handler: (request) => this.hoverController.translate(request)
     })
 
     this.registerCommand(builtInCommandRename, {

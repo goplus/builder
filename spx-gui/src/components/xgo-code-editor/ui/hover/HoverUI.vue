@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, watchPostEffect } from 'vue'
-import { UIDropdown, type DropdownPos } from '@/components/ui'
+import { UIDropdown, UIIcon, type DropdownPos } from '@/components/ui'
 import { useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import HoverCard from './HoverCard.vue'
 import HoverCardContent from './HoverCardContent.vue'
 import type { HoverController } from '.'
+import { builtInCommandTranslate, type InternalAction } from '../code-editor-ui'
+import DiagnosticItem from '../markdown/DiagnosticItem.vue'
+import { DiagnosticSeverity } from '../../common'
 
 const props = defineProps<{
   controller: HoverController
@@ -17,6 +20,23 @@ const codeEditorUICtx = useCodeEditorUICtx()
 const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
 const hoveredTextCls = 'code-editor-hovered-text'
+
+function getTranslationTarget(contentIndex: number) {
+  return props.controller.hover?.translationTargets.find((target) => target.contentIndex === contentIndex) ?? null
+}
+
+function getTranslationState(contentIndex: number) {
+  const state = props.controller.translationState
+  return state?.contentIndex === contentIndex ? state : null
+}
+
+function getTranslationDiagnosticSeverity(contentIndex: number) {
+  return (getTranslationTarget(contentIndex)?.diagnosticSeverity ?? DiagnosticSeverity.Error) as DiagnosticSeverity
+}
+
+function handleAction(action: InternalAction) {
+  if (action.command !== builtInCommandTranslate) props.controller.hideHover()
+}
 
 // Use post effect to ensure the effect executed after effect of `useDecorations`
 watchPostEffect(async () => {
@@ -78,10 +98,38 @@ useDecorations(() => {
       :actions="controller.hover.actions"
       @mouseenter="controller.emit('cardMouseEnter', $event)"
       @mouseleave="controller.emit('cardMouseLeave', $event)"
-      @action="controller.hideHover()"
+      @action="handleAction"
     >
       <HoverCardContent v-for="(content, i) in controller.hover.contents" :key="i">
         <MarkdownView v-bind="content" />
+        <div
+          v-if="getTranslationState(i) != null"
+          class="mt-2 border-t border-dividing-line-2 pt-2"
+          :class="{ 'translation-loading': getTranslationState(i)?.status === 'loading' }"
+        >
+          <div
+            v-if="getTranslationState(i)?.status === 'loading'"
+            class="flex min-h-8 items-center gap-2 text-xs text-grey-700"
+            role="status"
+            aria-live="polite"
+          >
+            <UIIcon type="loading" class="text-primary-main" />
+            <span>{{ $t({ en: 'Translating…', zh: '翻译中…' }) }}</span>
+          </div>
+          <DiagnosticItem
+            v-else-if="getTranslationTarget(i)?.kind === 'diagnostic' && getTranslationState(i)?.translated != null"
+            :severity="getTranslationDiagnosticSeverity(i)"
+          >
+            {{ getTranslationState(i)?.translated }}
+          </DiagnosticItem>
+          <MarkdownView
+            v-else-if="getTranslationState(i)?.status === 'success' && getTranslationState(i)?.translated != null"
+            :value="getTranslationState(i)!.translated!"
+          />
+          <p v-else class="text-xs text-red-600" role="alert">
+            {{ $t({ en: 'Translation unavailable', zh: '暂时无法翻译' }) }}
+          </p>
+        </div>
       </HoverCardContent>
     </HoverCard>
   </UIDropdown>

@@ -1,6 +1,7 @@
 import { debounce } from 'lodash'
 import { escapeHTML } from '@/utils/utils'
 import Emitter from '@/utils/emitter'
+import { shallowRef } from 'vue'
 import { TaskManager } from '@/utils/task'
 import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import {
@@ -24,14 +25,23 @@ import {
   builtInCommandGoToResource,
   type CodeEditorUIController,
   builtInCommandRenameResource,
-  builtInCommandInvokeInputHelper
+  builtInCommandInvokeInputHelper,
+  builtInCommandTranslate
 } from '../code-editor-ui'
 import { fromMonacoPosition } from '../common'
 import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
+import {
+  extractDocumentationExplanation,
+  type EditorTranslationRequest,
+  type EditorTranslationKind
+} from '../../translation'
 
 type TextHover = Hover & {
   range: Range
+  translationTargets: Array<EditorTranslationRequest & { contentIndex: number }>
 }
+
+type TranslationTarget = EditorTranslationRequest & { contentIndex: number }
 
 export type InternalHover =
   | TextHover
@@ -39,6 +49,7 @@ export type InternalHover =
       range: null
       anchorRect: DOMRect
       inlayHint: InlayHintItem
+      translationTargets: TranslationTarget[]
     })
 
 type HoverRequest =
@@ -69,7 +80,33 @@ export class HoverController extends Emitter<{
     super()
   }
 
+  private translationStateRef = shallowRef<{
+    key: string
+    contentIndex: number
+    status: 'loading' | 'success' | 'error'
+    translated: string | null
+  } | null>(null)
+
+  get translationState() {
+    return this.translationStateRef.value
+  }
+
+  async translate(request: EditorTranslationRequest & { contentIndex?: number }) {
+    const contentIndex = request.contentIndex ?? 0
+    const key = `${request.kind}:${request.source}`
+    this.translationStateRef.value = { key, contentIndex, status: 'loading', translated: null }
+    try {
+      const translated = await this.ui.translationProvider.translate(request)
+      if (this.translationStateRef.value?.key !== key) return
+      this.translationStateRef.value = { key, contentIndex, status: 'success', translated }
+    } catch {
+      if (this.translationStateRef.value?.key !== key) return
+      this.translationStateRef.value = { key, contentIndex, status: 'error', translated: null }
+    }
+  }
+
   private hoverMgr = new TaskManager(async (signal, target: HoverRequest): Promise<InternalHover | null> => {
+    this.translationStateRef.value = null
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return null
     if (target.type === 'inlay-hint') {
@@ -80,6 +117,7 @@ export class HoverController extends Emitter<{
         range: null,
         anchorRect: target.anchorRect,
         inlayHint: target.item,
+        translationTargets: [],
         actions: []
       }
     }
@@ -91,7 +129,31 @@ export class HoverController extends Emitter<{
     let providedTextHover: TextHover | null = null
     if (providedHover != null) {
       const range = providedHover.range ?? textDocument.getDefaultRange(position)
-      providedTextHover = { ...providedHover, range }
+      const hoverSource = providedHover.contents[0]?.value
+      const translationTarget = await this.getDocumentationTranslationTarget(
+        textDocument,
+        position,
+        typeof hoverSource === 'string' ? hoverSource : '',
+        signal
+      )
+      const translationActions =
+        translationTarget == null
+          ? []
+          : [
+              {
+                command: builtInCommandTranslate,
+                arguments: [{ ...translationTarget, locale: this.ui.i18n.lang.value }]
+              }
+            ]
+      providedTextHover = {
+        ...providedHover,
+        actions: [...providedHover.actions, ...translationActions],
+        range,
+        translationTargets:
+          translationTarget == null || providedHover.contents.length === 0
+            ? []
+            : [{ ...translationTarget, contentIndex: 0 }]
+      }
     }
     const resourceReferenceHover = this.getResourceReferenceHover(position)
     const inputHelperHover = this.getInputHelperHover(position)
@@ -110,18 +172,26 @@ export class HoverController extends Emitter<{
         hover = {
           contents: [],
           range: hoverItem.range,
-          actions: []
+          actions: [],
+          translationTargets: []
         }
       }
       if (!rangeEq(hoverItem.range, hover.range)) continue
-      if (hover.contents.length === 0) hover.contents = [...hoverItem.contents]
+      if (hover.contents.length === 0) {
+        hover.contents = [...hoverItem.contents]
+        hover.translationTargets = [...hoverItem.translationTargets]
+      }
       hover.actions.push(...hoverItem.actions)
     }
 
     if (diagnosticsHover != null) {
       if (hover == null) return diagnosticsHover
       // Show diagnostics after the main hover content, but keep its action first as it is usually higher priority.
+      const contentIndex = hover.contents.length
       hover.contents.push(...diagnosticsHover.contents)
+      hover.translationTargets.push(
+        ...diagnosticsHover.translationTargets.map((target) => ({ ...target, contentIndex }))
+      )
       hover.actions.unshift(...diagnosticsHover.actions)
     }
 
@@ -133,7 +203,24 @@ export class HoverController extends Emitter<{
   }
 
   hideHover() {
+    this.translationStateRef.value = null
     this.hoverMgr.stop()
+  }
+
+  private async getDocumentationTranslationTarget(
+    textDocument: ITextDocument,
+    position: Position,
+    hoverSource: string,
+    signal: AbortSignal
+  ): Promise<Omit<EditorTranslationRequest, 'locale'> | null> {
+    if (this.ui.i18n.lang.value === 'en') return null
+    const definition = await this.ui.codeEditor.lspClient.getDefinition({ signal }, textDocument.id, position)
+    if (definition == null) return null
+    const documentation = await this.ui.codeEditor.documentBase.getDocumentation(definition)
+    if (documentation == null) return null
+    const source = extractDocumentationExplanation(hoverSource)
+    if (source === '') return null
+    return { kind: 'documentation', source }
   }
 
   private hasHoverFor(target: HoverRequest) {
@@ -157,6 +244,18 @@ export class HoverController extends Emitter<{
             `<pre is="diagnostic-item" severity="${diagnostic.severity}">${diagnostic.message}</pre>`
           )
         ],
+        translationTargets:
+          this.ui.i18n.lang.value === 'en'
+            ? []
+            : [
+                {
+                  kind: 'diagnostic' as EditorTranslationKind,
+                  source: diagnostic.message,
+                  contentIndex: 0,
+                  locale: 'zh',
+                  diagnosticSeverity: diagnostic.severity as 'error' | 'warning'
+                }
+              ],
         range: diagnostic.range,
         actions: [
           {
@@ -167,7 +266,22 @@ export class HoverController extends Emitter<{
                 problem: diagnostic
               }
             ]
-          }
+          },
+          ...(this.ui.i18n.lang.value === 'en'
+            ? []
+            : [
+                {
+                  command: builtInCommandTranslate,
+                  arguments: [
+                    {
+                      kind: 'diagnostic' as const,
+                      source: diagnostic.message,
+                      locale: 'zh' as const,
+                      diagnosticSeverity: diagnostic.severity as 'error' | 'warning'
+                    }
+                  ]
+                }
+              ])
         ]
       }
     }
@@ -190,6 +304,7 @@ export class HoverController extends Emitter<{
       })
       return {
         contents: [],
+        translationTargets: [],
         range: reference.range,
         actions
       }
@@ -212,6 +327,7 @@ export class HoverController extends Emitter<{
       }
       return {
         contents,
+        translationTargets: [],
         range: item.range,
         actions: [
           {

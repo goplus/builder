@@ -5,6 +5,7 @@ import iconFix from './fix.svg?raw'
 import iconGoto from './goto.svg?raw'
 import iconModify from './modify.svg?raw'
 import iconRename from './rename.svg?raw'
+import iconTranslate from './translate.svg?raw'
 import iconCopy from './copy.svg?raw'
 import iconCopilot from './copilot.svg?raw'
 
@@ -18,6 +19,7 @@ const typeIconMap = {
   goto: iconGoto,
   modify: iconModify,
   rename: iconRename,
+  translate: iconTranslate,
   copy: iconCopy,
   copilot: iconCopilot
 }
