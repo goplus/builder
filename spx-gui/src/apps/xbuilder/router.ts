@@ -125,6 +125,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/course/:courseSeriesIdInput/:courseIdInput/playground/:inEditorPath*',
+    name: 'course-playground',
     component: () => import('./pages/tutorials/course-playground.vue'),
     props: true
   },

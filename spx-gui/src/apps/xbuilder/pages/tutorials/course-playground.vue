@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import type { PlaygroundCourse } from '@/apis/course'
@@ -28,7 +27,7 @@ const tutorialStatus = useTutorialStatus()
 const router = useRouter()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 
-async function getMockData() {
+async function getMockData(courseSeriesID: string, courseID: string) {
   const project = await createDefaultProject('', '', [])
   const secondSprite = project.sprites[0]?.clone()
   if (secondSprite == null) throw new Error('default sprite not found')
@@ -95,7 +94,7 @@ Copilot.onRoundComplete round => {
     }
   ]
   const series: CourseSeries = {
-    id: props.courseSeriesIdInput,
+    id: courseSeriesID,
     owner: 'tutorial-demo',
     kind: 'playground',
     title: 'Playground Demo Series',
@@ -106,7 +105,7 @@ Copilot.onRoundComplete round => {
     createdAt: '2026-08-26T00:00:00Z',
     updatedAt: '2026-08-26T00:00:00Z'
   }
-  const course = courses.find(({ id }) => id === props.courseIdInput) ?? courses[1]
+  const course = courses.find(({ id }) => id === courseID) ?? courses[1]
   if (course == null) throw new Error('mock course not found')
 
   return { course, courses, series }
@@ -128,7 +127,7 @@ async function toDataUrl(file: File) {
 const sessionQueryRet = useQuery(
   async (ctx) => {
     // TODO: Load the Course and Course Series from Course APIs once the Tutorial v2 backend data is available.
-    const { course, courses, series } = await getMockData()
+    const { course, courses, series } = await getMockData(props.courseSeriesIdInput, props.courseIdInput)
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
     if (!series.courseIDs.includes(course.id)) throw new Error(`course ${course.id} is not in series ${series.id}`)
 
@@ -146,6 +145,13 @@ const sessionQueryRet = useQuery(
       }
     }
 
+    if (!ctx.signal.aborted) {
+      tutorialStatus.setCurrentCourse(course, series, courses)
+      ctx.signal.addEventListener('abort', () => tutorialStatus.clearCurrentCourse('playground', course.id), {
+        once: true
+      })
+    }
+
     return { course, courses, series, project }
   },
   {
@@ -155,22 +161,7 @@ const sessionQueryRet = useQuery(
   { clearDataOnFetch: true }
 )
 
-watch(
-  () => [props.courseSeriesIdInput, props.courseIdInput],
-  () => sessionQueryRet.refetch()
-)
-
 const session = sessionQueryRet.data
-
-watch(
-  session,
-  (currentSession, _, onCleanup) => {
-    if (currentSession == null) return
-    tutorialStatus.setCurrentCourse(currentSession.course, currentSession.series, currentSession.courses)
-    onCleanup(() => tutorialStatus.clearCurrentCourse('playground', currentSession.course.id))
-  },
-  { immediate: true }
-)
 
 async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const completedSession = session.value
@@ -187,10 +178,14 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
   const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
   if (action === 'next' && nextCourseID != null) {
-    const inEditorPath = repeatableParamToPathSegments(props.inEditorPath).map(encodeURIComponent).join('/')
-    await router.push(
-      `/course/${encodeURIComponent(completedSession.series.id)}/${encodeURIComponent(nextCourseID)}/playground/${inEditorPath}`
-    )
+    await router.push({
+      name: 'course-playground',
+      params: {
+        courseSeriesIdInput: completedSession.series.id,
+        courseIdInput: nextCourseID,
+        inEditorPath: repeatableParamToPathSegments(props.inEditorPath)
+      }
+    })
   } else {
     await router.push(`/course-series/${encodeURIComponent(completedSession.series.id)}`)
   }
