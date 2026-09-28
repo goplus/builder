@@ -1,5 +1,5 @@
-import { computed, inject, provide, shallowRef } from 'vue'
-import type { ComputedRef, InjectionKey } from 'vue'
+import { inject, provide, shallowRef } from 'vue'
+import type { InjectionKey } from 'vue'
 
 import type { Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
@@ -17,11 +17,11 @@ const playgroundRoutePath = '/course/:courseSeriesIdInput/:courseIdInput/playgro
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 
-export type CurrentStatus = {
+export type TutorialSession = {
   course: Course
   series: CourseSeries
-  seriesCourses: Course[] | null
-  courseState: 'in-progress' | 'completed'
+  seriesCourses?: Course[] | null
+  courseState?: 'in-progress' | 'completed'
 }
 
 export function useTutorial() {
@@ -35,20 +35,17 @@ export function provideTutorial(tutorial: Tutorial) {
 }
 
 export class Tutorial {
-  private playgroundCurrentRef = shallowRef<CurrentStatus | null>(null)
-  private currentRef: ComputedRef<CurrentStatus | null>
+  private playgroundCurrentRef = shallowRef<TutorialSession | null>(null)
 
   constructor(
     private guidedTutorial: GuidedTutorialController,
     private router: TutorialRouter,
     private loadCourse: (id: string) => Promise<Course> = getCourse,
     private loadCourseSeries: (id: string) => Promise<CourseSeries> = getCourseSeries
-  ) {
-    this.currentRef = computed(() => this.guidedTutorial.current ?? this.playgroundCurrentRef.value)
-  }
+  ) {}
 
-  get current() {
-    return this.currentRef.value
+  get current(): TutorialSession | null {
+    return this.guidedTutorial.current ?? this.playgroundCurrentRef.value
   }
 
   setCurrentCourse(course: Course, series: CourseSeries, seriesCourses?: Course[]) {

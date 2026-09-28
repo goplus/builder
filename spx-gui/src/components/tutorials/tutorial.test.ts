@@ -6,7 +6,6 @@ import type { GuidedCourse, PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
 import { Tutorial } from './tutorial'
-import type { CurrentStatus } from './tutorial'
 
 function makeSeries(courseIDs = ['course-1']): CourseSeries {
   return {
@@ -50,7 +49,7 @@ function makeControllers(
 ) {
   return {
     guided: {
-      current: null as CurrentStatus | null,
+      current: null as { course: GuidedCourse; series: CourseSeries } | null,
       startCourse: vi.fn().mockResolvedValue(undefined),
       endCurrentCourse: vi.fn()
     },

@@ -93,8 +93,8 @@
       </div>
     </template>
     <template #center>
-      <div v-if="currentTutorial != null" class="max-w-[50%] truncate text-title text-xl">
-        {{ currentTutorial.course.title }}
+      <div v-if="currentTutorialCourse != null" class="max-w-[50%] truncate text-title text-xl">
+        {{ currentTutorialCourse.title }}
       </div>
       <div v-else-if="project != null" class="flex items-center justify-center gap-2">
         <div v-if="title != null" class="max-w-62 truncate text-title text-xl">{{ title }}</div>
@@ -221,7 +221,7 @@ const canManageProject = computed(() => {
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 const isSimpleMode = computed(() => selectedEditMode.value === EditMode.Simple)
-const currentTutorial = computed(() => tutorial.current)
+const currentTutorialCourse = computed(() => tutorial.current?.course)
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 

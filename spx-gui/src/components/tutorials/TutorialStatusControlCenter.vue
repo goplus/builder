@@ -15,10 +15,10 @@ import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
 const router = useRouter()
 const tutorial = useTutorial()
 const dropdown = useDropdown()
-const currentStatus = computed(() => tutorial.current)
+const currentSession = computed(() => tutorial.current)
 
 const courses = useAsyncComputed(async (onCleanup) => {
-  const current = currentStatus.value
+  const current = currentSession.value
   if (current == null) return []
   if (current.seriesCourses != null) return current.seriesCourses
 
@@ -54,7 +54,7 @@ const { fn: handleExitCourse } = useMessageHandle(
 
 const { fn: handleReturnSeries } = useMessageHandle(
   async () => {
-    const current = currentStatus.value
+    const current = currentSession.value
     if (current == null) return
     dropdown?.setVisible(false)
     await tutorial.endCurrentCourse()
@@ -66,7 +66,7 @@ const { fn: handleReturnSeries } = useMessageHandle(
 
 const { fn: handleSelectCourse } = useMessageHandle(
   async (courseID: string) => {
-    const current = currentStatus.value
+    const current = currentSession.value
     if (current == null || courseID === current.course.id) return
     dropdown?.setVisible(false)
 
@@ -87,7 +87,7 @@ const { fn: handleSelectCourse } = useMessageHandle(
 
 const { fn: handleRestartCourse } = useMessageHandle(
   async () => {
-    const current = currentStatus.value
+    const current = currentSession.value
     if (current == null) return
     dropdown?.setVisible(false)
 
@@ -124,8 +124,8 @@ const { fn: handleRestartCourse } = useMessageHandle(
         :key="course.id"
         :course="course"
         :sequence="index + 1"
-        :active="course.id === currentStatus?.course.id"
-        :state="course.id === currentStatus?.course.id ? currentStatus.courseState : null"
+        :active="course.id === currentSession?.course.id"
+        :state="course.id === currentSession?.course.id ? currentSession.courseState ?? 'in-progress' : null"
         @select="handleSelectCourse(course.id)"
         @restart="handleRestartCourse"
       />
