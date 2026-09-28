@@ -22,6 +22,7 @@ import type { InlayHintItem } from '../../inlay-hint'
 export type { Hover, HoverContext, IHoverProvider } from '../../hover'
 import {
   builtInCommandCopilotFixProblem,
+  builtInCommandCopilotExplain,
   builtInCommandGoToResource,
   type CodeEditorUIController,
   builtInCommandRenameResource,
@@ -130,11 +131,9 @@ export class HoverController extends Emitter<{
     if (providedHover != null) {
       const range = providedHover.range ?? textDocument.getDefaultRange(position)
       const hoverSource = providedHover.contents[0]?.value
-      const translationTarget = await this.getDocumentationTranslationTarget(
-        textDocument,
-        position,
-        typeof hoverSource === 'string' ? hoverSource : '',
-        signal
+      const translationTarget = this.getDocumentationTranslationTarget(
+        providedHover,
+        typeof hoverSource === 'string' ? hoverSource : ''
       )
       const translationActions =
         translationTarget == null
@@ -207,17 +206,13 @@ export class HoverController extends Emitter<{
     this.hoverMgr.stop()
   }
 
-  private async getDocumentationTranslationTarget(
-    textDocument: ITextDocument,
-    position: Position,
-    hoverSource: string,
-    signal: AbortSignal
-  ): Promise<Omit<EditorTranslationRequest, 'locale'> | null> {
+  private getDocumentationTranslationTarget(
+    providedHover: Hover,
+    hoverSource: string
+  ): Omit<EditorTranslationRequest, 'locale'> | null {
     if (this.ui.i18n.lang.value === 'en') return null
-    const definition = await this.ui.codeEditor.lspClient.getDefinition({ signal }, textDocument.id, position)
-    if (definition == null) return null
-    const documentation = await this.ui.codeEditor.documentBase.getDocumentation(definition)
-    if (documentation == null) return null
+    // HoverProvider adds this action only after resolving a documented XGo/SPX definition.
+    if (!providedHover.actions.some((action) => action.command === builtInCommandCopilotExplain)) return null
     const source = extractDocumentationExplanation(hoverSource)
     if (source === '') return null
     return { kind: 'documentation', source }
