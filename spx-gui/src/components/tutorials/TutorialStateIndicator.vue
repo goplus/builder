@@ -15,12 +15,10 @@ const course = computed(() => {
   return tutorial.currentCourse
 })
 
-const { fn: handleExitTutorial } = useMessageHandle(
-  () => {
-    tutorial.endCurrentCourse()
-  },
-  { zh: '退出课程时遇到问题', en: 'Encountered an issue when exiting the course' }
-)
+const { fn: handleExitTutorial } = useMessageHandle(() => tutorial.exitCurrentCourse(), {
+  zh: '退出课程时遇到问题',
+  en: 'Encountered an issue when exiting the course'
+})
 </script>
 
 <template>

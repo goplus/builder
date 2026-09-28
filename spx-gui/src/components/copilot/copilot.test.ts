@@ -718,6 +718,13 @@ describe('Copilot', () => {
         role: 'user',
         content: {
           type: 'text',
+          text: contextMessage.content
+        }
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text',
           text: 'Find my projects'
         }
       },
@@ -744,13 +751,6 @@ describe('Copilot', () => {
         content: {
           type: 'text',
           text: '{"projects":["demo"]}'
-        }
-      },
-      {
-        role: 'user',
-        content: {
-          type: 'text',
-          text: contextMessage.content
         }
       }
     ])
@@ -908,6 +908,13 @@ describe('Copilot', () => {
         role: 'user',
         content: {
           type: 'text',
+          text: contextMessage.content
+        }
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text',
           text: 'Find my projects'
         }
       },
@@ -930,13 +937,6 @@ describe('Copilot', () => {
         content: {
           type: 'text',
           text: '{"projects":["demo"]}'
-        }
-      },
-      {
-        role: 'user',
-        content: {
-          type: 'text',
-          text: contextMessage.content
         }
       }
     ])
@@ -1004,7 +1004,8 @@ describe('Copilot', () => {
     await waitForCompletion()
 
     expect(generator.calls).toHaveLength(2)
-    expect(generator.calls[1]?.[2]).toEqual({
+    // Index 0 is the context message; the tool result follows the user message and the tool call.
+    expect(generator.calls[1]?.[3]).toEqual({
       role: 'tool',
       toolCallId: 'call_1',
       content: {
@@ -1094,11 +1095,20 @@ describe('Copilot', () => {
     ])
     const contextMessage = await copilot.getContextMessage()
 
-    expect(sampledMessages?.at(-1)).toEqual({
+    // The tail is [context, user message, copilot tool call, tool result]: the context sits
+    // right before the current round's user message.
+    expect(sampledMessages?.at(-4)).toEqual({
       role: 'user',
       content: {
         type: 'text',
         text: contextMessage.content
+      }
+    })
+    expect(sampledMessages?.at(-3)).toEqual({
+      role: 'user',
+      content: {
+        type: 'text',
+        text: 'Find my projects'
       }
     })
   })
@@ -1139,7 +1149,8 @@ describe('Copilot', () => {
     expect(generator.calls).toHaveLength(1)
     expect(generator.callOptions).toHaveLength(1)
 
-    const contextMessage = generator.calls[0].at(-1)
+    // The context message sits right before the user's message, which stays last.
+    const contextMessage = generator.calls[0].at(-2)
     const expectedContextMessage = await copilot.getContextMessage()
 
     expect(contextMessage).toEqual({
@@ -1289,5 +1300,77 @@ describe('Copilot', () => {
       }
     ])
     expect(copilot.executor.getExecution('call_legacy')).toBe(null)
+  })
+})
+
+describe('Copilot collapse', () => {
+  it('should not auto-open on user events after the user collapsed the copilot', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    await copilot.startSession(createEventTopic())
+    expect(copilot.active).toBe(true)
+
+    copilot.collapse()
+    expect(copilot.active).toBe(false)
+
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail of the event')
+    // The panel stays collapsed, while the event still reaches the session
+    expect(copilot.active).toBe(false)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+
+    // Opening again restores event-driven auto-open
+    copilot.open()
+    copilot.collapse()
+    copilot.open()
+    copilot.notifyUserEvent({ en: 'Another event', zh: '另一事件' }, 'Detail')
+    expect(copilot.active).toBe(true)
+  })
+
+  it('should auto-open on user events again after a new session starts', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    await copilot.startSession(createEventTopic())
+    copilot.collapse()
+
+    await copilot.startSession(createEventTopic('Another Topic'))
+    expect(copilot.active).toBe(true)
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail of the event')
+    expect(copilot.active).toBe(true)
+  })
+
+  it('should start a session in the background when autoOpen is false', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    await copilot.startSession(createEventTopic(), undefined, { autoOpen: false })
+    expect(copilot.active).toBe(false)
+    // The session still runs: events reach it while the panel stays hidden.
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail', { autoOpen: false })
+    expect(copilot.active).toBe(false)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+  })
+
+  it('should let a backgrounded session open later despite an earlier collapse', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    await copilot.startSession(createEventTopic())
+    copilot.collapse() // the user collapsed the PREVIOUS session
+
+    await copilot.startSession(createEventTopic('Another Topic'), undefined, { autoOpen: false })
+    expect(copilot.active).toBe(false)
+    // The stale collapse must not stick: an event that may open the panel still does.
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail')
+    expect(copilot.active).toBe(true)
+  })
+
+  it('should keep the panel hidden on events under a background-first topic', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Response 1', 'Response 2'))
+    const topic: Topic = { ...createEventTopic(), autoOpenOnEvents: false }
+    await copilot.startSession(topic, undefined, { autoOpen: false })
+
+    // Ambient events (page navigation, modals, ...) do not pass autoOpen explicitly; the topic
+    // decides they must not pop the panel.
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, 'User navigated somewhere')
+    expect(copilot.active).toBe(false)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+
+    // An explicit per-event choice still wins over the topic default.
+    copilot.notifyUserEvent({ en: 'Some event', zh: '某事件' }, 'Detail', { autoOpen: true })
+    expect(copilot.active).toBe(true)
   })
 })

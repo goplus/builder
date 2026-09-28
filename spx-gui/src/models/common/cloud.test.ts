@@ -1,9 +1,26 @@
+import { createDirectUploadTask } from 'qiniu-js'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { cloudHelpers } from './cloud'
-import { createFileURLSignatures } from '@/apis/file'
 
-vi.mock('@/apis/file', () => ({
-  createFileURLSignatures: vi.fn()
+import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
+import { createFileURLSignatures, createUploadSession, getFileObject } from '@/apis/file'
+import { capture } from '@/utils/exception'
+import { cloudHelpers, saveFile } from './cloud'
+import { fromBlob } from './file'
+
+vi.mock('qiniu-js', () => ({
+  createDirectUploadTask: vi.fn()
+}))
+
+vi.mock('@/apis/file', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/apis/file')>()),
+  createFileURLSignatures: vi.fn(),
+  createUploadSession: vi.fn(),
+  getFileObject: vi.fn()
+}))
+
+vi.mock('@/utils/exception', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/exception')>()),
+  capture: vi.fn()
 }))
 
 describe('universalUrlToWebUrl', () => {
@@ -123,5 +140,88 @@ describe('universalUrlToWebUrl', () => {
     vi.advanceTimersByTime(batchDelay)
 
     await expect(promise).rejects.toThrow(error)
+  })
+})
+
+describe('saveFile', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(createUploadSession).mockResolvedValue({
+      token: 'token',
+      expiresAt: '2099-01-01T00:00:00Z',
+      maxSize: 20 * 1024 * 1024,
+      bucket: 'bucket',
+      region: 'z0'
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('reuses an existing content-addressed Kodo object', async () => {
+    vi.mocked(getFileObject).mockResolvedValue({
+      url: 'kodo://bucket/files/lm4W-B9xRnQqLLX9MP8Yafji4gmr-4194305.ttf'
+    })
+    const file = fromBlob('font.ttf', new Blob([new Uint8Array(4 * 1024 * 1024 + 1).fill(1)], { type: 'font/ttf' }))
+
+    await expect(saveFile(file)).resolves.toBe('kodo://bucket/files/lm4W-B9xRnQqLLX9MP8Yafji4gmr-4194305.ttf')
+    expect(getFileObject).toHaveBeenCalledWith(
+      'lm4W-B9xRnQqLLX9MP8Yafji4gmr',
+      4 * 1024 * 1024 + 1,
+      'font.ttf',
+      undefined
+    )
+    expect(createUploadSession).not.toHaveBeenCalled()
+    expect(createDirectUploadTask).not.toHaveBeenCalled()
+  })
+
+  it('uploads the file when the content-addressed object is unavailable', async () => {
+    const error = new Error('not found')
+    vi.mocked(getFileObject).mockRejectedValue(error)
+    vi.mocked(createDirectUploadTask).mockReturnValue({
+      start: vi.fn(),
+      cancel: vi.fn(),
+      onError: vi.fn(),
+      onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
+    } as unknown as ReturnType<typeof createDirectUploadTask>)
+    const file = fromBlob('asset.png', new Blob([new Uint8Array(1024 * 1024).fill(1)], { type: 'image/png' }))
+
+    await expect(saveFile(file)).resolves.toBe('kodo://bucket/files/uploaded.png')
+    expect(getFileObject).toHaveBeenCalledWith('FlndqgEuxWByGI9JFdTZ9rM1JLMX', 1024 * 1024, 'asset.png', undefined)
+    expect(capture).toHaveBeenCalledWith(error, 'Failed to get existing Kodo file object')
+    expect(createDirectUploadTask).toHaveBeenCalledOnce()
+  })
+
+  it('uploads the file without reporting an expected lookup miss', async () => {
+    vi.mocked(getFileObject).mockRejectedValue(
+      new ApiException(ApiExceptionCode.errorNotFound, 'not found', {
+        req: new Request('https://example.com/file-objects/hash')
+      })
+    )
+    vi.mocked(createDirectUploadTask).mockReturnValue({
+      start: vi.fn(),
+      cancel: vi.fn(),
+      onError: vi.fn(),
+      onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
+    } as unknown as ReturnType<typeof createDirectUploadTask>)
+    const file = fromBlob('asset.png', new Blob([new Uint8Array(1024 * 1024).fill(1)], { type: 'image/png' }))
+
+    await expect(saveFile(file)).resolves.toBe('kodo://bucket/files/uploaded.png')
+    expect(capture).not.toHaveBeenCalled()
+  })
+
+  it('uploads a small file without checking for reuse', async () => {
+    vi.mocked(createDirectUploadTask).mockReturnValue({
+      start: vi.fn(),
+      cancel: vi.fn(),
+      onError: vi.fn(),
+      onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
+    } as unknown as ReturnType<typeof createDirectUploadTask>)
+    const file = fromBlob('asset.png', new Blob([new Uint8Array(1024 * 1024 - 1)], { type: 'image/png' }))
+
+    await expect(saveFile(file)).resolves.toBe('kodo://bucket/files/uploaded.png')
+    expect(getFileObject).not.toHaveBeenCalled()
+    expect(createDirectUploadTask).toHaveBeenCalledOnce()
   })
 })

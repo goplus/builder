@@ -78,6 +78,7 @@ import rotateAround from './rotate-around.svg?raw'
 import back from './back.svg?raw'
 import position from './position.svg?raw'
 import resize from './resize.svg?raw'
+import ruler from './ruler.svg?raw'
 import camera from './camera.svg?raw'
 import zoomIn from './zoom-in.svg?raw'
 import zoomOut from './zoom-out.svg?raw'
@@ -158,6 +159,7 @@ const typeIconMap = {
   back,
   position,
   resize,
+  ruler,
   camera,
   zoomIn,
   zoomOut,

@@ -1,43 +1,54 @@
 <script lang="ts">
 import { z } from 'zod'
-import { timeout } from '@/utils/utils'
-import TutorialCourseSuccessModal from './TutorialCourseSuccessModal.vue'
 
 export const tagName = 'tutorial-course-success'
 
 export const isRaw = false
 
-export const detailedDescription = `
-Please add tags to the reply message according to the following rules:
-1. Only when the user completes the course, you must add the tag at the end of the reply message: <tutorial-course-success />
-2. Within the entire conversation context, the <tutorial-course-success /> tag can only appear once
-3. Do not add this tag if the user has not completed the course or is still studying
-4. If this tag has been added before, do not repeat it in subsequent replies
-5. The tag must be complete and accurate, with no spelling errors or formatting deviations
-Please ensure strict compliance with the above rules, only adding this tag once when the user truly completes the course.`
+export const detailedDescription = `\
+Declare the course complete and show the user a success dialog. Add <${tagName} comment="..." /> to your reply as \
+soon as the course's completion criteria are met — the criteria in the course prompt are the only measure; do not \
+demand more than they ask for. Use this ONLY for courses whose completion you judge yourself (e.g. "the user sends \
+the copilot a message"); a course that completes from the running game signals completion on its own, and you must \
+not declare it.
 
-export const attributes = z.object({})
+1. Judge the criteria against everything that has happened, including the message you are reading right now. If the \
+criteria are "the user sends the copilot a message", then any message the user sends meets them immediately: \
+declare success in that same reply instead of asking them to do it again.
+2. ALWAYS fill \`comment\` — it is the ONLY text the user sees. The dialog displays it; prose elsewhere in your \
+reply does NOT reach the dialog (event rounds are hidden from chat), and omitting the comment leaves the dialog \
+waiting on an extra round. Write a short, friendly sentence in the user's language: greet them back and praise \
+what they did. For example:
+<${tagName} comment="你好呀！你成功给我发了第一条消息，我们是搭档啦！" />
+3. Use it once per course. If you already declared success, do not repeat it.`
+
+export const attributes = z.object({
+  comment: z
+    .string()
+    .optional()
+    .describe(
+      "The evaluation sentence shown in the success dialog — the ONLY text the user sees; always provide it, in the user's language"
+    )
+})
 </script>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 
 import { useTutorial } from './tutorial'
-import { useCopilot } from '@/components/copilot/context'
-import { useModal } from '@/components/ui'
+
+const props = defineProps<{
+  /** Short evaluation of the user's solution, from the copilot */
+  comment?: string
+}>()
 
 const tutorial = useTutorial()
-const copilot = useCopilot()
-const open = useModal(TutorialCourseSuccessModal)
 
-onMounted(async () => {
-  if (!tutorial.currentCourse || !tutorial.currentSeries) {
-    throw new Error('No course or series in progress')
-  }
-  await timeout(500)
-  open({ tutorial, course: tutorial.currentCourse, series: tutorial.currentSeries })
-  copilot.close()
-  tutorial.endCurrentCourse()
+onMounted(() => {
+  // Copilot-judged completion: the copilot emits this element when it decides the course's criteria
+  // are met. The dialog and teardown are driven by the tutorial's completion state (see
+  // TutorialRoot); code-judged courses complete via a runtime sentinel instead and never reach here.
+  tutorial.markCourseComplete(props.comment)
 })
 </script>
 

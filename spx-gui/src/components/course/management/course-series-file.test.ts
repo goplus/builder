@@ -76,6 +76,7 @@ const existingCourse: Course = {
   title: 'Course 1',
   thumbnail: 'kodo://bucket/course-thumbnail.png',
   entrypoint: '/editor/curator/EntryProject/lesson?tab=code',
+  references: [],
   prompt: 'Prompt'
 }
 

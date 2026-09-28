@@ -110,6 +110,27 @@ describe('Radar', () => {
     expect(notFoundNode).toBeNull()
   })
 
+  it('should find a node by its name', async () => {
+    const { radar, container } = createTestEnvironment()
+
+    const TestComponent = defineComponent({
+      template: `
+        <div v-radar="{ name: 'API References', desc: 'panel' }">
+          <div id="run" v-radar="{ name: 'Run button', desc: 'run' }"></div>
+        </div>
+      `
+    })
+
+    mountComponent(TestComponent, radar, container)
+    await nextTick()
+
+    const runNode = radar.getNodeByName('Run button')
+    expect(runNode).not.toBeNull()
+    expect(runNode!.getElement().id).toBe('run')
+    expect(radar.getNodeByName('API References')).not.toBeNull()
+    expect(radar.getNodeByName('No Such Node')).toBeNull()
+  })
+
   it('should handle node updates correctly', async () => {
     const { radar, container } = createTestEnvironment()
 

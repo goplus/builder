@@ -163,10 +163,6 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/admin/index.vue'),
     children: [
       {
-        path: '',
-        redirect: '/admin/users'
-      },
-      {
         path: 'users',
         component: () => import('./pages/admin/users.vue')
       },
@@ -200,6 +196,14 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/404/index.vue')
   }
 ]
+
+if (import.meta.env.DEV) {
+  // Programmatic harness for verifying course code against the real runtime (`window.courseRunner`).
+  routes.push({
+    path: '/devtools/course-runner',
+    component: () => import('./pages/devtools/course-runner.vue')
+  })
+}
 
 const router = createRouter({
   history: createWebHistory(''),

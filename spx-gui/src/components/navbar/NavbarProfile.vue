@@ -6,7 +6,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useExternalUrl } from '@/utils/utils'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
-import { signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
+import { canUseAdminConsole as checkCanUseAdminConsole, signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
@@ -18,15 +18,17 @@ const { isOnline } = useNetwork()
 const router = useRouter()
 const i18n = useI18n()
 const signIn = useSignIn()
+// Starting the sign-in flow involves a backend request (pushed authorization), which can fail
+// (e.g. unregistered redirect URI); surface the failure instead of silently doing nothing.
+const handleSignIn = useMessageHandle(() => signIn(), {
+  en: 'Failed to sign in',
+  zh: '登录失败'
+}).fn
 
 const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
-const canUseAccountAdmin = computed(
-  () =>
-    signedInUser.value?.capabilities.canManageAccount === true ||
-    signedInUser.value?.capabilities.canManageAuthorization === true
-)
+const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
 const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
@@ -42,7 +44,7 @@ function handleProjects() {
   router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
 }
 
-function handleAccountAdmin() {
+function handleAdminConsole() {
   router.push('/admin')
 }
 
@@ -68,11 +70,11 @@ async function handleSignOut() {
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
-      @click="signIn()"
+      @click="handleSignIn"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
-  <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
+  <UIDropdown v-else trigger="click" placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
       <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
         <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
@@ -126,9 +128,9 @@ async function handleSignOut() {
           {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="canUseAccountAdmin">
-        <UIMenuItem @click="handleAccountAdmin">
-          {{ $t({ en: 'Account admin', zh: '账号管理' }) }}
+      <UIMenuGroup v-if="canUseAdminConsole">
+        <UIMenuItem @click="handleAdminConsole">
+          {{ $t({ en: 'Admin console', zh: '管理后台' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>

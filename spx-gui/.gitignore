@@ -49,3 +49,6 @@ tsconfig.tsbuildinfo
 .env.local
 .env.*.local
 .vercel
+
+# Scratch staging for the course-runner dev harness
+/public/_lita-verify/
