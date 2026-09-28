@@ -47,8 +47,16 @@ function makePlaygroundCourse(): PlaygroundCourse {
 function makeControllers(
   route: Pick<RouteLocationNormalizedLoaded, 'matched' | 'params'> = { matched: [], params: {} }
 ) {
+  const currentCourse = ref<GuidedCourse | null>(null)
+  const currentSeries = ref<CourseSeries | null>(null)
   return {
     guided: {
+      get currentCourse() {
+        return currentCourse.value
+      },
+      get currentSeries() {
+        return currentSeries.value
+      },
       startCourse: vi.fn().mockResolvedValue(undefined),
       endCurrentCourse: vi.fn()
     },

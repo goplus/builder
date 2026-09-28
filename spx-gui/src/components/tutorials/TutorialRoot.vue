@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { watch } from 'vue'
+import { onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 
@@ -17,18 +17,7 @@ const guidedTutorial = new GuidedTutorial(copilot, router, isRouteLoaded)
 const tutorial = new Tutorial(guidedTutorial, router)
 
 provideTutorial(tutorial)
-
-watch(
-  () => [guidedTutorial.currentCourse, guidedTutorial.currentSeries] as const,
-  ([course, series]) => {
-    if (course == null || series == null) {
-      tutorial.clearCourseKind('guided')
-      return
-    }
-    tutorial.setCurrentCourse(course, series)
-  },
-  { immediate: true }
-)
+onUnmounted(() => tutorial.dispose())
 </script>
 
 <template>

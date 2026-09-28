@@ -1,4 +1,4 @@
-import { inject, provide, shallowRef } from 'vue'
+import { inject, provide, shallowRef, watch } from 'vue'
 import type { InjectionKey } from 'vue'
 
 import type { Ref } from 'vue'
@@ -6,9 +6,13 @@ import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 
 import { getCourse, type Course, type CourseKind } from '@/apis/course'
 import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
+import { Disposable } from '@/utils/disposable'
 
 import type { GuidedTutorial } from './guided/guided-tutorial'
-type GuidedTutorialController = Pick<GuidedTutorial, 'startCourse' | 'endCurrentCourse'>
+type GuidedTutorialController = Pick<
+  GuidedTutorial,
+  'currentCourse' | 'currentSeries' | 'startCourse' | 'endCurrentCourse'
+>
 type TutorialRouter = Pick<Router, 'push'> & {
   readonly currentRoute: Readonly<Ref<Pick<RouteLocationNormalizedLoaded, 'matched' | 'params'>>>
 }
@@ -34,7 +38,7 @@ export function provideTutorial(tutorial: Tutorial) {
   provide(tutorialKey, tutorial)
 }
 
-export class Tutorial {
+export class Tutorial extends Disposable {
   private currentCourseRef = shallowRef<CurrentCourse | null>(null)
 
   constructor(
@@ -42,7 +46,23 @@ export class Tutorial {
     private router: TutorialRouter,
     private loadCourse: (id: string) => Promise<Course> = getCourse,
     private loadCourseSeries: (id: string) => Promise<CourseSeries> = getCourseSeries
-  ) {}
+  ) {
+    super()
+
+    this.addDisposer(
+      watch(
+        () => [this.guidedTutorial.currentCourse, this.guidedTutorial.currentSeries] as const,
+        ([course, series]) => {
+          if (course == null || series == null) {
+            this.clearCourseKind('guided')
+            return
+          }
+          this.setCurrentCourse(course, series)
+        },
+        { immediate: true }
+      )
+    )
+  }
 
   get currentCourse() {
     return this.currentCourseRef.value
