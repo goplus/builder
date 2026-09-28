@@ -182,8 +182,7 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
       name: 'course-playground',
       params: {
         courseSeriesIdInput: completedSession.series.id,
-        courseIdInput: nextCourseID,
-        inEditorPath: repeatableParamToPathSegments(props.inEditorPath)
+        courseIdInput: nextCourseID
       }
     })
   } else {
