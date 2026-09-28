@@ -9,15 +9,13 @@ import { repeatableParamToPathSegments } from '@/utils/route'
 import { useAsyncComputed } from '@/utils/utils'
 import { UIButton } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
-import { useTutorialStatus } from './status'
 import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
 
 const router = useRouter()
-const tutorialStatus = useTutorialStatus()
 const tutorial = useTutorial()
 const dropdown = useDropdown()
-const currentCourse = computed(() => tutorialStatus.currentCourse)
+const currentCourse = computed(() => tutorial.currentCourse)
 
 const courses = useAsyncComputed(async (onCleanup) => {
   const current = currentCourse.value

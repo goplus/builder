@@ -5,7 +5,7 @@ import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { UIButton, UIImg } from '@/components/ui'
 import { useAsyncComputed } from '@/utils/utils'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
-import type { TutorialCoursePreview } from './status'
+import type { TutorialCoursePreview } from './tutorial'
 
 const props = defineProps<{
   course: TutorialCoursePreview

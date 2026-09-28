@@ -52,9 +52,9 @@
 import { computed } from 'vue'
 
 import { UIDropdownWithTooltip, UIIcon, UITooltip } from '@/components/ui'
-import { useTutorialStatus } from '@/components/tutorials/status'
+import { useTutorial } from '@/components/tutorials/tutorial'
 import TutorialStatusControlCenter from '@/components/tutorials/TutorialStatusControlCenter.vue'
 
-const tutorialStatus = useTutorialStatus()
-const currentCourse = computed(() => tutorialStatus.currentCourse)
+const tutorial = useTutorial()
+const currentCourse = computed(() => tutorial.currentCourse)
 </script>
