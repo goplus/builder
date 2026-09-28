@@ -60,6 +60,71 @@ function parenDelta(line: string): number {
   return delta
 }
 
+function bracketDelta(line: string): number {
+  let delta = 0
+  let quote: '"' | "'" | '`' | null = null
+  let escaped = false
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index]
+    const next = line[index + 1]
+    if (quote == null && char === '/' && next === '/') break
+    if (quote != null) {
+      if (escaped) {
+        escaped = false
+      } else if (char === '\\') {
+        escaped = true
+      } else if (char === quote) {
+        quote = null
+      }
+      continue
+    }
+    if (char === '"' || char === "'" || char === '`') {
+      quote = char
+    } else if (char === '[') {
+      delta += 1
+    } else if (char === ']') {
+      delta -= 1
+    }
+  }
+  return delta
+}
+
+function codeWithoutStringsAndComments(line: string): string {
+  let code = ''
+  let quote: '"' | "'" | '`' | null = null
+  let escaped = false
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index]
+    const next = line[index + 1]
+    if (quote == null && char === '/' && next === '/') break
+    if (quote != null) {
+      if (escaped) {
+        escaped = false
+      } else if (char === '\\') {
+        escaped = true
+      } else if (char === quote) {
+        quote = null
+      }
+      code += ' '
+      continue
+    }
+    if (char === '"' || char === "'" || char === '`') {
+      quote = char
+      code += ' '
+    } else {
+      code += char
+    }
+  }
+  return code
+}
+
+function continuesOnNextLine(line: string): boolean {
+  const code = codeWithoutStringsAndComments(line).trimEnd()
+  return /(?:\|\||&&|<<|>>|==|!=|<=|>=|:=|\+=|-=|\*=|\/=|%=|[,+\-*/%|&^=<>.])$/.test(code)
+}
+
 function isTopLevelDeclaration(trimmed: string): boolean {
   // Keep declarations at the top level. In particular, fmt.Println cannot be
   // inserted before XGo functions and event handlers without changing the
@@ -81,16 +146,21 @@ export function instrumentSpxSource(path: string, source: string): string {
   let blockDepth = 0
   let groupedDeclarationDepth = 0
   let structDeclarationDepth = 0
+  let continuationParenDepth = 0
+  let continuationBracketDepth = 0
+  let statementContinues = false
+  let pendingMarker: { indent: string; endMarker: string; startsWithExit: boolean } | null = null
   const instrumented: string[] = []
 
   lines.forEach((line, index) => {
     const trimmed = line.trim()
-    const startsGroupedDeclaration =
-      blockDepth === 0 && groupedDeclarationDepth === 0 && /^(?:var|const|type|import)\s*\(/.test(trimmed)
+    const startsGroupedDeclaration = groupedDeclarationDepth === 0 && /^(?:var|const|type|import)\s*\(/.test(trimmed)
     const isGroupedDeclaration = groupedDeclarationDepth > 0 || startsGroupedDeclaration
-    const startsStruct = blockDepth === 0 && structDeclarationDepth === 0 && startsStructDeclaration(trimmed)
+    const startsStruct = structDeclarationDepth === 0 && startsStructDeclaration(trimmed)
     const isStructDeclaration = structDeclarationDepth > 0 || startsStruct
+    const isContinuationLine = statementContinues
     const isExecutable =
+      !isContinuationLine &&
       !isGroupedDeclaration &&
       !isStructDeclaration &&
       (blockDepth > 0 || !isTopLevelDeclaration(trimmed)) &&
@@ -112,10 +182,12 @@ export function instrumentSpxSource(path: string, source: string): string {
       const indent = line.slice(0, line.length - line.trimStart().length)
       const startMarker = `${executionMarkerPrefix}start:${path}:${index + 1}`
       const endMarker = `${executionMarkerPrefix}end:${path}:${index + 1}`
-      const canMarkCompletion =
-        !trimmed.endsWith('{') && !trimmed.endsWith('}') && !/^(?:return|break|continue)\b/.test(trimmed)
       instrumented.push(`${indent}fmt.Println(${JSON.stringify(startMarker)})`, line)
-      if (canMarkCompletion) instrumented.push(`${indent}fmt.Println(${JSON.stringify(endMarker)})`)
+      pendingMarker = {
+        indent,
+        endMarker,
+        startsWithExit: /^(?:return|break|continue)\b/.test(trimmed)
+      }
     }
 
     blockDepth = Math.max(0, blockDepth + braceDelta(line))
@@ -124,6 +196,20 @@ export function instrumentSpxSource(path: string, source: string): string {
     }
     if (isStructDeclaration) {
       structDeclarationDepth = Math.max(0, structDeclarationDepth + braceDelta(line))
+    }
+
+    continuationParenDepth = Math.max(0, continuationParenDepth + parenDelta(line))
+    continuationBracketDepth = Math.max(0, continuationBracketDepth + bracketDelta(line))
+    const hasCode = codeWithoutStringsAndComments(line).trim() !== ''
+    if (hasCode) {
+      statementContinues = continuationParenDepth > 0 || continuationBracketDepth > 0 || continuesOnNextLine(line)
+      if (!statementContinues && pendingMarker != null) {
+        const canMarkCompletion = !pendingMarker.startsWithExit && !trimmed.endsWith('{') && !trimmed.endsWith('}')
+        if (canMarkCompletion) {
+          instrumented.push(`${pendingMarker.indent}fmt.Println(${JSON.stringify(pendingMarker.endMarker)})`)
+        }
+        pendingMarker = null
+      }
     }
   })
 

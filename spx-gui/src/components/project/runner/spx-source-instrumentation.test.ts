@@ -99,6 +99,58 @@ onStart => {
     expect(instrumented).toContain('fmt.Println("__XB_EXEC__start:Stage.spx:7")')
   })
 
+  it('keeps multiline expressions intact', () => {
+    const source = `type mushroom interface { IsMature() bool; Sprite }
+
+func canCrossRiver(x, y float64) bool {
+  return nearRoute(x, y, -136.5, -81.5, 101, -82, 22) ||
+    nearRoute(x, y, 101, -82, 101, 75, 22)
+}`
+
+    const instrumented = instrumentSpxSource('main.spx', source)
+
+    expect(instrumented).toContain(
+      'fmt.Println("__XB_EXEC__start:main.spx:4")\n  return nearRoute(x, y, -136.5, -81.5, 101, -82, 22) ||\n    nearRoute(x, y, 101, -82, 101, 75, 22)'
+    )
+    expect(instrumented).not.toMatch(/\|\|\n\s+fmt\.Println/)
+    expect(instrumented).not.toContain('__XB_EXEC__start:main.spx:5')
+    expect(instrumented).not.toContain('__XB_EXEC__end:main.spx:4')
+  })
+
+  it('marks a multiline call only after the complete statement', () => {
+    const source = `onStart => {
+  say join(
+    "hello",
+    "world"
+  )
+}`
+
+    const instrumented = instrumentSpxSource('Lita.spx', source)
+
+    expect(instrumented).toContain(
+      'fmt.Println("__XB_EXEC__start:Lita.spx:2")\n  say join(\n    "hello",\n    "world"\n  )\n  fmt.Println("__XB_EXEC__end:Lita.spx:2")'
+    )
+    expect(instrumented).not.toContain('__XB_EXEC__start:Lita.spx:3')
+    expect(instrumented).not.toContain('__XB_EXEC__start:Lita.spx:4')
+    expect(instrumented).not.toContain('__XB_EXEC__start:Lita.spx:5')
+  })
+
+  it('does not instrument local grouped declarations', () => {
+    const source = `onStart => {
+  var (
+    mature bool
+    collected bool
+  )
+  mature = true
+}`
+
+    const instrumented = instrumentSpxSource('Lita.spx', source)
+
+    expect(instrumented).toContain('var (\n    mature bool\n    collected bool\n  )')
+    expect(instrumented).not.toMatch(/var \([\s\S]*__XB_EXEC__[\s\S]*\n\s+\)/)
+    expect(instrumented).toContain('fmt.Println("__XB_EXEC__start:Lita.spx:6")')
+  })
+
   it('ignores braces inside strings and comments when tracking blocks', () => {
     const source = `onStart => {\n  println "{not a block}"\n  // }\n  println "done"\n}`
     const instrumented = instrumentSpxSource('Stage.spx', source)
