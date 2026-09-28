@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import { getCourse, listCourses } from '@/apis/course'
+import { listCourses } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
 import { useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
@@ -30,22 +30,23 @@ const sessionQueryRet = useQuery(
   async (ctx) => {
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
-    const series = await getCourseSeries(courseSeriesID, ctx.signal)
-    const [course, coursesPage] = await Promise.all([
-      getCourse(courseID, ctx.signal),
+    const [series, coursesPage] = await Promise.all([
+      getCourseSeries(courseSeriesID, ctx.signal),
       listCourses(
         {
           courseSeriesID,
           pageIndex: 1,
-          pageSize: series.courseIDs.length,
+          pageSize: 100,
           orderBy: 'sequenceInCourseSeries'
         },
         ctx.signal
       )
     ])
     const courses = coursesPage.data
+    if (!series.courseIDs.includes(courseID)) throw new Error(`course ${courseID} is not in series ${series.id}`)
+    const course = courses.find(({ id }) => id === courseID)
+    if (course == null) throw new Error(`course ${courseID} not found in series ${series.id}`)
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
-    if (!series.courseIDs.includes(course.id)) throw new Error(`course ${course.id} is not in series ${series.id}`)
 
     const project = await TutorialProject.load(course)
     project.disposeOnSignal(ctx.signal)

@@ -6,30 +6,30 @@ import { createDefaultProject } from '@/components/project/default-project'
 import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/models/common/file'
 import { Monitor } from '@/models/spx/widget/monitor'
 
-export const playgroundDemoCourseSeriesID = 'playground-demo-series'
+export const playgroundMockCourseSeriesID = 'playground-demo-series'
 
-const playgroundDemoCourseIDs = ['playground-demo-course-1', 'playground-demo-course-2', 'playground-demo-course-3']
+const playgroundMockCourseIDs = ['playground-demo-course-1', 'playground-demo-course-2', 'playground-demo-course-3']
 
-const playgroundDemoSeries: CourseSeries = {
-  id: playgroundDemoCourseSeriesID,
+const playgroundMockSeries: CourseSeries = {
+  id: playgroundMockCourseSeriesID,
   owner: 'tutorial-demo',
   kind: 'playground',
   title: 'Playground Demo Series',
   thumbnail: '',
   description: 'A temporary Course playground for Tutorial v2 development.',
-  courseIDs: playgroundDemoCourseIDs,
+  courseIDs: playgroundMockCourseIDs,
   order: 1,
   createdAt: '2026-08-26T00:00:00Z',
   updatedAt: '2026-08-26T00:00:00Z'
 }
 
-type PlaygroundDemoData = {
+type PlaygroundMockData = {
   courses: PlaygroundCourse[]
 }
 
-let playgroundDemoDataPromise: Promise<PlaygroundDemoData> | null = null
+let playgroundMockDataPromise: Promise<PlaygroundMockData> | null = null
 
-async function createPlaygroundDemoData(): Promise<PlaygroundDemoData> {
+async function createPlaygroundMockData(): Promise<PlaygroundMockData> {
   const project = await createDefaultProject('', '', [])
   try {
     const secondSprite = project.sprites[0]?.clone()
@@ -68,7 +68,7 @@ Copilot.onRoundComplete round => {
       ...prefixFiles(project.exportFiles(), 'project')
     }
     const content = await toFileCollection(files)
-    const courses: PlaygroundCourse[] = playgroundDemoCourseIDs.map((id, index) => ({
+    const courses: PlaygroundCourse[] = playgroundMockCourseIDs.map((id, index) => ({
       id,
       owner: 'tutorial-demo',
       kind: 'playground',
@@ -82,35 +82,35 @@ Copilot.onRoundComplete round => {
   }
 }
 
-function getPlaygroundDemoData() {
-  playgroundDemoDataPromise ??= createPlaygroundDemoData().catch((error) => {
-    playgroundDemoDataPromise = null
+function getPlaygroundMockData() {
+  playgroundMockDataPromise ??= createPlaygroundMockData().catch((error) => {
+    playgroundMockDataPromise = null
     throw error
   })
-  return playgroundDemoDataPromise
+  return playgroundMockDataPromise
 }
 
-export function getPlaygroundDemoCourseSeries(id: string, signal?: AbortSignal): CourseSeries | null {
+export function getPlaygroundMockCourseSeries(id: string, signal?: AbortSignal): CourseSeries | null {
   signal?.throwIfAborted()
-  if (id !== playgroundDemoCourseSeriesID) return null
-  return { ...playgroundDemoSeries, courseIDs: [...playgroundDemoSeries.courseIDs] }
+  if (id !== playgroundMockCourseSeriesID) return null
+  return { ...playgroundMockSeries, courseIDs: [...playgroundMockSeries.courseIDs] }
 }
 
-export async function getPlaygroundDemoCourse(id: string, signal?: AbortSignal): Promise<PlaygroundCourse | null> {
-  if (!playgroundDemoCourseIDs.includes(id)) return null
+export async function getPlaygroundMockCourse(id: string, signal?: AbortSignal): Promise<PlaygroundCourse | null> {
+  if (!playgroundMockCourseIDs.includes(id)) return null
   signal?.throwIfAborted()
-  const { courses } = await getPlaygroundDemoData()
+  const { courses } = await getPlaygroundMockData()
   signal?.throwIfAborted()
   return courses.find((course) => course.id === id) ?? null
 }
 
-export async function listPlaygroundDemoCourses(
+export async function listPlaygroundMockCourses(
   params: ListCoursesParams | undefined,
   signal?: AbortSignal
 ): Promise<ByPage<PlaygroundCourse> | null> {
-  if (params?.courseSeriesID !== playgroundDemoCourseSeriesID) return null
+  if (params?.courseSeriesID !== playgroundMockCourseSeriesID) return null
   signal?.throwIfAborted()
-  const { courses } = await getPlaygroundDemoData()
+  const { courses } = await getPlaygroundMockData()
   signal?.throwIfAborted()
   const resolvedPageIndex = params.pageIndex ?? 1
   const resolvedPageSize = params.pageSize ?? courses.length
