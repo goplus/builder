@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 
+import type { Course } from '@/apis/course'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { UIButton, UIImg } from '@/components/ui'
 import { useAsyncComputed } from '@/utils/utils'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
-import type { TutorialCoursePreview } from './tutorial'
 
 const props = defineProps<{
-  course: TutorialCoursePreview
+  course: Pick<Course, 'id' | 'title' | 'thumbnail'>
   sequence: number
   current: boolean
   state: 'in-progress' | 'completed' | null

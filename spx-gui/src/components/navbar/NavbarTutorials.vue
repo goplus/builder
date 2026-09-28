@@ -26,8 +26,8 @@
     <template #tooltip-content>
       {{
         $t({
-          en: `${currentCourse.courseTitle}${currentCourse.state === 'completed' ? ' completed' : ' in progress'}`,
-          zh: `${currentCourse.courseTitle}${currentCourse.state === 'completed' ? '已完成' : '学习中'}`
+          en: `${currentCourse.course.title}${currentCourse.state === 'completed' ? ' completed' : ' in progress'}`,
+          zh: `${currentCourse.course.title}${currentCourse.state === 'completed' ? '已完成' : '学习中'}`
         })
       }}
     </template>

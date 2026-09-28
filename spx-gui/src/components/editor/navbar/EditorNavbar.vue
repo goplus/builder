@@ -94,7 +94,7 @@
     </template>
     <template #center>
       <div v-if="currentTutorialCourse != null" class="max-w-[50%] truncate text-title text-xl">
-        {{ currentTutorialCourse.courseTitle }}
+        {{ currentTutorialCourse.course.title }}
       </div>
       <div v-else-if="project != null" class="flex items-center justify-center gap-2">
         <div v-if="title != null" class="max-w-62 truncate text-title text-xl">{{ title }}</div>
