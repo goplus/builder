@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchPostEffect } from 'vue'
+import { computed, ref, watchPostEffect } from 'vue'
 import { UIDropdown, UIIcon, type DropdownPos } from '@/components/ui'
 import { useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -7,9 +7,15 @@ import MarkdownView from '../markdown/MarkdownView.vue'
 import HoverCard from './HoverCard.vue'
 import HoverCardContent from './HoverCardContent.vue'
 import type { HoverController } from '.'
-import { builtInCommandTranslate, type InternalAction } from '../code-editor-ui'
+import {
+  builtInCommandCopilotExplain,
+  builtInCommandCopilotFixProblem,
+  builtInCommandTranslate,
+  type InternalAction
+} from '../code-editor-ui'
 import DiagnosticItem from '../markdown/DiagnosticItem.vue'
-import { DiagnosticSeverity } from '../../common'
+import { DiagnosticSeverity, type Action, type Diagnostic } from '../../common'
+import { extractDocumentationExplanation, type EditorTranslationRequest } from '../../translation'
 
 const props = defineProps<{
   controller: HoverController
@@ -21,8 +27,50 @@ const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
 const hoveredTextCls = 'code-editor-hovered-text'
 
+type TranslationTarget = EditorTranslationRequest & { contentIndex: number }
+
+const translationTargets = computed<TranslationTarget[]>(() => {
+  const hover = props.controller.hover
+  const locale = codeEditorUICtx.ui.i18n.lang.value
+  if (hover == null || locale === 'en') return []
+
+  const targets: TranslationTarget[] = []
+  if (hover.actions.some((action) => action.command === builtInCommandCopilotExplain)) {
+    const hoverSource = hover.contents[0]?.value
+    if (typeof hoverSource === 'string') {
+      const source = extractDocumentationExplanation(hoverSource)
+      if (source !== '') targets.push({ kind: 'documentation', source, locale, contentIndex: 0 })
+    }
+  }
+
+  const fixAction = hover.actions.find((action) => action.command === builtInCommandCopilotFixProblem)
+  const diagnostic = (fixAction?.arguments[0] as { problem?: Diagnostic } | undefined)?.problem
+  if (diagnostic != null && hover.contents.length > 0) {
+    targets.push({
+      kind: 'diagnostic',
+      source: diagnostic.message,
+      locale,
+      contentIndex: hover.contents.length - 1,
+      diagnosticSeverity: diagnostic.severity as 'error' | 'warning'
+    })
+  }
+  return targets
+})
+
+const hoverActions = computed<Action[]>(() => {
+  const hover = props.controller.hover
+  if (hover == null) return []
+  return [
+    ...hover.actions,
+    ...translationTargets.value.map((target) => ({
+      command: builtInCommandTranslate,
+      arguments: [target]
+    }))
+  ]
+})
+
 function getTranslationTarget(contentIndex: number) {
-  return props.controller.hover?.translationTargets.find((target) => target.contentIndex === contentIndex) ?? null
+  return translationTargets.value.find((target) => target.contentIndex === contentIndex) ?? null
 }
 
 function getTranslationState(contentIndex: number) {
@@ -39,8 +87,13 @@ function handleAction(action: InternalAction) {
 }
 
 // Use post effect to ensure the effect executed after effect of `useDecorations`
+let renderedHover = props.controller.hover
 watchPostEffect(async () => {
   const hover = props.controller.hover
+  if (hover !== renderedHover) {
+    props.controller.resetTranslation()
+    renderedHover = hover
+  }
   if (hover == null) {
     dropdownVisible.value = false
     return
@@ -95,7 +148,7 @@ useDecorations(() => {
   >
     <HoverCard
       v-if="controller.hover != null"
-      :actions="controller.hover.actions"
+      :actions="hoverActions"
       @mouseenter="controller.emit('cardMouseEnter', $event)"
       @mouseleave="controller.emit('cardMouseLeave', $event)"
       @action="handleAction"
