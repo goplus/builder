@@ -2,7 +2,7 @@ import { effectScope, ref, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
 import type { SpxProject } from '@/models/spx/project'
-import type { TextDocumentRange } from '@/components/xgo-code-editor'
+import type { TextDocumentIdentifier, TextDocumentRange } from '@/components/xgo-code-editor'
 
 export type RunningState =
   | {
@@ -34,6 +34,12 @@ export interface RuntimeOutput {
 
 export type RuntimeOutputDraft = Omit<RuntimeOutput, 'id'>
 
+export interface RuntimeLocation {
+  textDocument: TextDocumentIdentifier
+  /** Line number, starting from 1. */
+  line: number
+}
+
 export class Runtime extends Emitter<{
   didChangeOutput: void
   didChangeLocation: void
@@ -44,7 +50,7 @@ export class Runtime extends Emitter<{
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
   private outputsRef = shallowRef<RuntimeOutput[]>([])
-  private currentLocationRef = shallowRef<TextDocumentRange | null>(null)
+  private locationRef = shallowRef<RuntimeLocation | null>(null)
   private scheduledLocationFlush: number | null = null
   private locationAvailable = false
 
@@ -65,19 +71,15 @@ export class Runtime extends Emitter<{
     return this.outputsRef.value
   }
 
-  get currentLocation(): TextDocumentRange | null {
-    return this.currentLocationRef.value
+  get location(): RuntimeLocation | null {
+    return this.locationRef.value
   }
 
-  setCurrentLocation(location: TextDocumentRange | null) {
+  setLocation(location: RuntimeLocation | null) {
     if ((this.running.mode !== 'debug' || !this.locationAvailable) && location != null) return
-    const current = this.currentLocationRef.value
-    if (
-      current?.textDocument.uri === location?.textDocument.uri &&
-      current?.range.start.line === location?.range.start.line
-    )
-      return
-    this.currentLocationRef.value = location
+    const current = this.locationRef.value
+    if (current?.textDocument.uri === location?.textDocument.uri && current?.line === location?.line) return
+    this.locationRef.value = location
     if (this.scheduledLocationFlush != null) cancelAnimationFrame(this.scheduledLocationFlush)
     if (location == null) {
       this.scheduledLocationFlush = null
@@ -90,14 +92,14 @@ export class Runtime extends Emitter<{
     }
   }
 
-  invalidateCurrentLocation() {
+  invalidateLocation() {
     this.locationAvailable = false
-    this.setCurrentLocation(null)
+    this.setLocation(null)
   }
 
   setRunning(running: RunningState, filesHash?: string) {
-    if (running.mode === 'none') this.invalidateCurrentLocation()
-    else if (running.initializing) this.setCurrentLocation(null)
+    if (running.mode === 'none') this.invalidateLocation()
+    else if (running.initializing) this.setLocation(null)
     if (running.mode === 'debug' && running.initializing) this.locationAvailable = true
     this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
@@ -163,7 +165,7 @@ export class Runtime extends Emitter<{
   }
 
   clearOutputs() {
-    this.setCurrentLocation(null)
+    this.setLocation(null)
     this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
@@ -181,7 +183,7 @@ export class Runtime extends Emitter<{
       watch(
         () => this.project.exportFiles(),
         async () => {
-          this.invalidateCurrentLocation()
+          this.invalidateLocation()
           await until(() => this.running.mode !== 'debug')
           this.clearOutputs()
         }
@@ -191,7 +193,7 @@ export class Runtime extends Emitter<{
       this.cancelScheduledDidChangeOutput()
       if (this.scheduledLocationFlush != null) cancelAnimationFrame(this.scheduledLocationFlush)
       this.scheduledLocationFlush = null
-      this.currentLocationRef.value = null
+      this.locationRef.value = null
     })
     this.addDisposer(() => scope.stop())
   }

@@ -88,7 +88,7 @@ const selected = computed(() => editorCtx.state.selected)
 const mode = computed(() => editorCtx.state.selectedEditMode)
 const selectedSprite = computed(() => (selected.value.type === 'sprite' ? selected.value.sprite : null))
 const executionLine = computed(() =>
-  getSimpleExecutionLine(editorCtx.state.runtime.currentLocation, selectedSprite.value?.codeFilePath ?? null)
+  getSimpleExecutionLine(editorCtx.state.runtime.location, selectedSprite.value?.codeFilePath ?? null)
 )
 const simpleControlsAnchor = ref<HTMLElement | null>(null)
 

@@ -46,33 +46,33 @@ describe('Runtime', () => {
     withMockedAnimationFrame()
     const runtime = makeRuntime()
     const events: Array<number | null> = []
-    runtime.on('didChangeLocation', () => events.push(runtime.currentLocation?.range.start.line ?? null))
+    runtime.on('didChangeLocation', () => events.push(runtime.location?.line ?? null))
     runtime.setRunning({ mode: 'debug', initializing: true })
     const location = (line: number) => ({
       textDocument: { uri: 'file:///Sprite.spx' },
-      range: { start: { line, column: 1 }, end: { line, column: 1 } }
+      line
     })
 
-    runtime.setCurrentLocation(location(1))
-    runtime.setCurrentLocation(location(2))
+    runtime.setLocation(location(1))
+    runtime.setLocation(location(2))
     flushOutputs()
     expect(events).toEqual([2])
 
-    runtime.setCurrentLocation(location(3))
+    runtime.setLocation(location(3))
     runtime.setRunning({ mode: 'none' })
     expect(events).toEqual([2, null])
     flushOutputs()
     expect(events).toEqual([2, null])
 
     runtime.setRunning({ mode: 'debug', initializing: true })
-    runtime.setCurrentLocation(location(4))
-    runtime.invalidateCurrentLocation()
-    runtime.setCurrentLocation(location(5))
-    expect(runtime.currentLocation).toBeNull()
+    runtime.setLocation(location(4))
+    runtime.invalidateLocation()
+    runtime.setLocation(location(5))
+    expect(runtime.location).toBeNull()
     runtime.setRunning({ mode: 'debug', initializing: true })
-    runtime.setCurrentLocation(location(6))
+    runtime.setLocation(location(6))
     runtime.clearOutputs()
-    expect(runtime.currentLocation).toBeNull()
+    expect(runtime.location).toBeNull()
     runtime.dispose()
     vi.useRealTimers()
     vi.unstubAllGlobals()

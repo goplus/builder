@@ -161,6 +161,7 @@ import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
 import { client } from '@/apis/common'
 import errorBgUrl from './error-bg.svg'
+import { spxLocationLogMessage } from './spx-log'
 
 const runnerBaseUrl = getProjectRunnerBaseUrl()
 const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
@@ -192,7 +193,7 @@ watch(runnerIframeRef, (iframe) => {
 function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   iframeWindow.__xb_track_execution_location = props.trackExecutionLocation === true
   iframeWindow.console.log = function (...args: unknown[]) {
-    if (typeof args[0] !== 'string' || !args[0].includes('"msg":"__spx_loc__"')) {
+    if (typeof args[0] !== 'string' || !args[0].includes(`"msg":"${spxLocationLogMessage}"`)) {
       // eslint-disable-next-line no-console
       console.log(...args)
     }
