@@ -1,12 +1,9 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { listCourses, type Course } from '@/apis/course'
+import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { useMessageHandle } from '@/utils/exception'
-import { getCleanupSignal } from '@/utils/disposable'
-import { repeatableParamToPathSegments } from '@/utils/route'
-import { useAsyncComputed } from '@/utils/utils'
+import { useSeriesCourses } from '@/stores/course-series'
 import { UIButton } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
@@ -15,34 +12,8 @@ import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
 const router = useRouter()
 const tutorial = useTutorial()
 const dropdown = useDropdown()
-const currentSession = computed(() => tutorial.current)
-
-const courses = useAsyncComputed(async (onCleanup) => {
-  const current = currentSession.value
-  if (current == null) return []
-  if (current.seriesCourses != null) return current.seriesCourses
-
-  const result = await listCourses(
-    {
-      courseSeriesID: current.series.id,
-      pageIndex: 1,
-      pageSize: current.series.courseIDs.length,
-      orderBy: 'sequenceInCourseSeries'
-    },
-    getCleanupSignal(onCleanup)
-  )
-  const coursesByID = new Map(result.data.map((course) => [course.id, course]))
-  const loadedCourses: Course[] = []
-  for (const id of current.series.courseIDs) {
-    const course = coursesByID.get(id)
-    if (course != null) {
-      loadedCourses.push(course)
-    } else if (id === current.course.id) {
-      loadedCourses.push(current.course)
-    }
-  }
-  return loadedCourses
-})
+const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.series.id ?? null)
+const courses = coursesQueryRet.data
 
 const { fn: handleExitCourse } = useMessageHandle(
   () => {
@@ -54,49 +25,32 @@ const { fn: handleExitCourse } = useMessageHandle(
 
 const { fn: handleReturnSeries } = useMessageHandle(
   async () => {
-    const current = currentSession.value
-    if (current == null) return
+    const currentCourse = tutorial.currentCourse
+    if (currentCourse == null) return
     dropdown?.setVisible(false)
     await tutorial.endCurrentCourse()
-    const seriesRoute = `/course-series/${encodeURIComponent(current.series.id)}`
+    const seriesRoute = getCourseSeriesPageRoute(currentCourse.series.id)
     if (router.currentRoute.value.path !== seriesRoute) await router.push(seriesRoute)
   },
-  { en: 'Failed to open the course series', zh: '打开系列课程失败' }
+  { en: 'Failed to return to series courses', zh: '返回系列课程失败' }
 )
 
 const { fn: handleSelectCourse } = useMessageHandle(
   async (courseID: string) => {
-    const current = currentSession.value
-    if (current == null || courseID === current.course.id) return
+    const currentCourse = tutorial.currentCourse
+    if (currentCourse == null || courseID === currentCourse.id) return
     dropdown?.setVisible(false)
-
-    if (current.course.kind === 'playground' && current.seriesCourses != null) {
-      const inEditorPath = router.currentRoute.value.params.inEditorPath
-      const pathSegments = inEditorPath == null ? [] : repeatableParamToPathSegments(inEditorPath)
-      const editorPath = pathSegments.map(encodeURIComponent).join('/')
-      await router.push(
-        `/course/${encodeURIComponent(current.series.id)}/${encodeURIComponent(courseID)}/playground/${editorPath}`
-      )
-      return
-    }
-
-    await tutorial.startCourse(current.series.id, courseID)
+    await tutorial.startCourse(currentCourse.series.id, courseID)
   },
   { en: 'Failed to open course', zh: '打开课程失败' }
 )
 
 const { fn: handleRestartCourse } = useMessageHandle(
   async () => {
-    const current = currentSession.value
-    if (current == null) return
+    const currentCourse = tutorial.currentCourse
+    if (currentCourse == null) return
     dropdown?.setVisible(false)
-
-    if (current.course.kind === 'playground' && current.seriesCourses != null) {
-      router.go(0)
-      return
-    }
-
-    await tutorial.startCourse(current.series.id, current.course.id)
+    await tutorial.startCourse(currentCourse.series.id, currentCourse.id)
   },
   { en: 'Failed to restart course', zh: '重新开始课程失败' }
 )
@@ -124,8 +78,8 @@ const { fn: handleRestartCourse } = useMessageHandle(
         :key="course.id"
         :course="course"
         :sequence="index + 1"
-        :active="course.id === currentSession?.course.id"
-        :state="course.id === currentSession?.course.id ? currentSession.courseState ?? 'in-progress' : null"
+        :active="course.id === tutorial.currentCourse?.id"
+        :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
         @select="handleSelectCourse(course.id)"
         @restart="handleRestartCourse"
       />

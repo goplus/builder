@@ -1,10 +1,10 @@
 <template>
-  <UIDropdownWithTooltip v-if="current != null" placement="bottom">
+  <UIDropdownWithTooltip v-if="currentCourse != null" placement="bottom">
     <template #trigger="{ dropdownVisible }">
       <button
         v-radar="{
           name: 'Tutorial course entry',
-          desc: 'Shows the course in progress; click to open the tutorial control center'
+          desc: 'Shows the course in progress; click to open the tutorial control panel'
         }"
         type="button"
         class="h-full flex cursor-pointer items-center border-none bg-transparent px-3 outline-none transition-colors hover:bg-grey-300"
@@ -20,14 +20,14 @@
     </template>
 
     <template #dropdown-content>
-      <TutorialStatusControlCenter />
+      <TutorialControlPanel />
     </template>
 
     <template #tooltip-content>
       {{
         $t({
-          en: `${current.course.title}${current.courseState === 'completed' ? ' completed' : ' in progress'}`,
-          zh: `${current.course.title}${current.courseState === 'completed' ? '已完成' : '学习中'}`
+          en: `${currentCourse.title}${currentCourse.state === CourseState.Completed ? ' completed' : ' in progress'}`,
+          zh: `${currentCourse.title}${currentCourse.state === CourseState.Completed ? '已完成' : '学习中'}`
         })
       }}
     </template>
@@ -51,9 +51,9 @@
 import { computed } from 'vue'
 
 import { UIDropdownWithTooltip, UIIcon, UITooltip } from '@/components/ui'
-import { useTutorial } from '@/components/tutorials/tutorial'
-import TutorialStatusControlCenter from '@/components/tutorials/TutorialStatusControlCenter.vue'
+import { CourseState, useTutorial } from '@/components/tutorials/tutorial'
+import TutorialControlPanel from '@/components/tutorials/TutorialControlPanel.vue'
 
 const tutorial = useTutorial()
-const current = computed(() => tutorial.current)
+const currentCourse = computed(() => tutorial.currentCourse)
 </script>

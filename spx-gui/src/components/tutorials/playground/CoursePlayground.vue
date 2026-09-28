@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
@@ -17,7 +17,7 @@ import { useSpotlight } from '@/utils/spotlight'
 import type { SpotlightOptions } from '@/utils/tutorial-framework'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import type { ILocalCache } from '@/components/editor/editing'
-import { EditorState } from '@/components/editor/editor-state'
+import { EditorState, type IInEditorRouter } from '@/components/editor/editor-state'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
@@ -27,9 +27,11 @@ import { useSaveProjectAs } from '@/components/project'
 import type { PlaygroundCourseCompletion } from './runner'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 import { PlaygroundCourseRunner } from './runner'
+import { repeatableParamToPathSegments } from '@/utils/route'
 
 const props = defineProps<{
   project: TutorialProject
+  inEditorPath: string | string[]
 }>()
 
 const emit = defineEmits<{
@@ -87,6 +89,23 @@ const noLocalCache: ILocalCache = {
   async clear() {}
 }
 
+const inEditorRouter: IInEditorRouter = {
+  currentPath: computed(() => repeatableParamToPathSegments(props.inEditorPath)),
+  push: (newPath, options) => {
+    const currentRoute = router.currentRoute.value
+    // Vue Router checks if we are already on the same route, and prevents redundant navigation.
+    // So we do not need to check it manually to avoid infinite loops.
+    return router.push({
+      params: {
+        ...currentRoute.params,
+        inEditorPath: newPath
+      },
+      query: currentRoute.query,
+      replace: options?.replace
+    })
+  }
+}
+
 const runningErr = ref<Exception | null>(null)
 
 const runnerQueryRet = useQuery(
@@ -101,7 +120,7 @@ const runnerQueryRet = useQuery(
     const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
     editorState.disposeOnSignal(ctx.signal)
     editorState.editing.startEditing()
-    editorState.syncWithRouter(router)
+    editorState.syncWithRouter(inEditorRouter)
     const runner = new PlaygroundCourseRunner({
       project,
       editorState,

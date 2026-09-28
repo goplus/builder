@@ -8,7 +8,6 @@ import { useCopilot } from '@/components/copilot/context'
 import { isGuidedTutorialTopic, provideGuidedTutorial, type GuidedTutorial } from './guided-tutorial'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
-import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 
 const props = defineProps<{
@@ -43,7 +42,6 @@ watch(
       }),
       copilot.registerCustomElement(tutorialCourseAbandonPrediction),
       copilot.registerCustomElement(tutorialCourseAbandonDismissal),
-      copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default),
       copilot.registerQuickInputProvider({
         provideQuickInput(lastCopilotMessage, topic) {
           if (topic == null || !isGuidedTutorialTopic(topic)) return []

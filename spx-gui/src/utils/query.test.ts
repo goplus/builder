@@ -49,6 +49,32 @@ describe('useQuery', () => {
     expect(ret.data.value).toBe('second')
   })
 
+  it('does not collect reactive reads from the previous query cleanup', async () => {
+    const queryInput = ref(1)
+    const cleanupOnly = ref(0)
+    const cleanup = vi.fn(() => cleanupOnly.value)
+    const queryFn = vi.fn(async (ctx: QueryContext) => {
+      const input = queryInput.value
+      ctx.signal.addEventListener('abort', cleanup, { once: true })
+      return input
+    })
+    const ret = withSetup(() => useQuery(queryFn))
+
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledTimes(1)
+
+    queryInput.value = 2
+    await flushPromises()
+    expect(cleanup).toHaveBeenCalledTimes(1)
+    expect(queryFn).toHaveBeenCalledTimes(2)
+    expect(ret.data.value).toBe(2)
+
+    cleanupOnly.value++
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledTimes(2)
+    expect(ret.data.value).toBe(2)
+  })
+
   it('aborts the failed query signal and allows refetch', async () => {
     const error = new Error('failed')
     const signals: AbortSignal[] = []

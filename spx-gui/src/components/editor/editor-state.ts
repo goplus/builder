@@ -1,6 +1,5 @@
 import { computed, ref, watch, type Ref, type WatchSource } from 'vue'
-import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } from 'vue-router'
-import { repeatableParamToPathSegments, shiftPath, type PathSegments } from '@/utils/route'
+import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import type { QueryRet } from '@/utils/query'
@@ -36,9 +35,16 @@ export type Selected =
       spriteSelected: SpriteEditorSelected | null
     }
 
-export interface IRouter {
-  currentRoute: Ref<Pick<RouteLocationNormalizedGeneric, 'fullPath' | 'params' | 'query' | 'hash'>>
-  push(to: RouteLocationAsRelativeGeneric): Promise<unknown>
+export type InEditorPushOptions = {
+  /** Whether to replace the current route instead of pushing a new one. Defaults to false. */
+  replace?: boolean
+}
+
+export interface IInEditorRouter {
+  /** The current path segments in the editor. */
+  currentPath: Ref<PathSegments>
+  /** Navigate to a new path in the editor. */
+  push(newPath: PathSegments, options?: InEditorPushOptions): Promise<unknown>
 }
 
 export enum EditMode {
@@ -354,60 +360,22 @@ export class EditorState extends Disposable {
     return pathSegments
   }
 
-  private updateRouter(router: IRouter, replace: boolean) {
-    const routePath = this.getRoute()
-    const currentRoute = router.currentRoute.value
-
-    // Vue Router currently calculates the scroll position on every router.push navigation,
-    // which triggers layout recalculations that can negatively impact performance.
-    // See details in https://github.com/vuejs/router/issues/2393.
-    // TODO: We need to monitor the issue and update Vue Router when it is fixed.
-
-    // Vue Router checks if we are already on the same route, and prevents redundant navigation.
-    // So we do not need to check it manually to avoid infinite loops.
-    router.push({
-      params: {
-        ...currentRoute.params,
-        inEditorPath: routePath
-      },
-      query: currentRoute.query,
-      replace
-    })
-  }
-
-  syncWithRouter(router: IRouter) {
+  syncWithRouter(router: IInEditorRouter) {
     // Sync from router to selected state
-    this.addDisposer(
-      watch(
-        router.currentRoute,
-        (currentRoute, prevRoute) => {
-          const { inEditorPath, projectNameInput } = currentRoute.params
-          // if project changed, skip selecting. A new `EditorState` instance will be constructed later.
-          // Selecting on the old instance with new route may cause unexpected behavior.
-          if (prevRoute != null && projectNameInput !== prevRoute.params.projectNameInput) return
-          this.selectByRoute(repeatableParamToPathSegments(inEditorPath ?? ''))
-        },
-        { immediate: true }
-      )
-    )
+    this.addDisposer(watch(router.currentPath, (currentPath) => this.selectByRoute(currentPath), { immediate: true }))
 
     // Sync from selected state to router
     this.addDisposer(
       watch(
-        // Why watch?
-        // We can switch to map without watching, but we need the map route in the history stack.
-        // This requires responding to changes in `selectedEditMode`.
-        // Scenario: Sprite -> Stage -> Map -> Click Back.
-        // With watch: Back to Stage. Without watch: Back to Sprite.
         () => [this.selected, this.selectedEditMode],
         (_, __, onCleanup) => {
-          // If `selected` changes, push new route
-          this.updateRouter(router, false)
+          // If `selected` or `selectedEditMode` changes, push new route
+          router.push(this.getRoute())
           onCleanup(
             watch(
               () => this.getRoute(),
               // If route changes without `selected` changing, replace current route
-              () => this.updateRouter(router, true)
+              () => router.push(this.getRoute(), { replace: true })
             )
           )
         },

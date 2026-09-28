@@ -4,11 +4,13 @@ export const courseSeriesItemHeight = 254
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+
 import type { CourseSeries } from '@/apis/course-series'
+import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
+import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UIImg } from '@/components/ui'
 import { humanizeExactTime, humanizeTime, useAsyncComputed } from '@/utils/utils'
-import { createFileWithUniversalUrl } from '@/models/common/cloud'
 
 const props = defineProps<{
   courseSeries: CourseSeries
@@ -40,7 +42,7 @@ const updatedAtTitle = computed(() => {
     class="w-58 overflow-hidden rounded-md border border-grey-400 transition-all duration-200 hover:cursor-pointer hover:shadow-sm"
     :style="{ height: `${courseSeriesItemHeight}px`, backgroundImage: `url(${stageBgUrl})` }"
   >
-    <RouterLink :to="`/course-series/${props.courseSeries.id}`" class="no-underline">
+    <RouterLink :to="getCourseSeriesPageRoute(props.courseSeries.id)" class="no-underline">
       <div class="h-full w-full flex flex-col">
         <UIImg class="flex-auto" :src="thumbnailUrl" size="cover" />
         <div class="flex-none h-20 w-full overflow-hidden p-4 bg-grey-100">

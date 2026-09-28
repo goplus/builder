@@ -1,27 +1,26 @@
 import { inject, provide, shallowRef } from 'vue'
 import type { InjectionKey } from 'vue'
 
-import type { Ref } from 'vue'
-import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
+import type { Router } from 'vue-router'
 
-import { getCourse, type Course, type CourseKind } from '@/apis/course'
+import { getCourse, type Course, type PlaygroundCourse } from '@/apis/course'
 import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
+import { getCoursePlaygroundRoute, getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 
 import type { GuidedTutorial } from './guided/guided-tutorial'
-type GuidedTutorialController = Pick<GuidedTutorial, 'current' | 'startCourse' | 'endCurrentCourse'>
-type TutorialRouter = Pick<Router, 'push'> & {
-  readonly currentRoute: Readonly<Ref<Pick<RouteLocationNormalizedLoaded, 'matched' | 'params'>>>
-}
-
-const playgroundRoutePath = '/course/:courseSeriesIdInput/:courseIdInput/playground/:inEditorPath*'
+type GuidedTutorialController = Pick<GuidedTutorial, 'currentCourse' | 'startCourse' | 'endCurrentCourse'>
+type TutorialRouter = Pick<Router, 'push' | 'go'>
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 
-export type TutorialSession = {
-  course: Course
+export enum CourseState {
+  InProgress = 'in-progress',
+  Completed = 'completed'
+}
+
+export type CurrentCourse = Course & {
   series: CourseSeries
-  seriesCourses?: Course[] | null
-  courseState?: 'in-progress' | 'completed'
+  state: CourseState
 }
 
 export function useTutorial() {
@@ -35,7 +34,7 @@ export function provideTutorial(tutorial: Tutorial) {
 }
 
 export class Tutorial {
-  private playgroundCurrentRef = shallowRef<TutorialSession | null>(null)
+  private currentPlaygroundCourseRef = shallowRef<CurrentCourse | null>(null)
 
   constructor(
     private guidedTutorial: GuidedTutorialController,
@@ -44,43 +43,27 @@ export class Tutorial {
     private loadCourseSeries: (id: string) => Promise<CourseSeries> = getCourseSeries
   ) {}
 
-  get current(): TutorialSession | null {
-    return this.guidedTutorial.current ?? this.playgroundCurrentRef.value
+  get currentCourse(): CurrentCourse | null {
+    const currentPlaygroundCourse = this.currentPlaygroundCourseRef.value
+    if (currentPlaygroundCourse != null) return currentPlaygroundCourse
+    const currentGuidedCourse = this.guidedTutorial.currentCourse
+    return currentGuidedCourse == null ? null : { ...currentGuidedCourse, state: CourseState.InProgress }
   }
 
-  setCurrentCourse(course: Course, series: CourseSeries, seriesCourses?: Course[]) {
-    this.playgroundCurrentRef.value = {
-      course,
-      series,
-      seriesCourses: seriesCourses ?? null,
-      courseState: 'in-progress'
-    }
-  }
-
-  markCurrentCourseCompleted(courseKind: CourseKind, courseID: string) {
-    const playgroundCurrent = this.playgroundCurrentRef.value
-    if (
-      playgroundCurrent == null ||
-      playgroundCurrent.course.kind !== courseKind ||
-      playgroundCurrent.course.id !== courseID
-    )
-      return
-    this.playgroundCurrentRef.value = { ...playgroundCurrent, courseState: 'completed' }
-  }
-
-  clearCurrentCourse(courseKind: CourseKind, courseID: string) {
-    const playgroundCurrent = this.playgroundCurrentRef.value
-    if (
-      playgroundCurrent == null ||
-      playgroundCurrent.course.kind !== courseKind ||
-      playgroundCurrent.course.id !== courseID
-    )
-      return
-    this.playgroundCurrentRef.value = null
-  }
-
+  /** Starts a course by ID. Starting the current course again restarts it. */
   async startCourse(courseSeriesID: string, courseID: string): Promise<void> {
     this.guidedTutorial.endCurrentCourse()
+    // const currentPlaygroundCourse = this.currentPlaygroundCourseRef.value
+    // if (
+    //   currentPlaygroundCourse != null &&
+    //   currentPlaygroundCourse.id === courseID &&
+    //   currentPlaygroundCourse.series.id === courseSeriesID
+    // ) {
+    //   // Vue Router ignores a push to the current route; reload to recreate the Playground project and runner.
+    //   this.router.go(0)
+    //   return
+    // }
+
     const [series, course] = await Promise.all([this.loadCourseSeries(courseSeriesID), this.loadCourse(courseID)])
     if (!series.courseIDs.includes(course.id)) throw new Error(`course ${course.id} is not in series ${series.id}`)
 
@@ -89,17 +72,35 @@ export class Tutorial {
       return
     }
 
-    await this.router.push(`/course/${encodeURIComponent(series.id)}/${encodeURIComponent(course.id)}/playground`)
+    await this.router.push({
+      path: getCoursePlaygroundRoute(series.id, course.id),
+      force: true // Force reload even if the route is the same, to recreate the Playground project and runner.
+    })
   }
 
   async endCurrentCourse(): Promise<void> {
-    this.guidedTutorial.endCurrentCourse()
+    const currentCourse = this.currentCourse
+    if (currentCourse == null) return
+    if (currentCourse.kind === 'guided') {
+      this.guidedTutorial.endCurrentCourse()
+      return
+    }
+    await this.router.push(getCourseSeriesPageRoute(currentCourse.series.id))
+  }
 
-    const route = this.router.currentRoute.value
-    if (!route.matched.some((record) => record.path === playgroundRoutePath)) return
+  notifyPlaygroundCourseStarted(course: PlaygroundCourse, series: CourseSeries) {
+    this.currentPlaygroundCourseRef.value = { ...course, series, state: CourseState.InProgress }
+  }
 
-    const courseSeriesID = route.params.courseSeriesIdInput
-    if (typeof courseSeriesID !== 'string') return
-    await this.router.push(`/course-series/${encodeURIComponent(courseSeriesID)}`)
+  notifyPlaygroundCourseCompleted(courseID: string) {
+    const currentPlaygroundCourse = this.currentPlaygroundCourseRef.value
+    if (currentPlaygroundCourse == null || currentPlaygroundCourse.id !== courseID) return
+    this.currentPlaygroundCourseRef.value = { ...currentPlaygroundCourse, state: CourseState.Completed }
+  }
+
+  notifyPlaygroundCourseEnded(courseID: string) {
+    const currentPlaygroundCourse = this.currentPlaygroundCourseRef.value
+    if (currentPlaygroundCourse == null || currentPlaygroundCourse.id !== courseID) return
+    this.currentPlaygroundCourseRef.value = null
   }
 }

@@ -25,9 +25,7 @@ export default defineComponent<Props>(
     const tutorial = useGuidedTutorial()
     const handleClick = useMessageHandle(
       () => {
-        if (!tutorial.currentCourse || !tutorial.currentSeries) {
-          throw new Error('No course or series in progress')
-        }
+        if (tutorial.currentCourse == null) throw new Error('No course in progress')
         tutorial.endCurrentCourse()
       },
       {

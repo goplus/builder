@@ -48,8 +48,6 @@ const panelRef = ref<HTMLElement>()
 
 const session = computed(() => copilot.currentSession)
 
-const StateIndicator = computed(() => copilot.stateIndicatorComponent)
-
 providePopupContainer(panelRef)
 
 // resize the panel when the window size changes
@@ -431,10 +429,6 @@ onMounted(async () => {
     </div>
     <div class="footer">
       <div class="footer-wrapper">
-        <template v-if="StateIndicator != null">
-          <StateIndicator />
-          <div class="v-line"></div>
-        </template>
         <UITooltip>
           <template #trigger>
             <div class="fold" :class="[triggerState]" @click="copilot.close()">
@@ -649,11 +643,6 @@ onMounted(async () => {
   border: 1px solid var(--ui-color-grey-400);
   background: var(--ui-color-grey-100);
   box-shadow: var(--ui-box-shadow-control);
-}
-
-.footer .v-line {
-  border-right: 1px solid var(--ui-color-grey-400);
-  height: 12px;
 }
 
 .footer .fold {

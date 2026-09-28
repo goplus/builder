@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import { listCourses } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
-import { useQuery } from '@/utils/query'
+import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
+import { composeQuery, useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
+import { useSeriesCourses } from '@/stores/course-series'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
@@ -23,24 +24,16 @@ const props = defineProps<{
 const tutorial = useTutorial()
 const router = useRouter()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
+const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
 
 const sessionQueryRet = useQuery(
   async (ctx) => {
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
-    const [series, coursesPage] = await Promise.all([
+    const [series, courses] = await Promise.all([
       getCourseSeries(courseSeriesID, ctx.signal),
-      listCourses(
-        {
-          courseSeriesID,
-          pageIndex: 1,
-          pageSize: 100,
-          orderBy: 'sequenceInCourseSeries'
-        },
-        ctx.signal
-      )
+      composeQuery(ctx, seriesCoursesQueryRet)
     ])
-    const courses = coursesPage.data
     const course = courses.find(({ id }) => id === courseID)
     if (course == null) throw new Error(`course ${courseID} not found in series ${series.id}`)
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
@@ -61,12 +54,12 @@ const sessionQueryRet = useQuery(
     }
 
     ctx.signal.throwIfAborted()
-    ctx.signal.addEventListener('abort', () => tutorial.clearCurrentCourse('playground', course.id), {
+    ctx.signal.addEventListener('abort', () => tutorial.notifyPlaygroundCourseEnded(course.id), {
       once: true
     })
-    tutorial.setCurrentCourse(course, series, courses)
+    tutorial.notifyPlaygroundCourseStarted(course, series)
 
-    return { course, courses, series, project }
+    return { course, series, project }
   },
   {
     en: 'Failed to start course',
@@ -80,7 +73,7 @@ const session = sessionQueryRet.data
 async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const completedSession = session.value
   if (completedSession == null) return
-  tutorial.markCurrentCourseCompleted('playground', completedSession.course.id)
+  tutorial.notifyPlaygroundCourseCompleted(completedSession.course.id)
 
   const action: CompletionAction = await openCompletion({
     course: completedSession.course,
@@ -94,7 +87,7 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
   if (action === 'next' && nextCourseID != null) {
     await tutorial.startCourse(completedSession.series.id, nextCourseID)
   } else {
-    await router.push(`/course-series/${encodeURIComponent(completedSession.series.id)}`)
+    await router.push(getCourseSeriesPageRoute(completedSession.series.id))
   }
 }
 </script>
@@ -104,6 +97,7 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
     v-if="session != null"
     :key="session.course.id"
     :project="session.project"
+    :in-editor-path="inEditorPath"
     @course-completed="handleCompleted"
   />
   <section v-else class="h-full w-full flex items-center justify-center">

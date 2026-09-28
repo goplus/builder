@@ -4,12 +4,13 @@ import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { UIButton, UIImg } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
+import { CourseState } from './tutorial'
 
 const props = defineProps<{
   course: Course
   sequence: number
   active: boolean
-  state: 'in-progress' | 'completed' | null
+  state: CourseState | null
 }>()
 
 const emit = defineEmits<{
@@ -43,7 +44,9 @@ const [thumbnailUrl] = useFileUrl(() =>
     </div>
     <span class="min-w-0 truncate text-base font-medium text-text">{{ course.title }}</span>
     <span v-if="state != null" class="flex-none px-1 text-xs font-medium text-primary-main">
-      {{ $t(state === 'completed' ? { en: 'completed', zh: '已完成' } : { en: 'in progress', zh: '进行中' }) }}
+      {{
+        $t(state === CourseState.Completed ? { en: 'completed', zh: '已完成' } : { en: 'in progress', zh: '进行中' })
+      }}
     </span>
     <UIButton v-if="active" class="ml-auto flex-none" type="white" size="small" @click.stop="emit('restart')">
       {{ $t({ en: 'Restart course', zh: '重新开始' }) }}

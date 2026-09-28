@@ -1,10 +1,9 @@
-import { ref } from 'vue'
-import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { GuidedCourse, PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
+import type { CurrentCourse as GuidedCurrentCourse } from './guided/guided-tutorial'
 import { Tutorial } from './tutorial'
 
 function makeSeries(courseIDs = ['course-1']): CourseSeries {
@@ -44,16 +43,14 @@ function makePlaygroundCourse(): PlaygroundCourse {
   }
 }
 
-function makeControllers(
-  route: Pick<RouteLocationNormalizedLoaded, 'matched' | 'params'> = { matched: [], params: {} }
-) {
+function makeControllers() {
   return {
     guided: {
-      current: null as { course: GuidedCourse; series: CourseSeries } | null,
+      currentCourse: null as GuidedCurrentCourse | null,
       startCourse: vi.fn().mockResolvedValue(undefined),
       endCurrentCourse: vi.fn()
     },
-    router: { currentRoute: ref(route), push: vi.fn().mockResolvedValue(undefined) }
+    router: { push: vi.fn().mockResolvedValue(undefined), go: vi.fn() }
   }
 }
 
@@ -102,19 +99,13 @@ describe('Tutorial', () => {
 
   it('exits an active Playground Course to its Course Series', async () => {
     const series = makeSeries()
-    const { guided, router } = makeControllers({
-      matched: [
-        {
-          path: '/course/:courseSeriesIdInput/:courseIdInput/playground/:inEditorPath*'
-        } as RouteLocationNormalizedLoaded['matched'][number]
-      ],
-      params: { courseSeriesIdInput: series.id, courseIdInput: 'course-1' }
-    })
+    const { guided, router } = makeControllers()
     const tutorial = new Tutorial(guided, router)
+    tutorial.notifyPlaygroundCourseStarted(makePlaygroundCourse(), series)
 
     await tutorial.endCurrentCourse()
 
-    expect(guided.endCurrentCourse).toHaveBeenCalledOnce()
+    expect(guided.endCurrentCourse).not.toHaveBeenCalled()
     expect(router.push).toHaveBeenCalledWith('/course-series/series-1')
   })
 

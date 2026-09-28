@@ -221,7 +221,7 @@ const canManageProject = computed(() => {
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 const isSimpleMode = computed(() => selectedEditMode.value === EditMode.Simple)
-const currentTutorialCourse = computed(() => tutorial.current?.course)
+const currentTutorialCourse = computed(() => tutorial.currentCourse)
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 

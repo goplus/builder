@@ -5,8 +5,10 @@ import type { CourseSeries } from './course-series'
 import { createDefaultProject } from '@/components/project/default-project'
 import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/models/common/file'
 import { Monitor } from '@/models/spx/widget/monitor'
+import { timeout } from '@/utils/utils'
 
 export const playgroundMockCourseSeriesID = 'playground-demo-series'
+const mockResponseDelay = 300
 
 const playgroundMockCourseIDs = ['playground-demo-course-1', 'playground-demo-course-2', 'playground-demo-course-3']
 
@@ -90,16 +92,17 @@ function getPlaygroundMockData() {
   return playgroundMockDataPromise
 }
 
-export function getPlaygroundMockCourseSeries(id: string, signal?: AbortSignal): CourseSeries | null {
-  signal?.throwIfAborted()
+export async function getPlaygroundMockCourseSeries(id: string, signal?: AbortSignal): Promise<CourseSeries | null> {
   if (id !== playgroundMockCourseSeriesID) return null
+  await timeout(mockResponseDelay, signal)
+  signal?.throwIfAborted()
   return { ...playgroundMockSeries, courseIDs: [...playgroundMockSeries.courseIDs] }
 }
 
 export async function getPlaygroundMockCourse(id: string, signal?: AbortSignal): Promise<PlaygroundCourse | null> {
   if (!playgroundMockCourseIDs.includes(id)) return null
   signal?.throwIfAborted()
-  const { courses } = await getPlaygroundMockData()
+  const [{ courses }] = await Promise.all([getPlaygroundMockData(), timeout(mockResponseDelay, signal)])
   signal?.throwIfAborted()
   return courses.find((course) => course.id === id) ?? null
 }
@@ -110,7 +113,7 @@ export async function listPlaygroundMockCourses(
 ): Promise<ByPage<PlaygroundCourse> | null> {
   if (params?.courseSeriesID !== playgroundMockCourseSeriesID) return null
   signal?.throwIfAborted()
-  const { courses } = await getPlaygroundMockData()
+  const [{ courses }] = await Promise.all([getPlaygroundMockData(), timeout(mockResponseDelay, signal)])
   signal?.throwIfAborted()
   const resolvedPageIndex = params.pageIndex ?? 1
   const resolvedPageSize = params.pageSize ?? courses.length

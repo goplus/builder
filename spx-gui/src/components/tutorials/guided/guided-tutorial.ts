@@ -9,7 +9,6 @@ import type { CourseSeries } from '@/apis/course-series'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
 
-import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
@@ -29,6 +28,10 @@ export type GuidedTutorialTopic = Topic & {
   isTutorialTopic: true
 }
 
+export type CurrentCourse = GuidedCourse & {
+  series: CourseSeries
+}
+
 export function isGuidedTutorialTopic(topic: Topic): topic is GuidedTutorialTopic {
   return (topic as GuidedTutorialTopic).isTutorialTopic === true
 }
@@ -43,19 +46,11 @@ export class GuidedTutorial {
     private isRouteLoaded: Ref<boolean>
   ) {}
 
-  get currentCourse(): GuidedCourse | null {
-    return this.course.value
-  }
-
-  get currentSeries(): CourseSeries | null {
-    return this.series.value
-  }
-
-  get current(): { course: GuidedCourse; series: CourseSeries } | null {
-    const course = this.currentCourse
-    const series = this.currentSeries
+  get currentCourse(): CurrentCourse | null {
+    const course = this.course.value
+    const series = this.series.value
     if (course == null || series == null) return null
-    return { course, series }
+    return { ...course, series }
   }
 
   private abandonPredictionCountRef = ref(0)
@@ -210,8 +205,7 @@ This is an example for messages between you and the user in a course:
   <${tutorialCourseSuccessTagName} />
 `,
       reactToEvents: true,
-      endable: false,
-      stateIndicator: tutorialStateIndicatorName
+      endable: false
     }
   }
 
