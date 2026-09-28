@@ -7,7 +7,6 @@
           desc: 'Shows the course in progress; click to open the tutorial control center'
         }"
         type="button"
-        :aria-label="$t({ en: 'Tutorial course entry', zh: '教程入口' })"
         class="h-full flex cursor-pointer items-center border-none bg-transparent px-3 outline-none transition-colors hover:bg-grey-300"
         :class="{ 'bg-grey-400!': dropdownVisible }"
       >
