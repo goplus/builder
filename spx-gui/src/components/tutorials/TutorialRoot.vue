@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 
@@ -17,7 +16,6 @@ const guidedTutorial = new GuidedTutorial(copilot, router, isRouteLoaded)
 const tutorial = new Tutorial(guidedTutorial, router)
 
 provideTutorial(tutorial)
-onUnmounted(() => tutorial.dispose())
 </script>
 
 <template>

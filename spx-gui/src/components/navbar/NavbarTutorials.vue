@@ -1,5 +1,5 @@
 <template>
-  <UIDropdownWithTooltip v-if="currentCourse != null" placement="bottom">
+  <UIDropdownWithTooltip v-if="current != null" placement="bottom">
     <template #trigger="{ dropdownVisible }">
       <button
         v-radar="{
@@ -26,8 +26,8 @@
     <template #tooltip-content>
       {{
         $t({
-          en: `${currentCourse.course.title}${currentCourse.state === 'completed' ? ' completed' : ' in progress'}`,
-          zh: `${currentCourse.course.title}${currentCourse.state === 'completed' ? '已完成' : '学习中'}`
+          en: `${current.course.title}${current.courseState === 'completed' ? ' completed' : ' in progress'}`,
+          zh: `${current.course.title}${current.courseState === 'completed' ? '已完成' : '学习中'}`
         })
       }}
     </template>
@@ -55,5 +55,5 @@ import { useTutorial } from '@/components/tutorials/tutorial'
 import TutorialStatusControlCenter from '@/components/tutorials/TutorialStatusControlCenter.vue'
 
 const tutorial = useTutorial()
-const currentCourse = computed(() => tutorial.currentCourse)
+const current = computed(() => tutorial.current)
 </script>

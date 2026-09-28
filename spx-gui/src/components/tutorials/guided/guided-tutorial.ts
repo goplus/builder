@@ -9,6 +9,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
 
+import type { CurrentStatus } from '../tutorial'
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
@@ -49,6 +50,13 @@ export class GuidedTutorial {
 
   get currentSeries(): CourseSeries | null {
     return this.series.value
+  }
+
+  get current(): CurrentStatus | null {
+    const course = this.currentCourse
+    const series = this.currentSeries
+    if (course == null || series == null) return null
+    return { course, series, seriesCourses: null, courseState: 'in-progress' }
   }
 
   private abandonPredictionCountRef = ref(0)

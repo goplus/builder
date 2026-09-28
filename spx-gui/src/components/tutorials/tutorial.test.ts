@@ -6,6 +6,7 @@ import type { GuidedCourse, PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
 import { Tutorial } from './tutorial'
+import type { CurrentStatus } from './tutorial'
 
 function makeSeries(courseIDs = ['course-1']): CourseSeries {
   return {
@@ -47,16 +48,9 @@ function makePlaygroundCourse(): PlaygroundCourse {
 function makeControllers(
   route: Pick<RouteLocationNormalizedLoaded, 'matched' | 'params'> = { matched: [], params: {} }
 ) {
-  const currentCourse = ref<GuidedCourse | null>(null)
-  const currentSeries = ref<CourseSeries | null>(null)
   return {
     guided: {
-      get currentCourse() {
-        return currentCourse.value
-      },
-      get currentSeries() {
-        return currentSeries.value
-      },
+      current: null as CurrentStatus | null,
       startCourse: vi.fn().mockResolvedValue(undefined),
       endCurrentCourse: vi.fn()
     },

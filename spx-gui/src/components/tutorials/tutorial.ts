@@ -1,18 +1,14 @@
-import { inject, provide, shallowRef, watch } from 'vue'
-import type { InjectionKey } from 'vue'
+import { computed, inject, provide, shallowRef } from 'vue'
+import type { ComputedRef, InjectionKey } from 'vue'
 
 import type { Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 
 import { getCourse, type Course, type CourseKind } from '@/apis/course'
 import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
-import { Disposable } from '@/utils/disposable'
 
 import type { GuidedTutorial } from './guided/guided-tutorial'
-type GuidedTutorialController = Pick<
-  GuidedTutorial,
-  'currentCourse' | 'currentSeries' | 'startCourse' | 'endCurrentCourse'
->
+type GuidedTutorialController = Pick<GuidedTutorial, 'current' | 'startCourse' | 'endCurrentCourse'>
 type TutorialRouter = Pick<Router, 'push'> & {
   readonly currentRoute: Readonly<Ref<Pick<RouteLocationNormalizedLoaded, 'matched' | 'params'>>>
 }
@@ -21,11 +17,11 @@ const playgroundRoutePath = '/course/:courseSeriesIdInput/:courseIdInput/playgro
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 
-type CurrentCourse = {
+export type CurrentStatus = {
   course: Course
   series: CourseSeries
   seriesCourses: Course[] | null
-  state: 'in-progress' | 'completed'
+  courseState: 'in-progress' | 'completed'
 }
 
 export function useTutorial() {
@@ -38,8 +34,9 @@ export function provideTutorial(tutorial: Tutorial) {
   provide(tutorialKey, tutorial)
 }
 
-export class Tutorial extends Disposable {
-  private currentCourseRef = shallowRef<CurrentCourse | null>(null)
+export class Tutorial {
+  private playgroundCurrentRef = shallowRef<CurrentStatus | null>(null)
+  private currentRef: ComputedRef<CurrentStatus | null>
 
   constructor(
     private guidedTutorial: GuidedTutorialController,
@@ -47,52 +44,42 @@ export class Tutorial extends Disposable {
     private loadCourse: (id: string) => Promise<Course> = getCourse,
     private loadCourseSeries: (id: string) => Promise<CourseSeries> = getCourseSeries
   ) {
-    super()
-
-    this.addDisposer(
-      watch(
-        () => [this.guidedTutorial.currentCourse, this.guidedTutorial.currentSeries] as const,
-        ([course, series]) => {
-          if (course == null || series == null) {
-            this.clearCourseKind('guided')
-            return
-          }
-          this.setCurrentCourse(course, series)
-        },
-        { immediate: true }
-      )
-    )
+    this.currentRef = computed(() => this.guidedTutorial.current ?? this.playgroundCurrentRef.value)
   }
 
-  get currentCourse() {
-    return this.currentCourseRef.value
+  get current() {
+    return this.currentRef.value
   }
 
   setCurrentCourse(course: Course, series: CourseSeries, seriesCourses?: Course[]) {
-    this.currentCourseRef.value = {
+    this.playgroundCurrentRef.value = {
       course,
       series,
       seriesCourses: seriesCourses ?? null,
-      state: 'in-progress'
+      courseState: 'in-progress'
     }
   }
 
   markCurrentCourseCompleted(courseKind: CourseKind, courseID: string) {
-    const currentCourse = this.currentCourseRef.value
-    if (currentCourse == null || currentCourse.course.kind !== courseKind || currentCourse.course.id !== courseID)
+    const playgroundCurrent = this.playgroundCurrentRef.value
+    if (
+      playgroundCurrent == null ||
+      playgroundCurrent.course.kind !== courseKind ||
+      playgroundCurrent.course.id !== courseID
+    )
       return
-    this.currentCourseRef.value = { ...currentCourse, state: 'completed' }
+    this.playgroundCurrentRef.value = { ...playgroundCurrent, courseState: 'completed' }
   }
 
   clearCurrentCourse(courseKind: CourseKind, courseID: string) {
-    const currentCourse = this.currentCourseRef.value
-    if (currentCourse == null || currentCourse.course.kind !== courseKind || currentCourse.course.id !== courseID)
+    const playgroundCurrent = this.playgroundCurrentRef.value
+    if (
+      playgroundCurrent == null ||
+      playgroundCurrent.course.kind !== courseKind ||
+      playgroundCurrent.course.id !== courseID
+    )
       return
-    this.currentCourseRef.value = null
-  }
-
-  clearCourseKind(courseKind: CourseKind) {
-    if (this.currentCourseRef.value?.course.kind === courseKind) this.currentCourseRef.value = null
+    this.playgroundCurrentRef.value = null
   }
 
   async startCourse(courseSeriesID: string, courseID: string): Promise<void> {
