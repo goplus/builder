@@ -1,6 +1,6 @@
 import { inject, provide, ref } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
-import type { Router } from 'vue-router'
+import { isNavigationFailure, type Router } from 'vue-router'
 
 import { timeout, until } from '@/utils/utils'
 import { userSessionStorageRef } from '@/utils/user-storage'
@@ -61,7 +61,7 @@ export class GuidedTutorial {
     this.abandonPredictionCountRef.value = 0
   }
 
-  async startCourse(course: GuidedCourse, series: CourseSeries): Promise<void> {
+  async enterCourse(course: GuidedCourse, series: CourseSeries): Promise<void> {
     try {
       this.copilot.endCurrentSession()
       this.course.value = course
@@ -71,7 +71,8 @@ export class GuidedTutorial {
       const { entrypoint } = course.content
 
       if (entrypoint) {
-        await this.router.push(entrypoint)
+        const failure = await this.router.replace(entrypoint)
+        if (isNavigationFailure(failure)) throw failure
         await until(this.isRouteLoaded)
         await timeout(100) // Wait for detailed UI rendering
       }
@@ -87,7 +88,7 @@ export class GuidedTutorial {
         'Now the course has just started.'
       )
     } catch (error) {
-      console.error('Failed to start course:', error)
+      console.error('Failed to enter course:', error)
       this.endCurrentCourse()
       throw error
     }

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { useMessageHandle } from '@/utils/exception'
 import { useSeriesCourses } from '@/stores/course-series'
-import { UIButton } from '@/components/ui'
+import { UIButton, UILoading } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
@@ -72,18 +72,21 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
-    <ul class="min-h-0 flex-1 flex flex-col gap-2 overflow-y-auto p-1">
-      <TutorialStatusCourseRow
-        v-for="(course, index) in courses ?? []"
-        :key="course.id"
-        :course="course"
-        :sequence="index + 1"
-        :active="course.id === tutorial.currentCourse?.id"
-        :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
-        @select="handleSelectCourse(course.id)"
-        @restart="handleRestartCourse"
-      />
-    </ul>
+    <div class="min-h-0 flex-1 overflow-y-auto p-1">
+      <UILoading v-if="coursesQueryRet.isLoading.value" class="h-24" />
+      <ul v-else class="flex flex-col gap-2">
+        <TutorialStatusCourseRow
+          v-for="(course, index) in courses ?? []"
+          :key="course.id"
+          :course="course"
+          :sequence="index + 1"
+          :active="course.id === tutorial.currentCourse?.id"
+          :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
+          @select="handleSelectCourse(course.id)"
+          @restart="handleRestartCourse"
+        />
+      </ul>
+    </div>
 
     <footer class="flex-none p-2">
       <button

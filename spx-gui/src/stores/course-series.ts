@@ -1,6 +1,7 @@
 import { computed, toRef, type WatchSource } from 'vue'
 
 import { listCourses } from '@/apis/course'
+import { getCourseSeries } from '@/apis/course-series'
 import { useQueryWithCache } from '@/utils/query'
 
 function getSeriesCoursesQueryKey(seriesID: string | null) {
@@ -8,6 +9,16 @@ function getSeriesCoursesQueryKey(seriesID: string | null) {
 }
 
 const staleTime = 5 * 60 * 1000
+
+export function useSeries(seriesID: WatchSource<string>) {
+  const seriesIDRef = toRef(seriesID)
+  return useQueryWithCache({
+    queryKey: computed(() => ['course-series', seriesIDRef.value]),
+    queryFn: (signal) => getCourseSeries(seriesIDRef.value, signal),
+    staleTime,
+    failureSummaryMessage: { en: 'Failed to load course series', zh: '加载课程系列失败' }
+  })
+}
 
 export function useSeriesCourses(seriesID: WatchSource<string | null>) {
   const seriesIDRef = toRef(seriesID)

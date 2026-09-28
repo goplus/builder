@@ -93,10 +93,7 @@
       </div>
     </template>
     <template #center>
-      <div v-if="currentTutorialCourse != null" class="max-w-[50%] truncate text-title text-xl">
-        {{ currentTutorialCourse.title }}
-      </div>
-      <div v-else-if="project != null" class="flex items-center justify-center gap-2">
+      <div v-if="project != null" class="flex items-center justify-center gap-2">
         <div v-if="title != null" class="max-w-62 truncate text-title text-xl">{{ title }}</div>
         <EditorProjectDisplayName v-else :project="project" />
         <EditorAutoSaveStateIcon :editing="state?.editing ?? null" />
@@ -181,7 +178,6 @@ import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
-import { useTutorial } from '@/components/tutorials/tutorial'
 import EditorAutoSaveStateIcon from './EditorAutoSaveStateIcon.vue'
 import EditorProjectDisplayName from './EditorProjectDisplayName.vue'
 import EditorCheckoutReleaseButton from './EditorCheckoutReleaseButton.vue'
@@ -212,7 +208,6 @@ const i18n = useI18n()
 const router = useRouter()
 const confirm = useConfirmDialog()
 const signedInUser = useSignedInUser()
-const tutorial = useTutorial()
 const canManageProject = computed(() => {
   const signedInUsername = signedInUser.value?.username
   if (signedInUsername == null || props.project == null) return false
@@ -221,7 +216,6 @@ const canManageProject = computed(() => {
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 const isSimpleMode = computed(() => selectedEditMode.value === EditMode.Simple)
-const currentTutorialCourse = computed(() => tutorial.currentCourse)
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 

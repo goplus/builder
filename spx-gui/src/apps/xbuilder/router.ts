@@ -42,6 +42,10 @@ export function getCoursePlaygroundRoute(courseSeriesID: string, courseID: strin
   return `/course/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/playground`
 }
 
+export function getCourseStartRoute(courseSeriesID: string, courseID: string) {
+  return `/course/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/start`
+}
+
 export function getCourseSeriesPageRoute(courseSeriesID: string) {
   return `/course-series/${encodeURIComponent(courseSeriesID)}`
 }
