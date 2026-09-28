@@ -1,16 +1,14 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
-
 import type { Course } from '@/apis/course'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { UIButton, UIImg } from '@/components/ui'
-import { useAsyncComputed } from '@/utils/utils'
+import { useFileUrl } from '@/utils/file'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 
 const props = defineProps<{
-  course: Pick<Course, 'id' | 'title' | 'thumbnail'>
+  course: Course
   sequence: number
-  current: boolean
+  active: boolean
   state: 'in-progress' | 'completed' | null
 }>()
 
@@ -19,19 +17,17 @@ const emit = defineEmits<{
   restart: []
 }>()
 
-const thumbnailSource = computed(() => props.course.thumbnail)
-const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
-  if (thumbnailSource.value === '') return null
-  return createFileWithUniversalUrl(thumbnailSource.value).url(onCleanup)
-})
+const [thumbnailUrl] = useFileUrl(() =>
+  props.course.thumbnail === '' ? null : createFileWithUniversalUrl(props.course.thumbnail)
+)
 </script>
 
 <template>
   <li
     v-radar="{ name: `Course: ${course.title}`, desc: 'Click to open this course' }"
-    :aria-current="current ? 'step' : undefined"
+    :aria-current="active ? 'step' : undefined"
     class="flex h-11 flex-none cursor-pointer items-center gap-2 rounded-[6px] py-1 pl-1 pr-2 transition-colors"
-    :class="current ? 'bg-turquoise-100 hover:bg-turquoise-200' : 'hover:bg-grey-200'"
+    :class="active ? 'bg-turquoise-100 hover:bg-turquoise-200' : 'hover:bg-grey-200'"
     @click="emit('select')"
   >
     <div
@@ -43,13 +39,13 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
       >
         {{ sequence }}
       </span>
-      <UIImg v-if="thumbnailSource !== ''" class="absolute inset-0 h-full w-full" :src="thumbnailUrl" size="cover" />
+      <UIImg v-if="course.thumbnail !== ''" class="absolute inset-0 h-full w-full" :src="thumbnailUrl" size="cover" />
     </div>
     <span class="min-w-0 truncate text-base font-medium text-text">{{ course.title }}</span>
     <span v-if="state != null" class="flex-none px-1 text-xs font-medium text-primary-main">
       {{ $t(state === 'completed' ? { en: 'completed', zh: '已完成' } : { en: 'in progress', zh: '进行中' }) }}
     </span>
-    <UIButton v-if="current" class="ml-auto flex-none" type="white" size="small" @click.stop="emit('restart')">
+    <UIButton v-if="active" class="ml-auto flex-none" type="white" size="small" @click.stop="emit('restart')">
       {{ $t({ en: 'Restart course', zh: '重新开始' }) }}
     </UIButton>
   </li>

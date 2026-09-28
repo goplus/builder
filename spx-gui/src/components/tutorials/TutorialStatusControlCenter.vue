@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { listCourses } from '@/apis/course'
+import { listCourses, type Course } from '@/apis/course'
 import { useMessageHandle } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { repeatableParamToPathSegments } from '@/utils/route'
@@ -32,13 +32,13 @@ const courses = useAsyncComputed(async (onCleanup) => {
     getCleanupSignal(onCleanup)
   )
   const coursesByID = new Map(result.data.map((course) => [course.id, course]))
-  const loadedCourses = []
+  const loadedCourses: Course[] = []
   for (const id of current.series.courseIDs) {
     const course = coursesByID.get(id)
     if (course != null) {
-      loadedCourses.push({ id: course.id, title: course.title, thumbnail: course.thumbnail })
+      loadedCourses.push(course)
     } else if (id === current.course.id) {
-      loadedCourses.push({ id, title: current.course.title, thumbnail: '' })
+      loadedCourses.push(current.course)
     }
   }
   return loadedCourses
@@ -124,7 +124,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
         :key="course.id"
         :course="course"
         :sequence="index + 1"
-        :current="course.id === currentCourse?.course.id"
+        :active="course.id === currentCourse?.course.id"
         :state="course.id === currentCourse?.course.id ? currentCourse.state : null"
         @select="handleSelectCourse(course.id)"
         @restart="handleRestartCourse"
