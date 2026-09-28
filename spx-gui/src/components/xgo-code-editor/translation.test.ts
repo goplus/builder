@@ -9,6 +9,11 @@ describe('editor translation demo adapter', () => {
     expect(extractDocumentationExplanation('```go\ntype string\n```\n\nA string is immutable.')).toBe(
       'A string is immutable.'
     )
+    expect(
+      extractDocumentationExplanation(
+        'func think(msg string)\n\nThink sends a message.\n\nfunc think(msg string, context map[string]any)'
+      )
+    ).toBe('Think sends a message.')
   })
 
   it('uses the demo translation for the supported diagnostic', async () => {
@@ -25,5 +30,11 @@ describe('editor translation demo adapter', () => {
     await expect(
       mockEditorTranslationProvider.translate({ kind: 'documentation', locale: 'en', source: 'A string.' })
     ).resolves.toBe('A string.')
+  })
+
+  it('marks unsupported content as a simulation instead of pretending it is translated', async () => {
+    await expect(
+      mockEditorTranslationProvider.translate({ kind: 'documentation', locale: 'zh', source: 'An unknown sentence.' })
+    ).resolves.toBe('【模拟翻译】An unknown sentence.')
   })
 })

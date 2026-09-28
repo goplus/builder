@@ -19,8 +19,10 @@ export interface EditorTranslationProvider {
 export function extractDocumentationExplanation(markdown: string): string {
   const withoutCode = markdown.replace(/```[\s\S]*?```/g, '').trim()
   const lines = withoutCode.split(/\r?\n/)
-  if (lines.length > 1 && /^(?:func|type|var|const|class|interface)\b/.test(lines[0].trim())) lines.shift()
-  return lines.join('\n').trim()
+  return lines
+    .filter((line) => !/^(?:func|type|var|const|class|interface)\b/.test(line.trim()))
+    .join('\n')
+    .trim()
 }
 
 const exactMockTranslations: Array<[RegExp, string]> = [
@@ -35,6 +37,10 @@ const exactMockTranslations: Array<[RegExp, string]> = [
   [
     /string is the set of all strings of 8-bit bytes, conventionally but not necessarily representing UTF-8-encoded text\. A string may be empty, but not nil\. Values of string type are immutable\./i,
     'string 是所有 8 位字节字符串的集合，通常表示 UTF-8 编码文本，但并非必须如此。字符串可以为空，但不能为 nil。string 类型的值不可变。'
+  ],
+  [
+    /Think sends a message to the AI and processes its response\. The optional context provides extra context for this specific interaction\.\s*Think implements an iterative loop, continuing the interaction with the AI based on command execution results until the AI signals its completion \(no command\) or a \[Break\] is encountered, or a critical error occurs\./i,
+    'Think 会向 AI 发送消息并处理 AI 的响应。可选的 context 参数会为这次交互提供额外上下文。Think 会根据命令执行结果持续与 AI 交互，直到 AI 表示完成（没有命令）、遇到 [Break]，或发生严重错误。'
   ]
 ]
 
@@ -43,14 +49,7 @@ function mockTranslate(source: string): string {
   const exact = exactMockTranslations.find(([pattern]) => pattern.test(normalizedSource))
   if (exact != null) return exact[1]
 
-  const translated = source
-    .replace(/\bdefault formats\b/gi, '默认格式')
-    .replace(/\bstandard output\b/gi, '标准输出')
-    .replace(/\bstring\b/gi, '字符串')
-    .replace(/\btype\b/gi, '类型')
-    .replace(/^Unable to /i, '无法')
-    .replace(/^cannot /i, '无法')
-  return translated === source ? `（模拟翻译）${source}` : translated
+  return `【模拟翻译】${source}`
 }
 
 export const mockEditorTranslationProvider: EditorTranslationProvider = {

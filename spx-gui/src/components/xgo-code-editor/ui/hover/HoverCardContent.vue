@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <li class="px-2 py-1.5">
+  <li class="w-full min-w-0 overflow-hidden px-2 py-1.5">
     <slot></slot>
   </li>
 </template>

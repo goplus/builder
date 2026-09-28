@@ -35,16 +35,17 @@ const translationTargets = computed<TranslationTarget[]>(() => {
   if (hover == null || locale === 'en') return []
 
   const targets: TranslationTarget[] = []
-  if (hover.actions.some((action) => action.command === builtInCommandCopilotExplain)) {
-    const hoverSource = hover.contents[0]?.value
-    if (typeof hoverSource === 'string') {
-      const source = extractDocumentationExplanation(hoverSource)
-      if (source !== '') targets.push({ kind: 'documentation', source, locale, contentIndex: 0 })
-    }
-  }
-
   const fixAction = hover.actions.find((action) => action.command === builtInCommandCopilotFixProblem)
   const diagnostic = (fixAction?.arguments[0] as { problem?: Diagnostic } | undefined)?.problem
+  const diagnosticContentIndex = diagnostic == null ? -1 : hover.contents.length - 1
+  if (hover.actions.some((action) => action.command === builtInCommandCopilotExplain)) {
+    hover.contents.forEach((content, contentIndex) => {
+      if (contentIndex === diagnosticContentIndex || typeof content.value !== 'string') return
+      const source = extractDocumentationExplanation(content.value)
+      if (source !== '') targets.push({ kind: 'documentation', source, locale, contentIndex })
+    })
+  }
+
   if (diagnostic != null && hover.contents.length > 0) {
     targets.push({
       kind: 'diagnostic',
@@ -62,10 +63,14 @@ const hoverActions = computed<Action[]>(() => {
   if (hover == null) return []
   return [
     ...hover.actions,
-    ...translationTargets.value.map((target) => ({
-      command: builtInCommandTranslate,
-      arguments: [target]
-    }))
+    ...(translationTargets.value.length > 0
+      ? [
+          {
+            command: builtInCommandTranslate,
+            arguments: [translationTargets.value]
+          }
+        ]
+      : [])
   ]
 })
 
@@ -74,8 +79,7 @@ function getTranslationTarget(contentIndex: number) {
 }
 
 function getTranslationState(contentIndex: number) {
-  const state = props.controller.translationState
-  return state?.contentIndex === contentIndex ? state : null
+  return props.controller.translationState?.items.find((item) => item.contentIndex === contentIndex) ?? null
 }
 
 function getTranslationDiagnosticSeverity(contentIndex: number) {
@@ -154,10 +158,10 @@ useDecorations(() => {
       @action="handleAction"
     >
       <HoverCardContent v-for="(content, i) in controller.hover.contents" :key="i">
-        <MarkdownView v-bind="content" />
+        <MarkdownView class="hover-content" v-bind="content" />
         <div
           v-if="getTranslationState(i) != null"
-          class="mt-2 border-t border-dividing-line-2 pt-2"
+          class="mt-2"
           :class="{ 'translation-loading': getTranslationState(i)?.status === 'loading' }"
         >
           <div
@@ -172,6 +176,7 @@ useDecorations(() => {
           <DiagnosticItem
             v-else-if="getTranslationTarget(i)?.kind === 'diagnostic' && getTranslationState(i)?.translated != null"
             :severity="getTranslationDiagnosticSeverity(i)"
+            class="w-full min-w-0"
           >
             {{ getTranslationState(i)?.translated }}
           </DiagnosticItem>
@@ -193,5 +198,19 @@ useDecorations(() => {
 .code-editor-hovered-text {
   border-radius: 2px;
   background-color: var(--ui-color-grey-600);
+}
+
+.hover-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.hover-content pre,
+.hover-content code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 </style>

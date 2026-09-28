@@ -32,7 +32,7 @@ const handleAction = useMessageHandle(
 
 <template>
   <CodeEditorCard class="flex flex-col items-stretch p-2">
-    <ul class="min-h-0 max-h-75 min-w-62.5 max-w-82 flex flex-col overflow-y-auto [scrollbar-width:thin]">
+    <ul class="hover-card-content-list min-w-62.5 max-w-82 flex flex-col gap-4 [scrollbar-width:thin]">
       <slot></slot>
     </ul>
     <footer v-if="actions.length > 0" class="mt-1.5 flex gap-3 border-t border-dividing-line-2 px-2 pt-3.5 pb-2">
@@ -47,3 +47,14 @@ const handleAction = useMessageHandle(
     </footer>
   </CodeEditorCard>
 </template>
+
+<style scoped>
+.hover-card-content-list {
+  width: 100%;
+  min-height: 0;
+  max-height: 300px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+</style>

@@ -100,7 +100,7 @@ export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = '
 export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentRange], void> = 'xgo.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'xgo.renameResource'
 export const builtInCommandInvokeInputHelper: Command<[InternalInputSlot], void> = 'xgo.invokeInputHelper'
-export const builtInCommandTranslate: Command<[EditorTranslationRequest], void> = 'xgo.translate'
+export const builtInCommandTranslate: Command<[EditorTranslationRequest[]], void> = 'xgo.translate'
 
 export type InternalAction<A extends any[] = any, R = any> = {
   title: string
@@ -642,7 +642,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.registerCommand(builtInCommandTranslate, {
       icon: 'translate',
       title: { en: 'Translate', zh: '翻译' },
-      handler: (request) => this.hoverController.translate(request)
+      handler: (requests) => this.hoverController.translate(requests)
     })
 
     this.registerCommand(builtInCommandRename, {

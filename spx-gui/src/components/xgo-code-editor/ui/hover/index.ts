@@ -73,9 +73,11 @@ export class HoverController extends Emitter<{
 
   private translationStateRef = shallowRef<{
     key: string
-    contentIndex: number
-    status: 'loading' | 'success' | 'error'
-    translated: string | null
+    items: Array<{
+      contentIndex: number
+      status: 'loading' | 'success' | 'error'
+      translated: string | null
+    }>
   } | null>(null)
 
   get translationState() {
@@ -86,17 +88,25 @@ export class HoverController extends Emitter<{
     this.translationStateRef.value = null
   }
 
-  async translate(request: EditorTranslationRequest & { contentIndex?: number }) {
-    const contentIndex = request.contentIndex ?? 0
-    const key = `${request.kind}:${request.source}`
-    this.translationStateRef.value = { key, contentIndex, status: 'loading', translated: null }
-    try {
-      const translated = await this.ui.translationProvider.translate(request)
-      if (this.translationStateRef.value?.key !== key) return
-      this.translationStateRef.value = { key, contentIndex, status: 'success', translated }
-    } catch {
-      if (this.translationStateRef.value?.key !== key) return
-      this.translationStateRef.value = { key, contentIndex, status: 'error', translated: null }
+  async translate(requests: EditorTranslationRequest[]) {
+    const key = requests.map((request) => `${request.kind}:${request.contentIndex}:${request.source}`).join('|')
+    this.translationStateRef.value = {
+      key,
+      items: requests.map((request) => ({
+        contentIndex: request.contentIndex ?? 0,
+        status: 'loading',
+        translated: null
+      }))
+    }
+    const results = await Promise.allSettled(requests.map((request) => this.ui.translationProvider.translate(request)))
+    if (this.translationStateRef.value?.key !== key) return
+    this.translationStateRef.value = {
+      key,
+      items: results.map((result, index) => ({
+        contentIndex: requests[index].contentIndex ?? 0,
+        status: result.status === 'fulfilled' ? 'success' : 'error',
+        translated: result.status === 'fulfilled' ? result.value : null
+      }))
     }
   }
 
