@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import type { PlaygroundCourse } from '@/apis/course'
-import type { CourseSeries } from '@/apis/course-series'
-import { createDefaultProject } from '@/components/project/default-project'
-import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/models/common/file'
-import { Monitor } from '@/models/spx/widget/monitor'
-import { TutorialProject } from '@/models/tutorial/project'
+import { getCourse, listCourses } from '@/apis/course'
+import { getCourseSeries } from '@/apis/course-series'
 import { useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
+import { TutorialProject } from '@/models/tutorial/project'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/runner'
+import { useTutorial } from '@/components/tutorials/tutorial'
 import { useTutorialStatus } from '@/components/tutorials/status'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 
@@ -24,115 +22,34 @@ const props = defineProps<{
 }>()
 
 const tutorialStatus = useTutorialStatus()
+const tutorial = useTutorial()
 const router = useRouter()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 
-async function getMockData(courseSeriesID: string, courseID: string) {
-  const project = await createDefaultProject('', '', [])
-  const secondSprite = project.sprites[0]?.clone()
-  if (secondSprite == null) throw new Error('default sprite not found')
-  secondSprite.setX(-120)
-  secondSprite.setY(80)
-  project.addSprite(secondSprite)
-  project.stage.addWidget(
-    new Monitor('Score', { x: -220, y: 150, visible: true, label: 'Score', variableName: 'score' })
-  )
-  const files: Files = {
-    'index.json': fromConfig('index.json', {
-      project: { type: 'spx', root: 'project' },
-      inEditorPath: '/simple',
-      copilotContext: 'Help the learner explore the Playground Course.'
-    }),
-    'main_course.gox': fromText(
-      'main_course.gox',
-      `onStart => {
-	// TODO: Use an XGo List literal when the tutorial runtime supports it.
-	apis := make([]string, 0)
-	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.stepTo#0")
-	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.turn#0")
-	Editor.CodeEditor.filterAPIs apis
-	Editor.Ruler.enable
-	// showMessage "Hi, this is a sample course."
-}
-
-Copilot.onRoundComplete round => {
-	if round.UserMessage == "结束" {
-		conclusion := Copilot.generateText("Generate a short conclusion for the learning process (including user conversation with Copilot). Less than 50 words. Use the same language as the current UI language.")
-		completeWith conclusion
-	}
-}`
-    ),
-    ...prefixFiles(project.exportFiles(), 'project')
-  }
-  project.dispose()
-
-  const content = await toFileCollection(files)
-  const courses: PlaygroundCourse[] = [
-    {
-      id: 'playground-demo-course-1',
-      owner: 'tutorial-demo',
-      kind: 'playground',
-      title: 'Playground Demo 1',
-      thumbnail: '',
-      content
-    },
-    {
-      id: 'playground-demo-course-2',
-      owner: 'tutorial-demo',
-      kind: 'playground',
-      title: 'Playground Demo 2',
-      thumbnail: '',
-      content
-    },
-    {
-      id: 'playground-demo-course-3',
-      owner: 'tutorial-demo',
-      kind: 'playground',
-      title: 'Playground Demo 3',
-      thumbnail: '',
-      content
-    }
-  ]
-  const series: CourseSeries = {
-    id: courseSeriesID,
-    owner: 'tutorial-demo',
-    kind: 'playground',
-    title: 'Playground Demo Series',
-    thumbnail: '',
-    description: 'A temporary Course playground for Tutorial v2 development.',
-    courseIDs: courses.map(({ id }) => id),
-    order: 1,
-    createdAt: '2026-08-26T00:00:00Z',
-    updatedAt: '2026-08-26T00:00:00Z'
-  }
-  const course = courses.find(({ id }) => id === courseID) ?? courses[1]
-  if (course == null) throw new Error('mock course not found')
-
-  return { course, courses, series }
-}
-
-async function toFileCollection(files: Files) {
-  return Object.fromEntries(
-    await Promise.all(Object.entries(files).map(async ([path, file]) => [path, await toDataUrl(file!)] as const))
-  )
-}
-
-async function toDataUrl(file: File) {
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  let content = ''
-  for (const byte of bytes) content += String.fromCharCode(byte)
-  return `data:${file.type};base64,${btoa(content)}`
-}
-
 const sessionQueryRet = useQuery(
   async (ctx) => {
-    // TODO: Load the Course and Course Series from Course APIs once the Tutorial v2 backend data is available.
-    const { course, courses, series } = await getMockData(props.courseSeriesIdInput, props.courseIdInput)
+    const courseSeriesID = props.courseSeriesIdInput
+    const courseID = props.courseIdInput
+    const series = await getCourseSeries(courseSeriesID, ctx.signal)
+    const [course, coursesPage] = await Promise.all([
+      getCourse(courseID, ctx.signal),
+      listCourses(
+        {
+          courseSeriesID,
+          pageIndex: 1,
+          pageSize: series.courseIDs.length,
+          orderBy: 'sequenceInCourseSeries'
+        },
+        ctx.signal
+      )
+    ])
+    const courses = coursesPage.data
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
     if (!series.courseIDs.includes(course.id)) throw new Error(`course ${course.id} is not in series ${series.id}`)
 
     const project = await TutorialProject.load(course)
     project.disposeOnSignal(ctx.signal)
+    ctx.signal.throwIfAborted()
     if (repeatableParamToPathSegments(props.inEditorPath).length === 0) {
       const inEditorPath = (project.config?.inEditorPath ?? '').split('/').filter((segment) => segment !== '')
       if (inEditorPath.length > 0) {
@@ -145,12 +62,11 @@ const sessionQueryRet = useQuery(
       }
     }
 
-    if (!ctx.signal.aborted) {
-      tutorialStatus.setCurrentCourse(course, series, courses)
-      ctx.signal.addEventListener('abort', () => tutorialStatus.clearCurrentCourse('playground', course.id), {
-        once: true
-      })
-    }
+    ctx.signal.throwIfAborted()
+    ctx.signal.addEventListener('abort', () => tutorialStatus.clearCurrentCourse('playground', course.id), {
+      once: true
+    })
+    tutorialStatus.setCurrentCourse(course, series, courses)
 
     return { course, courses, series, project }
   },
@@ -178,13 +94,7 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
   const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
   if (action === 'next' && nextCourseID != null) {
-    await router.push({
-      name: 'course-playground',
-      params: {
-        courseSeriesIdInput: completedSession.series.id,
-        courseIdInput: nextCourseID
-      }
-    })
+    await tutorial.startCourse(completedSession.series.id, nextCourseID)
   } else {
     await router.push(`/course-series/${encodeURIComponent(completedSession.series.id)}`)
   }

@@ -1,5 +1,6 @@
 import { client, type ByPage, type PaginationParams } from './common'
 import type { CourseKind } from './course'
+import { getPlaygroundDemoCourseSeries } from './course-playground-mock'
 
 export const courseSeriesTitleMaxLength = 200
 export const courseSeriesDescriptionMaxLength = 400
@@ -26,7 +27,9 @@ export type CourseSeries = {
 }
 
 /** Get a course series by ID */
-export function getCourseSeries(id: string, signal?: AbortSignal) {
+export async function getCourseSeries(id: string, signal?: AbortSignal) {
+  const mockCourseSeries = getPlaygroundDemoCourseSeries(id, signal)
+  if (mockCourseSeries != null) return mockCourseSeries
   return client.get(`/course-series/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<CourseSeries>
 }
 

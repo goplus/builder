@@ -1,4 +1,5 @@
 import { client, type ByPage, type FileCollection, type PaginationParams } from './common'
+import { getPlaygroundDemoCourse, listPlaygroundDemoCourses } from './course-playground-mock'
 
 export const courseTitleMaxLength = 200
 /**
@@ -47,7 +48,9 @@ export function isGuidedCourse(course: Course): course is GuidedCourse {
 }
 
 /** Get a course by ID */
-export function getCourse(id: string, signal?: AbortSignal) {
+export async function getCourse(id: string, signal?: AbortSignal) {
+  const mockCourse = await getPlaygroundDemoCourse(id, signal)
+  if (mockCourse != null) return mockCourse
   return client.get(`/courses/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<Course>
 }
 
@@ -99,7 +102,9 @@ export type ListCoursesParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listCourses(params?: ListCoursesParams, signal?: AbortSignal) {
+export async function listCourses(params?: ListCoursesParams, signal?: AbortSignal) {
+  const mockCourses = await listPlaygroundDemoCourses(params, signal)
+  if (mockCourses != null) return mockCourses
   return client.get('/courses', params, { signal }) as Promise<ByPage<Course>>
 }
 
