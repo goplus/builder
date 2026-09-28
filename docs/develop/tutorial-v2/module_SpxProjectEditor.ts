@@ -3,16 +3,16 @@ import type { Disposer, RuntimeOutput, SpxProject, UI } from "./base";
 /** Route added to the existing Project Editor route space for Simple Mode. */
 export type SimpleModeInEditorRoute = `/simple/sprites/${string}`;
 
+export type RuntimeLocation = {
+  textDocument: { uri: string };
+  /** Line number, starting from 1. */
+  line: number;
+};
+
 /** Existing runtime owned by `EditorState`. */
 export interface Runtime {
-  /** Current SPX source location, emitted by ispx at DebugRef granularity. */
-  readonly currentLocation: {
-    textDocument: { uri: string };
-    range: {
-      start: { line: number; column: number };
-      end: { line: number; column: number };
-    };
-  } | null;
+  /** Current SPX source line, emitted by ispx at DebugRef granularity. */
+  readonly location: RuntimeLocation | null;
   /** Latest 500 outputs for UI rendering, updated on snapshot changes. */
   readonly outputSnapshot: readonly RuntimeOutput[];
   /**

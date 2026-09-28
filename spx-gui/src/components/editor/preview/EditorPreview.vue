@@ -154,78 +154,19 @@
   </Teleport>
 </template>
 
-<script lang="ts">
-// Check tools/ispx/log.go for log source
-// TODO: Move these types & functions to ProjectRunner, and emit `log` instead of `console` event
-type SpxLog = {
-  level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
-  /** RFC 3339 date time string, e.g., `2025-12-04T14:17:36.24+08:00` */
-  time: string
-  msg: string
-  [key: string]: unknown
-}
-
-function isSpxLog(obj: any): obj is SpxLog {
-  return (
-    obj != null &&
-    typeof obj === 'object' &&
-    typeof obj.level === 'string' &&
-    typeof obj.time === 'string' &&
-    typeof obj.msg === 'string'
-  )
-}
-
-function parseSpxLog(jsonStr: string): SpxLog | null {
-  try {
-    const obj = JSON.parse(jsonStr)
-    if (isSpxLog(obj)) return obj
-  } catch {
-    // ignore
-  }
-  return null
-}
-
-type SpxInfoLog = SpxLog & {
-  level: 'INFO'
-  function: string
-  /** Source file name, e.g., `NiuXiaoQi.spx` */
-  file: string
-  /** Source code line number, starting from 1 */
-  line: number
-}
-
-function isSpxInfoLog(obj: SpxLog): obj is SpxInfoLog {
-  return obj.level === 'INFO' && obj.msg !== '__spx_loc__'
-}
-
-type SpxPanicLog = SpxLog & {
-  level: 'ERROR'
-  msg: 'panic'
-  /** Panic error message */
-  error: string
-  /** Source file name, e.g., `NiuXiaoQi.spx` */
-  file: string
-  /** Source code line number, starting from 1 */
-  line: number
-  /** Source code column number, starting from 1 */
-  column: number
-}
-
-function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
-  return obj.level === 'ERROR' && typeof obj.error === 'string' && obj.msg === 'panic'
-}
-</script>
-
 <script lang="ts" setup>
 import dayjs from 'dayjs'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { useNetwork } from '@/utils/network'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useSignedInUser } from '@/stores/user'
 import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
+import { usePublishProject } from '@/components/project'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
+import { isSpxInfoLog, isSpxLocationLog, isSpxPanicLog, parseSpxLog } from '@/components/project/runner/spx-log'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
   useCodeEditor,
@@ -236,9 +177,6 @@ import {
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import RulerToggle from './stage-viewer/ruler/RulerToggle.vue'
-import { isSpxLocationLog } from './spx-location'
-import { useNetwork } from '@/utils/network'
-import { usePublishProject } from '@/components/project'
 
 const props = withDefaults(
   defineProps<{
@@ -328,14 +266,10 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   if (type !== 'log' || typeof args[0] !== 'string') return
   const spxLog = parseSpxLog(args[0])
   if (spxLog == null) return
-  if (spxLog.msg === '__spx_loc__') {
-    if (!isSpxLocationLog(spxLog)) return
-    runtime.value.setCurrentLocation({
+  if (isSpxLocationLog(spxLog)) {
+    runtime.value.setLocation({
       textDocument: { uri: `file:///${spxLog.file}` },
-      range: {
-        start: { line: spxLog.line, column: 1 },
-        end: { line: spxLog.line, column: 1 }
-      }
+      line: spxLog.line
     })
   } else if (isSpxInfoLog(spxLog)) {
     appendRuntimeOutput({
@@ -373,7 +307,7 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
 }
 
 function handleExit(code: number) {
-  runtime.value.invalidateCurrentLocation()
+  runtime.value.invalidateLocation()
   runtime.value.emit('didExit', code)
   if (exitGuard.value === 'manualStopPending') {
     exitGuard.value = 'idle'
