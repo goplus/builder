@@ -32,11 +32,10 @@ const copilot = useCopilot()
 const open = useModal(TutorialCourseSuccessModal)
 
 onMounted(async () => {
-  if (!tutorial.currentCourse || !tutorial.currentSeries) {
-    throw new Error('No course or series in progress')
-  }
+  const currentCourse = tutorial.currentCourse
+  if (currentCourse == null) throw new Error('No course in progress')
   await timeout(500)
-  open({ course: tutorial.currentCourse, series: tutorial.currentSeries })
+  open({ course: currentCourse, series: currentCourse.series })
   copilot.close()
   tutorial.endCurrentCourse()
 })

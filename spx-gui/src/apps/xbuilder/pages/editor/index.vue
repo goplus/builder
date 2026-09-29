@@ -60,15 +60,17 @@ import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
-import { EditorState } from '@/components/editor/editor-state'
+import { EditorState, type IInEditorRouter } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
 import type { ProjectSerialized } from '@/models/project'
 import { SpxProject } from '@/models/spx/project'
+import { repeatableParamToPathSegments } from '@/utils/route'
 
 const props = defineProps<{
   ownerNameInput: string
   projectNameInput: string
+  inEditorPath: string | string[]
 }>()
 const localCache = new LocalCache(localHelpers)
 
@@ -103,6 +105,29 @@ const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: str
   })
 }
 
+const inEditorRouter: IInEditorRouter = {
+  currentPath: computed(() => repeatableParamToPathSegments(props.inEditorPath)),
+  push: (newPath, options) => {
+    const currentRoute = router.currentRoute.value
+
+    // Vue Router currently calculates the scroll position on every router.push navigation,
+    // which triggers layout recalculations that can negatively impact performance.
+    // See details in https://github.com/vuejs/router/issues/2393.
+    // TODO: We need to monitor the issue and update Vue Router when it is fixed.
+
+    // Vue Router checks if we are already on the same route, and prevents redundant navigation.
+    // So we do not need to check it manually to avoid infinite loops.
+    return router.push({
+      params: {
+        ...currentRoute.params,
+        inEditorPath: newPath
+      },
+      query: currentRoute.query,
+      replace: options?.replace
+    })
+  }
+}
+
 const stateQueryRet = useQuery(
   async (ctx) => {
     // We need to access route deps synchronously,
@@ -132,7 +157,7 @@ const stateQueryRet = useQuery(
       ctx.signal
     )
     state.editing.startEditing()
-    state.syncWithRouter(router)
+    state.syncWithRouter(inEditorRouter)
     return state
   },
   { en: 'Failed to load project', zh: '加载项目失败' }

@@ -6,7 +6,7 @@ import {
   type WatchSource,
   computed,
   ref,
-  onUnmounted,
+  onBeforeUnmount,
   toValue,
   watch
 } from 'vue'
@@ -65,16 +65,16 @@ export function useQuery<T>(
   const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
 
   let lastCtrl: AbortController | null = null
-  onUnmounted(() => lastCtrl?.abort(new Cancelled('unmounted')))
-  const getCtrl = () => {
-    if (lastCtrl != null) lastCtrl.abort(new Cancelled('new query'))
-    const ctrl = new AbortController()
-    lastCtrl = ctrl
-    return ctrl
+  const abortLast = (reason: Cancelled) => {
+    const ctrl = lastCtrl
+    lastCtrl = null
+    ctrl?.abort(reason)
   }
+  onBeforeUnmount(() => abortLast(new Cancelled('unmounted')))
 
   function fetch(source: QuerySource) {
-    const ctrl = getCtrl()
+    const ctrl = new AbortController()
+    lastCtrl = ctrl
     const signal = ctrl.signal
     const reporter = new ProgressReporter((p) => (progress.value = p))
     if (options.clearDataOnFetch) data.value = null
@@ -97,9 +97,16 @@ export function useQuery<T>(
     )
   }
 
-  watchEffect(() => fetch('auto'))
+  watchEffect((onCleanup) => {
+    // Cleanup runs outside dependency tracking, so abort listeners cannot become query dependencies.
+    onCleanup(() => abortLast(new Cancelled('new query')))
+    fetch('auto')
+  })
 
-  const refetch = () => fetch('refetch')
+  const refetch = () => {
+    abortLast(new Cancelled('new query'))
+    fetch('refetch')
+  }
 
   return { isLoading, data, error, progress, refetch }
 }

@@ -1,6 +1,6 @@
 import { inject, provide, ref } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
-import type { Router } from 'vue-router'
+import { isNavigationFailure, type Router } from 'vue-router'
 
 import { timeout, until } from '@/utils/utils'
 import { userSessionStorageRef } from '@/utils/user-storage'
@@ -9,7 +9,6 @@ import type { CourseSeries } from '@/apis/course-series'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
 
-import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
@@ -29,6 +28,10 @@ export type GuidedTutorialTopic = Topic & {
   isTutorialTopic: true
 }
 
+export type CurrentCourse = GuidedCourse & {
+  series: CourseSeries
+}
+
 export function isGuidedTutorialTopic(topic: Topic): topic is GuidedTutorialTopic {
   return (topic as GuidedTutorialTopic).isTutorialTopic === true
 }
@@ -43,12 +46,11 @@ export class GuidedTutorial {
     private isRouteLoaded: Ref<boolean>
   ) {}
 
-  get currentCourse(): GuidedCourse | null {
-    return this.course.value
-  }
-
-  get currentSeries(): CourseSeries | null {
-    return this.series.value
+  get currentCourse(): CurrentCourse | null {
+    const course = this.course.value
+    const series = this.series.value
+    if (course == null || series == null) return null
+    return { ...course, series }
   }
 
   private abandonPredictionCountRef = ref(0)
@@ -59,7 +61,7 @@ export class GuidedTutorial {
     this.abandonPredictionCountRef.value = 0
   }
 
-  async startCourse(course: GuidedCourse, series: CourseSeries): Promise<void> {
+  async enterCourse(course: GuidedCourse, series: CourseSeries): Promise<void> {
     try {
       this.copilot.endCurrentSession()
       this.course.value = course
@@ -69,7 +71,8 @@ export class GuidedTutorial {
       const { entrypoint } = course.content
 
       if (entrypoint) {
-        await this.router.push(entrypoint)
+        const failure = await this.router.replace(entrypoint)
+        if (isNavigationFailure(failure)) throw failure
         await until(this.isRouteLoaded)
         await timeout(100) // Wait for detailed UI rendering
       }
@@ -85,7 +88,7 @@ export class GuidedTutorial {
         'Now the course has just started.'
       )
     } catch (error) {
-      console.error('Failed to start course:', error)
+      console.error('Failed to enter course:', error)
       this.endCurrentCourse()
       throw error
     }
@@ -203,8 +206,7 @@ This is an example for messages between you and the user in a course:
   <${tutorialCourseSuccessTagName} />
 `,
       reactToEvents: true,
-      endable: false,
-      stateIndicator: tutorialStateIndicatorName
+      endable: false
     }
   }
 

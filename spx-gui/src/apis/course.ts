@@ -1,4 +1,5 @@
 import { client, type ByPage, type FileCollection, type PaginationParams } from './common'
+import { getPlaygroundMockCourse, listPlaygroundMockCourses } from './course-playground-mock'
 
 export const courseTitleMaxLength = 200
 /**
@@ -42,13 +43,26 @@ export type PlaygroundCourse = CourseBase & {
 
 export type Course = GuidedCourse | PlaygroundCourse
 
+type LegacyGuidedCourse = Omit<GuidedCourse, 'kind' | 'content'> & GuidedCourse['content']
+
+function normalizeCourse(course: Course | LegacyGuidedCourse): Course {
+  if ('kind' in course) return course
+  const { entrypoint, prompt, ...base } = course
+  return { ...base, kind: 'guided', content: { entrypoint, prompt } }
+}
+
 export function isGuidedCourse(course: Course): course is GuidedCourse {
   return course.kind === 'guided'
 }
 
 /** Get a course by ID */
-export function getCourse(id: string, signal?: AbortSignal) {
-  return client.get(`/courses/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<Course>
+export async function getCourse(id: string, signal?: AbortSignal) {
+  const mockCourse = await getPlaygroundMockCourse(id, signal)
+  if (mockCourse != null) return mockCourse
+  const course = (await client.get(`/courses/${encodeURIComponent(id)}`, undefined, { signal })) as
+    | Course
+    | LegacyGuidedCourse
+  return normalizeCourse(course)
 }
 
 export type AddCourseParams =
@@ -99,10 +113,14 @@ export type ListCoursesParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export function listCourses(params?: ListCoursesParams, signal?: AbortSignal) {
-  return client.get('/courses', params, { signal }) as Promise<ByPage<Course>>
+export async function listCourses(params?: ListCoursesParams, signal?: AbortSignal) {
+  const mockCourses = await listPlaygroundMockCourses(params, signal)
+  if (mockCourses != null) return mockCourses
+  const result = (await client.get('/courses', params, { signal })) as ByPage<Course | LegacyGuidedCourse>
+  return { ...result, data: result.data.map(normalizeCourse) }
 }
 
-export function listSignedInUserCourses(params?: ListCoursesParams, signal?: AbortSignal) {
-  return client.get('/user/courses', params, { signal }) as Promise<ByPage<Course>>
+export async function listSignedInUserCourses(params?: ListCoursesParams, signal?: AbortSignal) {
+  const result = (await client.get('/user/courses', params, { signal })) as ByPage<Course | LegacyGuidedCourse>
+  return { ...result, data: result.data.map(normalizeCourse) }
 }

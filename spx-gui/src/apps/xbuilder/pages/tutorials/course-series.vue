@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { listCourses, type Course } from '@/apis/course'
-import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
+import type { CourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
@@ -11,6 +11,7 @@ import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
+import { useSeries } from '@/stores/course-series'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
@@ -29,10 +30,7 @@ const props = defineProps<{
 
 const tutorial = useTutorial()
 
-const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesIdInput), {
-  en: 'Failed to load course series',
-  zh: '加载课程系列失败'
-})
+const courseSeriesQuery = useSeries(() => props.courseSeriesIdInput)
 
 const {
   data: courseSeries,
@@ -152,7 +150,7 @@ const { fn: handleCourseClick } = useMessageHandle(
                 <a
                   v-for="course in data.data"
                   :key="course.id"
-                  :href="`/course/${courseSeries.id}/${course.id}/start`"
+                  :href="tutorial.getCourseStartRoute(courseSeries.id, course.id)"
                   class="no-underline"
                   @click="handleCourseClick($event, course, courseSeries)"
                 >

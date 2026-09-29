@@ -1,8 +1,8 @@
-import { ref, type WatchSource } from 'vue'
+import { computed, defineComponent, nextTick, ref, type PropType, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from '@/utils/i18n'
-import type { QueryRet } from '@/utils/query'
+import { useQuery, type QueryRet } from '@/utils/query'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { Sound } from '@/models/spx/sound'
@@ -14,7 +14,7 @@ import { mockFile } from '@/models/common/test'
 import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
 import type { SignedInState } from '@/stores/user'
 import type * as editing from './editing'
-import { EditMode, EditorState, type IRouter, type Selected } from './editor-state'
+import { EditMode, EditorState, type IInEditorRouter, type Selected } from './editor-state'
 
 function makeCloudHelpers(): editing.CloudHelpers {
   return {
@@ -101,22 +101,12 @@ function makeProjectWithResources(): SpxProject {
   return project
 }
 
-function makeRouter(ownerNameInput = 'test-owner', projectNameInput = 'test-project') {
-  const currentRoute: IRouter['currentRoute'] = ref({
-    fullPath: `/editor/${ownerNameInput}/${projectNameInput}`,
-    params: {
-      ownerNameInput,
-      projectNameInput,
-      inEditorPath: []
-    },
-    query: {},
-    hash: ''
-  })
-
+function makeRouter() {
+  const currentPath = ref<string[]>([])
   return {
-    currentRoute,
+    currentPath,
     push: vi.fn().mockResolvedValue(undefined)
-  } satisfies IRouter
+  } satisfies IInEditorRouter
 }
 
 function makeEditorState(
@@ -482,10 +472,71 @@ describe('EditorState', () => {
   })
 
   describe('router integration', () => {
+    it('disposes the old editor before selecting a new path when identity and path props change', async () => {
+      const projects = {
+        first: makeProjectWithResources(),
+        second: makeProjectWithResources()
+      }
+      const pushes: Array<{ id: string; path: string[] }> = []
+      let queryRet!: QueryRet<EditorState>
+
+      const wrapper = mount(
+        defineComponent({
+          props: {
+            id: { type: String as PropType<'first' | 'second'>, required: true },
+            path: { type: Array as PropType<string[]>, required: true }
+          },
+          setup(props) {
+            const inEditorRouter: IInEditorRouter = {
+              currentPath: computed(() => props.path),
+              push: async (path) => {
+                pushes.push({ id: props.id, path })
+              }
+            }
+            queryRet = useQuery(
+              async (ctx) => {
+                const id = props.id
+                await nextTick()
+                const editorState = makeEditorState(projects[id])
+                editorState.disposeOnSignal(ctx.signal)
+                editorState.syncWithRouter(inEditorRouter)
+                return editorState
+              },
+              { en: 'Failed to load editor', zh: '加载编辑器失败' },
+              { clearDataOnFetch: true }
+            )
+            return () => null
+          }
+        }),
+        { props: { id: 'first', path: ['sprites', 'sprite1', 'code'] } }
+      )
+
+      try {
+        await flushPromises()
+        const oldState = queryRet.data.value!
+        const oldSelection = oldState.selected
+        pushes.length = 0
+
+        await wrapper.setProps({ id: 'second', path: ['sounds', 'sound2'] })
+        await flushPromises()
+
+        expect(oldState.isDisposed).toBe(true)
+        expect(oldState.selected).toEqual(oldSelection)
+        expect(queryRet.data.value?.selected).toEqual({
+          type: 'stage',
+          stageSelected: { type: 'sounds', sound: projects.second.sounds[1] }
+        } satisfies Selected)
+        expect(pushes.length).toBeGreaterThan(0)
+        expect(pushes.every(({ id }) => id === 'second')).toBe(true)
+      } finally {
+        wrapper.unmount()
+      }
+    })
+
     it('should sync selection to router correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter(project.owner, project.name)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -494,13 +545,7 @@ describe('EditorState', () => {
       editorState.selectSprite(project.sprites[1].id)
       await flushPromises()
 
-      expect(router.push).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: expect.objectContaining({
-            inEditorPath: ['sprites', 'sprite2', 'code']
-          })
-        })
-      )
+      expect(router.push).toHaveBeenCalledWith(['sprites', 'sprite2', 'code'])
 
       editorState.dispose()
     })
@@ -508,19 +553,13 @@ describe('EditorState', () => {
     it('should sync from router to selection correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter(project.owner, project.name)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
 
       // Simulate router change
-      router.currentRoute.value = {
-        ...router.currentRoute.value,
-        params: {
-          ...router.currentRoute.value.params,
-          inEditorPath: ['sounds', 'sound2']
-        }
-      }
+      router.currentPath.value = ['sounds', 'sound2']
       await flushPromises()
 
       expect(editorState.selected).toEqual({
@@ -537,19 +576,13 @@ describe('EditorState', () => {
     it('should handle legacy bare sounds route correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter(project.owner, project.name)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
 
       // Simulate old top-level sounds route without sound name
-      router.currentRoute.value = {
-        ...router.currentRoute.value,
-        params: {
-          ...router.currentRoute.value.params,
-          inEditorPath: ['sounds']
-        }
-      }
+      router.currentPath.value = ['sounds']
       await flushPromises()
 
       expect(editorState.selected).toEqual({
@@ -566,19 +599,13 @@ describe('EditorState', () => {
     it('should handle stage routes correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter(project.owner, project.name)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
 
       // Navigate to stage
-      router.currentRoute.value = {
-        ...router.currentRoute.value,
-        params: {
-          ...router.currentRoute.value.params,
-          inEditorPath: ['stage']
-        }
-      }
+      router.currentPath.value = ['stage']
       await flushPromises()
 
       expect(editorState.selected.type).toBe('stage')
@@ -589,19 +616,13 @@ describe('EditorState', () => {
     it('should handle sprite sub-routes correctly', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter(project.owner, project.name)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
 
       // Navigate to sprite with costume selection
-      router.currentRoute.value = {
-        ...router.currentRoute.value,
-        params: {
-          ...router.currentRoute.value.params,
-          inEditorPath: ['sprites', 'sprite1', 'costumes', 'costume2']
-        }
-      }
+      router.currentPath.value = ['sprites', 'sprite1', 'costumes', 'costume2']
       await flushPromises()
 
       expect(editorState.selected).toEqual({
@@ -619,16 +640,10 @@ describe('EditorState', () => {
     it('should select the focused sprite for a Simple Mode route', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter(project.owner, project.name)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
-      router.currentRoute.value = {
-        ...router.currentRoute.value,
-        params: {
-          ...router.currentRoute.value.params,
-          inEditorPath: ['simple', 'sprites', 'sprite2']
-        }
-      }
+      router.currentPath.value = ['simple', 'sprites', 'sprite2']
       await flushPromises()
 
       expect(editorState.selectedEditMode).toBe(EditMode.Simple)
@@ -637,13 +652,7 @@ describe('EditorState', () => {
         sprite: project.sprites[1],
         spriteSelected: { type: 'code' }
       } satisfies Selected)
-      expect(router.push).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: expect.objectContaining({
-            inEditorPath: ['simple', 'sprites', 'sprite2', 'code']
-          })
-        })
-      )
+      expect(router.push).toHaveBeenCalledWith(['simple', 'sprites', 'sprite2', 'code'])
 
       editorState.dispose()
     })
@@ -651,19 +660,13 @@ describe('EditorState', () => {
     it('should default to sprites route when no specific route provided', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter(project.owner, project.name)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
 
       // Navigate with empty path (should default to sprites)
-      router.currentRoute.value = {
-        ...router.currentRoute.value,
-        params: {
-          ...router.currentRoute.value.params,
-          inEditorPath: []
-        }
-      }
+      router.currentPath.value = []
       await flushPromises()
 
       expect(editorState.selected).toEqual({
@@ -680,7 +683,7 @@ describe('EditorState', () => {
     it('should do replace instead of push when selected resource renamed', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
-      const router = makeRouter(project.owner, project.name)
+      const router = makeRouter()
 
       editorState.syncWithRouter(router)
       await flushPromises()
@@ -691,14 +694,7 @@ describe('EditorState', () => {
       await flushPromises()
 
       expect(router.push).toHaveBeenCalledOnce()
-      expect(router.push).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: expect.objectContaining({
-            inEditorPath: ['sprites', 'newSpriteName', 'code']
-          }),
-          replace: true
-        })
-      )
+      expect(router.push).toHaveBeenCalledWith(['sprites', 'newSpriteName', 'code'], { replace: true })
 
       editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[0].id)
       await flushPromises()
@@ -708,14 +704,9 @@ describe('EditorState', () => {
       await flushPromises()
 
       expect(router.push).toHaveBeenCalledOnce()
-      expect(router.push).toHaveBeenCalledWith(
-        expect.objectContaining({
-          params: expect.objectContaining({
-            inEditorPath: ['sprites', 'newSpriteName', 'costumes', 'newCostumeName']
-          }),
-          replace: true
-        })
-      )
+      expect(router.push).toHaveBeenCalledWith(['sprites', 'newSpriteName', 'costumes', 'newCostumeName'], {
+        replace: true
+      })
 
       editorState.dispose()
     })

@@ -38,6 +38,18 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+export function getCoursePlaygroundRoute(courseSeriesID: string, courseID: string) {
+  return `/course/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/playground`
+}
+
+export function getCourseStartRoute(courseSeriesID: string, courseID: string) {
+  return `/course/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/start`
+}
+
+export function getCourseSeriesPageRoute(courseSeriesID: string) {
+  return `/course-series/${encodeURIComponent(courseSeriesID)}`
+}
+
 export const homePageName = 'home'
 
 declare module 'vue-router' {

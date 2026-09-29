@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import type { PlaygroundCourse } from '@/apis/course'
-import type { CourseSeries } from '@/apis/course-series'
-import { createDefaultProject } from '@/components/project/default-project'
-import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/models/common/file'
-import { Monitor } from '@/models/spx/widget/monitor'
-import { TutorialProject } from '@/models/tutorial/project'
-import { useQuery } from '@/utils/query'
+import { getCourseSeries } from '@/apis/course-series'
+import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
+import { composeQuery, useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
+import { TutorialProject } from '@/models/tutorial/project'
+import { useSeriesCourses } from '@/stores/course-series'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
@@ -26,91 +24,23 @@ const props = defineProps<{
 const tutorial = useTutorial()
 const router = useRouter()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
-
-async function getMockData() {
-  const project = await createDefaultProject('', '', [])
-  const secondSprite = project.sprites[0]?.clone()
-  if (secondSprite == null) throw new Error('default sprite not found')
-  secondSprite.setX(-120)
-  secondSprite.setY(80)
-  project.addSprite(secondSprite)
-  project.stage.addWidget(
-    new Monitor('Score', { x: -220, y: 150, visible: true, label: 'Score', variableName: 'score' })
-  )
-  const files: Files = {
-    'index.json': fromConfig('index.json', {
-      project: { type: 'spx', root: 'project' },
-      inEditorPath: '/simple',
-      copilotContext: 'Help the learner explore the Playground Course.'
-    }),
-    'main_course.gox': fromText(
-      'main_course.gox',
-      `onStart => {
-	// TODO: Use an XGo List literal when the tutorial runtime supports it.
-	apis := make([]string, 0)
-	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.stepTo#0")
-	apis = append(apis, "xgo:github.com/goplus/spx/v3?Sprite.turn#0")
-	Editor.CodeEditor.filterAPIs apis
-	Editor.Ruler.enable
-	// showMessage "Hi, this is a sample course."
-}
-
-Copilot.onRoundComplete round => {
-	if round.UserMessage == "结束" {
-		conclusion := Copilot.generateText("Generate a short conclusion for the learning process (including user conversation with Copilot). Less than 50 words. Use the same language as the current UI language.")
-		completeWith conclusion
-	}
-}`
-    ),
-    ...prefixFiles(project.exportFiles(), 'project')
-  }
-  project.dispose()
-
-  const course: PlaygroundCourse = {
-    id: 'playground-demo-course',
-    owner: 'tutorial-demo',
-    kind: 'playground',
-    title: 'Playground Demo',
-    thumbnail: '',
-    content: await toFileCollection(files)
-  }
-  const series: CourseSeries = {
-    id: 'playground-demo-series',
-    owner: 'tutorial-demo',
-    kind: 'playground',
-    title: 'Playground Demo Series',
-    thumbnail: '',
-    description: 'A temporary Course playground for Tutorial v2 development.',
-    courseIDs: [course.id],
-    order: 1,
-    createdAt: '2026-08-26T00:00:00Z',
-    updatedAt: '2026-08-26T00:00:00Z'
-  }
-  return { course, series }
-}
-
-async function toFileCollection(files: Files) {
-  return Object.fromEntries(
-    await Promise.all(Object.entries(files).map(async ([path, file]) => [path, await toDataUrl(file!)] as const))
-  )
-}
-
-async function toDataUrl(file: File) {
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  let content = ''
-  for (const byte of bytes) content += String.fromCharCode(byte)
-  return `data:${file.type};base64,${btoa(content)}`
-}
+const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
 
 const sessionQueryRet = useQuery(
   async (ctx) => {
-    // TODO: Load the Course and Course Series from Course APIs once the Tutorial v2 backend data is available.
-    const { course, series } = await getMockData()
+    const courseSeriesID = props.courseSeriesIdInput
+    const courseID = props.courseIdInput
+    const [series, courses] = await Promise.all([
+      getCourseSeries(courseSeriesID, ctx.signal),
+      composeQuery(ctx, seriesCoursesQueryRet)
+    ])
+    const course = courses.find(({ id }) => id === courseID)
+    if (course == null) throw new Error(`course ${courseID} not found in series ${series.id}`)
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
-    if (!series.courseIDs.includes(course.id)) throw new Error(`course ${course.id} is not in series ${series.id}`)
 
     const project = await TutorialProject.load(course)
     project.disposeOnSignal(ctx.signal)
+    ctx.signal.throwIfAborted()
     if (repeatableParamToPathSegments(props.inEditorPath).length === 0) {
       const inEditorPath = (project.config?.inEditorPath ?? '').split('/').filter((segment) => segment !== '')
       if (inEditorPath.length > 0) {
@@ -122,6 +52,12 @@ const sessionQueryRet = useQuery(
         })
       }
     }
+
+    ctx.signal.throwIfAborted()
+    ctx.signal.addEventListener('abort', () => tutorial.notifyPlaygroundCourseEnded(course.id), {
+      once: true
+    })
+    tutorial.notifyPlaygroundCourseStarted(course, series)
 
     return { course, series, project }
   },
@@ -137,6 +73,7 @@ const session = sessionQueryRet.data
 async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const completedSession = session.value
   if (completedSession == null) return
+  tutorial.notifyPlaygroundCourseCompleted(completedSession.course.id)
 
   const action: CompletionAction = await openCompletion({
     course: completedSession.course,
@@ -150,7 +87,7 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
   if (action === 'next' && nextCourseID != null) {
     await tutorial.startCourse(completedSession.series.id, nextCourseID)
   } else {
-    await router.push(`/course-series/${encodeURIComponent(completedSession.series.id)}`)
+    await router.push(getCourseSeriesPageRoute(completedSession.series.id))
   }
 }
 </script>
@@ -160,6 +97,7 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
     v-if="session != null"
     :key="session.course.id"
     :project="session.project"
+    :in-editor-path="inEditorPath"
     @course-completed="handleCompleted"
   />
   <section v-else class="h-full w-full flex items-center justify-center">

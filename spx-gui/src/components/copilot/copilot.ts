@@ -131,8 +131,6 @@ export type Topic = {
   endable?: boolean
   /** Whether code-block Copy/Insert and code-change Apply helpers are enabled, defaults to `true`. */
   codeHelperEnabled?: boolean
-  /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
-  stateIndicator?: string
 }
 
 export enum RoundState {
@@ -572,15 +570,8 @@ export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
   markdownElements = shallowReactive<MarkdownElementDefinitions>({})
-  private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
   getTools(): ToolDefinition[] {
     return Array.from(this.toolMap.values())
-  }
-
-  get stateIndicatorComponent(): Component<object> | null {
-    const name = this.currentSession?.topic.stateIndicator
-    if (name == null) return null
-    return this.stateIndicatorComponentMap.get(name) ?? null
   }
 
   executor = new ToolExecutor(() => this.getTools())
@@ -999,16 +990,6 @@ ${messages.map((message) => `<${message.role}>${message.content?.text ?? ''}</${
       if (this.toolMap.get(tool.name) === tool) {
         this.toolMap.delete(tool.name)
       }
-    }
-  }
-
-  registerStateIndicatorComponent(name: string, component: Component): Disposer {
-    if (this.stateIndicatorComponentMap.has(name))
-      console.warn(`State indicator component with name "${name}" already exists`)
-    this.stateIndicatorComponentMap.set(name, component)
-    return () => {
-      if (this.stateIndicatorComponentMap.get(name) !== component) return
-      this.stateIndicatorComponentMap.delete(name)
     }
   }
 }
