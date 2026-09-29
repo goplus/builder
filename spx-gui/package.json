@@ -43,7 +43,7 @@
     "@vue/runtime-core": "3.5.25",
     "@vue/test-utils": "^2.4.5",
     "@vue/tsconfig": "^0.8.1",
-    "@xgo-pkgs/spx": "3.2.4",
+    "@xgo-pkgs/spx": "3.3.0",
     "bowser": "^2.14.1",
     "browserslist": "^4.28.0",
     "browserslist-to-esbuild": "^2.1.1",
