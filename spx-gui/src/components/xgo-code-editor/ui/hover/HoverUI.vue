@@ -176,7 +176,7 @@ useDecorations(() => {
           <DiagnosticItem
             v-else-if="getTranslationTarget(i)?.kind === 'diagnostic' && getTranslationState(i)?.translated != null"
             :severity="getTranslationDiagnosticSeverity(i)"
-            class="w-full min-w-0"
+            class="w-full min-w-0 self-stretch"
           >
             {{ getTranslationState(i)?.translated }}
           </DiagnosticItem>

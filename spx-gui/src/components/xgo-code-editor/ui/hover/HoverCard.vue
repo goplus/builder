@@ -31,11 +31,14 @@ const handleAction = useMessageHandle(
 </script>
 
 <template>
-  <CodeEditorCard class="flex flex-col items-stretch p-2">
-    <ul class="hover-card-content-list min-w-62.5 max-w-82 flex flex-col gap-4 [scrollbar-width:thin]">
+  <CodeEditorCard class="hover-card flex flex-col items-stretch p-2">
+    <ul class="hover-card-content-list min-w-62.5 flex flex-col gap-4">
       <slot></slot>
     </ul>
-    <footer v-if="actions.length > 0" class="mt-1.5 flex gap-3 border-t border-dividing-line-2 px-2 pt-3.5 pb-2">
+    <footer
+      v-if="actions.length > 0"
+      class="mt-1.5 flex flex-none gap-3 border-t border-dividing-line-2 px-2 pt-3.5 pb-2"
+    >
       <ActionButton
         v-for="(action, i) in actions"
         :key="i"
@@ -49,6 +52,11 @@ const handleAction = useMessageHandle(
 </template>
 
 <style scoped>
+.hover-card {
+  width: max-content;
+  max-width: min(520px, calc(100vw - 24px));
+}
+
 .hover-card-content-list {
   width: 100%;
   min-height: 0;
@@ -56,5 +64,7 @@ const handleAction = useMessageHandle(
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 </style>
