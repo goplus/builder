@@ -16,12 +16,15 @@ type SpxLogBase = {
   [key: string]: unknown
 }
 
-function isSpxLogBase(obj: any): obj is SpxLogBase {
+function isSpxLogBase(obj: unknown): obj is SpxLogBase {
   return (
     obj != null &&
     typeof obj === 'object' &&
+    'level' in obj &&
     typeof obj.level === 'string' &&
+    'time' in obj &&
     typeof obj.time === 'string' &&
+    'msg' in obj &&
     typeof obj.msg === 'string'
   )
 }
@@ -74,6 +77,7 @@ type ParsedSpxLog =
   | { type: 'executionLocation'; executionLocation: SpxExecutionLocation }
 
 export function parseSpxLog(jsonStr: string): ParsedSpxLog | null {
+  if (!jsonStr.startsWith('{')) return null
   try {
     const log = JSON.parse(jsonStr)
     if (!isSpxLogBase(log)) return null
