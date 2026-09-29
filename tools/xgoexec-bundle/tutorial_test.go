@@ -31,8 +31,8 @@ onStart => {
 	Editor.Ruler.enable
 	showPrelude "Move Lita to Mushroom."
 	showVideo "step-to"
-	Spotlight.reveal "Code editor > Code text editor", "Write your code here"
-	Spotlight.revealWith "Stage overview", "Watch Lita", SpotlightOptions{Mask: false, Duration: 3}
+	Spotlight.reveal "code-text-editor", "Write your code here"
+	Spotlight.revealWith "stage-overview", "Watch Lita", SpotlightOptions{Mask: false, Duration: 3}
 }
 
 Editor.Runtime.onStart => {
