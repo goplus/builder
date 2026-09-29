@@ -8555,6 +8555,14 @@ components:
         - $ref: "#/components/schemas/AIGCGraphicAssetSettings"
         - type: object
           properties:
+            referenceImageUrl:
+              description: Universal URL of the backdrop reference image.
+              type:
+                - string
+                - "null"
+              format: uri
+              examples:
+                - kodo://bucket/key
             category:
               description: Backdrop category.
               type: string

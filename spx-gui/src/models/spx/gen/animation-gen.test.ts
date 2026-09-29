@@ -10,6 +10,7 @@ import { Sprite } from '../sprite'
 import { createI18n } from '@/utils/i18n'
 import { AnimationGen } from './animation-gen'
 import { Costume } from '../costume'
+import { mockSaveFile } from './test-helpers'
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
@@ -18,6 +19,7 @@ vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 1
 describe('AnimationGen', () => {
   beforeEach(() => {
     aigcMock.reset()
+    mockSaveFile()
   })
 
   it('encodes an animation name when using it as a directory', () => {
@@ -148,7 +150,7 @@ describe('AnimationGen', () => {
     expect(gen.generateVideoState.status).toBe('finished')
   })
 
-  it('should throw error when generating video without reference costume', async () => {
+  it('should throw error when generating video without a reference image or costume', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
@@ -156,8 +158,8 @@ describe('AnimationGen', () => {
 
     await gen.enrich()
 
-    // Try to generate video without reference costume
-    await expect(gen.generateVideo()).rejects.toThrow('reference costume expected')
+    // Try to generate video without a reference image or costume
+    await expect(gen.generateVideo()).rejects.toThrow('reference image or costume expected')
   })
 
   it('should throw error when extracting frames without video', async () => {
@@ -496,5 +498,118 @@ describe('AnimationGen', () => {
     expect(loadedGen.finishState.result?.name).toBe(gen.finishState.result?.name)
     expect(loadedGen.finishState.result?.costumes.length).toBe(gen.finishState.result?.costumes.length)
     expect(loadedGen.finishState.result?.duration).toBe(1)
+  })
+
+  it('uses a local image directly as the animation reference', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const costume = new Costume('default', mockFile('default.png'))
+    sprite.addCostume(costume)
+    const gen = new AnimationGen(i18n, sprite, project, { settings: { name: 'walk' } })
+    const localFile = mockFile('local_character.png')
+    gen.setReferenceImage(localFile)
+    gen.setReferenceCostume(costume.id)
+    gen.setReferenceImageSelection({ type: 'local-image', file: localFile })
+
+    await gen.generateVideo()
+    const [videoTask] = [...aigcMock.tasks.values()]
+    expect(aigcMock.tasks.size).toBe(1)
+    expect(videoTask.task.type).toBe(TaskType.GenerateAnimationVideo)
+    expect(videoTask.params).toMatchObject({
+      settings: { referenceFrameUrl: 'kodo://mock-bucket/local_character.png' }
+    })
+    expect(gen.getTaskIds()).toEqual([videoTask.task.id])
+
+    const [rawConfig, rawFiles] = gen.export()
+    const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(rawConfig), sndFiles(rawFiles))
+    expect(loaded.referenceImageSelection).toMatchObject({ type: 'local-image', file: { name: localFile.name } })
+    expect(loaded.getTaskIds()).toEqual([videoTask.task.id])
+    gen.dispose()
+    loaded.dispose()
+  })
+
+  it.each(['replace', 'remove', 'select costume'] as const)(
+    'invalidates a running video task when the reference is %s',
+    async (change) => {
+      let resume!: () => void
+      const paused = new Promise<void>((resolve) => {
+        resume = resolve
+      })
+      aigcMock.registerTaskHandler(TaskType.GenerateAnimationVideo, async function* (_task, _params, defaultHandler) {
+        await paused
+        yield* defaultHandler()
+      })
+      const project = makeSpxProject()
+      const sprite = Sprite.create('TestSprite', '')
+      const costume = new Costume('default', mockFile('default.png'))
+      sprite.addCostume(costume)
+      const gen = new AnimationGen(i18n, sprite, project, {
+        settings: { name: 'walk' },
+        referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
+      })
+      const pending = gen.generateVideo().catch((error) => error)
+      await vi.waitFor(() => expect(aigcMock.tasks.size).toBe(1))
+      if (change === 'select costume') gen.setReferenceCostume(costume.id)
+      else gen.setReferenceImage(change === 'remove' ? null : mockFile('replacement.png'))
+      const [config, files] = gen.export()
+      expect(config.generateVideoTaskSerialized).toBeUndefined()
+      const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+      resume()
+      expect(await pending).toBeInstanceOf(Error)
+      expect(gen.video).toBeNull()
+      expect([...aigcMock.tasks.values()][0].task.status).toBe(TaskStatus.Cancelled)
+      expect(loaded.generateVideoState.status).toBe('initial')
+      await gen.generateVideo()
+      const videoTask = [...aigcMock.tasks.values()].at(-1)!
+      expect(videoTask.params).toMatchObject({
+        settings: {
+          referenceFrameUrl:
+            change === 'replace' ? 'kodo://mock-bucket/replacement.png' : 'kodo://mock-bucket/default.png'
+        }
+      })
+      gen.dispose()
+      loaded.dispose()
+    }
+  )
+
+  it('does not start video generation after the reference changes during upload', async () => {
+    let resume!: () => void
+    const paused = new Promise<void>((resolve) => {
+      resume = resolve
+    })
+    mockSaveFile().mockImplementationOnce(async () => {
+      await paused
+      return 'kodo://mock-bucket/reference.png'
+    })
+    const gen = new AnimationGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject(), {
+      referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
+    })
+    const pending = gen.generateVideo().catch((error) => error)
+    await flushPromises()
+    gen.setReferenceImage(mockFile('replacement.png'))
+    resume()
+    expect(await pending).toBeInstanceOf(Error)
+    expect(aigcMock.tasks.size).toBe(0)
+    gen.dispose()
+  })
+
+  it.each(['missing-path', 'missing-file'])('loads generated video with a %s reference', async (failure) => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: 'walk' },
+      referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
+    })
+    await gen.generateVideo()
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    if (failure === 'missing-path') delete config.referenceImagePath
+    else delete files[config.referenceImagePath!]
+    const loaded = AnimationGen.load(i18n, sprite, project, config, files)
+    expect(loaded.referenceImageSelection).toBeNull()
+    expect(loaded.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
+    expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
+    gen.dispose()
+    loaded.dispose()
   })
 })
