@@ -28,11 +28,11 @@ describe('editor translation demo adapter', () => {
     ).toBe('Think sends a message.')
   })
 
-  it('keeps the definition structure and places the demo label inline with its body', () => {
+  it('renders definition translations as body content without repeating the signature', () => {
     const markdown =
       '<pre is="definition-item" def-id="xgo:ai?think" overview="func think(msg string)">\nThink sends a message.\n</pre>'
     expect(formatDocumentationTranslation(markdown, '【模拟翻译】Think sends a message.')).toBe(
-      '<pre is="definition-item" def-id="xgo:ai?think" overview="func think(msg string)">【模拟翻译】Think sends a message.</pre>'
+      '【模拟翻译】Think sends a message.'
     )
   })
 

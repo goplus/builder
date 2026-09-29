@@ -164,6 +164,7 @@ useDecorations(() => {
     trigger="manual"
     :pos="dropdownPos"
     placement="top-start"
+    :flip="false"
     :offset="{ x: 0, y: 4 }"
   >
     <HoverCard

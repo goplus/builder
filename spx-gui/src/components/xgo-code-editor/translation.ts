@@ -35,18 +35,10 @@ export function extractDocumentationExplanation(markdown: string): string {
     .trim()
 }
 
-/** Keep the definition signature and component structure while replacing its explanatory body. */
+/** Render definition translations as body content so the signature is not repeated. */
 export function formatDocumentationTranslation(markdown: string, translated: string): string {
-  let replaced = false
-  const result = markdown.replace(
-    definitionItemPattern,
-    (definitionItem, openingTag: string, _body: string, closingTag: string) => {
-      if (replaced) return definitionItem
-      replaced = true
-      return `${openingTag}${translated.trimStart()}${closingTag}`
-    }
-  )
-  return replaced ? result : translated
+  const hasDefinitionItem = new RegExp(definitionItemPattern.source, definitionItemPattern.flags).test(markdown)
+  return hasDefinitionItem ? translated.trimStart() : translated
 }
 
 const exactMockTranslations: Array<[RegExp, string]> = [
