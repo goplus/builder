@@ -222,9 +222,9 @@ export class AnimationGen extends Disposable {
     this.setVideo(null)
     this.setFramesConfig(null)
     this.resetGenerateVideoTasks()
-    const task = new Task(TaskType.GenerateAnimationVideo)
+    this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
+    const task = this.generateVideoTask
     this.addDisposable(task)
-    this.generateVideoTask = task
     const signal = task.getSignal()
     const video = await this.generateVideoPhase.run(async (reporter) => {
       const image =

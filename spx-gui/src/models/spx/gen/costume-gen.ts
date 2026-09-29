@@ -202,9 +202,9 @@ export class CostumeGen extends Disposable {
     this.setImage(null)
     this.generateTask?.tryCancel()
     this.generateTask?.dispose()
-    const task = new Task(TaskType.GenerateCostume)
+    this.generateTask = new Task(TaskType.GenerateCostume)
+    const task = this.generateTask
     this.addDisposable(task)
-    this.generateTask = task
     const signal = task.getSignal()
     const image = await this.generatePhase.run(async (reporter) => {
       let referenceImageUrl: string | null = null

@@ -216,9 +216,9 @@ export class SpriteGen extends Disposable {
     this.setImageIndex(null)
     this.genImagesTask?.tryCancel()
     this.genImagesTask?.dispose()
-    const task = new Task(TaskType.GenerateCostume)
+    this.genImagesTask = new Task(TaskType.GenerateCostume)
+    const task = this.genImagesTask
     this.addDisposable(task)
-    this.genImagesTask = task
     const signal = task.getSignal()
     return this.genImagesPhase.run(async (reporter) => {
       const settings = this.getDefaultCostumeSettings()
