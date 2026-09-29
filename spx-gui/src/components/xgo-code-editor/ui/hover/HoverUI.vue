@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watchPostEffect } from 'vue'
+import { computed, nextTick, onScopeDispose, ref, watchPostEffect } from 'vue'
 import { UIDropdown, UIIcon, type DropdownPos } from '@/components/ui'
 import { useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -15,6 +15,7 @@ import {
   formatDocumentationTranslation,
   type EditorTranslationRequest
 } from '../../translation'
+import { resolveHoverLayout, resolveHoverMaxHeight, type HoverPlacement } from './layout'
 
 const props = defineProps<{
   controller: HoverController
@@ -24,6 +25,8 @@ const codeEditorUICtx = useCodeEditorUICtx()
 
 const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
+const hoverPlacement = ref<HoverPlacement>('top-start')
+const hoverCardMaxHeight = ref(376)
 const hoverCardRef = ref<InstanceType<typeof HoverCard> | null>(null)
 const hoveredTextCls = 'code-editor-hovered-text'
 
@@ -94,6 +97,18 @@ function getRenderedTranslation(contentIndex: number) {
   return formatDocumentationTranslation(source, translated)
 }
 
+function updateHoverMaxHeight() {
+  if (!dropdownVisible.value) return
+  const anchorRect = {
+    top: dropdownPos.value.y,
+    bottom: dropdownPos.value.y + (dropdownPos.value.height ?? 0)
+  }
+  hoverCardMaxHeight.value = resolveHoverMaxHeight(hoverPlacement.value, anchorRect, window.innerHeight)
+}
+
+window.addEventListener('resize', updateHoverMaxHeight)
+onScopeDispose(() => window.removeEventListener('resize', updateHoverMaxHeight))
+
 async function handleAction(action: InternalAction) {
   if (action.command !== builtInCommandTranslate) {
     props.controller.hideHover()
@@ -110,6 +125,7 @@ async function handleAction(action: InternalAction) {
 let renderedHover = props.controller.hover
 watchPostEffect(async () => {
   const hover = props.controller.hover
+  const isNewHover = hover !== renderedHover
   if (hover !== renderedHover) {
     props.controller.resetTranslation()
     renderedHover = hover
@@ -135,6 +151,11 @@ watchPostEffect(async () => {
     y: rect.y,
     width: rect.width,
     height: rect.height
+  }
+  if (isNewHover) {
+    const layout = resolveHoverLayout(rect, window.innerHeight)
+    hoverPlacement.value = layout.placement
+    hoverCardMaxHeight.value = layout.maxHeight
   }
 })
 
@@ -163,7 +184,7 @@ useDecorations(() => {
     :visible="dropdownVisible"
     trigger="manual"
     :pos="dropdownPos"
-    placement="top-start"
+    :placement="hoverPlacement"
     :flip="false"
     :offset="{ x: 0, y: 4 }"
   >
@@ -171,6 +192,7 @@ useDecorations(() => {
       v-if="controller.hover != null"
       ref="hoverCardRef"
       :actions="hoverActions"
+      :max-height="hoverCardMaxHeight"
       @mouseenter="controller.emit('cardMouseEnter', $event)"
       @mouseleave="controller.emit('cardMouseLeave', $event)"
       @action="handleAction"

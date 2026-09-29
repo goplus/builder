@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, type CSSProperties } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useContentSize } from '@/utils/dom'
 import type { Action } from '../../common'
@@ -10,6 +10,7 @@ import ActionButton from './ActionButton.vue'
 
 const props = defineProps<{
   actions: Action[]
+  maxHeight?: number
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +27,14 @@ const cardWidth = computed(() => {
   const horizontalPadding = 32
   return Math.min(520, Math.max(defaultWidth, (actionListSize.value?.width ?? 0) + horizontalPadding))
 })
+
+const cardStyle = computed(
+  () =>
+    ({
+      '--hover-card-width': `${cardWidth.value}px`,
+      ...(props.maxHeight == null ? {} : { '--hover-card-max-height': `${props.maxHeight}px` })
+    }) satisfies CSSProperties
+)
 
 const actions = computed(() => {
   return props.actions.map((a) => codeEditorCtx.ui.resolveAction(a)).filter((a) => a != null) as InternalAction[]
@@ -52,10 +61,7 @@ defineExpose({ scrollToTranslation })
 </script>
 
 <template>
-  <CodeEditorCard
-    class="hover-card flex flex-col items-stretch p-2"
-    :style="{ '--hover-card-width': `${cardWidth}px` }"
-  >
+  <CodeEditorCard class="hover-card flex flex-col items-stretch p-2" :style="cardStyle">
     <ul ref="contentListRef" class="hover-card-content-list flex flex-col gap-4">
       <slot></slot>
     </ul>
@@ -80,11 +86,15 @@ defineExpose({ scrollToTranslation })
 
 <style scoped>
 .hover-card {
+  box-sizing: border-box;
   width: min(var(--hover-card-width), calc(100vw - 24px));
   max-width: min(520px, calc(100vw - 24px));
+  max-height: var(--hover-card-max-height, none);
+  overflow: hidden;
 }
 
 .hover-card-content-list {
+  flex: 1 1 auto;
   width: 100%;
   min-height: 0;
   max-height: 300px;
