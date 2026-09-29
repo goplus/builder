@@ -137,7 +137,7 @@ When working with backend unique string identifiers such as `username`, project 
 
 ## Vue Component Development
 
-* Generate accessibility info for interactive elements using `v-radar` directive.
+* Generate accessibility info for interactive elements using `v-radar` directive. It sets `aria-label` from `name`, so do not add a separate `aria-label` to the same element.
 * Keep Vue SFC sections in this logical order when applicable: optional `<script>`, `<script setup>`, `<template>`, then optional `<style>`.
 * Use the optional `<script>` section for definitions that belong to the same component but can be reused across multiple component instances, such as constants or helper functions.
 
