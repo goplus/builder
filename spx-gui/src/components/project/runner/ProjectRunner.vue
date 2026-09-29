@@ -224,6 +224,7 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
       capture(err, 'ProjectRunner game error')
     })
     iframeWindow.onGameExit((code: number) => {
+      emitExecutionLocation.cancel()
       emit('exit', code)
     })
     iframeWindow.onEngineCrash((err: string) => {
