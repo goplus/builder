@@ -14,7 +14,7 @@ export interface Runtime {
   readonly outputs: readonly RuntimeOutput[];
   /** Current SPX source line reported by the runtime. */
   readonly location: RuntimeLocation | null;
-  /** Planned for the Tutorial Class Framework; the current Runtime does not emit this yet. */
+  /** New event needed by the Tutorial Class Framework runtime namespace. */
   on(event: "didStart", listener: () => void): Disposer;
   on(event: "didChangeOutput", listener: () => void): Disposer;
   on(event: "didChangeLocation", listener: () => void): Disposer;
