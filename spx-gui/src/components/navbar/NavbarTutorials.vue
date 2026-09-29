@@ -3,7 +3,7 @@
     <template #trigger="{ dropdownVisible }">
       <button
         v-radar="{
-          name: 'Tutorial course entry',
+          name: 'tutorial-course-entry',
           desc: 'Shows the course in progress; click to open the tutorial control panel'
         }"
         type="button"

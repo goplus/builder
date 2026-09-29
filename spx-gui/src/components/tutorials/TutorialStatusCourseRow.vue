@@ -25,7 +25,11 @@ const [thumbnailUrl] = useFileUrl(() =>
 
 <template>
   <li
-    v-radar="{ name: `Course: ${course.title}`, desc: 'Click to open this course' }"
+    v-radar="{
+      name: 'tutorial-course-row',
+      desc: active ? 'Current course in the series' : 'Click to start this course',
+      attrs: { name: course.title }
+    }"
     :aria-current="active ? 'step' : undefined"
     class="flex h-11 flex-none cursor-pointer items-center gap-2 rounded-[6px] py-1 pl-1 pr-2 transition-colors"
     :class="active ? 'bg-turquoise-100 hover:bg-turquoise-200' : 'hover:bg-grey-200'"
