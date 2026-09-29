@@ -5,7 +5,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { SpxProject } from '@/models/spx/project'
 import { UIButton, UITooltip } from '@/components/ui'
 import ProjectRunner from './ProjectRunner.vue'
-import type { ProjectRunnerLocation, ProjectRunnerOutput } from './types'
+import type { ProjectRunnerExecutionLocation, ProjectRunnerLog } from './spx-log'
 
 type RunnerState = 'initial' | 'loading' | 'running'
 
@@ -39,8 +39,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:fullscreen': [value: boolean]
   exit: [code: number]
-  output: [output: ProjectRunnerOutput]
-  location: [location: ProjectRunnerLocation]
+  log: [log: ProjectRunnerLog]
+  executionLocation: [location: ProjectRunnerExecutionLocation]
 }>()
 
 const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
@@ -480,8 +480,8 @@ defineExpose({
           :track-execution-location="props.trackExecutionLocation"
           class="runner"
           :project="project"
-          @output="(output) => emit('output', output)"
-          @location="(location) => emit('location', location)"
+          @log="(log) => emit('log', log)"
+          @execution-location="(location) => emit('executionLocation', location)"
           @exit="(code) => emit('exit', code)"
         />
         <slot v-if="!overlayActive" name="inline-overlay" />

@@ -53,7 +53,6 @@ type RunnerFiles = {
 }
 
 interface RunnerIframeWindow extends Window {
-  __xb_track_execution_location?: boolean
   xbuilder_set_ai_interaction_api_endpoint: (endpoint: string) => void
   xbuilder_set_ai_interaction_api_token_provider: (provider: () => Promise<string>) => void
   xbuilder_set_ai_description: (description: string) => void
@@ -77,6 +76,8 @@ interface RunnerIframeWindow extends Window {
    * It is set to `true` before reloading and reset to `false` after reloaded.
    */
   __xb_is_stale?: boolean
+  /** Set before ispx initialization to emit the current SPX source line. */
+  __xb_track_execution_location?: boolean
 }
 
 async function loadFiles(files: Files, reporter: ProgressReporter, signal?: AbortSignal) {
@@ -161,8 +162,7 @@ import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
 import { client } from '@/apis/common'
 import errorBgUrl from './error-bg.svg'
-import { parseSpxConsoleLog } from './spx-log'
-import type { ProjectRunnerLocation, ProjectRunnerOutput } from './types'
+import { parseSpxConsoleLog, type ProjectRunnerExecutionLocation, type ProjectRunnerLog } from './spx-log'
 
 const runnerBaseUrl = getProjectRunnerBaseUrl()
 const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
@@ -172,8 +172,8 @@ const assetURLs = getProjectRunnerAssetURLs()
 const props = defineProps<{ project: SpxProject; trackExecutionLocation?: boolean }>()
 
 const emit = defineEmits<{
-  output: [output: ProjectRunnerOutput]
-  location: [location: ProjectRunnerLocation]
+  log: [log: ProjectRunnerLog]
+  executionLocation: [location: ProjectRunnerExecutionLocation]
   exit: [code: number]
 }>()
 
@@ -196,12 +196,12 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   iframeWindow.__xb_track_execution_location = props.trackExecutionLocation === true
   iframeWindow.console.log = function (...args: unknown[]) {
     const event = typeof args[0] === 'string' ? parseSpxConsoleLog(args[0]) : null
-    if (event?.type !== 'location') {
+    if (event?.type !== 'executionLocation') {
       // eslint-disable-next-line no-console
       console.log(...args)
     }
-    if (event?.type === 'output') emit('output', event.output)
-    else if (event?.type === 'location') emit('location', event.location)
+    if (event?.type === 'log') emit('log', event.log)
+    else if (event?.type === 'executionLocation') emit('executionLocation', event.executionLocation)
     else if (event?.type === 'unknown') capture(new Error(`Unknown spx runtime log: ${args[0]}`))
   }
   iframeWindow.console.warn = function (...args: unknown[]) {
