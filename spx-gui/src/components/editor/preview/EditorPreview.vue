@@ -9,18 +9,65 @@
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
-        <UIButton
-          v-show="canManageProject"
-          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-          type="secondary"
-          icon="publish"
-          :disabled="!isOnline"
-          @click="handlePublishProject"
-        >
+        <UITooltip placement="top-end">
+          <template #trigger>
+            <UIButton
+              v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+              type="primary"
+              shape="square"
+              icon="playHollow"
+              :aria-label="$t({ en: 'Run', zh: '运行' })"
+              :loading="handleRun.isLoading.value"
+              @click="handleRun.fn"
+            ></UIButton>
+          </template>
+          {{ $t({ en: 'Run', zh: '运行' }) }}
+        </UITooltip>
+        <UITooltip v-if="canManageProject" placement="top-end">
+          <template #trigger>
+            <UIButton
+              v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+              type="secondary"
+              shape="square"
+              icon="publish"
+              :aria-label="$t({ en: 'Publish', zh: '发布' })"
+              :disabled="!isOnline"
+              @click="handlePublishProject"
+            ></UIButton>
+          </template>
           {{ $t({ en: 'Publish', zh: '发布' }) }}
-        </UIButton>
+        </UITooltip>
       </template>
       <template v-else>
+        <UITooltip placement="top-end">
+          <template #trigger>
+            <UIButton
+              v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
+              type="primary"
+              shape="square"
+              icon="rotate"
+              :aria-label="$t({ en: 'Rerun', zh: '重新运行' })"
+              :disabled="runnerState !== 'running' || handleStop.isLoading.value"
+              :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
+              @click="handleRerun.fn"
+            ></UIButton>
+          </template>
+          {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+        </UITooltip>
+        <UITooltip placement="top-end">
+          <template #trigger>
+            <UIButton
+              v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+              type="neutral"
+              shape="square"
+              icon="end"
+              :aria-label="$t({ en: 'Stop', zh: '停止' })"
+              :loading="handleStop.isLoading.value"
+              @click="handleStop.fn"
+            ></UIButton>
+          </template>
+          {{ $t({ en: 'Stop', zh: '停止' }) }}
+        </UITooltip>
         <UITooltip placement="top-end">
           <template #trigger>
             <UIButton
@@ -36,46 +83,6 @@
         </UITooltip>
       </template>
     </UICardHeader>
-    <Teleport v-if="runActionsReady" to="#editor-run-actions">
-      <UIButton
-        v-if="runnerState === 'initial'"
-        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-        type="primary"
-        icon="playHollow"
-        :loading="handleRun.isLoading.value"
-        @click="handleRun.fn"
-      >
-        {{ $t({ en: 'Run', zh: '运行' }) }}
-      </UIButton>
-      <template v-else>
-        <UIButton
-          v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
-          type="primary"
-          icon="rotate"
-          :shape="compactControls ? 'square' : 'default'"
-          :aria-label="$t({ en: 'Rerun', zh: '重新运行' })"
-          :title="$t({ en: 'Rerun', zh: '重新运行' })"
-          :disabled="runnerState !== 'running' || handleStop.isLoading.value"
-          :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
-          @click="handleRerun.fn"
-        >
-          <span v-if="!compactControls">{{ $t({ en: 'Rerun', zh: '重新运行' }) }}</span>
-        </UIButton>
-        <UIButton
-          v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
-          type="neutral"
-          icon="end"
-          :shape="compactControls ? 'square' : 'default'"
-          :aria-label="$t({ en: 'Stop', zh: '停止' })"
-          :title="$t({ en: 'Stop', zh: '停止' })"
-          :loading="handleStop.isLoading.value"
-          @click="handleStop.fn"
-        >
-          <span v-if="!compactControls">{{ $t({ en: 'Stop', zh: '停止' }) }}</span>
-        </UIButton>
-      </template>
-    </Teleport>
-
     <div class="min-h-0 flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': fillContainer }">
       <div
         ref="stageContainerRef"
@@ -186,7 +193,7 @@ function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -226,12 +233,10 @@ const signedInUser = useSignedInUser()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
-const runActionsReady = ref(false)
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
 const stageContainerSize = useContentSize(stageContainerRef)
-const compactControls = computed(() => stageContainerSize.value != null && stageContainerSize.value.width < 336)
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 // Fill the unused panel area decoratively without extending the interactive game viewport.
 const [focusedBackdropSrc] = useRenderableImageUrl(() =>
@@ -493,12 +498,6 @@ function handleEnterFullscreen() {
   if (runnerState.value === 'initial') return
   handleFullscreenChange(true)
 }
-
-onMounted(() => {
-  nextTick(() => {
-    runActionsReady.value = true
-  })
-})
 
 onBeforeUnmount(() => {
   if (runnerHostReleaseTimer != null) {

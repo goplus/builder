@@ -2,21 +2,18 @@
   <div
     v-show="isPreviewMode"
     ref="previewColumnRef"
-    class="min-w-0 flex flex-none flex-col gap-xl"
-    :class="[
-      'order-1',
-      { 'h-full overflow-y-auto': isPortraitLayout, 'pointer-events-none': resizing != null }
-    ]"
+    class="order-1 min-w-0 flex flex-none flex-col gap-xl"
+    :class="{ 'h-full overflow-y-auto': isPortraitLayout }"
     :style="previewColumnStyle"
   >
     <div v-if="isPortraitLayout" class="min-h-full flex flex-none gap-xl">
-      <div class="min-w-0 flex flex-[1_1_0] flex-col gap-xl pb-4">
+      <div class="min-w-0 flex flex-[1_1_0] flex-col gap-xl">
         <EditorPreview class="min-w-0 flex-none" />
         <EditorPanels layout="portrait" />
       </div>
       <UICard
         v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
-        class="w-28 min-w-0 flex-none"
+        class="w-26 min-w-0 flex-none"
       >
         <SpritesPanel layout="vertical" header-height="large" />
       </UICard>
@@ -80,30 +77,7 @@
       ></div>
       <ConsolePanel class="h-full" />
     </div>
-    <div
-      v-radar="{ name: 'Editor pane resize handle', desc: 'Drag to resize code and preview panels' }"
-      role="separator"
-      aria-orientation="vertical"
-      aria-controls="project-code-pane"
-      :aria-label="$t({ en: 'Resize code and preview panels', zh: '调整代码与预览区域宽度' })"
-      :aria-valuemin="Math.round(paneLayout?.minCodeWidth ?? 0)"
-      :aria-valuemax="Math.round(paneLayout?.maxCodeWidth ?? 0)"
-      :aria-valuenow="Math.round(paneLayout?.codeWidth ?? 0)"
-      :title="$t({ en: 'Drag to resize; double-click to reset', zh: '拖动调整宽度，双击恢复基准尺寸' })"
-      tabindex="0"
-      class="group absolute inset-y-0 -left-4 z-10 w-4 touch-none cursor-col-resize select-none flex items-center justify-center focus-visible:outline-none"
-      @pointerdown="startResizing"
-      @keydown="handleResizeKey"
-      @dblclick="preferredCodeWidths[props.layout] = null"
-    >
-      <div
-        class="h-12 w-0.5 rounded-full bg-grey-500 transition-colors group-hover:bg-primary-main group-focus-visible:bg-primary-main"
-        :class="{ 'bg-primary-main!': resizing?.moved }"
-      ></div>
-    </div>
   </UICard>
-  <!-- Prevent the runner iframe from swallowing pointer events during a drag. -->
-  <div v-if="resizing?.moved" class="fixed inset-0 z-50 cursor-col-resize select-none"></div>
   <MapEditor
     v-if="!isPreviewMode"
     :project="editorCtx.project"
@@ -113,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useContentSize } from '@/utils/dom'
 import { getCleanupSignal } from '@/utils/disposable'
 import { UICard } from '@/components/ui'
@@ -146,18 +120,12 @@ const isFocusedLayout = computed(() => props.layout === 'focused')
 const isPortraitLayout = computed(() => props.layout === 'portrait')
 const previewColumnRef = ref<HTMLElement | null>(null)
 const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
-const preferredCodeWidths = reactive<Record<EditorLayout, number | null>>({
-  landscape: null,
-  portrait: null,
-  focused: null
-})
 const paneLayout = computed(() => {
   const size = editorSize.value
   if (size == null) return null
-  return getPaneLayout(size, project.value.viewportSize, props.layout, preferredCodeWidths[props.layout])
+  return getPaneLayout(size, project.value.viewportSize, props.layout)
 })
 const previewColumnStyle = computed(() => ({ width: `${paneLayout.value?.previewWidth ?? 496}px` }))
-const resizing = ref<{ pointerId: number; startX: number; codeWidth: number; moved: boolean } | null>(null)
 const CONSOLE_LINE_HEIGHT = 16
 const CONSOLE_ITEM_GAP = 4
 const CONSOLE_VERTICAL_PADDING = 24
@@ -176,54 +144,9 @@ const editorPaneStyle = computed(() => ({
   '--editor-console-safe-area': `${consoleSafeArea.value}px`
 }))
 
-function setCodeWidth(width: number) {
-  const layout = paneLayout.value
-  if (layout == null) return
-  preferredCodeWidths[props.layout] = Math.min(layout.maxCodeWidth, Math.max(layout.minCodeWidth, width))
-}
-
-function startResizing(event: PointerEvent) {
-  if (event.button !== 0 || !event.isPrimary || paneLayout.value == null) return
-  event.preventDefault()
-  ;(event.currentTarget as HTMLElement).focus({ preventScroll: true })
-  resizing.value = {
-    pointerId: event.pointerId,
-    startX: event.clientX,
-    codeWidth: paneLayout.value.codeWidth,
-    moved: false
-  }
-}
-
-function resizePanes(event: PointerEvent) {
-  const drag = resizing.value
-  if (drag == null || event.pointerId !== drag.pointerId) return
-  if (!drag.moved && Math.abs(event.clientX - drag.startX) < 3) return
-  drag.moved = true
-  const offset = event.clientX - drag.startX
-  setCodeWidth(drag.codeWidth - offset)
-}
-
-function stopResizing() {
-  resizing.value = null
-}
-
 function setConsoleHeight(height: number) {
   preferredConsoleHeight.value = Math.min(maxConsoleHeight.value, Math.max(MIN_CONSOLE_HEIGHT, height))
 }
-
-watchEffect((onCleanup) => {
-  if (resizing.value == null) return
-  window.addEventListener('pointermove', resizePanes)
-  window.addEventListener('pointerup', stopResizing)
-  window.addEventListener('pointercancel', stopResizing)
-  window.addEventListener('blur', stopResizing)
-  onCleanup(() => {
-    window.removeEventListener('pointermove', resizePanes)
-    window.removeEventListener('pointerup', stopResizing)
-    window.removeEventListener('pointercancel', stopResizing)
-    window.removeEventListener('blur', stopResizing)
-  })
-})
 
 watchEffect((onCleanup) => {
   if (consoleResizeHandleEl.value == null) return
@@ -257,19 +180,6 @@ watchEffect((onCleanup) => {
   )
   signal.addEventListener('abort', endResizing)
 })
-
-function handleResizeKey(event: KeyboardEvent) {
-  const layout = paneLayout.value
-  if (layout == null || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-  event.preventDefault()
-  setCodeWidth(
-    event.key === 'Home'
-      ? layout.minCodeWidth
-      : event.key === 'End'
-        ? layout.maxCodeWidth
-        : layout.codeWidth + (event.key === 'ArrowRight' ? -16 : 16)
-  )
-}
 
 function handleConsoleResizeKey(event: KeyboardEvent) {
   if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return

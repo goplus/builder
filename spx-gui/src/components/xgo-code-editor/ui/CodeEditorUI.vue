@@ -187,6 +187,7 @@ const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
+const editorToolsEl = ref<HTMLElement>()
 const sidebarWidth = userLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
 const isResizing = ref(false)
 
@@ -200,7 +201,7 @@ watchEffect((onCleanup) => {
   }
   function handleMouseMove(e: MouseEvent) {
     const offset = e.clientX - resizing.initialClientX
-    sidebarWidth.value = Math.min(Math.max(minSidebarWidth, resizing.initialWidth + offset), resizing.maxWidth)
+    sidebarWidth.value = Math.min(Math.max(minSidebarWidth, resizing.initialWidth - offset), resizing.maxWidth)
   }
   function endResizing() {
     isResizing.value = false
@@ -214,7 +215,12 @@ watchEffect((onCleanup) => {
       resizing = {
         initialClientX: e.clientX,
         initialWidth: sidebarWidth.value,
-        maxWidth: codeEditorEl.value!.clientWidth - minMonacoEditorWidth
+        maxWidth: Math.max(
+          minSidebarWidth,
+          codeEditorEl.value!.clientWidth -
+            minMonacoEditorWidth -
+            (editorToolsEl.value?.offsetWidth ?? 0)
+        )
       }
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', endResizing)
@@ -249,19 +255,6 @@ providePopupContainer(codeEditorEl)
     class="relative flex min-h-0 flex-[1_1_0] justify-stretch"
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
-    <aside
-      class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
-      :style="{ flexBasis: `${sidebarWidth}px` }"
-    >
-      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
-    </aside>
-    <div
-      ref="resizeHandleEl"
-      v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
-      class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
-      :class="{ 'bg-black/10': isResizing }"
-      :style="{ left: `${sidebarWidth}px` }"
-    ></div>
     <MonacoEditorComp
       v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
       class="my-3 min-w-0 flex-[1_1_0]"
@@ -279,9 +272,23 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
+    <aside ref="editorToolsEl" class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
       <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+    </aside>
+    <div class="relative h-full w-0 flex-none">
+      <div
+        ref="resizeHandleEl"
+        v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
+        class="absolute inset-y-0 z-10 -left-1.75 w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
+        :class="{ 'bg-black/10': isResizing }"
+      ></div>
+    </div>
+    <aside
+      class="relative flex min-h-0 min-w-0 flex-none flex-col border-l border-l-dividing-line-2"
+      :style="{ flexBasis: `${sidebarWidth}px` }"
+    >
+      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
     </aside>
   </div>
 </template>

@@ -11,12 +11,6 @@
   </UICard>
   <div v-else class="flex flex-[1_1_0] gap-xl">
     <UICard
-      v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
-      class="min-w-0 flex flex-[1_1_0]"
-    >
-      <SpritesPanel />
-    </UICard>
-    <UICard
       v-radar="{
         name: 'Stage panel',
         desc: 'Panel for stage of the project, with quick entries to widgets, sounds and backdrops tabs'
@@ -24,6 +18,12 @@
       class="flex-none"
     >
       <StagePanel />
+    </UICard>
+    <UICard
+      v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
+      class="min-w-0 flex flex-[1_1_0]"
+    >
+      <SpritesPanel />
     </UICard>
   </div>
 </template>
