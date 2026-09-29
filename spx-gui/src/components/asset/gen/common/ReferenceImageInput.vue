@@ -116,13 +116,12 @@ const handleUpload = useReferenceImageUpload((file) => {
     <template v-if="localImage == null" #additional-options="{ disabled }">
       <button
         v-radar="{
-          name: 'Upload local reference image',
+          name: $t({ en: 'Upload reference image', zh: '上传参考图片' }),
           desc: 'Click to upload a local reference image'
         }"
         type="button"
         class="h-22 w-22 flex-none flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-grey-400 bg-grey-100 text-xs text-grey-700 cursor-pointer transition-colors enabled:hover:border-primary-main enabled:hover:bg-grey-300 enabled:active:bg-grey-400 focus-visible:border-primary-main focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
         :disabled="disabled"
-        :aria-label="$t({ en: 'Upload reference image', zh: '上传参考图片' })"
         @click="handleUpload"
       >
         <UIIcon type="upload" class="h-6 w-6" />
