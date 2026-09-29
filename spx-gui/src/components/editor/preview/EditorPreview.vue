@@ -112,8 +112,8 @@
             :on-stop="handleStop.fn"
             :stop-loading="handleStop.isLoading.value"
             :inline-anchor="getStageInlineAnchor"
-            @output="handleOutput"
-            @location="handleLocation"
+            @log="handleLog"
+            @execution-location="handleExecutionLocation"
             @update:fullscreen="handleFullscreenChange"
             @exit="handleExit"
           />
@@ -166,7 +166,7 @@ import { useSignedInUser } from '@/stores/user'
 import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
 import { usePublishProject } from '@/components/project'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
-import type { ProjectRunnerLocation, ProjectRunnerOutput } from '@/components/project/runner/types'
+import type { ProjectRunnerExecutionLocation, ProjectRunnerLog } from '@/components/project/runner/spx-log'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
   useCodeEditor,
@@ -257,17 +257,24 @@ function keepRunnerHostVisibleForOverlay() {
   }, 450)
 }
 
-function handleOutput(output: ProjectRunnerOutput) {
+function handleLog(log: ProjectRunnerLog) {
+  const { file, line, column } = log.source
   runtime.value.addOutput({
-    kind: output.kind === 'log' ? RuntimeOutputKind.Log : RuntimeOutputKind.Error,
-    time: output.time,
-    message: output.message,
-    source: output.source
+    kind: log.level === 'ERROR' ? RuntimeOutputKind.Error : RuntimeOutputKind.Log,
+    time: log.time,
+    message: log.message,
+    source: {
+      textDocument: { uri: `file:///${file}` },
+      range: {
+        start: { line, column },
+        end: { line, column }
+      }
+    }
   })
 }
 
-function handleLocation(location: ProjectRunnerLocation) {
-  runtime.value.setLocation(location)
+function handleExecutionLocation(location: ProjectRunnerExecutionLocation) {
+  runtime.value.setLocation({ textDocument: { uri: `file:///${location.file}` }, line: location.line })
 }
 
 function handleExit(code: number) {
@@ -332,6 +339,7 @@ async function executeRun(action: 'run' | 'rerun') {
   const surface = await untilNotNull(projectRunnerSurfaceRef)
   runtime.value.clearOutputs()
   editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
+  editorCtx.state.runtime.beginLocationTracking()
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
     runnerState.value = 'running'

@@ -41,13 +41,12 @@ function withMockedAnimationFrame() {
 }
 
 describe('Runtime', () => {
-  it('batches location updates and clears immediately on stop and restart', () => {
-    vi.useFakeTimers()
-    withMockedAnimationFrame()
+  it('reports location changes and rejects delayed locations after exit', () => {
     const runtime = makeRuntime()
     const events: Array<number | null> = []
     runtime.on('didChangeLocation', () => events.push(runtime.location?.line ?? null))
     runtime.setRunning({ mode: 'debug', initializing: true })
+    runtime.beginLocationTracking()
     const location = (line: number) => ({
       textDocument: { uri: 'file:///Sprite.spx' },
       line
@@ -55,27 +54,26 @@ describe('Runtime', () => {
 
     runtime.setLocation(location(1))
     runtime.setLocation(location(2))
-    flushOutputs()
-    expect(events).toEqual([2])
+    expect(events).toEqual([1, 2])
 
     runtime.setLocation(location(3))
     runtime.setRunning({ mode: 'none' })
-    expect(events).toEqual([2, null])
-    flushOutputs()
-    expect(events).toEqual([2, null])
+    expect(events).toEqual([1, 2, 3, null])
 
     runtime.setRunning({ mode: 'debug', initializing: true })
+    runtime.beginLocationTracking()
     runtime.setLocation(location(4))
     runtime.invalidateLocation()
     runtime.setLocation(location(5))
     expect(runtime.location).toBeNull()
     runtime.setRunning({ mode: 'debug', initializing: true })
     runtime.setLocation(location(6))
+    expect(runtime.location).toBeNull()
+    runtime.beginLocationTracking()
+    runtime.setLocation(location(6))
     runtime.clearOutputs()
     expect(runtime.location).toBeNull()
     runtime.dispose()
-    vi.useRealTimers()
-    vi.unstubAllGlobals()
   })
 
   it('should keep latest outputs within default max size and assign stable ids', () => {

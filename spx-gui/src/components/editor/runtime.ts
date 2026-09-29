@@ -51,7 +51,7 @@ export class Runtime extends Emitter<{
   private filesHashRef = ref<string | null>(null)
   private outputsRef = shallowRef<RuntimeOutput[]>([])
   private locationRef = shallowRef<RuntimeLocation | null>(null)
-  private scheduledLocationFlush: number | null = null
+  // The console remains in debug mode after exit; reject delayed ispx locations until the next run.
   private locationAvailable = false
 
   get running() {
@@ -80,16 +80,7 @@ export class Runtime extends Emitter<{
     const current = this.locationRef.value
     if (current?.textDocument.uri === location?.textDocument.uri && current?.line === location?.line) return
     this.locationRef.value = location
-    if (this.scheduledLocationFlush != null) cancelAnimationFrame(this.scheduledLocationFlush)
-    if (location == null) {
-      this.scheduledLocationFlush = null
-      this.emit('didChangeLocation')
-    } else {
-      this.scheduledLocationFlush = requestAnimationFrame(() => {
-        this.scheduledLocationFlush = null
-        this.emit('didChangeLocation')
-      })
-    }
+    this.emit('didChangeLocation')
   }
 
   invalidateLocation() {
@@ -97,10 +88,13 @@ export class Runtime extends Emitter<{
     this.setLocation(null)
   }
 
+  beginLocationTracking() {
+    this.locationAvailable = true
+  }
+
   setRunning(running: RunningState, filesHash?: string) {
     if (running.mode === 'none') this.invalidateLocation()
     else if (running.initializing) this.setLocation(null)
-    if (running.mode === 'debug' && running.initializing) this.locationAvailable = true
     this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
       const nextHash = filesHash ?? this.filesHash
@@ -191,8 +185,6 @@ export class Runtime extends Emitter<{
     })
     this.addDisposer(() => {
       this.cancelScheduledDidChangeOutput()
-      if (this.scheduledLocationFlush != null) cancelAnimationFrame(this.scheduledLocationFlush)
-      this.scheduledLocationFlush = null
       this.locationRef.value = null
     })
     this.addDisposer(() => scope.stop())

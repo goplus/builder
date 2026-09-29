@@ -33,7 +33,6 @@ import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPositio
 import { InputHelperController, type InternalInputSlot } from './input-helper'
 import { InlayHintController } from './inlay-hint'
 import { DropIndicatorController } from './drop-indicator'
-import { ExecutionLineController } from './execution-line'
 import { SnippetParser } from './snippet'
 import {
   CopilotExplainKind,
@@ -182,7 +181,6 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   inputHelperController = new InputHelperController(this)
   inlayHintController = new InlayHintController(this)
   dropIndicatorController = new DropIndicatorController(this)
-  executionLineController = new ExecutionLineController()
   snippetParser = new SnippetParser(this)
 
   /** Temporary text document IDs */
