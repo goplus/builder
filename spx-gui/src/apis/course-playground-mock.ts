@@ -7,6 +7,7 @@ import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/mode
 import { Monitor } from '@/models/spx/widget/monitor'
 import { timeout } from '@/utils/utils'
 
+// TODO: Remove this temporary mock and its API hooks before merging the collaboration branch into dev/main.
 export const playgroundMockCourseSeriesID = 'playground-demo-series'
 const mockResponseDelay = 300
 

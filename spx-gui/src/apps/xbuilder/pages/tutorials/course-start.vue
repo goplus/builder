@@ -16,11 +16,8 @@ const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
 
 const allQueryRet = useQuery(
   async (ctx) => {
-    const courseID = props.courseIdInput
-    const seriesID = props.courseSeriesIdInput
     const [course, series] = await Promise.all([composeQuery(ctx, courseQueryRet), composeQuery(ctx, seriesQueryRet)])
     ctx.signal.throwIfAborted()
-    if (course.id !== courseID || series.id !== seriesID) throw new Error('Course Start route changed while loading')
     await tutorial.enterCourse(course, series)
   },
   { en: 'Failed to start course', zh: '启动课程失败' }

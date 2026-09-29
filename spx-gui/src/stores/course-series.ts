@@ -29,6 +29,8 @@ export function useSeriesCourses(seriesID: WatchSource<string | null>) {
     async queryFn(signal) {
       const id = seriesIDRef.value
       if (id == null) return []
+      // Assume a series fits in one API page (at most 100 courses).
+      // TODO: Load subsequent pages when a series can exceed this limit.
       const result = await listCourses(
         {
           courseSeriesID: id,
