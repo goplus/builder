@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { extractDocumentationExplanation, mockEditorTranslationProvider } from './translation'
+import {
+  extractDocumentationExplanation,
+  formatDocumentationTranslation,
+  mockEditorTranslationProvider
+} from './translation'
 
 describe('editor translation demo adapter', () => {
   it('keeps the definition signature out of the translated explanation', () => {
@@ -14,6 +18,22 @@ describe('editor translation demo adapter', () => {
         'func think(msg string)\n\nThink sends a message.\n\nfunc think(msg string, context map[string]any)'
       )
     ).toBe('Think sends a message.')
+    expect(extractDocumentationExplanation('type Player\n\nPlayer represents an AI agent.')).toBe(
+      'Player represents an AI agent.'
+    )
+    expect(
+      extractDocumentationExplanation(
+        '<pre is="definition-item" def-id="xgo:ai?think" overview="func think(msg string)">\nThink sends a message.\n</pre>'
+      )
+    ).toBe('Think sends a message.')
+  })
+
+  it('keeps the definition structure and places the demo label inline with its body', () => {
+    const markdown =
+      '<pre is="definition-item" def-id="xgo:ai?think" overview="func think(msg string)">\nThink sends a message.\n</pre>'
+    expect(formatDocumentationTranslation(markdown, '【模拟翻译】Think sends a message.')).toBe(
+      '<pre is="definition-item" def-id="xgo:ai?think" overview="func think(msg string)">【模拟翻译】Think sends a message.</pre>'
+    )
   })
 
   it('uses the demo translation for the supported diagnostic', async () => {

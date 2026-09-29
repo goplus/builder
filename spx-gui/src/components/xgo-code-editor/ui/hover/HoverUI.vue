@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchPostEffect } from 'vue'
+import { computed, nextTick, ref, watchPostEffect } from 'vue'
 import { UIDropdown, UIIcon, type DropdownPos } from '@/components/ui'
 import { useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -7,15 +7,14 @@ import MarkdownView from '../markdown/MarkdownView.vue'
 import HoverCard from './HoverCard.vue'
 import HoverCardContent from './HoverCardContent.vue'
 import type { HoverController } from '.'
-import {
-  builtInCommandCopilotExplain,
-  builtInCommandCopilotFixProblem,
-  builtInCommandTranslate,
-  type InternalAction
-} from '../code-editor-ui'
+import { builtInCommandCopilotFixProblem, builtInCommandTranslate, type InternalAction } from '../code-editor-ui'
 import DiagnosticItem from '../markdown/DiagnosticItem.vue'
 import { DiagnosticSeverity, type Action, type Diagnostic } from '../../common'
-import { extractDocumentationExplanation, type EditorTranslationRequest } from '../../translation'
+import {
+  extractDocumentationExplanation,
+  formatDocumentationTranslation,
+  type EditorTranslationRequest
+} from '../../translation'
 
 const props = defineProps<{
   controller: HoverController
@@ -25,6 +24,7 @@ const codeEditorUICtx = useCodeEditorUICtx()
 
 const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
+const hoverCardRef = ref<InstanceType<typeof HoverCard> | null>(null)
 const hoveredTextCls = 'code-editor-hovered-text'
 
 type TranslationTarget = EditorTranslationRequest & { contentIndex: number }
@@ -38,7 +38,7 @@ const translationTargets = computed<TranslationTarget[]>(() => {
   const fixAction = hover.actions.find((action) => action.command === builtInCommandCopilotFixProblem)
   const diagnostic = (fixAction?.arguments[0] as { problem?: Diagnostic } | undefined)?.problem
   const diagnosticContentIndex = diagnostic == null ? -1 : hover.contents.length - 1
-  if (hover.actions.some((action) => action.command === builtInCommandCopilotExplain)) {
+  if (hover.range != null) {
     hover.contents.forEach((content, contentIndex) => {
       if (contentIndex === diagnosticContentIndex || typeof content.value !== 'string') return
       const source = extractDocumentationExplanation(content.value)
@@ -86,8 +86,24 @@ function getTranslationDiagnosticSeverity(contentIndex: number) {
   return (getTranslationTarget(contentIndex)?.diagnosticSeverity ?? DiagnosticSeverity.Error) as DiagnosticSeverity
 }
 
-function handleAction(action: InternalAction) {
-  if (action.command !== builtInCommandTranslate) props.controller.hideHover()
+function getRenderedTranslation(contentIndex: number) {
+  const translated = getTranslationState(contentIndex)?.translated
+  if (translated == null || getTranslationTarget(contentIndex)?.kind !== 'documentation') return translated
+  const source = props.controller.hover?.contents[contentIndex]?.value
+  if (typeof source !== 'string') return translated
+  return formatDocumentationTranslation(source, translated)
+}
+
+async function handleAction(action: InternalAction) {
+  if (action.command !== builtInCommandTranslate) {
+    props.controller.hideHover()
+    return
+  }
+
+  await nextTick()
+  const firstTranslationIndex = translationTargets.value[0]?.contentIndex
+  if (firstTranslationIndex == null) return
+  hoverCardRef.value?.scrollToTranslation(firstTranslationIndex)
 }
 
 // Use post effect to ensure the effect executed after effect of `useDecorations`
@@ -152,6 +168,7 @@ useDecorations(() => {
   >
     <HoverCard
       v-if="controller.hover != null"
+      ref="hoverCardRef"
       :actions="hoverActions"
       @mouseenter="controller.emit('cardMouseEnter', $event)"
       @mouseleave="controller.emit('cardMouseLeave', $event)"
@@ -161,7 +178,8 @@ useDecorations(() => {
         <MarkdownView class="hover-content" v-bind="content" />
         <div
           v-if="getTranslationState(i) != null"
-          class="mt-2"
+          class="mt-2 w-full min-w-0"
+          :data-editor-translation-index="i"
           :class="{ 'translation-loading': getTranslationState(i)?.status === 'loading' }"
         >
           <div
@@ -182,7 +200,9 @@ useDecorations(() => {
           </DiagnosticItem>
           <MarkdownView
             v-else-if="getTranslationState(i)?.status === 'success' && getTranslationState(i)?.translated != null"
-            :value="getTranslationState(i)!.translated!"
+            class="hover-content"
+            :flag="controller.hover.contents[i].flag"
+            :value="getRenderedTranslation(i)!"
           />
           <p v-else class="text-xs text-red-600" role="alert">
             {{ $t({ en: 'Translation unavailable', zh: '暂时无法翻译' }) }}
@@ -201,6 +221,7 @@ useDecorations(() => {
 }
 
 .hover-content {
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;

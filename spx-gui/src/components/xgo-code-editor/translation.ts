@@ -15,14 +15,35 @@ export interface EditorTranslationProvider {
   translate(request: EditorTranslationRequest, signal?: AbortSignal): Promise<string>
 }
 
+const definitionItemPattern = /(<pre\b(?=[^>]*\bis=(?:"definition-item"|'definition-item'))[^>]*>)([\s\S]*?)(<\/pre>)/gi
+
 /** Return only the explanatory part of a definition hover. */
 export function extractDocumentationExplanation(markdown: string): string {
+  const definitionBodies: string[] = []
+  markdown.replace(definitionItemPattern, (_, _openingTag: string, body: string) => {
+    const explanation = body.trim()
+    if (explanation !== '') definitionBodies.push(explanation)
+    return ''
+  })
+  if (definitionBodies.length > 0) return definitionBodies.join('\n\n')
+
   const withoutCode = markdown.replace(/```[\s\S]*?```/g, '').trim()
   const lines = withoutCode.split(/\r?\n/)
   return lines
     .filter((line) => !/^(?:func|type|var|const|class|interface)\b/.test(line.trim()))
     .join('\n')
     .trim()
+}
+
+/** Keep the definition signature and component structure while replacing its explanatory body. */
+export function formatDocumentationTranslation(markdown: string, translated: string): string {
+  let replaced = false
+  const result = markdown.replace(definitionItemPattern, (definitionItem, openingTag: string, _body: string, closingTag: string) => {
+    if (replaced) return definitionItem
+    replaced = true
+    return `${openingTag}${translated.trimStart()}${closingTag}`
+  })
+  return replaced ? result : translated
 }
 
 const exactMockTranslations: Array<[RegExp, string]> = [
