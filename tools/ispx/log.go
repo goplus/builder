@@ -5,7 +5,6 @@ package main
 import (
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -24,7 +23,7 @@ func logExecutionLocation(info *ixgo.DebugInfo) {
 	if position.Line < 1 || !strings.HasSuffix(position.Filename, ".spx") {
 		return
 	}
-	executionLocation.report(filepath.Base(position.Filename), position.Line, time.Now())
+	executionLocation.report(position.Filename, position.Line, time.Now())
 }
 
 // logWithCallerInfo logs msg with caller information extracted from frame.

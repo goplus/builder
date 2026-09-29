@@ -51,8 +51,6 @@ export class Runtime extends Emitter<{
   private filesHashRef = ref<string | null>(null)
   private outputsRef = shallowRef<RuntimeOutput[]>([])
   private locationRef = shallowRef<RuntimeLocation | null>(null)
-  // The console remains in debug mode after exit; reject delayed ispx locations until the next run.
-  private locationAvailable = false
 
   get running() {
     return this.runningRef.value
@@ -76,24 +74,15 @@ export class Runtime extends Emitter<{
   }
 
   setLocation(location: RuntimeLocation | null) {
-    if ((this.running.mode !== 'debug' || !this.locationAvailable) && location != null) return
+    if (this.running.mode !== 'debug' && location != null) return
     const current = this.locationRef.value
     if (current?.textDocument.uri === location?.textDocument.uri && current?.line === location?.line) return
     this.locationRef.value = location
     this.emit('didChangeLocation')
   }
 
-  invalidateLocation() {
-    this.locationAvailable = false
-    this.setLocation(null)
-  }
-
-  beginLocationTracking() {
-    this.locationAvailable = true
-  }
-
   setRunning(running: RunningState, filesHash?: string) {
-    if (running.mode === 'none') this.invalidateLocation()
+    if (running.mode === 'none') this.setLocation(null)
     else if (running.initializing) this.setLocation(null)
     this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
@@ -159,7 +148,6 @@ export class Runtime extends Emitter<{
   }
 
   clearOutputs() {
-    this.setLocation(null)
     this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
@@ -177,16 +165,12 @@ export class Runtime extends Emitter<{
       watch(
         () => this.project.exportFiles(),
         async () => {
-          this.invalidateLocation()
           await until(() => this.running.mode !== 'debug')
           this.clearOutputs()
         }
       )
     })
-    this.addDisposer(() => {
-      this.cancelScheduledDidChangeOutput()
-      this.locationRef.value = null
-    })
+    this.addDisposer(() => this.cancelScheduledDidChangeOutput())
     this.addDisposer(() => scope.stop())
   }
 }

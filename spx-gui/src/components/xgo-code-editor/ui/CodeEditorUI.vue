@@ -87,7 +87,6 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
-const initializedUiRef = shallowRef<CodeEditorUIController | null>(null)
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor
@@ -160,7 +159,6 @@ watch(
 
     await untilTaskScheduled('user-visible', signal)
     ui.init(editor)
-    initializedUiRef.value = ui
 
     ui.editor.onDidChangeConfiguration((e) => {
       const fontSizeId = ui.monaco.editor.EditorOption.fontSize
@@ -171,7 +169,6 @@ watch(
 
     codeEditor.attachUI(ui)
     signal.addEventListener('abort', () => {
-      if (initializedUiRef.value === ui) initializedUiRef.value = null
       codeEditor.detachUI(ui)
     })
   },
@@ -284,7 +281,7 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <ExecutionLocationUI v-if="props.simpleMode && initializedUiRef === uiRef" />
+    <ExecutionLocationUI v-if="props.simpleMode" />
     <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
       <ZoomControl v-if="!props.simpleMode" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />

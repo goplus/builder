@@ -4,7 +4,6 @@ import type { CourseSeries } from './course-series'
 
 import { createDefaultProject } from '@/components/project/default-project'
 import { fromConfig, fromText, prefixFiles, type File, type Files } from '@/models/common/file'
-import { Monitor } from '@/models/spx/widget/monitor'
 import { timeout } from '@/utils/utils'
 
 // TODO: Remove this temporary mock and its API hooks before merging the collaboration branch into dev/main.
@@ -40,9 +39,6 @@ async function createPlaygroundMockData(): Promise<PlaygroundMockData> {
     secondSprite.setX(-120)
     secondSprite.setY(80)
     project.addSprite(secondSprite)
-    project.stage.addWidget(
-      new Monitor('Score', { x: -220, y: 150, visible: true, label: 'Score', variableName: 'score' })
-    )
     const files: Files = {
       'index.json': fromConfig('index.json', {
         project: { type: 'spx', root: 'project' },

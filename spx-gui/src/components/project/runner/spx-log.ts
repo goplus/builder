@@ -1,17 +1,6 @@
 // SPX runtime log format is defined in tools/ispx/log.go.
-import dayjs from 'dayjs'
-
-/** A runner log or error with its position in an SPX source file. */
-export type ProjectRunnerLog = {
-  level: SpxLog['level']
-  /** Timestamp in milliseconds. */
-  time: number
-  message: string
-  source: { file: string; line: number; column: number }
-}
-
 /** The SPX source line currently being executed by the runner. */
-export type ProjectRunnerExecutionLocation = {
+export type SpxExecutionLocation = {
   file: string
   /** Line number, starting from 1. */
   line: number
@@ -19,7 +8,7 @@ export type ProjectRunnerExecutionLocation = {
 
 const spxLocationLogMessage = '__spx_loc__'
 
-type SpxLog = {
+type SpxLogBase = {
   level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
   /** RFC 3339 date time string, e.g., `2025-12-04T14:17:36.24+08:00` */
   time: string
@@ -27,7 +16,7 @@ type SpxLog = {
   [key: string]: unknown
 }
 
-function isSpxLog(obj: any): obj is SpxLog {
+function isSpxLogBase(obj: any): obj is SpxLogBase {
   return (
     obj != null &&
     typeof obj === 'object' &&
@@ -37,17 +26,7 @@ function isSpxLog(obj: any): obj is SpxLog {
   )
 }
 
-function parseSpxLog(jsonStr: string): SpxLog | null {
-  try {
-    const obj = JSON.parse(jsonStr)
-    if (isSpxLog(obj)) return obj
-  } catch {
-    // ignore
-  }
-  return null
-}
-
-type SpxInfoLog = SpxLog & {
+type SpxInfoLog = SpxLogBase & {
   level: 'INFO'
   function: string
   /** Source file name, e.g., `NiuXiaoQi.spx` */
@@ -56,11 +35,11 @@ type SpxInfoLog = SpxLog & {
   line: number
 }
 
-function isSpxInfoLog(obj: SpxLog): obj is SpxInfoLog {
+function isSpxInfoLog(obj: SpxLogBase): obj is SpxInfoLog {
   return obj.level === 'INFO' && obj.msg !== spxLocationLogMessage
 }
 
-type SpxPanicLog = SpxLog & {
+type SpxPanicLog = SpxLogBase & {
   level: 'ERROR'
   msg: 'panic'
   /** Panic error message */
@@ -73,55 +52,40 @@ type SpxPanicLog = SpxLog & {
   column: number
 }
 
-function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
+/** An SPX source log emitted by the runner. */
+export type SpxLog = SpxInfoLog | SpxPanicLog
+
+function isSpxPanicLog(obj: SpxLogBase): obj is SpxPanicLog {
   return obj.level === 'ERROR' && typeof obj.error === 'string' && obj.msg === 'panic'
 }
 
-type SpxLocationLog = SpxLog & {
+type SpxLocationLog = SpxLogBase & {
   msg: typeof spxLocationLogMessage
   file: string
   line: number
 }
 
-function isSpxLocationLog(log: SpxLog): log is SpxLocationLog {
+function isSpxLocationLog(log: SpxLogBase): log is SpxLocationLog {
   return log.msg === spxLocationLogMessage && typeof log.file === 'string' && typeof log.line === 'number'
 }
 
-type SpxConsoleLogEvent =
-  | { type: 'log'; log: ProjectRunnerLog }
-  | { type: 'executionLocation'; executionLocation: ProjectRunnerExecutionLocation }
-  | { type: 'unknown' }
+type ParsedSpxLog =
+  | { type: 'log'; log: SpxLog }
+  | { type: 'executionLocation'; executionLocation: SpxExecutionLocation }
 
-export function parseSpxConsoleLog(jsonStr: string): SpxConsoleLogEvent | null {
-  const log = parseSpxLog(jsonStr)
-  if (log == null) return null
-  if (isSpxLocationLog(log)) {
-    return {
-      type: 'executionLocation',
-      executionLocation: { file: log.file, line: log.line }
-    }
-  }
-  if (isSpxInfoLog(log)) {
-    return {
-      type: 'log',
-      log: {
-        level: log.level,
-        time: dayjs(log.time).valueOf(),
-        message: log.msg,
-        source: { file: log.file, line: log.line, column: 1 }
+export function parseSpxLog(jsonStr: string): ParsedSpxLog | null {
+  try {
+    const log = JSON.parse(jsonStr)
+    if (!isSpxLogBase(log)) return null
+    if (isSpxLocationLog(log)) {
+      return {
+        type: 'executionLocation',
+        executionLocation: { file: log.file, line: log.line }
       }
     }
+    if (isSpxInfoLog(log) || isSpxPanicLog(log)) return { type: 'log', log }
+  } catch {
+    // Ignore unrelated console messages.
   }
-  if (isSpxPanicLog(log)) {
-    return {
-      type: 'log',
-      log: {
-        level: log.level,
-        time: dayjs(log.time).valueOf(),
-        message: log.error,
-        source: { file: log.file, line: log.line, column: log.column }
-      }
-    }
-  }
-  return { type: 'unknown' }
+  return null
 }

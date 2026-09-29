@@ -1,34 +1,22 @@
 package main
 
 import (
+	"reflect"
 	"testing"
 	"time"
 )
 
-func TestLocationReporterCoalescesAndDeduplicates(t *testing.T) {
-	type location struct {
-		file string
-		line int
-	}
-	locations := make(chan location, 2)
-	reporter := newLocationReporter(20*time.Millisecond, func(file string, line int) {
-		locations <- location{file, line}
+func TestLocationReporterEmitsLatestLineOnNextCallback(t *testing.T) {
+	var locations []int
+	reporter := newLocationReporter(33*time.Millisecond, func(_ string, line int) {
+		locations = append(locations, line)
 	})
-	now := time.Now()
-	reporter.report("Sprite.spx", 1, now)
-	reporter.report("Sprite.spx", 1, now)
-	reporter.report("Sprite.spx", 2, now.Add(time.Millisecond))
-	reporter.report("Sprite.spx", 3, now.Add(2*time.Millisecond))
-
-	if got := <-locations; got != (location{"Sprite.spx", 1}) {
-		t.Fatalf("first location = %+v", got)
-	}
-	select {
-	case got := <-locations:
-		if got != (location{"Sprite.spx", 3}) {
-			t.Fatalf("last location = %+v", got)
-		}
-	case <-time.After(time.Second):
-		t.Fatal("pending location was not emitted")
+	start := time.Unix(0, 0)
+	reporter.report("Squirrel.spx", 1, start)
+	reporter.report("Squirrel.spx", 2, start.Add(10*time.Millisecond))
+	reporter.report("Squirrel.spx", 2, start.Add(34*time.Millisecond))
+	reporter.report("Squirrel.spx", 2, start.Add(68*time.Millisecond))
+	if want := []int{1, 2}; !reflect.DeepEqual(locations, want) {
+		t.Fatalf("locations = %v, want %v", locations, want)
 	}
 }

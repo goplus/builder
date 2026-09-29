@@ -156,6 +156,7 @@
 </template>
 
 <script lang="ts" setup>
+import dayjs from 'dayjs'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
@@ -166,7 +167,7 @@ import { useSignedInUser } from '@/stores/user'
 import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
 import { usePublishProject } from '@/components/project'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
-import type { ProjectRunnerExecutionLocation, ProjectRunnerLog } from '@/components/project/runner/spx-log'
+import type { SpxExecutionLocation, SpxLog } from '@/components/project/runner/spx-log'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
   useCodeEditor,
@@ -257,12 +258,13 @@ function keepRunnerHostVisibleForOverlay() {
   }, 450)
 }
 
-function handleLog(log: ProjectRunnerLog) {
-  const { file, line, column } = log.source
+function handleLog(log: SpxLog) {
+  const { file, line } = log
+  const column = log.level === 'ERROR' ? log.column : 1
   runtime.value.addOutput({
     kind: log.level === 'ERROR' ? RuntimeOutputKind.Error : RuntimeOutputKind.Log,
-    time: log.time,
-    message: log.message,
+    time: dayjs(log.time).valueOf(),
+    message: log.level === 'ERROR' ? log.error : log.msg,
     source: {
       textDocument: { uri: `file:///${file}` },
       range: {
@@ -273,12 +275,12 @@ function handleLog(log: ProjectRunnerLog) {
   })
 }
 
-function handleExecutionLocation(location: ProjectRunnerExecutionLocation) {
+function handleExecutionLocation(location: SpxExecutionLocation) {
   runtime.value.setLocation({ textDocument: { uri: `file:///${location.file}` }, line: location.line })
 }
 
 function handleExit(code: number) {
-  runtime.value.invalidateLocation()
+  runtime.value.setLocation(null)
   runtime.value.emit('didExit', code)
   if (exitGuard.value === 'manualStopPending') {
     exitGuard.value = 'idle'
@@ -339,7 +341,6 @@ async function executeRun(action: 'run' | 'rerun') {
   const surface = await untilNotNull(projectRunnerSurfaceRef)
   runtime.value.clearOutputs()
   editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
-  editorCtx.state.runtime.beginLocationTracking()
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
     runnerState.value = 'running'

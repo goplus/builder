@@ -1,23 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { parseSpxConsoleLog } from './spx-log'
+import { parseSpxLog } from './spx-log'
 
-describe('SPX console log', () => {
+describe('SPX log', () => {
   const time = '2025-12-04T14:17:36.24+08:00'
 
-  it('ignores unrelated console messages', () => {
-    expect(parseSpxConsoleLog('hello')).toBeNull()
-    expect(parseSpxConsoleLog(JSON.stringify({ msg: 'hello' }))).toBeNull()
+  it('returns null for unrelated or unhandled console messages', () => {
+    expect(parseSpxLog('hello')).toBeNull()
+    expect(parseSpxLog(JSON.stringify({ msg: 'hello' }))).toBeNull()
+    expect(parseSpxLog(JSON.stringify({ level: 'WARN', time, msg: 'warning' }))).toBeNull()
   })
 
   it('converts execution markers to source locations', () => {
     const log = JSON.stringify({ level: 'INFO', time, msg: '__spx_loc__', file: 'Sprite.spx', line: 3 })
-    expect(parseSpxConsoleLog(log)).toEqual({
+    expect(parseSpxLog(log)).toEqual({
       type: 'executionLocation',
       executionLocation: { file: 'Sprite.spx', line: 3 }
     })
   })
 
-  it('converts info and panic logs to runner logs', () => {
+  it('preserves info and panic log fields', () => {
     const infoLog = JSON.stringify({ level: 'INFO', time, msg: 'hello', function: 'main', file: 'Sprite.spx', line: 4 })
     const panicLog = JSON.stringify({
       level: 'ERROR',
@@ -28,22 +29,27 @@ describe('SPX console log', () => {
       line: 5,
       column: 7
     })
-    expect(parseSpxConsoleLog(infoLog)).toEqual({
+    expect(parseSpxLog(infoLog)).toEqual({
       type: 'log',
       log: {
         level: 'INFO',
-        time: Date.parse(time),
-        message: 'hello',
-        source: { file: 'Sprite.spx', line: 4, column: 1 }
+        time,
+        msg: 'hello',
+        function: 'main',
+        file: 'Sprite.spx',
+        line: 4
       }
     })
-    expect(parseSpxConsoleLog(panicLog)).toEqual({
+    expect(parseSpxLog(panicLog)).toEqual({
       type: 'log',
       log: {
         level: 'ERROR',
-        time: Date.parse(time),
-        message: 'failure',
-        source: { file: 'Sprite.spx', line: 5, column: 7 }
+        time,
+        msg: 'panic',
+        error: 'failure',
+        file: 'Sprite.spx',
+        line: 5,
+        column: 7
       }
     })
   })
