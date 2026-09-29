@@ -18,7 +18,7 @@ describe('editor pane layout', () => {
   it.each([
     [classic, 'landscape', 496],
     [landscape, 'landscape', 569],
-    [portrait, 'portrait', 459]
+    [portrait, 'portrait', 331]
   ] as const)('uses a %s base preview width of %i', (viewport, layout, previewWidth) => {
     expect(getPaneLayout({ width: 1408, height: 820 }, viewport, layout, null).previewWidth).toBe(previewWidth)
   })
@@ -44,19 +44,19 @@ describe('editor pane layout', () => {
       for (const preferred of [-1000, 384, 600, 10000, null]) {
         const result = getPaneLayout({ width, height: 782 }, portrait, 'portrait', preferred)
         expect(result.codeWidth).toBeGreaterThanOrEqual(384)
-        expect(result.previewWidth).toBeGreaterThanOrEqual(448)
-        expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(Math.max(width, 848))
+        expect(result.previewWidth).toBeGreaterThanOrEqual(320)
+        expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(Math.max(width, 720))
       }
     }
   })
 
-  it('keeps the portrait base preview size at the minimum desktop size', () => {
+  it('shrinks the portrait preview at the minimum desktop size to keep the stage panel visible', () => {
     const regularDesktop = getPaneLayout({ width: 1408, height: 820 }, portrait, 'portrait', null)
-    expect(regularDesktop.previewWidth).toBe(459)
+    expect(regularDesktop.previewWidth).toBe(331)
 
     const minimumDesktop = getPaneLayout({ width: 1248, height: 720 }, portrait, 'portrait', null)
     expect(minimumDesktop.codeWidth).toBeGreaterThanOrEqual(384)
-    expect(minimumDesktop.previewWidth).toBe(459)
+    expect(minimumDesktop.previewWidth).toBe(303)
   })
 
   it('moves continuously across the portrait drag range without changing the bounds', () => {
@@ -67,7 +67,7 @@ describe('editor pane layout', () => {
       expect(resized.codeWidth).toBeCloseTo(width)
       expect(resized.minCodeWidth).toBeCloseTo(initial.minCodeWidth)
       expect(resized.maxCodeWidth).toBeCloseTo(initial.maxCodeWidth)
-      expect(resized.previewWidth).toBeGreaterThanOrEqual(448)
+      expect(resized.previewWidth).toBeGreaterThanOrEqual(320)
     }
   })
 

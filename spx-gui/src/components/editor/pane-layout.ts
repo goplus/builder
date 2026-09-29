@@ -10,6 +10,24 @@ function getBasePreviewViewportWidth(viewport: Size) {
   return viewport.width
 }
 
+function getPortraitPreviewWidthForHeight(containerHeight: number, viewport: Size) {
+  const previewHeaderHeight = 48
+  const previewPadding = 24
+  const panelGap = 16
+  const stagePanelHeight = 120
+  const columnBottomPadding = 16
+  const availableViewportHeight = Math.max(
+    0,
+    containerHeight -
+      previewHeaderHeight -
+      previewPadding -
+      panelGap -
+      stagePanelHeight -
+      columnBottomPadding
+  )
+  return Math.floor(availableViewportHeight * (viewport.width / viewport.height) + previewPadding)
+}
+
 export function getPaneLayout(
   container: Size,
   viewport: Size,
@@ -18,8 +36,7 @@ export function getPaneLayout(
 ) {
   const gap = 16
   const minCodeWidth = 384
-  const spriteRailWidth = 112
-  const minPreviewWidth = layout === 'portrait' ? 320 + gap + spriteRailWidth : 320
+  const minPreviewWidth = 320
   const previewPaddingWidth = 24
   const layoutWidth =
     layout === 'portrait' ? Math.max(container.width, minCodeWidth + minPreviewWidth + gap) : container.width
@@ -32,15 +49,16 @@ export function getPaneLayout(
       preferredCodeWidth == null ? availablePreviewWidth : availableWidth - preferredCodeWidth
     )
   )
-  const maxPreviewWidth = availablePreviewWidth
+  const maxPreviewWidth =
+    layout === 'portrait'
+      ? Math.min(availablePreviewWidth, getPortraitPreviewWidthForHeight(container.height, viewport))
+      : availablePreviewWidth
   const clampedMinPreviewWidth = Math.min(minPreviewWidth, maxPreviewWidth)
   const defaultPreviewWidth =
     layout === 'focused'
       ? Math.max(660, availableWidth * (3 / 6.5))
       : Math.min(
-          getBasePreviewViewportWidth(viewport) +
-            previewPaddingWidth +
-            (layout === 'portrait' ? gap + spriteRailWidth : 0),
+          getBasePreviewViewportWidth(viewport) + previewPaddingWidth,
           maxPreviewWidth
         )
   const previewWidth = Math.max(

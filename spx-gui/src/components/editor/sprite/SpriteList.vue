@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ComponentPublicInstance, computed, onBeforeUnmount, ref, shallowReactive } from 'vue'
+import { type ComponentPublicInstance, computed, onBeforeUnmount, ref, shallowReactive, useSlots } from 'vue'
 import { Sprite } from '@/models/spx/sprite'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
@@ -13,6 +13,8 @@ import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import { UIEmpty } from '@/components/ui'
 
 const props = withDefaults(defineProps<{ layout?: 'wrap' | 'vertical' }>(), { layout: 'wrap' })
+const emit = defineEmits<{ select: [] }>()
+const slots = useSlots()
 
 const editorCtx = useEditorCtx()
 const sprites = computed(() => editorCtx.project.sprites)
@@ -24,6 +26,7 @@ function isSelected(sprite: Sprite) {
 
 function handleSpriteClick(sprite: Sprite) {
   editorCtx.state.selectSprite(sprite.id)
+  emit('select')
 }
 
 const spriteGenItemRefs = shallowReactive(new Map<string, HTMLElement>())
@@ -44,21 +47,26 @@ onBeforeUnmount(
   })
 )
 
-const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.genState.sprites])
+const addItem = Symbol('add-sprite')
+const list = computed(() => [
+  ...editorCtx.project.sprites,
+  ...editorCtx.state.genState.sprites,
+  ...(slots.add == null ? [] : [addItem])
+])
 const listWrapper = ref<HTMLElement | null>(null)
 
 const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
   filterItem: (item: unknown) => {
-    return item instanceof SpriteGen
+    return item instanceof SpriteGen || item === addItem
   },
   filterMove: (oldIndex: number, newIndex: number) => {
     const totalList = list.value
     // spriteGens cannot be moved
     const fromItem = totalList[oldIndex]
-    if (fromItem instanceof SpriteGen) return true
+    if (fromItem instanceof SpriteGen || fromItem === addItem) return true
     // sprites can only be moved to positions before spriteGens, i.e., cannot be moved to positions of spriteGens or after
     const toItem = totalList[newIndex]
-    if (toItem instanceof SpriteGen) return true
+    if (toItem instanceof SpriteGen || toItem === addItem) return true
     return false
   }
 }
@@ -94,6 +102,7 @@ const handleSpriteGenClick = useMessageHandle(
       await result.autoFit()
     })
     editorCtx.state.selectSprite(result.id)
+    emit('select')
   },
   {
     en: 'Failed to add generated sprite',
@@ -127,6 +136,7 @@ const handleSpriteGenClick = useMessageHandle(
       :gen="gen"
       @click="handleSpriteGenClick(gen)"
     />
+    <slot name="add"></slot>
   </div>
 </template>
 

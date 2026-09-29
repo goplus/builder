@@ -5,21 +5,13 @@
     class="min-w-0 flex flex-none flex-col gap-xl"
     :class="[
       'order-1',
-      { 'h-full overflow-y-auto': isPortraitLayout, 'pointer-events-none': resizing != null }
+      { 'h-full overflow-y-auto': showSpritesAsTab, 'pointer-events-none': resizing != null }
     ]"
     :style="previewColumnStyle"
   >
-    <div v-if="isPortraitLayout" class="min-h-full flex flex-none gap-xl">
-      <div class="min-w-0 flex flex-[1_1_0] flex-col gap-xl pb-4">
-        <EditorPreview class="min-w-0 flex-none" />
-        <EditorPanels layout="portrait" />
-      </div>
-      <UICard
-        v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
-        class="w-28 min-w-0 flex-none"
-      >
-        <SpritesPanel layout="vertical" header-height="large" />
-      </UICard>
+    <div v-if="showSpritesAsTab" class="min-h-full min-w-0 flex flex-none flex-col gap-xl pb-4">
+      <EditorPreview class="min-w-0 flex-none" />
+      <EditorPanels layout="portrait" />
     </div>
     <template v-else>
       <EditorPreview class="min-w-0" :fill-container="isFocusedLayout" />
@@ -49,6 +41,7 @@
         :sprite="selected.sprite"
         :state="editorCtx.state.spriteState!"
         :bottom-inset="consoleSafeArea"
+        :show-sprites-tab="showSpritesAsTab"
       />
       <StageEditor
         v-else-if="selected.type === 'stage'"
@@ -114,6 +107,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watchEffect } from 'vue'
+import { useRoute } from 'vue-router'
 import { useContentSize } from '@/utils/dom'
 import { getCleanupSignal } from '@/utils/disposable'
 import { UICard } from '@/components/ui'
@@ -121,7 +115,6 @@ import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
 import EditorPreview from './preview/EditorPreview.vue'
 import EditorPanels from './panels/EditorPanels.vue'
-import SpritesPanel from './panels/sprite/SpritesPanel.vue'
 import ConsolePanel from './panels/ConsolePanel.vue'
 import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
@@ -138,12 +131,17 @@ const props = withDefaults(
 )
 
 const editorCtx = useEditorCtx()
+const route = useRoute()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const running = computed(() => editorCtx.state.runtime.running)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
 const isFocusedLayout = computed(() => props.layout === 'focused')
 const isPortraitLayout = computed(() => props.layout === 'portrait')
+const isLandscapeSpritesTabTrial = computed(
+  () => props.layout === 'landscape' && route.query.layoutTrial === 'sprites-tab'
+)
+const showSpritesAsTab = computed(() => isPortraitLayout.value || isLandscapeSpritesTabTrial.value)
 const previewColumnRef = ref<HTMLElement | null>(null)
 const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
 const preferredCodeWidths = reactive<Record<EditorLayout, number | null>>({

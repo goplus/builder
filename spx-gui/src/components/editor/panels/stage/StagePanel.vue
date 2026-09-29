@@ -3,7 +3,7 @@
     <UICardHeader class="h-11" :class="layout === 'wide' ? 'w-full justify-start px-3' : 'w-20 justify-center'">
       {{ $t({ en: 'Stage', zh: '舞台' }) }}
     </UICardHeader>
-    <main class="min-h-0 flex flex-[1_1_0]" :class="layout === 'wide' ? 'items-center px-3 py-2' : 'flex-col items-center'">
+    <main class="min-h-0 flex flex-[1_1_0]" :class="layout === 'wide' ? 'items-start px-3 py-2' : 'flex-col items-center'">
       <div class="flex-none" :class="layout === 'wide' ? 'pr-3' : 'p-3'">
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"

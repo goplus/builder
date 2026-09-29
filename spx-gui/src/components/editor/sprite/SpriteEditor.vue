@@ -5,9 +5,15 @@
         name: 'Sprite editor tabs',
         desc: 'Navigation tabs for switching between different sprite editing views'
       }"
-      :value="state.selected.type"
-      @update:value="(type) => state.select(type as SelectedType)"
+      :value="showSprites ? 'sprites' : state.selected.type"
+      @update:value="handleTabSelect"
     >
+      <UITab
+        v-if="showSpritesTab"
+        v-radar="{ name: 'Sprites tab', desc: 'Click to manage project sprites' }"
+        value="sprites"
+        >{{ $t({ en: 'Sprites', zh: '精灵' }) }}</UITab
+      >
       <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">{{
         $t({ en: 'Code', zh: '代码' })
       }}</UITab>
@@ -21,23 +27,37 @@
       >
     </UITabs>
     <template #extra>
-      <FormatButton v-if="state.selected.type === 'code'" :code-file-path="sprite.codeFilePath" />
+      <FormatButton v-if="!showSprites && state.selected.type === 'code'" :code-file-path="sprite.codeFilePath" />
     </template>
   </EditorHeader>
+  <SpritesPanel
+    v-if="showSprites"
+    v-radar="{ name: 'Sprites management view', desc: 'View for managing project sprites' }"
+    embedded
+    @select="handleSpriteSelect"
+  />
   <CodeEditorUI
-    v-show="state.selected.type === 'code'"
+    v-show="!showSprites && state.selected.type === 'code'"
     ref="codeEditor"
     v-radar="{
       name: 'Code editor',
       desc: 'Code editor for editing code of current sprite',
-      visible: state.selected.type === 'code'
+      visible: !showSprites && state.selected.type === 'code'
     }"
     :code-file-path="sprite.codeFilePath"
     :bottom-inset="bottomInset"
   />
-  <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
+  <CostumesEditor
+    v-if="!showSprites && state.selected.type === 'costumes'"
+    :sprite="sprite"
+    :state="state.costumesState"
+  />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
-  <AnimationEditor v-if="state.selected.type === 'animations'" :sprite="sprite" :state="state.animationsState" />
+  <AnimationEditor
+    v-if="!showSprites && state.selected.type === 'animations'"
+    :sprite="sprite"
+    :state="state.animationsState"
+  />
 </template>
 
 <script lang="ts">
@@ -153,10 +173,28 @@ import { CodeEditorUI, FormatButton } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
+import SpritesPanel from '../panels/sprite/SpritesPanel.vue'
 
-defineProps<{
+const props = defineProps<{
   sprite: Sprite
   state: SpriteEditorState
   bottomInset?: number
+  showSpritesTab?: boolean
 }>()
+
+const showSprites = ref(false)
+
+function handleTabSelect(type: string) {
+  if (type === 'sprites') {
+    showSprites.value = true
+    return
+  }
+  showSprites.value = false
+  props.state.select(type as SelectedType)
+}
+
+function handleSpriteSelect() {
+  showSprites.value = false
+  props.state.select('code')
+}
 </script>
