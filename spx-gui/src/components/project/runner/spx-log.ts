@@ -1,8 +1,22 @@
+// SPX runtime log format is defined in tools/ispx/log.go.
 import dayjs from 'dayjs'
-import type { TextDocumentRange } from '@/components/xgo-code-editor'
-import type { ProjectRunnerLocation, ProjectRunnerOutput } from './types'
 
-// Check tools/ispx/log.go for the log source.
+/** A runner log or error with its position in an SPX source file. */
+export type ProjectRunnerLog = {
+  level: SpxLog['level']
+  /** Timestamp in milliseconds. */
+  time: number
+  message: string
+  source: { file: string; line: number; column: number }
+}
+
+/** The SPX source line currently being executed by the runner. */
+export type ProjectRunnerExecutionLocation = {
+  file: string
+  /** Line number, starting from 1. */
+  line: number
+}
+
 const spxLocationLogMessage = '__spx_loc__'
 
 type SpxLog = {
@@ -73,19 +87,9 @@ function isSpxLocationLog(log: SpxLog): log is SpxLocationLog {
   return log.msg === spxLocationLogMessage && typeof log.file === 'string' && typeof log.line === 'number'
 }
 
-function toSourceRange(file: string, line: number, column: number): TextDocumentRange {
-  return {
-    textDocument: { uri: `file:///${file}` },
-    range: {
-      start: { line, column },
-      end: { line, column }
-    }
-  }
-}
-
 type SpxConsoleLogEvent =
-  | { type: 'output'; output: ProjectRunnerOutput }
-  | { type: 'location'; location: ProjectRunnerLocation }
+  | { type: 'log'; log: ProjectRunnerLog }
+  | { type: 'executionLocation'; executionLocation: ProjectRunnerExecutionLocation }
   | { type: 'unknown' }
 
 export function parseSpxConsoleLog(jsonStr: string): SpxConsoleLogEvent | null {
@@ -93,29 +97,29 @@ export function parseSpxConsoleLog(jsonStr: string): SpxConsoleLogEvent | null {
   if (log == null) return null
   if (isSpxLocationLog(log)) {
     return {
-      type: 'location',
-      location: { textDocument: { uri: `file:///${log.file}` }, line: log.line }
+      type: 'executionLocation',
+      executionLocation: { file: log.file, line: log.line }
     }
   }
   if (isSpxInfoLog(log)) {
     return {
-      type: 'output',
-      output: {
-        kind: 'log',
+      type: 'log',
+      log: {
+        level: log.level,
         time: dayjs(log.time).valueOf(),
         message: log.msg,
-        source: toSourceRange(log.file, log.line, 1)
+        source: { file: log.file, line: log.line, column: 1 }
       }
     }
   }
   if (isSpxPanicLog(log)) {
     return {
-      type: 'output',
-      output: {
-        kind: 'error',
+      type: 'log',
+      log: {
+        level: log.level,
         time: dayjs(log.time).valueOf(),
         message: log.error,
-        source: toSourceRange(log.file, log.line, log.column)
+        source: { file: log.file, line: log.line, column: log.column }
       }
     }
   }

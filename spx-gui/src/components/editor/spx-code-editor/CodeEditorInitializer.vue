@@ -45,6 +45,7 @@ watch(
     )
 
     codeEditor.registerDiagnosticsProvider(diagnosticsProvider)
+    codeEditor.registerExecutionLocationProvider(runtime)
     codeEditor.registerResourceAdapter(resourceAdapter)
     codeEditor.registerInputHelperProvider(inputHelperProvider)
     codeEditor.registerSnippetVariablesProvider(snippetVariablesProvider)

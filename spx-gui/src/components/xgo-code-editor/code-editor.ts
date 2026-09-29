@@ -44,6 +44,7 @@ import { CompletionProvider } from './completion'
 import { DiagnosticsProvider } from './diagnostics'
 import { SnippetVariablesProvider } from './snippet-variables'
 import type { ICopilot } from './copilot'
+import type { IExecutionLocationProvider } from './execution-location'
 
 const formatTabSize = 4
 const formatInsertSpaces = false
@@ -157,6 +158,14 @@ export class CodeEditor extends Disposable {
   }
   registerSnippetVariablesProvider(provider: ISnippetVariablesProvider) {
     this.snippetVariablesProviderRef.value = provider
+  }
+
+  private executionLocationProviderRef = shallowRef<IExecutionLocationProvider | null>(null)
+  get executionLocationProvider() {
+    return this.executionLocationProviderRef.value
+  }
+  registerExecutionLocationProvider(provider: IExecutionLocationProvider) {
+    this.executionLocationProviderRef.value = provider
   }
 
   /**
