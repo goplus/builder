@@ -38,11 +38,14 @@ export function extractDocumentationExplanation(markdown: string): string {
 /** Keep the definition signature and component structure while replacing its explanatory body. */
 export function formatDocumentationTranslation(markdown: string, translated: string): string {
   let replaced = false
-  const result = markdown.replace(definitionItemPattern, (definitionItem, openingTag: string, _body: string, closingTag: string) => {
-    if (replaced) return definitionItem
-    replaced = true
-    return `${openingTag}${translated.trimStart()}${closingTag}`
-  })
+  const result = markdown.replace(
+    definitionItemPattern,
+    (definitionItem, openingTag: string, _body: string, closingTag: string) => {
+      if (replaced) return definitionItem
+      replaced = true
+      return `${openingTag}${translated.trimStart()}${closingTag}`
+    }
+  )
   return replaced ? result : translated
 }
 
