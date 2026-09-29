@@ -209,6 +209,28 @@ describe('useFloatingPopup', () => {
     expect(floatingMocks.computePosition).toHaveBeenCalled()
   })
 
+  it('can keep a popup on its requested side without flip middleware', async () => {
+    floatingMocks.autoUpdate.mockImplementation((_reference, _floating, update) => {
+      void update()
+      return vi.fn()
+    })
+
+    const popup = withSetup(() =>
+      useFloatingPopup({
+        visible: ref(true),
+        placement: ref<'top'>('top'),
+        flip: ref(false)
+      })
+    )
+
+    popup.referenceRef.value = document.createElement('button')
+    popup.floatingRef.value = document.createElement('div')
+    await flushFloatingEffects()
+
+    const options = floatingMocks.computePosition.mock.calls[0]?.[2]
+    expect(options?.middleware.map((middleware: { name?: string }) => middleware.name)).toEqual(['offset', 'shift'])
+  })
+
   it('re-subscribes and repositions when reactive placement changes', async () => {
     const cleanup = vi.fn()
     const placement = ref<'bottom' | 'top'>('bottom')

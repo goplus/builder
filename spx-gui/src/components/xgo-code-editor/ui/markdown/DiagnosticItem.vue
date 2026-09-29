@@ -9,14 +9,14 @@ defineProps<{
 
 <template>
   <div
-    class="flex items-start gap-2 self-stretch px-2 py-1.5 rounded-sm"
+    class="w-full flex items-start gap-2 self-stretch px-2 py-1.5 rounded-sm"
     :class="{
       'bg-yellow-200': severity === 'warning',
       'bg-red-100': severity === 'error'
     }"
   >
-    <UIIcon class="mt-0.75" :type="severity" />
-    <div class="flex-1">
+    <UIIcon class="mt-0.75 flex-none" :type="severity" />
+    <div class="min-w-0 flex-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
       <slot></slot>
     </div>
   </div>

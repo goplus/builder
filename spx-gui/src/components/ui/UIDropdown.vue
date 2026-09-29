@@ -33,6 +33,8 @@ export type Offset = {
 
 export type Props = {
   placement?: Placement
+  /** Whether the popup may switch to the opposite side when space is limited. */
+  flip?: boolean
   trigger?: TriggerType
   visible?: boolean
   pos?: Pos
@@ -66,6 +68,7 @@ defineOptions({
 
 const props = withDefaults(defineProps<Props>(), {
   placement: 'bottom',
+  flip: true,
   trigger: 'hover',
   visible: undefined,
   pos: undefined,
@@ -95,6 +98,7 @@ const {
 } = useFloatingPopup({
   visible: visibleComputed,
   placement: computed(() => props.placement),
+  flip: computed(() => props.flip),
   offset: computed(() => props.offset),
   virtualAnchor: computed(() => props.pos ?? null)
 })
