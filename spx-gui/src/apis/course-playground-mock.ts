@@ -32,7 +32,7 @@ type PlaygroundMockData = {
 let playgroundMockDataPromise: Promise<PlaygroundMockData> | null = null
 
 async function createPlaygroundMockData(): Promise<PlaygroundMockData> {
-  const project = await createDefaultProject('', '', [])
+  const project = await createDefaultProject('', '', ['default'])
   try {
     const secondSprite = project.sprites[0]?.clone()
     if (secondSprite == null) throw new Error('default sprite not found')

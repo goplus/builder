@@ -45,11 +45,11 @@ useDecorations(() => {
 
 <style>
 .code-editor-execution-location {
-  background-color: rgba(40, 190, 170, 0.18);
+  background-color: rgba(255, 193, 7, 0.24);
 }
 .code-editor-execution-location-header {
-  width: 100% !important;
-  left: 0 !important;
-  background-color: var(--ui-color-turquoise-500);
+  width: 3px !important;
+  margin-left: 2px;
+  background-color: rgba(245, 158, 11, 0.9);
 }
 </style>
