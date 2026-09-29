@@ -11,7 +11,7 @@ export type RuntimeLocation = {
 
 /** Existing runtime owned by `EditorState`. */
 export interface Runtime {
-  /** Current SPX source line, emitted by ispx at DebugRef granularity. */
+  /** Current SPX source line reported by the runtime. */
   readonly location: RuntimeLocation | null;
   /** Latest 500 outputs for UI rendering, updated on snapshot changes. */
   readonly outputSnapshot: readonly RuntimeOutput[];
