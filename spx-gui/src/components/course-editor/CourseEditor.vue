@@ -370,10 +370,16 @@ const saving = computed(() => handleSave.isLoading.value)
  * Read by: that same watch (to avoid loading twice), `CourseEditor.vue#template` (`CoursePlayground :project`).
  */
 const preview = shallowRef<TutorialProject | null>(null)
+// The editor owns every snapshot it hands the playground, which runs it but does not dispose it: one taken off
+// the screen is disposed once the playground has unmounted, and the one on screen when the editor goes, in
+// `onUnmounted`.
+watch(preview, (_, previous) => {
+  if (previous != null) void nextTick(() => previous.dispose())
+})
 /**
- * The error that kept the preview from starting or running, or null.
+ * The error that kept the preview from starting, or null. The playground shows its own errors.
  * Written by: `handlePreview` and `enterPreviewFromRoute` (cleared on success, set on failure by the latter),
- * `handlePreviewFailed`, the `watch(isPreviewRoute)` (cleared when leaving).
+ * the `watch(isPreviewRoute)` (cleared when leaving).
  * Read by: `CourseEditor.vue#template` (`UIError` branch of the preview pane).
  */
 const previewError = ref<Error | null>(null)
@@ -426,10 +432,8 @@ function isCurrentPreview(generation: number) {
 }
 
 /**
- * Build a fresh `TutorialProject` loaded from a snapshot of the working copy, for the playground to run. The
- * snapshot's embedded `SpxProject` carries watchers, so whoever ends up not delivering it must dispose it: a
- * failed load and a superseded load are disposed here; a delivered one is disposed by `CoursePlayground` when it
- * unmounts.
+ * Build a fresh `TutorialProject` loaded from a snapshot of the working copy, for the playground to run. A failed
+ * or superseded load is disposed here; a delivered one once it leaves `preview`.
  * @param generation - The preview generation this load belongs to (see `previewGeneration`).
  * @throws Cancelled when the session ended or the generation was superseded while loading (the snapshot is
  * disposed first); rethrows load errors after disposing.
@@ -443,13 +447,13 @@ async function loadPreviewSnapshot(generation: number) {
   try {
     await snapshot.load(await props.project.snapshot())
   } catch (error) {
-    // Nobody will receive this snapshot: release its embedded project before reporting the failure.
-    snapshot.project.dispose()
+    // Nobody will receive this snapshot: release it before reporting the failure.
+    snapshot.dispose()
     throw error
   }
   // Superseded or orphaned: the author left the preview (or the editor) while the snapshot loaded.
   if (!isCurrentPreview(generation)) {
-    snapshot.project.dispose()
+    snapshot.dispose()
     throw new Cancelled('preview superseded')
   }
   return snapshot
@@ -471,13 +475,44 @@ const handlePreview = useMessageHandle(
     const snapshot = await loadPreviewSnapshot(++previewGeneration)
     previewError.value = null
     preview.value = snapshot
-    // Remember where to come back to, then switch to the preview route record with an empty in-editor path
-    // (the playground replaces it with the configured `inEditorPath` when it initializes).
+    // Remember where to come back to, then switch to the preview route record, opening the project where a
+    // learner starting the course lands.
     routeBeforePreview = route.fullPath
-    await router.push({ name: courseEditorPreviewRouteName, params: { ...courseRouteParams(), inEditorPath: [] } })
+    await router.push({
+      name: courseEditorPreviewRouteName,
+      params: { ...courseRouteParams(), inEditorPath: getConfiguredPath(snapshot) }
+    })
   },
   { en: 'Failed to start preview', zh: '启动预览失败' }
 )
+
+/** Where `snapshot` opens its project, as in-editor path segments: where a learner starting the course lands. */
+function getConfiguredPath(snapshot: TutorialProject) {
+  return pathToSegments(snapshot.config?.inEditorPath ?? '')
+}
+
+/**
+ * Point the preview route at `snapshot`'s configured path, without a history entry. The playground opens the
+ * project at the route's path and no longer applies the configured one itself.
+ * @throws `Cancelled` when the preview moved on during the navigation; the snapshot is disposed on any throw.
+ */
+async function openPreviewAtConfiguredPath(snapshot: TutorialProject, generation: number) {
+  try {
+    await router.replace({
+      name: courseEditorPreviewRouteName,
+      params: { ...courseRouteParams(), inEditorPath: getConfiguredPath(snapshot) },
+      query: route.query,
+      hash: route.hash
+    })
+  } catch (error) {
+    snapshot.dispose()
+    throw error
+  }
+  if (!isCurrentPreview(generation)) {
+    snapshot.dispose()
+    throw new Cancelled('preview superseded')
+  }
+}
 
 /**
  * Start a preview because the preview route became current without `handlePreview` (typed URL, reload, browser
@@ -493,6 +528,8 @@ async function enterPreviewFromRoute() {
     // Leaving the preview route bumps the generation (see the watch below), so a load that finishes after the
     // author left is discarded by `loadPreviewSnapshot` itself.
     const snapshot = await loadPreviewSnapshot(generation)
+    // Entered with no path inside the project (a typed URL, say): start where a learner would.
+    if (paramToSegments(route.params.inEditorPath).length === 0) await openPreviewAtConfiguredPath(snapshot, generation)
     previewError.value = null
     preview.value = snapshot
   } catch (error) {
@@ -526,7 +563,7 @@ async function loadSavedCourseSnapshot(courseID: string, generation: number) {
   const snapshot = await TutorialProject.load(course)
   // Superseded or orphaned: the author left the preview (or the editor) while the course loaded.
   if (!isCurrentPreview(generation)) {
-    snapshot.project.dispose()
+    snapshot.dispose()
     throw new Cancelled('preview superseded')
   }
   return { course, snapshot }
@@ -545,12 +582,14 @@ async function previewSavedCourse(courseID: string) {
   const generation = ++previewGeneration
   previewCourseID.value = courseID
   previewError.value = null
-  // Drop the finished course before loading the next: `CoursePlayground` disposes the snapshot it was given when
-  // it unmounts, and `nextTick` lets that happen before this load can publish another one.
+  // Take the finished course off the screen before loading the next, so its playground unmounts (and its snapshot
+  // is disposed) before another one can be published.
   preview.value = null
   await nextTick()
   try {
     const { course, snapshot } = await loadSavedCourseSnapshot(courseID, generation)
+    // The route still says where the finished course was; the next one starts where a learner would.
+    await openPreviewAtConfiguredPath(snapshot, generation)
     previewCourse.value = course
     preview.value = snapshot
   } catch (error) {
@@ -647,8 +686,8 @@ function restoreAuthorCopilot() {
 watch(
   isPreviewRoute,
   (isPreview) => {
-    // Leaving the preview (Back to editor, history, completion modal): release the snapshot so the playground
-    // unmounts and disposes its project, and bring the author's copilot back.
+    // Leaving the preview (Back to editor, history, completion modal): take the snapshot off the screen (it is
+    // disposed once the playground has unmounted), and bring the author's copilot back.
     if (!isPreview) {
       // Any load still in flight belongs to a preview that is over: let it discard its snapshot.
       previewGeneration++
@@ -709,16 +748,6 @@ async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
   const next = action === 'next' ? nextCourseID() : null
   if (next != null) return previewSavedCourse(next)
   await exitPreview()
-}
-
-/**
- * The playground reported a failure of the course program: show it in place of the playground.
- * @param error - The error raised by the playground course runner.
- * @returns void; side effect: sets `previewError`.
- * Called by: `components/course-editor/CourseEditor.vue#template` (`CoursePlayground @failed`)
- */
-function handlePreviewFailed(error: Error) {
-  previewError.value = error
 }
 
 /**
@@ -829,8 +858,9 @@ onMounted(() => {
 onUnmounted(() => {
   // Anything still awaited (modals, snapshot loads) sees this and drops its result.
   sessionAlive = false
-  // A preview load in flight is orphaned too.
+  // A preview load in flight is orphaned too, and the playground showing a snapshot has unmounted by now.
   previewGeneration++
+  preview.value?.dispose()
   // Leaving the editor from the preview route: the author's copilot must not stay replaced by the learner's.
   restoreAuthorCopilot()
   window.removeEventListener('beforeunload', handleBeforeUnload)
@@ -943,12 +973,12 @@ onUnmounted(() => {
         <UIError v-if="previewError != null" class="flex-1" :retry="retryPreview">
           {{ previewError.message }}
         </UIError>
-        <!-- The playground runs the snapshot project; `course-completed` and `failed` are handled above. -->
+        <!-- The playground runs the snapshot project at the route's in-editor path, and shows its own errors. -->
         <CoursePlayground
           v-else-if="preview != null"
           :project="preview"
+          :in-editor-path="route.params.inEditorPath"
           @course-completed="handlePreviewCompleted"
-          @failed="handlePreviewFailed"
         />
         <!-- No snapshot and no error yet: the preview is still being prepared. -->
         <UIDetailedLoading v-else class="flex-1" :percentage="0">

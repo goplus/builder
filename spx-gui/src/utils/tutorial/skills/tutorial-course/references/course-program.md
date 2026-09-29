@@ -70,7 +70,7 @@ Editor.Runtime.onExit callback     // the project runtime exited; the callback r
 Editor.Runtime.onLog callback      // one run per newly appended runtime log line; error output is not included
 Editor.CodeEditor.filterAPIs apis  // limit the APIs the Code Editor offers
 Editor.CodeEditor.formatWorkspace  // format the current workspace
-Editor.Ruler.show / hide           // the ruler over the stage
+Editor.Ruler.enable / disable      // turn the ruler over the stage on or off
 ```
 
 `filterAPIs` takes definition identifiers of the form `xgo:<package>?<name>#<overloadId>`; leaving out

@@ -136,7 +136,7 @@ const entryQueryRet = useQuery(
     if (ctx.signal.aborted) {
       // A newer query (e.g. another course on the same route) has superseded this one.
       // Release the freshly loaded project ourselves: `useQuery` discards the result and nobody else will.
-      project.project.dispose()
+      project.dispose()
       throw new Cancelled('superseded')
     }
     // Hand the loaded parts to the `data` watcher, which turns them into the on-screen session.
@@ -163,8 +163,7 @@ async function disposeSession() {
   session.value = null
   // Let the `v-if="session != null"` subtree unmount before its project goes away.
   await nextTick()
-  // Dispose the embedded learner project (the `TutorialProject` itself has nothing else to release).
-  current?.project.project.dispose()
+  current?.project.dispose()
 }
 
 /**

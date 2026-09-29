@@ -4,15 +4,15 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { createI18n } from '@/utils/i18n'
 import { courseEditorRoutes, getCourseEditorRoute } from '@/apps/xbuilder/router'
-import type { IRouter } from '@/components/editor/editor-state'
+import type { IInEditorRouter } from '@/components/editor/editor-state'
 import type { SpxProject } from '@/models/spx/project'
 import SpxProjectEditorHost from './SpxProjectEditorHost.vue'
 
 // The host's own job is the route: which in-editor path the embedded Project Editor is told to show, and when.
 // What it builds that on -- the editor state, its UI, Monaco -- is stood in for, so only the route logic is under
-// test. The fake state records the `IRouter` it is synced with, which is the host's whole contract with it. It never
-// acts on what it is shown, though, so it cannot tell when the state's own navigation overtakes the host's: those
-// round trips are covered against a real editor state in `SpxProjectEditorHost.sync.test.ts`.
+// test. The fake state records the `IInEditorRouter` it is synced with, which is the host's whole contract with it.
+// It never acts on what it is shown, though, so it cannot tell when the state's own navigation overtakes the host's:
+// those round trips are covered against a real editor state in `SpxProjectEditorHost.sync.test.ts`.
 const { states, FakeEditorState } = vi.hoisted(() => {
   class FakeEditorState {
     editing = { startEditing: vi.fn() }
@@ -21,8 +21,8 @@ const { states, FakeEditorState } = vi.hoisted(() => {
       this.router = router as FakeEditorState['router']
     })
     dispose = vi.fn()
-    /** The view of the route the host handed over, or null until `syncWithRouter` was called. */
-    router: IRouter | null = null
+    /** The router the host handed over, or null until `syncWithRouter` was called. */
+    router: IInEditorRouter | null = null
     constructor(
       _i18n: unknown,
       public project: unknown
@@ -77,7 +77,7 @@ function coursePath(...segments: string[]) {
 
 /** What the Project Editor state is currently told the in-editor path is. */
 function inEditorPathOf(state: FakeEditorState) {
-  return state.router?.currentRoute.value.params.inEditorPath
+  return state.router?.currentPath.value
 }
 
 async function mountHost(options: { at: string; active: boolean }) {
@@ -137,13 +137,13 @@ describe('SpxProjectEditorHost', () => {
     await flushPromises()
     expect(inEditorPathOf(state())).toEqual(['sprites', 'Bird'])
 
-    const frozen = state().router!.currentRoute.value
+    const frozen = state().router!.currentPath.value
     await router.push(coursePath('assets', 'videos'))
     await flushPromises()
 
-    // The very same snapshot, so the watcher `syncWithRouter` installed never fires: nothing gets deselected
-    // while the author works on another document.
-    expect(state().router!.currentRoute.value).toBe(frozen)
+    // The very same path, so the watcher `syncWithRouter` installed never fires: nothing gets deselected while the
+    // author works on another document.
+    expect(state().router!.currentPath.value).toBe(frozen)
   })
 
   it('drops what the project asks for while it is not the open document', async () => {
@@ -152,7 +152,7 @@ describe('SpxProjectEditorHost', () => {
     await wrapper.setProps({ active: false })
     const at = router.currentRoute.value.fullPath
     // What the editor state does on its own, e.g. re-selecting after the author deleted the selected sprite.
-    await state().router!.push({ params: { inEditorPath: ['sprites', 'Lita'] } })
+    await state().router!.push(['sprites', 'Lita'])
     await flushPromises()
 
     expect(router.currentRoute.value.fullPath).toBe(at)

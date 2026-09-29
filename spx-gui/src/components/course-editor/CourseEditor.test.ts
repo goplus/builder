@@ -1,6 +1,7 @@
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent, h, ref } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { createI18n } from '@/utils/i18n'
@@ -76,8 +77,8 @@ vi.mock('./project', () => ({ getProjectEditorHost: () => ({ name: 'ProjectEdito
 vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
   default: {
     name: 'CoursePlayground',
-    props: ['project'],
-    emits: ['courseCompleted', 'failed'],
+    props: ['project', 'inEditorPath'],
+    emits: ['courseCompleted'],
     render: () => null
   }
 }))
@@ -118,11 +119,12 @@ function makeSeries(courseIDs: string[]): CourseSeries {
   } as unknown as CourseSeries
 }
 
-function makeFiles(): Files {
+/** A course's records; `inEditorPath` is where a learner starting it lands in the project. */
+function makeFiles(inEditorPath = ''): Files {
   return {
     'index.json': fromConfig('index.json', {
       project: { type: 'spx', root: 'project' },
-      inEditorPath: '',
+      inEditorPath,
       copilotContext: ''
     }),
     [mainCourseFilePath]: fromText(mainCourseFilePath, 'onStart => {}'),
@@ -130,9 +132,9 @@ function makeFiles(): Files {
   }
 }
 
-async function loadProject(course: PlaygroundCourse) {
+async function loadProject(course: PlaygroundCourse, inEditorPath = '') {
   const project = new TutorialProject()
-  await project.load({ metadata: course, files: makeFiles() })
+  await project.load({ metadata: course, files: makeFiles(inEditorPath) })
   return project
 }
 
@@ -167,8 +169,15 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 
-/** Mount the editor for `course` of `series`, already showing the preview of the course being edited. */
-async function mountPreviewing(course: PlaygroundCourse, series: CourseSeries, options?: { editing?: boolean }) {
+/**
+ * Mount the editor for `course` of `series`, already showing the preview of the course being edited. Like the page,
+ * it is mounted under a `v-if`, so `closeEditor` takes it away the way ending the editing session does.
+ */
+async function mountPreviewing(
+  course: PlaygroundCourse,
+  series: CourseSeries,
+  options?: { editing?: boolean; inEditorPath?: string }
+) {
   const router = createRouter({ history: createMemoryHistory(), routes: courseEditorRoutes })
   if (options?.editing) {
     await router.push({
@@ -182,9 +191,10 @@ async function mountPreviewing(course: PlaygroundCourse, series: CourseSeries, o
     })
   }
   await router.isReady()
-  const project = await loadProject(course)
-  const wrapper = mount(CourseEditor, {
-    props: { course, series, project },
+  const project = await loadProject(course, options?.inEditorPath)
+  const shown = ref(true)
+  const Page = defineComponent(() => () => (shown.value ? h(CourseEditor, { course, series, project }) : null))
+  const wrapper = mount(Page, {
     global: {
       plugins: [createI18n({ lang: 'en' }), router, VueQueryPlugin],
       directives: { radar: {} },
@@ -200,7 +210,11 @@ async function mountPreviewing(course: PlaygroundCourse, series: CourseSeries, o
     }
   })
   await flushPromises()
-  return { wrapper, router, project }
+  async function closeEditor() {
+    shown.value = false
+    await flushPromises()
+  }
+  return { wrapper, router, project, closeEditor }
 }
 
 /** Report that the previewed course ran to its end, the way the playground's runner does. */
@@ -296,6 +310,65 @@ describe('CourseEditor preview', () => {
     expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(false)
     expect(wrapper.findComponent({ name: 'UIError' }).exists()).toBe(true)
     expect(router.currentRoute.value.name).toBe(courseEditorPreviewRouteName)
+  })
+
+  it('opens the project where a learner starting the course lands', async () => {
+    const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338']), {
+      inEditorPath: 'sprites/Lita/code'
+    })
+
+    expect(router.currentRoute.value.params.inEditorPath).toEqual(['sprites', 'Lita', 'code'])
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('inEditorPath')).toEqual([
+      'sprites',
+      'Lita',
+      'code'
+    ])
+  })
+
+  it('opens the next course of the series where a learner starting that course lands', async () => {
+    mocks.getCourse.mockResolvedValue(makeCourse('2339', 'Second'))
+    const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course, 'stage'))
+    mocks.completionAction = 'next'
+    const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']), {
+      inEditorPath: 'sprites/Lita/code'
+    })
+
+    await completePreviewedCourse(wrapper)
+
+    // Not where the course before it was left: that path belongs to another project.
+    expect(router.currentRoute.value.params.inEditorPath).toEqual(['stage'])
+    loadSaved.mockRestore()
+  })
+
+  it('disposes a snapshot once the playground running it is gone', async () => {
+    mocks.getCourse.mockResolvedValue(makeCourse('2339', 'Second'))
+    const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
+    mocks.completionAction = 'next'
+    const first = makeCourse('2338', 'First')
+    const { wrapper, router, closeEditor } = await mountPreviewing(first, makeSeries(['2338', '2339']))
+    /** For each snapshot disposed, whether a playground was still running it at that moment. */
+    const stillRunning: boolean[] = []
+    function watchDisposal() {
+      const snapshot = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+      const running = () =>
+        wrapper.findAllComponents({ name: 'CoursePlayground' }).some((p) => p.props('project') === snapshot)
+      vi.spyOn(snapshot, 'dispose').mockImplementation(() => void stillRunning.push(running()))
+    }
+
+    // The walk moves on to the next course...
+    watchDisposal()
+    await completePreviewedCourse(wrapper)
+    expect(stillRunning).toEqual([false])
+    // ...the author goes back to the editor...
+    watchDisposal()
+    await leavePreview(router, first)
+    expect(stillRunning).toEqual([false, false])
+    // ...and the editor closes while previewing.
+    await enterPreview(router, first)
+    watchDisposal()
+    await closeEditor()
+    expect(stillRunning).toEqual([false, false, false])
+    loadSaved.mockRestore()
   })
 })
 
