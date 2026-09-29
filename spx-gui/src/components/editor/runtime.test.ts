@@ -82,17 +82,17 @@ describe('Runtime', () => {
     runtime.dispose()
   })
 
-  it('reports location changes and rejects delayed locations after exit', () => {
+  it('reports location changes and clears location when debug mode ends', () => {
     const runtime = makeRuntime()
     const events: Array<number | null> = []
     runtime.on('didChangeLocation', () => events.push(runtime.location?.line ?? null))
     runtime.setRunning({ mode: 'debug', initializing: true })
-    runtime.beginLocationTracking()
     const location = (line: number) => ({
       textDocument: { uri: 'file:///Sprite.spx' },
       line
     })
 
+    runtime.setLocation(location(1))
     runtime.setLocation(location(1))
     runtime.setLocation(location(2))
     expect(events).toEqual([1, 2])
@@ -101,18 +101,14 @@ describe('Runtime', () => {
     runtime.setRunning({ mode: 'none' })
     expect(events).toEqual([1, 2, 3, null])
 
-    runtime.setRunning({ mode: 'debug', initializing: true })
-    runtime.beginLocationTracking()
     runtime.setLocation(location(4))
-    runtime.invalidateLocation()
-    runtime.setLocation(location(5))
     expect(runtime.location).toBeNull()
+
     runtime.setRunning({ mode: 'debug', initializing: true })
-    runtime.setLocation(location(6))
-    expect(runtime.location).toBeNull()
-    runtime.beginLocationTracking()
-    runtime.setLocation(location(6))
+    runtime.setLocation(location(5))
     runtime.clearOutputs()
+    expect(runtime.location).toEqual(location(5))
+    runtime.setRunning({ mode: 'debug', initializing: true })
     expect(runtime.location).toBeNull()
     runtime.dispose()
   })

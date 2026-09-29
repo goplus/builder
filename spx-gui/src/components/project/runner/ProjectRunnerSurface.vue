@@ -5,7 +5,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { SpxProject } from '@/models/spx/project'
 import { UIButton, UITooltip } from '@/components/ui'
 import ProjectRunner from './ProjectRunner.vue'
-import type { ProjectRunnerExecutionLocation, ProjectRunnerLog } from './spx-log'
+import type { SpxExecutionLocation, SpxLog } from './spx-log'
 
 type RunnerState = 'initial' | 'loading' | 'running'
 
@@ -39,8 +39,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:fullscreen': [value: boolean]
   exit: [code: number]
-  log: [log: ProjectRunnerLog]
-  executionLocation: [location: ProjectRunnerExecutionLocation]
+  log: [log: SpxLog]
+  executionLocation: [location: SpxExecutionLocation]
 }>()
 
 const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
@@ -480,9 +480,9 @@ defineExpose({
           :track-execution-location="props.trackExecutionLocation"
           class="runner"
           :project="project"
-          @log="(log) => emit('log', log)"
-          @execution-location="(location) => emit('executionLocation', location)"
-          @exit="(code) => emit('exit', code)"
+          @log="emit('log', $event)"
+          @execution-location="emit('executionLocation', $event)"
+          @exit="emit('exit', $event)"
         />
         <slot v-if="!overlayActive" name="inline-overlay" />
         <div v-if="overlayActive && initialLoading && !overlayOpening" class="overlay-loading"></div>

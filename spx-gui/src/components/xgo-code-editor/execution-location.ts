@@ -1,3 +1,4 @@
+import Emitter from '@/utils/emitter'
 import type { TextDocumentIdentifier } from './common'
 
 export type ExecutionLocation = {
@@ -6,7 +7,7 @@ export type ExecutionLocation = {
   line: number
 }
 
-/** Provides the current execution location as reactive state. */
-export interface IExecutionLocationProvider {
-  readonly location: ExecutionLocation | null
+/** Provides the current execution location and reports when it changes. */
+export interface IExecutionLocationProvider extends Emitter<{ didChangeExecutionLocation: void }> {
+  provideExecutionLocation(): ExecutionLocation | null
 }

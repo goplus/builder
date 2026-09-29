@@ -1,12 +1,30 @@
 <script setup lang="ts">
+import { shallowRef, watch } from 'vue'
+import type { ExecutionLocation } from '../../execution-location'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import { useDecorations } from '../common'
 
 const { ui } = useCodeEditorUICtx()
+const location = shallowRef<ExecutionLocation | null>(null)
+
+watch(
+  () => ui.codeEditor.executionLocationProvider,
+  (provider, _, onCleanup) => {
+    const refreshLocation = () => {
+      location.value = provider?.provideExecutionLocation() ?? null
+    }
+    refreshLocation()
+    if (provider != null) onCleanup(provider.on('didChangeExecutionLocation', refreshLocation))
+  },
+  { immediate: true }
+)
 
 useDecorations(() => {
-  const location = ui.codeEditor.executionLocationProvider?.location
-  const line = location?.textDocument.uri === ui.activeTextDocument?.id.uri ? location?.line : null
+  const currentLocation = location.value
+  const line =
+    currentLocation != null && currentLocation.textDocument.uri === ui.activeTextDocument?.id.uri
+      ? currentLocation.line
+      : null
   if (line == null) return []
   const model = ui.editor.getModel()
   if (model == null || line < 1 || line > model.getLineCount()) return []

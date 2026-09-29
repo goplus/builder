@@ -162,7 +162,7 @@ import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
 import { client } from '@/apis/common'
 import errorBgUrl from './error-bg.svg'
-import { parseSpxConsoleLog, type ProjectRunnerExecutionLocation, type ProjectRunnerLog } from './spx-log'
+import { parseSpxLog, type SpxExecutionLocation, type SpxLog } from './spx-log'
 
 const runnerBaseUrl = getProjectRunnerBaseUrl()
 const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
@@ -172,8 +172,8 @@ const assetURLs = getProjectRunnerAssetURLs()
 const props = defineProps<{ project: SpxProject; trackExecutionLocation?: boolean }>()
 
 const emit = defineEmits<{
-  log: [log: ProjectRunnerLog]
-  executionLocation: [location: ProjectRunnerExecutionLocation]
+  log: [log: SpxLog]
+  executionLocation: [location: SpxExecutionLocation]
   exit: [code: number]
 }>()
 
@@ -195,14 +195,14 @@ watch(runnerIframeRef, (iframe) => {
 function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   iframeWindow.__xb_track_execution_location = props.trackExecutionLocation === true
   iframeWindow.console.log = function (...args: unknown[]) {
-    const event = typeof args[0] === 'string' ? parseSpxConsoleLog(args[0]) : null
-    if (event?.type !== 'executionLocation') {
+    const event = typeof args[0] === 'string' ? parseSpxLog(args[0]) : null
+    if (event == null) {
       // eslint-disable-next-line no-console
       console.log(...args)
+      return
     }
-    if (event?.type === 'log') emit('log', event.log)
-    else if (event?.type === 'executionLocation') emit('executionLocation', event.executionLocation)
-    else if (event?.type === 'unknown') capture(new Error(`Unknown spx runtime log: ${args[0]}`))
+    if (event.type === 'log') emit('log', event.log)
+    else emit('executionLocation', event.executionLocation)
   }
   iframeWindow.console.warn = function (...args: unknown[]) {
     console.warn(...args)

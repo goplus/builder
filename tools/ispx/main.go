@@ -31,6 +31,8 @@ func ispxInit() error {
 	trackLocation := js.Global().Get("__xb_track_execution_location")
 	if trackLocation.Type() == js.TypeBoolean && trackLocation.Bool() {
 		ixgoCtx.SetDebug(logExecutionLocation)
+		// NewContext created the SSA builder before SetDebug changed BuilderMode.
+		ixgoCtx.Builder.Reset()
 	}
 
 	// Override fmt.Print* functions to log with caller info.
