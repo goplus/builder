@@ -176,6 +176,15 @@ const emit = defineEmits<{
   executionLocation: [location: SpxExecutionLocation]
   exit: [code: number]
 }>()
+const emitExecutionLocation = throttle(
+  (location: SpxExecutionLocation) => {
+    if (unmounted) return
+    if (state.value.type !== 'starting' && state.value.type !== 'running') return
+    emit('executionLocation', location)
+  },
+  33,
+  { leading: false }
+)
 
 const [thumbnailUrl, thumbnailUrlLoading] = useRenderableImageUrl(() => props.project.thumbnail)
 const signedInStateQuery = useSignedInStateQuery()
@@ -202,7 +211,7 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
       return
     }
     if (event.type === 'log') emit('log', event.log)
-    else emit('executionLocation', event.executionLocation)
+    else emitExecutionLocation(event.executionLocation)
   }
   iframeWindow.console.warn = function (...args: unknown[]) {
     console.warn(...args)
