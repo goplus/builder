@@ -24,16 +24,14 @@ const courses = coursesQueryRet.data
 async function confirmCourseAction(
   action: LocaleMessage,
   content: LocaleMessage = {
-    en: 'The current course learning state will be discarded.',
-    zh: '当前课程的学习状态将被丢弃。'
+    en: 'The current course learning state will be discarded. Continue?',
+    zh: '当前课程的学习状态将被丢弃，确认继续吗？'
   }
 ) {
   // TODO: Skip confirmation when the course is still in its initial state (https://github.com/goplus/builder/issues/3546).
   return confirm({
     title: t(action),
-    content: t(content),
-    cancelText: t({ en: 'Cancel', zh: '取消' }),
-    confirmText: t(action)
+    content: t(content)
   })
 }
 
@@ -70,15 +68,15 @@ const { fn: handleReturnSeries } = useMessageHandle(
 )
 
 const { fn: handleSelectCourse } = useMessageHandle(
-  async (courseID: string) => {
+  async (courseID: string, courseTitle: string) => {
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null || courseID === currentCourse.id) return
-    if (!(await confirmCourseAction({ en: 'Open another course', zh: '切换课程' }))) return
+    if (!(await confirmCourseAction({ en: `Start course ${courseTitle}`, zh: `开始课程 ${courseTitle}` }))) return
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
     await tutorial.startCourse(currentCourse.series.id, courseID)
   },
-  { en: 'Failed to open course', zh: '打开课程失败' }
+  { en: 'Failed to start course', zh: '开始课程失败' }
 )
 
 const { fn: handleRestartCourse } = useMessageHandle(
@@ -87,7 +85,10 @@ const { fn: handleRestartCourse } = useMessageHandle(
     if (currentCourse == null) return
     const confirmed = await confirmCourseAction(
       { en: 'Restart course', zh: '重新开始课程' },
-      { en: 'The current course learning state will be reset.', zh: '当前课程的学习状态将被重置。' }
+      {
+        en: 'The current course learning state will be reset. Continue?',
+        zh: '当前课程的学习状态将被重置，确认继续吗？'
+      }
     )
     if (!confirmed) return
     resetEditorDirtyBeforeLeaving()
@@ -124,7 +125,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
           :sequence="index + 1"
           :active="course.id === tutorial.currentCourse?.id"
           :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
-          @select="handleSelectCourse(course.id)"
+          @select="handleSelectCourse(course.id, course.title)"
           @restart="handleRestartCourse"
         />
       </ul>
