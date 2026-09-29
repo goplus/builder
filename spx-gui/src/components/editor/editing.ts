@@ -167,6 +167,11 @@ export class Editing extends Disposable {
     return this.dirtyRef.value
   }
 
+  /** Clear the dirty flag without changing the project content. */
+  resetDirty() {
+    this.dirtyRef.value = false
+  }
+
   private startDirtyMonitoring() {
     this.addDisposer(
       watch(

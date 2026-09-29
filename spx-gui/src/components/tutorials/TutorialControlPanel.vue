@@ -3,8 +3,11 @@ import { useRouter } from 'vue-router'
 
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { useMessageHandle } from '@/utils/exception'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useSeriesCourses } from '@/stores/course-series'
-import { UIButton, UILoading } from '@/components/ui'
+import { EditingMode } from '@/components/editor/editing'
+import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
+import { UIButton, UILoading, useConfirmDialogWithResult } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
@@ -12,13 +15,42 @@ import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
 const router = useRouter()
 const tutorial = useTutorial()
 const dropdown = useDropdown()
+const editorCtxRef = useEditorCtxRef()
+const confirm = useConfirmDialogWithResult()
+const { t } = useI18n()
 const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.series.id ?? null)
 const courses = coursesQueryRet.data
 
+async function confirmCourseAction(
+  action: LocaleMessage,
+  content: LocaleMessage = {
+    en: 'The current course learning state will be discarded.',
+    zh: '当前课程的学习状态将被丢弃。'
+  }
+) {
+  // TODO: Skip confirmation when the course is still in its initial state (https://github.com/goplus/builder/issues/3546).
+  return confirm({
+    title: t(action),
+    content: t(content),
+    cancelText: t({ en: 'Cancel', zh: '取消' }),
+    confirmText: t(action)
+  })
+}
+
+function resetEditorDirtyBeforeLeaving() {
+  if (tutorial.currentCourse?.kind !== 'guided') return
+  const editing = editorCtxRef.value?.state.editing
+  // Edits to an effect-free project opened for a Guided Course are part of its learning state.
+  // Once the learner confirms discarding that state, reset dirty to skip the editor's route-leave confirmation.
+  if (editing?.mode === EditingMode.EffectFree) editing.resetDirty()
+}
+
 const { fn: handleExitCourse } = useMessageHandle(
-  () => {
+  async () => {
+    if (tutorial.currentCourse == null) return
+    if (!(await confirmCourseAction({ en: 'Exit course', zh: '退出课程' }))) return
     dropdown?.setVisible(false)
-    return tutorial.endCurrentCourse()
+    await tutorial.endCurrentCourse()
   },
   { en: 'Failed to exit course', zh: '退出课程失败' }
 )
@@ -27,6 +59,8 @@ const { fn: handleReturnSeries } = useMessageHandle(
   async () => {
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null) return
+    if (!(await confirmCourseAction({ en: 'Back to series courses', zh: '返回系列课程' }))) return
+    resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
     await tutorial.endCurrentCourse()
     const seriesRoute = getCourseSeriesPageRoute(currentCourse.series.id)
@@ -39,6 +73,8 @@ const { fn: handleSelectCourse } = useMessageHandle(
   async (courseID: string) => {
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null || courseID === currentCourse.id) return
+    if (!(await confirmCourseAction({ en: 'Open another course', zh: '切换课程' }))) return
+    resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
     await tutorial.startCourse(currentCourse.series.id, courseID)
   },
@@ -49,6 +85,12 @@ const { fn: handleRestartCourse } = useMessageHandle(
   async () => {
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null) return
+    const confirmed = await confirmCourseAction(
+      { en: 'Restart course', zh: '重新开始课程' },
+      { en: 'The current course learning state will be reset.', zh: '当前课程的学习状态将被重置。' }
+    )
+    if (!confirmed) return
+    resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
     await tutorial.startCourse(currentCourse.series.id, currentCourse.id)
   },
