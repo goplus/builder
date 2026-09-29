@@ -1,11 +1,20 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  EditorTranslationError,
   extractDocumentationExplanation,
   formatDocumentationTranslation,
   mockEditorTranslationProvider
 } from './translation'
 
 describe('editor translation demo adapter', () => {
+  beforeEach(() => {
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('keeps the definition signature out of the translated explanation', () => {
     expect(extractDocumentationExplanation('func println(a ...any) (n int, err error)\n\nPrintln writes output.')).toBe(
       'Println writes output.'
@@ -56,5 +65,17 @@ describe('editor translation demo adapter', () => {
     await expect(
       mockEditorTranslationProvider.translate({ kind: 'documentation', locale: 'zh', source: 'An unknown sentence.' })
     ).resolves.toBe('【模拟翻译】An unknown sentence.')
+  })
+
+  it.each([
+    [0.5, 'failed'],
+    [0.7, 'rate-limited'],
+    [0.9, 'quota-exceeded']
+  ] as const)('simulates translation failure %s as %s', async (random, kind) => {
+    vi.mocked(Math.random).mockReturnValue(random)
+
+    await expect(
+      mockEditorTranslationProvider.translate({ kind: 'documentation', locale: 'zh', source: 'A string.' })
+    ).rejects.toEqual(new EditorTranslationError(kind))
   })
 })

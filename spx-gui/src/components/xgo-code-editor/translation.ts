@@ -1,6 +1,16 @@
 import type { Lang } from '@/utils/i18n'
 
 export type EditorTranslationKind = 'diagnostic' | 'documentation'
+export type EditorTranslationFailureKind = 'failed' | 'rate-limited' | 'quota-exceeded'
+export type EditorTranslationStatus = 'loading' | 'success' | EditorTranslationFailureKind
+
+export class EditorTranslationError extends Error {
+  name = 'EditorTranslationError'
+
+  constructor(public kind: EditorTranslationFailureKind) {
+    super(kind)
+  }
+}
 
 export type EditorTranslationRequest = {
   kind: EditorTranslationKind
@@ -68,6 +78,13 @@ function mockTranslate(source: string): string {
   return `【模拟翻译】${source}`
 }
 
+function getMockFailureKind(random: number): EditorTranslationFailureKind | null {
+  if (random < 0.4) return null
+  if (random < 0.6) return 'failed'
+  if (random < 0.8) return 'rate-limited'
+  return 'quota-exceeded'
+}
+
 export const mockEditorTranslationProvider: EditorTranslationProvider = {
   async translate(request, signal) {
     await new Promise<void>((resolve, reject) => {
@@ -82,6 +99,8 @@ export const mockEditorTranslationProvider: EditorTranslationProvider = {
       )
     })
     if (request.locale === 'en') return request.source
+    const failureKind = getMockFailureKind(Math.random())
+    if (failureKind != null) throw new EditorTranslationError(failureKind)
     return mockTranslate(request.source)
   }
 }

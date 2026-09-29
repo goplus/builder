@@ -29,7 +29,7 @@ import {
 } from '../code-editor-ui'
 import { fromMonacoPosition } from '../common'
 import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
-import type { EditorTranslationRequest } from '../../translation'
+import { EditorTranslationError, type EditorTranslationRequest, type EditorTranslationStatus } from '../../translation'
 
 type TextHover = Hover & {
   range: Range
@@ -75,7 +75,7 @@ export class HoverController extends Emitter<{
     key: string
     items: Array<{
       contentIndex: number
-      status: 'loading' | 'success' | 'error'
+      status: EditorTranslationStatus
       translated: string | null
     }>
   } | null>(null)
@@ -102,11 +102,20 @@ export class HoverController extends Emitter<{
     if (this.translationStateRef.value?.key !== key) return
     this.translationStateRef.value = {
       key,
-      items: results.map((result, index) => ({
-        contentIndex: requests[index].contentIndex ?? 0,
-        status: result.status === 'fulfilled' ? 'success' : 'error',
-        translated: result.status === 'fulfilled' ? result.value : null
-      }))
+      items: results.map((result, index) => {
+        if (result.status === 'fulfilled') {
+          return {
+            contentIndex: requests[index].contentIndex ?? 0,
+            status: 'success' as const,
+            translated: result.value
+          }
+        }
+        return {
+          contentIndex: requests[index].contentIndex ?? 0,
+          status: result.reason instanceof EditorTranslationError ? result.reason.kind : ('failed' as const),
+          translated: null
+        }
+      })
     }
   }
 

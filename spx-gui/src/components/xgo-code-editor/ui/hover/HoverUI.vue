@@ -13,9 +13,11 @@ import { DiagnosticSeverity, type Action, type Diagnostic } from '../../common'
 import {
   extractDocumentationExplanation,
   formatDocumentationTranslation,
+  type EditorTranslationFailureKind,
   type EditorTranslationRequest
 } from '../../translation'
 import { resolveHoverLayout, resolveHoverMaxHeight, type HoverPlacement } from './layout'
+import TranslationFeedback from './TranslationFeedback.vue'
 
 const props = defineProps<{
   controller: HoverController
@@ -83,6 +85,12 @@ function getTranslationTarget(contentIndex: number) {
 
 function getTranslationState(contentIndex: number) {
   return props.controller.translationState?.items.find((item) => item.contentIndex === contentIndex) ?? null
+}
+
+function getTranslationFailureKind(contentIndex: number): EditorTranslationFailureKind | null {
+  const status = getTranslationState(contentIndex)?.status
+  if (status === 'failed' || status === 'rate-limited' || status === 'quota-exceeded') return status
+  return null
 }
 
 function getTranslationDiagnosticSeverity(contentIndex: number) {
@@ -214,6 +222,7 @@ useDecorations(() => {
             <UIIcon type="loading" class="text-primary-main" />
             <span>{{ $t({ en: 'Translating…', zh: '翻译中…' }) }}</span>
           </div>
+          <TranslationFeedback v-else-if="getTranslationFailureKind(i) != null" :kind="getTranslationFailureKind(i)!" />
           <DiagnosticItem
             v-else-if="getTranslationTarget(i)?.kind === 'diagnostic' && getTranslationState(i)?.translated != null"
             :severity="getTranslationDiagnosticSeverity(i)"
@@ -227,9 +236,6 @@ useDecorations(() => {
             :flag="controller.hover.contents[i].flag"
             :value="getRenderedTranslation(i)!"
           />
-          <p v-else class="text-xs text-red-600" role="alert">
-            {{ $t({ en: 'Translation unavailable', zh: '暂时无法翻译' }) }}
-          </p>
         </div>
       </HoverCardContent>
     </HoverCard>
