@@ -201,7 +201,7 @@ useDecorations(() => {
         <MarkdownView class="hover-content" v-bind="content" />
         <div
           v-if="getTranslationState(i) != null"
-          class="mt-3 w-full min-w-0"
+          class="mt-3 w-full min-w-0 text-[13px]"
           :data-editor-translation-index="i"
           :class="{ 'translation-loading': getTranslationState(i)?.status === 'loading' }"
         >
