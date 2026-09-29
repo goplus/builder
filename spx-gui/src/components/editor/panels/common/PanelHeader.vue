@@ -22,8 +22,8 @@ import { UICardHeader, UIDropdown, UIIcon } from '@/components/ui'
 
 const props = withDefaults(
   defineProps<{
-  active: boolean
-  height?: 'default' | 'large'
+    active: boolean
+    height?: 'default' | 'large'
   }>(),
   { height: 'default' }
 )

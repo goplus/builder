@@ -107,9 +107,7 @@ const handleSpriteGenClick = useMessageHandle(
     ref="listWrapper"
     class="sprite-list overflow-y-auto m-0 gap-2"
     :class="
-      props.layout === 'vertical'
-        ? 'sprite-list-vertical flex flex-col flex-nowrap'
-        : 'flex flex-wrap content-start'
+      props.layout === 'vertical' ? 'sprite-list-vertical flex flex-col flex-nowrap' : 'flex flex-wrap content-start'
     "
   >
     <UIEmpty v-if="list.length === 0" size="medium">

@@ -217,9 +217,7 @@ watchEffect((onCleanup) => {
         initialWidth: sidebarWidth.value,
         maxWidth: Math.max(
           minSidebarWidth,
-          codeEditorEl.value!.clientWidth -
-            minMonacoEditorWidth -
-            (editorToolsEl.value?.offsetWidth ?? 0)
+          codeEditorEl.value!.clientWidth - minMonacoEditorWidth - (editorToolsEl.value?.offsetWidth ?? 0)
         )
       }
       window.addEventListener('mousemove', handleMouseMove)

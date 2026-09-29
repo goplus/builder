@@ -33,11 +33,7 @@ function getPreviewWidthForArea(viewport: Size, area: number) {
   return Math.floor(Math.sqrt(area * ratio) + previewPaddingWidth)
 }
 
-export function getPaneLayout(
-  container: Size,
-  viewport: Size,
-  layout: EditorLayout
-) {
+export function getPaneLayout(container: Size, viewport: Size, layout: EditorLayout) {
   const gap = panelGap
   const minCodeWidth = 384
   const portraitExtraWidth = layout === 'portrait' ? panelGap + spriteRailWidth : 0
@@ -61,14 +57,8 @@ export function getPaneLayout(
   const defaultPreviewWidth =
     layout === 'focused'
       ? Math.max(660, availableWidth * (3 / 6.5))
-      : Math.min(
-          getBasePreviewViewportWidth(viewport) + previewPaddingWidth + portraitExtraWidth,
-          maxPreviewWidth
-        )
-  const previewWidth = Math.max(
-    clampedMinPreviewWidth,
-    Math.min(maxPreviewWidth, defaultPreviewWidth)
-  )
+      : Math.min(getBasePreviewViewportWidth(viewport) + previewPaddingWidth + portraitExtraWidth, maxPreviewWidth)
+  const previewWidth = Math.max(clampedMinPreviewWidth, Math.min(maxPreviewWidth, defaultPreviewWidth))
   return {
     previewWidth,
     codeWidth: availableWidth - previewWidth
