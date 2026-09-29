@@ -173,10 +173,6 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/admin/index.vue'),
     children: [
       {
-        path: '',
-        redirect: '/admin/users'
-      },
-      {
         path: 'users',
         component: () => import('./pages/admin/users.vue')
       },

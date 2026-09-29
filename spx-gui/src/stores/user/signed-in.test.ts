@@ -3,10 +3,22 @@ import { OAuthException } from '@/apis/common/exception'
 import { accountOAuthApisForXBuilder } from '@/apis/account/oauth'
 import * as userApis from '@/apis/user'
 import { OAuthErrorCode } from '@/utils/oauth'
-import { ensureAccessToken, initUserState } from './signed-in'
+import { canUseAdminConsole, ensureAccessToken, initUserState } from './signed-in'
 
 const userStateStorageKey = 'builder-user'
 const originalNavigatorLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
+
+describe('canUseAdminConsole', () => {
+  it.each([
+    [{ canManageAccount: false, canManageAuthorization: false }, false],
+    [{ canManageAccount: true, canManageAuthorization: false }, true],
+    [{ canManageAccount: false, canManageAuthorization: true }, true],
+    [{ canManageAccount: true, canManageAuthorization: true }, true],
+    [null, false]
+  ])('checks the signed-in user management capabilities', (capabilities, expected) => {
+    expect(canUseAdminConsole(capabilities)).toBe(expected)
+  })
+})
 
 describe('ensureAccessToken', () => {
   beforeEach(() => {
