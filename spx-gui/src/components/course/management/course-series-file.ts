@@ -4,14 +4,16 @@ import { extname } from '@/utils/path'
 import { DefaultException } from '@/utils/exception'
 import { getExtFromMime } from '@/utils/file'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getCourse, addCourse, deleteCourse, isGuidedCourse, type GuidedCourse } from '@/apis/course'
-import { addCourseSeries, updateCourseSeries, type CourseSeries } from '@/apis/course-series'
+import { getCourse, addCourse, isGuidedCourse, type GuidedCourse } from '@/apis/course'
+import { addCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { getProject, ProjectType, updateProject, Visibility, type UpdateProjectParams } from '@/apis/project'
 import { createProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, createFileWithUniversalUrl, saveFile } from '@/models/common/cloud'
 import { File as LazyFile } from '@/models/common/file'
 import { xbpHelpers } from '@/models/common/xbp'
 import type { PartialMetadata } from '@/models/project'
+import type { DeleteCourse } from '@/stores/course'
+import type { UpdateCourseSeries } from '@/stores/course-series'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
@@ -100,14 +102,24 @@ export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?
   return new File([zipped], `${courseSeries.title}.xbcs.zip`, { type: 'application/zip' })
 }
 
+/**
+ * The writes an import into an existing series makes that cached courses and series depend on: pass the ones from
+ * `stores/course-series` and `stores/course`, which keep those caches in step.
+ */
+export type CourseSeriesImportWrites = {
+  updateCourseSeries: UpdateCourseSeries
+  deleteCourse: DeleteCourse
+}
+
 export async function importCourseSeriesFile(
   courseSeries: CourseSeries,
   file: globalThis.File,
   signedInUsername: string,
+  writes: CourseSeriesImportWrites,
   signal?: AbortSignal
 ) {
   const data = await loadCourseSeriesFile(file, signal)
-  return importCourseSeriesFileData(courseSeries, data, signedInUsername, signal)
+  return importCourseSeriesFileData({ courseSeries, writes }, data, signedInUsername, signal)
 }
 
 export async function importCourseSeriesFileAsNew(
@@ -155,11 +167,12 @@ async function loadCourseSeriesFile(file: globalThis.File, signal?: AbortSignal)
 }
 
 async function importCourseSeriesFileData(
-  courseSeries: CourseSeries | null,
+  target: { courseSeries: CourseSeries; writes: CourseSeriesImportWrites } | null,
   { manifest, unzipped }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
   signedInUsername: string,
   signal?: AbortSignal
 ) {
+  const courseSeries = target?.courseSeries ?? null
   const projectFullNameMap = new Map<string, string>()
   for (const project of manifest.projects) {
     const importedFullName = await importProject(project, manifest, unzipped, signedInUsername, signal)
@@ -193,12 +206,10 @@ async function importCourseSeriesFileData(
     order: courseSeries?.order ?? 1,
     courseIDs: importedCourses.map((course) => course.id)
   }
-  const importedCourseSeries =
-    courseSeries == null
-      ? await addCourseSeries(params, signal)
-      : await updateCourseSeries(courseSeries.id, params, signal)
-
-  if (courseSeries != null) await Promise.all(courseSeries.courseIDs.map((courseID) => deleteCourse(courseID)))
+  if (target == null) return addCourseSeries(params, signal)
+  const { writes } = target
+  const importedCourseSeries = await writes.updateCourseSeries(target.courseSeries.id, params, signal)
+  await Promise.all(target.courseSeries.courseIDs.map((courseID) => writes.deleteCourse(courseID)))
   return importedCourseSeries
 }
 

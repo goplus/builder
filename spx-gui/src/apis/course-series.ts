@@ -47,16 +47,28 @@ export type AddCourseSeriesParams = Pick<
   CourseSeries,
   'kind' | 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'
 >
-export type UpdateCourseSeriesParams = Pick<CourseSeries, 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'>
+/**
+ * Any subset of a course series' editable fields. `PATCH /course-series/:id` patches just the fields given, so a
+ * caller that only changes which courses the series holds sends `courseIDs` alone and leaves the rest untouched.
+ */
+export type UpdateCourseSeriesParams = Partial<
+  Pick<CourseSeries, 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'>
+>
 
 /** Add a new course series */
-export function addCourseSeries(params: AddCourseSeriesParams, signal?: AbortSignal) {
-  return client.post('/user/course-series', params, { signal }) as Promise<CourseSeries>
+export async function addCourseSeries(params: AddCourseSeriesParams, signal?: AbortSignal) {
+  const series = (await client.post('/user/course-series', params, { signal })) as
+    | CourseSeries
+    | LegacyGuidedCourseSeries
+  return normalizeCourseSeries(series)
 }
 
 /** Update an existing course series */
-export function updateCourseSeries(id: string, params: UpdateCourseSeriesParams, signal?: AbortSignal) {
-  return client.patch(`/course-series/${encodeURIComponent(id)}`, params, { signal }) as Promise<CourseSeries>
+export async function updateCourseSeries(id: string, params: UpdateCourseSeriesParams, signal?: AbortSignal) {
+  const series = (await client.patch(`/course-series/${encodeURIComponent(id)}`, params, { signal })) as
+    | CourseSeries
+    | LegacyGuidedCourseSeries
+  return normalizeCourseSeries(series)
 }
 
 /** Delete a course series */

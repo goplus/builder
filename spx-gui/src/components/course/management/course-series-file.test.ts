@@ -59,6 +59,9 @@ vi.mock('@/models/common/xbp', () => ({
   }
 }))
 
+// Stand-ins for the store writes an import into an existing series is handed; assertions inspect the mocked APIs.
+const writes = { updateCourseSeries, deleteCourse }
+
 const existingSeries: CourseSeries = {
   id: 'series-id',
   owner: 'alice',
@@ -162,11 +165,10 @@ beforeEach(() => {
   )
   vi.mocked(addCourse).mockResolvedValue({ ...existingCourse, id: 'imported-course' })
   vi.mocked(updateCourseSeries).mockImplementation(async (id, params) => ({
+    // A patch may carry any subset of the fields; whatever it leaves out stays as it was.
+    ...existingSeries,
     id,
     owner: 'alice',
-    kind: existingSeries.kind,
-    createdAt: existingSeries.createdAt,
-    updatedAt: existingSeries.updatedAt,
     ...params
   }))
   vi.mocked(addCourseSeries).mockImplementation(async (params) => ({
@@ -266,6 +268,7 @@ describe('importCourseSeriesFile', () => {
       existingSeries,
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
       'alice',
+      writes,
       ctrl.signal
     )
 
@@ -315,7 +318,8 @@ describe('importCourseSeriesFile', () => {
     await importCourseSeriesFile(
       existingSeries,
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
-      'alice'
+      'alice',
+      writes
     )
 
     expect(updateProject).not.toHaveBeenCalled()
@@ -344,7 +348,8 @@ describe('importCourseSeriesFile', () => {
     await importCourseSeriesFile(
       existingSeries,
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
-      'alice'
+      'alice',
+      writes
     )
 
     expect(updateProject).toHaveBeenCalledWith(
@@ -375,7 +380,8 @@ describe('importCourseSeriesFile', () => {
     await importCourseSeriesFile(
       existingSeries,
       await makeCourseSeriesFile('/editor/curator/EntryProjectPlus/lesson?tab=code'),
-      'alice'
+      'alice',
+      writes
     )
 
     expect(addCourse).toHaveBeenCalledWith(
