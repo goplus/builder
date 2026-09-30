@@ -163,41 +163,40 @@ export class SpxProject extends Disposable implements IProject {
     if (this.cameraFollowSpriteId === sprite.id) this.cameraFollowSpriteId = null
     sprite.dispose()
   }
-  /** Attach a sprite without the interactive name correction performed by addSprite. */
-  private attachSprite(sprite: Sprite, index = this.sprites.length) {
+  private prepareAddSprite(sprite: Sprite, preserve: boolean) {
+    if (!preserve) {
+      const newName = ensureValidSpriteName(sprite.name, this)
+      sprite.setName(newName)
+    }
     sprite.setProject(this)
     sprite.addDisposer(() => sprite.setProject(null))
-    this.sprites.splice(index, 0, sprite)
   }
-  private prepareAddSprite(sprite: Sprite) {
-    const newName = ensureValidSpriteName(sprite.name, this)
-    sprite.setName(newName)
-  }
-  /**
-   * Add given sprite to project.
-   * NOTE: the sprite's name may be altered to avoid conflict
-   */
-  addSprite(sprite: Sprite) {
-    this.prepareAddSprite(sprite)
-    this.attachSprite(sprite)
+  /** Add given sprite to project. */
+  addSprite(
+    sprite: Sprite,
+    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    preserve = false
+  ) {
+    this.prepareAddSprite(sprite, preserve)
+    this.sprites.push(sprite)
     if (!this.zorder.includes(sprite.id)) {
       this.zorder = [...this.zorder, sprite.id]
     }
   }
-  /**
-   * Add a sprite after the specified reference sprite.
-   */
+  /** Add a sprite after the specified reference sprite. */
   addSpriteAfter(
     /** Sprite to be added */
     sprite: Sprite,
     /** ID of the reference sprite */
-    referenceId: string
+    referenceId: string,
+    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    preserve = false
   ) {
     const index = this.sprites.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`sprite ${referenceId} not found`)
 
-    this.prepareAddSprite(sprite)
-    this.attachSprite(sprite, index + 1)
+    this.prepareAddSprite(sprite, preserve)
+    this.sprites.splice(index + 1, 0, sprite)
     if (!this.zorder.includes(sprite.id)) {
       const idx = this.zorder.indexOf(referenceId)
       if (idx === -1) this.zorder.push(sprite.id)
@@ -252,38 +251,37 @@ export class SpxProject extends Disposable implements IProject {
     }
     sound.dispose()
   }
-  /** Attach a sound without the interactive name correction performed by addSound. */
-  private attachSound(sound: Sound, index = this.sounds.length) {
+  private prepareAddSound(sound: Sound, preserve: boolean) {
+    if (!preserve) {
+      const newName = ensureValidSoundName(sound.name, this)
+      sound.setName(newName)
+    }
     sound.setProject(this)
     sound.addDisposer(() => sound.setProject(null))
-    this.sounds.splice(index, 0, sound)
   }
-  private prepareAddSound(sound: Sound) {
-    const newName = ensureValidSoundName(sound.name, this)
-    sound.setName(newName)
+  /** Add given sound to project. */
+  addSound(
+    sound: Sound,
+    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    preserve = false
+  ) {
+    this.prepareAddSound(sound, preserve)
+    this.sounds.push(sound)
   }
-  /**
-   * Add given sound to project.
-   * NOTE: the sound's name may be altered to avoid conflict
-   */
-  addSound(sound: Sound) {
-    this.prepareAddSound(sound)
-    this.attachSound(sound)
-  }
-  /**
-   * Add a sound after the specified reference sound.
-   */
+  /** Add a sound after the specified reference sound. */
   addSoundAfter(
     /** Sound to be added */
     sound: Sound,
     /** ID of the reference sound */
-    referenceId: string
+    referenceId: string,
+    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    preserve = false
   ) {
     const index = this.sounds.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`sound ${referenceId} not found`)
 
-    this.prepareAddSound(sound)
-    this.attachSound(sound, index + 1)
+    this.prepareAddSound(sound, preserve)
+    this.sounds.splice(index + 1, 0, sound)
   }
   /** Move a sound within the sounds array, without changing the sound zorder */
   moveSound(from: number, to: number) {
@@ -493,11 +491,11 @@ export class SpxProject extends Disposable implements IProject {
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
     for (const sprite of orderBy(sprites, spriteOrder)) {
-      this.attachSprite(sprite)
+      this.addSprite(sprite, true)
     }
     this.sounds.splice(0).forEach((s) => s.dispose())
     for (const sound of orderBy(sounds, soundOrder)) {
-      this.attachSound(sound)
+      this.addSound(sound, true)
     }
     this.zorder = zorder ?? []
     this.fonts.splice(0, this.fonts.length, ...fonts)

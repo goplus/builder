@@ -129,6 +129,51 @@ describe('Project', () => {
     expect(widget.stage).toBeNull()
   })
 
+  it('should restore names when inserting assets after a reference', () => {
+    const project = makeProject()
+    const originalSprite = project.sprites[0]
+    const sprite = new Sprite('not an identifier')
+    project.addSpriteAfter(sprite, originalSprite.id, true)
+    expect(project.sprites[1]).toBe(sprite)
+    expect(sprite.name).toBe('not an identifier')
+    expect(sprite.project).toBe(project)
+    expect(project.zorder).toEqual([originalSprite.id, sprite.id])
+
+    const costume = new Costume('', mockFile())
+    originalSprite.addCostumeAfter(costume, originalSprite.costumes[0].id, true)
+    expect(originalSprite.costumes[1]).toBe(costume)
+    expect(costume.name).toBe('')
+    expect(costume.parent).toBe(originalSprite)
+
+    const animation = new Animation('')
+    originalSprite.addAnimationAfter(animation, originalSprite.animations[0].id, true)
+    expect(originalSprite.animations[1]).toBe(animation)
+    expect(animation.name).toBe('')
+    expect(animation.sprite).toBe(originalSprite)
+
+    const sound = new Sound('', mockFile())
+    project.addSoundAfter(sound, project.sounds[0].id, true)
+    expect(project.sounds[1]).toBe(sound)
+    expect(sound.name).toBe('')
+    expect(sound._project).toBe(project)
+
+    const stage = project.stage
+    const backdrop = new Backdrop('', mockFile())
+    stage.addBackdropAfter(backdrop, stage.backdrops[0].id, true)
+    expect(stage.backdrops[1]).toBe(backdrop)
+    expect(backdrop.name).toBe('')
+    expect(backdrop.stage).toBe(stage)
+
+    const originalWidget = stage.widgets[0]
+    const widget = new Monitor('', { variableName: 'score' })
+    stage.addWidgetAfter(widget, originalWidget.id, true)
+    expect(stage.widgets[1]).toBe(widget)
+    expect(widget.name).toBe('')
+    expect(widget.stage).toBe(stage)
+    expect(stage.widgetsZorder).toEqual([originalWidget.id, widget.id])
+    expect(stage.export()[0].widgets?.map((w) => w.name)).toEqual(['monitor', ''])
+  })
+
   it('should still correct names when interactively adding assets', () => {
     const project = new SpxProject()
     const sprite = new Sprite('not an identifier')

@@ -69,9 +69,15 @@ export class Costume {
   }
 
   name: string
-  setName(name: string) {
-    const err = validateCostumeName(name, this.parent)
-    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
+  setName(
+    name: string,
+    /** Accept the name without interactive validation; used when loading or cloning existing data. */
+    preserve = false
+  ) {
+    if (!preserve) {
+      const err = validateCostumeName(name, this.parent)
+      if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
+    }
     this.name = name
   }
 

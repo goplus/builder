@@ -79,20 +79,19 @@ export class Animation extends Disposable {
   }
 
   costumes: Costume[]
-  /** Restore costume ownership and contents without correcting names or initializing duration. */
-  private attachCostumes(costumes: Costume[]) {
-    for (const costume of costumes) costume.setParent(this)
-    this.costumes = costumes
-  }
   // For now, detailed methods to manipulate costumes are not needed, we may implement them later
-  setCostumes(costumes: Costume[]) {
+  setCostumes(
+    costumes: Costume[],
+    /** Preserve frame names and duration; used when loading or cloning existing data. */
+    preserve = false
+  ) {
     for (const costume of costumes) {
-      const costumeName = ensureValidCostumeName(costume.name, this)
+      const costumeName = preserve ? costume.name : ensureValidCostumeName(costume.name, this)
       costume.setParent(this)
-      costume.setName(costumeName)
+      costume.setName(costumeName, preserve)
     }
     this.costumes = costumes
-    if (this.duration === 0) {
+    if (!preserve && this.duration === 0) {
       this.duration = costumes.length / defaultFps
     }
   }
@@ -142,7 +141,7 @@ export class Animation extends Disposable {
       soundPlayback: this.soundPlayback
     })
     const costumes = this.costumes.map((c) => c.clone(preserveId))
-    animation.attachCostumes(costumes)
+    animation.setCostumes(costumes, true)
     return animation
   }
 
@@ -213,11 +212,10 @@ export class Animation extends Disposable {
     const animationCostumeNames = animationCostumes.map((c) => c.name)
     for (const costume of animationCostumes) {
       if (costume.name.startsWith(animation.costumeNamePrefix)) {
-        // Decode the serialized name without applying interactive name validation.
-        costume.name = costume.name.slice(animation.costumeNamePrefix.length)
+        costume.setName(costume.name.slice(animation.costumeNamePrefix.length), true)
       }
     }
-    animation.attachCostumes(animationCostumes)
+    animation.setCostumes(animationCostumes, true)
     return [animation, animationCostumeNames]
   }
 
