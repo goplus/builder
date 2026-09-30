@@ -174,7 +174,10 @@ export class SpxProject extends Disposable implements IProject {
   /** Add given sprite to project. */
   addSprite(
     sprite: Sprite,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     this.prepareAddSprite(sprite, preserve)
@@ -189,7 +192,10 @@ export class SpxProject extends Disposable implements IProject {
     sprite: Sprite,
     /** ID of the reference sprite */
     referenceId: string,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     const index = this.sprites.findIndex((s) => s.id === referenceId) // ensure referenceId exists
@@ -262,7 +268,10 @@ export class SpxProject extends Disposable implements IProject {
   /** Add given sound to project. */
   addSound(
     sound: Sound,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     this.prepareAddSound(sound, preserve)
@@ -274,7 +283,10 @@ export class SpxProject extends Disposable implements IProject {
     sound: Sound,
     /** ID of the reference sound */
     referenceId: string,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     const index = this.sounds.findIndex((s) => s.id === referenceId) // ensure referenceId exists

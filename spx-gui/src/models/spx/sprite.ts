@@ -205,7 +205,10 @@ export class Sprite extends Disposable {
   /** Add given costume to sprite. */
   addCostume(
     costume: Costume,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     this.prepareAddCostume(costume, preserve)
@@ -217,7 +220,10 @@ export class Sprite extends Disposable {
     costume: Costume,
     /** ID of the reference costume */
     referenceId: string,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     const index = this.costumes.findIndex((s) => s.id === referenceId) // ensure referenceId exists
@@ -267,7 +273,10 @@ export class Sprite extends Disposable {
   /** Add given animation to sprite. */
   addAnimation(
     animation: Animation,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     this.prepareAddAnimation(animation, preserve)
@@ -279,7 +288,10 @@ export class Sprite extends Disposable {
     animation: Animation,
     /** ID of the reference animation */
     referenceId: string,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     const index = this.animations.findIndex((s) => s.id === referenceId) // ensure referenceId exists

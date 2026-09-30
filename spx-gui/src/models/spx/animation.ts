@@ -82,13 +82,17 @@ export class Animation extends Disposable {
   // For now, detailed methods to manipulate costumes are not needed, we may implement them later
   setCostumes(
     costumes: Costume[],
-    /** Preserve frame names and duration; used when loading or cloning existing data. */
+    /**
+     * Preserve frame names and duration; otherwise correct names and initialize zero duration.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     for (const costume of costumes) {
-      const costumeName = preserve ? costume.name : ensureValidCostumeName(costume.name, this)
       costume.setParent(this)
-      costume.setName(costumeName, preserve)
+      if (!preserve) {
+        costume.setName(ensureValidCostumeName(costume.name, this))
+      }
     }
     this.costumes = costumes
     if (!preserve && this.duration === 0) {

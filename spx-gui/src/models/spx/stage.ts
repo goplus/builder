@@ -106,7 +106,10 @@ export class Stage extends Disposable {
   /** Add given backdrop to stage. */
   addBackdrop(
     backdrop: Backdrop,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     this.prepareAddBackdrop(backdrop, preserve)
@@ -118,7 +121,10 @@ export class Stage extends Disposable {
     backdrop: Backdrop,
     /** ID of the backdrop to insert after */
     referenceId: string,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     const index = this.backdrops.findIndex((s) => s.id === referenceId) // ensure referenceId exists
@@ -176,7 +182,10 @@ export class Stage extends Disposable {
   /** Add given widget to stage. */
   addWidget(
     widget: Widget,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     this.prepareAddWidget(widget, preserve)
@@ -192,7 +201,10 @@ export class Stage extends Disposable {
     widget: Widget,
     /** ID of the widget to insert after */
     referenceId: string,
-    /** Preserve the name without interactive correction; used when loading or cloning existing data. */
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
     preserve = false
   ) {
     const index = this.widgets.findIndex((s) => s.id === referenceId) // ensure referenceId exists
