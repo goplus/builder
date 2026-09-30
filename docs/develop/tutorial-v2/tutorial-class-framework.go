@@ -96,10 +96,10 @@ type CodeEditor interface {
 }
 
 type Ruler interface {
-	// show displays the ruler over the stage.
-	show()
-	// hide removes the ruler from the stage.
-	hide()
+	// enable turns on the ruler over the stage.
+	enable()
+	// disable turns off the ruler over the stage.
+	disable()
 }
 
 type Copilot interface {
