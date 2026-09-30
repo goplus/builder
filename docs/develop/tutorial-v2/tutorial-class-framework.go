@@ -39,7 +39,8 @@ type CourseAbilities interface {
 	// flow always waits for the learner to finish reading.
 	showMessage(message string)
 	// showVideo displays the Course-local video with the given declared resource
-	// name and returns after the learner finishes watching or closes it.
+	// name. Playback ending keeps the player open for replay; the call returns
+	// only after the learner clicks Continue or explicitly closes the dialog.
 	// Presentation never advances automatically.
 	showVideo(videoName string)
 	// complete marks the course as completed and ends the Course program: no
@@ -96,10 +97,10 @@ type CodeEditor interface {
 }
 
 type Ruler interface {
-	// show displays the ruler over the stage.
-	show()
-	// hide removes the ruler from the stage.
-	hide()
+	// enable turns on the ruler over the stage.
+	enable()
+	// disable turns off the ruler over the stage.
+	disable()
 }
 
 type Copilot interface {

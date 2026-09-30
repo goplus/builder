@@ -191,7 +191,7 @@ SPX files and video files are not executor input. Supporting additional Course-p
 | Framework host area  | Concrete owner and behavior                                                                             |
 | -------------------- | ------------------------------------------------------------------------------------------------------- |
 | Prelude and message  | Route-local Tutorial presentation; resolves after learner dismissal                                     |
-| Named video          | Resolves `Video` by name from the same `TutorialProject`; resolves after playback finishes or is closed |
+| Named video          | Resolves `Video` by name from the same `TutorialProject`; keeps the player open after playback; resolves after Continue or explicit close |
 | Completion           | Runtime records the first completion request; repeated requests are ignored                             |
 | Project code queries | Reads the active session `SpxProject`                                                                   |
 | Code Editor          | Delegates API filtering and formatting to the matching Code Editor from #3416                           |
