@@ -98,16 +98,6 @@
       </div>
     </template>
     <template #right>
-      <UIButton
-        v-if="canManageProject"
-        v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-        type="white"
-        icon="publish"
-        :disabled="!isOnline"
-        @click="handlePublishProject"
-      >
-        {{ $t({ en: 'Publish', zh: '发布' }) }}
-      </UIButton>
       <UIButtonGroup
         v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
@@ -145,6 +135,16 @@
           {{ $t({ en: 'Map edit mode', zh: '地图编辑模式' }) }}
         </UITooltip>
       </UIButtonGroup>
+      <UIButton
+        v-if="canManageProject"
+        v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+        type="white"
+        icon="publish"
+        :disabled="!isOnline"
+        @click="handlePublishProject"
+      >
+        {{ $t({ en: 'Publish', zh: '发布' }) }}
+      </UIButton>
     </template>
     <template v-if="previewFocused != null" #profile-menu>
       <div
