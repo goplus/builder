@@ -127,6 +127,51 @@
       </div>
     </div>
   </UICard>
+  <Teleport v-if="isCodeSelected" :key="runShortcutTargetKey" defer to="#editor-run-shortcut">
+    <UITooltip v-if="runnerState === 'initial'" placement="top-end">
+      <template #trigger>
+        <UIButton
+          v-radar="{ name: 'Code run shortcut', desc: 'Run the project after editing code' }"
+          type="primary"
+          shape="square"
+          icon="playHollow"
+          :aria-label="$t({ en: 'Run', zh: '运行' })"
+          :loading="handleRun.isLoading.value"
+          @click="handleRun.fn"
+        ></UIButton>
+      </template>
+      {{ $t({ en: 'Run', zh: '运行' }) }}
+    </UITooltip>
+    <UITooltip v-else placement="top-end">
+      <template #trigger>
+        <UIButton
+          v-radar="{ name: 'Code rerun shortcut', desc: 'Rerun the project after editing code' }"
+          type="primary"
+          shape="square"
+          icon="rotate"
+          :aria-label="$t({ en: 'Rerun', zh: '重新运行' })"
+          :disabled="runnerState !== 'running' || handleStop.isLoading.value"
+          :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
+          @click="handleRerun.fn"
+        ></UIButton>
+      </template>
+      {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+    </UITooltip>
+    <UITooltip v-if="runnerState !== 'initial'" placement="top-end">
+      <template #trigger>
+        <UIButton
+          v-radar="{ name: 'Code stop shortcut', desc: 'Stop the running project after editing code' }"
+          type="neutral"
+          shape="square"
+          icon="end"
+          :aria-label="$t({ en: 'Stop', zh: '停止' })"
+          :loading="handleStop.isLoading.value"
+          @click="handleStop.fn"
+        ></UIButton>
+      </template>
+      {{ $t({ en: 'Stop', zh: '停止' }) }}
+    </UITooltip>
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -233,6 +278,12 @@ const signedInUser = useSignedInUser()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
+const isCodeSelected = computed(() => {
+  const selected = editorCtx.state.selected
+  if (selected.type === 'stage') return selected.stageSelected.type === 'code'
+  return selected.spriteSelected?.type === 'code'
+})
+const runShortcutTargetKey = computed(() => editorCtx.state.selected.type)
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
