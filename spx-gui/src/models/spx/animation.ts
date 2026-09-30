@@ -79,6 +79,10 @@ export class Animation extends Disposable {
   }
 
   costumes: Costume[]
+  private attachCostumes(costumes: Costume[]) {
+    for (const costume of costumes) costume.setParent(this)
+    this.costumes = costumes
+  }
   // For now, detailed methods to manipulate costumes are not needed, we may implement them later
   setCostumes(costumes: Costume[]) {
     for (const costume of costumes) {
@@ -137,7 +141,7 @@ export class Animation extends Disposable {
       soundPlayback: this.soundPlayback
     })
     const costumes = this.costumes.map((c) => c.clone(preserveId))
-    animation.setCostumes(costumes)
+    animation.attachCostumes(costumes)
     return animation
   }
 
@@ -208,10 +212,10 @@ export class Animation extends Disposable {
     const animationCostumeNames = animationCostumes.map((c) => c.name)
     for (const costume of animationCostumes) {
       if (costume.name.startsWith(animation.costumeNamePrefix)) {
-        costume.setName(costume.name.slice(animation.costumeNamePrefix.length))
+        costume.name = costume.name.slice(animation.costumeNamePrefix.length)
       }
     }
-    animation.setCostumes(animationCostumes)
+    animation.attachCostumes(animationCostumes)
     return [animation, animationCostumeNames]
   }
 

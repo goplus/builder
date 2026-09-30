@@ -195,10 +195,13 @@ export class Sprite extends Disposable {
       this.costumeIndex = this.costumeIndex - 1
     }
   }
+  private attachCostume(costume: Costume, index = this.costumes.length) {
+    costume.setParent(this)
+    this.costumes.splice(index, 0, costume)
+  }
   private prepareAddCostume(costume: Costume) {
     const newCostumeName = ensureValidCostumeName(costume.name, this)
     costume.setName(newCostumeName)
-    costume.setParent(this)
   }
   /**
    * Add given costume to sprite.
@@ -206,7 +209,7 @@ export class Sprite extends Disposable {
    */
   addCostume(costume: Costume) {
     this.prepareAddCostume(costume)
-    this.costumes.push(costume)
+    this.attachCostume(costume)
   }
   /**
    * Add given costume after the specified reference costume.
@@ -220,7 +223,7 @@ export class Sprite extends Disposable {
     const index = this.costumes.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`costume ${referenceId} not found`)
     this.prepareAddCostume(costume)
-    this.costumes.splice(index + 1, 0, costume)
+    this.attachCostume(costume, index + 1)
     if (index < this.costumeIndex) this.costumeIndex += 1
   }
   /** Move a costume within the costumes array, without changing the default costume */
@@ -254,10 +257,13 @@ export class Sprite extends Disposable {
     animation.setSprite(null)
     animation.dispose()
   }
+  private attachAnimation(animation: Animation, index = this.animations.length) {
+    animation.setSprite(this)
+    this.animations.splice(index, 0, animation)
+  }
   private prepareAddAnimation(animation: Animation) {
     const newAnimationName = ensureValidAnimationName(animation.name, this)
     animation.setName(newAnimationName)
-    animation.setSprite(this)
   }
   /**
    * Add given animation to sprite.
@@ -265,7 +271,7 @@ export class Sprite extends Disposable {
    */
   addAnimation(animation: Animation) {
     this.prepareAddAnimation(animation)
-    this.animations.push(animation)
+    this.attachAnimation(animation)
   }
   /**
    * Add given animation after the specified reference animation.
@@ -279,7 +285,7 @@ export class Sprite extends Disposable {
     const index = this.animations.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`animation ${referenceId} not found`)
     this.prepareAddAnimation(animation)
-    this.animations.splice(index + 1, 0, animation)
+    this.attachAnimation(animation, index + 1)
   }
   /** Move a animation within the animations array */
   moveAnimation(from: number, to: number) {
@@ -556,7 +562,8 @@ export class Sprite extends Disposable {
     if (mAnimations != null) console.warn(`unsupported field: mAnimations for sprite ${name}`)
     if (tAnimations != null) console.warn(`unsupported field: tAnimations for sprite ${name}`)
 
-    const animationNameToId = (name?: string) => name && animations.find((a) => a.name === name)?.id
+    const animationNameToId = (name?: string) =>
+      name != null ? animations.find((a) => a.name === name)?.id : undefined
 
     const sprite = new Sprite(name, code, {
       x,
@@ -585,10 +592,10 @@ export class Sprite extends Disposable {
     for (const costume of costumes) {
       // If this costume is included by any animation, exclude it from sprite's costume list
       if (animationCostumeSet.has(costume.name)) continue
-      sprite.addCostume(costume)
+      sprite.attachCostume(costume)
     }
     for (const animation of animations) {
-      sprite.addAnimation(animation)
+      sprite.attachAnimation(animation)
     }
     return sprite
   }
@@ -615,7 +622,8 @@ export class Sprite extends Disposable {
         this.animations.find((a) => a.id === id)?.name
       ])
     )
-    const animationNameToId = (name?: string) => name && animations.find((a) => a.name === name)?.id
+    const animationNameToId = (name?: string) =>
+      name != null ? animations.find((a) => a.name === name)?.id : undefined
 
     const sprite = new Sprite(this.name, this.code, {
       id: preserveId ? this.id : undefined,
@@ -643,10 +651,10 @@ export class Sprite extends Disposable {
     })
 
     for (const costume of this.costumes) {
-      sprite.addCostume(costume.clone(preserveId))
+      sprite.attachCostume(costume.clone(preserveId))
     }
     for (const animation of animations) {
-      sprite.addAnimation(animation)
+      sprite.attachAnimation(animation)
     }
     return sprite
   }

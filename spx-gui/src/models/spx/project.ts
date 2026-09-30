@@ -163,11 +163,14 @@ export class SpxProject extends Disposable implements IProject {
     if (this.cameraFollowSpriteId === sprite.id) this.cameraFollowSpriteId = null
     sprite.dispose()
   }
+  private attachSprite(sprite: Sprite, index = this.sprites.length) {
+    sprite.setProject(this)
+    sprite.addDisposer(() => sprite.setProject(null))
+    this.sprites.splice(index, 0, sprite)
+  }
   private prepareAddSprite(sprite: Sprite) {
     const newName = ensureValidSpriteName(sprite.name, this)
     sprite.setName(newName)
-    sprite.setProject(this)
-    sprite.addDisposer(() => sprite.setProject(null))
   }
   /**
    * Add given sprite to project.
@@ -175,7 +178,7 @@ export class SpxProject extends Disposable implements IProject {
    */
   addSprite(sprite: Sprite) {
     this.prepareAddSprite(sprite)
-    this.sprites.push(sprite)
+    this.attachSprite(sprite)
     if (!this.zorder.includes(sprite.id)) {
       this.zorder = [...this.zorder, sprite.id]
     }
@@ -193,7 +196,7 @@ export class SpxProject extends Disposable implements IProject {
     if (index === -1) throw new Error(`sprite ${referenceId} not found`)
 
     this.prepareAddSprite(sprite)
-    this.sprites.splice(index + 1, 0, sprite)
+    this.attachSprite(sprite, index + 1)
     if (!this.zorder.includes(sprite.id)) {
       const idx = this.zorder.indexOf(referenceId)
       if (idx === -1) this.zorder.push(sprite.id)
@@ -248,11 +251,14 @@ export class SpxProject extends Disposable implements IProject {
     }
     sound.dispose()
   }
+  private attachSound(sound: Sound, index = this.sounds.length) {
+    sound.setProject(this)
+    sound.addDisposer(() => sound.setProject(null))
+    this.sounds.splice(index, 0, sound)
+  }
   private prepareAddSound(sound: Sound) {
     const newName = ensureValidSoundName(sound.name, this)
     sound.setName(newName)
-    sound.setProject(this)
-    sound.addDisposer(() => sound.setProject(null))
   }
   /**
    * Add given sound to project.
@@ -260,7 +266,7 @@ export class SpxProject extends Disposable implements IProject {
    */
   addSound(sound: Sound) {
     this.prepareAddSound(sound)
-    this.sounds.push(sound)
+    this.attachSound(sound)
   }
   /**
    * Add a sound after the specified reference sound.
@@ -275,7 +281,7 @@ export class SpxProject extends Disposable implements IProject {
     if (index === -1) throw new Error(`sound ${referenceId} not found`)
 
     this.prepareAddSound(sound)
-    this.sounds.splice(index + 1, 0, sound)
+    this.attachSound(sound, index + 1)
   }
   /** Move a sound within the sounds array, without changing the sound zorder */
   moveSound(from: number, to: number) {
@@ -484,9 +490,13 @@ export class SpxProject extends Disposable implements IProject {
 
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
-    orderBy(sprites, spriteOrder).forEach((s) => this.addSprite(s))
+    for (const sprite of orderBy(sprites, spriteOrder)) {
+      this.attachSprite(sprite)
+    }
     this.sounds.splice(0).forEach((s) => s.dispose())
-    orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
+    for (const sound of orderBy(sounds, soundOrder)) {
+      this.attachSound(sound)
+    }
     this.zorder = zorder ?? []
     this.fonts.splice(0, this.fonts.length, ...fonts)
 

@@ -96,10 +96,13 @@ export class Stage extends Disposable {
     this.backdropIndex = idx
   }
 
+  private attachBackdrop(backdrop: Backdrop, index = this.backdrops.length) {
+    backdrop.setStage(this)
+    this.backdrops.splice(index, 0, backdrop)
+  }
   private prepareAddBackdrop(backdrop: Backdrop) {
     const newBackdropName = ensureValidBackdropName(backdrop.name, this)
     backdrop.setName(newBackdropName)
-    backdrop.setStage(this)
   }
   /**
    * Add given backdrop to stage.
@@ -107,7 +110,7 @@ export class Stage extends Disposable {
    */
   addBackdrop(backdrop: Backdrop) {
     this.prepareAddBackdrop(backdrop)
-    this.backdrops.push(backdrop)
+    this.attachBackdrop(backdrop)
   }
   /**
    * Add a backdrop after the specified reference backdrop.
@@ -121,7 +124,7 @@ export class Stage extends Disposable {
     const index = this.backdrops.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`backdrop ${referenceId} not found`)
     this.prepareAddBackdrop(backdrop)
-    this.backdrops.splice(index + 1, 0, backdrop)
+    this.attachBackdrop(backdrop, index + 1)
     if (index < this.backdropIndex) {
       this.backdropIndex = this.backdropIndex + 1
     }
@@ -162,11 +165,14 @@ export class Stage extends Disposable {
   /** Zorder for widgets, will be merged with sprites in model `Project` */
   widgetsZorder: string[]
 
+  private attachWidget(widget: Widget, index = this.widgets.length) {
+    widget.setStage(this)
+    widget.addDisposer(() => widget.setStage(null))
+    this.widgets.splice(index, 0, widget)
+  }
   private prepareAddWidget(widget: Widget) {
     const newName = ensureValidWidgetName(widget.name, this)
     widget.setName(newName)
-    widget.setStage(this)
-    widget.addDisposer(() => widget.setStage(null))
   }
   /**
    * Add given widget to stage.
@@ -174,7 +180,7 @@ export class Stage extends Disposable {
    */
   addWidget(widget: Widget) {
     this.prepareAddWidget(widget)
-    this.widgets.push(widget)
+    this.attachWidget(widget)
 
     if (!this.widgetsZorder.includes(widget.id)) {
       this.widgetsZorder = [...this.widgetsZorder, widget.id]
@@ -192,7 +198,7 @@ export class Stage extends Disposable {
     const index = this.widgets.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`widget ${referenceId} not found`)
     this.prepareAddWidget(widget)
-    this.widgets.splice(index + 1, 0, widget)
+    this.attachWidget(widget, index + 1)
 
     if (!this.widgetsZorder.includes(widget.id)) {
       const idx = this.widgetsZorder.indexOf(referenceId)
@@ -333,11 +339,12 @@ export class Stage extends Disposable {
       (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
     )
     for (const backdrop of backdrops) {
-      stage.addBackdrop(backdrop)
+      stage.attachBackdrop(backdrop)
     }
     const widgets = (widgetConfigs ?? []).map((c) => loadWidget(c))
     for (const widget of widgets) {
-      stage.addWidget(widget)
+      stage.attachWidget(widget)
+      if (!stage.widgetsZorder.includes(widget.id)) stage.widgetsZorder.push(widget.id)
     }
     stage.setPhysics({
       enabled: physicsEnabled === true,
