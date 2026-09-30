@@ -5,7 +5,7 @@
       name: 'Stage panel',
       desc: 'Panel for stage of the project, with quick entries to widgets, sounds and backdrops tabs'
     }"
-    class="min-h-30 flex-[1_1_0]"
+    class="h-[18vh] min-h-30 max-h-36 flex-none"
   >
     <StagePanel layout="wide" />
   </UICard>

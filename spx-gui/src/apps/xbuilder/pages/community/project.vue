@@ -448,7 +448,7 @@ const remixesRet = useQuery(
             v-if="runnerState === 'loading' || runnerState === 'running'"
             v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
             type="neutral"
-            icon="end"
+            icon="stopHollow"
             :loading="handleStop.isLoading.value"
             @click="handleStop.fn"
           >

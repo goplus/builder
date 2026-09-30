@@ -46,7 +46,7 @@
               v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
               type="neutral"
               shape="square"
-              icon="end"
+              icon="stopHollow"
               :aria-label="$t({ en: 'Stop', zh: '停止' })"
               :loading="handleStop.isLoading.value"
               @click="handleStop.fn"

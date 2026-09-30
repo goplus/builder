@@ -9,16 +9,27 @@ describe('editor pane layout', () => {
   it('uses the base preview size when it fits the area limit', () => {
     const container = { width: 1196, height: 782 }
     const result = getPaneLayout(container, landscape, 'landscape')
-    expect(result.previewWidth).toBe(540)
-    expect(result.codeWidth).toBe(640)
+    expect(result.previewWidth).toBe(504)
+    expect(result.codeWidth).toBe(676)
   })
 
   it.each([
-    [classic, 'landscape', 471],
-    [landscape, 'landscape', 540],
-    [portrait, 'portrait', 434]
-  ] as const)('caps a %s preview at %i pixels wide', (viewport, layout, previewWidth) => {
+    [classic, 'landscape', 496],
+    [landscape, 'landscape', 504]
+  ] as const)('uses the base width for a %s preview in %s mode', (viewport, layout, previewWidth) => {
     expect(getPaneLayout({ width: 1408, height: 820 }, viewport, layout).previewWidth).toBe(previewWidth)
+  })
+
+  it.each([classic, landscape])('fits four sprite cards without excessive trailing space for %s', (viewport) => {
+    const result = getPaneLayout({ width: 1408, height: 820 }, viewport, 'landscape')
+    const spritePanelWidth = result.previewWidth - 80 - 16
+    const fourSpriteCardsWidth = 12 + 88 * 4 + 8 * 3
+    expect(spritePanelWidth).toBeGreaterThanOrEqual(fourSpriteCardsWidth)
+    expect(spritePanelWidth - fourSpriteCardsWidth).toBeLessThanOrEqual(20)
+  })
+
+  it('sizes the portrait preview from the available height', () => {
+    expect(getPaneLayout({ width: 1408, height: 820 }, portrait, 'portrait').previewWidth).toBe(475)
   })
 
   it.each(['landscape', 'focused'] as EditorLayout[])('keeps both panes within the container in %s mode', (layout) => {
@@ -35,18 +46,19 @@ describe('editor pane layout', () => {
       const result = getPaneLayout({ width, height: 782 }, portrait, 'portrait')
       expect(result.codeWidth).toBeGreaterThanOrEqual(384)
       expect(result.previewWidth).toBeGreaterThanOrEqual(414)
-      expect(result.previewWidth).toBeLessThanOrEqual(434)
+      expect(result.previewWidth).toBeLessThanOrEqual(453)
       expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(Math.max(width, 814))
     }
   })
 
-  it('shrinks the portrait preview at the minimum desktop size to keep the stage visible', () => {
-    const regularDesktop = getPaneLayout({ width: 1408, height: 820 }, portrait, 'portrait')
-    expect(regularDesktop.previewWidth).toBe(434)
+  it('preserves the portrait preview ratio at the minimum supported 1280x800 screen size', () => {
+    const minimumScreenContent = getPaneLayout({ width: 1248, height: 728 }, portrait, 'portrait')
+    expect(minimumScreenContent.codeWidth).toBeGreaterThanOrEqual(384)
+    expect(minimumScreenContent.previewWidth).toBe(423)
 
-    const minimumDesktop = getPaneLayout({ width: 1248, height: 720 }, portrait, 'portrait')
-    expect(minimumDesktop.codeWidth).toBeGreaterThanOrEqual(384)
-    expect(minimumDesktop.previewWidth).toBe(432)
+    const previewBodyWidth = minimumScreenContent.previewWidth - 104 - 16 - 24
+    const previewBodyHeight = 728 - 48 - 24 - 16 - 144
+    expect(previewBodyWidth / previewBodyHeight).toBeCloseTo(portrait.width / portrait.height, 2)
   })
 
   it('uses the focused default ratio while preserving the minimum code width', () => {

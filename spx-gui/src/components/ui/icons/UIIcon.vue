@@ -19,6 +19,7 @@ import check from './check.svg?raw'
 import microphone from './microphone.svg?raw'
 import reload from './reload.svg?raw'
 import stop from './stop.svg?raw'
+import stopHollow from './stop-hollow.svg?raw'
 import plus from './plus.svg?raw'
 import trash from './trash.svg?raw'
 import edit from './edit.svg?raw'
@@ -100,6 +101,7 @@ const typeIconMap = {
   microphone,
   reload,
   stop,
+  stopHollow,
   plus,
   trash,
   edit,

@@ -467,7 +467,7 @@ defineExpose({
             v-if="runnerState !== 'initial'"
             v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
             type="neutral"
-            icon="end"
+            icon="stopHollow"
             :loading="stopButtonLoading"
             @click="handleStopClick"
           >

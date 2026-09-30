@@ -3,11 +3,8 @@
     <UICardHeader class="h-11" :class="layout === 'wide' ? 'w-full justify-start px-3' : 'w-20 justify-center'">
       {{ $t({ en: 'Stage', zh: '舞台' }) }}
     </UICardHeader>
-    <main
-      class="min-h-0 flex flex-[1_1_0]"
-      :class="layout === 'wide' ? 'items-start px-3 py-2' : 'flex-col items-center'"
-    >
-      <div class="flex-none" :class="layout === 'wide' ? 'pr-3' : 'p-3'">
+    <main class="min-h-0 flex flex-[1_1_0]" :class="layout === 'wide' ? 'items-stretch pl-3' : 'flex-col items-center'">
+      <div class="flex-none" :class="layout === 'wide' ? 'flex items-center pr-3' : 'p-3'">
         <div
           v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
           class="relative h-14 w-14 cursor-pointer flex items-center justify-center rounded-md border border-grey-400 transition-colors"
@@ -17,16 +14,22 @@
           <UIImg class="h-11 w-11 rounded-[4px] object-cover" :src="imgSrc" size="cover" :loading="imgLoading" />
         </div>
       </div>
-      <UIDivider :class="layout === 'wide' ? 'h-14 w-px flex-none' : 'w-10'" />
+      <UIDivider :vertical="layout === 'wide'" :class="layout === 'wide' ? 'h-10 self-center' : 'w-10'" />
       <div
         class="min-w-0"
         :class="
           layout === 'wide'
-            ? 'ml-3 flex flex-[1_1_0] items-stretch'
+            ? 'flex flex-[1_1_0] items-center'
             : 'scroll-container w-full flex-[1_0_72px] overflow-y-auto'
         "
       >
-        <div :class="layout === 'wide' ? 'flex h-full w-full gap-2' : 'flex flex-col items-start gap-2'">
+        <div
+          :class="
+            layout === 'wide'
+              ? 'h-full w-full grid grid-cols-3 items-center justify-items-center'
+              : 'flex flex-col items-start gap-2'
+          "
+        >
           <button
             v-radar="{
               name: 'Backdrops quick entry',
@@ -95,12 +98,8 @@ function openTab(type: Extract<SelectedType, 'backdrops' | 'sounds' | 'widgets'>
 
 const backdrop = computed(() => editorCtx.project.stage.defaultBackdrop)
 const [imgSrc, imgLoading] = useRenderableImageUrl(() => backdrop.value?.img)
-const quickEntryClass = computed(
-  () =>
-    `cursor-pointer flex flex-col items-center justify-center gap-0.5 rounded-md border-none bg-grey-100 p-1 text-2xs text-grey-900 outline-none transition-colors hover:bg-grey-300 ${
-      layout.value === 'wide' ? 'min-w-0 flex-[1_1_0]' : 'h-14 w-14'
-    }`
-)
+const quickEntryClass =
+  'h-14 w-14 cursor-pointer flex flex-col items-center justify-center gap-0.5 rounded-md border-none bg-grey-100 p-1 text-2xs text-grey-900 outline-none transition-colors hover:bg-grey-300'
 </script>
 
 <style scoped>
