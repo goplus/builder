@@ -5,7 +5,7 @@
     <slot></slot>
     <div class="extra flex items-center gap-2">
       <slot name="extra"></slot>
-      <div id="editor-run-shortcut" class="flex items-center"></div>
+      <div id="editor-run-shortcut" class="flex items-center gap-2"></div>
     </div>
   </div>
 </template>

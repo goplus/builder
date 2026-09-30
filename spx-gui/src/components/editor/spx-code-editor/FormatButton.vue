@@ -3,7 +3,7 @@
     <template #trigger>
       <UIButton
         v-radar="{ name: 'Format button', desc: 'Click to format the code' }"
-        type="white"
+        type="neutral"
         shape="square"
         icon="format"
         :aria-label="$t({ en: 'Format', zh: '格式化' })"
