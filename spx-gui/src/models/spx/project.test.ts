@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
 import { TimeoutException } from '@/utils/exception'
 import { ProjectType } from '@/apis/project'
-import { Sprite } from './sprite'
+import { History } from '@/components/editor/history'
+import { Sprite, State } from './sprite'
 import { Animation } from './animation'
 import { Sound } from './sound'
 import { Costume } from './costume'
-import { fromText, toConfig, type Files } from '../common/file'
+import { fromConfig, fromText, toConfig, type Files } from '../common/file'
 import * as hashHelper from '../common/hash'
 import { Backdrop } from './backdrop'
 import { Monitor } from './widget/monitor'
@@ -43,6 +44,161 @@ function makeProject(screenshotTaker: ScreenshotTaker | null = async () => mockF
 }
 
 describe('Project', () => {
+  it('should restore persisted asset names and references without interactive corrections', async () => {
+    const longName = 'a'.repeat(101)
+    const spriteName = 'not an identifier'
+    const files: Files = {
+      [projectConfigFilePath]: fromConfig('index.json', {
+        backdrops: [{ name: '', path: 'blank.png', x: 0, y: 0 }],
+        backdropIndex: 0,
+        camera: { on: spriteName },
+        zorder: [spriteName, { type: 'monitor', name: longName, mode: 1, val: 'score' }],
+        fontPreferences: ['default']
+      }),
+      'assets/blank.png': mockFile('blank.png'),
+      [`assets/sprites/${spriteName}/index.json`]: fromConfig('index.json', {
+        builder_id: 'sprite-id',
+        costumes: [
+          { name: '', path: 'blank.png' },
+          { name: longName, path: 'long.png' },
+          { name: '__animation__', path: 'frame.png' }
+        ],
+        costumeIndex: 0,
+        fAnimations: { '': { frameFrom: '__animation__', frameTo: '__animation__', onStart: { play: longName } } },
+        defaultAnimation: '',
+        animBindings: { die: '' }
+      }),
+      [`assets/sprites/${spriteName}/blank.png`]: mockFile('blank.png'),
+      [`assets/sprites/${spriteName}/long.png`]: mockFile('long.png'),
+      [`assets/sprites/${spriteName}/frame.png`]: mockFile('frame.png'),
+      [`assets/sounds/${longName}/index.json`]: fromConfig('index.json', { path: 'sound.wav' }),
+      [`assets/sounds/${longName}/sound.wav`]: mockFile('sound.wav')
+    }
+    const project = new SpxProject()
+    await project.loadFiles(files)
+
+    const assertRestored = () => {
+      const sprite = project.sprites[0]
+      const animation = sprite.animations[0]
+      const sound = project.sounds[0]
+      const stage = project.stage
+      expect(sprite.name).toBe(spriteName)
+      expect(sprite.project).toBe(project)
+      expect(sprite.costumes.map((c) => c.name)).toEqual(['', longName])
+      expect(sprite.costumes.every((c) => c.parent === sprite)).toBe(true)
+      expect(sprite.defaultCostume).toBe(sprite.costumes[0])
+      expect(animation.name).toBe('')
+      expect(animation.sprite).toBe(sprite)
+      expect(animation.costumes[0].name).toBe('')
+      expect(animation.costumes[0].parent).toBe(animation)
+      expect(sprite.getAnimationBoundStates(animation.id)).toEqual([State.Default, State.Die])
+      expect(animation.sound).toBe(sound.id)
+      expect(sound.name).toBe(longName)
+      expect(sound._project).toBe(project)
+      expect(project.cameraFollowSprite).toBe(sprite)
+      expect(project.zorder).toEqual([sprite.id])
+      expect(stage.defaultBackdrop?.name).toBe('')
+      expect(stage.backdrops[0].stage).toBe(stage)
+      expect(stage.widgets[0].name).toBe(longName)
+      expect(stage.widgets[0].stage).toBe(stage)
+      expect(stage.widgetsZorder).toEqual([stage.widgets[0].id])
+    }
+    assertRestored()
+    const exported = project.exportFiles()
+    const hash = await hashHelper.hashFiles(exported)
+    await project.loadFiles(exported)
+    assertRestored()
+    expect(await hashHelper.hashFiles(project.exportFiles())).toBe(hash)
+
+    const history = new History(project)
+    await history.doAction({ name: { en: 'Move sprite', zh: '移动精灵' } }, () => project.sprites[0].setX(20))
+    await history.undo()
+    assertRestored()
+    await history.redo()
+    assertRestored()
+    expect(project.sprites[0].x).toBe(20)
+
+    const [sprite] = project.sprites
+    const [sound] = project.sounds
+    const [widget] = project.stage.widgets
+    project.removeSprite(sprite.id)
+    project.removeSound(sound.id)
+    project.stage.removeWidget(widget.id)
+    expect(sprite.project).toBeNull()
+    expect(sound._project).toBeNull()
+    expect(widget.stage).toBeNull()
+  })
+
+  it('should restore names when inserting assets after a reference', () => {
+    const project = makeProject()
+    const originalSprite = project.sprites[0]
+    const sprite = new Sprite('not an identifier')
+    project.addSpriteAfter(sprite, originalSprite.id, true)
+    expect(project.sprites[1]).toBe(sprite)
+    expect(sprite.name).toBe('not an identifier')
+    expect(sprite.project).toBe(project)
+    expect(project.zorder).toEqual([originalSprite.id, sprite.id])
+
+    const costume = new Costume('', mockFile())
+    originalSprite.addCostumeAfter(costume, originalSprite.costumes[0].id, true)
+    expect(originalSprite.costumes[1]).toBe(costume)
+    expect(costume.name).toBe('')
+    expect(costume.parent).toBe(originalSprite)
+
+    const animation = new Animation('')
+    originalSprite.addAnimationAfter(animation, originalSprite.animations[0].id, true)
+    expect(originalSprite.animations[1]).toBe(animation)
+    expect(animation.name).toBe('')
+    expect(animation.sprite).toBe(originalSprite)
+
+    const sound = new Sound('', mockFile())
+    project.addSoundAfter(sound, project.sounds[0].id, true)
+    expect(project.sounds[1]).toBe(sound)
+    expect(sound.name).toBe('')
+    expect(sound._project).toBe(project)
+
+    const stage = project.stage
+    const backdrop = new Backdrop('', mockFile())
+    stage.addBackdropAfter(backdrop, stage.backdrops[0].id, true)
+    expect(stage.backdrops[1]).toBe(backdrop)
+    expect(backdrop.name).toBe('')
+    expect(backdrop.stage).toBe(stage)
+
+    const originalWidget = stage.widgets[0]
+    const widget = new Monitor('', { variableName: 'score' })
+    stage.addWidgetAfter(widget, originalWidget.id, true)
+    expect(stage.widgets[1]).toBe(widget)
+    expect(widget.name).toBe('')
+    expect(widget.stage).toBe(stage)
+    expect(stage.widgetsZorder).toEqual([originalWidget.id, widget.id])
+    expect(stage.export()[0].widgets?.map((w) => w.name)).toEqual(['monitor', ''])
+  })
+
+  it('should still correct names when interactively adding assets', () => {
+    const project = new SpxProject()
+    const sprite = new Sprite('not an identifier')
+    project.addSprite(sprite)
+    expect(sprite.name).toBe('NotAnIdentifier')
+    const costume = new Costume('', mockFile())
+    sprite.addCostume(costume)
+    expect(costume.name).toBe('costume1')
+    const duplicate = new Costume('costume1', mockFile())
+    sprite.addCostumeAfter(duplicate, costume.id)
+    expect(duplicate.name).toBe('costume2')
+    const animation = new Animation('')
+    sprite.addAnimation(animation)
+    expect(animation.name).toBe('animation1')
+    const sound = new Sound('', mockFile())
+    project.addSound(sound)
+    expect(sound.name).toBe('sound1')
+    const backdrop = new Backdrop('', mockFile())
+    project.stage.addBackdrop(backdrop)
+    expect(backdrop.name).toBe('backdrop1')
+    const widget = new Monitor('', { variableName: 'score' })
+    project.stage.addWidget(widget)
+    expect(widget.name).toBe('widget1')
+  })
+
   it('should preserve animation sound with exportGameFiles & loadGameFiles', async () => {
     const project = makeProject()
     const sprite = project.sprites[0]
