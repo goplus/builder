@@ -26,8 +26,10 @@ import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { courseTitleMaxLength, updateCourse, type PlaygroundCourse } from '@/apis/course'
+import { courseTitleMaxLength, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
+import { useUpdateCourse } from '@/stores/course'
+import { useUpdateCourseSeries } from '@/stores/course-series'
 import { createStarterCourseFiles } from '@/components/course-editor/starter'
 import { createDefaultProject } from '@/components/project/default-project'
 import {
@@ -57,6 +59,7 @@ const emit = defineEmits<{
 
 const i18n = useI18n()
 const m = useMessage()
+const updateCourse = useUpdateCourse()
 
 const isEditMode = computed(() => props.course !== null)
 const modalTitle = computed(() =>
@@ -123,7 +126,7 @@ async function buildStarterFiles() {
  * This modal's one attempt at creating a course. It outlives a failed submit, so that submitting again finishes
  * what is left instead of creating a second course.
  */
-const creation = new PlaygroundCourseCreation(buildStarterFiles)
+const creation = new PlaygroundCourseCreation(buildStarterFiles, useUpdateCourseSeries())
 
 /**
  * Create the course (uploading its starter content first) or update the one being edited, then resolve with it.

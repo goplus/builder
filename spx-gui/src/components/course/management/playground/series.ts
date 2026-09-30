@@ -4,12 +4,8 @@
  * own, so opening one has to find its series first.
  */
 
-import {
-  getCourseSeries,
-  listSignedInUserCourseSeries,
-  updateCourseSeries,
-  type CourseSeries
-} from '@/apis/course-series'
+import { getCourseSeries, listSignedInUserCourseSeries, type CourseSeries } from '@/apis/course-series'
+import type { UpdateCourseSeries } from '@/stores/course-series'
 
 /** How many series are looked through; an author with more Playground Course series than this is not expected. */
 const seriesPageSize = 100
@@ -52,13 +48,19 @@ export async function findSeriesOfCourse(courseID: string): Promise<CourseSeries
  *
  * @param courseSeriesID - The series to add to.
  * @param courseID - The course to add.
+ * @param updateCourseSeries - The write, from `stores/course-series#useUpdateCourseSeries`, which keeps cached series
+ *   in step with it.
  * @returns The series as it stands afterwards. When the course is already in it (a retry after a response that
  *   never arrived), nothing is written.
  *
  * Called by: components/course/management/playground/creation.ts#PlaygroundCourseCreation.run,
  * components/course/management/playground/series.test.ts.
  */
-export async function appendCourseToSeries(courseSeriesID: string, courseID: string): Promise<CourseSeries> {
+export async function appendCourseToSeries(
+  courseSeriesID: string,
+  courseID: string,
+  updateCourseSeries: UpdateCourseSeries
+): Promise<CourseSeries> {
   const current = await getCourseSeries(courseSeriesID)
   if (current.courseIDs.includes(courseID)) return current
   return updateCourseSeries(courseSeriesID, { courseIDs: [...current.courseIDs, courseID] })

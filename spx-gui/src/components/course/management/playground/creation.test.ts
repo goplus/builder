@@ -4,10 +4,11 @@ import type { PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { PlaygroundCourseCreation } from './creation'
 
-const { addCourse, saveFiles, appendCourseToSeries } = vi.hoisted(() => ({
+const { addCourse, saveFiles, appendCourseToSeries, updateCourseSeries } = vi.hoisted(() => ({
   addCourse: vi.fn(),
   saveFiles: vi.fn(),
-  appendCourseToSeries: vi.fn()
+  appendCourseToSeries: vi.fn(),
+  updateCourseSeries: vi.fn()
 }))
 
 vi.mock('@/apis/course', () => ({ addCourse }))
@@ -27,7 +28,7 @@ describe('PlaygroundCourseCreation', () => {
 
   it('creates the course from its starter files and puts it in the series', async () => {
     const buildFiles = vi.fn().mockResolvedValue({})
-    const creation = new PlaygroundCourseCreation(buildFiles)
+    const creation = new PlaygroundCourseCreation(buildFiles, updateCourseSeries)
 
     await expect(creation.run(params)).resolves.toEqual({ course, courseSeries: series })
 
@@ -37,12 +38,12 @@ describe('PlaygroundCourseCreation', () => {
       thumbnail: 'kodo://bucket/thumbnail',
       content: { 'index.json': 'data:,' }
     })
-    expect(appendCourseToSeries).toHaveBeenCalledWith('39', '2345')
+    expect(appendCourseToSeries).toHaveBeenCalledWith('39', '2345', updateCourseSeries)
   })
 
   it('does not create a second course when only adding it to the series failed', async () => {
     const buildFiles = vi.fn().mockResolvedValue({})
-    const creation = new PlaygroundCourseCreation(buildFiles)
+    const creation = new PlaygroundCourseCreation(buildFiles, updateCourseSeries)
     appendCourseToSeries.mockRejectedValueOnce(new Error('network'))
 
     // The course exists by now, and the author is told so rather than that creating it failed.
@@ -60,7 +61,7 @@ describe('PlaygroundCourseCreation', () => {
   })
 
   it('starts over when creating the course itself failed', async () => {
-    const creation = new PlaygroundCourseCreation(vi.fn().mockResolvedValue({}))
+    const creation = new PlaygroundCourseCreation(vi.fn().mockResolvedValue({}), updateCourseSeries)
     addCourse.mockRejectedValueOnce(new Error('quota'))
 
     await expect(creation.run(params)).rejects.toThrow('quota')

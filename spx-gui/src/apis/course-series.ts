@@ -56,13 +56,19 @@ export type UpdateCourseSeriesParams = Partial<
 >
 
 /** Add a new course series */
-export function addCourseSeries(params: AddCourseSeriesParams, signal?: AbortSignal) {
-  return client.post('/user/course-series', params, { signal }) as Promise<CourseSeries>
+export async function addCourseSeries(params: AddCourseSeriesParams, signal?: AbortSignal) {
+  const series = (await client.post('/user/course-series', params, { signal })) as
+    | CourseSeries
+    | LegacyGuidedCourseSeries
+  return normalizeCourseSeries(series)
 }
 
 /** Update an existing course series */
-export function updateCourseSeries(id: string, params: UpdateCourseSeriesParams, signal?: AbortSignal) {
-  return client.patch(`/course-series/${encodeURIComponent(id)}`, params, { signal }) as Promise<CourseSeries>
+export async function updateCourseSeries(id: string, params: UpdateCourseSeriesParams, signal?: AbortSignal) {
+  const series = (await client.patch(`/course-series/${encodeURIComponent(id)}`, params, { signal })) as
+    | CourseSeries
+    | LegacyGuidedCourseSeries
+  return normalizeCourseSeries(series)
 }
 
 /** Delete a course series */

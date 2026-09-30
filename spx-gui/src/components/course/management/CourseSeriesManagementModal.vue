@@ -4,7 +4,8 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import type { CourseKind } from '@/apis/course'
-import { listSignedInUserCourseSeries, deleteCourseSeries, type CourseSeries } from '@/apis/course-series'
+import { listSignedInUserCourseSeries, type CourseSeries } from '@/apis/course-series'
+import { useDeleteCourseSeries } from '@/stores/course-series'
 import {
   UIIcon,
   UIPagination,
@@ -62,6 +63,7 @@ const queryRet = useQuery(
 const i18n = useI18n()
 const m = useMessage()
 const confirm = useConfirmDialog()
+const deleteCourseSeries = useDeleteCourseSeries()
 
 const invokeEditModal = useModal(CourseSeriesEditModal)
 

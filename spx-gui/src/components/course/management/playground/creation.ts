@@ -10,6 +10,7 @@ import { addCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { saveFiles } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
+import type { UpdateCourseSeries } from '@/stores/course-series'
 import { appendCourseToSeries } from './series'
 
 /** What the author filled in. */
@@ -34,8 +35,13 @@ export class PlaygroundCourseCreation {
   /**
    * @param buildFiles - Builds the records the course starts with. Passed in because the app builds them from the
    *   default project, which fetches template assets, while a test supplies its own.
+   * @param updateCourseSeries - The write that puts the course in its series, from
+   *   `stores/course-series#useUpdateCourseSeries`, which keeps cached series in step with it.
    */
-  constructor(private buildFiles: () => Promise<Files>) {}
+  constructor(
+    private buildFiles: () => Promise<Files>,
+    private updateCourseSeries: UpdateCourseSeries
+  ) {}
 
   /** The course this attempt has created so far, if any. */
   get createdCourse() {
@@ -63,7 +69,7 @@ export class PlaygroundCourseCreation {
     }
     const course = this.created
     try {
-      const courseSeries = await appendCourseToSeries(params.courseSeriesID, course.id)
+      const courseSeries = await appendCourseToSeries(params.courseSeriesID, course.id, this.updateCourseSeries)
       return { course, courseSeries }
     } catch (cause) {
       console.warn('failed to add the new course to its series', cause)

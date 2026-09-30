@@ -29,12 +29,13 @@ import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } fr
 import { useRoute, useRouter, type RouteLocationNormalizedGeneric } from 'vue-router'
 import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import { getCourse, updateCourse, type PlaygroundCourse } from '@/apis/course'
+import { getCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { courseEditorPreviewRouteName, courseEditorRouteName } from '@/apps/xbuilder/router'
 import { saveFiles } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import { TutorialProject } from '@/models/tutorial/project'
+import { useUpdateCourse } from '@/stores/course'
 import { useCopilot } from '@/components/copilot/context'
 import type { SessionExported } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
@@ -87,6 +88,7 @@ const router = useRouter()
 const confirm = useConfirmDialogWithResult()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const copilot = useCopilot()
+const updateCourse = useUpdateCourse()
 
 /**
  * The Tutorial project's config (`index.json`), narrowed to non-null: the page only renders this component once

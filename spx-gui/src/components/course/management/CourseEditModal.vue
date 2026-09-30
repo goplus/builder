@@ -6,10 +6,10 @@ import {
   addCourse,
   coursePromptMaxLength,
   courseTitleMaxLength,
-  updateCourse,
   type AddCourseParams,
   type GuidedCourse
 } from '@/apis/course'
+import { useUpdateCourse } from '@/stores/course'
 import { UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useMessage, useForm } from '@/components/ui'
 import ThumbnailUploader from './ThumbnailUploader.vue'
 
@@ -25,6 +25,7 @@ const emit = defineEmits<{
 
 const i18n = useI18n()
 const m = useMessage()
+const updateCourse = useUpdateCourse()
 
 const isEditMode = computed(() => props.course !== null)
 const modalTitle = computed(() =>

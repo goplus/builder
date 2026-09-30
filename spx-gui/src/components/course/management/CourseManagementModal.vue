@@ -7,12 +7,12 @@ import { useQuery } from '@/utils/query'
 import {
   isGuidedCourse,
   listSignedInUserCourses,
-  deleteCourse,
   type Course,
   type CourseKind,
   type PlaygroundCourse
 } from '@/apis/course'
 import { getCourseEditorRoute } from '@/apps/xbuilder/router'
+import { useDeleteCourse } from '@/stores/course'
 import {
   UIButton,
   UIIcon,
@@ -74,6 +74,7 @@ const i18n = useI18n()
 const m = useMessage()
 const confirm = useConfirmDialog()
 const router = useRouter()
+const deleteCourse = useDeleteCourse()
 
 const invokeGuidedEditModal = useModal(CourseEditModal)
 const invokePlaygroundEditModal = useModal(PlaygroundCourseEditModal)

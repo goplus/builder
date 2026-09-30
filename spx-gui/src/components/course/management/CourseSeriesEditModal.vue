@@ -8,12 +8,13 @@ import {
   addCourseSeries,
   courseSeriesDescriptionMaxLength,
   courseSeriesTitleMaxLength,
-  updateCourseSeries,
   type AddCourseSeriesParams,
   type CourseSeries,
   type UpdateCourseSeriesParams
 } from '@/apis/course-series'
 import { listSignedInUserCourses, type Course, type CourseKind } from '@/apis/course'
+import { useDeleteCourse } from '@/stores/course'
+import { useUpdateCourseSeries } from '@/stores/course-series'
 import { useSignedInUser } from '@/stores/user'
 import {
   exportCourseSeriesFile,
@@ -52,6 +53,8 @@ const i18n = useI18n()
 const m = useMessage()
 const confirm = useConfirmDialog()
 const signedInUser = useSignedInUser()
+const updateCourseSeries = useUpdateCourseSeries()
+const deleteCourse = useDeleteCourse()
 
 const isEditMode = computed(() => props.courseSeries !== null)
 // A series only holds courses of its own kind, so the kind decides which courses can be picked.
@@ -213,7 +216,7 @@ const handleImport = useMessageHandle(
 
     await m.withLoading(
       courseSeries != null
-        ? importCourseSeriesFile(courseSeries, file, username)
+        ? importCourseSeriesFile(courseSeries, file, username, { updateCourseSeries, deleteCourse })
         : importCourseSeriesFileAsNew(file, username),
       i18n.t({ en: 'Importing course series file', zh: '导入课程系列文件中' })
     )

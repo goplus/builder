@@ -105,13 +105,17 @@ export function generatePlaygroundCourseCopilotContext(
 }
 
 /** Add a new course */
-export function addCourse(params: AddCourseParams, signal?: AbortSignal) {
-  return client.post('/user/courses', params, { signal }) as Promise<Course>
+export async function addCourse(params: AddCourseParams, signal?: AbortSignal) {
+  const course = (await client.post('/user/courses', params, { signal })) as Course | LegacyGuidedCourse
+  return normalizeCourse(course)
 }
 
 /** Update an existing course */
-export function updateCourse(id: string, params: UpdateCourseParams, signal?: AbortSignal) {
-  return client.patch(`/courses/${encodeURIComponent(id)}`, params, { signal }) as Promise<Course>
+export async function updateCourse(id: string, params: UpdateCourseParams, signal?: AbortSignal) {
+  const course = (await client.patch(`/courses/${encodeURIComponent(id)}`, params, { signal })) as
+    | Course
+    | LegacyGuidedCourse
+  return normalizeCourse(course)
 }
 
 /** Delete a course */

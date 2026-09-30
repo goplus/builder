@@ -9,7 +9,7 @@ const { listSignedInUserCourseSeries, getCourseSeries, updateCourseSeries } = vi
   updateCourseSeries: vi.fn()
 }))
 
-vi.mock('@/apis/course-series', () => ({ listSignedInUserCourseSeries, getCourseSeries, updateCourseSeries }))
+vi.mock('@/apis/course-series', () => ({ listSignedInUserCourseSeries, getCourseSeries }))
 
 function makeSeries(id: string, courseIDs: string[]): CourseSeries {
   return {
@@ -64,7 +64,7 @@ describe('Playground Course series lookup', () => {
       ...patch
     }))
 
-    const updated = await appendCourseToSeries('39', '2345')
+    const updated = await appendCourseToSeries('39', '2345', updateCourseSeries)
 
     expect(updateCourseSeries).toHaveBeenCalledWith('39', { courseIDs: ['2337', '2340', '2345'] })
     expect(updated.courseIDs).toEqual(['2337', '2340', '2345'])
@@ -74,7 +74,7 @@ describe('Playground Course series lookup', () => {
     // A retry after a response that never arrived: the first attempt did go through.
     getCourseSeries.mockResolvedValue(makeSeries('39', ['2337', '2345']))
 
-    const current = await appendCourseToSeries('39', '2345')
+    const current = await appendCourseToSeries('39', '2345', updateCourseSeries)
 
     expect(updateCourseSeries).not.toHaveBeenCalled()
     expect(current.courseIDs).toEqual(['2337', '2345'])
