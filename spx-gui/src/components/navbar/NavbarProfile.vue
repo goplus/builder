@@ -99,6 +99,9 @@ async function handleSignOut() {
           {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
         </UITooltip>
       </UIMenuGroup>
+      <UIMenuGroup v-if="$slots.default">
+        <slot></slot>
+      </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleUserPage">
           {{ $t({ en: 'Profile', zh: '个人主页' }) }}

@@ -3,7 +3,7 @@ import { createFileWithWebUrl } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import { Backdrop } from '@/models/spx/backdrop'
 import { basicChineseFontFamilyName, createBasicChineseFontFamily } from '@/models/spx/font'
-import { SpxProject } from '@/models/spx/project'
+import { SpxProject, type ViewportSize } from '@/models/spx/project'
 import { Sound } from '@/models/spx/sound'
 import { Sprite } from '@/models/spx/sprite'
 
@@ -25,8 +25,13 @@ function getTemplateAssets(): Files {
   )
 }
 
-export async function createDefaultProject(owner: string, name: string, fontPreferences: string[]) {
-  const project = new SpxProject(owner, name)
+export async function createDefaultProject(
+  owner: string,
+  name: string,
+  fontPreferences: string[],
+  viewportSize?: ViewportSize
+) {
+  const project = new SpxProject(owner, name, { viewportSize })
   const files = getTemplateAssets()
   const backdropFile = files['assets/grass.svg']!
   project.stage.addBackdrop(await Backdrop.create('grass', backdropFile))

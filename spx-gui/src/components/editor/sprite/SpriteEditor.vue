@@ -33,6 +33,7 @@
       visible: state.selected.type === 'code'
     }"
     :code-file-path="sprite.codeFilePath"
+    :bottom-inset="bottomInset"
   />
   <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
@@ -156,5 +157,6 @@ import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
 defineProps<{
   sprite: Sprite
   state: SpriteEditorState
+  bottomInset?: number
 }>()
 </script>
