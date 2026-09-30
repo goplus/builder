@@ -98,6 +98,16 @@
       </div>
     </template>
     <template #right>
+      <UIButton
+        v-if="canManageProject"
+        v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+        type="white"
+        icon="publish"
+        :disabled="!isOnline"
+        @click="handlePublishProject"
+      >
+        {{ $t({ en: 'Publish', zh: '发布' }) }}
+      </UIButton>
       <UIButtonGroup
         v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="mx-3 items-center"
@@ -163,6 +173,7 @@ import {
   useMessage,
   UIButtonGroup,
   UIButtonGroupItem,
+  UIButton,
   UITag,
   UISwitch
 } from '@/components/ui'

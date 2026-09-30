@@ -4,12 +4,12 @@
       <UIButton
         v-radar="{ name: 'Format button', desc: 'Click to format the code' }"
         type="neutral"
-        shape="square"
-        icon="format"
         :aria-label="$t({ en: 'Format', zh: '格式化' })"
         :loading="handleFormat.isLoading.value"
         @click="handleFormat.fn"
-      ></UIButton>
+      >
+        {{ $t({ en: 'Format', zh: '格式化' }) }}
+      </UIButton>
     </template>
     {{ $t({ en: 'Format', zh: '格式化' }) }}
   </UITooltip>

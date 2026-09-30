@@ -23,20 +23,6 @@
           </template>
           {{ $t({ en: 'Run', zh: '运行' }) }}
         </UITooltip>
-        <UITooltip v-if="canManageProject" placement="top-end">
-          <template #trigger>
-            <UIButton
-              v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-              type="secondary"
-              shape="square"
-              icon="publish"
-              :aria-label="$t({ en: 'Publish', zh: '发布' })"
-              :disabled="!isOnline"
-              @click="handlePublishProject"
-            ></UIButton>
-          </template>
-          {{ $t({ en: 'Publish', zh: '发布' }) }}
-        </UITooltip>
       </template>
       <template v-else>
         <UITooltip placement="top-end">
@@ -245,7 +231,6 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
-import { useSignedInUser } from '@/stores/user'
 import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -257,8 +242,6 @@ import {
 } from '@/components/editor/spx-code-editor'
 import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
-import { useNetwork } from '@/utils/network'
-import { usePublishProject } from '@/components/project'
 
 // Code Editor operations may take a long time for some projects and block project execution.
 const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
@@ -273,8 +256,6 @@ const props = withDefaults(
 const fillContainer = computed(() => props.fillContainer)
 const editorCtx = useEditorCtx()
 const codeEditorRef = useCodeEditorRef()
-const { isOnline } = useNetwork()
-const signedInUser = useSignedInUser()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
@@ -462,19 +443,6 @@ async function executeRun(action: 'run' | 'rerun') {
     throw error
   }
 }
-
-const canManageProject = computed(() => {
-  if (editorCtx.project == null) return false
-  const signedInUsername = signedInUser.value?.username
-  if (signedInUsername == null) return false
-  if (editorCtx.project.owner !== signedInUsername) return false
-  return true
-})
-const publishProject = usePublishProject()
-const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.project), {
-  en: 'Failed to publish project',
-  zh: '发布项目失败'
-}).fn
 
 const handleRun = useMessageHandle(
   async () => {
