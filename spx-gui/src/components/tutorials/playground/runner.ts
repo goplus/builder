@@ -1,10 +1,9 @@
 import { shallowRef, watch } from 'vue'
-import type { JsonSchema7Type } from 'zod-to-json-schema'
 
 import Emitter from '@/utils/emitter'
-import { XGoExecutor, type XGoExitReason, type XGoFramework } from '@/utils/xgoexec'
+import { XGoExecutor, type XGoExitReason } from '@/utils/xgoexec'
 import { ActionException, DefaultException, type Exception } from '@/utils/exception/base'
-import type { SpotlightOptions } from '@/utils/tutorial-framework'
+import { createTutorialFramework, type SpotlightOptions, type TutorialFrameworkHost } from '@/utils/tutorial-framework'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot, Session, Topic } from '@/components/copilot/copilot'
@@ -12,7 +11,9 @@ import { RuntimeOutputKind } from '@/components/editor/runtime'
 import type { EditorState } from '@/components/editor/editor-state'
 
 export type PlaygroundCoursePresentation = {
-  showMessage(content: string): Promise<void>
+  showPrelude(content: string, signal: AbortSignal): Promise<void>
+  showMessage(content: string, signal: AbortSignal): Promise<void>
+  showVideo(videoName: string, signal: AbortSignal): Promise<void>
   revealSpotlight(target: string, tip: string, options: SpotlightOptions): Promise<void>
 }
 
@@ -25,6 +26,7 @@ export type PlaygroundCourseRunnerOptions = {
   editorState: EditorState
   copilot: Copilot
   presentation: PlaygroundCoursePresentation
+  formatWorkspace(): Promise<void>
 }
 
 export class PlaygroundCourseRunner extends Emitter<{
@@ -35,7 +37,7 @@ export class PlaygroundCourseRunner extends Emitter<{
   private session: Session | null = null
   private eventQueue = Promise.resolve()
   private completion: PlaygroundCourseCompletion | null = null
-  private completionTimer: ReturnType<typeof setTimeout> | null = null
+  private presentationController = new AbortController()
   private lastRuntimeOutputID = -1
   private lastError: Exception | null = null
   private started = false
@@ -45,6 +47,7 @@ export class PlaygroundCourseRunner extends Emitter<{
   editorState: EditorState
   copilot: Copilot
   private presentation: PlaygroundCoursePresentation
+  private formatWorkspace: () => Promise<void>
 
   private apiWhitelistRef = shallowRef<string[] | null>(null)
   get apiWhitelist() {
@@ -68,8 +71,9 @@ export class PlaygroundCourseRunner extends Emitter<{
     this.editorState = options.editorState
     this.copilot = options.copilot
     this.presentation = options.presentation
+    this.formatWorkspace = options.formatWorkspace
     this.executor = new XGoExecutor({
-      framework: this.createFramework(),
+      framework: createTutorialFramework(this.createHost()),
       onError: (phase, message) => {
         this.lastError = new DefaultException({
           en: `Tutorial Course failed during ${phase}: ${message}`,
@@ -86,19 +90,19 @@ export class PlaygroundCourseRunner extends Emitter<{
     this.started = true
 
     const { project, copilot } = this
-    await copilot.startSession(this.createCopilotTopic(project))
-    this.session = copilot.currentSession
-    if (this.isDisposed) {
-      if (copilot.currentSession === this.session) copilot.endCurrentSession()
-      return
-    }
-    const session = this.session
-    this.addDisposer(() => {
-      if (copilot.currentSession === session) copilot.endCurrentSession()
-    })
-    this.installEventBridge()
-
     try {
+      await copilot.startSession(this.createCopilotTopic(project))
+      this.session = copilot.currentSession
+      if (this.isDisposed) {
+        if (copilot.currentSession === this.session) copilot.endCurrentSession()
+        return
+      }
+      const session = this.session
+      this.addDisposer(() => {
+        if (copilot.currentSession === session) copilot.endCurrentSession()
+      })
+      this.installEventBridge()
+
       await this.executor.run({ [mainCourseFilePath]: project.mainCourse.code })
       if (this.isDisposed) return
       this.executorStarted.resolve()
@@ -112,34 +116,50 @@ export class PlaygroundCourseRunner extends Emitter<{
 
   dispose() {
     if (this.isDisposed) return
-    if (this.completionTimer != null) clearTimeout(this.completionTimer)
-    this.completionTimer = null
+    this.presentationController.abort()
     super.dispose()
   }
 
-  private createFramework(): XGoFramework {
+  private createHost(): TutorialFrameworkHost {
+    const signal = this.presentationController.signal
     return {
-      name: 'tutorial',
-      capabilities: {
-        course_showMessage: (request) => this.presentation.showMessage((request as { content: string }).content),
-        course_complete: () => this.acceptCompletion(null),
-        course_completeWith: (request) => this.acceptCompletion((request as { content: string }).content),
-        copilot_generateText: (request) => this.copilot.generateTextResponse((request as { content: string }).content),
-        copilot_generateJSON: (request) => {
-          const { content, schema } = request as { content: string; schema: JsonSchema7Type }
-          return this.copilot.generateJSONResponse(content, schema)
+      course: {
+        showPrelude: async (content) => {
+          if (!signal.aborted) await this.presentation.showPrelude(content, signal)
         },
-        spotlight_reveal: (request) => {
-          const { target, tip, options } = request as {
-            target: string
-            tip: string
-            options: SpotlightOptions
-          }
-          return this.presentation.revealSpotlight(target, tip, options)
+        showMessage: async (content) => {
+          if (!signal.aborted) await this.presentation.showMessage(content, signal)
         },
-        editor_ruler_enable: () => this.setRulerEnabled(true),
-        editor_ruler_disable: () => this.setRulerEnabled(false),
-        editor_codeEditor_filterAPIs: (request) => this.setAPIWhitelist((request as { apis: string[] }).apis)
+        showVideo: async (videoName) => {
+          if (!signal.aborted) await this.presentation.showVideo(videoName, signal)
+        },
+        complete: async () => this.acceptCompletion(null),
+        completeWith: async (content) => this.acceptCompletion(content)
+      },
+      editor: {
+        codeEditor: {
+          filterAPIs: (apis) => this.setAPIWhitelist(apis),
+          formatWorkspace: () => this.formatWorkspace()
+        },
+        project: {
+          getCode: (name) => {
+            const sprite = this.project.project.sprites.find((sprite) => sprite.name === name)
+            if (sprite == null) throw new Error(`Sprite ${name} not found`)
+            return sprite.code
+          },
+          listSprites: () => this.project.project.sprites.map((sprite) => sprite.name)
+        },
+        ruler: {
+          enable: () => this.setRulerEnabled(true),
+          disable: () => this.setRulerEnabled(false)
+        }
+      },
+      copilot: {
+        generateText: (content) => this.copilot.generateTextResponse(content, this.getSignal()),
+        generateJSON: (content, schema) => this.copilot.generateJSONResponse(content, schema, this.getSignal())
+      },
+      spotlight: {
+        reveal: (target, tip, options) => this.presentation.revealSpotlight(target, tip, options)
       }
     }
   }
@@ -189,11 +209,11 @@ export class PlaygroundCourseRunner extends Emitter<{
     this.eventQueue = this.eventQueue
       .then(async () => {
         await this.executorStarted.promise
-        if (this.isDisposed) return
+        if (this.isDisposed || this.completion != null) return
         await this.executor.dispatchEvent(name, payload)
       })
       .catch((error) => {
-        if (!this.isDisposed)
+        if (!this.isDisposed && this.completion == null)
           this.finishWithFailure(new ActionException(error, { en: 'Failed to dispatch event', zh: '分发事件失败' }))
       })
   }
@@ -201,10 +221,7 @@ export class PlaygroundCourseRunner extends Emitter<{
   private acceptCompletion(feedback: string | null) {
     if (this.completion != null) return
     this.completion = { feedback }
-    this.completionTimer = setTimeout(() => {
-      this.completionTimer = null
-      this.finishWithCompletion()
-    })
+    this.presentationController.abort()
   }
 
   private handleExecutorExit(reason: XGoExitReason) {

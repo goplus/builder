@@ -76,13 +76,17 @@ export type SpotlightOptions = {
  * Course program keeps handling events and may issue further calls,
  * including further presentation calls. The framework does not serialize
  * presentation: when a `course.show*` call arrives while another is pending,
- * the host's capability decides whether to queue it, reject it, or dismiss
- * the earlier one, and documents that choice. Generation calls can be pending
- * concurrently.
+ * the Playground host opens each call directly, without queuing, rejecting,
+ * or replacing other presentation calls. Course authors avoid concurrent
+ * presentation when stacked dialogs would be inappropriate. Generation calls
+ * can be pending concurrently.
  *
- * On completion the host must promptly settle every still-pending call (for
- * presentation, resolving as a no-op is fine): the program only exits after
- * pending callbacks finish, so an unsettled call would hold the exit open.
+ * On completion the host closes and resolves every pending presentation call
+ * and treats later presentation calls as no-ops. Generation calls already
+ * in flight finish with their real results, allowing suspended callbacks to
+ * run to their end; completion waits for these callbacks rather than stopping
+ * the executor. Leaving or replacing the Course cancels generation requests
+ * and stops the executor instead.
  */
 export interface TutorialFrameworkHost {
   course: {
@@ -98,8 +102,9 @@ export interface TutorialFrameworkHost {
      */
     showMessage(message: string): Promise<void>;
     /**
-     * Displays a Course-local video. Resolves after the learner finishes
-     * watching or closes it; presentation never advances automatically.
+     * Displays a Course-local video. Playback ending keeps the player open for
+     * replay; resolves only after the learner clicks Continue or explicitly
+     * closes the dialog. Presentation never advances automatically.
      */
     showVideo(videoName: string): Promise<void>;
     /**

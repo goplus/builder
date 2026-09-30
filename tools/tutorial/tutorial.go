@@ -119,8 +119,9 @@ func (p *Course) ShowMessage(message string) {
 	p.courseProgram.mustCallCapability("course_showMessage", contentRequest{Content: message}, nil)
 }
 
-// ShowVideo plays a Course-local explanatory video and returns once the
-// learner finishes watching or closes it.
+// ShowVideo plays a Course-local explanatory video. Playback ending keeps the
+// player open for replay; the call returns only after the learner clicks
+// Continue or explicitly closes the dialog.
 //
 // videoName is a declared video resource name, not a file path: videos are
 // declared as assets/videos/<name>/index.json and the author writes

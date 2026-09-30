@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
 import { mainCourseFilePath } from '@/models/tutorial/course'
+import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
 import { type CopilotRound, type Topic } from '@/components/copilot/copilot'
 import { Runtime, RuntimeOutputKind } from '@/components/editor/runtime'
@@ -87,14 +88,18 @@ function makeHarness() {
   const editorState = { runtime: editorRuntime } as EditorState
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
+    showPrelude: vi.fn().mockResolvedValue(undefined),
+    showVideo: vi.fn().mockResolvedValue(undefined),
     showMessage: vi.fn().mockResolvedValue(undefined),
     revealSpotlight: vi.fn().mockResolvedValue(undefined)
   }
+  const formatWorkspace = vi.fn().mockResolvedValue(undefined)
   const runner = new PlaygroundCourseRunner({
     project,
     editorState,
     copilot: copilot as unknown as Copilot,
-    presentation
+    presentation,
+    formatWorkspace
   })
   const executor = executorMocks.instances.at(-1)!
   return {
@@ -105,6 +110,7 @@ function makeHarness() {
     copilot,
     executor,
     presentation,
+    formatWorkspace,
     runner,
     getExecutorOptions: () => executor.options
   }
@@ -196,8 +202,12 @@ describe('PlaygroundCourseRunner', () => {
     await expect(generateJSON({ content: 'Is the goal complete?', schema: { type: 'object' } })).resolves.toEqual({
       complete: true
     })
-    expect(harness.copilot.generateTextResponse).toHaveBeenCalledWith('Give feedback')
-    expect(harness.copilot.generateJSONResponse).toHaveBeenCalledWith('Is the goal complete?', { type: 'object' })
+    expect(harness.copilot.generateTextResponse).toHaveBeenCalledWith('Give feedback', harness.runner.getSignal())
+    expect(harness.copilot.generateJSONResponse).toHaveBeenCalledWith(
+      'Is the goal complete?',
+      { type: 'object' },
+      harness.runner.getSignal()
+    )
   })
 
   it('publishes completion for its owner to dispose', async () => {
@@ -210,7 +220,9 @@ describe('PlaygroundCourseRunner', () => {
 
     await completeWith({ content: 'Nice work' })
 
-    await vi.waitFor(() => expect(completed).toHaveBeenCalledWith({ feedback: 'Nice work' }))
+    expect(completed).not.toHaveBeenCalled()
+    harness.getExecutorOptions().onExit?.('completed')
+    expect(completed).toHaveBeenCalledWith({ feedback: 'Nice work' })
     expect(harness.executor.stop).not.toHaveBeenCalled()
     expect(harness.copilot.endCurrentSession).not.toHaveBeenCalled()
 
@@ -263,5 +275,117 @@ describe('PlaygroundCourseRunner', () => {
     harness.runner.dispose()
 
     expect(harness.executor.stop).toHaveBeenCalledOnce()
+  })
+  it('reads the current session project and discovers learner-created sprites', async () => {
+    const harness = makeHarness()
+    const sprite = new Sprite('Lita')
+    sprite.setCode('step 100')
+    harness.project.project.addSprite(sprite)
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    expect(capabilities.editor_project_getCode({ sprite: 'Lita' })).toBe('step 100')
+    sprite.setCode('stepTo Mushroom')
+    expect(capabilities.editor_project_getCode({ sprite: 'Lita' })).toBe('stepTo Mushroom')
+    harness.project.project.addSprite(new Sprite('Mushroom'))
+    expect(capabilities.editor_project_listSprites(null)).toEqual(['Lita', 'Mushroom'])
+    expect(() => capabilities.editor_project_getCode({ sprite: 'Missing' })).toThrow('Sprite Missing not found')
+  })
+
+  it('waits for workspace formatting', async () => {
+    const harness = makeHarness()
+    let finish!: () => void
+    harness.formatWorkspace.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        })
+    )
+    const formatted = vi.fn()
+    const call = harness.getExecutorOptions().framework!.capabilities.editor_codeEditor_formatWorkspace(null)
+    void Promise.resolve(call).then(formatted)
+    await Promise.resolve()
+    expect(formatted).not.toHaveBeenCalled()
+    finish()
+    await call
+    expect(formatted).toHaveBeenCalledOnce()
+  })
+
+  it('opens overlapping presentations directly and settles them at completion', async () => {
+    const harness = makeHarness()
+    harness.presentation.showPrelude.mockImplementationOnce(
+      (_content: string, signal: AbortSignal) =>
+        new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }))
+    )
+    harness.presentation.showMessage.mockImplementationOnce(
+      (_content: string, signal: AbortSignal) =>
+        new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }))
+    )
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    const prelude = capabilities.course_showPrelude({ content: 'Opening' })
+    const message = capabilities.course_showMessage({ content: 'Hint' })
+    expect(harness.presentation.showPrelude).toHaveBeenCalledOnce()
+    expect(harness.presentation.showMessage).toHaveBeenCalledOnce()
+    await capabilities.course_complete(null)
+    await Promise.all([prelude, message])
+    await capabilities.course_showVideo({ videoName: 'step-to' })
+    expect(harness.presentation.showVideo).not.toHaveBeenCalled()
+  })
+
+  it('delegates named videos and settles active presentation when disposed', async () => {
+    const harness = makeHarness()
+    harness.presentation.showVideo.mockImplementationOnce(
+      (_name: string, signal: AbortSignal) =>
+        new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }))
+    )
+    const call = harness.getExecutorOptions().framework!.capabilities.course_showVideo({ videoName: 'step-to' })
+    expect(harness.presentation.showVideo).toHaveBeenCalledWith('step-to', expect.any(AbortSignal))
+    harness.runner.dispose()
+    await call
+  })
+
+  it('keeps the first completion and suppresses new events while callbacks finish', async () => {
+    const harness = makeHarness()
+    await harness.runner.start()
+    const completed = vi.fn()
+    harness.runner.on('completed', completed)
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    await capabilities.course_completeWith({ content: 'First' })
+    await capabilities.course_completeWith({ content: 'Second' })
+    harness.editorRuntime.emit('didExit', 0)
+    await nextTick()
+    await Promise.resolve()
+    harness.getExecutorOptions().onExit?.('completed')
+    harness.getExecutorOptions().onExit?.('completed')
+    expect(completed).toHaveBeenCalledExactlyOnceWith({ feedback: 'First' })
+    expect(harness.executor.dispatchEvent).not.toHaveBeenCalled()
+  })
+
+  it('keeps concurrent generation results independent and cancels requests on disposal', async () => {
+    const harness = makeHarness()
+    let finishText!: (value: string) => void
+    let finishJSON!: (value: unknown) => void
+    harness.copilot.generateTextResponse.mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          finishText = resolve
+        })
+    )
+    harness.copilot.generateJSONResponse.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          finishJSON = resolve
+        })
+    )
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    const text = capabilities.copilot_generateText({ content: 'Text' })
+    const json = capabilities.copilot_generateJSON({ content: 'JSON', schema: { type: 'object' } })
+    await capabilities.course_complete(null)
+    expect(harness.runner.getSignal().aborted).toBe(false)
+    finishJSON({ passed: true })
+    await expect(json).resolves.toEqual({ passed: true })
+    finishText('Feedback')
+    await expect(text).resolves.toBe('Feedback')
+    harness.runner.dispose()
+    expect(harness.copilot.generateTextResponse.mock.calls[0][1].aborted).toBe(true)
+    expect(harness.copilot.generateJSONResponse.mock.calls[0][2].aborted).toBe(true)
   })
 })

@@ -78,9 +78,10 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
   const action: CompletionAction = await openCompletion({
     course: completedSession.course,
     series: completedSession.series,
-    feedback: completion.feedback
+    feedback: completion.feedback,
+    signal: completedSession.project.getSignal()
   })
-  if (action === 'continueEditing') return
+  if (completedSession.project.isDisposed || action === 'continueEditing') return
 
   const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
   const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
