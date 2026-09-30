@@ -79,6 +79,7 @@ export class Animation extends Disposable {
   }
 
   costumes: Costume[]
+  /** Restore costume ownership and contents without correcting names or initializing duration. */
   private attachCostumes(costumes: Costume[]) {
     for (const costume of costumes) costume.setParent(this)
     this.costumes = costumes
@@ -212,6 +213,7 @@ export class Animation extends Disposable {
     const animationCostumeNames = animationCostumes.map((c) => c.name)
     for (const costume of animationCostumes) {
       if (costume.name.startsWith(animation.costumeNamePrefix)) {
+        // Decode the serialized name without applying interactive name validation.
         costume.name = costume.name.slice(animation.costumeNamePrefix.length)
       }
     }

@@ -96,6 +96,7 @@ export class Stage extends Disposable {
     this.backdropIndex = idx
   }
 
+  /** Attach a backdrop without the interactive name correction performed by addBackdrop. */
   private attachBackdrop(backdrop: Backdrop, index = this.backdrops.length) {
     backdrop.setStage(this)
     this.backdrops.splice(index, 0, backdrop)
@@ -165,6 +166,7 @@ export class Stage extends Disposable {
   /** Zorder for widgets, will be merged with sprites in model `Project` */
   widgetsZorder: string[]
 
+  /** Attach a widget without the interactive name correction performed by addWidget. */
   private attachWidget(widget: Widget, index = this.widgets.length) {
     widget.setStage(this)
     widget.addDisposer(() => widget.setStage(null))

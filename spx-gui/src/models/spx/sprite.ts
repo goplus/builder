@@ -195,6 +195,7 @@ export class Sprite extends Disposable {
       this.costumeIndex = this.costumeIndex - 1
     }
   }
+  /** Attach a costume without the interactive name correction performed by addCostume. */
   private attachCostume(costume: Costume, index = this.costumes.length) {
     costume.setParent(this)
     this.costumes.splice(index, 0, costume)
@@ -257,6 +258,7 @@ export class Sprite extends Disposable {
     animation.setSprite(null)
     animation.dispose()
   }
+  /** Attach an animation without the interactive name correction performed by addAnimation. */
   private attachAnimation(animation: Animation, index = this.animations.length) {
     animation.setSprite(this)
     this.animations.splice(index, 0, animation)

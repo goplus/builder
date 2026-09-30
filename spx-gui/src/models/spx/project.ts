@@ -163,6 +163,7 @@ export class SpxProject extends Disposable implements IProject {
     if (this.cameraFollowSpriteId === sprite.id) this.cameraFollowSpriteId = null
     sprite.dispose()
   }
+  /** Attach a sprite without the interactive name correction performed by addSprite. */
   private attachSprite(sprite: Sprite, index = this.sprites.length) {
     sprite.setProject(this)
     sprite.addDisposer(() => sprite.setProject(null))
@@ -251,6 +252,7 @@ export class SpxProject extends Disposable implements IProject {
     }
     sound.dispose()
   }
+  /** Attach a sound without the interactive name correction performed by addSound. */
   private attachSound(sound: Sound, index = this.sounds.length) {
     sound.setProject(this)
     sound.addDisposer(() => sound.setProject(null))
