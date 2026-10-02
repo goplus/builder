@@ -9,6 +9,7 @@ defineProps<{ value: string }>()
 </template>
 
 <style scoped>
+/* TODO: Extract shared Markdown styles for reuse across MarkdownView consumers. */
 .course-markdown :deep(h1),
 .course-markdown :deep(h2),
 .course-markdown :deep(h3) {

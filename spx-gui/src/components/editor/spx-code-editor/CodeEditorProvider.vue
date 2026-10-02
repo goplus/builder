@@ -69,7 +69,7 @@ useProvideCodeEditor(codeEditorRef)
     v-if="codeEditorRef != null"
     :code-editor="codeEditorRef"
     :api-whitelist="apiWhitelist"
-    @vue:mounted="emit('ready', codeEditorRef)"
+    @ready="emit('ready', $event)"
   />
   <slot></slot>
 </template>

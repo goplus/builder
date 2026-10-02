@@ -92,7 +92,68 @@ const ProgrammaticModal = defineComponent({
   }
 })
 
+function mountCancellableModal() {
+  let openModal!: (props: { label: string }, options?: { signal?: AbortSignal }) => Promise<unknown>
+  const Consumer = defineComponent({
+    setup() {
+      openModal = useModal(ProgrammaticModal as any)
+      return () => null
+    }
+  })
+  mountWithModalProvider(
+    defineComponent({
+      setup() {
+        return () => h(UIModalProvider, null, { default: () => h(Consumer) })
+      }
+    })
+  )
+  return (signal: AbortSignal) => openModal({ label: 'cancellable' }, { signal })
+}
+
 describe('UIModalProvider', () => {
+  it.each([false, true])('cancels before or after becoming visible (visible: %s)', async (visible) => {
+    vi.useFakeTimers()
+    const open = mountCancellableModal()
+    const controller = new AbortController()
+    const result = open(controller.signal)
+    const cancelled = expect(result).rejects.toBeInstanceOf(Cancelled)
+    if (visible) await flushModalProvider()
+    controller.abort()
+    await cancelled
+    await flushModalProvider()
+    expect(getByTestId('cancellable')).toBeNull()
+    await vi.advanceTimersByTimeAsync(300)
+    expect(getByTestId('cancellable')).toBeNull()
+  })
+
+  it('cancels pending modals and removes abort listeners when the provider unmounts', async () => {
+    vi.useFakeTimers()
+    const open = mountCancellableModal()
+    const controller = new AbortController()
+    const removeListener = vi.spyOn(controller.signal, 'removeEventListener')
+    const result = open(controller.signal)
+    const cancelled = expect(result).rejects.toBeInstanceOf(Cancelled)
+    await flushModalProvider()
+    mountedWrappers.pop()!.unmount()
+    await cancelled
+    expect(removeListener).toHaveBeenCalledWith('abort', expect.any(Function))
+    await vi.advanceTimersByTimeAsync(300)
+  })
+
+  it('removes the abort listener after resolving normally', async () => {
+    vi.useFakeTimers()
+    const open = mountCancellableModal()
+    const controller = new AbortController()
+    const removeListener = vi.spyOn(controller.signal, 'removeEventListener')
+    const result = open(controller.signal)
+    await flushModalProvider()
+    await clickByTestId('cancellable-resolve')
+    await expect(result).resolves.toBe('cancellable')
+    expect(removeListener).toHaveBeenCalledWith('abort', expect.any(Function))
+    controller.abort()
+    await expect(result).resolves.toBe('cancellable')
+  })
+
   it('opens modals programmatically, resolves results, and emits lifecycle events', async () => {
     vi.useFakeTimers()
 

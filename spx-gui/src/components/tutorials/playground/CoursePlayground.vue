@@ -24,10 +24,10 @@ import { CodeEditorProvider, loadMonaco, type CodeEditor } from '@/components/ed
 import { UIDetailedLoading, UIError, UIMenuGroup, UIMenuItem, useModal } from '@/components/ui'
 import { useSaveProjectAs } from '@/components/project'
 
-import type { PlaygroundCourseCompletion } from './runner'
+import type { PlaygroundCourseCompletion } from './program'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 import CoursePlaygroundVideoModal from './CoursePlaygroundVideoModal.vue'
-import { PlaygroundCourseRunner } from './runner'
+import { PlaygroundCourseSession } from './session'
 import { repeatableParamToPathSegments } from '@/utils/route'
 
 const props = defineProps<{
@@ -72,15 +72,15 @@ const codeEditor = shallowRef<CodeEditor | null>(null)
 
 const presentation = {
   showPrelude(content: string, signal: AbortSignal) {
-    return openMessage({ content, kind: 'prelude', signal })
+    return openMessage({ content, kind: 'prelude' }, { signal })
   },
   showMessage(content: string, signal: AbortSignal) {
-    return openMessage({ content, kind: 'message', signal })
+    return openMessage({ content, kind: 'message' }, { signal })
   },
   showVideo(videoName: string, signal: AbortSignal) {
     const video = props.project.videos.find((video) => video.name === videoName)
     if (video == null) throw new Error(`Video ${videoName} not found`)
-    return openVideo({ video, signal })
+    return openVideo({ video }, { signal })
   },
   async revealSpotlight(target: string, tip: string, options: SpotlightOptions) {
     const node = radar.select(target)
@@ -119,7 +119,7 @@ const inEditorRouter: IInEditorRouter = {
 
 const runningErr = ref<Exception | null>(null)
 
-const runnerQueryRet = useQuery(
+const sessionQueryRet = useQuery(
   async (ctx) => {
     runningErr.value = null
     const project = props.project
@@ -127,12 +127,10 @@ const runnerQueryRet = useQuery(
     // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause unnecessary query fetching.
     // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
     await nextTick()
+    ctx.signal.throwIfAborted()
 
     const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
-    editorState.disposeOnSignal(ctx.signal)
-    editorState.editing.startEditing()
-    editorState.syncWithRouter(inEditorRouter)
-    const runner = new PlaygroundCourseRunner({
+    const session = new PlaygroundCourseSession({
       project,
       editorState,
       copilot,
@@ -142,16 +140,23 @@ const runnerQueryRet = useQuery(
         await codeEditor.value.formatWorkspace()
       }
     })
-    runner.disposeOnSignal(ctx.signal)
-    runner.on('completed', (completion) => {
-      runner.dispose()
+    session.disposeOnSignal(ctx.signal)
+    editorState.disposeOnSignal(ctx.signal)
+    editorState.editing.startEditing()
+    editorState.syncWithRouter(inEditorRouter)
+    session.on('completed', (completion) => {
       emit('courseCompleted', completion)
     })
-    runner.on('failed', (e) => {
-      runner.dispose()
+    session.on('failed', (e) => {
       runningErr.value = e
     })
-    return runner
+    // Give the Editor UI time to mount before the Course accesses its targets.
+    // TODO(#3533): Replace this delay with a reliable Editor UI readiness signal.
+    const startTimer = setTimeout(() => {
+      void session.start().catch(() => {})
+    }, 300)
+    session.addDisposer(() => clearTimeout(startTimer))
+    return session
   },
   {
     en: 'Failed to start course',
@@ -160,21 +165,16 @@ const runnerQueryRet = useQuery(
   { clearDataOnFetch: true }
 )
 
-const runner = runnerQueryRet.data
-
-function handleEditorReady(editor: CodeEditor) {
-  codeEditor.value = editor
-  void runner.value?.start().catch(() => {})
-}
+const session = sessionQueryRet.data
 </script>
 
 <template>
   <section class="relative min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
       <EditorNavbar
-        v-if="runner != null"
-        :project="runner.project.project"
-        :state="runner.editorState"
+        v-if="session != null"
+        :project="session.project.project"
+        :state="session.editorState"
         :title="project.title"
       >
         <template #project-menu>
@@ -187,11 +187,11 @@ function handleEditorReady(editor: CodeEditor) {
       </EditorNavbar>
     </header>
     <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
-      <UIDetailedLoading v-if="runnerQueryRet.isLoading.value" :percentage="runnerQueryRet.progress.value.percentage">
+      <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">
         <span>{{ $t({ en: 'Preparing course...', zh: '准备课程中...' }) }}</span>
       </UIDetailedLoading>
-      <UIError v-else-if="runnerQueryRet.error.value != null" :retry="runnerQueryRet.refetch">
-        {{ $t(runnerQueryRet.error.value.userMessage) }}
+      <UIError v-else-if="sessionQueryRet.error.value != null" :retry="sessionQueryRet.refetch">
+        {{ $t(sessionQueryRet.error.value.userMessage) }}
       </UIError>
       <UIDetailedLoading
         v-else-if="monacoQueryRet.isLoading.value"
@@ -202,16 +202,20 @@ function handleEditorReady(editor: CodeEditor) {
       <UIError v-else-if="monacoQueryRet.error.value != null" :retry="monacoQueryRet.refetch">
         {{ $t(monacoQueryRet.error.value.userMessage) }}
       </UIError>
-      <UIError v-else-if="runningErr != null" :retry="runnerQueryRet.refetch">
+      <UIError v-else-if="runningErr != null" :retry="sessionQueryRet.refetch">
         {{ $t(runningErr.userMessage) }}
       </UIError>
-      <EditorContextProvider v-else-if="runner != null" :project="runner.project.project" :state="runner.editorState">
+      <EditorContextProvider
+        v-else-if="session != null"
+        :project="session.project.project"
+        :state="session.editorState"
+      >
         <CodeEditorProvider
           :monaco="monacoQueryRet.data.value!"
-          :api-whitelist="runner.apiWhitelist"
-          @ready="handleEditorReady"
+          :api-whitelist="session.apiWhitelist"
+          @ready="codeEditor = $event"
         >
-          <ProjectEditor :ruler-enabled="runner.rulerEnabled" />
+          <ProjectEditor :ruler-enabled="session.rulerEnabled" />
         </CodeEditorProvider>
       </EditorContextProvider>
     </main>
