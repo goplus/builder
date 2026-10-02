@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { Cancelled } from '@/utils/exception'
+import { Cancelled } from './exception'
 import { createCSSAnimation } from './css-animation'
 
-describe('Copilot panel animation', () => {
+describe('CSS animation', () => {
   it('finishes when the panel or its trigger completes a transition', async () => {
     const panel = document.createElement('div')
     const child = panel.appendChild(document.createElement('div'))

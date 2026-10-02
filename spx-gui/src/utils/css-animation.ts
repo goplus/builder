@@ -1,5 +1,6 @@
-import { timeout } from '@/utils/utils'
+import { timeout } from './utils'
 
+/** Animate a CSS class and wait for its transition, with optional cancellation. */
 export function createCSSAnimation(className: string, el: HTMLElement | null | undefined, signal?: AbortSignal) {
   let begun = false
   return {
