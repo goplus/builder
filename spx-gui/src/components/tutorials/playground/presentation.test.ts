@@ -11,7 +11,7 @@ const globalOptions = {
   mocks: { $t: (message: { en: string }) => message.en },
   directives: { radar: () => {} },
   stubs: {
-    UIModal: { props: ['visible', 'active'], template: '<div v-if="visible"><slot /></div>' },
+    UIModal: { props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
     UIButton: { template: '<button><slot /></button>' },
     UIError: { template: '<div><slot /></div>' },
     UILoading: true,
@@ -35,7 +35,7 @@ function mountVideo() {
   const file = new File('lesson.mp4', async () => new ArrayBuffer(0), { type: 'video/mp4' })
   vi.spyOn(file, 'url').mockResolvedValue('blob:lesson')
   const wrapper = mount(CoursePlaygroundVideoModal, {
-    props: { visible: true, active: true, video: new Video('lesson', file) },
+    props: { visible: true, video: new Video('lesson', file) },
     global: globalOptions
   })
   wrappers.push(wrapper)
@@ -45,7 +45,7 @@ function mountVideo() {
 describe('Course presentation', () => {
   it.each(['prelude', 'message'] as const)('renders %s Markdown and waits for confirmation', async (kind) => {
     const wrapper = mount(CoursePlaygroundMessageModal, {
-      props: { visible: true, active: true, kind, content: '**Goal**: use `stepTo`' },
+      props: { visible: true, kind, content: '**Goal**: use `stepTo`' },
       global: globalOptions
     })
     wrappers.push(wrapper)

@@ -7,7 +7,6 @@ import messageImage from './images/message.svg'
 
 defineProps<{
   visible: boolean
-  active?: boolean
   content: string
   kind: 'prelude' | 'message'
 }>()
@@ -21,7 +20,6 @@ const emit = defineEmits<{
 <template>
   <UIModal
     :visible="visible"
-    :active="active"
     size="small"
     class="w-111!"
     :mask-closable="false"
