@@ -7,7 +7,6 @@ import { UIButton, UIError, UIIcon, UILoading, UIModal } from '@/components/ui'
 
 const props = defineProps<{
   visible: boolean
-  active?: boolean
   video: Video
 }>()
 
@@ -82,7 +81,6 @@ onBeforeUnmount(() => {
 <template>
   <UIModal
     :visible="visible && !dismissed"
-    :active="active"
     size="large"
     :mask-closable="false"
     :radar="{ name: 'course-video', desc: 'Course-local instructional video' }"

@@ -14,7 +14,6 @@ import successImg from './images/success.svg'
 
 const props = defineProps<{
   visible: boolean
-  active?: boolean
   course: Course
   series: CourseSeries
   feedback: string | null
@@ -37,7 +36,6 @@ function dismiss() {
 <template>
   <UIModal
     :visible="visible"
-    :active="active"
     size="small"
     class="w-111!"
     :mask-closable="false"
