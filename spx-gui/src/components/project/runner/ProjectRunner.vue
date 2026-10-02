@@ -76,6 +76,8 @@ interface RunnerIframeWindow extends Window {
    * It is set to `true` before reloading and reset to `false` after reloaded.
    */
   __xb_is_stale?: boolean
+  /** Set before ispx initialization to emit the current SPX source line. */
+  __xb_track_execution_location?: boolean
 }
 
 async function loadFiles(files: Files, reporter: ProgressReporter, signal?: AbortSignal) {
@@ -160,18 +162,29 @@ import { isProjectUsingAIInteraction } from '@/utils/project'
 import { capture, Cancelled } from '@/utils/exception'
 import { client } from '@/apis/common'
 import errorBgUrl from './error-bg.svg'
+import { parseSpxLog, type SpxExecutionLocation, type SpxLog } from './spx-log'
 
 const runnerBaseUrl = getProjectRunnerBaseUrl()
 const runnerUrl = new URL(`${runnerBaseUrl}/runner.html`, import.meta.url).href
 const aiInteractionEndpoint = client.urlFor('/ai-interaction').toString()
 const assetURLs = getProjectRunnerAssetURLs()
 
-const props = defineProps<{ project: SpxProject }>()
+const props = defineProps<{ project: SpxProject; trackExecutionLocation?: boolean }>()
 
 const emit = defineEmits<{
-  console: [type: 'log' | 'warn', args: unknown[]]
+  log: [log: SpxLog]
+  executionLocation: [location: SpxExecutionLocation]
   exit: [code: number]
 }>()
+const emitExecutionLocation = throttle(
+  (location: SpxExecutionLocation) => {
+    if (unmounted) return
+    if (state.value.type !== 'starting' && state.value.type !== 'running') return
+    emit('executionLocation', location)
+  },
+  33,
+  { leading: false }
+)
 
 const [thumbnailUrl, thumbnailUrlLoading] = useRenderableImageUrl(() => props.project.thumbnail)
 const signedInStateQuery = useSignedInStateQuery()
@@ -189,14 +202,19 @@ watch(runnerIframeRef, (iframe) => {
 })
 
 function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
+  iframeWindow.__xb_track_execution_location = props.trackExecutionLocation === true
   iframeWindow.console.log = function (...args: unknown[]) {
-    // eslint-disable-next-line no-console
-    console.log(...args)
-    emit('console', 'log', args)
+    const event = typeof args[0] === 'string' ? parseSpxLog(args[0]) : null
+    if (event == null) {
+      // eslint-disable-next-line no-console
+      console.log(...args)
+      return
+    }
+    if (event.type === 'log') emit('log', event.log)
+    else emitExecutionLocation(event.executionLocation)
   }
   iframeWindow.console.warn = function (...args: unknown[]) {
     console.warn(...args)
-    emit('console', 'warn', args)
   }
 
   function handleRunnerReady() {
@@ -206,6 +224,7 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
       capture(err, 'ProjectRunner game error')
     })
     iframeWindow.onGameExit((code: number) => {
+      emitExecutionLocation.cancel()
       emit('exit', code)
     })
     iframeWindow.onEngineCrash((err: string) => {

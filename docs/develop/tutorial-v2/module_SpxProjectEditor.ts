@@ -3,12 +3,21 @@ import type { Disposer, RuntimeOutput, SpxProject, UI } from "./base";
 /** Route added to the existing Project Editor route space for Simple Mode. */
 export type SimpleModeInEditorRoute = `/simple/sprites/${string}`;
 
+export type RuntimeLocation = {
+  textDocument: { uri: string };
+  /** Line number, starting from 1. */
+  line: number;
+};
+
 /** Existing runtime owned by `EditorState`. */
 export interface Runtime {
   readonly outputs: readonly RuntimeOutput[];
+  /** Current SPX source line reported by the runtime. */
+  readonly location: RuntimeLocation | null;
   /** New event needed by the Tutorial Class Framework runtime namespace. */
   on(event: "didStart", listener: () => void): Disposer;
   on(event: "didChangeOutput", listener: () => void): Disposer;
+  on(event: "didChangeLocation", listener: () => void): Disposer;
   on(event: "didExit", listener: (code: number) => void): Disposer;
 }
 

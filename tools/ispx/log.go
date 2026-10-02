@@ -5,12 +5,21 @@ package main
 import (
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/goplus/ixgo"
 )
 
 // logger is the JSON logger for ispx.
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+func logExecutionLocation(info *ixgo.DebugInfo) {
+	position := info.Position()
+	if position.Line < 1 || !strings.HasSuffix(position.Filename, ".spx") {
+		return
+	}
+	logger.Info("__spx_loc__", "file", position.Filename, "line", position.Line)
+}
 
 // logWithCallerInfo logs msg with caller information extracted from frame.
 func logWithCallerInfo(msg string, frame *ixgo.Frame) {

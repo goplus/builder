@@ -8,6 +8,7 @@ import { parseDefinitionId, type CodeEditor } from '@/components/xgo-code-editor
 import { FilteredCompletionProvider } from './api-filter'
 import { SpxAPIReferenceProvider } from './api-reference'
 import { SpxDiagnosticsProvider } from './diagnostics'
+import { SpxExecutionLocationProvider } from './execution-location'
 import { SpxResourceAdapter, useResourceRenameHelpers, useResourceSelectorHelpers } from './resource'
 import { SpxInputHelperProvider } from './input-helper'
 import { SpxSnippetVariablesProvider } from './snippet-variables'
@@ -28,6 +29,7 @@ watch(
     const { project: spxProject, runtime } = editorCtx.state
     const { documentBase, project, lspClient } = codeEditor
     const diagnosticsProvider = new SpxDiagnosticsProvider(runtime, lspClient, project)
+    const executionLocationProvider = new SpxExecutionLocationProvider(runtime)
     const resourceAdapter = new SpxResourceAdapter(
       lspClient,
       editorCtx.state,
@@ -43,6 +45,7 @@ watch(
     )
 
     codeEditor.registerDiagnosticsProvider(diagnosticsProvider)
+    codeEditor.registerExecutionLocationProvider(executionLocationProvider)
     codeEditor.registerResourceAdapter(resourceAdapter)
     codeEditor.registerInputHelperProvider(inputHelperProvider)
     codeEditor.registerSnippetVariablesProvider(snippetVariablesProvider)
@@ -63,6 +66,7 @@ watch(
     onCleanup(() => {
       stopAPIWatch()
       diagnosticsProvider.dispose()
+      executionLocationProvider.dispose()
     })
   },
   { immediate: true }
