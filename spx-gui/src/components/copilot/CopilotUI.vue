@@ -28,6 +28,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } fr
 import { useRouter } from 'vue-router'
 
 import { isRectIntersecting, useContentSize } from '@/utils/dom'
+import { createCSSAnimation } from '@/utils/css-animation'
 import { localStorageRef, untilNotNull } from '@/utils/utils'
 import { untilLoaded } from '@/utils/query'
 import { getCleanupSignal } from '@/utils/disposable'
@@ -40,7 +41,6 @@ import CopilotTrigger from './CopilotTrigger.vue'
 import { useCopilot } from './context'
 import { useSpotlight } from '@/utils/spotlight'
 import { homePageName } from '@/apps/xbuilder/router'
-import { createCSSAnimation } from './css-animation'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()
