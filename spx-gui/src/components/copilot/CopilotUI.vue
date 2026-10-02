@@ -20,7 +20,6 @@ enum TriggerVisibility {
 }
 
 const panelBoundaryBuffer = [20, 20]
-const triggerSnapThreshold = 20
 </script>
 
 <script setup lang="ts">
@@ -246,22 +245,20 @@ const onDragMove = (offset: Offset) => {
   updatePanelOutOfBoundsStatus(position)
 }
 const onDragEnd = () => {
-  if (isPanelOutOfBounds.value) copilot.close()
-  else copilot.open()
+  if (copilot.active && isPanelOutOfBounds.value) copilot.close()
   dragging.value = false
 }
 useDraggable(() => triggerRef.value?.el, {
   onDragStart,
   onDragMove: (offset: Offset) => {
     dragging.value = true
-    const { windowW, panelW } = getCurrentSizes()
+    const { panelW } = getCurrentSizes()
     const newPosition = {
       right: (position.right -= offset.x),
       bottom: (position.bottom -= offset.y)
     }
-    const { right } = newPosition
     let statePosition = newPosition
-    if (triggerVisibility.value && (right + panelW < triggerSnapThreshold || windowW - right < triggerSnapThreshold)) {
+    if (!copilot.active) {
       statePosition = getTriggerClampedPosition(newPosition)
     } else {
       statePosition = getDirection(newPosition, panelW)
