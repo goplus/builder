@@ -28,8 +28,11 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } fr
 import { useRouter } from 'vue-router'
 
 import { isRectIntersecting, useContentSize } from '@/utils/dom'
-import { localStorageRef, timeout, untilNotNull } from '@/utils/utils'
+import { createCSSAnimation } from '@/utils/css-animation'
+import { localStorageRef, untilNotNull } from '@/utils/utils'
 import { untilLoaded } from '@/utils/query'
+import { getCleanupSignal } from '@/utils/disposable'
+import { capture } from '@/utils/exception'
 import { isSignedIn, useSignedInStateQuery } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
 import { providePopupContainer, UITooltip } from '@/components/ui'
@@ -67,6 +70,8 @@ function getCurrentSizes() {
   }
 }
 
+const dragging = ref(false)
+
 // resize the panel to fit the window size
 watch(windowSize, updatePanelClampedPosition)
 watch(panelSize, () => {
@@ -74,29 +79,29 @@ watch(panelSize, () => {
   updatePanelClampedPosition()
 })
 watch(
-  () => [copilot.globalUIEnabled, copilot.active] as const,
-  async ([enabled, active], previous) => {
-    if (!enabled) return
-    await untilNotNull(panelSize)
-    if (!copilot.globalUIEnabled) return
+  () => [copilot.globalUIEnabled, copilot.active, dragging.value] as const,
+  async ([enabled, active, isDragging], previous, onCleanup) => {
+    const signal = getCleanupSignal(onCleanup)
+    if (!enabled || isDragging) return
+    try {
+      await untilNotNull(panelSize, signal)
+      signal.throwIfAborted()
 
-    // On initialization, update triggerVisibility and panelStatePosition based on the copilot's active state
-    if (previous == null || !previous[0]) {
-      updateTriggerVisibility()
-      updatePanelClampedPosition()
-      if (active) isPanelOutOfBounds.value = false
-      return
-    }
+      // Initialize the global panel when it becomes available.
+      if (previous == null || !previous[0]) {
+        updateTriggerVisibility()
+        updatePanelClampedPosition()
+        if (active) isPanelOutOfBounds.value = false
+        return
+      }
 
-    if (active) {
-      openPanel()
-    } else {
-      closePanel()
+      if (active) await openPanel(signal)
+      else await closePanel(signal)
+    } catch (error) {
+      capture(error, 'Failed to animate Copilot panel')
     }
   },
-  {
-    immediate: true
-  }
+  { immediate: true }
 )
 
 function getDirection(position: Position, elWidth: number) {
@@ -124,44 +129,6 @@ function getClampedPosition(
     right: Math.min(windowW - elWidth - leftRight, Math.max(right, leftRight)),
     bottom: Math.min(windowH - elHeight - topBottom, Math.max(bottom, topBottom)),
     state
-  }
-}
-
-function createCSSAnimation(className: string, el?: HTMLElement) {
-  if (!el) {
-    return {
-      begin: () => {},
-      endAndWait: () => Promise.resolve()
-    }
-  }
-
-  let begined = false
-  return {
-    begin: async (can = true) => {
-      if (!can) return
-      // force reflow to ensure the browser correctly triggers animation events on initialization
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      el.offsetHeight
-      el.classList.add(className)
-      begined = true
-    },
-    endAndWait: () =>
-      new Promise<void>((resolve) => {
-        if (!begined) {
-          resolve()
-          return
-        }
-        el.addEventListener(
-          'transitionend',
-          async () => {
-            el.classList.remove(className)
-            // Wait for the next frame to ensure proper animation sequence
-            await timeout()
-            resolve()
-          },
-          { once: true }
-        )
-      })
   }
 }
 
@@ -224,37 +191,36 @@ function getOpenedPanelClampedPosition(position: Position = panelStatePosition.v
   return getClampedPosition(getDirection(position, panelW), panelW, panelH, panelBoundaryBuffer)
 }
 
-async function openPanel() {
+async function openPanel(signal: AbortSignal) {
   // trigger animation
-  const triggerAnimation = createCSSAnimation('animated', panelRef.value)
-  await triggerAnimation.begin(!!triggerVisibility.value)
+  const triggerAnimation = createCSSAnimation('animated', panelRef.value, signal)
+  triggerAnimation.begin(!!triggerVisibility.value)
   triggerVisibility.value = TriggerVisibility.None
   await triggerAnimation.endAndWait()
+  signal.throwIfAborted()
 
   // panel animation
-  const panelAnimation = createCSSAnimation('animated', panelRef.value)
+  const panelAnimation = createCSSAnimation('animated', panelRef.value, signal)
   const newPosition = getOpenedPanelClampedPosition()
-  await panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
+  panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
   panelStatePosition.value = newPosition
   triggerState.value = newPosition.state
   isPanelOutOfBounds.value = false
   await panelAnimation.endAndWait()
-
-  copilot.open()
 }
 
-async function closePanel() {
-  const { begin, endAndWait } = createCSSAnimation('animated', panelRef.value)
+async function closePanel(signal: AbortSignal) {
+  const { begin, endAndWait } = createCSSAnimation('animated', panelRef.value, signal)
   const newPosition = getClosedPanelClampedPosition()
   // When the `transition-property` doesn't change, the `transitionend` event can't be triggered.
-  await begin(!isSamePosition(newPosition, panelStatePosition.value))
+  begin(!isSamePosition(newPosition, panelStatePosition.value))
   panelStatePosition.value = newPosition
   triggerState.value = newPosition.state
   isPanelOutOfBounds.value = true
   await endAndWait()
+  signal.throwIfAborted()
 
   triggerVisibility.value = TriggerVisibility.Visible
-  copilot.close()
 }
 
 const onDragStart = () => {
@@ -263,6 +229,7 @@ const onDragStart = () => {
   position.bottom = statePosition.bottom
 }
 const onDragMove = (offset: Offset) => {
+  dragging.value = true
   const { panelW } = getCurrentSizes()
   const newPosition = getDirection(
     {
@@ -279,15 +246,14 @@ const onDragMove = (offset: Offset) => {
   updatePanelOutOfBoundsStatus(position)
 }
 const onDragEnd = () => {
-  if (!isPanelOutOfBounds.value) {
-    openPanel()
-  } else {
-    closePanel()
-  }
+  if (isPanelOutOfBounds.value) copilot.close()
+  else if (triggerVisibility.value === TriggerVisibility.None) copilot.open()
+  dragging.value = false
 }
 useDraggable(() => triggerRef.value?.el, {
   onDragStart,
   onDragMove: (offset: Offset) => {
+    dragging.value = true
     const { windowW, panelW } = getCurrentSizes()
     const newPosition = {
       right: (position.right -= offset.x),
@@ -336,7 +302,7 @@ onBeforeUnmount(
         // panel animation
         const panelAnimation = createCSSAnimation('animated', panelRef.value)
         const newPosition = getOpenedPanelClampedPosition({ right: newRight, bottom })
-        await panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
+        panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
         panelStatePosition.value = newPosition
         await panelAnimation.endAndWait()
       }
@@ -408,7 +374,7 @@ onMounted(async () => {
             ref="triggerRef"
             :class="['trigger', triggerState, triggerVisibility]"
             :attached-to="triggerState === State.Move ? null : triggerState"
-            @click="openPanel()"
+            @click="copilot.open()"
           />
         </template>
         <div>{{ $t({ en: 'Copilot', zh: 'Copilot' }) }}</div>
