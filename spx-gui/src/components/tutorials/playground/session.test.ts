@@ -1,5 +1,5 @@
 import { nextTick } from 'vue'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
 import { mainCourseFilePath } from '@/models/tutorial/course'
@@ -11,7 +11,7 @@ import type { EditorState } from '@/components/editor/editor-state'
 import type { Copilot } from '@/components/copilot/copilot'
 import { DefaultException } from '@/utils/exception'
 
-import { PlaygroundCourseRunner } from './runner'
+import { PlaygroundCourseSession } from './session'
 
 const executorMocks = vi.hoisted(() => ({
   instances: [] as Array<{
@@ -63,6 +63,9 @@ function makeCopilot() {
       get currentSession() {
         return currentSession
       },
+      replaceSession(session: object) {
+        currentSession = session
+      },
       startSession: vi.fn(async (_topic: Topic) => {
         currentSession = session
       }),
@@ -82,10 +85,16 @@ function makeCopilot() {
   }
 }
 
+const cleanups: Array<() => void> = []
+
+afterEach(() => {
+  for (const cleanup of cleanups.splice(0)) cleanup()
+})
+
 function makeHarness() {
   const project = makeProject()
   const editorRuntime = new Runtime(project.project)
-  const editorState = { runtime: editorRuntime } as EditorState
+  const editorState = { runtime: editorRuntime, dispose: vi.fn() } as unknown as EditorState
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
     showPrelude: vi.fn().mockResolvedValue(undefined),
@@ -94,7 +103,7 @@ function makeHarness() {
     revealSpotlight: vi.fn().mockResolvedValue(undefined)
   }
   const formatWorkspace = vi.fn().mockResolvedValue(undefined)
-  const runner = new PlaygroundCourseRunner({
+  const courseSession = new PlaygroundCourseSession({
     project,
     editorState,
     copilot: copilot as unknown as Copilot,
@@ -102,7 +111,7 @@ function makeHarness() {
     formatWorkspace
   })
   const executor = executorMocks.instances.at(-1)!
-  return {
+  const harness = {
     project,
     editorRuntime,
     editorState,
@@ -111,12 +120,19 @@ function makeHarness() {
     executor,
     presentation,
     formatWorkspace,
-    runner,
+    courseSession,
     getExecutorOptions: () => executor.options
   }
+  cleanups.push(() => {
+    courseSession.dispose()
+    editorState.dispose()
+    editorRuntime.dispose()
+    project.dispose()
+  })
+  return harness
 }
 
-describe('PlaygroundCourseRunner', () => {
+describe('PlaygroundCourseSession', () => {
   beforeEach(() => {
     executorMocks.instances.length = 0
   })
@@ -124,8 +140,9 @@ describe('PlaygroundCourseRunner', () => {
   it('starts one Playground Copilot session and the main Course program', async () => {
     const harness = makeHarness()
 
-    await harness.runner.start()
+    await harness.courseSession.start()
 
+    expect(harness.copilot.startSession).toHaveBeenCalledOnce()
     expect(harness.copilot.startSession).toHaveBeenCalledWith({
       title: { en: 'Build a game', zh: 'Build a game' },
       description: 'You are assisting the learner in the Playground Course: Build a game.\n\nHelp with this Course',
@@ -140,13 +157,13 @@ describe('PlaygroundCourseRunner', () => {
 
   it('updates the API whitelist', async () => {
     const harness = makeHarness()
-    await harness.runner.start()
+    await harness.courseSession.start()
     const filterAPIs = harness.getExecutorOptions().framework?.capabilities.editor_codeEditor_filterAPIs
     if (filterAPIs == null) throw new Error('editor_codeEditor_filterAPIs capability not found')
 
     await filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'] })
 
-    expect(harness.runner.apiWhitelist).toEqual(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
+    expect(harness.courseSession.apiWhitelist).toEqual(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
   })
 
   it('forwards editor and Copilot events in source order', async () => {
@@ -156,7 +173,7 @@ describe('PlaygroundCourseRunner', () => {
     })
     vi.stubGlobal('cancelAnimationFrame', () => {})
     const harness = makeHarness()
-    await harness.runner.start()
+    await harness.courseSession.start()
 
     harness.editorRuntime.setRunning({ mode: 'debug', initializing: false }, 'files-hash')
     await nextTick()
@@ -187,9 +204,30 @@ describe('PlaygroundCourseRunner', () => {
     vi.unstubAllGlobals()
   })
 
+  it('drops events waiting for startup when the session is disposed', async () => {
+    const harness = makeHarness()
+    let finishStartup!: () => void
+    harness.executor.run.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishStartup = resolve
+        })
+    )
+    const failed = vi.fn()
+    harness.courseSession.on('failed', failed)
+    const starting = harness.courseSession.start()
+    await vi.waitFor(() => expect(harness.executor.run).toHaveBeenCalledOnce())
+    harness.editorRuntime.emit('didExit', 0)
+    harness.courseSession.dispose()
+    finishStartup()
+    await starting
+    expect(harness.executor.dispatchEvent).not.toHaveBeenCalled()
+    expect(failed).not.toHaveBeenCalled()
+  })
+
   it('provides Copilot generation without adding a learner round', async () => {
     const harness = makeHarness()
-    await harness.runner.start()
+    await harness.courseSession.start()
     harness.copilot.generateTextResponse.mockResolvedValueOnce('Great work')
     harness.copilot.generateJSONResponse.mockResolvedValueOnce({ complete: true })
 
@@ -202,31 +240,35 @@ describe('PlaygroundCourseRunner', () => {
     await expect(generateJSON({ content: 'Is the goal complete?', schema: { type: 'object' } })).resolves.toEqual({
       complete: true
     })
-    expect(harness.copilot.generateTextResponse).toHaveBeenCalledWith('Give feedback', harness.runner.getSignal())
+    expect(harness.copilot.generateTextResponse).toHaveBeenCalledWith(
+      'Give feedback',
+      harness.courseSession.program.getSignal()
+    )
     expect(harness.copilot.generateJSONResponse).toHaveBeenCalledWith(
       'Is the goal complete?',
       { type: 'object' },
-      harness.runner.getSignal()
+      harness.courseSession.program.getSignal()
     )
   })
 
-  it('publishes completion for its owner to dispose', async () => {
+  it('disposes the program on completion while retaining the editor and Copilot session', async () => {
     const harness = makeHarness()
     const completed = vi.fn()
-    harness.runner.on('completed', completed)
-    await harness.runner.start()
+    harness.courseSession.on('completed', completed)
+    await harness.courseSession.start()
     const completeWith = harness.getExecutorOptions().framework?.capabilities.course_completeWith
     if (completeWith == null) throw new Error('course_completeWith capability not found')
 
     await completeWith({ content: 'Nice work' })
 
-    expect(completed).not.toHaveBeenCalled()
-    harness.getExecutorOptions().onExit?.('completed')
     expect(completed).toHaveBeenCalledWith({ feedback: 'Nice work' })
-    expect(harness.executor.stop).not.toHaveBeenCalled()
+    expect(harness.courseSession.program.isDisposed).toBe(true)
+    expect(harness.courseSession.isDisposed).toBe(false)
+    expect(harness.editorState.dispose).not.toHaveBeenCalled()
+    expect(harness.executor.stop).toHaveBeenCalledOnce()
     expect(harness.copilot.endCurrentSession).not.toHaveBeenCalled()
 
-    harness.runner.dispose()
+    harness.courseSession.dispose()
 
     expect(harness.executor.stop).toHaveBeenCalledOnce()
     expect(harness.copilot.endCurrentSession).toHaveBeenCalledOnce()
@@ -245,23 +287,23 @@ describe('PlaygroundCourseRunner', () => {
     })
   })
 
-  it('forwards ruler visibility requests to the course presentation', async () => {
+  it('updates ruler availability in the session', async () => {
     const harness = makeHarness()
     const { editor_ruler_disable: disable, editor_ruler_enable: enable } =
       harness.getExecutorOptions().framework?.capabilities ?? {}
     if (enable == null || disable == null) throw new Error('ruler capabilities not found')
 
     await enable(null)
-    expect(harness.runner.rulerEnabled).toBe(true)
+    expect(harness.courseSession.rulerEnabled).toBe(true)
     await disable(null)
-    expect(harness.runner.rulerEnabled).toBe(false)
+    expect(harness.courseSession.rulerEnabled).toBe(false)
   })
 
-  it('publishes executor failures for its owner to dispose', async () => {
+  it('disposes the program on failure without disposing the session', async () => {
     const harness = makeHarness()
     const failed = vi.fn()
-    harness.runner.on('failed', failed)
-    await harness.runner.start()
+    harness.courseSession.on('failed', failed)
+    await harness.courseSession.start()
 
     harness.getExecutorOptions().onExit?.('error')
 
@@ -270,9 +312,11 @@ describe('PlaygroundCourseRunner', () => {
         new DefaultException({ en: 'Tutorial Course exited with error', zh: '课程运行时发生错误' })
       )
     )
-    expect(harness.executor.stop).not.toHaveBeenCalled()
+    expect(harness.executor.stop).toHaveBeenCalledOnce()
+    expect(harness.courseSession.program.isDisposed).toBe(true)
+    expect(harness.courseSession.isDisposed).toBe(false)
 
-    harness.runner.dispose()
+    harness.courseSession.dispose()
 
     expect(harness.executor.stop).toHaveBeenCalledOnce()
   })
@@ -309,24 +353,29 @@ describe('PlaygroundCourseRunner', () => {
     expect(formatted).toHaveBeenCalledOnce()
   })
 
-  it('opens overlapping presentations directly and settles them at completion', async () => {
+  it('opens overlapping presentations directly and cancels them at completion', async () => {
     const harness = makeHarness()
     harness.presentation.showPrelude.mockImplementationOnce(
       (_content: string, signal: AbortSignal) =>
-        new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }))
+        new Promise<void>((_resolve, reject) =>
+          signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
+        )
     )
     harness.presentation.showMessage.mockImplementationOnce(
       (_content: string, signal: AbortSignal) =>
-        new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }))
+        new Promise<void>((_resolve, reject) =>
+          signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
+        )
     )
     const capabilities = harness.getExecutorOptions().framework!.capabilities
     const prelude = capabilities.course_showPrelude({ content: 'Opening' })
     const message = capabilities.course_showMessage({ content: 'Hint' })
     expect(harness.presentation.showPrelude).toHaveBeenCalledOnce()
     expect(harness.presentation.showMessage).toHaveBeenCalledOnce()
+    const cancelled = Promise.allSettled([prelude, message])
     await capabilities.course_complete(null)
-    await Promise.all([prelude, message])
-    await capabilities.course_showVideo({ videoName: 'step-to' })
+    expect((await cancelled).map((result) => result.status)).toEqual(['rejected', 'rejected'])
+    await expect(capabilities.course_showVideo({ videoName: 'step-to' })).rejects.toThrow('cancelled')
     expect(harness.presentation.showVideo).not.toHaveBeenCalled()
   })
 
@@ -334,19 +383,35 @@ describe('PlaygroundCourseRunner', () => {
     const harness = makeHarness()
     harness.presentation.showVideo.mockImplementationOnce(
       (_name: string, signal: AbortSignal) =>
-        new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }))
+        new Promise<void>((_resolve, reject) =>
+          signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
+        )
     )
     const call = harness.getExecutorOptions().framework!.capabilities.course_showVideo({ videoName: 'step-to' })
     expect(harness.presentation.showVideo).toHaveBeenCalledWith('step-to', expect.any(AbortSignal))
-    harness.runner.dispose()
-    await call
+    const cancelled = expect(call).rejects.toThrow('cancelled')
+    harness.courseSession.dispose()
+    await cancelled
   })
 
-  it('keeps the first completion and suppresses new events while callbacks finish', async () => {
+  it('preserves accepted completion when the executor exits with a later error', async () => {
     const harness = makeHarness()
-    await harness.runner.start()
     const completed = vi.fn()
-    harness.runner.on('completed', completed)
+    const failed = vi.fn()
+    harness.courseSession.on('completed', completed)
+    harness.courseSession.on('failed', failed)
+    await harness.getExecutorOptions().framework!.capabilities.course_completeWith({ content: 'Done' })
+    harness.getExecutorOptions().onError?.('runtime', 'Presentation cancelled')
+    harness.getExecutorOptions().onExit?.('error')
+    expect(completed).toHaveBeenCalledWith({ feedback: 'Done' })
+    expect(failed).not.toHaveBeenCalled()
+  })
+
+  it('keeps the first completion and stops event forwarding', async () => {
+    const harness = makeHarness()
+    await harness.courseSession.start()
+    const completed = vi.fn()
+    harness.courseSession.on('completed', completed)
     const capabilities = harness.getExecutorOptions().framework!.capabilities
     await capabilities.course_completeWith({ content: 'First' })
     await capabilities.course_completeWith({ content: 'Second' })
@@ -359,33 +424,123 @@ describe('PlaygroundCourseRunner', () => {
     expect(harness.executor.dispatchEvent).not.toHaveBeenCalled()
   })
 
-  it('keeps concurrent generation results independent and cancels requests on disposal', async () => {
+  it('cancels generation immediately on completion', async () => {
     const harness = makeHarness()
-    let finishText!: (value: string) => void
-    let finishJSON!: (value: unknown) => void
     harness.copilot.generateTextResponse.mockImplementationOnce(
-      () =>
-        new Promise<string>((resolve) => {
-          finishText = resolve
-        })
-    )
-    harness.copilot.generateJSONResponse.mockImplementationOnce(
-      () =>
-        new Promise<unknown>((resolve) => {
-          finishJSON = resolve
-        })
+      (_content: string, signal: AbortSignal) =>
+        new Promise((_resolve, reject) =>
+          signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
+        )
     )
     const capabilities = harness.getExecutorOptions().framework!.capabilities
     const text = capabilities.copilot_generateText({ content: 'Text' })
-    const json = capabilities.copilot_generateJSON({ content: 'JSON', schema: { type: 'object' } })
+    const cancelled = expect(text).rejects.toThrow('cancelled')
     await capabilities.course_complete(null)
-    expect(harness.runner.getSignal().aborted).toBe(false)
-    finishJSON({ passed: true })
-    await expect(json).resolves.toEqual({ passed: true })
-    finishText('Feedback')
-    await expect(text).resolves.toBe('Feedback')
-    harness.runner.dispose()
-    expect(harness.copilot.generateTextResponse.mock.calls[0][1].aborted).toBe(true)
-    expect(harness.copilot.generateJSONResponse.mock.calls[0][2].aborted).toBe(true)
+    await cancelled
+    expect(harness.courseSession.program.getSignal().aborted).toBe(true)
+    expect(harness.courseSession.isDisposed).toBe(false)
+  })
+
+  it('retains API and ruler state after completion and borrows the editor and project', async () => {
+    const harness = makeHarness()
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    await capabilities.editor_codeEditor_filterAPIs({ apis: ['stepTo'] })
+    await capabilities.editor_ruler_enable(null)
+    await capabilities.course_complete(null)
+    expect(harness.courseSession.apiWhitelist).toEqual(['stepTo'])
+    expect(harness.courseSession.rulerEnabled).toBe(true)
+    harness.courseSession.dispose()
+    harness.courseSession.dispose()
+    expect(harness.editorState.dispose).not.toHaveBeenCalled()
+    expect(harness.project.isDisposed).toBe(false)
+    expect(harness.executor.stop).toHaveBeenCalledOnce()
+  })
+
+  it('cleans up disposal during Copilot startup without starting the executor', async () => {
+    const harness = makeHarness()
+    let finish!: () => void
+    const startSession = harness.copilot.startSession.getMockImplementation()!
+    harness.copilot.startSession.mockImplementationOnce(async (topic) => {
+      await startSession(topic)
+      await new Promise<void>((resolve) => {
+        finish = resolve
+      })
+    })
+    const starting = harness.courseSession.start()
+    harness.courseSession.dispose()
+    await Promise.resolve()
+    finish()
+    await starting
+    expect(harness.copilot.endCurrentSession).toHaveBeenCalledOnce()
+    expect(harness.executor.run).not.toHaveBeenCalled()
+  })
+
+  it('reports Copilot startup failure once without running the program', async () => {
+    const harness = makeHarness()
+    harness.copilot.startSession.mockRejectedValueOnce(new Error('Copilot unavailable'))
+    const failed = vi.fn()
+    harness.courseSession.on('failed', failed)
+    await expect(harness.courseSession.start()).resolves.toBeUndefined()
+    expect(failed).toHaveBeenCalledOnce()
+    expect(harness.executor.run).not.toHaveBeenCalled()
+    expect(harness.courseSession.program.isDisposed).toBe(false)
+    expect(harness.courseSession.isDisposed).toBe(false)
+    harness.courseSession.dispose()
+    expect(harness.courseSession.program.isDisposed).toBe(true)
+  })
+
+  it('retains a replacement Copilot session when the course session is disposed', async () => {
+    const harness = makeHarness()
+    await harness.courseSession.start()
+    const replacement = {}
+    harness.copilot.replaceSession(replacement)
+
+    harness.courseSession.dispose()
+
+    expect(harness.courseSession.copilotSession).toBe(harness.session)
+    expect(harness.copilot.currentSession).toBe(replacement)
+    expect(harness.copilot.endCurrentSession).not.toHaveBeenCalled()
+    expect(harness.editorState.dispose).not.toHaveBeenCalled()
+  })
+
+  it('reports executor startup failure once through the session event', async () => {
+    const harness = makeHarness()
+    harness.executor.run.mockRejectedValueOnce(new Error('Build failed'))
+    const failed = vi.fn()
+    harness.courseSession.on('failed', failed)
+    await expect(harness.courseSession.start()).resolves.toBeUndefined()
+    expect(failed).toHaveBeenCalledOnce()
+    expect(harness.courseSession.program.isDisposed).toBe(true)
+  })
+
+  it('resolves startup when completion stops the executor during onStart', async () => {
+    const harness = makeHarness()
+    const completed = vi.fn()
+    const failed = vi.fn()
+    harness.courseSession.on('completed', completed)
+    harness.courseSession.on('failed', failed)
+    harness.executor.run.mockImplementationOnce(async () => {
+      await harness.getExecutorOptions().framework!.capabilities.course_complete(null)
+      throw new Error('XGo executor exited: stopped')
+    })
+    await expect(harness.courseSession.start()).resolves.toBeUndefined()
+    expect(completed).toHaveBeenCalledExactlyOnceWith({ feedback: null })
+    expect(failed).not.toHaveBeenCalled()
+  })
+
+  it('rejects repeated session startup without replacing Copilot', async () => {
+    const harness = makeHarness()
+    await harness.courseSession.start()
+    await expect(harness.courseSession.start()).rejects.toThrow('already started')
+    expect(harness.copilot.startSession).toHaveBeenCalledOnce()
+    expect(harness.executor.run).toHaveBeenCalledOnce()
+  })
+
+  it('does not run a disposed program', async () => {
+    const harness = makeHarness()
+    harness.courseSession.dispose()
+    await harness.courseSession.start()
+    expect(harness.copilot.startSession).not.toHaveBeenCalled()
+    expect(harness.executor.run).not.toHaveBeenCalled()
   })
 })

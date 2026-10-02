@@ -3,7 +3,7 @@ export type CompletionAction = 'continueEditing' | 'next' | 'exit'
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed } from 'vue'
 
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
@@ -15,7 +15,6 @@ import successImg from './images/success.svg'
 const props = defineProps<{
   visible: boolean
   active?: boolean
-  signal: AbortSignal
   course: Course
   series: CourseSeries
   feedback: string | null
@@ -30,28 +29,17 @@ const emit = defineEmits<{
   cancelled: []
   resolved: [action: CompletionAction]
 }>()
-const dismissed = ref(false)
-function resolve(action: CompletionAction) {
-  if (dismissed.value) return
-  dismissed.value = true
-  emit('resolved', action)
-}
 function dismiss() {
-  resolve('continueEditing')
+  emit('resolved', 'continueEditing')
 }
-onMounted(() => {
-  if (props.signal.aborted) dismiss()
-  else props.signal.addEventListener('abort', dismiss, { once: true })
-})
-onUnmounted(() => props.signal.removeEventListener('abort', dismiss))
 </script>
 
 <template>
   <UIModal
-    :visible="visible && !dismissed"
+    :visible="visible"
     :active="active"
     size="small"
-    class="w-111! rounded-xl!"
+    class="w-111!"
     :mask-closable="false"
     :radar="{ name: 'course-completion', desc: 'Course completion and next Course actions' }"
     @update:visible="dismiss"
@@ -81,7 +69,7 @@ onUnmounted(() => props.signal.removeEventListener('abort', dismiss))
             type="neutral"
             size="large"
             class="w-full! rounded-lg!"
-            @click="resolve('exit')"
+            @click="emit('resolved', 'exit')"
           >
             {{ $t({ en: 'Back to course series', zh: '返回课程系列' }) }}
           </UIButton>
@@ -90,7 +78,7 @@ onUnmounted(() => props.signal.removeEventListener('abort', dismiss))
             v-radar="{ name: 'course-next', desc: 'Start the next Course' }"
             size="large"
             class="w-full! rounded-lg!"
-            @click="resolve('next')"
+            @click="emit('resolved', 'next')"
           >
             {{ $t({ en: 'Learn next course', zh: '学习下一个课程' }) }}
           </UIButton>

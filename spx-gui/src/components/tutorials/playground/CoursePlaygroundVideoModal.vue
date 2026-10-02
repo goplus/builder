@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
 
 import { Cancelled } from '@/utils/exception'
 import type { Video } from '@/models/tutorial/video'
@@ -9,7 +9,6 @@ const props = defineProps<{
   visible: boolean
   active?: boolean
   video: Video
-  signal: AbortSignal
 }>()
 
 const emit = defineEmits<{
@@ -48,7 +47,7 @@ async function play() {
       needsPlay.value = true
     }
   }
-  if (dismissed.value) video.pause()
+  if (controller.signal.aborted) video.pause()
 }
 
 async function load() {
@@ -73,15 +72,8 @@ async function replay() {
   await play()
 }
 
-onMounted(() => {
-  if (props.signal.aborted) dismiss()
-  else {
-    props.signal.addEventListener('abort', dismiss, { once: true })
-    void load()
-  }
-})
-onUnmounted(() => {
-  props.signal.removeEventListener('abort', dismiss)
+onMounted(() => void load())
+onBeforeUnmount(() => {
   videoElement.value?.pause()
   controller.abort(new Cancelled('Video unmounted'))
 })

@@ -35,34 +35,4 @@ After upload, `PlaygroundCourse.content` does not contain these file bodies dire
 
 The files are intentionally small and focus on format and ownership boundaries rather than forming a production-ready lesson.
 
-## Presentation and lifecycle
-
-`showPrelude` presents a Markdown opening task guide. `showMessage` presents a
-Markdown message during the Course. Both return only when the learner dismisses
-the dialog. `showVideo "step-to"` resolves the declared Course-local resource by
-name, retains the player for replay after playback ends, and returns when the
-learner clicks Continue or explicitly closes it. The example MP4 is an empty
-format placeholder; replace it with a playable video before previewing.
-
-Put presentations that should run in sequence in the same callback:
-
-```go
-onStart => {
-    showPrelude "**Goal:** move Lita to Mushroom using `stepTo`."
-    showVideo "step-to"
-    showMessage "Try the project, then revise your code."
-}
-```
-
-The Host opens each presentation call immediately. It does not queue or replace
-concurrent calls; authors avoid overlapping calls when stacked dialogs would be
-inappropriate. Completion closes pending presentation and makes subsequent
-presentation calls no-ops. Already-started callbacks, including in-flight
-Copilot generation, finish before the completion dialog appears. Leaving or
-replacing the Course stops its execution and cancels pending generation.
-
-`Editor.Project.getCode("Lita")` reads the current session project's sprite code;
-`Editor.Project.listSprites()` discovers names added by the learner.
-`Editor.CodeEditor.formatWorkspace` formats the current Course workspace and
-returns after formatting finishes. `Editor.Ruler.enable` and
-`Editor.Ruler.disable` control availability of the ruler tool.
+The example MP4 is an empty format placeholder; replace it with a playable video before previewing.

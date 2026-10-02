@@ -101,27 +101,21 @@ func (p *Course) OnStart(handler func()) {
 		func(h *handlers, r *registration[struct{}]) { h.courseStart = append(h.courseStart, r) })
 }
 
-// ShowPrelude displays the opening task guide and returns once the learner
-// dismisses it. It differs from ShowMessage only in how the host presents it
-// (opening guide versus ordinary dialog); on this side they are simply two
-// capability names.
+// ShowPrelude presents the opening task guide and returns once the learner
+// finishes reading it.
 func (p *Course) ShowPrelude(preludeMessage string) {
 	p.courseProgram.mustCallCapability("course_showPrelude", contentRequest{Content: preludeMessage}, nil)
 }
 
-// ShowMessage displays a dialog and returns once the learner dismisses it.
-//
-// Blocking is deliberate: the contract has presentation always wait for the
-// learner to finish reading, never advancing on its own. That keeps Course
-// code reading as a sequential script, so the author needs no notion of
-// asynchrony.
+// ShowMessage presents the given message and returns once the learner finishes
+// reading it, so Course code can express successive steps sequentially.
 func (p *Course) ShowMessage(message string) {
 	p.courseProgram.mustCallCapability("course_showMessage", contentRequest{Content: message}, nil)
 }
 
-// ShowVideo plays a Course-local explanatory video. Playback ending keeps the
-// player open for replay; the call returns only after the learner clicks
-// Continue or explicitly closes the dialog.
+// ShowVideo presents a Course-local explanatory video and returns once the
+// learner finishes watching it. The host determines how viewing completion
+// is established.
 //
 // videoName is a declared video resource name, not a file path: videos are
 // declared as assets/videos/<name>/index.json and the author writes
@@ -138,11 +132,9 @@ func (p *Course) ShowVideo(videoName string) {
 //
 // Completion semantics: no further triggers start runs and pending ones are
 // abandoned, while callbacks already running or suspended execute their
-// remaining statements (the host no-ops presentation capabilities by then).
-// Once they all finish, the program ends and the executor reports the run as
-// completed. Terminating right here instead is deliberately avoided: Complete
-// is called from inside the author's callback, and forcing an exit would make
-// "do the statements after complete run?" an unanswerable question.
+// remaining statements unless a capability fails. Once they all finish, the
+// program ends and the executor reports completion. Capability failures still
+// report an execution error.
 //
 // Repeated calls are ignored, see courseProgram.markCompleted.
 func (p *Course) Complete() {
@@ -184,8 +176,8 @@ func (p *Course) CompleteWith(message string) {
 //     callback may overlap (how they relate: see #3509).
 //   - Completion winds down: after complete, no new trigger starts a run;
 //     runs already executing or suspended finish their remaining statements
-//     (the host no-ops presentation capabilities by then), and the program
-//     ends once they all do.
+//     unless a capability fails or is cancelled, and the program ends once
+//     they all finish or a fatal error occurs.
 //
 // Triggers being handled in arrival order, and the callbacks of one trigger
 // starting in registration order, is what the implementation currently does;

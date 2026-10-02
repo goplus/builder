@@ -1,52 +1,35 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-
 import CourseMarkdown from './CourseMarkdown.vue'
 import { UIButton, UIModal } from '@/components/ui'
 
 import guideImage from './images/guide.svg'
 import messageImage from './images/message.svg'
 
-const props = defineProps<{
+defineProps<{
   visible: boolean
   active?: boolean
   content: string
   kind: 'prelude' | 'message'
-  signal: AbortSignal
 }>()
 
 const emit = defineEmits<{
   cancelled: []
   resolved: []
 }>()
-
-const dismissed = ref(false)
-
-function dismiss() {
-  if (dismissed.value) return
-  dismissed.value = true
-  emit('resolved')
-}
-
-onMounted(() => {
-  if (props.signal.aborted) dismiss()
-  else props.signal.addEventListener('abort', dismiss, { once: true })
-})
-onUnmounted(() => props.signal.removeEventListener('abort', dismiss))
 </script>
 
 <template>
   <UIModal
-    :visible="visible && !dismissed"
+    :visible="visible"
     :active="active"
     size="small"
-    class="w-111! rounded-xl!"
+    class="w-111!"
     :mask-closable="false"
     :radar="{
       name: kind === 'prelude' ? 'course-prelude' : 'course-message',
       desc: kind === 'prelude' ? 'Course opening task guide' : 'Message from the Course author'
     }"
-    @update:visible="dismiss"
+    @update:visible="emit('resolved')"
   >
     <div class="max-h-[calc(100vh-32px)] overflow-y-auto p-6">
       <div class="aspect-[2/1] w-full overflow-hidden">
@@ -59,7 +42,7 @@ onUnmounted(() => props.signal.removeEventListener('abort', dismiss))
         v-radar="{ name: 'course-continue', desc: 'Dismiss the message and continue the Course' }"
         class="mt-6 w-full! rounded-lg!"
         size="large"
-        @click="dismiss"
+        @click="emit('resolved')"
       >
         {{ $t({ en: 'Continue', zh: '继续' }) }}
       </UIButton>
