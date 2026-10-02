@@ -32,6 +32,8 @@ func ispxInit() error {
 	if trackLocation.Type() == js.TypeBoolean && trackLocation.Bool() {
 		ixgoCtx.SetDebug(logExecutionLocation)
 		// NewContext created the SSA builder before SetDebug changed BuilderMode.
+		// TODO: Remove this reset after upgrading ixgo to a version containing
+		// the fix from https://github.com/goplus/ixgo/pull/524.
 		ixgoCtx.Builder.Reset()
 	}
 
