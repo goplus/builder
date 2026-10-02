@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 
 import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
+import { useMessageHandle } from '@/utils/exception'
 import { composeQuery, useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -11,7 +12,7 @@ import CoursePlayground from '@/components/tutorials/playground/CoursePlayground
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
-import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/runner'
+import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 
@@ -70,26 +71,28 @@ const sessionQueryRet = useQuery(
 
 const session = sessionQueryRet.data
 
-async function handleCompleted(completion: PlaygroundCourseCompletion) {
-  const completedSession = session.value
-  if (completedSession == null) return
-  tutorial.notifyPlaygroundCourseCompleted(completedSession.course.id)
+const { fn: handleCompleted } = useMessageHandle(
+  async (completion: PlaygroundCourseCompletion) => {
+    const completedSession = session.value
+    if (completedSession == null) return
+    tutorial.notifyPlaygroundCourseCompleted(completedSession.course.id)
 
-  const action: CompletionAction = await openCompletion({
-    course: completedSession.course,
-    series: completedSession.series,
-    feedback: completion.feedback
-  })
-  if (action === 'continueEditing') return
+    const action: CompletionAction = await openCompletion(
+      { course: completedSession.course, series: completedSession.series, feedback: completion.feedback },
+      { signal: completedSession.project.getSignal() }
+    )
+    if (completedSession.project.isDisposed || action === 'continueEditing') return
 
-  const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
-  const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
-  if (action === 'next' && nextCourseID != null) {
-    await tutorial.startCourse(completedSession.series.id, nextCourseID)
-  } else {
-    await router.push(getCourseSeriesPageRoute(completedSession.series.id))
-  }
-}
+    const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
+    const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
+    if (action === 'next' && nextCourseID != null) {
+      await tutorial.startCourse(completedSession.series.id, nextCourseID)
+    } else {
+      await router.push(getCourseSeriesPageRoute(completedSession.series.id))
+    }
+  },
+  { en: 'Failed to handle course completion', zh: '处理课程完成失败' }
+)
 </script>
 
 <template>

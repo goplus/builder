@@ -75,10 +75,8 @@ export type SpotlightOptions = {
  * Calls may overlap: while a presentation or generation call is pending, the
  * Course program keeps handling events and may issue further calls,
  * including further presentation calls. The framework does not serialize
- * presentation: when a `course.show*` call arrives while another is pending,
- * the host's capability decides whether to queue it, reject it, or dismiss
- * the earlier one, and documents that choice. Generation calls can be pending
- * concurrently.
+ * presentation calls; the Host defines how overlapping presentations are
+ * handled. Generation calls can be pending concurrently.
  *
  * On completion the host must promptly settle every still-pending call (for
  * presentation, resolving as a no-op is fine): the program only exits after
@@ -87,19 +85,18 @@ export type SpotlightOptions = {
 export interface TutorialFrameworkHost {
   course: {
     /**
-     * Displays the Course opening guide with the given message. Resolves
-     * after the learner dismisses it; presentation never advances
-     * automatically.
+     * Presents the Course opening guide with the given message. Resolves
+     * after the learner finishes reading it.
      */
     showPrelude(preludeMessage: string): Promise<void>;
     /**
-     * Displays a message dialog. Resolves after the learner dismisses it;
-     * presentation never advances automatically.
+     * Presents the given message. Resolves after the learner finishes reading
+     * it.
      */
     showMessage(message: string): Promise<void>;
     /**
-     * Displays a Course-local video. Resolves after the learner finishes
-     * watching or closes it; presentation never advances automatically.
+     * Presents a Course-local video. Resolves after the learner finishes
+     * watching it. The Host determines how viewing completion is established.
      */
     showVideo(videoName: string): Promise<void>;
     /**

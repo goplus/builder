@@ -34,3 +34,5 @@ example-tutorial-course/
 After upload, `PlaygroundCourse.content` does not contain these file bodies directly. It contains a `FileCollection` whose keys are the relative paths shown here and whose values are universal URLs. Course APIs and PostgreSQL preserve that mapping without parsing this directory's internal contracts.
 
 The files are intentionally small and focus on format and ownership boundaries rather than forming a production-ready lesson.
+
+The example MP4 is an empty format placeholder; replace it with a playable video before previewing.
