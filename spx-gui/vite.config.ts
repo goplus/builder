@@ -125,7 +125,13 @@ export default defineConfig(({ mode }) => {
           find: /^monaco-editor$/,
           replacement: resolve('node_modules/monaco-editor/esm/vs/editor/editor.api')
         }
-      ]
+      ],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text-summary', ['lcov', { projectRoot: resolve('..') }]],
+        include: ['src/**/*.{ts,js,vue}'],
+        exclude: ['src/**/*.d.ts', 'src/assets/wasm/**', 'src/**/test.ts', 'src/**/*-mock.ts']
+      }
     },
     server: {
       headers: {

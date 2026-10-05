@@ -16,7 +16,8 @@
     "format-check": "prettier --check ./src",
     "format": "prettier --write ./src",
     "lint": "eslint --max-warnings 0",
-    "test": "vitest"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
@@ -88,6 +89,9 @@
     "vue-tsc": "^3.1.1",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.24.1"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.0"
   },
   "engines": {
     "node": "^24.11.1",
