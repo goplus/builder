@@ -1,5 +1,7 @@
 # XBuilder
 
+[![codecov](https://codecov.io/gh/goplus/builder/branch/dev/graph/badge.svg)](https://codecov.io/gh/goplus/builder/branch/dev)
+
 XBuilder is a tool for building games. We create it to help children to learn [abilities to build](https://github.com/goplus/builder/issues/531).
 
 XBuilder is developed based on [spx](https://github.com/goplus/spx), which is a game engine built on [XGo](https://xgo.dev/).

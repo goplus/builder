@@ -1,0 +1,21 @@
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+flag_management:
+  individual_flags:
+    - name: spx-gui
+      paths:
+        - spx-gui/src/
+    - name: tools-ai
+      paths:
+        - tools/ai/
+
+comment:
+  layout: "reach, diff, flags, files"
+  require_changes: false

@@ -125,7 +125,12 @@ export default defineConfig(({ mode }) => {
           find: /^monaco-editor$/,
           replacement: resolve('node_modules/monaco-editor/esm/vs/editor/editor.api')
         }
-      ]
+      ],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'lcov'],
+        include: ['src/**']
+      }
     },
     server: {
       headers: {

@@ -49,7 +49,14 @@ jobs:
         run: ./build-wasm.sh
 
       - name: Run Vitest
-        run: pnpm run test
+        run: pnpm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: spx-gui
+          files: spx-gui/coverage/lcov.info
 
       - name: Build
         run: pnpm run build
@@ -70,4 +77,11 @@ jobs:
           cache-dependency-path: tools/ai/go.sum
 
       - name: Run unit test cases
-        run: go test -v -race ./...
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: tools-ai
+          files: tools/ai/coverage.out
