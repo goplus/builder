@@ -130,7 +130,7 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['text-summary', ['lcov', { projectRoot: resolve('..') }]],
         include: ['src/**/*.{ts,js,vue}'],
-        exclude: ['src/**/*.d.ts', 'src/assets/wasm/**', 'src/**/test.ts', 'src/**/*-mock.ts']
+        exclude: ['src/**/*.d.ts', 'src/assets/wasm/**', 'src/**/test.ts']
       }
     },
     server: {
