@@ -12,6 +12,8 @@ import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import { UIEmpty } from '@/components/ui'
 
+const props = withDefaults(defineProps<{ layout?: 'wrap' | 'vertical' }>(), { layout: 'wrap' })
+
 const editorCtx = useEditorCtx()
 const sprites = computed(() => editorCtx.project.sprites)
 const selectedSprite = computed(() => editorCtx.state.selectedSprite)
@@ -101,7 +103,13 @@ const handleSpriteGenClick = useMessageHandle(
 </script>
 
 <template>
-  <div ref="listWrapper" class="sprite-list overflow-y-auto m-0 flex flex-wrap content-start gap-2">
+  <div
+    ref="listWrapper"
+    class="sprite-list overflow-y-auto m-0 gap-2"
+    :class="
+      props.layout === 'vertical' ? 'sprite-list-vertical flex flex-col flex-nowrap' : 'flex flex-wrap content-start'
+    "
+  >
     <UIEmpty v-if="list.length === 0" size="medium">
       {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
     </UIEmpty>
@@ -129,6 +137,10 @@ const handleSpriteGenClick = useMessageHandle(
   flex: 1 0 112px; /* 112px: 1 row of sprite items height */
   padding: 12px 0 12px 12px; /* no right padding to allow optional scrollbar */
   scrollbar-width: thin;
+}
+
+.sprite-list-vertical {
+  padding-left: 8px;
 }
 
 /* Shadow-like effect */

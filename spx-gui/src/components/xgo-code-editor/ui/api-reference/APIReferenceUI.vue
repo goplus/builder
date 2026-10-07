@@ -24,7 +24,7 @@ import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilTaskScheduled } from '@/utils/utils'
-import { UIError } from '@/components/ui'
+import { UIError, UITooltip } from '@/components/ui'
 import { stringifyDefinitionId, type DefinitionDocumentationItem } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
@@ -148,28 +148,45 @@ function handleCategoryClick(id: string) {
   <section
     v-radar="{
       name: 'API References',
-      desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
+      desc: 'All available API reference items beside the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
-    class="flex min-h-0"
+    class="flex min-h-0 flex-col"
   >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
-        <li
-          v-for="c in categoriesComputed"
-          :key="c.id"
-          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
-          :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
-          @click="handleCategoryClick(c.id)"
-        >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="h-6 w-6" v-html="c.icon"></div>
-          <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
+      <ul
+        class="h-10 flex flex-none items-center gap-1 overflow-x-auto border-b border-dividing-line-2 px-2 [scrollbar-width:none]"
+      >
+        <li v-for="c in categoriesComputed" :key="c.id" class="flex-none">
+          <UITooltip placement="bottom">
+            <template #trigger>
+              <button
+                v-radar="{ name: $t(c.label), desc: 'Click to view APIs in this category' }"
+                type="button"
+                class="size-7 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 transition-colors duration-100"
+                :class="
+                  c.id === activeCategoryIdRef
+                    ? 'bg-grey-400 text-grey-1000'
+                    : 'bg-transparent text-grey-800 hover:bg-grey-300'
+                "
+                :aria-pressed="c.id === activeCategoryIdRef"
+                @click="handleCategoryClick(c.id)"
+              >
+                <!-- eslint-disable-next-line vue/no-v-html -->
+                <div class="size-4 [&>svg]:h-full [&>svg]:w-full" v-html="c.icon"></div>
+              </button>
+            </template>
+            {{ $t(c.label) }}
+          </UITooltip>
         </li>
       </ul>
-      <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
+      <ul
+        ref="itemsWrapperRef"
+        class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 [scrollbar-width:thin]"
+        style="padding-bottom: calc(0.75rem + var(--editor-console-safe-area, 0px))"
+      >
         <li
           v-for="c in categoriesForItems"
           :key="c.id"

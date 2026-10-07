@@ -100,9 +100,20 @@ export type ViewportSize = {
   height: number
 }
 
+export type SpxProjectInits = {
+  /** Visible game canvas size used by the editor and runner. */
+  viewportSize?: ViewportSize
+}
+
 const defaultViewportSize: ViewportSize = defaultMapSize
+const legacyPortraitViewportSize: ViewportSize = { width: 620, height: 900 }
+const portraitViewportSize: ViewportSize = { width: 307, height: 545 }
 const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
 const disabledAudioAttenuationFlag = 0
+
+function isLegacyPortraitViewport(width: unknown, height: unknown) {
+  return width === legacyPortraitViewportSize.width && height === legacyPortraitViewportSize.height
+}
 
 export class SpxProject extends Disposable implements IProject {
   id?: string
@@ -287,7 +298,8 @@ export class SpxProject extends Disposable implements IProject {
     this.sounds.splice(to, 0, sound)
   }
 
-  readonly viewportSize = defaultViewportSize
+  /** Visible game canvas size. The map may grow beyond this size. */
+  readonly viewportSize: ViewportSize
 
   private cameraFollowSpriteId: string | null
   get cameraFollowSprite(): Sprite | null {
@@ -373,9 +385,10 @@ export class SpxProject extends Disposable implements IProject {
     return () => disposable.dispose()
   }
 
-  constructor(owner?: string, name?: string) {
+  constructor(owner?: string, name?: string, inits?: SpxProjectInits) {
     super()
     const reactiveThis = reactive(this) as this
+    const viewportSize = inits?.viewportSize ?? defaultViewportSize
     this.owner = owner
     this.name = name
     if (name != null) {
@@ -384,7 +397,11 @@ export class SpxProject extends Disposable implements IProject {
     this.zorder = []
     this.fonts = []
     this.fontPreferences = ['default']
-    this.stage = new Stage()
+    this.viewportSize = { ...viewportSize }
+    this.stage = new Stage('', {
+      mapWidth: viewportSize.width,
+      mapHeight: viewportSize.height
+    })
     this.sprites = []
     this.sounds = []
     this.addDisposer(() => {
@@ -434,8 +451,6 @@ export class SpxProject extends Disposable implements IProject {
     }
     const {
       zorder: rawZorder,
-      // For now runConfig will be ignored, as the fixed viewport / run size is used in builder
-      // TODO: support customized viewport / run size
       run: runConfig,
       camera: cameraConfig,
       builder_spriteOrder: spriteOrder,
@@ -445,6 +460,21 @@ export class SpxProject extends Disposable implements IProject {
       fontPreferences,
       ...rawStageConfig
     } = config
+
+    const runWidth = runConfig?.width
+    const runHeight = runConfig?.height
+    const shouldMigrateLegacyPortraitViewport = isLegacyPortraitViewport(runWidth, runHeight)
+    if (
+      typeof runWidth === 'number' &&
+      Number.isFinite(runWidth) &&
+      runWidth > 0 &&
+      typeof runHeight === 'number' &&
+      Number.isFinite(runHeight) &&
+      runHeight > 0
+    ) {
+      this.viewportSize.width = shouldMigrateLegacyPortraitViewport ? portraitViewportSize.width : runWidth
+      this.viewportSize.height = shouldMigrateLegacyPortraitViewport ? portraitViewportSize.height : runHeight
+    }
 
     const sounds = await Sound.loadAll(files)
     const sprites = await Sprite.loadAll(files, { sounds })
@@ -481,6 +511,10 @@ export class SpxProject extends Disposable implements IProject {
     this.stage.dispose()
     const stageConfig = { ...rawStageConfig, widgets }
     const stage = await Stage.load(stageConfig, files)
+    if (shouldMigrateLegacyPortraitViewport && isLegacyPortraitViewport(stage.mapWidth, stage.mapHeight)) {
+      stage.setMapWidth(portraitViewportSize.width)
+      stage.setMapHeight(portraitViewportSize.height)
+    }
 
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())

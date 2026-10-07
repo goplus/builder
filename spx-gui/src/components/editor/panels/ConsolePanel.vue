@@ -3,7 +3,7 @@ import dayjs from 'dayjs'
 import { computed, ref } from 'vue'
 import { useBottomSticky } from '@/utils/dom'
 import { useI18n } from '@/utils/i18n'
-import { UICard, UICardHeader, UIEmpty } from '@/components/ui'
+import { UIEmpty } from '@/components/ui'
 import type { RuntimeOutput } from '@/components/editor/runtime'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { CodeLink, textDocumentId2CodeFileName } from '../spx-code-editor'
@@ -48,14 +48,11 @@ const initializingError = computed(() => {
 </script>
 
 <template>
-  <UICard
-    class="flex flex-col"
+  <div
+    class="h-full min-h-0 flex flex-col overflow-hidden"
     style="--console-panel-text-color: var(--ui-color-grey-1000); --console-panel-tip-color: var(--ui-color-grey-700)"
   >
-    <UICardHeader class="h-11">
-      {{ $t({ en: 'Console', zh: '控制台' }) }}
-    </UICardHeader>
-    <ul ref="outputContainerRef" class="flex-[1_1_0] flex flex-col gap-1 overflow-y-auto p-3">
+    <ul ref="outputContainerRef" class="min-h-0 flex-[1_1_0] flex flex-col gap-1 overflow-y-auto p-3">
       <UIEmpty v-if="runtime.running.mode !== 'debug'" size="small">
         {{ $t({ en: 'Not running in debug mode', zh: '未处于调试模式' }) }}
       </UIEmpty>
@@ -64,7 +61,7 @@ const initializingError = computed(() => {
       </UIEmpty>
       <li
         v-else-if="initializingError != null"
-        class="relative font-code text-xs"
+        class="relative font-code text-xs leading-4"
         style="--console-panel-text-color: var(--ui-color-red-500); --console-panel-tip-color: var(--ui-color-red-300)"
       >
         <!-- TODO: Optimize initializing-error displaying here -->
@@ -76,13 +73,13 @@ const initializingError = computed(() => {
         </span>
       </li>
       <UIEmpty v-else-if="outputs.length === 0" size="small">
-        {{ $t({ en: 'No output', zh: '无输出' }) }}
+        {{ $t({ en: 'Runtime logs will appear here', zh: '运行日志将显示在这里' }) }}
       </UIEmpty>
       <li
         v-for="output in outputs"
         v-else
         :key="output.id"
-        class="relative font-code text-xs"
+        class="relative font-code text-xs leading-4"
         :style="
           output.kind === 'error'
             ? {
@@ -103,5 +100,5 @@ const initializingError = computed(() => {
         <span class="whitespace-pre-line break-all text-(--console-panel-text-color)">{{ output.message }}</span>
       </li>
     </ul>
-  </UICard>
+  </div>
 </template>
