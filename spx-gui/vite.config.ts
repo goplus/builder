@@ -120,6 +120,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'happy-dom',
       alias: [
+        { find: /^konva$/, replacement: resolve('node_modules/konva/lib/index.js') },
         // Alias for `monaco-editor` to avoid `Failed to resolve entry for package "monaco-editor"`, for details: https://github.com/vitest-dev/vitest/discussions/1806
         {
           find: /^monaco-editor$/,
