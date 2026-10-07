@@ -4,8 +4,14 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   spx-gui-lint:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,12 +55,25 @@ jobs:
         run: ./build-wasm.sh
 
       - name: Run Vitest
-        run: pnpm run test
+        run: pnpm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
+        with:
+          # Fork pull requests use Codecov's tokenless upload support.
+          use_oidc: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+          files: spx-gui/coverage/lcov.info
+          flags: spx-gui
+          disable_search: true
+          fail_ci_if_error: true
 
       - name: Build
         run: pnpm run build
 
   tools-ai-test:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -70,4 +89,13 @@ jobs:
           cache-dependency-path: tools/ai/go.sum
 
       - name: Run unit test cases
-        run: go test -v -race ./...
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
+        with:
+          use_oidc: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+          files: tools/ai/coverage.out
+          flags: tools-ai
+          disable_search: true
+          fail_ci_if_error: true
