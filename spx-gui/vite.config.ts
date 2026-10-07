@@ -131,7 +131,17 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['text-summary', ['lcov', { projectRoot: resolve('..') }]],
         include: ['src/**/*.{ts,js,vue}'],
-        exclude: ['src/**/*.d.ts', 'src/assets/wasm/**', 'src/**/test.ts']
+        exclude: [
+          'src/**/*.d.ts',
+          'src/assets/wasm/**',
+          'src/**/test.ts',
+          // Copied third-party code and configuration; their XBuilder adapters remain covered.
+          'src/utils/snippet-parser/**',
+          'src/components/xgo-code-editor/ui/completion/fuzzy/**',
+          'src/utils/kodo-regions.ts',
+          'src/components/xgo-code-editor/xgo-language-configuration.ts',
+          'src/utils/xgo/gop-tm-language.json'
+        ]
       }
     },
     server: {
