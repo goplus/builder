@@ -3,6 +3,11 @@ import { createMemoryHistory, createRouter, type RouteRecordRaw } from 'vue-rout
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createAppState } from '@/utils/app-state'
+import { createI18n } from '@/utils/i18n'
+import { createRadar } from '@/utils/radar'
+import { createSpotlight } from '@/utils/spotlight'
+import { initDayjs } from '@/setup/dayjs'
 import { client } from '@/apis/common'
 import { ExploreOrder, ProjectType, Visibility, type ProjectData } from '@/apis/project'
 import * as projectApis from '@/apis/project'
@@ -10,13 +15,8 @@ import * as releaseApis from '@/apis/project-release'
 import * as userApis from '@/apis/user'
 import * as courseApis from '@/apis/course'
 import * as courseSeriesApis from '@/apis/course-series'
-import { provideCommunityConfig } from '@/components/community/config'
-import { initDayjs } from '@/setup/dayjs'
 import { initUserState } from '@/stores/user'
-import { createAppState } from '@/utils/app-state'
-import { createI18n } from '@/utils/i18n'
-import { createRadar } from '@/utils/radar'
-import { createSpotlight } from '@/utils/spotlight'
+import { provideCommunityConfig } from '@/components/community/config'
 import App from '../App.vue'
 import Project from './community/project.vue'
 import Community from './community/index.vue'
@@ -29,9 +29,8 @@ import User from './community/user/index.vue'
 import UserOverview from './community/user/overview.vue'
 import UserProjects from './community/user/projects.vue'
 import UserLikes from './community/user/likes.vue'
-import UserFollowers from './community/user/followers.vue'
-import UserFollowing from './community/user/following.vue'
 
+// Load the real UI config without the canvas-dependent app bootstrap.
 vi.mock('@/setup', () => import('@/setup/i18n'))
 vi.mock('@/apis/project', { spy: true })
 vi.mock('@/apis/user', { spy: true })
@@ -86,9 +85,7 @@ async function mountPages(path: string) {
           children: [
             { path: '', component: UserOverview, props: true },
             { path: 'projects', component: UserProjects, props: true },
-            { path: 'likes', component: UserLikes, props: true },
-            { path: 'followers', component: UserFollowers, props: true },
-            { path: 'following', component: UserFollowing, props: true }
+            { path: 'likes', component: UserLikes, props: true }
           ]
         }
       ]
@@ -138,6 +135,7 @@ describe('page happy paths', () => {
     localStorage.clear()
     window.dispatchEvent(new StorageEvent('storage', { key: 'builder-user' }))
     vi.clearAllMocks()
+    // Keep the external WASM runner document on about:blank.
     vi.spyOn(HTMLIFrameElement.prototype, 'src', 'set').mockImplementation(() => {})
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { headers: { ETag: '"test-version"' } }))
     vi.mocked(userApis.getUser).mockResolvedValue({
@@ -158,8 +156,6 @@ describe('page happy paths', () => {
     vi.mocked(releaseApis.listProjectReleases).mockResolvedValue({ data: [], total: 0 })
     vi.mocked(projectApis.listUserPublicProjects).mockResolvedValue({ data: [makeProject('First flight')], total: 1 })
     vi.mocked(projectApis.listUserLikedProjects).mockResolvedValue({ data: [makeProject('Moon landing')], total: 1 })
-    vi.mocked(userApis.listUserFollowers).mockResolvedValue({ data: [], total: 0 })
-    vi.mocked(userApis.listUserFollowing).mockResolvedValue({ data: [], total: 0 })
     vi.mocked(projectApis.listProjects).mockResolvedValue({ data: [makeProject('Space game')], total: 1 })
     const series = {
       id: 'space',
