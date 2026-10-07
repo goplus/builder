@@ -163,14 +163,15 @@ function handleCategoryClick(id: string) {
           <UITooltip placement="bottom">
             <template #trigger>
               <button
+                v-radar="{ name: $t(c.label), desc: 'Click to view APIs in this category' }"
                 type="button"
-                class="size-7 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 outline-none transition-colors duration-100"
+                class="size-7 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 transition-colors duration-100"
                 :class="
                   c.id === activeCategoryIdRef
                     ? 'bg-grey-400 text-grey-1000'
                     : 'bg-transparent text-grey-800 hover:bg-grey-300'
                 "
-                :aria-label="$t(c.label)"
+                :aria-pressed="c.id === activeCategoryIdRef"
                 @click="handleCategoryClick(c.id)"
               >
                 <!-- eslint-disable-next-line vue/no-v-html -->

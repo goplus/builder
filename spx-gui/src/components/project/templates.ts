@@ -22,7 +22,7 @@ export const projectTemplates: ProjectTemplate[] = [
   },
   {
     id: 'portrait',
-    name: { en: 'Portrait', zh: '竖版' },
+    name: { en: 'Portrait 9:16', zh: '竖版 9:16' },
     viewportSize: { width: 307, height: 545 }
   }
 ]

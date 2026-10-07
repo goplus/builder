@@ -15,9 +15,8 @@
         />
       </UIFormItem>
 
-      <div v-if="props.remixSource == null" class="mt-6">
-        <div class="mb-3 text-title">{{ $t({ en: 'Template', zh: '模板' }) }}</div>
-        <div class="grid grid-cols-3 gap-3">
+      <UIFormItem v-if="props.remixSource == null" class="mt-6" :label="$t({ en: 'Template', zh: '模板' })">
+        <div class="mt-2 grid grid-cols-3 gap-3">
           <button
             v-for="template in projectTemplates"
             :key="template.id"
@@ -51,7 +50,7 @@
             <div class="mt-2 truncate text-xs">{{ $t(template.name) }}</div>
           </button>
         </div>
-      </div>
+      </UIFormItem>
 
       <footer class="mt-8 flex justify-center">
         <UIButton

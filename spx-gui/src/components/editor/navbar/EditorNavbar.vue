@@ -147,13 +147,16 @@
       </UIButton>
     </template>
     <template v-if="previewFocused != null" #profile-menu>
-      <div
-        v-radar="{ name: 'Simplified preview toggle', desc: 'Toggle the simplified preview layout' }"
-        class="min-w-52 flex items-center justify-between gap-4 px-2 py-2 text-sm text-grey-1000"
-        @click.stop
-      >
+      <div class="min-w-52 flex items-center justify-between gap-4 px-2 py-2 text-sm text-grey-1000" @click.stop>
         <span>{{ $t({ en: 'Simplified preview', zh: '简化预览' }) }}</span>
-        <UISwitch :value="previewFocused" @update:value="setPreviewFocused" />
+        <UISwitch
+          v-radar="{
+            name: $t({ en: 'Simplified preview', zh: '简化预览' }),
+            desc: 'Toggle the simplified preview layout'
+          }"
+          :value="previewFocused"
+          @update:value="setPreviewFocused"
+        />
       </div>
     </template>
   </NavbarWrapper>
