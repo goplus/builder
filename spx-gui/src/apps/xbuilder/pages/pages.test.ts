@@ -17,6 +17,9 @@ import { ExploreOrder, ProjectType, Visibility, type ProjectData } from '@/apis/
 import * as projectApis from '@/apis/project'
 import * as releaseApis from '@/apis/project-release'
 import * as userApis from '@/apis/user'
+import * as accountAdminApis from '@/apis/admin/account'
+import * as auditApis from '@/apis/admin/audit'
+import type { UserCapabilities } from '@/apis/user'
 import * as copilotApis from '@/apis/copilot'
 import * as courseApis from '@/apis/course'
 import * as courseSeriesApis from '@/apis/course-series'
@@ -42,6 +45,14 @@ import User from './community/user/index.vue'
 import UserOverview from './community/user/overview.vue'
 import UserProjects from './community/user/projects.vue'
 import UserLikes from './community/user/likes.vue'
+import Admin from './admin/index.vue'
+import AdminApps from './admin/apps.vue'
+import AdminApp from './admin/app.vue'
+import AdminGrant from './admin/grant.vue'
+import AdminUsers from './admin/users.vue'
+import AdminAuditLogs from './admin/audit-logs.vue'
+import UserFollowers from './community/user/followers.vue'
+import UserFollowing from './community/user/following.vue'
 
 vi.mock('@lottiefiles/dotlottie-vue', () => ({
   DotLottieVue: { template: '<span />', methods: { getDotLottieInstance: () => null } }
@@ -58,6 +69,8 @@ vi.mock('@/apis/project-release', { spy: true })
 vi.mock('@/apis/course-series', { spy: true })
 vi.mock('@/apis/course', { spy: true })
 vi.mock('@/apis/copilot', { spy: true })
+vi.mock('@/apis/admin/account', { spy: true })
+vi.mock('@/apis/admin/audit', { spy: true })
 
 enableAutoUnmount(afterEach)
 initDayjs()
@@ -105,7 +118,7 @@ function makeAsset(name: string, type: AssetType, files: AssetData['files']): As
   }
 }
 
-async function signIn() {
+async function signIn(capabilities: Partial<UserCapabilities> = {}) {
   const user = await userApis.getUser('alice')
   vi.mocked(userApis.getSignedInUser).mockResolvedValue({
     ...user,
@@ -114,7 +127,8 @@ async function signIn() {
       canManageAuthorization: false,
       canManageAssets: false,
       canManageCourses: false,
-      canUsePremiumLLM: false
+      canUsePremiumLLM: false,
+      ...capabilities
     }
   })
   localStorage.setItem(
@@ -146,7 +160,9 @@ async function mountPages(path: string) {
           children: [
             { path: '', component: UserOverview, props: true },
             { path: 'projects', component: UserProjects, props: true },
-            { path: 'likes', component: UserLikes, props: true }
+            { path: 'likes', component: UserLikes, props: true },
+            { path: 'followers', component: UserFollowers, props: true },
+            { path: 'following', component: UserFollowing, props: true }
           ]
         }
       ]
@@ -154,6 +170,17 @@ async function mountPages(path: string) {
     { path: '/editor/:ownerNameInput/:projectNameInput/:inEditorPath*', component: Editor, props: true },
     { path: '/editor/:projectNameInput', component: OwnProject, props: true },
     { path: '/tutorials', component: Tutorials },
+    {
+      path: '/admin',
+      component: Admin,
+      children: [
+        { path: 'users', component: AdminUsers },
+        { path: 'apps', component: AdminApps },
+        { path: 'apps/:appID', component: AdminApp, props: true },
+        { path: 'users/:userID/app-grants/:grantID', component: AdminGrant, props: true },
+        { path: 'audit-logs', component: AdminAuditLogs }
+      ]
+    },
     { path: '/course-series/:courseSeriesIdInput', component: CourseSeries, props: true },
     { path: '/course/:courseSeriesIdInput/:courseIdInput/start', component: CourseStart, props: true },
     { path: '/:pathMatch(.*)*', component: { template: '<div>Destination</div>' } }
@@ -266,7 +293,7 @@ describe('page happy paths', () => {
     vi.mocked(projectApis.isLiking).mockResolvedValue(false)
     vi.mocked(projectApis.listSignedInUserProjects).mockResolvedValue({ data: [makeProject('My spaceship')], total: 1 })
     vi.mocked(projectApis.exploreProjects).mockImplementation(async ({ order }) => [makeProject(order)])
-    vi.mocked(projectApis.getProject).mockImplementation(async (_owner, name) => makeProject(name))
+    vi.mocked(projectApis.getProject).mockImplementation(async (owner, name) => ({ ...makeProject(name), owner }))
     vi.mocked(releaseApis.listProjectReleases).mockResolvedValue({ data: [], total: 0 })
     vi.mocked(projectApis.listUserPublicProjects).mockResolvedValue({ data: [makeProject('First flight')], total: 1 })
     vi.mocked(projectApis.listUserLikedProjects).mockResolvedValue({ data: [makeProject('Moon landing')], total: 1 })
@@ -425,7 +452,8 @@ describe('page happy paths', () => {
     await vi.waitFor(() => expect(project.stage.widgets[0].name).toBe('ScoreDisplay'))
   })
 
-  it('imports a backdrop and renames it with undo and redo', async () => {
+  it('searches the asset library, imports a backdrop and manages it with undo and redo', async () => {
+    await signIn()
     const config = { name: 'Grassland', path: 'grass.svg', x: 240, y: 180, imageWidth: 480, imageHeight: 360 }
     vi.mocked(assetApis.listAssets).mockResolvedValue({
       total: 1,
@@ -436,6 +464,7 @@ describe('page happy paths', () => {
         })
       ]
     })
+    vi.mocked(assetApis.listSignedInUserAssets).mockResolvedValue({ total: 0, data: [] })
     const { wrapper } = await mountPages('/editor/alice/First%20flight')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Backdrops quick entry"]').exists()).toBe(true), {
       timeout: 4000
@@ -447,6 +476,28 @@ describe('page happy paths', () => {
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Asset library modal"]').exists()).toBe(true))
     const modal = wrapper.get('[aria-label="Asset library modal"]')
     await vi.waitFor(() => expect(modal.text()).toContain('Grassland'))
+    await modal.get('input[placeholder="Search"]').setValue('grass')
+    await vi.waitFor(() =>
+      expect(assetApis.listAssets).toHaveBeenLastCalledWith(
+        expect.objectContaining({ keyword: 'grass', type: AssetType.Backdrop, visibility: Visibility.Public })
+      )
+    )
+    await modal
+      .findAll('button')
+      .find((button) => button.text() === 'My library')!
+      .trigger('click')
+    await vi.waitFor(() =>
+      expect(assetApis.listSignedInUserAssets).toHaveBeenCalledWith(
+        expect.objectContaining({ keyword: 'grass', type: AssetType.Backdrop })
+      )
+    )
+    await vi.waitFor(() => expect(modal.text()).toContain('No data'))
+    await modal
+      .findAll('button')
+      .find((button) => button.text() === 'Public library')!
+      .trigger('click')
+    await vi.waitFor(() => expect(modal.text()).toContain('Grassland'))
+
     await modal
       .get('[aria-label="Asset list"]')
       .findAll('[title]')
@@ -468,6 +519,16 @@ describe('page happy paths', () => {
     await history[0].trigger('click')
     await vi.waitFor(() => expect(project.stage.backdrops.map((backdrop) => backdrop.name)).toEqual(['Grassland']))
     await history[1].trigger('click')
+    await vi.waitFor(() => expect(project.stage.backdrops.map((backdrop) => backdrop.name)).toEqual(['Landing']))
+    await wrapper.get('[aria-label="Backdrop mode selector"] [aria-label="Scale"]').trigger('click')
+    await vi.waitFor(() => expect(project.stage.mapMode).toBe('fillRatio'))
+    await wrapper.get('[aria-label="Backdrops management"] [aria-label="Options button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Duplicate"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Duplicate"]').trigger('click')
+    await vi.waitFor(() => expect(project.stage.backdrops).toHaveLength(2))
+    await wrapper.get('[aria-label="Backdrops management"] [aria-label="Options button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Remove"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Remove"]').trigger('click')
     await vi.waitFor(() => expect(project.stage.backdrops.map((backdrop) => backdrop.name)).toEqual(['Landing']))
   })
 
@@ -569,6 +630,28 @@ describe('page happy paths', () => {
     await settings.get('[aria-label="Collapse button"]').trigger('click')
     await wrapper.get('[aria-label="Expand button"]').trigger('click')
     expect(wrapper.find('[aria-label="Basic configuration for selected sprite"]').exists()).toBe(true)
+    await wrapper.get('[aria-label="Default mode"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Sprites panel"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Sprites panel"] [aria-label="Options button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Duplicate"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Duplicate"]').trigger('click')
+    await vi.waitFor(() => expect(project.sprites).toHaveLength(2))
+    expect(project.sprites[1].x).toBe(110)
+    expect(project.sprites[1].y).toBe(40)
+    expect(project.sprites[1].animations[0].name).toBe('Fly')
+    await wrapper.get('[aria-label="Sprites panel"] [aria-label="Options button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Rename"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Rename"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Rename modal"]').exists()).toBe(true))
+    const renameSprite = wrapper.get('[aria-label="Rename modal"]')
+    await renameSprite.get('[aria-label="Name input"] input').setValue('Shuttle')
+    await renameSprite.get('form').trigger('submit')
+    await vi.waitFor(() => expect(project.sprites[1].name).toBe('Shuttle'))
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Rename modal"]').exists()).toBe(false))
+    await wrapper.get('[aria-label="Sprites panel"] [aria-label="Options button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Remove"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Remove"]').trigger('click')
+    await vi.waitFor(() => expect(project.sprites.map((sprite) => sprite.name)).toEqual(['Spaceship']))
   })
 
   it('configures map size and physics through map edit mode', async () => {
@@ -670,7 +753,6 @@ describe('page happy paths', () => {
         }
       ]
     })
-    vi.mocked(projectApis.getProject).mockImplementation(async (owner, name) => ({ ...makeProject(name), owner }))
     const { wrapper, router } = await mountPages('/project/bob/Space')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Remix button"]').exists()).toBe(true))
     await wrapper.get('[aria-label="Remix button"]').trigger('click')
@@ -721,8 +803,14 @@ describe('page happy paths', () => {
       entrypoint: '/editor/alice/first-flight',
       prompt: 'Build a spaceship'
     })
-    vi.mocked(copilotApis.generateCopilotMessage).mockImplementation(async function* () {
-      yield { type: 'text_delta', data: { text: 'Welcome! Start by adding a spaceship.' } }
+    vi.mocked(copilotApis.generateCopilotMessage).mockImplementation(async function* (messages) {
+      const nextStep = messages.some(
+        (message) => message.role === 'user' && message.content.text.includes('I did what you asked.')
+      )
+      yield {
+        type: 'text_delta',
+        data: { text: nextStep ? 'Now move your spaceship.' : 'Welcome! Start by adding a spaceship.' }
+      }
       yield { type: 'done', data: { finishReason: 'stop' } }
     })
     const { wrapper, router } = await mountPages('/course-series/space')
@@ -733,17 +821,20 @@ describe('page happy paths', () => {
     await vi.waitFor(() => expect(wrapper.findAll('button').some((button) => button.text() === 'Next step')).toBe(true))
     const next = wrapper.findAll('button').find((button) => button.text() === 'Next step')!
     await next.trigger('click')
-    await vi.waitFor(() => expect(copilotApis.generateCopilotMessage).toHaveBeenCalledTimes(2))
-    expect(vi.mocked(copilotApis.generateCopilotMessage).mock.calls[1][0]).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          role: 'user',
-          content: expect.objectContaining({
-            text: expect.stringContaining('I did what you asked. Tell me what to do next.')
+    await vi.waitFor(() =>
+      expect(copilotApis.generateCopilotMessage).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            role: 'user',
+            content: expect.objectContaining({
+              text: expect.stringContaining('I did what you asked. Tell me what to do next.')
+            })
           })
-        })
-      ])
+        ]),
+        expect.anything()
+      )
     )
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Now move your spaceship.'))
     await vi.waitFor(() => expect(wrapper.findAll('button').some((button) => button.text() === 'Next step')).toBe(true))
     expect(copilotApis.generateCopilotMessage).toHaveBeenCalledWith(
       expect.arrayContaining([
@@ -754,5 +845,356 @@ describe('page happy paths', () => {
       ]),
       expect.anything()
     )
+  })
+  it('follows a user, browses their paginated followers and unfollows them', async () => {
+    await signIn()
+    const alice = await userApis.getUser('alice')
+    const bob = { ...alice, id: 'bob', username: 'bob', displayName: 'Bob' }
+    vi.mocked(userApis.getUser).mockImplementation(async (name) => (name === 'bob' ? bob : alice))
+    let following = false
+    vi.mocked(userApis.isFollowing).mockImplementation(async () => following)
+    vi.mocked(userApis.follow).mockImplementation(async () => {
+      following = true
+    })
+    vi.mocked(userApis.unfollow).mockImplementation(async () => {
+      following = false
+    })
+    vi.mocked(userApis.listUserFollowers).mockImplementation(async (_name, params) => ({
+      total: 9,
+      data: [{ ...alice, displayName: params?.pageIndex === 2 ? 'Another pilot' : 'Alice' }]
+    }))
+    vi.mocked(userApis.listUserFollowing).mockResolvedValue({ total: 1, data: [alice] })
+    const { wrapper, router } = await mountPages('/user/bob')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Follow button"]').text()).toBe('Follow'))
+    await wrapper.get('[aria-label="Follow button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.get('[aria-label="Follow button"]').text()).toBe('Unfollow'))
+    expect(userApis.follow).toHaveBeenCalledWith('bob')
+    await wrapper.get('a[aria-label="Followers link"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('My followers'))
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '2')!
+      .trigger('click')
+    await vi.waitFor(() => expect(router.currentRoute.value.query.p).toBe('2'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Another pilot'))
+    expect(userApis.listUserFollowers).toHaveBeenLastCalledWith(
+      'bob',
+      expect.objectContaining({ pageIndex: 2, pageSize: 8 })
+    )
+    await wrapper.get('a[aria-label="Following link"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Users I'm following"))
+    expect(wrapper.find('a[href="/user/alice"]').exists()).toBe(true)
+    await wrapper.get('[aria-label="Follow button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.get('[aria-label="Follow button"]').text()).toBe('Follow'))
+    expect(userApis.unfollow).toHaveBeenCalledWith('bob')
+  })
+
+  it('likes and unlikes a public project', async () => {
+    await signIn()
+    let liking = false
+    vi.mocked(projectApis.isLiking).mockImplementation(async () => liking)
+    vi.mocked(projectApis.likeProject).mockImplementation(async () => {
+      liking = true
+    })
+    vi.mocked(projectApis.unlikeProject).mockImplementation(async () => {
+      liking = false
+    })
+    const { wrapper } = await mountPages('/project/bob/Space')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Like button"]').exists()).toBe(true))
+    const like = wrapper.get('[aria-label="Like button"]')
+    await like.trigger('click')
+    await vi.waitFor(() => expect(projectApis.likeProject).toHaveBeenCalledWith('bob', 'Space'))
+    await vi.waitFor(() => expect(like.classes()).toContain('text-red-main!'))
+    await like.trigger('click')
+    await vi.waitFor(() => expect(projectApis.unlikeProject).toHaveBeenCalledWith('bob', 'Space'))
+    await vi.waitFor(() => expect(like.classes()).not.toContain('text-red-main!'))
+  })
+  it('creates an OAuth app and saves its identity, endpoints and availability', async () => {
+    await signIn({ canManageAccount: true })
+    let app: accountAdminApis.AccountApp = {
+      id: 'flight',
+      name: 'flight',
+      displayName: 'Flight planner',
+      clientType: 'confidential',
+      status: 'active',
+      redirectURIs: ['https://flight.test/callback'],
+      redirectURIPatterns: [],
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+    vi.mocked(accountAdminApis.listAccountApps).mockResolvedValue({ total: 0, data: [] })
+    vi.mocked(accountAdminApis.createAccountApp).mockResolvedValue(app)
+    vi.mocked(accountAdminApis.getAccountApp).mockImplementation(async () => app)
+    vi.mocked(accountAdminApis.listAccountAppSecrets).mockResolvedValue({ total: 0, data: [] })
+    vi.mocked(accountAdminApis.updateAccountApp).mockImplementation(async (_id, params) => {
+      app = { ...app, ...params }
+      return app
+    })
+    const { wrapper, router } = await mountPages('/admin/apps')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('0 apps'))
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Create app')!
+      .trigger('click')
+    const create = wrapper.get('form')
+    const inputs = create.findAll('input')
+    await inputs[0].setValue('flight')
+    await inputs[1].setValue('Flight planner')
+    await create.get('select').setValue('confidential')
+    await create.get('textarea').setValue(' https://flight.test/callback\n\n')
+    await create.trigger('submit')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/admin/apps/flight'))
+    expect(accountAdminApis.createAccountApp).toHaveBeenCalledWith({
+      name: 'flight',
+      displayName: 'Flight planner',
+      clientType: 'confidential',
+      redirectURIs: ['https://flight.test/callback']
+    })
+    await vi.waitFor(() => expect(wrapper.findAll('form').length).toBe(3))
+    const identity = wrapper.findAll('form').find((form) => form.text().includes('Save changes'))!
+    await identity.get('input').setValue(' Space planner ')
+    await identity.trigger('submit')
+    await vi.waitFor(() =>
+      expect(accountAdminApis.updateAccountApp).toHaveBeenCalledWith('flight', { displayName: 'Space planner' })
+    )
+    await vi.waitFor(() => expect(identity.get('button[type="submit"]').attributes('disabled')).toBeDefined())
+    const endpoints = wrapper.findAll('form').find((form) => form.text().includes('Save endpoint settings'))!
+    await endpoints.get('textarea').setValue('https://flight.test/callback\n https://flight.test/return ')
+    await endpoints.trigger('submit')
+    await vi.waitFor(() =>
+      expect(accountAdminApis.updateAccountApp).toHaveBeenCalledWith('flight', {
+        redirectURIs: ['https://flight.test/callback', 'https://flight.test/return']
+      })
+    )
+    await wrapper.get('[aria-label="App availability"]').trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save availability')!
+      .trigger('click')
+    await vi.waitFor(() =>
+      expect(accountAdminApis.updateAccountApp).toHaveBeenCalledWith('flight', { status: 'disabled' })
+    )
+    const secretForm = wrapper.findAll('form').find((form) => form.text().includes('Create secret'))!
+    const secret = {
+      id: 'test-secret-id',
+      name: 'Test deployment',
+      value: 'test-only-secret',
+      createdAt: '2026-01-01T00:00:00Z'
+    }
+    vi.mocked(accountAdminApis.createAccountAppSecret).mockResolvedValue(secret)
+    vi.mocked(accountAdminApis.listAccountAppSecrets).mockResolvedValue({ total: 1, data: [secret] })
+    await secretForm.get('input').setValue('Test deployment')
+    await secretForm.trigger('submit')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Copy app secret"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Copy app secret"]').trigger('click')
+    await vi.waitFor(async () => expect(await navigator.clipboard.readText()).toBe('test-only-secret'))
+    expect(accountAdminApis.createAccountAppSecret).toHaveBeenCalledWith('flight', { name: 'Test deployment' })
+  })
+
+  it('filters account users and preserves the query when paging', async () => {
+    await signIn({ canManageAccount: true })
+    const user = {
+      id: 'pilot',
+      username: 'pilot',
+      displayName: 'Space pilot',
+      avatar: '',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+    vi.mocked(accountAdminApis.listAccountUsers).mockResolvedValue({ total: 21, data: [user] })
+    const { wrapper, router } = await mountPages('/admin')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/admin/users'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Space pilot'))
+    await wrapper.get('input[placeholder="Username or display name"]').setValue('pilot')
+    await vi.waitFor(() => expect(router.currentRoute.value.query.q).toBe('pilot'))
+    await vi.waitFor(() =>
+      expect(accountAdminApis.listAccountUsers).toHaveBeenLastCalledWith(
+        expect.objectContaining({ keyword: 'pilot', pageIndex: 1 })
+      )
+    )
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '2')!
+      .trigger('click')
+    await vi.waitFor(() =>
+      expect(accountAdminApis.listAccountUsers).toHaveBeenLastCalledWith(
+        expect.objectContaining({ keyword: 'pilot', pageIndex: 2 })
+      )
+    )
+    expect(wrapper.get('a[href="/admin/users/pilot"]').text()).toContain('Space pilot')
+    await wrapper.get('select').setValue('asc')
+    await vi.waitFor(() =>
+      expect(accountAdminApis.listAccountUsers).toHaveBeenLastCalledWith(
+        expect.objectContaining({ keyword: 'pilot', pageIndex: 1, sortOrder: 'asc' })
+      )
+    )
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Refresh')!
+      .trigger('click')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Space pilot'))
+  })
+
+  it('filters audit logs by creation date and displays operation metadata', async () => {
+    await signIn({ canManageAuthorization: true })
+    vi.mocked(auditApis.listAuditLogs).mockResolvedValue({
+      total: 1,
+      data: [
+        {
+          id: 'audit',
+          actor: 'alice',
+          action: 'account.app.update',
+          resourceType: 'app',
+          resourceID: 'flight',
+          createdAt: '2026-01-02T00:00:00Z',
+          metadata: { displayName: 'Space planner' }
+        }
+      ]
+    })
+    const { wrapper, router } = await mountPages('/admin')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/admin/audit-logs'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('account.app.update'))
+    await wrapper.findAll('input[type="datetime-local"]')[0].setValue('2026-01-01T00:00')
+    await vi.waitFor(() =>
+      expect(auditApis.listAuditLogs).toHaveBeenLastCalledWith(
+        expect.objectContaining({ createdAfter: new Date('2026-01-01T00:00').toISOString() })
+      )
+    )
+    expect(wrapper.get('details').text()).toContain('Space planner')
+    const calls = vi.mocked(auditApis.listAuditLogs).mock.calls.length
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Refresh')!
+      .trigger('click')
+    await vi.waitFor(() => expect(auditApis.listAuditLogs).toHaveBeenCalledTimes(calls + 1))
+  })
+  it('opens an existing project from the menu and changes its name', async () => {
+    await signIn()
+    vi.mocked(projectApis.isProjectNameTaken).mockResolvedValue(false)
+    vi.mocked(projectApis.updateProject).mockImplementation(async (_owner, name, params) => ({
+      ...makeProject(name),
+      ...params
+    }))
+    const { wrapper, router } = await mountPages('/')
+    await wrapper.get('[aria-label="Project menu"]').trigger('mouseenter')
+    await vi.waitFor(() =>
+      expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Open project...')).toBe(true)
+    )
+    await wrapper
+      .findAll('.ui-menu-item')
+      .find((item) => item.text() === 'Open project...')!
+      .trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Project open modal"]').exists()).toBe(true))
+    const open = wrapper.get('[aria-label="Project open modal"]')
+    await vi.waitFor(() => expect(open.text()).toContain('My spaceship'))
+    await open.get('a[href="/editor/alice/My%20spaceship"]').trigger('click')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/editor/alice/My%20spaceship/sprites'))
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Stage overview"]').exists()).toBe(true), { timeout: 4000 })
+    await wrapper.get('[aria-label="Project menu"]').trigger('mouseenter')
+    await vi.waitFor(() =>
+      expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Modify project name')).toBe(true)
+    )
+    await wrapper
+      .findAll('.ui-menu-item')
+      .find((item) => item.text() === 'Modify project name')!
+      .trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Project name warning modal"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Project name warning modal"] button').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Project name modal"]').exists()).toBe(true))
+    const rename = wrapper.get('[aria-label="Project name modal"]')
+    await rename.get('[aria-label="Project name input"] input').setValue('New-flight')
+    await rename.get('form').trigger('submit')
+    await vi.waitFor(() =>
+      expect(projectApis.updateProject).toHaveBeenCalledWith('alice', 'My spaceship', { name: 'New-flight' })
+    )
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/editor/alice/New-flight/sprites'))
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Stage overview"]').exists()).toBe(true))
+  })
+
+  it('creates and copies a test access token, then filters the app grant token list', async () => {
+    await signIn({ canManageAccount: true })
+    const user = {
+      id: 'pilot',
+      username: 'pilot',
+      displayName: 'Space pilot',
+      avatar: '',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+    const app: accountAdminApis.AccountApp = {
+      id: 'flight',
+      name: 'flight',
+      displayName: 'Flight planner',
+      clientType: 'public',
+      status: 'active',
+      redirectURIs: ['https://flight.test/callback'],
+      redirectURIPatterns: [],
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    }
+    vi.mocked(accountAdminApis.getAccountUser).mockResolvedValue(user)
+    vi.mocked(accountAdminApis.getAccountAppGrant).mockResolvedValue({
+      id: 'grant',
+      userID: user.id,
+      appID: app.id,
+      app,
+      scope: 'openid profile',
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    })
+    let tokens: accountAdminApis.AccountAppToken[] = []
+    vi.mocked(accountAdminApis.listAccountAppGrantTokens).mockImplementation(async (_id, params) => {
+      const data = tokens.filter((token) => params?.tokenType == null || token.tokenType === params.tokenType)
+      return { total: data.length, data }
+    })
+    vi.mocked(accountAdminApis.createAccountAppGrantToken).mockImplementation(async (_id, params) => {
+      const token = {
+        ...params,
+        id: 'test-token-id',
+        grantID: 'grant',
+        scope: 'openid profile',
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+      tokens = [token]
+      return { ...token, value: 'test-only-access-token' }
+    })
+    const { wrapper } = await mountPages('/admin/users/pilot/app-grants/grant')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Flight planner'))
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Create')!
+      .trigger('click')
+    const create = wrapper.get('form')
+    await create.get('input:not([type="datetime-local"])').setValue('Test automation')
+    const expiresAt = create.get<HTMLInputElement>('input[type="datetime-local"]').element.value
+    await create.trigger('submit')
+    await vi.waitFor(() =>
+      expect(accountAdminApis.createAccountAppGrantToken).toHaveBeenCalledWith('grant', {
+        tokenType: 'accessToken',
+        name: 'Test automation',
+        expiresAt: new Date(expiresAt).toISOString()
+      })
+    )
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Copy Access token"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Copy Access token"]').trigger('click')
+    await vi.waitFor(async () => expect(await navigator.clipboard.readText()).toBe('test-only-access-token'))
+    await vi.waitFor(() => expect(wrapper.find('tbody').text()).toContain('Test automation'))
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'I have saved it')!
+      .trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Copy Access token"]').exists()).toBe(false))
+    await wrapper.get('select').setValue('refreshToken')
+    await vi.waitFor(() =>
+      expect(accountAdminApis.listAccountAppGrantTokens).toHaveBeenLastCalledWith(
+        'grant',
+        expect.objectContaining({ tokenType: 'refreshToken' })
+      )
+    )
+    await vi.waitFor(() => expect(wrapper.text()).toContain('No active tokens'))
+    await wrapper.get('select').setValue('accessToken')
+    await vi.waitFor(() => expect(wrapper.get('tbody').text()).toContain('Test automation'))
   })
 })
