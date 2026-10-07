@@ -4,7 +4,7 @@ import { defineComponent, h, onUnmounted } from 'vue'
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from 'vue-router'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createAppState } from '@/utils/app-state'
 import { createI18n } from '@/utils/i18n'
 import { createRadar } from '@/utils/radar'
@@ -28,6 +28,7 @@ import { localHelpers } from '@/models/common/local'
 import { initUserState } from '@/stores/user'
 import { provideProjectConfig } from '@/components/project/config'
 import { provideCommunityConfig } from '@/components/community/config'
+import { loadMonaco } from '@/components/xgo-code-editor/monaco'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import App from '../App.vue'
@@ -221,6 +222,9 @@ async function mountPages(path: string) {
 }
 
 describe('page happy paths', () => {
+  beforeAll(async () => {
+    await loadMonaco('en')
+  }, 30_000)
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
