@@ -50,11 +50,14 @@ export class ProgressReporter {
   startAutoReport(
     /** Estimated time cost in milliseconds */
     timeCost: number,
-    /** Interval in milliseconds for each report. `null` uses `timeCost / 50`, with a minimum of 300ms. */
-    interval: number | null = null,
-    signal?: AbortSignal
+    options?: {
+      /** Interval in milliseconds for each report. Defaults to `timeCost / 50`, with a minimum of 100ms. */
+      interval?: number
+      signal?: AbortSignal
+    }
   ) {
-    const reportInterval = interval ?? Math.max(300, Math.round(timeCost / 50))
+    const reportInterval = options?.interval ?? Math.max(100, Math.round(timeCost / 50))
+    const signal = options?.signal
     return new Promise<void>((resolve) => {
       if (signal?.aborted) {
         resolve()

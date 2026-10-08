@@ -234,7 +234,7 @@ export class Editing extends Disposable {
       const ownedBySignedInUser = signedInState.isSignedIn && signedInState.user.username === projectData.owner
       return !ownedBySignedInUser
     }
-    loadFromCloudReporter.startAutoReport(1000, null, signal)
+    loadFromCloudReporter.startAutoReport(1000, { signal })
     const cloudData = await this.cloudHelpers.load(ownerInput, projectNameInput, preferPublished, signal)
     signal.throwIfAborted()
     loadFromCloudReporter.report(1)
@@ -243,7 +243,7 @@ export class Editing extends Disposable {
     // https://github.com/goplus/builder/issues/259
     // https://github.com/goplus/builder/issues/393
     let localData: ProjectSerialized | null = null
-    loadFromLocalCacheReporter.startAutoReport(200, null, signal)
+    loadFromLocalCacheReporter.startAutoReport(200, { signal })
     try {
       localData = await this.localCacheHelper.load(signal)
     } catch (e) {
@@ -287,7 +287,7 @@ export class Editing extends Disposable {
         restoredFromLocalCache = true
       }
     }
-    projectLoadReporter.startAutoReport(1000, null, signal)
+    projectLoadReporter.startAutoReport(1000, { signal })
     await this.project.load(finalData, signal)
     signal.throwIfAborted()
     projectLoadReporter.report(1)
