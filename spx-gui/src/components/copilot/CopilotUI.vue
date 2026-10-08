@@ -28,7 +28,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } fr
 import { useRouter } from 'vue-router'
 
 import { isRectIntersecting, useContentSize } from '@/utils/dom'
-import { createCSSAnimation } from '@/utils/css-animation'
+import { animateCSS } from '@/utils/css-animation'
 import { localStorageRef, untilNotNull } from '@/utils/utils'
 import { untilLoaded } from '@/utils/query'
 import { getCleanupSignal } from '@/utils/disposable'
@@ -193,33 +193,45 @@ function getOpenedPanelClampedPosition(position: Position = panelStatePosition.v
 
 /** Settle the panel's position and visibility into the opened state, including after dragging. */
 async function settlePanelOpened(signal: AbortSignal) {
-  // trigger animation
-  const triggerAnimation = createCSSAnimation('animated', panelRef.value, signal)
-  triggerAnimation.begin(!!triggerVisibility.value)
-  triggerVisibility.value = TriggerVisibility.None
-  await triggerAnimation.endAndWait()
+  await animateCSS(
+    'animated',
+    panelRef.value,
+    () => {
+      triggerVisibility.value = TriggerVisibility.None
+    },
+    !!triggerVisibility.value,
+    signal
+  )
   signal.throwIfAborted()
 
-  // panel animation
-  const panelAnimation = createCSSAnimation('animated', panelRef.value, signal)
   const newPosition = getOpenedPanelClampedPosition()
-  panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
-  panelStatePosition.value = newPosition
-  triggerState.value = newPosition.state
-  isPanelOutOfBounds.value = false
-  await panelAnimation.endAndWait()
+  await animateCSS(
+    'animated',
+    panelRef.value,
+    () => {
+      panelStatePosition.value = newPosition
+      triggerState.value = newPosition.state
+      isPanelOutOfBounds.value = false
+    },
+    !isSamePosition(newPosition, panelStatePosition.value),
+    signal
+  )
 }
 
 /** Settle the panel's position and visibility into the closed state, including after dragging. */
 async function settlePanelClosed(signal: AbortSignal) {
-  const { begin, endAndWait } = createCSSAnimation('animated', panelRef.value, signal)
   const newPosition = getClosedPanelClampedPosition()
-  // When the `transition-property` doesn't change, the `transitionend` event can't be triggered.
-  begin(!isSamePosition(newPosition, panelStatePosition.value))
-  panelStatePosition.value = newPosition
-  triggerState.value = newPosition.state
-  isPanelOutOfBounds.value = true
-  await endAndWait()
+  await animateCSS(
+    'animated',
+    panelRef.value,
+    () => {
+      panelStatePosition.value = newPosition
+      triggerState.value = newPosition.state
+      isPanelOutOfBounds.value = true
+    },
+    !isSamePosition(newPosition, panelStatePosition.value),
+    signal
+  )
   signal.throwIfAborted()
 
   triggerVisibility.value = TriggerVisibility.Visible
@@ -301,12 +313,15 @@ onBeforeUnmount(
           newRight = innerWidth - right > panelW ? 0 : innerWidth
         }
 
-        // panel animation
-        const panelAnimation = createCSSAnimation('animated', panelRef.value)
         const newPosition = getOpenedPanelClampedPosition({ right: newRight, bottom })
-        panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
-        panelStatePosition.value = newPosition
-        await panelAnimation.endAndWait()
+        await animateCSS(
+          'animated',
+          panelRef.value,
+          () => {
+            panelStatePosition.value = newPosition
+          },
+          !isSamePosition(newPosition, panelStatePosition.value)
+        )
       }
     }
   })
