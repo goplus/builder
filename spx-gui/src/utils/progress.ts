@@ -50,10 +50,11 @@ export class ProgressReporter {
   startAutoReport(
     /** Estimated time cost in milliseconds */
     timeCost: number,
-    /** Interval in milliseconds for each report. Defaults to `timeCost / 50`. */
-    interval = Math.max(300, Math.round(timeCost / 50)),
+    /** Interval in milliseconds for each report. `null` uses `timeCost / 50`, with a minimum of 300ms. */
+    interval: number | null = null,
     signal?: AbortSignal
   ) {
+    const reportInterval = interval ?? Math.max(300, Math.round(timeCost / 50))
     return new Promise<void>((resolve) => {
       if (signal?.aborted) {
         resolve()
@@ -70,13 +71,13 @@ export class ProgressReporter {
           return
         }
         times++
-        const elapsed = times * interval
+        const elapsed = times * reportInterval
         // Linear function: reaches maxPercentage exactly at estimated time cost
         const percentage = Math.min(maxPercentage, (elapsed / timeCost) * maxPercentage)
         // ETA derived from percentage so it stays consistent: percentage + timeLeft/timeCost = 1
         const timeLeft = timeCost * (1 - percentage)
         this.report({ percentage, desc: null, timeLeft })
-      }, interval)
+      }, reportInterval)
       function finish() {
         clearInterval(timer)
         signal?.removeEventListener('abort', finish)
