@@ -243,7 +243,6 @@ export class Editing extends Disposable {
     // https://github.com/goplus/builder/issues/259
     // https://github.com/goplus/builder/issues/393
     let localData: ProjectSerialized | null = null
-    loadFromLocalCacheReporter.startAutoReport(200, { signal })
     try {
       localData = await this.localCacheHelper.load(signal)
     } catch (e) {
