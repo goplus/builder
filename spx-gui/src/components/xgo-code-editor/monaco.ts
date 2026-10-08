@@ -1,7 +1,7 @@
 import { shikiToMonaco } from '@shikijs/monaco'
 import type * as monaco from 'monaco-editor'
 import { getHighlighter } from '@/utils/xgo/highlighter'
-import xgoLanguageConfiguration from '@/utils/xgo/language-configuration.json'
+import rawXgoLanguageConfiguration from '@/utils/xgo/language-configuration.json'
 
 export type { monaco }
 export type Monaco = typeof monaco
@@ -39,6 +39,26 @@ async function getMonaco(lang: Lang) {
   return import('monaco-editor')
 }
 
+const xgoLanguageConfiguration: monaco.languages.LanguageConfiguration = {
+  comments: rawXgoLanguageConfiguration.comments as monaco.languages.CommentRule,
+  brackets: rawXgoLanguageConfiguration.brackets as monaco.languages.CharacterPair[],
+  autoClosingPairs: rawXgoLanguageConfiguration.autoClosingPairs.map((pair) =>
+    Array.isArray(pair) ? { open: pair[0], close: pair[1] } : pair
+  ),
+  surroundingPairs: rawXgoLanguageConfiguration.surroundingPairs.map(([open, close]) => ({ open, close })),
+  indentationRules: {
+    increaseIndentPattern: new RegExp(rawXgoLanguageConfiguration.indentationRules.increaseIndentPattern),
+    // Decrease indent for `else` & `else if` in addition to the upstream rules.
+    decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|}\\s*else\\b.*{|\\)[,]?)$')
+  },
+  folding: {
+    markers: {
+      start: new RegExp(rawXgoLanguageConfiguration.folding.markers.start),
+      end: new RegExp(rawXgoLanguageConfiguration.folding.markers.end)
+    }
+  }
+}
+
 /**
  * Loads Monaco editor together with the syntax highlighter, registers the xgo language,
  * wires Shiki highlighting, and applies the language configuration. Returns the Monaco instance.
@@ -47,24 +67,6 @@ export async function loadMonaco(lang: Lang): Promise<Monaco> {
   const [monacoInstance, highlighter] = await Promise.all([getMonaco(lang), getHighlighter()])
   monacoInstance.languages.register({ id: 'xgo' })
   shikiToMonaco(highlighter, monacoInstance)
-  monacoInstance.languages.setLanguageConfiguration('xgo', {
-    comments: xgoLanguageConfiguration.comments as monaco.languages.CommentRule,
-    brackets: xgoLanguageConfiguration.brackets as monaco.languages.CharacterPair[],
-    autoClosingPairs: xgoLanguageConfiguration.autoClosingPairs.map((pair) =>
-      Array.isArray(pair) ? { open: pair[0], close: pair[1] } : pair
-    ),
-    surroundingPairs: xgoLanguageConfiguration.surroundingPairs.map(([open, close]) => ({ open, close })),
-    indentationRules: {
-      increaseIndentPattern: new RegExp(xgoLanguageConfiguration.indentationRules.increaseIndentPattern),
-      // Decrease indent for `else` & `else if` in addition to the upstream rules.
-      decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|}\\s*else\\b.*{|\\)[,]?)$')
-    },
-    folding: {
-      markers: {
-        start: new RegExp(xgoLanguageConfiguration.folding.markers.start),
-        end: new RegExp(xgoLanguageConfiguration.folding.markers.end)
-      }
-    }
-  })
+  monacoInstance.languages.setLanguageConfiguration('xgo', xgoLanguageConfiguration)
   return monacoInstance
 }
