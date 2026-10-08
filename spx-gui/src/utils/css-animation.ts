@@ -33,9 +33,9 @@ export function createCSSAnimation(className: string, el: HTMLElement | null | u
         element.addEventListener('transitionend', onEnd)
         signal?.addEventListener('abort', onAbort, { once: true })
       })
-      // Preserve the original pause between animation stages after removing the class.
-      // This does not guarantee a rendered frame; begin() forces reflow, so the pause may
-      // be redundant. Verify consecutive transitions in browsers before removing it.
+      // Let the remaining transitionend events from this stage finish before the next
+      // stage registers its listener. Copilot's trigger transitions opacity and transform
+      // together; without this pause, the second event prematurely ends the panel animation.
       await timeout(0, signal)
     }
   }
