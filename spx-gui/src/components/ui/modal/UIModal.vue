@@ -68,18 +68,12 @@ const props = withDefaults(
      * Metadata for radar, equivalent to applying `v-radar` on the dialog surface.
      */
     radar?: RadarNodeMeta
-    /**
-     * This prop should not be passed manually. It is reserved for `UIModalProvider`
-     * to indicate whether the current `UIModal` is at the top layer.
-     */
-    active?: boolean
   }>(),
   {
     size: 'medium',
     visible: false,
     autoFocus: true,
     maskClosable: true,
-    active: true,
     class: undefined,
     radar: undefined
   }
@@ -155,11 +149,11 @@ function getFirstFocusableElement(container: HTMLElement) {
 }
 
 watch(
-  () => props.active && modalRegistration.isTopmost.value,
-  async (active, _, onCleanUp) => {
-    if (!active) return
+  modalRegistration.isTopmost,
+  async (isTopmost, _, onCleanup) => {
+    if (!isTopmost) return
 
-    const signal = getCleanupSignal(onCleanUp)
+    const signal = getCleanupSignal(onCleanup)
     const container = await untilNotNull(containerRef, signal)
 
     const handleKeydown = (e: KeyboardEvent) => {
