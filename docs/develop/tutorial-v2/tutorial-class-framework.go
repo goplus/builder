@@ -39,10 +39,11 @@ type CourseAbilities interface {
 	// how viewing completion is established.
 	showVideo(videoName string)
 	// complete marks the course as completed and ends the Course program: no
-	// further events are processed, callbacks already running or waiting still
-	// run to their end (presentation calls after a completion are ignored by
-	// the host), and the program then exits. Calling complete or completeWith
-	// again has no effect.
+	// further events start callbacks. Callbacks already running or waiting finish
+	// unless a capability fails or is cancelled, and the program then exits.
+	// The host settles pending capability calls during shutdown; the Playground
+	// Host cancels them and retains the accepted completion result independently
+	// of executor exit. Calling complete or completeWith again has no effect.
 	complete()
 	// completeWith is complete with the given feedback displayed to the learner.
 	completeWith(message string)

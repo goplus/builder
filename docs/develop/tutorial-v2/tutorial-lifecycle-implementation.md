@@ -197,7 +197,7 @@ SPX files and video files are not executor input. Supporting additional Course-p
 | Completion           | Program publishes the first completion request and disposes; repeated requests are ignored              |
 | Project code queries | Reads the active session `SpxProject`                                                                   |
 | Code Editor          | Delegates API filtering and formatting to the matching Code Editor from #3416                           |
-| Ruler                | Delegates visible state to the mounted Project Editor support from #3416                                |
+| Ruler                | Delegates enabled state to the mounted Project Editor support from #3416                                |
 | Copilot generation   | Delegates text/JSON generation to generic Copilot APIs from #3421                                       |
 | Spotlight            | Delegates target resolution and presentation to Radar/Spotlight support from #3416                      |
 

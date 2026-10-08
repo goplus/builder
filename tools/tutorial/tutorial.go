@@ -132,9 +132,9 @@ func (p *Course) ShowVideo(videoName string) {
 //
 // Completion semantics: no further triggers start runs and pending ones are
 // abandoned, while callbacks already running or suspended execute their
-// remaining statements unless a capability fails. Once they all finish, the
-// program ends and the executor reports completion. Capability failures still
-// report an execution error.
+// remaining statements unless a capability fails or is cancelled. Once they all
+// finish, the program ends and the executor reports completion. Capability
+// failures or cancellation still report an execution error.
 //
 // Repeated calls are ignored, see courseProgram.markCompleted.
 func (p *Course) Complete() {

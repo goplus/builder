@@ -78,9 +78,11 @@ export type SpotlightOptions = {
  * presentation calls; the Host defines how overlapping presentations are
  * handled. Generation calls can be pending concurrently.
  *
- * On completion the host must promptly settle every still-pending call (for
- * presentation, resolving as a no-op is fine): the program only exits after
- * pending callbacks finish, so an unsettled call would hold the exit open.
+ * On completion the Host must promptly settle every still-pending call so it
+ * does not hold shutdown open. The framework waits for running or suspended
+ * callbacks to finish; capability failure or cancellation can end execution
+ * with an error. The Playground Host cancels pending calls and retains the
+ * accepted completion result regardless of subsequent executor errors.
  */
 export interface TutorialFrameworkHost {
   course: {
@@ -102,9 +104,9 @@ export interface TutorialFrameworkHost {
     /**
      * Completes the Course without feedback. Resolves as soon as the
      * completion is accepted; it does not wait for the completion dialog.
-     * After a completion the host treats further presentation capabilities
-     * as no-ops, and repeated completion calls are idempotent (the first one
-     * wins).
+     * Repeated completion calls are idempotent (the first one wins).
+     * The Playground Host ends its Program lifetime when completion is accepted;
+     * further capability calls cannot resume interaction with the learner.
      */
     complete(): Promise<void>;
     /**
