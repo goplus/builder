@@ -120,6 +120,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'happy-dom',
       alias: [
+        // Use Konva's browser entry in happy-dom; its Node entry requires the optional native `canvas` package.
         { find: /^konva$/, replacement: resolve('node_modules/konva/lib/index.js') },
         // Alias for `monaco-editor` to avoid `Failed to resolve entry for package "monaco-editor"`, for details: https://github.com/vitest-dev/vitest/discussions/1806
         {
@@ -135,10 +136,9 @@ export default defineConfig(({ mode }) => {
           'src/**/*.d.ts',
           'src/assets/wasm/**',
           'src/**/test.ts',
-          // Copied third-party code and configuration; their XBuilder adapters remain covered.
+          // Copied third-party code; its XBuilder adapters remain covered.
           'src/utils/snippet-parser/**',
-          'src/components/xgo-code-editor/ui/completion/fuzzy/**',
-          'src/utils/xgo/language-configuration.ts'
+          'src/components/xgo-code-editor/ui/completion/fuzzy/**'
         ]
       }
     },

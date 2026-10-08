@@ -1,7 +1,8 @@
 import { shikiToMonaco } from '@shikijs/monaco'
 import type * as monaco from 'monaco-editor'
 import { getHighlighter } from '@/utils/xgo/highlighter'
-import { xgoLanguageConfiguration } from '@/utils/xgo/language-configuration'
+// Copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json
+import xgoLanguageConfiguration from '@/utils/xgo/language-configuration.json'
 
 export type { monaco }
 export type Monaco = typeof monaco
@@ -47,6 +48,30 @@ export async function loadMonaco(lang: Lang): Promise<Monaco> {
   const [monacoInstance, highlighter] = await Promise.all([getMonaco(lang), getHighlighter()])
   monacoInstance.languages.register({ id: 'xgo' })
   shikiToMonaco(highlighter, monacoInstance)
-  monacoInstance.languages.setLanguageConfiguration('xgo', xgoLanguageConfiguration)
+  monacoInstance.languages.setLanguageConfiguration('xgo', {
+    comments: {
+      ...xgoLanguageConfiguration.comments,
+      blockComment: [
+        xgoLanguageConfiguration.comments.blockComment[0],
+        xgoLanguageConfiguration.comments.blockComment[1]
+      ]
+    },
+    brackets: xgoLanguageConfiguration.brackets.map(([open, close]) => [open, close]),
+    autoClosingPairs: xgoLanguageConfiguration.autoClosingPairs.map((pair) =>
+      Array.isArray(pair) ? { open: pair[0], close: pair[1] } : pair
+    ),
+    surroundingPairs: xgoLanguageConfiguration.surroundingPairs.map(([open, close]) => ({ open, close })),
+    indentationRules: {
+      increaseIndentPattern: new RegExp(xgoLanguageConfiguration.indentationRules.increaseIndentPattern),
+      // Decrease indent for `else` & `else if` in addition to the upstream rules.
+      decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|}\\s*else\\b.*{|\\)[,]?)$')
+    },
+    folding: {
+      markers: {
+        start: new RegExp(xgoLanguageConfiguration.folding.markers.start),
+        end: new RegExp(xgoLanguageConfiguration.folding.markers.end)
+      }
+    }
+  })
   return monacoInstance
 }
