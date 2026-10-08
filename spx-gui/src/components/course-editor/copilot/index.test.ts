@@ -75,8 +75,8 @@ describe('useCourseEditorCopilot', () => {
     expect(context).toContain('Move Lita to Mushroom')
     expect(context).toContain('/sprites/Lita/code')
     expect(context).toContain('Help the learner find stepTo.')
-    // Resources are listed by the name the course program addresses, not by path.
-    expect(context).toContain('step-to (videos)')
+    // Videos are listed by the name the course program plays them by, not by path.
+    expect(context).toContain('Videos the course program can play by name: step-to.')
     expect(context).not.toContain('assets/videos/step-to')
     expect(context).toContain('showVideo')
     expect(context).toContain('The author is editing the course program.')

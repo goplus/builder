@@ -14,7 +14,7 @@ A course is made of four things:
   what the learner does, shows guidance, and decides when the course is complete.
 - **The embedded project**, an ordinary SPX project the learner edits during the course. It is the starting point
   they are given, not a solution.
-- **Course resources**, currently videos and pictures, addressed by the program by name.
+- **Course resources**, currently videos, addressed by the program by name.
 - **The course settings**, which say where the learner's editor opens and what the learner-facing Copilot should
   know about this course.
 
@@ -57,12 +57,12 @@ the course's mistake; see goplus/builder#3419.
 
 ## Working in the Course Editor
 
-The activity bar along the left edge switches between the five parts of the course: the course itself (its
-settings), the project, the videos, the pictures and the program. Files are never shown by path. Opening the
+The activity bar along the left edge switches between the four parts of the course: the course itself (its
+settings), the project, the videos and the program. Files are never shown by path. Opening the
 project shows the full SPX editor; ask about that project with the spx-project skill instead of this one.
 
-- **Adding a resource**: the videos and pictures pages each have their own add button, so what is being added
-  is never asked; the author only picks files. Each card's menu renames or deletes that resource.
+- **Adding a video**: the videos page has its own add button; the author only picks files. Each card's menu
+  renames or deletes that video.
 - **Settings**: the course page edits the initial editor path and the Copilot instructions. The title and the
   thumbnail belong to course management, not here.
 - **Copilot instructions** (`copilotContext`) are for the _learner's_ Copilot during the course. They are not

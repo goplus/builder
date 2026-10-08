@@ -73,7 +73,7 @@ const handleGenerateCopilotContext = useMessageHandle(
     const contextBefore = config.value.copilotContext
     try {
       // The endpoint reads the author's current (unsaved) work, so the working copy is uploaded first.
-      const { metadata, files } = await props.project.snapshot()
+      const { metadata, files } = await props.project.export()
       // Phase 1: upload every record; yields the file collection the backend can read.
       const { fileCollection } = await m.withLoading(
         saveFiles(files, signal),

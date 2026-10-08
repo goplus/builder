@@ -22,9 +22,9 @@ describe('createStarterCourseFiles', () => {
       inEditorPath: '',
       copilotContext: ''
     })
-    // Everything a new course carries has a part of the editor to show it: none of it is kept unseen.
-    expect(project.extraFiles.size).toBe(0)
-    expect(project.resources).toEqual([])
+    // Everything a new course carries is part of the model, so saving it keeps all of it.
+    expect(Object.keys(project.exportFiles())).toEqual(expect.arrayContaining(Object.keys(files)))
+    expect(project.videos).toEqual([])
   })
 
   it('starts the author with a program that only uses calls a course can rely on', async () => {

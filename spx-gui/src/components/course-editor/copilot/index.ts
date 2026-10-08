@@ -56,10 +56,7 @@ class CourseContextProvider implements ICopilotContextProvider {
     const config = project.config
     // Before the course is loaded there is nothing to say about it.
     if (config == null) return ''
-    const resources =
-      project.resources.length === 0
-        ? 'None'
-        : project.resources.map((resource) => `${resource.name} (${resource.kind})`).join(', ')
+    const videos = project.videos.length === 0 ? 'None' : project.videos.map((video) => video.name).join(', ')
     const copilotContext = config.copilotContext.trim()
     return `# Current course
 The user is authoring the Playground Course "${project.title}" (course ${project.id}). \
@@ -67,8 +64,7 @@ They are the course author: the Course Editor edits the course itself, not a lea
 Embedded project: type ${config.project.type}, root \`${config.project.root}\`.
 Where the learner's editor opens when the course starts: ${config.inEditorPath === '' ? 'not set' : `\`${config.inEditorPath}\``}.
 Instructions this course gives the learner's own Copilot: ${copilotContext === '' ? 'none yet' : JSON.stringify(copilotContext)}.
-Resources the course program can address by name: ${resources}.
-Records kept with the course but unused by it: ${project.extraFiles.size}.`
+Videos the course program can play by name: ${videos}.`
   }
 }
 

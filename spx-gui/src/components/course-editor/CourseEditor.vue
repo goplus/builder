@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Purpose: The Course Editor for one Playground Course. An activity bar on the left switches between the five views
- * of the course (its settings, the learner's project, the videos, the pictures and the course program), the view
+ * Purpose: The Course Editor for one Playground Course. An activity bar on the left switches between the views of
+ * the course (its settings, the learner's project, the videos and the course program), the view
  * fills the rest, and the Project Editor host for the embedded learner project stays mounted throughout; it owns
  * saving, unsaved-change tracking, the route-driven learner preview and the leave guards. The open view is derived
  * from the route (`inCourseEditorPath` param), never from local state, so it survives reloads and browser history.
@@ -255,7 +255,7 @@ const revision = ref(0)
 const exportedFiles = computed(() => props.project.exportFiles())
 /**
  * Mark the working copy dirty whenever the exported records change. `exportFiles()` reads every record of the
- * model (config, main course, embedded project, resources, extra files), so this one source captures all edits.
+ * model (config, main course, embedded project, videos, images), so this one source captures all edits.
  * The callback ignores the new/old `Files` maps: only the fact that something changed matters.
  * @returns void; side effects: sets `dirty` and bumps `revision`.
  * Called by: Vue (watch on `exportedFiles`)
@@ -310,8 +310,8 @@ let saveController: AbortController | null = null
  * Called by: `components/course-editor/CourseEditor.vue#handleSave`
  */
 async function save(signal: AbortSignal) {
-  // Take a consistent snapshot (waits for in-flight transactions of the embedded project to finish)...
-  const { files } = await props.project.snapshot()
+  // Take a consistent snapshot (waits for in-flight transactions of the course and its embedded project)...
+  const { files } = await props.project.export()
   // ...and remember which revision it corresponds to, so edits made during the upload are not mistaken as saved.
   const savedRevision = revision.value
   // Upload every record to cloud storage; yields the path -> file-id collection the backend stores.
@@ -447,7 +447,7 @@ async function loadPreviewSnapshot(generation: number) {
   // A new instance, loaded from the exported metadata + files of the author's project.
   const snapshot = new TutorialProject()
   try {
-    await snapshot.load(await props.project.snapshot())
+    await snapshot.load(await props.project.export())
   } catch (error) {
     // Nobody will receive this snapshot: release it before reporting the failure.
     snapshot.dispose()

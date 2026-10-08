@@ -1,31 +1,17 @@
 <script setup lang="ts">
 /**
- * Purpose: One resource on its kind's page, drawn like a course in course management: its picture (for a video, the
- * first frame) filling the card, its name along the bottom, and a menu in the corner that shows on hover. Clicking
- * the card asks for a preview; the menu renames or deletes the resource.
- *
- * Props:
- * - `resource`: the resource the card stands for.
- *
- * Emits (all listened by `components/course-editor/CourseResourceGrid.vue#template`):
- * - `preview`: the card was clicked.
- * - `rename`: "Rename..." was chosen in the menu.
- * - `remove`: "Delete..." was chosen in the menu.
- *
- * Used by: `components/course-editor/CourseResourceGrid.vue#template` (one per resource of the page's kind).
- *
- * Uses: UIDropdown / UIMenu / UIMenuGroup / UIMenuItem, UIIcon, `models/common/cloud#getStoredWebUrl`,
- * `utils/utils#useAsyncComputed`.
+ * One resource on its page, drawn like a course in course management: its picture (for a video, the first frame)
+ * filling the card, its name along the bottom, and a menu in the corner that shows on hover.
  */
 import { computed } from 'vue'
 import { useAsyncComputed } from '@/utils/utils'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { getStoredWebUrl } from '@/models/common/cloud'
-import { videosKind, type Resource } from '@/models/tutorial/resource'
+import { Video, type Image } from '@/models/tutorial/project'
 import { UIDropdown, UIIcon, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 
 const props = defineProps<{
-  /** The resource the card stands for. */
-  resource: Resource
+  resource: Video | Image
 }>()
 
 const emit = defineEmits<{
@@ -37,23 +23,17 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-/**
- * Whether the card shows a video (its first frame) rather than a picture.
- * Read by: `CourseResourceCard.vue#template`.
- */
-const isVideo = computed(() => props.resource.kind === videosKind)
+const isVideo = computed(() => props.resource instanceof Video)
 
-/**
- * Where the card's picture comes from. A file the course has already stored is shown from where it is stored, so a
- * video's first frame costs a few range requests instead of the whole video; a file added since, and not saved yet,
- * is in memory anyway. Null while it is being worked out.
- * Read by: `CourseResourceCard.vue#template`.
- * Called by: Vue (`watchEffect` inside `useAsyncComputed`; re-run when the resource's file changes)
- */
-const url = useAsyncComputed(async (onCleanup) => {
+// A stored video is shown from where it is stored, so its first frame costs a few range requests instead of the
+// whole video, which `File.url()` would download first. A video added since the last save is in memory anyway.
+const videoUrl = useAsyncComputed(async (onCleanup) => {
+  if (!isVideo.value) return null
   const file = props.resource.file
   return (await getStoredWebUrl(file)) ?? file.url(onCleanup)
 })
+
+const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
 
 <template>
@@ -61,28 +41,27 @@ const url = useAsyncComputed(async (onCleanup) => {
     v-radar="{
       name: 'resource-card',
       desc: 'Click to preview this resource',
-      attrs: { name: resource.name, kind: resource.kind }
+      attrs: { name: resource.name, type: isVideo ? 'video' : 'image' }
     }"
     class="group relative box-border aspect-video cursor-pointer overflow-hidden rounded-lg border-2 border-grey-300 bg-grey-400 transition-all duration-200 hover:-translate-y-0.5 hover:border-grey-400 hover:shadow-sm"
     @click="emit('preview')"
   >
-    <!-- The app is cross-origin isolated, so a stored file is only let in when requested with CORS
+    <!-- The app is cross-origin isolated, so a stored video is only let in when requested with CORS
          (`crossorigin`). `#t=0.1` asks for the frame just after the start, which browsers then draw as the poster. -->
     <video
-      v-if="isVideo && url != null"
+      v-if="isVideo && videoUrl != null"
       class="h-full w-full object-cover"
-      :src="`${url}#t=0.1`"
+      :src="`${videoUrl}#t=0.1`"
       crossorigin="anonymous"
       preload="metadata"
       muted
       playsinline
     ></video>
     <img
-      v-else-if="!isVideo && url != null"
+      v-else-if="!isVideo && imageUrl != null"
       class="h-full w-full object-cover"
-      :src="url"
+      :src="imageUrl"
       :alt="resource.name"
-      crossorigin="anonymous"
     />
     <!-- A video reads as one even before its frame has arrived. -->
     <div v-if="isVideo" class="pointer-events-none absolute inset-0 flex items-center justify-center">

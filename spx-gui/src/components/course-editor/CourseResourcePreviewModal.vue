@@ -1,33 +1,20 @@
 <script setup lang="ts">
 /**
- * Purpose: A resource at full size: a video to play, or a picture to look at. For a video it also gives the line
- * of course program that plays it, ready to copy, since that is what its name is for.
- *
- * Props:
- * - `visible`: whether the modal is shown (driven by `useModal`).
- * - `resource`: the resource to show.
- *
- * Emits:
- * - `cancelled`: the author closed it (close button or mask); the modal has nothing to resolve with.
- * - `resolved`: declared for `useModal`; never emitted.
- *
- * Used by: `components/course-editor/CourseResourceGrid.vue#handlePreview` (through `useModal`).
- *
- * Uses: UIModal, UIModalClose, CodeView and CopyButton (`components/common`), `models/common/cloud#getStoredWebUrl`,
- * `utils/utils#useAsyncComputed`.
+ * A resource at full size: a video to play, or a picture to look at. For a video it also gives the line of course
+ * program that plays it, ready to copy, since that is what its name is for.
  */
 import { computed } from 'vue'
 import { useAsyncComputed } from '@/utils/utils'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { getStoredWebUrl } from '@/models/common/cloud'
-import { videosKind, type Resource } from '@/models/tutorial/resource'
+import { Video, type Image } from '@/models/tutorial/project'
 import { UIModal, UIModalClose } from '@/components/ui'
 import CodeView from '@/components/common/CodeView.vue'
 import CopyButton from '@/components/common/CopyButton.vue'
 
 const props = defineProps<{
   visible: boolean
-  /** The resource to show. */
-  resource: Resource
+  resource: Video | Image
 }>()
 
 const emit = defineEmits<{
@@ -35,29 +22,19 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-/**
- * Whether this is a video rather than a picture.
- * Read by: `CourseResourcePreviewModal.vue#template`.
- */
-const isVideo = computed(() => props.resource.kind === videosKind)
+const isVideo = computed(() => props.resource instanceof Video)
 
-/**
- * The line of course program that plays this video. The name is written as a string literal (`JSON.stringify`),
- * so a name holding a quote or a backslash still gives code that compiles.
- * Read by: `CourseResourcePreviewModal.vue#template` (shown, and what the copy button copies).
- */
+// `JSON.stringify` writes the name as a string literal, so a name holding a quote or a backslash still compiles.
 const playCall = computed(() => `showVideo ${JSON.stringify(props.resource.name)}`)
 
-/**
- * Where the file is shown from: where the course stored it when it has, so a video can stream instead of being
- * downloaded first, or the file in memory when it was added since the last save.
- * Read by: `CourseResourcePreviewModal.vue#template`.
- * Called by: Vue (`watchEffect` inside `useAsyncComputed`)
- */
-const url = useAsyncComputed(async (onCleanup) => {
+// A stored video streams from where it is stored instead of being downloaded first, as `File.url()` would do.
+const videoUrl = useAsyncComputed(async (onCleanup) => {
+  if (!isVideo.value) return null
   const file = props.resource.file
   return (await getStoredWebUrl(file)) ?? file.url(onCleanup)
 })
+
+const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
 
 <template>
@@ -80,21 +57,20 @@ const url = useAsyncComputed(async (onCleanup) => {
         </span>
       </div>
       <video
-        v-if="isVideo && url != null"
+        v-if="isVideo && videoUrl != null"
         class="w-full rounded bg-black"
         style="max-height: 70vh"
-        :src="url"
+        :src="videoUrl"
         crossorigin="anonymous"
         controls
         autoplay
       ></video>
       <img
-        v-else-if="!isVideo && url != null"
+        v-else-if="!isVideo && imageUrl != null"
         class="mx-auto block max-w-full rounded"
         style="max-height: 70vh"
-        :src="url"
+        :src="imageUrl"
         :alt="resource.name"
-        crossorigin="anonymous"
       />
     </div>
   </UIModal>

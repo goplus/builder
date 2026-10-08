@@ -13,38 +13,29 @@ const acceptedExts = {
 
 <script setup lang="ts">
 /**
- * Purpose: The page of one resource kind of the course -- the videos or the pictures -- laid out as a grid of cards
- * like the course management lists. Adding happens here: the page says what is being added, so the author only
- * picks the files, and each becomes a resource of this kind. A card previews its resource when clicked; its corner
+ * The page of one resource type of the course -- the videos or the pictures -- laid out as a grid of cards like the
+ * course management lists. Adding happens here: the page says what is being added, so the author only picks the
+ * files, and each becomes a resource named after its file. A card previews its resource when clicked; its corner
  * menu renames or deletes it. Nothing is saved until the author saves the course.
- *
- * Props:
- * - `project`: the author's working copy of the Tutorial project; resources are read from and written to it.
- * - `view`: which resource view this is; it decides the kind, the wording and the files accepted.
- *
- * Used by: `components/course-editor/CourseEditor.vue#template` (the videos and pictures views, keyed by view).
- *
- * Uses: CourseResourceCard, CourseResourcePreviewModal and `components/common/RenameModal.vue` (through
- * `useModal`), the confirm dialog, `models/common/cloud#selectFilesWithUploadLimit`, `./upload`
- * (`validateResourceUpload`, `addUploadedResources`), `./course-views`.
  */
 import { computed, onUnmounted } from 'vue'
-import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
+import { stripExt } from '@/utils/path'
 import { selectFilesWithUploadLimit } from '@/models/common/cloud'
-import type { TutorialProject } from '@/models/tutorial/project'
-import { validateResourceLayout, type Resource } from '@/models/tutorial/resource'
+import { fromNativeFile } from '@/models/common/file'
+import { validateImageName, validateVideoName } from '@/models/tutorial/asset-name'
+import { Image, Video, type TutorialProject } from '@/models/tutorial/project'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { UIButton, UIEmpty, useConfirmDialog, useModal } from '@/components/ui'
 import CourseResourceCard from './CourseResourceCard.vue'
 import CourseResourcePreviewModal from './CourseResourcePreviewModal.vue'
-import { getViewLabel, viewResourceKinds, type ResourceView } from './course-views'
-import { addUploadedResources, validateResourceUpload } from './upload'
+import { getViewLabel, type ResourceView } from './course-views'
 
 const props = defineProps<{
-  /** The author's working copy of the Tutorial project. */
+  /** The author's working copy of the Tutorial project; resources are read from and written to it. */
   project: TutorialProject
-  /** Which resource view this is. */
+  /** Which resource view this is; it decides the type, the wording and the files accepted. */
   view: ResourceView
 }>()
 
@@ -53,71 +44,44 @@ const confirm = useConfirmDialog()
 const openPreview = useModal(CourseResourcePreviewModal)
 const openRename = useModal(RenameModal)
 
-/**
- * The resource kind this page shows.
- * Read by: `resources`, the handlers below, `CourseResourceGrid.vue#template`.
- */
-const kind = computed(() => viewResourceKinds[props.view])
-
-/**
- * The resources of this page's kind, by name.
- * Read by: `CourseResourceGrid.vue#template`.
- * Called by: Vue (computed; re-evaluated when the project's resources change)
- */
 const resources = computed(() =>
-  props.project.resources
-    .filter((resource) => resource.kind === kind.value)
-    .sort((a, b) => a.name.localeCompare(b.name))
+  [...(props.view === 'videos' ? props.project.videos : props.project.images)].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  )
 )
 
-/**
- * Whether the page is gone: the files an author picks for it must not land in a course nobody is looking at.
- * Written by: `onUnmounted`. Read by: `handleAdd`.
- */
+// The files an author picks for the page must not land in a course nobody is looking at.
 let disposed = false
 onUnmounted(() => {
   disposed = true
 })
 
-/**
- * Add files: pick them (only the kinds of file this page takes are offered), then add each as a resource of this
- * page's kind. A refusal is shown as the error toast; closing the file picker is not an error.
- * Called by: `CourseResourceGrid.vue#template` (the add buttons).
- */
 const handleAdd = useMessageHandle(
   async () => {
-    const error = validateResourceUpload(props.project, kind.value)
-    if (error != null) throw new DefaultException(error)
     const files = await selectFilesWithUploadLimit({ accept: acceptedExts[props.view] })
     if (disposed) return
-    addUploadedResources(props.project, kind.value, files)
+    for (const nativeFile of files) {
+      const file = fromNativeFile(nativeFile)
+      // The project renames a resource whose name is taken or cannot be used.
+      if (props.view === 'videos') props.project.addVideo(new Video(stripExt(file.name), file))
+      else props.project.addImage(new Image(stripExt(file.name), file))
+    }
   },
   { en: 'Failed to add files', zh: '添加文件失败' }
 )
 
-/**
- * Show a resource at full size. Closing the preview is how it ends, not a failure.
- * @param resource - The resource whose card was clicked.
- * Called by: `CourseResourceGrid.vue#template` (`CourseResourceCard @preview`).
- */
-const handlePreview = useMessageHandle((resource: Resource) => openPreview({ resource }))
+const handlePreview = useMessageHandle((resource: Video | Image) => openPreview({ resource }))
 
-/**
- * Rename a resource in the shared rename dialog. The name is what the course program plays a video by, so for a
- * video the dialog also warns that the program has to follow.
- * @param resource - The resource whose menu was used.
- * Called by: `CourseResourceGrid.vue#template` (`CourseResourceCard @rename`).
- */
+// The course program plays a video by its name, so for a video the dialog also warns that the program has to follow.
 const handleRename = useMessageHandle(
-  (resource: Resource) =>
+  (resource: Video | Image) =>
     openRename({
       target: {
         name: resource.name,
         validateName: (name) =>
-          validateResourceLayout(
-            { kind: resource.kind, name: name.trim(), file: resource.file, extraFiles: resource.extraFiles },
-            props.project
-          ),
+          resource instanceof Video
+            ? validateVideoName(name.trim(), props.project)
+            : validateImageName(name.trim(), props.project),
         applyName: async (name) => resource.setName(name.trim()),
         inputTip:
           props.view === 'videos'
@@ -135,14 +99,8 @@ const handleRename = useMessageHandle(
   { en: 'Failed to rename', zh: '重命名失败' }
 )
 
-/**
- * Delete a resource after the author confirms. Like every other edit, it only reaches the course when the course
- * is saved.
- * @param resource - The resource whose menu was used.
- * Called by: `CourseResourceGrid.vue#template` (`CourseResourceCard @remove`).
- */
 const handleRemove = useMessageHandle(
-  async (resource: Resource) => {
+  async (resource: Video | Image) => {
     await confirm({
       title: t({ en: `Delete "${resource.name}"`, zh: `删除“${resource.name}”` }),
       content:
@@ -154,7 +112,8 @@ const handleRemove = useMessageHandle(
           : t({ en: 'It will no longer be kept with the course.', zh: '它将不再随课程保存。' }),
       confirmText: t({ en: 'Delete', zh: '删除' })
     })
-    props.project.removeResource(resource.id)
+    if (resource instanceof Video) props.project.removeVideo(resource.id)
+    else props.project.removeImage(resource.id)
   },
   { en: 'Failed to delete', zh: '删除失败' }
 )
@@ -168,7 +127,7 @@ const handleRemove = useMessageHandle(
         <span class="text-sm font-normal text-grey-700">{{ resources.length }}</span>
       </h2>
       <UIButton
-        v-radar="{ name: 'add-resource-button', desc: 'Click to add files to this page', attrs: { kind } }"
+        v-radar="{ name: 'add-resource-button', desc: 'Click to add files to this page', attrs: { view } }"
         type="secondary"
         size="small"
         @click="handleAdd.fn"

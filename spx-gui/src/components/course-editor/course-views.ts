@@ -1,33 +1,32 @@
 /**
- * The Course Editor shows a course as five views, one per part of it: the course itself (its settings), the
- * learner's project, the videos, the pictures and the course program. The activity bar switches between them.
+ * The Course Editor shows a course as views, one per part of it: the course itself (its settings), the learner's
+ * project, the videos and the course program. The activity bar switches between them.
  *
  * A view is addressed in the route by the path of what it edits: `''` for the course, the project root with the
- * Project Editor's own path after it, a resource kind's directory, `main_course.gox`. So every address the editor
- * has produced still leads somewhere: a path inside a view is shown by that view, and anything else -- a file the
- * course does not use, say -- by the course itself. Those records, and resource kinds other than videos and
- * pictures, are not shown at all; the model keeps them, and saving writes them back unchanged.
+ * Project Editor's own path after it, the videos' directory, `main_course.gox`. A path inside a view is shown by
+ * that view, and anything else by the course itself.
  */
 
 import type { LocaleMessage } from '@/utils/i18n'
 import type { Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { configFilePath } from '@/models/tutorial/project'
-import { getResourceKindDir, imagesKind, videosKind } from '@/models/tutorial/resource'
+import { imageAssetPath } from '@/models/tutorial/image'
+import { videoAssetPath } from '@/models/tutorial/video'
 import type { IconType } from '@/components/ui'
 import { isPathWithin, pathToSegments } from './route'
 
 /** One part of the course, as the activity bar offers it. */
 export type CourseView = 'course' | 'project' | 'videos' | 'images' | 'program'
 
-/** The views in the order the activity bar lists them. */
-export const courseViews: CourseView[] = ['course', 'project', 'videos', 'images', 'program']
+/**
+ * The views in the order the activity bar lists them. The images view is hidden until the course format defines
+ * images and some course API uses them; the model still loads and saves the images a course has.
+ */
+export const courseViews: CourseView[] = ['course', 'project', 'videos', 'program']
 
-/** The resource kind each resource view shows. */
-export const viewResourceKinds = { videos: videosKind, images: imagesKind } as const
-
-/** A view that shows the resources of one kind. */
-export type ResourceView = keyof typeof viewResourceKinds
+/** A view that shows the resources of one type. */
+export type ResourceView = 'videos' | 'images'
 
 /** What is open: a view, and for the project the Project Editor's own path inside it. */
 export type OpenView = { view: Exclude<CourseView, 'project'> } | { view: 'project'; inEditorPath: string[] }
@@ -80,7 +79,7 @@ export function getViewIcon(view: CourseView): IconType {
  * @param view - The view.
  * @param projectRoot - `config.project.root`, the embedded project's directory.
  * @returns The in-Course-Editor path of the view.
- * Called by: components/course-editor/CourseEditor.vue#openView, components/course-editor/course-views.ts#resolveView.
+ * Called by: components/course-editor/CourseEditor.vue#openView.
  */
 export function getViewPath(view: CourseView, projectRoot: string): string {
   switch (view) {
@@ -89,8 +88,9 @@ export function getViewPath(view: CourseView, projectRoot: string): string {
     case 'project':
       return projectRoot
     case 'videos':
+      return videoAssetPath
     case 'images':
-      return getResourceKindDir(viewResourceKinds[view])
+      return imageAssetPath
     case 'program':
       return mainCourseFilePath
   }
@@ -98,9 +98,9 @@ export function getViewPath(view: CourseView, projectRoot: string): string {
 
 /**
  * The view that shows `path`, and the path it lives at. The project comes first: whatever is under its root is
- * the Project Editor's own path, which the project view keeps as it is. A path inside a resource kind's directory
- * (a single video, as earlier versions of the editor addressed one) is shown by that kind's view, and any other
- * path by the course.
+ * the Project Editor's own path, which the project view keeps as it is. A path inside the videos' directory (a
+ * single video, as earlier versions of the editor addressed one) is shown by the videos view, and any other path
+ * by the course.
  * @param path - The normalized in-Course-Editor path from the route; `''` for the course itself.
  * @param projectRoot - `config.project.root`.
  * @returns What is open, and the path the route should say; that path differs from `path` when `path` is not a
@@ -113,16 +113,12 @@ export function resolveView(path: string, projectRoot: string): { open: OpenView
     return { open: { view: 'project', inEditorPath: pathToSegments(path.slice(projectRoot.length)) }, path }
   }
   if (path === mainCourseFilePath) return { open: { view: 'program' }, path }
-  for (const view of ['videos', 'images'] as const) {
-    const viewPath = getViewPath(view, projectRoot)
-    if (isPathWithin(path, viewPath)) return { open: { view }, path: viewPath }
-  }
+  if (isPathWithin(path, videoAssetPath)) return { open: { view: 'videos' }, path: videoAssetPath }
   return { open: { view: 'course' }, path: '' }
 }
 
 /**
- * The views with unsaved changes, for the dots on the activity bar. A record belongs to the view that edits it;
- * records no view shows (unused files, other resource kinds) belong to none, and no view edits them anyway.
+ * The views with unsaved changes, for the dots on the activity bar. A record belongs to the view that edits it.
  * @param changedPaths - The result of `getChangedPaths`.
  * @param projectRoot - `config.project.root`.
  * @returns The views some changed record belongs to.
@@ -134,16 +130,16 @@ export function getDirtyViews(changedPaths: Set<string>, projectRoot: string): S
     if (path === configFilePath) dirty.add('course')
     else if (path === mainCourseFilePath) dirty.add('program')
     else if (isPathWithin(path, projectRoot)) dirty.add('project')
-    else if (isPathWithin(path, getViewPath('videos', projectRoot))) dirty.add('videos')
-    else if (isPathWithin(path, getViewPath('images', projectRoot))) dirty.add('images')
+    else if (isPathWithin(path, videoAssetPath)) dirty.add('videos')
+    else if (isPathWithin(path, imageAssetPath)) dirty.add('images')
   }
   return dirty
 }
 
 /**
  * Paths whose record differs between two exports: added, removed, or replaced by another `File` instance. Identity
- * comparison is enough because the model reuses `File` instances while their source is unchanged (`DerivedFile`
- * for generated records; edits always produce a new instance).
+ * comparison is enough because the model reuses `File` instances while their source is unchanged (generated
+ * records are kept in computeds; edits always produce a new instance).
  *
  * @param baseline - The export taken at load or after the last successful save.
  * @param current - The export of the working copy now.

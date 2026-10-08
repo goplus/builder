@@ -39,15 +39,16 @@ describe('resolveView', () => {
     })
   })
 
-  it('shows a single resource, as older addresses name one, on its kind', () => {
+  it('shows a single video, as older addresses name one, on the videos view', () => {
     expect(resolveView('assets/videos/step-to', root)).toEqual({ open: { view: 'videos' }, path: 'assets/videos' })
-    expect(resolveView('assets/images/hint', root)).toEqual({ open: { view: 'images' }, path: 'assets/images' })
   })
 
   it('shows the course for anything no view edits', () => {
     expect(resolveView('notes.md', root)).toEqual({ open: { view: 'course' }, path: '' })
     expect(resolveView('assets/texts/lines', root)).toEqual({ open: { view: 'course' }, path: '' })
     expect(resolveView('assets', root)).toEqual({ open: { view: 'course' }, path: '' })
+    // The images view is hidden.
+    expect(resolveView('assets/images/hint', root)).toEqual({ open: { view: 'course' }, path: '' })
   })
 })
 
@@ -61,7 +62,7 @@ describe('unsaved changes', () => {
 
     project.mainCourse.setCode('onStart => { showVideo "step-to" }')
     project.setConfig({ copilotContext: 'Changed.' })
-    project.getResource('videos', 'step-to')!.setName('step-back')
+    project.videos[0].setName('step-back')
     const changed = getChangedPaths(baseline, project.exportFiles())
 
     expect([...getDirtyViews(changed, root)].sort()).toEqual(['course', 'program', 'videos'])

@@ -405,9 +405,9 @@ describe('CourseEditor preview, entered again', () => {
   it('keeps the running preview when a snapshot it walked away from fails later', async () => {
     const first = makeCourse('2338', 'First')
     const { wrapper, router, project } = await mountPreviewing(first, makeSeries(['2338']), { editing: true })
-    const abandoned = deferred<Awaited<ReturnType<TutorialProject['snapshot']>>>()
+    const abandoned = deferred<Awaited<ReturnType<TutorialProject['export']>>>()
     // The first preview's snapshot hangs; the one after it is taken as usual.
-    vi.spyOn(project, 'snapshot').mockReturnValueOnce(abandoned.promise)
+    vi.spyOn(project, 'export').mockReturnValueOnce(abandoned.promise)
 
     await enterPreview(router, first)
     await leavePreview(router, first)
