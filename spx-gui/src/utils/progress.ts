@@ -42,7 +42,7 @@ export class ProgressReporter {
   /**
    * Start reporting progress automatically: a series of progress will be reported in given interval.
    * Reports start from `percentage: 0` and keep increasing.
-   * Reports stop when `timeCost` is reached (at `percentage: 0.99`), or `percentage: 1` is reported manually.
+   * Reports stop when `timeCost` is reached (at `percentage: 0.99`), `percentage: 1` is reported manually, or the signal is aborted.
    *
    * Both progress percentage and ETA use a linear algorithm so they remain consistent with each other.
    * Percentage reaches 0.99 exactly at the estimated time cost.
@@ -51,9 +51,14 @@ export class ProgressReporter {
     /** Estimated time cost in milliseconds */
     timeCost: number,
     /** Interval in milliseconds for each report. Defaults to `timeCost / 50`. */
-    interval = Math.max(300, Math.round(timeCost / 50))
+    interval = Math.max(300, Math.round(timeCost / 50)),
+    signal?: AbortSignal
   ) {
     return new Promise<void>((resolve) => {
+      if (signal?.aborted) {
+        resolve()
+        return
+      }
       const maxPercentage = 0.99
       // Report immediately at percentage: 0
       this.report({ percentage: 0, desc: null, timeLeft: timeCost })
@@ -61,8 +66,7 @@ export class ProgressReporter {
       const timer = setInterval(() => {
         const curr = this.percentage
         if (curr >= maxPercentage) {
-          clearInterval(timer)
-          resolve()
+          finish()
           return
         }
         times++
@@ -73,6 +77,12 @@ export class ProgressReporter {
         const timeLeft = timeCost * (1 - percentage)
         this.report({ percentage, desc: null, timeLeft })
       }, interval)
+      function finish() {
+        clearInterval(timer)
+        signal?.removeEventListener('abort', finish)
+        resolve()
+      }
+      signal?.addEventListener('abort', finish, { once: true })
     })
   }
 }

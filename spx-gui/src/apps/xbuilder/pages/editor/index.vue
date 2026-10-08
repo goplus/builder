@@ -152,7 +152,7 @@ usePageTitle(() => {
 
 const monacoQueryRet = useQuery(
   async (ctx) => {
-    ctx.reporter.startAutoReport(1000)
+    ctx.reporter.startAutoReport(1000, 50, ctx.signal)
     const monaco = await loadMonaco(i18n.lang.value)
     ctx.reporter.report(1)
     return monaco
