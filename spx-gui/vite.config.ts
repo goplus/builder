@@ -138,9 +138,7 @@ export default defineConfig(({ mode }) => {
           // Copied third-party code and configuration; their XBuilder adapters remain covered.
           'src/utils/snippet-parser/**',
           'src/components/xgo-code-editor/ui/completion/fuzzy/**',
-          'src/utils/kodo-regions.ts',
-          'src/components/xgo-code-editor/xgo-language-configuration.ts',
-          'src/utils/xgo/gop-tm-language.json'
+          'src/utils/xgo/language-configuration.ts'
         ]
       }
     },

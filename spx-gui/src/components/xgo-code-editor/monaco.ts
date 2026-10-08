@@ -1,7 +1,7 @@
 import { shikiToMonaco } from '@shikijs/monaco'
 import type * as monaco from 'monaco-editor'
 import { getHighlighter } from '@/utils/xgo/highlighter'
-import { xgoLanguageConfiguration } from './xgo-language-configuration'
+import { xgoLanguageConfiguration } from '@/utils/xgo/language-configuration'
 
 export type { monaco }
 export type Monaco = typeof monaco
