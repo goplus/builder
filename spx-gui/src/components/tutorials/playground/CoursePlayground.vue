@@ -130,6 +130,8 @@ const sessionQueryRet = useQuery(
     ctx.signal.throwIfAborted()
 
     const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
+    editorState.editing.startEditing()
+    editorState.syncWithRouter(inEditorRouter)
     const session = new PlaygroundCourseSession({
       project,
       editorState,
@@ -142,8 +144,6 @@ const sessionQueryRet = useQuery(
     })
     session.disposeOnSignal(ctx.signal)
     editorState.disposeOnSignal(ctx.signal)
-    editorState.editing.startEditing()
-    editorState.syncWithRouter(inEditorRouter)
     session.on('completed', (completion) => {
       emit('courseCompleted', completion)
     })
@@ -212,10 +212,10 @@ const session = sessionQueryRet.data
       >
         <CodeEditorProvider
           :monaco="monacoQueryRet.data.value!"
-          :api-whitelist="session.apiWhitelist"
+          :api-whitelist="session.apiWhitelist.apis"
           @ready="codeEditor = $event"
         >
-          <ProjectEditor :ruler-enabled="session.rulerEnabled" />
+          <ProjectEditor :ruler-enabled="session.ruler.enabled" />
         </CodeEditorProvider>
       </EditorContextProvider>
     </main>

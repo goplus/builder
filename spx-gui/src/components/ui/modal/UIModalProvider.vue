@@ -46,8 +46,11 @@ export type ModalInfo = {
   props: any
   handlers: ModalHandlers<any>
   visible: boolean
-  // Settled modals remain in currentModals for the leave transition; this prevents
-  // duplicate settlement and reopening after cancellation during the initial nextTick.
+  /**
+   * Whether the modal invocation has resolved or been cancelled.
+   * Entries remain in currentModals for the leave transition, so this flag prevents
+   * duplicate settlement and reopening after cancellation during the initial nextTick.
+   */
   settled: boolean
   /** Removes the abort listener from the invocation signal when the modal settles. */
   stopSignalListening: (() => void) | null
@@ -61,9 +64,13 @@ export type ModalEvents = Emitter<{
 
 type ModalInput = Pick<ModalInfo, 'component' | 'props' | 'handlers'>
 
+export type ModalOptions = {
+  signal?: AbortSignal
+}
+
 type ModalContext = {
   events: ModalEvents
-  add(modalInfo: ModalInput, signal?: AbortSignal): void
+  add(modalInfo: ModalInput, options?: ModalOptions): void
 }
 
 export type ModalComponentDefinition = ComponentDefinition<ModalComponentProps, ModalComponentEmits<any>>
@@ -77,11 +84,10 @@ const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context'
 export function useModal<C extends ModalComponentDefinition>(component: C) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(extraProps: ExtraProps<C>, options?: { signal?: AbortSignal }) {
+  return function invokeModal(extraProps: ExtraProps<C>, options?: ModalOptions) {
     return new Promise<ResolvedValue<EmitsForComponent<C>>>((resolve, reject) => {
       const handlers = { resolve, reject }
-      const signal = options?.signal
-      ctx.add({ component, props: extraProps, handlers }, signal)
+      ctx.add({ component, props: extraProps, handlers }, options)
     })
   }
 }
@@ -99,7 +105,8 @@ const currentModals = shallowReactive<ModalInfo[]>([])
 const emitter: ModalEvents = new Emitter()
 let nextModalId = 1
 
-async function add({ component, props, handlers }: ModalInput, signal?: AbortSignal) {
+async function add({ component, props, handlers }: ModalInput, options?: ModalOptions) {
+  const signal = options?.signal
   const id = nextModalId
   nextModalId += 1
   const currentModal = shallowReactive<ModalInfo>({

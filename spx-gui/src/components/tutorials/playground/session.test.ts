@@ -163,7 +163,7 @@ describe('PlaygroundCourseSession', () => {
 
     await filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'] })
 
-    expect(harness.courseSession.apiWhitelist).toEqual(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
+    expect(harness.courseSession.apiWhitelist.apis).toEqual(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
   })
 
   it('forwards editor and Copilot events in source order', async () => {
@@ -240,14 +240,11 @@ describe('PlaygroundCourseSession', () => {
     await expect(generateJSON({ content: 'Is the goal complete?', schema: { type: 'object' } })).resolves.toEqual({
       complete: true
     })
-    expect(harness.copilot.generateTextResponse).toHaveBeenCalledWith(
-      'Give feedback',
-      harness.courseSession.program.getSignal()
-    )
+    expect(harness.copilot.generateTextResponse).toHaveBeenCalledWith('Give feedback', expect.any(AbortSignal))
     expect(harness.copilot.generateJSONResponse).toHaveBeenCalledWith(
       'Is the goal complete?',
       { type: 'object' },
-      harness.courseSession.program.getSignal()
+      expect.any(AbortSignal)
     )
   })
 
@@ -262,7 +259,6 @@ describe('PlaygroundCourseSession', () => {
     await completeWith({ content: 'Nice work' })
 
     expect(completed).toHaveBeenCalledWith({ feedback: 'Nice work' })
-    expect(harness.courseSession.program.isDisposed).toBe(true)
     expect(harness.courseSession.isDisposed).toBe(false)
     expect(harness.editorState.dispose).not.toHaveBeenCalled()
     expect(harness.executor.stop).toHaveBeenCalledOnce()
@@ -294,9 +290,9 @@ describe('PlaygroundCourseSession', () => {
     if (enable == null || disable == null) throw new Error('ruler capabilities not found')
 
     await enable(null)
-    expect(harness.courseSession.rulerEnabled).toBe(true)
+    expect(harness.courseSession.ruler.enabled).toBe(true)
     await disable(null)
-    expect(harness.courseSession.rulerEnabled).toBe(false)
+    expect(harness.courseSession.ruler.enabled).toBe(false)
   })
 
   it('disposes the program on failure without disposing the session', async () => {
@@ -313,7 +309,6 @@ describe('PlaygroundCourseSession', () => {
       )
     )
     expect(harness.executor.stop).toHaveBeenCalledOnce()
-    expect(harness.courseSession.program.isDisposed).toBe(true)
     expect(harness.courseSession.isDisposed).toBe(false)
 
     harness.courseSession.dispose()
@@ -437,7 +432,6 @@ describe('PlaygroundCourseSession', () => {
     const cancelled = expect(text).rejects.toThrow('cancelled')
     await capabilities.course_complete(null)
     await cancelled
-    expect(harness.courseSession.program.getSignal().aborted).toBe(true)
     expect(harness.courseSession.isDisposed).toBe(false)
   })
 
@@ -447,8 +441,8 @@ describe('PlaygroundCourseSession', () => {
     await capabilities.editor_codeEditor_filterAPIs({ apis: ['stepTo'] })
     await capabilities.editor_ruler_enable(null)
     await capabilities.course_complete(null)
-    expect(harness.courseSession.apiWhitelist).toEqual(['stepTo'])
-    expect(harness.courseSession.rulerEnabled).toBe(true)
+    expect(harness.courseSession.apiWhitelist.apis).toEqual(['stepTo'])
+    expect(harness.courseSession.ruler.enabled).toBe(true)
     harness.courseSession.dispose()
     harness.courseSession.dispose()
     expect(harness.editorState.dispose).not.toHaveBeenCalled()
@@ -483,10 +477,9 @@ describe('PlaygroundCourseSession', () => {
     await expect(harness.courseSession.start()).resolves.toBeUndefined()
     expect(failed).toHaveBeenCalledOnce()
     expect(harness.executor.run).not.toHaveBeenCalled()
-    expect(harness.courseSession.program.isDisposed).toBe(false)
+    expect(harness.executor.stop).not.toHaveBeenCalled()
     expect(harness.courseSession.isDisposed).toBe(false)
     harness.courseSession.dispose()
-    expect(harness.courseSession.program.isDisposed).toBe(true)
   })
 
   it('retains a replacement Copilot session when the course session is disposed', async () => {
@@ -497,7 +490,6 @@ describe('PlaygroundCourseSession', () => {
 
     harness.courseSession.dispose()
 
-    expect(harness.courseSession.copilotSession).toBe(harness.session)
     expect(harness.copilot.currentSession).toBe(replacement)
     expect(harness.copilot.endCurrentSession).not.toHaveBeenCalled()
     expect(harness.editorState.dispose).not.toHaveBeenCalled()
@@ -510,7 +502,6 @@ describe('PlaygroundCourseSession', () => {
     harness.courseSession.on('failed', failed)
     await expect(harness.courseSession.start()).resolves.toBeUndefined()
     expect(failed).toHaveBeenCalledOnce()
-    expect(harness.courseSession.program.isDisposed).toBe(true)
   })
 
   it('resolves startup when completion stops the executor during onStart', async () => {

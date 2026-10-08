@@ -229,10 +229,11 @@ Subscriptions are installed immediately after executor startup is requested and 
 
 The first `course_complete` or `course_completeWith` publishes the completion result and resolves when accepted. The page handles completion UI.
 
-Accepting completion immediately disposes Program, cancelling pending
-presentation and generation calls, and publishes completion for the page to
-display without waiting for executor exit. Subsequent executor errors cannot
-replace that result. Failure also disposes Program.
+When the Host accepts a `course_complete` or `course_completeWith` request, it
+immediately disposes Program, cancelling pending presentation and generation
+calls, and publishes completion for the page to display without waiting for
+executor exit or learner interaction with the completion dialog. Subsequent
+executor errors cannot replace that result. Failure also disposes Program.
 
 | Executor result | Program state | Result                                                        |
 | --------------- | ------------- | ------------------------------------------------------------- |
@@ -322,7 +323,7 @@ The second prototype adds a deliberately narrow end-to-end runtime example:
 - Session starts and retains the non-proactive Copilot Topic; Program runs only `main_course.gox` and owns the executor, event subscriptions and pending capability lifetime;
 - Runtime start, exit, and log signals plus Copilot round completion wait for executor startup before forwarding directly; the Framework queues received events;
 - `showMessage` is represented by route-local blocking presentation, while `complete` and `completeWith` publish a terminal outcome for the page to handle;
-- the page, rather than the runtime or facade, displays completion UI and chooses to continue editing, start Next, or exit based on the active Series;
+- the page, rather than the runtime or facade, displays completion UI and chooses to retry, continue editing, start Next, or exit based on the active Series;
 - replacing a page-owned Playground session waits one Vue render turn before disposing its project, allowing the child runtime and `EditorState` to unmount first.
 
 This confirms that XGo/Copilot integration does not require broadening the facade. It also sharpens the internal responsibility split:

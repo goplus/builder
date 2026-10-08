@@ -38,11 +38,11 @@ const emit = defineEmits<{
       </div>
       <UIButton
         v-radar="{ name: 'course-continue', desc: 'Dismiss the message and continue the Course' }"
-        class="mt-6 w-full! rounded-lg!"
+        class="mt-6 w-full!"
         size="large"
         @click="emit('resolved')"
       >
-        {{ $t({ en: 'Continue', zh: '继续' }) }}
+        {{ $t(kind === 'prelude' ? { en: 'Continue', zh: '继续' } : { en: 'Keep trying', zh: '继续尝试' }) }}
       </UIButton>
     </div>
   </UIModal>

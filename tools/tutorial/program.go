@@ -349,10 +349,10 @@ func (p *courseProgram) handlerSnapshot() handlers {
 // markCompleted marks the Course completed and reports whether this was the
 // first completion.
 //
-// Idempotence is required here: statements after complete continue inside the
-// same callback, and overlapping runs may each judge the goal reached. Without
-// this gate the learner would see two completion dialogs. The flag is set before
-// the capability call, so even a
+// Idempotence is required here: the contract lets a Course keep executing the
+// statements after complete inside the same callback, and overlapping runs may
+// each judge the goal reached. Without this gate the learner would see two
+// completion dialogs. The flag is set before the capability call, so even a
 // panicking capability cannot reopen the gate.
 func (p *courseProgram) markCompleted() bool {
 	p.schedulerMu.Lock()

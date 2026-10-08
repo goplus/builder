@@ -5,8 +5,13 @@ import { XGoExecutor, type XGoExitReason } from '@/utils/xgoexec'
 import { ActionException, Cancelled, DefaultException, type Exception } from '@/utils/exception/base'
 import { createTutorialFramework, type SpotlightOptions, type TutorialFrameworkHost } from '@/utils/tutorial-framework'
 import { mainCourseFilePath } from '@/models/tutorial/course'
+import type { TutorialProject } from '@/models/tutorial/project'
+import type { Copilot } from '@/components/copilot/copilot'
+import type { EditorState } from '@/components/editor/editor-state'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
-import type { PlaygroundCourseSession } from './session'
+
+import type { APIWhitelist } from './api-whitelist'
+import type { Ruler } from './ruler'
 
 export type PlaygroundCoursePresentation = {
   showPrelude(content: string, signal: AbortSignal): Promise<void>
@@ -20,13 +25,21 @@ export type PlaygroundCourseCompletion = {
 }
 
 export type PlaygroundCourseProgramOptions = {
-  session: PlaygroundCourseSession
+  project: TutorialProject
+  editorState: EditorState
+  copilot: Copilot
+  apiWhitelist: APIWhitelist
+  ruler: Ruler
   presentation: PlaygroundCoursePresentation
   formatWorkspace(): Promise<void>
   onCompleted(completion: PlaygroundCourseCompletion): void
   onFailed(error: Exception): void
 }
 
+/**
+ * Runs one Course's XGo program, providing capabilities and forwarding editor and Copilot events.
+ * Completion or failure disposes Program; the Session keeps the editor available afterwards.
+ */
 export class PlaygroundCourseProgram extends Disposable {
   private executor: XGoExecutor
   private lastRuntimeOutputID = -1
@@ -52,9 +65,9 @@ export class PlaygroundCourseProgram extends Disposable {
     if (this.isDisposed) return
     if (this.executorStarted != null) throw new Error('Playground Course program has already started')
 
-    const { session } = this.options
+    const { project } = this.options
     try {
-      this.executorStarted = this.executor.run({ [mainCourseFilePath]: session.project.mainCourse.code })
+      this.executorStarted = this.executor.run({ [mainCourseFilePath]: project.mainCourse.code })
       this.installEventBridge()
       await this.executorStarted
     } catch (e) {
@@ -65,7 +78,7 @@ export class PlaygroundCourseProgram extends Disposable {
 
   private createHost(): TutorialFrameworkHost {
     const signal = this.getSignal()
-    const { session, presentation, formatWorkspace } = this.options
+    const { project, copilot, apiWhitelist, ruler, presentation, formatWorkspace } = this.options
     return {
       course: {
         showPrelude: async (content) => {
@@ -85,25 +98,22 @@ export class PlaygroundCourseProgram extends Disposable {
       },
       editor: {
         codeEditor: {
-          filterAPIs: (apis) => session.setAPIWhitelist(apis),
+          filterAPIs: (apis) => apiWhitelist.set(apis),
           formatWorkspace: () => formatWorkspace()
         },
         project: {
           getCode: (name) => {
-            const sprite = session.project.project.sprites.find((sprite) => sprite.name === name)
+            const sprite = project.project.sprites.find((sprite) => sprite.name === name)
             if (sprite == null) throw new Error(`Sprite ${name} not found`)
             return sprite.code
           },
-          listSprites: () => session.project.project.sprites.map((sprite) => sprite.name)
+          listSprites: () => project.project.sprites.map((sprite) => sprite.name)
         },
-        ruler: {
-          enable: () => session.setRulerEnabled(true),
-          disable: () => session.setRulerEnabled(false)
-        }
+        ruler
       },
       copilot: {
-        generateText: (content) => session.copilot.generateTextResponse(content, this.getSignal()),
-        generateJSON: (content, schema) => session.copilot.generateJSONResponse(content, schema, this.getSignal())
+        generateText: (content) => copilot.generateTextResponse(content, signal),
+        generateJSON: (content, schema) => copilot.generateJSONResponse(content, schema, signal)
       },
       spotlight: {
         reveal: (target, tip, options) => presentation.revealSpotlight(target, tip, options)
@@ -112,8 +122,9 @@ export class PlaygroundCourseProgram extends Disposable {
   }
 
   private installEventBridge() {
-    const { session } = this.options
-    const runtime = session.editorState.runtime
+    const { editorState, copilot } = this.options
+    const copilotSession = copilot.currentSession
+    const runtime = editorState.runtime
     this.addDisposer(
       runtime.on('didChangeOutput', () => {
         for (const output of runtime.outputs) {
@@ -136,9 +147,8 @@ export class PlaygroundCourseProgram extends Disposable {
       )
     )
     this.addDisposer(
-      session.copilot.on('roundComplete', (round) => {
-        if (session.copilot.currentSession === session.copilotSession)
-          this.dispatchEvent('copilot.roundComplete', round)
+      copilot.on('roundComplete', (round) => {
+        if (copilot.currentSession === copilotSession) this.dispatchEvent('copilot.roundComplete', round)
       })
     )
   }

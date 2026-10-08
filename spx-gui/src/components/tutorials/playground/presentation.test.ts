@@ -21,7 +21,6 @@ const globalOptions = {
 const wrappers: VueWrapper[] = []
 
 beforeEach(() => {
-  vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {})
   vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
 })
@@ -80,13 +79,32 @@ describe('Course presentation', () => {
     expect(wrapper.emitted('resolved')).toBeUndefined()
   })
 
-  it('offers a play action if both autoplay attempts are blocked', async () => {
-    vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValue(new Error('Autoplay blocked'))
+  it('offers manual playback when autoplay is blocked', async () => {
+    vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(new Error('Autoplay blocked'))
     const { wrapper } = mountVideo()
     await flushPromises()
     await wrapper.find('video').trigger('loadeddata')
     await flushPromises()
     expect(wrapper.find('button[aria-label="Play video"]').exists()).toBe(true)
+    await wrapper.find('button[aria-label="Play video"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('button[aria-label="Play video"]').exists()).toBe(false)
+    expect(wrapper.emitted('resolved')).toBeUndefined()
+  })
+
+  it('toggles sound without restarting playback and preserves it for replay', async () => {
+    const { wrapper } = mountVideo()
+    await flushPromises()
+    const video = wrapper.find('video')
+    await wrapper.find('button[aria-label="Turn sound off"]').trigger('click')
+    expect(video.element.muted).toBe(true)
+    await video.trigger('ended')
+    await wrapper.find('button[aria-label="Play video"]').trigger('click')
+    expect(video.element.muted).toBe(true)
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
+    await wrapper.find('button[aria-label="Turn sound on"]').trigger('click')
+    expect(video.element.muted).toBe(false)
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
     expect(wrapper.emitted('resolved')).toBeUndefined()
   })
 

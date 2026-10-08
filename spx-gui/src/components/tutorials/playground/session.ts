@@ -1,5 +1,3 @@
-import { shallowRef } from 'vue'
-
 import Emitter from '@/utils/emitter'
 import { ActionException, type Exception } from '@/utils/exception'
 import type { TutorialProject } from '@/models/tutorial/project'
@@ -7,6 +5,8 @@ import type { Copilot, Session as CopilotSession, Topic } from '@/components/cop
 import type { EditorState } from '@/components/editor/editor-state'
 
 import { PlaygroundCourseProgram, type PlaygroundCourseCompletion, type PlaygroundCoursePresentation } from './program'
+import { APIWhitelist } from './api-whitelist'
+import { Ruler } from './ruler'
 
 export type PlaygroundCourseSessionOptions = {
   project: TutorialProject
@@ -16,18 +16,22 @@ export type PlaygroundCourseSessionOptions = {
   formatWorkspace(): Promise<void>
 }
 
+/**
+ * Holds the Course's editor session, including UI state, Copilot session and Program.
+ * It remains available for editing after Program completes, and is disposed on Course leave.
+ */
 export class PlaygroundCourseSession extends Emitter<{
   completed: PlaygroundCourseCompletion
   failed: Exception
 }> {
   readonly project: TutorialProject
   readonly editorState: EditorState
-  readonly copilot: Copilot
-  readonly program: PlaygroundCourseProgram
-  copilotSession: CopilotSession | null = null
+  readonly apiWhitelist = new APIWhitelist()
+  readonly ruler = new Ruler()
+  private readonly copilot: Copilot
+  private readonly program: PlaygroundCourseProgram
+  private copilotSession: CopilotSession | null = null
   private started = false
-  private apiWhitelistRef = shallowRef<string[] | null>(null)
-  private rulerEnabledRef = shallowRef(false)
 
   constructor(options: PlaygroundCourseSessionOptions) {
     super()
@@ -39,29 +43,17 @@ export class PlaygroundCourseSession extends Emitter<{
         this.copilot.endCurrentSession()
     })
     this.program = new PlaygroundCourseProgram({
-      session: this,
+      project: this.project,
+      editorState: this.editorState,
+      copilot: this.copilot,
+      apiWhitelist: this.apiWhitelist,
+      ruler: this.ruler,
       presentation: options.presentation,
       formatWorkspace: options.formatWorkspace,
       onCompleted: (completion) => this.emit('completed', completion),
       onFailed: (error) => this.emit('failed', error)
     })
     this.addDisposable(this.program)
-  }
-
-  get apiWhitelist() {
-    return this.apiWhitelistRef.value
-  }
-
-  setAPIWhitelist(apis: string[]) {
-    this.apiWhitelistRef.value = apis
-  }
-
-  get rulerEnabled() {
-    return this.rulerEnabledRef.value
-  }
-
-  setRulerEnabled(enabled: boolean) {
-    this.rulerEnabledRef.value = enabled
   }
 
   async start() {

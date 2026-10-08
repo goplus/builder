@@ -83,6 +83,11 @@ const { fn: handleCompleted } = useMessageHandle(
     )
     if (completedSession.project.isDisposed || action === 'continueEditing') return
 
+    if (action === 'retry') {
+      await tutorial.startCourse(completedSession.series.id, completedSession.course.id)
+      return
+    }
+
     const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
     const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
     if (action === 'next' && nextCourseID != null) {
