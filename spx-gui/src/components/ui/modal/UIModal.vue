@@ -150,10 +150,10 @@ function getFirstFocusableElement(container: HTMLElement) {
 
 watch(
   modalRegistration.isTopmost,
-  async (isTopmost, _, onCleanUp) => {
+  async (isTopmost, _, onCleanup) => {
     if (!isTopmost) return
 
-    const signal = getCleanupSignal(onCleanUp)
+    const signal = getCleanupSignal(onCleanup)
     const container = await untilNotNull(containerRef, signal)
 
     const handleKeydown = (e: KeyboardEvent) => {
