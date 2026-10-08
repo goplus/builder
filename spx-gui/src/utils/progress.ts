@@ -53,6 +53,7 @@ export class ProgressReporter {
     options?: {
       /** Interval in milliseconds for each report. Defaults to `timeCost / 50`, with a minimum of 100ms. */
       interval?: number
+      /** Stops reporting and resolves the returned promise when aborted. */
       signal?: AbortSignal
     }
   ) {
