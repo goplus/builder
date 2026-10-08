@@ -1,4 +1,7 @@
 {
+	"information_for_contributors": [
+		"This file is copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json"
+	],
 	"comments": {
 		"lineComment": "//",
 		"blockComment": [

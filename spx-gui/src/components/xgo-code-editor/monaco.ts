@@ -1,7 +1,6 @@
 import { shikiToMonaco } from '@shikijs/monaco'
 import type * as monaco from 'monaco-editor'
 import { getHighlighter } from '@/utils/xgo/highlighter'
-// Copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json
 import xgoLanguageConfiguration from '@/utils/xgo/language-configuration.json'
 
 export type { monaco }
@@ -49,14 +48,8 @@ export async function loadMonaco(lang: Lang): Promise<Monaco> {
   monacoInstance.languages.register({ id: 'xgo' })
   shikiToMonaco(highlighter, monacoInstance)
   monacoInstance.languages.setLanguageConfiguration('xgo', {
-    comments: {
-      ...xgoLanguageConfiguration.comments,
-      blockComment: [
-        xgoLanguageConfiguration.comments.blockComment[0],
-        xgoLanguageConfiguration.comments.blockComment[1]
-      ]
-    },
-    brackets: xgoLanguageConfiguration.brackets.map(([open, close]) => [open, close]),
+    comments: xgoLanguageConfiguration.comments as monaco.languages.CommentRule,
+    brackets: xgoLanguageConfiguration.brackets as monaco.languages.CharacterPair[],
     autoClosingPairs: xgoLanguageConfiguration.autoClosingPairs.map((pair) =>
       Array.isArray(pair) ? { open: pair[0], close: pair[1] } : pair
     ),

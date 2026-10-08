@@ -191,6 +191,7 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
         try {
           await this.loadFiles(signal)
         } catch (error) {
+          // Superseded syncs and editor disposal abort loading; ignore cancellation to avoid unhandled rejections.
           if (!signal.aborted) throw error
         }
       })
