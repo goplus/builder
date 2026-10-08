@@ -95,8 +95,8 @@ watch(
         return
       }
 
-      if (active) await openPanel(signal)
-      else await closePanel(signal)
+      if (active) await settlePanelOpened(signal)
+      else await settlePanelClosed(signal)
     } catch (error) {
       capture(error, 'Failed to animate Copilot panel')
     }
@@ -191,7 +191,8 @@ function getOpenedPanelClampedPosition(position: Position = panelStatePosition.v
   return getClampedPosition(getDirection(position, panelW), panelW, panelH, panelBoundaryBuffer)
 }
 
-async function openPanel(signal: AbortSignal) {
+/** Settle the panel's position and visibility into the opened state, including after dragging. */
+async function settlePanelOpened(signal: AbortSignal) {
   // trigger animation
   const triggerAnimation = createCSSAnimation('animated', panelRef.value, signal)
   triggerAnimation.begin(!!triggerVisibility.value)
@@ -209,7 +210,8 @@ async function openPanel(signal: AbortSignal) {
   await panelAnimation.endAndWait()
 }
 
-async function closePanel(signal: AbortSignal) {
+/** Settle the panel's position and visibility into the closed state, including after dragging. */
+async function settlePanelClosed(signal: AbortSignal) {
   const { begin, endAndWait } = createCSSAnimation('animated', panelRef.value, signal)
   const newPosition = getClosedPanelClampedPosition()
   // When the `transition-property` doesn't change, the `transitionend` event can't be triggered.
