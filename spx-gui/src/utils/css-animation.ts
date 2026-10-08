@@ -1,13 +1,13 @@
 import { timeout } from './utils'
 
-/**
- * Animate a CSS class with optional cancellation. Use begin(false) when no transition is expected.
- * endAndWait() waits for a transition and yields to the next task before another stage can start.
- */
+/** Animate a CSS class with optional cancellation. */
 export function createCSSAnimation(className: string, el: HTMLElement | null | undefined, signal?: AbortSignal) {
   let begun = false
   return {
-    begin(can = true) {
+    begin(
+      /** Set to false when no transition is expected, so endAndWait() skips waiting. */
+      can = true
+    ) {
       signal?.throwIfAborted()
       if (!can || el == null) return
       // Commit the current layout as the baseline before enabling the transition.
@@ -15,6 +15,7 @@ export function createCSSAnimation(className: string, el: HTMLElement | null | u
       el.classList.add(className)
       begun = true
     },
+    /** Wait for a transition, then yield to the next task before another stage can start. */
     async endAndWait() {
       signal?.throwIfAborted()
       if (!begun || el == null) return
