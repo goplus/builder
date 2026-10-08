@@ -35,7 +35,7 @@ See [XGo Executor](./module_XGoExecutor.ts).
 
 The Tutorial Class Framework defines the Tutorial-project format and the XGo API used by Course authors. It gives Course programs the capabilities and events needed to present, guide, and complete a learning experience, without coupling Course content to the host application's implementation.
 
-See [Tutorial Class Framework](./module_TutorialFramework.ts), its [Go contract](./tutorial-class-framework.go) and an [example Tutorial Course project](./example-tutorial-course/).
+See [Tutorial Class Framework](./module_TutorialFramework.ts), its [Go contract](./tutorial-class-framework.go) and an [example Tutorial Course project](./example-tutorial-course/). A guide for Course authors lives next to the implementation in [`tools/tutorial`](../../../tools/tutorial/README.md).
 
 ### Radar
 
