@@ -48,7 +48,8 @@ const xgoLanguageConfiguration: monaco.languages.LanguageConfiguration = {
   surroundingPairs: rawXgoLanguageConfiguration.surroundingPairs.map(([open, close]) => ({ open, close })),
   indentationRules: {
     increaseIndentPattern: new RegExp(rawXgoLanguageConfiguration.indentationRules.increaseIndentPattern),
-    // Decrease indent for `else` & `else if` in addition to the upstream rules.
+    // Deliberately override the JSON's decreaseIndentPattern to also handle `else` & `else if`.
+    // Keep the base rules in sync when updating the upstream JSON.
     decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|}\\s*else\\b.*{|\\)[,]?)$')
   },
   folding: {
