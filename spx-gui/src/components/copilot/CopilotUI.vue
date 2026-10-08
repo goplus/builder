@@ -193,7 +193,7 @@ function getOpenedPanelClampedPosition(position: Position = panelStatePosition.v
 
 /** Settle the panel's position and visibility into the opened state, including after dragging. */
 async function settlePanelOpened(signal: AbortSignal) {
-  // trigger animation
+  // Hide the trigger and wait for its transitionend event to bubble to the panel.
   const triggerAnimation = createCSSAnimation('animated', panelRef.value, signal)
   triggerAnimation.begin(!!triggerVisibility.value)
   triggerVisibility.value = TriggerVisibility.None
@@ -250,6 +250,7 @@ const onDragMove = (offset: Offset) => {
 const onDragEnd = () => {
   if (isPanelOutOfBounds.value) copilot.close()
   else if (triggerVisibility.value === TriggerVisibility.None) copilot.open()
+  // Re-run the watcher to settle position even when active stays unchanged.
   dragging.value = false
 }
 useDraggable(() => triggerRef.value?.el, {
