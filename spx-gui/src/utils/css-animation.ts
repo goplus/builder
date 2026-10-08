@@ -33,6 +33,9 @@ export function createCSSAnimation(className: string, el: HTMLElement | null | u
         element.addEventListener('transitionend', onEnd)
         signal?.addEventListener('abort', onAbort, { once: true })
       })
+      // Preserve the original pause between animation stages after removing the class.
+      // This does not guarantee a rendered frame; begin() forces reflow, so the pause may
+      // be redundant. Verify consecutive transitions in browsers before removing it.
       await timeout(0, signal)
     }
   }
