@@ -103,7 +103,6 @@ watchPostEffect(async () => {
 
 const handleInputUpdate = useMessageHandle(
   (newInput: Input) => {
-    if (codeEditorUICtx.ui.readOnly) return
     const { inputingSlot } = props.controller
     if (inputingSlot == null) return
     const td = codeEditorUICtx.ui.activeTextDocument

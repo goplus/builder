@@ -1,21 +1,22 @@
+import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import type { I18n } from '@/utils/i18n'
 import type { CodeEditor } from '../code-editor'
 import { CodeEditorUIController } from './code-editor-ui'
 
 function makeUI() {
-  let readOnly = false
+  const readOnly = ref(false)
   const ui = new CodeEditorUIController({ uri: 'file:///Cat.spx' }, {} as CodeEditor, {} as I18n, {
     renameHandler: vi.fn(),
     get readOnly() {
-      return readOnly
+      return readOnly.value
     }
   })
   const document = { pushEdits: vi.fn(), getLineContent: () => '', getWordAtPosition: () => null }
   const editor = { setPosition: vi.fn(), focus: vi.fn(), executeEdits: vi.fn(), getContribution: vi.fn() }
   Object.defineProperty(ui, 'activeTextDocument', { get: () => document })
   Object.defineProperty(ui, 'editor', { get: () => editor })
-  return { ui, document, editor, setReadOnly: (value: boolean) => (readOnly = value) }
+  return { ui, document, editor, setReadOnly: (value: boolean) => (readOnly.value = value) }
 }
 
 describe('Code Editor UI read-only state', () => {
@@ -47,5 +48,35 @@ describe('Code Editor UI read-only state', () => {
     setReadOnly(false)
     ui.inputHelperController.startInputing('slot')
     expect(ui.inputHelperController.inputingSlot).toBe(slot)
+  })
+
+  it('closes an open input helper synchronously when editing becomes read-only', () => {
+    vi.useFakeTimers()
+    const { ui, editor, setReadOnly } = makeUI()
+    Object.assign(ui.codeEditor, { project: { exportFiles: () => ({}) }, inputHelperProvider: null })
+    Object.assign(editor, {
+      getDomNode: () => document.createElement('div'),
+      onKeyDown: () => ({ dispose: vi.fn() }),
+      onMouseDown: () => ({ dispose: vi.fn() })
+    })
+    const slot = { id: 'slot' }
+    Object.defineProperty(ui.inputHelperController, 'slots', { get: () => [slot] })
+    const controller = ui.inputHelperController
+    try {
+      controller.init()
+      controller.startInputing('slot')
+      expect(controller.inputingSlot).toBe(slot)
+      setReadOnly(true)
+      expect(controller.inputingSlot).toBeNull()
+      controller.startInputing('slot')
+      expect(controller.inputingSlot).toBeNull()
+      setReadOnly(false)
+      controller.startInputing('slot')
+      expect(controller.inputingSlot).toBe(slot)
+    } finally {
+      controller.dispose()
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
   })
 })

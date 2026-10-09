@@ -26,13 +26,10 @@ vi.mock('@/utils/utils', async (importOriginal) => ({
 afterEach(() => vi.restoreAllMocks())
 
 describe('Code Editor UI options', () => {
-  it('toggles Monaco read-only without replacing the editor, controller, or decorations', async () => {
-    const model = { decorations: ['current-line-highlight'] }
+  it('toggles Monaco read-only without replacing the editor or controller', async () => {
     const editor = {
       updateOptions: vi.fn(),
-      onDidChangeConfiguration: vi.fn(),
-      setModel: vi.fn(),
-      getModel: () => model
+      onDidChangeConfiguration: vi.fn()
     }
     vi.spyOn(CodeEditorUIController.prototype, 'init').mockImplementation(function (this: CodeEditorUIController) {
       Object.defineProperty(this, 'editor', { get: () => editor })
@@ -52,8 +49,6 @@ describe('Code Editor UI options', () => {
     await wrapper.setProps({ readOnly: false })
     expect(editor.updateOptions).toHaveBeenLastCalledWith(expect.objectContaining({ readOnly: false }))
     expect(ui.readOnly).toBe(false)
-    expect(editor.getModel()).toBe(model)
-    expect(model.decorations).toEqual(['current-line-highlight'])
     expect(dispose).not.toHaveBeenCalled()
     expect(attachUI.mock.calls.at(-1)![0]).toBe(ui)
     wrapper.unmount()

@@ -379,25 +379,15 @@ const redoText = computed(() => ({
   zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
 }))
 
-const handleUndo = useMessageHandle(
-  () => {
-    if (!historyReadOnly.value) return props.state?.history.undo()
-  },
-  {
-    en: 'Failed to undo',
-    zh: '撤销操作失败'
-  }
-)
+const handleUndo = useMessageHandle(() => props.state?.history.undo(), {
+  en: 'Failed to undo',
+  zh: '撤销操作失败'
+})
 
-const handleRedo = useMessageHandle(
-  () => {
-    if (!historyReadOnly.value) return props.state?.history.redo()
-  },
-  {
-    en: 'Failed to redo',
-    zh: '重做操作失败'
-  }
-)
+const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
+  en: 'Failed to redo',
+  zh: '重做操作失败'
+})
 
 const historyBtnClz =
   'h-full flex items-center justify-center border-none bg-transparent px-3 text-inherit outline-none disabled:cursor-not-allowed disabled:text-grey-600 enabled:cursor-pointer enabled:hover:bg-grey-400'
