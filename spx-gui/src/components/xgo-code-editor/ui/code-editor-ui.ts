@@ -107,6 +107,7 @@ export type InternalAction<A extends any[] = any, R = any> = {
 type CodeEditorUIOptions = {
   renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>
   simpleMode?: boolean
+  readonly readOnly?: boolean
 }
 
 export class CodeEditorUIController extends Disposable implements ICodeEditorUIController {
@@ -162,6 +163,10 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     private options: CodeEditorUIOptions
   ) {
     super()
+  }
+
+  get readOnly() {
+    return this.options.readOnly ?? false
   }
 
   get project() {
@@ -252,6 +257,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
    * Cursor will be moved to the end of the inserted text.
    */
   async insertText(text: string, range: Range = this.getSelectionRange()) {
+    if (this.readOnly) return
     this.activeTextDocument?.pushEdits([
       {
         range,
@@ -283,6 +289,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   async insertSnippet(snippet: string, range: Range = this.getSelectionRange()) {
+    if (this.readOnly) return
     const editor = this.editor
     // `executeEdits` does not support snippet, so we have to split the insertion into two steps:
     // 1. remove the range with `executeEdits`
@@ -291,6 +298,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       const removing = { range: toMonacoRange(range), text: '' }
       editor.executeEdits('insertSnippet', [removing])
       await timeout(0) // NOTE: the timeout is necessary, or the cursor position will be wrong after snippet inserted
+      if (this.readOnly) return
     }
     // It's weird but works, see details in https://github.com/Microsoft/monaco-editor/issues/342
     // While it prevents us to wrap a history action around the snippet insertion. See details in `TextDocument.withChangeKindProgram`
@@ -302,6 +310,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   private async insertInlineContent(type: 'text' | 'snippet', content: string, range: Range) {
+    if (this.readOnly) return
     const textDocument = this.activeTextDocument
     if (textDocument == null) return
 
@@ -340,6 +349,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   private async insertBlockContent(type: 'text' | 'snippet', content: string, range: Range) {
+    if (this.readOnly) return
     const textDocument = this.activeTextDocument
     if (textDocument == null) return
 
@@ -599,24 +609,26 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
       title: { en: 'Cut', zh: '剪切' },
       handler: () => {
         editor.focus()
-        document.execCommand('cut')
+        if (!this.readOnly) document.execCommand('cut')
       }
     })
     this.registerCommand(builtInCommandPaste, {
       icon: 'copy', // TODO: Add specific icon for paste when it is needed
       title: { en: 'Paste', zh: '粘贴' },
       handler: async () => {
+        if (this.readOnly) return
         try {
           // This is slightly different from monaco's built-in paste behavior, for example, when pasting a "line".
           // TODO: keep consistent with monaco's built-in behavior
           const selection = editor.getSelection()
           if (selection == null) return
           const text = await navigator.clipboard.readText()
+          if (this.readOnly) return
           editor.executeEdits('paste', [{ range: selection, text }])
           editor.focus()
         } catch {
           editor.focus()
-          document.execCommand('paste')
+          if (!this.readOnly) document.execCommand('paste')
         }
       }
     })
