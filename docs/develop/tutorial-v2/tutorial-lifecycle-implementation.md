@@ -370,7 +370,9 @@ Initial configuration should precede waiting operations within the same callback
 Configuration after a waiting operation is an ordinary runtime update. This does
 not add an ordering guarantee between different callbacks.
 
-Completion stops Program and uncovers the editor while Session remains available.
+Completion stops Program while Session remains available. If it happens during
+startup, the host still waits for initial configuration rendering before uncovering
+the editor, using the session lifetime because Program has already been disposed.
 Failure replaces the editor with the error experience. Leaving, retrying or
 replacing a Course aborts its pending handshakes, so an obsolete session cannot
 start callbacks or uncover the replacement editor. Preview uses the same flow.

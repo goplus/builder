@@ -8,7 +8,7 @@ import { useQuery } from '@/utils/query'
 import { until } from '@/utils/utils'
 import { useProvideUIReady } from '@/utils/ui-ready'
 import { useEnsureSignedIn } from '@/utils/user'
-import { type Exception, useMessageHandle } from '@/utils/exception'
+import { capture, type Exception, useMessageHandle } from '@/utils/exception'
 import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -139,6 +139,14 @@ const sessionQueryRet = useQuery(
     const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
     editorState.editing.startEditing()
     editorState.syncWithRouter(inEditorRouter)
+    async function finishStarting(signal: AbortSignal) {
+      await nextTick()
+      await until(editorReady, signal)
+      await nextTick()
+      signal.throwIfAborted()
+      starting.value = false
+    }
+
     const session = new PlaygroundCourseSession({
       project,
       editorState,
@@ -151,13 +159,7 @@ const sessionQueryRet = useQuery(
         await nextTick()
         signal.throwIfAborted()
       },
-      async onStarted(signal) {
-        await nextTick()
-        await until(editorReady, signal)
-        await nextTick()
-        signal.throwIfAborted()
-        starting.value = false
-      },
+      onStarted: finishStarting,
       async formatWorkspace() {
         if (codeEditor.value == null) throw new Error('Course Code Editor is not ready')
         await codeEditor.value.formatWorkspace()
@@ -166,7 +168,10 @@ const sessionQueryRet = useQuery(
     session.disposeOnSignal(ctx.signal)
     editorState.disposeOnSignal(ctx.signal)
     session.on('completed', (completion) => {
-      starting.value = false
+      // Completion disposes Program before its startup acknowledgment can arrive.
+      void finishStarting(ctx.signal).catch((error) => {
+        if (!ctx.signal.aborted) capture(error, 'Failed to render completed Course')
+      })
       emit('courseCompleted', completion)
     })
     session.on('failed', (e) => {

@@ -150,6 +150,24 @@ describe('Playground startup rendering', () => {
     expect(wrapper.find('.editor').text()).toBe('Ruler: true')
   })
 
+  it('keeps initial configuration covered when the course completes during onStart', async () => {
+    const wrapper = mountPlayground()
+    await flushPromises()
+    const session = mocks.sessions[0]
+    mocks.editors[0].value = true
+    await flushPromises()
+    session.apiWhitelist.apis = ['stepTo']
+    mocks.editors[0].value = false
+    session.listeners.get('completed')({ feedback: null })
+    await flushPromises()
+    expect(wrapper.emitted('courseCompleted')).toEqual([[{ feedback: null }]])
+    expect(wrapper.find('[role="status"]').exists()).toBe(true)
+    mocks.editors[0].value = true
+    await flushPromises()
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(wrapper.find('.apis').text()).toBe('["stepTo"]')
+  })
+
   it('retries with a covered fresh editor and cancels the previous startup acknowledgment', async () => {
     const wrapper = mountPlayground()
     await flushPromises()
