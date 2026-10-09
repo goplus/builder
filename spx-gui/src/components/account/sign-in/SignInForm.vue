@@ -17,8 +17,11 @@ function clearPendingAuthorization(request: OAuthRequest) {
 </script>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 
+import { getCleanupSignal } from '@/utils/disposable'
+import { useMessageHandle } from '@/utils/exception'
+import { composeQuery, useQuery } from '@/utils/query'
 import {
   buildIdentityProviderAuthorizeUrl,
   createSessionWithPassword,
@@ -30,8 +33,6 @@ import {
 import type { IdentityProvider, OAuthRequest, PasswordSignInPayload } from '@/apis/account'
 import { accountOAuthApis } from '@/apis/account/oauth'
 import { UIError, UILoading } from '@/components/ui'
-import { useMessageHandle } from '@/utils/exception'
-import { composeQuery, useQuery } from '@/utils/query'
 
 import CurrentAccount from './CurrentAccount.vue'
 import logoUrl from './logo.svg'
@@ -49,6 +50,7 @@ function handleSignInWithPassword() {
 }
 
 const isRedirectingToApp = ref(false)
+const isRedirectingToProvider = ref(false)
 
 function completeSignInWithCurrentAccount() {
   clearPendingAuthorization(props.request)
@@ -80,6 +82,18 @@ watch(sessionQuery.data, (session) => {
   }
 })
 
+window.addEventListener(
+  'pageshow',
+  (event) => {
+    if (!event.persisted) return
+    // A cached page retains its redirect state but may have a new account session.
+    isRedirectingToApp.value = false
+    isRedirectingToProvider.value = false
+    reinitialize()
+  },
+  { signal: getCleanupSignal(onUnmounted) }
+)
+
 const { fn: handleSwitchAccount, isLoading: isSwitchingAccount } = useMessageHandle(
   async () => {
     await revokeSession()
@@ -89,14 +103,13 @@ const { fn: handleSwitchAccount, isLoading: isSwitchingAccount } = useMessageHan
   { en: 'Failed to switch account', zh: '切换账号失败' }
 )
 
-const isRedirectingToProvider = ref(false)
-const passwordSignInRetryAfter = ref<number | null>(null)
-
 function handleSignInWithProvider(provider: IdentityProvider) {
   markPendingAuthorization(props.request)
   isRedirectingToProvider.value = true
   window.location.assign(buildIdentityProviderAuthorizeUrl(provider.name, props.request))
 }
+
+const passwordSignInRetryAfter = ref<number | null>(null)
 
 const { fn: handleSignInWithPasswordSubmit, isLoading: isSubmittingSignInWithPassword } = useMessageHandle(
   async (payload: PasswordSignInPayload) => {
