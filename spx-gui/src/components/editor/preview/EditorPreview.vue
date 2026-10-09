@@ -517,18 +517,7 @@ function restoreDebugRuntime() {
 
 function handleFullscreenChange(value: boolean) {
   fullscreen.value = value
-  if (value) {
-    if (runnerState.value !== 'initial') {
-      restoreDebugRuntime()
-    }
-    return
-  }
-  if (runnerState.value === 'initial') {
-    keepRunnerHostVisibleForOverlay()
-    editorCtx.state.runtime.setRunning({ mode: 'none' })
-  } else {
-    restoreDebugRuntime()
-  }
+  if (!value && runnerState.value === 'initial') keepRunnerHostVisibleForOverlay()
 }
 
 function handleEnterFullscreen() {
