@@ -224,13 +224,13 @@ export class Editing extends Disposable {
     signal: AbortSignal
   ) {
     const collector = ProgressCollector.collectorFor(reporter)
-    const loadFromLocalCacheReporter = collector.getSubReporter(
-      { en: 'Reading local cache...', zh: '读取本地缓存中...' },
-      1
-    )
     const loadFromCloudReporter = collector.getSubReporter(
       { en: 'Loading project from cloud...', zh: '从云端加载项目中...' },
       5
+    )
+    const loadFromLocalCacheReporter = collector.getSubReporter(
+      { en: 'Reading local cache...', zh: '读取本地缓存中...' },
+      1
     )
     const projectLoadReporter = collector.getSubReporter({ en: 'Loading project...', zh: '加载项目中...' }, 5)
 
@@ -239,6 +239,7 @@ export class Editing extends Disposable {
       const ownedBySignedInUser = signedInState.isSignedIn && signedInState.user.username === projectData.owner
       return !ownedBySignedInUser
     }
+    loadFromCloudReporter.startAutoReport(1000, { signal })
     const cloudData = await this.cloudHelpers.load(ownerInput, projectNameInput, preferPublished, signal)
     signal.throwIfAborted()
     loadFromCloudReporter.report(1)
@@ -290,6 +291,7 @@ export class Editing extends Disposable {
         restoredFromLocalCache = true
       }
     }
+    projectLoadReporter.startAutoReport(1000, { signal })
     await this.project.load(finalData, signal)
     signal.throwIfAborted()
     projectLoadReporter.report(1)

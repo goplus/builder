@@ -67,7 +67,7 @@ watch(
     <div class="mb-1 h-[5px] w-45 rounded-full bg-grey-600">
       <div
         v-show="percentage > 0"
-        class="h-full rounded-full bg-primary-main"
+        class="h-full rounded-full bg-primary-main transition-[width] duration-100 ease-linear motion-reduce:transition-none"
         :style="{ width: `${percentage * 100}%` }"
       ></div>
     </div>
