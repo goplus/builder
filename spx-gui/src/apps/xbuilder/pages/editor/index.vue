@@ -145,7 +145,6 @@ const stateQueryRet = useQuery(
     ctx.signal.throwIfAborted()
     const state = new EditorState(i18n, project, isOnline, signedInStateQuery, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
-    ctx.reporter.startAutoReport(1000)
     await state.editing.loadProject(
       ownerInput,
       projectNameInput,
@@ -177,9 +176,11 @@ usePageTitle(() => {
 })
 
 const monacoQueryRet = useQuery(
-  (ctx) => {
-    ctx.reporter.startAutoReport(1000)
-    return loadMonaco(i18n.lang.value)
+  async (ctx) => {
+    ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
+    const monaco = await loadMonaco(i18n.lang.value)
+    ctx.reporter.report(1)
+    return monaco
   },
   {
     en: 'Failed to load code editor',
