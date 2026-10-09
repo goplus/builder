@@ -2,6 +2,7 @@ import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
+import { until } from '@/utils/utils'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -188,8 +189,8 @@ describe('PlaygroundCourseSession', () => {
     'cancels %s on disposal and rejects obsolete lifecycle calls',
     async (name) => {
       const harness = makeHarness()
-      harness.waitForEditor.mockImplementation(() => new Promise(() => {}))
-      harness.onStarted.mockImplementation(() => new Promise(() => {}))
+      harness.waitForEditor.mockImplementation((signal: AbortSignal) => until(() => false, signal))
+      harness.onStarted.mockImplementation((signal: AbortSignal) => until(() => false, signal))
       const capability = harness.getExecutorOptions().framework!.capabilities[name]
       const waiting = Promise.resolve(capability(null))
       const cancelled = expect(waiting).rejects.toThrow('cancelled')

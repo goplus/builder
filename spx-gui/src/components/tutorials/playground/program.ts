@@ -1,6 +1,6 @@
 import { watch } from 'vue'
 
-import { Disposable, promiseForSignal } from '@/utils/disposable'
+import { Disposable } from '@/utils/disposable'
 import { XGoExecutor, type XGoExitReason } from '@/utils/xgoexec'
 import { ActionException, Cancelled, DefaultException, type Exception } from '@/utils/exception/base'
 import { createTutorialFramework, type SpotlightOptions, type TutorialFrameworkHost } from '@/utils/tutorial-framework'
@@ -85,11 +85,11 @@ export class PlaygroundCourseProgram extends Disposable {
       lifecycle: {
         waitForEditor: () => {
           signal.throwIfAborted()
-          return Promise.race([this.options.waitForEditor(signal), promiseForSignal(signal)])
+          return this.options.waitForEditor(signal)
         },
         started: () => {
           signal.throwIfAborted()
-          return Promise.race([this.options.onStarted(signal), promiseForSignal(signal)])
+          return this.options.onStarted(signal)
         }
       },
       course: {
