@@ -76,7 +76,7 @@
       <div class="flex">
         <UITooltip :disabled="undoAction == null">
           <template #trigger>
-            <button :class="historyBtnClz" :disabled="undoAction == null" @click="handleUndo.fn">
+            <button :class="historyBtnClz" :disabled="undoAction == null || historyReadOnly" @click="handleUndo.fn">
               <UIIcon class="h-5 w-5" type="undo" />
             </button>
           </template>
@@ -84,7 +84,7 @@
         </UITooltip>
         <UITooltip :disabled="redoAction == null">
           <template #trigger>
-            <button :class="historyBtnClz" :disabled="redoAction == null" @click="handleRedo.fn">
+            <button :class="historyBtnClz" :disabled="redoAction == null || historyReadOnly" @click="handleRedo.fn">
               <UIIcon class="h-5 w-5" type="redo" />
             </button>
           </template>
@@ -216,6 +216,10 @@ const canManageProject = computed(() => {
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 const isSimpleMode = computed(() => selectedEditMode.value === EditMode.Simple)
+const historyReadOnly = computed(() => {
+  const running = props.state?.runtime.running
+  return isSimpleMode.value && running?.mode === 'debug' && !running.exited && running.initializingError == null
+})
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 
@@ -375,15 +379,25 @@ const redoText = computed(() => ({
   zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
 }))
 
-const handleUndo = useMessageHandle(() => props.state?.history.undo(), {
-  en: 'Failed to undo',
-  zh: '撤销操作失败'
-})
+const handleUndo = useMessageHandle(
+  () => {
+    if (!historyReadOnly.value) return props.state?.history.undo()
+  },
+  {
+    en: 'Failed to undo',
+    zh: '撤销操作失败'
+  }
+)
 
-const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
-  en: 'Failed to redo',
-  zh: '重做操作失败'
-})
+const handleRedo = useMessageHandle(
+  () => {
+    if (!historyReadOnly.value) return props.state?.history.redo()
+  },
+  {
+    en: 'Failed to redo',
+    zh: '重做操作失败'
+  }
+)
 
 const historyBtnClz =
   'h-full flex items-center justify-center border-none bg-transparent px-3 text-inherit outline-none disabled:cursor-not-allowed disabled:text-grey-600 enabled:cursor-pointer enabled:hover:bg-grey-400'

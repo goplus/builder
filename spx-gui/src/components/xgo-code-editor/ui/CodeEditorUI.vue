@@ -41,6 +41,7 @@ import { userLocalStorageRef } from '@/utils/user-storage'
 const props = defineProps<{
   codeFilePath: string
   simpleMode?: boolean
+  readOnly?: boolean
 }>()
 
 const i18n = useI18n()
@@ -69,7 +70,10 @@ const uiRef = computed(() => {
   const mainTextDocumentId = getTextDocumentId(props.codeFilePath)
   return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, {
     renameHandler: rename,
-    simpleMode: props.simpleMode
+    simpleMode: props.simpleMode,
+    get readOnly() {
+      return props.readOnly ?? false
+    }
   })
 })
 
@@ -82,10 +86,15 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   tabSize,
   insertSpaces,
   fontSize: fontSize.value,
-  contextmenu: false
+  contextmenu: false,
+  readOnly: props.readOnly ?? false
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
+
+watchEffect(() => {
+  monacoEditorRef.value?.updateOptions(monacoEditorOptions.value)
+})
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor
@@ -93,6 +102,7 @@ async function handleMonacoEditorInit(editor: MonacoEditor) {
 
 const handleMonacoEditorDrag = throttle((clientPoint: { x: number; y: number } | null) => {
   const ui = uiRef.value
+  if (props.readOnly) return
   if (clientPoint == null) {
     ui.dropIndicatorController.setDropPosition(null)
     return
@@ -125,7 +135,7 @@ async function handleMonacoEditorDrop(e: DragEvent) {
   const ui = uiRef.value
   ui.dropIndicatorController.setDropPosition(null)
   handleMonacoEditorDrag.cancel()
-  if (e.dataTransfer == null) return
+  if (props.readOnly || e.dataTransfer == null) return
 
   const target = ui.editor.getTargetAtClientPoint(e.clientX, e.clientY)
   if (target == null || target.position == null) return

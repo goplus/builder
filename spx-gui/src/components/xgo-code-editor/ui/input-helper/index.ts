@@ -51,6 +51,7 @@ export class InputHelperController extends Disposable {
   }
 
   startInputing(slotId: string) {
+    if (this.ui.readOnly) return
     this.inputingSlotRef.value = this.slots?.find((item) => item.id === slotId) ?? null
   }
   stopInputing() {
@@ -64,6 +65,15 @@ export class InputHelperController extends Disposable {
 
   init() {
     const { editor } = this.ui
+    this.addDisposer(
+      watch(
+        () => this.ui.readOnly,
+        (readOnly) => {
+          if (readOnly) this.stopInputing()
+        },
+        { flush: 'sync' }
+      )
+    )
     const refreshSlots = debounce(() => this.mgr.start(), 100)
 
     this.addDisposer(

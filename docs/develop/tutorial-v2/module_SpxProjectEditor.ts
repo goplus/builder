@@ -51,6 +51,9 @@ export type StageViewerEmits = {
 /**
  * Existing SPX Project Editor. It consumes Editor Context from
  * `EditorContextProvider` and handles Simple Mode composition internally.
+ * In Simple Mode, code editing is read-only during project startup and execution.
+ * Stop, completion, or failure restores editing without removing runtime controls
+ * or code decorations. Standard-mode editing remains available during execution.
  */
 export declare function ProjectEditor(): UI;
 
