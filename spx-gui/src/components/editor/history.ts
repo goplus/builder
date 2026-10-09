@@ -25,9 +25,12 @@ export type State = {
   action: Action | null
 }
 
+/** What a history records: the files of a project, restored by loading them back. */
+export type HistoryTarget = Pick<IProject, 'mutex' | 'exportFiles' | 'loadFiles'>
+
 export class History {
   constructor(
-    private project: IProject,
+    private project: HistoryTarget,
     /**
      * Max history item num.
      * When exceeded, the old history(s) will be discarded.

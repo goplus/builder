@@ -1,4 +1,5 @@
 import { computed, reactive, toValue, type ComputedRef } from 'vue'
+import { isEqual } from 'lodash'
 
 import { Disposable } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
@@ -106,19 +107,27 @@ export class TutorialProject extends Disposable {
   }
 
   async loadFiles(files: Files) {
-    const configFile = files[configFilePath]
-    if (configFile == null) throw new Error(`file ${configFilePath} not found`)
-    const config = (await toConfig(configFile)) as TutorialProjectConfig
+    const config = await loadConfig(files)
     await this.project.loadFiles(unprefixFiles(files, config.project.root))
+    await this.loadOwnFiles(files)
+  }
+
+  /** Load the files of the course itself (see `exportOwnFiles`), leaving the embedded project as it is. */
+  async loadOwnFiles(files: Files) {
+    const config = await loadConfig(files)
     await this.mainCourse.loadFiles(files)
     const videos = await Video.loadAll(files)
     const images = await Image.loadAll(files)
 
-    this.config = config
-    this.videos.splice(0).forEach((video) => video.setProject(null))
-    videos.forEach((video) => this.addVideo(video))
-    this.images.splice(0).forEach((image) => image.setProject(null))
-    images.forEach((image) => this.addImage(image))
+    // What did not change is kept as it is, so its files keep their identity: an undo of one part must not look
+    // like a change of the others (exports are compared by identity to find unsaved changes).
+    if (!isEqual(config, this.config)) this.config = config
+    const oldVideos = this.videos.splice(0)
+    oldVideos.forEach((video) => video.setProject(null))
+    keepExisting(videos, oldVideos).forEach((video) => this.addVideo(video))
+    const oldImages = this.images.splice(0)
+    oldImages.forEach((image) => image.setProject(null))
+    keepExisting(images, oldImages).forEach((image) => this.addImage(image))
   }
 
   private prepareAddVideo(video: Video) {
@@ -163,19 +172,21 @@ export class TutorialProject extends Disposable {
    *
    * NOTE: this method may return intermediate result during transactional edits.
    */
-  exportFiles() {
+  exportFiles(): Files {
+    if (this.config == null) throw new Error('Tutorial project has not been loaded')
+    return { ...this.exportOwnFiles(), ...prefixFiles(this.project.exportFiles(), this.config.project.root) }
+  }
+
+  /** Export the files of the course itself: everything but the embedded project. */
+  exportOwnFiles(): Files {
     const configFile = toValue(this.configFile)
-    if (this.config == null || configFile == null) throw new Error('Tutorial project has not been loaded')
-    const files: Files = {}
-    files[configFilePath] = configFile
-    Object.assign(
-      files,
-      prefixFiles(this.project.exportFiles(), this.config.project.root),
+    if (configFile == null) throw new Error('Tutorial project has not been loaded')
+    return Object.assign(
+      { [configFilePath]: configFile },
       this.mainCourse.export(),
       ...this.videos.map((video) => video.export()),
       ...this.images.map((image) => image.export())
     )
-    return files
   }
 
   /** Export metadata & files, after transactional edits of the course and of the embedded project finished. */
@@ -193,4 +204,23 @@ export class TutorialProject extends Disposable {
       }))
     )
   }
+}
+
+/** `loaded`, with each item that `existing` already has (by id) replaced by that one, updated to match. */
+function keepExisting<T extends Video | Image>(loaded: T[], existing: T[]) {
+  const left = [...existing]
+  return loaded.map((item) => {
+    const index = left.findIndex((e) => e.id === item.id)
+    if (index < 0) return item
+    const [kept] = left.splice(index, 1)
+    kept.setName(item.name)
+    kept.setFile(item.file)
+    return kept
+  })
+}
+
+async function loadConfig(files: Files) {
+  const configFile = files[configFilePath]
+  if (configFile == null) throw new Error(`file ${configFilePath} not found`)
+  return (await toConfig(configFile)) as TutorialProjectConfig
 }

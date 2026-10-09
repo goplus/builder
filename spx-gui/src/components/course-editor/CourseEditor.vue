@@ -39,6 +39,7 @@ import { useUpdateCourse } from '@/stores/course'
 import { useCopilot } from '@/components/copilot/context'
 import type { SessionExported } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
+import { History, type Action } from '@/components/editor/history'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
@@ -121,9 +122,21 @@ const projectEditorHost = computed(() => getProjectEditorHost(config.value.proje
  * The embedded Project Editor's `EditorState`, or null while the host has not initialized (or is re-initializing).
  * Written by: the project editor host through `v-model:editor-state` (`project/SpxProjectEditorHost.vue#setState`
  * emits `update:editorState`).
- * Read by: `CourseEditor.vue#template` (`EditorHistoryButtons` and `EditorModeSwitch` in the navbar).
+ * Read by: `CourseEditor.vue#template` (`EditorHistoryButtons` and `EditorModeSwitch` in the navbar, while the
+ * project is open).
  */
 const editorState = shallowRef<EditorState | null>(null)
+
+// The course's own history. The embedded project keeps its own in `editorState`, so undoing in one never changes
+// the other.
+const history = new History({
+  mutex: props.project.mutex,
+  exportFiles: () => props.project.exportOwnFiles(),
+  loadFiles: (files) => props.project.loadOwnFiles(files)
+})
+
+// Typing in the program is recorded as one step, as long as nothing else is done in between.
+const editProgramAction: Action = { name: { en: 'Update program', zh: '修改程序' }, mergeable: true }
 
 // The open view comes from the route, so it survives reloads and works with browser history.
 /**
@@ -915,9 +928,9 @@ onUnmounted(() => {
       </div>
       <!-- Editor navbar (not previewing): three slots of `NavbarWrapper`. -->
       <NavbarWrapper v-else>
-        <!-- Left slot: undo/redo of the embedded Project Editor, only while the project is open. -->
+        <!-- Left slot: undo/redo of the embedded project while it is open, of the course otherwise. -->
         <template #left>
-          <EditorHistoryButtons v-if="open.view === 'project'" :state="editorState" />
+          <EditorHistoryButtons :history="open.view === 'project' ? editorState?.history ?? null : history" />
         </template>
         <!-- Center slot: course title, series title, and the "Unsaved" tag driven by `dirty`. -->
         <template #center>
@@ -990,20 +1003,21 @@ onUnmounted(() => {
       <!-- The open view, in a card; the project is not in here, its UI is the always-mounted host below. -->
       <UICard v-else-if="open.view !== 'project'" class="min-w-0 flex-[1_1_0] flex flex-col overflow-hidden">
         <!-- The course: its settings, stored in `index.json`. -->
-        <CourseConfigDoc v-if="open.view === 'course'" :project="project" />
+        <CourseConfigDoc v-if="open.view === 'course'" :project="project" :history="history" />
         <!-- Videos or pictures: a grid of cards, and where they are added. Keyed so each page starts fresh. -->
         <CourseResourceGrid
           v-else-if="open.view === 'videos' || open.view === 'images'"
           :key="open.view"
           :project="project"
           :view="open.view"
+          :history="history"
         />
-        <!-- The course program (`main_course.gox`): a text editor bound directly to `project.mainCourse.code`. -->
+        <!-- The course program (`main_course.gox`): edits are recorded in the course history. -->
         <CourseTextDoc
           v-else
           :text="project.mainCourse.code"
           language="xgo"
-          @update:text="(text) => project.mainCourse.setCode(text)"
+          @update:text="(text) => history.doAction(editProgramAction, () => project.mainCourse.setCode(text))"
         />
       </UICard>
       <!-- Always mounted: the author's editor state outlives view switches and the preview. -->

@@ -24,11 +24,24 @@ import { generatePlaygroundCourseCopilotContext } from '@/apis/course'
 import { saveFiles } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { UIButton, UITextInput, useMessage } from '@/components/ui'
+import type { Action, History } from '@/components/editor/history'
 
 const props = defineProps<{
   /** The author's working copy of the Tutorial project; its `config` is edited in place. */
   project: TutorialProject
+  /** The course's own history, which records every change made here. */
+  history: History
 }>()
+
+// Typing in one field is recorded as one step, as long as nothing else is done in between.
+const editInEditorPathAction: Action = {
+  name: { en: "Update learner's initial view", zh: '修改学习者初始视图' },
+  mergeable: true
+}
+const editCopilotContextAction: Action = {
+  name: { en: 'Update Copilot context', zh: '修改 Copilot 上下文' },
+  mergeable: true
+}
 
 const { t } = useI18n()
 const m = useMessage()
@@ -102,7 +115,9 @@ const handleGenerateCopilotContext = useMessageHandle(
         })
       }
       // Write the result into the config; the textarea below reflects it and the course becomes unsaved.
-      props.project.setConfig({ copilotContext })
+      await props.history.doAction({ name: { en: 'Generate Copilot context', zh: '生成 Copilot 上下文' } }, () =>
+        props.project.setConfig({ copilotContext })
+      )
     } catch (error) {
       // Whatever a layer turned the abort into, an aborted generation is a cancellation, not a failure.
       if (signal.aborted) throw new Cancelled('unmounted')
@@ -159,7 +174,7 @@ onUnmounted(() => {
         :value="config.inEditorPath"
         :disabled="generating"
         placeholder="/sprites/Lita/code"
-        @update:value="(v) => project.setConfig({ inEditorPath: v })"
+        @update:value="(v) => history.doAction(editInEditorPathAction, () => project.setConfig({ inEditorPath: v }))"
       />
     </label>
     <!-- `copilotContext`: free-text instructions for Copilot, edited by hand or filled by the button below. -->
@@ -171,7 +186,9 @@ onUnmounted(() => {
         :rows="10"
         :value="config.copilotContext"
         :disabled="generating"
-        @update:value="(v) => project.setConfig({ copilotContext: v })"
+        @update:value="
+          (v) => history.doAction(editCopilotContextAction, () => project.setConfig({ copilotContext: v }))
+        "
       />
     </label>
     <!-- Generate button: runs `handleGenerateCopilotContext`; shows a spinner while it runs. -->

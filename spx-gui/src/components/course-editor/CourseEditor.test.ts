@@ -7,7 +7,9 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { createI18n } from '@/utils/i18n'
 import { fromConfig, fromText, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
+import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
+import type { History } from '@/components/editor/history'
 import type { PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { courseEditorPreviewRouteName, courseEditorRouteName, courseEditorRoutes } from '@/apps/xbuilder/router'
@@ -481,5 +483,98 @@ describe('CourseEditor unsaved changes', () => {
     expect(holdsPageClose()).toBe(true)
     expect(activityBar.props('dirtyViews')).toEqual(new Set(['program']))
     expect(exportFiles).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CourseEditor history', () => {
+  /** Mount the editor for a course, showing the view at `inCourseEditorPath`, with its navbar rendered. */
+  async function mountEditing(inCourseEditorPath: string[]) {
+    const course = makeCourse('2338', 'First')
+    const series = makeSeries(['2338'])
+    const router = createRouter({ history: createMemoryHistory(), routes: courseEditorRoutes })
+    await router.push({
+      name: courseEditorRouteName,
+      params: { courseSeriesIdInput: series.id, courseIdInput: course.id, inCourseEditorPath }
+    })
+    await router.isReady()
+    const project = await loadProject(course)
+    const wrapper = mount(CourseEditor, {
+      props: { course, series, project },
+      global: {
+        plugins: [createI18n({ lang: 'en' }), router, VueQueryPlugin],
+        directives: { radar: {} },
+        stubs: {
+          CourseActivityBar: true,
+          NavbarWrapper: defineComponent(
+            (_, { slots }) =>
+              () =>
+                h('div', [slots.left?.(), slots.right?.()])
+          ),
+          EditorHistoryButtons: defineComponent({
+            name: 'EditorHistoryButtons',
+            props: { history: { type: Object, default: null } },
+            render: () => null
+          }),
+          EditorModeSwitch: true
+        }
+      }
+    })
+    await flushPromises()
+    /** The history the undo and redo buttons in the navbar work on. */
+    const buttonsHistory = () => wrapper.findComponent({ name: 'EditorHistoryButtons' }).props('history') as History
+    /** Type into the program editor, the way Monaco reports an edit. */
+    async function typeProgram(code: string) {
+      wrapper.findComponent({ name: 'CourseTextDoc' }).vm.$emit('update:text', code)
+      await flushPromises()
+    }
+    return { wrapper, router, project, buttonsHistory, typeProgram }
+  }
+
+  it('undoes and redoes edits of the course, leaving the embedded project as it is', async () => {
+    const { project, buttonsHistory, typeProgram } = await mountEditing([mainCourseFilePath])
+
+    await typeProgram('onStart => { completeWith "Well done" }')
+    project.project.addSprite(new Sprite('Lita'))
+    await buttonsHistory().undo()
+
+    expect(project.mainCourse.code).toBe('onStart => {}')
+    expect(project.project.sprites.map((sprite) => sprite.name)).toEqual(['Lita'])
+
+    await buttonsHistory().redo()
+    expect(project.mainCourse.code).toBe('onStart => { completeWith "Well done" }')
+  })
+
+  it('takes typing in the program back as one step', async () => {
+    const { project, buttonsHistory, typeProgram } = await mountEditing([mainCourseFilePath])
+
+    await typeProgram('onStart => { c }')
+    await typeProgram('onStart => { co }')
+    await typeProgram('onStart => { com }')
+
+    expect(buttonsHistory().getUndoAction()?.name.en).toBe('Update program')
+    await buttonsHistory().undo()
+    expect(project.mainCourse.code).toBe('onStart => {}')
+    expect(buttonsHistory().getUndoAction()).toBeNull()
+  })
+
+  it("works the project's own history while the project is open, and the course's elsewhere", async () => {
+    const { wrapper, router, buttonsHistory } = await mountEditing([mainCourseFilePath])
+    const courseHistory = buttonsHistory()
+    const projectHistory = { getUndoAction: () => null } as unknown as History
+    wrapper.findComponent({ name: 'ProjectEditorHost' }).vm.$emit('update:editorState', { history: projectHistory })
+
+    await router.push({
+      name: courseEditorRouteName,
+      params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inCourseEditorPath: ['project'] }
+    })
+    await flushPromises()
+    expect(buttonsHistory()).toBe(projectHistory)
+
+    await router.push({
+      name: courseEditorRouteName,
+      params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inCourseEditorPath: [] }
+    })
+    await flushPromises()
+    expect(buttonsHistory()).toBe(courseHistory)
   })
 })

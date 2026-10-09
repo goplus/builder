@@ -6,86 +6,37 @@ const historyBtnClz =
 </script>
 
 <script setup lang="ts">
-/**
- * Purpose: undo/redo buttons for the Project Editor's edit history. Extracted from `EditorNavbar.vue` so the
- * Course Editor can show the same controls in its own navbar while the embedded learner project is open.
- *
- * Props:
- * - `state` - The `EditorState` whose `history` is undone/redone; null while no project editor is active
- *   (both buttons are then disabled, because there is no undo/redo action to show).
- *
- * Emits: none (undo/redo are applied directly on `state.history`).
- *
- * Used by: components/editor/navbar/EditorNavbar.vue#template (left slot),
- * components/course-editor/CourseEditor.vue#template (left slot, only when `doc.type === 'project'`).
- *
- * Uses: components/ui (`UIIcon`, `UITooltip`), components/editor/editor-state.ts (`EditorState.history`),
- * components/editor/history.ts (`History.getUndoAction`, `getRedoAction`, `undo`, `redo`),
- * utils/exception (`useMessageHandle`).
- */
+/** Undo/redo buttons for a history: the Project Editor's, or the Course Editor's for the course it edits. */
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIIcon, UITooltip } from '@/components/ui'
-import type { EditorState } from '../editor-state'
+import type { History } from '../history'
 
 const props = defineProps<{
-  state: EditorState | null
+  /** The history to undo and redo; both buttons are disabled while it is null. */
+  history: History | null
 }>()
 
-/**
- * The action that would be undone next; null when the history is at its first state, undefined when there is
- * no editor state at all. Both falsy cases disable the undo button.
- * @returns `Action` (with a bilingual `name`), or null/undefined.
- * Called by: EditorHistoryButtons.vue#undoText, EditorHistoryButtons.vue#template (`:disabled` bindings).
- */
-const undoAction = computed(() => props.state?.history.getUndoAction())
+const undoAction = computed(() => props.history?.getUndoAction())
 
-/**
- * Tooltip text of the undo button: names the action when there is one, plain "Undo" otherwise.
- * @returns A `LocaleMessage` with `en` and `zh` variants.
- * Called by: EditorHistoryButtons.vue#template (`$t(undoText)`).
- */
 const undoText = computed(() => ({
   en: undoAction.value != null ? `Undo "${undoAction.value.name.en}"` : 'Undo',
   zh: undoAction.value != null ? `撤销“${undoAction.value.name.zh}”` : '撤销'
 }))
 
-/**
- * The action that would be redone next; null when there is no later state, undefined when there is no editor
- * state at all. Both falsy cases disable the redo button.
- * @returns `Action` (with a bilingual `name`), or null/undefined.
- * Called by: EditorHistoryButtons.vue#redoText, EditorHistoryButtons.vue#template (`:disabled` bindings).
- */
-const redoAction = computed(() => props.state?.history.getRedoAction())
+const redoAction = computed(() => props.history?.getRedoAction())
 
-/**
- * Tooltip text of the redo button: names the action when there is one, plain "Redo" otherwise.
- * @returns A `LocaleMessage` with `en` and `zh` variants.
- * Called by: EditorHistoryButtons.vue#template (`$t(redoText)`).
- */
 const redoText = computed(() => ({
   en: redoAction.value != null ? `Redo "${redoAction.value.name.en}"` : 'Redo',
   zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
 }))
 
-/**
- * Click handler of the undo button, wrapped by `useMessageHandle` so a failing undo shows an error toast instead
- * of an unhandled rejection. `handleUndo.fn` is the callable, `handleUndo.isLoading` the in-flight flag.
- * @returns Promise<void>; on success the history moves back one step and the project state is restored.
- * Called by: EditorHistoryButtons.vue#template (`@click="handleUndo.fn"`).
- */
-const handleUndo = useMessageHandle(() => props.state?.history.undo(), {
+const handleUndo = useMessageHandle(() => props.history?.undo(), {
   en: 'Failed to undo',
   zh: '撤销操作失败'
 })
 
-/**
- * Click handler of the redo button, wrapped by `useMessageHandle` so a failing redo shows an error toast.
- * `handleRedo.fn` is the callable, `handleRedo.isLoading` the in-flight flag.
- * @returns Promise<void>; on success the history moves forward one step and the project state is restored.
- * Called by: EditorHistoryButtons.vue#template (`@click="handleRedo.fn"`).
- */
-const handleRedo = useMessageHandle(() => props.state?.history.redo(), {
+const handleRedo = useMessageHandle(() => props.history?.redo(), {
   en: 'Failed to redo',
   zh: '重做操作失败'
 })

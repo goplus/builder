@@ -26,6 +26,7 @@ import { selectFilesWithUploadLimit } from '@/models/common/cloud'
 import { fromNativeFile } from '@/models/common/file'
 import { validateImageName, validateVideoName } from '@/models/tutorial/asset-name'
 import { Image, Video, type TutorialProject } from '@/models/tutorial/project'
+import type { History } from '@/components/editor/history'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { UIButton, UIEmpty, useConfirmDialog, useModal } from '@/components/ui'
 import CourseResourceCard from './CourseResourceCard.vue'
@@ -37,6 +38,8 @@ const props = defineProps<{
   project: TutorialProject
   /** Which resource view this is; it decides the type, the wording and the files accepted. */
   view: ResourceView
+  /** The course's own history, which records every change made here. */
+  history: History
 }>()
 
 const { t } = useI18n()
@@ -60,12 +63,17 @@ const handleAdd = useMessageHandle(
   async () => {
     const files = await selectFilesWithUploadLimit({ accept: acceptedExts[props.view] })
     if (disposed) return
-    for (const nativeFile of files) {
-      const file = fromNativeFile(nativeFile)
-      // The project renames a resource whose name is taken or cannot be used.
-      if (props.view === 'videos') props.project.addVideo(new Video(stripExt(file.name), file))
-      else props.project.addImage(new Image(stripExt(file.name), file))
+    const action = {
+      name: props.view === 'videos' ? { en: 'Add videos', zh: '添加视频' } : { en: 'Add images', zh: '添加图片' }
     }
+    await props.history.doAction(action, () => {
+      for (const nativeFile of files) {
+        const file = fromNativeFile(nativeFile)
+        // The project renames a resource whose name is taken or cannot be used.
+        if (props.view === 'videos') props.project.addVideo(new Video(stripExt(file.name), file))
+        else props.project.addImage(new Image(stripExt(file.name), file))
+      }
+    })
   },
   { en: 'Failed to add files', zh: '添加文件失败' }
 )
@@ -82,7 +90,15 @@ const handleRename = useMessageHandle(
           resource instanceof Video
             ? validateVideoName(name.trim(), props.project)
             : validateImageName(name.trim(), props.project),
-        applyName: async (name) => resource.setName(name.trim()),
+        applyName: async (name) => {
+          const action = {
+            name:
+              resource instanceof Video
+                ? { en: 'Rename video', zh: '重命名视频' }
+                : { en: 'Rename image', zh: '重命名图片' }
+          }
+          await props.history.doAction(action, () => resource.setName(name.trim()))
+        },
         inputTip:
           props.view === 'videos'
             ? { en: 'The course program plays the video by this name', zh: '课程程序按这个名字播放视频' }
@@ -112,8 +128,14 @@ const handleRemove = useMessageHandle(
           : t({ en: 'It will no longer be kept with the course.', zh: '它将不再随课程保存。' }),
       confirmText: t({ en: 'Delete', zh: '删除' })
     })
-    if (resource instanceof Video) props.project.removeVideo(resource.id)
-    else props.project.removeImage(resource.id)
+    const name = resource.name
+    if (resource instanceof Video) {
+      const action = { name: { en: `Remove video ${name}`, zh: `删除视频 ${name}` } }
+      await props.history.doAction(action, () => props.project.removeVideo(resource.id))
+    } else {
+      const action = { name: { en: `Remove image ${name}`, zh: `删除图片 ${name}` } }
+      await props.history.doAction(action, () => props.project.removeImage(resource.id))
+    }
   },
   { en: 'Failed to delete', zh: '删除失败' }
 )

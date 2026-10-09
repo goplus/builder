@@ -22,6 +22,7 @@
  * constants `theme` / `tabSize` / `insertSpaces`.
  */
 import { computed, watch } from 'vue'
+import { debounce } from 'lodash'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { insertSpaces, tabSize, theme } from '@/utils/xgo/highlighter'
@@ -101,23 +102,20 @@ function handleEditorInit(editor: MonacoEditor) {
     const text = editor.getValue()
     if (text !== props.text) emit('update:text', text)
   })
-  /**
-   * Prop -> editor: when `text` changes from outside (undo elsewhere, a different record with the same key),
-   * replace the editor content, unless it already matches (the common case after a local edit was emitted).
-   * @param text - The new `props.text`.
-   * @returns void; side effect: `editor.setValue`.
-   * Called by: Vue (watch on `props.text`, created inside `handleEditorInit`)
-   */
-  const stopModelSync = watch(
-    () => props.text,
-    (text) => {
-      if (editor.getValue() !== text) editor.setValue(text)
-    }
-  )
-  // `MonacoEditorComp` disposes the editor on unmount / re-creation; release both bindings with it.
+  // Prop -> editor: when `text` changes from outside (an undo, say), replace the editor content, unless it
+  // already matches (the common case after a local edit was emitted). Edits may come back asynchronously (the
+  // parent records them in a history first), so an input method inserting two characters at once would see the
+  // first one come back while the editor already shows both, and replacing the content would move the cursor.
+  // Syncing after a short pause lets such edits settle first, as `xgo-code-editor/text-document.ts` does.
+  const syncFromText = debounce(() => {
+    if (editor.getValue() !== props.text) editor.setValue(props.text)
+  }, 100)
+  const stopModelSync = watch(() => props.text, syncFromText)
+  // `MonacoEditorComp` disposes the editor on unmount / re-creation; release the bindings with it.
   editor.onDidDispose(() => {
     contentListener.dispose()
     stopModelSync()
+    syncFromText.cancel()
   })
 }
 </script>
