@@ -39,6 +39,14 @@ export type SpotlightOptions = {
  * docs/develop/tutorial-v2/module_TutorialFramework.ts.
  */
 export interface TutorialFrameworkHost {
+  /** Internal startup handshake; not exposed to Course authors. */
+  lifecycle: {
+    /** Waits for the mounted editor UI before triggering onStart. */
+    waitForEditor(): Promise<void>;
+    /** All onStart callbacks reached their first waiting call or returned.
+     * Waits for configuration rendering before uncovering the editor. */
+    started(): Promise<void>;
+  };
   course: {
     showPrelude(preludeMessage: string): Promise<void>;
     showMessage(message: string): Promise<void>;
@@ -109,6 +117,8 @@ export function createTutorialFramework(
   return {
     name: "tutorial",
     capabilities: {
+      lifecycle_waitForEditor: () => host.lifecycle.waitForEditor(),
+      lifecycle_started: () => host.lifecycle.started(),
       course_showPrelude: (request) =>
         host.course.showPrelude((request as ContentRequest).content),
       course_showMessage: (request) =>

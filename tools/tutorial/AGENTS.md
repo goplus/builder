@@ -7,7 +7,7 @@ These are the rules of change.
   Every trigger starts a new run of each registered callback, so runs of one callback may overlap. How such runs
   relate (run policies and run groups) is deferred to #3509; do not add ad-hoc guards in the framework meanwhile
 - `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long and
-  restores `current` afterwards. Only `mustCallCapability` may call it
+  restores `current` afterwards. Only `mustCallCapability` may call it; main-goroutine lifecycle handshakes use `callLifecycleCapability` without touching the token
 - Runs are started only by `startRuns`, from `Course.Start` and the event deliverers, in registration order, each to
   its first yield (`yielded`) before the next. That order is an implementation detail the contract does not promise
   (see #3509); keep `startRuns` the sole start path and never spawn course code elsewhere
@@ -27,6 +27,7 @@ These are the rules of change.
 
 # Capabilities and contracts
 
+- Internal `lifecycle_*` handshakes run only from `Course.Start`, outside Course runs: wait for the editor, then acknowledge all start callbacks reaching their first yield or return. They are not author-facing fast/waiting capabilities.
 - Classify every new capability: waiting on the learner or the LLM goes in `capabilityKinds` as `kindWaiting`,
   host-computation-only goes in the test's `fastCapabilities` list. `TestEveryCapabilityIsClassified` enforces this.
   The framework never serializes presentation calls; how overlapping `course.show*` calls behave is the host's policy

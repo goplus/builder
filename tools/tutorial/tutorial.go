@@ -159,8 +159,9 @@ func (p *Course) CompleteWith(message string) {
 	p.courseProgram.mustCallCapability("course_completeWith", contentRequest{Content: message}, nil)
 }
 
-// Start runs the Course program: start the runs of course start, start the
-// dispatcher goroutine, then wait for the Course to end.
+// Start waits for the editor, starts each course-start run through its first
+// yield or return, acknowledges startup rendering, then starts the event
+// dispatcher and waits for the Course to end.
 //
 // Course start takes the same path as host events: this is the single trigger
 // that starts every onStart. Author callbacks therefore have exactly two
@@ -188,7 +189,13 @@ func (p *Course) Start() {
 	// starts the dispatcher for host events: the Course logically begins
 	// before it observes the world. If the Course already completed inside
 	// MainEntry, admitRun refuses to start them and no start callback runs.
+	if !program.terminated() {
+		program.callLifecycleCapability("lifecycle_waitForEditor")
+	}
 	startRuns(program, program.handlerSnapshot().courseStart, struct{}{})
+	if !program.terminated() {
+		program.callLifecycleCapability("lifecycle_started")
+	}
 	events.goLive(program)
 	program.awaitShutdown()
 }

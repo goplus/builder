@@ -51,6 +51,10 @@ export type StageViewerEmits = {
 /**
  * Existing SPX Project Editor. It consumes Editor Context from
  * `EditorContextProvider` and handles Simple Mode composition internally.
+ * Async editor surfaces report readiness to an optional, tree-scoped host
+ * boundary: Monaco attachment, API Reference fetch/render, and Stage Viewer
+ * resources. Readiness tracks subsequent configuration updates too; a mounted
+ * parent alone is not an editor-ready signal.
  */
 export declare function ProjectEditor(): UI;
 

@@ -17,7 +17,8 @@ import (
 //     runFrame and yieldWhile may call them: a run has exactly one yield
 //     point, with no ad-hoc yielding scattered elsewhere.
 //  2. yieldWhile is entered only from mustCallCapability, which waits on the
-//     host; the bridge's callCapability appears only in mustCallCapability.
+//     host; the bridge's callCapability appears only in mustCallCapability or the
+//     main-goroutine callLifecycleCapability handshake.
 //  3. No operation that can block appears while schedulerMu is held (channel
 //     send or receive, select, Wait, taking the token, calling the bridge);
 //     registryMu is a leaf lock whose regions allow only allowlisted calls.
@@ -88,8 +89,12 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 					report(n.Pos(), "%s yields the token: only mustCallCapability may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
-				if name != blockingWaitHome {
-					report(n.Pos(), "%s calls the capability bridge directly: all bridge waits must go through %s", name, blockingWaitHome)
+				if name != blockingWaitHome && name != "callLifecycleCapability" {
+					report(n.Pos(), "%s calls the capability bridge directly: bridge waits must go through %s or callLifecycleCapability", name, blockingWaitHome)
+				}
+			case strings.HasSuffix(callee, ".callLifecycleCapability"):
+				if name != "Start" {
+					report(n.Pos(), "%s calls a lifecycle handshake: only Course.Start may", name)
 				}
 			case callee == "startRuns":
 				if name != "Start" {

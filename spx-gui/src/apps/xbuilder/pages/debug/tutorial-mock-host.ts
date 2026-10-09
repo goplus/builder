@@ -14,6 +14,10 @@ export const mockLearnerCode = `onClick => {
  */
 export function createMockTutorialHost(log: (message: string) => void): TutorialFrameworkHost {
   return {
+    lifecycle: {
+      async waitForEditor() {},
+      async started() {}
+    },
     course: {
       async showPrelude(preludeMessage) {
         log(`[host] course.showPrelude: ${preludeMessage}`)

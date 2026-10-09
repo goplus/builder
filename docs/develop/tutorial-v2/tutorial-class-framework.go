@@ -24,7 +24,10 @@ type Course struct {
 }
 
 type CourseAbilities interface {
-	// onStart registers a callback that is called when the course starts.
+	// onStart registers a callback that is called after the editor UI is ready.
+	// The editor stays covered until every start callback reaches its first
+	// waiting operation or returns. Put initial filterAPIs/Ruler configuration
+	// before presentation or Copilot calls to apply it before first display.
 	// Several callbacks may be registered; they run independently of each
 	// other. Opening steps that must happen in order belong in one callback.
 	onStart(callback func())
