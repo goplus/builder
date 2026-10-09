@@ -85,6 +85,14 @@ export type SpotlightOptions = {
  * accepted completion result regardless of subsequent executor errors.
  */
 export interface TutorialFrameworkHost {
+  /** Internal startup handshake; not exposed to Course authors. */
+  lifecycle: {
+    /** Waits for the mounted editor UI before triggering onStart. */
+    waitForEditor(): Promise<void>;
+    /** All onStart callbacks reached their first waiting call or returned.
+     * Waits for configuration rendering before uncovering the editor. */
+    started(): Promise<void>;
+  };
   course: {
     /**
      * Presents the Course opening guide with the given message. Resolves

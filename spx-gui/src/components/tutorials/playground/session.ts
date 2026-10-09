@@ -13,6 +13,8 @@ export type PlaygroundCourseSessionOptions = {
   editorState: EditorState
   copilot: Copilot
   presentation: PlaygroundCoursePresentation
+  waitForEditor(signal: AbortSignal): Promise<void>
+  onStarted(signal: AbortSignal): Promise<void>
   formatWorkspace(): Promise<void>
 }
 
@@ -49,6 +51,8 @@ export class PlaygroundCourseSession extends Emitter<{
       apiWhitelist: this.apiWhitelist,
       ruler: this.ruler,
       presentation: options.presentation,
+      waitForEditor: options.waitForEditor,
+      onStarted: options.onStarted,
       formatWorkspace: options.formatWorkspace,
       onCompleted: (completion) => this.emit('completed', completion),
       onFailed: (error) => this.emit('failed', error)

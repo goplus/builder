@@ -122,6 +122,7 @@ import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
+import { useRegisterUIReady } from '@/utils/ui-ready'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/spx/stage'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -438,6 +439,8 @@ const loading = computed(() => {
   if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeId(w)))) return true
   return false
 })
+
+useRegisterUIReady(() => stageRef.value != null && !loading.value)
 
 const visibleSpriteLocalConfigs = computed(() => {
   const { zorder, sprites } = editorCtx.project

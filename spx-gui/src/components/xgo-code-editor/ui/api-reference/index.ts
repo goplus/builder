@@ -1,5 +1,5 @@
-import { watch } from 'vue'
-import { Disposable } from '@/utils/disposable'
+import { ref, watch } from 'vue'
+import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import { TaskManager } from '@/utils/task'
 import type {
   APICategoryViewInfo,
@@ -23,6 +23,11 @@ export class APIReferenceController extends Disposable {
     return provider.provideAPIReference({ textDocument, signal })
   }, true)
 
+  private loadingRef = ref(false)
+  get loading() {
+    return this.loadingRef.value
+  }
+
   get items() {
     return this.itemsMgr.result.data
   }
@@ -39,9 +44,12 @@ export class APIReferenceController extends Disposable {
     this.addDisposer(
       watch(
         () => [this.ui.activeTextDocument, this.ui.codeEditor.apiReferenceProvider],
-        ([td]) => {
+        async ([td], _, onCleanup) => {
           if (td == null) return
-          this.itemsMgr.start()
+          const signal = getCleanupSignal(onCleanup)
+          this.loadingRef.value = true
+          await this.itemsMgr.start()
+          if (!signal.aborted) this.loadingRef.value = false
         },
         { immediate: true }
       )

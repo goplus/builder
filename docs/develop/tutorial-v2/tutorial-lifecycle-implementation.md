@@ -319,7 +319,7 @@ The current prototype validates the central boundary without requiring the publi
 
 The second prototype adds a deliberately narrow end-to-end runtime example:
 
-- `CoursePlayground` creates one component-local `PlaygroundCourseSession` and starts its Program after the temporary 300ms UI mounting delay (#3533);
+- `CoursePlayground` creates one component-local `PlaygroundCourseSession` and starts its Program in parallel with editor mounting, using the startup handshake described below (#3533);
 - Session starts and retains the non-proactive Copilot Topic; Program runs only `main_course.gox` and owns the executor, event subscriptions and pending capability lifetime;
 - Runtime start, exit, and log signals plus Copilot round completion wait for executor startup before forwarding directly; the Framework queues received events;
 - `showMessage` is represented by route-local blocking presentation, while `complete` and `completeWith` publish a terminal outcome for the page to handle;
@@ -343,3 +343,38 @@ The prototype still exposes implementation questions that do not change the publ
 3. Copilot round completion is currently observed from reactive session state because #3421's explicit round-finish event is not present on this branch. The ownership stays route-local when that event replaces the prototype watch.
 4. The current Copilot Topic can disable proactive event reactions, but this branch does not yet expose #3421's code-helper controls.
 5. Direct refresh intentionally reloads Course data. Guided restoration, by contrast, remains isolated in `GuidedTutorial` session storage rather than serializing unified facade state.
+
+## Playground startup coordination
+
+The executor starts in parallel with mounting the Playground editor. An opaque
+loading cover keeps the mounted editor out of view and prevents learner input;
+it does not hide or unmount the editor or change its layout.
+
+After MainEntry has registered Course callbacks, the framework calls the internal
+`lifecycle.waitForEditor` host handshake. The host waits for the current session's
+Code Editor, Monaco UI, API Reference data and deferred rendering, and Stage Viewer
+resources to be ready. Only then does the framework trigger `onStart`.
+
+Every startup callback runs through its first waiting capability (Prelude,
+Message, Video or Copilot generation) or return. Fast capabilities, including API
+filtering and Ruler configuration, wait for host acknowledgment without yielding.
+Once all admitted startup callbacks reach that boundary, the framework calls
+`lifecycle.started`. The host waits for pending UI updates, including refreshed API
+Reference data, before removing the loading cover. It does not wait for the
+learner to dismiss presentations or for generation to finish. No fixed startup
+delay or browser-frame assumption is involved. Host events remain queued until
+this handshake is acknowledged.
+
+Course authors continue using `onStart`; no initialization callback is introduced.
+Initial configuration should precede waiting operations within the same callback.
+Configuration after a waiting operation is an ordinary runtime update. This does
+not add an ordering guarantee between different callbacks.
+
+Completion stops Program and uncovers the editor while Session remains available.
+Failure replaces the editor with the error experience. Leaving, retrying or
+replacing a Course aborts its pending handshakes, so an obsolete session cannot
+start callbacks or uncover the replacement editor. Preview uses the same flow.
+
+Spotlight runs against the mounted editor. Waiting/retrying for a particular
+conditional Radar target is independent of this startup handshake (tracked in
+#3536).
