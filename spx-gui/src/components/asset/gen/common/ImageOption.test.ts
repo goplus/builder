@@ -24,7 +24,7 @@ describe('ImageOption actions', () => {
   it('removes an image through a native button without selecting the card', async () => {
     const wrapper = mountOption()
     const remove = wrapper.findAll('button')[1]
-    expect(remove.attributes('aria-label')).toBe('移除图片')
+    expect(remove.attributes('aria-label')).toBe('Remove image')
     await remove.trigger('click')
     expect(wrapper.emitted('remove')).toEqual([[]])
     expect(wrapper.emitted('click')).toBeUndefined()

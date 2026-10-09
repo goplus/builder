@@ -78,7 +78,7 @@ describe('ReferenceImageButton', () => {
       global
     })
 
-    expect(wrapper.get('button').attributes('aria-label')).toBe('上传参考图片')
+    expect(wrapper.get('button').attributes('aria-label')).toBe('Upload reference image')
     expect(wrapper.get('[data-test-id="tooltip"]').text()).toBe('上传参考图片')
   })
 
@@ -112,6 +112,6 @@ describe('ReferenceImageButton', () => {
 
     await wrapper.setProps({ file: null })
     expect(wrapper.find('[data-test-id="popover"]').exists()).toBe(false)
-    expect(wrapper.get('button').attributes('aria-label')).toBe('上传参考图片')
+    expect(wrapper.get('button').attributes('aria-label')).toBe('Upload reference image')
   })
 })

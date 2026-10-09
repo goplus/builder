@@ -28,7 +28,7 @@ const emit = defineEmits<{
     <UICornerIcon
       v-if="active && (clearable || removable)"
       v-radar="{
-        name: removable ? $t({ en: 'Remove image', zh: '移除图片' }) : $t({ en: 'Deselect image', zh: '取消选择图片' }),
+        name: removable ? 'Remove image' : 'Deselect image',
         desc: `${removable ? 'Remove' : 'Deselect'} '${label}'`
       }"
       :type="removable ? 'trash' : 'minus'"

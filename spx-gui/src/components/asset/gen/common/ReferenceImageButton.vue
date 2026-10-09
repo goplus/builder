@@ -36,7 +36,7 @@ async function removeReferenceImage() {
       <UIButton
         ref="buttonRef"
         v-radar="{
-          name: $t({ en: 'Manage reference image', zh: '管理参考图片' }),
+          name: 'Manage reference image',
           desc: 'Click to manage the local reference image'
         }"
         type="white"
@@ -66,7 +66,7 @@ async function removeReferenceImage() {
       <UIButton
         ref="buttonRef"
         v-radar="{
-          name: $t({ en: 'Upload reference image', zh: '上传参考图片' }),
+          name: 'Upload reference image',
           desc: 'Click to upload a local reference image'
         }"
         type="white"
