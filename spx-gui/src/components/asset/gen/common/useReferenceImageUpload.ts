@@ -8,9 +8,9 @@ const failureMessage = {
   zh: '选择图片失败'
 }
 
-export function useReferenceImageUpload(onSelected: (file: File) => void) {
+export function useReferenceImageUpload(onSelected: (file: File) => void | Promise<void>) {
   return useMessageHandle(async () => {
     const nativeFile = await selectFileWithUploadLimit({ accept: referenceImageExts })
-    onSelected(fromNativeFile(nativeFile))
+    await onSelected(fromNativeFile(nativeFile))
   }, failureMessage).fn
 }

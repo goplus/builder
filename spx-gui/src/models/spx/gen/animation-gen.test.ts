@@ -14,11 +14,12 @@ import { mockSaveFile } from './test-helpers'
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
-vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
+vi.spyOn(fileHelpers, 'getImageSize')
 
 describe('AnimationGen', () => {
   beforeEach(() => {
     aigcMock.reset()
+    vi.mocked(fileHelpers.getImageSize).mockResolvedValue({ width: 512, height: 512 })
     mockSaveFile()
   })
 
@@ -526,6 +527,42 @@ describe('AnimationGen', () => {
     expect(loaded.getTaskIds()).toEqual([videoTask.task.id])
     gen.dispose()
     loaded.dispose()
+  })
+
+  it.each([
+    [148, 148],
+    [255, 512],
+    [512, 255],
+    [5761, 512],
+    [512, 5761]
+  ])('rejects a %i×%i reference before uploading or starting a video task', async (width, height) => {
+    vi.mocked(fileHelpers.getImageSize).mockResolvedValue({ width, height })
+    const saveFile = mockSaveFile()
+    saveFile.mockClear()
+    const gen = new AnimationGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject(), {
+      referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
+    })
+
+    await expect(gen.generateVideo()).rejects.toThrow('256')
+    expect(saveFile).not.toHaveBeenCalled()
+    expect(aigcMock.tasks.size).toBe(0)
+    expect(gen.generateVideoState.status).toBe('failed')
+    gen.dispose()
+  })
+
+  it.each([
+    [256, 256],
+    [5760, 256],
+    [256, 5760]
+  ])('accepts a %i×%i video reference at the dimension limits', async (width, height) => {
+    vi.mocked(fileHelpers.getImageSize).mockResolvedValue({ width, height })
+    const gen = new AnimationGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject(), {
+      referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
+    })
+
+    await gen.generateVideo()
+    expect(aigcMock.tasks.size).toBe(1)
+    gen.dispose()
   })
 
   it.each(['replace', 'remove', 'select costume'] as const)(

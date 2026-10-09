@@ -15,9 +15,11 @@ const props = withDefaults(
     selection: ReferenceImageSelection
     costumes: Costume[]
     clearable?: boolean
+    validate?: ((file: File) => Promise<void>) | null
   }>(),
   {
-    clearable: true
+    clearable: true,
+    validate: null
   }
 )
 
@@ -92,7 +94,8 @@ function handleRemoveOption(value: OptionValue) {
   emit('update:referenceImage', null)
 }
 
-const handleUpload = useReferenceImageUpload((file) => {
+const handleUpload = useReferenceImageUpload(async (file) => {
+  await props.validate?.(file)
   localImage.value = file
   emit('update:referenceImage', file)
 })

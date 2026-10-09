@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import type { AnimationGen } from '@/models/spx/gen/animation-gen'
+import { validateAnimationReferenceImage } from '@/models/spx/gen/reference-image'
 import { UIButton } from '@/components/ui'
 import SettingsInput from '../common/SettingsInput.vue'
 import ReferenceImageInput from '../common/ReferenceImageInput.vue'
@@ -49,6 +50,7 @@ const submitText = computed(() => {
         :costumes="gen.sprite.costumes"
         :selection="gen.referenceImageSelection"
         :clearable="false"
+        :validate="validateAnimationReferenceImage"
         @update:selection="gen.setReferenceImageSelection($event)"
         @update:reference-image="gen.setReferenceImage($event)"
       />

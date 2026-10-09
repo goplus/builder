@@ -37,6 +37,7 @@ import {
   saveReferenceImageFile,
   type ReferenceImageSelection,
   type StoredReferenceImageSelection,
+  validateAnimationReferenceImage,
   validateReferenceImage
 } from './reference-image'
 
@@ -232,6 +233,8 @@ export class AnimationGen extends Disposable {
           ? this.referenceImageSelection.file
           : this.referenceCostume?.img
       if (image == null) throw new Error('reference image or costume expected')
+      await validateAnimationReferenceImage(image)
+      signal.throwIfAborted()
       const referenceFrameUrl = await saveFile(image, signal)
       signal.throwIfAborted()
       await task.start({ settings: { ...this.settings, referenceFrameUrl } })

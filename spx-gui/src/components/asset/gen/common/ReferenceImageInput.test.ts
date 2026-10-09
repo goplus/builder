@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { mockFile } from '@/models/common/test'
 import ReferenceImageInput from './ReferenceImageInput.vue'
 
-let selectFile: (file: ReturnType<typeof mockFile>) => void
+let selectFile: (file: ReturnType<typeof mockFile>) => Promise<void>
 
 vi.mock('@/utils/file', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/file')>()),
@@ -33,7 +33,7 @@ describe('ReferenceImageInput', () => {
     const wrapper = mountInput()
     await flushPromises()
     const file = mockFile('reference.png')
-    selectFile(file)
+    await selectFile(file)
     expect(wrapper.emitted('update:referenceImage')).toEqual([[file]])
     await wrapper.setProps({ selection: { type: 'local-image', file } })
     await wrapper.setProps({ selection: { type: 'costume', costumeId: 'costume' } })
@@ -53,7 +53,7 @@ describe('ReferenceImageInput', () => {
   it('can remove the temporary image without changing a costume selection', async () => {
     const wrapper = mountInput({ type: 'costume', costumeId: 'costume' })
     await flushPromises()
-    selectFile(mockFile('reference.png'))
+    await selectFile(mockFile('reference.png'))
     await wrapper.vm.$nextTick()
     const selector = wrapper.getComponent({ name: 'ParamSelector' })
     const localOption = selector.props('options').find((option: { removable?: boolean }) => option.removable)
@@ -62,5 +62,19 @@ describe('ReferenceImageInput', () => {
     expect(selector.props('options')).toEqual([])
     expect(wrapper.emitted('update:referenceImage')?.at(-1)).toEqual([null])
     expect(wrapper.emitted('update:selection')).toBeUndefined()
+  })
+
+  it('does not replace the reference when upload validation fails', async () => {
+    const wrapper = mountInput({ type: 'costume', costumeId: 'costume' })
+    const error = new Error('reference image is too small')
+    const validate = vi.fn().mockRejectedValue(error)
+    await wrapper.setProps({ validate })
+    const file = mockFile('small.png')
+
+    await expect(selectFile(file)).rejects.toBe(error)
+    expect(validate).toHaveBeenCalledWith(file)
+    expect(wrapper.emitted('update:referenceImage')).toBeUndefined()
+    expect(wrapper.getComponent({ name: 'ParamSelector' }).props('options')).toEqual([])
+    wrapper.unmount()
   })
 })

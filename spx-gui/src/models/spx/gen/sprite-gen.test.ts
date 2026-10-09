@@ -20,7 +20,7 @@ import { mockFile } from '../../common/test'
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
 // TODO: Consider replacing this spy by pre-filling file.meta.imgSize in test fixtures.
-vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 100, height: 100 }))
+vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 512, height: 512 }))
 
 async function finishCostumeGen(name: string, gen: CostumeGen) {
   gen.setSettings({
@@ -143,11 +143,11 @@ describe('SpriteGen', () => {
     })
     expect(sprite.costumes.length).toBe(3)
     expect(sprite.costumes[0].name).toBe('default')
-    expect(sprite.costumes[0].pivot).toEqual({ x: 25, y: 25 })
+    expect(sprite.costumes[0].pivot).toEqual({ x: 128, y: 128 })
     expect(sprite.costumes[1].name).toBe('costume-1')
-    expect(sprite.costumes[1].pivot).toEqual({ x: 25, y: 25 })
+    expect(sprite.costumes[1].pivot).toEqual({ x: 128, y: 128 })
     expect(sprite.costumes[2].name).toBe('costume-2')
-    expect(sprite.costumes[2].pivot).toEqual({ x: 25, y: 25 })
+    expect(sprite.costumes[2].pivot).toEqual({ x: 128, y: 128 })
     expect(sprite.animations.length).toBe(2)
     expect(sprite.animations[0].name).toBe('walk')
     expect(sprite.animations[1].name).toBe('jump')

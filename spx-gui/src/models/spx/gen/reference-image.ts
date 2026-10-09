@@ -1,6 +1,7 @@
 import { getExtFromMime, imgExts } from '@/utils/file'
 import { extname } from '@/utils/path'
-import type { File, Files } from '../../common/file'
+import { DefaultException } from '@/utils/exception'
+import { getImageSize, type File, type Files } from '../../common/file'
 
 export const referenceImageExts = imgExts.filter((ext) => ext !== 'svg')
 
@@ -27,6 +28,18 @@ function isImageFile(file: File) {
 
 export function validateReferenceImage(file: File) {
   if (!isImageFile(file)) throw new Error(`unsupported reference image type: ${file.type}`)
+}
+
+export async function validateAnimationReferenceImage(file: File) {
+  const { width, height } = await getImageSize(file)
+  const minDimension = 256
+  const maxDimension = 5760
+  if (width < minDimension || height < minDimension || width > maxDimension || height > maxDimension) {
+    throw new DefaultException({
+      en: `Video reference image width and height must each be between ${minDimension} and ${maxDimension} pixels. Selected image: ${width}×${height}.`,
+      zh: `视频参考图的宽、高均须在 ${minDimension}～${maxDimension} 像素之间，当前图片为 ${width}×${height} 像素。`
+    })
+  }
 }
 
 /** Explicit selection (including null) takes precedence over legacy costume ID. */

@@ -82,7 +82,9 @@ describe('generation task persistence', () => {
           taskKey: 'generateTaskSerialized'
         }
       })()
-      gen.setReferenceImage(mockFile('reference.png'))
+      const reference = mockFile('reference.png')
+      reference.meta.imgSize = { width: 512, height: 512 }
+      gen.setReferenceImage(reference)
 
       // The editor watches a computed export to decide when to save again.
       const exported = computed(exportConfig)
