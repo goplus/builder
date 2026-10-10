@@ -2,7 +2,7 @@ import { effectScope, ref, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
 import type { SpxProject } from '@/models/spx/project'
-import type { TextDocumentRange } from '@/components/xgo-code-editor'
+import type { TextDocumentIdentifier, TextDocumentRange } from '@/components/xgo-code-editor'
 
 export type RunningState =
   | {
@@ -34,8 +34,15 @@ export interface RuntimeOutput {
 
 export type RuntimeOutputDraft = Omit<RuntimeOutput, 'id'>
 
+export interface RuntimeLocation {
+  textDocument: TextDocumentIdentifier
+  /** Line number, starting from 1. */
+  line: number
+}
+
 export class Runtime extends Emitter<{
   didChangeOutput: void
+  didChangeLocation: void
   didExit: number
 }> {
   static readonly defaultMaxOutputs = 500
@@ -43,6 +50,7 @@ export class Runtime extends Emitter<{
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
   private outputsRef = shallowRef<RuntimeOutput[]>([])
+  private locationRef = shallowRef<RuntimeLocation | null>(null)
 
   get running() {
     return this.runningRef.value
@@ -61,7 +69,21 @@ export class Runtime extends Emitter<{
     return this.outputsRef.value
   }
 
+  get location(): RuntimeLocation | null {
+    return this.locationRef.value
+  }
+
+  setLocation(location: RuntimeLocation | null) {
+    if (this.running.mode !== 'debug' && location != null) return
+    const current = this.locationRef.value
+    if (current?.textDocument.uri === location?.textDocument.uri && current?.line === location?.line) return
+    this.locationRef.value = location
+    this.emit('didChangeLocation')
+  }
+
   setRunning(running: RunningState, filesHash?: string) {
+    if (running.mode === 'none') this.setLocation(null)
+    else if (running.initializing) this.setLocation(null)
     this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
       const nextHash = filesHash ?? this.filesHash
@@ -148,9 +170,7 @@ export class Runtime extends Emitter<{
         }
       )
     })
-    this.addDisposer(() => {
-      this.cancelScheduledDidChangeOutput()
-    })
+    this.addDisposer(() => this.cancelScheduledDidChangeOutput())
     this.addDisposer(() => scope.stop())
   }
 }

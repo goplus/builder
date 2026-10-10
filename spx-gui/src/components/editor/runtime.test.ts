@@ -41,6 +41,37 @@ function withMockedAnimationFrame() {
 }
 
 describe('Runtime', () => {
+  it('reports location changes and clears location when debug mode ends', () => {
+    const runtime = makeRuntime()
+    const events: Array<number | null> = []
+    runtime.on('didChangeLocation', () => events.push(runtime.location?.line ?? null))
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    const location = (line: number) => ({
+      textDocument: { uri: 'file:///Sprite.spx' },
+      line
+    })
+
+    runtime.setLocation(location(1))
+    runtime.setLocation(location(1))
+    runtime.setLocation(location(2))
+    expect(events).toEqual([1, 2])
+
+    runtime.setLocation(location(3))
+    runtime.setRunning({ mode: 'none' })
+    expect(events).toEqual([1, 2, 3, null])
+
+    runtime.setLocation(location(4))
+    expect(runtime.location).toBeNull()
+
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    runtime.setLocation(location(5))
+    runtime.clearOutputs()
+    expect(runtime.location).toEqual(location(5))
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    expect(runtime.location).toBeNull()
+    runtime.dispose()
+  })
+
   it('should keep latest outputs within default max size and assign stable ids', () => {
     vi.useFakeTimers()
     withMockedAnimationFrame()
