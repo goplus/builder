@@ -844,7 +844,7 @@ func TestGenerateJSONDecodesUnderTheToken(t *testing.T) {
 // TestCompletionSettlesPendingWait checks that once the host settles a
 // waiting call that was in flight at completion, the suspended run executes
 // its remaining statements and the program winds down as completed. The
-// contract requires the host to settle every pending call promptly after a
+// contract requires the host to settle pending presentation promptly after a
 // completion.
 func TestCompletionSettlesPendingWait(t *testing.T) {
 	host := newFakeHost()

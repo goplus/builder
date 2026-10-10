@@ -18,6 +18,8 @@ const props = defineProps<{
   apiWhitelist: string[] | null
 }>()
 
+const emit = defineEmits<{ ready: [editor: CodeEditor] }>()
+
 const editorCtx = useEditorCtx()
 const resourceSelectorHelpers = useResourceSelectorHelpers()
 const resourceRenameHelpers = useResourceRenameHelpers()
@@ -64,6 +66,7 @@ watch(
       stopAPIWatch()
       diagnosticsProvider.dispose()
     })
+    emit('ready', codeEditor)
   },
   { immediate: true }
 )

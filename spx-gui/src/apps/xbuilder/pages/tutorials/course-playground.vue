@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 
 import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
+import { useMessageHandle } from '@/utils/exception'
 import { composeQuery, useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -11,7 +12,7 @@ import CoursePlayground from '@/components/tutorials/playground/CoursePlayground
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
-import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/runner'
+import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
 
@@ -70,26 +71,42 @@ const sessionQueryRet = useQuery(
 
 const session = sessionQueryRet.data
 
-async function handleCompleted(completion: PlaygroundCourseCompletion) {
-  const completedSession = session.value
-  if (completedSession == null) return
-  tutorial.notifyPlaygroundCourseCompleted(completedSession.course.id)
+const { fn: handleRestart } = useMessageHandle(
+  async () => {
+    const currentSession = session.value
+    if (currentSession == null) return
+    await tutorial.startCourse(currentSession.series.id, currentSession.course.id)
+  },
+  { en: 'Failed to restart course', zh: '重新开始课程失败' }
+)
 
-  const action: CompletionAction = await openCompletion({
-    course: completedSession.course,
-    series: completedSession.series,
-    feedback: completion.feedback
-  })
-  if (action === 'continueEditing') return
+const { fn: handleCompleted } = useMessageHandle(
+  async (completion: PlaygroundCourseCompletion) => {
+    const completedSession = session.value
+    if (completedSession == null) return
+    tutorial.notifyPlaygroundCourseCompleted(completedSession.course.id)
 
-  const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
-  const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
-  if (action === 'next' && nextCourseID != null) {
-    await tutorial.startCourse(completedSession.series.id, nextCourseID)
-  } else {
-    await router.push(getCourseSeriesPageRoute(completedSession.series.id))
-  }
-}
+    const action: CompletionAction = await openCompletion(
+      { course: completedSession.course, series: completedSession.series, feedback: completion.feedback },
+      { signal: completedSession.project.getSignal() }
+    )
+    if (completedSession.project.isDisposed || action === 'continueEditing') return
+
+    if (action === 'retry') {
+      await tutorial.startCourse(completedSession.series.id, completedSession.course.id)
+      return
+    }
+
+    const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
+    const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
+    if (action === 'next' && nextCourseID != null) {
+      await tutorial.startCourse(completedSession.series.id, nextCourseID)
+    } else {
+      await router.push(getCourseSeriesPageRoute(completedSession.series.id))
+    }
+  },
+  { en: 'Failed to handle course completion', zh: '处理课程完成失败' }
+)
 </script>
 
 <template>
@@ -99,6 +116,7 @@ async function handleCompleted(completion: PlaygroundCourseCompletion) {
     :project="session.project"
     :in-editor-path="inEditorPath"
     @course-completed="handleCompleted"
+    @course-restart="handleRestart"
   />
   <section v-else class="h-full w-full flex items-center justify-center">
     <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">

@@ -19,6 +19,8 @@ const props = withDefaults(
   { apiWhitelist: null }
 )
 
+const emit = defineEmits<{ ready: [editor: CodeEditor] }>()
+
 const copilot = useCopilot()
 const editorCtx = useEditorCtx()
 const i18n = useI18n()
@@ -63,6 +65,11 @@ useProvideCodeEditor(codeEditorRef)
 </script>
 
 <template>
-  <CodeEditorInitializer v-if="codeEditorRef != null" :code-editor="codeEditorRef" :api-whitelist="apiWhitelist" />
+  <CodeEditorInitializer
+    v-if="codeEditorRef != null"
+    :code-editor="codeEditorRef"
+    :api-whitelist="apiWhitelist"
+    @ready="emit('ready', $event)"
+  />
   <slot></slot>
 </template>

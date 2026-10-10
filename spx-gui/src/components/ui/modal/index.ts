@@ -1,6 +1,7 @@
 export { default as UIFormModal } from './UIFormModal.vue'
 export { default as UISearchableModal } from './UISearchableModal.vue'
 export { default as UIModalProvider, useModal, useModalEvents } from './UIModalProvider.vue'
+export type { ModalOptions } from './UIModalProvider.vue'
 export { default as UIModalClose } from './UIModalClose.vue'
 export { default as UIModal } from './UIModal.vue'
 export type { ModalTransformOrigin } from './UIModal.vue'
