@@ -112,3 +112,48 @@ export function useDecorations(
   })
   onUnmounted(() => collection?.clear())
 }
+
+export type ViewZoneSpec = {
+  /** The view zone is placed after this line number. Use `0` to place it at the very top. */
+  afterLineNumber: number
+  /** Height of the view zone, measured in editor lines. */
+  heightInLines: number
+  /** DOM node rendered inside the view zone. */
+  domNode: HTMLElement
+  /** Optional cleanup run when this zone is removed (e.g. cancel work tied to `domNode`). */
+  onRemove?: () => void
+}
+
+/**
+ * Reactively manage a single Monaco view zone (extra vertical space between lines).
+ * `getZone` is re-evaluated reactively; returning `null` removes the zone.
+ */
+export function useViewZone(getZone: () => ViewZoneSpec | null) {
+  const codeEditorUICtx = useCodeEditorUICtx()
+  let zoneId: string | null = null
+  let zoneCleanup: (() => void) | null = null
+
+  function removeZone() {
+    if (zoneId == null) return
+    const id = zoneId
+    codeEditorUICtx.ui.editor.changeViewZones((accessor) => accessor.removeZone(id))
+    zoneId = null
+    zoneCleanup?.()
+    zoneCleanup = null
+  }
+
+  watchEffect(() => {
+    const zone = getZone()
+    removeZone()
+    if (zone == null) return
+    zoneCleanup = zone.onRemove ?? null
+    codeEditorUICtx.ui.editor.changeViewZones((accessor) => {
+      zoneId = accessor.addZone({
+        afterLineNumber: zone.afterLineNumber,
+        heightInLines: zone.heightInLines,
+        domNode: zone.domNode
+      })
+    })
+  })
+  onUnmounted(removeZone)
+}
