@@ -37,6 +37,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   courseCompleted: [completion: PlaygroundCourseCompletion]
+  courseRestart: []
 }>()
 
 const i18n = useI18n()
@@ -202,7 +203,7 @@ const session = sessionQueryRet.data
       <UIError v-else-if="monacoQueryRet.error.value != null" :retry="monacoQueryRet.refetch">
         {{ $t(monacoQueryRet.error.value.userMessage) }}
       </UIError>
-      <UIError v-else-if="runningErr != null" :retry="sessionQueryRet.refetch">
+      <UIError v-else-if="runningErr != null" :retry="() => emit('courseRestart')">
         {{ $t(runningErr.userMessage) }}
       </UIError>
       <EditorContextProvider

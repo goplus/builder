@@ -71,6 +71,15 @@ const sessionQueryRet = useQuery(
 
 const session = sessionQueryRet.data
 
+const { fn: handleRestart } = useMessageHandle(
+  async () => {
+    const currentSession = session.value
+    if (currentSession == null) return
+    await tutorial.startCourse(currentSession.series.id, currentSession.course.id)
+  },
+  { en: 'Failed to restart course', zh: '重新开始课程失败' }
+)
+
 const { fn: handleCompleted } = useMessageHandle(
   async (completion: PlaygroundCourseCompletion) => {
     const completedSession = session.value
@@ -107,6 +116,7 @@ const { fn: handleCompleted } = useMessageHandle(
     :project="session.project"
     :in-editor-path="inEditorPath"
     @course-completed="handleCompleted"
+    @course-restart="handleRestart"
   />
   <section v-else class="h-full w-full flex items-center justify-center">
     <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">
