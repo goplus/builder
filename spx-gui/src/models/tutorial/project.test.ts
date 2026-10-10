@@ -171,39 +171,32 @@ describe('TutorialProject', () => {
     expect(exported).not.toContain('assets/texts/note/index.json')
   })
 
-  it('exports and loads the files of the course itself apart from the embedded project', async () => {
+  it('keeps the parts that did not change when reloading, the embedded project included', async () => {
     const tutorial = await loadProject()
-    const own = tutorial.exportOwnFiles()
-    expect(Object.keys(own).sort()).toEqual(
-      Object.keys(makeFiles())
-        .filter((path) => !path.startsWith('project/'))
-        .sort()
-    )
-
+    const files = tutorial.exportFiles()
+    const video = tutorial.videos[0]
+    const loadProjectFiles = vi.spyOn(tutorial.project, 'loadFiles')
     tutorial.mainCourse.setCode('onStart => { showVideo "step-to" }')
-    tutorial.removeVideo(tutorial.videos[0].id)
-    tutorial.project.addSprite(new Sprite('Lita'))
-    await tutorial.loadOwnFiles(own)
+
+    await tutorial.loadFiles(files)
 
     expect(tutorial.mainCourse.code).toBe('onStart => {}')
-    expect(tutorial.videos.map((video) => video.name)).toEqual(['step-to'])
-    expect(tutorial.videos[0].id).toBe('video-id')
-    expect(tutorial.project.sprites.map((sprite) => sprite.name)).toEqual(['Lita'])
-  })
-
-  it('keeps the parts that did not change when loading the files of the course itself', async () => {
-    const tutorial = await loadProject()
-    const own = tutorial.exportOwnFiles()
-    const video = tutorial.videos[0]
-    tutorial.mainCourse.setCode('onStart => { showVideo "step-to" }')
-
-    await tutorial.loadOwnFiles(own)
-
-    const reloaded = tutorial.exportOwnFiles()
-    expect(reloaded['index.json']).toBe(own['index.json'])
-    expect(reloaded['assets/videos/step-to/index.json']).toBe(own['assets/videos/step-to/index.json'])
+    const reloaded = tutorial.exportFiles()
+    expect(reloaded['index.json']).toBe(files['index.json'])
+    expect(reloaded['assets/videos/step-to/index.json']).toBe(files['assets/videos/step-to/index.json'])
     expect(tutorial.videos[0]).toBe(video)
     expect(video._project).toBe(tutorial)
+    expect(loadProjectFiles).not.toHaveBeenCalled()
+  })
+
+  it('reloads the embedded project when its files changed', async () => {
+    const tutorial = await loadProject()
+    const files = tutorial.exportFiles()
+    tutorial.project.addSprite(new Sprite('Lita'))
+
+    await tutorial.loadFiles(files)
+
+    expect(tutorial.project.sprites).toEqual([])
   })
 
   it('updates the config', async () => {

@@ -104,11 +104,16 @@ export class EditorState extends Disposable {
     isOnline: WatchSource<boolean>,
     signedInStateQuery: QueryRet<SignedInState>,
     cloudHelpers: editing.CloudHelpers,
-    localCache: editing.ILocalCache
+    localCache: editing.ILocalCache,
+    /**
+     * Where edits are recorded for undo and redo; a history of `project` alone by default. Pass one when the project
+     * is part of something larger, so that its edits and those of the rest are undone in one order.
+     */
+    history?: History
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
-    this.history = new History(project)
+    this.history = history ?? new History(project)
     this.addDisposable((this.genState = new GenState(i18n, project)))
     const projectWithGens = new SpxProjectWithGens(project, this.genState)
     this.addDisposable(

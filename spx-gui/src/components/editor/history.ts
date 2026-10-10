@@ -6,6 +6,7 @@
 import { shallowReactive } from 'vue'
 import type { LocaleMessage } from '@/utils/i18n'
 import type { Files } from '@/models/common/file'
+import type Mutex from '@/utils/mutex'
 import type { IProject } from '@/models/project'
 
 export type Action = {
@@ -26,7 +27,10 @@ export type State = {
 }
 
 /** What a history records: the files of a project, restored by loading them back. */
-export type HistoryTarget = Pick<IProject, 'mutex' | 'exportFiles' | 'loadFiles'>
+export type HistoryTarget = Pick<IProject, 'exportFiles' | 'loadFiles'> & {
+  /** Held while recording an action, undoing and redoing. */
+  mutex: Pick<Mutex, 'runExclusive'>
+}
 
 export class History {
   constructor(

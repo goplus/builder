@@ -107,20 +107,18 @@ export class TutorialProject extends Disposable {
   }
 
   async loadFiles(files: Files) {
-    const config = await loadConfig(files)
-    await this.project.loadFiles(unprefixFiles(files, config.project.root))
-    await this.loadOwnFiles(files)
-  }
-
-  /** Load the files of the course itself (see `exportOwnFiles`), leaving the embedded project as it is. */
-  async loadOwnFiles(files: Files) {
-    const config = await loadConfig(files)
+    const configFile = files[configFilePath]
+    if (configFile == null) throw new Error(`file ${configFilePath} not found`)
+    const config = (await toConfig(configFile)) as TutorialProjectConfig
+    // What did not change is kept as it is, so its files keep their identity: undoing an edit of one part must not
+    // look like a change of the others (exports are compared by identity to find unsaved changes), nor reload the
+    // embedded project for nothing.
+    const projectFiles = unprefixFiles(files, config.project.root)
+    if (!isSameFiles(projectFiles, this.project.exportFiles())) await this.project.loadFiles(projectFiles)
     await this.mainCourse.loadFiles(files)
     const videos = await Video.loadAll(files)
     const images = await Image.loadAll(files)
 
-    // What did not change is kept as it is, so its files keep their identity: an undo of one part must not look
-    // like a change of the others (exports are compared by identity to find unsaved changes).
     if (!isEqual(config, this.config)) this.config = config
     const oldVideos = this.videos.splice(0)
     oldVideos.forEach((video) => video.setProject(null))
@@ -173,36 +171,34 @@ export class TutorialProject extends Disposable {
    * NOTE: this method may return intermediate result during transactional edits.
    */
   exportFiles(): Files {
-    if (this.config == null) throw new Error('Tutorial project has not been loaded')
-    return { ...this.exportOwnFiles(), ...prefixFiles(this.project.exportFiles(), this.config.project.root) }
-  }
-
-  /** Export the files of the course itself: everything but the embedded project. */
-  exportOwnFiles(): Files {
     const configFile = toValue(this.configFile)
-    if (configFile == null) throw new Error('Tutorial project has not been loaded')
+    if (this.config == null || configFile == null) throw new Error('Tutorial project has not been loaded')
     return Object.assign(
       { [configFilePath]: configFile },
+      prefixFiles(this.project.exportFiles(), this.config.project.root),
       this.mainCourse.export(),
       ...this.videos.map((video) => video.export()),
       ...this.images.map((image) => image.export())
     )
   }
 
+  /** Run `job` after transactions of the course and of the embedded project finished, holding off new ones. */
+  runExclusive<T>(job: () => T | Promise<T>): Promise<T> {
+    return this.mutex.runExclusive(() => this.project.mutex.runExclusive(job))
+  }
+
   /** Export metadata & files, after transactional edits of the course and of the embedded project finished. */
   async export(): Promise<TutorialProjectSerialized> {
-    return this.mutex.runExclusive(() =>
-      this.project.mutex.runExclusive(() => ({
-        metadata: {
-          id: this.id,
-          owner: this.owner,
-          kind: this.kind,
-          title: this.title,
-          thumbnail: this.thumbnail
-        },
-        files: this.exportFiles()
-      }))
-    )
+    return this.runExclusive(() => ({
+      metadata: {
+        id: this.id,
+        owner: this.owner,
+        kind: this.kind,
+        title: this.title,
+        thumbnail: this.thumbnail
+      },
+      files: this.exportFiles()
+    }))
   }
 }
 
@@ -219,8 +215,7 @@ function keepExisting<T extends Video | Image>(loaded: T[], existing: T[]) {
   })
 }
 
-async function loadConfig(files: Files) {
-  const configFile = files[configFilePath]
-  if (configFile == null) throw new Error(`file ${configFilePath} not found`)
-  return (await toConfig(configFile)) as TutorialProjectConfig
+function isSameFiles(a: Files, b: Files) {
+  const paths = Object.keys(a)
+  return paths.length === Object.keys(b).length && paths.every((path) => a[path] === b[path])
 }

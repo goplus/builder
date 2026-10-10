@@ -1,10 +1,12 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { markRaw } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { createI18n } from '@/utils/i18n'
 import { courseEditorRoutes, getCourseEditorRoute } from '@/apps/xbuilder/router'
 import type { IInEditorRouter } from '@/components/editor/editor-state'
+import type { History } from '@/components/editor/history'
 import type { SpxProject } from '@/models/spx/project'
 import SpxProjectEditorHost from './SpxProjectEditorHost.vue'
 
@@ -21,10 +23,14 @@ const { states, FakeEditorState } = vi.hoisted(() => {
     dispose = vi.fn()
     /** The router the host handed over, or null until `syncWithRouter` was called. */
     router: IInEditorRouter | null = null
+    /** Where the host asked the state to record edits. */
+    history: unknown
     constructor(
       _i18n: unknown,
-      public project: unknown
+      public project: unknown,
+      ...rest: unknown[]
     ) {
+      this.history = rest[4]
       states.push(this)
     }
   }
@@ -67,6 +73,8 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
 
 const rootPath = 'project'
 const initialPath = '/sprites/Lita/code'
+// Only passed through to the editor state, which is a fake here. Raw, so that it arrives as itself.
+const history = markRaw({}) as History
 
 /** A Course Editor path, e.g. `('project', 'sprites', 'Bird')`. */
 function coursePath(...segments: string[]) {
@@ -84,7 +92,7 @@ async function mountHost(options: { at: string; active: boolean }) {
   await router.isReady()
   const wrapper = mount(SpxProjectEditorHost, {
     // The project is only passed through to the editor state, which is a fake here.
-    props: { project: {} as SpxProject, rootPath, initialPath, active: options.active },
+    props: { project: {} as SpxProject, rootPath, initialPath, history, active: options.active },
     global: {
       plugins: [createI18n({ lang: 'en' }), router],
       directives: { radar: {} },
@@ -169,7 +177,13 @@ describe('SpxProjectEditorHost', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.fullPath).toBe(coursePath('project', 'sprites', 'Bird'))
-    // The same state throughout: its selection and undo history were never rebuilt.
+    // The same state throughout: its selection was never rebuilt.
     expect(state()).toBe(editorState)
+  })
+
+  it('has the edits of the project recorded in the history it is given', async () => {
+    const { state } = await mountHost({ at: coursePath('project'), active: true })
+
+    expect(state().history).toBe(history)
   })
 })

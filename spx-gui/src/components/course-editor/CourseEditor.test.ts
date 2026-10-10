@@ -530,18 +530,26 @@ describe('CourseEditor history', () => {
     return { wrapper, router, project, buttonsHistory, typeProgram }
   }
 
-  it('undoes and redoes edits of the course, leaving the embedded project as it is', async () => {
+  it('undoes and redoes edits of the course and of its project in the order they were made', async () => {
     const { project, buttonsHistory, typeProgram } = await mountEditing([mainCourseFilePath])
+    const history = buttonsHistory()
 
     await typeProgram('onStart => { completeWith "Well done" }')
-    project.project.addSprite(new Sprite('Lita'))
-    await buttonsHistory().undo()
+    // What the project's editor does on an edit, with the history it was given.
+    await history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () =>
+      project.project.addSprite(new Sprite('Lita'))
+    )
 
-    expect(project.mainCourse.code).toBe('onStart => {}')
-    expect(project.project.sprites.map((sprite) => sprite.name)).toEqual(['Lita'])
-
-    await buttonsHistory().redo()
+    await history.undo()
+    expect(project.project.sprites).toEqual([])
     expect(project.mainCourse.code).toBe('onStart => { completeWith "Well done" }')
+    await history.undo()
+    expect(project.mainCourse.code).toBe('onStart => {}')
+
+    await history.redo()
+    await history.redo()
+    expect(project.mainCourse.code).toBe('onStart => { completeWith "Well done" }')
+    expect(project.project.sprites.map((sprite) => sprite.name)).toEqual(['Lita'])
   })
 
   it('takes typing in the program back as one step', async () => {
@@ -557,24 +565,16 @@ describe('CourseEditor history', () => {
     expect(buttonsHistory().getUndoAction()).toBeNull()
   })
 
-  it("works the project's own history while the project is open, and the course's elsewhere", async () => {
+  it("records the project's edits in the history the navbar works on, whichever view is open", async () => {
     const { wrapper, router, buttonsHistory } = await mountEditing([mainCourseFilePath])
-    const courseHistory = buttonsHistory()
-    const projectHistory = { getUndoAction: () => null } as unknown as History
-    wrapper.findComponent({ name: 'ProjectEditorHost' }).vm.$emit('update:editorState', { history: projectHistory })
+    const history = buttonsHistory()
+    expect(wrapper.findComponent({ name: 'ProjectEditorHost' }).vm.$attrs.history).toBe(history)
 
     await router.push({
       name: courseEditorRouteName,
       params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inCourseEditorPath: ['project'] }
     })
     await flushPromises()
-    expect(buttonsHistory()).toBe(projectHistory)
-
-    await router.push({
-      name: courseEditorRouteName,
-      params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inCourseEditorPath: [] }
-    })
-    await flushPromises()
-    expect(buttonsHistory()).toBe(courseHistory)
+    expect(buttonsHistory()).toBe(history)
   })
 })

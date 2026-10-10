@@ -61,6 +61,7 @@ import { cloudHelpers } from '@/models/common/cloud'
 import type { SpxProject } from '@/models/spx/project'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import { EditorState, type IInEditorRouter } from '@/components/editor/editor-state'
+import type { History } from '@/components/editor/history'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { UIDetailedLoading, UIError } from '@/components/ui'
@@ -72,9 +73,11 @@ const props = defineProps<{
   rootPath: string
   /** In-editor path to open the first time the project is shown, unless the route already carries one. */
   initialPath: string
+  /** Where the edits of the project are recorded, together with those of the rest of the course. */
+  history: History
   /**
    * Whether the project is the open document. While inactive, the editor UI is unmounted and the editor state
-   * (selection, undo history, ...) is kept alive but detached from the route.
+   * (selection, ...) is kept alive but detached from the route.
    */
   active: boolean
 }>()
@@ -193,7 +196,15 @@ async function initialize() {
   if (disposed) return
 
   // The project comes already loaded, so there is no `editing.loadProject` here.
-  const nextState = new EditorState(i18n, props.project, isOnline, signedInStateQuery, cloudHelpers, noopLocalCache)
+  const nextState = new EditorState(
+    i18n,
+    props.project,
+    isOnline,
+    signedInStateQuery,
+    cloudHelpers,
+    noopLocalCache,
+    props.history
+  )
   try {
     nextState.editing.startEditing()
     // The `active` watcher ignores toggles while `state` is null, so `active` is sampled here. If the project is not

@@ -11,6 +11,7 @@ import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { courseEditorRoutes, getCourseEditorRoute } from '@/apps/xbuilder/router'
 import type { EditorState } from '@/components/editor/editor-state'
+import { History } from '@/components/editor/history'
 import { inCourseEditorPathParam, isPathWithin, paramToSegments, segmentsToPath } from '../route'
 import SpxProjectEditorHost from './SpxProjectEditorHost.vue'
 
@@ -74,6 +75,7 @@ async function mountInCourseEditor(at: string) {
   await router.isReady()
   const project = makeProject()
   const state = shallowRef<EditorState | null>(null)
+  const history = new History(project)
   // What `CourseEditor.vue` does: the project is open while the route's path is inside its root.
   const CourseEditorStandIn = defineComponent({
     setup() {
@@ -86,6 +88,7 @@ async function mountInCourseEditor(at: string) {
           project,
           rootPath,
           initialPath: '/sprites/Lita/code',
+          history,
           active: active.value,
           'onUpdate:editorState': (next: EditorState | null) => (state.value = next)
         })

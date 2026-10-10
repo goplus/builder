@@ -75,12 +75,12 @@ const projectEditorHost = computed(() => getProjectEditorHost(config.value.proje
 /** Reported by the project editor host; null until the host has initialized it. */
 const editorState = shallowRef<EditorState | null>(null)
 
-// The course's own history. The embedded project keeps its own in `editorState`, so undoing in one never changes
-// the other.
+// One history for the whole course, the embedded project included, which the project's editor records into too: an
+// edit touching both (importing a project, say) is one step, and undoing never leaves them out of step.
 const history = new History({
-  mutex: props.project.mutex,
-  exportFiles: () => props.project.exportOwnFiles(),
-  loadFiles: (files) => props.project.loadOwnFiles(files)
+  mutex: { runExclusive: (job) => props.project.runExclusive(job) },
+  exportFiles: () => props.project.exportFiles(),
+  loadFiles: (files) => props.project.loadFiles(files)
 })
 
 // Typing in the program is recorded as one step, as long as nothing else is done in between.
@@ -545,7 +545,7 @@ onUnmounted(() => {
       </div>
       <NavbarWrapper v-else>
         <template #left>
-          <EditorHistoryButtons :history="open.view === 'project' ? editorState?.history ?? null : history" />
+          <EditorHistoryButtons :history="history" />
         </template>
         <template #center>
           <div
@@ -629,6 +629,7 @@ onUnmounted(() => {
         :project="project.project"
         :root-path="config.project.root"
         :initial-path="config.inEditorPath"
+        :history="history"
         :active="!isPreviewRoute && open.view === 'project'"
       />
     </main>
