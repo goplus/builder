@@ -241,12 +241,17 @@ export class Task<T extends TaskType> extends Disposable {
   }
 
   async untilCompleted(reporter?: ProgressReporter) {
-    const signal = this.getSignal()
-    signal.throwIfAborted()
-    return Promise.race([this.waitForCompletion(reporter), promiseForSignal(signal)])
+    const ctrl = new AbortController()
+    const signal = mergeSignals(this.getSignal(), ctrl.signal)
+    try {
+      signal.throwIfAborted()
+      return await Promise.race([this.waitForCompletion(signal, reporter), promiseForSignal(signal)])
+    } finally {
+      ctrl.abort()
+    }
   }
 
-  private async waitForCompletion(reporter?: ProgressReporter) {
+  private async waitForCompletion(signal: AbortSignal, reporter?: ProgressReporter) {
     const data = this.data
     if (data == null) throw new Error('task not started')
     if (reporter != null && !isTerminalTaskStatus(data.status)) {
@@ -254,12 +259,10 @@ export class Task<T extends TaskType> extends Disposable {
       const taskDurationMs = taskDurations[this.type] * 1000
       const timeLeft = Math.max(1000, taskDurationMs - elapsed)
       // startAutoReport reports percentage: 0 synchronously, so Phase.run sets state.timeLeft immediately
-      reporter.startAutoReport(timeLeft)
+      reporter.startAutoReport(timeLeft, { signal })
     }
     if (!isTerminalTaskStatus(data.status)) {
-      const ctrl = new AbortController()
-      const signal = mergeSignals(this.getSignal(), ctrl.signal)
-      for await (const event of this.apis.subscribeTaskEvents(data.id, signal ?? undefined)) {
+      for await (const event of this.apis.subscribeTaskEvents(data.id, signal)) {
         switch (event.type) {
           case TaskEventType.Snapshot:
             Object.assign<TaskData<T>, TaskData<T>>(data, event.data as TaskData<T>)
@@ -279,10 +282,7 @@ export class Task<T extends TaskType> extends Disposable {
             data.status = TaskStatus.Cancelled
             break
         }
-        if (isTerminalTaskStatus(data.status)) {
-          ctrl.abort()
-          break
-        }
+        if (isTerminalTaskStatus(data.status)) break
       }
     }
     reporter?.report(1)
