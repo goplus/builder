@@ -114,7 +114,6 @@
             @console="handleConsole"
             @update:fullscreen="handleFullscreenChange"
             @exit="handleExit"
-            @failed="handleRuntimeEnded"
           />
         </div>
       </div>
@@ -371,13 +370,7 @@ function handleExit(code: number) {
   exitGuard.value = 'idle'
   lastPanicOutput.value = null
   const shouldRestore = restoreDebugRuntime()
-  handleRuntimeEnded()
   runnerState.value = shouldRestore ? 'running' : 'loading'
-}
-
-function handleRuntimeEnded() {
-  const running = runtime.value.running
-  if (running.mode === 'debug') runtime.value.setRunning({ ...running, exited: true })
 }
 
 async function checkAndNotifyCodeError() {
@@ -427,20 +420,13 @@ async function executeRun(action: 'run' | 'rerun') {
   lastPanicOutput.value = null
   await nextTick()
   const surface = await untilNotNull(projectRunnerSurfaceRef)
-  if (action === 'rerun') {
-    exitGuard.value = 'manualStopPending'
-    await surface.stop()
-    exitGuard.value = 'idle'
-  }
   runtime.value.clearOutputs()
   editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
   try {
-    const filesHash = await surface.run()
+    const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
     runnerState.value = 'running'
     lastFilesHash.value = filesHash
-    const running = runtime.value.running
-    if (running.mode !== 'debug') return
-    editorCtx.state.runtime.setRunning({ ...running, initializing: false }, filesHash)
+    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
   } catch (error) {
     runnerState.value = 'running'
     editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false, initializingError: error })
@@ -507,11 +493,7 @@ function restoreDebugRuntime() {
     })
     return false
   }
-  const running = runtime.value.running
-  editorCtx.state.runtime.setRunning(
-    { ...(running.mode === 'debug' ? running : {}), mode: 'debug', initializing: false },
-    filesHash
-  )
+  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
   return true
 }
 

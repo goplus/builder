@@ -55,7 +55,14 @@ function mountPreview() {
           name: 'ProjectRunnerSurface',
           props: ['onRun', 'onRerun', 'onStop'],
           template: '<div />',
-          methods: { run, stop }
+          methods: {
+            run,
+            stop,
+            async rerun() {
+              await stop()
+              return run()
+            }
+          }
         }
       }
     }
@@ -87,23 +94,23 @@ describe('Editor Preview execution lifecycle', () => {
     expect(runtime.running).toBe(running)
   })
 
-  it('preserves early exit and failure across fullscreen and resets them on rerun', async () => {
+  it('keeps the runtime preview open after exit, fullscreen transitions, and rerun until stopped', async () => {
     const { runtime, surface, run, stop, toggleFullscreen } = mountPreview()
     run.mockImplementationOnce(async () => {
       surface.vm.$emit('exit', 0)
       return 'files-hash'
     })
     await surface.props('onRun')()
-    expect(runtime.running).toEqual({ mode: 'debug', initializing: false, exited: true })
+    expect(runtime.running).toEqual({ mode: 'debug', initializing: false })
     await toggleFullscreen()
-    expect(runtime.running).toEqual({ mode: 'debug', initializing: false, exited: true })
+    expect(runtime.running).toEqual({ mode: 'debug', initializing: false })
     stop.mockImplementationOnce(async () => surface.vm.$emit('exit', 0))
     await surface.props('onRerun')()
     expect(runtime.running).toEqual({ mode: 'debug', initializing: false })
-    surface.vm.$emit('failed')
-    expect(runtime.running).toEqual({ mode: 'debug', initializing: false, exited: true })
+    surface.vm.$emit('exit', 1)
+    expect(runtime.running).toEqual({ mode: 'debug', initializing: false })
     await toggleFullscreen()
-    expect(runtime.running).toEqual({ mode: 'debug', initializing: false, exited: true })
+    expect(runtime.running).toEqual({ mode: 'debug', initializing: false })
     await surface.props('onStop')()
     expect(runtime.running).toEqual({ mode: 'none' })
   })

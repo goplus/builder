@@ -83,7 +83,7 @@ The judging principle: **judge structured results with code**. A course scene's 
 
 Editor customizations a course can enable on demand — independent of each other and freely combinable:
 
-* **Simple mode**: a focused form for single-sprite programming — hides the sprite list and disables sprite settings; sprite names appear on the stage (hovering a sprite reveals its name label, clicking inserts the name into the code, so learners never have to spell sprite names); larger code font; centered run button and Copilot entry; a bigger API Reference. The running state does not exit automatically — learners switch back themselves, encouraging rapid "change a little, run again" iteration
+* **Simple mode**: a focused form for single-sprite programming — hides the sprite list and disables sprite settings; sprite names appear on the stage (hovering a sprite reveals its name label, clicking inserts the name into the code, so learners never have to spell sprite names); larger code font; centered run button and Copilot entry; a bigger API Reference. The running state does not exit automatically — learners switch back themselves, encouraging rapid "change a little, run again" iteration. Code editing is disabled in the running state
 * **API allowlist**: filters the API Reference to show only the APIs relevant to the course and hides unrelated categories, reducing cognitive load
 * **Ruler**: a measuring aid on the stage that helps learners build intuition for coordinates and distances
 

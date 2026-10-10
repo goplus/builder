@@ -5,7 +5,11 @@
       v-radar="{ name: 'simple-code-editor', desc: 'Focused code editor for the selected course sprite' }"
       class="relative min-w-0 flex-[3.5_1_0] flex flex-col overflow-visible!"
     >
-      <CodeEditorUI :code-file-path="selectedSprite.codeFilePath" :read-only="codeReadOnly" simple-mode />
+      <CodeEditorUI
+        :code-file-path="selectedSprite.codeFilePath"
+        :read-only="editorCtx.state.codeReadOnly"
+        simple-mode
+      />
       <div class="absolute right-3 bottom-4 z-10 flex items-center gap-4">
         <div ref="simpleControlsAnchor"></div>
         <DockedCopilotUI />
@@ -86,10 +90,6 @@ const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
 const mode = computed(() => editorCtx.state.selectedEditMode)
 const selectedSprite = computed(() => (selected.value.type === 'sprite' ? selected.value.sprite : null))
-const codeReadOnly = computed(() => {
-  const running = editorCtx.state.runtime.running
-  return running.mode === 'debug' && !running.exited && running.initializingError == null
-})
 const simpleControlsAnchor = ref<HTMLElement | null>(null)
 
 useSpxEditorCopilot()

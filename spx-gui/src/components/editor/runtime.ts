@@ -16,8 +16,6 @@ export type RunningState =
       initializing: boolean
       /** Error occurred during initializing, if any */
       initializingError?: unknown
-      /** Execution ended while the debug preview remains open. */
-      exited?: boolean
     }
 
 export enum RuntimeOutputKind {
