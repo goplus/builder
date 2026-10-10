@@ -31,6 +31,8 @@ export type PlaygroundCourseProgramOptions = {
   apiWhitelist: APIWhitelist
   ruler: Ruler
   presentation: PlaygroundCoursePresentation
+  waitForEditor(signal: AbortSignal): Promise<void>
+  onStarted(signal: AbortSignal): Promise<void>
   formatWorkspace(): Promise<void>
   onCompleted(completion: PlaygroundCourseCompletion): void
   onFailed(error: Exception): void
@@ -80,6 +82,16 @@ export class PlaygroundCourseProgram extends Disposable {
     const signal = this.getSignal()
     const { project, copilot, apiWhitelist, ruler, presentation, formatWorkspace } = this.options
     return {
+      lifecycle: {
+        waitForEditor: () => {
+          signal.throwIfAborted()
+          return this.options.waitForEditor(signal)
+        },
+        started: () => {
+          signal.throwIfAborted()
+          return this.options.onStarted(signal)
+        }
+      },
       course: {
         showPrelude: async (content) => {
           if (signal.aborted) throw new Cancelled(signal.reason)

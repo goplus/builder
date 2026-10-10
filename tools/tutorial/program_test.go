@@ -213,7 +213,7 @@ func TestCompletionEndsTheProgram(t *testing.T) {
 	})
 
 	want := []string{"course_showPrelude", "course_completeWith"}
-	got := host.names()
+	got := courseCapabilityNames(host)
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Errorf("capability calls = %v, want %v", got, want)
 	}
@@ -235,7 +235,7 @@ func TestCompletionIsIdempotent(t *testing.T) {
 		})
 	})
 
-	if got, want := fmt.Sprint(host.names()), "[course_complete]"; got != want {
+	if got, want := fmt.Sprint(courseCapabilityNames(host)), "[course_complete]"; got != want {
 		t.Errorf("capability calls = %s, want %s", got, want)
 	}
 }
@@ -931,5 +931,98 @@ func TestPendingEventsAreBounded(t *testing.T) {
 	}
 	if err := xgoexec.DispatchEvent("editor.runtime.log", []byte(`{"log":"x"}`)); err == nil {
 		t.Fatal("a dispatch beyond the pending limit must fail")
+	}
+}
+
+func courseCapabilityNames(host *fakeHost) []string {
+	var names []string
+	for _, name := range host.names() {
+		if !strings.HasPrefix(name, "lifecycle_") {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
+func TestStartWaitsForEditorAndEveryCallbackInitialSegment(t *testing.T) {
+	host := newFakeHost()
+	editorWaiting, editorReady := host.holdCapability("lifecycle_waitForEditor")
+	filterWaiting, filterApplied := host.holdCapability("editor_codeEditor_filterAPIs")
+	messageWaiting, dismissMessage := host.holdCapability("course_showMessage")
+	startupWaiting, uncoverEditor := host.holdCapability("lifecycle_started")
+	callbackStarted := make(chan struct{}, 1)
+	callbackReturned := make(chan struct{}, 1)
+	done := startCourse(host, func(course *testCourse) {
+		course.OnStart(func() {
+			callbackStarted <- struct{}{}
+			course.Editor.CodeEditor.FilterAPIs([]string{"stepTo"})
+			course.ShowMessage("Try this")
+		})
+		course.OnStart(func() {
+			course.Editor.Ruler.Enable()
+			callbackReturned <- struct{}{}
+		})
+		course.Editor.Runtime.OnLog(func(string) { course.Complete() })
+	})
+	await(t, editorWaiting, "editor readiness handshake")
+	select {
+	case <-callbackStarted:
+		t.Fatal("onStart ran before editor readiness")
+	default:
+	}
+	editorReady()
+	await(t, filterWaiting, "API configuration acknowledgment")
+	select {
+	case <-startupWaiting:
+		t.Fatal("startup finished before fast configuration was acknowledged")
+	default:
+	}
+	filterApplied()
+	await(t, startupWaiting, "all startup callback initial segments")
+	await(t, callbackReturned, "second callback returning")
+	await(t, messageWaiting, "first callback waiting on the learner")
+	// Events may queue during startup, but must not run before rendering is acknowledged.
+	dispatch(t, "editor.runtime.log", `{"log":"complete"}`)
+	select {
+	case <-done:
+		t.Fatal("host event ran before startup rendering was acknowledged")
+	default:
+	}
+	uncoverEditor()
+	dismissMessage()
+	awaitDone(t, done)
+}
+
+func TestStartupWithoutCallbacksStillNotifiesHost(t *testing.T) {
+	host := newFakeHost()
+	startupWaiting, uncoverEditor := host.holdCapability("lifecycle_started")
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog(func(string) { course.Complete() })
+	})
+	await(t, startupWaiting, "startup without callbacks")
+	uncoverEditor()
+	dispatch(t, "editor.runtime.log", `{"log":"complete"}`)
+	awaitDone(t, done)
+}
+
+func TestStartupHandshakeFailures(t *testing.T) {
+	for _, name := range []string{"lifecycle_waitForEditor", "lifecycle_started"} {
+		t.Run(name, func(t *testing.T) {
+			host := newFakeHost()
+			host.fail[name] = fmt.Errorf("handshake failed: %s", name)
+			ran := false
+			defer func() {
+				failure := recover()
+				if failure == nil || !strings.Contains(fmt.Sprint(failure), name) {
+					t.Fatalf("startup failure = %v, want %s", failure, name)
+				}
+				if ran != (name == "lifecycle_started") {
+					t.Fatalf("onStart ran = %v after %s failure", ran, name)
+				}
+			}()
+			XGot_Course_Main(newTestCourse(host, func(course *testCourse) {
+				course.OnStart(func() { ran = true })
+			}))
+		})
 	}
 }

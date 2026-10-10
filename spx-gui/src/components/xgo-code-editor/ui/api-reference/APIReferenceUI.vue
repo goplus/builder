@@ -29,6 +29,7 @@ import { stringifyDefinitionId, type DefinitionDocumentationItem } from '../../c
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import { useRegisterUIReady } from '@/utils/ui-ready'
 
 const props = defineProps<{
   controller: APIReferenceController
@@ -87,6 +88,14 @@ watch(categoriesComputed, async (categories, oldValue, onCleanUp) => {
   categoriesForItems.value = categories
   loaded.value = true
 })
+
+useRegisterUIReady(
+  () =>
+    props.controller.error != null ||
+    (!props.controller.loading &&
+      props.controller.items != null &&
+      (!needsCategorization.value || categoriesForItems.value === categoriesComputed.value))
+)
 
 const activeCategoryIdRef = ref<string | null>(null)
 

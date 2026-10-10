@@ -147,6 +147,14 @@ func (p *courseProgram) init() {
 	p.callCapability = xgoexec.CallCapability
 }
 
+// Lifecycle handshakes run on the main goroutine, outside Course runs. They
+// neither access current nor yield the execution token.
+func (p *courseProgram) callLifecycleCapability(name string) {
+	if err := p.callCapability(name, nil, nil); err != nil {
+		p.recordFatal(err)
+	}
+}
+
 func (p *courseProgram) acquireExec() { <-p.execToken }
 
 // releaseExec returns the execution token. The non-blocking send doubles as a

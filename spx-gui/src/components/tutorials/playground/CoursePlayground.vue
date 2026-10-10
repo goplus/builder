@@ -5,8 +5,10 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { useQuery } from '@/utils/query'
+import { until } from '@/utils/utils'
+import { useProvideUIReady } from '@/utils/ui-ready'
 import { useEnsureSignedIn } from '@/utils/user'
-import { type Exception, useMessageHandle } from '@/utils/exception'
+import { capture, type Exception, useMessageHandle } from '@/utils/exception'
 import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -119,10 +121,14 @@ const inEditorRouter: IInEditorRouter = {
 }
 
 const runningErr = ref<Exception | null>(null)
+const editorReady = useProvideUIReady()
+const starting = ref(true)
 
 const sessionQueryRet = useQuery(
   async (ctx) => {
     runningErr.value = null
+    starting.value = true
+    codeEditor.value = null
     const project = props.project
 
     // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause unnecessary query fetching.
@@ -133,11 +139,27 @@ const sessionQueryRet = useQuery(
     const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
     editorState.editing.startEditing()
     editorState.syncWithRouter(inEditorRouter)
+    async function finishStarting(signal: AbortSignal) {
+      await nextTick()
+      await until(editorReady, signal)
+      await nextTick()
+      signal.throwIfAborted()
+      starting.value = false
+    }
+
     const session = new PlaygroundCourseSession({
       project,
       editorState,
       copilot,
       presentation,
+      async waitForEditor(signal) {
+        await until(() => sessionQueryRet.data.value === session && codeEditor.value != null, signal)
+        await nextTick()
+        await until(editorReady, signal)
+        await nextTick()
+        signal.throwIfAborted()
+      },
+      onStarted: finishStarting,
       async formatWorkspace() {
         if (codeEditor.value == null) throw new Error('Course Code Editor is not ready')
         await codeEditor.value.formatWorkspace()
@@ -146,17 +168,16 @@ const sessionQueryRet = useQuery(
     session.disposeOnSignal(ctx.signal)
     editorState.disposeOnSignal(ctx.signal)
     session.on('completed', (completion) => {
+      // Completion disposes Program before its startup acknowledgment can arrive.
+      void finishStarting(ctx.signal).catch((error) => {
+        if (!ctx.signal.aborted) capture(error, 'Failed to render completed Course')
+      })
       emit('courseCompleted', completion)
     })
     session.on('failed', (e) => {
       runningErr.value = e
     })
-    // Give the Editor UI time to mount before the Course accesses its targets.
-    // TODO(#3533): Replace this delay with a reliable Editor UI readiness signal.
-    const startTimer = setTimeout(() => {
-      void session.start().catch(() => {})
-    }, 300)
-    session.addDisposer(() => clearTimeout(startTimer))
+    void session.start()
     return session
   },
   {
@@ -167,11 +188,18 @@ const sessionQueryRet = useQuery(
 )
 
 const session = sessionQueryRet.data
+const covered = computed(
+  () =>
+    starting.value &&
+    sessionQueryRet.error.value == null &&
+    monacoQueryRet.error.value == null &&
+    runningErr.value == null
+)
 </script>
 
 <template>
   <section class="relative min-h-full w-full flex flex-col bg-grey-300">
-    <header class="flex-none">
+    <header class="flex-none" :inert="covered">
       <EditorNavbar
         v-if="session != null"
         :project="session.project.project"
@@ -187,7 +215,7 @@ const session = sessionQueryRet.data
         </template>
       </EditorNavbar>
     </header>
-    <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
+    <main class="flex-[1_1_0] flex gap-xl p-4 pt-2" :inert="covered">
       <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">
         <span>{{ $t({ en: 'Preparing course...', zh: '准备课程中...' }) }}</span>
       </UIDetailedLoading>
@@ -220,5 +248,15 @@ const session = sessionQueryRet.data
         </CodeEditorProvider>
       </EditorContextProvider>
     </main>
+    <div
+      v-if="covered"
+      class="absolute inset-0 z-20 flex items-center justify-center bg-grey-300"
+      role="status"
+      :aria-label="$t({ en: 'Preparing course...', zh: '准备课程中...' })"
+    >
+      <UIDetailedLoading :percentage="0">
+        <span>{{ $t({ en: 'Preparing course...', zh: '准备课程中...' }) }}</span>
+      </UIDetailedLoading>
+    </div>
   </section>
 </template>
