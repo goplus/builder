@@ -8,6 +8,33 @@ import { withQueryClient, withSetup } from './test'
 import { timeout } from './utils'
 
 describe('useQuery', () => {
+  it.each(['auto', 'refetch'] as const)('resets progress and ignores stale reports on %s fetch', async (source) => {
+    const input = ref(0)
+    const contexts: QueryContext[] = []
+    const ret = withSetup(() =>
+      useQuery(async (ctx) => {
+        const value = input.value
+        contexts.push(ctx)
+        return value
+      })
+    )
+
+    await flushPromises()
+    contexts[0].reporter.report({ percentage: 0.8, timeLeft: 100, desc: { en: 'Loading', zh: '加载中' } })
+    expect(ret.progress.value.percentage).toBe(0.8)
+
+    if (source === 'auto') input.value++
+    else ret.refetch()
+    await flushPromises()
+    expect(contexts[0].signal.aborted).toBe(true)
+    expect(contexts[1].source).toBe(source)
+    expect(ret.progress.value).toEqual({ percentage: 0, timeLeft: null, desc: null })
+
+    contexts[1].reporter.report(0.2)
+    contexts[0].reporter.report(1)
+    expect(ret.progress.value.percentage).toBe(0.2)
+  })
+
   it('keeps previous data during refetch by default', async () => {
     let resolveNext!: (value: string) => void
     let callCount = 0

@@ -139,7 +139,8 @@ components/tutorials/
 ├── guided/                     Guided Root, runtime, Copilot elements, and persisted state
 ├── playground/
 │   ├── CoursePlayground.vue    route/Preview-owned editor composition
-│   └── runner.ts               one Playground Course runner
+│   ├── session.ts              component-local editor and Copilot session
+│   └── program.ts              one disposable XGo program execution
 └── ...                         existing Guided presentation components
 
 apps/xbuilder/pages/tutorials/
@@ -165,18 +166,19 @@ Readiness is tied to object identity (`editorContext.project === tutorialProject
 
 ## Playground runtime
 
-One route-local runtime owns:
+The component-local Session borrows EditorState and owns the Playground Copilot session,
+Course-controlled API filtering and Ruler state. It forwards Program completion
+to the caller, borrows the caller's TutorialProject, and owns one Program.
 
-- the XGo executor;
-- the Playground Copilot session;
-- Runtime and Copilot event subscriptions;
-- Tutorial-owned presentation for this Course;
-- Course-controlled API filtering, Ruler, and Spotlight state;
-- the accepted completion result.
+Session creates a Playground Copilot Topic with the Course title and
+`copilotContext`, proactive reactions disabled, and code Copy/Apply helpers
+disabled. It starts Copilot before starting Program. Project, code, and runtime
+context still come from the normal editor context providers.
 
-It creates a Playground Copilot Topic with the Course title and `copilotContext`, proactive reactions disabled, and code Copy/Apply helpers disabled. Project, code, and runtime context still come from the normal editor context providers.
-
-It passes `createTutorialFramework(host)` to `XGoExecutor` and runs exactly:
+Program owns the XGo executor, Runtime and Copilot event subscriptions, and the
+signal for pending capability calls. The component provides presentation and
+workspace formatting. Program passes `createTutorialFramework(host)` to
+`XGoExecutor` and runs exactly:
 
 ```ts
 {
@@ -191,15 +193,22 @@ SPX files and video files are not executor input. Supporting additional Course-p
 | Framework host area  | Concrete owner and behavior                                                                             |
 | -------------------- | ------------------------------------------------------------------------------------------------------- |
 | Prelude and message  | Route-local Tutorial presentation; resolves after learner dismissal                                     |
-| Named video          | Resolves `Video` by name from the same `TutorialProject`; resolves after playback finishes or is closed |
-| Completion           | Runtime records the first completion request; repeated requests are ignored                             |
+| Named video          | Resolves `Video` by name from the same `TutorialProject`; keeps the player open after playback; resolves after Continue or explicit close |
+| Completion           | Program publishes the first completion request and disposes; repeated requests are ignored              |
 | Project code queries | Reads the active session `SpxProject`                                                                   |
 | Code Editor          | Delegates API filtering and formatting to the matching Code Editor from #3416                           |
-| Ruler                | Delegates visible state to the mounted Project Editor support from #3416                                |
+| Ruler                | Delegates enabled state to the mounted Project Editor support from #3416                                |
 | Copilot generation   | Delegates text/JSON generation to generic Copilot APIs from #3421                                       |
 | Spotlight            | Delegates target resolution and presentation to Radar/Spotlight support from #3416                      |
 
-After completion has been accepted, later presentation capabilities are no-ops.
+The Playground Host opens each presentation call directly, without queuing or
+replacing other calls. Course authors avoid overlapping calls when stacked
+dialogs would be inappropriate. The current video dialog remains available for
+replay after playback ends; Continue or explicit close marks viewing as complete.
+These are Playground presentation choices, not Framework interface requirements.
+
+Programmatic modal calls receive
+lifecycle cancellation through `useModal` options, rather than modal props.
 
 ## Event forwarding
 
@@ -214,18 +223,23 @@ The route-local runtime forwards:
 
 Runtime exposes cumulative output. The Playground runtime keeps the last forwarded output ID and sends every new `log` entry exactly once and in order. Error output is not part of the judging channel.
 
-Subscriptions are installed before executor startup and removed before route-local state is disposed. Events arriving during stop are ignored.
+Subscriptions are installed immediately after executor startup is requested and before Worker messages arrive. They are removed when Program is disposed. Events arriving during stop are ignored.
 
 ## Completion and failure
 
-The first `course_complete` or `course_completeWith` stores the completion result and resolves when accepted. It does not open completion UI inside the capability call.
+The first `course_complete` or `course_completeWith` publishes the completion result and resolves when accepted. The page handles completion UI.
 
-| Executor result | Completion requested | Result                                                             |
-| --------------- | -------------------- | ------------------------------------------------------------------ |
-| `completed`     | yes                  | Publish completion, then show completion UI                        |
-| `completed`     | no                   | Report that the Course program fell through without completing     |
-| `stopped`       | irrelevant           | Expected route leave, replacement, or public end; no completion UI |
-| `error`         | irrelevant           | Publish failure and show a Course failure                          |
+When the Host accepts a `course_complete` or `course_completeWith` request, it
+immediately disposes Program, cancelling pending presentation and generation
+calls, and publishes completion for the page to display without waiting for
+executor exit or learner interaction with the completion dialog. Subsequent
+executor errors cannot replace that result. Failure also disposes Program.
+
+| Executor result | Program state | Result                                                        |
+| --------------- | ------------- | ------------------------------------------------------------- |
+| any             | disposed      | Ignore; completion, failure, or disposal was already handled   |
+| `completed`     | active        | Report that the Course program exited without completing      |
+| `error`/`stopped`| active        | Publish failure and show a Course execution error              |
 
 Choosing Next disposes the current page-owned session, then invokes the thin facade's `startCourse` with the next Course ID.
 
@@ -237,7 +251,23 @@ Public `endCurrentCourse` is idempotent:
 - if the current route is a Playground Course, navigate to its Course Series page so route leave disposes the local session;
 - otherwise, do nothing.
 
-`CoursePlayground`, which creates and starts the runner, disposes the previous runner before replacing it and disposes the current runner when the component unmounts. Completion and failure only notify the page; they keep the Playground session, including its project and editor state, mounted behind the completion UI. The page disposes the project and editor state only on route leave, replacement, explicit exit, or transition to the next Course. Runner disposal is idempotent.
+`CoursePlayground` creates and disposes EditorState and a component-local
+`PlaygroundCourseSession`. Session borrows EditorState and owns
+API filtering and Ruler state, the Copilot session, and one
+`PlaygroundCourseProgram`. The externally supplied `TutorialProject` remains
+owned by the caller. The component disposes its Session on replacement or
+unmount; the page disposes the Project on route leave or replacement.
+
+The Class Framework still waits for already-started callbacks before normal
+shutdown. The frontend Program lifetime is separate: once it accepts completion,
+it no longer processes program input or output, and does not wait for that
+Framework shutdown. This is the Playground Host's lifecycle policy, not a change
+to Class Framework completion semantics.
+
+Program owns the executor, Framework Host and event bridge. Session remains
+available for the UI until the component ends its
+lifecycle, retaining editor configuration and the Copilot conversation after
+completion. No statements after complete are guaranteed to execute.
 
 Starting any Course ends Guided state first, preventing a restored Guided session from remaining active when a Playground Course is entered.
 
@@ -273,7 +303,7 @@ Playground tests:
 - the configured in-editor path is applied;
 - only `main_course.gox` is passed to XGo Executor;
 - logs are forwarded once and in order;
-- completion retains the editor session and its runner until the session is replaced or unmounted;
+- completion immediately disposes Program while retaining Session until replacement or unmount;
 - route leave and snapshot replacement dispose runtime and `EditorState` once;
 - Preview snapshots use the same Playground runtime without invoking the ID-based facade.
 
@@ -289,11 +319,11 @@ The current prototype validates the central boundary without requiring the publi
 
 The second prototype adds a deliberately narrow end-to-end runtime example:
 
-- `CoursePlayground` waits until the editor providers are mounted, then creates one route-local `PlaygroundCourseRunner`;
-- the runner starts a non-proactive Copilot Topic, runs only `main_course.gox`, and owns its executor, Copilot, Runtime, and presentation subscriptions until its owner disposes it;
-- the current Runtime start, exit, and log signals plus Copilot round completion are serialized through one executor-event queue;
+- `CoursePlayground` creates one component-local `PlaygroundCourseSession` and starts its Program after the temporary 300ms UI mounting delay (#3533);
+- Session starts and retains the non-proactive Copilot Topic; Program runs only `main_course.gox` and owns the executor, event subscriptions and pending capability lifetime;
+- Runtime start, exit, and log signals plus Copilot round completion wait for executor startup before forwarding directly; the Framework queues received events;
 - `showMessage` is represented by route-local blocking presentation, while `complete` and `completeWith` publish a terminal outcome for the page to handle;
-- the page, rather than the runtime or facade, displays completion UI and chooses to continue editing, start Next, or exit based on the active Series;
+- the page, rather than the runtime or facade, displays completion UI and chooses to retry, continue editing, start Next, or exit based on the active Series;
 - replacing a page-owned Playground session waits one Vue render turn before disposing its project, allowing the child runtime and `EditorState` to unmount first.
 
 This confirms that XGo/Copilot integration does not require broadening the facade. It also sharpens the internal responsibility split:
@@ -301,8 +331,9 @@ This confirms that XGo/Copilot integration does not require broadening the facad
 ```text
 Tutorial facade       load by ID, dispatch kind, end Guided state or exit Playground route
 Playground page       load TutorialProject, failure/completion UI, Series Next/Exit policy, session disposal
-CoursePlayground      EditorState, editor providers, route-local presentation, runner lifetime
-Playground runner     XGo, Copilot session, framework host, event bridge, terminal events
+CoursePlayground      editor providers, presentation, component-local Session lifetime
+Playground Session   Project reference, EditorState, API/Ruler state, Copilot session, Program
+Playground Program   XGo executor, framework host, event bridge, cancellation, terminal callbacks
 ```
 
 The prototype still exposes implementation questions that do not change the public boundary:

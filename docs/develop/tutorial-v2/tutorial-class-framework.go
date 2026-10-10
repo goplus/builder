@@ -13,9 +13,8 @@ package tutorial
 // specified; until it is, Course code handles that race itself. The order in
 // which runs start is not promised either.
 //
-// Overlapping presentation calls from different runs are the host's business:
-// the framework does not serialize them, and the host's capability decides
-// whether to queue the later call, reject it, or dismiss the earlier one.
+// The framework does not serialize overlapping presentation calls from
+// different runs; the host defines how these presentations are handled.
 
 type Course struct {
 	CourseAbilities
@@ -29,24 +28,22 @@ type CourseAbilities interface {
 	// Several callbacks may be registered; they run independently of each
 	// other. Opening steps that must happen in order belong in one callback.
 	onStart(callback func())
-	// showPrelude displays the Course opening guide with the given message and
-	// returns after the learner dismisses it. Unlike showMessage, the host
-	// presents it as the opening task guide. Presentation never advances
-	// automatically.
+	// showPrelude presents the Course opening guide with the given message and
+	// returns after the learner finishes reading it.
 	showPrelude(preludeMessage string)
-	// showMessage displays a dialog with the given message and returns after the
-	// learner dismisses it. Presentation never advances automatically: the Course
-	// flow always waits for the learner to finish reading.
+	// showMessage presents the given message and returns after the learner
+	// finishes reading it.
 	showMessage(message string)
-	// showVideo displays the Course-local video with the given declared resource
-	// name and returns after the learner finishes watching or closes it.
-	// Presentation never advances automatically.
+	// showVideo presents the Course-local video with the given declared resource
+	// name and returns after the learner finishes watching it. The host determines
+	// how viewing completion is established.
 	showVideo(videoName string)
 	// complete marks the course as completed and ends the Course program: no
-	// further events are processed, callbacks already running or waiting still
-	// run to their end (presentation calls after a completion are ignored by
-	// the host), and the program then exits. Calling complete or completeWith
-	// again has no effect.
+	// further events start callbacks. Callbacks already running or waiting finish
+	// unless a capability fails or is cancelled, and the program then exits.
+	// The host settles pending capability calls during shutdown; the Playground
+	// Host cancels them and retains the accepted completion result independently
+	// of executor exit. Calling complete or completeWith again has no effect.
 	complete()
 	// completeWith is complete with the given feedback displayed to the learner.
 	completeWith(message string)

@@ -76,7 +76,11 @@ export function useQuery<T>(
     const ctrl = new AbortController()
     lastCtrl = ctrl
     const signal = ctrl.signal
-    const reporter = new ProgressReporter((p) => (progress.value = p))
+    progress.value = { percentage: 0, timeLeft: null, desc: null }
+    const reporter = new ProgressReporter((p) => {
+      if (signal.aborted) return
+      progress.value = p
+    })
     if (options.clearDataOnFetch) data.value = null
     isLoading.value = true
     queryFn({ signal, source, reporter }).then(

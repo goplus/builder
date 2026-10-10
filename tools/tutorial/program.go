@@ -190,6 +190,7 @@ func (r *run) markYielded() {
 // exit path; recording it lets awaitShutdown re-raise it on the main
 // goroutine, and the executor still sees "the Course program panicked, exit
 // with an error".
+// TODO: Distinguish expected capability cancellation from execution errors.
 //
 // Mind the defer order: markYielded is registered first and therefore runs
 // last, so the dispatcher is always released when a run ends; releaseExec
@@ -279,9 +280,9 @@ func startRuns[T any](p *courseProgram, regs []*registration[T], event T) {
 // awaitShutdown waits for the Course to end, by completion or a fatal error.
 //
 // The completion path waits for every in-flight run to finish on its own: a
-// suspended run resumes once the capability it waits on returns (after a
-// completion the host no-ops presentation, so that is quick) and executes its
-// remaining statements; the dispatcher goroutine exits. The fatal path does
+// suspended run resumes once the capability it waits on succeeds and executes
+// its remaining statements. Capability failure or cancellation instead takes
+// the fatal path; the dispatcher goroutine exits. The fatal path does
 // not wait: it re-raises on the main goroutine right away, and suspended runs
 // die with the process.
 func (p *courseProgram) awaitShutdown() {

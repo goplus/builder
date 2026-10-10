@@ -75,39 +75,38 @@ export type SpotlightOptions = {
  * Calls may overlap: while a presentation or generation call is pending, the
  * Course program keeps handling events and may issue further calls,
  * including further presentation calls. The framework does not serialize
- * presentation: when a `course.show*` call arrives while another is pending,
- * the host's capability decides whether to queue it, reject it, or dismiss
- * the earlier one, and documents that choice. Generation calls can be pending
- * concurrently.
+ * presentation calls; the Host defines how overlapping presentations are
+ * handled. Generation calls can be pending concurrently.
  *
- * On completion the host must promptly settle every still-pending call (for
- * presentation, resolving as a no-op is fine): the program only exits after
- * pending callbacks finish, so an unsettled call would hold the exit open.
+ * On completion the Host must promptly settle every still-pending call so it
+ * does not hold shutdown open. The framework waits for running or suspended
+ * callbacks to finish; capability failure or cancellation can end execution
+ * with an error. The Playground Host cancels pending calls and retains the
+ * accepted completion result regardless of subsequent executor errors.
  */
 export interface TutorialFrameworkHost {
   course: {
     /**
-     * Displays the Course opening guide with the given message. Resolves
-     * after the learner dismisses it; presentation never advances
-     * automatically.
+     * Presents the Course opening guide with the given message. Resolves
+     * after the learner finishes reading it.
      */
     showPrelude(preludeMessage: string): Promise<void>;
     /**
-     * Displays a message dialog. Resolves after the learner dismisses it;
-     * presentation never advances automatically.
+     * Presents the given message. Resolves after the learner finishes reading
+     * it.
      */
     showMessage(message: string): Promise<void>;
     /**
-     * Displays a Course-local video. Resolves after the learner finishes
-     * watching or closes it; presentation never advances automatically.
+     * Presents a Course-local video. Resolves after the learner finishes
+     * watching it. The Host determines how viewing completion is established.
      */
     showVideo(videoName: string): Promise<void>;
     /**
      * Completes the Course without feedback. Resolves as soon as the
      * completion is accepted; it does not wait for the completion dialog.
-     * After a completion the host treats further presentation capabilities
-     * as no-ops, and repeated completion calls are idempotent (the first one
-     * wins).
+     * Repeated completion calls are idempotent (the first one wins).
+     * The Playground Host ends its Program lifetime when completion is accepted;
+     * further capability calls cannot resume interaction with the learner.
      */
     complete(): Promise<void>;
     /**
