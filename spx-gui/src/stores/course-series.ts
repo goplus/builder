@@ -87,7 +87,7 @@ export function useDeleteCourseSeries() {
   )
 }
 
-/** Keeps cached series and their course lists in step with the course writes of `stores/course`. */
+/** Keeps cached series and their course lists in step with writes to courses. */
 export function useCourseChangesInSeries() {
   const seriesCache = useQueryCache<apis.CourseSeries>()
   const coursesCache = useQueryCache<Course[]>()

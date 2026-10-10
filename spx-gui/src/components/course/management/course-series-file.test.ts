@@ -59,7 +59,7 @@ vi.mock('@/models/common/xbp', () => ({
   }
 }))
 
-// Stand-ins for the store writes an import into an existing series is handed; assertions inspect the mocked APIs.
+// The mocked APIs stand in for the store writes, so assertions can inspect them.
 const writes = { updateCourseSeries, deleteCourse }
 
 const existingSeries: CourseSeries = {

@@ -9,10 +9,7 @@ function splitNumericSuffix(name: string) {
   return { base: match[1], digits: match[2] }
 }
 
-/**
- * Add one to a non-negative decimal integer given as its digits. Working on the digits rather than on a `Number`
- * keeps every suffix exact: past `Number.MAX_SAFE_INTEGER`, `n + 1 === n` and incrementing a number stalls.
- */
+/** Add one to a decimal integer given as digits, which unlike a `Number` stays exact past `MAX_SAFE_INTEGER`. */
 function incrementDecimal(digits: string) {
   const chars = digits.split('')
   for (let i = chars.length - 1; i >= 0; i--) {

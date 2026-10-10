@@ -1,10 +1,3 @@
-/**
- * Creating a Playground Course takes two requests the server cannot make one: create the course, then put it in
- * the series it is written for. Either can fail on its own, so the second has to be retryable without redoing the
- * first; otherwise a failed attachment followed by another click on "Create" leaves two courses behind, one of
- * them in no series.
- */
-
 import { DefaultException } from '@/utils/exception'
 import { addCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
@@ -13,50 +6,35 @@ import type { Files } from '@/models/common/file'
 import type { UpdateCourseSeries } from '@/stores/course-series'
 import { appendCourseToSeries } from './series'
 
-/** What the author filled in. */
 export type PlaygroundCourseCreationParams = {
   title: string
   thumbnail: string
-  /** The series the course is written for. */
   courseSeriesID: string
 }
 
 /**
- * One attempt at creating a course, kept across retries. It remembers the course once it exists, so running it
- * again only repeats what has not succeeded yet.
- *
- * Consumed by: components/course/management/playground/PlaygroundCourseEditModal.vue (one instance per modal),
- * components/course/management/playground/creation.test.ts.
+ * One attempt at creating a Playground Course, kept across retries. Creating the course and adding it to its series
+ * are two requests that can fail separately; once the course exists, running again only retries adding it, so a
+ * failed add followed by another "Create" does not leave a second course behind.
  */
 export class PlaygroundCourseCreation {
-  /** The course, once created; null until then. */
   private created: PlaygroundCourse | null = null
 
-  /**
-   * @param buildFiles - Builds the records the course starts with. Passed in because the app builds them from the
-   *   default project, which fetches template assets, while a test supplies its own.
-   * @param updateCourseSeries - The write that puts the course in its series, from
-   *   `stores/course-series#useUpdateCourseSeries`, which keeps cached series in step with it.
-   */
   constructor(
+    /** Builds the files the course starts with. */
     private buildFiles: () => Promise<Files>,
     private updateCourseSeries: UpdateCourseSeries
   ) {}
 
-  /** The course this attempt has created so far, if any. */
   get createdCourse() {
     return this.created
   }
 
-  /**
-   * Create the course unless an earlier run already did, then put it in its series.
-   *
-   * @param params - What the author filled in. After the course exists, only `courseSeriesID` is still used.
-   * @returns The course and the series as it stands with the course in it.
-   * @throws Whatever creating the course throws; or a `DefaultException` saying the course exists but is not in
-   *   the series yet, which is the case a retry repairs.
-   */
-  async run(params: PlaygroundCourseCreationParams): Promise<{ course: PlaygroundCourse; courseSeries: CourseSeries }> {
+  /** Create the course unless an earlier run already did, then put it in its series. */
+  async run(
+    /** Once the course exists, only `courseSeriesID` is used. */
+    params: PlaygroundCourseCreationParams
+  ): Promise<{ course: PlaygroundCourse; courseSeries: CourseSeries }> {
     if (this.created == null) {
       const { fileCollection } = await saveFiles(await this.buildFiles())
       const course = await addCourse({

@@ -102,10 +102,7 @@ export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?
   return new File([zipped], `${courseSeries.title}.xbcs.zip`, { type: 'application/zip' })
 }
 
-/**
- * The writes an import into an existing series makes that cached courses and series depend on: pass the ones from
- * `stores/course-series` and `stores/course`, which keep those caches in step.
- */
+/** Writes that keep cached courses and series in step, from `stores/course` and `stores/course-series`. */
 export type CourseSeriesImportWrites = {
   updateCourseSeries: UpdateCourseSeries
   deleteCourse: DeleteCourse

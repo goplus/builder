@@ -1,10 +1,6 @@
 /**
  * The Course Editor shows a course as views, one per part of it: the course itself (its settings), the learner's
- * project, the videos and the course program. The activity bar switches between them.
- *
- * A view is addressed in the route by the path of what it edits: `''` for the course, the project root with the
- * Project Editor's own path after it, the videos' directory, `main_course.gox`. A path inside a view is shown by
- * that view, and anything else by the course itself.
+ * project, the videos and the course program. A view is addressed in the route by the path of what it edits.
  */
 
 import type { LocaleMessage } from '@/utils/i18n'
@@ -16,28 +12,18 @@ import { videoAssetPath } from '@/models/tutorial/video'
 import type { IconType } from '@/components/ui'
 import { isPathWithin, pathToSegments } from './route'
 
-/** One part of the course, as the activity bar offers it. */
 export type CourseView = 'course' | 'project' | 'videos' | 'images' | 'program'
 
 /**
- * The views in the order the activity bar lists them. The images view is hidden until the course format defines
- * images and some course API uses them; the model still loads and saves the images a course has.
+ * The views in display order. The images view is hidden until the course format defines images and some course API
+ * uses them; the model still loads and saves the images a course has.
  */
 export const courseViews: CourseView[] = ['course', 'project', 'videos', 'program']
 
-/** A view that shows the resources of one type. */
 export type ResourceView = 'videos' | 'images'
 
-/** What is open: a view, and for the project the Project Editor's own path inside it. */
 export type OpenView = { view: Exclude<CourseView, 'project'> } | { view: 'project'; inEditorPath: string[] }
 
-/**
- * What a view is called, in the activity bar's tooltips and in the view's own header.
- * @param view - The view.
- * @returns A localized label.
- * Called by: components/course-editor/CourseActivityBar.vue#template,
- * components/course-editor/CourseResourceGrid.vue (its header).
- */
 export function getViewLabel(view: CourseView): LocaleMessage {
   switch (view) {
     case 'course':
@@ -53,12 +39,6 @@ export function getViewLabel(view: CourseView): LocaleMessage {
   }
 }
 
-/**
- * The icon a view is shown with in the activity bar.
- * @param view - The view.
- * @returns A `UIIcon` type.
- * Called by: components/course-editor/CourseActivityBar.vue#template.
- */
 export function getViewIcon(view: CourseView): IconType {
   switch (view) {
     case 'course':
@@ -74,13 +54,6 @@ export function getViewIcon(view: CourseView): IconType {
   }
 }
 
-/**
- * The path a view lives at, which is where the activity bar navigates.
- * @param view - The view.
- * @param projectRoot - `config.project.root`, the embedded project's directory.
- * @returns The in-Course-Editor path of the view.
- * Called by: components/course-editor/CourseEditor.vue#openView.
- */
 export function getViewPath(view: CourseView, projectRoot: string): string {
   switch (view) {
     case 'course':
@@ -97,15 +70,9 @@ export function getViewPath(view: CourseView, projectRoot: string): string {
 }
 
 /**
- * The view that shows `path`, and the path it lives at. The project comes first: whatever is under its root is
- * the Project Editor's own path, which the project view keeps as it is. A path inside the videos' directory (a
- * single video, as earlier versions of the editor addressed one) is shown by the videos view, and any other path
- * by the course.
- * @param path - The normalized in-Course-Editor path from the route; `''` for the course itself.
- * @param projectRoot - `config.project.root`.
- * @returns What is open, and the path the route should say; that path differs from `path` when `path` is not a
- *   view's own, so the editor can bring the URL in line with what it shows.
- * Called by: components/course-editor/CourseEditor.vue#resolved, components/course-editor/course-views.test.ts.
+ * The view that shows `path`, and the path the route should say, which differs from `path` when `path` is not a
+ * view's own. A path inside the videos' directory (a single video, as earlier versions of the editor addressed one)
+ * is shown by the videos view, and any other path by the course.
  */
 export function resolveView(path: string, projectRoot: string): { open: OpenView; path: string } {
   if (path === '') return { open: { view: 'course' }, path }
@@ -117,13 +84,7 @@ export function resolveView(path: string, projectRoot: string): { open: OpenView
   return { open: { view: 'course' }, path: '' }
 }
 
-/**
- * The views with unsaved changes, for the dots on the activity bar. A record belongs to the view that edits it.
- * @param changedPaths - The result of `getChangedPaths`.
- * @param projectRoot - `config.project.root`.
- * @returns The views some changed record belongs to.
- * Called by: components/course-editor/CourseEditor.vue#dirtyViews, components/course-editor/course-views.test.ts.
- */
+/** The views that edit some changed record. A record that no view edits marks none, not even the course. */
 export function getDirtyViews(changedPaths: Set<string>, projectRoot: string): Set<CourseView> {
   const dirty = new Set<CourseView>()
   for (const path of changedPaths) {
@@ -140,18 +101,9 @@ export function getDirtyViews(changedPaths: Set<string>, projectRoot: string): S
  * Paths whose record differs between two exports: added, removed, or replaced by another `File` instance. Identity
  * comparison is enough because the model reuses `File` instances while their source is unchanged (generated
  * records are kept in computeds; edits always produce a new instance).
- *
- * @param baseline - The export taken at load or after the last successful save.
- * @param current - The export of the working copy now.
- * @returns The set of paths present in either export whose `File` differs (including `undefined` on one side).
- *
- * Called by:
- * - components/course-editor/CourseEditor.vue#changedPaths
- * - components/course-editor/course-views.test.ts
  */
 export function getChangedPaths(baseline: Files, current: Files): Set<string> {
   const changed = new Set<string>()
-  // Union of both key sets so additions and removals are both seen.
   for (const path of new Set([...Object.keys(baseline), ...Object.keys(current)])) {
     if (baseline[path] !== current[path]) changed.add(path)
   }

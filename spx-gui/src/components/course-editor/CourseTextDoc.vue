@@ -1,26 +1,5 @@
 <script setup lang="ts">
-/**
- * Purpose: A controlled plain-text editor (Monaco) for a text record of the course, which today means the course
- * program (`main_course.gox`). It loads Monaco for the current UI
- * language, shows loading/error states meanwhile, and keeps the editor content and the `text` prop in sync in
- * both directions: local edits are emitted, external changes to `text` are pushed into the editor. No language
- * server is attached yet (see the note on `editorOptions`).
- *
- * Props:
- * - `text`: the current text; the single source of truth (the editor is re-synced whenever it changes).
- * - `language`: Monaco language id (`xgo`, `plaintext`, `json`, ...); falls back to `plaintext` when the loaded
- *   Monaco does not know it.
- *
- * Emits:
- * - `update:text(text)`: the author edited the content; carries the full new text. Listened by
- *   `components/course-editor/CourseEditor.vue#template` (`project.mainCourse.setCode(text)`).
- *
- * Used by: `components/course-editor/CourseEditor.vue#template` (the program view).
- *
- * Uses: `xgo-code-editor/ui/MonacoEditor.vue` (creates the editor instance and emits `init`),
- * `xgo-code-editor#loadMonaco`, `useQuery`, `useI18n`, UIDetailedLoading, UIError, and the highlighter
- * constants `theme` / `tabSize` / `insertSpaces`.
- */
+/** A controlled plain-text Monaco editor for a text file of the course, such as the course program. */
 import { computed, watch } from 'vue'
 import { debounce } from 'lodash'
 import { useI18n } from '@/utils/i18n'
@@ -44,26 +23,12 @@ const emit = defineEmits<{
 
 const i18n = useI18n()
 
-/**
- * The Monaco loading query: resolves to the `Monaco` namespace for the current UI language. Reading
- * `i18n.lang.value` inside the query function makes it re-run on a language switch, which re-creates the editor.
- * Read by: `editorOptions` (language check), `CourseTextDoc.vue#template` (loading / error / editor branches,
- * `:retry`).
- * Called by: Vue (`useQuery` runs it on setup and whenever `i18n.lang` changes)
- */
 const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
   en: 'Failed to load code editor',
   zh: '加载代码编辑器失败'
 })
 
 // Plain text editing for now; completion and diagnostics for course programs wait for the Tutorial Language Server.
-/**
- * Construction options for the Monaco editor: the requested language when the loaded Monaco registers it
- * (`plaintext` otherwise), the shared XGo theme and indentation settings, a small font and no context menu.
- * @returns `IStandaloneEditorConstructionOptions` passed to `MonacoEditorComp`.
- * Read by: `CourseTextDoc.vue#template` (`:options`).
- * Called by: Vue (computed; re-evaluated when Monaco finishes loading or `props.language` changes)
- */
 const editorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => {
   const loaded = monacoQueryRet.data.value
   // Only languages the loaded Monaco knows are valid ids; anything else would make Monaco warn and fall back.
@@ -78,40 +43,25 @@ const editorOptions = computed<monaco.editor.IStandaloneEditorConstructionOption
   }
 })
 
-/**
- * Wire a freshly created Monaco editor to the `text` prop: seed it with the current text, emit local edits, push
- * external changes into it, and stop both when the editor is disposed. Because this runs outside setup, the
- * `watch` below is not tied to the component scope and is stopped by hand on dispose.
- * @param editor - The `IStandaloneCodeEditor` instance created by `MonacoEditorComp`.
- * @returns void; side effects: sets the editor content, registers a content listener, a watcher and a dispose
- * hook.
- * Called by: `components/xgo-code-editor/ui/MonacoEditor.vue` (`emit('init', editor)` once the editor exists),
- * through `components/course-editor/CourseTextDoc.vue#template` (`@init="handleEditorInit"`)
- */
+// Runs outside setup, so the `watch` below is not tied to the component scope and is stopped by hand on dispose.
 function handleEditorInit(editor: MonacoEditor) {
   // The editor is re-created when Monaco reloads (e.g. on language change), so always start from the
   // current text rather than whatever the component captured at setup.
   editor.setValue(props.text)
-  /**
-   * Editor -> prop: report each local edit, unless the content already equals `props.text` (which is the case
-   * right after `setValue` from the watcher below, avoiding an echo).
-   * @returns void; side effect: emits `update:text`.
-   * Called by: Monaco (`onDidChangeModelContent` event)
-   */
+  // Right after a `setValue` from the sync below the content equals `props.text`; do not echo it back.
   const contentListener = editor.onDidChangeModelContent(() => {
     const text = editor.getValue()
     if (text !== props.text) emit('update:text', text)
   })
-  // Prop -> editor: when `text` changes from outside (an undo, say), replace the editor content, unless it
-  // already matches (the common case after a local edit was emitted). Edits may come back asynchronously (the
-  // parent records them in a history first), so an input method inserting two characters at once would see the
-  // first one come back while the editor already shows both, and replacing the content would move the cursor.
-  // Syncing after a short pause lets such edits settle first, as `xgo-code-editor/text-document.ts` does.
+  // Edits may come back asynchronously (the parent records them in a history first), so an input method inserting
+  // two characters at once would see the first come back while the editor already shows both, and replacing the
+  // content would move the cursor. Syncing after a short pause lets edits settle first, as
+  // `xgo-code-editor/text-document.ts` does.
   const syncFromText = debounce(() => {
     if (editor.getValue() !== props.text) editor.setValue(props.text)
   }, 100)
   const stopModelSync = watch(() => props.text, syncFromText)
-  // `MonacoEditorComp` disposes the editor on unmount / re-creation; release the bindings with it.
+  // `MonacoEditorComp` disposes the editor on unmount and re-creation.
   editor.onDidDispose(() => {
     contentListener.dispose()
     stopModelSync()
@@ -121,15 +71,12 @@ function handleEditorInit(editor: MonacoEditor) {
 </script>
 
 <template>
-  <!-- While Monaco loads: a progress placeholder driven by the query's progress. -->
   <UIDetailedLoading v-if="monacoQueryRet.isLoading.value" :percentage="monacoQueryRet.progress.value.percentage">
     <span>{{ $t({ en: 'Loading code editor...', zh: '加载代码编辑器中...' }) }}</span>
   </UIDetailedLoading>
-  <!-- Monaco failed to load: show the user message with a retry that re-runs the query. -->
   <UIError v-else-if="monacoQueryRet.error.value != null" :retry="monacoQueryRet.refetch">
     {{ $t(monacoQueryRet.error.value.userMessage) }}
   </UIError>
-  <!-- Monaco is ready: the editor fills the document; `@init` hands the created instance to `handleEditorInit`. -->
   <MonacoEditorComp
     v-else-if="monacoQueryRet.data.value != null"
     v-radar="{ name: 'text-editor', desc: 'Code editor for the open text file' }"

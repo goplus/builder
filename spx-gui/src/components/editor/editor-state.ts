@@ -284,11 +284,7 @@ export class EditorState extends Disposable {
     }
   }
 
-  /**
-   * Select a target (by specifying route path). Throws if the path is not recognized.
-   * Public so that a host embedding the Project Editor can open an initial path itself before `syncWithRouter` takes
-   * over, and decide what to do when the path is not recognized.
-   */
+  /** Select a target by route path. Throws if the path is not recognized. */
   selectByRoute(path: PathSegments) {
     let [segment, extra] = shiftPath(path)
 

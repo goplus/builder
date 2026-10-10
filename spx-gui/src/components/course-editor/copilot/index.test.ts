@@ -54,12 +54,11 @@ function currentContext() {
     .join('\n\n')
 }
 
-/** Every skill the registered providers ask to preload. */
 function preloadedSkills() {
   return providers.flatMap((provider) => provider.providePreloadSkills?.() ?? [])
 }
 
-/** Run the composable in its own scope, as a mounted `CourseEditor` would. */
+/** Run the composable in its own scope, as a mounted component would. */
 function runInScope(project: TutorialProject, open: () => OpenView, isPreviewing: () => boolean = () => false) {
   const scope = effectScope()
   scope.run(() => useCourseEditorCopilot(() => project, open, isPreviewing))
@@ -121,8 +120,6 @@ describe('useCourseEditorCopilot', () => {
 
   it('says nothing while the course is being previewed', async () => {
     const project = await loadProject()
-    // The editor stays mounted through a preview, where the Copilot belongs to the learner's session: it must see
-    // what a learner's would, not the author's course, program or authoring skill.
     const previewing = { value: true }
     const scope = runInScope(
       project,

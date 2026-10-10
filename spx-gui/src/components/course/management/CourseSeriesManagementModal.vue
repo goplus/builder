@@ -31,7 +31,6 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-// Which kind of series is listed; a series only ever holds courses of its own kind.
 const kind = shallowRef<CourseKind>('guided')
 
 const page = shallowRef(1)
@@ -39,7 +38,6 @@ const pageSize = 12
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 watch(kind, () => (page.value = 1))
 
-/** `UITabRadioGroup` speaks strings; the two tabs are the two course kinds, so anything else is ignored. */
 function handleKindUpdate(value: string) {
   if (value === 'guided' || value === 'playground') kind.value = value
 }
@@ -120,8 +118,7 @@ const handleRemove = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <template #input>
-      <!-- The two kinds are two views of one list, exactly one of which is shown: a segmented switch, not a set
-           of filters. The header slot lays its content out side by side without spacing, hence the margin. -->
+      <!-- The header slot lays its content out without spacing, hence the margin. -->
       <UITabRadioGroup
         v-radar="{ name: 'course-kind-switch', desc: 'Switch between guided and Playground' }"
         class="mr-3 w-44"

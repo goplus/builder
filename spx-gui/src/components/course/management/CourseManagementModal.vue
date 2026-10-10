@@ -40,8 +40,7 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-// Which kind of course is listed. The two kinds are managed in one place but never mixed: they are created and
-// edited differently, and the server filters by kind so that pages and totals describe what is shown.
+// Filtered by the server rather than here, so that pages and totals describe what is shown.
 const kind = shallowRef<CourseKind>('guided')
 
 const page = shallowRef(1)
@@ -49,7 +48,6 @@ const pageSize = 8
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 watch(kind, () => (page.value = 1))
 
-/** `UITabRadioGroup` speaks strings; the two tabs are the two course kinds, so anything else is ignored. */
 function handleKindUpdate(value: string) {
   if (value === 'guided' || value === 'playground') kind.value = value
 }
@@ -79,10 +77,6 @@ const deleteCourse = useDeleteCourse()
 const invokeGuidedEditModal = useModal(CourseEditModal)
 const invokePlaygroundEditModal = useModal(PlaygroundCourseEditModal)
 
-/**
- * Open a Playground Course in the Course Editor. The editor addresses a course through the series it is written
- * for, so the series is looked up first; a course that is in none cannot be opened yet.
- */
 const handleOpenInCourseEditor = useMessageHandle(
   async (course: PlaygroundCourse) => {
     const courseSeries = await m.withLoading(
@@ -158,10 +152,7 @@ const handleRemove = useMessageHandle(
   }
 ).fn
 
-/**
- * Clicking a Playground Course opens it in the Course Editor, where its content lives. A guided course has no
- * editor beyond its form, which stays where it was, in the corner menu.
- */
+// A guided course has no editor beyond its form, which stays in the corner menu.
 function handleOpen(course: Course) {
   if (!isGuidedCourse(course)) handleOpenInCourseEditor(course)
 }
@@ -175,8 +166,7 @@ function handleOpen(course: Course) {
     @update:visible="emit('cancelled')"
   >
     <template #input>
-      <!-- The two kinds are two views of one list, exactly one of which is shown: a segmented switch, not a set
-           of filters. The header slot lays its content out side by side without spacing, hence the margin. -->
+      <!-- The header slot lays its content out without spacing, hence the margin. -->
       <UITabRadioGroup
         v-radar="{ name: 'course-kind-switch', desc: 'Switch between guided and Playground' }"
         class="mr-3 w-44"

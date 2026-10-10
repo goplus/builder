@@ -1,26 +1,8 @@
 <script lang="ts" setup>
 /**
- * Create a Playground Course, or edit the metadata of one. Playground Courses keep everything else (the program,
- * the resources, the embedded project) inside their content, which the Course Editor edits; here the author only
- * gives the course a title and a thumbnail, both of which the Course API requires.
- *
- * Creating one also gives it something to start from: a default SPX project and a program that already runs (see
- * `components/course-editor/starter`). A course created empty could not be opened, previewed or learned.
- *
- * A new course is created in a series, chosen here. The Course Editor opens a course through the series it is
- * written for, so a course in no series could be listed but never edited; asking for the series up front means
- * every course created here can be opened right away.
- *
- * Props:
- * - `visible`: whether the modal is shown; set by `UIModalProvider`.
- * - `course`: the course to edit, or null to create one.
- *
- * Emits:
- * - `cancelled`: the author closed the modal.
- * - `resolved`: payload is the created or updated course, plus the series it was created in (null when editing),
- *   so the caller can open it in the Course Editor.
- *
- * Used by: components/course/management/CourseManagementModal.vue (through `useModal`)
+ * Create a Playground Course, or edit its title and thumbnail; the rest of it is edited in the Course Editor.
+ * A new course gets starter content and is created in a series, since a course created empty, or in no series, could
+ * not be opened in the Course Editor.
  */
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
@@ -49,11 +31,13 @@ import { listPlaygroundSeries } from './series'
 
 const props = defineProps<{
   visible: boolean
+  /** The course to edit, or null to create one. */
   course: PlaygroundCourse | null
 }>()
 
 const emit = defineEmits<{
   cancelled: []
+  /** `courseSeries` is the series the course was created in, null when editing. */
   resolved: [result: { course: PlaygroundCourse; courseSeries: CourseSeries | null }]
 }>()
 
@@ -96,23 +80,11 @@ const form = useForm({
   ]
 })
 
-/**
- * The author's Playground Course series, to create the course in. Loaded only for creation.
- * Read by: `PlaygroundCourseEditModal.vue#template` (the series select, and the hint when there is none).
- */
 const seriesQueryRet = useQuery(async () => (props.course == null ? listPlaygroundSeries() : []), {
   en: 'Failed to list course series',
   zh: '获取课程系列列表失败'
 })
 
-/**
- * The records a new course starts with: a default SPX project, the configuration pointing at it, and a starter
- * program. The project is built only to export its records and disposed right after.
- *
- * @returns The course's files, ready to upload.
- *
- * Called by: components/course/management/playground/PlaygroundCourseEditModal.vue#handleSubmit
- */
 async function buildStarterFiles() {
   const project = await createDefaultProject('', '', [])
   try {
@@ -122,19 +94,9 @@ async function buildStarterFiles() {
   }
 }
 
-/**
- * This modal's one attempt at creating a course. It outlives a failed submit, so that submitting again finishes
- * what is left instead of creating a second course.
- */
+// Outlives a failed submit, so submitting again finishes what is left instead of creating a second course.
 const creation = new PlaygroundCourseCreation(buildStarterFiles, useUpdateCourseSeries())
 
-/**
- * Create the course (uploading its starter content first) or update the one being edited, then resolve with it.
- *
- * @returns A `useMessageHandle` wrapper; `fn()` performs the write and emits `resolved`.
- *
- * Called by: components/course/management/playground/PlaygroundCourseEditModal.vue#template (form submit)
- */
 const handleSubmit = useMessageHandle(
   async () => {
     const { title, thumbnail } = form.value
@@ -185,7 +147,6 @@ const handleSubmit = useMessageHandle(
         <ThumbnailUploader v-model:thumbnail="form.value.thumbnail" class="h-50 w-full" />
       </UIFormItem>
 
-      <!-- Creation only: the series the course is written for. Without one the course could not be opened. -->
       <UIFormItem v-if="!isEditMode" path="courseSeriesID" :label="$t({ en: 'Course series', zh: '所属系列' })">
         <UISelect
           v-model:value="form.value.courseSeriesID"
@@ -206,7 +167,6 @@ const handleSubmit = useMessageHandle(
         </p>
       </UIFormItem>
 
-      <!-- Says where the rest of a course is edited, so the short form does not read like the whole thing. -->
       <p v-if="!isEditMode" class="m-0 text-sm text-grey-700">
         {{
           $t({

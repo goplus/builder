@@ -13,10 +13,8 @@ const acceptedExts = {
 
 <script setup lang="ts">
 /**
- * The page of one resource type of the course -- the videos or the pictures -- laid out as a grid of cards like the
- * course management lists. Adding happens here: the page says what is being added, so the author only picks the
- * files, and each becomes a resource named after its file. A card previews its resource when clicked; its corner
- * menu renames or deletes it. Nothing is saved until the author saves the course.
+ * The page of one resource type of the course (its videos or its pictures), as a grid of cards. Each file the author
+ * adds becomes a resource named after the file.
  */
 import { computed, onUnmounted } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
@@ -34,7 +32,7 @@ import CourseResourcePreviewModal from './CourseResourcePreviewModal.vue'
 import { getViewLabel, type ResourceView } from './course-views'
 
 const props = defineProps<{
-  /** The author's working copy of the Tutorial project; resources are read from and written to it. */
+  /** The author's working copy of the Tutorial project. */
   project: TutorialProject
   /** Which resource view this is; it decides the type, the wording and the files accepted. */
   view: ResourceView
@@ -80,7 +78,6 @@ const handleAdd = useMessageHandle(
 
 const handlePreview = useMessageHandle((resource: Video | Image) => openPreview({ resource }))
 
-// The course program plays a video by its name, so for a video the dialog also warns that the program has to follow.
 const handleRename = useMessageHandle(
   (resource: Video | Image) =>
     openRename({

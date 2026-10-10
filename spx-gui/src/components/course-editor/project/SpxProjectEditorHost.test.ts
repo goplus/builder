@@ -8,11 +8,9 @@ import type { IInEditorRouter } from '@/components/editor/editor-state'
 import type { SpxProject } from '@/models/spx/project'
 import SpxProjectEditorHost from './SpxProjectEditorHost.vue'
 
-// The host's own job is the route: which in-editor path the embedded Project Editor is told to show, and when.
-// What it builds that on -- the editor state, its UI, Monaco -- is stood in for, so only the route logic is under
-// test. The fake state records the `IInEditorRouter` it is synced with, which is the host's whole contract with it.
-// It never acts on what it is shown, though, so it cannot tell when the state's own navigation overtakes the host's:
-// those round trips are covered against a real editor state in `SpxProjectEditorHost.sync.test.ts`.
+// Only the host's route logic is under test: the editor state, its UI and Monaco are stood in for, and the fake state
+// records the `IInEditorRouter` it is synced with. It never acts on what it is shown, so round trips where the
+// state's own navigation overtakes the host's are covered in `SpxProjectEditorHost.sync.test.ts`.
 const { states, FakeEditorState } = vi.hoisted(() => {
   class FakeEditorState {
     editing = { startEditing: vi.fn() }

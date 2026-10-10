@@ -47,10 +47,7 @@ export type AddCourseSeriesParams = Pick<
   CourseSeries,
   'kind' | 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'
 >
-/**
- * Any subset of a course series' editable fields. `PATCH /course-series/:id` patches just the fields given, so a
- * caller that only changes which courses the series holds sends `courseIDs` alone and leaves the rest untouched.
- */
+/** Fields to update; omitted fields keep their stored values. */
 export type UpdateCourseSeriesParams = Partial<
   Pick<CourseSeries, 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'>
 >

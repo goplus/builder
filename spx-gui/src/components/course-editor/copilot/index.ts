@@ -1,17 +1,3 @@
-/**
- * Copilot setup for the Course Editor: what the assistant is told about the course being authored, and which
- * skill it starts with. The Project Editor does the same for a project (`components/editor/copilot`); when the
- * author opens the embedded project, that subtree mounts and adds its own context, and unmounts with it.
- *
- * Everything here is registered for the lifetime of the calling scope and disposed with it, so a second course
- * opened in the same session never inherits the first one's context.
- *
- * None of it applies while the course is being previewed. The Course Editor stays mounted through a preview, but
- * the Copilot there belongs to the learner's session that the playground runner started, and the whole point of
- * Preview is to see what a learner sees: an assistant told it is helping an author, handed the course program
- * and the authoring skill, is not that. `whileAuthoring` is where that rule lives.
- */
-
 import { onScopeDispose } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { useCopilot } from '@/components/copilot/context'
@@ -21,21 +7,14 @@ import type { TutorialProject } from '@/models/tutorial/project'
 import type { OpenView } from '../course-views'
 
 /**
- * How much of the course program is passed as context, in characters. A course program is short by nature (it
- * reacts to events and says a few things), so this only guards against a pathological one crowding out the rest
- * of the context.
+ * How many characters of the course program are passed as context. A course program is short by nature, so this
+ * only guards against a pathological one crowding out the rest of the context.
  */
 const programMaxLength = 20000
 
 /**
- * Wrap a provider so it says nothing while the course is being previewed: the learner's session must see what a
- * learner's would, and nothing of the author's.
- *
- * @param isPreviewing - Whether the editor is showing the preview rather than the editing surface.
- * @param provider - The provider to gate.
- * @returns A provider that delegates while authoring and is silent while previewing.
- *
- * Called by: components/course-editor/copilot/index.ts#useCourseEditorCopilot (for every registration)
+ * Silence a provider while the course is being previewed. The Course Editor stays mounted through a preview, but
+ * the Copilot there belongs to the learner's session, which must see what a learner would and nothing of the author's.
  */
 function whileAuthoring(isPreviewing: () => boolean, provider: ICopilotContextProvider): ICopilotContextProvider {
   return {
@@ -44,17 +23,12 @@ function whileAuthoring(isPreviewing: () => boolean, provider: ICopilotContextPr
   }
 }
 
-/**
- * What the author is working on: the course's identity, its settings, and what it carries. Read at the start of
- * every round, so it follows the working copy including unsaved edits.
- */
 class CourseContextProvider implements ICopilotContextProvider {
   constructor(private getProject: () => TutorialProject) {}
 
   provideContext(): string {
     const project = this.getProject()
     const config = project.config
-    // Before the course is loaded there is nothing to say about it.
     if (config == null) return ''
     const videos = project.videos.length === 0 ? 'None' : project.videos.map((video) => video.name).join(', ')
     const copilotContext = config.copilotContext.trim()
@@ -68,10 +42,7 @@ Videos the course program can play by name: ${videos}.`
   }
 }
 
-/**
- * The course program as it stands, unsaved edits included. It is the thing the author actually writes, so it is
- * given in full rather than sampled around a cursor.
- */
+/** The course program is what the author actually writes, so it is given in full rather than sampled around a cursor. */
 class CourseProgramContextProvider implements ICopilotContextProvider {
   constructor(private getProject: () => TutorialProject) {}
 
@@ -88,10 +59,6 @@ ${JSON.stringify(shown)}`
   }
 }
 
-/**
- * Which view of the course the author has open, so the assistant can tell "fix this video's name" from "fix the
- * program".
- */
 class OpenViewContextProvider implements ICopilotContextProvider {
   constructor(private getOpen: () => OpenView) {}
 
@@ -117,20 +84,11 @@ The author is editing the course program.`
   }
 }
 
-/**
- * Set up Copilot for the Course Editor: register what it should know about this course and preload the
- * course-authoring skill.
- *
- * @param getProject - The course being edited; read on every round, so it follows the working copy.
- * @param getOpen - The view the author has open, from the route.
- * @param isPreviewing - Whether the editor is previewing the course; everything registered here goes quiet then.
- * @returns Nothing; every registration is disposed with the calling scope.
- *
- * Called by: components/course-editor/CourseEditor.vue (setup)
- */
+/** Tell Copilot about the course being authored and preload the course-authoring skill, for the calling scope. */
 export function useCourseEditorCopilot(
   getProject: () => TutorialProject,
   getOpen: () => OpenView,
+  /** Everything registered here goes quiet while this returns true. */
   isPreviewing: () => boolean
 ): void {
   const d = new Disposable()

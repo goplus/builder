@@ -14,12 +14,9 @@ import type { EditorState } from '@/components/editor/editor-state'
 import { inCourseEditorPathParam, isPathWithin, paramToSegments, segmentsToPath } from '../route'
 import SpxProjectEditorHost from './SpxProjectEditorHost.vue'
 
-// The other host tests stand a fake in for the editor state, to look at the host alone. These use the real one,
-// because the round trip they cover runs through it: shown a route, the state selects what the route names and
-// then navigates to wherever its selection says -- so a route the host lets through can overtake a navigation of
-// the host's own. Only the editor's UI and Monaco are stood in for. The host is mounted the way the Course Editor
-// mounts it, open exactly while the route is inside the project, so tests only move the route, as the activity bar
-// does.
+// These use a real editor state: shown a route, it selects what the route names and then navigates to wherever its
+// selection says, so a route the host lets through can overtake a navigation of the host's own. Only the editor's UI
+// and Monaco are stood in for. Tests only move the route, as the activity bar does.
 vi.mock('@/components/editor/ProjectEditor.vue', () => ({ default: { name: 'ProjectEditor', render: () => null } }))
 vi.mock('@/components/editor/EditorContextProvider.vue', () => ({
   default: {

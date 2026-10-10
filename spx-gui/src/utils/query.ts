@@ -163,9 +163,8 @@ export function useQueryCache<T>() {
 
   /**
    * Discard data known to be outdated, for all queries whose keys start with the provided queryKey. Unlike
-   * `invalidate`, which leaves the outdated data in place for the next reader to take (`isLoading` stays false while
-   * data exists), queries nobody is using are removed, so their next reader waits for fresh data. Queries in use are
-   * refetched in the background, keeping what they show until the fresh data arrives.
+   * `invalidate`, which leaves outdated data for the next reader, unused queries are removed so their next reader
+   * waits for fresh data; queries in use refetch in the background.
    */
   function discard(queryKey: unknown[]) {
     queryClient.removeQueries({ queryKey, type: 'inactive' })
