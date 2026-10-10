@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { encodePathSegment, extname } from '@/utils/path'
-import { Disposable, promiseForSignal } from '@/utils/disposable'
+import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { ArtStyle, Perspective } from '@/apis/common'
 import {
@@ -183,11 +183,12 @@ export class CostumeGen extends Disposable {
   }
 
   setReferenceImage(file: File | null) {
-    this.referenceImageSelection = resolveSelectionAfterReferenceImageChange(
+    const selection = resolveSelectionAfterReferenceImageChange(
       this.referenceImageSelection,
       file,
       this.sprite.defaultCostume?.id ?? null
     )
+    this.setReferenceImageSelection(selection)
   }
 
   image: File | null = null
@@ -215,8 +216,7 @@ export class CostumeGen extends Disposable {
       }
       signal.throwIfAborted()
       await task.start({ settings: { ...this.settings, referenceImageUrl }, n: 1 })
-      signal.throwIfAborted()
-      const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
+      const { imageUrls } = await task.untilCompleted(reporter)
       if (imageUrls.length < 1) throw new Error('no costume image generated')
       return createFileWithUniversalUrl(imageUrls[0])
     })

@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { reactive, watch } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { encodePathSegment, extname } from '@/utils/path'
-import { Disposable, promiseForSignal } from '@/utils/disposable'
+import { Disposable } from '@/utils/disposable'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
 import { getContentBoundingRect } from '@/utils/img'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
@@ -227,8 +227,7 @@ export class SpriteGen extends Disposable {
       }
       signal.throwIfAborted()
       await task.start({ settings, n: 4 })
-      signal.throwIfAborted()
-      const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
+      const { imageUrls } = await task.untilCompleted(reporter)
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
     })
   }

@@ -29,8 +29,4 @@ const handleDropdownVisibleChange = (v: boolean) => {
 const handleTooltipVisibleChange = (v: boolean) => {
   tooltipVisible.value = v && !dropdownVisible.value
 }
-
-defineExpose({
-  setVisible: handleDropdownVisibleChange
-})
 </script>

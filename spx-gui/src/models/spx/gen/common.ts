@@ -1,5 +1,5 @@
 import { ActionException, Cancelled, capture, Exception } from '@/utils/exception'
-import { Disposable, mergeSignals } from '@/utils/disposable'
+import { Disposable, mergeSignals, promiseForSignal } from '@/utils/disposable'
 import type { LocaleMessage } from '@/utils/i18n'
 import { ProgressReporter } from '@/utils/progress'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
@@ -241,6 +241,12 @@ export class Task<T extends TaskType> extends Disposable {
   }
 
   async untilCompleted(reporter?: ProgressReporter) {
+    const signal = this.getSignal()
+    signal.throwIfAborted()
+    return Promise.race([this.waitForCompletion(reporter), promiseForSignal(signal)])
+  }
+
+  private async waitForCompletion(reporter?: ProgressReporter) {
     const data = this.data
     if (data == null) throw new Error('task not started')
     if (reporter != null && !isTerminalTaskStatus(data.status)) {

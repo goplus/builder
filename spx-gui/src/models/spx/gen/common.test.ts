@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TaskErrorReason, TaskEventType, TaskStatus, TaskType, type TaskParams } from '@/apis/aigc'
 import { Cancelled } from '@/utils/exception'
 import { setupAigcMock } from './aigc-mock'
@@ -63,6 +63,36 @@ describe('Task', () => {
     await task.tryCancel()
 
     await expect(task.untilCompleted()).rejects.toBeInstanceOf(Cancelled)
+  })
+
+  it('untilCompleted() should reject before subscribing if disposed', async () => {
+    const task = new Task(TaskType.GenerateCostume)
+    await task.start(costumeParams)
+    task.dispose()
+
+    await expect(task.untilCompleted()).rejects.toBe(task.getSignal().reason)
+    expect(aigcMock.subscribeTaskEvents).not.toHaveBeenCalled()
+  })
+
+  it('untilCompleted() should reject on disposal without waiting for another event', async () => {
+    const task = new Task(TaskType.GenerateCostume)
+    await task.start(costumeParams)
+    let resume!: () => void
+    const paused = new Promise<void>((resolve) => {
+      resume = resolve
+    })
+    vi.mocked(aigcMock.subscribeTaskEvents).mockImplementationOnce(async function* () {
+      await paused
+      yield { type: TaskEventType.Snapshot, data: task.data! }
+    })
+
+    const pending = task.untilCompleted()
+    task.dispose()
+    try {
+      await expect(pending).rejects.toBe(task.getSignal().reason)
+    } finally {
+      resume()
+    }
   })
 
   it('tryCancel() should not cancel when task is not started', async () => {

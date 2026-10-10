@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
-import { Disposable, promiseForSignal } from '@/utils/disposable'
+import { Disposable } from '@/utils/disposable'
 import type { Prettify } from '@/utils/types'
 import type { I18n } from '@/utils/i18n'
 import { encodePathSegment, extname } from '@/utils/path'
@@ -142,8 +142,7 @@ export class BackdropGen extends Disposable {
       const referenceImageUrl = this.referenceImage == null ? null : await saveFile(this.referenceImage, signal)
       signal.throwIfAborted()
       await task.start({ settings: { ...this.settings, referenceImageUrl }, n: 4 })
-      signal.throwIfAborted()
-      const { imageUrls } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
+      const { imageUrls } = await task.untilCompleted(reporter)
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
     })
   }

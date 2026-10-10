@@ -13,11 +13,8 @@ vi.mock('./useReferenceImageUpload', () => ({
   useReferenceImageUpload: () => () => undefined
 }))
 
-const setDropdownVisible = vi.fn()
-
 const DropdownStub = defineComponent({
-  setup(_, { expose, slots }) {
-    expose({ setVisible: setDropdownVisible })
+  setup(_, { slots }) {
     return () =>
       h('div', [
         h('div', { 'data-test-id': 'toolbar' }, slots.trigger?.()),
@@ -66,7 +63,6 @@ const global = {
 
 describe('ReferenceImageButton', () => {
   beforeEach(() => {
-    setDropdownVisible.mockClear()
     settingsInputCtx.disabled = false
     settingsInputCtx.readonly = false
     settingsInputCtx.iconOnly = false
@@ -91,11 +87,18 @@ describe('ReferenceImageButton', () => {
     expect(wrapper.get('button').text()).toBe('')
   })
 
-  it('shows the reference image label in the tooltip and removes the file from the popover', async () => {
+  it('removes the reference image popover and focuses the upload button', async ({ onTestFinished }) => {
     const wrapper = shallowMount(ReferenceImageButton, {
-      props: { file: { name: 'reference.png' } as File },
+      attachTo: document.body,
+      props: {
+        file: { name: 'reference.png' } as File,
+        'onUpdate:file': (file: File | null) => {
+          wrapper.setProps({ file })
+        }
+      },
       global
     })
+    onTestFinished(() => wrapper.unmount())
 
     const toolbar = wrapper.get('[data-test-id="toolbar"]')
     expect(toolbar.text()).not.toContain('reference.png')
@@ -105,13 +108,13 @@ describe('ReferenceImageButton', () => {
     expect(wrapper.get('[data-test-id="popover"]').text()).toContain('参考图片')
     expect(wrapper.get('[data-test-id="remove"]').attributes('type')).toBe('trash')
 
-    await wrapper.get('[data-test-id="remove"]').trigger('click')
+    const removeButton = wrapper.get<HTMLButtonElement>('[data-test-id="remove"]')
+    removeButton.element.focus()
+    await removeButton.trigger('click')
 
-    expect(setDropdownVisible).toHaveBeenCalledWith(false)
     expect(wrapper.emitted('update:file')).toEqual([[null]])
-
-    await wrapper.setProps({ file: null })
     expect(wrapper.find('[data-test-id="popover"]').exists()).toBe(false)
     expect(wrapper.get('button').attributes('aria-label')).toBe('Upload reference image')
+    expect(document.activeElement).toBe(wrapper.get('button').element)
   })
 })

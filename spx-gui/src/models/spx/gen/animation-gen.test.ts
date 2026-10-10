@@ -23,6 +23,20 @@ describe('AnimationGen', () => {
     mockSaveFile()
   })
 
+  it.each(['file', 'selection'])('rejects an unsupported reference %s without replacing the selection', (input) => {
+    const gen = new AnimationGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject())
+    gen.setReferenceImage(mockFile('reference.png'))
+    const selection = gen.referenceImageSelection
+    const file = mockFile('reference.svg')
+
+    expect(() => {
+      if (input === 'file') gen.setReferenceImage(file)
+      else gen.setReferenceImageSelection({ type: 'local-image', file })
+    }).toThrow('unsupported reference image type')
+    expect(gen.referenceImageSelection).toBe(selection)
+    gen.dispose()
+  })
+
   it('encodes an animation name when using it as a directory', () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')

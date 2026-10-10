@@ -17,13 +17,11 @@ const emit = defineEmits<{
 }>()
 
 const [fileUrl] = useFileUrl(() => props.file)
-const dropdownRef = ref<InstanceType<typeof UIDropdownWithTooltip> | null>(null)
 const buttonRef = ref<InstanceType<typeof UIButton> | null>(null)
 
 const handleUpload = useReferenceImageUpload((file) => emit('update:file', file))
 
 async function removeReferenceImage() {
-  dropdownRef.value?.setVisible(false)
   emit('update:file', null)
   await nextTick()
   buttonRef.value?.focus()
@@ -31,7 +29,7 @@ async function removeReferenceImage() {
 </script>
 
 <template>
-  <UIDropdownWithTooltip v-if="file != null" ref="dropdownRef" class="rounded-lg" :disabled="disabled" placement="top">
+  <UIDropdownWithTooltip v-if="file != null" class="rounded-lg" :disabled="disabled" placement="top">
     <template #trigger>
       <UIButton
         ref="buttonRef"

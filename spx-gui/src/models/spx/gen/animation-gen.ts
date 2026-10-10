@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { reactive } from 'vue'
 import type { Prettify } from '@/utils/types'
 import { encodePathSegment, extname } from '@/utils/path'
-import { Disposable, promiseForSignal } from '@/utils/disposable'
+import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
 import {
@@ -238,8 +238,7 @@ export class AnimationGen extends Disposable {
       const referenceFrameUrl = await saveFile(image, signal)
       signal.throwIfAborted()
       await task.start({ settings: { ...this.settings, referenceFrameUrl } })
-      signal.throwIfAborted()
-      const { videoUrl } = await Promise.race([task.untilCompleted(reporter), promiseForSignal(signal)])
+      const { videoUrl } = await task.untilCompleted(reporter)
       return createFileWithUniversalUrl(videoUrl)
     })
     this.setVideo(video)
