@@ -69,7 +69,7 @@ const {
     await project.load(serialized)
 
     const history = new History(project)
-    const lspClient = new SpxLSPClient(project, { locale: i18n.lang.value })
+    const lspClient = new SpxLSPClient(project)
     lspClient.init()
     const documentBase = new DocumentBase([...Object.values(spxDefinitionsByName), ...spxKeyDefinitions])
 
