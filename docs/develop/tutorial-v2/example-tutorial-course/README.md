@@ -21,15 +21,19 @@ example-tutorial-course/
 │               ├── index.json
 │               └── default.svg
 └── assets/
-    └── videos/
-        └── step-to/
+    ├── videos/
+    │   └── step-to/
+    │       ├── index.json
+    │       └── step-to.mp4
+    └── images/
+        └── mushroom/
             ├── index.json
-            └── step-to.mp4
+            └── mushroom.svg
 ```
 
 `index.json` is the Tutorial Class Framework configuration. It locates the embedded SPX project, supplies Course-author-provided Copilot instructions that are not shown in the learner UI and selects the initial in-editor path.
 
-`main_course.gox` is the conventional entry file for the Course-author-written XGo program. `project/` is an ordinary serialized SPX project that becomes an ownerless in-memory project while the learner works. The root `assets/` contains Course-local resources addressed by the Tutorial program; `assets/videos/step-to/index.json` declares the video resource and points to `step-to.mp4` relative to its own directory. It is independent of `project/assets/`, which belongs to the embedded SPX project.
+`main_course.gox` is the conventional entry file for the Course-author-written XGo program. `project/` is an ordinary serialized SPX project that becomes an ownerless in-memory project while the learner works. The root `assets/` contains Course-local resources addressed by the Tutorial program; `assets/videos/step-to/index.json` declares the video resource and points to `step-to.mp4` relative to its own directory. Image resources follow the same shape under `assets/images/`: `assets/images/mushroom/index.json` declares the image named `mushroom` and points to `mushroom.svg`. Names are unique within each resource type, so a video and an image may share a name. No Tutorial Class Framework API addresses images yet; they are kept with the Course for APIs that will. The root `assets/` is independent of `project/assets/`, which belongs to the embedded SPX project.
 
 After upload, `PlaygroundCourse.content` does not contain these file bodies directly. It contains a `FileCollection` whose keys are the relative paths shown here and whose values are universal URLs. Course APIs and PostgreSQL preserve that mapping without parsing this directory's internal contracts.
 

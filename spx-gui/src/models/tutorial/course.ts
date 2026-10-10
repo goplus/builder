@@ -1,15 +1,20 @@
-import { reactive } from 'vue'
+import { computed, reactive, toValue, type ComputedRef } from 'vue'
 
-import { fromText, toText, type Files } from '@/models/common/file'
+import { fromText, toText, type File, type Files } from '@/models/common/file'
 
 export const mainCourseFilePath = 'main_course.gox'
 
 export class Course {
   code: string
 
+  // Kept as the same `File` while the code is unchanged, so that exports can be compared by identity.
+  private codeFile: ComputedRef<File>
+
   constructor(code = '') {
     this.code = code
-    return reactive(this) as this
+    const reactiveThis = reactive(this) as this
+    this.codeFile = computed(() => fromText(mainCourseFilePath, reactiveThis.code))
+    return reactiveThis
   }
 
   setCode(code: string) {
@@ -23,6 +28,6 @@ export class Course {
   }
 
   export(): Files {
-    return { [mainCourseFilePath]: fromText(mainCourseFilePath, this.code) }
+    return { [mainCourseFilePath]: toValue(this.codeFile) }
   }
 }

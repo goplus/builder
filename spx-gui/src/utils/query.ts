@@ -160,9 +160,26 @@ export function useQueryCache<T>() {
     return invalidate(queryKey)
   }
 
+  /** Update the data of all queries whose keys start with the provided queryKey; queries with no data are skipped. */
+  function update(queryKey: unknown[], updater: (data: T) => T) {
+    queryClient.setQueriesData<T>({ queryKey }, (data) => (data == null ? data : updater(data)))
+  }
+
+  /**
+   * Discard data known to be outdated, for all queries whose keys start with the provided queryKey. Unlike
+   * `invalidate`, which leaves outdated data for the next reader, unused queries are removed so their next reader
+   * waits for fresh data; queries in use refetch in the background.
+   */
+  function discard(queryKey: unknown[]) {
+    queryClient.removeQueries({ queryKey, type: 'inactive' })
+    return invalidate(queryKey)
+  }
+
   return {
     invalidate,
-    invalidateWithOptimisticValue
+    invalidateWithOptimisticValue,
+    update,
+    discard
   }
 }
 

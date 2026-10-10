@@ -104,11 +104,16 @@ export class EditorState extends Disposable {
     isOnline: WatchSource<boolean>,
     signedInStateQuery: QueryRet<SignedInState>,
     cloudHelpers: editing.CloudHelpers,
-    localCache: editing.ILocalCache
+    localCache: editing.ILocalCache,
+    /**
+     * Where edits are recorded for undo and redo; a history of `project` alone by default. Pass one when the project
+     * is part of something larger, so that its edits and those of the rest are undone in one order.
+     */
+    history?: History
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
-    this.history = new History(project)
+    this.history = history ?? new History(project)
     this.addDisposable((this.genState = new GenState(i18n, project)))
     const projectWithGens = new SpxProjectWithGens(project, this.genState)
     this.addDisposable(
@@ -137,6 +142,13 @@ export class EditorState extends Disposable {
   }
 
   runtime: Runtime
+  /**
+   * NOTE: This is a history of `project` alone, with one exception: the Course Editor passes the course's history,
+   * so that edits of the embedded project and of the rest of the course are undone in one order. There it records
+   * and restores the whole course, not just `project`.
+   * TODO: Make the history (or the editor state) independent of spx, see
+   * https://github.com/goplus/builder/pull/3494#discussion_r4237184023
+   */
   history: History
   genState: GenState
   editing: editing.Editing
@@ -284,7 +296,8 @@ export class EditorState extends Disposable {
     }
   }
 
-  private selectByRoute(path: PathSegments) {
+  /** Select a target by route path. Throws if the path is not recognized. */
+  selectByRoute(path: PathSegments) {
     let [segment, extra] = shiftPath(path)
 
     switch (segment) {

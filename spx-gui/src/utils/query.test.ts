@@ -1,9 +1,10 @@
 import { nextTick, ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
+import { QueryClient } from '@tanstack/vue-query'
 import { describe, it, expect, vi } from 'vitest'
 import { type ProgressReportParams } from './progress'
-import { useQuery, composeQuery, type QueryContext } from './query'
-import { withSetup } from './test'
+import { useQuery, composeQuery, useQueryCache, useQueryWithCache, type QueryContext } from './query'
+import { withQueryClient, withSetup } from './test'
 import { timeout } from './utils'
 
 describe('useQuery', () => {
@@ -437,5 +438,66 @@ describe('composeQuery', () => {
     expect(ret2.progress.value.percentage).toBeCloseTo(1)
     expect(ret3.progress.value.percentage).toBeCloseTo(1)
     expect(ret3.progress.value.desc).toBeNull()
+  })
+})
+
+describe('useQueryCache', () => {
+  function makeQueryClient() {
+    // No garbage collection: whatever leaves the cache here is removed by the code under test.
+    return new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } })
+  }
+
+  it('updates the data of every query under a key, skipping queries with no data', () => {
+    const queryClient = makeQueryClient()
+    queryClient.setQueryData(['list', '1'], [1])
+    queryClient.setQueryData(['list', '2'], [2])
+    queryClient.setQueryData(['other'], [9])
+    queryClient.getQueryCache().build(queryClient, { queryKey: ['list', '3'] })
+    const cache = withQueryClient(queryClient, () => useQueryCache<number[]>())
+    const updater = vi.fn((data: number[]) => [...data, 0])
+
+    cache.update(['list'], updater)
+
+    expect(queryClient.getQueryData(['list', '1'])).toEqual([1, 0])
+    expect(queryClient.getQueryData(['list', '2'])).toEqual([2, 0])
+    expect(queryClient.getQueryData(['other'])).toEqual([9])
+    expect(updater).toHaveBeenCalledTimes(2)
+  })
+
+  it('discards data nobody is reading, so the next reader waits for fresh data', async () => {
+    const queryClient = makeQueryClient()
+    queryClient.setQueryData(['item'], 'outdated')
+    const cache = withQueryClient(queryClient, () => useQueryCache())
+
+    await cache.discard(['item'])
+
+    const ret = withQueryClient(queryClient, () =>
+      useQueryWithCache({ queryKey: ['item'], queryFn: async () => 'fresh' })
+    )
+    expect(ret.isLoading.value).toBe(true)
+    expect(ret.data.value).toBeNull()
+    await flushPromises()
+    expect(ret.data.value).toBe('fresh')
+  })
+
+  it('refetches data a reader is showing, which keeps it until the fresh data arrives', async () => {
+    const queryClient = makeQueryClient()
+    let resolveFresh!: (value: string) => void
+    const queryFn = vi
+      .fn()
+      .mockResolvedValueOnce('outdated')
+      .mockReturnValueOnce(new Promise<string>((resolve) => (resolveFresh = resolve)))
+    const ret = withQueryClient(queryClient, () => useQueryWithCache({ queryKey: ['item'], queryFn }))
+    await flushPromises()
+    const cache = withQueryClient(queryClient, () => useQueryCache())
+
+    void cache.discard(['item'])
+    // `vue-query` starts the refetch on the next macrotask.
+    await vi.waitFor(() => expect(queryFn).toHaveBeenCalledTimes(2))
+
+    expect(ret.isLoading.value).toBe(false)
+    expect(ret.data.value).toBe('outdated')
+    resolveFresh('fresh')
+    await vi.waitFor(() => expect(ret.data.value).toBe('fresh'))
   })
 })

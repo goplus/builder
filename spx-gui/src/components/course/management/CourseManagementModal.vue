@@ -1,22 +1,35 @@
 <script lang="ts" setup>
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
-import { useMessageHandle } from '@/utils/exception'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { isGuidedCourse, listSignedInUserCourses, deleteCourse, type GuidedCourse } from '@/apis/course'
 import {
+  isGuidedCourse,
+  listSignedInUserCourses,
+  type Course,
+  type CourseKind,
+  type PlaygroundCourse
+} from '@/apis/course'
+import { getCourseEditorRoute } from '@/apps/xbuilder/router'
+import { useDeleteCourse } from '@/stores/course'
+import {
+  UIButton,
   UIIcon,
   UIPagination,
   UISearchableModal,
+  UITabRadio,
+  UITabRadioGroup,
   useModal,
   useConfirmDialog,
-  useMessage,
-  UIButton
+  useMessage
 } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CourseItem from './CourseItem.vue'
 import CourseItemCornerMenu from './CourseItemCornerMenu.vue'
 import CourseEditModal from './CourseEditModal.vue'
+import PlaygroundCourseEditModal from './playground/PlaygroundCourseEditModal.vue'
+import { findSeriesOfCourse } from './playground/series'
 
 defineProps<{
   visible: boolean
@@ -27,18 +40,27 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
+// Filtered by the server rather than here, so that pages and totals describe what is shown.
+const kind = shallowRef<CourseKind>('guided')
+
 const page = shallowRef(1)
 const pageSize = 8
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
+watch(kind, () => (page.value = 1))
+
+function handleKindUpdate(value: string) {
+  if (value === 'guided' || value === 'playground') kind.value = value
+}
 
 const queryRet = useQuery(
   () => {
     return listSignedInUserCourses({
+      kind: kind.value,
       pageSize,
       pageIndex: page.value,
       orderBy: 'updatedAt',
       sortOrder: 'desc'
-    }).then((result) => ({ ...result, data: result.data.filter(isGuidedCourse) }))
+    })
   },
   {
     en: 'Failed to list courses',
@@ -49,13 +71,49 @@ const queryRet = useQuery(
 const i18n = useI18n()
 const m = useMessage()
 const confirm = useConfirmDialog()
+const router = useRouter()
+const deleteCourse = useDeleteCourse()
 
-const invokeEditModal = useModal(CourseEditModal)
+const invokeGuidedEditModal = useModal(CourseEditModal)
+const invokePlaygroundEditModal = useModal(PlaygroundCourseEditModal)
+
+const handleOpenInCourseEditor = useMessageHandle(
+  async (course: PlaygroundCourse) => {
+    const courseSeries = await m.withLoading(
+      findSeriesOfCourse(course.id),
+      i18n.t({ en: 'Opening course', zh: '打开课程中' })
+    )
+    if (courseSeries == null) {
+      throw new DefaultException({
+        en: `"${course.title}" is not in any course series yet. Add it to one in "Manage course series" first.`,
+        zh: `"${course.title}"还不属于任何课程系列，请先在"管理课程系列"里把它加入一个系列。`
+      })
+    }
+    // Close first: the modal lives above the page and would otherwise cover the editor it just opened.
+    emit('resolved')
+    await router.push(getCourseEditorRoute(courseSeries.id, course.id))
+  },
+  {
+    en: 'Failed to open course',
+    zh: '打开课程失败'
+  }
+).fn
 
 const handleCreate = useMessageHandle(
   async () => {
-    await invokeEditModal({ course: null })
-    queryRet.refetch()
+    if (kind.value === 'guided') {
+      await invokeGuidedEditModal({ course: null })
+      queryRet.refetch()
+      return
+    }
+    // A Playground Course is written in the Course Editor, so creating one goes straight there.
+    const { course, courseSeries } = await invokePlaygroundEditModal({ course: null })
+    if (courseSeries == null) {
+      queryRet.refetch()
+      return
+    }
+    emit('resolved')
+    await router.push(getCourseEditorRoute(courseSeries.id, course.id))
   },
   {
     en: 'Failed to create course',
@@ -64,8 +122,9 @@ const handleCreate = useMessageHandle(
 ).fn
 
 const handleEdit = useMessageHandle(
-  async (course: GuidedCourse) => {
-    await invokeEditModal({ course })
+  async (course: Course) => {
+    if (isGuidedCourse(course)) await invokeGuidedEditModal({ course })
+    else await invokePlaygroundEditModal({ course })
     queryRet.refetch()
   },
   {
@@ -75,7 +134,7 @@ const handleEdit = useMessageHandle(
 ).fn
 
 const handleRemove = useMessageHandle(
-  async (course: GuidedCourse) => {
+  async (course: Course) => {
     await confirm({
       type: 'warning',
       title: i18n.t({ en: 'Remove course', zh: '删除课程' }),
@@ -92,6 +151,11 @@ const handleRemove = useMessageHandle(
     zh: '删除课程失败'
   }
 ).fn
+
+// A guided course has no editor beyond its form, which stays in the corner menu.
+function handleOpen(course: Course) {
+  if (!isGuidedCourse(course)) handleOpenInCourseEditor(course)
+}
 </script>
 
 <template>
@@ -102,6 +166,16 @@ const handleRemove = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <template #input>
+      <!-- The header slot lays its content out without spacing, hence the margin. -->
+      <UITabRadioGroup
+        v-radar="{ name: 'course-kind-switch', desc: 'Switch between guided and Playground' }"
+        class="mr-3 w-44"
+        :value="kind"
+        @update:value="handleKindUpdate"
+      >
+        <UITabRadio value="guided">{{ $t({ en: 'Guided', zh: '引导式' }) }}</UITabRadio>
+        <UITabRadio value="playground">{{ $t({ en: 'Playground', zh: '目标式' }) }}</UITabRadio>
+      </UITabRadioGroup>
       <UIButton type="neutral" @click="handleCreate">
         <template #icon>
           <UIIcon type="plus" />
@@ -127,7 +201,12 @@ const handleRemove = useMessageHandle(
             </p>
           </div>
           <ul v-else class="flex flex-wrap content-start gap-xl">
-            <CourseItem v-for="course in slotProps.data.data" :key="course.id" :course="course">
+            <CourseItem
+              v-for="course in slotProps.data.data"
+              :key="course.id"
+              :course="course"
+              @click="handleOpen(course)"
+            >
               <CourseItemCornerMenu :course="course" @edit="handleEdit(course)" @remove="handleRemove(course)" />
             </CourseItem>
           </ul>

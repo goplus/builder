@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { fromConfig, fromText, toConfig, toText, type Files } from '@/models/common/file'
-import { validateVideoName, Video } from './video'
+import { getVideoName, validateVideoName } from './asset-name'
+import { Video } from './video'
 
 function makeFiles(): Files {
   return {
@@ -34,13 +35,38 @@ describe('Video', () => {
     expect((await Video.loadAll(files)).map((video) => video.name)).toEqual(['step-to', 'another'])
   })
 
+  it('exports under its new name after a rename', async () => {
+    const video = new Video('step-to', fromText('original.mp4', 'video'))
+    video.setName('intro')
+
+    const exported = video.export()
+    expect(Object.keys(exported).sort()).toEqual(['assets/videos/intro/index.json', 'assets/videos/intro/intro.mp4'])
+    expect(await toConfig(exported['assets/videos/intro/index.json']!)).toMatchObject({ path: 'intro.mp4' })
+  })
+
+  it('keeps its manifest file while unchanged', () => {
+    const video = new Video('step-to', fromText('step-to.mp4', 'video'))
+    const manifest = video.export()['assets/videos/step-to/index.json']
+
+    expect(video.export()['assets/videos/step-to/index.json']).toBe(manifest)
+    video.setFile(fromText('step-to.webm', 'video'))
+    expect(video.export()['assets/videos/step-to/index.json']).not.toBe(manifest)
+  })
+
   it('rejects names that cannot identify a video directory', () => {
     const video = new Video('step-to', fromText('step-to.mp4', 'video'))
 
-    expect(() => video.setName('assets/step-to')).toThrow('The name must not contain /')
+    expect(() => video.setName('assets/step-to')).toThrow('must not contain /')
+    expect(() => video.setName('..')).toThrow('cannot be . or ..')
   })
 
   it('limits names to 100 code points', () => {
     expect(validateVideoName('a'.repeat(101), null)?.en).toContain('maximum is 100 characters')
+  })
+
+  it('names a video after its file when it can', () => {
+    expect(getVideoName(null, 'step-to')).toBe('step-to')
+    expect(getVideoName(null, '')).toBe('video')
+    expect(getVideoName(null, 'a'.repeat(101))).toBe('video')
   })
 })
