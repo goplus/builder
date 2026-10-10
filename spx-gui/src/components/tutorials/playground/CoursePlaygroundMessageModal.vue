@@ -42,7 +42,7 @@ const emit = defineEmits<{
         size="large"
         @click="emit('resolved')"
       >
-        {{ $t(kind === 'prelude' ? { en: 'Continue', zh: '继续' } : { en: 'Keep trying', zh: '继续尝试' }) }}
+        {{ $t({ en: 'Continue', zh: '继续' }) }}
       </UIButton>
     </div>
   </UIModal>
