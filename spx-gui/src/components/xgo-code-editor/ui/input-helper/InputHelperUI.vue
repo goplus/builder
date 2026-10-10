@@ -150,7 +150,7 @@ const handleInputUpdate = useMessageHandle(
       :predefined-names="props.controller.inputingSlot.predefinedNames"
       :provider="props.controller.provider"
       @update:input="handleInputUpdate"
-      @submit="controller.stopInputing()"
+      @submit="controller.stopInputing(true)"
     />
   </UIDropdown>
 </template>

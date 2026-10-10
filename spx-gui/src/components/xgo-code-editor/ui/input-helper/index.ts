@@ -53,13 +53,12 @@ export class InputHelperController extends Disposable {
   startInputing(slotId: string) {
     this.inputingSlotRef.value = this.slots?.find((item) => item.id === slotId) ?? null
   }
-  stopInputing() {
-    if (this.inputingSlot == null) return
+  stopInputing(focusEditor = false) {
     this.inputingSlotRef.value = null
-    this.ui.editor.focus()
+    if (focusEditor) this.ui.editor.focus()
   }
-  toggleInputing(slotId: string) {
-    if (this.inputingSlot?.id === slotId) this.stopInputing()
+  toggleInputing(slotId: string, focusEditor = false) {
+    if (this.inputingSlot?.id === slotId) this.stopInputing(focusEditor)
     else this.startInputing(slotId)
   }
 
@@ -120,7 +119,7 @@ export class InputHelperController extends Disposable {
         if (id != null && id === clickingId) {
           e.preventDefault()
           e.stopPropagation()
-          this.toggleInputing(id)
+          this.toggleInputing(id, true)
         }
         clickingId = null
       },
