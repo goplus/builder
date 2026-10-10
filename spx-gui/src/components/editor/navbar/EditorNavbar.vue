@@ -72,7 +72,7 @@
 
       <NavbarTutorials v-if="showTutorialsEntry" />
 
-      <EditorHistoryButtons :history="state?.codeReadOnly ? null : (state?.history ?? null)" />
+      <EditorHistoryButtons :history="state?.codeReadOnly ? null : state?.history ?? null" />
     </template>
     <template #center>
       <div v-if="project != null" class="flex items-center justify-center gap-2">

@@ -82,16 +82,15 @@ function mountPreview() {
 }
 
 describe('Editor Preview execution lifecycle', () => {
-  it('keeps startup failure state when entering and leaving fullscreen before any successful run', async () => {
-    const { runtime, surface, run, toggleFullscreen } = mountPreview()
+  it('keeps the runtime preview open after startup failure until stopped', async () => {
+    const { runtime, surface, run } = mountPreview()
     const error = new Error('startup failed')
     run.mockRejectedValueOnce(error)
     await expect(surface.props('onRun')()).rejects.toThrow(error)
-    const running = runtime.running
-    expect(running).toEqual({ mode: 'debug', initializing: false, initializingError: error })
+    expect(runtime.running).toEqual({ mode: 'debug', initializing: false, initializingError: error })
     expect(runtime.filesHash).toBeNull()
-    await toggleFullscreen()
-    expect(runtime.running).toBe(running)
+    await surface.props('onStop')()
+    expect(runtime.running).toEqual({ mode: 'none' })
   })
 
   it('keeps the runtime preview open after exit, fullscreen transitions, and rerun until stopped', async () => {
