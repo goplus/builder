@@ -32,6 +32,7 @@ import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
 const props = defineProps<{
   controller: APIReferenceController
+  disabled?: boolean
 }>()
 
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
@@ -193,6 +194,7 @@ function handleCategoryClick(id: string) {
                   :key="stringifyDefinitionId(item.definition)"
                   :item="item"
                   :interaction-disabled="scrolling"
+                  :disabled="disabled"
                 />
               </ul>
             </section>
@@ -205,6 +207,7 @@ function handleCategoryClick(id: string) {
             :item="item"
             block-style
             :interaction-disabled="false"
+            :disabled="disabled"
           />
         </template>
       </ul>

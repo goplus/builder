@@ -107,6 +107,7 @@ export type InternalAction<A extends any[] = any, R = any> = {
 type CodeEditorUIOptions = {
   renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>
   simpleMode?: boolean
+  isReadOnly?: () => boolean
 }
 
 export class CodeEditorUIController extends Disposable implements ICodeEditorUIController {
@@ -162,6 +163,10 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     private options: CodeEditorUIOptions
   ) {
     super()
+  }
+
+  get readOnly() {
+    return this.options.isReadOnly?.() ?? false
   }
 
   get project() {

@@ -76,7 +76,7 @@
       <div class="flex">
         <UITooltip :disabled="undoAction == null">
           <template #trigger>
-            <button :class="historyBtnClz" :disabled="undoAction == null" @click="handleUndo.fn">
+            <button :class="historyBtnClz" :disabled="undoAction == null || state?.codeReadOnly" @click="handleUndo.fn">
               <UIIcon class="h-5 w-5" type="undo" />
             </button>
           </template>
@@ -84,7 +84,7 @@
         </UITooltip>
         <UITooltip :disabled="redoAction == null">
           <template #trigger>
-            <button :class="historyBtnClz" :disabled="redoAction == null" @click="handleRedo.fn">
+            <button :class="historyBtnClz" :disabled="redoAction == null || state?.codeReadOnly" @click="handleRedo.fn">
               <UIIcon class="h-5 w-5" type="redo" />
             </button>
           </template>

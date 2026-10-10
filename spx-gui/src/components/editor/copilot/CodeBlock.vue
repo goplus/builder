@@ -15,6 +15,7 @@ const editorCtxRef = useEditorCtxRef()
 const codeEditorRef = useCodeEditorRef()
 const copilot = useCopilot()
 const codeHelperEnabled = computed(() => copilot.currentSession?.topic.codeHelperEnabled !== false)
+const codeReadOnly = computed(() => editorCtxRef.value?.state.codeReadOnly ?? false)
 
 const handleInsert = useMessageHandle(
   (code: string) => {
@@ -34,7 +35,7 @@ const handleInsert = useMessageHandle(
   <BaseCodeBlock :language="language">
     <slot></slot>
     <template #actions="{ code }">
-      <BlockActionBtn v-if="codeHelperEnabled" icon="insert" @click="handleInsert(code)">
+      <BlockActionBtn v-if="codeHelperEnabled && !codeReadOnly" icon="insert" @click="handleInsert(code)">
         {{ $t({ en: 'Insert', zh: '插入' }) }}
       </BlockActionBtn>
     </template>

@@ -17,8 +17,10 @@ import type { APIReferenceItem } from '.'
 const props = withDefaults(
   defineProps<{
     item: APIReferenceItem
+    /** Suspend the hover dropdown while the list is scrolling. */
     interactionDisabled: boolean
     blockStyle?: boolean
+    disabled?: boolean
   }>(),
   {
     blockStyle: false
@@ -29,10 +31,12 @@ const codeEditor = useCodeEditor()
 const codeEditorUICtx = useCodeEditorUICtx()
 
 const handleInsert = useMessageHandle(
-  () =>
-    codeEditor.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+  () => {
+    if (props.disabled) return
+    return codeEditor.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
       codeEditorUICtx.ui.insertDefinition(props.item)
-    ),
+    )
+  },
   {
     en: 'Failed to insert',
     zh: '插入失败'
@@ -105,7 +109,12 @@ function handleMouseUp(e: MouseEvent) {
 </script>
 
 <template>
-  <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
+  <UIDropdown
+    ref="hoverDropdown"
+    placement="bottom-start"
+    :offset="{ x: 0, y: 4 }"
+    :disabled="interactionDisabled || disabled"
+  >
     <template #trigger>
       <li
         v-radar="{
@@ -118,14 +127,17 @@ function handleMouseUp(e: MouseEvent) {
             'overload-id': item.definition.overloadId
           }
         }"
-        class="api-reference-item max-w-full cursor-pointer self-start translate-x-0 rounded-sm bg-grey-100 px-1.5 transition-all duration-200 hover:bg-grey-300 [scroll-margin-bottom:16px] [scroll-margin-top:42px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
+        class="api-reference-item max-w-full self-start translate-x-0 rounded-sm bg-grey-100 px-1.5 transition-all duration-200 hover:bg-grey-300 [scroll-margin-bottom:16px] [scroll-margin-top:42px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
+        :aria-disabled="disabled"
         :class="{
+          'cursor-not-allowed opacity-50': disabled,
+          'cursor-pointer': !disabled,
           'block-style relative flex min-h-9 w-fit max-w-none items-center rounded-md border border-grey-500 py-1.5 pr-2.5 pl-6.5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] hover:border-primary-main hover:bg-grey-100 hover:shadow-[0_4px_12px_rgba(15,23,42,0.12)]':
-            props.blockStyle,
-          'cursor-grab [&.before-dragging]:cursor-grabbing': props.blockStyle,
-          '[&_.overview]:break-normal': props.blockStyle
+            blockStyle,
+          'cursor-grab [&.before-dragging]:cursor-grabbing': blockStyle && !disabled,
+          '[&_.overview]:break-normal': blockStyle
         }"
-        draggable="true"
+        :draggable="!disabled"
         @dragstart="handleDragStart"
         @mousedown.passive="handleMouseDown"
         @mouseup.passive="handleMouseUp"

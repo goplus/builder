@@ -82,7 +82,7 @@ export class ContextMenuController extends Disposable {
     return { selection: this.ui.selection! }
   }
 
-  private hideMenu() {
+  hideMenu() {
     this.menuMgr.stop()
   }
 
@@ -114,6 +114,7 @@ export class ContextMenuController extends Disposable {
     const MTT = monaco.editor.MouseTargetType
     this.addDisposable(
       editor.onMouseDown((e) => {
+        if (this.ui.readOnly) return
         if (e.target.type !== MTT.CONTENT_WIDGET) this.hideMenu()
         if (!e.event.rightButton) return
         switch (e.target.type) {

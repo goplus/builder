@@ -41,6 +41,7 @@ import { userLocalStorageRef } from '@/utils/user-storage'
 const props = defineProps<{
   codeFilePath: string
   simpleMode?: boolean
+  readOnly?: boolean
 }>()
 
 const i18n = useI18n()
@@ -69,7 +70,8 @@ const uiRef = computed(() => {
   const mainTextDocumentId = getTextDocumentId(props.codeFilePath)
   return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, {
     renameHandler: rename,
-    simpleMode: props.simpleMode
+    simpleMode: props.simpleMode,
+    isReadOnly: () => props.readOnly ?? false
   })
 })
 
@@ -82,10 +84,15 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   tabSize,
   insertSpaces,
   fontSize: fontSize.value,
-  contextmenu: false
+  contextmenu: false,
+  readOnly: props.readOnly ?? false
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
+
+watchEffect(() => {
+  monacoEditorRef.value?.updateOptions({ readOnly: props.readOnly ?? false })
+})
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor
@@ -93,6 +100,7 @@ async function handleMonacoEditorInit(editor: MonacoEditor) {
 
 const handleMonacoEditorDrag = throttle((clientPoint: { x: number; y: number } | null) => {
   const ui = uiRef.value
+  if (props.readOnly) return
   if (clientPoint == null) {
     ui.dropIndicatorController.setDropPosition(null)
     return
@@ -125,7 +133,7 @@ async function handleMonacoEditorDrop(e: DragEvent) {
   const ui = uiRef.value
   ui.dropIndicatorController.setDropPosition(null)
   handleMonacoEditorDrag.cancel()
-  if (e.dataTransfer == null) return
+  if (props.readOnly || e.dataTransfer == null) return
 
   const target = ui.editor.getTargetAtClientPoint(e.clientX, e.clientY)
   if (target == null || target.position == null) return
@@ -254,7 +262,7 @@ providePopupContainer(codeEditorEl)
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
-      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
+      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" :disabled="readOnly" />
     </aside>
     <div
       ref="resizeHandleEl"
@@ -274,15 +282,15 @@ providePopupContainer(codeEditorEl)
       @drop="handleMonacoEditorDrop"
     />
     <HoverUI :controller="uiRef.hoverController" />
-    <CompletionUI :controller="uiRef.completionController" />
+    <CompletionUI v-if="!readOnly" :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
-    <ContextMenuUI :controller="uiRef.contextMenuController" />
-    <InputHelperUI :controller="uiRef.inputHelperController" />
+    <ContextMenuUI v-if="!readOnly" :controller="uiRef.contextMenuController" />
+    <InputHelperUI v-if="!readOnly" :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
     <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl v-if="!props.simpleMode" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+      <ZoomControl v-if="!simpleMode" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>
