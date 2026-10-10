@@ -23,7 +23,7 @@ import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
-import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/runner'
+import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
 import {
   UIButton,
   UICard,
@@ -327,18 +327,24 @@ async function loadSavedCourseSnapshot(courseID: string, generation: number) {
   return { course, snapshot }
 }
 
-/** Walk on to a saved course of the series. Failures are shown in the preview pane, as no button triggered this. */
-async function previewSavedCourse(courseID: string) {
+/**
+ * Start a course of the series from the beginning, as a learner starting it does: the course being edited from the
+ * working copy, the others as they were saved. Failures are shown in the preview pane, as no button triggered this.
+ */
+async function startPreviewedCourse(courseID: string) {
   const generation = ++previewGeneration
   previewCourseID.value = courseID
   previewError.value = null
-  // Take the finished course off the screen first, so its playground unmounts (and its snapshot is disposed)
+  // Take the running course off the screen first, so its playground unmounts (and its snapshot is disposed)
   // before another one can be published.
   preview.value = null
   await nextTick()
   try {
-    const { course, snapshot } = await loadSavedCourseSnapshot(courseID, generation)
-    // The route still says where the finished course was; the next one starts where a learner would.
+    const { course, snapshot } =
+      courseID === props.course.id
+        ? { course: props.course, snapshot: await loadPreviewSnapshot(generation) }
+        : await loadSavedCourseSnapshot(courseID, generation)
+    // The route still says where the previous run was; this one starts where a learner would.
     await openPreviewAtConfiguredPath(snapshot, generation)
     previewCourse.value = course
     preview.value = snapshot
@@ -352,7 +358,11 @@ async function previewSavedCourse(courseID: string) {
 /** Retry what the preview pane failed to show: the working copy, or the saved course the walk had reached. */
 function retryPreview() {
   if (previewCourseID.value === props.course.id) return enterPreviewFromRoute()
-  return previewSavedCourse(previewCourseID.value)
+  return startPreviewedCourse(previewCourseID.value)
+}
+
+function restartPreview() {
+  return startPreviewedCourse(previewCourse.value.id)
 }
 
 /** The course after the previewed one, or null at the end of the series or if the course has left it since. */
@@ -436,8 +446,9 @@ async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
   })
   if (action === 'continueEditing') return
   if (!isCurrentPreview(generation)) return
+  if (action === 'retry') return restartPreview()
   const next = action === 'next' ? nextCourseID() : null
-  if (next != null) return previewSavedCourse(next)
+  if (next != null) return startPreviewedCourse(next)
   await exitPreview()
 }
 
@@ -599,6 +610,7 @@ onUnmounted(() => {
           :project="preview"
           :in-editor-path="route.params.inEditorPath"
           @course-completed="handlePreviewCompleted"
+          @course-restart="restartPreview"
         />
         <UIDetailedLoading v-else class="flex-1" :percentage="0">
           <span>{{ $t({ en: 'Preparing preview...', zh: '准备预览中...' }) }}</span>

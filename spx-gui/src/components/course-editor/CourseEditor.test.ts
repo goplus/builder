@@ -22,11 +22,11 @@ const { mocks } = vi.hoisted(() => ({
   mocks: {
     getCourse: vi.fn(),
     /** What the completion modal resolves with, i.e. which button the learner is taken to have pressed. */
-    completionAction: 'exit' as 'continueEditing' | 'next' | 'exit',
+    completionAction: 'exit' as 'continueEditing' | 'retry' | 'next' | 'exit',
     /** The props the completion modal was opened with, one entry per completed course. */
     completionProps: [] as Array<{ course: PlaygroundCourse }>,
     /** When set, the modal is answered only when the test settles this promise, not right away. */
-    completionAnswer: null as Promise<'continueEditing' | 'next' | 'exit'> | null
+    completionAnswer: null as Promise<'continueEditing' | 'retry' | 'next' | 'exit'> | null
   }
 }))
 
@@ -80,7 +80,7 @@ vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
   default: {
     name: 'CoursePlayground',
     props: ['project', 'inEditorPath'],
-    emits: ['courseCompleted'],
+    emits: ['courseCompleted', 'courseRestart'],
     render: () => null
   }
 }))
@@ -342,6 +342,48 @@ describe('CourseEditor preview', () => {
     loadSaved.mockRestore()
   })
 
+  it('starts the course being edited over from the working copy when the learner retries', async () => {
+    mocks.completionAction = 'retry'
+    const { wrapper, router, project } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338']), {
+      inEditorPath: 'sprites/Lita/code'
+    })
+    const finished = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+    project.mainCourse.setCode('onStart => { completeWith "Again" }')
+    // The learner wandered off before finishing.
+    await router.replace({
+      name: courseEditorPreviewRouteName,
+      params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inEditorPath: ['stage'] }
+    })
+
+    await completePreviewedCourse(wrapper)
+
+    const restarted = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+    expect(restarted).not.toBe(finished)
+    expect(finished.isDisposed).toBe(true)
+    expect(restarted.mainCourse.code).toBe('onStart => { completeWith "Again" }')
+    expect(router.currentRoute.value.params.inEditorPath).toEqual(['sprites', 'Lita', 'code'])
+    expect(mocks.getCourse).not.toHaveBeenCalled()
+  })
+
+  it('starts a saved course of the series over as it was saved when the playground asks to', async () => {
+    mocks.getCourse.mockResolvedValue(makeCourse('2339', 'Second'))
+    const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
+    mocks.completionAction = 'next'
+    const { wrapper } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
+    await completePreviewedCourse(wrapper)
+    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+
+    wrapper.findComponent({ name: 'CoursePlayground' }).vm.$emit('courseRestart')
+    await flushPromises()
+
+    const restarted = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+    expect(restarted).not.toBe(running)
+    expect(restarted.title).toBe('Second')
+    expect(mocks.getCourse).toHaveBeenCalledTimes(2)
+    expect(mocks.getCourse).toHaveBeenLastCalledWith('2339')
+    loadSaved.mockRestore()
+  })
+
   it('disposes a snapshot once the playground running it is gone', async () => {
     mocks.getCourse.mockResolvedValue(makeCourse('2339', 'Second'))
     const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
@@ -425,7 +467,7 @@ describe('CourseEditor preview, entered again', () => {
 
   it('does not let a completion modal answered after the author came back walk the new preview on', async () => {
     const first = makeCourse('2338', 'First')
-    const answer = deferred<'continueEditing' | 'next' | 'exit'>()
+    const answer = deferred<'continueEditing' | 'retry' | 'next' | 'exit'>()
     mocks.completionAnswer = answer.promise
     const { wrapper, router } = await mountPreviewing(first, makeSeries(['2338', '2339']))
 
@@ -444,7 +486,7 @@ describe('CourseEditor preview, entered again', () => {
 
   it('does not let a completion modal answered after the author came back end the new preview', async () => {
     const first = makeCourse('2338', 'First')
-    const answer = deferred<'continueEditing' | 'next' | 'exit'>()
+    const answer = deferred<'continueEditing' | 'retry' | 'next' | 'exit'>()
     mocks.completionAnswer = answer.promise
     const { wrapper, router } = await mountPreviewing(first, makeSeries(['2338', '2339']))
 
