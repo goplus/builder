@@ -259,17 +259,6 @@ export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
   return cloudHelpers.universalUrlToWebUrl(universalUrl)
 }
 
-/**
- * The web URL a file is already stored at, or null if it exists only locally. Unlike `saveFileForWebUrl` it never
- * uploads, and unlike `File.url()` it lets a media element fetch only what it shows, such as a video's first frame.
- * NOTE: The app is cross-origin isolated, so an element loading this URL needs `crossorigin="anonymous"`.
- */
-export async function getStoredWebUrl(file: File): Promise<WebUrl | null> {
-  const universalUrl = getUniversalUrl(file)
-  if (universalUrl == null) return null
-  return cloudHelpers.universalUrlToWebUrl(universalUrl)
-}
-
 type UniversalUrlCacheEntry = { webUrl: WebUrl; cachedAt: number }
 
 const universalUrlCache = (() => {

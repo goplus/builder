@@ -4,9 +4,8 @@
  * filling the card, its name along the bottom, and a menu in the corner that shows on hover.
  */
 import { computed } from 'vue'
-import { useAsyncComputed } from '@/utils/utils'
+import { useFileUrl } from '@/utils/file'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
-import { getStoredWebUrl } from '@/models/common/cloud'
 import { Video, type Image } from '@/models/tutorial/project'
 import { UIDropdown, UIIcon, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 
@@ -25,13 +24,8 @@ const emit = defineEmits<{
 
 const isVideo = computed(() => props.resource instanceof Video)
 
-// A stored video is shown from where it is stored, so its first frame costs a few range requests instead of the
-// whole video, which `File.url()` would download first. A video added since the last save is in memory anyway.
-const videoUrl = useAsyncComputed(async (onCleanup) => {
-  if (!isVideo.value) return null
-  const file = props.resource.file
-  return (await getStoredWebUrl(file)) ?? file.url(onCleanup)
-})
+// NOTE: The whole video is loaded before its first frame shows, see https://github.com/goplus/builder/issues/3573.
+const [videoUrl] = useFileUrl(() => (isVideo.value ? props.resource.file : null))
 
 const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
@@ -46,13 +40,11 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
     class="group relative box-border aspect-video cursor-pointer overflow-hidden rounded-lg border-2 border-grey-300 bg-grey-400 transition-all duration-200 hover:-translate-y-0.5 hover:border-grey-400 hover:shadow-sm"
     @click="emit('preview')"
   >
-    <!-- The app is cross-origin isolated, so a stored video is only let in when requested with CORS
-         (`crossorigin`). `#t=0.1` asks for the frame just after the start, which browsers then draw as the poster. -->
+    <!-- `#t=0.1` asks for the frame just after the start, which browsers then draw as the poster. -->
     <video
       v-if="isVideo && videoUrl != null"
       class="h-full w-full object-cover"
       :src="`${videoUrl}#t=0.1`"
-      crossorigin="anonymous"
       preload="metadata"
       muted
       playsinline

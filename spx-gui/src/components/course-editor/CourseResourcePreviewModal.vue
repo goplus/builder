@@ -4,9 +4,8 @@
  * program that plays it, ready to copy, since that is what its name is for.
  */
 import { computed } from 'vue'
-import { useAsyncComputed } from '@/utils/utils'
+import { useFileUrl } from '@/utils/file'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
-import { getStoredWebUrl } from '@/models/common/cloud'
 import { Video, type Image } from '@/models/tutorial/project'
 import { UIModal, UIModalClose } from '@/components/ui'
 import CodeView from '@/components/common/CodeView.vue'
@@ -27,12 +26,8 @@ const isVideo = computed(() => props.resource instanceof Video)
 // `JSON.stringify` writes the name as a string literal, so a name holding a quote or a backslash still compiles.
 const playCall = computed(() => `showVideo ${JSON.stringify(props.resource.name)}`)
 
-// A stored video streams from where it is stored instead of being downloaded first, as `File.url()` would do.
-const videoUrl = useAsyncComputed(async (onCleanup) => {
-  if (!isVideo.value) return null
-  const file = props.resource.file
-  return (await getStoredWebUrl(file)) ?? file.url(onCleanup)
-})
+// NOTE: The whole video is loaded before it plays, see https://github.com/goplus/builder/issues/3573.
+const [videoUrl] = useFileUrl(() => (isVideo.value ? props.resource.file : null))
 
 const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
@@ -61,7 +56,6 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
         class="w-full rounded bg-black"
         style="max-height: 70vh"
         :src="videoUrl"
-        crossorigin="anonymous"
         controls
         autoplay
       ></video>
