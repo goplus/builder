@@ -69,7 +69,11 @@ export function useQuery<T>(
 
   function fetch(source: QuerySource) {
     const signal = getSignal()
-    const reporter = new ProgressReporter((p) => (progress.value = p))
+    progress.value = { percentage: 0, timeLeft: null, desc: null }
+    const reporter = new ProgressReporter((p) => {
+      if (signal.aborted) return
+      progress.value = p
+    })
     isLoading.value = true
     queryFn({ signal, source, reporter }).then(
       (d) => {

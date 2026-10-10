@@ -2,13 +2,48 @@ import { describe, expect, it } from 'vitest'
 import { Sprite, State } from './sprite'
 import { Animation } from './animation'
 import { Costume } from './costume'
-import { File } from '../common/file'
+import { File, fromConfig } from '../common/file'
 
 function makeCostume(name: string) {
   return new Costume(name, new File(`${name}.png`, async () => new ArrayBuffer(0)))
 }
 
 describe('Sprite', () => {
+  it.each([false, true])(
+    'should preserve loaded names and bindings when cloning (preserveId=%s)',
+    async (preserveId) => {
+      const longName = 'a'.repeat(101)
+      const files = {
+        'assets/sprites/MySprite/index.json': fromConfig('index.json', {
+          costumes: [
+            { name: '', path: 'blank.png' },
+            { name: longName, path: 'long.png' },
+            { name: '__animation__', path: 'frame.png' }
+          ],
+          fAnimations: { '': { frameFrom: '__animation__', frameTo: '__animation__' } },
+          defaultAnimation: '',
+          animBindings: { die: '' }
+        }),
+        'assets/sprites/MySprite/blank.png': makeCostume('').img,
+        'assets/sprites/MySprite/long.png': makeCostume(longName).img,
+        'assets/sprites/MySprite/frame.png': makeCostume('frame').img
+      }
+      const sprite = await Sprite.load('MySprite', files, { sounds: [] })
+      if (sprite == null) throw new Error('sprite expected')
+      const clone = sprite.clone(preserveId)
+      expect(clone.costumes.map((c) => c.name)).toEqual(['', longName])
+      expect(clone.costumes.every((c) => c.parent === clone)).toBe(true)
+      expect(clone.costumes[0]).not.toBe(sprite.costumes[0])
+      expect(clone.animations[0].name).toBe('')
+      expect(clone.animations[0].sprite).toBe(clone)
+      expect(clone.animations[0].costumes[0].name).toBe('')
+      expect(clone.animations[0].costumes[0].parent).toBe(clone.animations[0])
+      expect(clone.getAnimationBoundStates(clone.animations[0].id)).toEqual([State.Default, State.Die])
+      if (preserveId) expect(clone.id).toBe(sprite.id)
+      else expect(clone.id).not.toBe(sprite.id)
+    }
+  )
+
   it('should export & load animations correctly', async () => {
     const sprite = new Sprite('MySprite')
     sprite.addCostume(makeCostume('costume1'))

@@ -16,7 +16,8 @@
     "format-check": "prettier --check ./src",
     "format": "prettier --write ./src",
     "lint": "eslint --max-warnings 0",
-    "test": "vitest"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
@@ -38,12 +39,13 @@
     "@types/node": "^24.10.1",
     "@types/sortablejs": "^1.15.8",
     "@vitejs/plugin-vue": "^6.0.5",
+    "@vitest/coverage-v8": "^4.1.0",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/runtime-core": "3.5.25",
     "@vue/test-utils": "^2.4.5",
     "@vue/tsconfig": "^0.8.1",
-    "@xgo-pkgs/spx": "3.2.4",
+    "@xgo-pkgs/spx": "3.3.0",
     "bowser": "^2.14.1",
     "browserslist": "^4.28.0",
     "browserslist-to-esbuild": "^2.1.1",
