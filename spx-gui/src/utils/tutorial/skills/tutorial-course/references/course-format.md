@@ -8,6 +8,7 @@ index.json                     the course settings
 main_course.gox                the course program
 project/                       the embedded SPX project (its root is named in index.json)
 assets/videos/<name>/          one video resource: a manifest plus its payload
+assets/images/<name>/          one image resource, same shape (no call addresses images yet)
 ```
 
 ## Settings (`index.json`)
