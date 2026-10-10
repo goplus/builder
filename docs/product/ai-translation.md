@@ -6,14 +6,14 @@ AI Translation provides on-demand translation of dynamic descriptions in XBuilde
 
 XBuilder's fixed interface already has multilingual text. Editor diagnostics change with code, library documentation includes descriptions in different languages, and translating UGC is a future direction. AI Translation provides a unified translation entry point for this content.
 
-The editor already includes built-in Chinese and English descriptions for XGo's `for`, `if`, `var`, and `println`, and Spx's `Sprite`, `clone`, `onCloned`, and `turn`, among others. Existing descriptions in the target language are displayed directly; users can request translation of other content as needed.
+The editor already includes built-in Chinese and English descriptions for XGo's `for`, `if`, `var`, and `println`, and Spx's `Sprite`, `clone`, `onCloned`, and `turn`, among others.
 
 ## Goals
 
 * Support diagnostic and documentation descriptions in code editor Hover in the first phase.
 * Let users explicitly request translation, retain the original for comparison, and preserve its meaning.
 * Select Context based on the description being translated to keep technical terms, code names, and formatting accurate.
-* Continue the task when the user leaves the description, and reuse the task or translation when they return to the same description they previously clicked to translate.
+* Let users continue editing and reading while waiting for translation.
 * Extend to dynamic UGC such as project descriptions, instructions, and course introductions as reading needs evolve.
 
 ## Basic Concepts
@@ -22,8 +22,6 @@ The editor already includes built-in Chinese and English descriptions for XGo's 
 
 * Diagnostic description: explains a problem in code and corresponds to the diagnostic's file and range.
 * Documentation description: explains a definition such as a type or method, and comes from library documentation or user comments.
-
-Each description has its own translation action. Diagnostics and documentation in the same Hover are handled separately.
 
 Translation processes the complete description, expressing mixed-language text in the target language while preserving meaning and coherence. Signatures, code identifiers, example code, numbers, links, and Markdown structure remain unchanged.
 
@@ -54,21 +52,23 @@ XGo / Spx knowledge for both types of translation is read through the standalone
 
 ## Core Mechanisms
 
-### Language Assessment
+### Language Analysis
 
-The target language is the reader's current interface language. A new language analysis API automatically identifies languages in the actual text. Results are saved against the text version, and the frontend compares the language tags with the target language. The publisher's language settings are excluded from the identification criteria.
+The target language is the reader's current interface language.
 
 | Stage | Approach |
 | - | - |
-| Read | Use existing language information in built-in documentation, or query the language analysis result for the current text version |
+| Read | The frontend first uses language information from built-in documentation, the page cache, or the content API; it requests the language analysis API when no valid information exists |
 | Identify | When no valid result exists, the language analysis service calls the model once to identify natural languages in the text; code, key names, and proper names are treated as protected content |
 | Tag | Save the natural-language list and identification status; mixed languages are recorded as lists such as `[zh, en]`, with protected content excluded from the language tags |
-| Reuse | Use the database and Redis for stable library descriptions and future public UGC, and frontend caching within the current page for diagnostics and user comments; concurrent analysis of the same version is merged into one task |
-| Compare | Display the text directly when identification is complete and all languages match the target; offer a translation entry point when another language is present, identification is incomplete, or analysis fails |
+| Compare | Compare natural-language tags with the target language to determine whether all languages match, other languages are present, or the result is uncertain |
 
-For example, the text "按空格跳跃，avoid the enemies" is tagged `[zh, en]`, so both Chinese and English readers see a translation entry point. In "按 Space 跳跃", the key name is preserved and the natural language is tagged `[zh]`. Changing the target language only compares the tags again; updating the text triggers new analysis.
+For example, the text "按空格跳跃，avoid the enemies" is tagged `[zh, en]`, so both Chinese and English readers see a translation entry point. In "按 Space 跳跃", the key name is preserved and the natural language is tagged `[zh]`.
 
-Language analysis is separate from translation generation after a click. For public UGC, language information is prepared after the text is saved or updated and delivered with the content when read. Editor descriptions are queried or analyzed as they are read. The system performs language analysis; uncertain results are treated as requiring translation, and users request a translation through the same entry point.
+Language analysis takes place at different times for the two content types:
+
+* Public UGC: identify languages after the text is saved or updated, and return the language information with the text when users read it.
+* Editor descriptions: query the text's language information when users view it, and identify languages when no valid result exists.
 
 ### Content Selection
 
@@ -86,63 +86,55 @@ Translation applies to the description text the user is currently reading, with 
 | The user has clicked and is waiting for a translation | Retain the original and show an in-progress state |
 | The translation is available after the user clicks | Display the translation with an AI Translation label and retain the original for comparison |
 
-Translation storage and the user's display choice are managed separately. Within the same page session, descriptions the user has clicked retain the choice to view the translation. A new session or a change to the content or target language reassesses the entry point for the current content, and the user clicks again to view the translation.
+### API Design
+
+Both APIs accept the content source, actual text, text format, and protected names. The translation API also accepts the target language and Context. The frontend provides diagnostic and comment text; the backend reads or verifies public content using its source identifiers.
+
+| API | When called | Responsibility and output |
+| - | - | - |
+| `POST /translations/language-analysis` | Called automatically when valid language information is missing | Look up or identify languages and return the language list, identification status, and whether natural language is present, allowing the frontend to determine the translation entry point |
+| `POST /translations` | Called after the user clicks Translate and the page lacks a reusable result | Look up an existing translation or wait for the same task; when generation is needed, check quota and request frequency, then call the model once, returning the complete translation |
 
 ### Translation Flow
 
-1. The frontend determines the actual description, reads or identifies its language through the language analysis API, and compares it with the interface language. Uncertain results offer a translation entry point.
-2. After the user clicks, the frontend collects the required Context, fixes the text, background, and target language, and forms an identity for the current input.
-3. Query the translation or task for that input: return an existing translation directly, or continue waiting for an in-progress task.
-4. When no result or task exists, request translation through the generation API. The server checks quota and request frequency, then submits the fixed input to the model once.
-5. Validate the complete translation and save it in the frontend cache or a shared persistent record according to the content type. The frontend presents the result according to the current input and the user's display choice.
+1. The frontend reads or automatically identifies the text's languages and compares them with the interface language to determine the translation entry point.
+2. After the user clicks, the frontend collects Context and first reuses a translation or task within the page. When no result exists, it calls the translation API for the backend to look up or generate a translation.
+3. When generation completes, check the current input and public content version. Save validated results according to the content type and display translations matching the current description and target language.
 
 ### Result Storage
 
-The system saves language information and successful translations for reuse during later reading. Storage scope depends on the content type:
+Language information stores languages and identification status for reuse across target languages. Translations store the complete text, target language, and the corresponding text, background, and rules used during generation.
 
-| Content | Storage and reuse rules |
+| Content | Storage |
 | - | - |
-| Diagnostics and user code comments | Cache language information, tasks, and translations within the current user's page |
-| Existing built-in Chinese and English descriptions | Reuse existing documentation resources and read the target-language description directly |
-| Stable public library descriptions with missing translations | Store persistently for users reading the same version with the same shared background |
-| Public UGC such as project descriptions (future) | Store with the corresponding content for readers with the same target language |
+| Diagnostics, user comments, and translations containing personal code Context | The current user's page cache stores language information, tasks, and translations |
+| Existing built-in Chinese and English descriptions | Reuse existing documentation resources |
+| Stable public library descriptions and future public UGC | The database stores language information and successful translations, with Redis accelerating reads; share results with the same public background |
 
-#### Page Cache
+The page cache has expiration and capacity limits and is cleared when the page refreshes or the account changes. Tasks continue after the user leaves Hover; returning to the same description previously clicked shows progress or the translation.
 
-When the user leaves Hover, translation continues and the result is saved. Returning to the same description they previously clicked lets them view the in-progress task or completed translation.
-
-The page cache is subject to time and capacity limits. Refreshing the page or switching accounts clears personal results.
-
-#### Public Content Storage
-
-Each public description stores its current language information and one current translation per target language. Generating the same language again updates the existing translation; Chinese, English, and other language results are maintained separately.
-
-When the text, relevant background, target language, and translation rules match, clicking reads the existing result directly. A missing valid translation triggers generation. Existing public translations are also viewed after an explicit user click.
+Each public description retains one current text record and one translation record per target language. A new result in the same language overwrites its existing record. Missing or expired Redis entries are filled from valid database results.
 
 ### Translation Updates
 
-A translation corresponds to the text, relevant background, and translation rules used during generation. The system checks these when the description is read again or the content is updated. Results matching the current content remain reusable.
+Changes to the text, protected names, or language analysis rules trigger language identification again. Changes only to background, target language, or translation rules reuse language information.
 
 #### Page Cache Updates
 
-| Change | Handling rule |
+Reuse the editor's code change notifications and diagnostic refresh mechanism to read the description text and Context again. Add matching fingerprints for text, protected names, and Context to look up cached results for the same target language and translation rules.
+
+When the description text or relevant Context changes, show the current original and require the user to click "Translate" again. Read a matching cache entry when available; otherwise, translate again. Moving line numbers or changing unrelated code keeps the existing translation.
+
+#### Public Record Updates
+
+| Content | Basis for updates |
 | - | - |
-| Diagnostic message or comment text changes | Automatically analyze the new text and display the current original with its corresponding translation entry point |
-| The expression causing the error, relevant declarations, signature, or required background changes | Retain language information and match the translation again |
-| Only line numbers move or unrelated code changes | Reuse the translation for the same text and background |
-| Target language or translation rules change | Read the corresponding result; the user clicks to generate a missing valid translation |
+| Public library descriptions | Reuse existing definition IDs and description reads; add a trusted documentation manifest, text and public background fingerprints, and a content version per entry to identify description edits within the same library version |
+| Project descriptions and instructions (future) | Reuse change detection for `description` and `instructions` in `UpdateProjectParams.Diff`; add a content version for each field and update it when the text or required public background changes |
 
-After content changes, the user clicks to view the current translation. Completed results are displayed only in descriptions whose content matches their input.
+The project's `revision` signals that content should be checked again, while each field's content version determines whether its translation is valid. Different library versions or release objects maintain separate records.
 
-#### Persistent Result Updates
-
-Language information and translations for public descriptions are associated with the content version. Library descriptions are maintained with library and documentation versions; editing description text within the same library version also updates the corresponding content. Project descriptions and instructions are updated according to actual text changes, including when release information remains unchanged.
-
-When the text changes, the system updates the current version and analyzes its language again, invalidating existing translations. Clicking "Translate" generates the current result and updates the existing translation for that target language. A change only to relevant background retains language information and matches the translation again.
-
-Different library versions in use and different release objects maintain separate results. If content changes during generation, the current saved result follows the latest content version.
-
-For example, when instructions change from "Press H to jump" to "Press J to jump", users see the new original and click to view a translation matching the new key.
+A content version update invalidates old translations in all languages. The user must click "Translate" again to generate the current translation. A successful result overwrites that language's existing record and updates Redis. Other languages wait for generation on demand, and current content uses only cache entries matching its current version.
 
 ### Usage Quota
 
@@ -180,16 +172,16 @@ While quota or rate limits apply, saved valid translations that remain accessibl
 
 ### Understanding a Diagnostic
 
-A user opens Hover on a type error, reads the original, and clicks "Translate". The translation preserves variable names and types so the user can compare it with the original to understand the error.
-
-While waiting, the user edits another file and the task continues. Returning to the same diagnostic shows its progress or completed translation. After changing the expression causing the error, the user sees the updated diagnostic and can click to translate the new content.
+A user encounters an English type error while writing code, clicks "Translate" in the diagnostic description, and fixes the code after understanding the cause.
 
 ### Reading Library Documentation
 
-A user views a Spx method. Existing Chinese documentation is displayed directly with a Chinese interface. For a library method without a Chinese description, the user clicks "Translate" and reads it alongside the original; signatures and code examples remain unchanged.
-
-Returning to the description they previously clicked in the same page session reuses the translation. Other users reading the same trusted version of the public description first see the original and a translation entry point, then click to read the saved translation directly.
+A user learning the Spx API encounters a method without a Chinese description and clicks "Translate" to understand its purpose and parameters.
 
 ### Reading User Comments
 
-A user views a custom method's comment and clicks "Translate". The translation corresponds to the comment text and uses the method's declaration and necessary background to resolve references. After the comment or related signature changes, the user sees the current original and clicks to read or generate the matching translation.
+A user reading a method written by someone else clicks "Translate" to read a foreign-language comment and understand the code's intent.
+
+### Reading UGC (Future)
+
+A user browsing another creator's project clicks "Translate" to understand foreign-language or mixed-language project descriptions and instructions, learning what the project offers and how to play.
