@@ -33,6 +33,7 @@ vi.mock('@/components/editor/editor-state', () => ({
 }))
 vi.mock('@/components/editor/EditorContextProvider.vue', () => ({
   default: defineComponent({
+    props: { project: { type: Object, required: true }, state: { type: Object, required: true } },
     setup:
       (_, { slots }) =>
       () =>
@@ -83,12 +84,14 @@ vi.mock('./session', () => ({
     editorState: unknown
     apiWhitelist = shallowReactive({ apis: null as string[] | null })
     ruler = shallowReactive({ enabled: false })
+    program = new Disposable()
     listeners = new Map<string, (payload: unknown) => void>()
     started = false
     constructor(readonly options: PlaygroundCourseSessionOptions) {
       super()
       this.project = options.project
       this.editorState = options.editorState
+      this.addDisposable(this.program)
       mocks.sessions.push(this)
     }
     on(event: string, fn: (payload: unknown) => void) {
@@ -96,7 +99,7 @@ vi.mock('./session', () => ({
     }
     async start() {
       try {
-        await this.options.waitForEditor(this.getSignal())
+        await this.options.waitForEditor(this.program.getSignal())
         this.started = true
       } catch {
         // Disposal cancels the test program's pending UI handshake.
@@ -139,7 +142,7 @@ describe('Playground startup rendering', () => {
     session.ruler.enabled = true
     // API data refresh may still be pending after the fast configuration call returns.
     mocks.editors[0].value = false
-    const uncovered = session.options.onStarted(session.getSignal())
+    const uncovered = session.options.onStarted(session.program.getSignal())
     await flushPromises()
     expect(wrapper.find('[role="status"]').exists()).toBe(true)
     mocks.editors[0].value = true
@@ -158,6 +161,7 @@ describe('Playground startup rendering', () => {
     await flushPromises()
     session.apiWhitelist.apis = ['stepTo']
     mocks.editors[0].value = false
+    session.program.dispose()
     session.listeners.get('completed')({ feedback: null })
     await flushPromises()
     expect(wrapper.emitted('courseCompleted')).toEqual([[{ feedback: null }]])
@@ -175,13 +179,16 @@ describe('Playground startup rendering', () => {
     mocks.editors[0].value = true
     await flushPromises()
     mocks.editors[0].value = false
-    const pending = previous.options.onStarted(previous.getSignal())
+    const pending = previous.options.onStarted(previous.program.getSignal())
     const cancelled = expect(pending).rejects.toThrow('cancelled')
+    previous.program.dispose()
     previous.listeners.get('failed')(new DefaultException({ en: 'Startup failed', zh: '启动失败' }))
     await nextTick()
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
     expect(wrapper.find('main').attributes('inert')).toBeUndefined()
     await wrapper.find('button').trigger('click')
+    expect(wrapper.emitted('courseRestart')).toEqual([[]])
+    await wrapper.setProps({ project: { title: 'Restarted course', project: {} } as TutorialProject })
     await flushPromises()
     await cancelled
     expect(previous.isDisposed).toBe(true)
@@ -191,7 +198,7 @@ describe('Playground startup rendering', () => {
     expect(mocks.sessions[1].started).toBe(false)
     mocks.editors[1].value = true
     await flushPromises()
-    await mocks.sessions[1].options.onStarted(mocks.sessions[1].getSignal())
+    await mocks.sessions[1].options.onStarted(mocks.sessions[1].program.getSignal())
     await nextTick()
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
   })
