@@ -205,6 +205,7 @@ describe('Editing', () => {
     await flushPromises()
     expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
     expect(editing.saving?.state).toBe(SavingState.Failed)
+    expect(editing.saving?.error).toBeInstanceOf(Error)
 
     vi.advanceTimersByTime(retryAutoSaveToCloudDelay)
     await flushPromises()
@@ -216,6 +217,68 @@ describe('Editing', () => {
     expect(cloudHelpers.save).toHaveBeenCalledTimes(3)
     expect(editing.dirty).toBe(false)
     expect(editing.saving?.state).toBe(SavingState.Completed)
+  })
+
+  it('should reuse an in-progress save when flushing', async () => {
+    const project = makeProject()
+    const cloudHelpers = makeCloudHelpers()
+    vi.mocked(cloudHelpers.save).mockImplementation(({ metadata, files }: ProjectSerialized, signal?: AbortSignal) =>
+      timeout(500, signal).then(() => makeSavedSerialized({ metadata, files }))
+    )
+    const editing = makeEditing({ project, cloudHelpers })
+    editing.startEditing()
+
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
+    await flushPromises()
+    vi.advanceTimersByTime(autoSaveToCloudDelay)
+    await flushPromises()
+
+    const flushPromise = editing.saving!.flush()
+    expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
+
+    vi.advanceTimersByTime(500)
+    await expect(flushPromise).resolves.toBeUndefined()
+    expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
+  })
+
+  it('should retry a failed save when flushing', async () => {
+    const project = makeProject()
+    const cloudHelpers = makeCloudHelpers()
+    vi.mocked(cloudHelpers.save)
+      .mockRejectedValueOnce(new Error('Cloud save failed'))
+      .mockResolvedValue(makeSavedSerialized({ metadata: {}, files: {} }))
+    const editing = makeEditing({ project, cloudHelpers })
+    editing.startEditing()
+
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
+    await flushPromises()
+    vi.advanceTimersByTime(autoSaveToCloudDelay)
+    await flushPromises()
+    expect(editing.saving?.state).toBe(SavingState.Failed)
+
+    await expect(editing.saving!.flush()).resolves.toBeUndefined()
+    expect(cloudHelpers.save).toHaveBeenCalledTimes(2)
+    expect(editing.saving?.state).toBe(SavingState.Completed)
+    expect(editing.dirty).toBe(false)
+  })
+
+  it('should stop retrying after it is disposed following a failed save', async () => {
+    const project = makeProject()
+    const cloudHelpers = makeCloudHelpers()
+    vi.mocked(cloudHelpers.save).mockRejectedValue(new Error('Cloud save failed'))
+    const editing = makeEditing({ project, cloudHelpers })
+    editing.startEditing()
+
+    project.setFile('file1.txt', mockFile('file1.txt updated'))
+    await flushPromises()
+    vi.advanceTimersByTime(autoSaveToCloudDelay)
+    await flushPromises()
+    expect(editing.saving?.state).toBe(SavingState.Failed)
+
+    editing.dispose()
+    vi.advanceTimersByTime(retryAutoSaveToCloudDelay)
+    await flushPromises()
+    expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
   })
 
   it('should cancel pending saving when editing is disposed', async () => {
@@ -689,5 +752,22 @@ describe('Editing.loadProject', () => {
 
     // Equal revisions keep the local cache to preserve unsaved local work.
     expect(project.load).toHaveBeenCalledWith(localData, expect.anything())
+  })
+
+  it('should treat a restored local cache as unsaved', async () => {
+    const cloudData = makeCloudSerialized('alice', 'my-project', 1)
+    const localData = makeLocalSerialized('alice', 'my-project', 1)
+    const cloudHelpers = makeCloudHelpers()
+    vi.mocked(cloudHelpers.load).mockResolvedValue(cloudData)
+    const localCacheHelper = makeLocalCache(localData)
+    const project = makeProject({ owner: 'alice', name: 'my-project' })
+    const editing = makeEditing({ project, cloudHelpers, localCacheHelper })
+
+    await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), new AbortController().signal)
+    editing.startEditing()
+    await flushPromises()
+
+    expect(editing.dirty).toBe(true)
+    expect(editing.saving?.state).toBe(SavingState.Pending)
   })
 })
