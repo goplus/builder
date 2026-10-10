@@ -37,7 +37,6 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:fullscreen': [value: boolean]
   exit: [code: number]
-  failed: []
   console: [type: 'log' | 'warn', args: unknown[]]
 }>()
 
@@ -479,7 +478,6 @@ defineExpose({
           :project="project"
           @console="(type, args) => emit('console', type, args)"
           @exit="(code) => emit('exit', code)"
-          @failed="emit('failed')"
         />
         <slot v-if="!overlayActive" name="inline-overlay" />
         <div v-if="overlayActive && initialLoading && !overlayOpening" class="overlay-loading"></div>

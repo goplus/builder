@@ -171,7 +171,6 @@ const props = defineProps<{ project: SpxProject }>()
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
   exit: [code: number]
-  failed: []
 }>()
 
 const [thumbnailUrl, thumbnailUrlLoading] = useRenderableImageUrl(() => props.project.thumbnail)
@@ -204,7 +203,6 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
     runnerIframeWindowRef.value = iframeWindow
     iframeWindow.onGameError((err: string) => {
       state.value = { type: 'failed', err }
-      emit('failed')
       capture(err, 'ProjectRunner game error')
     })
     iframeWindow.onGameExit((code: number) => {
@@ -212,14 +210,12 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
     })
     iframeWindow.onEngineCrash((err: string) => {
       state.value = { type: 'failed', err }
-      emit('failed')
       capture(err, 'ProjectRunner engine crash')
       reloadIframe() // The engine crashed and failed to recover by itself, so we reload the iframe.
     })
     engineInitPromise = iframeWindow.initEngine(assetURLs, { logLevel: logLevels.LOG_LEVEL_ERROR, useProfiler: false })
     engineInitPromise.catch((err) => {
       state.value = { type: 'failed', err }
-      emit('failed')
       capture(err, 'ProjectRunner init engine error')
     })
   }

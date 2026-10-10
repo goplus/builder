@@ -19,7 +19,7 @@ export function checkInputHelperIcon(el: HTMLElement): string | null {
 </script>
 
 <script setup lang="ts">
-import { ref, watchPostEffect } from 'vue'
+import { onUnmounted, ref, watchPostEffect } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
 import { type Input, InputKind } from '../../common'
@@ -34,6 +34,7 @@ const props = defineProps<{
 }>()
 
 const codeEditorUICtx = useCodeEditorUICtx()
+onUnmounted(() => props.controller.stopInputing())
 
 useDecorations(() => {
   const { activeSlots, inputingSlot } = props.controller

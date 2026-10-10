@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
+import { onUnmounted, ref, watchEffect } from 'vue'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
 import { toAbsolutePosition } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -11,6 +11,7 @@ const props = defineProps<{
 }>()
 
 const codeEditorUICtx = useCodeEditorUICtx()
+onUnmounted(() => props.controller.stopCompletion())
 
 const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })

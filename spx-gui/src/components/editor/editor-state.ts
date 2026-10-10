@@ -151,6 +151,10 @@ export class EditorState extends Disposable {
     return this.selectedEditModeRef.value
   }
 
+  get codeReadOnly() {
+    return this.selectedEditMode === EditMode.Simple && this.runtime.running.mode === 'debug'
+  }
+
   get selectedSprite() {
     if (this.selectedTypeRef.value !== 'sprite') return null
     return this.project.sprites.find((s) => s.id === this.selectedSpriteIdRef.value) ?? null

@@ -76,7 +76,7 @@
       <div class="flex">
         <UITooltip :disabled="undoAction == null">
           <template #trigger>
-            <button :class="historyBtnClz" :disabled="undoAction == null || historyReadOnly" @click="handleUndo.fn">
+            <button :class="historyBtnClz" :disabled="undoAction == null || state?.codeReadOnly" @click="handleUndo.fn">
               <UIIcon class="h-5 w-5" type="undo" />
             </button>
           </template>
@@ -84,7 +84,7 @@
         </UITooltip>
         <UITooltip :disabled="redoAction == null">
           <template #trigger>
-            <button :class="historyBtnClz" :disabled="redoAction == null || historyReadOnly" @click="handleRedo.fn">
+            <button :class="historyBtnClz" :disabled="redoAction == null || state?.codeReadOnly" @click="handleRedo.fn">
               <UIIcon class="h-5 w-5" type="redo" />
             </button>
           </template>
@@ -216,10 +216,6 @@ const canManageProject = computed(() => {
 
 const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 const isSimpleMode = computed(() => selectedEditMode.value === EditMode.Simple)
-const historyReadOnly = computed(() => {
-  const running = props.state?.runtime.running
-  return isSimpleMode.value && running?.mode === 'debug' && !running.exited && running.initializingError == null
-})
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 

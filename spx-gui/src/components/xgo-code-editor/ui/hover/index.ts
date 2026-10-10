@@ -213,12 +213,14 @@ export class HoverController extends Emitter<{
       return {
         contents,
         range: item.range,
-        actions: [
-          {
-            command: builtInCommandInvokeInputHelper,
-            arguments: [item]
-          }
-        ]
+        actions: this.ui.readOnly
+          ? []
+          : [
+              {
+                command: builtInCommandInvokeInputHelper,
+                arguments: [item]
+              }
+            ]
       }
     }
     return null
