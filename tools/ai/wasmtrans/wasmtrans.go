@@ -106,7 +106,7 @@ func (t *wasmTransport) buildHeaders() map[string]any {
 
 // fetchAndParse performs a fetch request and parses the JSON response into the target.
 func (t *wasmTransport) fetchAndParse(ctx context.Context, path string, body []byte, result any) error {
-	headers := t.buildHeaders()
+	headers := mergeExtraHeaders(t.buildHeaders(), ai.ExtraHeadersFromContext(ctx))
 
 	jsAbortController := js.Global().Get("AbortController").New()
 	defer context.AfterFunc(ctx, func() {

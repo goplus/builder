@@ -149,12 +149,15 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 	}
 
 	p.beginInteraction()
+	// Keep one Transport for the complete interaction so a runner session change
+	// cannot move an in-flight Player onto a newly installed global transport.
+	transport := p.transport()
 	defer func() {
 		p.endInteraction()
 		if ctx.Err() != nil {
 			return
 		}
-		p.scheduleHistoryManagement(owner)
+		p.scheduleHistoryManagement(owner, transport)
 	}()
 
 	currentMsg := msg
@@ -174,7 +177,6 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 		})
 		currentHistory := slices.Clone(p.history)
 		currentArchivedHistory := p.archivedHistory
-		currentTransport := p.transport()
 		p.mu.RUnlock()
 
 		request := Request{
@@ -197,7 +199,7 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 			backoffCap,
 			transportTimeout,
 			func(ctx stdContext.Context) (Response, error) {
-				return currentTransport.Interact(ctx, request)
+				return transport.Interact(ctx, request)
 			},
 		)
 		if err := ctx.Err(); err != nil {
@@ -329,16 +331,16 @@ func (p *Player) appendHistory(turn Turn) {
 // scheduleHistoryManagement starts history management in an owner-scoped
 // coroutine so it can outlive the caller without outliving its owner. The
 // blocking archive work runs natively to avoid blocking the game engine.
-func (p *Player) scheduleHistoryManagement(owner any) {
+func (p *Player) scheduleHistoryManagement(owner any, transport Transport) {
 	spx.Go(owner, func(ctx stdContext.Context, _ any) {
 		spx.ExecuteNative(func(_ stdContext.Context, _ any) {
-			p.manageHistory(ctx)
+			p.manageHistory(ctx, transport)
 		})
 	})
 }
 
 // manageHistory checks if archiving is needed and performs it if necessary.
-func (p *Player) manageHistory(ctx stdContext.Context) {
+func (p *Player) manageHistory(ctx stdContext.Context, transport Transport) {
 	const (
 		archiveTimeout     = 120 * time.Second      // Timeout for archive operation.
 		maxArchiveAttempts = 3                      // Maximum number of archive attempts.
@@ -353,7 +355,6 @@ func (p *Player) manageHistory(ctx stdContext.Context) {
 	}
 
 	// Perform archive with retries.
-	transport := p.transport()
 	archived, lastErr := retryTransportCall(
 		ctx,
 		maxArchiveAttempts,
