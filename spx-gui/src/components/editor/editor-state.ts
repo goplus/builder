@@ -142,6 +142,13 @@ export class EditorState extends Disposable {
   }
 
   runtime: Runtime
+  /**
+   * NOTE: This is a history of `project` alone, with one exception: the Course Editor passes the course's history,
+   * so that edits of the embedded project and of the rest of the course are undone in one order. There it records
+   * and restores the whole course, not just `project`.
+   * TODO: Make the history (or the editor state) independent of spx, see
+   * https://github.com/goplus/builder/pull/3494#discussion_r4237184023
+   */
   history: History
   genState: GenState
   editing: editing.Editing
