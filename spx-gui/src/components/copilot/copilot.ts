@@ -176,6 +176,16 @@ export class Round {
   get state() {
     return this.stateRef.value
   }
+
+  /**
+   * Whether this round was produced live in the current session (vs. loaded from history). Set when the
+   * round is started; rounds restored via `load` stay `false`. Used by features (e.g. in-editor code
+   * guides) to decide whether to auto-drive the editor — so a restored suggestion doesn't re-pop guides.
+   */
+  private liveRef = ref(false)
+  get isLive() {
+    return this.liveRef.value
+  }
   private setState(state: RoundState) {
     this.stateRef.value = state
     this.updatedAt = dayjs().valueOf()
@@ -355,6 +365,7 @@ export class Round {
     this.errorRef.value = null
     this.apiExceptionCode = null
     this.apiExceptionMeta = null
+    this.liveRef.value = true
     this.setState(RoundState.Loading)
     this.ctrl = new AbortController()
     this.generateCopilotMessage()
