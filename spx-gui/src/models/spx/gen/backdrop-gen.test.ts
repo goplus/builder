@@ -5,10 +5,12 @@ import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/a
 import { TaskStatus, TaskType } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as fileHelpers from '@/models/common/file'
-import { sndFiles } from '@/models/common/test'
+import * as cloud from '@/models/common/cloud'
+import { mockFile, sndFiles } from '@/models/common/test'
 import { GenState } from '@/components/editor/gen'
 import { makeSpxProject } from '../common/test'
 import { BackdropGen } from './backdrop-gen'
+import { mockSaveFile } from './test-helpers'
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
@@ -18,7 +20,56 @@ vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 1
 describe('BackdropGen', () => {
   beforeEach(() => {
     aigcMock.reset()
+    mockSaveFile()
   })
+
+  it('uses and persists a local reference image', async () => {
+    const project = makeSpxProject()
+    const gen = new BackdropGen(i18n, project, { settings: { description: 'A city street' } })
+    const referenceImage = mockFile('reference.png')
+    gen.setReferenceImage(referenceImage)
+
+    await gen.genImages()
+
+    const [taskRecord] = [...aigcMock.tasks.values()]
+    expect(taskRecord.params).toMatchObject({
+      settings: { referenceImageUrl: 'kodo://mock-bucket/reference.png' }
+    })
+
+    const files = sndFiles(gen.export())
+    const loadedGen = await BackdropGen.load(gen.name, i18n, project, files)
+    expect(loadedGen.referenceImage?.name).toBe(referenceImage.name)
+    gen.dispose()
+    loadedGen.dispose()
+  })
+
+  it.each(['cancel', 'dispose', 'cancel-and-dispose'])(
+    'does not generate after %s during reference upload',
+    async (action) => {
+      let resolveUpload!: (url: string) => void
+      const upload = new Promise<string>((resolve) => {
+        resolveUpload = resolve
+      })
+      const saveFile = vi.mocked(cloud.saveFile).mockReturnValueOnce(upload)
+      const gen = new BackdropGen(i18n, makeSpxProject(), { referenceImage: mockFile('reference.png') })
+      const pending = gen.genImages().catch((error) => error)
+      await flushPromises()
+
+      if (action !== 'dispose') await gen.cancel()
+      if (action !== 'cancel') gen.dispose()
+      expect(saveFile.mock.calls[0][1]?.aborted).toBe(true)
+      resolveUpload('kodo://mock-bucket/reference.png')
+
+      expect(await pending).toBeInstanceOf(Error)
+      expect(aigcMock.tasks.size).toBe(0)
+      if (action === 'cancel') {
+        await gen.genImages()
+        expect(gen.imagesGenState.status).toBe('finished')
+        expect(aigcMock.tasks.size).toBe(1)
+      }
+      gen.dispose()
+    }
+  )
 
   it('should work well', async () => {
     const project = makeSpxProject()
@@ -45,7 +96,8 @@ describe('BackdropGen', () => {
       category: BackdropCategory.Unspecified,
       description: 'Enriched description for A majestic mountain range under a clear blue sky',
       artStyle: ArtStyle.Unspecified,
-      perspective: Perspective.Unspecified
+      perspective: Perspective.Unspecified,
+      referenceImageUrl: null
     })
 
     // 4. User updates some settings
