@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Cancelled } from '@/utils/exception'
-import { composeQuery, useQuery } from '@/utils/query'
+import { composeQuery, untilLoaded, useQuery } from '@/utils/query'
 import { useCourse } from '@/stores/course'
 import { useSeries } from '@/stores/course-series'
 import { useSignIn, useSignedInStateQuery } from '@/stores/user'
@@ -21,7 +21,9 @@ const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
 const allQueryRet = useQuery(
   async (ctx) => {
     const [signedInState, course, series] = await Promise.all([
-      composeQuery(ctx, signedInStateQuery),
+      // Use untilLoaded instead of composeQuery to avoid restarting course entry on token refresh.
+      // See https://github.com/goplus/builder/issues/3590
+      untilLoaded(signedInStateQuery, ctx.signal),
       composeQuery(ctx, courseQueryRet),
       composeQuery(ctx, seriesQueryRet)
     ])

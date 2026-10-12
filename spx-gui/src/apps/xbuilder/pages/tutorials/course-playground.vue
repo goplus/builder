@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
-import { composeQuery, useQuery } from '@/utils/query'
+import { composeQuery, untilLoaded, useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useSeriesCourses } from '@/stores/course-series'
@@ -35,7 +35,9 @@ const sessionQueryRet = useQuery(
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
     const [signedInState, series, courses] = await Promise.all([
-      composeQuery(ctx, signedInStateQuery),
+      // Use untilLoaded instead of composeQuery to avoid resetting the session on token refresh.
+      // See https://github.com/goplus/builder/issues/3590
+      untilLoaded(signedInStateQuery, ctx.signal),
       getCourseSeries(courseSeriesID, ctx.signal),
       composeQuery(ctx, seriesCoursesQueryRet)
     ])
