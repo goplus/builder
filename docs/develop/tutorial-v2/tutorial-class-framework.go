@@ -2,11 +2,19 @@ package tutorial
 
 // Execution model: callbacks run one at a time, so shared variables in Course
 // code never race. A callback run yields while it waits on the learner
-// (showPrelude, showMessage, showVideo) or on generation (generateText,
-// generateJSON); other runs proceed meanwhile. Every trigger starts a new run
-// of each callback registered for it, so runs of one callback may overlap
-// when a trigger arrives while an earlier run is still waiting. Course start
-// is delivered like any other event.
+// (showPrelude, showMessage, showVideo), on generation (generateText,
+// generateJSON) or on time (wait, time.Sleep); other runs proceed meanwhile.
+// Every trigger starts a new run of each callback registered for it, so runs
+// of one callback may overlap when a trigger arrives while an earlier run is
+// still waiting. Course start is delivered like any other event.
+//
+// Anything else that blocks holds up every other run until it ends: channel
+// operations and select (receiving from time.After or time.Tick included),
+// reading or writing an io.Pipe, and long-running loops. Waiting for something
+// only another callback can provide, such as a value another callback sends
+// on a channel, never ends. Course code must not start goroutines of its own
+// (go statements, time.AfterFunc): their code runs outside this model, and
+// using the framework from one fails the Course program.
 //
 // TODO(#3509): how overlapping runs of one callback relate (cancelling the
 // stale one, running one at a time, ignoring triggers while busy) is not yet
@@ -38,6 +46,10 @@ type CourseAbilities interface {
 	// name and returns after the learner finishes watching it. The host determines
 	// how viewing completion is established.
 	showVideo(videoName string)
+	// wait pauses the calling callback for the given number of seconds; other
+	// runs proceed meanwhile. Zero or negative seconds return at once. Pausing
+	// with time.Sleep behaves the same way.
+	wait(seconds float64)
 	// complete marks the course as completed and ends the Course program: no
 	// further events start callbacks. Callbacks already running or waiting finish
 	// unless a capability fails or is cancelled, and the program then exits.

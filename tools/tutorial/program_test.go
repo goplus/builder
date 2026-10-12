@@ -3,10 +3,15 @@ package tutorial
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/goplus/ixgo"
+	_ "github.com/goplus/ixgo/pkg/time"
 
 	"github.com/goplus/builder/tools/xgoexec"
 )
@@ -725,6 +730,239 @@ func TestSlowCapabilitiesRunConcurrently(t *testing.T) {
 	releaseGenerate()
 	releaseGenerate()
 	awaitDone(t, done)
+}
+
+// courseOutcome starts a Course program and returns a channel that receives
+// what the program failed with, or nil once it completes.
+func courseOutcome(host *fakeHost, mainEntry func(*testCourse)) <-chan any {
+	outcome := make(chan any, 1)
+	go func() {
+		defer func() { outcome <- recover() }()
+		XGot_Course_Main(newTestCourse(host, mainEntry))
+	}()
+	return outcome
+}
+
+// TestWaitLetsOtherRunsProceed checks that wait is a waiting point: a trigger
+// arriving while a run pauses starts its run at once, not after the pause.
+func TestWaitLetsOtherRunsProceed(t *testing.T) {
+	host := newFakeHost()
+	var order []string
+	pausing := make(chan struct{}, 1)
+	ready := make(chan struct{})
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog(func(string) {
+			pausing <- struct{}{}
+			course.Wait(0.2)
+			order = append(order, "paused run ended")
+		})
+		course.Editor.Runtime.OnExit(func(int) {
+			order = append(order, "exit")
+			course.Complete()
+		})
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"x"}`)
+	await(t, pausing, "the run to start pausing")
+	dispatch(t, "editor.runtime.exit", `{"code":0}`)
+	awaitDone(t, done)
+
+	if got, want := fmt.Sprint(order), "[exit paused run ended]"; got != want {
+		t.Errorf("order = %s, want %s", got, want)
+	}
+}
+
+// TestWaitWithoutTimeDoesNotYield checks that wait with zero or negative
+// seconds returns at once without releasing the token, as time.Sleep does,
+// while a positive wait releases it.
+func TestWaitWithoutTimeDoesNotYield(t *testing.T) {
+	host := newFakeHost()
+	released := func(r *run) bool {
+		select {
+		case <-r.yielded:
+			return true
+		default:
+			return false
+		}
+	}
+	var releasedEarly, releasedLater bool
+	runCourse(t, host, func(course *testCourse) {
+		course.OnStart(func() {
+			r := course.courseProgram.current
+			course.Wait(0)
+			course.Wait(-1)
+			releasedEarly = released(r)
+			course.Wait(0.001)
+			releasedLater = released(r)
+			course.Complete()
+		})
+	})
+
+	if releasedEarly {
+		t.Error("wait without time released the token")
+	}
+	if !releasedLater {
+		t.Error("wait with time did not release the token")
+	}
+}
+
+func TestWaitRejectsNaN(t *testing.T) {
+	failure := awaitOne(t, courseOutcome(newFakeHost(), func(course *testCourse) {
+		course.OnStart(func() { course.Wait(math.NaN()) })
+	}), "the course to end")
+	if !strings.Contains(fmt.Sprint(failure), "NaN") {
+		t.Errorf("failure = %v, want an error about NaN", failure)
+	}
+}
+
+// TestFrameworkFromCourseGoroutineFailsTheCourse checks that using the
+// framework from a goroutine the Course started itself fails the Course
+// instead of touching the token. The call arrives while a run holds the token,
+// where releasing it from that goroutine used to hand out a second token.
+func TestFrameworkFromCourseGoroutineFailsTheCourse(t *testing.T) {
+	starts := map[string]func(func()){
+		"go statement":   func(f func()) { go f() },
+		"time.AfterFunc": func(f func()) { time.AfterFunc(0, f) },
+	}
+	abilities := map[string]func(*testCourse){
+		"showMessage": func(course *testCourse) { course.ShowMessage("from a goroutine") },
+		"wait":        func(course *testCourse) { course.Wait(0.01) },
+		"onLog":       func(course *testCourse) { course.Editor.Runtime.OnLog(func(string) {}) },
+	}
+	for how, start := range starts {
+		for name, call := range abilities {
+			t.Run(how+"/"+name, func(t *testing.T) {
+				returned := make(chan struct{}, 1)
+				tokensLeft := make(chan int, 1)
+				outcome := courseOutcome(newFakeHost(), func(course *testCourse) {
+					course.OnStart(func() {
+						program := &course.courseProgram
+						start(func() {
+							call(course)
+							returned <- struct{}{}
+						})
+						// Keep holding the token until the goroutine's call
+						// has failed the Course.
+						for !program.terminated() {
+							runtime.Gosched()
+						}
+						tokensLeft <- len(program.execToken)
+					})
+				})
+
+				failure := awaitOne(t, outcome, "the course to end")
+				if !strings.Contains(fmt.Sprint(failure), "goroutine the Course started") {
+					t.Errorf("failure = %v, want an error about the goroutine", failure)
+				}
+				if n := awaitOne(t, tokensLeft, "the holding run to finish"); n != 0 {
+					t.Error("a goroutine outside the scheduler released a token it never acquired")
+				}
+				select {
+				case <-returned:
+					t.Error("the call returned to the goroutine instead of ending it")
+				default:
+				}
+			})
+		}
+	}
+}
+
+// interpretedSleeps is Go source interpreted by ixgo the way Course code is,
+// calling time.Sleep directly and through a function value.
+const interpretedSleeps = `package main
+
+import "time"
+
+func Direct(d time.Duration) { time.Sleep(d) }
+
+func ThroughValue(d time.Duration) {
+	sleep := time.Sleep
+	sleep(d)
+}
+
+func main() {}
+`
+
+func interpretedSleepFuncs(t *testing.T) map[string]func(time.Duration) {
+	t.Helper()
+	ctx := ixgo.NewContext(0)
+	pkg, err := ctx.LoadFile("main.go", interpretedSleeps)
+	if err != nil {
+		t.Fatal(err)
+	}
+	interp, err := ctx.NewInterp(pkg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	funcs := map[string]func(time.Duration){}
+	for _, name := range []string{"Direct", "ThroughValue"} {
+		fn, ok := interp.GetFunc(name)
+		if !ok {
+			t.Fatalf("interpreted function %s not found", name)
+		}
+		funcs[name] = fn.(func(time.Duration))
+	}
+	return funcs
+}
+
+// TestTimeSleepInCourseCodePauses checks the redirection in sleep.go: Course
+// code calling time.Sleep pauses like wait instead of holding the token.
+func TestTimeSleepInCourseCodePauses(t *testing.T) {
+	for name, sleep := range interpretedSleepFuncs(t) {
+		t.Run(name, func(t *testing.T) {
+			host := newFakeHost()
+			var order []string
+			pausing := make(chan struct{}, 1)
+			ready := make(chan struct{})
+			done := startCourse(host, func(course *testCourse) {
+				course.Editor.Runtime.OnLog(func(string) {
+					pausing <- struct{}{}
+					sleep(200 * time.Millisecond)
+					order = append(order, "paused run ended")
+				})
+				course.Editor.Runtime.OnExit(func(int) {
+					order = append(order, "exit")
+					course.Complete()
+				})
+				course.OnStart(func() { close(ready) })
+			})
+
+			await(t, ready, "the course to start")
+			dispatch(t, "editor.runtime.log", `{"log":"x"}`)
+			await(t, pausing, "the run to start pausing")
+			dispatch(t, "editor.runtime.exit", `{"code":0}`)
+			awaitDone(t, done)
+
+			if got, want := fmt.Sprint(order), "[exit paused run ended]"; got != want {
+				t.Errorf("order = %s, want %s", got, want)
+			}
+		})
+	}
+}
+
+// TestTimeSleepOutsideARunSleepsPlainly checks that time.Sleep stays ordinary
+// Go on a goroutine the Course started itself: it sleeps without touching the
+// token and without failing the Course.
+func TestTimeSleepOutsideARunSleepsPlainly(t *testing.T) {
+	sleep := interpretedSleepFuncs(t)["Direct"]
+	slept := make(chan struct{})
+	outcome := courseOutcome(newFakeHost(), func(course *testCourse) {
+		course.Editor.Runtime.OnExit(func(int) { course.Complete() })
+		course.OnStart(func() {
+			go func() {
+				sleep(10 * time.Millisecond)
+				close(slept)
+			}()
+		})
+	})
+
+	await(t, slept, "the goroutine to wake up")
+	dispatch(t, "editor.runtime.exit", `{"code":0}`)
+	if failure := awaitOne(t, outcome, "the course to end"); failure != nil {
+		t.Errorf("the course failed: %v", failure)
+	}
 }
 
 // TestFatalDuringCompletionIsReported checks that a fatal error arriving late

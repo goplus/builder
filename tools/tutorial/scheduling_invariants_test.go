@@ -15,9 +15,11 @@ import (
 //
 //  1. The execution token flows only through acquireExec/releaseExec, and only
 //     runFrame and yieldWhile may call them: a run has exactly one yield
-//     point, with no ad-hoc yielding scattered elsewhere.
+//     point, with no ad-hoc yielding scattered elsewhere. The token holder's
+//     goroutine ID is written only alongside the token itself.
 //  2. yieldWhile is entered only from mustCallCapability, which waits on the
-//     host; the bridge's callCapability appears only in mustCallCapability.
+//     host, and pause, which waits on a timer; the bridge's callCapability
+//     appears only in mustCallCapability.
 //  3. No operation that can block appears while schedulerMu is held (channel
 //     send or receive, select, Wait, taking the token, calling the bridge);
 //     registryMu is a leaf lock whose regions allow only allowlisted calls.
@@ -61,7 +63,7 @@ func TestSchedulingInvariants(t *testing.T) {
 var (
 	tokenOperators   = map[string]bool{"runFrame": true, "yieldWhile": true}
 	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
-	yieldCallers     = map[string]bool{"mustCallCapability": true}
+	yieldCallers     = map[string]bool{"mustCallCapability": true, "pause": true}
 	blockingWaitHome = "mustCallCapability"
 	admitCallers     = map[string]bool{"startRuns": true, "goLive": true}
 	yieldMarkers     = map[string]bool{"runFrame": true, "yieldWhile": true}
@@ -83,9 +85,13 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				if !tokenOperators[name] {
 					report(n.Pos(), "%s calls %s: only runFrame and yieldWhile may operate the token", name, callee)
 				}
+			case strings.HasSuffix(callee, ".holder.Store"):
+				if !tokenPlumbing[name] {
+					report(n.Pos(), "%s writes the token holder: only acquireExec, releaseExec and init may", name)
+				}
 			case strings.HasSuffix(callee, ".yieldWhile"):
 				if !yieldCallers[name] {
-					report(n.Pos(), "%s yields the token: only mustCallCapability may wait", name)
+					report(n.Pos(), "%s yields the token: only mustCallCapability and pause may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
 				if name != blockingWaitHome {
