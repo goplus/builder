@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { UIButtonGroup, UIButtonGroupItem, UITooltip } from '@/components/ui'
 import { EditMode, type EditorState } from '../editor-state'
 import defaultModeSvg from './icons/default-mode.svg?raw'
 import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
 
-const props = defineProps<{
-  /** Null while there is no editor state; the switch then shows the default mode and ignores clicks. */
-  state: EditorState | null
+defineProps<{
+  state: EditorState
 }>()
-
-const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMode.Default)
 </script>
 
 <!-- eslint-disable vue/no-v-html -->
@@ -20,8 +16,8 @@ const selectedEditMode = computed(() => props.state?.selectedEditMode ?? EditMod
     class="mx-3 items-center"
     type="icon"
     variant="secondary"
-    :value="selectedEditMode"
-    @update:value="(v) => state?.selectEditMode(v as EditMode)"
+    :value="state.selectedEditMode"
+    @update:value="(v) => state.selectEditMode(v as EditMode)"
   >
     <UITooltip>
       <template #trigger>
