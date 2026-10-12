@@ -72,7 +72,7 @@
 
       <NavbarTutorials v-if="showTutorialsEntry" />
 
-      <EditorHistoryButtons :history="state?.codeReadOnly ? null : state?.history ?? null" />
+      <EditorHistoryButtons v-if="state != null && !state.codeReadOnly" :history="state.history" />
     </template>
     <template #center>
       <div v-if="project != null" class="flex items-center justify-center gap-2">
@@ -83,7 +83,7 @@
       </div>
     </template>
     <template #right>
-      <EditorModeSwitch v-if="!isSimpleMode" :state="state" />
+      <EditorModeSwitch v-if="state != null && !isSimpleMode" :state="state" />
     </template>
   </NavbarWrapper>
 </template>

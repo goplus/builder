@@ -572,7 +572,7 @@ onUnmounted(() => {
           </div>
         </template>
         <template #right>
-          <EditorModeSwitch v-if="open.view === 'project'" :state="editorState" />
+          <EditorModeSwitch v-if="open.view === 'project' && editorState != null" :state="editorState" />
           <UIButton
             v-radar="{ name: 'preview-button', desc: 'Click to preview the course as a learner' }"
             class="mr-2"

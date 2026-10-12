@@ -13,30 +13,29 @@ import { UIIcon, UITooltip } from '@/components/ui'
 import type { History } from '../history'
 
 const props = defineProps<{
-  /** The history to undo and redo; both buttons are disabled while it is null. */
-  history: History | null
+  history: History
 }>()
 
-const undoAction = computed(() => props.history?.getUndoAction())
+const undoAction = computed(() => props.history.getUndoAction())
 
 const undoText = computed(() => ({
   en: undoAction.value != null ? `Undo "${undoAction.value.name.en}"` : 'Undo',
   zh: undoAction.value != null ? `撤销“${undoAction.value.name.zh}”` : '撤销'
 }))
 
-const redoAction = computed(() => props.history?.getRedoAction())
+const redoAction = computed(() => props.history.getRedoAction())
 
 const redoText = computed(() => ({
   en: redoAction.value != null ? `Redo "${redoAction.value.name.en}"` : 'Redo',
   zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
 }))
 
-const handleUndo = useMessageHandle(() => props.history?.undo(), {
+const handleUndo = useMessageHandle(() => props.history.undo(), {
   en: 'Failed to undo',
   zh: '撤销操作失败'
 })
 
-const handleRedo = useMessageHandle(() => props.history?.redo(), {
+const handleRedo = useMessageHandle(() => props.history.redo(), {
   en: 'Failed to redo',
   zh: '重做操作失败'
 })
@@ -44,8 +43,6 @@ const handleRedo = useMessageHandle(() => props.history?.redo(), {
 
 <template>
   <div class="flex">
-    <!-- Undo button with its tooltip. Both the button and the tooltip are disabled when there is nothing to
-         undo (or no editor state), so hovering a dead button shows no hint. -->
     <UITooltip :disabled="undoAction == null">
       <template #trigger>
         <button
