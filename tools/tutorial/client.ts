@@ -41,10 +41,10 @@ export type SpotlightOptions = {
 export interface TutorialFrameworkHost {
   /** Internal startup handshake; not exposed to Course authors. */
   lifecycle: {
-    /** Waits for the mounted editor UI before triggering onStart. */
-    waitForEditor(): Promise<void>;
+    /** Waits until Host capabilities are usable before triggering onStart. */
+    waitForHostReady(): Promise<void>;
     /** All onStart callbacks reached their first waiting call or returned.
-     * Waits for configuration rendering before uncovering the editor. */
+     * The Host applies initial configuration effects before acknowledging startup. */
     started(): Promise<void>;
   };
   course: {
@@ -117,7 +117,7 @@ export function createTutorialFramework(
   return {
     name: "tutorial",
     capabilities: {
-      lifecycle_waitForEditor: () => host.lifecycle.waitForEditor(),
+      lifecycle_waitForHostReady: () => host.lifecycle.waitForHostReady(),
       lifecycle_started: () => host.lifecycle.started(),
       course_showPrelude: (request) =>
         host.course.showPrelude((request as ContentRequest).content),

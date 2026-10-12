@@ -15,7 +15,7 @@ export const mockLearnerCode = `onClick => {
 export function createMockTutorialHost(log: (message: string) => void): TutorialFrameworkHost {
   return {
     lifecycle: {
-      async waitForEditor() {},
+      async waitForHostReady() {},
       async started() {}
     },
     course: {

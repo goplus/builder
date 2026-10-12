@@ -99,7 +99,7 @@ vi.mock('./session', () => ({
     }
     async start() {
       try {
-        await this.options.waitForEditor(this.program.getSignal())
+        await this.options.waitForHostReady(this.program.getSignal())
         this.started = true
       } catch {
         // Disposal cancels the test program's pending UI handshake.

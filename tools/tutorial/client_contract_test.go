@@ -67,7 +67,7 @@ var fastCapabilities = map[string]bool{
 // yielding, must not become a hiding place for one that was overlooked.
 func TestEveryCapabilityIsClassified(t *testing.T) {
 	for _, name := range collectGoWireNames(t) {
-		if name == "lifecycle_waitForEditor" || name == "lifecycle_started" {
+		if name == "lifecycle_waitForHostReady" || name == "lifecycle_started" {
 			continue // Main-goroutine handshakes, not Course-run capabilities.
 		}
 		_, waiting := capabilityKinds[name]
@@ -132,7 +132,7 @@ func collectContractEventNames(t *testing.T) []string {
 // Course capability or internal lifecycle call across this package's Go sources.
 func collectGoWireNames(t *testing.T) []string {
 	t.Helper()
-	pattern := regexp.MustCompile(`(?:mustCallCapability|callLifecycleCapability)\("([A-Za-z_]+)"`)
+	pattern := regexp.MustCompile(`(?:mustCallCapability|callCapability)\("([A-Za-z_]+)"`)
 
 	files, err := filepath.Glob("*.go")
 	if err != nil {

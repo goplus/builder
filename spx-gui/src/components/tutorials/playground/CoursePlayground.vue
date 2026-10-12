@@ -140,8 +140,10 @@ const sessionQueryRet = useQuery(
     editorState.editing.startEditing()
     editorState.syncWithRouter(inEditorRouter)
     async function finishStarting(signal: AbortSignal) {
+      // Flush configuration changes so descendants can report newly pending work.
       await nextTick()
       await until(editorReady, signal)
+      // Ready data still needs its DOM update committed before the cover is removed.
       await nextTick()
       signal.throwIfAborted()
       starting.value = false
@@ -152,10 +154,12 @@ const sessionQueryRet = useQuery(
       editorState,
       copilot,
       presentation,
-      async waitForEditor(signal) {
+      async waitForHostReady(signal) {
         await until(() => sessionQueryRet.data.value === session && codeEditor.value != null, signal)
+        // Allow descendants to mount and register their asynchronous readiness conditions.
         await nextTick()
         await until(editorReady, signal)
+        // Commit their ready state to the DOM before Course code can use UI capabilities.
         await nextTick()
         signal.throwIfAborted()
       },

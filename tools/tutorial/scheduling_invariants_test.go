@@ -19,8 +19,7 @@ import (
 //     goroutine ID is written only alongside the token itself.
 //  2. yieldWhile is entered only from mustCallCapability, which waits on the
 //     host, and pause, which waits on a timer; the bridge's callCapability
-//     appears only in mustCallCapability or the main-goroutine
-//     callLifecycleCapability handshake.
+//     appears only in mustCallCapability or the main-goroutine Start handshakes.
 //  3. No operation that can block appears while schedulerMu is held (channel
 //     send or receive, select, Wait, taking the token, calling the bridge);
 //     registryMu is a leaf lock whose regions allow only allowlisted calls.
@@ -210,12 +209,8 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 					report(n.Pos(), "%s yields the token: only mustCallCapability and pause may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
-				if name != blockingWaitHome && name != "callLifecycleCapability" {
-					report(n.Pos(), "%s calls the capability bridge directly: bridge waits must go through %s or callLifecycleCapability", name, blockingWaitHome)
-				}
-			case strings.HasSuffix(callee, ".callLifecycleCapability"):
-				if name != "Start" {
-					report(n.Pos(), "%s calls a lifecycle handshake: only Course.Start may", name)
+				if name != blockingWaitHome && name != "Start" {
+					report(n.Pos(), "%s calls the capability bridge directly: bridge waits must go through %s or Course.Start", name, blockingWaitHome)
 				}
 			case callee == "startRuns":
 				if name != "Start" {

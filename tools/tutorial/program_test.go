@@ -1091,12 +1091,12 @@ func courseCapabilityNames(host *fakeHost) []string {
 	return names
 }
 
-func TestStartWaitsForEditorAndEveryCallbackInitialSegment(t *testing.T) {
+func TestStartWaitsForHostAndEveryCallbackInitialSegment(t *testing.T) {
 	host := newFakeHost()
-	editorWaiting, editorReady := host.holdCapability("lifecycle_waitForEditor")
+	hostWaiting, hostReady := host.holdCapability("lifecycle_waitForHostReady")
 	filterWaiting, filterApplied := host.holdCapability("editor_codeEditor_filterAPIs")
 	messageWaiting, dismissMessage := host.holdCapability("course_showMessage")
-	startupWaiting, uncoverEditor := host.holdCapability("lifecycle_started")
+	startupWaiting, acknowledgeStartup := host.holdCapability("lifecycle_started")
 	callbackStarted := make(chan struct{}, 1)
 	callbackReturned := make(chan struct{}, 1)
 	done := startCourse(host, func(course *testCourse) {
@@ -1111,13 +1111,13 @@ func TestStartWaitsForEditorAndEveryCallbackInitialSegment(t *testing.T) {
 		})
 		course.Editor.Runtime.OnLog(func(string) { course.Complete() })
 	})
-	await(t, editorWaiting, "editor readiness handshake")
+	await(t, hostWaiting, "Host readiness handshake")
 	select {
 	case <-callbackStarted:
-		t.Fatal("onStart ran before editor readiness")
+		t.Fatal("onStart ran before Host readiness")
 	default:
 	}
-	editorReady()
+	hostReady()
 	await(t, filterWaiting, "API configuration acknowledgment")
 	select {
 	case <-startupWaiting:
@@ -1128,32 +1128,32 @@ func TestStartWaitsForEditorAndEveryCallbackInitialSegment(t *testing.T) {
 	await(t, startupWaiting, "all startup callback initial segments")
 	await(t, callbackReturned, "second callback returning")
 	await(t, messageWaiting, "first callback waiting on the learner")
-	// Events may queue during startup, but must not run before rendering is acknowledged.
+	// Events may queue during startup, but must not run before initial effects are acknowledged.
 	dispatch(t, "editor.runtime.log", `{"log":"complete"}`)
 	select {
 	case <-done:
-		t.Fatal("host event ran before startup rendering was acknowledged")
+		t.Fatal("host event ran before startup effects were acknowledged")
 	default:
 	}
-	uncoverEditor()
+	acknowledgeStartup()
 	dismissMessage()
 	awaitDone(t, done)
 }
 
 func TestStartupWithoutCallbacksStillNotifiesHost(t *testing.T) {
 	host := newFakeHost()
-	startupWaiting, uncoverEditor := host.holdCapability("lifecycle_started")
+	startupWaiting, acknowledgeStartup := host.holdCapability("lifecycle_started")
 	done := startCourse(host, func(course *testCourse) {
 		course.Editor.Runtime.OnLog(func(string) { course.Complete() })
 	})
 	await(t, startupWaiting, "startup without callbacks")
-	uncoverEditor()
+	acknowledgeStartup()
 	dispatch(t, "editor.runtime.log", `{"log":"complete"}`)
 	awaitDone(t, done)
 }
 
 func TestStartupHandshakeFailures(t *testing.T) {
-	for _, name := range []string{"lifecycle_waitForEditor", "lifecycle_started"} {
+	for _, name := range []string{"lifecycle_waitForHostReady", "lifecycle_started"} {
 		t.Run(name, func(t *testing.T) {
 			host := newFakeHost()
 			host.fail[name] = fmt.Errorf("handshake failed: %s", name)

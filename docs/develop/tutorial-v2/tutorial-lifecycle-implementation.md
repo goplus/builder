@@ -351,16 +351,22 @@ loading cover keeps the mounted editor out of view and prevents learner input;
 it does not hide or unmount the editor or change its layout.
 
 After MainEntry has registered Course callbacks, the framework calls the internal
-`lifecycle.waitForEditor` host handshake. The host waits for the current session's
-Code Editor, Monaco UI, API Reference data and deferred rendering, and Stage Viewer
-resources to be ready. Only then does the framework trigger `onStart`.
+`lifecycle.waitForHostReady` handshake. It waits for Host capabilities to become
+usable; the framework does not assume the Playground hosts an editor or that
+readiness is determined by rendering. The current SPX Playground Host satisfies
+this condition by waiting for the session's Code Editor, Monaco UI, API Reference
+fetch/deferred rendering, and Stage Viewer resources. Only then does the framework
+trigger `onStart`.
 
 Every startup callback runs through its first waiting capability (Prelude,
 Message, Video or Copilot generation) or return. Fast capabilities, including API
 filtering and Ruler configuration, wait for host acknowledgment without yielding.
 Once all admitted startup callbacks reach that boundary, the framework calls
-`lifecycle.started`. The host waits for pending UI updates, including refreshed API
-Reference data, before removing the loading cover. It does not wait for the
+`lifecycle.started`. The Host applies initial configuration effects before
+acknowledging startup. In the current SPX Playground, this means flushing Vue
+configuration updates, waiting for registered async readiness conditions (including
+API Reference refresh and deferred rendering), then committing their DOM updates
+before removing the loading cover. It does not wait for the
 learner to dismiss presentations or for generation to finish. No fixed startup
 delay or browser-frame assumption is involved. Host events remain queued until
 this handshake is acknowledged.
@@ -376,7 +382,3 @@ the editor, using the session lifetime because Program has already been disposed
 Failure replaces the editor with the error experience. Leaving, retrying or
 replacing a Course aborts its pending handshakes, so an obsolete session cannot
 start callbacks or uncover the replacement editor. Preview uses the same flow.
-
-Spotlight runs against the mounted editor. Waiting/retrying for a particular
-conditional Radar target is independent of this startup handshake (tracked in
-#3536).
