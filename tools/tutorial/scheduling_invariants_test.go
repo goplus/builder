@@ -31,8 +31,9 @@ import (
 //     events.goLive only by Start.
 //  6. Every exported method of a type holding the course program (the API
 //     Course code calls) refuses a caller outside a run before doing anything
-//     else: its first call is requireRun, mustCallCapability or register (both
-//     start with requireRun), or another such method of the same receiver.
+//     else: its first call is requireRun, a guard delegate (mustCallCapability
+//     or register, whose own first call must be requireRun), or another such
+//     method of the same receiver.
 //
 // The checks work on the AST rather than on observed behavior, so a violating
 // way of writing things turns red as it enters the repository instead of
@@ -60,6 +61,7 @@ func TestSchedulingInvariants(t *testing.T) {
 	if len(courseFacing) == 0 {
 		t.Fatal("found no type holding the course program: rule 6 checks nothing")
 	}
+	delegatesSeen := map[string]bool{}
 	for _, parsed := range parsedFiles {
 		for _, decl := range parsed.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
@@ -68,6 +70,14 @@ func TestSchedulingInvariants(t *testing.T) {
 			}
 			checkFunction(t, fset, fn)
 			checkGuardedEntry(t, fset, fn, courseFacing)
+			if checkGuardDelegate(t, fset, fn) {
+				delegatesSeen[fn.Name.Name] = true
+			}
+		}
+	}
+	for name := range guardDelegates {
+		if !delegatesSeen[name] {
+			t.Errorf("guard delegate %s not found: keep guardDelegates in step with the code", name)
 		}
 	}
 }
@@ -97,9 +107,42 @@ func courseFacingTypes(files []*ast.File) map[string]bool {
 	return types
 }
 
-// guardedEntryCalls are the calls that may come first in a method Course code
-// calls: each refuses a caller outside a run before touching any state.
-var guardedEntryCalls = []string{".requireRun", ".mustCallCapability"}
+// guardDelegates are the functions an ability may call first instead of
+// requireRun. Each must call requireRun first itself (checkGuardDelegate), so
+// the refusal still comes before anything else the ability does.
+var guardDelegates = map[string]bool{"mustCallCapability": true, "register": true}
+
+// firstCall returns the first call in fn's body in source order, or nil. A
+// call's arguments come after the call itself, so for register(..., func()
+// {...}) the result is register, not a call inside the closure.
+func firstCall(fn *ast.FuncDecl) *ast.CallExpr {
+	var first *ast.CallExpr
+	ast.Inspect(fn.Body, func(node ast.Node) bool {
+		if call, ok := node.(*ast.CallExpr); ok && first == nil {
+			first = call
+		}
+		return first == nil
+	})
+	return first
+}
+
+// calleeName returns the last segment of a rendered callee, so that
+// "p.courseProgram.requireRun" and "requireRun" both give "requireRun".
+func calleeName(callee string) string {
+	return callee[strings.LastIndex(callee, ".")+1:]
+}
+
+// checkGuardDelegate checks the other half of rule 6, that a guard delegate's
+// own first call is requireRun, and reports whether fn is a guard delegate.
+func checkGuardDelegate(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) bool {
+	if !guardDelegates[fn.Name.Name] {
+		return false
+	}
+	if first := firstCall(fn); first == nil || calleeName(renderExpr(first.Fun)) != "requireRun" {
+		t.Errorf("%s: %s must call requireRun first: abilities that call it first rely on that refusal", fset.Position(fn.Pos()), fn.Name.Name)
+	}
+	return true
+}
 
 // checkGuardedEntry checks rule 6. Start is exempt: it is the program entry
 // the generated Main calls on the main goroutine, not an ability.
@@ -115,25 +158,14 @@ func checkGuardedEntry(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl, cour
 		return
 	}
 
-	var first *ast.CallExpr
-	ast.Inspect(fn.Body, func(node ast.Node) bool {
-		if call, ok := node.(*ast.CallExpr); ok && first == nil {
-			first = call
-		}
-		return first == nil
-	})
+	first := firstCall(fn)
 	if first == nil {
 		t.Errorf("%s: %s calls nothing: an ability must reach requireRun", fset.Position(fn.Pos()), fn.Name.Name)
 		return
 	}
 	callee := renderExpr(first.Fun)
-	if callee == "register" {
+	if name := calleeName(callee); name == "requireRun" || guardDelegates[name] {
 		return
-	}
-	for _, guard := range guardedEntryCalls {
-		if strings.HasSuffix(callee, guard) {
-			return
-		}
 	}
 	if recv := receiverName(fn); strings.HasPrefix(callee, recv+".") && ast.IsExported(strings.TrimPrefix(callee, recv+".")) {
 		return

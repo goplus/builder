@@ -11,8 +11,8 @@ These are the rules of change.
   call it
 - The contract forbids course code to start goroutines (`go`, `time.AfterFunc`), but nothing stops it, and such
   goroutines run outside the scheduler. Every exported method course code can call must refuse them before doing
-  anything else: its first call is `requireRun`, or `mustCallCapability`/`register` (which start with it), or another
-  such method. The invariant checker enforces this. `holding` compares goroutine IDs with `holder`, which only
+  anything else: its first call is `requireRun`, or `mustCallCapability`/`register` (whose own first call is
+  `requireRun`), or another such method. The invariant checker enforces both halves. `holding` compares goroutine IDs with `holder`, which only
   `acquireExec`, `releaseExec` and `init` write
 - Only framework calls yield. Do not redirect Go's own blocking calls (say `time.Sleep` through
   `ixgo.RegisterExternal`): channel operations, timers and I/O could not follow, and a rule with one exception is
