@@ -55,6 +55,10 @@ export function isGuidedCourse(course: Course): course is GuidedCourse {
   return course.kind === 'guided'
 }
 
+export function isPlaygroundCourse(course: Course): course is PlaygroundCourse {
+  return course.kind === 'playground'
+}
+
 /** Get a course by ID */
 export async function getCourse(id: string, signal?: AbortSignal) {
   const mockCourse = await getPlaygroundMockCourse(id, signal)

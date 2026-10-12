@@ -1,30 +1,55 @@
 import dayjs from 'dayjs'
 import { zip, unzip, type Zippable } from '@/utils/zip'
-import { extname } from '@/utils/path'
-import { DefaultException } from '@/utils/exception'
+import { extname, filename } from '@/utils/path'
+import { capture, DefaultException } from '@/utils/exception'
+import type { LocaleMessage } from '@/utils/i18n'
 import { getExtFromMime } from '@/utils/file'
+import type { FileCollection } from '@/apis/common'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { getCourse, addCourse, isGuidedCourse, type GuidedCourse } from '@/apis/course'
+import {
+  getCourse,
+  addCourse,
+  deleteCourse,
+  isGuidedCourse,
+  isPlaygroundCourse,
+  type CourseKind,
+  type GuidedCourse,
+  type PlaygroundCourse
+} from '@/apis/course'
 import { addCourseSeries, type CourseSeries } from '@/apis/course-series'
-import { getProject, ProjectType, updateProject, Visibility, type UpdateProjectParams } from '@/apis/project'
+import {
+  deleteProject,
+  getProject,
+  ProjectType,
+  updateProject,
+  Visibility,
+  type UpdateProjectParams
+} from '@/apis/project'
 import { createProjectRelease } from '@/apis/project-release'
-import { cloudHelpers, createFileWithUniversalUrl, saveFile } from '@/models/common/cloud'
-import { File as LazyFile } from '@/models/common/file'
+import { cloudHelpers, createFileWithUniversalUrl, saveFile, saveFiles } from '@/models/common/cloud'
+import { File as LazyFile, type Files } from '@/models/common/file'
 import { xbpHelpers } from '@/models/common/xbp'
-import type { PartialMetadata } from '@/models/project'
+import type { Metadata, PartialMetadata, ProjectSerialized } from '@/models/project'
 import type { DeleteCourse } from '@/stores/course'
 import type { UpdateCourseSeries } from '@/stores/course-series'
+import { checkPlaygroundCourse } from './playground/course-check'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
-const version = 3
+const version = 4
 
 type CourseSeriesFileThumbnail = {
   path: string
 }
 
-type CourseSeriesFileCourse = Pick<GuidedCourse, 'title' | 'content'> & {
+type CourseSeriesFileGuidedCourse = Pick<GuidedCourse, 'title' | 'content'> & {
   thumbnail: CourseSeriesFileThumbnail
+}
+
+type CourseSeriesFilePlaygroundCourse = Pick<PlaygroundCourse, 'title'> & {
+  thumbnail: CourseSeriesFileThumbnail
+  /** Directory of the file holding the course's files, each at its path in the course. */
+  files: string
 }
 
 type CourseSeriesFileProject = {
@@ -36,10 +61,12 @@ type CourseSeriesFileProject = {
 type CourseSeriesFileManifest = {
   format: typeof format
   version: typeof version
-  courseSeries: Pick<CourseSeries, 'title' | 'description'> & {
+  courseSeries: Pick<CourseSeries, 'kind' | 'title' | 'description'> & {
     thumbnail: CourseSeriesFileThumbnail
   }
-  courses: CourseSeriesFileCourse[]
+  /** Courses of the series' kind, in order. */
+  courses: Array<CourseSeriesFileGuidedCourse | CourseSeriesFilePlaygroundCourse>
+  /** Projects the guided courses open; a Playground Course carries its project among its own files. */
   projects: CourseSeriesFileProject[]
 }
 
@@ -55,8 +82,6 @@ export type CourseSeriesFileImportInspection = {
 
 export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?: AbortSignal) {
   const courses = await Promise.all(courseSeries.courseIDs.map((id) => getCourse(id, signal)))
-  if (!courses.every(isGuidedCourse)) throw new Error('Guided courses expected')
-  const projects = collectEntrypointProjects(courses)
   const zippable: Zippable = {}
 
   const courseSeriesThumbnail = await exportThumbnail(
@@ -65,30 +90,48 @@ export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?
     zippable,
     signal
   )
-  const exportedCourses = await Promise.all(
-    courses.map(
-      async (course, index): Promise<CourseSeriesFileCourse> => ({
-        title: course.title,
-        content: course.content,
-        thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, zippable, signal)
+  let exportedCourses: CourseSeriesFileManifest['courses']
+  let exportedProjects: CourseSeriesFileProject[] = []
+  if (courseSeries.kind === 'guided') {
+    if (!courses.every(isGuidedCourse)) throw new Error('Guided courses expected')
+    exportedCourses = await Promise.all(
+      courses.map(
+        async (course, index): Promise<CourseSeriesFileGuidedCourse> => ({
+          title: course.title,
+          content: course.content,
+          thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, zippable, signal)
+        })
+      )
+    )
+    exportedProjects = await Promise.all(
+      collectEntrypointProjects(courses).map(async (project, index): Promise<CourseSeriesFileProject> => {
+        const serialized = await cloudHelpers.load(project.owner, project.name, true, signal)
+        const file = await xbpHelpers.save(serialized, signal)
+        const path = `projects/${index}.xbp`
+        zippable[path] = new Uint8Array(await file.arrayBuffer())
+        return { fullName: project.fullName, name: project.name, path }
       })
     )
-  )
-
-  const exportedProjects = await Promise.all(
-    projects.map(async (project, index): Promise<CourseSeriesFileProject> => {
-      const serialized = await cloudHelpers.load(project.owner, project.name, true, signal)
-      const file = await xbpHelpers.save(serialized, signal)
-      const path = `projects/${index}.xbp`
-      zippable[path] = new Uint8Array(await file.arrayBuffer())
-      return { fullName: project.fullName, name: project.name, path }
-    })
-  )
+  } else {
+    if (!courses.every(isPlaygroundCourse)) throw new Error('Playground courses expected')
+    exportedCourses = await Promise.all(
+      courses.map(async (course, index): Promise<CourseSeriesFilePlaygroundCourse> => {
+        const files = `courses/${index}`
+        await exportCourseFiles(course.content, files, zippable, signal)
+        return {
+          title: course.title,
+          thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, zippable, signal),
+          files
+        }
+      })
+    )
+  }
 
   const manifest: CourseSeriesFileManifest = {
     format,
     version,
     courseSeries: {
+      kind: courseSeries.kind,
       title: courseSeries.title,
       description: courseSeries.description,
       thumbnail: courseSeriesThumbnail
@@ -108,6 +151,16 @@ export type CourseSeriesImportWrites = {
   deleteCourse: DeleteCourse
 }
 
+export type CourseSeriesImportResult = {
+  courseSeries: CourseSeries
+  /** Courses the series held before, which could not be deleted once it held the imported ones. */
+  undeletedCourseIDs: string[]
+}
+
+/**
+ * Replace the courses of `courseSeries` with those of the file. Should it fail before the series holds the imported
+ * courses, what it wrote is undone: the series is then as it was.
+ */
 export async function importCourseSeriesFile(
   courseSeries: CourseSeries,
   file: globalThis.File,
@@ -115,26 +168,28 @@ export async function importCourseSeriesFile(
   writes: CourseSeriesImportWrites,
   signal?: AbortSignal
 ) {
-  const data = await loadCourseSeriesFile(file, signal)
+  const data = await loadCourseSeriesFile(file, courseSeries.kind, signal)
   return importCourseSeriesFileData({ courseSeries, writes }, data, signedInUsername, signal)
 }
 
 export async function importCourseSeriesFileAsNew(
   file: globalThis.File,
+  kind: CourseKind,
   signedInUsername: string,
   signal?: AbortSignal
 ) {
-  const data = await loadCourseSeriesFile(file, signal)
+  const data = await loadCourseSeriesFile(file, kind, signal)
   return importCourseSeriesFileData(null, data, signedInUsername, signal)
 }
 
 export async function inspectCourseSeriesFileImport(
   courseSeries: CourseSeries | null,
+  kind: CourseKind,
   file: globalThis.File,
   signedInUsername: string,
   signal?: AbortSignal
 ): Promise<CourseSeriesFileImportInspection> {
-  const data = await loadCourseSeriesFile(file, signal)
+  const data = await loadCourseSeriesFile(file, kind, signal)
   const deletedCourses =
     courseSeries == null
       ? []
@@ -148,7 +203,11 @@ export async function inspectCourseSeriesFileImport(
   return { deletedCourses, overwrittenProjects: overwrittenProjects.filter((p) => p != null) }
 }
 
-async function loadCourseSeriesFile(file: globalThis.File, signal?: AbortSignal) {
+/**
+ * Read a course series file of `kind`. A Playground series is checked course by course before anything is written,
+ * and refused with what is wrong if any course has a problem.
+ */
+async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind, signal?: AbortSignal) {
   const arrayBuffer = await file.arrayBuffer()
   const unzipped = await unzip(new Uint8Array(arrayBuffer), { signal })
   const manifest = JSON.parse(
@@ -160,54 +219,208 @@ async function loadCourseSeriesFile(file: globalThis.File, signal?: AbortSignal)
       zh: '不支持的课程系列文件格式'
     })
   }
-  return { manifest, unzipped }
+  if (manifest.courseSeries.kind !== kind) {
+    const fileKind = kindNames[manifest.courseSeries.kind] ?? { en: 'unknown', zh: '未知' }
+    throw new DefaultException({
+      en: `The file holds a ${fileKind.en} course series, which cannot be imported as a ${kindNames[kind].en} one`,
+      zh: `文件里是${fileKind.zh}课程系列，不能作为${kindNames[kind].zh}课程系列导入`
+    })
+  }
+  const courseFiles = kind === 'playground' ? await loadPlaygroundCourseFiles(manifest, unzipped) : []
+  return { manifest, unzipped, courseFiles }
+}
+
+const kindNames: Record<CourseKind, LocaleMessage> = {
+  guided: { en: 'Guided', zh: '引导式' },
+  playground: { en: 'Playground', zh: '目标式' }
+}
+
+/** The files of each Playground Course in the file, once all of them pass `checkPlaygroundCourse`. */
+async function loadPlaygroundCourseFiles(
+  manifest: CourseSeriesFileManifest,
+  unzipped: Record<string, Uint8Array<ArrayBuffer>>
+) {
+  const problems: Array<{ course: string; problem: LocaleMessage }> = []
+  const courseFiles: Files[] = []
+  for (const course of manifest.courses) {
+    if (!('files' in course) || typeof course.files !== 'string') {
+      throw new DefaultException({
+        en: `Invalid course series file: course "${course.title}" has no files`,
+        zh: `无效的课程系列文件：课程“${course.title}”没有文件`
+      })
+    }
+    const prefix = `${course.files}/`
+    const files: Files = {}
+    for (const [path, data] of Object.entries(unzipped)) {
+      // Some zip tools list directories too, as entries ending with a slash.
+      if (!path.startsWith(prefix) || path.endsWith('/')) continue
+      const coursePath = path.slice(prefix.length)
+      files[coursePath] = createLazyFile(filename(coursePath), data)
+    }
+    for (const problem of await checkPlaygroundCourse(files)) problems.push({ course: course.title, problem })
+    courseFiles.push(files)
+  }
+  if (problems.length > 0) throw new DefaultException(describeProblems(problems))
+  return courseFiles
+}
+
+function describeProblems(problems: Array<{ course: string; problem: LocaleMessage }>): LocaleMessage {
+  const shown = problems.slice(0, 3)
+  const more = problems.length - shown.length
+  return {
+    en:
+      'The course series file cannot be imported: ' +
+      shown.map(({ course, problem }) => `"${course}": ${problem.en}`).join('; ') +
+      (more > 0 ? `; and ${more} more` : ''),
+    zh:
+      '课程系列文件无法导入：' +
+      shown.map(({ course, problem }) => `课程“${course}”：${problem.zh}`).join('；') +
+      (more > 0 ? `；共 ${problems.length} 处问题` : '')
+  }
+}
+
+/** What an import wrote before its series held the imported courses, which a failure undoes. */
+type ImportChanges = {
+  courseIDs: string[]
+  createdProjects: Array<{ owner: string; name: string }>
+  /** Projects the import overwrote, as they were before. */
+  overwrittenProjects: Array<ProjectSerialized<Metadata>>
 }
 
 async function importCourseSeriesFileData(
   target: { courseSeries: CourseSeries; writes: CourseSeriesImportWrites } | null,
-  { manifest, unzipped }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
+  { manifest, unzipped, courseFiles }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
   signedInUsername: string,
   signal?: AbortSignal
-) {
+): Promise<CourseSeriesImportResult> {
   const courseSeries = target?.courseSeries ?? null
-  const projectFullNameMap = new Map<string, string>()
-  for (const project of manifest.projects) {
-    const importedFullName = await importProject(project, manifest, unzipped, signedInUsername, signal)
-    projectFullNameMap.set(project.fullName, importedFullName)
+  const changes: ImportChanges = { courseIDs: [], createdProjects: [], overwrittenProjects: [] }
+  let importedCourseSeries: CourseSeries
+  try {
+    const projectFullNameMap = new Map<string, string>()
+    for (const project of manifest.projects) {
+      const importedFullName = await importProject(project, manifest, unzipped, signedInUsername, changes, signal)
+      projectFullNameMap.set(project.fullName, importedFullName)
+    }
+
+    for (const [index, course] of manifest.courses.entries()) {
+      const thumbnail = await importThumbnail(course.thumbnail, unzipped, signal)
+      const imported =
+        'files' in course
+          ? await addCourse(
+              {
+                title: course.title,
+                thumbnail,
+                kind: 'playground',
+                content: (await saveFiles(courseFiles[index], signal)).fileCollection
+              },
+              signal
+            )
+          : await addCourse(
+              {
+                title: course.title,
+                thumbnail,
+                kind: 'guided',
+                content: {
+                  entrypoint: rewriteProjectFullNames(course.content.entrypoint, projectFullNameMap),
+                  prompt: course.content.prompt
+                }
+              },
+              signal
+            )
+      changes.courseIDs.push(imported.id)
+    }
+
+    const params = {
+      kind: manifest.courseSeries.kind,
+      title: manifest.courseSeries.title,
+      thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
+      description: manifest.courseSeries.description,
+      // Keep the local sort order because it depends on other course series in the current environment.
+      order: courseSeries?.order ?? 1,
+      courseIDs: changes.courseIDs
+    }
+    // The series holds the imported courses from here on, so nothing before this needs undoing any more.
+    importedCourseSeries =
+      target == null
+        ? await addCourseSeries(params, signal)
+        : await target.writes.updateCourseSeries(target.courseSeries.id, params, signal)
+  } catch (error) {
+    return undoImport(changes, manifest, error)
   }
 
-  const importedCourses = []
-  for (const course of manifest.courses) {
-    importedCourses.push(
-      await addCourse(
-        {
-          title: course.title,
-          thumbnail: await importThumbnail(course.thumbnail, unzipped, signal),
-          kind: 'guided',
-          content: {
-            entrypoint: rewriteProjectFullNames(course.content.entrypoint, projectFullNameMap),
-            prompt: course.content.prompt
-          }
-        },
-        signal
-      )
-    )
+  const undeletedCourseIDs: string[] = []
+  if (target != null) {
+    const oldCourseIDs = target.courseSeries.courseIDs
+    const results = await Promise.allSettled(oldCourseIDs.map((courseID) => target.writes.deleteCourse(courseID)))
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') undeletedCourseIDs.push(oldCourseIDs[index])
+    })
   }
+  return { courseSeries: importedCourseSeries, undeletedCourseIDs }
+}
 
-  const params = {
-    kind: courseSeries?.kind ?? 'guided',
-    title: manifest.courseSeries.title,
-    thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
-    description: manifest.courseSeries.description,
-    // Keep the local sort order because it depends on other course series in the current environment.
-    order: courseSeries?.order ?? 1,
-    courseIDs: importedCourses.map((course) => course.id)
+/**
+ * Undo what a failed import wrote: delete the courses and projects it created and restore the projects it
+ * overwrote. Rethrows the failure, or reports what could not be undone. Files it uploaded are left behind, as nothing
+ * refers to them.
+ */
+async function undoImport(changes: ImportChanges, manifest: CourseSeriesFileManifest, error: unknown): Promise<never> {
+  const notUndone: string[] = []
+  for (const courseID of changes.courseIDs) {
+    try {
+      await deleteCourse(courseID)
+    } catch (e) {
+      capture(e, 'failed to delete an imported course while undoing the import')
+      notUndone.push(courseID)
+    }
   }
-  if (target == null) return addCourseSeries(params, signal)
-  const { writes } = target
-  const importedCourseSeries = await writes.updateCourseSeries(target.courseSeries.id, params, signal)
-  await Promise.all(target.courseSeries.courseIDs.map((courseID) => writes.deleteCourse(courseID)))
-  return importedCourseSeries
+  for (const backup of changes.overwrittenProjects) {
+    try {
+      await restoreProject(backup, manifest)
+    } catch (e) {
+      capture(e, 'failed to restore an overwritten project while undoing the import')
+      notUndone.push(`${backup.metadata.owner}/${backup.metadata.name}`)
+    }
+  }
+  for (const { owner, name } of changes.createdProjects) {
+    try {
+      await deleteProject(owner, name)
+    } catch (e) {
+      capture(e, 'failed to delete an imported project while undoing the import')
+      notUndone.push(`${owner}/${name}`)
+    }
+  }
+  if (notUndone.length === 0) throw error
+  capture(error, 'failed to import course series file')
+  throw new DefaultException({
+    en: `Failed to import the course series file, and some changes could not be undone: ${notUndone.join(', ')}`,
+    zh: `导入课程系列文件失败，且以下改动未能还原：${notUndone.join('、')}`
+  })
+}
+
+/** Write an overwritten project back as it was, and publish it again so that its published content is too. */
+async function restoreProject(backup: ProjectSerialized<Metadata>, manifest: CourseSeriesFileManifest) {
+  const restored = await cloudHelpers.save(backup)
+  const { owner, name } = restored.metadata
+  let revision = restored.metadata.revision
+  if (backup.metadata.extraSettings != null) {
+    revision = (await updateProject(owner, name, { extraSettings: backup.metadata.extraSettings })).revision
+  }
+  await createProjectRelease(owner, name, {
+    name: generateReleaseName(),
+    description: `Restored after a failed import of course series "${manifest.courseSeries.title}"`,
+    projectRevision: revision
+  })
+}
+
+async function exportCourseFiles(content: FileCollection, dir: string, zippable: Zippable, signal?: AbortSignal) {
+  await Promise.all(
+    Object.entries(content).map(async ([path, universalUrl]) => {
+      const file = createFileWithUniversalUrl(universalUrl)
+      zippable[`${dir}/${path}`] = new Uint8Array(await file.arrayBuffer(signal))
+    })
+  )
 }
 
 async function exportThumbnail(
@@ -271,10 +484,16 @@ async function importProject(
   manifest: CourseSeriesFileManifest,
   unzipped: Record<string, Uint8Array<ArrayBuffer>>,
   signedInUsername: string,
+  changes: ImportChanges,
   signal?: AbortSignal
 ) {
   const serialized = await xbpHelpers.load(new File([getRequiredEntry(unzipped, project.path)], `${project.name}.xbp`))
   const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
+  if (existingProject != null) {
+    changes.overwrittenProjects.push(
+      await cloudHelpers.load(existingProject.owner, existingProject.name, false, signal)
+    )
+  }
   const metadata: PartialMetadata = {
     ...serialized.metadata,
     id: existingProject?.id,
@@ -287,6 +506,7 @@ async function importProject(
 
   const saved = await cloudHelpers.save({ metadata, files: serialized.files }, signal)
   let { owner, name, revision } = saved.metadata
+  if (existingProject == null) changes.createdProjects.push({ owner, name })
   const metadataUpdates: UpdateProjectParams = {}
   if (serialized.metadata.description != null) metadataUpdates.description = serialized.metadata.description
   if (serialized.metadata.instructions != null) metadataUpdates.instructions = serialized.metadata.instructions
