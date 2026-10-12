@@ -7,8 +7,10 @@ import * as fileHelpers from '@/models/common/file'
 import { mockFile, sndConfig, sndFiles } from '@/models/common/test'
 import { makeSpxProject } from '../common/test'
 import { Sprite } from '../sprite'
+import { Costume } from '../costume'
 import { createI18n } from '@/utils/i18n'
 import { CostumeGen } from './costume-gen'
+import { mockSaveFile } from './test-helpers'
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
@@ -18,6 +20,20 @@ vi.spyOn(fileHelpers, 'getImageSize').mockReturnValue(Promise.resolve({ width: 1
 describe('CostumeGen', () => {
   beforeEach(() => {
     aigcMock.reset()
+    mockSaveFile()
+  })
+
+  it('rejects an unsupported reference without replacing the selection', () => {
+    const gen = new CostumeGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject())
+    gen.setReferenceImageSelection({ type: 'local-image', file: mockFile('reference.png') })
+    const selection = gen.referenceImageSelection
+    const file = mockFile('reference.svg')
+
+    expect(() => gen.setReferenceImageSelection({ type: 'local-image', file })).toThrow(
+      'unsupported reference image type'
+    )
+    expect(gen.referenceImageSelection).toBe(selection)
+    gen.dispose()
   })
 
   it('encodes a costume name when using it as a directory', () => {
@@ -369,5 +385,116 @@ describe('CostumeGen', () => {
     expect(loadedGen.generateState.status).toBe('finished')
     expect(typeof loadedGen.image?.arrayBuffer).toBe('function')
     expect(loadedGen.image?.meta.universalUrl).toBe(gen.image?.meta.universalUrl)
+  })
+
+  describe.each(['local-image', 'costume'])('uploading a %s reference', (reference) => {
+    it.each(['cancel', 'dispose', 'cancel-and-dispose'])('does not create a task after %s', async (action) => {
+      let resolveUpload!: (url: string) => void
+      const upload = new Promise<string>((resolve) => {
+        resolveUpload = resolve
+      })
+      const saveFile = mockSaveFile().mockReturnValueOnce(upload)
+      const sprite = Sprite.create('TestSprite', '')
+      const costume = new Costume('default', mockFile('default.png'))
+      sprite.addCostume(costume)
+      const gen = new CostumeGen(i18n, sprite, makeSpxProject())
+      if (reference === 'local-image')
+        gen.setReferenceImageSelection({ type: 'local-image', file: mockFile('reference.png') })
+      else gen.setReferenceCostume(costume.id)
+      const pending = gen.generate().catch((error) => error)
+      await flushPromises()
+
+      if (action !== 'dispose') await gen.cancel()
+      if (action !== 'cancel') gen.dispose()
+      expect(saveFile.mock.calls[0][1]?.aborted).toBe(true)
+      resolveUpload('kodo://mock-bucket/reference.png')
+      expect(await pending).toBeInstanceOf(Error)
+      expect(aigcMock.tasks.size).toBe(0)
+      expect(gen.image).toBeNull()
+      if (action === 'cancel') {
+        await gen.generate()
+        expect(gen.generateState.status).toBe('finished')
+        expect(aigcMock.tasks.size).toBe(1)
+      }
+      gen.dispose()
+    })
+  })
+
+  it('loads generated costume when the reference file is missing', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: 'idle' },
+      referenceImageSelection: { type: 'local-image', file: mockFile('reference.png') }
+    })
+    await gen.generate()
+    const [rawConfig, rawFiles] = gen.export()
+    const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
+    if (config.reference?.type !== 'local-image') throw new Error('local reference expected')
+    delete files[config.reference.filePath]
+    const loaded = CostumeGen.load(i18n, sprite, project, config, files)
+    expect(loaded.referenceImageSelection).toBeNull()
+    expect(loaded.image?.meta.universalUrl).toBe(gen.image?.meta.universalUrl)
+    expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
+    gen.dispose()
+    loaded.dispose()
+  })
+
+  it('persists only the selected reference image', async () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const defaultCostume = new Costume('default', mockFile('default.png'))
+    sprite.addCostume(defaultCostume)
+    project.addSprite(sprite)
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'Local ref costume' } })
+
+    const localFile = mockFile('local_character.png')
+    gen.setReferenceImageSelection({ type: 'local-image', file: localFile })
+    await gen.generate()
+    const [localReferenceTask] = [...aigcMock.tasks.values()]
+    expect(localReferenceTask.params).toMatchObject({
+      settings: { referenceImageUrl: 'kodo://mock-bucket/local_character.png' }
+    })
+
+    gen.setReferenceCostume(defaultCostume.id)
+    expect(gen.referenceCostume).toBe(defaultCostume)
+    const [config, files] = gen.export()
+    expect(config.reference).toEqual({ type: 'costume', costumeId: defaultCostume.id })
+    expect(Object.keys(files)).not.toContainEqual(expect.stringContaining('reference_image'))
+
+    gen.setReferenceImageSelection(null)
+    await gen.generate()
+    const taskRecords = [...aigcMock.tasks.values()]
+    expect(taskRecords[taskRecords.length - 1].params).toMatchObject({ settings: { referenceImageUrl: null } })
+
+    const [finalConfig, finalFiles] = gen.export()
+    const loadedGen = CostumeGen.load(i18n, sprite, project, sndConfig(finalConfig), sndFiles(finalFiles))
+    expect(loadedGen.referenceImageSelection).toBeNull()
+
+    loadedGen.setReferenceImageSelection({ type: 'local-image', file: localFile })
+    loadedGen.setReferenceImageSelection(null)
+    expect(loadedGen.referenceImageSelection).toBeNull()
+  })
+  it('exports and loads the reference file through the stored selection', () => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const file = mockFile('reference.png')
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: 'reference-test' },
+      referenceImageSelection: { type: 'local-image', file }
+    })
+    const [config, files] = gen.export()
+    expect(config.reference).toEqual({ type: 'local-image', filePath: expect.any(String) })
+    expect(config).not.toHaveProperty('referenceImagePath')
+    if (config.reference?.type !== 'local-image') throw new Error('local reference expected')
+    expect(files[config.reference.filePath]).toBe(file)
+
+    const loaded = CostumeGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    expect(loaded.referenceImageSelection).toMatchObject({ type: 'local-image', file: { name: file.name } })
+    const [saved] = loaded.export()
+    expect(saved.reference).toEqual(config.reference)
+    gen.dispose()
+    loaded.dispose()
+    project.dispose()
   })
 })

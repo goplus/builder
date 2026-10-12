@@ -4,6 +4,7 @@ import { useMessageHandle } from '@/utils/exception'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import SettingsInput from '../common/SettingsInput.vue'
 import SpriteCategoryInput from './SpriteCategoryInput.vue'
+import ReferenceImageButton from '../common/ReferenceImageButton.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import EnrichableSubmitButton from '../common/EnrichableSubmitButton.vue'
@@ -60,6 +61,7 @@ const submitText = computed(() => {
     @enrich="handleEnrich"
   >
     <template #extra>
+      <ReferenceImageButton :file="gen.referenceImage" @update:file="gen.setReferenceImage($event)" />
       <SpriteCategoryInput :value="gen.settings.category" @update:value="gen.setSettings({ category: $event })" />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />
