@@ -20,7 +20,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UIBlockItem :active="active" :interactive="interactive" :button-label="interactive ? label : null">
+  <UIBlockItem :active="active" :interactive="interactive" :button-label="label">
     <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
       <UIImg class="h-15 w-20 rounded-sm" :src="image" />
     </div>

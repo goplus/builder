@@ -9,7 +9,7 @@
     ]"
   >
     <button
-      v-if="buttonLabel != null"
+      v-if="interactive && buttonLabel != null"
       type="button"
       class="absolute inset-0 rounded-md border-0 bg-transparent cursor-pointer focus-visible:outline-2 focus-visible:outline-primary-main"
       :aria-label="buttonLabel"
