@@ -32,6 +32,43 @@ describe('editor pane layout', () => {
     expect(getPaneLayout({ width: 1408, height: 820 }, portrait, 'portrait').previewWidth).toBe(475)
   })
 
+  it.each([
+    { width: 1248, height: 728 },
+    { width: 1408, height: 828 }
+  ])('keeps a single sprite column on smaller portrait screens: %s', (container) => {
+    expect(getPaneLayout(container, portrait, 'portrait').spriteRailWidth).toBe(104)
+  })
+
+  it('adds a second portrait sprite column on large screens without shrinking the preview', () => {
+    const container = { width: 1888, height: 1008 }
+    const singleColumn = getPaneLayout(container, portrait, 'portrait')
+    const twoColumns = getPaneLayout(container, portrait, 'portrait', true)
+
+    expect(twoColumns.spriteRailWidth).toBe(200)
+    expect(twoColumns.previewWidth - twoColumns.spriteRailWidth).toBe(
+      singleColumn.previewWidth - singleColumn.spriteRailWidth
+    )
+    expect(twoColumns.codeWidth).toBe(singleColumn.codeWidth - 96)
+    expect(twoColumns.codeWidth).toBeGreaterThanOrEqual(384)
+    expect(twoColumns.codeWidth + twoColumns.previewWidth + 16).toBe(container.width)
+  })
+
+  it('preserves the minimum code width when the two-column portrait layout needs overflow', () => {
+    const result = getPaneLayout({ width: 500, height: 782 }, portrait, 'portrait', true)
+    expect(result.spriteRailWidth).toBe(200)
+    expect(result.codeWidth).toBe(384)
+    expect(result.previewWidth).toBe(510)
+    expect(result.codeWidth + result.previewWidth + 16).toBe(910)
+  })
+
+  it.each(['landscape', 'focused'] as EditorLayout[])('does not change %s pane sizes on large screens', (layout) => {
+    const container = { width: 1888, height: 1008 }
+    const normal = getPaneLayout(container, landscape, layout)
+    const large = getPaneLayout(container, landscape, layout, true)
+    expect(large.previewWidth).toBe(normal.previewWidth)
+    expect(large.codeWidth).toBe(normal.codeWidth)
+  })
+
   it.each(['landscape', 'focused'] as EditorLayout[])('keeps both panes within the container in %s mode', (layout) => {
     for (const width of [500, 887, 1196, 1480]) {
       const result = getPaneLayout({ width, height: 782 }, landscape, layout)

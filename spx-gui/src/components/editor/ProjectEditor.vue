@@ -13,7 +13,8 @@
       </div>
       <UICard
         v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
-        class="w-26 min-w-0 flex-none"
+        class="min-w-0 flex-none"
+        :style="{ width: `${paneLayout?.spriteRailWidth ?? 104}px` }"
       >
         <SpritesPanel layout="vertical" header-height="large" />
       </UICard>
@@ -90,7 +91,7 @@
 import { computed, ref, watchEffect } from 'vue'
 import { useContentSize } from '@/utils/dom'
 import { getCleanupSignal } from '@/utils/disposable'
-import { UICard } from '@/components/ui'
+import { UICard, useResponsive } from '@/components/ui'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
 import EditorPreview from './preview/EditorPreview.vue'
@@ -118,12 +119,13 @@ const running = computed(() => editorCtx.state.runtime.running)
 const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
 const isFocusedLayout = computed(() => props.layout === 'focused')
 const isPortraitLayout = computed(() => props.layout === 'portrait')
+const isLargeScreen = useResponsive('desktop-large')
 const previewColumnRef = ref<HTMLElement | null>(null)
 const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
 const paneLayout = computed(() => {
   const size = editorSize.value
   if (size == null) return null
-  return getPaneLayout(size, project.value.viewportSize, props.layout)
+  return getPaneLayout(size, project.value.viewportSize, props.layout, isLargeScreen.value)
 })
 const previewColumnStyle = computed(() => ({ width: `${paneLayout.value?.previewWidth ?? 496}px` }))
 const CONSOLE_LINE_HEIGHT = 16
