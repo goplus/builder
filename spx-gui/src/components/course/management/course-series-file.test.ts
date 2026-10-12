@@ -5,9 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { addCourse, deleteCourse, getCourse, type GuidedCourse, type PlaygroundCourse } from '@/apis/course'
-import { addCourseSeries, updateCourseSeries, type CourseSeries } from '@/apis/course-series'
-import { deleteProject, getProject, ProjectType, updateProject, Visibility } from '@/apis/project'
-import { createProjectRelease } from '@/apis/project-release'
+import {
+  addCourseSeries,
+  getCourseSeries,
+  listSignedInUserCourseSeries,
+  updateCourseSeries,
+  type CourseSeries
+} from '@/apis/course-series'
+import { deleteProject, getProject, ProjectType, updateProject, Visibility, type ProjectData } from '@/apis/project'
+import { createProjectRelease, type ProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, createFileWithUniversalUrl, saveFile, saveFiles } from '@/models/common/cloud'
 import { File as LazyFile, toText } from '@/models/common/file'
 import { DefaultException } from '@/utils/exception'
@@ -32,7 +38,9 @@ vi.mock('@/apis/course', () => ({
 
 vi.mock('@/apis/course-series', () => ({
   addCourseSeries: vi.fn(),
-  updateCourseSeries: vi.fn()
+  updateCourseSeries: vi.fn(),
+  getCourseSeries: vi.fn(),
+  listSignedInUserCourseSeries: vi.fn()
 }))
 
 vi.mock('@/apis/project', async (importOriginal) => ({
@@ -189,6 +197,9 @@ beforeEach(() => {
     ...params
   }))
   vi.mocked(deleteCourse).mockResolvedValue(undefined)
+  // Read back after a failed series write: by default it did not take effect.
+  vi.mocked(getCourseSeries).mockResolvedValue(existingSeries)
+  vi.mocked(listSignedInUserCourseSeries).mockResolvedValue({ total: 0, data: [] })
   vi.mocked(updateProject).mockImplementation(
     async (owner, name) =>
       ({
@@ -199,6 +210,32 @@ beforeEach(() => {
   )
   vi.mocked(createProjectRelease).mockResolvedValue({} as Awaited<ReturnType<typeof createProjectRelease>>)
 })
+
+const releaseA = {
+  id: 'release-a',
+  files: { 'main.spx': 'kodo://published/main.spx' },
+  thumbnail: 'kodo://published/thumbnail.png'
+} as unknown as ProjectRelease
+
+/** EntryProject as `alice` has it before an import overwrites it. */
+function projectData(overrides: Partial<ProjectData>) {
+  return {
+    id: 'project-entry',
+    owner: 'alice',
+    name: 'EntryProject',
+    displayName: 'Entry',
+    type: ProjectType.Game,
+    revision: 5,
+    files: { 'main.spx': 'kodo://draft/main.spx' },
+    visibility: Visibility.Private,
+    description: 'Old description',
+    instructions: 'Old instructions',
+    extraSettings: {},
+    thumbnail: 'kodo://draft/thumbnail.png',
+    latestRelease: null,
+    ...overrides
+  } as ProjectData
+}
 
 function mockCloudProjectSave(owner: string, name: string, revision: number) {
   vi.mocked(cloudHelpers.save).mockImplementationOnce(
@@ -418,15 +455,16 @@ describe('importCourseSeriesFile when it fails', () => {
       )
     ).rejects.toThrow('network')
 
-    // The imported course and the project it created are gone; the old course was never touched.
+    // The series still holds the old course, so the imported course and the project it created are gone.
     expect(vi.mocked(deleteCourse).mock.calls).toEqual([['imported-course']])
     expect(deleteProject).toHaveBeenCalledWith('alice', 'EntryProject')
   })
 
-  it('writes back a project it overwrote, and publishes it again', async () => {
-    vi.mocked(getProject).mockResolvedValue({ owner: 'alice', name: 'EntryProject' } as Awaited<
-      ReturnType<typeof getProject>
-    >)
+  it('puts back both what an overwritten project holds and what it published', async () => {
+    const backup = projectData({ latestRelease: releaseA })
+    vi.mocked(getProject)
+      .mockResolvedValueOnce(backup)
+      .mockResolvedValueOnce({ ...backup, revision: 8, latestRelease: { ...releaseA, id: 'release-imported' } })
     vi.mocked(updateCourseSeries).mockRejectedValueOnce(new Error('network'))
 
     await expect(
@@ -438,14 +476,176 @@ describe('importCourseSeriesFile when it fails', () => {
       )
     ).rejects.toThrow('network')
 
-    const backup = await vi.mocked(cloudHelpers.load).mock.results[0].value
-    expect(cloudHelpers.load).toHaveBeenCalledWith('alice', 'EntryProject', false, undefined)
-    expect(vi.mocked(cloudHelpers.save).mock.calls.at(-1)?.[0]).toBe(backup)
+    // The published content goes back and is released, then the rest of the project over it.
+    expect(vi.mocked(updateProject).mock.calls.slice(-2)).toEqual([
+      ['alice', 'EntryProject', { files: releaseA.files, thumbnail: releaseA.thumbnail }],
+      [
+        'alice',
+        'EntryProject',
+        {
+          files: backup.files,
+          visibility: Visibility.Private,
+          displayName: 'Entry',
+          description: 'Old description',
+          instructions: 'Old instructions',
+          extraSettings: {},
+          thumbnail: 'kodo://draft/thumbnail.png'
+        }
+      ]
+    ])
     expect(createProjectRelease).toHaveBeenLastCalledWith('alice', 'EntryProject', {
       name: expect.stringMatching(/^v0\.0\.0\+/),
       description: 'Restored after a failed import of course series "Imported series"',
       projectRevision: 8
     })
+    const [publishedWrite, restWrite] = vi.mocked(updateProject).mock.invocationCallOrder.slice(-2)
+    const release = vi.mocked(createProjectRelease).mock.invocationCallOrder.at(-1)!
+    expect(publishedWrite).toBeLessThan(release)
+    expect(release).toBeLessThan(restWrite)
+    expect(deleteProject).not.toHaveBeenCalled()
+  })
+
+  it('does not publish again a project the import did not get to publish', async () => {
+    const backup = projectData({ latestRelease: releaseA })
+    vi.mocked(getProject)
+      .mockResolvedValueOnce(backup)
+      .mockResolvedValueOnce({ ...backup, revision: 8 })
+    vi.mocked(createProjectRelease).mockRejectedValueOnce(new Error('network'))
+
+    await expect(
+      importCourseSeriesFile(
+        existingSeries,
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+        'alice',
+        writes
+      )
+    ).rejects.toThrow('network')
+
+    expect(createProjectRelease).toHaveBeenCalledTimes(1)
+    expect(updateProject).toHaveBeenLastCalledWith(
+      'alice',
+      'EntryProject',
+      expect.objectContaining({ files: backup.files, visibility: Visibility.Private })
+    )
+    expect(addCourse).not.toHaveBeenCalled()
+  })
+
+  it('leaves alone a project the import did not get to write', async () => {
+    const backup = projectData({ latestRelease: releaseA })
+    vi.mocked(getProject).mockResolvedValueOnce(backup).mockResolvedValueOnce(backup)
+    vi.mocked(cloudHelpers.save).mockRejectedValueOnce(new Error('network'))
+
+    await expect(
+      importCourseSeriesFile(
+        existingSeries,
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+        'alice',
+        writes
+      )
+    ).rejects.toThrow('network')
+
+    expect(updateProject).not.toHaveBeenCalled()
+    expect(createProjectRelease).not.toHaveBeenCalled()
+  })
+
+  it('says when it cannot take back the release it made of a project that had none', async () => {
+    const backup = projectData({ visibility: Visibility.Public })
+    vi.mocked(getProject)
+      .mockResolvedValueOnce(backup)
+      .mockResolvedValueOnce({ ...backup, revision: 8, latestRelease: { ...releaseA, id: 'release-imported' } })
+    vi.mocked(updateCourseSeries).mockRejectedValueOnce(new Error('network'))
+
+    await expect(
+      importCourseSeriesFile(
+        existingSeries,
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+        'alice',
+        writes
+      )
+    ).rejects.toThrow('some changes could not be undone: the release the import made of project alice/EntryProject')
+    expect(createProjectRelease).toHaveBeenCalledTimes(1)
+    expect(updateProject).toHaveBeenLastCalledWith(
+      'alice',
+      'EntryProject',
+      expect.objectContaining({ files: backup.files, visibility: Visibility.Public })
+    )
+  })
+
+  it('does not count a project it failed to create as one left behind', async () => {
+    vi.mocked(cloudHelpers.save).mockRejectedValueOnce(new Error('network'))
+    vi.mocked(deleteProject).mockRejectedValueOnce(
+      new ApiException(ApiExceptionCode.errorNotFound, 'Not found', {
+        req: new Request('https://api.example.com/projects/alice/EntryProject')
+      })
+    )
+
+    await expect(
+      importCourseSeriesFile(
+        existingSeries,
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+        'alice',
+        writes
+      )
+    ).rejects.toThrow('network')
+    expect(deleteProject).toHaveBeenCalledWith('alice', 'EntryProject')
+  })
+
+  it('takes a lost answer for success when the series holds the imported courses', async () => {
+    vi.mocked(updateCourseSeries).mockRejectedValueOnce(new Error('timeout'))
+    vi.mocked(getCourseSeries).mockResolvedValueOnce({ ...existingSeries, courseIDs: ['imported-course'] })
+
+    const result = await importCourseSeriesFile(
+      existingSeries,
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+      'alice',
+      writes
+    )
+
+    expect(result.courseSeries.courseIDs).toEqual(['imported-course'])
+    expect(vi.mocked(deleteCourse).mock.calls).toEqual([['course-1']])
+    expect(deleteProject).not.toHaveBeenCalled()
+  })
+
+  it('finds the series a lost answer created', async () => {
+    vi.mocked(addCourseSeries).mockRejectedValueOnce(new Error('timeout'))
+    vi.mocked(listSignedInUserCourseSeries).mockResolvedValueOnce({
+      total: 2,
+      data: [
+        { ...existingSeries, id: 'other-series', courseIDs: ['course-9'] },
+        { ...existingSeries, id: 'created-series', courseIDs: ['imported-course'] }
+      ]
+    })
+
+    const result = await importCourseSeriesFileAsNew(
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+      'guided',
+      'alice'
+    )
+
+    expect(result.courseSeries.id).toBe('created-series')
+    expect(listSignedInUserCourseSeries).toHaveBeenCalledWith({
+      kind: 'guided',
+      orderBy: 'createdAt',
+      sortOrder: 'desc',
+      pageIndex: 1,
+      pageSize: 10
+    })
+    expect(deleteCourse).not.toHaveBeenCalled()
+  })
+
+  it('undoes nothing when it cannot tell whether the series took the imported courses', async () => {
+    vi.mocked(updateCourseSeries).mockRejectedValueOnce(new Error('timeout'))
+    vi.mocked(getCourseSeries).mockRejectedValueOnce(new Error('offline'))
+
+    await expect(
+      importCourseSeriesFile(
+        existingSeries,
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+        'alice',
+        writes
+      )
+    ).rejects.toThrow('Could not tell whether the course series file was imported')
+    expect(deleteCourse).not.toHaveBeenCalled()
     expect(deleteProject).not.toHaveBeenCalled()
   })
 
@@ -461,7 +661,7 @@ describe('importCourseSeriesFile when it fails', () => {
     )
 
     await expect(failure).rejects.toBeInstanceOf(DefaultException)
-    await expect(failure).rejects.toThrow('some changes could not be undone: imported-course')
+    await expect(failure).rejects.toThrow('some changes could not be undone: course imported-course')
   })
 
   it('leaves the old courses it could not delete once the series holds the imported ones', async () => {
@@ -477,6 +677,35 @@ describe('importCourseSeriesFile when it fails', () => {
     expect(result.undeletedCourseIDs).toEqual(['course-1'])
     expect(result.courseSeries.courseIDs).toEqual(['imported-course'])
     expect(deleteProject).not.toHaveBeenCalled()
+  })
+
+  it('refuses a file with a project it cannot read, before writing anything', async () => {
+    vi.mocked(xbpHelpers.load).mockRejectedValueOnce(new Error('not a zip'))
+
+    await expect(
+      importCourseSeriesFile(
+        existingSeries,
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
+        'alice',
+        writes
+      )
+    ).rejects.toThrow('Invalid course series file: project "EntryProject" cannot be read')
+    expect(getProject).not.toHaveBeenCalled()
+    expect(cloudHelpers.save).not.toHaveBeenCalled()
+    expect(addCourse).not.toHaveBeenCalled()
+  })
+
+  it('refuses a file missing a thumbnail, before writing anything', async () => {
+    await expect(
+      importCourseSeriesFile(
+        existingSeries,
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', ['thumbnails/courses/0.png']),
+        'alice',
+        writes
+      )
+    ).rejects.toThrow('Invalid course series file: missing thumbnails/courses/0.png')
+    expect(cloudHelpers.save).not.toHaveBeenCalled()
+    expect(addCourse).not.toHaveBeenCalled()
   })
 
   it('refuses a file of the other kind', async () => {
@@ -575,6 +804,20 @@ describe('Playground course series files', () => {
     expect(updateCourseSeries).not.toHaveBeenCalled()
   })
 
+  it('refuses a file that comes with separate projects, before writing anything', async () => {
+    const file = await makePlaygroundSeriesFile(
+      [playgroundCourseFiles('onStart => {}')],
+      [{ fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' }]
+    )
+
+    await expect(importCourseSeriesFile(playgroundSeries, file, 'alice', writes)).rejects.toThrow(
+      'Playground courses cannot come with separate projects'
+    )
+    expect(getProject).not.toHaveBeenCalled()
+    expect(cloudHelpers.save).not.toHaveBeenCalled()
+    expect(addCourse).not.toHaveBeenCalled()
+  })
+
   it('reports no projects to overwrite', async () => {
     const inspection = await inspectCourseSeriesFileImport(
       playgroundSeries,
@@ -598,7 +841,10 @@ function playgroundCourseFiles(program: string): Record<string, string> {
   }
 }
 
-async function makePlaygroundSeriesFile(courses: Array<Record<string, string>>) {
+async function makePlaygroundSeriesFile(
+  courses: Array<Record<string, string>>,
+  projects: Array<{ fullName: string; name: string; path: string }> = []
+) {
   const encoder = new TextEncoder()
   const zippable: Zippable = {
     'course-series.json': encoder.encode(
@@ -616,11 +862,12 @@ async function makePlaygroundSeriesFile(courses: Array<Record<string, string>>) 
           thumbnail: { path: `thumbnails/courses/${index}.png` },
           files: `courses/${index}`
         })),
-        projects: []
+        projects
       })
     ),
     'thumbnails/course-series.png': encoder.encode('series thumbnail')
   }
+  for (const project of projects) zippable[project.path] = encoder.encode('project')
   courses.forEach((files, index) => {
     zippable[`thumbnails/courses/${index}.png`] = encoder.encode('course thumbnail')
     for (const [path, content] of Object.entries(files)) zippable[`courses/${index}/${path}`] = encoder.encode(content)
@@ -653,7 +900,11 @@ describe('inspectCourseSeriesFileImport', () => {
   })
 })
 
-async function makeCourseSeriesFile(entrypoint: string) {
+async function makeCourseSeriesFile(
+  entrypoint: string,
+  /** Paths of entries to leave out. */
+  omit: string[] = []
+) {
   const zippable: Zippable = {
     'course-series.json': new TextEncoder().encode(
       JSON.stringify({
@@ -679,5 +930,6 @@ async function makeCourseSeriesFile(entrypoint: string) {
     'thumbnails/courses/0.png': new TextEncoder().encode('course thumbnail'),
     'projects/0.xbp': new TextEncoder().encode('entry project')
   }
+  for (const path of omit) delete zippable[path]
   return new File([await zip(zippable)], 'Imported series.xbcs.zip', { type: 'application/zip' })
 }

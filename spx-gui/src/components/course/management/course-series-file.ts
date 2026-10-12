@@ -16,20 +16,27 @@ import {
   type GuidedCourse,
   type PlaygroundCourse
 } from '@/apis/course'
-import { addCourseSeries, type CourseSeries } from '@/apis/course-series'
+import {
+  addCourseSeries,
+  getCourseSeries,
+  listSignedInUserCourseSeries,
+  type AddCourseSeriesParams,
+  type CourseSeries
+} from '@/apis/course-series'
 import {
   deleteProject,
   getProject,
   ProjectType,
   updateProject,
   Visibility,
+  type ProjectData,
   type UpdateProjectParams
 } from '@/apis/project'
 import { createProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, createFileWithUniversalUrl, saveFile, saveFiles } from '@/models/common/cloud'
 import { File as LazyFile, type Files } from '@/models/common/file'
 import { xbpHelpers } from '@/models/common/xbp'
-import type { Metadata, PartialMetadata, ProjectSerialized } from '@/models/project'
+import type { PartialMetadata, ProjectSerialized } from '@/models/project'
 import type { DeleteCourse } from '@/stores/course'
 import type { UpdateCourseSeries } from '@/stores/course-series'
 import { checkPlaygroundCourse } from './playground/course-check'
@@ -204,8 +211,9 @@ export async function inspectCourseSeriesFileImport(
 }
 
 /**
- * Read a course series file of `kind`. A Playground series is checked course by course before anything is written,
- * and refused with what is wrong if any course has a problem.
+ * Read a course series file of `kind`, and refuse it with what is wrong before anything is written. Whatever in the
+ * file could break an import is read here: the manifest, every thumbnail, every guided project, and every Playground
+ * Course, which is loaded and checked course by course.
  */
 async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind, signal?: AbortSignal) {
   const arrayBuffer = await file.arrayBuffer()
@@ -226,8 +234,48 @@ async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind, sig
       zh: `文件里是${fileKind.zh}课程系列，不能作为${kindNames[kind].zh}课程系列导入`
     })
   }
-  const courseFiles = kind === 'playground' ? await loadPlaygroundCourseFiles(manifest, unzipped) : []
-  return { manifest, unzipped, courseFiles }
+  for (const thumbnail of [manifest.courseSeries.thumbnail, ...manifest.courses.map((course) => course.thumbnail)]) {
+    getRequiredEntry(unzipped, thumbnail.path)
+  }
+  if (kind === 'playground') {
+    if (manifest.projects.length > 0) {
+      throw new DefaultException({
+        en: 'Playground courses cannot come with separate projects; each keeps its project among its own files',
+        zh: '目标式课程不能单独上传新项目，课程的工程应放在课程自己的文件里'
+      })
+    }
+    return { manifest, unzipped, courseFiles: await loadPlaygroundCourseFiles(manifest, unzipped), projects: [] }
+  }
+  for (const course of manifest.courses) {
+    if (!('content' in course) || typeof course.content?.entrypoint !== 'string') {
+      throw new DefaultException({
+        en: `Invalid course series file: course "${course.title}" has no entrypoint`,
+        zh: `无效的课程系列文件：课程“${course.title}”没有入口`
+      })
+    }
+  }
+  return { manifest, unzipped, courseFiles: [], projects: await loadGuidedProjects(manifest, unzipped) }
+}
+
+/** The projects the file holds for its guided courses, in the order of `manifest.projects`. */
+async function loadGuidedProjects(
+  manifest: CourseSeriesFileManifest,
+  unzipped: Record<string, Uint8Array<ArrayBuffer>>
+) {
+  const projects: ProjectSerialized[] = []
+  for (const project of manifest.projects) {
+    const entry = getRequiredEntry(unzipped, project.path)
+    try {
+      projects.push(await xbpHelpers.load(new File([entry], `${project.name}.xbp`)))
+    } catch (e) {
+      capture(e, 'failed to read a project in a course series file')
+      throw new DefaultException({
+        en: `Invalid course series file: project "${project.name}" cannot be read`,
+        zh: `无效的课程系列文件：项目“${project.name}”无法读取`
+      })
+    }
+  }
+  return projects
 }
 
 const kindNames: Record<CourseKind, LocaleMessage> = {
@@ -279,27 +327,46 @@ function describeProblems(problems: Array<{ course: string; problem: LocaleMessa
   }
 }
 
-/** What an import wrote before its series held the imported courses, which a failure undoes. */
+/**
+ * What an import may have written before its series held the imported courses, which a failure undoes. Projects are
+ * recorded before they are written, as an answer can be lost after the write took effect; undoing finds out what
+ * actually changed.
+ */
 type ImportChanges = {
   courseIDs: string[]
   createdProjects: Array<{ owner: string; name: string }>
-  /** Projects the import overwrote, as they were before. */
-  overwrittenProjects: Array<ProjectSerialized<Metadata>>
+  /** Projects the import may have overwritten, as they were before. */
+  overwrittenProjects: ProjectData[]
 }
 
+/**
+ * Write what `loadCourseSeriesFile` read. The file itself was checked there, so what can still go wrong here is
+ * outside it: an upload or request that fails, the server refusing a value (its own checks, such as lengths, are not
+ * repeated here), or an answer that never arrives. Hence:
+ * - a failure before the commit, the series write that switches to the imported courses, undoes all written so far;
+ * - a failed commit is checked against the series first, since it may have taken effect with its answer lost;
+ * - after the commit the import stands, and old courses that cannot be deleted are only reported.
+ */
 async function importCourseSeriesFileData(
   target: { courseSeries: CourseSeries; writes: CourseSeriesImportWrites } | null,
-  { manifest, unzipped, courseFiles }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
+  { manifest, unzipped, courseFiles, projects }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
   signedInUsername: string,
   signal?: AbortSignal
 ): Promise<CourseSeriesImportResult> {
   const courseSeries = target?.courseSeries ?? null
   const changes: ImportChanges = { courseIDs: [], createdProjects: [], overwrittenProjects: [] }
-  let importedCourseSeries: CourseSeries
+  let params: AddCourseSeriesParams
   try {
     const projectFullNameMap = new Map<string, string>()
-    for (const project of manifest.projects) {
-      const importedFullName = await importProject(project, manifest, unzipped, signedInUsername, changes, signal)
+    for (const [index, project] of manifest.projects.entries()) {
+      const importedFullName = await importProject(
+        project,
+        projects[index],
+        manifest,
+        signedInUsername,
+        changes,
+        signal
+      )
       projectFullNameMap.set(project.fullName, importedFullName)
     }
 
@@ -331,7 +398,7 @@ async function importCourseSeriesFileData(
       changes.courseIDs.push(imported.id)
     }
 
-    const params = {
+    params = {
       kind: manifest.courseSeries.kind,
       title: manifest.courseSeries.title,
       thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
@@ -340,13 +407,31 @@ async function importCourseSeriesFileData(
       order: courseSeries?.order ?? 1,
       courseIDs: changes.courseIDs
     }
-    // The series holds the imported courses from here on, so nothing before this needs undoing any more.
+  } catch (error) {
+    return undoImport(changes, manifest, error)
+  }
+
+  let importedCourseSeries: CourseSeries
+  try {
     importedCourseSeries =
       target == null
         ? await addCourseSeries(params, signal)
         : await target.writes.updateCourseSeries(target.courseSeries.id, params, signal)
   } catch (error) {
-    return undoImport(changes, manifest, error)
+    let committed: CourseSeries | null
+    try {
+      committed = await findCommittedCourseSeries(courseSeries, params)
+    } catch (e) {
+      // Undoing now could empty a series that holds the imported courses, so nothing is undone.
+      capture(e, 'failed to check the course series after its update failed')
+      capture(error, 'failed to import course series file')
+      throw new DefaultException({
+        en: 'Could not tell whether the course series file was imported. Check the course series before importing it again.',
+        zh: '无法确认课程系列文件是否已导入，请先查看课程系列再决定是否重新导入。'
+      })
+    }
+    if (committed == null) return undoImport(changes, manifest, error)
+    importedCourseSeries = committed
   }
 
   const undeletedCourseIDs: string[] = []
@@ -360,58 +445,106 @@ async function importCourseSeriesFileData(
   return { courseSeries: importedCourseSeries, undeletedCourseIDs }
 }
 
+/** The series as a commit whose answer was lost left it, when it holds the imported courses; null otherwise. */
+async function findCommittedCourseSeries(courseSeries: CourseSeries | null, params: AddCourseSeriesParams) {
+  const holdsImportedCourses = (series: CourseSeries) =>
+    series.courseIDs.length === params.courseIDs.length &&
+    series.courseIDs.every((id, index) => id === params.courseIDs[index])
+  if (courseSeries != null) {
+    const series = await getCourseSeries(courseSeries.id)
+    return holdsImportedCourses(series) ? series : null
+  }
+  // The imported courses are new, so a series holding them can only be the one this import created, among the newest.
+  if (params.courseIDs.length === 0) return null
+  const { data } = await listSignedInUserCourseSeries({
+    kind: params.kind,
+    orderBy: 'createdAt',
+    sortOrder: 'desc',
+    pageIndex: 1,
+    pageSize: 10
+  })
+  return data.find(holdsImportedCourses) ?? null
+}
+
 /**
  * Undo what a failed import wrote: delete the courses and projects it created and restore the projects it
  * overwrote. Rethrows the failure, or reports what could not be undone. Files it uploaded are left behind, as nothing
  * refers to them.
  */
 async function undoImport(changes: ImportChanges, manifest: CourseSeriesFileManifest, error: unknown): Promise<never> {
-  const notUndone: string[] = []
+  const notUndone: LocaleMessage[] = []
   for (const courseID of changes.courseIDs) {
     try {
       await deleteCourse(courseID)
     } catch (e) {
       capture(e, 'failed to delete an imported course while undoing the import')
-      notUndone.push(courseID)
+      notUndone.push({ en: `course ${courseID}`, zh: `课程 ${courseID}` })
     }
   }
   for (const backup of changes.overwrittenProjects) {
+    const fullName = `${backup.owner}/${backup.name}`
     try {
-      await restoreProject(backup, manifest)
+      if (!(await restoreProject(backup, manifest))) {
+        notUndone.push({
+          en: `the release the import made of project ${fullName}`,
+          zh: `导入为项目 ${fullName} 创建的发布版本`
+        })
+      }
     } catch (e) {
       capture(e, 'failed to restore an overwritten project while undoing the import')
-      notUndone.push(`${backup.metadata.owner}/${backup.metadata.name}`)
+      notUndone.push({ en: `project ${fullName}`, zh: `项目 ${fullName}` })
     }
   }
   for (const { owner, name } of changes.createdProjects) {
     try {
       await deleteProject(owner, name)
     } catch (e) {
+      // Not found: the import failed before creating it.
+      if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) continue
       capture(e, 'failed to delete an imported project while undoing the import')
-      notUndone.push(`${owner}/${name}`)
+      notUndone.push({ en: `project ${owner}/${name}`, zh: `项目 ${owner}/${name}` })
     }
   }
   if (notUndone.length === 0) throw error
   capture(error, 'failed to import course series file')
   throw new DefaultException({
-    en: `Failed to import the course series file, and some changes could not be undone: ${notUndone.join(', ')}`,
-    zh: `导入课程系列文件失败，且以下改动未能还原：${notUndone.join('、')}`
+    en: `Failed to import the course series file, and some changes could not be undone: ${notUndone.map((m) => m.en).join(', ')}`,
+    zh: `导入课程系列文件失败，且以下改动未能还原：${notUndone.map((m) => m.zh).join('、')}`
   })
 }
 
-/** Write an overwritten project back as it was, and publish it again so that its published content is too. */
-async function restoreProject(backup: ProjectSerialized<Metadata>, manifest: CourseSeriesFileManifest) {
-  const restored = await cloudHelpers.save(backup)
-  const { owner, name } = restored.metadata
-  let revision = restored.metadata.revision
-  if (backup.metadata.extraSettings != null) {
-    revision = (await updateProject(owner, name, { extraSettings: backup.metadata.extraSettings })).revision
+/**
+ * Put a project the import overwrote back as `backup` has it, both what it holds and what it has published, going by
+ * what the import actually changed. Returns false when the import published a project that had no release before:
+ * a release cannot be removed, so that one stays.
+ */
+async function restoreProject(backup: ProjectData, manifest: CourseSeriesFileManifest) {
+  const { owner, name } = backup
+  const current = await getProject(owner, name)
+  if (current.revision === backup.revision) return true
+
+  const published = backup.latestRelease
+  const releasedByImport = (current.latestRelease?.id ?? null) !== (published?.id ?? null)
+  if (releasedByImport && published != null) {
+    // A release is made of the project as it is, so its published content goes back first, the rest over it.
+    const { revision } = await updateProject(owner, name, { files: published.files, thumbnail: published.thumbnail })
+    await createProjectRelease(owner, name, {
+      name: generateReleaseName(),
+      description: `Restored after a failed import of course series "${manifest.courseSeries.title}"`,
+      projectRevision: revision
+    })
   }
-  await createProjectRelease(owner, name, {
-    name: generateReleaseName(),
-    description: `Restored after a failed import of course series "${manifest.courseSeries.title}"`,
-    projectRevision: revision
+  const { files, visibility, displayName, description, instructions, extraSettings, thumbnail } = backup
+  await updateProject(owner, name, {
+    files,
+    visibility,
+    displayName,
+    description,
+    instructions,
+    extraSettings,
+    thumbnail
   })
+  return !releasedByImport || published != null
 }
 
 async function exportCourseFiles(content: FileCollection, dir: string, zippable: Zippable, signal?: AbortSignal) {
@@ -481,18 +614,19 @@ function parseProjectFullName(fullName: string): ParsedProjectFullName {
 
 async function importProject(
   project: CourseSeriesFileProject,
+  serialized: ProjectSerialized,
   manifest: CourseSeriesFileManifest,
-  unzipped: Record<string, Uint8Array<ArrayBuffer>>,
   signedInUsername: string,
   changes: ImportChanges,
   signal?: AbortSignal
 ) {
-  const serialized = await xbpHelpers.load(new File([getRequiredEntry(unzipped, project.path)], `${project.name}.xbp`))
   const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
+  let created: { owner: string; name: string } | null = null
   if (existingProject != null) {
-    changes.overwrittenProjects.push(
-      await cloudHelpers.load(existingProject.owner, existingProject.name, false, signal)
-    )
+    changes.overwrittenProjects.push(existingProject)
+  } else {
+    created = { owner: signedInUsername, name: project.name }
+    changes.createdProjects.push(created)
   }
   const metadata: PartialMetadata = {
     ...serialized.metadata,
@@ -506,7 +640,7 @@ async function importProject(
 
   const saved = await cloudHelpers.save({ metadata, files: serialized.files }, signal)
   let { owner, name, revision } = saved.metadata
-  if (existingProject == null) changes.createdProjects.push({ owner, name })
+  if (created != null) Object.assign(created, { owner, name })
   const metadataUpdates: UpdateProjectParams = {}
   if (serialized.metadata.description != null) metadataUpdates.description = serialized.metadata.description
   if (serialized.metadata.instructions != null) metadataUpdates.instructions = serialized.metadata.instructions
