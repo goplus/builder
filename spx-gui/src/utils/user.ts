@@ -8,7 +8,10 @@ export function useEnsureSignedIn() {
   const withConfirm = useConfirmDialog()
   const signIn = useSignIn()
 
-  return async (returnTo?: string) => {
+  return async (
+    /** Post-sign-in destination; defaults to the current URL when omitted. */
+    returnTo?: string
+  ) => {
     if (isSignedIn()) return
     await withConfirm({
       title: t({ en: 'Sign in to continue', zh: '登录以继续' }),
