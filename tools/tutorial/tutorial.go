@@ -100,7 +100,7 @@ func (p *Course) initCourse() *Course {
 // and then proceed independently (see startRuns). A start callback registered
 // after the Course has started is never called.
 func (p *Course) OnStart(handler func()) {
-	register(&p.courseProgram, nil, func(struct{}) { handler() },
+	register(&p.courseProgram, func(struct{}) { handler() },
 		func(h *handlers, r *registration[struct{}]) { h.courseStart = append(h.courseStart, r) })
 }
 
@@ -195,13 +195,15 @@ func (p *Course) CompleteWith(message string) {
 //     may overlap, constrained by their run group's policy.
 //   - Starts are ordered: triggers are handled in arrival order, and within
 //     one trigger the callbacks start in registration order, each running to
-//     its first wait or its end before the next starts. That is what backs
-//     the contract's promise for editor.runtime.log, one run started per
-//     entry, started in append order.
-//   - Completion winds down: after complete, no new trigger starts a run;
-//     runs already executing or suspended finish their remaining statements
-//     unless a capability fails or is cancelled, while queued runs simply
-//     exit, and the program ends once they all finish or a fatal error occurs.
+//     its first wait or its end before the next starts; a run started with
+//     RunGroup.start begins when the starting run next waits or ends, before
+//     whatever waits on that run moves on. That is what backs the contract's
+//     promise for editor.runtime.log, one run started per entry, started in
+//     append order.
+//   - Completion winds down: after complete, no new trigger starts a run and
+//     no started run begins; runs already executing or suspended finish their
+//     remaining statements unless a capability fails or is cancelled, and the
+//     program ends once they all finish or a fatal error occurs.
 func (p *Course) Start() {
 	program := &p.courseProgram
 	// The main goroutine starts the course-start runs itself, and only then
@@ -231,6 +233,6 @@ func (p *Course) Start() {
 func XGot_Course_Main(course CourseProto) {
 	program := &course.initCourse().courseProgram
 	events.attach(program)
-	program.runFrame(newRun(), course.MainEntry)
+	program.runFrame(newRun(course.MainEntry))
 	course.Start()
 }

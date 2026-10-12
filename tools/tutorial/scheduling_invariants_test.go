@@ -17,16 +17,17 @@ import (
 //     runFrame and yieldWhile may call them: a run has exactly one yield
 //     point, with no ad-hoc yielding scattered elsewhere.
 //  2. yieldWhile is entered only from mustCallCapability, which waits on the
-//     host, and from join, which queues under OneAtATime; the bridge's
-//     callCapability appears only in mustCallCapability.
+//     host; the bridge's callCapability appears only in mustCallCapability.
 //  3. No operation that can block appears while schedulerMu is held (channel
 //     send or receive, select, Wait, taking the token, calling the bridge);
 //     registryMu and groupMu are leaf locks whose regions allow only
 //     allowlisted calls.
-//  4. Runs have a single lifecycle entry: startRuns is called only by Start
-//     and the package-level event deliverers; admitRun only by startRuns and
-//     goLive; cancel only by join; markYielded only by runFrame and
-//     yieldWhile.
+//  4. Runs have a single lifecycle entry: startRun is called only by
+//     startRuns (itself called only by Start and the package-level event
+//     deliverers) and by startChildren (called only by runFrame and
+//     yieldWhile, when a run yields or ends); admitRun only by startRun and
+//     goLive; cancel only by Start, the run group gate; markYielded only by
+//     runFrame and yieldWhile.
 //  5. Events have a single entry: handlers are registered with the executor
 //     only in init; events.attach is called only by XGot_Course_Main and
 //     events.goLive only by Start.
@@ -64,9 +65,11 @@ func TestSchedulingInvariants(t *testing.T) {
 var (
 	tokenOperators   = map[string]bool{"runFrame": true, "yieldWhile": true}
 	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
-	yieldCallers     = map[string]bool{"mustCallCapability": true, "join": true}
+	yieldCallers     = map[string]bool{"mustCallCapability": true}
 	blockingWaitHome = "mustCallCapability"
-	admitCallers     = map[string]bool{"startRuns": true, "goLive": true}
+	admitCallers     = map[string]bool{"startRun": true, "goLive": true}
+	runStarters      = map[string]bool{"startRuns": true, "startChildren": true}
+	childStarters    = map[string]bool{"runFrame": true, "yieldWhile": true}
 	yieldMarkers     = map[string]bool{"runFrame": true, "yieldWhile": true}
 )
 
@@ -88,7 +91,7 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				}
 			case strings.HasSuffix(callee, ".yieldWhile"):
 				if !yieldCallers[name] {
-					report(n.Pos(), "%s yields the token: only mustCallCapability and join may wait", name)
+					report(n.Pos(), "%s yields the token: only mustCallCapability may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
 				if name != blockingWaitHome {
@@ -98,13 +101,21 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				if name != "Start" {
 					report(n.Pos(), "%s starts runs: only Course.Start and the event deliverers may", name)
 				}
+			case strings.HasSuffix(callee, ".startRun"):
+				if !runStarters[name] {
+					report(n.Pos(), "%s starts a run: only startRuns and startChildren may", name)
+				}
+			case strings.HasSuffix(callee, ".startChildren"):
+				if !childStarters[name] {
+					report(n.Pos(), "%s starts a run's children: only runFrame and yieldWhile may, when the run yields or ends", name)
+				}
 			case strings.HasSuffix(callee, ".admitRun"):
 				if !admitCallers[name] {
-					report(n.Pos(), "%s admits a goroutine to runs: only startRuns and goLive may", name)
+					report(n.Pos(), "%s admits a goroutine to runs: only startRun and goLive may", name)
 				}
 			case strings.HasSuffix(callee, ".cancel"):
-				if name != "join" {
-					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only join may", name)
+				if name != "Start" {
+					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only Start may", name)
 				}
 			case strings.HasSuffix(callee, ".markYielded"):
 				if !yieldMarkers[name] {
@@ -183,7 +194,7 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 // lock.
 var leafLockAllowedCalls = map[string]map[string]bool{
 	"registryMu": {"len": true, "append": true, "make": true, "fmt.Errorf": true, "json.RawMessage": true},
-	"groupMu":    {"len": true, "append": true, "close": true},
+	"groupMu":    {"len": true, "append": true},
 }
 
 type lockRegion struct {

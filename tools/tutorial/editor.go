@@ -72,12 +72,14 @@ func (p *Project) ListSprites() []string {
 // difference to the host, which need not know what the Course subscribed to.
 //
 // Each event has three overloads, which XGo groups by the __N suffix: the
-// callback alone; a RunPolicy before the callback, which puts every run of
-// that callback in a private group from its first statement; and a RunGroup
-// before the callback, which joins every run to that shared group from the
-// start. A callback that filters its triggers should enter() after the
-// filter, and giving a policy at registration suits only low-frequency,
-// unfiltered events — see policy.go.
+// callback alone; a RunPolicy before the callback; and a RunGroup before the
+// callback. The latter two are sugar, see inGroup: `onExit judging, code =>
+// {B}` is exactly `onExit code => { judging.start => {B} }`, the whole body
+// being one run of the group, and a bare policy stands for an anonymous group
+// private to that callback. A callback that filters its triggers keeps the
+// plain form and starts a run of the group after the filter; binding a whole
+// callback to a policy suits only low-frequency, unfiltered events — see
+// policy.go.
 type Runtime struct {
 	courseProgram *courseProgram
 }
@@ -85,42 +87,42 @@ type Runtime struct {
 // OnStart__0 registers a callback for the learner's project starting to run.
 // Several may be registered.
 func (p *Runtime) OnStart__0(handler func()) {
-	p.onStart(nil, handler)
+	p.onStart(func(struct{}) { handler() })
 }
 
 // OnStart__1 is OnStart with a run policy.
 func (p *Runtime) OnStart__1(policy RunPolicy, handler func()) {
-	p.onStart(&runGroup{p: p.courseProgram, policy: policy}, handler)
+	p.onStart(inGroup(&runGroup{p: p.courseProgram, policy: policy}, func(struct{}) { handler() }))
 }
 
-// OnStart__2 is OnStart joining a run group.
+// OnStart__2 is OnStart bound to a run group.
 func (p *Runtime) OnStart__2(group RunGroup, handler func()) {
-	p.onStart(groupOf(group), handler)
+	p.onStart(inGroup(groupOf(group), func(struct{}) { handler() }))
 }
 
-func (p *Runtime) onStart(group *runGroup, handler func()) {
-	register(p.courseProgram, group, func(struct{}) { handler() },
+func (p *Runtime) onStart(handler func(struct{})) {
+	register(p.courseProgram, handler,
 		func(h *handlers, r *registration[struct{}]) { h.runtimeStart = append(h.runtimeStart, r) })
 }
 
 // OnExit__0 registers a callback for the learner's project exiting, where
 // code is the exit code. Several may be registered.
 func (p *Runtime) OnExit__0(handler func(code int)) {
-	p.onExit(nil, handler)
+	p.onExit(handler)
 }
 
 // OnExit__1 is OnExit with a run policy.
 func (p *Runtime) OnExit__1(policy RunPolicy, handler func(code int)) {
-	p.onExit(&runGroup{p: p.courseProgram, policy: policy}, handler)
+	p.onExit(inGroup(&runGroup{p: p.courseProgram, policy: policy}, handler))
 }
 
-// OnExit__2 is OnExit joining a run group.
+// OnExit__2 is OnExit bound to a run group.
 func (p *Runtime) OnExit__2(group RunGroup, handler func(code int)) {
-	p.onExit(groupOf(group), handler)
+	p.onExit(inGroup(groupOf(group), handler))
 }
 
-func (p *Runtime) onExit(group *runGroup, handler func(code int)) {
-	register(p.courseProgram, group, handler,
+func (p *Runtime) onExit(handler func(code int)) {
+	register(p.courseProgram, handler,
 		func(h *handlers, r *registration[int]) { h.runtimeExit = append(h.runtimeExit, r) })
 }
 
@@ -136,23 +138,23 @@ func (p *Runtime) onExit(group *runGroup, handler func(code int)) {
 // Several callbacks may be registered: with two judging clues in one Course,
 // writing two handlers reads better than cramming both into one if-else.
 // Runs of one callback may overlap; for "latest wins" or "ignore while busy",
-// enter() a run group with the matching policy after the filter.
+// start a run of a run group with the matching policy after the filter.
 func (p *Runtime) OnLog__0(handler func(log string)) {
-	p.onLog(nil, handler)
+	p.onLog(handler)
 }
 
 // OnLog__1 is OnLog with a run policy.
 func (p *Runtime) OnLog__1(policy RunPolicy, handler func(log string)) {
-	p.onLog(&runGroup{p: p.courseProgram, policy: policy}, handler)
+	p.onLog(inGroup(&runGroup{p: p.courseProgram, policy: policy}, handler))
 }
 
-// OnLog__2 is OnLog joining a run group.
+// OnLog__2 is OnLog bound to a run group.
 func (p *Runtime) OnLog__2(group RunGroup, handler func(log string)) {
-	p.onLog(groupOf(group), handler)
+	p.onLog(inGroup(groupOf(group), handler))
 }
 
-func (p *Runtime) onLog(group *runGroup, handler func(log string)) {
-	register(p.courseProgram, group, handler,
+func (p *Runtime) onLog(handler func(log string)) {
+	register(p.courseProgram, handler,
 		func(h *handlers, r *registration[string]) { h.runtimeLog = append(h.runtimeLog, r) })
 }
 

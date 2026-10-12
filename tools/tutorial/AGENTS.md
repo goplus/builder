@@ -5,12 +5,17 @@ These are the rules of change.
 
 - Course callbacks execute only through `runFrame`. At any instant, only the `execToken` holder runs course code.
   Every trigger starts a new run of each registered callback, so runs of one callback may overlap; a `runGroup`'s
-  `RunPolicy` (CancelPrevious, OneAtATime, SkipWhileBusy) is the only thing that relates them
+  `RunPolicy` (CancelPrevious, OneAtATime, SkipWhileBusy) is the only thing that relates runs, and its gate sits in
+  `RunGroup.Start`: a group holds at most one run, whichever callback started it. A policy or group given at
+  registration is pure sugar (`inGroup`): the whole callback becomes one run of the group
 - `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long, restores
   `current` afterwards, and is where cancellation takes effect (checked before the wait and after it, so a cancelled
-  run never uses a pending result). Only `mustCallCapability` and `join` may call it
-- Runs are started only by `startRuns`, from `Course.Start` and the event deliverers, in registration order, each to
-  its first yield (`yielded`) before the next. Keep that the sole start path; never spawn course code elsewhere
+  run never uses a pending result). Only `mustCallCapability` may call it
+- Runs begin only through `startRun`, from `startRuns` (`Course.Start` and the event deliverers, in registration
+  order) and from `startChildren` (the runs a run started with `RunGroup.Start`, in start order, when that run yields
+  or ends), each to its first yield (`yielded`) before the next. Keep those the sole start paths; never spawn course
+  code elsewhere. A started run that has not begun is just a closure: it costs no goroutine, and after completion it
+  never begins
 - Hold no lock across a blocking operation: `schedulerMu` regions stay free of channel ops, `select`, `Wait`, token
   ops, and other locks; `registryMu` and `groupMu` are leaf locks whose regions may only touch fields and call the
   allowlisted builtins. Cancellation, waiting, decoding, and delivery happen outside every lock

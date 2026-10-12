@@ -6,67 +6,71 @@ package tutorial
 // generateJSON); other runs proceed meanwhile. Every trigger starts a new run
 // of each callback registered for it, so runs of one callback may overlap
 // when a trigger arrives while an earlier run is still waiting. A RunPolicy
-// given at registration, or a RunGroup the run joins, decides how such runs
-// relate; without either they run independently. Runs start in a fixed
-// order: triggers are handled in arrival order, and within one trigger the
-// callbacks start in registration order, each running to its first wait or
-// its end before the next starts (a run held back by OneAtATime does not
-// delay the others). Course start is delivered like any other event.
+// given at registration, or a RunGroup whose runs the callback starts, decides
+// how such runs relate; without either they run independently. Runs start in
+// a fixed order: triggers are handled in arrival order, and within one trigger
+// the callbacks start in registration order, each running to its first wait
+// or its end before the next starts; a run started with RunGroup.start begins
+// once the starting run next waits or ends (a run waiting its turn under
+// OneAtATime holds nothing up). Course start is delivered like any other
+// event.
 //
 // The framework does not serialize overlapping presentation calls from
 // different runs; the host defines how these presentations are handled.
 
-// RunPolicy decides how runs that share a run group relate when a run joins
-// the group while an earlier run still holds it. A policy given directly at
-// registration (`onExit OneAtATime, code => {...}`) puts every run of that
-// callback in a private group from its first statement. When a callback
-// filters its triggers, or when several callbacks must share one policy,
-// create a RunGroup and join it where it matters.
+// RunPolicy decides how the runs of one run group relate: what happens when a
+// run of the group is started while an earlier run still holds the group. A
+// policy given directly at registration (`onExit OneAtATime, code => {...}`)
+// makes the whole callback one run of an anonymous group private to that
+// callback. When a callback filters its triggers, or when several callbacks
+// must share one policy, create a RunGroup and start runs of it where it
+// matters.
 type RunPolicy int
 
 const (
-	// CancelPrevious cancels the run holding the group so the joining run
-	// proceeds. A cancelled run ends at its next waiting point: if it is
+	// CancelPrevious cancels the run holding the group so the new run takes
+	// its place. A cancelled run ends at its next waiting point: if it is
 	// waiting, the result of that call is discarded when the host settles it;
 	// otherwise it ends before making its next waiting call. Statements
 	// between waits still run, and the host may still finish presenting what
 	// it was asked. Use it when only the latest trigger matters, such as
 	// judging the latest output.
 	CancelPrevious RunPolicy = iota + 1
-	// OneAtATime lets runs through one after another in arrival order: a
-	// joining run waits, yielding like a waiting call, until the run holding
-	// the group ends. Use it when every trigger must be handled in full and in
-	// order, such as showing a hint for each failed run.
+	// OneAtATime lets runs through one after another in start order: a run
+	// started while another holds the group waits its turn, holding nothing
+	// else up, and begins once that run ends. Use it when every trigger must
+	// be handled in full and in order, such as showing a hint for each failed
+	// run.
 	OneAtATime
-	// SkipWhileBusy ends the joining run on the spot while another run holds
-	// the group; the statements after the join point do not execute. Use it
-	// to react once to a burst of triggers, such as judging once while a
-	// signal repeats every frame.
+	// SkipWhileBusy does not start the run at all while another run holds the
+	// group. Use it to react once to a burst of triggers, such as judging once
+	// while a signal repeats every frame.
 	SkipWhileBusy
 )
 
-// RunGroup is a shared policy scope for runs. A run holds the group from the
-// moment it joins until the run ends; the group's RunPolicy decides what
-// happens when a run joins while another still holds it. One group may be
-// shared by callbacks of different events, for example an onLog and an
-// onExit that both judge completion:
+// RunGroup is a shared policy scope for runs. It holds at most one run at a
+// time, and its RunPolicy decides what happens when a run of it is started
+// while another still holds it, whichever callback started either run. One
+// group may therefore be shared by callbacks of different events, for example
+// an onLog and an onExit that both judge completion:
 //
-//	judging := newRunGroup(SkipWhileBusy)
+//	judging := newRunGroup(CancelPrevious)
 //	Editor.Runtime.onLog log => {
 //		if log != "reached" { return }
-//		judging.enter() // join here, after the filter
-//		...
+//		judging.start => { judge() } // start here, after the filter
 //	}
-//	Editor.Runtime.onExit code => {
-//		judging.enter()
-//		...
+//	Editor.Runtime.onExit judging, code => { // the whole callback is one run
+//		judge()
 //	}
+//
+// The second form is exactly `onExit code => { judging.start => { ... } }`.
 type RunGroup interface {
-	// enter joins the current run to the group at this point. It never needs
-	// a checked result: under SkipWhileBusy the run may end here, under
-	// OneAtATime it may wait here, under CancelPrevious the run holding the
-	// group is cancelled. Joining a group the run already holds has no effect.
-	enter()
+	// start starts a new run of the group executing body. The calling run
+	// does not wait for it: the new run begins once the caller next waits or
+	// ends, and the group's policy decides what happens if another run still
+	// holds the group. Starting a run of the group from a run of the same
+	// group is an error.
+	start(body func())
 }
 
 type Course struct {
@@ -130,9 +134,9 @@ type Project interface {
 
 // Every event registration below accepts an optional RunPolicy or RunGroup
 // before the callback (`onExit OneAtATime, code => {...}`,
-// `onLog judging, log => {...}`); it applies from the run's first statement.
-// A callback that filters its triggers should join a RunGroup after the
-// filter instead. See RunPolicy and RunGroup.
+// `onLog judging, log => {...}`), which makes the whole callback one run of
+// that group. A callback that filters its triggers should instead start a run
+// of a RunGroup after the filter. See RunPolicy and RunGroup.
 type Runtime interface {
 	// onStart registers a callback that is called when the project runtime starts.
 	onStart(callback func())

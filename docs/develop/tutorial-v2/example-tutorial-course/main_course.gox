@@ -12,8 +12,10 @@ onStart => {
 judging := newRunGroup(CancelPrevious)
 
 Editor.Runtime.onLog log => {
-	if log == "reached-target" {
-		judging.enter()
+	if log != "reached-target" {
+		return
+	}
+	judging.start => {
 		code := Editor.Project.getCode("Lita")
 		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
 		completeWith feedback

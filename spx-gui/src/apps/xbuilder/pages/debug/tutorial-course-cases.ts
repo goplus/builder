@@ -10,8 +10,15 @@ export const exampleCourseSource = `onStart => {
 	Spotlight.reveal "API References", "Here is stepTo, the only block you need in this lesson."
 }
 
+// Only the latest "reached-target" matters: a newer signal cancels a
+// judgement that is still waiting on Copilot.
+judging := newRunGroup(CancelPrevious)
+
 Editor.Runtime.onLog log => {
-	if log == "reached-target" {
+	if log != "reached-target" {
+		return
+	}
+	judging.start => {
 		code := Editor.Project.getCode("Lita")
 		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\\n" + code)
 		completeWith feedback
@@ -73,16 +80,17 @@ Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.enter()
-	for sprite <- Editor.Project.listSprites() {
-		echo Editor.Project.getCode(sprite)
-	}
-	Editor.CodeEditor.formatWorkspace
-	Editor.Ruler.disable
+	judging.start => {
+		for sprite <- Editor.Project.listSprites() {
+			echo Editor.Project.getCode(sprite)
+		}
+		Editor.CodeEditor.formatWorkspace
+		Editor.Ruler.disable
 
-	feedback := &Feedback{}
-	Copilot.generateJSON "judge this", feedback
-	completeWith Copilot.generateText("praise the learner")
+		feedback := &Feedback{}
+		Copilot.generateJSON "judge this", feedback
+		completeWith Copilot.generateText("praise the learner")
+	}
 }
 `
 

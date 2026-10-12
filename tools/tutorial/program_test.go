@@ -396,11 +396,11 @@ func TestCoursesDoNotShareState(t *testing.T) {
 	// callbacks are registered only on itself.
 	first.initCourse()
 	second.initCourse()
-	first.courseProgram.runFrame(newRun(), first.MainEntry)
-	second.courseProgram.runFrame(newRun(), second.MainEntry)
+	first.courseProgram.runFrame(newRun(first.MainEntry))
+	second.courseProgram.runFrame(newRun(second.MainEntry))
 
 	for _, reg := range first.courseProgram.handlerSnapshot().courseStart {
-		first.courseProgram.runFrame(newRun(), func() { reg.handler(struct{}{}) })
+		first.courseProgram.runFrame(newRun(func() { reg.handler(struct{}{}) }))
 	}
 	if !first.courseProgram.markCompleted() {
 		t.Fatal("the first course was already completed")
@@ -673,10 +673,10 @@ func TestOneAtATimeRunsInOrder(t *testing.T) {
 	}
 }
 
-// TestOneAtATimeQueuedRunYields checks that queueing under OneAtATime is a
-// wait that releases the token: while one callback's run is queued, the other
-// callbacks of the same log are handled as usual.
-func TestOneAtATimeQueuedRunYields(t *testing.T) {
+// TestOneAtATimeQueuedRunHoldsNothingUp checks that a run waiting its turn
+// under OneAtATime holds nothing up: it is not even a goroutine yet, and the
+// other callbacks of the same log are handled as usual meanwhile.
+func TestOneAtATimeQueuedRunHoldsNothingUp(t *testing.T) {
 	host := newFakeHost()
 	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
 
@@ -795,8 +795,9 @@ func TestCancelledRunDiscardsPendingResult(t *testing.T) {
 }
 
 // TestSkipWhileBusyDropsTriggers checks SkipWhileBusy: while a run is in
-// flight a newly triggered run ends on the spot and the callback body does not
-// execute, and once the in-flight run ends a new trigger is handled as usual.
+// flight a run started by a new trigger never begins and the callback body
+// does not execute, and once the in-flight run ends a new trigger is handled
+// as usual.
 func TestSkipWhileBusyDropsTriggers(t *testing.T) {
 	host := newFakeHost()
 	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
@@ -846,9 +847,9 @@ func TestSkipWhileBusyDropsTriggers(t *testing.T) {
 }
 
 // TestRunGroupSharedAcrossCallbacks checks that a run group the author creates
-// can be shared across events and joined after filtering: while the onLog
-// judgement is in flight the onExit judgement ends on the spot, and unrelated
-// logs are unaffected.
+// can be shared across events, with runs started after filtering: while the
+// judgement started from onLog is in flight the one onExit starts never
+// begins, and unrelated logs are unaffected.
 func TestRunGroupSharedAcrossCallbacks(t *testing.T) {
 	host := newFakeHost()
 	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
@@ -864,14 +865,14 @@ func TestRunGroupSharedAcrossCallbacks(t *testing.T) {
 				trace = append(trace, "ignored:"+log)
 				return
 			}
-			judging.Enter()
-			trace = append(trace, "judging:log")
-			course.Copilot.GenerateText("judge")
-			course.Complete()
+			judging.Start(func() {
+				trace = append(trace, "judging:log")
+				course.Copilot.GenerateText("judge")
+				course.Complete()
+			})
 		})
 		course.Editor.Runtime.OnExit__0(func(int) {
-			judging.Enter()
-			trace = append(trace, "judging:exit")
+			judging.Start(func() { trace = append(trace, "judging:exit") })
 		})
 		course.Editor.Runtime.OnExit__0(func(int) { exitSeen <- struct{}{} })
 		course.OnStart(func() { close(ready) })
@@ -889,6 +890,153 @@ func TestRunGroupSharedAcrossCallbacks(t *testing.T) {
 	want := "[judging:log ignored:noise]"
 	if got := fmt.Sprint(trace); got != want {
 		t.Errorf("trace = %s, want %s", got, want)
+	}
+}
+
+// TestCancelPreviousAcrossEvents checks the case run groups exist for: a
+// judgement started from one event cancels the one another event started,
+// because the group only knows which run holds it, never which callback
+// started that run. Here onRoundComplete, bound to the group at registration,
+// cancels the judgement that a filtered onLog started and that is still
+// waiting.
+func TestCancelPreviousAcrossEvents(t *testing.T) {
+	host := newFakeHost()
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
+
+	var trace []string
+	ready := make(chan struct{})
+	roundDone := make(chan struct{}, 1)
+
+	done := startCourse(host, func(course *testCourse) {
+		judging := course.NewRunGroup(CancelPrevious)
+		course.Editor.Runtime.OnLog__0(func(log string) {
+			if log != "reached" {
+				return
+			}
+			judging.Start(func() {
+				course.Copilot.GenerateText("judge the log")
+				trace = append(trace, "after:log")
+			})
+		})
+		course.Copilot.OnRoundComplete__2(judging, func(CopilotRound) {
+			course.Copilot.GenerateText("judge the round")
+			trace = append(trace, "after:round")
+			roundDone <- struct{}{}
+		})
+		course.Editor.Runtime.OnExit__0(func(int) { course.Complete() })
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"reached"}`)
+	await(t, generateStarted, "the log judgement to suspend in generateText")
+	dispatch(t, "copilot.roundComplete", `{"userMessage":"hi","resultMessages":["hello"]}`)
+	await(t, generateStarted, "the round judgement to suspend in generateText")
+	releaseGenerate()
+	releaseGenerate()
+	await(t, roundDone, "the round judgement to finish")
+	dispatch(t, "editor.runtime.exit", `{"code":0}`)
+	awaitDone(t, done)
+
+	if got, want := fmt.Sprint(trace), "[after:round]"; got != want {
+		t.Errorf("trace = %s, want %s: the round's judgement must cancel the log's", got, want)
+	}
+}
+
+// TestStartedRunsBeginInStartOrder checks when the runs a callback starts
+// begin: after the callback's run ends, in the order they were started, and
+// before the next callback of the same trigger starts.
+func TestStartedRunsBeginInStartOrder(t *testing.T) {
+	host := newFakeHost()
+	var trace []string
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		first := course.NewRunGroup(CancelPrevious)
+		second := course.NewRunGroup(OneAtATime)
+		course.Editor.Runtime.OnLog__0(func(string) {
+			first.Start(func() { trace = append(trace, "first") })
+			second.Start(func() { trace = append(trace, "second") })
+			trace = append(trace, "starter ends")
+		})
+		course.Editor.Runtime.OnLog__0(func(string) {
+			trace = append(trace, "next callback")
+			course.Complete()
+		})
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"go"}`)
+	awaitDone(t, done)
+
+	if got, want := fmt.Sprint(trace), "[starter ends first second next callback]"; got != want {
+		t.Errorf("trace = %s, want %s", got, want)
+	}
+}
+
+// TestStartFromARunOfTheSameGroupFails checks that a run of a group starting
+// another run of the same group is reported as a Course error rather than
+// doing something policy-dependent in silence.
+func TestStartFromARunOfTheSameGroupFails(t *testing.T) {
+	host := newFakeHost()
+	done := make(chan any, 1)
+	go func() {
+		defer func() { done <- recover() }()
+		XGot_Course_Main(newTestCourse(host, func(course *testCourse) {
+			judging := course.NewRunGroup(OneAtATime)
+			course.OnStart(func() {
+				judging.Start(func() {
+					judging.Start(func() {})
+				})
+			})
+		}))
+	}()
+
+	select {
+	case recovered := <-done:
+		if recovered == nil {
+			t.Error("starting a run of a group from a run of the same group must fail the course")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("course program did not exit")
+	}
+}
+
+// TestQueuedRunsNeverBeginAfterCompletion checks that a run waiting its turn
+// under OneAtATime when the Course completes never begins: completion lets
+// the holder finish its remaining statements and drops what is still waiting.
+func TestQueuedRunsNeverBeginAfterCompletion(t *testing.T) {
+	host := newFakeHost()
+	generateStarted, releaseGenerate := host.holdCapability("copilot_generateText")
+
+	var trace []string
+	seen := make(chan string, 2)
+	ready := make(chan struct{})
+
+	done := startCourse(host, func(course *testCourse) {
+		course.Editor.Runtime.OnLog__1(OneAtATime, func(log string) {
+			trace = append(trace, "begin:"+log)
+			course.Copilot.GenerateText("judge " + log)
+			course.Complete()
+		})
+		// Registered second, so once it has seen a log the first callback has
+		// already started, or queued, its run for that log.
+		course.Editor.Runtime.OnLog__0(func(log string) { seen <- log })
+		course.OnStart(func() { close(ready) })
+	})
+
+	await(t, ready, "the course to start")
+	dispatch(t, "editor.runtime.log", `{"log":"first"}`)
+	await(t, generateStarted, "the first run to suspend in generateText")
+	awaitOne(t, seen, "the observer to see the first log")
+	dispatch(t, "editor.runtime.log", `{"log":"second"}`)
+	awaitOne(t, seen, "the observer to see the second log, whose run is now queued")
+	releaseGenerate()
+	awaitDone(t, done)
+
+	if got, want := fmt.Sprint(trace), "[begin:first]"; got != want {
+		t.Errorf("trace = %s, want %s: the queued run must never begin", got, want)
 	}
 }
 

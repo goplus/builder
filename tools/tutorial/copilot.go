@@ -25,21 +25,21 @@ type CopilotRound struct {
 // hint after too many questions. See Runtime in editor.go for what the three
 // overloads mean.
 func (p *Copilot) OnRoundComplete__0(handler func(round CopilotRound)) {
-	p.onRoundComplete(nil, handler)
+	p.onRoundComplete(handler)
 }
 
 // OnRoundComplete__1 is OnRoundComplete with a run policy.
 func (p *Copilot) OnRoundComplete__1(policy RunPolicy, handler func(round CopilotRound)) {
-	p.onRoundComplete(&runGroup{p: p.courseProgram, policy: policy}, handler)
+	p.onRoundComplete(inGroup(&runGroup{p: p.courseProgram, policy: policy}, handler))
 }
 
-// OnRoundComplete__2 is OnRoundComplete joining a run group.
+// OnRoundComplete__2 is OnRoundComplete bound to a run group.
 func (p *Copilot) OnRoundComplete__2(group RunGroup, handler func(round CopilotRound)) {
-	p.onRoundComplete(groupOf(group), handler)
+	p.onRoundComplete(inGroup(groupOf(group), handler))
 }
 
-func (p *Copilot) onRoundComplete(group *runGroup, handler func(round CopilotRound)) {
-	register(p.courseProgram, group, handler,
+func (p *Copilot) onRoundComplete(handler func(round CopilotRound)) {
+	register(p.courseProgram, handler,
 		func(h *handlers, r *registration[CopilotRound]) { h.copilotRound = append(h.copilotRound, r) })
 }
 

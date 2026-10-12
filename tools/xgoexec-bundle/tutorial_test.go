@@ -57,19 +57,20 @@ Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.enter()
-	for sprite <- Editor.Project.listSprites() {
-		echo Editor.Project.getCode(sprite)
-	}
-	Editor.CodeEditor.formatWorkspace
-	Editor.Ruler.disable
+	judging.start => {
+		for sprite <- Editor.Project.listSprites() {
+			echo Editor.Project.getCode(sprite)
+		}
+		Editor.CodeEditor.formatWorkspace
+		Editor.Ruler.disable
 
-	feedback := &Feedback{}
-	Copilot.generateJSON "judge this", feedback
-	if feedback.Score > 3 {
-		completeWith Copilot.generateText("praise the learner")
-	} else {
-		complete
+		feedback := &Feedback{}
+		Copilot.generateJSON "judge this", feedback
+		if feedback.Score > 3 {
+			completeWith Copilot.generateText("praise the learner")
+		} else {
+			complete
+		}
 	}
 }
 `
