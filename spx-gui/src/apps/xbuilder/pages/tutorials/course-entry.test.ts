@@ -61,7 +61,9 @@ async function openCourse(destination: string, previousRoute: string | null = nu
         path: courseRoute.path,
         props: true,
         component: courseRoute.component,
-        children: courseRoute.children!.map((route) => ({ path: route.path, props: true, component: coursePage }))
+        children: courseRoute.children!.map((route) =>
+          route.redirect != null ? route : { path: route.path, props: true, component: coursePage }
+        )
       }
     ]
   })
@@ -92,6 +94,15 @@ describe('Course entry authentication', () => {
     expect(mocks.signIn).toHaveBeenCalledWith(destination, '/course-series/series?p=3')
     expect(router.currentRoute.value.fullPath).toBe('/course-series/series?p=3')
   })
+
+  it.each(['/course/series/course?mode=edit#code', '/course/series/course/?mode=edit#code'])(
+    'routes bare Course URL %s through the authenticated Start flow',
+    async (destination) => {
+      const { entered } = await openCourse(destination)
+      expect(mocks.signIn).toHaveBeenCalledWith('/course/series/course/start?mode=edit#code', '/course-series/series')
+      expect(entered).not.toHaveBeenCalled()
+    }
+  )
 
   it('returns to the same list page when sign-in is cancelled', async () => {
     mocks.confirm.mockRejectedValue(new Cancelled('cancelled'))

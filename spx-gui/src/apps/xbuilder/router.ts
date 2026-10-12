@@ -136,6 +136,10 @@ const routes: Array<RouteRecordRaw> = [
     props: true,
     children: [
       {
+        path: '',
+        redirect: (to) => ({ path: `${to.path.replace(/\/$/, '')}/start`, query: to.query, hash: to.hash })
+      },
+      {
         path: 'start',
         component: () => import('./pages/tutorials/course-start.vue'),
         props: true
