@@ -49,10 +49,10 @@ const submitText = computed(() => {
         :key="gen.id"
         :costumes="gen.sprite.costumes"
         :selection="gen.referenceImageSelection"
+        :fallback-costume-id="gen.sprite.defaultCostume?.id ?? null"
         :clearable="false"
         :validate="validateAnimationReferenceImage"
         @update:selection="gen.setReferenceImageSelection($event)"
-        @update:reference-image="gen.setReferenceImage($event)"
       />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />
       <PerspectiveInput :value="gen.settings.perspective" @update:value="gen.setSettings({ perspective: $event })" />

@@ -23,16 +23,15 @@ describe('AnimationGen', () => {
     mockSaveFile()
   })
 
-  it.each(['file', 'selection'])('rejects an unsupported reference %s without replacing the selection', (input) => {
+  it('rejects an unsupported reference without replacing the selection', () => {
     const gen = new AnimationGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject())
-    gen.setReferenceImage(mockFile('reference.png'))
+    gen.setReferenceImageSelection({ type: 'local-image', file: mockFile('reference.png') })
     const selection = gen.referenceImageSelection
     const file = mockFile('reference.svg')
 
-    expect(() => {
-      if (input === 'file') gen.setReferenceImage(file)
-      else gen.setReferenceImageSelection({ type: 'local-image', file })
-    }).toThrow('unsupported reference image type')
+    expect(() => gen.setReferenceImageSelection({ type: 'local-image', file })).toThrow(
+      'unsupported reference image type'
+    )
     expect(gen.referenceImageSelection).toBe(selection)
     gen.dispose()
   })
@@ -522,7 +521,7 @@ describe('AnimationGen', () => {
     sprite.addCostume(costume)
     const gen = new AnimationGen(i18n, sprite, project, { settings: { name: 'walk' } })
     const localFile = mockFile('local_character.png')
-    gen.setReferenceImage(localFile)
+    gen.setReferenceImageSelection({ type: 'local-image', file: localFile })
     gen.setReferenceCostume(costume.id)
     gen.setReferenceImageSelection({ type: 'local-image', file: localFile })
 
@@ -601,7 +600,12 @@ describe('AnimationGen', () => {
       const pending = gen.generateVideo().catch((error) => error)
       await vi.waitFor(() => expect(aigcMock.tasks.size).toBe(1))
       if (change === 'select costume') gen.setReferenceCostume(costume.id)
-      else gen.setReferenceImage(change === 'remove' ? null : mockFile('replacement.png'))
+      else
+        gen.setReferenceImageSelection(
+          change === 'remove'
+            ? { type: 'costume', costumeId: costume.id }
+            : { type: 'local-image', file: mockFile('replacement.png') }
+        )
       const [config, files] = gen.export()
       expect(config.generateVideoTaskSerialized).toBeUndefined()
       const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
@@ -637,7 +641,7 @@ describe('AnimationGen', () => {
     })
     const pending = gen.generateVideo().catch((error) => error)
     await flushPromises()
-    gen.setReferenceImage(mockFile('replacement.png'))
+    gen.setReferenceImageSelection({ type: 'local-image', file: mockFile('replacement.png') })
     resume()
     expect(await pending).toBeInstanceOf(Error)
     expect(aigcMock.tasks.size).toBe(0)

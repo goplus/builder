@@ -69,16 +69,6 @@ export function loadReferenceImageSelection(
   return file == null ? null : { type: 'local-image', file }
 }
 
-export function resolveSelectionAfterReferenceImageChange(
-  selection: ReferenceImageSelection,
-  referenceImage: File | null,
-  fallbackCostumeId: string | null
-): ReferenceImageSelection {
-  if (referenceImage != null) return { type: 'local-image', file: referenceImage }
-  if (selection?.type !== 'local-image') return selection
-  return fallbackCostumeId == null ? null : { type: 'costume', costumeId: fallbackCostumeId }
-}
-
 /** Store the optional reference as reference_image.<ext> within the generation's asset directory. */
 export function saveReferenceImageFile(files: Files, basePath: string, file: File | null) {
   if (file == null) return null

@@ -23,16 +23,15 @@ describe('CostumeGen', () => {
     mockSaveFile()
   })
 
-  it.each(['file', 'selection'])('rejects an unsupported reference %s without replacing the selection', (input) => {
+  it('rejects an unsupported reference without replacing the selection', () => {
     const gen = new CostumeGen(i18n, Sprite.create('TestSprite', ''), makeSpxProject())
-    gen.setReferenceImage(mockFile('reference.png'))
+    gen.setReferenceImageSelection({ type: 'local-image', file: mockFile('reference.png') })
     const selection = gen.referenceImageSelection
     const file = mockFile('reference.svg')
 
-    expect(() => {
-      if (input === 'file') gen.setReferenceImage(file)
-      else gen.setReferenceImageSelection({ type: 'local-image', file })
-    }).toThrow('unsupported reference image type')
+    expect(() => gen.setReferenceImageSelection({ type: 'local-image', file })).toThrow(
+      'unsupported reference image type'
+    )
     expect(gen.referenceImageSelection).toBe(selection)
     gen.dispose()
   })
@@ -399,7 +398,8 @@ describe('CostumeGen', () => {
       const costume = new Costume('default', mockFile('default.png'))
       sprite.addCostume(costume)
       const gen = new CostumeGen(i18n, sprite, makeSpxProject())
-      if (reference === 'local-image') gen.setReferenceImage(mockFile('reference.png'))
+      if (reference === 'local-image')
+        gen.setReferenceImageSelection({ type: 'local-image', file: mockFile('reference.png') })
       else gen.setReferenceCostume(costume.id)
       const pending = gen.generate().catch((error) => error)
       await flushPromises()
@@ -449,7 +449,7 @@ describe('CostumeGen', () => {
     const gen = new CostumeGen(i18n, sprite, project, { settings: { description: 'Local ref costume' } })
 
     const localFile = mockFile('local_character.png')
-    gen.setReferenceImage(localFile)
+    gen.setReferenceImageSelection({ type: 'local-image', file: localFile })
     await gen.generate()
     const [localReferenceTask] = [...aigcMock.tasks.values()]
     expect(localReferenceTask.params).toMatchObject({
@@ -472,7 +472,7 @@ describe('CostumeGen', () => {
     expect(loadedGen.referenceImageSelection).toBeNull()
 
     loadedGen.setReferenceImageSelection({ type: 'local-image', file: localFile })
-    loadedGen.setReferenceImage(null)
-    expect(loadedGen.referenceCostume).toBe(defaultCostume)
+    loadedGen.setReferenceImageSelection(null)
+    expect(loadedGen.referenceImageSelection).toBeNull()
   })
 })

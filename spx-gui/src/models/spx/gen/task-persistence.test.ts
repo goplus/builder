@@ -84,7 +84,11 @@ describe('generation task persistence', () => {
       })()
       const reference = mockFile('reference.png')
       reference.meta.imgSize = { width: 512, height: 512 }
-      gen.setReferenceImage(reference)
+      if (gen instanceof AnimationGen || gen instanceof CostumeGen) {
+        gen.setReferenceImageSelection({ type: 'local-image', file: reference })
+      } else {
+        gen.setReferenceImage(reference)
+      }
 
       // The editor watches a computed export to decide when to save again.
       const exported = computed(exportConfig)

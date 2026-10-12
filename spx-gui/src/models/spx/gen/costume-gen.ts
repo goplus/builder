@@ -31,7 +31,6 @@ import {
 import {
   loadReferenceImageSelection,
   resolveInitialReferenceImageSelection,
-  resolveSelectionAfterReferenceImageChange,
   saveReferenceImageFile,
   type ReferenceImageSelection,
   type StoredReferenceImageSelection,
@@ -180,15 +179,6 @@ export class CostumeGen extends Disposable {
   setReferenceImageSelection(selection: ReferenceImageSelection) {
     if (selection?.type === 'local-image') validateReferenceImage(selection.file)
     this.referenceImageSelection = selection
-  }
-
-  setReferenceImage(file: File | null) {
-    const selection = resolveSelectionAfterReferenceImageChange(
-      this.referenceImageSelection,
-      file,
-      this.sprite.defaultCostume?.id ?? null
-    )
-    this.setReferenceImageSelection(selection)
   }
 
   image: File | null = null

@@ -46,8 +46,8 @@ const submitText = computed(() => {
         :key="gen.id"
         :costumes="gen.sprite.costumes"
         :selection="gen.referenceImageSelection"
+        :fallback-costume-id="gen.sprite.defaultCostume?.id ?? null"
         @update:selection="gen.setReferenceImageSelection($event)"
-        @update:reference-image="gen.setReferenceImage($event)"
       />
       <FacingInput :value="gen.settings.facing" @update:value="gen.setSettings({ facing: $event })" />
       <ArtStyleInput :value="gen.settings.artStyle" @update:value="gen.setSettings({ artStyle: $event })" />

@@ -33,7 +33,6 @@ import type { SpriteGen } from './sprite-gen'
 import {
   loadReferenceImageSelection,
   resolveInitialReferenceImageSelection,
-  resolveSelectionAfterReferenceImageChange,
   saveReferenceImageFile,
   type ReferenceImageSelection,
   type StoredReferenceImageSelection,
@@ -205,15 +204,6 @@ export class AnimationGen extends Disposable {
     if (selection?.type === 'local-image') validateReferenceImage(selection.file)
     if (!sameReferenceSelection(selection, this.referenceImageSelection)) this.resetGenerateVideoTasks()
     this.referenceImageSelection = selection
-  }
-
-  setReferenceImage(file: File | null) {
-    const selection = resolveSelectionAfterReferenceImageChange(
-      this.referenceImageSelection,
-      file,
-      this.sprite.defaultCostume?.id ?? null
-    )
-    this.setReferenceImageSelection(selection)
   }
 
   get generateVideoState() {

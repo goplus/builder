@@ -14,18 +14,19 @@ const props = withDefaults(
   defineProps<{
     selection: ReferenceImageSelection
     costumes: Costume[]
+    fallbackCostumeId?: string | null
     clearable?: boolean
     validate?: ((file: File) => Promise<void>) | null
   }>(),
   {
     clearable: true,
+    fallbackCostumeId: null,
     validate: null
   }
 )
 
 const emit = defineEmits<{
   'update:selection': [selection: ReferenceImageSelection]
-  'update:referenceImage': [file: File | null]
 }>()
 
 const name = { en: 'Reference image', zh: '参考图片' }
@@ -91,13 +92,15 @@ function handleSelection(value: OptionValue | null) {
 function handleRemoveOption(value: OptionValue) {
   if (!isLocalImageOption(value)) return
   localImage.value = null
-  emit('update:referenceImage', null)
+  if (props.selection?.type !== 'local-image') return
+  const costumeId = props.fallbackCostumeId
+  emit('update:selection', costumeId == null ? null : { type: 'costume', costumeId })
 }
 
 const handleUpload = useReferenceImageUpload(async (file) => {
   await props.validate?.(file)
   localImage.value = file
-  emit('update:referenceImage', file)
+  emit('update:selection', { type: 'local-image', file })
 })
 </script>
 
