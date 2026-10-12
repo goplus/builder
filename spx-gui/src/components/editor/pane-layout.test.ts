@@ -20,12 +20,12 @@ describe('editor pane layout', () => {
     expect(getPaneLayout({ width: 1408, height: 820 }, viewport, layout).previewWidth).toBe(previewWidth)
   })
 
-  it.each([classic, landscape])('fits four sprite cards without excessive trailing space for %s', (viewport) => {
+  it.each([classic, landscape])('fits five sprite cards without excessive trailing space for %s', (viewport) => {
     const result = getPaneLayout({ width: 1408, height: 820 }, viewport, 'landscape')
     const spritePanelWidth = result.previewWidth - 80 - 16
-    const fourSpriteCardsWidth = 12 + 88 * 4 + 8 * 3
-    expect(spritePanelWidth).toBeGreaterThanOrEqual(fourSpriteCardsWidth)
-    expect(spritePanelWidth - fourSpriteCardsWidth).toBeLessThanOrEqual(20)
+    const fiveSpriteCardsWidth = 12 + 72 * 5 + 4 * 4
+    expect(spritePanelWidth).toBeGreaterThanOrEqual(fiveSpriteCardsWidth)
+    expect(spritePanelWidth - fiveSpriteCardsWidth).toBeLessThanOrEqual(20)
   })
 
   it('sizes the portrait preview from the available height', () => {
@@ -44,21 +44,28 @@ describe('editor pane layout', () => {
     const singleColumn = getPaneLayout(container, portrait, 'portrait')
     const twoColumns = getPaneLayout(container, portrait, 'portrait', true)
 
-    expect(twoColumns.spriteRailWidth).toBe(200)
+    expect(twoColumns.spriteRailWidth).toBe(164)
     expect(twoColumns.previewWidth - twoColumns.spriteRailWidth).toBe(
       singleColumn.previewWidth - singleColumn.spriteRailWidth
     )
-    expect(twoColumns.codeWidth).toBe(singleColumn.codeWidth - 96)
+    expect(twoColumns.codeWidth).toBe(singleColumn.codeWidth - 60)
     expect(twoColumns.codeWidth).toBeGreaterThanOrEqual(384)
     expect(twoColumns.codeWidth + twoColumns.previewWidth + 16).toBe(container.width)
   })
 
+  it('fits two compact sprite cards with balanced horizontal insets', () => {
+    const result = getPaneLayout({ width: 1888, height: 1008 }, portrait, 'portrait', true)
+    const leftInset = 8
+    const cardsWidth = 72 * 2 + 4
+    expect(result.spriteRailWidth - leftInset - cardsWidth).toBe(leftInset)
+  })
+
   it('preserves the minimum code width when the two-column portrait layout needs overflow', () => {
     const result = getPaneLayout({ width: 500, height: 782 }, portrait, 'portrait', true)
-    expect(result.spriteRailWidth).toBe(200)
+    expect(result.spriteRailWidth).toBe(164)
     expect(result.codeWidth).toBe(384)
-    expect(result.previewWidth).toBe(510)
-    expect(result.codeWidth + result.previewWidth + 16).toBe(910)
+    expect(result.previewWidth).toBe(474)
+    expect(result.codeWidth + result.previewWidth + 16).toBe(874)
   })
 
   it.each(['landscape', 'focused'] as EditorLayout[])('does not change %s pane sizes on large screens', (layout) => {
