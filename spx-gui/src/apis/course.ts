@@ -84,12 +84,17 @@ export type GeneratePlaygroundCourseCopilotContextResult = {
 }
 
 /** Generates an editable Copilot context for an unsaved Playground Course. */
+// The response waits for the model, which the server bounds at two minutes. A little longer here, so that a slow
+// generation ends with the server's answer rather than a client timeout.
+const copilotContextTimeout = 150 * 1000
+
 export function generatePlaygroundCourseCopilotContext(
   params: GeneratePlaygroundCourseCopilotContextParams,
   signal?: AbortSignal
 ) {
   return client.post('/user/courses/playground/copilot-context', params, {
-    signal
+    signal,
+    timeout: copilotContextTimeout
   }) as Promise<GeneratePlaygroundCourseCopilotContextResult>
 }
 
