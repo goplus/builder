@@ -1,5 +1,5 @@
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, type Ref } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -7,6 +7,9 @@ import { Cancelled } from '@/utils/exception'
 
 const mocks = vi.hoisted(() => ({
   signedIn: false,
+  courseLoading: null as Ref<boolean> | null,
+  seriesLoading: null as Ref<boolean> | null,
+  seriesCoursesLoading: null as Ref<boolean> | null,
   signIn: vi.fn(),
   confirm: vi.fn(),
   enter: vi.fn(),
@@ -29,26 +32,38 @@ vi.mock('@/stores/user', () => ({
   useSignIn: () => mocks.signIn
 }))
 vi.mock('@/stores/course', () => ({
-  useCourse: () => ({
-    data: ref(mocks.course),
-    error: ref(null),
-    isLoading: ref(false),
-    progress: ref({ percentage: 0 })
-  })
+  useCourse: () => {
+    const isLoading = ref(false)
+    mocks.courseLoading = isLoading
+    return {
+      data: ref(mocks.course),
+      error: ref(null),
+      isLoading,
+      progress: ref({ percentage: 0 })
+    }
+  }
 }))
 vi.mock('@/stores/course-series', () => ({
-  useSeries: () => ({
-    data: ref(mocks.series),
-    error: ref(null),
-    isLoading: ref(false),
-    progress: ref({ percentage: 0 })
-  }),
-  useSeriesCourses: () => ({
-    data: ref([mocks.course]),
-    error: ref(null),
-    isLoading: ref(false),
-    progress: ref({ percentage: 0 })
-  })
+  useSeries: () => {
+    const isLoading = ref(false)
+    mocks.seriesLoading = isLoading
+    return {
+      data: ref(mocks.series),
+      error: ref(null),
+      isLoading,
+      progress: ref({ percentage: 0 })
+    }
+  },
+  useSeriesCourses: () => {
+    const isLoading = ref(false)
+    mocks.seriesCoursesLoading = isLoading
+    return {
+      data: ref([mocks.course]),
+      error: ref(null),
+      isLoading,
+      progress: ref({ percentage: 0 })
+    }
+  }
 }))
 vi.mock('@/apis/course-series', () => ({ getCourseSeries: async () => mocks.series }))
 vi.mock('@/apis/course', () => ({ listCourses: async () => ({ data: [mocks.course], total: 30 }) }))
@@ -179,8 +194,20 @@ describe('Course authentication', () => {
     'protects direct entry %s before starting a runtime',
     async (destination) => {
       const { router } = await openPage(destination)
-      expect(mocks.signIn).toHaveBeenCalledWith(destination)
-      expect(router.currentRoute.value.path).toBe('/course-series/series')
+      expect(mocks.signIn).toHaveBeenCalledWith()
+      expect(router.currentRoute.value.fullPath).toBe(destination)
+      expect(mocks.enter).not.toHaveBeenCalled()
+      expect(mocks.load).not.toHaveBeenCalled()
+    }
+  )
+
+  it.each(['/course/series/course/start', '/course/series/course/playground'])(
+    'shows the existing query error when sign-in cannot start at %s',
+    async (destination) => {
+      mocks.signIn.mockRejectedValue(new Error('PAR failed'))
+      const { router, page } = await openPage(destination)
+      expect(router.currentRoute.value.fullPath).toBe(destination)
+      expect(page.findComponent({ name: 'UIError' }).exists()).toBe(true)
       expect(mocks.enter).not.toHaveBeenCalled()
       expect(mocks.load).not.toHaveBeenCalled()
     }
@@ -192,6 +219,32 @@ describe('Course authentication', () => {
     await openPage('/course/series/course/start')
     expect(mocks.enter).toHaveBeenCalledWith(mocks.course, mocks.series)
     expect(mocks.signIn).not.toHaveBeenCalled()
+  })
+
+  it.each(['courseLoading', 'seriesLoading'] as const)(
+    'refreshes Start when its %s dependency reloads',
+    async (query) => {
+      mocks.signedIn = true
+      await openPage('/course/series/course/start')
+      expect(mocks.enter).toHaveBeenCalledOnce()
+      mocks[query]!.value = true
+      await flushPromises()
+      mocks[query]!.value = false
+      await flushPromises()
+      expect(mocks.enter).toHaveBeenCalledTimes(2)
+    }
+  )
+
+  it('refreshes the Playground when its Course list dependency reloads', async () => {
+    mocks.course.kind = 'playground'
+    mocks.signedIn = true
+    await openPage('/course/series/course/playground')
+    expect(mocks.load).toHaveBeenCalledOnce()
+    mocks.seriesCoursesLoading!.value = true
+    await flushPromises()
+    mocks.seriesCoursesLoading!.value = false
+    await flushPromises()
+    expect(mocks.load).toHaveBeenCalledTimes(2)
   })
 
   it('loads a signed-in Playground on direct navigation', async () => {

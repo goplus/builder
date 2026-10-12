@@ -23,7 +23,7 @@ See [Course APIs](./module_CourseApis.ts) and [Course storage](./course-storage.
 
 Tutorial provides the application entry and exit for learning a Course. It selects the appropriate Guided or Playground learning flow, coordinates their lifecycle, and connects the active Course with the shared editor, Copilot, and execution capabilities. The public module boundary stays independent of the different internal implementations of those flows.
 
-Course Series and Course lists remain public. Learner entry to both Guided and Playground Courses requires sign-in. Course list clicks confirm sign-in before navigating, so cancelling the prompt or failing to start sign-in leaves the list and pagination unchanged. The existing Start and Playground pages also check authentication before starting a runtime, protecting direct URLs, refresh, and history navigation. Sign-in preserves the full selected Course destination. Signed-out direct entry first returns to the corresponding Series list before starting hosted sign-in. Hosted sign-in callback failures keep the existing home-page fallback; preserving the initiating context on those failures is deferred. Course Preview remains an authoring flow outside these learner entry routes.
+Learning a Guided or Playground Course requires sign-in.
 
 See [Tutorial](./module_Tutorial.ts).
 

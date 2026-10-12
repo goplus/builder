@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
@@ -25,8 +25,7 @@ const props = defineProps<{
 
 const tutorial = useTutorial()
 const router = useRouter()
-const route = useRoute()
-const { fn: signIn } = useMessageHandle(useSignIn(), { en: 'Failed to sign in', zh: '登录失败' })
+const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
@@ -35,18 +34,16 @@ const sessionQueryRet = useQuery(
   async (ctx) => {
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
-    const signedInState = await composeQuery(ctx, signedInStateQuery)
-    ctx.signal.throwIfAborted()
-    if (!signedInState.isSignedIn) {
-      const destination = route.fullPath
-      await router.replace(getCourseSeriesPageRoute(courseSeriesID))
-      await signIn(destination)
-      throw new Cancelled('redirected to sign in')
-    }
-    const [series, courses] = await Promise.all([
+    const [signedInState, series, courses] = await Promise.all([
+      composeQuery(ctx, signedInStateQuery),
       getCourseSeries(courseSeriesID, ctx.signal),
       composeQuery(ctx, seriesCoursesQueryRet)
     ])
+    ctx.signal.throwIfAborted()
+    if (!signedInState.isSignedIn) {
+      await signIn()
+      throw new Cancelled('redirected to sign in')
+    }
     const course = courses.find(({ id }) => id === courseID)
     if (course == null) throw new Error(`course ${courseID} not found in series ${series.id}`)
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
