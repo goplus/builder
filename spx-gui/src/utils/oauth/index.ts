@@ -225,11 +225,6 @@ export class OAuthFlow<ExtraData extends object = object> {
     return { authorizeUrl }
   }
 
-  /** App data for handling a failed callback, available before completing authorization. */
-  getPendingAuthorizationData(): ExtraData | null {
-    return this.pas.read()?.data ?? null
-  }
-
   async completeAuthorization(search: string): Promise<OAuthCallbackResult<ExtraData>> {
     const { code, state } = parseOAuthCallbackParams(search)
     const pendingAuthorization = this.pas.read()

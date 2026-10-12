@@ -3,13 +3,11 @@ import { defineComponent, h, Suspense } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  complete: vi.fn(),
-  failureReturnTo: '/course-series/series?p=3'
+  complete: vi.fn()
 }))
 
 vi.mock('@/stores/user', () => ({
-  completeSignIn: mocks.complete,
-  getSignInFailureReturnTo: () => mocks.failureReturnTo
+  completeSignIn: mocks.complete
 }))
 vi.mock('@/utils/utils', () => ({ usePageTitle: vi.fn() }))
 
@@ -27,7 +25,6 @@ async function openCallback() {
 describe('Sign-in callback destinations', () => {
   beforeEach(() => {
     mocks.complete.mockReset()
-    mocks.failureReturnTo = '/course-series/series?p=3'
     vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
@@ -40,19 +37,8 @@ describe('Sign-in callback destinations', () => {
     expect(replace).toHaveBeenCalledWith('/course/series/course/playground/sprites/Lita/code')
   })
 
-  it('returns to the captured list context when completion fails and consumes pending state', async () => {
+  it('returns home when Course sign-in fails', async () => {
     const replace = vi.spyOn(window.location, 'replace').mockImplementation(() => {})
-    mocks.complete.mockImplementation(async () => {
-      mocks.failureReturnTo = '/'
-      throw new Error('Token exchange failed')
-    })
-    await openCallback()
-    expect(replace).toHaveBeenCalledWith('/course-series/series?p=3')
-  })
-
-  it('retains the home fallback for other sign-in flows', async () => {
-    const replace = vi.spyOn(window.location, 'replace').mockImplementation(() => {})
-    mocks.failureReturnTo = '/'
     mocks.complete.mockRejectedValue(new Error('Sign-in failed'))
     await openCallback()
     expect(replace).toHaveBeenCalledWith('/')

@@ -32,9 +32,7 @@ const emptyUserState: UserState = {
   username: null
 }
 
-type SignInData = { returnTo: string; failureReturnTo: string | null }
-
-let oauthFlow: OAuthFlow<SignInData> | null = null
+let oauthFlow: OAuthFlow<{ returnTo: string }> | null = null
 
 const userState = reactive<UserState>({ ...emptyUserState })
 
@@ -44,7 +42,7 @@ function ensureOAuthFlow() {
 }
 
 export function initUserState(clientId: string) {
-  oauthFlow = new OAuthFlow<SignInData>(oauthApis, {
+  oauthFlow = new OAuthFlow<{ returnTo: string }>(oauthApis, {
     clientId,
     redirectUri: `${window.location.origin}/sign-in/callback`
   })
@@ -91,21 +89,13 @@ async function handleTokenResponse(resp: OAuthTokenResponse, username: string | 
 
 export function useSignIn() {
   const i18n = useI18n()
-  return async (
-    returnTo: string = window.location.pathname + window.location.search + window.location.hash,
-    failureReturnTo: string | null = null
-  ) => {
+  return async (returnTo: string = window.location.pathname + window.location.search + window.location.hash) => {
     const { authorizeUrl } = await ensureOAuthFlow().createAuthorization({
-      data: { returnTo, failureReturnTo },
+      data: { returnTo },
       uiLocales: normalizeLang(i18n.lang.value)
     })
     window.location.assign(authorizeUrl)
   }
-}
-
-/** Read before completing sign-in, which consumes the pending OAuth state. */
-export function getSignInFailureReturnTo() {
-  return ensureOAuthFlow().getPendingAuthorizationData()?.failureReturnTo ?? '/'
 }
 
 export async function completeSignIn(search: string) {

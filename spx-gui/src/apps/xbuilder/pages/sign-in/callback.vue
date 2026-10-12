@@ -1,24 +1,22 @@
+<template>
+  <div class="h-screen flex items-center justify-center">
+    <h4>{{ $t(title) }}</h4>
+  </div>
+</template>
 <script setup lang="ts">
 import { usePageTitle } from '@/utils/utils'
-import { completeSignIn, getSignInFailureReturnTo } from '@/stores/user'
+import { completeSignIn } from '@/stores/user'
 
 const title = { en: 'Signing in...', zh: '登录中...' }
 
 usePageTitle(title)
-
-const failureReturnTo = getSignInFailureReturnTo()
 
 try {
   const { returnTo } = await completeSignIn(window.location.search)
   window.location.replace(returnTo)
 } catch (e) {
   console.error('failed to complete sign-in', e)
-  window.location.replace(failureReturnTo)
+  // TODO: Preserve the initiating page on sign-in failure instead of always going home (see #3580).
+  window.location.replace('/')
 }
 </script>
-
-<template>
-  <div class="h-screen flex items-center justify-center">
-    <h4>{{ $t(title) }}</h4>
-  </div>
-</template>

@@ -91,7 +91,7 @@ describe('Course entry authentication', () => {
     const { router, entered } = await openCourse(destination, '/course-series/series?p=3')
     expect(entered).not.toHaveBeenCalled()
     expect(mocks.confirm).toHaveBeenCalledOnce()
-    expect(mocks.signIn).toHaveBeenCalledWith(destination, '/course-series/series?p=3')
+    expect(mocks.signIn).toHaveBeenCalledWith(destination)
     expect(router.currentRoute.value.fullPath).toBe('/course-series/series?p=3')
   })
 
@@ -99,7 +99,7 @@ describe('Course entry authentication', () => {
     'routes bare Course URL %s through the authenticated Start flow',
     async (destination) => {
       const { entered } = await openCourse(destination)
-      expect(mocks.signIn).toHaveBeenCalledWith('/course/series/course/start?mode=edit#code', '/course-series/series')
+      expect(mocks.signIn).toHaveBeenCalledWith('/course/series/course/start?mode=edit#code')
       expect(entered).not.toHaveBeenCalled()
     }
   )
@@ -122,7 +122,7 @@ describe('Course entry authentication', () => {
   it('uses the selected series list for direct navigation', async () => {
     const { router } = await openCourse('/course/series/course/playground')
     expect(router.currentRoute.value.fullPath).toBe('/course-series/series')
-    expect(mocks.signIn).toHaveBeenCalledWith('/course/series/course/playground', '/course-series/series')
+    expect(mocks.signIn).toHaveBeenCalledWith('/course/series/course/playground')
   })
 
   it.each(['/course/series/guided/start', '/course/series/playground/playground'])(
@@ -169,7 +169,7 @@ describe('Course entry authentication', () => {
     resolvePrevious!()
     await flushPromises()
     expect(mocks.signIn).toHaveBeenCalledOnce()
-    expect(mocks.signIn).toHaveBeenCalledWith('/course/series/second/start', '/course-series/series')
+    expect(mocks.signIn).toHaveBeenCalledWith('/course/series/second/start')
     expect(entered).not.toHaveBeenCalled()
   })
 

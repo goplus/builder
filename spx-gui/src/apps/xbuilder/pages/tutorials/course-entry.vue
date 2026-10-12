@@ -42,7 +42,7 @@ const { fn: requestSignIn } = useMessageHandle(
       if (!signal.aborted) await router.replace(returnTo)
     }
     // Keep the list in browser history so Back from hosted sign-in also cancels Course entry.
-    await signIn(destination, returnTo)
+    await signIn(destination)
   },
   { en: 'Failed to sign in', zh: '登录失败' }
 )
