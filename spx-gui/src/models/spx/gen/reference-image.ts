@@ -18,11 +18,7 @@ export type ReferenceImageSelection =
 
 export type StoredReferenceImageSelection =
   | { type: 'costume'; costumeId: string }
-  | {
-      type: 'local-image'
-      /** Optional for legacy configs that store the path separately. */
-      filePath?: string
-    }
+  | { type: 'local-image'; filePath: string }
   | null
 
 function getImageExtension(file: File) {
@@ -64,22 +60,18 @@ export function resolveInitialReferenceImageSelection(
 export function loadReferenceImageSelection(
   selection: StoredReferenceImageSelection | undefined,
   legacyCostumeId: string | null | undefined,
-  path: string | undefined,
   files: Files
 ): ReferenceImageSelection {
   if (selection === undefined) {
-    selection = resolveInitialReferenceImageSelection(undefined, legacyCostumeId)
-    if (selection == null && path != null) selection = { type: 'local-image' }
+    return resolveInitialReferenceImageSelection(undefined, legacyCostumeId)
   }
   if (selection?.type !== 'local-image') return selection
-  path = selection.filePath ?? path
-  const file = path == null ? null : files[path]
+  const file = files[selection.filePath]
   return file == null ? null : { type: 'local-image', file }
 }
 
-/** Store the optional reference as reference_image.<ext> within the generation's asset directory. */
-export function saveReferenceImageFile(files: Files, basePath: string, file: File | null) {
-  if (file == null) return null
+/** Store the reference as reference_image.<ext> within the generation's asset directory. */
+export function saveReferenceImageFile(files: Files, basePath: string, file: File) {
   const extension = getImageExtension(file)
   const path = `${basePath}/reference_image.${extension}`
   files[path] = file

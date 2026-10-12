@@ -18,40 +18,26 @@ describe('reference image selection', () => {
   it('loads only the selected reference file and supports legacy costume IDs', () => {
     const file = fromText('reference.png', '')
     const path = 'gen/reference_image.png'
-    expect(loadReferenceImageSelection(undefined, 'legacy', undefined, {})).toEqual({
+    expect(loadReferenceImageSelection(undefined, 'legacy', {})).toEqual({
       type: 'costume',
       costumeId: 'legacy'
     })
-    expect(loadReferenceImageSelection({ type: 'local-image' }, null, path, { [path]: file })).toEqual({
+    expect(loadReferenceImageSelection({ type: 'local-image', filePath: path }, null, { [path]: file })).toEqual({
       type: 'local-image',
       file
     })
-    expect(loadReferenceImageSelection(undefined, null, path, { [path]: file })).toEqual({
-      type: 'local-image',
-      file
-    })
-    expect(loadReferenceImageSelection({ type: 'local-image' }, null, path, {})).toBeNull()
-    expect(loadReferenceImageSelection({ type: 'costume', costumeId: 'selected' }, null, path, {})).toEqual({
+    expect(loadReferenceImageSelection({ type: 'local-image', filePath: path }, null, {})).toBeNull()
+    expect(loadReferenceImageSelection({ type: 'costume', costumeId: 'selected' }, 'legacy', {})).toEqual({
       type: 'costume',
       costumeId: 'selected'
     })
   })
 
-  it('loads the path stored in the selection before a legacy path', () => {
+  it('does not select an image just because its file exists', () => {
     const file = fromText('reference.png', '')
     const path = 'gen/reference_image.png'
-    const legacyPath = 'gen/old_reference.png'
-    const files = { [path]: file, [legacyPath]: fromText('old.png', '') }
-
-    expect(loadReferenceImageSelection({ type: 'local-image', filePath: path }, null, legacyPath, files)).toEqual({
-      type: 'local-image',
-      file
-    })
-    expect(
-      loadReferenceImageSelection({ type: 'local-image', filePath: path }, null, legacyPath, {
-        [legacyPath]: files[legacyPath]
-      })
-    ).toBeNull()
-    expect(loadReferenceImageSelection(null, 'legacy-costume', legacyPath, files)).toBeNull()
+    const files = { [path]: file }
+    expect(loadReferenceImageSelection(undefined, null, files)).toBeNull()
+    expect(loadReferenceImageSelection(null, 'legacy-costume', files)).toBeNull()
   })
 })

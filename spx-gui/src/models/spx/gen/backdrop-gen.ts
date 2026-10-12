@@ -233,7 +233,8 @@ export class BackdropGen extends Disposable {
     const config: RawBackdropGenConfig = {
       id: this.id,
       settings: this.settings,
-      referenceImagePath: saveReferenceImageFile(files, assetsPath, this.referenceImage) ?? undefined,
+      referenceImagePath:
+        this.referenceImage == null ? undefined : saveReferenceImageFile(files, assetsPath, this.referenceImage),
       enrichPhaseSerialized: this.enrichPhase.export(),
       generateTaskSerialized: this.generateTask?.export(),
       generatePhaseSerialized

@@ -601,7 +601,8 @@ export class SpriteGen extends Disposable {
       return ac
     })
 
-    const referenceImagePath = saveReferenceImageFile(files, basePath, this.referenceImage)
+    const referenceImagePath =
+      this.referenceImage == null ? null : saveReferenceImageFile(files, basePath, this.referenceImage)
 
     const config: RawSpriteGenConfig = {
       id: this.id,

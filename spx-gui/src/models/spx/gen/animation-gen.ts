@@ -72,8 +72,6 @@ export type RawAnimationGenConfig = Prettify<
     reference?: StoredReferenceImageSelection
     /** Read only for migration; new saves use reference. */
     referenceCostumeId?: string
-    /** Read only for migration; new saves use reference.filePath. */
-    referenceImagePath?: string
     enrichPhaseSerialized?: PhaseSerialized<AnimationSettings>
     generateVideoTaskSerialized?: TaskSerialized<TaskType.GenerateAnimationVideo>
     generateVideoPhaseSerialized?: PhaseSerialized<string>
@@ -313,6 +311,7 @@ export class AnimationGen extends Disposable {
    * - No exception will be thrown even if the cancellation requests fail.
    */
   cancel() {
+    // TODO: Simplify generation cancellation (see https://github.com/goplus/builder/issues/3586)
     const task = this.generateVideoTask
     if (this.generateVideoState.status === 'running') this.generateVideoTask = null
     task?.dispose()
@@ -329,7 +328,7 @@ export class AnimationGen extends Disposable {
       settings: this.settings,
       reference:
         selection?.type === 'local-image'
-          ? { type: 'local-image', filePath: saveReferenceImageFile(files, assetsPath, selection.file) ?? undefined }
+          ? { type: 'local-image', filePath: saveReferenceImageFile(files, assetsPath, selection.file) }
           : selection,
       framesConfig: this.framesConfig ?? undefined,
       enrichPhaseSerialized: this.enrichPhase.export(),
@@ -372,7 +371,6 @@ export class AnimationGen extends Disposable {
       settings,
       reference,
       referenceCostumeId,
-      referenceImagePath,
       framesConfig,
       videoPath,
       enrichPhaseSerialized,
@@ -389,12 +387,7 @@ export class AnimationGen extends Disposable {
 
     const inits: AnimationGenInits = { id: genId }
     inits.settings = settings
-    inits.referenceImageSelection = loadReferenceImageSelection(
-      reference,
-      referenceCostumeId,
-      referenceImagePath,
-      files
-    )
+    inits.referenceImageSelection = loadReferenceImageSelection(reference, referenceCostumeId, files)
     if (framesConfig != null) inits.framesConfig = framesConfig
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (generateVideoTaskSerialized != null) inits.generateVideoTask = Task.load(generateVideoTaskSerialized)
