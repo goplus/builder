@@ -68,9 +68,13 @@ export async function getCourse(id: string, signal?: AbortSignal) {
 export type AddCourseParams =
   | Pick<GuidedCourse, 'kind' | 'title' | 'thumbnail' | 'content'>
   | Pick<PlaygroundCourse, 'kind' | 'title' | 'thumbnail' | 'content'>
+/**
+ * Fields to update; omitted fields keep their stored values. The union ties the shape of `content` to the course
+ * kind, which itself cannot be changed.
+ */
 export type UpdateCourseParams =
-  | Pick<GuidedCourse, 'title' | 'thumbnail' | 'content'>
-  | Pick<PlaygroundCourse, 'title' | 'thumbnail' | 'content'>
+  | Partial<Pick<GuidedCourse, 'title' | 'thumbnail' | 'content'>>
+  | Partial<Pick<PlaygroundCourse, 'title' | 'thumbnail' | 'content'>>
 
 /** Current unsaved Playground Course content used to generate its Copilot context. */
 export type GeneratePlaygroundCourseCopilotContextParams = Pick<PlaygroundCourse, 'title' | 'thumbnail' | 'content'>
@@ -80,23 +84,32 @@ export type GeneratePlaygroundCourseCopilotContextResult = {
 }
 
 /** Generates an editable Copilot context for an unsaved Playground Course. */
+// The response waits for the model, which the server bounds at two minutes. A little longer here, so that a slow
+// generation ends with the server's answer rather than a client timeout.
+const copilotContextTimeout = 150 * 1000
+
 export function generatePlaygroundCourseCopilotContext(
   params: GeneratePlaygroundCourseCopilotContextParams,
   signal?: AbortSignal
 ) {
   return client.post('/user/courses/playground/copilot-context', params, {
-    signal
+    signal,
+    timeout: copilotContextTimeout
   }) as Promise<GeneratePlaygroundCourseCopilotContextResult>
 }
 
 /** Add a new course */
-export function addCourse(params: AddCourseParams, signal?: AbortSignal) {
-  return client.post('/user/courses', params, { signal }) as Promise<Course>
+export async function addCourse(params: AddCourseParams, signal?: AbortSignal) {
+  const course = (await client.post('/user/courses', params, { signal })) as Course | LegacyGuidedCourse
+  return normalizeCourse(course)
 }
 
 /** Update an existing course */
-export function updateCourse(id: string, params: UpdateCourseParams, signal?: AbortSignal) {
-  return client.patch(`/courses/${encodeURIComponent(id)}`, params, { signal }) as Promise<Course>
+export async function updateCourse(id: string, params: UpdateCourseParams, signal?: AbortSignal) {
+  const course = (await client.patch(`/courses/${encodeURIComponent(id)}`, params, { signal })) as
+    | Course
+    | LegacyGuidedCourse
+  return normalizeCourse(course)
 }
 
 /** Delete a course */
@@ -105,6 +118,8 @@ export function deleteCourse(id: string) {
 }
 
 export type ListCoursesParams = PaginationParams & {
+  /** Filter courses by kind */
+  kind?: CourseKind
   /** Filter courses by the course series ID */
   courseSeriesID?: string
   /** Field by which to order the results */

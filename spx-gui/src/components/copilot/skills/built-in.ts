@@ -1,4 +1,5 @@
 import { getSpxProjectSkillFiles, spxProjectSkillName } from '@/utils/spx'
+import { getTutorialCourseSkillFiles, tutorialCourseSkillName } from '@/utils/tutorial'
 import { getXGoLanguageSkillFiles, xgoLanguageSkillName } from '@/utils/xgo'
 import { fromText, type Files } from '@/models/common/file'
 import { InMemorySkillRegistry } from './registry'
@@ -6,8 +7,9 @@ import type { SkillBundle, SkillRegistry } from './types'
 
 export const skillSpxProject = spxProjectSkillName
 export const skillXgoLanguage = xgoLanguageSkillName
+export const skillTutorialCourse = tutorialCourseSkillName
 
-const builtInSkillFileGetters = [getSpxProjectSkillFiles, getXGoLanguageSkillFiles]
+const builtInSkillFileGetters = [getSpxProjectSkillFiles, getXGoLanguageSkillFiles, getTutorialCourseSkillFiles]
 
 function createBuiltInSkillBundle(skillFiles: Record<string, string>): SkillBundle {
   const files: Files = {}
