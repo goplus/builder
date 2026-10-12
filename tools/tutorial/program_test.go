@@ -824,9 +824,17 @@ func TestFrameworkFromCourseGoroutineFailsTheCourse(t *testing.T) {
 		"time.AfterFunc": func(f func()) { time.AfterFunc(0, f) },
 	}
 	abilities := map[string]func(*testCourse){
-		"showMessage": func(course *testCourse) { course.ShowMessage("from a goroutine") },
-		"wait":        func(course *testCourse) { course.Wait(0.01) },
-		"onLog":       func(course *testCourse) { course.Editor.Runtime.OnLog(func(string) {}) },
+		"showMessage":  func(course *testCourse) { course.ShowMessage("from a goroutine") },
+		"wait":         func(course *testCourse) { course.Wait(0.01) },
+		"onLog":        func(course *testCourse) { course.Editor.Runtime.OnLog(func(string) {}) },
+		"complete":     func(course *testCourse) { course.Complete() },
+		"completeWith": func(course *testCourse) { course.CompleteWith("from a goroutine") },
+		// An invalid result, so that only refusing the call before deriving
+		// the schema keeps the error the same as everywhere else.
+		"generateJSON": func(course *testCourse) {
+			var notAStruct int
+			course.Copilot.GenerateJSON("from a goroutine", &notAStruct)
+		},
 	}
 	for how, start := range starts {
 		for name, call := range abilities {

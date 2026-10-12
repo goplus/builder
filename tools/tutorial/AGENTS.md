@@ -9,9 +9,10 @@ These are the rules of change.
 - `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long and
   restores `current` afterwards. Only `mustCallCapability` (waiting on the host) and `pause` (waiting on a timer) may
   call it
-- Course code can start goroutines of its own (`go`, `time.AfterFunc`) that run outside the scheduler. Every entry
-  point course code can reach (`mustCallCapability`, `Wait`, `register`) calls `requireRun` first, which fails the
-  Course unless the caller holds the token. `holding` compares goroutine IDs with `holder`, which only
+- The contract forbids course code to start goroutines (`go`, `time.AfterFunc`), but nothing stops it, and such
+  goroutines run outside the scheduler. Every exported method course code can call must refuse them before doing
+  anything else: its first call is `requireRun`, or `mustCallCapability`/`register` (which start with it), or another
+  such method. The invariant checker enforces this. `holding` compares goroutine IDs with `holder`, which only
   `acquireExec`, `releaseExec` and `init` write
 - Only framework calls yield. Do not redirect Go's own blocking calls (say `time.Sleep` through
   `ixgo.RegisterExternal`): channel operations, timers and I/O could not follow, and a rule with one exception is

@@ -61,6 +61,7 @@ func (p *Copilot) GenerateText(message string) string {
 // case, which encoding/json can neither read nor fill, leaving the Course with
 // an all-zero value and no hint as to why.
 func (p *Copilot) GenerateJSON(message string, result any) {
+	p.courseProgram.requireRun("calling generateJSON")
 	schema, err := deriveSchema(result)
 	if err != nil {
 		panic(err)

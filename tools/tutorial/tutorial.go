@@ -173,6 +173,10 @@ func secondsToDuration(seconds float64) time.Duration {
 //
 // Repeated calls are ignored, see courseProgram.markCompleted.
 func (p *Course) Complete() {
+	// Refuse a Course goroutine before markCompleted: it would otherwise put
+	// the Course into its completed state before mustCallCapability refuses
+	// the call, racing the failure against a reported completion.
+	p.courseProgram.requireRun("calling complete")
 	if !p.courseProgram.markCompleted() {
 		return
 	}
@@ -188,6 +192,7 @@ func (p *Course) Complete() {
 // shared by the presentation capabilities; a host reading some other field
 // name should align with the contract.
 func (p *Course) CompleteWith(message string) {
+	p.courseProgram.requireRun("calling completeWith")
 	if !p.courseProgram.markCompleted() {
 		return
 	}

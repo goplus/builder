@@ -29,6 +29,10 @@ import (
 //  5. Events have a single entry: handlers are registered with the executor
 //     only in init; events.attach is called only by XGot_Course_Main and
 //     events.goLive only by Start.
+//  6. Every exported method of a type holding the course program (the API
+//     Course code calls) refuses a caller outside a run before doing anything
+//     else: its first call is requireRun, mustCallCapability or register (both
+//     start with requireRun), or another such method of the same receiver.
 //
 // The checks work on the AST rather than on observed behavior, so a violating
 // way of writing things turns red as it enters the repository instead of
@@ -40,6 +44,7 @@ func TestSchedulingInvariants(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var parsedFiles []*ast.File
 	for _, file := range files {
 		if strings.HasSuffix(file, "_test.go") {
 			continue
@@ -48,14 +53,92 @@ func TestSchedulingInvariants(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		parsedFiles = append(parsedFiles, parsed)
+	}
+
+	courseFacing := courseFacingTypes(parsedFiles)
+	if len(courseFacing) == 0 {
+		t.Fatal("found no type holding the course program: rule 6 checks nothing")
+	}
+	for _, parsed := range parsedFiles {
 		for _, decl := range parsed.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
 			if !ok || fn.Body == nil {
 				continue
 			}
 			checkFunction(t, fset, fn)
+			checkGuardedEntry(t, fset, fn, courseFacing)
 		}
 	}
+}
+
+// courseFacingTypes returns the types holding the course program, by value or
+// by pointer, in a field named courseProgram: Course and its namespaces.
+func courseFacingTypes(files []*ast.File) map[string]bool {
+	types := map[string]bool{}
+	for _, file := range files {
+		ast.Inspect(file, func(node ast.Node) bool {
+			spec, ok := node.(*ast.TypeSpec)
+			if !ok {
+				return true
+			}
+			if st, ok := spec.Type.(*ast.StructType); ok {
+				for _, field := range st.Fields.List {
+					for _, name := range field.Names {
+						if name.Name == "courseProgram" {
+							types[spec.Name.Name] = true
+						}
+					}
+				}
+			}
+			return false
+		})
+	}
+	return types
+}
+
+// guardedEntryCalls are the calls that may come first in a method Course code
+// calls: each refuses a caller outside a run before touching any state.
+var guardedEntryCalls = []string{".requireRun", ".mustCallCapability"}
+
+// checkGuardedEntry checks rule 6. Start is exempt: it is the program entry
+// the generated Main calls on the main goroutine, not an ability.
+func checkGuardedEntry(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl, courseFacing map[string]bool) {
+	if fn.Recv == nil || !fn.Name.IsExported() || fn.Name.Name == "Start" {
+		return
+	}
+	recvType := fn.Recv.List[0].Type
+	if star, ok := recvType.(*ast.StarExpr); ok {
+		recvType = star.X
+	}
+	if ident, ok := recvType.(*ast.Ident); !ok || !courseFacing[ident.Name] {
+		return
+	}
+
+	var first *ast.CallExpr
+	ast.Inspect(fn.Body, func(node ast.Node) bool {
+		if call, ok := node.(*ast.CallExpr); ok && first == nil {
+			first = call
+		}
+		return first == nil
+	})
+	if first == nil {
+		t.Errorf("%s: %s calls nothing: an ability must reach requireRun", fset.Position(fn.Pos()), fn.Name.Name)
+		return
+	}
+	callee := renderExpr(first.Fun)
+	if callee == "register" {
+		return
+	}
+	for _, guard := range guardedEntryCalls {
+		if strings.HasSuffix(callee, guard) {
+			return
+		}
+	}
+	if recv := receiverName(fn); strings.HasPrefix(callee, recv+".") && ast.IsExported(strings.TrimPrefix(callee, recv+".")) {
+		return
+	}
+	t.Errorf("%s: %s calls %s before refusing callers outside a run: call requireRun first", fset.Position(first.Pos()), fn.Name.Name, callee)
 }
 
 // The allowlists for the rules above: the only functions entitled to perform
