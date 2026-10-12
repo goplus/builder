@@ -185,7 +185,17 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
 
   init() {
     this.connection = new WorkerConnection()
-    this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
+    this.addDisposer(
+      watchEffect(async (cleanUp) => {
+        const signal = getCleanupSignal(cleanUp)
+        try {
+          await this.loadFiles(signal)
+        } catch (error) {
+          // Superseded syncs and editor disposal abort loading; ignore cancellation to avoid unhandled rejections.
+          if (!signal.aborted) throw error
+        }
+      })
+    )
     const lc = new XGoLanguageClient(this.connection)
     this.lcRef.value = lc
 
