@@ -18,7 +18,6 @@ func init() {
 			"encoding/json": "json",
 			"fmt":           "fmt",
 			"github.com/goplus/builder/tools/xgoexec": "xgoexec",
-			"github.com/goplus/ixgo":                  "ixgo",
 			"github.com/visualfc/gid":                 "gid",
 			"math":                                    "math",
 			"reflect":                                 "reflect",

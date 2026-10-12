@@ -94,17 +94,16 @@ Editor.Runtime.onLog log => {
 }
 `
 
-// A course whose onLog pauses and then checks that onExit ran meanwhile, so it
-// fails instead of completing when the pause holds up other callbacks.
-function pauseCourseSource(pause: string) {
-  return `import "time"
-
+// A course whose onLog pauses with wait and then checks that onExit ran
+// meanwhile, so it fails instead of completing when the pause holds up other
+// callbacks.
+const waitCourseSource = `
 var (
 	exitSeen bool
 )
 
 Editor.Runtime.onLog log => {
-	${pause}
+	wait 0.5
 	if !exitSeen {
 		panic "onExit did not run while onLog paused"
 	}
@@ -115,7 +114,6 @@ Editor.Runtime.onExit code => {
 	exitSeen = true
 }
 `
-}
 
 export const courseCases: CourseCase[] = [
   {
@@ -154,16 +152,7 @@ export const courseCases: CourseCase[] = [
   {
     name: 'wait lets other callbacks run',
     description: 'While onLog pauses with wait, a later event starts its callback instead of waiting for the pause.',
-    source: pauseCourseSource('wait 0.5'),
-    events: [
-      { name: 'editor.runtime.log', payload: { log: 'pause' } },
-      { name: 'editor.runtime.exit', payload: { code: 0 } }
-    ]
-  },
-  {
-    name: 'time.Sleep lets other callbacks run',
-    description: 'time.Sleep in course code pauses the way wait does.',
-    source: pauseCourseSource('time.Sleep 500*time.Millisecond'),
+    source: waitCourseSource,
     events: [
       { name: 'editor.runtime.log', payload: { log: 'pause' } },
       { name: 'editor.runtime.exit', payload: { code: 0 } }

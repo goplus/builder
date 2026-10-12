@@ -136,8 +136,13 @@ func (p *Course) ShowVideo(videoName string) {
 
 // Wait pauses the calling callback for the given number of seconds while
 // other runs proceed, the Course's counterpart of spx's wait. Zero or negative
-// seconds return at once. time.Sleep in Course code pauses the same way (see
-// sleep.go).
+// seconds return at once.
+//
+// time.Sleep is deliberately left alone: like every other blocking operation
+// in Go, it holds the execution token and stalls the other runs. Redirecting
+// it alone would make one Go call yield while channel operations, timers and
+// I/O still block, a rule harder to explain than "only the framework's calls
+// yield".
 func (p *Course) Wait(seconds float64) {
 	p.courseProgram.requireRun("calling wait")
 	p.courseProgram.pause(secondsToDuration(seconds))
@@ -202,9 +207,9 @@ func (p *Course) CompleteWith(message string) {
 //   - One at a time, several in flight: only the holder of the execution
 //     token runs Course code at any instant, so shared variables never race;
 //     a run releases the token while it waits on a waiting capability
-//     (presentation, LLM) or pauses (wait, time.Sleep) and the other runs
-//     proceed, which means runs of one callback may overlap (how they relate:
-//     see #3509).
+//     (presentation, LLM) or pauses with wait and the other runs proceed,
+//     which means runs of one callback may overlap (how they relate: see
+//     #3509).
 //   - Completion winds down: after complete, no new trigger starts a run;
 //     runs already executing or suspended finish their remaining statements
 //     unless a capability fails or is cancelled, and the program ends once

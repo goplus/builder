@@ -13,9 +13,9 @@ These are the rules of change.
   point course code can reach (`mustCallCapability`, `Wait`, `register`) calls `requireRun` first, which fails the
   Course unless the caller holds the token. `holding` compares goroutine IDs with `holder`, which only
   `acquireExec`, `releaseExec` and `init` write
-- `sleep.go` redirects `time.Sleep` in interpreted course code to `courseSleep` through `ixgo.RegisterExternal`: it
-  pauses like `wait` for a token holder and sleeps plainly for anyone else. Channel operations and loops are language
-  operations that cannot be redirected; the contract warns authors instead
+- Only framework calls yield. Do not redirect Go's own blocking calls (say `time.Sleep` through
+  `ixgo.RegisterExternal`): channel operations, timers and I/O could not follow, and a rule with one exception is
+  harder for authors than none. Authors pause with `wait`; the contract lists what blocks
 - Runs are started only by `startRuns`, from `Course.Start` and the event deliverers, in registration order, each to
   its first yield (`yielded`) before the next. That order is an implementation detail the contract does not promise
   (see #3509); keep `startRuns` the sole start path and never spawn course code elsewhere

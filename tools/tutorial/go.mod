@@ -4,12 +4,12 @@ go 1.25.0
 
 require (
 	github.com/goplus/builder/tools/xgoexec v0.0.0
-	github.com/goplus/ixgo v1.1.3
 	github.com/visualfc/gid v0.3.2
 )
 
 require (
 	github.com/goplus/gogen v1.23.5 // indirect
+	github.com/goplus/ixgo v1.1.3 // indirect
 	github.com/goplus/mod v0.21.1 // indirect
 	github.com/goplus/reflectx v1.7.5 // indirect
 	github.com/goplus/xgo v1.7.5 // indirect

@@ -10,9 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goplus/ixgo"
-	_ "github.com/goplus/ixgo/pkg/time"
-
 	"github.com/goplus/builder/tools/xgoexec"
 )
 
@@ -866,102 +863,6 @@ func TestFrameworkFromCourseGoroutineFailsTheCourse(t *testing.T) {
 				}
 			})
 		}
-	}
-}
-
-// interpretedSleeps is Go source interpreted by ixgo the way Course code is,
-// calling time.Sleep directly and through a function value.
-const interpretedSleeps = `package main
-
-import "time"
-
-func Direct(d time.Duration) { time.Sleep(d) }
-
-func ThroughValue(d time.Duration) {
-	sleep := time.Sleep
-	sleep(d)
-}
-
-func main() {}
-`
-
-func interpretedSleepFuncs(t *testing.T) map[string]func(time.Duration) {
-	t.Helper()
-	ctx := ixgo.NewContext(0)
-	pkg, err := ctx.LoadFile("main.go", interpretedSleeps)
-	if err != nil {
-		t.Fatal(err)
-	}
-	interp, err := ctx.NewInterp(pkg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	funcs := map[string]func(time.Duration){}
-	for _, name := range []string{"Direct", "ThroughValue"} {
-		fn, ok := interp.GetFunc(name)
-		if !ok {
-			t.Fatalf("interpreted function %s not found", name)
-		}
-		funcs[name] = fn.(func(time.Duration))
-	}
-	return funcs
-}
-
-// TestTimeSleepInCourseCodePauses checks the redirection in sleep.go: Course
-// code calling time.Sleep pauses like wait instead of holding the token.
-func TestTimeSleepInCourseCodePauses(t *testing.T) {
-	for name, sleep := range interpretedSleepFuncs(t) {
-		t.Run(name, func(t *testing.T) {
-			host := newFakeHost()
-			var order []string
-			pausing := make(chan struct{}, 1)
-			ready := make(chan struct{})
-			done := startCourse(host, func(course *testCourse) {
-				course.Editor.Runtime.OnLog(func(string) {
-					pausing <- struct{}{}
-					sleep(200 * time.Millisecond)
-					order = append(order, "paused run ended")
-				})
-				course.Editor.Runtime.OnExit(func(int) {
-					order = append(order, "exit")
-					course.Complete()
-				})
-				course.OnStart(func() { close(ready) })
-			})
-
-			await(t, ready, "the course to start")
-			dispatch(t, "editor.runtime.log", `{"log":"x"}`)
-			await(t, pausing, "the run to start pausing")
-			dispatch(t, "editor.runtime.exit", `{"code":0}`)
-			awaitDone(t, done)
-
-			if got, want := fmt.Sprint(order), "[exit paused run ended]"; got != want {
-				t.Errorf("order = %s, want %s", got, want)
-			}
-		})
-	}
-}
-
-// TestTimeSleepOutsideARunSleepsPlainly checks that time.Sleep stays ordinary
-// Go on a goroutine the Course started itself: it sleeps without touching the
-// token and without failing the Course.
-func TestTimeSleepOutsideARunSleepsPlainly(t *testing.T) {
-	sleep := interpretedSleepFuncs(t)["Direct"]
-	slept := make(chan struct{})
-	outcome := courseOutcome(newFakeHost(), func(course *testCourse) {
-		course.Editor.Runtime.OnExit(func(int) { course.Complete() })
-		course.OnStart(func() {
-			go func() {
-				sleep(10 * time.Millisecond)
-				close(slept)
-			}()
-		})
-	})
-
-	await(t, slept, "the goroutine to wake up")
-	dispatch(t, "editor.runtime.exit", `{"code":0}`)
-	if failure := awaitOne(t, outcome, "the course to end"); failure != nil {
-		t.Errorf("the course failed: %v", failure)
 	}
 }
 

@@ -54,8 +54,8 @@ var capabilityKinds = map[string]capabilityKind{
 // release-then-acquire pairs form a happens-before chain, so shared variables
 // in Course code never race and the author needs no synchronization at all.
 // Every trigger starts a new run of each registered callback; a run releases
-// the token while it waits on a waiting capability or pauses (wait,
-// time.Sleep), so runs of one callback may overlap.
+// the token while it waits on a waiting capability or pauses with wait, so runs
+// of one callback may overlap.
 //
 // TODO(#3509): how overlapping runs of one callback relate (cancelling the
 // stale one, running one at a time, ignoring triggers while busy) is not
