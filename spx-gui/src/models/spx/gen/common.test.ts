@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TaskErrorReason, TaskEventType, TaskStatus, TaskType, type TaskParams } from '@/apis/aigc'
+import { promiseForSignal } from '@/utils/disposable'
 import { Cancelled } from '@/utils/exception'
+import { ProgressReporter } from '@/utils/progress'
 import { setupAigcMock } from './aigc-mock'
-import { majorityOf, Task, TaskException } from './common'
+import { majorityOf, Phase, Task, TaskException } from './common'
 
 const aigcMock = setupAigcMock()
 
@@ -65,6 +67,36 @@ describe('Task', () => {
     await expect(task.untilCompleted()).rejects.toBeInstanceOf(Cancelled)
   })
 
+  it('untilCompleted() should reject before subscribing if disposed', async () => {
+    const task = new Task(TaskType.GenerateCostume)
+    await task.start(costumeParams)
+    task.dispose()
+
+    await expect(task.untilCompleted()).rejects.toBe(task.getSignal().reason)
+    expect(aigcMock.subscribeTaskEvents).not.toHaveBeenCalled()
+  })
+
+  it('untilCompleted() should reject on disposal without waiting for another event', async () => {
+    const task = new Task(TaskType.GenerateCostume)
+    await task.start(costumeParams)
+    let resume!: () => void
+    const paused = new Promise<void>((resolve) => {
+      resume = resolve
+    })
+    vi.mocked(aigcMock.subscribeTaskEvents).mockImplementationOnce(async function* () {
+      await paused
+      yield { type: TaskEventType.Snapshot, data: task.data! }
+    })
+
+    const pending = task.untilCompleted()
+    task.dispose()
+    try {
+      await expect(pending).rejects.toBe(task.getSignal().reason)
+    } finally {
+      resume()
+    }
+  })
+
   it('tryCancel() should not cancel when task is not started', async () => {
     const task = new Task(TaskType.GenerateCostume)
     await task.tryCancel()
@@ -101,6 +133,70 @@ describe('Task', () => {
 
     const result = await task.untilCompleted()
     expect(result).toBeTruthy()
+  })
+
+  describe('progress reporting', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    })
+
+    it('stops reporting on disposal without overwriting the next phase run', async () => {
+      const task = new Task(TaskType.GenerateCostume)
+      await task.start(costumeParams)
+      vi.mocked(aigcMock.subscribeTaskEvents).mockImplementationOnce(async function* (_id, signal) {
+        yield { type: TaskEventType.Snapshot, data: task.data! }
+        await promiseForSignal(signal!)
+      })
+      const phase = new Phase<unknown>({ en: 'generate costume', zh: '生成造型' })
+      const pending = phase.run((reporter) => task.untilCompleted(reporter)).catch((error) => error)
+      expect(vi.getTimerCount()).toBe(1)
+
+      task.dispose()
+      expect(await pending).toBe(task.getSignal().reason)
+      expect(vi.getTimerCount()).toBe(0)
+
+      let finish!: () => void
+      const next = phase.run((reporter) => {
+        reporter.report({ percentage: 0, desc: null, timeLeft: 1000 })
+        return new Promise<void>((resolve) => {
+          finish = resolve
+        })
+      })
+      try {
+        await vi.advanceTimersByTimeAsync(1000)
+        expect(phase.state).toMatchObject({ status: 'running', timeLeft: 1000 })
+      } finally {
+        finish()
+        await next
+      }
+    })
+
+    it.each(['completion', 'stream failure'])('cleans up the timer immediately on %s', async (outcome) => {
+      const task = new Task(TaskType.GenerateCostume)
+      await task.start(costumeParams)
+      const error = new Error('stream failed')
+      if (outcome === 'stream failure') {
+        vi.mocked(aigcMock.subscribeTaskEvents).mockImplementationOnce(async function* () {
+          yield { type: TaskEventType.Snapshot, data: task.data! }
+          throw error
+        })
+      }
+      const handler = vi.fn()
+      const pending = task.untilCompleted(new ProgressReporter(handler))
+      if (outcome === 'stream failure') await expect(pending).rejects.toBe(error)
+      else await pending
+
+      expect(vi.getTimerCount()).toBe(0)
+      const reports = handler.mock.calls.length
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(handler).toHaveBeenCalledTimes(reports)
+      task.dispose()
+    })
   })
 })
 

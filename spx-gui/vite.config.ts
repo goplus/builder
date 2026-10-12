@@ -120,6 +120,8 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'happy-dom',
       alias: [
+        // Use Konva's browser entry in happy-dom; its Node entry requires the optional native `canvas` package.
+        { find: /^konva$/, replacement: resolve('node_modules/konva/lib/index.js') },
         // Alias for `monaco-editor` to avoid `Failed to resolve entry for package "monaco-editor"`, for details: https://github.com/vitest-dev/vitest/discussions/1806
         {
           find: /^monaco-editor$/,
@@ -130,7 +132,14 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['text-summary', ['lcov', { projectRoot: resolve('..') }]],
         include: ['src/**/*.{ts,js,vue}'],
-        exclude: ['src/**/*.d.ts', 'src/assets/wasm/**', 'src/**/test.ts']
+        exclude: [
+          'src/**/*.d.ts',
+          'src/assets/wasm/**',
+          'src/**/test.ts',
+          // Copied third-party code; its XBuilder adapters remain covered.
+          'src/utils/snippet-parser/**',
+          'src/components/xgo-code-editor/ui/completion/fuzzy/**'
+        ]
       }
     },
     server: {

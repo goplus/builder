@@ -520,7 +520,8 @@ export class MockAigcApis {
       category: (settings as BackdropSettings | undefined)?.category ?? BackdropCategory.Unspecified,
       description,
       artStyle,
-      perspective
+      perspective,
+      referenceImageUrl: null
     } satisfies BackdropSettings
   }
 
