@@ -658,13 +658,40 @@ describe('AnimationGen', () => {
     await gen.generateVideo()
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
-    if (failure === 'missing-path') delete config.referenceImagePath
-    else delete files[config.referenceImagePath!]
+    if (config.reference?.type !== 'local-image') throw new Error('local reference expected')
+    if (failure === 'missing-path') delete config.reference.filePath
+    else delete files[config.reference.filePath!]
     const loaded = AnimationGen.load(i18n, sprite, project, config, files)
     expect(loaded.referenceImageSelection).toBeNull()
     expect(loaded.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
     expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
     gen.dispose()
     loaded.dispose()
+  })
+  it.each(['separate-path', 'path-only'])('migrates a %s reference into the stored selection', (format) => {
+    const project = makeSpxProject()
+    const sprite = Sprite.create('TestSprite', '')
+    const file = mockFile('reference.png')
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: 'reference-test' },
+      referenceImageSelection: { type: 'local-image', file }
+    })
+    const [config, files] = gen.export()
+    expect(config.reference).toEqual({ type: 'local-image', filePath: expect.any(String) })
+    expect(config.referenceImagePath).toBeUndefined()
+    if (config.reference?.type !== 'local-image') throw new Error('local reference expected')
+    expect(files[config.reference.filePath!]).toBe(file)
+    config.referenceImagePath = config.reference.filePath
+    if (format === 'path-only') delete config.reference
+    else delete config.reference.filePath
+
+    const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    expect(loaded.referenceImageSelection).toMatchObject({ type: 'local-image', file: { name: file.name } })
+    const [saved] = loaded.export()
+    expect(saved.reference).toEqual({ type: 'local-image', filePath: config.referenceImagePath })
+    expect(saved.referenceImagePath).toBeUndefined()
+    gen.dispose()
+    loaded.dispose()
+    project.dispose()
   })
 })

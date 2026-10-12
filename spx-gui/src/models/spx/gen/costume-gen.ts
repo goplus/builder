@@ -66,6 +66,7 @@ export type RawCostumeGenConfig = Prettify<
     reference?: StoredReferenceImageSelection
     /** Read only for migration; new saves use reference. */
     referenceCostumeId?: string
+    /** Read only for migration; new saves use reference.filePath. */
     referenceImagePath?: string
     enrichPhaseSerialized?: PhaseSerialized<CostumeSettings>
     generateTaskSerialized?: TaskSerialized<TaskType.GenerateCostume>
@@ -270,13 +271,13 @@ export class CostumeGen extends Disposable {
       return resultConfig
     })
     const selection = this.referenceImageSelection
-    const referenceImagePath =
-      selection?.type === 'local-image' ? saveReferenceImageFile(files, assetsPath, selection.file) : null
     const config: RawCostumeGenConfig = {
       id: this.id,
       settings: this.settings,
-      reference: selection?.type === 'local-image' ? { type: 'local-image' } : selection,
-      referenceImagePath: referenceImagePath ?? undefined,
+      reference:
+        selection?.type === 'local-image'
+          ? { type: 'local-image', filePath: saveReferenceImageFile(files, assetsPath, selection.file) ?? undefined }
+          : selection,
       enrichPhaseSerialized: this.enrichPhase.export(),
       generateTaskSerialized: this.generateTask?.export(),
       generatePhaseSerialized: mapPhaseResult(this.generatePhase.export(), (result) => {

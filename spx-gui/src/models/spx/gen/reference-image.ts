@@ -16,7 +16,14 @@ export type ReferenceImageSelection =
     }
   | null
 
-export type StoredReferenceImageSelection = { type: 'costume'; costumeId: string } | { type: 'local-image' } | null
+export type StoredReferenceImageSelection =
+  | { type: 'costume'; costumeId: string }
+  | {
+      type: 'local-image'
+      /** Optional for legacy configs that store the path separately. */
+      filePath?: string
+    }
+  | null
 
 function getImageExtension(file: File) {
   return getExtFromMime(file.type) ?? extname(file.name).slice(1).toLowerCase()
@@ -65,6 +72,7 @@ export function loadReferenceImageSelection(
     if (selection == null && path != null) selection = { type: 'local-image' }
   }
   if (selection?.type !== 'local-image') return selection
+  path = selection.filePath ?? path
   const file = path == null ? null : files[path]
   return file == null ? null : { type: 'local-image', file }
 }

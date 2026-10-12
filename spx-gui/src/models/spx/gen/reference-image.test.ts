@@ -36,4 +36,22 @@ describe('reference image selection', () => {
       costumeId: 'selected'
     })
   })
+
+  it('loads the path stored in the selection before a legacy path', () => {
+    const file = fromText('reference.png', '')
+    const path = 'gen/reference_image.png'
+    const legacyPath = 'gen/old_reference.png'
+    const files = { [path]: file, [legacyPath]: fromText('old.png', '') }
+
+    expect(loadReferenceImageSelection({ type: 'local-image', filePath: path }, null, legacyPath, files)).toEqual({
+      type: 'local-image',
+      file
+    })
+    expect(
+      loadReferenceImageSelection({ type: 'local-image', filePath: path }, null, legacyPath, {
+        [legacyPath]: files[legacyPath]
+      })
+    ).toBeNull()
+    expect(loadReferenceImageSelection(null, 'legacy-costume', legacyPath, files)).toBeNull()
+  })
 })

@@ -72,6 +72,7 @@ export type RawAnimationGenConfig = Prettify<
     reference?: StoredReferenceImageSelection
     /** Read only for migration; new saves use reference. */
     referenceCostumeId?: string
+    /** Read only for migration; new saves use reference.filePath. */
     referenceImagePath?: string
     enrichPhaseSerialized?: PhaseSerialized<AnimationSettings>
     generateVideoTaskSerialized?: TaskSerialized<TaskType.GenerateAnimationVideo>
@@ -323,13 +324,13 @@ export class AnimationGen extends Disposable {
     const assetsPath = assetsPathFor(basePath, this.name)
 
     const selection = this.referenceImageSelection
-    const referenceImagePath =
-      selection?.type === 'local-image' ? saveReferenceImageFile(files, assetsPath, selection.file) : null
     const config: RawAnimationGenConfig = {
       id: this.id,
       settings: this.settings,
-      reference: selection?.type === 'local-image' ? { type: 'local-image' } : selection,
-      referenceImagePath: referenceImagePath ?? undefined,
+      reference:
+        selection?.type === 'local-image'
+          ? { type: 'local-image', filePath: saveReferenceImageFile(files, assetsPath, selection.file) ?? undefined }
+          : selection,
       framesConfig: this.framesConfig ?? undefined,
       enrichPhaseSerialized: this.enrichPhase.export(),
       generateVideoTaskSerialized: this.generateVideoTask?.export(),
