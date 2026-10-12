@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
-import { useMessageHandle } from '@/utils/exception'
+import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { composeQuery, useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useSeriesCourses } from '@/stores/course-series'
+import { useSignIn, useSignedInStateQuery } from '@/stores/user'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
@@ -24,6 +25,9 @@ const props = defineProps<{
 
 const tutorial = useTutorial()
 const router = useRouter()
+const route = useRoute()
+const { fn: signIn } = useMessageHandle(useSignIn(), { en: 'Failed to sign in', zh: '登录失败' })
+const signedInStateQuery = useSignedInStateQuery()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
 
@@ -31,6 +35,14 @@ const sessionQueryRet = useQuery(
   async (ctx) => {
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
+    const signedInState = await composeQuery(ctx, signedInStateQuery)
+    ctx.signal.throwIfAborted()
+    if (!signedInState.isSignedIn) {
+      const destination = route.fullPath
+      await router.replace(getCourseSeriesPageRoute(courseSeriesID))
+      await signIn(destination)
+      throw new Cancelled('redirected to sign in')
+    }
     const [series, courses] = await Promise.all([
       getCourseSeries(courseSeriesID, ctx.signal),
       composeQuery(ctx, seriesCoursesQueryRet)

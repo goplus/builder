@@ -8,7 +8,7 @@ export function useEnsureSignedIn() {
   const withConfirm = useConfirmDialog()
   const signIn = useSignIn()
 
-  return async () => {
+  return async (returnTo?: string) => {
     if (isSignedIn()) return
     await withConfirm({
       title: t({ en: 'Sign in to continue', zh: '登录以继续' }),
@@ -17,7 +17,7 @@ export function useEnsureSignedIn() {
         zh: '你需要先登录才能执行此操作。你想现在登录吗？'
       }),
       confirmText: t({ en: 'Sign in', zh: '登录' }),
-      confirmHandler: () => signIn()
+      confirmHandler: () => signIn(returnTo)
     })
     throw new Cancelled('redirected to sign in')
   }
