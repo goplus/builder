@@ -131,14 +131,21 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/tutorials/index.vue')
   },
   {
-    path: '/course/:courseSeriesIdInput/:courseIdInput/start',
-    component: () => import('./pages/tutorials/course-start.vue'),
-    props: true
-  },
-  {
-    path: '/course/:courseSeriesIdInput/:courseIdInput/playground/:inEditorPath*',
-    component: () => import('./pages/tutorials/course-playground.vue'),
-    props: true
+    path: '/course/:courseSeriesIdInput/:courseIdInput',
+    component: () => import('./pages/tutorials/course-entry.vue'),
+    props: true,
+    children: [
+      {
+        path: 'start',
+        component: () => import('./pages/tutorials/course-start.vue'),
+        props: true
+      },
+      {
+        path: 'playground/:inEditorPath*',
+        component: () => import('./pages/tutorials/course-playground.vue'),
+        props: true
+      }
+    ]
   },
   {
     path: '/course-series/:courseSeriesIdInput',

@@ -23,6 +23,8 @@ See [Course APIs](./module_CourseApis.ts) and [Course storage](./course-storage.
 
 Tutorial provides the application entry and exit for learning a Course. It selects the appropriate Guided or Playground learning flow, coordinates their lifecycle, and connects the active Course with the shared editor, Copilot, and execution capabilities. The public module boundary stays independent of the different internal implementations of those flows.
 
+Course Series and Course lists remain public. Learner entry to both Guided and Playground Courses requires sign-in. The shared Course-entry route gates both the Start page and direct Playground URLs before mounting their loading/runtime components. It preserves the full selected destination through hosted sign-in, and returns cancellation or failure to the relevant Series list, retaining list query parameters when entry came from that list. Course Preview remains an authoring flow outside these learner entry routes.
+
 See [Tutorial](./module_Tutorial.ts).
 
 ### XGo Executor

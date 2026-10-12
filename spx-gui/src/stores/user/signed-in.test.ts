@@ -3,7 +3,13 @@ import { OAuthException } from '@/apis/common/exception'
 import { accountOAuthApisForXBuilder } from '@/apis/account/oauth'
 import * as userApis from '@/apis/user'
 import { OAuthErrorCode } from '@/utils/oauth'
-import { canUseAdminConsole, ensureAccessToken, initUserState } from './signed-in'
+import {
+  canUseAdminConsole,
+  completeSignIn,
+  ensureAccessToken,
+  getSignInFailureReturnTo,
+  initUserState
+} from './signed-in'
 
 const userStateStorageKey = 'builder-user'
 const originalNavigatorLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
@@ -295,5 +301,62 @@ describe('ensureAccessToken', () => {
     window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
 
     expect(setItem).not.toHaveBeenCalled()
+  })
+})
+
+describe('Course sign-in destinations', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    initUserState('client-id')
+    sessionStorage.setItem(
+      'builder-pending-oauth-authorization',
+      JSON.stringify({
+        state: 'course-state',
+        codeVerifier: 'verifier',
+        data: {
+          returnTo: '/course/series/course/start',
+          failureReturnTo: '/course-series/series?p=3'
+        }
+      })
+    )
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  it('resumes the selected Course after successful authentication', async () => {
+    vi.spyOn(accountOAuthApisForXBuilder, 'exchangeToken').mockResolvedValue({
+      access_token: 'course-token',
+      expires_in: 3600
+    })
+    vi.spyOn(userApis, 'getSignedInUser').mockResolvedValue({ username: 'alice' } as userApis.SignedInUser)
+    await expect(completeSignIn('?code=course-code&state=course-state')).resolves.toEqual({
+      returnTo: '/course/series/course/start',
+      failureReturnTo: '/course-series/series?p=3'
+    })
+    expect(await ensureAccessToken()).toBe('course-token')
+  })
+
+  it('retains the failure destination before a failed token exchange consumes OAuth state', async () => {
+    vi.spyOn(accountOAuthApisForXBuilder, 'exchangeToken').mockRejectedValue(new Error('exchange failed'))
+    const failureReturnTo = getSignInFailureReturnTo()
+    await expect(completeSignIn('?code=course-code&state=course-state')).rejects.toThrow('exchange failed')
+    expect(failureReturnTo).toBe('/course-series/series?p=3')
+    expect(sessionStorage.getItem('builder-pending-oauth-authorization')).toBeNull()
+  })
+
+  it('returns cancellation callbacks to the selected Series list', async () => {
+    const failureReturnTo = getSignInFailureReturnTo()
+    await expect(completeSignIn('?error=access_denied&state=course-state')).rejects.toThrow()
+    expect(failureReturnTo).toBe('/course-series/series?p=3')
+  })
+
+  it('keeps the existing home fallback for other sign-in flows', () => {
+    sessionStorage.clear()
+    expect(getSignInFailureReturnTo()).toBe('/')
   })
 })
