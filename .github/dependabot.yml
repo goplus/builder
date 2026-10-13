@@ -14,6 +14,8 @@ updates:
     patterns:
       - "*"
     multi-ecosystem-group: infrastructure
+    ignore:
+      - dependency-name: "codecov/codecov-action"
   - package-ecosystem: gomod
     directories:
       - /tools/spxls
