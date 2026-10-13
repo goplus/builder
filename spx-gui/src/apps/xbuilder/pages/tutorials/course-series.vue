@@ -85,7 +85,13 @@ const { fn: handleCourseClick } = useMessageHandle(
     }
 
     event.preventDefault()
-    await ensureSignedIn(tutorial.getCourseStartRoute(courseSeries.id, course.id))
+    await ensureSignedIn({
+      returnTo: tutorial.getCourseStartRoute(courseSeries.id, course.id),
+      content: {
+        en: 'Sign in to start learning this course.',
+        zh: '登录后即可开始学习这节课程。'
+      }
+    })
     return tutorial.startCourse(courseSeries.id, course.id)
   },
   {
