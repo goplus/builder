@@ -1313,8 +1313,9 @@ paths:
         - Notifications
       summary: List notifications for the authenticated user
       description: |
-        List one category of notifications, newest first. Unread counts cover both categories and are consistent with
-        the returned page. Reading a notification does not change its position in the list.
+        List one category of notifications, newest first. Unread counts are totals for both categories, not only the
+        listed category or page, and come from the same snapshot as the returned page. Reading a notification does not
+        change its position in the list.
       parameters:
         - name: category
           description: Category of notifications to list.
@@ -1324,7 +1325,7 @@ paths:
             $ref: "#/components/schemas/NotificationCategory"
         - $ref: "#/components/parameters/PageSize"
         - name: cursor
-          description: Cursor returned by an earlier page of the same category.
+          description: The `nextCursor` value returned by an earlier page of the same category.
           in: query
           schema:
             type: string
