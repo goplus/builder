@@ -991,125 +991,6 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /user/notifications:
-    get:
-      operationId: listAuthenticatedUserNotifications
-      tags:
-        - Users
-      summary: List notifications for the authenticated user
-      description: |
-        List one category of notifications, newest first. Unread counts cover both categories and are consistent with
-        the returned page. Reading a notification does not change its position in the list.
-      parameters:
-        - name: category
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/NotificationCategory"
-        - $ref: "#/components/parameters/PageSize"
-        - name: cursor
-          description: Cursor returned by an earlier page of the same category.
-          in: query
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 512
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - unreadCounts
-                  - nextCursor
-                  - data
-                properties:
-                  unreadCounts:
-                    type: object
-                    required:
-                      - message
-                      - announcement
-                    properties:
-                      message:
-                        type: integer
-                        format: int64
-                        minimum: 0
-                      announcement:
-                        type: integer
-                        format: int64
-                        minimum: 0
-                  nextCursor:
-                    oneOf:
-                      - type: string
-                        minLength: 1
-                      - type: "null"
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Notification"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-    patch:
-      operationId: markAllAuthenticatedUserNotificationsRead
-      tags:
-        - Users
-      summary: Mark all notifications read
-      description: Mark the authenticated user's unread notifications in all categories as read. Later deliveries remain unread.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MarkNotificationReadRequest"
-      responses:
-        "200":
-          description: Notifications marked read.
-          content:
-            application/json:
-              schema:
-                type: object
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /user/notifications/{notificationID}:
-    patch:
-      operationId: markAuthenticatedUserNotificationRead
-      tags:
-        - Users
-      summary: Mark a notification read
-      description: Preserve the first read timestamp when the notification is read again.
-      parameters:
-        - name: notificationID
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MarkNotificationReadRequest"
-      responses:
-        "200":
-          description: Notification marked read.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Notification"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
   /user/avatar:
     put:
       operationId: updateAuthenticatedUserAvatar
@@ -1422,6 +1303,118 @@ paths:
           $ref: "#/components/responses/MovedPermanently"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /user/notifications:
+    get:
+      operationId: listAuthenticatedUserNotifications
+      tags:
+        - Notifications
+      summary: List notifications for the authenticated user
+      description: |
+        List one category of notifications, newest first. Unread counts cover both categories and are consistent with
+        the returned page. Reading a notification does not change its position in the list.
+      parameters:
+        - name: category
+          description: Category of notifications to list.
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/NotificationCategory"
+        - $ref: "#/components/parameters/PageSize"
+        - name: cursor
+          description: Cursor returned by an earlier page of the same category.
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 512
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - unreadCounts
+                  - nextCursor
+                  - data
+                properties:
+                  unreadCounts:
+                    description: Number of unread notifications in each category.
+                    type: object
+                    required:
+                      - message
+                      - announcement
+                    properties:
+                      message:
+                        description: Number of unread notifications in the `message` category.
+                        type: integer
+                        format: int64
+                        minimum: 0
+                        examples:
+                          - 3
+                      announcement:
+                        description: Number of unread notifications in the `announcement` category.
+                        type: integer
+                        format: int64
+                        minimum: 0
+                        examples:
+                          - 1
+                  nextCursor:
+                    description: Cursor for the next page, or `null` if there are no more notifications.
+                    type:
+                      - string
+                      - "null"
+                    minLength: 1
+                    maxLength: 512
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notification"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: markAllAuthenticatedUserNotificationsRead
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      description: |
+        Mark all unread notifications of the authenticated user as read, across all categories. Notifications delivered
+        after the request remain unread.
+      responses:
+        "204":
+          description: All unread notifications marked as read.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /user/notifications/{notificationID}/read:
+    put:
+      operationId: markAuthenticatedUserNotificationRead
+      tags:
+        - Notifications
+      summary: Mark a notification as read
+      description: |
+        Mark a notification of the authenticated user as read. Marking an already read notification again keeps its
+        first read time.
+      parameters:
+        - name: notificationID
+          description: ID of the notification to mark as read.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Notification marked as read, or it was already read.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -7239,54 +7232,6 @@ components:
           type: string
           format: uri-reference
 
-    NotificationCategory:
-      description: Category used to group notifications in the client.
-      type: string
-      enum:
-        - message
-        - announcement
-
-    Notification:
-      description: Notification delivered to the authenticated user.
-      type: object
-      required:
-        - id
-        - category
-        - title
-        - body
-        - createdAt
-        - readAt
-      properties:
-        id:
-          $ref: "#/components/schemas/Model/properties/id"
-        category:
-          $ref: "#/components/schemas/NotificationCategory"
-        title:
-          type: string
-          minLength: 1
-          maxLength: 200
-        body:
-          description: Markdown content.
-          type: string
-          minLength: 1
-          maxLength: 5000
-        createdAt:
-          $ref: "#/components/schemas/Model/properties/createdAt"
-        readAt:
-          oneOf:
-            - type: string
-              format: date-time
-            - type: "null"
-
-    MarkNotificationReadRequest:
-      type: object
-      required:
-        - read
-      properties:
-        read:
-          type: boolean
-          const: true
-
     User:
       description: User account information.
       type: object
@@ -7432,6 +7377,55 @@ components:
           type: boolean
           examples:
             - true
+
+    NotificationCategory:
+      description: Category used to group notifications in the client.
+      type: string
+      enum:
+        - message
+        - announcement
+      examples:
+        - message
+
+    Notification:
+      description: Notification delivered to the authenticated user.
+      type: object
+      required:
+        - id
+        - category
+        - title
+        - body
+        - createdAt
+        - readAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        category:
+          $ref: "#/components/schemas/NotificationCategory"
+        title:
+          description: Title of the notification.
+          type: string
+          minLength: 1
+          maxLength: 200
+          examples:
+            - New follower
+        body:
+          description: Body of the notification in Markdown.
+          type: string
+          minLength: 1
+          maxLength: 5000
+          examples:
+            - "[John Doe](/user/john) started following you."
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        readAt:
+          description: Time when the user first read the notification, or `null` if the notification is unread.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
 
     Project:
       type: object
