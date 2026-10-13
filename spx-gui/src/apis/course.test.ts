@@ -1,6 +1,59 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { client } from './common'
-import { generatePlaygroundCourseCopilotContext } from './course'
+import {
+  generatePlaygroundCourseCopilotContext,
+  getCourse,
+  listCourses,
+  listSignedInUserCourses,
+  type Course
+} from './course'
+
+function makeCourses(): Course[] {
+  return [
+    {
+      id: 'guided',
+      owner: 'teacher',
+      kind: 'guided',
+      title: 'Create a project',
+      thumbnail: '',
+      content: { entrypoint: '/', prompt: 'Guide the learner.' }
+    },
+    {
+      id: 'playground',
+      owner: 'teacher',
+      kind: 'playground',
+      title: 'Move a sprite',
+      thumbnail: '',
+      content: { 'main_course.gox': 'https://example.com/main_course.gox' }
+    }
+  ]
+}
+
+describe('Course APIs', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('loads both course kinds with their current content shapes', async () => {
+    const get = vi.spyOn(client, 'get')
+    const signal = new AbortController().signal
+    for (const course of makeCourses()) {
+      get.mockResolvedValueOnce(course)
+      await expect(getCourse(course.id, signal)).resolves.toEqual(course)
+      expect(get).toHaveBeenLastCalledWith(`/courses/${course.id}`, undefined, { signal })
+    }
+  })
+
+  it.each([
+    { list: listCourses, path: '/courses' },
+    { list: listSignedInUserCourses, path: '/user/courses' }
+  ])('loads a page from $path with course content and ordering', async ({ list, path }) => {
+    const result = { total: 12, data: makeCourses() }
+    const get = vi.spyOn(client, 'get').mockResolvedValue(result)
+    const signal = new AbortController().signal
+    const params = { courseSeriesID: 'series', pageIndex: 2, pageSize: 2, orderBy: 'sequenceInCourseSeries' as const }
+    await expect(list(params, signal)).resolves.toEqual(result)
+    expect(get).toHaveBeenCalledWith(path, params, { signal })
+  })
+})
 
 describe('generatePlaygroundCourseCopilotContext', () => {
   afterEach(() => {
