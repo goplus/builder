@@ -66,7 +66,7 @@ export function createMockTutorialHost(log: (message: string) => void): Tutorial
       },
       async generateJSON(message, schema) {
         log(`[host] copilot.generateJSON: ${message} (schema: ${JSON.stringify(schema)})`)
-        return {}
+        return fillSchema(schema)
       }
     },
     spotlight: {
@@ -74,5 +74,35 @@ export function createMockTutorialHost(log: (message: string) => void): Tutorial
         log(`[host] spotlight.reveal: ${target} (tip: ${tip}, options: ${JSON.stringify(options)})`)
       }
     }
+  }
+}
+
+/**
+ * Answers a generateJSON call with canned values of the shapes the schema asks
+ * for, so a Course reading the result sees a plausible verdict rather than
+ * zero values: strings get a sentence, booleans true, numbers 5.
+ */
+function fillSchema(schema: unknown): unknown {
+  if (schema == null || typeof schema !== 'object') return null
+  const { type, properties, items } = schema as { type?: unknown; properties?: unknown; items?: unknown }
+  switch (type) {
+    case 'object': {
+      const result: Record<string, unknown> = {}
+      for (const [name, property] of Object.entries((properties ?? {}) as Record<string, unknown>)) {
+        result[name] = fillSchema(property)
+      }
+      return result
+    }
+    case 'array':
+      return [fillSchema(items)]
+    case 'string':
+      return 'You used stepTo to walk Lita right up to the mushroom.'
+    case 'boolean':
+      return true
+    case 'integer':
+    case 'number':
+      return 5
+    default:
+      return null
   }
 }

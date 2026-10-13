@@ -1,0 +1,4 @@
+// The Tutorial program in main.gox consumes this signal through editor.runtime.onLog.
+onTouchStart "Lita", => {
+	println "reached-target"
+}
