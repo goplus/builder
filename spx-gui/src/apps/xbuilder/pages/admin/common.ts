@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 
 import type { LocaleMessage } from '@/utils/i18n'
 import type { AccountAppClientType, AccountAppStatus, AccountAppTokenType } from '@/apis/account/common'
+import { FeedbackStatus } from '@/apis/feedback'
 
 export const accountAppClientTypeLabels: Record<AccountAppClientType, LocaleMessage> = {
   public: { en: 'Public client', zh: '公共客户端' },
@@ -26,6 +27,11 @@ export const accountAppRedirectURIsTip: LocaleMessage = {
 export const accountAppRedirectURIPatternsTip: LocaleMessage = {
   en: 'Read-only wildcard patterns for controlled preview or non-production callback hosts. Exact redirect URIs remain the primary allowlist. Patterns are managed outside the public Admin API and cannot be changed here.',
   zh: '用于受控预览或非生产回调域名的只读通配模式。精确回调 URI 仍是主要 allowlist；这组模式不通过公开 Admin API 管理，也不能在这里修改。'
+}
+
+export const feedbackStatusLabels: Record<FeedbackStatus, LocaleMessage> = {
+  [FeedbackStatus.New]: { en: 'New', zh: '待处理' },
+  [FeedbackStatus.Handled]: { en: 'Handled', zh: '已处理' }
 }
 
 export function formatTime(value: string) {
