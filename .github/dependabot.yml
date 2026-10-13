@@ -14,8 +14,8 @@ updates:
     patterns:
       - "*"
     multi-ecosystem-group: infrastructure
-    # Codecov Action upgrades are handled manually.
     ignore:
+      # Codecov Action upgrades are handled manually.
       - dependency-name: "codecov/codecov-action"
   - package-ecosystem: gomod
     directories:
