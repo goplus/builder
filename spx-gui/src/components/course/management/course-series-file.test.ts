@@ -271,7 +271,7 @@ describe('exportCourseSeriesFile', () => {
       content: existingCourse.content,
       thumbnail: { path: 'thumbnails/courses/0.png' }
     })
-    expect(manifest.version).toBe(4)
+    expect(manifest.version).toBe(3)
     expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual(['curator/EntryProject'])
     expect(Object.keys(unzipped)).toEqual(
       expect.arrayContaining([
@@ -699,13 +699,28 @@ describe('importCourseSeriesFile when it fails', () => {
     await expect(
       importCourseSeriesFile(
         existingSeries,
-        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', ['thumbnails/courses/0.png']),
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', {
+          omit: ['thumbnails/courses/0.png']
+        }),
         'alice',
         writes
       )
     ).rejects.toThrow('Invalid course series file: missing thumbnails/courses/0.png')
     expect(cloudHelpers.save).not.toHaveBeenCalled()
     expect(addCourse).not.toHaveBeenCalled()
+  })
+
+  it('reads a file written before series had kinds as a guided series', async () => {
+    const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', { kind: null })
+
+    await importCourseSeriesFileAsNew(file, 'guided', 'alice')
+    expect(addCourseSeries).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'guided', courseIDs: ['imported-course'] }),
+      undefined
+    )
+    await expect(importCourseSeriesFileAsNew(file, 'playground', 'alice')).rejects.toThrow(
+      'holds a Guided course series, which cannot be imported as a Playground one'
+    )
   })
 
   it('refuses a file of the other kind', async () => {
@@ -741,7 +756,7 @@ describe('Playground course series files', () => {
     const unzipped = await unzip(new Uint8Array(await file.arrayBuffer()))
     const manifest = JSON.parse(new TextDecoder().decode(unzipped['course-series.json']!)) as Record<string, any>
 
-    expect(manifest.version).toBe(4)
+    expect(manifest.version).toBe(3)
     expect(manifest.courseSeries.kind).toBe('playground')
     expect(manifest.courses).toEqual([
       { title: 'Measure it', thumbnail: { path: 'thumbnails/courses/0.png' }, files: 'courses/0' }
@@ -874,7 +889,7 @@ async function makePlaygroundSeriesFile(
     'course-series.json': encoder.encode(
       JSON.stringify({
         format: 'xbuilder-course-series',
-        version: 4,
+        version: 3,
         courseSeries: {
           kind: 'playground',
           title: 'Imported series',
@@ -926,16 +941,23 @@ describe('inspectCourseSeriesFileImport', () => {
 
 async function makeCourseSeriesFile(
   entrypoint: string,
-  /** Paths of entries to leave out. */
-  omit: string[] = []
+  {
+    omit = [],
+    kind = 'guided'
+  }: {
+    /** Paths of entries to leave out. */
+    omit?: string[]
+    /** Null for a file written before series had kinds. */
+    kind?: string | null
+  } = {}
 ) {
   const zippable: Zippable = {
     'course-series.json': new TextEncoder().encode(
       JSON.stringify({
         format: 'xbuilder-course-series',
-        version: 4,
+        version: 3,
         courseSeries: {
-          kind: 'guided',
+          ...(kind != null && { kind }),
           title: 'Imported series',
           description: 'Imported description',
           thumbnail: { path: 'thumbnails/course-series.png' }

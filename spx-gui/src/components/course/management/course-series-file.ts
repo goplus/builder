@@ -43,7 +43,7 @@ import { checkPlaygroundCourse } from './playground/course-check'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
-const version = 4
+const version = 3
 
 type CourseSeriesFileThumbnail = {
   path: string
@@ -68,7 +68,9 @@ type CourseSeriesFileProject = {
 type CourseSeriesFileManifest = {
   format: typeof format
   version: typeof version
-  courseSeries: Pick<CourseSeries, 'kind' | 'title' | 'description'> & {
+  courseSeries: Pick<CourseSeries, 'title' | 'description'> & {
+    /** Missing from files written before series had kinds, which hold a guided series. */
+    kind: CourseKind
     thumbnail: CourseSeriesFileThumbnail
   }
   /** Courses of the series' kind, in order. */
@@ -227,6 +229,7 @@ async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind, sig
       zh: '不支持的课程系列文件格式'
     })
   }
+  manifest.courseSeries.kind ??= 'guided'
   if (manifest.courseSeries.kind !== kind) {
     const fileKind = kindNames[manifest.courseSeries.kind] ?? { en: 'unknown', zh: '未知' }
     throw new DefaultException({
