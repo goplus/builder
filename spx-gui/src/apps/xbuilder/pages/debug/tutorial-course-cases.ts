@@ -10,11 +10,95 @@ export const exampleCourseSource = `onStart => {
 	Spotlight.reveal "API References", "Here is stepTo, the only block you need in this lesson."
 }
 
+// Only the latest "reached-target" matters: a newer signal cancels a
+// judgement that is still waiting on Copilot.
+judging := newRunGroup(CancelPrevious)
+
 Editor.Runtime.onLog log => {
-	if log == "reached-target" {
+	if log != "reached-target" {
+		return
+	}
+	judging.start => {
 		code := Editor.Project.getCode("Lita")
 		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\\n" + code)
 		completeWith feedback
+	}
+}
+`
+
+// Copied from docs/develop/tutorial-v2/example-tutorial-course-run-groups/main_course.gox,
+// kept in sync by hand like the copy above.
+export const runGroupsExampleCourseSource = `// This Course exists to show how run groups relate runs that overlap. The
+// lesson itself is the one in example-tutorial-course: walk Lita to Mushroom
+// with stepTo.
+//
+// Judging can start from three places, and only the latest trigger should
+// count: a learner who fixes the code and runs again while Copilot is still
+// judging the previous attempt must see one verdict, the newer one. All three
+// triggers therefore start runs of one group with CancelPrevious. Hints are a
+// separate concern with a separate policy: from the third stop on each stop
+// gets a hint, shown one after another, so they live in a private group with
+// OneAtATime.
+
+type Verdict struct {
+	Passed  bool
+	Comment string
+}
+
+func judge(trigger string) {
+	code := Editor.Project.getCode("Lita")
+	prompt := "Trigger: " + trigger + "\\nLita's code:\\n" + code +
+		"\\nDoes this code walk Lita to Mushroom with stepTo? Set Passed accordingly and comment in one sentence."
+	verdict := &Verdict{}
+	Copilot.generateJSON(prompt, verdict)
+	if verdict.Passed {
+		completeWith verdict.Comment
+		return
+	}
+	showMessage verdict.Comment
+}
+
+judging := newRunGroup(CancelPrevious)
+attempts := 0
+
+onStart => {
+	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
+	showPrelude "Walk Lita to Mushroom with stepTo, then run the project: Mushroom prints \\"reached-target\\" when Lita gets there."
+	Spotlight.reveal "api-references", "stepTo is the only block you need."
+}
+
+// The project printing the signal. Logs arrive for every print, so this
+// callback is in no group: it filters first and only then starts a judging
+// run. Output that is not the signal never touches the group and cancels
+// nothing.
+Editor.Runtime.onLog log => {
+	if log != "reached-target" {
+		return
+	}
+	judging.start => {
+		judge("the project printed reached-target")
+	}
+}
+
+// The project exiting. The whole callback is one run of judging, so an exit
+// while an earlier judgement is still waiting cancels that judgement.
+Editor.Runtime.onExit judging, code => {
+	judge("the project exited")
+}
+
+// A Copilot round completing. Same group, so it cancels a judgement started
+// by a log or an exit, and is cancelled by them in turn.
+Copilot.onRoundComplete judging, round => {
+	judge("the learner finished a Copilot round about: " + round.UserMessage)
+}
+
+// Hints are independent of judging. A policy given directly makes a private
+// group for this callback alone: quick stops in a row show their hints one
+// after another rather than as a pile of dialogs.
+Editor.Runtime.onExit OneAtATime, code => {
+	attempts++
+	if attempts >= 3 {
+		showMessage "Hint: stepTo takes a sprite name, like stepTo Mushroom."
 	}
 }
 `
@@ -55,11 +139,17 @@ Editor.Runtime.onStart => {
 	showMessage "Running!"
 }
 
-Editor.Runtime.onExit code => {
+judging := newRunGroup(SkipWhileBusy)
+
+Editor.Runtime.onExit OneAtATime, code => {
 	echo "exit code", code
 }
 
-Copilot.onRoundComplete round => {
+Editor.Runtime.onExit judging, code => {
+	echo "judging exit", code
+}
+
+Copilot.onRoundComplete CancelPrevious, round => {
 	echo "round", round.UserMessage
 }
 
@@ -67,15 +157,17 @@ Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	for sprite <- Editor.Project.listSprites() {
-		echo Editor.Project.getCode(sprite)
-	}
-	Editor.CodeEditor.formatWorkspace
-	Editor.Ruler.disable
+	judging.start => {
+		for sprite <- Editor.Project.listSprites() {
+			echo Editor.Project.getCode(sprite)
+		}
+		Editor.CodeEditor.formatWorkspace
+		Editor.Ruler.disable
 
-	feedback := &Feedback{}
-	Copilot.generateJSON "judge this", feedback
-	completeWith Copilot.generateText("praise the learner")
+		feedback := &Feedback{}
+		Copilot.generateJSON "judge this", feedback
+		completeWith Copilot.generateText("praise the learner")
+	}
 }
 `
 
@@ -99,6 +191,12 @@ export const courseCases: CourseCase[] = [
     name: 'Docs example course',
     description: 'The example from docs/develop/tutorial-v2 completes on the reached-target signal.',
     source: exampleCourseSource,
+    events: [{ name: 'editor.runtime.log', payload: { log: 'reached-target' } }]
+  },
+  {
+    name: 'Run groups example course',
+    description: 'The run-groups example from docs starts a judging run from a filtered log and completes.',
+    source: runGroupsExampleCourseSource,
     events: [{ name: 'editor.runtime.log', payload: { log: 'reached-target' } }]
   },
   {

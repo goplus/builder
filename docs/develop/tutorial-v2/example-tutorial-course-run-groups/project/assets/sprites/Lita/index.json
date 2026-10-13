@@ -1,0 +1,25 @@
+{
+  "heading": 90,
+  "x": -120,
+  "y": -60,
+  "size": 1,
+  "rotationStyle": "normal",
+  "physicsMode": "no",
+  "costumeIndex": 0,
+  "visible": true,
+  "isDraggable": false,
+  "builder_id": "example-lita",
+  "costumes": [
+    {
+      "name": "default",
+      "path": "default.svg",
+      "x": 30,
+      "y": 30,
+      "faceRight": 0,
+      "bitmapResolution": 1,
+      "builder_id": "example-lita-costume",
+      "imageWidth": 60,
+      "imageHeight": 60
+    }
+  ]
+}

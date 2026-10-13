@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/goplus/ixgo"
@@ -39,11 +43,17 @@ Editor.Runtime.onStart => {
 	showMessage "Running!"
 }
 
-Editor.Runtime.onExit code => {
+judging := newRunGroup(SkipWhileBusy)
+
+Editor.Runtime.onExit OneAtATime, code => {
 	echo code
 }
 
-Copilot.onRoundComplete round => {
+Editor.Runtime.onExit judging, code => {
+	echo "judging exit", code
+}
+
+Copilot.onRoundComplete CancelPrevious, round => {
 	echo round.UserMessage
 }
 
@@ -51,18 +61,20 @@ Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	for sprite <- Editor.Project.listSprites() {
-		echo Editor.Project.getCode(sprite)
-	}
-	Editor.CodeEditor.formatWorkspace
-	Editor.Ruler.disable
+	judging.start => {
+		for sprite <- Editor.Project.listSprites() {
+			echo Editor.Project.getCode(sprite)
+		}
+		Editor.CodeEditor.formatWorkspace
+		Editor.Ruler.disable
 
-	feedback := &Feedback{}
-	Copilot.generateJSON "judge this", feedback
-	if feedback.Score > 3 {
-		completeWith Copilot.generateText("praise the learner")
-	} else {
-		complete
+		feedback := &Feedback{}
+		Copilot.generateJSON "judge this", feedback
+		if feedback.Score > 3 {
+			completeWith Copilot.generateText("praise the learner")
+		} else {
+			complete
+		}
 	}
 }
 `
@@ -108,15 +120,91 @@ func TestTutorialCourseBuilds(t *testing.T) {
 	buildCourse(t, []byte(courseSource))
 }
 
-// TestExampleCourseBuilds compiles the example Course from docs, keeping the
-// documented example in step with the framework implementation. That example
-// used to be written entirely by hand and never compiled, and sat for a long
-// time with a syntax error in it — a paren-less command call cannot be used as
-// an expression. This test stops it rotting again.
-func TestExampleCourseBuilds(t *testing.T) {
-	source, err := os.ReadFile("../../docs/develop/tutorial-v2/example-tutorial-course/main_course.gox")
+// TestExampleCoursesBuild compiles every example Course under docs, keeping
+// the documented examples in step with the framework implementation. The first
+// example used to be written entirely by hand and never compiled, and sat for a
+// long time with a syntax error in it — a paren-less command call cannot be
+// used as an expression. This test stops that happening again.
+func TestExampleCoursesBuild(t *testing.T) {
+	courses, err := filepath.Glob("../../docs/develop/tutorial-v2/example-tutorial-course*/main_course.gox")
 	if err != nil {
-		t.Fatalf("read example course: %v", err)
+		t.Fatal(err)
 	}
-	buildCourse(t, source)
+	if len(courses) < 2 {
+		t.Fatalf("expected the example courses under docs, found %v", courses)
+	}
+	for _, path := range courses {
+		t.Run(filepath.Base(filepath.Dir(path)), func(t *testing.T) {
+			source, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read example course: %v", err)
+			}
+			buildCourse(t, source)
+		})
+	}
+}
+
+// TestGuideCoursesBuild compiles every ```go block of the course-author guide,
+// tools/tutorial/README.md and its Chinese mirror README.zh.md, as a complete
+// Course, so that the snippets a reader copies keep compiling as the framework
+// evolves. It also checks that both languages carry the same code blocks in
+// the same order: the Chinese guide translates the prose, never the code. A
+// deliberate fragment belongs in a ```text fence, which this test ignores.
+func TestGuideCoursesBuild(t *testing.T) {
+	en := guideCodeBlocks(t, "../tutorial/README.md")
+	zh := guideCodeBlocks(t, "../tutorial/README.zh.md")
+	if len(en) == 0 {
+		t.Fatal("expected ```go blocks in tools/tutorial/README.md, found none")
+	}
+	if !slices.Equal(en, zh) {
+		t.Errorf("README.md and README.zh.md differ in their ```go blocks (%d vs %d blocks, first difference at block %d)",
+			len(en), len(zh), firstDifference(en, zh))
+	}
+	for i, block := range en {
+		t.Run(fmt.Sprintf("block-%02d", i+1), func(t *testing.T) {
+			buildCourse(t, []byte(block))
+		})
+	}
+}
+
+// guideCodeBlocks returns the contents of the ```go fenced blocks of a Markdown
+// file, in order. A fence line must consist of the fence alone.
+func guideCodeBlocks(t *testing.T, path string) []string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read guide: %v", err)
+	}
+	var blocks []string
+	var current []string
+	inBlock := false
+	for _, line := range strings.Split(string(data), "\n") {
+		switch {
+		case !inBlock && line == "```go":
+			inBlock = true
+			current = nil
+		case inBlock && line == "```":
+			inBlock = false
+			blocks = append(blocks, strings.Join(current, "\n")+"\n")
+		case inBlock:
+			current = append(current, line)
+		}
+	}
+	if inBlock {
+		t.Fatalf("%s: unterminated ```go block", path)
+	}
+	return blocks
+}
+
+// firstDifference returns the 1-based index of the first block at which a and
+// b differ; when one is a prefix of the other, that is the shorter length plus
+// one.
+func firstDifference(a, b []string) int {
+	n := min(len(a), len(b))
+	for i := 0; i < n; i++ {
+		if a[i] != b[i] {
+			return i + 1
+		}
+	}
+	return n + 1
 }
