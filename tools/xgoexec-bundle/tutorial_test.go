@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/goplus/ixgo"
@@ -120,4 +123,69 @@ func TestExampleCourseBuilds(t *testing.T) {
 		t.Fatalf("read example course: %v", err)
 	}
 	buildCourse(t, source)
+}
+
+// TestGuideCoursesBuild compiles every ```go block of the course-author guide,
+// tools/tutorial/README.md and its Chinese mirror README.zh.md, as a complete
+// Course, so that the snippets a reader copies keep compiling as the framework
+// evolves. It also checks that both languages carry the same code blocks in
+// the same order: the Chinese guide translates the prose, never the code. A
+// deliberate fragment belongs in a ```text fence, which this test ignores.
+func TestGuideCoursesBuild(t *testing.T) {
+	en := guideCodeBlocks(t, "../tutorial/README.md")
+	zh := guideCodeBlocks(t, "../tutorial/README.zh.md")
+	if len(en) == 0 {
+		t.Fatal("expected ```go blocks in tools/tutorial/README.md, found none")
+	}
+	if !slices.Equal(en, zh) {
+		t.Errorf("README.md and README.zh.md differ in their ```go blocks (%d vs %d blocks, first difference at block %d)",
+			len(en), len(zh), firstDifference(en, zh))
+	}
+	for i, block := range en {
+		t.Run(fmt.Sprintf("block-%02d", i+1), func(t *testing.T) {
+			buildCourse(t, []byte(block))
+		})
+	}
+}
+
+// guideCodeBlocks returns the contents of the ```go fenced blocks of a Markdown
+// file, in order. A fence line must consist of the fence alone.
+func guideCodeBlocks(t *testing.T, path string) []string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read guide: %v", err)
+	}
+	var blocks []string
+	var current []string
+	inBlock := false
+	for _, line := range strings.Split(string(data), "\n") {
+		switch {
+		case !inBlock && line == "```go":
+			inBlock = true
+			current = nil
+		case inBlock && line == "```":
+			inBlock = false
+			blocks = append(blocks, strings.Join(current, "\n")+"\n")
+		case inBlock:
+			current = append(current, line)
+		}
+	}
+	if inBlock {
+		t.Fatalf("%s: unterminated ```go block", path)
+	}
+	return blocks
+}
+
+// firstDifference returns the 1-based index of the first block at which a and
+// b differ; when one is a prefix of the other, that is the shorter length plus
+// one.
+func firstDifference(a, b []string) int {
+	n := min(len(a), len(b))
+	for i := 0; i < n; i++ {
+		if a[i] != b[i] {
+			return i + 1
+		}
+	}
+	return n + 1
 }
