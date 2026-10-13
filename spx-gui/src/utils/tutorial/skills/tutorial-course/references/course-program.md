@@ -37,11 +37,17 @@ completeWith feedback
 ## Execution model
 
 Callbacks run one at a time, so variables shared between them never race. A run yields while it waits on the
-learner (`showPrelude`, `showMessage`, `showVideo`) or on generation (`generateText`, `generateJSON`); other
-runs proceed meanwhile. Every trigger starts a new run of each callback registered for it, so two runs of one
-callback can overlap when a trigger arrives while an earlier run is still waiting. How overlapping runs of one
-callback relate is not specified yet (goplus/builder#3509), so a course that can be triggered repeatedly handles
-that itself, for example with a flag it sets before the first wait.
+learner (`showPrelude`, `showMessage`, `showVideo`), on generation (`generateText`, `generateJSON`) or on time
+(`wait`); other runs proceed meanwhile. Every trigger starts a new run of each callback registered for it, so
+two runs of one callback can overlap when a trigger arrives while an earlier run is still waiting. How
+overlapping runs of one callback relate is not specified yet (goplus/builder#3509), so a course that can be
+triggered repeatedly handles that itself, for example with a flag it sets before the first wait.
+
+Anything else that blocks holds up every other run until it ends: Go's own blocking calls such as `time.Sleep`,
+channel operations and `select` (receiving from `time.After` or `time.Tick` included), and long-running loops.
+Waiting for something only another callback can provide, such as a value it sends on a channel, never ends. To
+pause, use `wait`. Never start goroutines (`go` statements, `time.AfterFunc`): their code runs outside this
+model, and using the framework from one fails the program.
 
 Course start is delivered like any other event. `complete` and `completeWith` end the program: no further events
 are processed, runs already waiting still finish, and presentation calls made after a completion are ignored.
@@ -54,11 +60,12 @@ onStart callback         // the course started; several callbacks may be registe
 showPrelude message      // the opening task guide; returns after the learner dismisses it
 showMessage message      // a dialog; returns after the learner dismisses it
 showVideo videoName      // a course video by its declared name; returns when it is finished or closed
+wait seconds             // pause this callback for the given seconds while other callbacks keep running
 complete                 // mark the course complete and end the program
 completeWith message     // complete, with a line of feedback for the learner
 ```
 
-Presentation never advances on its own: each of these waits for the learner.
+Presentation never advances on its own: `showPrelude`, `showMessage` and `showVideo` each wait for the learner.
 
 ## Editor
 

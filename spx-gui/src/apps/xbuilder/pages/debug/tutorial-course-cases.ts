@@ -94,6 +94,27 @@ Editor.Runtime.onLog log => {
 }
 `
 
+// A course whose onLog pauses with wait and then checks that onExit ran
+// meanwhile, so it fails instead of completing when the pause holds up other
+// callbacks.
+const waitCourseSource = `
+var (
+	exitSeen bool
+)
+
+Editor.Runtime.onLog log => {
+	wait 0.5
+	if !exitSeen {
+		panic "onExit did not run while onLog paused"
+	}
+	complete
+}
+
+Editor.Runtime.onExit code => {
+	exitSeen = true
+}
+`
+
 export const courseCases: CourseCase[] = [
   {
     name: 'Docs example course',
@@ -126,6 +147,15 @@ export const courseCases: CourseCase[] = [
       { name: 'editor.runtime.start', payload: null },
       { name: 'copilot.roundComplete', payload: { userMessage: 'hi', resultMessages: ['hello'] } },
       { name: 'editor.runtime.log', payload: { log: 'done' } }
+    ]
+  },
+  {
+    name: 'wait lets other callbacks run',
+    description: 'While onLog pauses with wait, a later event starts its callback instead of waiting for the pause.',
+    source: waitCourseSource,
+    events: [
+      { name: 'editor.runtime.log', payload: { log: 'pause' } },
+      { name: 'editor.runtime.exit', payload: { code: 0 } }
     ]
   }
 ]

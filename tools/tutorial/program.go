@@ -3,9 +3,13 @@ package tutorial
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/goplus/builder/tools/xgoexec"
+	"github.com/visualfc/gid"
 )
 
 // capabilityKind decides what happens during one capability call.
@@ -50,8 +54,8 @@ var capabilityKinds = map[string]capabilityKind{
 // release-then-acquire pairs form a happens-before chain, so shared variables
 // in Course code never race and the author needs no synchronization at all.
 // Every trigger starts a new run of each registered callback; a run releases
-// the token while it waits on a waiting capability, so runs of one callback
-// may overlap.
+// the token while it waits on a waiting capability or pauses with wait, so runs
+// of one callback may overlap.
 //
 // TODO(#3509): how overlapping runs of one callback relate (cancelling the
 // stale one, running one at a time, ignoring triggers while busy) is not
@@ -81,6 +85,10 @@ type courseProgram struct {
 	// token is held, hence no lock: runFrame sets it on entry, yieldWhile
 	// restores it after reacquiring the token.
 	current *run
+	// holder is the ID of the goroutine holding the token, 0 while the token
+	// is free. Unlike current it is read by goroutines that do not hold the
+	// token, to tell whether they do (see holding), hence atomic.
+	holder atomic.Uint64
 	// shutdown is closed once, on completion or on a fatal error, to tell the
 	// dispatcher goroutine to exit.
 	shutdown     chan struct{}
@@ -122,6 +130,7 @@ type registration[T any] struct {
 // inside a callback): the trigger being delivered uses the snapshot it already
 // took, so a newly registered callback takes effect from the next trigger on.
 func register[T any](p *courseProgram, handler func(T), attach func(*handlers, *registration[T])) {
+	p.requireRun("registering a callback")
 	p.schedulerMu.Lock()
 	defer p.schedulerMu.Unlock()
 	attach(&p.handlers, &registration[T]{handler: handler})
@@ -142,18 +151,23 @@ func (p *courseProgram) init() {
 	p.fatal = nil
 	p.execToken = execToken
 	p.current = nil
+	p.holder.Store(0)
 	p.shutdown = make(chan struct{})
 	p.shutdownOnce = sync.Once{}
 	p.callCapability = xgoexec.CallCapability
 }
 
-func (p *courseProgram) acquireExec() { <-p.execToken }
+func (p *courseProgram) acquireExec() {
+	<-p.execToken
+	p.holder.Store(gid.Get())
+}
 
 // releaseExec returns the execution token. The non-blocking send doubles as a
 // runtime assertion: a full slot means something released a token it never
 // acquired, which is a framework bug. Failing loudly beats quietly ending up
 // with two tokens, which would break mutual exclusion.
 func (p *courseProgram) releaseExec() {
+	p.holder.Store(0)
 	select {
 	case p.execToken <- struct{}{}:
 	default:
@@ -234,6 +248,45 @@ func (p *courseProgram) yieldWhile(wait func()) {
 		wait()
 	}()
 	p.current = r
+}
+
+// holding reports whether the calling goroutine holds the execution token.
+//
+// Course code runs on run goroutines, only while they hold the token, unless
+// it starts goroutines of its own (a go statement, time.AfterFunc): code on
+// those runs outside the scheduler, and this is how the framework tells.
+func (p *courseProgram) holding() bool {
+	return p.holder.Load() == gid.Get()
+}
+
+// requireRun fails the Course when the calling goroutine does not hold the
+// execution token, that is, when Course code uses the framework from a
+// goroutine it started itself; what describes that use for the error message,
+// such as "calling wait". Every entry point Course code can reach calls it
+// first.
+//
+// Letting such a call through would break the scheduler: a waiting call would
+// release a token the goroutine never acquired, panicking when the token is
+// free and handing out a second token when a run holds it. There is no run
+// frame to catch a panic on that goroutine, so record the error as fatal, which
+// ends the Course the usual way, and end the goroutine.
+func (p *courseProgram) requireRun(what string) {
+	if p.holding() {
+		return
+	}
+	p.recordFatal(fmt.Errorf("%s from a goroutine the Course started: the framework may only be used at the top level of the Course and in its callbacks", what))
+	runtime.Goexit()
+}
+
+// pause suspends the calling run for d and lets other runs proceed meanwhile,
+// which makes it a waiting point like a waiting capability. The caller must
+// hold the token. A non-positive d returns at once without yielding, as
+// time.Sleep does.
+func (p *courseProgram) pause(d time.Duration) {
+	if d <= 0 {
+		return
+	}
+	p.yieldWhile(func() { time.Sleep(d) })
 }
 
 // admitRun checks the terminal state and registers a goroutine with runs under
@@ -383,6 +436,7 @@ func (p *courseProgram) isCompleted() bool {
 // catches the panic and records it as fatal; it is re-raised on the main
 // goroutine, and the executor reports a runtime-stage error.
 func (p *courseProgram) mustCallCapability(name string, request, result any) {
+	p.requireRun("calling " + name)
 	if capabilityKinds[name] == kindFast {
 		if err := p.callCapability(name, request, result); err != nil {
 			panic(err)

@@ -20,6 +20,12 @@
 // with this package.
 package tutorial
 
+import (
+	"fmt"
+	"math"
+	"time"
+)
+
 // XGoPackage marks this as an XGo package (GopPackage is the legacy spelling).
 // The classfile machinery relies on it to recognize a package usable as a
 // project class framework.
@@ -128,6 +134,35 @@ func (p *Course) ShowVideo(videoName string) {
 	}{VideoName: videoName}, nil)
 }
 
+// Wait pauses the calling callback for the given number of seconds while
+// other runs proceed, the Course's counterpart of spx's wait. Zero or negative
+// seconds return at once.
+//
+// time.Sleep is deliberately left alone: like every other blocking operation
+// in Go, it holds the execution token and stalls the other runs. Redirecting
+// it alone would make one Go call yield while channel operations, timers and
+// I/O still block, a rule harder to explain than "only the framework's calls
+// yield".
+func (p *Course) Wait(seconds float64) {
+	p.courseProgram.requireRun("calling wait")
+	p.courseProgram.pause(secondsToDuration(seconds))
+}
+
+// secondsToDuration converts the argument of wait. NaN can only come from a
+// mistake in the Course code and fails it; values beyond what a Duration
+// holds saturate rather than overflow.
+func secondsToDuration(seconds float64) time.Duration {
+	switch {
+	case math.IsNaN(seconds):
+		panic(fmt.Errorf("wait: seconds is NaN"))
+	case seconds <= 0:
+		return 0
+	case seconds >= math.MaxInt64/float64(time.Second):
+		return math.MaxInt64
+	}
+	return time.Duration(seconds * float64(time.Second))
+}
+
 // Complete marks the Course completed.
 //
 // Completion semantics: no further triggers start runs and pending ones are
@@ -138,6 +173,10 @@ func (p *Course) ShowVideo(videoName string) {
 //
 // Repeated calls are ignored, see courseProgram.markCompleted.
 func (p *Course) Complete() {
+	// Refuse a Course goroutine before markCompleted: it would otherwise put
+	// the Course into its completed state before mustCallCapability refuses
+	// the call, racing the failure against a reported completion.
+	p.courseProgram.requireRun("calling complete")
 	if !p.courseProgram.markCompleted() {
 		return
 	}
@@ -153,6 +192,7 @@ func (p *Course) Complete() {
 // shared by the presentation capabilities; a host reading some other field
 // name should align with the contract.
 func (p *Course) CompleteWith(message string) {
+	p.courseProgram.requireRun("calling completeWith")
 	if !p.courseProgram.markCompleted() {
 		return
 	}
@@ -172,8 +212,9 @@ func (p *Course) CompleteWith(message string) {
 //   - One at a time, several in flight: only the holder of the execution
 //     token runs Course code at any instant, so shared variables never race;
 //     a run releases the token while it waits on a waiting capability
-//     (presentation, LLM) and the other runs proceed, which means runs of one
-//     callback may overlap (how they relate: see #3509).
+//     (presentation, LLM) or pauses with wait and the other runs proceed,
+//     which means runs of one callback may overlap (how they relate: see
+//     #3509).
 //   - Completion winds down: after complete, no new trigger starts a run;
 //     runs already executing or suspended finish their remaining statements
 //     unless a capability fails or is cancelled, and the program ends once

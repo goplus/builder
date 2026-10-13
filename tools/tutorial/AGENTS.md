@@ -7,7 +7,16 @@ These are the rules of change.
   Every trigger starts a new run of each registered callback, so runs of one callback may overlap. How such runs
   relate (run policies and run groups) is deferred to #3509; do not add ad-hoc guards in the framework meanwhile
 - `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long and
-  restores `current` afterwards. Only `mustCallCapability` may call it
+  restores `current` afterwards. Only `mustCallCapability` (waiting on the host) and `pause` (waiting on a timer) may
+  call it
+- The contract forbids course code to start goroutines (`go`, `time.AfterFunc`), but nothing stops it, and such
+  goroutines run outside the scheduler. Every exported method course code can call must refuse them before doing
+  anything else: its first call is `requireRun`, or `mustCallCapability`/`register` (whose own first call is
+  `requireRun`), or another such method. The invariant checker enforces both halves. `holding` compares goroutine IDs with `holder`, which only
+  `acquireExec`, `releaseExec` and `init` write
+- Only framework calls yield. Do not redirect Go's own blocking calls (say `time.Sleep` through
+  `ixgo.RegisterExternal`): channel operations, timers and I/O could not follow, and a rule with one exception is
+  harder for authors than none. Authors pause with `wait`; the contract lists what blocks
 - Runs are started only by `startRuns`, from `Course.Start` and the event deliverers, in registration order, each to
   its first yield (`yielded`) before the next. That order is an implementation detail the contract does not promise
   (see #3509); keep `startRuns` the sole start path and never spawn course code elsewhere

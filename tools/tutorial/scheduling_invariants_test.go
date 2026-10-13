@@ -15,9 +15,11 @@ import (
 //
 //  1. The execution token flows only through acquireExec/releaseExec, and only
 //     runFrame and yieldWhile may call them: a run has exactly one yield
-//     point, with no ad-hoc yielding scattered elsewhere.
+//     point, with no ad-hoc yielding scattered elsewhere. The token holder's
+//     goroutine ID is written only alongside the token itself.
 //  2. yieldWhile is entered only from mustCallCapability, which waits on the
-//     host; the bridge's callCapability appears only in mustCallCapability.
+//     host, and pause, which waits on a timer; the bridge's callCapability
+//     appears only in mustCallCapability.
 //  3. No operation that can block appears while schedulerMu is held (channel
 //     send or receive, select, Wait, taking the token, calling the bridge);
 //     registryMu is a leaf lock whose regions allow only allowlisted calls.
@@ -27,6 +29,11 @@ import (
 //  5. Events have a single entry: handlers are registered with the executor
 //     only in init; events.attach is called only by XGot_Course_Main and
 //     events.goLive only by Start.
+//  6. Every exported method of a type holding the course program (the API
+//     Course code calls) refuses a caller outside a run before doing anything
+//     else: its first call is requireRun, a guard delegate (mustCallCapability
+//     or register, whose own first call must be requireRun), or another such
+//     method of the same receiver.
 //
 // The checks work on the AST rather than on observed behavior, so a violating
 // way of writing things turns red as it enters the repository instead of
@@ -38,6 +45,7 @@ func TestSchedulingInvariants(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var parsedFiles []*ast.File
 	for _, file := range files {
 		if strings.HasSuffix(file, "_test.go") {
 			continue
@@ -46,14 +54,123 @@ func TestSchedulingInvariants(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		parsedFiles = append(parsedFiles, parsed)
+	}
+
+	courseFacing := courseFacingTypes(parsedFiles)
+	if len(courseFacing) == 0 {
+		t.Fatal("found no type holding the course program: rule 6 checks nothing")
+	}
+	delegatesSeen := map[string]bool{}
+	for _, parsed := range parsedFiles {
 		for _, decl := range parsed.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
 			if !ok || fn.Body == nil {
 				continue
 			}
 			checkFunction(t, fset, fn)
+			checkGuardedEntry(t, fset, fn, courseFacing)
+			if checkGuardDelegate(t, fset, fn) {
+				delegatesSeen[fn.Name.Name] = true
+			}
 		}
 	}
+	for name := range guardDelegates {
+		if !delegatesSeen[name] {
+			t.Errorf("guard delegate %s not found: keep guardDelegates in step with the code", name)
+		}
+	}
+}
+
+// courseFacingTypes returns the types holding the course program, by value or
+// by pointer, in a field named courseProgram: Course and its namespaces.
+func courseFacingTypes(files []*ast.File) map[string]bool {
+	types := map[string]bool{}
+	for _, file := range files {
+		ast.Inspect(file, func(node ast.Node) bool {
+			spec, ok := node.(*ast.TypeSpec)
+			if !ok {
+				return true
+			}
+			if st, ok := spec.Type.(*ast.StructType); ok {
+				for _, field := range st.Fields.List {
+					for _, name := range field.Names {
+						if name.Name == "courseProgram" {
+							types[spec.Name.Name] = true
+						}
+					}
+				}
+			}
+			return false
+		})
+	}
+	return types
+}
+
+// guardDelegates are the functions an ability may call first instead of
+// requireRun. Each must call requireRun first itself (checkGuardDelegate), so
+// the refusal still comes before anything else the ability does.
+var guardDelegates = map[string]bool{"mustCallCapability": true, "register": true}
+
+// firstCall returns the first call in fn's body in source order, or nil. A
+// call's arguments come after the call itself, so for register(..., func()
+// {...}) the result is register, not a call inside the closure.
+func firstCall(fn *ast.FuncDecl) *ast.CallExpr {
+	var first *ast.CallExpr
+	ast.Inspect(fn.Body, func(node ast.Node) bool {
+		if call, ok := node.(*ast.CallExpr); ok && first == nil {
+			first = call
+		}
+		return first == nil
+	})
+	return first
+}
+
+// calleeName returns the last segment of a rendered callee, so that
+// "p.courseProgram.requireRun" and "requireRun" both give "requireRun".
+func calleeName(callee string) string {
+	return callee[strings.LastIndex(callee, ".")+1:]
+}
+
+// checkGuardDelegate checks the other half of rule 6, that a guard delegate's
+// own first call is requireRun, and reports whether fn is a guard delegate.
+func checkGuardDelegate(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) bool {
+	if !guardDelegates[fn.Name.Name] {
+		return false
+	}
+	if first := firstCall(fn); first == nil || calleeName(renderExpr(first.Fun)) != "requireRun" {
+		t.Errorf("%s: %s must call requireRun first: abilities that call it first rely on that refusal", fset.Position(fn.Pos()), fn.Name.Name)
+	}
+	return true
+}
+
+// checkGuardedEntry checks rule 6. Start is exempt: it is the program entry
+// the generated Main calls on the main goroutine, not an ability.
+func checkGuardedEntry(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl, courseFacing map[string]bool) {
+	if fn.Recv == nil || !fn.Name.IsExported() || fn.Name.Name == "Start" {
+		return
+	}
+	recvType := fn.Recv.List[0].Type
+	if star, ok := recvType.(*ast.StarExpr); ok {
+		recvType = star.X
+	}
+	if ident, ok := recvType.(*ast.Ident); !ok || !courseFacing[ident.Name] {
+		return
+	}
+
+	first := firstCall(fn)
+	if first == nil {
+		t.Errorf("%s: %s calls nothing: an ability must reach requireRun", fset.Position(fn.Pos()), fn.Name.Name)
+		return
+	}
+	callee := renderExpr(first.Fun)
+	if name := calleeName(callee); name == "requireRun" || guardDelegates[name] {
+		return
+	}
+	if recv := receiverName(fn); strings.HasPrefix(callee, recv+".") && ast.IsExported(strings.TrimPrefix(callee, recv+".")) {
+		return
+	}
+	t.Errorf("%s: %s calls %s before refusing callers outside a run: call requireRun first", fset.Position(first.Pos()), fn.Name.Name, callee)
 }
 
 // The allowlists for the rules above: the only functions entitled to perform
@@ -61,7 +178,7 @@ func TestSchedulingInvariants(t *testing.T) {
 var (
 	tokenOperators   = map[string]bool{"runFrame": true, "yieldWhile": true}
 	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
-	yieldCallers     = map[string]bool{"mustCallCapability": true}
+	yieldCallers     = map[string]bool{"mustCallCapability": true, "pause": true}
 	blockingWaitHome = "mustCallCapability"
 	admitCallers     = map[string]bool{"startRuns": true, "goLive": true}
 	yieldMarkers     = map[string]bool{"runFrame": true, "yieldWhile": true}
@@ -83,9 +200,13 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				if !tokenOperators[name] {
 					report(n.Pos(), "%s calls %s: only runFrame and yieldWhile may operate the token", name, callee)
 				}
+			case strings.HasSuffix(callee, ".holder.Store"):
+				if !tokenPlumbing[name] {
+					report(n.Pos(), "%s writes the token holder: only acquireExec, releaseExec and init may", name)
+				}
 			case strings.HasSuffix(callee, ".yieldWhile"):
 				if !yieldCallers[name] {
-					report(n.Pos(), "%s yields the token: only mustCallCapability may wait", name)
+					report(n.Pos(), "%s yields the token: only mustCallCapability and pause may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
 				if name != blockingWaitHome {

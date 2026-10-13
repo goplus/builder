@@ -37,6 +37,7 @@ onStart => {
 
 Editor.Runtime.onStart => {
 	showMessage "Running!"
+	wait 0.5
 }
 
 Editor.Runtime.onExit code => {
