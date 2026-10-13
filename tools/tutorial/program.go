@@ -260,9 +260,10 @@ func (p *courseProgram) holding() bool {
 }
 
 // requireRun fails the Course when the calling goroutine does not hold the
-// execution token, that is, when Course code uses the framework (what names
-// how) from a goroutine it started itself. Every entry point Course code can
-// reach calls it first.
+// execution token, that is, when Course code uses the framework from a
+// goroutine it started itself; what describes that use for the error message,
+// such as "calling wait". Every entry point Course code can reach calls it
+// first.
 //
 // Letting such a call through would break the scheduler: a waiting call would
 // release a token the goroutine never acquired, panicking when the token is
