@@ -5,9 +5,7 @@ export const exampleCourseSource = `onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
-	// TODO(#3441): "API References" is the target's Radar node name; revisit
-	// once the Radar name-based selector syntax is settled.
-	Spotlight.reveal "API References", "Here is stepTo, the only block you need in this lesson."
+	Spotlight.reveal "api-references", "Here is stepTo, the only block you need in this lesson."
 }
 
 Editor.Runtime.onLog log => {
@@ -47,8 +45,8 @@ onStart => {
 	Editor.Ruler.enable
 	showPrelude "Move Lita to Mushroom."
 	showVideo "step-to"
-	Spotlight.reveal "Code editor > Code text editor", "Write your code here"
-	Spotlight.revealWith "Stage overview", "Watch Lita", SpotlightOptions{Mask: false, Duration: 3}
+	Spotlight.reveal "code-text-editor", "Write your code here"
+	Spotlight.revealWith "stage-overview", "Watch Lita", SpotlightOptions{Mask: false, Duration: 3}
 }
 
 Editor.Runtime.onStart => {

@@ -40,11 +40,13 @@ type spotlightRevealRequest struct {
 
 // Reveal highlights the UI elements target matches and shows tip beside them.
 //
-// target is a Radar selector — of the form "Code editor > Code text editor",
-// built from node names annotated in builder's editor UI code and kept as
-// stable as possible — not a Radar node ID, which is generated afresh on every
-// mount and which Course code written in advance cannot know. The selector
-// syntax is defined by the Radar module; this side only passes it through.
+// target is a Radar selector — such as "run-button", or
+// "editor-preview run-button" for the one inside the editor preview — built
+// from the kebab-case UI roles annotated in builder's editor UI code and kept
+// as stable as possible, not a Radar node ID, which is generated afresh on
+// every mount and which Course code written in advance cannot know. The
+// selector syntax is defined by the Radar module; this side only passes it
+// through.
 //
 // A selector matching several elements highlights them together as one group,
 // for instance every overload of an API name.

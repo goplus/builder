@@ -11,7 +11,7 @@ while the calls on them do not:
 ```xgo
 Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 Copilot.generateText("...")
-Spotlight.reveal "Run button", "Click here to run the project"
+Spotlight.reveal "run-button", "Click here to run the project"
 showMessage "Well done."
 ```
 
@@ -132,8 +132,15 @@ Spotlight.revealWith target, tip, options         // the same, with explicit Spo
 
 `reveal` returns as soon as the spotlight is shown, so it never blocks the course. Its defaults are course
 guidance: the mask is on and the spotlight stays until the learner clicks anywhere. `target` is a Radar selector
-naming the UI elements to reveal; one selector may match several elements, which are then revealed together. A
-malformed selector fails the course program, so mistakes show up in Preview; a well-formed selector that matches
+naming the UI elements to reveal; one selector may match several elements, which are then revealed together.
+
+A selector is made of the kebab-case role names the editor gives its UI, which are the tags in the UI structure
+you are given: `run-button`, `api-references`, `code-text-editor`. A space means "inside", as in
+`editor-preview run-button`, and `[name="…"]` picks one of several, as in `sprite-item[name="Lita"]`. Names are
+case-sensitive and never contain spaces, so a visible label such as "Run button" is not a selector. Some targets
+exist only in some states: the `ruler` toggle appears once the course has called `Editor.Ruler.enable`.
+
+A malformed selector fails the course program, so mistakes show up in Preview; a well-formed selector that matches
 nothing right now is not an error, the host retries briefly and then skips the highlight.
 
 ## A complete example
@@ -143,7 +150,7 @@ onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
-	Spotlight.reveal "API References", "Here is stepTo, the only block you need in this lesson."
+	Spotlight.reveal "api-references", "Here is stepTo, the only block you need in this lesson."
 }
 
 Editor.Runtime.onLog log => {
