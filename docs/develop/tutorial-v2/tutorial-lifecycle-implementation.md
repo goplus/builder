@@ -346,39 +346,30 @@ The prototype still exposes implementation questions that do not change the publ
 
 ## Playground startup coordination
 
-The executor starts in parallel with mounting the Playground editor. An opaque
-loading cover keeps the mounted editor out of view and prevents learner input;
-it does not hide or unmount the editor or change its layout.
+The executor and Host prepare in parallel. After MainEntry registers callbacks,
+`lifecycle.waitForHostReady` waits for Host capabilities to become usable before
+`onStart` runs. Each callback advances to its first waiting capability or return;
+fast configuration calls wait for Host acknowledgment without yielding. Then
+`lifecycle.started` applies initial configuration effects before revealing
+Playground content and releasing queued Host events.
 
-After MainEntry has registered Course callbacks, the framework calls the internal
-`lifecycle.waitForHostReady` handshake. It waits for Host capabilities to become
-usable; the framework does not assume the Playground hosts an editor or that
-readiness is determined by rendering. The current SPX Playground Host satisfies
-this condition by waiting for the session's Code Editor, Monaco UI, API Reference
-fetch/deferred rendering, and Stage Viewer resources. Only then does the framework
-trigger `onStart`.
+Initial configuration should precede presentation or Copilot calls in the same
+callback; separate callbacks have no ordering guarantee. Startup does not wait for
+learner interaction or generation to finish. Completion retains Session long
+enough to apply initial effects; leaving, retrying or replacing a Course cancels
+pending handshakes. Preview follows the same flow.
 
-Every startup callback runs through its first waiting capability (Prelude,
-Message, Video or Copilot generation) or return. Fast capabilities, including API
-filtering and Ruler configuration, wait for host acknowledgment without yielding.
-Once all admitted startup callbacks reach that boundary, the framework calls
-`lifecycle.started`. The Host applies initial configuration effects before
-acknowledging startup. In the current SPX Playground, this means flushing Vue
-configuration updates, waiting for registered async readiness conditions (including
-API Reference refresh and deferred rendering), then committing their DOM updates
-before removing the loading cover. It does not wait for the
-learner to dismiss presentations or for generation to finish. No fixed startup
-delay or browser-frame assumption is involved. Host events remain queued until
-this handshake is acknowledged.
+In the current SPX Host, the editor mounts under a cover limited to the main
+content; the Navbar remains visible while dependencies load. Host readiness includes
+Monaco attachment and API Reference loading/rendering;
+initial configuration updates are committed before the cover is removed.
 
-Course authors continue using `onStart`; no initialization callback is introduced.
-Initial configuration should precede waiting operations within the same callback.
-Configuration after a waiting operation is an ordinary runtime update. This does
-not add an ordering guarantee between different callbacks.
+### Shared readiness scopes
 
-Completion stops Program while Session remains available. If it happens during
-startup, the host still waits for initial configuration rendering before uncovering
-the editor, using the session lifetime because Program has already been disposed.
-Failure replaces the editor with the error experience. Leaving, retrying or
-replacing a Course aborts its pending handshakes, so an obsolete session cannot
-start callbacks or uncover the replacement editor. Preview uses the same flow.
+App provides a page Scope around RouterView and passes it to TutorialRoot and
+CopilotRoot. CoursePlayground passes a nested Host Scope to Session, which owns
+startup state, the borrowed CodeEditor reference and runtime errors. The loading
+cover gates the parent page Scope while Host readiness remains independent,
+avoiding a startup dependency cycle. Preview uses the same
+coordination. See the [readiness module README](../../../spx-gui/src/utils/readiness/README.md)
+for its API and behavior.

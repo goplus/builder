@@ -1,8 +1,12 @@
+import { ref, shallowRef } from 'vue'
 import Emitter from '@/utils/emitter'
-import { ActionException, type Exception } from '@/utils/exception'
+import { ActionException, capture, type Exception } from '@/utils/exception'
+import type { ReadinessScope } from '@/utils/readiness'
+import { untilNotNull } from '@/utils/utils'
 import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot, Session as CopilotSession, Topic } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
+import type { CodeEditor } from '@/components/editor/spx-code-editor'
 
 import { PlaygroundCourseProgram, type PlaygroundCourseCompletion, type PlaygroundCoursePresentation } from './program'
 import { APIWhitelist } from './api-whitelist'
@@ -13,9 +17,7 @@ export type PlaygroundCourseSessionOptions = {
   editorState: EditorState
   copilot: Copilot
   presentation: PlaygroundCoursePresentation
-  waitForHostReady(signal: AbortSignal): Promise<void>
-  onStarted(signal: AbortSignal): Promise<void>
-  formatWorkspace(): Promise<void>
+  readiness: ReadinessScope
 }
 
 /**
@@ -34,13 +36,36 @@ export class PlaygroundCourseSession extends Emitter<{
   private readonly program: PlaygroundCourseProgram
   private copilotSession: CopilotSession | null = null
   private started = false
+  private startingRef = ref(true)
+  private codeEditorRef = shallowRef<CodeEditor | null>(null)
+  private errorRef = shallowRef<Exception | null>(null)
 
-  constructor(options: PlaygroundCourseSessionOptions) {
+  /** Remains true until Host readiness and initial configuration rendering finish. */
+  get starting() {
+    return this.startingRef.value
+  }
+
+  /** Borrowed from CodeEditorProvider; the Session does not dispose it. */
+  get codeEditor() {
+    return this.codeEditorRef.value
+  }
+
+  setCodeEditor(editor: CodeEditor | null) {
+    this.codeEditorRef.value = editor
+  }
+
+  /** Session startup or Program failure; used to present the Course restart action. */
+  get error() {
+    return this.errorRef.value
+  }
+
+  constructor(private readonly options: PlaygroundCourseSessionOptions) {
     super()
     this.project = options.project
     this.editorState = options.editorState
     this.copilot = options.copilot
     this.addDisposer(() => {
+      this.codeEditorRef.value = null
       if (this.copilotSession != null && this.copilot.currentSession === this.copilotSession)
         this.copilot.endCurrentSession()
     })
@@ -51,11 +76,23 @@ export class PlaygroundCourseSession extends Emitter<{
       apiWhitelist: this.apiWhitelist,
       ruler: this.ruler,
       presentation: options.presentation,
-      waitForHostReady: options.waitForHostReady,
-      onStarted: options.onStarted,
-      formatWorkspace: options.formatWorkspace,
-      onCompleted: (completion) => this.emit('completed', completion),
-      onFailed: (error) => this.emit('failed', error)
+      waitForHostReady: async (signal) => {
+        await untilNotNull(this.codeEditorRef, signal)
+        await options.readiness.untilReady(signal)
+      },
+      onStarted: (signal) => this.finishStarting(signal),
+      formatWorkspace: async () => {
+        if (this.codeEditor == null) throw new Error('Course Code Editor is not ready')
+        await this.codeEditor.formatWorkspace()
+      },
+      onCompleted: (completion) => {
+        // Program is disposed on completion; initial rendering still belongs to Session.
+        void this.finishStarting(this.getSignal()).catch((error) => {
+          if (!this.isDisposed) capture(error, 'Failed to render completed Course')
+        })
+        this.emit('completed', completion)
+      },
+      onFailed: (error) => this.fail(error)
     })
     this.addDisposable(this.program)
   }
@@ -68,14 +105,21 @@ export class PlaygroundCourseSession extends Emitter<{
       await this.startCopilotSession()
     } catch (error) {
       if (this.isDisposed) return
-      this.emit(
-        'failed',
-        new ActionException(error, { en: 'Failed to start Copilot session', zh: '无法开始 Copilot 会话' })
-      )
+      this.fail(new ActionException(error, { en: 'Failed to start Copilot session', zh: '无法开始 Copilot 会话' }))
       return
     }
     if (this.isDisposed) return
     await this.program.start()
+  }
+
+  private async finishStarting(signal: AbortSignal) {
+    await this.options.readiness.untilReady(signal)
+    this.startingRef.value = false
+  }
+
+  private fail(error: Exception) {
+    this.errorRef.value = error
+    this.emit('failed', error)
   }
 
   private async startCopilotSession() {

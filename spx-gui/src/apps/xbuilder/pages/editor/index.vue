@@ -41,7 +41,7 @@ import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
-import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import { useRegisterLoading } from '@/utils/readiness'
 import {
   getProjectEditorRouteParams,
   isSameProjectIdentifier,
@@ -209,7 +209,8 @@ const allQueryRet = useQuery(
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
 
-useRegisterUpdateRouteLoaded(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
+// TODO: Evaluate dropping the error check: it currently keeps consumers waiting until editor context is available.
+useRegisterLoading(() => allQueryRet.isLoading.value || allQueryRet.error.value != null)
 
 const publishProject = usePublishProject()
 

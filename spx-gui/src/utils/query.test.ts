@@ -54,7 +54,7 @@ describe('useQuery', () => {
     expect(ret.data.value).toBe('second')
   })
 
-  it('clears previous data when clearDataOnFetch is enabled', async () => {
+  it('clears previous data when clearResultOnFetch is enabled', async () => {
     let resolveNext!: (value: string) => void
     let callCount = 0
     const ret = withSetup(() =>
@@ -64,7 +64,7 @@ describe('useQuery', () => {
           return new Promise<string>((resolve) => (resolveNext = resolve))
         },
         { en: 'Failed to load data', zh: '加载数据失败' },
-        { clearDataOnFetch: true }
+        { clearResultOnFetch: true }
       )
     )
 
@@ -76,6 +76,29 @@ describe('useQuery', () => {
     await flushPromises()
     expect(ret.data.value).toBe('second')
   })
+
+  it.each([true, false])(
+    'resets the previous error on retry only when clearResultOnFetch is %s',
+    async (clearResultOnFetch) => {
+      const error = new Error('failed')
+      let finish!: (value: string) => void
+      const query = vi
+        .fn()
+        .mockRejectedValueOnce(error)
+        .mockImplementationOnce(() => new Promise<string>((resolve) => (finish = resolve)))
+      const ret = withSetup(() => useQuery(query, undefined, { clearResultOnFetch }))
+      await flushPromises()
+      expect(ret.error.value).toBe(error)
+
+      ret.refetch()
+      expect(ret.isLoading.value).toBe(true)
+      expect(ret.error.value).toBe(clearResultOnFetch ? null : error)
+      finish('recovered')
+      await flushPromises()
+      expect(ret.data.value).toBe('recovered')
+      expect(ret.error.value).toBeNull()
+    }
+  )
 
   it('does not collect reactive reads from the previous query cleanup', async () => {
     const queryInput = ref(1)

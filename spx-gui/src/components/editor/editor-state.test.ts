@@ -527,7 +527,7 @@ describe('EditorState', () => {
                 return editorState
               },
               { en: 'Failed to load editor', zh: '加载编辑器失败' },
-              { clearDataOnFetch: true }
+              { clearResultOnFetch: true }
             )
             return () => null
           }

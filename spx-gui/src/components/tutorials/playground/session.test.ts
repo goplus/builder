@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
 import { until } from '@/utils/utils'
+import { createReadinessScope } from '@/utils/readiness'
+import type { CodeEditor } from '@/components/editor/spx-code-editor'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -105,17 +107,17 @@ function makeHarness() {
     revealSpotlight: vi.fn().mockResolvedValue(undefined)
   }
   const formatWorkspace = vi.fn().mockResolvedValue(undefined)
-  const waitForHostReady = vi.fn().mockResolvedValue(undefined)
-  const onStarted = vi.fn().mockResolvedValue(undefined)
+  const readiness = createReadinessScope()
+  const untilReady = vi.spyOn(readiness, 'untilReady').mockResolvedValue(undefined)
   const courseSession = new PlaygroundCourseSession({
     project,
     editorState,
     copilot: copilot as unknown as Copilot,
     presentation,
-    formatWorkspace,
-    waitForHostReady,
-    onStarted
+    readiness
   })
+  const codeEditor = { formatWorkspace, dispose: vi.fn() } as unknown as CodeEditor
+  courseSession.setCodeEditor(codeEditor)
   const executor = executorMocks.instances.at(-1)!
   const harness = {
     project,
@@ -126,8 +128,8 @@ function makeHarness() {
     executor,
     presentation,
     formatWorkspace,
-    waitForHostReady,
-    onStarted,
+    untilReady,
+    codeEditor,
     courseSession,
     getExecutorOptions: () => executor.options
   }
@@ -165,33 +167,39 @@ describe('PlaygroundCourseSession', () => {
 
   it('waits for editor readiness and startup rendering acknowledgments', async () => {
     const harness = makeHarness()
+    harness.courseSession.setCodeEditor(null)
+    expect(harness.courseSession.starting).toBe(true)
     let ready!: () => void
-    harness.waitForHostReady.mockImplementationOnce(() => new Promise<void>((resolve) => (ready = resolve)))
+    harness.untilReady.mockImplementationOnce(() => new Promise<void>((resolve) => (ready = resolve)))
     const capabilities = harness.getExecutorOptions().framework!.capabilities
     const acknowledged = vi.fn()
     const waiting = Promise.resolve(capabilities.lifecycle_waitForHostReady(null)).then(acknowledged)
     await Promise.resolve()
     expect(acknowledged).not.toHaveBeenCalled()
+    expect(harness.untilReady).not.toHaveBeenCalled()
+    harness.courseSession.setCodeEditor(harness.codeEditor)
+    await vi.waitFor(() => expect(harness.untilReady).toHaveBeenCalledOnce())
     ready()
     await waiting
     expect(acknowledged).toHaveBeenCalledOnce()
+    expect(harness.courseSession.starting).toBe(true)
 
     let rendered!: () => void
-    harness.onStarted.mockImplementationOnce(() => new Promise<void>((resolve) => (rendered = resolve)))
+    harness.untilReady.mockImplementationOnce(() => new Promise<void>((resolve) => (rendered = resolve)))
     const rendering = Promise.resolve(capabilities.lifecycle_started(null)).then(acknowledged)
     await Promise.resolve()
     expect(acknowledged).toHaveBeenCalledOnce()
     rendered()
     await rendering
     expect(acknowledged).toHaveBeenCalledTimes(2)
+    expect(harness.courseSession.starting).toBe(false)
   })
 
   it.each(['lifecycle_waitForHostReady', 'lifecycle_started'])(
     'cancels %s on disposal and rejects obsolete lifecycle calls',
     async (name) => {
       const harness = makeHarness()
-      harness.waitForHostReady.mockImplementation((signal: AbortSignal) => until(() => false, signal))
-      harness.onStarted.mockImplementation((signal: AbortSignal) => until(() => false, signal))
+      harness.untilReady.mockImplementation((signal?: AbortSignal) => until(() => false, signal))
       const capability = harness.getExecutorOptions().framework!.capabilities[name]
       const waiting = Promise.resolve(capability(null))
       const cancelled = expect(waiting).rejects.toThrow('cancelled')
@@ -201,8 +209,7 @@ describe('PlaygroundCourseSession', () => {
       const replacement = makeHarness()
       await replacement.getExecutorOptions().framework!.capabilities.lifecycle_waitForHostReady(null)
       await replacement.getExecutorOptions().framework!.capabilities.lifecycle_started(null)
-      expect(replacement.waitForHostReady).toHaveBeenCalledOnce()
-      expect(replacement.onStarted).toHaveBeenCalledOnce()
+      expect(replacement.untilReady).toHaveBeenCalledTimes(2)
     }
   )
 
@@ -617,6 +624,8 @@ describe('PlaygroundCourseSession', () => {
     expect(harness.courseSession.ruler.enabled).toBe(true)
     harness.courseSession.dispose()
     harness.courseSession.dispose()
+    expect(harness.courseSession.codeEditor).toBeNull()
+    expect(harness.codeEditor.dispose).not.toHaveBeenCalled()
     expect(harness.editorState.dispose).not.toHaveBeenCalled()
     expect(harness.project.isDisposed).toBe(false)
     expect(harness.executor.stop).toHaveBeenCalledOnce()
@@ -648,6 +657,7 @@ describe('PlaygroundCourseSession', () => {
     harness.courseSession.on('failed', failed)
     await expect(harness.courseSession.start()).resolves.toBeUndefined()
     expect(failed).toHaveBeenCalledOnce()
+    expect(harness.courseSession.error).toBe(failed.mock.calls[0][0])
     expect(harness.executor.run).not.toHaveBeenCalled()
     expect(harness.executor.stop).not.toHaveBeenCalled()
     expect(harness.courseSession.isDisposed).toBe(false)
@@ -674,6 +684,7 @@ describe('PlaygroundCourseSession', () => {
     harness.courseSession.on('failed', failed)
     await expect(harness.courseSession.start()).resolves.toBeUndefined()
     expect(failed).toHaveBeenCalledOnce()
+    expect(harness.courseSession.error).toBe(failed.mock.calls[0][0])
   })
 
   it('resolves startup when completion stops the executor during onStart', async () => {

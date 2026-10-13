@@ -5,11 +5,13 @@ import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { composeQuery, untilLoaded, useQuery } from '@/utils/query'
+import { useRegisterLoading } from '@/utils/readiness'
 import { repeatableParamToPathSegments } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useSeriesCourses } from '@/stores/course-series'
 import { useSignIn, useSignedInStateQuery } from '@/stores/user'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
+import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
@@ -77,10 +79,11 @@ const sessionQueryRet = useQuery(
     en: 'Failed to start course',
     zh: '启动课程失败'
   },
-  { clearDataOnFetch: true }
+  { clearResultOnFetch: true }
 )
 
 const session = sessionQueryRet.data
+useRegisterLoading(sessionQueryRet.isLoading)
 
 const { fn: handleRestart } = useMessageHandle(
   async () => {
@@ -129,12 +132,19 @@ const { fn: handleCompleted } = useMessageHandle(
     @course-completed="handleCompleted"
     @course-restart="handleRestart"
   />
-  <section v-else class="h-full w-full flex items-center justify-center">
-    <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">
-      <span>{{ $t({ zh: '加载课程中...', en: 'Loading course...' }) }}</span>
-    </UIDetailedLoading>
-    <UIError v-else-if="sessionQueryRet.error.value != null" :retry="sessionQueryRet.refetch">
-      {{ $t(sessionQueryRet.error.value.userMessage) }}
-    </UIError>
+  <section v-else class="min-h-full w-full flex flex-col bg-grey-300">
+    <header class="flex-none">
+      <EditorNavbar :project="null" :state="null">
+        <template #project-menu />
+      </EditorNavbar>
+    </header>
+    <main class="flex-[1_1_0] flex items-center justify-center">
+      <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">
+        <span>{{ $t({ zh: '加载课程中...', en: 'Loading course...' }) }}</span>
+      </UIDetailedLoading>
+      <UIError v-else-if="sessionQueryRet.error.value != null" :retry="sessionQueryRet.refetch">
+        {{ $t(sessionQueryRet.error.value.userMessage) }}
+      </UIError>
+    </main>
   </section>
 </template>

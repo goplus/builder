@@ -41,8 +41,8 @@ export type QueryContext = {
 }
 
 export type QueryOptions = {
-  /** Clear previous data when a new fetch starts. */
-  clearDataOnFetch?: boolean
+  /** Clear previous data and error when a new fetch starts. */
+  clearResultOnFetch?: boolean
 }
 
 /**
@@ -81,7 +81,10 @@ export function useQuery<T>(
       if (signal.aborted) return
       progress.value = p
     })
-    if (options.clearDataOnFetch) data.value = null
+    if (options.clearResultOnFetch) {
+      data.value = null
+      error.value = null
+    }
     isLoading.value = true
     queryFn({ signal, source, reporter }).then(
       (d) => {

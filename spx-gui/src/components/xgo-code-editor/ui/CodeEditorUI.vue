@@ -15,7 +15,7 @@ import { throttle } from 'lodash'
 import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
 import { computedShallowReactive, untilNotNull, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
-import { useRegisterUIReady } from '@/utils/ui-ready'
+import { useRegisterLoading } from '@/utils/readiness'
 import { useI18n } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/xgo'
 import { theme, tabSize, insertSpaces } from '@/utils/xgo/highlighter'
@@ -156,13 +156,13 @@ async function handleMonacoEditorDrop(e: DragEvent) {
   }
 }
 
-const ready = ref(false)
-useRegisterUIReady(ready)
+const loading = ref(true)
+useRegisterLoading(loading)
 
 watch(
   uiRef,
   async (ui, _, onCleanUp) => {
-    ready.value = false
+    loading.value = true
     const signal = getCleanupSignal(onCleanUp)
     signal.addEventListener('abort', () => ui.dispose())
 
@@ -180,7 +180,7 @@ watch(
     })
 
     codeEditor.attachUI(ui)
-    ready.value = true
+    loading.value = false
     signal.addEventListener('abort', () => {
       codeEditor.detachUI(ui)
     })
