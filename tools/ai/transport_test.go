@@ -85,9 +85,9 @@ func TestTooManyRequestsError(t *testing.T) {
 		Err:        baseErr,
 	}
 
-	var tmrErr *TooManyRequestsError
-	if got, want := errors.As(err, &tmrErr), true; got != want {
-		t.Fatalf("got %t, want %t", got, want)
+	tmrErr, ok := errors.AsType[*TooManyRequestsError](err)
+	if !ok {
+		t.Fatalf("got error %v, want *TooManyRequestsError", err)
 	}
 	if got, want := tmrErr.RetryAfter, 5*time.Second; got != want {
 		t.Errorf("got %v, want %v", got, want)
