@@ -16,6 +16,7 @@ try {
   window.location.replace(returnTo)
 } catch (e) {
   console.error('failed to complete sign-in', e)
+  // TODO: Preserve the initiating page on sign-in failure instead of always going home (see #3580).
   window.location.replace('/')
 }
 </script>

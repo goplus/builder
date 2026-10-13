@@ -3,11 +3,12 @@ import { useRouter } from 'vue-router'
 
 import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
-import { useMessageHandle } from '@/utils/exception'
-import { composeQuery, useQuery } from '@/utils/query'
+import { Cancelled, useMessageHandle } from '@/utils/exception'
+import { composeQuery, untilLoaded, useQuery } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useSeriesCourses } from '@/stores/course-series'
+import { useSignIn, useSignedInStateQuery } from '@/stores/user'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
@@ -24,6 +25,8 @@ const props = defineProps<{
 
 const tutorial = useTutorial()
 const router = useRouter()
+const signIn = useSignIn()
+const signedInStateQuery = useSignedInStateQuery()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
 
@@ -31,10 +34,18 @@ const sessionQueryRet = useQuery(
   async (ctx) => {
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
-    const [series, courses] = await Promise.all([
+    const [signedInState, series, courses] = await Promise.all([
+      // Use untilLoaded instead of composeQuery to avoid resetting the session on token refresh.
+      // See https://github.com/goplus/builder/issues/3590
+      untilLoaded(signedInStateQuery, ctx.signal),
       getCourseSeries(courseSeriesID, ctx.signal),
       composeQuery(ctx, seriesCoursesQueryRet)
     ])
+    ctx.signal.throwIfAborted()
+    if (!signedInState.isSignedIn) {
+      await signIn()
+      throw new Cancelled('redirected to sign in')
+    }
     const course = courses.find(({ id }) => id === courseID)
     if (course == null) throw new Error(`course ${courseID} not found in series ${series.id}`)
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)

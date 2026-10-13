@@ -13,6 +13,7 @@ import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useSeries } from '@/stores/course-series'
 import { useQuery } from '@/utils/query'
+import { useEnsureSignedIn } from '@/utils/user'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
@@ -29,6 +30,7 @@ const props = defineProps<{
 }>()
 
 const tutorial = useTutorial()
+const ensureSignedIn = useEnsureSignedIn()
 
 const courseSeriesQuery = useSeries(() => props.courseSeriesIdInput)
 
@@ -77,12 +79,19 @@ const courseQuery = useQuery(
 )
 
 const { fn: handleCourseClick } = useMessageHandle(
-  (event: MouseEvent, course: Course, courseSeries: CourseSeries) => {
+  async (event: MouseEvent, course: Course, courseSeries: CourseSeries) => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
       return
     }
 
     event.preventDefault()
+    await ensureSignedIn({
+      returnTo: tutorial.getCourseStartRoute(courseSeries.id, course.id),
+      content: {
+        en: 'Sign in to start learning this course.',
+        zh: '登录后即可开始学习这节课程。'
+      }
+    })
     return tutorial.startCourse(courseSeries.id, course.id)
   },
   {
