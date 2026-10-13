@@ -24,6 +24,17 @@ export type QueryRet<T> = {
   refetch: () => void
 }
 
+/** Wraps existing data as a successful QueryRet, preserving reactive sources; refetch is a no-op. */
+export function createResolvedQueryRet<T>(data: WatchSource<T | null>): QueryRet<T> {
+  return {
+    data: computed(() => toValue<T | null>(data)),
+    isLoading: ref(false),
+    error: shallowRef(null),
+    progress: shallowRef({ percentage: 1, timeLeft: null, desc: null }),
+    refetch: () => {}
+  }
+}
+
 /**
  * Source of query triggering.
  * - `auto`: query is triggered automatically for dependencies' change.

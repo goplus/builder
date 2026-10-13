@@ -3,9 +3,32 @@ import { flushPromises } from '@vue/test-utils'
 import { QueryClient } from '@tanstack/vue-query'
 import { describe, it, expect, vi } from 'vitest'
 import { type ProgressReportParams } from './progress'
-import { useQuery, composeQuery, useQueryCache, useQueryWithCache, type QueryContext } from './query'
+import {
+  createResolvedQueryRet,
+  untilLoaded,
+  useQuery,
+  composeQuery,
+  useQueryCache,
+  useQueryWithCache,
+  type QueryContext
+} from './query'
 import { withQueryClient, withSetup } from './test'
 import { timeout } from './utils'
+
+describe('createResolvedQueryRet', () => {
+  it('provides completed query state for existing data and keeps reactive data current', async () => {
+    const data = ref('first')
+    const queryRet = createResolvedQueryRet(data)
+    expect(await untilLoaded(queryRet)).toBe('first')
+    expect(queryRet.isLoading.value).toBe(false)
+    expect(queryRet.error.value).toBeNull()
+    expect(queryRet.progress.value.percentage).toBe(1)
+    data.value = 'second'
+    queryRet.refetch()
+    expect(await untilLoaded(queryRet)).toBe('second')
+    expect(await untilLoaded(createResolvedQueryRet(() => 'fixed'))).toBe('fixed')
+  })
+})
 
 describe('useQuery', () => {
   it.each(['auto', 'refetch'] as const)('resets progress and ignores stale reports on %s fetch', async (source) => {

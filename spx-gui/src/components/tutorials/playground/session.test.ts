@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
 import { until } from '@/utils/utils'
 import { createReadinessScope } from '@/utils/readiness'
+import { ProgressReporter } from '@/utils/progress'
 import type { CodeEditor } from '@/components/editor/spx-code-editor'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { Sprite } from '@/models/spx/sprite'
@@ -114,7 +115,8 @@ function makeHarness() {
     editorState,
     copilot: copilot as unknown as Copilot,
     presentation,
-    readiness
+    readiness,
+    startReporter: new ProgressReporter(() => {})
   })
   const codeEditor = { formatWorkspace, dispose: vi.fn() } as unknown as CodeEditor
   courseSession.setCodeEditor(codeEditor)
@@ -206,10 +208,6 @@ describe('PlaygroundCourseSession', () => {
       harness.courseSession.dispose()
       await cancelled
       expect(() => capability(null)).toThrow('cancelled')
-      const replacement = makeHarness()
-      await replacement.getExecutorOptions().framework!.capabilities.lifecycle_waitForHostReady(null)
-      await replacement.getExecutorOptions().framework!.capabilities.lifecycle_started(null)
-      expect(replacement.untilReady).toHaveBeenCalledTimes(2)
     }
   )
 

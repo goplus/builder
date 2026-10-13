@@ -79,7 +79,7 @@ vi.mock('./project', () => ({ getProjectEditorHost: () => ({ name: 'ProjectEdito
 vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
   default: {
     name: 'CoursePlayground',
-    props: ['project', 'inEditorPath'],
+    props: ['projectQueryRet', 'inEditorPath'],
     emits: ['courseCompleted', 'courseRestart'],
     render: () => null
   }
@@ -240,7 +240,7 @@ describe('CourseEditor preview', () => {
     const playground = wrapper.findComponent({ name: 'CoursePlayground' })
     expect(playground.exists()).toBe(true)
     // A snapshot of the author's work, not the project itself: the course must not edit what is being authored.
-    expect(playground.props('project')).not.toBe(project)
+    expect(playground.props('projectQueryRet').data.value).not.toBe(project)
     expect(mocks.getCourse).not.toHaveBeenCalled()
   })
 
@@ -250,15 +250,15 @@ describe('CourseEditor preview', () => {
     const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
     mocks.completionAction = 'next'
     const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
-    const first = wrapper.findComponent({ name: 'CoursePlayground' }).props('project')
+    const first = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value
 
     await completePreviewedCourse(wrapper)
 
     expect(mocks.getCourse).toHaveBeenCalledWith('2339')
     expect(loadSaved).toHaveBeenCalledWith(next)
     const playground = wrapper.findComponent({ name: 'CoursePlayground' })
-    expect(playground.props('project')).not.toBe(first)
-    expect((playground.props('project') as TutorialProject).title).toBe('Second')
+    expect(playground.props('projectQueryRet').data.value).not.toBe(first)
+    expect((playground.props('projectQueryRet').data.value as TutorialProject).title).toBe('Second')
     // Still the preview of the same editing session: the author has not left the course they are writing.
     expect(router.currentRoute.value.name).toBe(courseEditorPreviewRouteName)
     expect(router.currentRoute.value.params.courseIdInput).toBe('2338')
@@ -294,11 +294,11 @@ describe('CourseEditor preview', () => {
   it('stays where it is when the author chooses to keep looking around', async () => {
     mocks.completionAction = 'continueEditing'
     const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
-    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('project')
+    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value
 
     await completePreviewedCourse(wrapper)
 
-    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('project')).toBe(running)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value).toBe(running)
     expect(router.currentRoute.value.name).toBe(courseEditorPreviewRouteName)
   })
 
@@ -347,7 +347,8 @@ describe('CourseEditor preview', () => {
     const { wrapper, router, project } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338']), {
       inEditorPath: 'sprites/Lita/code'
     })
-    const finished = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+    const finished = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+      .value as TutorialProject
     project.mainCourse.setCode('onStart => { completeWith "Again" }')
     // The learner wandered off before finishing.
     await router.replace({
@@ -357,7 +358,8 @@ describe('CourseEditor preview', () => {
 
     await completePreviewedCourse(wrapper)
 
-    const restarted = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+    const restarted = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+      .value as TutorialProject
     expect(restarted).not.toBe(finished)
     expect(finished.isDisposed).toBe(true)
     expect(restarted.mainCourse.code).toBe('onStart => { completeWith "Again" }')
@@ -371,12 +373,14 @@ describe('CourseEditor preview', () => {
     mocks.completionAction = 'next'
     const { wrapper } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
     await completePreviewedCourse(wrapper)
-    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+      .value as TutorialProject
 
     wrapper.findComponent({ name: 'CoursePlayground' }).vm.$emit('courseRestart')
     await flushPromises()
 
-    const restarted = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+    const restarted = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+      .value as TutorialProject
     expect(restarted).not.toBe(running)
     expect(restarted.title).toBe('Second')
     expect(mocks.getCourse).toHaveBeenCalledTimes(2)
@@ -393,9 +397,12 @@ describe('CourseEditor preview', () => {
     /** For each snapshot disposed, whether a playground was still running it at that moment. */
     const stillRunning: boolean[] = []
     function watchDisposal() {
-      const snapshot = wrapper.findComponent({ name: 'CoursePlayground' }).props('project') as TutorialProject
+      const snapshot = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+        .value as TutorialProject
       const running = () =>
-        wrapper.findAllComponents({ name: 'CoursePlayground' }).some((p) => p.props('project') === snapshot)
+        wrapper
+          .findAllComponents({ name: 'CoursePlayground' })
+          .some((p) => p.props('projectQueryRet').data.value === snapshot)
       vi.spyOn(snapshot, 'dispose').mockImplementation(() => void stillRunning.push(running()))
     }
 
@@ -475,13 +482,13 @@ describe('CourseEditor preview, entered again', () => {
     await completePreviewedCourse(wrapper)
     await leavePreview(router, first)
     await enterPreview(router, first)
-    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('project')
+    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value
 
     answer.resolve('next')
     await flushPromises()
 
     expect(mocks.getCourse).not.toHaveBeenCalled()
-    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('project')).toBe(running)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value).toBe(running)
   })
 
   it('does not let a completion modal answered after the author came back end the new preview', async () => {

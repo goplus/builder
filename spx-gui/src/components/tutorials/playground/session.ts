@@ -2,6 +2,7 @@ import { ref, shallowRef } from 'vue'
 import Emitter from '@/utils/emitter'
 import { ActionException, capture, type Exception } from '@/utils/exception'
 import type { ReadinessScope } from '@/utils/readiness'
+import type { ProgressReporter } from '@/utils/progress'
 import { untilNotNull } from '@/utils/utils'
 import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot, Session as CopilotSession, Topic } from '@/components/copilot/copilot'
@@ -18,6 +19,8 @@ export type PlaygroundCourseSessionOptions = {
   copilot: Copilot
   presentation: PlaygroundCoursePresentation
   readiness: ReadinessScope
+  /** Reports Course startup through the first configuration rendering. */
+  startReporter: ProgressReporter
 }
 
 /**
@@ -101,6 +104,7 @@ export class PlaygroundCourseSession extends Emitter<{
     if (this.isDisposed || this.program.isDisposed) return
     if (this.started) throw new Error('Playground Course session has already started')
     this.started = true
+    this.options.startReporter.startAutoReport(3000, { signal: this.getSignal() })
     try {
       await this.startCopilotSession()
     } catch (error) {
@@ -114,10 +118,12 @@ export class PlaygroundCourseSession extends Emitter<{
 
   private async finishStarting(signal: AbortSignal) {
     await this.options.readiness.untilReady(signal)
+    this.options.startReporter.report(1)
     this.startingRef.value = false
   }
 
   private fail(error: Exception) {
+    this.options.startReporter.report(1)
     this.errorRef.value = error
     this.emit('failed', error)
   }

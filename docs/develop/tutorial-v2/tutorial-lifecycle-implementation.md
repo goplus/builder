@@ -364,6 +364,12 @@ content; the Navbar remains visible while dependencies load. Host readiness incl
 Monaco attachment and API Reference loading/rendering;
 initial configuration updates are committed before the cover is removed.
 
+CoursePlayground consumes a Project QueryRet as part of Session construction.
+It combines Session and Monaco preparation progress with separate Course startup
+progress. One loading UI stays mounted throughout preparation.
+Preview wraps its loaded snapshot in a completed QueryRet; its existing loading
+and error feedback remain unchanged.
+
 ### Shared readiness scopes
 
 App provides a page Scope around RouterView and passes it to TutorialRoot and
