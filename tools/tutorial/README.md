@@ -90,8 +90,9 @@ after the course has started never runs.
 
 - **One callback runs at a time.** Variables shared between callbacks never race, and course code needs no locks.
 - **Waiting calls let other callbacks run.** `showPrelude`, `showMessage`, `showVideo`, `generateText` and
-  `generateJSON` wait for the learner or for generation. While one run waits, other runs keep going, including other
-  runs of the same callback, so shared state may have changed by the time the call returns.
+  `generateJSON` wait for the learner or for generation, and `wait` waits for time to pass. While one run waits,
+  other runs keep going, including other runs of the same callback, so shared state may have changed by the time the
+  call returns.
 - **Runs of one callback can overlap.** Every trigger starts a new run of each callback registered for it. A trigger
   that arrives while an earlier run is still waiting starts a second run, and the two interleave at waiting points. How
   overlapping runs should relate, such as dropping the stale one, running one at a time or ignoring triggers while
@@ -104,9 +105,11 @@ after the course has started never runs.
   the host decides whether the later call waits for its turn, is rejected, or dismisses the earlier one. Keep a
   sequence of presentations in one callback. Spotlight is not a presentation: `reveal` returns as soon as the highlight
   is shown and can stay on screen together with a dialog.
-- **There are no timers.** The framework has no `sleep` and no scheduler. A course reacts to events and to the learner
-  finishing a presentation. Do not reach for `time.Sleep` either: it keeps the turn, so every other callback freezes
-  until it returns.
+- **Only the framework's calls yield.** To pause, call `wait seconds`. Anything else that blocks keeps the turn and
+  freezes every other callback until it ends: `time.Sleep`, channel operations and `select` (receiving from
+  `time.After` or `time.Tick` included), and long-running loops. Waiting for something only another callback can
+  provide, such as a value it sends on a channel, never ends. Never start goroutines (`go` statements,
+  `time.AfterFunc`): their code runs outside this model, and using the framework from one fails the course.
 
 ```go
 previous := ""
@@ -182,6 +185,7 @@ learner's code.
 | `showPrelude message` | After the learner dismisses it | Shows the opening task guide. It differs from `showMessage` only in how the host presents it. |
 | `showMessage message` | After the learner dismisses it | Shows a dialog. |
 | `showVideo name` | After the learner finishes watching | Plays the declared video `name`, not a file path. The host decides what counts as finished. |
+| `wait seconds` | After that many seconds | Pauses this callback while other callbacks keep running. Zero or a negative number returns at once. |
 | `complete` | Immediately | Ends the course without feedback. See [Completion](#completion). |
 | `completeWith message` | Immediately | Ends the course and shows `message` as feedback. |
 
