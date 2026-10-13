@@ -10,6 +10,7 @@ import { canUseAdminConsole as checkCanUseAdminConsole, signOut, useSignIn, useS
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
+import { useSendFeedback } from '@/components/feedback'
 import { useI18n } from '@/utils/i18n'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
@@ -51,6 +52,8 @@ const manageCourses = useMessageHandle(manageCoursesFn).fn
 const manageCourseSeriesFn = useCourseSeriesManagement()
 const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
 
+const sendFeedback = useMessageHandle(useSendFeedback()).fn
+
 async function handleSignOut() {
   await signOut()
   router.go(0) // Reload the page to trigger navigation guards.
@@ -70,7 +73,13 @@ async function handleSignOut() {
   </div>
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
-      <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
+      <div
+        v-radar="{
+          name: 'Profile menu',
+          desc: 'Hover to see profile options (profile page, language, assets, courses, feedback, sign out, etc.)'
+        }"
+        class="h-full flex items-center justify-center px-3 hover:bg-grey-400"
+      >
         <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
       </div>
     </template>
@@ -125,6 +134,11 @@ async function handleSignOut() {
       <UIMenuGroup v-if="canUseAdminConsole">
         <UIMenuItem @click="handleAdminConsole">
           {{ $t({ en: 'Admin console', zh: '管理后台' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup>
+        <UIMenuItem @click="sendFeedback('profileMenu')">
+          {{ $t({ en: 'Send feedback', zh: '提交反馈' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>

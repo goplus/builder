@@ -188,6 +188,15 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'audit-logs',
         component: () => import('./pages/admin/audit-logs.vue')
+      },
+      {
+        path: 'feedback',
+        component: () => import('./pages/admin/feedback-list.vue')
+      },
+      {
+        path: 'feedback/:feedbackID',
+        component: () => import('./pages/admin/feedback.vue'),
+        props: true
       }
     ]
   },

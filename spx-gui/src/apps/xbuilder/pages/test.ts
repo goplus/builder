@@ -45,6 +45,8 @@ import AdminApp from './admin/app.vue'
 import AdminGrant from './admin/grant.vue'
 import AdminUsers from './admin/users.vue'
 import AdminAuditLogs from './admin/audit-logs.vue'
+import AdminFeedbackList from './admin/feedback-list.vue'
+import AdminFeedback from './admin/feedback.vue'
 import UserFollowers from './community/user/followers.vue'
 import UserFollowing from './community/user/following.vue'
 
@@ -65,6 +67,8 @@ vi.mock('@/apis/course', { spy: true })
 vi.mock('@/apis/copilot', { spy: true })
 vi.mock('@/apis/admin/account', { spy: true })
 vi.mock('@/apis/admin/audit', { spy: true })
+vi.mock('@/apis/admin/feedback', { spy: true })
+vi.mock('@/apis/feedback', { spy: true })
 
 enableAutoUnmount(afterEach)
 initDayjs()
@@ -121,6 +125,7 @@ export async function signIn(capabilities: Partial<UserCapabilities> = {}) {
       canManageAuthorization: false,
       canManageAssets: false,
       canManageCourses: false,
+      canManageFeedback: false,
       canUsePremiumLLM: false,
       ...capabilities
     }
@@ -172,7 +177,9 @@ export async function mountPages(path: string) {
         { path: 'apps', component: AdminApps },
         { path: 'apps/:appID', component: AdminApp, props: true },
         { path: 'users/:userID/app-grants/:grantID', component: AdminGrant, props: true },
-        { path: 'audit-logs', component: AdminAuditLogs }
+        { path: 'audit-logs', component: AdminAuditLogs },
+        { path: 'feedback', component: AdminFeedbackList },
+        { path: 'feedback/:feedbackID', component: AdminFeedback, props: true }
       ]
     },
     { path: '/course-series/:courseSeriesIdInput', component: CourseSeries, props: true },
