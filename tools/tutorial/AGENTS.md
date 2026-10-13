@@ -44,7 +44,7 @@ These are the rules of change.
 - The contracts in `docs/develop/tutorial-v2` are the source of truth. Align parameter names and shapes to the
   contract, never to a downstream prototype
 - `README.md` and `README.zh.md` are the course-author guide. Any change to the author-facing surface of this
-  package (exported methods, events and their payload fields, policy constants, `index.json` fields, course asset
+  package (exported methods, events and their payload fields, exported constants and types, `index.json` fields, course asset
   conventions) updates both in the same commit, keeps their Go code blocks identical, and passes the guide compile
   test in `tools/xgoexec-bundle` (`TestGuideCoursesBuild`), which builds every ```go block of both files as a Course.
   `spx-gui/src/utils/tutorial/skills/tutorial-course/references/course-program.md`, the Course Editor's authoring

@@ -95,7 +95,8 @@ onStart => {
 - **展示不会被串行化。** 多次运行同时请求 `showPrelude`、`showMessage` 或 `showVideo` 时，由宿主决定后一个调用是
   排队等候、被拒绝，还是关掉前一个。需要按顺序出现的一串展示要写在同一个回调里。Spotlight 不属于展示：`reveal`
   在高亮出现后立即返回，可以和对话框同时存在。
-- **没有定时器。** 框架没有 `sleep`，也没有调度器。课程只对事件和"学习者看完了某个展示"作出反应。
+- **没有定时器。** 框架没有 `sleep`，也没有调度器。课程只对事件和"学习者看完了某个展示"作出反应。也不要用
+  `time.Sleep`：它不会让出，其他回调会一直冻结到它返回。
 
 ```go
 previous := ""
@@ -145,11 +146,12 @@ Editor.Runtime.onLog log => {
 `complete` 和 `completeWith message` 会结束课程：
 
 - 新的触发不再启动运行，队列中尚未投递的事件会被丢弃。
-- 已经在执行或等待的运行会执行完剩余的语句，包括 `complete` 之后的语句，除非它们的某个调用失败或被取消。
+- 框架允许已经在执行或等待的运行执行完剩余的语句，除非它们的某个调用失败或被取消。课程不要依赖这一点，见最后
+  一条。
 - 只有第一次 `complete` 或 `completeWith` 生效，之后的调用没有任何效果。
-- 然后程序结束。Playground 会立即接受完成并结束程序所在的会话：仍在进行的展示或生成会被取消，之后请求的任何内容都
-  到不了学习者那里。无论如何课程都算完成，即使程序自身因为某个未完成的调用被取消而以错误退出。告别语要放在
-  `completeWith` 里，而不是放在 `complete` 之后的 `showMessage` 里。
+- 然后程序结束。Playground 会立即接受完成并当场停止程序：仍在进行的展示或生成会被取消，`complete` 之后的语句，
+  不论在这次运行还是别的运行里，都不会执行。无论如何课程都算完成，即使程序自身因为某个未完成的调用被取消而以错误
+  退出。告别语要放在 `completeWith` 里，而不是放在 `complete` 之后的 `showMessage` 里。
 
 `completeWith` 会把消息作为反馈展示给学习者。上面第一节课就是根据学习者的代码生成这条消息的。
 
@@ -284,11 +286,12 @@ Editor.Runtime.onExit code => {
   属性进一步缩小范围：`api-reference[name="Sprite.stepTo"]` 选中 API 参考里 `stepTo` 的各个条目。值是 JSON 字符串，
   所以这样的 selector 要写成原始字符串，见下面的例子。名字和值都是精确比较，区分大小写。完整语法见
   [`module_Radar.ts`](../../docs/develop/tutorial-v2/module_Radar.ts)。Radar 的 node ID 每次会话都会重新生成，不能作为
-  target。一个 selector 匹配到多个元素时，它们会被一起高亮。
+  target。按契约，一个 selector 匹配到多个元素时它们会被一起高亮；目前的 Playground 只高亮第一个可见的匹配（#3533）。
 - `SpotlightOptions{Mask, Duration}`：`Mask` 压暗目标以外的一切；`Duration` 表示多少秒后自动隐藏高亮，`0` 表示一直
   保留到学习者点击任意位置。`reveal` 使用 `Mask: true, Duration: 0`。
 - 语法错误的 selector 会让课程失败。语法正确但当前匹配不到任何元素的 selector（例如被 `filterAPIs` 隐藏的 API）
-  不算错误：宿主会短暂重试，然后跳过这次高亮并记录一条警告。
+  不算错误：按契约宿主会短暂重试，然后跳过这次高亮并记录一条警告。目前的 Playground 不重试，直接跳过并记录警告
+  （#3533）。
 
 ```go
 onStart => {
@@ -305,6 +308,7 @@ Editor.Runtime.onStart => {
 一个调用无法完成它承诺的事情时，课程程序会带着错误停止，这次运行报告为 `error`。例如：
 
 - `getCode` 指定了项目里不存在的精灵。
+- `showVideo` 指定了课程没有声明的视频名。
 - spotlight 的 selector 语法错误。
 - 生成失败，或者生成结果无法解码。
 - 传给 `generateJSON` 的 `result` 不受支持。

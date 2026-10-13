@@ -105,7 +105,8 @@ after the course has started never runs.
   sequence of presentations in one callback. Spotlight is not a presentation: `reveal` returns as soon as the highlight
   is shown and can stay on screen together with a dialog.
 - **There are no timers.** The framework has no `sleep` and no scheduler. A course reacts to events and to the learner
-  finishing a presentation.
+  finishing a presentation. Do not reach for `time.Sleep` either: it keeps the turn, so every other callback freezes
+  until it returns.
 
 ```go
 previous := ""
@@ -159,13 +160,14 @@ to the host as errors, and a signal the course waits for may never arrive.
 `complete` and `completeWith message` end the course:
 
 - No new trigger starts a run, and events still waiting in the queue are dropped.
-- Runs already executing or waiting finish their remaining statements, including the statements after `complete`,
-  unless one of their calls fails or is cancelled.
+- The framework lets runs already executing or waiting finish their remaining statements, unless one of their calls
+  fails or is cancelled. Do not rely on that in a course, see the last point.
 - Only the first `complete` or `completeWith` counts. Later calls do nothing.
-- The program then ends. The Playground accepts the completion at once and ends the program's session: a presentation
-  or generation still pending is cancelled, and nothing requested after that reaches the learner. The course is
-  completed either way, even if the program's own exit is reported as an error because a pending call was cancelled.
-  Put the farewell in `completeWith`, not in a `showMessage` after `complete`.
+- The program then ends. The Playground accepts the completion at once and stops the program right there: a
+  presentation or generation still pending is cancelled, and the statements after `complete`, in that run or any
+  other, do not get to execute. The course is completed either way, even if the program's own exit is reported as an
+  error because a pending call was cancelled. Put the farewell in `completeWith`, not in a `showMessage` after
+  `complete`.
 
 `completeWith` shows its message to the learner as feedback. The first course above generates that message from the
 learner's code.
@@ -304,11 +306,13 @@ Both return as soon as the highlight is shown. They never wait for it to be dism
   `stepTo` entries of the API reference. The value is a JSON string, so write such a selector as a raw string, as in
   the example below. Names and values are compared exactly, case included. The full grammar is in
   [`module_Radar.ts`](../../docs/develop/tutorial-v2/module_Radar.ts). Radar node IDs are generated per session and are
-  not valid targets. A selector that matches several elements highlights them together.
+  not valid targets. By contract a selector that matches several elements highlights them together; the Playground
+  today highlights the first visible match (#3533).
 - `SpotlightOptions{Mask, Duration}`: `Mask` dims everything except the target. `Duration` hides the highlight after
   that many seconds, and `0` keeps it until the learner clicks anywhere. `reveal` uses `Mask: true, Duration: 0`.
 - A malformed selector fails the course. A valid selector that matches nothing at the moment, for example an API hidden
-  by `filterAPIs`, is not an error: the host retries briefly, then skips the highlight and logs a warning.
+  by `filterAPIs`, is not an error: by contract the host retries briefly, then skips the highlight and logs a warning.
+  The Playground today skips it at once with a warning (#3533).
 
 ```go
 onStart => {
@@ -326,6 +330,7 @@ If a call cannot do what it promises, the course program stops with an error and
 example:
 
 - `getCode` names a sprite the project does not have.
+- `showVideo` names a video the course does not declare.
 - A spotlight selector is malformed.
 - Generation fails, or its result cannot be decoded.
 - `generateJSON` receives an unsupported `result`.
