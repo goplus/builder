@@ -16,10 +16,11 @@ English version: [README.md](./README.md)
 
 | 路径 | 用途 |
 | --- | --- |
-| `index.json` | 框架配置。`project.type` 和 `project.root` 指明内嵌的学习者项目，`copilotContext` 是给 Copilot 的作者指令、学习者看不到，`inEditorRoute` 决定编辑器打开时的位置。 |
+| `index.json` | 框架配置。`project.type` 和 `project.root` 指明内嵌的学习者项目，`copilotContext` 是给 Copilot 的作者指令、学习者看不到，`inEditorPath` 是编辑器打开时所在的路径，例如 `/simple/sprites/Lita`。 |
 | `main_course.gox` | 课程程序。 |
 | `project/` | 一个普通的序列化 SPX 项目。学习者上课时，它会成为一个没有 owner 的内存项目。 |
 | `assets/videos/<name>/index.json` | 声明名为 `<name>` 的视频。其中的 `path` 指向视频文件，相对于该目录。课程代码只用 `<name>` 引用视频。 |
+| `assets/images/<name>/index.json` | 以同样的方式声明名为 `<name>` 的图片。目前还没有课程 API 使用图片，先随课程保存，留给将来的 API。名字在每种资源类型内唯一，所以一个视频和一张图片可以同名。 |
 
 完整目录见[示例课程](../../docs/develop/tutorial-v2/example-tutorial-course/)。
 
@@ -73,6 +74,10 @@ onStart => {
 
 `main_course.gox` 的顶层语句在程序启动时执行一次，用来声明共享状态和注册回调。顶层语句执行完后，"课程开始"才会投递给
 每个 `onStart` 回调，所以开场流程运行时，所有回调都已经注册好了。
+
+声明要放在前面。顶层语句构成课程入口函数的函数体，每个 `func` 都必须在第一条顶层语句之前声明。写在语句之后的 `func`
+会被当作函数字面量解析，课程无法编译：`expected '(', found <name>`。`type` 声明也放在文件开头，让文件自上而下读起来
+顺畅。
 
 回调里也可以注册新的回调，新回调从下一次事件开始生效。课程开始之后才注册的 `onStart` 回调不会被调用。
 
@@ -139,10 +144,12 @@ Editor.Runtime.onLog log => {
 
 `complete` 和 `completeWith message` 会结束课程：
 
-- 不再投递新事件，队列中尚未投递的事件会被丢弃。
-- 已经在运行或等待的回调会执行到结束，包括 `complete` 之后的语句。完成后它们请求的展示会被宿主跳过。
-- 然后程序退出，这次运行报告为 `completed`。
+- 新的触发不再启动运行，队列中尚未投递的事件会被丢弃。
+- 已经在执行或等待的运行会执行完剩余的语句，包括 `complete` 之后的语句，除非它们的某个调用失败或被取消。
 - 只有第一次 `complete` 或 `completeWith` 生效，之后的调用没有任何效果。
+- 然后程序结束。Playground 会立即接受完成并结束程序所在的会话：仍在进行的展示或生成会被取消，之后请求的任何内容都
+  到不了学习者那里。无论如何课程都算完成，即使程序自身因为某个未完成的调用被取消而以错误退出。告别语要放在
+  `completeWith` 里，而不是放在 `complete` 之后的 `showMessage` 里。
 
 `completeWith` 会把消息作为反馈展示给学习者。上面第一节课就是根据学习者的代码生成这条消息的。
 
@@ -155,7 +162,7 @@ Editor.Runtime.onLog log => {
 | `onStart => { ... }` | | 注册课程开始回调。 |
 | `showPrelude message` | 学习者关闭后 | 展示开场任务说明。与 `showMessage` 的区别只在宿主的呈现方式。 |
 | `showMessage message` | 学习者关闭后 | 展示对话框。 |
-| `showVideo name` | 学习者看完或关闭后 | 播放已声明的视频 `name`，参数不是文件路径。 |
+| `showVideo name` | 学习者看完后 | 播放已声明的视频 `name`，参数不是文件路径。什么算看完由宿主决定。 |
 | `complete` | 立即 | 结束课程，不展示反馈。见[完成](#完成)。 |
 | `completeWith message` | 立即 | 结束课程，并把 `message` 作为反馈展示。 |
 
@@ -273,10 +280,11 @@ Editor.Runtime.onExit code => {
 两者都在高亮出现后立即返回，从不等待高亮消失。
 
 - `target` 是 Radar selector。名字是编辑器界面给元素起的稳定角色名，全小写、用连字符连接，例如 `code-text-editor`、
-  `stage-overview`、`api-references`。空格表示"在……之内"，`[属性="值"]` 用元素的某个属性进一步缩小范围：
-  `api-reference[name="Sprite.stepTo"]` 选中 API 参考里 `stepTo` 的各个条目。值是 JSON 字符串，所以这样的 selector
-  要写成原始字符串，见下面的例子。完整语法见 [`module_Radar.ts`](../../docs/develop/tutorial-v2/module_Radar.ts)。
-  Radar 的 node ID 每次会话都会重新生成，不能作为 target。一个 selector 匹配到多个元素时，它们会被一起高亮。
+  `simple-code-editor`、`stage-overview`、`ruler`、`api-references`。空格表示"在……之内"，`[属性="值"]` 用元素的某个
+  属性进一步缩小范围：`api-reference[name="Sprite.stepTo"]` 选中 API 参考里 `stepTo` 的各个条目。值是 JSON 字符串，
+  所以这样的 selector 要写成原始字符串，见下面的例子。名字和值都是精确比较，区分大小写。完整语法见
+  [`module_Radar.ts`](../../docs/develop/tutorial-v2/module_Radar.ts)。Radar 的 node ID 每次会话都会重新生成，不能作为
+  target。一个 selector 匹配到多个元素时，它们会被一起高亮。
 - `SpotlightOptions{Mask, Duration}`：`Mask` 压暗目标以外的一切；`Duration` 表示多少秒后自动隐藏高亮，`0` 表示一直
   保留到学习者点击任意位置。`reveal` 使用 `Mask: true, Duration: 0`。
 - 语法错误的 selector 会让课程失败。语法正确但当前匹配不到任何元素的 selector（例如被 `filterAPIs` 隐藏的 API）
@@ -309,7 +317,8 @@ selector。
 
 启动 spx-gui 开发服务器后，打开 `/debug/tutorial-courses`。这个页面用一个模拟宿主运行课程源码，模拟宿主会记录每一次
 capability 调用并返回固定的值。预置用例会投递事件，运行以完成状态结束即为通过。自由运行区可以接受任意
-`main_course.gox` 源码，并允许手动投递运行日志。
+`main_course.gox` 源码，并允许手动投递运行日志。模拟宿主会立即应答，那里不会有任何运行处于等待状态，所以这个页面
+展示不出重叠的运行是如何交错的。
 
 ## 修改框架
 

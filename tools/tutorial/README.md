@@ -17,10 +17,11 @@ guide and a contract disagree, the contract wins and this guide is out of date.
 
 | Path | Purpose |
 | --- | --- |
-| `index.json` | Framework configuration. `project.type` and `project.root` locate the embedded learner project, `copilotContext` holds instructions for Copilot that the learner never sees, and `inEditorRoute` selects where the editor opens. |
+| `index.json` | Framework configuration. `project.type` and `project.root` locate the embedded learner project, `copilotContext` holds instructions for Copilot that the learner never sees, and `inEditorPath` is the editor path to open at, such as `/simple/sprites/Lita`. |
 | `main_course.gox` | The course program. |
 | `project/` | An ordinary serialized SPX project. While the learner works, it becomes an in-memory project with no owner. |
 | `assets/videos/<name>/index.json` | Declares the video `<name>`. Its `path` points to the video file, relative to that directory. Course code refers to the video by `<name>` only. |
+| `assets/images/<name>/index.json` | Declares the image `<name>` the same way. No course API addresses images yet; they are kept with the course for APIs that will. Names are unique within each resource type, so a video and an image may share one. |
 
 The [example course](../../docs/develop/tutorial-v2/example-tutorial-course/) is a complete directory.
 
@@ -77,6 +78,10 @@ onStart => {
 Top-level statements in `main_course.gox` run once when the program starts. Use them to declare shared state and
 register callbacks. After they finish, the course start is delivered to every `onStart` callback, so every callback is
 already registered when the opening flow runs.
+
+Declarations come first. The top-level statements form the body of the course's entry function, and every `func` must be
+declared before the first of them. A `func` written after a statement is read as a function literal, and the course does
+not compile: `expected '(', found <name>`. Keep `type` declarations at the top as well, so the file reads top-down.
 
 A callback can also register other callbacks. They take effect from the next event. An `onStart` callback registered
 after the course has started never runs.
@@ -153,11 +158,14 @@ to the host as errors, and a signal the course waits for may never arrive.
 
 `complete` and `completeWith message` end the course:
 
-- No new events are delivered, and events still waiting in the queue are dropped.
-- Callbacks already running or waiting run to their end, including the statements after `complete`. The host skips any
-  presentation they request after completion.
-- The program then exits, and the run is reported as `completed`.
+- No new trigger starts a run, and events still waiting in the queue are dropped.
+- Runs already executing or waiting finish their remaining statements, including the statements after `complete`,
+  unless one of their calls fails or is cancelled.
 - Only the first `complete` or `completeWith` counts. Later calls do nothing.
+- The program then ends. The Playground accepts the completion at once and ends the program's session: a presentation
+  or generation still pending is cancelled, and nothing requested after that reaches the learner. The course is
+  completed either way, even if the program's own exit is reported as an error because a pending call was cancelled.
+  Put the farewell in `completeWith`, not in a `showMessage` after `complete`.
 
 `completeWith` shows its message to the learner as feedback. The first course above generates that message from the
 learner's code.
@@ -171,7 +179,7 @@ learner's code.
 | `onStart => { ... }` | | Registers a course-start callback. |
 | `showPrelude message` | After the learner dismisses it | Shows the opening task guide. It differs from `showMessage` only in how the host presents it. |
 | `showMessage message` | After the learner dismisses it | Shows a dialog. |
-| `showVideo name` | After the learner finishes or closes it | Plays the declared video `name`, not a file path. |
+| `showVideo name` | After the learner finishes watching | Plays the declared video `name`, not a file path. The host decides what counts as finished. |
 | `complete` | Immediately | Ends the course without feedback. See [Completion](#completion). |
 | `completeWith message` | Immediately | Ends the course and shows `message` as feedback. |
 
@@ -291,11 +299,12 @@ Editor.Runtime.onExit code => {
 Both return as soon as the highlight is shown. They never wait for it to be dismissed.
 
 - `target` is a Radar selector. Names are the stable, lowercase kebab-case roles the editor UI gives its elements, such
-  as `code-text-editor`, `stage-overview` or `api-references`. A space means "inside", and `[attribute="value"]`
-  narrows a name by one of its attributes: `api-reference[name="Sprite.stepTo"]` selects the `stepTo` entries of the
-  API reference. The value is a JSON string, so write such a selector as a raw string, as in the example below. The
-  full grammar is in [`module_Radar.ts`](../../docs/develop/tutorial-v2/module_Radar.ts). Radar node IDs are generated
-  per session and are not valid targets. A selector that matches several elements highlights them together.
+  as `code-text-editor`, `simple-code-editor`, `stage-overview`, `ruler` or `api-references`. A space means "inside",
+  and `[attribute="value"]` narrows a name by one of its attributes: `api-reference[name="Sprite.stepTo"]` selects the
+  `stepTo` entries of the API reference. The value is a JSON string, so write such a selector as a raw string, as in
+  the example below. Names and values are compared exactly, case included. The full grammar is in
+  [`module_Radar.ts`](../../docs/develop/tutorial-v2/module_Radar.ts). Radar node IDs are generated per session and are
+  not valid targets. A selector that matches several elements highlights them together.
 - `SpotlightOptions{Mask, Duration}`: `Mask` dims everything except the target. `Duration` hides the highlight after
   that many seconds, and `0` keeps it until the learner clicks anywhere. `reveal` uses `Mask: true, Duration: 0`.
 - A malformed selector fails the course. A valid selector that matches nothing at the moment, for example an API hidden
@@ -329,7 +338,9 @@ exception is a well-formed spotlight selector that currently matches nothing, de
 
 With the spx-gui dev server running, open `/debug/tutorial-courses`. The page runs course source against a mock host
 that logs every capability call and answers with fixed values. Scripted cases dispatch events and pass when the run
-completes. The free-form runner takes any `main_course.gox` source and lets you dispatch runtime logs by hand.
+completes. The free-form runner takes any `main_course.gox` source and lets you dispatch runtime logs by hand. Because
+the mock host answers at once, no run is ever waiting there, so the page shows nothing of how overlapping runs
+interleave.
 
 ## Changing the framework
 
