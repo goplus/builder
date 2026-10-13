@@ -128,6 +128,30 @@ describe('EditorState', () => {
     vi.useRealTimers()
   })
 
+  it('exposes codeReadOnly for Simple Mode throughout the runtime preview', async () => {
+    const state = makeEditorState()
+    try {
+      await flushPromises()
+      expect(state.codeReadOnly).toBe(false)
+      state.runtime.setRunning({ mode: 'debug', initializing: true })
+      expect(state.codeReadOnly).toBe(false)
+      state.selectEditMode(EditMode.Simple)
+      expect(state.codeReadOnly).toBe(true)
+      state.runtime.setRunning({ mode: 'debug', initializing: false }, 'files-hash')
+      state.runtime.emit('didExit', 0)
+      expect(state.codeReadOnly).toBe(true)
+      state.runtime.setRunning({ mode: 'debug', initializing: false, initializingError: new Error('failed') })
+      expect(state.codeReadOnly).toBe(true)
+      state.selectEditMode(EditMode.Default)
+      expect(state.codeReadOnly).toBe(false)
+      state.selectEditMode(EditMode.Simple)
+      state.runtime.setRunning({ mode: 'none' })
+      expect(state.codeReadOnly).toBe(false)
+    } finally {
+      state.dispose()
+    }
+  })
+
   describe('initialization', () => {
     it('should initialize with empty project and default to sprite selection', async () => {
       const project = makeEmptyProject()

@@ -1,6 +1,5 @@
 import { client, type ByPage, type PaginationParams } from './common'
 import type { CourseKind } from './course'
-import { getPlaygroundMockCourseSeries } from './course-playground-mock'
 
 export const courseSeriesTitleMaxLength = 200
 export const courseSeriesDescriptionMaxLength = 400
@@ -26,28 +25,19 @@ export type CourseSeries = {
   updatedAt: string
 }
 
-type LegacyGuidedCourseSeries = Omit<CourseSeries, 'kind'>
-
-function normalizeCourseSeries(series: CourseSeries | LegacyGuidedCourseSeries): CourseSeries {
-  if ('kind' in series) return series
-  return { ...series, kind: 'guided' }
-}
-
 /** Get a course series by ID */
-export async function getCourseSeries(id: string, signal?: AbortSignal) {
-  const mockCourseSeries = await getPlaygroundMockCourseSeries(id, signal)
-  if (mockCourseSeries != null) return mockCourseSeries
-  const series = (await client.get(`/course-series/${encodeURIComponent(id)}`, undefined, { signal })) as
-    | CourseSeries
-    | LegacyGuidedCourseSeries
-  return normalizeCourseSeries(series)
+export function getCourseSeries(id: string, signal?: AbortSignal) {
+  return client.get(`/course-series/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<CourseSeries>
 }
 
 export type AddCourseSeriesParams = Pick<
   CourseSeries,
   'kind' | 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'
 >
-export type UpdateCourseSeriesParams = Pick<CourseSeries, 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'>
+/** Fields to update; omitted fields keep their stored values. */
+export type UpdateCourseSeriesParams = Partial<
+  Pick<CourseSeries, 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'>
+>
 
 /** Add a new course series */
 export function addCourseSeries(params: AddCourseSeriesParams, signal?: AbortSignal) {
@@ -72,16 +62,10 @@ export type ListCourseSeriesParams = PaginationParams & {
   sortOrder?: 'asc' | 'desc'
 }
 
-export async function listCourseSeries(params?: ListCourseSeriesParams, signal?: AbortSignal) {
-  const result = (await client.get('/course-series', params, { signal })) as ByPage<
-    CourseSeries | LegacyGuidedCourseSeries
-  >
-  return { ...result, data: result.data.map(normalizeCourseSeries) }
+export function listCourseSeries(params?: ListCourseSeriesParams, signal?: AbortSignal) {
+  return client.get('/course-series', params, { signal }) as Promise<ByPage<CourseSeries>>
 }
 
-export async function listSignedInUserCourseSeries(params?: ListCourseSeriesParams, signal?: AbortSignal) {
-  const result = (await client.get('/user/course-series', params, { signal })) as ByPage<
-    CourseSeries | LegacyGuidedCourseSeries
-  >
-  return { ...result, data: result.data.map(normalizeCourseSeries) }
+export function listSignedInUserCourseSeries(params?: ListCourseSeriesParams, signal?: AbortSignal) {
+  return client.get('/user/course-series', params, { signal }) as Promise<ByPage<CourseSeries>>
 }

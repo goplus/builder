@@ -50,6 +50,41 @@ export function getCourseSeriesPageRoute(courseSeriesID: string) {
   return `/course-series/${encodeURIComponent(courseSeriesID)}`
 }
 
+export const courseEditorRouteName = 'course-editor'
+export const courseEditorPreviewRouteName = 'course-editor-preview'
+
+/**
+ * Editing and preview are sibling namespaces under the course: `…/edit/<path>` and `…/preview/<in-editor path>`. The
+ * edit path is course content and may use any name, `preview` included, so it must never share a level with the
+ * preview segment, or a node would be read back as the preview on reload.
+ */
+export const courseEditorRoutes: RouteRecordRaw[] = [
+  // Preview runs the learner-side playground, which drives `:inEditorPath*` (named as in `/editor/...` so that it
+  // works unchanged). Both records render the same page so that the editing session survives entering preview.
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/preview/:inEditorPath*',
+    name: courseEditorPreviewRouteName,
+    component: () => import('./pages/course-editor/index.vue'),
+    props: true
+  },
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/edit/:inCourseEditorPath*',
+    name: courseEditorRouteName,
+    component: () => import('./pages/course-editor/index.vue'),
+    props: true
+  },
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput',
+    redirect: (to) => ({ name: courseEditorRouteName, params: { ...to.params, inCourseEditorPath: [] } })
+  }
+]
+
+export function getCourseEditorRoute(courseSeriesID: string, courseID: string, inCourseEditorPath: string[] = []) {
+  const base = `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/edit`
+  if (inCourseEditorPath.length === 0) return base
+  return `${base}/${inCourseEditorPath.map(encodeURIComponent).join('/')}`
+}
+
 export const homePageName = 'home'
 
 declare module 'vue-router' {
@@ -145,6 +180,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/tutorials/course-series.vue'),
     props: true
   },
+  ...courseEditorRoutes,
   {
     path: '/editor/:projectNameInput',
     component: () => import('./pages/editor/own-project.vue'),
