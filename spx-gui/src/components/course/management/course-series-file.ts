@@ -323,7 +323,7 @@ function describeProblems(problems: Array<{ course: string; problem: LocaleMessa
     zh:
       '课程系列文件无法导入：' +
       shown.map(({ course, problem }) => `课程“${course}”：${problem.zh}`).join('；') +
-      (more > 0 ? `；共 ${problems.length} 处问题` : '')
+      (more > 0 ? `；另有 ${more} 处问题` : '')
   }
 }
 
@@ -445,8 +445,14 @@ async function importCourseSeriesFileData(
   return { courseSeries: importedCourseSeries, undeletedCourseIDs }
 }
 
-/** The series as a commit whose answer was lost left it, when it holds the imported courses; null otherwise. */
+/**
+ * The series as a commit whose answer was lost left it, when it holds the imported courses; null otherwise. It takes
+ * no signal on purpose: like undoing, finding out whether there is anything to undo must not stop when the import is
+ * cancelled.
+ */
 async function findCommittedCourseSeries(courseSeries: CourseSeries | null, params: AddCourseSeriesParams) {
+  // Without imported courses, a series the commit changed cannot be told from one it did not.
+  if (params.courseIDs.length === 0) return null
   const holdsImportedCourses = (series: CourseSeries) =>
     series.courseIDs.length === params.courseIDs.length &&
     series.courseIDs.every((id, index) => id === params.courseIDs[index])
@@ -455,7 +461,6 @@ async function findCommittedCourseSeries(courseSeries: CourseSeries | null, para
     return holdsImportedCourses(series) ? series : null
   }
   // The imported courses are new, so a series holding them can only be the one this import created, among the newest.
-  if (params.courseIDs.length === 0) return null
   const { data } = await listSignedInUserCourseSeries({
     kind: params.kind,
     orderBy: 'createdAt',

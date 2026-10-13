@@ -804,6 +804,30 @@ describe('Playground course series files', () => {
     expect(updateCourseSeries).not.toHaveBeenCalled()
   })
 
+  it('counts the problems it does not list the same way in both languages', async () => {
+    const file = await makePlaygroundSeriesFile(
+      ['a', 'b', 'c', 'd'].map((name) => playgroundCourseFiles(`onStart => {\n\tshowVideo "${name}"\n}`))
+    )
+
+    const error = await importCourseSeriesFile(playgroundSeries, file, 'alice', writes).catch((e) => e)
+
+    expect(error).toBeInstanceOf(DefaultException)
+    expect((error as DefaultException).userMessage.en).toMatch(/; and 1 more$/)
+    expect((error as DefaultException).userMessage.zh).toMatch(/；另有 1 处问题$/)
+  })
+
+  it('does not take a lost answer for success when the file has no courses', async () => {
+    const emptySeries = { ...playgroundSeries, courseIDs: [] }
+    vi.mocked(updateCourseSeries).mockRejectedValueOnce(new Error('timeout'))
+    vi.mocked(getCourseSeries).mockResolvedValueOnce(emptySeries)
+
+    await expect(
+      importCourseSeriesFile(emptySeries, await makePlaygroundSeriesFile([]), 'alice', writes)
+    ).rejects.toThrow('timeout')
+    // An empty series looks the same whether the commit took effect or not, so it is not read back.
+    expect(getCourseSeries).not.toHaveBeenCalled()
+  })
+
   it('refuses a file that comes with separate projects, before writing anything', async () => {
     const file = await makePlaygroundSeriesFile(
       [playgroundCourseFiles('onStart => {}')],

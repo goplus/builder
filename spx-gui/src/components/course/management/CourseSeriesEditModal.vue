@@ -266,7 +266,7 @@ function getImportConfirmContent(
     overwrittenProjects == null
       ? { en: '', zh: '' }
       : {
-          en: ` Overwritten projects: ${formatNameList(overwrittenProjects)}.`,
+          en: ` Projects to be overwritten and published: ${formatNameList(overwrittenProjects)}.`,
           zh: `会覆盖并发布的项目：${formatNameList(overwrittenProjects)}。`
         }
   if (courseSeries != null) {
