@@ -4,7 +4,7 @@ import { getCourseSeries, listCourseSeries, listSignedInUserCourseSeries, type C
 
 function makeSeries(kind: CourseSeries['kind']): CourseSeries {
   return {
-    id: 'series',
+    id: 'series/a',
     owner: 'teacher',
     kind,
     title: 'Tutorials',
@@ -20,13 +20,16 @@ function makeSeries(kind: CourseSeries['kind']): CourseSeries {
 describe('Course Series APIs', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it.each(['guided', 'playground'] as const)('loads a %s series with its ordered course IDs', async (kind) => {
-    const series = makeSeries(kind)
-    const get = vi.spyOn(client, 'get').mockResolvedValue(series)
-    const signal = new AbortController().signal
-    await expect(getCourseSeries(series.id, signal)).resolves.toEqual(series)
-    expect(get).toHaveBeenCalledWith('/course-series/series', undefined, { signal })
-  })
+  it.each(['guided', 'playground'] as const)(
+    'loads a %s series with an encoded ID and ordered course IDs',
+    async (kind) => {
+      const series = makeSeries(kind)
+      const get = vi.spyOn(client, 'get').mockResolvedValue(series)
+      const signal = new AbortController().signal
+      await expect(getCourseSeries(series.id, signal)).resolves.toEqual(series)
+      expect(get).toHaveBeenCalledWith('/course-series/series%2Fa', undefined, { signal })
+    }
+  )
 
   it.each([
     { list: listCourseSeries, path: '/course-series' },

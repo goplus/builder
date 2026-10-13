@@ -11,7 +11,7 @@ import {
 function makeCourses(): Course[] {
   return [
     {
-      id: 'guided',
+      id: 'guided/course',
       owner: 'teacher',
       kind: 'guided',
       title: 'Create a project',
@@ -19,7 +19,7 @@ function makeCourses(): Course[] {
       content: { entrypoint: '/', prompt: 'Guide the learner.' }
     },
     {
-      id: 'playground',
+      id: 'playground/course',
       owner: 'teacher',
       kind: 'playground',
       title: 'Move a sprite',
@@ -32,13 +32,13 @@ function makeCourses(): Course[] {
 describe('Course APIs', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('loads both course kinds with their current content shapes', async () => {
+  it('loads both course kinds with encoded IDs and their current content shapes', async () => {
     const get = vi.spyOn(client, 'get')
     const signal = new AbortController().signal
     for (const course of makeCourses()) {
       get.mockResolvedValueOnce(course)
       await expect(getCourse(course.id, signal)).resolves.toEqual(course)
-      expect(get).toHaveBeenLastCalledWith(`/courses/${course.id}`, undefined, { signal })
+      expect(get).toHaveBeenLastCalledWith(`/courses/${course.kind}%2Fcourse`, undefined, { signal })
     }
   })
 
