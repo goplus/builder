@@ -11,7 +11,7 @@ while the calls on them do not:
 ```xgo
 Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 Copilot.generateText("...")
-Spotlight.reveal "Run button", "Click here to run the project"
+Spotlight.reveal "api-references", "Here are the blocks you can use"
 showMessage "Well done."
 ```
 
@@ -34,6 +34,13 @@ feedback := Copilot.generateText("Give one sentence of feedback about: " + code)
 completeWith feedback
 ```
 
+## Declarations come before statements
+
+A `func` declaration has to precede the first top-level statement of the file; after a statement such as
+`judging := ...` or `onStart => { ... }`, XGo reads `func` as a function literal and fails with
+`expected '(', found <name>`. Keep `type` and `func` declarations at the top, then the variables, then the
+callbacks.
+
 ## Execution model
 
 Callbacks run one at a time, so variables shared between them never race. A run yields while it waits on the
@@ -50,8 +57,9 @@ pause, use `wait`. Never start goroutines (`go` statements, `time.AfterFunc`): t
 model, and using the framework from one fails the program.
 
 Course start is delivered like any other event. `complete` and `completeWith` end the program: no further events
-are processed, runs already waiting still finish, and presentation calls made after a completion are ignored.
-Calling either one again does nothing.
+are processed, and the Playground stops the program as soon as it accepts the completion, so a presentation or
+generation still pending is cancelled and the statements after `complete` do not execute. Put the farewell in
+`completeWith`, never in a `showMessage` after `complete`. Calling either one again does nothing.
 
 ## The course's own abilities
 
@@ -59,7 +67,7 @@ Calling either one again does nothing.
 onStart callback         // the course started; several callbacks may be registered
 showPrelude message      // the opening task guide; returns after the learner dismisses it
 showMessage message      // a dialog; returns after the learner dismisses it
-showVideo videoName      // a course video by its declared name; returns when it is finished or closed
+showVideo videoName      // a course video by its declared name; an undeclared name fails the program
 wait seconds             // pause this callback for the given seconds while other callbacks keep running
 complete                 // mark the course complete and end the program
 completeWith message     // complete, with a line of feedback for the learner
@@ -104,8 +112,9 @@ Copilot.generateJSON(message, result)   // fill result from generated JSON
 ```
 
 `generateJSON` derives a JSON Schema from the struct `result` points at, so `result` must be a non-nil pointer
-to a struct **with exported fields**. A struct whose fields are all lowercase derives an empty schema and is
-rejected.
+to a struct **with exported fields**; every field is required in the schema. A struct whose fields are all
+lowercase derives an empty schema and is rejected, as are embedded fields without a `json` tag and recursive
+types. `json` tags rename fields as usual.
 
 ```xgo
 type Review struct {
@@ -131,10 +140,15 @@ Spotlight.revealWith target, tip, options         // the same, with explicit Spo
 ```
 
 `reveal` returns as soon as the spotlight is shown, so it never blocks the course. Its defaults are course
-guidance: the mask is on and the spotlight stays until the learner clicks anywhere. `target` is a Radar selector
-naming the UI elements to reveal; one selector may match several elements, which are then revealed together. A
-malformed selector fails the course program, so mistakes show up in Preview; a well-formed selector that matches
-nothing right now is not an error, the host retries briefly and then skips the highlight.
+guidance: the mask is on and the spotlight stays until the learner clicks anywhere. `target` is a Radar selector:
+kebab-case node names, optionally narrowed by attributes, with a space meaning "descendant of", such as
+`"api-references"`, `"code-text-editor"`, `"stage-overview"`, `"ruler"` or `` `api-reference[name="Sprite.stepTo"]` ``
+(the attribute value is a JSON string, so write such a selector as a raw string). Names and values are compared
+exactly, case included; Radar node IDs are not valid targets. A malformed selector fails the course program, so
+mistakes show up in Preview. A well-formed selector that matches nothing right now, for example an API hidden by
+`filterAPIs`, is not an error: by contract the host retries briefly and then skips the highlight, and the
+Playground today skips it at once with a warning and highlights only the first visible match of a selector
+(goplus/builder#3533).
 
 ## A complete example
 
@@ -143,7 +157,7 @@ onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
-	Spotlight.reveal "API References", "Here is stepTo, the only block you need in this lesson."
+	Spotlight.reveal "api-references", "Here is stepTo, the only block you need in this lesson."
 }
 
 Editor.Runtime.onLog log => {
