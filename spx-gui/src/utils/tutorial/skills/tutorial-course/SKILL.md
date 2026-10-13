@@ -54,6 +54,9 @@ the course's mistake; see goplus/builder#3419.
   language the course is written in; keep one language throughout a course.
 - **One callback, one job.** Opening steps that must happen in order belong in a single `onStart`; independent
   reactions belong in their own callbacks.
+- **Pause with `wait`, never block.** `wait 2` pauses one callback while the others keep running. `time.Sleep`,
+  channel operations and long loops freeze the whole course instead, and a goroutine the course starts itself
+  (`go`, `time.AfterFunc`) fails the program as soon as it uses the framework.
 
 ## Working in the Course Editor
 
