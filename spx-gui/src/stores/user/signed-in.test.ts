@@ -10,10 +10,11 @@ const originalNavigatorLocks = Object.getOwnPropertyDescriptor(navigator, 'locks
 
 describe('canUseAdminConsole', () => {
   it.each([
-    [{ canManageAccount: false, canManageAuthorization: false }, false],
-    [{ canManageAccount: true, canManageAuthorization: false }, true],
-    [{ canManageAccount: false, canManageAuthorization: true }, true],
-    [{ canManageAccount: true, canManageAuthorization: true }, true],
+    [{ canManageAccount: false, canManageAuthorization: false, canManageFeedback: false }, false],
+    [{ canManageAccount: true, canManageAuthorization: false, canManageFeedback: false }, true],
+    [{ canManageAccount: false, canManageAuthorization: true, canManageFeedback: false }, true],
+    [{ canManageAccount: false, canManageAuthorization: false, canManageFeedback: true }, true],
+    [{ canManageAccount: true, canManageAuthorization: true, canManageFeedback: true }, true],
     [null, false]
   ])('checks the signed-in user management capabilities', (capabilities, expected) => {
     expect(canUseAdminConsole(capabilities)).toBe(expected)
