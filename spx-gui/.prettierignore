@@ -1,5 +1,7 @@
 # Copied from go
 wasm_exec.js
+# Build-generated WASM assets
+src/assets/wasm/*
 # 3rd party code or configuration
 src/components/ui/reset.css
 src/components/xgo-code-editor/ui/completion/fuzzy/*
