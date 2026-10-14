@@ -289,12 +289,13 @@ Editor.Runtime.onExit code => {
   属性进一步缩小范围：`api-reference[name="Sprite.stepTo"]` 选中 API 参考里 `stepTo` 的各个条目。值是 JSON 字符串，
   所以这样的 selector 要写成原始字符串，见下面的例子。名字和值都是精确比较，区分大小写。完整语法见
   [`module_Radar.ts`](../../docs/develop/tutorial-v2/module_Radar.ts)。Radar 的 node ID 每次会话都会重新生成，不能作为
-  target。按契约，一个 selector 匹配到多个元素时它们会被一起高亮；目前的 Playground 只高亮第一个可见的匹配（#3533）。
+  target。一个 selector 匹配到多个可见元素时，只高亮文档顺序中的第一个，所以 selector 要写得足够具体，只对应你想要的
+  那个元素。
 - `SpotlightOptions{Mask, Duration}`：`Mask` 压暗目标以外的一切；`Duration` 表示多少秒后自动隐藏高亮，`0` 表示一直
   保留到学习者点击任意位置。`reveal` 使用 `Mask: true, Duration: 0`。
 - 语法错误的 selector 会让课程失败。语法正确但当前匹配不到任何元素的 selector（例如被 `filterAPIs` 隐藏的 API）
-  不算错误：按契约宿主会短暂重试，然后跳过这次高亮并记录一条警告。目前的 Playground 不重试，直接跳过并记录警告
-  （#3533）。
+  不算错误：这次高亮会立即跳过，不等元素出现，并记录一条警告。有些元素只在特定状态下存在：比如 `ruler` 开关只有在
+  调用 `Editor.Ruler.enable` 之后才会出现。
 
 ```go
 onStart => {

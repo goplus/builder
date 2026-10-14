@@ -167,16 +167,18 @@ export interface TutorialFrameworkHost {
      * Focuses the existing Spotlight on a UI target and shows a short tip
      * beside it. Resolves once the spotlight is shown; it does not wait for
      * the spotlight to be dismissed, so it never blocks the Course flow.
-     * `target` is a Radar selector addressing the UI elements to reveal; see
+     * `target` is a Radar selector addressing the UI element to reveal; see
      * the Radar module design for its syntax. Session-local Radar node IDs
-     * are not valid targets. A selector matching several elements reveals
-     * them together as one group.
+     * are not valid targets. When the selector matches several visible
+     * elements, only the first in document order is revealed, so a selector
+     * should be specific enough to match the element meant.
      *
      * A malformed selector fails the capability call, surfacing the
      * authoring mistake during Preview. A well-formed selector that
      * currently matches nothing — the target is filtered out, or not
-     * mounted yet — is not an error: the host retries briefly, then
-     * resolves without showing anything and logs a warning.
+     * mounted yet — is not an error: the host resolves without showing
+     * anything and logs a warning, without waiting for the target to
+     * appear.
      *
      * `options` is always fully specified here: the author-facing `reveal`
      * defaults are materialized by `createTutorialFramework` before this

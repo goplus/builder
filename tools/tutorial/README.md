@@ -310,13 +310,14 @@ Both return as soon as the highlight is shown. They never wait for it to be dism
   `stepTo` entries of the API reference. The value is a JSON string, so write such a selector as a raw string, as in
   the example below. Names and values are compared exactly, case included. The full grammar is in
   [`module_Radar.ts`](../../docs/develop/tutorial-v2/module_Radar.ts). Radar node IDs are generated per session and are
-  not valid targets. By contract a selector that matches several elements highlights them together; the Playground
-  today highlights the first visible match (#3533).
+  not valid targets. A selector that matches several visible elements highlights only the first of them in document
+  order, so make it specific enough for the element you mean.
 - `SpotlightOptions{Mask, Duration}`: `Mask` dims everything except the target. `Duration` hides the highlight after
   that many seconds, and `0` keeps it until the learner clicks anywhere. `reveal` uses `Mask: true, Duration: 0`.
 - A malformed selector fails the course. A valid selector that matches nothing at the moment, for example an API hidden
-  by `filterAPIs`, is not an error: by contract the host retries briefly, then skips the highlight and logs a warning.
-  The Playground today skips it at once with a warning (#3533).
+  by `filterAPIs`, is not an error: the highlight is skipped at once, without waiting for the element to appear, and a
+  warning is logged. Some elements exist only in some states: the `ruler` toggle is there only after
+  `Editor.Ruler.enable`.
 
 ```go
 onStart => {
