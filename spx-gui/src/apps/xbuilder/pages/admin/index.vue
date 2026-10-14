@@ -24,16 +24,6 @@ const accountNavItems = [
   { to: '/admin/apps', label: { en: 'OAuth apps', zh: 'OAuth 应用' } }
 ]
 const isAccountRoute = computed(() => accountNavItems.some((item) => route.path.startsWith(item.to)))
-const isAuditLogsRoute = computed(() => route.path.startsWith('/admin/audit-logs'))
-
-const navItemBaseClass =
-  'h-8 flex cursor-pointer items-center rounded-md px-3 text-sm font-medium whitespace-nowrap no-underline transition-colors'
-const navItemActiveClass = 'bg-primary-100 text-primary-main hover:bg-primary-100'
-const navItemInactiveClass = 'text-grey-900 hover:bg-grey-300'
-
-function getNavItemClass(active: boolean) {
-  return [navItemBaseClass, active ? navItemActiveClass : navItemInactiveClass]
-}
 
 function getAdminDefaultRoute(capabilities: { canManageAccount: boolean; canManageAuthorization: boolean }) {
   if (capabilities.canManageAccount) return '/admin/users'
@@ -77,10 +67,17 @@ watch(
                 name: $t({ en: 'Account admin menu', zh: '账号管理菜单' }),
                 desc: 'Open Account admin navigation'
               }"
-              :trigger-class="getNavItemClass(isAccountRoute)"
+              :trigger-class="[
+                'h-8 rounded-md transition-colors',
+                isAccountRoute
+                  ? 'bg-primary-100 text-primary-main hover:bg-primary-100'
+                  : 'text-grey-900 hover:bg-grey-300'
+              ]"
             >
               <template #trigger>
-                <span>{{ $t({ en: 'Account admin', zh: '账号管理' }) }}</span>
+                <span class="whitespace-nowrap text-sm font-medium">{{
+                  $t({ en: 'Account admin', zh: '账号管理' })
+                }}</span>
               </template>
               <UIMenu class="min-w-36">
                 <UIMenuGroup>
@@ -103,7 +100,12 @@ watch(
             <RouterLink
               v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
-              :class="getNavItemClass(isAuditLogsRoute)"
+              class="h-8 flex items-center rounded-md px-3 whitespace-nowrap text-sm font-medium no-underline transition-colors"
+              :class="
+                route.path.startsWith('/admin/audit-logs')
+                  ? 'bg-primary-100 text-primary-main hover:bg-primary-100'
+                  : 'text-grey-900 hover:bg-grey-300'
+              "
               to="/admin/audit-logs"
             >
               {{ $t({ en: 'Audit logs', zh: '审计日志' }) }}
