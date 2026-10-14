@@ -66,11 +66,11 @@ describe('Runtime', () => {
       { id: count, message: 'error' }
     ])
     expect(appended.at(-1)).toEqual({ ...error, id: count })
-    expect(runtime.outputs).toEqual([])
+    expect(runtime.outputSnapshot).toEqual([])
     expect(snapshotChanged).not.toHaveBeenCalled()
 
     flushOutputs()
-    expect(runtime.outputs).toEqual(appended.slice(-Runtime.defaultMaxOutputs))
+    expect(runtime.outputSnapshot).toEqual(appended.slice(-Runtime.defaultMaxOutputs))
     expect(snapshotChanged).toHaveBeenCalledOnce()
     runtime.clearOutputs()
     appendLog(runtime, 'after-clear')
@@ -78,7 +78,7 @@ describe('Runtime', () => {
     flushOutputs()
     expect(appended.at(-1)).toMatchObject({ id: count + 1, message: 'after-clear' })
     expect(appended).toHaveLength(count + 2)
-    expect(runtime.outputs).toEqual([])
+    expect(runtime.outputSnapshot).toEqual([])
     runtime.dispose()
   })
 
@@ -92,11 +92,11 @@ describe('Runtime', () => {
     }
     flushOutputs()
 
-    expect(runtime.outputs.length).toBe(Runtime.defaultMaxOutputs)
-    expect(runtime.outputs[0].message).toBe('output-1')
-    expect(runtime.outputs.at(-1)?.message).toBe(`output-${Runtime.defaultMaxOutputs}`)
-    expect(runtime.outputs[0].id).toBe(1)
-    expect(runtime.outputs.at(-1)?.id).toBe(Runtime.defaultMaxOutputs)
+    expect(runtime.outputSnapshot.length).toBe(Runtime.defaultMaxOutputs)
+    expect(runtime.outputSnapshot[0].message).toBe('output-1')
+    expect(runtime.outputSnapshot.at(-1)?.message).toBe(`output-${Runtime.defaultMaxOutputs}`)
+    expect(runtime.outputSnapshot[0].id).toBe(1)
+    expect(runtime.outputSnapshot.at(-1)?.id).toBe(Runtime.defaultMaxOutputs)
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })
@@ -115,9 +115,9 @@ describe('Runtime', () => {
       appendLog(runtime, `output-${i}`)
     }
     flushOutputs()
-    expect(runtime.outputs.length).toBe(Runtime.defaultMaxOutputs)
-    expect(runtime.outputs[0].message).toBe('output-3')
-    expect(runtime.outputs.at(-1)?.message).toBe(`output-${Runtime.defaultMaxOutputs + 2}`)
+    expect(runtime.outputSnapshot.length).toBe(Runtime.defaultMaxOutputs)
+    expect(runtime.outputSnapshot[0].message).toBe('output-3')
+    expect(runtime.outputSnapshot.at(-1)?.message).toBe(`output-${Runtime.defaultMaxOutputs + 2}`)
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })
@@ -128,10 +128,10 @@ describe('Runtime', () => {
     const runtime = makeRuntime()
 
     appendLog(runtime, 'output-1')
-    expect(runtime.outputs).toEqual([])
+    expect(runtime.outputSnapshot).toEqual([])
 
     flushOutputs()
-    expect(runtime.outputs.map((item) => item.message)).toEqual(['output-1'])
+    expect(runtime.outputSnapshot.map((item) => item.message)).toEqual(['output-1'])
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })

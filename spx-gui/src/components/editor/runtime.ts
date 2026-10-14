@@ -39,7 +39,7 @@ export class Runtime extends Emitter<{
   didAppendOutput: RuntimeOutput
   /** The bounded UI snapshot changed, batched per frame except when cleared. */
   didChangeOutputSnapshot: void
-  /** A run or rerun succeeded; state restoration does not emit this event. */
+  /** Emitted once after a run or rerun succeeds. */
   didStart: void
   didExit: number
 }> {
@@ -47,7 +47,7 @@ export class Runtime extends Emitter<{
 
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
-  private outputsRef = shallowRef<RuntimeOutput[]>([])
+  private outputSnapshotRef = shallowRef<RuntimeOutput[]>([])
 
   get running() {
     return this.runningRef.value
@@ -62,8 +62,8 @@ export class Runtime extends Emitter<{
   }
 
   /** Public output snapshot, updated together with `didChangeOutputSnapshot` for batched UI consumption. */
-  get outputs(): readonly RuntimeOutput[] {
-    return this.outputsRef.value
+  get outputSnapshot(): readonly RuntimeOutput[] {
+    return this.outputSnapshotRef.value
   }
 
   setRunning(running: RunningState, filesHash?: string) {
@@ -81,19 +81,19 @@ export class Runtime extends Emitter<{
   private outputCount = 0
   private scheduledOutputFlush: number | null = null
 
-  private syncOutputs() {
+  private syncOutputSnapshot() {
     const outputs: RuntimeOutput[] = []
     for (let i = 0; i < this.outputCount; i++) {
       const idx = (this.outputHead + i) % this.maxOutputs
       const output = this.outputRing[idx]
       if (output != null) outputs.push(output)
     }
-    this.outputsRef.value = outputs
+    this.outputSnapshotRef.value = outputs
   }
 
   private flushDidChangeOutputSnapshot() {
     this.scheduledOutputFlush = null
-    this.syncOutputs()
+    this.syncOutputSnapshot()
     this.emit('didChangeOutputSnapshot')
   }
 
@@ -127,8 +127,8 @@ export class Runtime extends Emitter<{
       this.outputRing[this.outputHead] = nextOutput
       this.outputHead = (this.outputHead + 1) % this.maxOutputs
     }
-    this.emitDidChangeOutputSnapshot()
     this.emit('didAppendOutput', nextOutput)
+    this.emitDidChangeOutputSnapshot()
   }
 
   clearOutputs() {

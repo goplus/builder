@@ -231,7 +231,7 @@ describe('PlaygroundCourseSession', () => {
     expected.push(['editor.runtime.log', { log: 'after-clear' }])
 
     await vi.waitFor(() => expect(harness.executor.dispatchEvent.mock.calls).toEqual(expected))
-    expect(harness.editorRuntime.outputs).toEqual([])
+    expect(harness.editorRuntime.outputSnapshot).toEqual([])
   })
 
   it('preserves rapid starts and buffers events in source order until executor startup', async () => {

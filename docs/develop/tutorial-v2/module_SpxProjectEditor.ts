@@ -6,7 +6,7 @@ export type SimpleModeInEditorRoute = `/simple/sprites/${string}`;
 /** Existing runtime owned by `EditorState`. */
 export interface Runtime {
   /** Latest 500 outputs for UI rendering, updated on snapshot changes. */
-  readonly outputs: readonly RuntimeOutput[];
+  readonly outputSnapshot: readonly RuntimeOutput[];
   /**
    * Emitted once after a run or rerun succeeds, with runtime state and filesHash
    * updated. Failed/cancelled initialization and UI state restoration do not

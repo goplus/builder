@@ -46,11 +46,11 @@ export class SpxDiagnosticsProvider extends DiagnosticsProvider {
   }
 
   private async getRuntimeDiagnostics(ctx: DiagnosticsContext) {
-    const { outputs, filesHash } = this.runtime
+    const { outputSnapshot, filesHash } = this.runtime
     const currentFilesHash = await hashFiles(this.project.exportFiles(), ctx.signal)
     if (filesHash !== currentFilesHash) return []
     const diagnostics: Diagnostic[] = []
-    for (const output of outputs) {
+    for (const output of outputSnapshot) {
       if (output.kind !== RuntimeOutputKind.Error) continue
       if (output.source == null) continue
       if (!textDocumentIdEq(output.source.textDocument, ctx.textDocument.id)) continue
