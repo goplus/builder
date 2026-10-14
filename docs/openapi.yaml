@@ -1313,9 +1313,9 @@ paths:
         - Notifications
       summary: List notifications for the authenticated user
       description: |
-        List one category of notifications, newest first. Unread counts are totals for both categories, not only the
-        listed category or page, and come from the same snapshot as the returned page. Reading a notification does not
-        change its position in the list.
+        List one category of notifications, newest first. The unread count covers the whole category, not only the
+        returned page, and comes from the same snapshot as the page. Reading a notification does not change its
+        position in the list.
       parameters:
         - name: category
           description: Category of notifications to list.
@@ -1339,31 +1339,17 @@ paths:
               schema:
                 type: object
                 required:
-                  - unreadCounts
+                  - unreadCount
                   - nextCursor
                   - data
                 properties:
-                  unreadCounts:
-                    description: Number of unread notifications in each category.
-                    type: object
-                    required:
-                      - message
-                      - announcement
-                    properties:
-                      message:
-                        description: Number of unread notifications in the `message` category.
-                        type: integer
-                        format: int64
-                        minimum: 0
-                        examples:
-                          - 3
-                      announcement:
-                        description: Number of unread notifications in the `announcement` category.
-                        type: integer
-                        format: int64
-                        minimum: 0
-                        examples:
-                          - 1
+                  unreadCount:
+                    description: Number of unread notifications in the requested category.
+                    type: integer
+                    format: int64
+                    minimum: 0
+                    examples:
+                      - 3
                   nextCursor:
                     description: Cursor for the next page, or `null` if there are no more notifications.
                     type:
