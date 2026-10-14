@@ -38,7 +38,7 @@ type spotlightRevealRequest struct {
 	Options SpotlightOptions `json:"options"`
 }
 
-// Reveal highlights the UI elements target matches and shows tip beside them.
+// Reveal highlights the UI element target matches and shows tip beside it.
 //
 // target is a Radar selector — such as "run-button", or
 // "editor-preview run-button" for the one inside the editor preview — built
@@ -48,16 +48,16 @@ type spotlightRevealRequest struct {
 // selector syntax is defined by the Radar module; this side only passes it
 // through.
 //
-// A selector matching several elements highlights them together as one group,
-// for instance every overload of an API name.
+// When target matches several visible elements, only the first in document
+// order is highlighted, so target should be specific enough to match the
+// element meant.
 //
 // Failure comes in two levels. A malformed selector fails the capability and
 // therefore panics, so the author finds out during Preview. A well-formed
 // selector that currently matches nothing — the API was filtered out by
 // filterAPIs, or the element is not mounted yet — is not an error: the host
-// retries briefly, then skips the highlight and logs a warning, since that is
-// most likely a transient state and blowing up a whole Course over one
-// highlight is not worth it.
+// skips the highlight and logs a warning, without waiting for the element to
+// appear, since blowing up a whole Course over one highlight is not worth it.
 func (p *Spotlight) Reveal(target, tip string) {
 	p.RevealWith(target, tip, courseGuidanceSpotlight)
 }

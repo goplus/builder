@@ -147,13 +147,14 @@ type Spotlight interface {
 	// auto-conceal (the spotlight stays until the learner clicks anywhere).
 	// reveal returns once the spotlight is shown; it does not wait for the
 	// spotlight to be dismissed, so it never blocks the Course flow.
-	// target is a Radar selector addressing the UI elements to reveal; see the
-	// Radar module design for its syntax. A selector matching several elements
-	// reveals them together as one group.
+	// target is a Radar selector addressing the UI element to reveal; see the
+	// Radar module design for its syntax. When it matches several visible
+	// elements, only the first in document order is revealed.
 	// A malformed selector fails the Course program, so mistakes surface
 	// during Preview. A well-formed selector that currently matches nothing
 	// (for example an API filtered out by filterAPIs) is not an error: the
-	// host retries briefly, then skips the highlight and logs a warning.
+	// host skips the highlight and logs a warning, without waiting for the
+	// target to appear.
 	reveal(target, tip string)
 	// revealWith is reveal with explicit presentation options.
 	revealWith(target, tip string, options SpotlightOptions)

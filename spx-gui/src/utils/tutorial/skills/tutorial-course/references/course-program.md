@@ -132,7 +132,8 @@ Spotlight.revealWith target, tip, options         // the same, with explicit Spo
 
 `reveal` returns as soon as the spotlight is shown, so it never blocks the course. Its defaults are course
 guidance: the mask is on and the spotlight stays until the learner clicks anywhere. `target` is a Radar selector
-naming the UI elements to reveal; one selector may match several elements, which are then revealed together.
+naming the UI element to reveal; when it matches several, only the first on the page is revealed, so make it
+specific enough for the element you mean.
 
 A selector is made of the kebab-case role names the editor gives its UI, which are the tags in the UI structure
 you are given: `run-button`, `api-references`, `code-text-editor`. A space means "inside", as in
@@ -141,7 +142,7 @@ case-sensitive and never contain spaces, so a visible label such as "Run button"
 exist only in some states: the `ruler` toggle appears once the course has called `Editor.Ruler.enable`.
 
 A malformed selector fails the course program, so mistakes show up in Preview; a well-formed selector that matches
-nothing right now is not an error, the host retries briefly and then skips the highlight.
+nothing right now is not an error, the highlight is skipped without waiting for the element to appear.
 
 ## A complete example
 
