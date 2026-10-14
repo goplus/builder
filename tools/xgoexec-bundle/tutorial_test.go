@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/goplus/ixgo"
@@ -31,8 +35,8 @@ onStart => {
 	Editor.Ruler.enable
 	showPrelude "Move Lita to Mushroom."
 	showVideo "step-to"
-	Spotlight.reveal "Code editor > Code text editor", "Write your code here"
-	Spotlight.revealWith "Stage overview", "Watch Lita", SpotlightOptions{Mask: false, Duration: 3}
+	Spotlight.reveal "code-text-editor", "Write your code here"
+	Spotlight.revealWith "stage-overview", "Watch Lita", SpotlightOptions{Mask: false, Duration: 3}
 }
 
 Editor.Runtime.onStart => {
@@ -120,4 +124,68 @@ func TestExampleCourseBuilds(t *testing.T) {
 		t.Fatalf("read example course: %v", err)
 	}
 	buildCourse(t, source)
+}
+
+// TestGuideCoursesBuild compiles every ```go block of the course-author guide,
+// the tutorial-course skill in tools/tutorial/skills, as a complete Course, so
+// that the snippets a reader copies keep compiling as the framework evolves. A
+// deliberate fragment belongs in a ```text fence, which this test ignores.
+func TestGuideCoursesBuild(t *testing.T) {
+	const dir = "../tutorial/skills/tutorial-course"
+	var files []string
+	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
+		if err == nil && !entry.IsDir() && filepath.Ext(path) == ".md" {
+			files = append(files, path)
+		}
+		return err
+	})
+	if err != nil {
+		t.Fatalf("list the guide: %v", err)
+	}
+	blocks := 0
+	for _, file := range files {
+		name, err := filepath.Rel(dir, file)
+		if err != nil {
+			t.Fatalf("name %s: %v", file, err)
+		}
+		for i, block := range guideCodeBlocks(t, file) {
+			blocks++
+			t.Run(fmt.Sprintf("%s/block-%02d", name, i+1), func(t *testing.T) {
+				buildCourse(t, []byte(block))
+			})
+		}
+	}
+	if blocks == 0 {
+		t.Fatalf("expected ```go blocks in %s, found none", dir)
+	}
+}
+
+// guideCodeBlocks returns the contents of the ```go fenced blocks of a Markdown
+// file, in order. A fence line holds the fence alone, give or take surrounding
+// whitespace, so an indented fence or one with trailing spaces still counts.
+func guideCodeBlocks(t *testing.T, path string) []string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read guide: %v", err)
+	}
+	var blocks []string
+	var current []string
+	inBlock := false
+	for _, line := range strings.Split(string(data), "\n") {
+		switch {
+		case !inBlock && strings.TrimSpace(line) == "```go":
+			inBlock = true
+			current = nil
+		case inBlock && strings.TrimSpace(line) == "```":
+			inBlock = false
+			blocks = append(blocks, strings.Join(current, "\n")+"\n")
+		case inBlock:
+			current = append(current, line)
+		}
+	}
+	if inBlock {
+		t.Fatalf("%s: unterminated ```go block", path)
+	}
+	return blocks
 }

@@ -11,6 +11,8 @@ assets/videos/<name>/          one video resource: a manifest plus its payload
 assets/images/<name>/          one image resource, same shape (no call addresses images yet)
 ```
 
+The [example course](../../../../../docs/develop/tutorial-v2/example-tutorial-course/) is a complete course in this layout.
+
 ## Settings (`index.json`)
 
 ```json
@@ -34,7 +36,8 @@ course management.
 
 A resource is a directory holding a manifest (`index.json`) and one payload file. The directory name is the
 resource's name, and that name is the whole address: `showVideo "step-to"` finds `assets/videos/step-to/`
-whatever its payload is called. The manifest points at the payload and carries an editor-managed id; the editor
+whatever its payload is called. Names are unique within each type of resource, so a video and an image may
+share one. The manifest points at the payload and carries an editor-managed id; the editor
 writes both, so a course program never reads a manifest and never needs a path.
 
 Adding a video in the editor happens on the videos page: the page decides the directory and the manifest, and
