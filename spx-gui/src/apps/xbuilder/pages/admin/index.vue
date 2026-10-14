@@ -60,36 +60,27 @@ watch(
     <div class="sticky top-0 z-10 bg-grey-100">
       <NavbarWrapper class="border-b border-grey-400" centered>
         <template #left>
-          <div class="ml-3 flex items-center gap-1">
+          <div class="flex items-stretch">
             <NavbarDropdown
               v-if="canManageAccount"
               :trigger-radar="{
                 name: $t({ en: 'Account admin menu', zh: '账号管理菜单' }),
                 desc: 'Open Account admin navigation'
               }"
-              :trigger-class="[
-                'h-8 rounded-md transition-colors',
-                isAccountRoute
-                  ? 'bg-primary-100 text-primary-main hover:bg-primary-100'
-                  : 'text-grey-900 hover:bg-grey-300'
-              ]"
             >
               <template #trigger>
-                <span class="whitespace-nowrap text-sm font-medium">{{
-                  $t({ en: 'Account admin', zh: '账号管理' })
-                }}</span>
+                <span
+                  class="whitespace-nowrap text-sm font-medium"
+                  :class="isAccountRoute ? 'text-primary-main' : null"
+                  >{{ $t({ en: 'Account admin', zh: '账号管理' }) }}</span
+                >
               </template>
               <UIMenu class="min-w-36">
                 <UIMenuGroup>
                   <UIMenuItem
                     v-for="item in accountNavItems"
                     :key="item.to"
-                    class="whitespace-nowrap text-sm"
-                    :class="
-                      route.path.startsWith(item.to)
-                        ? 'bg-primary-100 font-medium text-primary-main hover:bg-primary-100'
-                        : null
-                    "
+                    :class="route.path.startsWith(item.to) ? 'bg-primary-100 text-primary-main' : null"
                     @click="router.push(item.to)"
                   >
                     {{ $t(item.label) }}
@@ -100,12 +91,8 @@ watch(
             <RouterLink
               v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
-              class="h-8 flex items-center rounded-md px-3 whitespace-nowrap text-sm font-medium no-underline transition-colors"
-              :class="
-                route.path.startsWith('/admin/audit-logs')
-                  ? 'bg-primary-100 text-primary-main hover:bg-primary-100'
-                  : 'text-grey-900 hover:bg-grey-300'
-              "
+              class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
+              :class="route.path.startsWith('/admin/audit-logs') ? 'text-primary-main' : 'text-inherit'"
               to="/admin/audit-logs"
             >
               {{ $t({ en: 'Audit logs', zh: '审计日志' }) }}

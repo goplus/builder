@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { UIDropdown, UIIcon } from '@/components/ui'
-import { cn, type ClassValue } from '@/components/ui/utils'
 import type { RadarNodeMeta } from '@/utils/radar'
 
 defineProps<{
   triggerRadar: RadarNodeMeta
-  triggerClass?: ClassValue
 }>()
 </script>
 
 <template>
   <UIDropdown placement="bottom-start">
     <template #trigger>
-      <div v-radar="triggerRadar" :class="cn('h-full flex items-center px-3 hover:bg-grey-400', triggerClass)">
+      <div v-radar="triggerRadar" class="h-full flex items-center px-3 hover:bg-grey-400">
         <slot name="trigger"></slot>
         <UIIcon type="arrowMini" class="w-2 ml-1" />
       </div>
