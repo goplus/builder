@@ -28,7 +28,7 @@ export class SpxDiagnosticsProvider extends DiagnosticsProvider {
     super(lspClient, project)
 
     this.addDisposer(
-      this.runtime.on('didChangeOutput', () => {
+      this.runtime.on('didChangeOutputSnapshot', () => {
         this.emit('didChangeDiagnostics')
       })
     )

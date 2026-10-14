@@ -35,17 +35,24 @@ export type TutorialProjectFiles = FileCollection;
  * Dispatching is safe as soon as `run()` resolves: the framework holds any
  * event that arrives before the Course program is ready and delivers it, in
  * arrival order, once the program starts. Events are never lost to startup
- * timing.
+ * timing. The Playground waits for executor startup before dispatching events
+ * in source order. Program completion, failure or Session disposal removes
+ * subscriptions and drops events still waiting for startup.
  */
 export type TutorialEvent =
-  /** The learner's project runtime started. */
+  /**
+   * One successful learner-project run or rerun. Failed/cancelled initialization,
+   * UI state restoration and subscription to an already-running runtime do not
+   * generate this event.
+   */
   | { name: "editor.runtime.start"; payload: null }
   /** The learner's project runtime exited with the given code. */
   | { name: "editor.runtime.exit"; payload: { code: number } }
   /**
    * One newly appended runtime log entry. Fired exactly once per new entry,
    * in append order, for `log`-kind outputs only: error output is not part
-   * of this channel.
+   * of this channel. Delivery is independent of console UI batching, retention
+   * and clearing. Final logs are dispatched before the corresponding exit.
    */
   | { name: "editor.runtime.log"; payload: { log: string } }
   /** A Copilot conversation round completed. */

@@ -427,6 +427,7 @@ async function executeRun(action: 'run' | 'rerun') {
     runnerState.value = 'running'
     lastFilesHash.value = filesHash
     editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
+    runtime.value.emit('didStart')
   } catch (error) {
     runnerState.value = 'running'
     editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false, initializingError: error })

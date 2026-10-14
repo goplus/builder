@@ -11,7 +11,7 @@ interface RuntimeOutput {
 }
 
 declare interface Runtime extends EmitterImpl<{
-  didChangeOutput: []
+  didChangeOutputSnapshot: []
 }> {
   getOutput(): Promise<RuntimeOutput[]>
 }
