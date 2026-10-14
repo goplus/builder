@@ -228,6 +228,7 @@ func (p *Course) Start() {
 	program := &p.courseProgram
 	// Terminal paths still wait for existing runs and propagate fatal errors.
 	defer program.awaitShutdown()
+	// MainEntry may already have completed or failed; skip startup in that case.
 	if program.terminated() {
 		return
 	}
@@ -236,7 +237,8 @@ func (p *Course) Start() {
 		program.recordFatal(err)
 		return
 	}
-	// Course startup precedes delivery of queued Host events.
+	// The main goroutine starts onStart runs before activating Host event delivery:
+	// the Course logically begins before it observes the world.
 	startRuns(program, program.handlerSnapshot().courseStart, struct{}{})
 	if program.terminated() {
 		return
