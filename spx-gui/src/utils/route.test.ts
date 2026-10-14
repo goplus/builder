@@ -23,33 +23,33 @@ describe('repeatableParamToPathSegments', () => {
 
 describe('makeChildScopedRouter', () => {
   it('only navigates within an active prefix, including nested scopes', async () => {
-    const currentPath = shallowRef(['editor', 'project', 'stage'])
+    const currentPath = shallowRef(['edit', 'project', 'stage'])
     const push = vi.fn(async (path: string[]) => {
       currentPath.value = path
     })
-    const editor = makeChildScopedRouter({ currentPath, push }, ['editor'])
+    const editor = makeChildScopedRouter({ currentPath, push }, ['edit'])
     const project = makeChildScopedRouter(editor, ['project'])
     expect(project.currentPath.value).toEqual(['stage'])
     await project.push(['sprites', 'A/B', 'code'], { replace: true })
-    expect(push).toHaveBeenLastCalledWith(['editor', 'project', 'sprites', 'A/B', 'code'], { replace: true })
+    expect(push).toHaveBeenLastCalledWith(['edit', 'project', 'sprites', 'A/B', 'code'], { replace: true })
     currentPath.value = ['preview', 'stage']
     expect(project.currentPath.value).toEqual([])
     push.mockClear()
     await project.push(['stage'])
     expect(push).not.toHaveBeenCalled()
-    currentPath.value = ['editor', 'program']
+    currentPath.value = ['edit', 'program']
     await project.push(['stage'])
     expect(push).not.toHaveBeenCalled()
   })
 
   it('recognizes a bare prefix and rejects shorter or partial matches', async () => {
-    const currentPath = shallowRef(['editor', 'project'])
+    const currentPath = shallowRef(['edit', 'project'])
     const push = vi.fn(async () => {})
-    const router = makeChildScopedRouter({ currentPath, push }, ['editor', 'project'])
+    const router = makeChildScopedRouter({ currentPath, push }, ['edit', 'project'])
     await router.push(['stage'])
-    expect(push).toHaveBeenCalledWith(['editor', 'project', 'stage'], undefined)
+    expect(push).toHaveBeenCalledWith(['edit', 'project', 'stage'], undefined)
     push.mockClear()
-    for (const path of [[], ['editor'], ['editor', 'project-other']]) {
+    for (const path of [[], ['edit'], ['edit', 'project-other']]) {
       currentPath.value = path
       await router.push(['stage'])
     }

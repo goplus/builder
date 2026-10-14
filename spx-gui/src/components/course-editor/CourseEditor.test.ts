@@ -12,12 +12,17 @@ import { TutorialProject } from '@/models/tutorial/project'
 import type { History } from '@/components/editor/history'
 import type { PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
-import { courseEditorRoute } from '@/apps/xbuilder/router'
 import { useScopedRouterWithPathParam } from '@/utils/route'
 import CourseEditor from './CourseEditor.vue'
 
 const courseEditorRouteName = 'course-editor'
-const courseEditorRoutes = [{ ...courseEditorRoute, name: courseEditorRouteName, component: { render: () => null } }]
+const courseEditorRoutes = [
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*',
+    name: courseEditorRouteName,
+    component: { render: () => null }
+  }
+]
 
 // The preview and the tracking of unsaved changes are what these tests drive, so everything the editing pane is made
 // of is stood in for: the course documents (one of them carries Monaco), the embedded Project Editor, and the
@@ -159,7 +164,7 @@ async function enterPreview(router: TestRouter, course: PlaygroundCourse) {
 async function leavePreview(router: TestRouter, course: PlaygroundCourse) {
   await router.push({
     name: courseEditorRouteName,
-    params: { courseSeriesIdInput: seriesID, courseIdInput: course.id, inEditorPath: ['editor'] }
+    params: { courseSeriesIdInput: seriesID, courseIdInput: course.id, inEditorPath: ['edit'] }
   })
   await flushPromises()
 }
@@ -188,7 +193,7 @@ async function mountPreviewing(
   if (options?.editing) {
     await router.push({
       name: courseEditorRouteName,
-      params: { courseSeriesIdInput: series.id, courseIdInput: course.id, inEditorPath: ['editor'] }
+      params: { courseSeriesIdInput: series.id, courseIdInput: course.id, inEditorPath: ['edit'] }
     })
   } else {
     await router.push({
@@ -295,7 +300,7 @@ describe('CourseEditor preview', () => {
     await completePreviewedCourse(wrapper)
 
     expect(mocks.getCourse).not.toHaveBeenCalled()
-    expect(router.currentRoute.value.params.inEditorPath[0]).toBe('editor')
+    expect(router.currentRoute.value.params.inEditorPath[0]).toBe('edit')
   })
 
   it('stays where it is when the author chooses to keep looking around', async () => {
@@ -553,7 +558,7 @@ describe('CourseEditor history', () => {
       params: {
         courseSeriesIdInput: series.id,
         courseIdInput: course.id,
-        inEditorPath: ['editor', ...inCourseEditorPath]
+        inEditorPath: ['edit', ...inCourseEditorPath]
       }
     })
     await router.isReady()
@@ -640,7 +645,7 @@ describe('CourseEditor history', () => {
 
     await router.push({
       name: courseEditorRouteName,
-      params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inEditorPath: ['editor', 'project'] }
+      params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inEditorPath: ['edit', 'project'] }
     })
     await flushPromises()
     expect(buttonsHistory()).toBe(history)

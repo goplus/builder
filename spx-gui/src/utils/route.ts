@@ -89,7 +89,10 @@ export function useRouteQueryParamStrEnum<K extends string, E extends StrEnumTyp
 /** Matched route segments (URL-decoded). */
 export type PathSegments = string[]
 
-/** Convert a path string to path segments. */
+/**
+ * Split a slash-separated path into non-empty segments without URL decoding. For Vue Router parameters, use
+ * `repeatableParamToPathSegments` instead so a decoded segment containing `/` stays intact.
+ */
 export function path2PathSegments(path: string): PathSegments {
   return path.split('/').filter((segment) => segment !== '')
 }
@@ -105,16 +108,27 @@ export function shiftPath(path: PathSegments): [segment: string | null, extra: P
   return [first ?? null, rest]
 }
 
+/** Controls how a scoped navigation updates history. */
 export type ScopedPushOptions = {
-  /** Whether to replace the current route instead of pushing a new one. Defaults to false. */
+  /** Replace the current history entry instead of adding one. Defaults to false. */
   replace?: boolean
 }
 
-/** A router that is scoped to a path prefix. */
+/**
+ * Navigation within a component's own route space. Both `currentPath` and paths passed to `push` are relative to
+ * that space; the host maps them to its routing structure without exposing route records or parameter names.
+ *
+ * Useful for reusable navigable components embedded in different pages, such as an editor hosted in a standalone
+ * page or a course preview. The component can synchronize its state with navigation without knowing its host URL.
+ * A host adapter can preserve deep links, browser history and surrounding route state while changing only this path.
+ *
+ * A scope may be backed by a route parameter, a child path prefix or local state; the interface does not require a
+ * particular backing router. Prefix matching and inactive-navigation behavior belong to the specific adapter.
+ */
 export interface IScopedRouter {
-  /** The current path segments in scope. */
+  /** The current URL-decoded path segments, relative to this scope. */
   currentPath: Ref<PathSegments>
-  /** Navigate to a new path in scope. */
+  /** Navigate to URL-decoded path segments relative to this scope. */
   push(newPath: PathSegments, options?: ScopedPushOptions): Promise<unknown>
 }
 
@@ -151,7 +165,10 @@ function makeScopedRouterWithPathParam(
   }
 }
 
-/** Child navigation only takes effect while the parent path matches the prefix. */
+/**
+ * Create a child scope by removing a fixed prefix from the parent's path and prepending it on navigation.
+ * Outside that prefix, `currentPath` is empty and `push` does nothing; entering the child scope requires parent navigation.
+ */
 export function makeChildScopedRouter(router: IScopedRouter, prefix: PathSegments): IScopedRouter {
   const isActive = computed(() => prefix.every((segment, i) => router.currentPath.value[i] === segment))
   return {
@@ -163,8 +180,18 @@ export function makeChildScopedRouter(router: IScopedRouter, prefix: PathSegment
   }
 }
 
+/**
+ * Bind a scoped router to a repeatable path parameter of the current Vue Router route. Navigation updates only
+ * that parameter, preserving the other parameters, query and hash; `replace` controls whether to add a history entry.
+ */
 export function useScopedRouterWithPathParam(
   pathParamName: string,
+  /**
+   * Defaults to reading the current route parameter. For a page using `props: true`, pass a getter such as
+   * `() => props.inEditorPath` to update the path together with the component's other inputs. Route parameters
+   * can update before those props; reading from props avoids the old component state reacting to a new path
+   * before its other inputs have caught up.
+   */
   pathParamGetter?: () => string | string[]
 ): IScopedRouter {
   const router = useRouter()

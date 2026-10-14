@@ -49,6 +49,7 @@ const props = defineProps<{
   series: CourseSeries
   /** The author's working copy, already loaded. Its owner disposes it, not the editor. */
   project: TutorialProject
+  /** Navigation scoped to this Course Editor. */
   router: IScopedRouter
 }>()
 
@@ -74,22 +75,28 @@ const projectEditorHost = computed(() => getProjectEditorHost(config.value.proje
 /** Reported by the project editor host; null until the host has initialized it. */
 const editorState = shallowRef<EditorState | null>(null)
 
-// Course and embedded-project edits share one undo history.
+// One history for the whole course, the embedded project included, which the project's editor records into too: an
+// edit touching both (importing a project, say) is one step, and undoing never leaves them out of step.
 const history = new History({
   mutex: { runExclusive: (job) => props.project.runExclusive(job) },
   exportFiles: () => props.project.exportFiles(),
   loadFiles: (files) => props.project.loadFiles(files)
 })
 
+// Typing in the program is recorded as one step, as long as nothing else is done in between.
 const editProgramAction: Action = { name: { en: 'Update program', zh: '修改程序' }, mergeable: true }
 
-const isPreviewRoute = computed(() => props.router.currentPath.value[0] === 'preview')
-const inEditorRouter = makeChildScopedRouter(props.router, ['editor'])
+const editPathPrefix = 'edit'
+const previewPathPrefix = 'preview'
+
+const isPreviewRoute = computed(() => props.router.currentPath.value[0] === previewPathPrefix)
+const inEditorRouter = makeChildScopedRouter(props.router, [editPathPrefix])
 const resolved = computed(() => resolveView(inEditorRouter.currentPath.value))
 const open = computed(() => resolved.value.open)
 const inProjectEditorRouter = makeChildScopedRouter(inEditorRouter, ['project'])
-const inPreviewRouter = makeChildScopedRouter(props.router, ['preview'])
+const inPreviewRouter = makeChildScopedRouter(props.router, [previewPathPrefix])
 
+// Silent while previewing: there the Copilot belongs to the learner's session and must see what a learner's would.
 useCourseEditorCopilot(
   () => props.project,
   () => open.value,
@@ -97,16 +104,19 @@ useCourseEditorCopilot(
 )
 
 function openView(view: CourseView) {
-  return props.router.push(['editor', ...getViewPath(view)])
+  return props.router.push([editPathPrefix, ...getViewPath(view)])
 }
 
+// Keep the URL saying what is on screen: a path inside a view (a single video, as earlier versions addressed one) or
+// one no view edits is replaced by the path of the view that shows it. Not on the preview route, whose path belongs
+// to the playground.
 watch(
   () =>
-    isPreviewRoute.value || isEqual(['editor', ...resolved.value.path], props.router.currentPath.value)
+    isPreviewRoute.value || isEqual([editPathPrefix, ...resolved.value.path], props.router.currentPath.value)
       ? null
       : resolved.value.path,
   (target) => {
-    if (target != null) void props.router.push(['editor', ...target], { replace: true })
+    if (target != null) void props.router.push([editPathPrefix, ...target], { replace: true })
   },
   { immediate: true }
 )
@@ -114,26 +124,37 @@ watch(
 const dirty = ref(false)
 /** Bumped on every edit, so a save can tell whether edits happened after its snapshot was taken. */
 const revision = ref(0)
+// `exportFiles()` reads every record of the model, so watching it captures all edits. It builds a new map on every
+// call; through this computed each edit builds one, shared by the unsaved flag and the per-view marks.
 const exportedFiles = computed(() => props.project.exportFiles())
 watch(exportedFiles, () => {
   dirty.value = true
   revision.value++
 })
 
+// Per-view unsaved marks compare records with the baseline taken at load and after every successful save, so a save
+// made while editing still shows what remains unsaved. Generated records keep their identity while their source is
+// unchanged, so comparing `File` instances is enough.
 const filesBaseline = shallowRef<Files>(exportedFiles.value)
 const changedPaths = computed(() => getChangedPaths(filesBaseline.value, exportedFiles.value))
 const dirtyViews = computed(() => getDirtyViews(changedPaths.value, config.value.project.root))
 
+// Saving blocks the editor (mask + route guards) so nothing changes underneath the upload. The abort
+// controller is the safety net for the paths that bypass the guards (programmatic session end, page close):
+// a save that outlives its session must never publish its stale snapshot.
 let saveController: AbortController | null = null
 
 async function save(signal: AbortSignal) {
+  // Unlike `exportFiles()`, `export()` waits for in-flight transactions of the course and its embedded project.
   const { files } = await props.project.export()
   const savedRevision = revision.value
   const { fileCollection } = await saveFiles(files, signal)
   signal.throwIfAborted()
+  // Only the content is written; title and thumbnail belong to course management.
   const saved = (await updateCourse(props.course.id, { content: fileCollection }, signal)) as PlaygroundCourse
   if (revision.value === savedRevision) dirty.value = false
   filesBaseline.value = files
+  // Pick up metadata edited elsewhere in the meantime.
   props.project.setMetadata({ title: saved.title, thumbnail: saved.thumbnail })
   emit('saved', saved)
 }
@@ -145,6 +166,7 @@ const handleSave = useMessageHandle(
     try {
       await m.withLoading(save(controller.signal), t({ en: 'Saving course...', zh: '保存课程中...' }))
     } finally {
+      // Defensive: the mask prevents overlapping saves.
       if (saveController === controller) saveController = null
     }
   },
@@ -153,7 +175,9 @@ const handleSave = useMessageHandle(
 )
 const saving = computed(() => handleSave.isLoading.value)
 
-// Preview runs an isolated snapshot; dispose it after the borrowing Playground unmounts.
+// Preview runs the real Tutorial lifecycle on a snapshot of the author's current work, so learner-side
+// edits and course execution never touch the working copy. The playground drives its scoped editor path;
+// entering and leaving preview, also through browser history, drives the state below.
 const preview = shallowRef<TutorialProject | null>(null)
 const previewProjectQueryRet = createResolvedQueryRet(preview)
 // The editor owns every snapshot it hands the playground, which runs it but does not dispose it: one taken off
@@ -165,6 +189,9 @@ watch(preview, (_, previous) => {
 /** Why the preview could not start; errors while it runs are shown by the playground. */
 const previewError = ref<Error | null>(null)
 
+// A preview is a walk along the series: it starts at the course being edited and "Learn next course" in the
+// completion modal moves it on, the way a learner goes from one course to the next. Only the course being
+// edited has a working copy; the ones after it are shown as they were saved.
 /** The course the preview is showing or trying to show. A failed load leaves it there, so a retry retries it. */
 const previewCourseID = ref(props.course.id)
 /** The course the preview is running, assigned once its snapshot has loaded. */
@@ -208,11 +235,13 @@ async function loadPreviewSnapshot(generation: number) {
 
 const handlePreview = useMessageHandle(
   async () => {
+    // Load before navigating: a failure leaves the route alone, and the route watcher finds `preview` set instead of
+    // loading a second snapshot. A superseded load rejects with `Cancelled`, which the wrapper swallows.
     const snapshot = await loadPreviewSnapshot(++previewGeneration)
     previewError.value = null
     preview.value = snapshot
     editorRouteBeforePreview = inEditorRouter.currentPath.value
-    await props.router.push(['preview', ...getConfiguredPath(snapshot)])
+    await props.router.push([previewPathPrefix, ...getConfiguredPath(snapshot)])
   },
   { en: 'Failed to start preview', zh: '启动预览失败' }
 )
@@ -248,10 +277,13 @@ async function enterPreviewFromRoute() {
   const generation = ++previewGeneration
   try {
     const snapshot = await loadPreviewSnapshot(generation)
+    // No path inside the project (a typed URL, say): start where a learner would.
     if (inPreviewRouter.currentPath.value.length === 0) await openPreviewAtConfiguredPath(snapshot, generation)
     previewError.value = null
     preview.value = snapshot
   } catch (error) {
+    // A load superseded while it ran, or one that failed after the author had left it, must not replace a preview
+    // that is running fine.
     if (error instanceof Cancelled || !isCurrentPreview(generation)) return
     previewError.value = error instanceof Error ? error : new Error(String(error))
   }
@@ -264,6 +296,7 @@ async function enterPreviewFromRoute() {
  */
 async function loadSavedCourseSnapshot(courseID: string, generation: number) {
   const course = await getCourse(courseID)
+  // A series holds courses of one kind, so this only fires on data the playground could not run anyway.
   if (course.kind !== 'playground') {
     throw new DefaultException({
       en: `Course "${course.title}" is not a Playground Course`,
@@ -286,6 +319,8 @@ async function startPreviewedCourse(courseID: string) {
   const generation = ++previewGeneration
   previewCourseID.value = courseID
   previewError.value = null
+  // Take the running course off the screen first, so its playground unmounts (and its snapshot is disposed)
+  // before another one can be published.
   preview.value = null
   await nextTick()
   try {
@@ -293,10 +328,12 @@ async function startPreviewedCourse(courseID: string) {
       courseID === props.course.id
         ? { course: props.course, snapshot: await loadPreviewSnapshot(generation) }
         : await loadSavedCourseSnapshot(courseID, generation)
+    // The route still says where the previous run was; this one starts where a learner would.
     await openPreviewAtConfiguredPath(snapshot, generation)
     previewCourse.value = course
     preview.value = snapshot
   } catch (error) {
+    // Only the preview on screen shows its errors (see `enterPreviewFromRoute`).
     if (error instanceof Cancelled || !isCurrentPreview(generation)) return
     previewError.value = error instanceof Error ? error : new Error(String(error))
   }
@@ -320,6 +357,7 @@ function nextCourseID(): string | null {
   return ids[index + 1]
 }
 
+// The title comes from the snapshot, so the course being edited is named by its unsaved title.
 const previewBannerText = computed(() => {
   const title = preview.value?.title
   if (title == null) return { en: 'Previewing the course as a learner', zh: '正在以学习者视角预览课程' }
@@ -351,31 +389,38 @@ function restoreAuthorCopilot() {
   else copilot.close()
 }
 
+// `immediate` covers landing directly on the preview URL.
 watch(
   isPreviewRoute,
   (isPreview) => {
     if (!isPreview) {
+      // Any load still in flight belongs to a preview that is over: let it discard its snapshot.
       previewGeneration++
       preview.value = null
       previewError.value = null
       restoreAuthorCopilot()
       return
     }
+    // This runs before the playground mounts and its runner replaces the copilot session.
     stashAuthorCopilot()
     previewCourseID.value = props.course.id
     previewCourse.value = props.course
+    // `handlePreview` already set the snapshot; otherwise load it from the route.
     if (preview.value == null) void enterPreviewFromRoute()
   },
   { immediate: true }
 )
 
 function exitPreview() {
+  // Consume the remembered route so a later, URL-entered preview does not reuse a stale target.
   const target = editorRouteBeforePreview
   editorRouteBeforePreview = null
-  return props.router.push(['editor', ...(target ?? [])])
+  return props.router.push([editPathPrefix, ...(target ?? [])])
 }
 
 async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
+  // The modal can outlive its preview: the browser's Back button does not close it, so the author may leave the
+  // preview, and even enter it again, while it is open. Its answer must then neither walk on nor end the one on screen.
   const generation = previewGeneration
   const action = await openCompletion({
     course: previewCourse.value,
@@ -391,6 +436,7 @@ async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
 }
 
 function confirmDiscardingUnsavedChanges() {
+  // Leaving mid-save could publish a stale snapshot or lose the result.
   if (saving.value) {
     m.warning(t({ en: 'The course is being saved, please wait', zh: '课程正在保存，请稍候' }))
     return false
@@ -409,6 +455,7 @@ function confirmDiscardingUnsavedChanges() {
 
 defineExpose({ confirmDiscardingUnsavedChanges })
 
+// Closing or reloading the tab bypasses the router guard.
 function handleBeforeUnload(event: BeforeUnloadEvent) {
   if (dirty.value || saving.value) event.preventDefault()
 }
@@ -416,6 +463,7 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
 function handleSaveShortcut(event: KeyboardEvent) {
   const { metaKey, ctrlKey, key } = event
   if ((metaKey || ctrlKey) && key.toLowerCase() === 's') {
+    // Suppress the browser's "save page" dialog even when there is nothing to save.
     event.preventDefault()
     if (dirty.value && !saving.value) handleSave.fn()
   }
@@ -427,11 +475,15 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // Orphan any preview load in flight. The playground has unmounted by now, so the snapshot on screen can be
+  // disposed right away.
   previewGeneration++
   preview.value?.dispose()
+  // Leaving the editor from the preview route: the author's copilot must not stay replaced by the learner's.
   restoreAuthorCopilot()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('keydown', handleSaveShortcut)
+  // With `Cancelled` as the abort reason, `useMessageHandle` treats the rejection as a cancellation (no error toast).
   saveController?.abort(new Cancelled('unmounted'))
 })
 </script>

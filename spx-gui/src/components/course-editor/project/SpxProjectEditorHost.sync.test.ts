@@ -9,7 +9,7 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { Costume } from '@/models/spx/costume'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
-import { courseEditorRoute, getCourseEditorRoute } from '@/apps/xbuilder/router'
+import { getCourseEditorRoute } from '@/apps/xbuilder/router'
 import { EditMode, type EditorState } from '@/components/editor/editor-state'
 import { History } from '@/components/editor/history'
 import { makeChildScopedRouter, useScopedRouterWithPathParam } from '@/utils/route'
@@ -70,7 +70,9 @@ function makeProject() {
 async function mountInCourseEditor(at: string) {
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: [{ ...courseEditorRoute, component: { render: () => null } }]
+    routes: [
+      { path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*', component: { render: () => null } }
+    ]
   })
   await router.push(at)
   await router.isReady()
@@ -81,9 +83,9 @@ async function mountInCourseEditor(at: string) {
   const CourseEditorStandIn = defineComponent({
     setup() {
       const inEditorRouter = useScopedRouterWithPathParam('inEditorPath')
-      const projectRouter = makeChildScopedRouter(inEditorRouter, ['editor', 'project'])
+      const projectRouter = makeChildScopedRouter(inEditorRouter, ['edit', 'project'])
       const active = computed(
-        () => inEditorRouter.currentPath.value[0] === 'editor' && inEditorRouter.currentPath.value[1] === 'project'
+        () => inEditorRouter.currentPath.value[0] === 'edit' && inEditorRouter.currentPath.value[1] === 'project'
       )
       return () =>
         h(SpxProjectEditorHost, {

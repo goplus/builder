@@ -4,7 +4,7 @@ import { defineComponent, h, ref } from 'vue'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 
 import { createI18n } from '@/utils/i18n'
-import { courseEditorRoute, getCourseEditorRoute } from '../../router'
+import { getCourseEditorRoute } from '../../router'
 import CourseEditorPage from './index.vue'
 
 const mocks = vi.hoisted(() => ({ confirm: vi.fn(), getCourse: vi.fn(), getSeries: vi.fn(), load: vi.fn() }))
@@ -39,7 +39,11 @@ async function openEditor() {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { ...courseEditorRoute, component: CourseEditorPage },
+      {
+        path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*',
+        component: CourseEditorPage,
+        props: true
+      },
       { path: '/elsewhere', component: { render: () => null } }
     ]
   })
@@ -67,7 +71,7 @@ describe('Course Editor page navigation guards', () => {
     const { router, wrapper } = await openEditor()
     const editor = wrapper.findComponent({ name: 'CourseEditor' }).vm
     const project = wrapper.findComponent({ name: 'CourseEditor' }).props('project')
-    for (const path of ['editor/project/stage', 'preview/sprites/Lita/code', 'editor/program']) {
+    for (const path of ['edit/project/stage', 'preview/sprites/Lita/code', 'edit/program']) {
       await router.push(`/course-editor/s/c/${path}?from=list#anchor`)
       await flushPromises()
       expect(wrapper.findComponent({ name: 'CourseEditor' }).vm).toBe(editor)

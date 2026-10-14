@@ -34,6 +34,7 @@ import { PlaygroundCourseSession } from './session'
 
 const props = defineProps<{
   projectQueryRet: QueryRet<TutorialProject>
+  /** Navigation scoped to this Course Playground. */
   router: IScopedRouter
 }>()
 

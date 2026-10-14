@@ -12,10 +12,6 @@ import { videoAssetPath } from '@/models/tutorial/video'
 import type { IconType } from '@/components/ui'
 import type { PathSegments } from '@/utils/route'
 
-function isPathWithin(path: string, dir: string) {
-  return dir === '' || path === dir || path.startsWith(dir + '/')
-}
-
 export type CourseView = 'course' | 'project' | 'videos' | 'images' | 'program'
 
 /**
@@ -65,6 +61,14 @@ export function getViewPath(view: CourseView): PathSegments {
 export function resolveView(path: PathSegments): { open: OpenView; path: PathSegments } {
   const view = courseViews.find((view) => view === path[0]) ?? 'course'
   return { open: { view }, path: view === 'project' ? path : getViewPath(view) }
+}
+
+/**
+ * Whether `path` is `dir` or lies under it, compared by segment: `assets/videos` is not within `assets/vid`. The empty
+ * `dir` is the root and contains every path.
+ */
+function isPathWithin(path: string, dir: string) {
+  return dir === '' || path === dir || path.startsWith(dir + '/')
 }
 
 /** The views that edit some changed record. A record that no view edits marks none, not even the course. */

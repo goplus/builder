@@ -2,6 +2,7 @@
 import type { IScopedRouter, PathSegments } from '@/utils/route'
 import type { ILocalCache } from '@/components/editor/editing'
 
+// The embedded learner project has no owner, so editing runs in EffectFree mode and never uses the local cache.
 const noopLocalCache: ILocalCache = {
   async load() {
     return null
@@ -33,6 +34,7 @@ import { UIDetailedLoading, UIError } from '@/components/ui'
 const props = defineProps<{
   /** The learner project to edit, already loaded. A new instance re-creates the editor state. */
   project: SpxProject
+  /** Navigation scoped to the hosted SPX Project Editor. */
   router: IScopedRouter
   /** Where the edits of the project are recorded, together with those of the rest of the course. */
   history: History
@@ -52,20 +54,27 @@ const i18n = useI18n()
 const { isOnline } = useNetwork()
 const signedInStateQuery = useSignedInStateQuery()
 
+// Written only through `setState`, so the parent always sees the state the editor UI renders.
 const state = shallowRef<EditorState | null>(null)
 const initializationError = ref<Error | null>(null)
 
 function setState(next: EditorState | null) {
+  // Store first so anything reacting to the emit already sees the new local state.
   state.value = next
   emit('update:editorState', next)
 }
 
 const retainedPath = shallowRef<PathSegments>([])
 const editorRouter: IScopedRouter = {
+  // While the project is not open, or sits on its transient bare root, the state keeps seeing where the project was
+  // (the same array, so it does not react): shown an empty path, it would select its default and navigate there,
+  // overtaking the bare-root restoration.
   currentPath: computed(() => {
     const path = props.router.currentPath.value
     return props.active && path.length > 0 ? path : retainedPath.value
   }),
+  // Host navigation is dropped while the project is not open, so a selection the state makes on its own
+  // (e.g. after the selected sprite was deleted) cannot take the route away from the document the author is looking at.
   push: (path, options) => {
     retainedPath.value = path
     if (!props.active) return Promise.resolve()
@@ -85,6 +94,7 @@ watch(
   { immediate: true }
 )
 
+// Checked after each `await`, so an initialization that outlives the component neither publishes nor leaks a state.
 let disposed = false
 
 /** (Re)create the editor state for the current project. Failures go to `initializationError` instead of rejecting. */
@@ -92,12 +102,15 @@ async function initialize() {
   const previousState = state.value
   setState(null)
   initializationError.value = null
+  // Let the UI unmount the components that still hold the old state before disposing it, so nothing reads a
+  // disposed state during its own teardown.
   await nextTick()
   previousState?.dispose()
   if (disposed) return
   const routePath = props.router.currentPath.value
   retainedPath.value = props.active ? routePath : []
 
+  // The project comes already loaded, so there is no `editing.loadProject` here.
   const nextState = new EditorState(
     i18n,
     props.project,
@@ -130,6 +143,7 @@ const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
 
 onUnmounted(() => {
   disposed = true
+  // Withdraw before disposing so the parent never holds a reference to a disposed state.
   const current = state.value
   setState(null)
   current?.dispose()
