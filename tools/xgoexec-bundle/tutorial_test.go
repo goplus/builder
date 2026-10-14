@@ -149,7 +149,8 @@ func TestGuideCoursesBuild(t *testing.T) {
 }
 
 // guideCodeBlocks returns the contents of the ```go fenced blocks of a Markdown
-// file, in order. A fence line must consist of the fence alone.
+// file, in order. A fence line holds the fence alone, give or take surrounding
+// whitespace, so an indented fence or one with trailing spaces still counts.
 func guideCodeBlocks(t *testing.T, path string) []string {
 	t.Helper()
 	data, err := os.ReadFile(path)
@@ -161,10 +162,10 @@ func guideCodeBlocks(t *testing.T, path string) []string {
 	inBlock := false
 	for _, line := range strings.Split(string(data), "\n") {
 		switch {
-		case !inBlock && line == "```go":
+		case !inBlock && strings.TrimSpace(line) == "```go":
 			inBlock = true
 			current = nil
-		case inBlock && line == "```":
+		case inBlock && strings.TrimSpace(line) == "```":
 			inBlock = false
 			blocks = append(blocks, strings.Join(current, "\n")+"\n")
 		case inBlock:
