@@ -81,6 +81,20 @@ describe('course series writes', () => {
     await vi.waitFor(() => expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')]))
   })
 
+  it('drops a series whose update failed, and its course list, as the update may still have taken effect', async () => {
+    queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
+    queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
+    queryClient.setQueryData(['course-series-courses', '41'], [makeCourse('2339')])
+    apis.updateCourseSeries.mockRejectedValue(new Error('timeout'))
+    const updateCourseSeries = withQueryClient(queryClient, () => useUpdateCourseSeries())
+
+    await expect(updateCourseSeries('40', { courseIDs: ['2340'] })).rejects.toThrow()
+
+    expect(queryClient.getQueryData(['course-series', '40'])).toBeUndefined()
+    expect(queryClient.getQueryData(['course-series-courses', '40'])).toBeUndefined()
+    expect(queryClient.getQueryData(['course-series-courses', '41'])).toEqual([makeCourse('2339')])
+  })
+
   it('drops a deleted series and its course list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
     queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])

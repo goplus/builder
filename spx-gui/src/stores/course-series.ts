@@ -63,7 +63,15 @@ export function useUpdateCourseSeries() {
       params: apis.UpdateCourseSeriesParams,
       signal?: AbortSignal
     ) {
-      const series = await apis.updateCourseSeries(courseSeriesID, params, signal)
+      let series: apis.CourseSeries
+      try {
+        series = await apis.updateCourseSeries(courseSeriesID, params, signal)
+      } catch (e) {
+        // A failed update may still have taken effect, its answer lost, so what is cached is no longer known.
+        seriesCache.discard(getSeriesQueryKey(courseSeriesID))
+        coursesCache.discard(getSeriesCoursesQueryKey(courseSeriesID))
+        throw e
+      }
       seriesCache.invalidateWithOptimisticValue(getSeriesQueryKey(series.id), series)
       // Which courses the series holds, and in what order, may have changed; the new list is not known here.
       coursesCache.discard(getSeriesCoursesQueryKey(series.id))
