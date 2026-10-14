@@ -282,6 +282,44 @@ describe('exportCourseSeriesFile', () => {
       ])
     )
   })
+
+  it('refuses projects that have the same name, as an import would save them as one', async () => {
+    vi.mocked(getCourse).mockImplementation(async (id) => ({
+      ...existingCourse,
+      id,
+      content: { ...existingCourse.content, entrypoint: `/editor/${id === 'course-1' ? 'alice/Game' : 'bob/game'}` }
+    }))
+
+    await expect(exportCourseSeriesFile({ ...existingSeries, courseIDs: ['course-1', 'course-2'] })).rejects.toThrow(
+      'Cannot export the course series: projects alice/Game and bob/game have the same name. Rename one of them.'
+    )
+    expect(cloudHelpers.load).not.toHaveBeenCalled()
+  })
+
+  it('exports a project several courses open once, however it is spelled, and imports it once for all', async () => {
+    const entrypoints: Record<string, string> = {
+      'course-1': '/editor/curator/EntryProject/lesson?tab=code',
+      'course-2': '/editor/Curator/entryproject/lesson'
+    }
+    vi.mocked(getCourse).mockImplementation(async (id) => ({
+      ...existingCourse,
+      id,
+      content: { ...existingCourse.content, entrypoint: entrypoints[id] }
+    }))
+
+    const file = await exportCourseSeriesFile({ ...existingSeries, courseIDs: ['course-1', 'course-2'] })
+    const unzipped = await unzip(new Uint8Array(await file.arrayBuffer()))
+    const manifest = JSON.parse(new TextDecoder().decode(unzipped['course-series.json']!)) as Record<string, any>
+    expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual(['curator/EntryProject'])
+
+    await importCourseSeriesFileAsNew(file, 'guided', 'alice')
+
+    expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(addCourse).mock.calls.map(([params]) => (params as GuidedCourse).content.entrypoint)).toEqual([
+      '/editor/alice/EntryProject/lesson?tab=code',
+      '/editor/alice/EntryProject/lesson'
+    ])
+  })
 })
 
 describe('importCourseSeriesFile', () => {
@@ -308,6 +346,27 @@ describe('importCourseSeriesFile', () => {
     )
     expect(updateCourseSeries).not.toHaveBeenCalled()
     expect(deleteCourse).not.toHaveBeenCalled()
+  })
+
+  it('imports once a project the file holds twice, spelled two ways', async () => {
+    await importCourseSeriesFileAsNew(
+      await makeCourseSeriesFile('/editor/Curator/entryproject/lesson?tab=code', {
+        projects: [
+          { fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' },
+          { fullName: 'Curator/entryproject', name: 'entryproject', path: 'projects/1.xbp' }
+        ]
+      }),
+      'guided',
+      'alice'
+    )
+
+    expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
+    expect(addCourse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({ entrypoint: '/editor/alice/EntryProject/lesson?tab=code' })
+      }),
+      undefined
+    )
   })
 
   it('rewrites exact editor project segment and preserves local order', async () => {
@@ -695,6 +754,27 @@ describe('importCourseSeriesFile when it fails', () => {
     expect(addCourse).not.toHaveBeenCalled()
   })
 
+  it('refuses a file with projects that have the same name, before writing anything', async () => {
+    await expect(
+      importCourseSeriesFile(
+        existingSeries,
+        await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', {
+          projects: [
+            { fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' },
+            { fullName: 'other/entryproject', name: 'entryproject', path: 'projects/1.xbp' }
+          ]
+        }),
+        'alice',
+        writes
+      )
+    ).rejects.toThrow(
+      'Invalid course series file: projects curator/EntryProject and other/entryproject have the same name. Rename one of them and export the series again.'
+    )
+    expect(xbpHelpers.load).not.toHaveBeenCalled()
+    expect(getProject).not.toHaveBeenCalled()
+    expect(cloudHelpers.save).not.toHaveBeenCalled()
+  })
+
   it('refuses a file missing a thumbnail, before writing anything', async () => {
     await expect(
       importCourseSeriesFile(
@@ -935,18 +1015,41 @@ describe('inspectCourseSeriesFileImport', () => {
       overwrittenProjects: ['EntryProject']
     })
   })
+
+  it('reports once a project the file holds twice, spelled two ways', async () => {
+    // As the backend finds a project ignoring case.
+    vi.mocked(getProject).mockResolvedValue({ owner: 'alice', name: 'EntryProject' } as Awaited<
+      ReturnType<typeof getProject>
+    >)
+
+    const inspection = await inspectCourseSeriesFileImport(
+      null,
+      'guided',
+      await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', {
+        projects: [
+          { fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' },
+          { fullName: 'Curator/entryproject', name: 'entryproject', path: 'projects/1.xbp' }
+        ]
+      }),
+      'alice'
+    )
+
+    expect(inspection.overwrittenProjects).toEqual(['EntryProject'])
+  })
 })
 
 async function makeCourseSeriesFile(
   entrypoint: string,
   {
     omit = [],
-    kind = 'guided'
+    kind = 'guided',
+    projects = [{ fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' }]
   }: {
     /** Paths of entries to leave out. */
     omit?: string[]
     /** Null for a file written before series had kinds. */
     kind?: string | null
+    projects?: Array<{ fullName: string; name: string; path: string }>
   } = {}
 ) {
   const zippable: Zippable = {
@@ -967,13 +1070,13 @@ async function makeCourseSeriesFile(
             content: { entrypoint, prompt: 'Imported prompt' }
           }
         ],
-        projects: [{ fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' }]
+        projects
       })
     ),
     'thumbnails/course-series.png': new TextEncoder().encode('series thumbnail'),
-    'thumbnails/courses/0.png': new TextEncoder().encode('course thumbnail'),
-    'projects/0.xbp': new TextEncoder().encode('entry project')
+    'thumbnails/courses/0.png': new TextEncoder().encode('course thumbnail')
   }
+  for (const project of projects) zippable[project.path] = new TextEncoder().encode(`project ${project.fullName}`)
   for (const path of omit) delete zippable[path]
   return new File([await zip(zippable)], 'Imported series.xbcs.zip', { type: 'application/zip' })
 }

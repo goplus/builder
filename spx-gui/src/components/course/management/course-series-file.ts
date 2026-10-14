@@ -112,8 +112,17 @@ export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?
         })
       )
     )
+    const projects = collectEntrypointProjects(courses)
+    const sharingName = findProjectsSharingName(projects)
+    if (sharingName != null) {
+      const { first, second } = sharingName
+      throw new DefaultException({
+        en: `Cannot export the course series: projects ${first} and ${second} have the same name. Rename one of them.`,
+        zh: `无法导出课程系列：项目 ${first} 和 ${second} 同名，请修改其中一个项目的名字`
+      })
+    }
     exportedProjects = await Promise.all(
-      collectEntrypointProjects(courses).map(async (project, index): Promise<CourseSeriesFileProject> => {
+      projects.map(async (project, index): Promise<CourseSeriesFileProject> => {
         const serialized = await cloudHelpers.load(project.owner, project.name, true, signal)
         const file = await xbpHelpers.save(serialized, signal)
         const path = `projects/${index}.xbp`
@@ -209,7 +218,7 @@ export async function inspectCourseSeriesFileImport(
       return existingProject?.name ?? null
     })
   )
-  return { deletedCourses, overwrittenProjects: overwrittenProjects.filter((p) => p != null) }
+  return { deletedCourses, overwrittenProjects: [...new Set(overwrittenProjects.filter((p) => p != null))] }
 }
 
 /**
@@ -257,7 +266,35 @@ async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind, sig
       })
     }
   }
+  const sharingName = findProjectsSharingName(manifest.projects)
+  if (sharingName != null) {
+    const { first, second } = sharingName
+    throw new DefaultException({
+      en: `Invalid course series file: projects ${first} and ${second} have the same name. Rename one of them and export the series again.`,
+      zh: `无效的课程系列文件：项目 ${first} 和 ${second} 同名，请修改其中一个项目的名字后重新导出`
+    })
+  }
   return { manifest, unzipped, courseFiles: [], projects: await loadGuidedProjects(manifest, unzipped) }
+}
+
+/**
+ * Two projects that have the same name, if any. An import saves each project as the signed-in user's project of its
+ * name, so they would overwrite each other; exporting them is refused too, so that a file exported imports again.
+ * Names are compared as the backend does, ignoring case, and one project spelled two ways is no conflict.
+ */
+function findProjectsSharingName(projects: Array<{ fullName: string; name: string }>) {
+  const fullNames = new Map<string, string>()
+  for (const { fullName, name } of projects) {
+    const first = fullNames.get(name.toLowerCase())
+    if (first == null) fullNames.set(name.toLowerCase(), fullName)
+    else if (projectKey(first) !== projectKey(fullName)) return { first, second: fullName }
+  }
+  return null
+}
+
+/** What tells a project apart: the backend ignores case in owners and project names. */
+function projectKey(fullName: string) {
+  return fullName.toLowerCase()
 }
 
 /** The projects the file holds for its guided courses, in the order of `manifest.projects`. */
@@ -376,6 +413,8 @@ async function importCourseSeriesFileData(
   try {
     const projectFullNameMap = new Map<string, string>()
     for (const [index, project] of manifest.projects.entries()) {
+      // Files written before projects were told apart ignoring case may hold one project twice, spelled two ways.
+      if (projectFullNameMap.has(projectKey(project.fullName))) continue
       const importedFullName = await importProject(
         project,
         projects[index],
@@ -384,7 +423,7 @@ async function importCourseSeriesFileData(
         changes,
         signal
       )
-      projectFullNameMap.set(project.fullName, importedFullName)
+      projectFullNameMap.set(projectKey(project.fullName), importedFullName)
     }
 
     for (const [index, course] of manifest.courses.entries()) {
@@ -611,7 +650,9 @@ function collectEntrypointProjects(courses: GuidedCourse[]) {
   const projects = new Map<string, ParsedProjectFullName & { fullName: string }>()
   for (const course of courses) {
     const entrypointProject = parseEditorProjectFullName(course.content.entrypoint)
-    if (entrypointProject != null) projects.set(entrypointProject.fullName, entrypointProject)
+    if (entrypointProject == null) continue
+    const key = projectKey(entrypointProject.fullName)
+    if (!projects.has(key)) projects.set(key, entrypointProject)
   }
   return [...projects.values()]
 }
@@ -700,7 +741,7 @@ function rewriteProjectFullNames(value: string, projectFullNameMap: Map<string, 
   if (parsed == null) return value
 
   const source = `${parsed.owner}/${parsed.name}`
-  const target = projectFullNameMap.get(source)
+  const target = projectFullNameMap.get(projectKey(source))
   if (target == null) return value
 
   const { owner, name } = parseProjectFullName(target)
