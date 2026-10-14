@@ -6,7 +6,7 @@ class DiagnosticsProviderImpl extends EmitterImpl<{
     super()
 
     lsp.onNotification('textDocument/publishDiagnostics', () => this.emit('didChangeDiagnostics'))
-    runtime.on('didChangeOutputSnapshot', () => this.emit('didChangeDiagnostics'))
+    runtime.on('didChangeOutput', () => this.emit('didChangeDiagnostics'))
   }
 
   async provideDiagnostics(ctx: DiagnosticsContext) {
