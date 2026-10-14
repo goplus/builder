@@ -102,7 +102,7 @@ For `kind: "playground"`, `startCourse` performs only the global entry work:
 1. navigate to the Course playground root route identified by the Series and Course IDs;
 2. resolve after navigation completes; it does not wait for project loading or XGo startup.
 
-The playground page loads the same Course and Series by route ID, validates the Playground kind and Series membership, and constructs one `TutorialProject`. `CoursePlayground` applies `TutorialProject.config.inEditorPath` to the current route. Project loading, startup, and runtime failures belong to that page.
+The playground page loads the same Course and Series by route ID, validates the Playground kind and Series membership, and constructs one `TutorialProject`. The page applies `TutorialProject.config.inEditorPath` when the local editor path is empty, using replacement navigation, and passes a host-provided `IScopedRouter` to `CoursePlayground`. Project loading, startup, and runtime failures belong to that page.
 
 When the browser directly opens or refreshes a Course playground URL, the page performs this same local loading flow. The page and Playground runtime use its exact `TutorialProject` instance, so the editor and Course program always observe the same session `SpxProject`.
 
@@ -130,6 +130,43 @@ The reusable `CoursePlayground` component/controller accepts an already-created 
 
 This still runs the real Playground lifecycle. It only bypasses ID loading and learner-route navigation, which are entry concerns rather than runtime behavior.
 
+### Scoped navigation and Course Editor views
+
+`IScopedRouter` exposes `currentPath: Ref<string[]>` and
+`push(path, { replace? }): Promise<unknown>`. Paths are decoded segments; a
+segment containing `/` must not be split again. Only the host page adapts this
+contract to Vue Router's repeatable parameters. That adapter preserves the
+other route parameters, query and hash on both push and replacement navigation.
+
+`makeChildScopedRouter(parent, prefix)` strips a fixed prefix from the parent's
+path. Outside that prefix it exposes an empty path and its `push` does nothing.
+Entering a child scope is the parent's responsibility.
+
+The learner page maps `inPlaygroundPath` to the Playground router. Course Editor
+uses one route record, `/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*`,
+with two local scopes:
+
+- `editor`: course settings at the bare scope; `project/<project-editor path>`,
+  `program` and `videos` are fixed view identifiers.
+- `preview/<project-editor path>`: the learner Playground running a snapshot.
+
+View identifiers do not depend on the embedded project's storage root or course
+resource filenames. File paths still determine loading, saving and dirty-view
+marks. An empty or unrecognized Course Editor path is replaced with `editor`.
+
+The project host retains its local path while another view or Preview is open.
+Editor-state navigation can update this retained path without navigating the
+host. Reopening the bare project view restores it with replacement navigation;
+a concrete URL path takes precedence, including deep links and browser history.
+A new author editor uses its own default selection unless the URL supplies a
+concrete path. The course-configured initial path belongs to the learner and
+Preview hosts. The same author `EditorState` and shared course edit history
+survive view switches.
+
+Course Editor exposes its unsaved-change check. The route page invokes it on
+leaving the page or changing Course/Series IDs, before replacing the editing
+session. View changes and Preview navigation within that session do not invoke it.
+
 ## Proposed file organization
 
 ```text
@@ -152,15 +189,15 @@ This is not a general strategy framework. There are two concrete runtime impleme
 
 ## Course playground composition
 
-`CoursePlayground` receives one `TutorialProject` and owns everything whose lifetime is bound to displaying that project:
+`CoursePlayground` receives one borrowed `TutorialProject` and an `IScopedRouter`, and owns the editor and runtime bound to displaying that project:
 
 1. use `tutorialProject.project` as the ownerless, session-local model;
 2. construct `EditorState` without calling `editing.loadProject`;
-3. apply `tutorialProject.config.inEditorPath` through the route-backed editor state from #3416;
+3. synchronize `EditorState` with the host-provided scoped router; the host handles the configured initial path;
 4. start effect-free editing;
 5. mount `EditorContextProvider`, `CodeEditorProvider`, and the existing `ProjectEditor`;
 6. create the Playground runtime after the matching editor context and Code Editor are available;
-7. dispose the runtime, `EditorState`, and session project when the component unmounts or its snapshot is replaced.
+7. dispose the runtime and `EditorState` when the component unmounts or its snapshot is replaced; the host disposes its project after the component unmounts.
 
 Readiness is tied to object identity (`editorContext.project === tutorialProject.project`), not merely to a non-null global editor context, so a stale editor cannot serve capabilities during route transitions.
 
@@ -313,7 +350,7 @@ The current prototype validates the central boundary without requiring the publi
 
 - existing callers become simpler and pass only route IDs;
 - Guided-only UI can depend on an internal `GuidedTutorial`, leaving the public facade free of `currentCourse` and `currentSeries`;
-- the Playground page can load exactly one `TutorialProject`, while `CoursePlayground` applies its in-editor path and owns it without widening the global facade;
+- the Playground page can load exactly one `TutorialProject`, while the page initializes its editor path and owns the project without widening the global facade;
 - Course Series Next reuses `startCourse` and needs no Series-specific facade method;
 - a Playground page can construct the existing `EditorState` directly from the embedded `SpxProject` without cloud loading or autosave.
 

@@ -94,10 +94,6 @@ export function path2PathSegments(path: string): PathSegments {
   return path.split('/').filter((segment) => segment !== '')
 }
 
-export function pathSegments2Path(segments: PathSegments): string {
-  return segments.join('/')
-}
-
 /** Normalize a repeatable route param without splitting decoded segments. */
 export function repeatableParamToPathSegments(param: string | string[]): PathSegments {
   return Array.isArray(param) ? param : param === '' ? [] : [param]
@@ -155,25 +151,22 @@ function makeScopedRouterWithPathParam(
   }
 }
 
-/** Create a child scoped router that is scoped to a path prefix. */
+/** Child navigation only takes effect while the parent path matches the prefix. */
 export function makeChildScopedRouter(router: IScopedRouter, prefix: PathSegments): IScopedRouter {
+  const isActive = computed(() => prefix.every((segment, i) => router.currentPath.value[i] === segment))
   return {
-    currentPath: computed(() => {
-      const current = router.currentPath.value
-      if (current.length < prefix.length) return []
-      for (let i = 0; i < prefix.length; i++) {
-        if (current[i] !== prefix[i]) return []
-      }
-      return current.slice(prefix.length)
-    }),
+    currentPath: computed(() => (isActive.value ? router.currentPath.value.slice(prefix.length) : [])),
     push: (newPath, options) => {
-      const fullPath = [...prefix, ...newPath]
-      return router.push(fullPath, options)
+      if (!isActive.value) return Promise.resolve()
+      return router.push([...prefix, ...newPath], options)
     }
   }
 }
 
-export function useScopedRouterWithPathParam(pathParamName: string, pathParamGetter?: () => string | string[]): IScopedRouter {
+export function useScopedRouterWithPathParam(
+  pathParamName: string,
+  pathParamGetter?: () => string | string[]
+): IScopedRouter {
   const router = useRouter()
   return makeScopedRouterWithPathParam(router, pathParamName, pathParamGetter)
 }

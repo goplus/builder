@@ -50,11 +50,14 @@ export function getCourseSeriesPageRoute(courseSeriesID: string) {
   return `/course-series/${encodeURIComponent(courseSeriesID)}`
 }
 
-// export const courseEditorRouteName = 'course-editor'
-// export const courseEditorPreviewRouteName = 'course-editor-preview'
+export const courseEditorRoute = {
+  path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*',
+  component: () => import('./pages/course-editor/index.vue'),
+  props: true
+} satisfies RouteRecordRaw
 
 export function getCourseEditorRoute(courseSeriesID: string, courseID: string, inCourseEditorPath: string[] = []) {
-  const base = `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/edit`
+  const base = `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/editor`
   if (inCourseEditorPath.length === 0) return base
   return `${base}/${inCourseEditorPath.map(encodeURIComponent).join('/')}`
 }
@@ -154,11 +157,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/tutorials/course-series.vue'),
     props: true
   },
-  {
-    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*',
-    component: () => import('./pages/course-editor/index.vue'),
-    props: true
-  },
+  courseEditorRoute,
   {
     path: '/editor/:projectNameInput',
     component: () => import('./pages/editor/own-project.vue'),

@@ -15,6 +15,7 @@ import { cloudHelpers } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { useCopilot } from '@/components/copilot/context'
 import { useRadar } from '@/utils/radar'
+import type { IScopedRouter } from '@/utils/route'
 import { useSpotlight } from '@/utils/spotlight'
 import type { SpotlightOptions } from '@/utils/tutorial-framework'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
@@ -30,7 +31,6 @@ import type { PlaygroundCourseCompletion } from './program'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 import CoursePlaygroundVideoModal from './CoursePlaygroundVideoModal.vue'
 import { PlaygroundCourseSession } from './session'
-import { type IScopedRouter } from '@/utils/route'
 
 const props = defineProps<{
   projectQueryRet: QueryRet<TutorialProject>
@@ -109,23 +109,6 @@ const noLocalCache: ILocalCache = {
   async save() {},
   async clear() {}
 }
-
-// const inEditorRouter: IInEditorRouter = {
-//   currentPath: computed(() => repeatableParamToPathSegments(props.inEditorPath)),
-//   push: (newPath, options) => {
-//     const currentRoute = router.currentRoute.value
-//     // Vue Router checks if we are already on the same route, and prevents redundant navigation.
-//     // So we do not need to check it manually to avoid infinite loops.
-//     return router.push({
-//       params: {
-//         ...currentRoute.params,
-//         inEditorPath: newPath
-//       },
-//       query: currentRoute.query,
-//       replace: options?.replace
-//     })
-//   }
-// }
 
 const readiness = useProvideReadiness()
 // Query preparation completes when Session is constructed; Course startup continues separately.

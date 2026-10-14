@@ -59,7 +59,7 @@ const sessionQueryRet = useQuery(
     ctx.signal.throwIfAborted()
     if (inPlaygroundRouter.currentPath.value.length === 0) {
       const inEditorPath = path2PathSegments(project.config?.inEditorPath ?? '')
-      if (inEditorPath.length > 0) inPlaygroundRouter.push(inEditorPath, { replace: true })
+      if (inEditorPath.length > 0) await inPlaygroundRouter.push(inEditorPath, { replace: true })
     }
 
     ctx.signal.throwIfAborted()
