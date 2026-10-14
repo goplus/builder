@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
-	"slices"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -126,25 +127,36 @@ func TestExampleCourseBuilds(t *testing.T) {
 }
 
 // TestGuideCoursesBuild compiles every ```go block of the course-author guide,
-// tools/tutorial/README.md and its Chinese mirror README.zh.md, as a complete
-// Course, so that the snippets a reader copies keep compiling as the framework
-// evolves. It also checks that both languages carry the same code blocks in
-// the same order: the Chinese guide translates the prose, never the code. A
+// the tutorial-course skill in tools/tutorial/skills, as a complete Course, so
+// that the snippets a reader copies keep compiling as the framework evolves. A
 // deliberate fragment belongs in a ```text fence, which this test ignores.
 func TestGuideCoursesBuild(t *testing.T) {
-	en := guideCodeBlocks(t, "../tutorial/README.md")
-	zh := guideCodeBlocks(t, "../tutorial/README.zh.md")
-	if len(en) == 0 {
-		t.Fatal("expected ```go blocks in tools/tutorial/README.md, found none")
+	const dir = "../tutorial/skills/tutorial-course"
+	var files []string
+	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
+		if err == nil && !entry.IsDir() && filepath.Ext(path) == ".md" {
+			files = append(files, path)
+		}
+		return err
+	})
+	if err != nil {
+		t.Fatalf("list the guide: %v", err)
 	}
-	if !slices.Equal(en, zh) {
-		t.Errorf("README.md and README.zh.md differ in their ```go blocks (%d vs %d blocks, first difference at block %d)",
-			len(en), len(zh), firstDifference(en, zh))
+	blocks := 0
+	for _, file := range files {
+		name, err := filepath.Rel(dir, file)
+		if err != nil {
+			t.Fatalf("name %s: %v", file, err)
+		}
+		for i, block := range guideCodeBlocks(t, file) {
+			blocks++
+			t.Run(fmt.Sprintf("%s/block-%02d", name, i+1), func(t *testing.T) {
+				buildCourse(t, []byte(block))
+			})
+		}
 	}
-	for i, block := range en {
-		t.Run(fmt.Sprintf("block-%02d", i+1), func(t *testing.T) {
-			buildCourse(t, []byte(block))
-		})
+	if blocks == 0 {
+		t.Fatalf("expected ```go blocks in %s, found none", dir)
 	}
 }
 
@@ -176,17 +188,4 @@ func guideCodeBlocks(t *testing.T, path string) []string {
 		t.Fatalf("%s: unterminated ```go block", path)
 	}
 	return blocks
-}
-
-// firstDifference returns the 1-based index of the first block at which a and
-// b differ; when one is a prefix of the other, that is the shorter length plus
-// one.
-func firstDifference(a, b []string) int {
-	n := min(len(a), len(b))
-	for i := 0; i < n; i++ {
-		if a[i] != b[i] {
-			return i + 1
-		}
-	}
-	return n + 1
 }

@@ -66,9 +66,8 @@ describe('built-in skill registry', () => {
       instructions: expect.stringContaining('# Authoring a Playground Course'),
       resourcePaths: ['references/course-format.md', 'references/course-program.md']
     })
-    // A symlink to the course-author guide, tools/tutorial/README.md.
     expect(await registry.loadResource('tutorial-course', 'references/course-program.md')).toContain(
-      '# Tutorial Class Framework'
+      '# The course program'
     )
 
     expect(await registry.load('spx-project')).toEqual({

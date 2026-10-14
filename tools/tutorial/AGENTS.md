@@ -43,12 +43,11 @@ These are the rules of change.
   together. `client_contract_test.go` extracts and compares them automatically
 - The contracts in `docs/develop/tutorial-v2` are the source of truth. Align parameter names and shapes to the
   contract, never to a downstream prototype
-- `README.md` and `README.zh.md` are the course-author guide. Any change to the author-facing surface of this
-  package (exported methods, events and their payload fields, exported constants and types, `index.json` fields, course asset
-  conventions) updates both in the same commit, keeps their Go code blocks identical, and passes the guide compile
-  test in `tools/xgoexec-bundle` (`TestGuideCoursesBuild`), which builds every ```go block of both files as a Course.
-  `spx-gui/src/utils/tutorial/skills/tutorial-course/references/course-program.md`, the Course Editor's authoring
-  skill, is a symlink to `README.md`: the assistant that writes course programs reads the same guide as people do
+- `skills/tutorial-course/` is the course-author guide, kept as a skill: people read it, and spx-gui links the
+  directory in as the Course Editor's authoring skill. Any change to the author-facing surface of this package
+  (exported methods, events and their payload fields, exported constants and types, `index.json` fields, course asset
+  conventions) updates it in the same commit and passes the guide compile test in `tools/xgoexec-bundle`
+  (`TestGuideCoursesBuild`), which builds every ```go block in it as a Course
 
 # Testing this package
 
