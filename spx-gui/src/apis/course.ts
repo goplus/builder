@@ -46,6 +46,10 @@ export function isGuidedCourse(course: Course): course is GuidedCourse {
   return course.kind === 'guided'
 }
 
+export function isPlaygroundCourse(course: Course): course is PlaygroundCourse {
+  return course.kind === 'playground'
+}
+
 /** Get a course by ID */
 export function getCourse(id: string, signal?: AbortSignal) {
   return client.get(`/courses/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<Course>

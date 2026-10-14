@@ -59,8 +59,6 @@ const deleteCourse = useDeleteCourse()
 const isEditMode = computed(() => props.courseSeries !== null)
 // A series only holds courses of its own kind, so the kind decides which courses can be picked.
 const kind = computed(() => props.courseSeries?.kind ?? props.kind)
-// The series file bundles the projects guided courses point at; it has no shape for a Playground Course yet.
-const supportsSeriesFile = computed(() => kind.value === 'guided')
 const modalTitle = computed(() =>
   isEditMode.value
     ? i18n.t({ en: 'Edit course series', zh: '编辑课程系列' })
@@ -203,24 +201,38 @@ const handleImport = useMessageHandle(
     const courseSeries = props.courseSeries
     const file = await selectFile({ accept: ['xbcs.zip'] })
     const inspection = await m.withLoading(
-      inspectCourseSeriesFileImport(courseSeries, file, username),
+      inspectCourseSeriesFileImport(courseSeries, kind.value, file, username),
       i18n.t({ en: 'Inspecting course series file', zh: '检查课程系列文件中' })
     )
 
     await confirm({
       type: 'warning',
       title: i18n.t({ en: 'Import course series file', zh: '导入课程系列文件' }),
-      content: getImportConfirmContent(courseSeries, inspection.deletedCourses, inspection.overwrittenProjects),
+      content: getImportConfirmContent(
+        courseSeries,
+        kind.value === 'guided' ? inspection.overwrittenProjects : null,
+        inspection.deletedCourses
+      ),
       confirmText: i18n.t({ en: 'Import', zh: '导入' })
     })
 
-    await m.withLoading(
+    const { undeletedCourseIDs } = await m.withLoading(
       courseSeries != null
         ? importCourseSeriesFile(courseSeries, file, username, { updateCourseSeries, deleteCourse })
-        : importCourseSeriesFileAsNew(file, username),
+        : importCourseSeriesFileAsNew(file, kind.value, username),
       i18n.t({ en: 'Importing course series file', zh: '导入课程系列文件中' })
     )
-    m.success(i18n.t({ en: 'Course series imported successfully', zh: '课程系列导入成功' }))
+    if (undeletedCourseIDs.length > 0) {
+      // The series already holds the imported courses; the old ones it no longer holds can be deleted by hand.
+      m.warning(
+        i18n.t({
+          en: `Course series imported, but ${undeletedCourseIDs.length} of its old courses could not be deleted. You can delete them in course management.`,
+          zh: `课程系列已导入，但有 ${undeletedCourseIDs.length} 门旧课程没能删除，可以在课程管理中手动删除。`
+        })
+      )
+    } else {
+      m.success(i18n.t({ en: 'Course series imported successfully', zh: '课程系列导入成功' }))
+    }
     emit('resolved')
   },
   {
@@ -246,20 +258,27 @@ const handleExport = useMessageHandle(
 
 function getImportConfirmContent(
   courseSeries: CourseSeries | null,
-  deletedCourses: string[],
-  overwrittenProjects: string[]
+  /** Null for a Playground series, whose courses carry their projects and overwrite none. */
+  overwrittenProjects: string[] | null,
+  deletedCourses: string[]
 ) {
-  const deletedCourseText = formatNameList(deletedCourses)
-  const overwrittenProjectText = formatNameList(overwrittenProjects)
+  const projects =
+    overwrittenProjects == null
+      ? { en: '', zh: '' }
+      : {
+          en: ` Projects to be overwritten and published: ${formatNameList(overwrittenProjects)}.`,
+          zh: `会覆盖并发布的项目：${formatNameList(overwrittenProjects)}。`
+        }
   if (courseSeries != null) {
+    const deletedCourseText = formatNameList(deletedCourses)
     return i18n.t({
-      en: `Courses currently in "${courseSeries.title}" will be deleted and rebuilt from the imported file. Deleted courses: ${deletedCourseText}. Overwritten projects: ${overwrittenProjectText}. This operation cannot be undone. Continue?`,
-      zh: `当前课程系列“${courseSeries.title}”中的旧课程会被删除，并根据导入文件重建。会删除的课程：${deletedCourseText}。会覆盖并发布的项目：${overwrittenProjectText}。此操作不可撤销，确定继续吗？`
+      en: `Courses currently in "${courseSeries.title}" will be deleted and rebuilt from the imported file. Deleted courses: ${deletedCourseText}.${projects.en} This operation cannot be undone. Continue?`,
+      zh: `当前课程系列“${courseSeries.title}”中的旧课程会被删除，并根据导入文件重建。会删除的课程：${deletedCourseText}。${projects.zh}此操作不可撤销，确定继续吗？`
     })
   }
   return i18n.t({
-    en: `A new course series will be created from the imported file. Overwritten projects: ${overwrittenProjectText}. Continue?`,
-    zh: `将根据导入文件创建一个新的课程系列。会覆盖并发布的项目：${overwrittenProjectText}。确定继续吗？`
+    en: `A new course series will be created from the imported file.${projects.en} Continue?`,
+    zh: `将根据导入文件创建一个新的课程系列。${projects.zh}确定继续吗？`
   })
 }
 
@@ -378,14 +397,12 @@ function formatNameList(names: string[]) {
       </div>
 
       <footer class="mt-5 flex justify-end gap-3 border-t border-dividing-line-2 pt-5">
-        <template v-if="supportsSeriesFile">
-          <UIButton v-if="isEditMode" type="neutral" :loading="handleExport.isLoading.value" @click="handleExport.fn">
-            {{ $t({ en: 'Export to file', zh: '导出到文件' }) }}
-          </UIButton>
-          <UIButton type="neutral" :loading="handleImport.isLoading.value" @click="handleImport.fn">
-            {{ $t({ en: 'Import from file...', zh: '从文件导入...' }) }}
-          </UIButton>
-        </template>
+        <UIButton v-if="isEditMode" type="neutral" :loading="handleExport.isLoading.value" @click="handleExport.fn">
+          {{ $t({ en: 'Export to file', zh: '导出到文件' }) }}
+        </UIButton>
+        <UIButton type="neutral" :loading="handleImport.isLoading.value" @click="handleImport.fn">
+          {{ $t({ en: 'Import from file...', zh: '从文件导入...' }) }}
+        </UIButton>
         <UIButton type="neutral" @click="emit('cancelled')">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
