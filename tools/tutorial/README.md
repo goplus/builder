@@ -344,14 +344,6 @@ This is deliberate. A course that continued after a failed read or a dialog that
 wrongly. Failures of this kind are authoring mistakes and should surface while the course is being tried. The one
 exception is a well-formed spotlight selector that currently matches nothing, described above.
 
-## Trying a course locally
-
-With the spx-gui dev server running, open `/debug/tutorial-courses`. The page runs course source against a mock host
-that logs every capability call and answers with fixed values. Scripted cases dispatch events and pass when the run
-completes. The free-form runner takes any `main_course.gox` source and lets you dispatch runtime logs by hand. Because
-the mock host answers at once, no run is ever waiting there, so the page shows nothing of how overlapping runs
-interleave.
-
 ## Changing the framework
 
 Read [AGENTS.md](./AGENTS.md) first. It lists the scheduler rules, how to classify a new capability, the two-sided wire
