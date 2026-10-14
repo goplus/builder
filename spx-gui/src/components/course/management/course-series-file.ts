@@ -37,9 +37,9 @@ import { cloudHelpers, createFileWithUniversalUrl, saveFile, saveFiles } from '@
 import { File as LazyFile, type Files } from '@/models/common/file'
 import { xbpHelpers } from '@/models/common/xbp'
 import type { PartialMetadata, ProjectSerialized } from '@/models/project'
+import { TutorialProject } from '@/models/tutorial/project'
 import type { DeleteCourse } from '@/stores/course'
 import type { UpdateCourseSeries } from '@/stores/course-series'
-import { checkPlaygroundCourse } from './playground/course-check'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
@@ -286,7 +286,10 @@ const kindNames: Record<CourseKind, LocaleMessage> = {
   playground: { en: 'Playground', zh: '目标式' }
 }
 
-/** The files of each Playground Course in the file, once all of them pass `checkPlaygroundCourse`. */
+/**
+ * The files of each Playground Course in the file, once every course loads. What its program refers to is not checked,
+ * as the Course Editor saves a course without checking it either, and a series exported must import again.
+ */
 async function loadPlaygroundCourseFiles(
   manifest: CourseSeriesFileManifest,
   unzipped: Record<string, Uint8Array<ArrayBuffer>>
@@ -308,7 +311,18 @@ async function loadPlaygroundCourseFiles(
       const coursePath = path.slice(prefix.length)
       files[coursePath] = createLazyFile(filename(coursePath), data)
     }
-    for (const problem of await checkPlaygroundCourse(files)) problems.push({ course: course.title, problem })
+    const project = new TutorialProject()
+    try {
+      await project.loadFiles(files)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      problems.push({
+        course: course.title,
+        problem: { en: `The course cannot be loaded: ${message}`, zh: `课程无法加载：${message}` }
+      })
+    } finally {
+      project.dispose()
+    }
     courseFiles.push(files)
   }
   if (problems.length > 0) throw new DefaultException(describeProblems(problems))

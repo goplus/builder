@@ -800,16 +800,14 @@ describe('Playground course series files', () => {
     expect(getProject).not.toHaveBeenCalled()
   })
 
-  it('refuses a file with a course it cannot import, before writing anything', async () => {
-    const missingProgram = playgroundCourseFiles('')
-    delete missingProgram['main_course.gox']
+  it('refuses a file with a course it cannot load, before writing anything', async () => {
     const file = await makePlaygroundSeriesFile([
-      playgroundCourseFiles('onStart => {\n\tshowVideo "intro"\n}'),
-      missingProgram
+      playgroundCourseFiles('', ['main_course.gox']),
+      playgroundCourseFiles('', ['index.json'])
     ])
 
     await expect(inspectCourseSeriesFileImport(playgroundSeries, 'playground', file, 'alice')).rejects.toThrow(
-      'The course series file cannot be imported: "Course 0": The course program plays video "intro", which the course does not have; "Course 1": The course program (main_course.gox) is missing'
+      'The course series file cannot be imported: "Course 0": The course cannot be loaded: file main_course.gox not found; "Course 1": The course cannot be loaded: file index.json not found'
     )
     await expect(importCourseSeriesFile(playgroundSeries, file, 'alice', writes)).rejects.toBeInstanceOf(
       DefaultException
@@ -820,9 +818,7 @@ describe('Playground course series files', () => {
   })
 
   it('counts the problems it does not list the same way in both languages', async () => {
-    const file = await makePlaygroundSeriesFile(
-      ['a', 'b', 'c', 'd'].map((name) => playgroundCourseFiles(`onStart => {\n\tshowVideo "${name}"\n}`))
-    )
+    const file = await makePlaygroundSeriesFile([0, 1, 2, 3].map(() => playgroundCourseFiles('', ['main_course.gox'])))
 
     const error = await importCourseSeriesFile(playgroundSeries, file, 'alice', writes).catch((e) => e)
 
@@ -869,15 +865,17 @@ describe('Playground course series files', () => {
   })
 })
 
-/** The files of a Playground Course whose program is `program` and which has a video named "step". */
-function playgroundCourseFiles(program: string): Record<string, string> {
-  return {
+/** The files of a Playground Course whose program is `program` and which has a video named "step", but `omit`. */
+function playgroundCourseFiles(program: string, omit: string[] = []): Record<string, string> {
+  const files: Record<string, string> = {
     'index.json': JSON.stringify({ project: { type: 'spx', root: 'project' }, inEditorPath: '', copilotContext: '' }),
     'main_course.gox': program,
     'project/assets/index.json': '{}',
     'assets/videos/step/index.json': JSON.stringify({ path: 'step.mp4', builder_id: 'step-id' }),
     'assets/videos/step/step.mp4': 'video'
   }
+  for (const path of omit) delete files[path]
+  return files
 }
 
 async function makePlaygroundSeriesFile(
