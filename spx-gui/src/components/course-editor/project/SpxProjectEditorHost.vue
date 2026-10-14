@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { RouteLocationNormalizedGeneric } from 'vue-router'
-import type { PathSegments } from '@/utils/route'
+import type { IScopedRouter, PathSegments } from '@/utils/route'
 import type { ILocalCache } from '@/components/editor/editing'
 import { inCourseEditorPathParam, paramToSegments } from '../route'
 
@@ -60,7 +60,7 @@ import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import type { SpxProject } from '@/models/spx/project'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
-import { EditorState, type IInEditorRouter } from '@/components/editor/editor-state'
+import { EditorState } from '@/components/editor/editor-state'
 import type { History } from '@/components/editor/history'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
@@ -69,10 +69,11 @@ import { UIDetailedLoading, UIError } from '@/components/ui'
 const props = defineProps<{
   /** The learner project to edit, already loaded. A new instance re-creates the editor state. */
   project: SpxProject
-  /** The project's root directory inside the course; the Course Editor route addresses the project by this path. */
-  rootPath: string
-  /** In-editor path to open the first time the project is shown, unless the route already carries one. */
-  initialPath: string
+  // /** The project's root directory inside the course; the Course Editor route addresses the project by this path. */
+  // rootPath: string
+  // /** In-editor path to open the first time the project is shown, unless the route already carries one. */
+  // initialPath: string
+  router: IScopedRouter
   /** Where the edits of the project are recorded, together with those of the rest of the course. */
   history: History
   /**
@@ -88,7 +89,7 @@ const emit = defineEmits<{
 }>()
 
 const i18n = useI18n()
-const router = useRouter()
+const globalRouter = useRouter()
 const { isOnline } = useNetwork()
 const signedInStateQuery = useSignedInStateQuery()
 
@@ -108,7 +109,7 @@ function setState(next: EditorState | null) {
 const lastProjectLocation = shallowRef<{ path: PathSegments; query: LocationQuery; hash: string } | null>(null)
 /** Remember the live route as the project's own. Only call it while the project is open. */
 function rememberProjectRoute() {
-  const current = router.currentRoute.value
+  const current = globalRouter.currentRoute.value
   const path = projectInEditorPath(current, rootSegments.value)
   // The bare project root is transient (it is replaced right away) and names no selection to come back to.
   if (path.length === 0) return
@@ -125,12 +126,12 @@ function restoreProjectRoute() {
   if (restoring != null) return restoring
   const last = lastProjectLocation.value
   if (last == null) return
-  const current = router.currentRoute.value
+  const current = globalRouter.currentRoute.value
   if (!isProjectDocRoute(current, rootSegments.value)) return
   if (projectInEditorPath(current, rootSegments.value).length > 0) return
   // `replace` (not push) so the transient bare root is not kept in history. Built directly on the app router (not
   // `editorRouter.push`) to use `last`'s query/hash.
-  restoring = router
+  restoring = globalRouter
     .replace({
       params: { ...current.params, [inCourseEditorPathParam]: [...rootSegments.value, ...last.path] },
       query: last.query,
@@ -144,7 +145,7 @@ function restoreProjectRoute() {
 // While the project is open, remember its routes and send the bare root back to where the project was. Before the
 // first sync there is nowhere to go back to; `startRouteSync` opens the initial path instead.
 watch(
-  () => router.currentRoute.value,
+  () => globalRouter.currentRoute.value,
   () => {
     if (!props.active) return
     rememberProjectRoute()
@@ -158,7 +159,7 @@ const editorRouter: IInEditorRouter = {
   // (the same array, so it does not react): shown an empty path, it would select its default and navigate there,
   // overtaking `restoreProjectRoute`.
   currentPath: computed(() => {
-    const path = projectInEditorPath(router.currentRoute.value, rootSegments.value)
+    const path = projectInEditorPath(globalRouter.currentRoute.value, rootSegments.value)
     if (props.active && path.length > 0) return path
     return lastProjectLocation.value?.path ?? noProjectPath
   }),
@@ -166,8 +167,8 @@ const editorRouter: IInEditorRouter = {
   // was deleted) cannot take the route away from the document the author is looking at.
   push: (path, options) => {
     if (!props.active) return Promise.resolve()
-    const current = router.currentRoute.value
-    return router.push({
+    const current = globalRouter.currentRoute.value
+    return globalRouter.push({
       params: { ...current.params, [inCourseEditorPathParam]: [...rootSegments.value, ...path] },
       query: current.query,
       hash: current.hash,
@@ -241,7 +242,7 @@ async function startRouteSync(editorState: EditorState) {
  * unrecognized path falls back to the default selection instead of blocking the editor.
  */
 async function openInitialPath(editorState: EditorState) {
-  const routePath = projectInEditorPath(router.currentRoute.value, rootSegments.value)
+  const routePath = projectInEditorPath(globalRouter.currentRoute.value, rootSegments.value)
   let path = routePath.length > 0 ? routePath : toPathSegments(props.initialPath)
   try {
     editorState.selectByRoute(path)

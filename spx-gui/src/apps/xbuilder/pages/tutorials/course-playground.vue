@@ -6,7 +6,7 @@ import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { untilLoaded, useQuery, type QueryRet } from '@/utils/query'
-import { repeatableParamToPathSegments } from '@/utils/route'
+import { path2PathSegments, useScopedRouterWithPathParam } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useSeriesCourses } from '@/stores/course-series'
 import { useSignIn, useSignedInStateQuery } from '@/stores/user'
@@ -21,7 +21,7 @@ import { useModal } from '@/components/ui'
 const props = defineProps<{
   courseSeriesIdInput: string
   courseIdInput: string
-  inEditorPath: string | string[]
+  inPlaygroundPath: string | string[]
 }>()
 
 const tutorial = useTutorial()
@@ -30,6 +30,7 @@ const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
+const inPlaygroundRouter = useScopedRouterWithPathParam('inPlaygroundPath', () => props.inPlaygroundPath)
 
 const sessionQueryRet = useQuery(
   async (ctx) => {
@@ -56,16 +57,9 @@ const sessionQueryRet = useQuery(
     const project = await TutorialProject.load(course)
     project.disposeOnSignal(ctx.signal)
     ctx.signal.throwIfAborted()
-    if (repeatableParamToPathSegments(props.inEditorPath).length === 0) {
-      const inEditorPath = (project.config?.inEditorPath ?? '').split('/').filter((segment) => segment !== '')
-      if (inEditorPath.length > 0) {
-        const currentRoute = router.currentRoute.value
-        await router.replace({
-          params: { ...currentRoute.params, inEditorPath },
-          query: currentRoute.query,
-          hash: currentRoute.hash
-        })
-      }
+    if (inPlaygroundRouter.currentPath.value.length === 0) {
+      const inEditorPath = path2PathSegments(project.config?.inEditorPath ?? '')
+      if (inEditorPath.length > 0) inPlaygroundRouter.push(inEditorPath, { replace: true })
     }
 
     ctx.signal.throwIfAborted()
@@ -131,7 +125,7 @@ const { fn: handleCompleted } = useMessageHandle(
 <template>
   <CoursePlayground
     :project-query-ret="projectQueryRet"
-    :in-editor-path="inEditorPath"
+    :router="inPlaygroundRouter"
     @course-completed="handleCompleted"
     @course-restart="handleRestart"
   />

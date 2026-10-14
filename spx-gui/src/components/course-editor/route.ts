@@ -5,7 +5,7 @@
  */
 
 /** The route param carrying the in-Course-Editor path; it is repeatable, so its value is an array of segments. */
-export const inCourseEditorPathParam = 'inCourseEditorPath'
+export const inCourseEditorPathParam = 'inEditorPath'
 
 /**
  * Normalizes a route param into non-empty path segments. Both a repeatable param (an array) and a plain one (a
