@@ -70,6 +70,13 @@ onStart => {
 }
 ```
 
+把命令式调用当作值来用，是课程编译不过最常见的原因：
+
+```text
+feedback := Copilot.generateText "Give one sentence of feedback about: " + code   // does not compile
+feedback := Copilot.generateText("Give one sentence of feedback about: " + code)  // compiles
+```
+
 ### 顶层代码与课程开始
 
 `main_course.gox` 的顶层语句在程序启动时执行一次，用来声明共享状态和注册回调。顶层语句执行完后，"课程开始"才会投递给

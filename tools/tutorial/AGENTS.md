@@ -48,7 +48,7 @@ These are the rules of change.
   conventions) updates both in the same commit, keeps their Go code blocks identical, and passes the guide compile
   test in `tools/xgoexec-bundle` (`TestGuideCoursesBuild`), which builds every ```go block of both files as a Course.
   `spx-gui/src/utils/tutorial/skills/tutorial-course/references/course-program.md`, the Course Editor's authoring
-  skill, restates the author surface for the assistant that writes course programs; keep it in step in the same change
+  skill, is a symlink to `README.md`: the assistant that writes course programs reads the same guide as people do
 
 # Testing this package
 

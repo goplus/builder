@@ -73,6 +73,13 @@ onStart => {
 }
 ```
 
+Using a command-style call as a value is the most common reason a course does not compile:
+
+```text
+feedback := Copilot.generateText "Give one sentence of feedback about: " + code   // does not compile
+feedback := Copilot.generateText("Give one sentence of feedback about: " + code)  // compiles
+```
+
 ### Top-level code and course start
 
 Top-level statements in `main_course.gox` run once when the program starts. Use them to declare shared state and
