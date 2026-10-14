@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RoundState, type Round } from './copilot'
+import { provideCopilotRound } from './context'
 import MarkdownView from './MarkdownView.vue'
 import BaseFailed from './feedback/BaseFailed.vue'
 import BaseCancelled from './feedback/BaseCancelled.vue'
@@ -12,6 +13,9 @@ const props = defineProps<{
   round: Round
   isLastRound: boolean
 }>()
+
+// Let markdown elements rendered in this round (e.g. code guides) know which round they belong to.
+provideCopilotRound({ round: props.round, isLastRound: () => props.isLastRound })
 
 const feedbackProps = computed(() => ({
   round: props.round,
