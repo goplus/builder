@@ -61,34 +61,33 @@ watch(
       <NavbarWrapper class="border-b border-grey-400" centered>
         <template #left>
           <div class="flex items-stretch">
-            <div v-if="canManageAccount" class="h-full w-36 shrink-0">
-              <NavbarDropdown
-                :trigger-radar="{
-                  name: 'account-admin-menu',
-                  desc: 'Open Account admin navigation'
-                }"
-              >
-                <template #trigger>
-                  <span
-                    class="whitespace-nowrap text-sm font-medium"
-                    :class="isAccountRoute ? 'text-primary-main' : null"
-                    >{{ $t({ en: 'Account admin', zh: '账号管理' }) }}</span
+            <NavbarDropdown
+              v-if="canManageAccount"
+              :trigger-radar="{
+                name: 'account-admin-menu',
+                desc: 'Open Account admin navigation'
+              }"
+            >
+              <template #trigger>
+                <span
+                  class="whitespace-nowrap text-sm font-medium"
+                  :class="isAccountRoute ? 'text-primary-main' : null"
+                  >{{ $t({ en: 'Account admin', zh: '账号管理' }) }}</span
+                >
+              </template>
+              <UIMenu class="min-w-36">
+                <UIMenuGroup>
+                  <UIMenuItem
+                    v-for="item in accountNavItems"
+                    :key="item.to"
+                    :class="route.path.startsWith(item.to) ? 'bg-primary-100 text-primary-main' : null"
+                    @click="router.push(item.to)"
                   >
-                </template>
-                <UIMenu class="w-36">
-                  <UIMenuGroup>
-                    <UIMenuItem
-                      v-for="item in accountNavItems"
-                      :key="item.to"
-                      :class="route.path.startsWith(item.to) ? 'bg-primary-100 text-primary-main' : null"
-                      @click="router.push(item.to)"
-                    >
-                      {{ $t(item.label) }}
-                    </UIMenuItem>
-                  </UIMenuGroup>
-                </UIMenu>
-              </NavbarDropdown>
-            </div>
+                    {{ $t(item.label) }}
+                  </UIMenuItem>
+                </UIMenuGroup>
+              </UIMenu>
+            </NavbarDropdown>
             <RouterLink
               v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
