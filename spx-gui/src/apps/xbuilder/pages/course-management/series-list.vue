@@ -73,6 +73,9 @@ const seriesQueryRet = useQuery((ctx) => listAllSeries(ctx.signal), {
 const allSeries = shallowRef<CourseSeries[]>([])
 watch(seriesQueryRet.data, (data) => (allSeries.value = data ?? []), { immediate: true })
 
+// A new series goes after the others, which have to be known first.
+const canAddSeries = computed(() => seriesQueryRet.data.value != null)
+
 const shownSeries = computed(() => {
   const kind = kindFilter.value
   return kind === 'all' ? allSeries.value : allSeries.value.filter((series) => series.kind === kind)
@@ -169,6 +172,7 @@ const handleRemove = useMessageHandle(
       <UIButton
         v-radar="{ name: 'import-button', desc: 'Click to create a course series from a course series file' }"
         type="neutral"
+        :disabled="!canAddSeries"
         @click="handleImport"
       >
         <template #icon><UIIcon type="upload" /></template>
@@ -177,6 +181,7 @@ const handleRemove = useMessageHandle(
       <UIButton
         v-radar="{ name: 'create-button', desc: 'Click to create a course series' }"
         type="primary"
+        :disabled="!canAddSeries"
         @click="handleCreate"
       >
         <template #icon><UIIcon type="plus" /></template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
@@ -113,6 +113,13 @@ useDragSortable(courses, listRef, {
   onSorted: handleSorted
 })
 
+function handleBack() {
+  // Back to the list as the author left it, filter included, when that is where they came from.
+  const back = router.options.history.state.back
+  if (typeof back === 'string' && back.split('?')[0] === getCourseManagementRoute()) router.back()
+  else router.push(getCourseManagementRoute())
+}
+
 function openInCourseEditor(series: CourseSeries, course: Course) {
   return router.push(getCourseEditorRoute(series.id, course.id))
 }
@@ -202,17 +209,21 @@ const handleRemoveSeries = useMessageHandle(
 
 <template>
   <div class="flex flex-col gap-6">
-    <nav class="flex items-center gap-2 text-grey-800">
-      <RouterLink
-        v-radar="{ name: 'course-management-link', desc: 'Back to the list of course series' }"
-        class="text-primary-main"
-        :to="getCourseManagementRoute()"
-      >
-        {{ $t({ en: 'Course management', zh: '课程管理' }) }}
-      </RouterLink>
-      <UIIcon class="h-4 w-4 text-grey-600" type="arrowRightSmall" />
-      <span class="truncate">{{ courseSeries?.title }}</span>
-    </nav>
+    <header class="flex min-h-10 items-center gap-3">
+      <UIButton
+        v-radar="{ name: 'back-button', desc: 'Click to go back to the list of course series' }"
+        type="neutral"
+        shape="circle"
+        icon="back"
+        @click="handleBack"
+      />
+      <template v-if="courseSeries != null">
+        <h1 class="m-0 truncate text-2xl text-title">{{ courseSeries.title }}</h1>
+        <UITag :color="courseSeries.kind === 'playground' ? 'primary' : 'default'">
+          {{ $t(courseKindNames[courseSeries.kind]) }}
+        </UITag>
+      </template>
+    </header>
 
     <UILoading v-if="seriesQueryRet.isLoading.value" class="h-80" :mask="false" />
     <UIError v-else-if="seriesQueryRet.error.value != null" class="h-80" :retry="seriesQueryRet.refetch">
@@ -228,13 +239,9 @@ const handleRemoveSeries = useMessageHandle(
       <section class="flex gap-6 rounded-lg bg-grey-100 p-6">
         <UIImg class="h-40 w-58 shrink-0 rounded-md" :src="thumbnailUrl" size="cover" />
         <div class="min-w-0 flex-1 flex flex-col gap-2">
-          <div class="flex items-center gap-3">
-            <h1 class="m-0 truncate text-2xl text-title">{{ courseSeries.title }}</h1>
-            <UITag :color="courseSeries.kind === 'playground' ? 'primary' : 'default'">
-              {{ $t(courseKindNames[courseSeries.kind]) }}
-            </UITag>
-          </div>
-          <p class="m-0 whitespace-pre-wrap text-grey-800">{{ courseSeries.description }}</p>
+          <p class="m-0 whitespace-pre-wrap text-grey-800">
+            {{ courseSeries.description }}
+          </p>
           <div class="mt-auto flex flex-wrap gap-3">
             <UIButton
               v-radar="{ name: 'edit-series-button', desc: 'Click to edit the title, thumbnail and description' }"

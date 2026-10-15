@@ -122,7 +122,7 @@ async function submit() {
   <UIDrawer
     :radar="{ name: 'playground-course-drawer', desc: 'Drawer for creating a Playground Course or editing its title' }"
     :visible="visible"
-    :title="isEditMode ? $t({ en: 'Edit course', zh: '编辑课程' }) : $t({ en: 'Create course', zh: '新建课程' })"
+    :title="isEditMode ? $t({ en: 'Course info', zh: '课程信息' }) : $t({ en: 'Create course', zh: '新建课程' })"
     @update:visible="handleClose"
   >
     <div v-if="isEditMode" class="mb-6 flex items-center justify-between gap-4 rounded-md bg-grey-300 px-4 py-3">
