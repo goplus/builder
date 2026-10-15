@@ -80,14 +80,22 @@ export class Animation extends Disposable {
 
   costumes: Costume[]
   // For now, detailed methods to manipulate costumes are not needed, we may implement them later
-  setCostumes(costumes: Costume[]) {
+  setCostumes(
+    costumes: Costume[],
+    /**
+     * Preserve frame names and duration; otherwise correct names and initialize zero duration.
+     * Used when loading or cloning existing data.
+     */
+    preserve = false
+  ) {
     for (const costume of costumes) {
-      const costumeName = ensureValidCostumeName(costume.name, this)
       costume.setParent(this)
-      costume.setName(costumeName)
+      if (!preserve) {
+        costume.setName(ensureValidCostumeName(costume.name, this))
+      }
     }
     this.costumes = costumes
-    if (this.duration === 0) {
+    if (!preserve && this.duration === 0) {
       this.duration = costumes.length / defaultFps
     }
   }
@@ -137,7 +145,7 @@ export class Animation extends Disposable {
       soundPlayback: this.soundPlayback
     })
     const costumes = this.costumes.map((c) => c.clone(preserveId))
-    animation.setCostumes(costumes)
+    animation.setCostumes(costumes, true)
     return animation
   }
 
@@ -208,10 +216,10 @@ export class Animation extends Disposable {
     const animationCostumeNames = animationCostumes.map((c) => c.name)
     for (const costume of animationCostumes) {
       if (costume.name.startsWith(animation.costumeNamePrefix)) {
-        costume.setName(costume.name.slice(animation.costumeNamePrefix.length))
+        costume.setName(costume.name.slice(animation.costumeNamePrefix.length), true)
       }
     }
-    animation.setCostumes(animationCostumes)
+    animation.setCostumes(animationCostumes, true)
     return [animation, animationCostumeNames]
   }
 

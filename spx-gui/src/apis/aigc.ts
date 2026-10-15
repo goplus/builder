@@ -63,6 +63,7 @@ export type BackdropSettings = {
   description: string
   artStyle: ArtStyle
   perspective: Perspective
+  referenceImageUrl: UniversalUrl | null
 }
 
 export const enum TaskType {

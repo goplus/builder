@@ -18,6 +18,11 @@ export type UploadSession = {
   region: string
 }
 
+export type FileObject = {
+  /** Universal URL of the file object. */
+  url: UniversalUrl
+}
+
 export type FileURLSignatureConfig = {
   baseUrl: string
   bucket: string
@@ -25,6 +30,10 @@ export type FileURLSignatureConfig = {
 
 export function createUploadSession() {
   return client.post('/upload-sessions') as Promise<UploadSession>
+}
+
+export function getFileObject(hash: string, size: number, filename: string, signal?: AbortSignal) {
+  return client.get(`/file-objects/${encodeURIComponent(hash)}`, { size, filename }, { signal }) as Promise<FileObject>
 }
 
 export async function createFileURLSignatures(

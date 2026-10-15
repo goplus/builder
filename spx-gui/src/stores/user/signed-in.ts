@@ -9,6 +9,11 @@ import { accountOAuthApisForXBuilder as oauthApis } from '@/apis/account/oauth'
 import { getUserQueryKey } from './query-keys'
 
 export type SignedInUser = userApis.SignedInUser
+export type AdminConsoleCapabilities = Pick<userApis.UserCapabilities, 'canManageAccount' | 'canManageAuthorization'>
+
+export function canUseAdminConsole(capabilities: AdminConsoleCapabilities | null | undefined) {
+  return capabilities?.canManageAccount === true || capabilities?.canManageAuthorization === true
+}
 
 const userStateStorageKey = 'builder-user'
 const userAccessTokenLockName = 'builder-user-access-token'

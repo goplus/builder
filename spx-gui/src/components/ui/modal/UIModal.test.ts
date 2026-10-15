@@ -8,6 +8,7 @@ import {
   usePopupContainer,
   useProvideLastClickEvent
 } from '../utils'
+import UIDropdown from '../UIDropdown.vue'
 import UIModal from './UIModal.vue'
 
 async function flushModal() {
@@ -278,8 +279,22 @@ describe('UIModal', () => {
           render() {
             return h(ModalTestProvider, null, {
               default: () => [
-                h(UIModal, { visible: this.firstVisible }, { default: () => h('div', 'First') }),
-                h(UIModal, { visible: this.secondVisible }, { default: () => h('div', 'Second') })
+                h(
+                  UIModal,
+                  {
+                    visible: this.firstVisible,
+                    'onUpdate:visible': (visible: boolean) => (this.firstVisible = visible)
+                  },
+                  { default: () => h('div', 'First') }
+                ),
+                h(
+                  UIModal,
+                  {
+                    visible: this.secondVisible,
+                    'onUpdate:visible': (visible: boolean) => (this.secondVisible = visible)
+                  },
+                  { default: () => h('div', 'Second') }
+                )
               ]
             })
           }
@@ -296,6 +311,62 @@ describe('UIModal', () => {
 
       expect(firstModal?.emitted('update:visible')).toBeUndefined()
       expect(secondModal?.emitted('update:visible')).toEqual([[false]])
+
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await flushModal()
+      expect(firstModal?.emitted('update:visible')).toEqual([[false]])
+      expect(secondModal?.emitted('update:visible')).toEqual([[false]])
+    })
+
+    it('closes a popup above a modal without closing the modal on the same Escape event', async () => {
+      const modalVisible = ref(true)
+      const popupVisible = ref(false)
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () =>
+              h(ModalTestProvider, null, {
+                default: () =>
+                  h(
+                    UIModal,
+                    {
+                      visible: modalVisible.value,
+                      'onUpdate:visible': (visible: boolean) => (modalVisible.value = visible)
+                    },
+                    {
+                      default: () =>
+                        h(
+                          UIDropdown,
+                          {
+                            trigger: 'manual',
+                            visible: popupVisible.value,
+                            'onUpdate:visible': (visible: boolean) => (popupVisible.value = visible)
+                          },
+                          {
+                            trigger: () => h('button', 'Popup'),
+                            default: () => h('button', { 'data-test-id': 'popup-content' }, 'Content')
+                          }
+                        )
+                    }
+                  )
+              })
+          }
+        })
+      )
+      await flushModal()
+      popupVisible.value = true
+      await flushModal()
+      ;(getLatestElement('[data-test-id="popup-content"]') as HTMLElement).dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+      )
+      await flushModal()
+      expect(popupVisible.value).toBe(false)
+      expect(modalVisible.value).toBe(true)
+      expect(wrapper.findComponent(UIModal).emitted('update:visible')).toBeUndefined()
+
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await flushModal()
+      expect(modalVisible.value).toBe(false)
     })
   })
 

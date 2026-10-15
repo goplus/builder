@@ -4,7 +4,6 @@ import * as Sentry from '@sentry/vue'
 import { Cancelled } from '@/utils/exception'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
-import type { Lang } from '@/utils/i18n'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
 import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
@@ -36,10 +35,6 @@ const lspStageTarget = 'Game'
 interface IConnectionWithFiles extends IConnection {
   sendFiles(files: SpxlsFiles): void
   dispose(): void
-}
-
-type SpxLSPClientOptions = {
-  locale?: Lang
 }
 
 function isServerNotInitializedError(error: unknown): error is ResponseError {
@@ -124,10 +119,7 @@ type TelemetryEventParams = TelemetryEventParamsForCall | TelemetryEventParamsFo
 export class SpxLSPClient extends Disposable implements ILSPClient {
   private emitter = new Emitter<LSPClientEvents>()
 
-  constructor(
-    private project: SpxProject,
-    private options: SpxLSPClientOptions = {}
-  ) {
+  constructor(private project: SpxProject) {
     super()
     this.addDisposable(this.emitter)
   }
@@ -185,7 +177,17 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
 
   init() {
     this.connection = new WorkerConnection()
-    this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
+    this.addDisposer(
+      watchEffect(async (cleanUp) => {
+        const signal = getCleanupSignal(cleanUp)
+        try {
+          await this.loadFiles(signal)
+        } catch (error) {
+          // Superseded syncs and editor disposal abort loading; ignore cancellation to avoid unhandled rejections.
+          if (!signal.aborted) throw error
+        }
+      })
+    )
     const lc = new XGoLanguageClient(this.connection)
     this.lcRef.value = lc
 
@@ -212,7 +214,6 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
       clientInfo: {
         name: 'XBuilder'
       },
-      locale: this.options.locale,
       rootUri: 'file:///',
       workspaceFolders: [
         {

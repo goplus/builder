@@ -2,6 +2,26 @@
 import type { LocaleMessage } from '@/utils/i18n'
 import type { AccountIdentityProviderName } from '@/apis/account/common'
 
+export const accountAdminRole = 'accountAdmin'
+export const authorizationAdminRole = 'authorizationAdmin'
+export const managedAdminRoles = [accountAdminRole, authorizationAdminRole, 'assetAdmin', 'courseAdmin'] as const
+
+export type ManagedAdminRole = (typeof managedAdminRoles)[number]
+
+export function isManagedAdminRole(role: string): role is ManagedAdminRole {
+  return managedAdminRoles.some((managedRole) => managedRole === role)
+}
+
+export function isAccountAdminRequired(roles: readonly string[]) {
+  return roles.includes(authorizationAdminRole)
+}
+
+export function normalizeAdminRoles(roles: readonly string[]) {
+  const selectedRoles = new Set(roles.filter(isManagedAdminRole))
+  if (selectedRoles.has(authorizationAdminRole)) selectedRoles.add(accountAdminRole)
+  return managedAdminRoles.filter((role) => selectedRoles.has(role))
+}
+
 const accountIdentityProviderLabels: Record<AccountIdentityProviderName, LocaleMessage> = {
   wechat: { en: 'WeChat', zh: '微信' },
   qq: { en: 'QQ', zh: 'QQ' },
@@ -11,11 +31,7 @@ const accountIdentityProviderLabels: Record<AccountIdentityProviderName, LocaleM
   x: { en: 'X', zh: 'X' }
 }
 
-const accountAdminRoles = ['accountAdmin', 'authorizationAdmin', 'assetAdmin', 'courseAdmin'] as const
-
-type AccountAdminRole = (typeof accountAdminRoles)[number]
-
-const accountAdminRoleLabels: Record<AccountAdminRole, LocaleMessage> = {
+const adminRoleLabels: Record<ManagedAdminRole, LocaleMessage> = {
   accountAdmin: { en: 'Account admin', zh: '账号管理员' },
   authorizationAdmin: { en: 'Authorization admin', zh: '授权管理员' },
   assetAdmin: { en: 'Asset admin', zh: '素材管理员' },
@@ -42,6 +58,7 @@ import {
   UIPagination,
   UIRadio,
   UIRadioGroup,
+  UITooltip,
   UITextInput
 } from '@/components/ui'
 import CopyButton from '@/components/common/CopyButton.vue'
@@ -65,6 +82,7 @@ const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.cap
 const canManageAuthorization = computed(
   () => signedInStateQuery.data.value?.user?.capabilities.canManageAuthorization === true
 )
+const canEditUserAuthorization = computed(() => canManageAccount.value && canManageAuthorization.value)
 
 const userQuery = useQuery(
   async () => {
@@ -135,25 +153,23 @@ const grantsPageTotal = computed(() => Math.ceil((grantsQuery.data.value?.total 
 
 const authorizationQuery = useQuery(
   async () => {
-    if (!canManageAuthorization.value) return null
+    if (!canEditUserAuthorization.value) return null
     return authorizationAdminApis.getUserAuthorization(props.userID)
   },
   { en: 'Failed to load user authorization', zh: '加载用户授权失败' }
 )
 
-const roles = ref<AccountAdminRole[]>([])
+const roles = ref<ManagedAdminRole[]>([])
 const plan = ref<authorizationAdminApis.UserPlan>('free')
+const accountAdminRequirementTooltipVisible = ref(false)
 const unmanagedRoles = computed(
-  () =>
-    authorizationQuery.data.value?.roles.filter((role) => !accountAdminRoles.includes(role as AccountAdminRole)) ?? []
+  () => authorizationQuery.data.value?.roles.filter((role) => !isManagedAdminRole(role)) ?? []
 )
 watch(
   () => authorizationQuery.data.value,
   (authorization) => {
     if (authorization == null) return
-    roles.value = authorization.roles.filter((role): role is AccountAdminRole =>
-      accountAdminRoles.includes(role as AccountAdminRole)
-    )
+    roles.value = authorization.roles.filter(isManagedAdminRole)
     plan.value = authorization.plan
   },
   { immediate: true }
@@ -172,7 +188,7 @@ const planOptions = [
   }
 ] as const
 
-const accountAdminRoleDescriptions: Record<AccountAdminRole, { en: string; zh: string }> = {
+const adminRoleDescriptions: Record<ManagedAdminRole, { en: string; zh: string }> = {
   accountAdmin: {
     en: 'Manage Account users, apps, identities, and sessions.',
     zh: '管理账号用户、应用、第三方身份与会话。'
@@ -217,9 +233,7 @@ const hasQuotaPolicies = computed(() => {
 const isAuthorizationChanged = computed(() => {
   const authorization = authorizationQuery.data.value
   if (authorization == null) return false
-  const currentRoles = authorization.roles.filter((role): role is AccountAdminRole =>
-    accountAdminRoles.includes(role as AccountAdminRole)
-  )
+  const currentRoles = authorization.roles.filter(isManagedAdminRole)
   return (
     plan.value !== authorization.plan ||
     roles.value.some((role) => !currentRoles.includes(role)) ||
@@ -232,7 +246,7 @@ function handlePlanChange(value: string | null) {
 }
 
 function handleRolesChange(value: string[]) {
-  roles.value = value.filter((role): role is AccountAdminRole => accountAdminRoles.includes(role as AccountAdminRole))
+  roles.value = normalizeAdminRoles(value)
 }
 
 function refetchAll() {
@@ -431,7 +445,10 @@ function revokeAllSessions() {
         />
       </header>
 
-      <div class="grid grid-cols-1 items-start gap-5 desktop:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]">
+      <div
+        class="grid grid-cols-1 items-start gap-5"
+        :class="canEditUserAuthorization ? 'desktop:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]' : null"
+      >
         <div class="flex min-w-0 flex-col gap-5">
           <section class="rounded-lg border border-grey-400 bg-white p-5">
             <div class="mb-5">
@@ -512,7 +529,7 @@ function revokeAllSessions() {
             </div>
           </section>
 
-          <section v-if="canManageAuthorization" class="rounded-lg border border-grey-400 bg-white p-5">
+          <section v-if="canEditUserAuthorization" class="rounded-lg border border-grey-400 bg-white p-5">
             <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 class="m-0 text-lg font-semibold text-title">{{ $t({ en: 'Authorization', zh: '授权配置' }) }}</h3>
@@ -559,17 +576,46 @@ function revokeAllSessions() {
                   class="grid grid-cols-1 gap-3 tablet:grid-cols-2"
                   @update:value="handleRolesChange"
                 >
-                  <UICheckbox
-                    v-for="role in accountAdminRoles"
-                    :key="role"
-                    :value="role"
-                    class="items-start rounded-md border border-grey-400 p-3 has-[:checked]:border-primary-main has-[:checked]:bg-primary-100"
-                  >
-                    <span class="flex flex-col gap-1">
-                      <span class="font-medium text-title">{{ $t(accountAdminRoleLabels[role]) }}</span>
-                      <span class="text-xs text-grey-700">{{ $t(accountAdminRoleDescriptions[role]) }}</span>
-                    </span>
-                  </UICheckbox>
+                  <div v-for="role in managedAdminRoles" :key="role" class="relative min-w-0">
+                    <UICheckbox
+                      :value="role"
+                      :disabled="role === accountAdminRole && isAccountAdminRequired(roles)"
+                      class="h-full w-full items-start rounded-md border border-grey-400 p-3 has-[:checked]:border-primary-main has-[:checked]:bg-primary-100"
+                    >
+                      <span class="flex min-w-0 flex-col gap-1">
+                        <span class="font-medium text-title">{{ $t(adminRoleLabels[role]) }}</span>
+                        <span class="text-xs text-grey-700">{{ $t(adminRoleDescriptions[role]) }}</span>
+                      </span>
+                    </UICheckbox>
+                    <UITooltip
+                      v-if="role === accountAdminRole && isAccountAdminRequired(roles)"
+                      v-model:visible="accountAdminRequirementTooltipVisible"
+                      placement="top"
+                    >
+                      {{
+                        $t({
+                          en: 'Required while Authorization admin is selected.',
+                          zh: '已选择授权管理员，因此必须保留账号管理员。'
+                        })
+                      }}
+                      <template #trigger>
+                        <button
+                          type="button"
+                          class="absolute right-3 top-3 z-2 flex h-5 w-5 items-center justify-center rounded-full border border-primary-main bg-white p-0 text-xs font-semibold text-primary-main hover:bg-primary-100 focus-visible:outline-2 focus-visible:outline-primary-main"
+                          :aria-label="
+                            $t({
+                              en: 'Why Account admin is required',
+                              zh: '为何必须保留账号管理员'
+                            })
+                          "
+                          @focus="accountAdminRequirementTooltipVisible = true"
+                          @blur="accountAdminRequirementTooltipVisible = false"
+                        >
+                          !
+                        </button>
+                      </template>
+                    </UITooltip>
+                  </div>
                 </UICheckboxGroup>
                 <div v-if="unmanagedRoles.length > 0" class="mt-3 text-sm">
                   <div class="text-grey-800">{{ $t({ en: 'Other assigned roles', zh: '其他已分配角色' }) }}</div>

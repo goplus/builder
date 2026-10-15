@@ -1,4 +1,4 @@
-import { describe, expect, it, vitest } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vitest } from 'vitest'
 import { ProgressCollector, ProgressReporter } from './progress'
 import { timeout } from './utils'
 
@@ -68,7 +68,7 @@ describe('ProgressReporter', () => {
         const onProgress = vitest.fn((p) => percentages.push(p.percentage))
         const interval = 100
         const reporter = new ProgressReporter(onProgress)
-        await reporter.startAutoReport(interval * estimatedTimes, interval)
+        await reporter.startAutoReport(interval * estimatedTimes, { interval })
         // Stops after reaching 0.99 at estimatedTimes ticks, so total = initial + estimatedTimes
         expect([
           estimatedTimes + 1,
@@ -91,7 +91,7 @@ describe('ProgressReporter', () => {
       const interval = 100
       const onProgress = vitest.fn()
       const reporter = new ProgressReporter(onProgress)
-      await reporter.startAutoReport(timeCost, interval)
+      await reporter.startAutoReport(timeCost, { interval })
       const reports: { percentage: number; timeLeft: number }[] = onProgress.mock.calls.map(([p]) => p)
       expect(reports.length).toBeGreaterThan(0)
       // First report should be at percentage 0 with timeCost as timeLeft
@@ -115,11 +115,81 @@ describe('ProgressReporter', () => {
     it('should stop when finished', async () => {
       const onProgress = vitest.fn()
       const reporter = new ProgressReporter(onProgress)
-      const autoReportDone = reporter.startAutoReport(5 * 100, 100)
+      const autoReportDone = reporter.startAutoReport(5 * 100, { interval: 100 })
       await timeout(250)
       reporter.report(1)
       await autoReportDone
       expect(onProgress).toHaveBeenCalledTimes(4)
+    })
+
+    describe('options', () => {
+      beforeEach(() => vitest.useFakeTimers())
+      afterEach(() => vitest.useRealTimers())
+
+      it.each([
+        { timeCost: 1000, interval: 100 },
+        { timeCost: 10000, interval: 200 }
+      ])('should use a default interval of $interval ms for $timeCost ms', async ({ timeCost, interval }) => {
+        const onProgress = vitest.fn()
+        const reporter = new ProgressReporter(onProgress)
+        const done = reporter.startAutoReport(timeCost)
+
+        await vitest.advanceTimersByTimeAsync(interval - 1)
+        expect(onProgress).toHaveBeenCalledTimes(1)
+        await vitest.advanceTimersByTimeAsync(1)
+        expect(onProgress).toHaveBeenCalledTimes(2)
+        expect(onProgress.mock.lastCall![0].percentage).toBeCloseTo((interval / timeCost) * 0.99)
+
+        reporter.report(1)
+        await vitest.advanceTimersByTimeAsync(interval)
+        await done
+        expect(vitest.getTimerCount()).toBe(0)
+      })
+
+      it('should not start reporting when the signal is already aborted', async () => {
+        const ctrl = new AbortController()
+        ctrl.abort()
+        const onProgress = vitest.fn()
+        const reporter = new ProgressReporter(onProgress)
+
+        await reporter.startAutoReport(1000, { signal: ctrl.signal })
+
+        expect(onProgress).not.toHaveBeenCalled()
+        expect(vitest.getTimerCount()).toBe(0)
+      })
+
+      it('should stop reporting and resolve when aborted', async () => {
+        const ctrl = new AbortController()
+        const onProgress = vitest.fn()
+        const reporter = new ProgressReporter(onProgress)
+        const done = reporter.startAutoReport(1000, { signal: ctrl.signal })
+        await vitest.advanceTimersByTimeAsync(250)
+        expect(onProgress).toHaveBeenCalledTimes(3)
+        expect(onProgress.mock.lastCall![0].percentage).toBeCloseTo(0.198)
+
+        ctrl.abort()
+        await done
+        expect(vitest.getTimerCount()).toBe(0)
+        await vitest.advanceTimersByTimeAsync(1000)
+        expect(onProgress).toHaveBeenCalledTimes(3)
+      })
+
+      it('should complete normally with a signal and custom interval', async () => {
+        const ctrl = new AbortController()
+        const onProgress = vitest.fn()
+        const reporter = new ProgressReporter(onProgress)
+        const done = reporter.startAutoReport(100, { interval: 50, signal: ctrl.signal })
+
+        await vitest.advanceTimersByTimeAsync(150)
+        await done
+        expect(onProgress).toHaveBeenCalledTimes(3)
+        expect(onProgress.mock.lastCall![0].percentage).toBe(0.99)
+        expect(vitest.getTimerCount()).toBe(0)
+
+        ctrl.abort()
+        await vitest.advanceTimersByTimeAsync(100)
+        expect(onProgress).toHaveBeenCalledTimes(3)
+      })
     })
   })
 })

@@ -195,31 +195,40 @@ export class Sprite extends Disposable {
       this.costumeIndex = this.costumeIndex - 1
     }
   }
-  private prepareAddCostume(costume: Costume) {
-    const newCostumeName = ensureValidCostumeName(costume.name, this)
-    costume.setName(newCostumeName)
+  private prepareAddCostume(costume: Costume, preserve: boolean) {
+    if (!preserve) {
+      const newCostumeName = ensureValidCostumeName(costume.name, this)
+      costume.setName(newCostumeName)
+    }
     costume.setParent(this)
   }
-  /**
-   * Add given costume to sprite.
-   * NOTE: the costume's name may be altered to avoid conflict
-   */
-  addCostume(costume: Costume) {
-    this.prepareAddCostume(costume)
+  /** Add given costume to sprite. */
+  addCostume(
+    costume: Costume,
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
+    preserve = false
+  ) {
+    this.prepareAddCostume(costume, preserve)
     this.costumes.push(costume)
   }
-  /**
-   * Add given costume after the specified reference costume.
-   */
+  /** Add given costume after the specified reference costume. */
   addCostumeAfter(
     /** Costume to be added */
     costume: Costume,
     /** ID of the reference costume */
-    referenceId: string
+    referenceId: string,
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
+    preserve = false
   ) {
     const index = this.costumes.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`costume ${referenceId} not found`)
-    this.prepareAddCostume(costume)
+    this.prepareAddCostume(costume, preserve)
     this.costumes.splice(index + 1, 0, costume)
     if (index < this.costumeIndex) this.costumeIndex += 1
   }
@@ -254,31 +263,40 @@ export class Sprite extends Disposable {
     animation.setSprite(null)
     animation.dispose()
   }
-  private prepareAddAnimation(animation: Animation) {
-    const newAnimationName = ensureValidAnimationName(animation.name, this)
-    animation.setName(newAnimationName)
+  private prepareAddAnimation(animation: Animation, preserve: boolean) {
+    if (!preserve) {
+      const newAnimationName = ensureValidAnimationName(animation.name, this)
+      animation.setName(newAnimationName)
+    }
     animation.setSprite(this)
   }
-  /**
-   * Add given animation to sprite.
-   * NOTE: the animation's name may be altered to avoid conflict
-   */
-  addAnimation(animation: Animation) {
-    this.prepareAddAnimation(animation)
+  /** Add given animation to sprite. */
+  addAnimation(
+    animation: Animation,
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
+    preserve = false
+  ) {
+    this.prepareAddAnimation(animation, preserve)
     this.animations.push(animation)
   }
-  /**
-   * Add given animation after the specified reference animation.
-   */
+  /** Add given animation after the specified reference animation. */
   addAnimationAfter(
     /** Animation to be added */
     animation: Animation,
     /** ID of the reference animation */
-    referenceId: string
+    referenceId: string,
+    /**
+     * Preserve the name as-is; otherwise correct it to satisfy naming rules and avoid conflicts.
+     * Used when loading or cloning existing data.
+     */
+    preserve = false
   ) {
     const index = this.animations.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`animation ${referenceId} not found`)
-    this.prepareAddAnimation(animation)
+    this.prepareAddAnimation(animation, preserve)
     this.animations.splice(index + 1, 0, animation)
   }
   /** Move a animation within the animations array */
@@ -556,7 +574,8 @@ export class Sprite extends Disposable {
     if (mAnimations != null) console.warn(`unsupported field: mAnimations for sprite ${name}`)
     if (tAnimations != null) console.warn(`unsupported field: tAnimations for sprite ${name}`)
 
-    const animationNameToId = (name?: string) => name && animations.find((a) => a.name === name)?.id
+    const animationNameToId = (name?: string) =>
+      name != null ? animations.find((a) => a.name === name)?.id : undefined
 
     const sprite = new Sprite(name, code, {
       x,
@@ -585,10 +604,10 @@ export class Sprite extends Disposable {
     for (const costume of costumes) {
       // If this costume is included by any animation, exclude it from sprite's costume list
       if (animationCostumeSet.has(costume.name)) continue
-      sprite.addCostume(costume)
+      sprite.addCostume(costume, true)
     }
     for (const animation of animations) {
-      sprite.addAnimation(animation)
+      sprite.addAnimation(animation, true)
     }
     return sprite
   }
@@ -615,7 +634,8 @@ export class Sprite extends Disposable {
         this.animations.find((a) => a.id === id)?.name
       ])
     )
-    const animationNameToId = (name?: string) => name && animations.find((a) => a.name === name)?.id
+    const animationNameToId = (name?: string) =>
+      name != null ? animations.find((a) => a.name === name)?.id : undefined
 
     const sprite = new Sprite(this.name, this.code, {
       id: preserveId ? this.id : undefined,
@@ -643,10 +663,10 @@ export class Sprite extends Disposable {
     })
 
     for (const costume of this.costumes) {
-      sprite.addCostume(costume.clone(preserveId))
+      sprite.addCostume(costume.clone(preserveId), true)
     }
     for (const animation of animations) {
-      sprite.addAnimation(animation)
+      sprite.addAnimation(animation, true)
     }
     return sprite
   }
