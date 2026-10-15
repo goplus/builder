@@ -1,5 +1,8 @@
 <template>
-  <div class="flex-[1_1_0] flex">
+  <div
+    class="flex-[1_1_0] flex"
+    :class="{ 'editor-list-compact': props.resourceType === 'sound' || props.resourceType === 'backdrop' }"
+  >
     <div class="flex-none flex flex-col border-r border-dividing-line-2">
       <div
         ref="itemsWrapper"
@@ -83,12 +86,45 @@ useDragSortable(sortableList, itemsWrapper, {
 </script>
 
 <style scoped>
+.editor-list-compact :deep(.items > .ui-block-item) {
+  width: 72px;
+  height: 72px;
+}
+
+.editor-list-compact :deep(.items > .ui-block-item .player-wrapper) {
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.editor-list-compact :deep(.items > .ui-block-item .play-control-play) {
+  box-sizing: border-box;
+  padding: 2px;
+  background-clip: content-box;
+}
+
+.editor-list-compact :deep(.items > .ui-block-item .play-control-icon) {
+  width: 14px;
+  height: 14px;
+}
+
+.editor-list-compact :deep(.items > .ui-block-item .play-control-stop .progress) {
+  inset: 2px;
+  width: 32px;
+  height: 32px;
+}
+
+.editor-list-compact :deep(.items > .ui-block-item .backdrop-thumbnail) {
+  width: 64px;
+  height: 44px;
+}
+
 .items {
   /* Here we keep the horizontal padding no more than `10px`, */
   /* as SortableJS uses `10` as `spacer` when deciding whether to put dragging item to the end of the list. */
   /* Padding no more than `10px` disables the `_ghostIsLast` check. */
   /* See details in https://github.com/SortableJS/Sortable/blob/ddd059717333d07b5b1125b7e1dc89514734bcf0/src/Sortable.js#L1822 */
   padding: 12px 10px;
+  padding-bottom: calc(12px + var(--editor-console-safe-area, 0px));
 }
 
 .items:deep(.sortable-ghost-item) {

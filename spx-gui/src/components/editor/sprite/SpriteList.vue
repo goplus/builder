@@ -12,6 +12,8 @@ import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import { UIEmpty } from '@/components/ui'
 
+const props = withDefaults(defineProps<{ layout?: 'wrap' | 'vertical' }>(), { layout: 'wrap' })
+
 const editorCtx = useEditorCtx()
 const sprites = computed(() => editorCtx.project.sprites)
 const selectedSprite = computed(() => editorCtx.state.selectedSprite)
@@ -101,7 +103,13 @@ const handleSpriteGenClick = useMessageHandle(
 </script>
 
 <template>
-  <div ref="listWrapper" class="sprite-list overflow-y-auto m-0 flex flex-wrap content-start gap-2">
+  <div
+    ref="listWrapper"
+    class="sprite-list overflow-y-auto m-0 gap-2"
+    :class="
+      props.layout === 'vertical' ? 'sprite-list-vertical flex flex-wrap content-start' : 'flex flex-wrap content-start'
+    "
+  >
     <UIEmpty v-if="list.length === 0" size="medium">
       {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
     </UIEmpty>
@@ -126,9 +134,28 @@ const handleSpriteGenClick = useMessageHandle(
 
 <style scoped>
 .sprite-list {
-  flex: 1 0 112px; /* 112px: 1 row of sprite items height */
+  flex: 1 0 96px; /* 96px: 1 row of sprite items height */
+  column-gap: 4px;
+  --editor-sprite-thumbnail-size: 40px;
+  --editor-sprite-thumbnail-margin-top: 2px;
+  --editor-sprite-thumbnail-margin-bottom: 4px;
   padding: 12px 0 12px 12px; /* no right padding to allow optional scrollbar */
   scrollbar-width: thin;
+}
+
+.sprite-list :deep(> .ui-block-item) {
+  width: 72px;
+  height: 72px;
+}
+
+.sprite-list :deep(.gen-item .preview-wrapper) {
+  width: 44px;
+  height: 41px;
+}
+
+.sprite-list-vertical {
+  flex: 1 1 0;
+  padding-left: 8px;
 }
 
 /* Shadow-like effect */

@@ -37,8 +37,9 @@ const props = withDefaults(
 const selected = computed(() => props.selectable && props.selectable.selected)
 
 const imgStyle: CSSProperties = {
-  marginBottom: '2px',
-  height: '60px',
-  width: '60px'
+  marginTop: 'var(--editor-sprite-thumbnail-margin-top, 0px)',
+  marginBottom: 'var(--editor-sprite-thumbnail-margin-bottom, 2px)',
+  height: 'var(--editor-sprite-thumbnail-size, 60px)',
+  width: 'var(--editor-sprite-thumbnail-size, 60px)'
 }
 </script>

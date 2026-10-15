@@ -1,10 +1,10 @@
 <template>
   <div class="h-full w-full overflow-hidden">
     <section
-      v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }"
+      v-radar="{ name: 'Sprites and stage panel', desc: 'Panel for managing project sprites and the stage' }"
       class="h-full flex flex-col overflow-hidden"
     >
-      <PanelHeader class="flex-none" :active="selectedSprite != null">
+      <PanelHeader class="flex-none" :active="selectedSprite != null" :height="props.headerHeight">
         {{ $t({ en: 'Sprites', zh: '精灵' }) }}
         <template #add-options>
           <UIMenu>
@@ -29,7 +29,9 @@
           </UIMenu>
         </template>
       </PanelHeader>
-      <SpriteList />
+      <main class="min-h-0 flex flex-[1_1_0] overflow-hidden">
+        <SpriteList :layout="props.layout" />
+      </main>
     </section>
   </div>
 </template>
@@ -46,6 +48,13 @@ import SpriteList from '@/components/editor/sprite/SpriteList.vue'
 import PanelHeader from '../common/PanelHeader.vue'
 
 const editorCtx = useEditorCtx()
+const props = withDefaults(
+  defineProps<{
+    layout?: 'wrap' | 'vertical'
+    headerHeight?: 'default' | 'large'
+  }>(),
+  { layout: 'wrap', headerHeight: 'default' }
+)
 
 const selectedSprite = computed(() => editorCtx.state.selectedSprite)
 

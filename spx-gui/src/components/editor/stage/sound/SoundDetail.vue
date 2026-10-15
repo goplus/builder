@@ -1,67 +1,72 @@
 <template>
-  <div class="w-full flex flex-col gap-6 px-5 py-6">
-    <div class="flex flex-col items-center">
-      <div class="flex items-center gap-2 text-title">
-        <AssetName>{{ sound.name }}</AssetName>
-        <UIIcon
-          v-radar="{ name: 'Rename sound', desc: 'Click to rename the sound' }"
-          class="cursor-pointer text-grey-900 hover:text-grey-800 active:text-grey-1000"
-          :title="$t({ en: 'Rename', zh: '重命名' })"
-          type="edit"
-          @click="handleNameEdit"
-        />
+  <div class="min-h-0 w-full flex-[1_1_0] overflow-y-auto">
+    <div
+      class="min-h-full flex flex-col gap-6 px-5 py-6"
+      style="padding-bottom: calc(1.5rem + var(--editor-console-safe-area, 0px))"
+    >
+      <div class="flex flex-col items-center">
+        <div class="flex items-center gap-2 text-title">
+          <AssetName>{{ sound.name }}</AssetName>
+          <UIIcon
+            v-radar="{ name: 'Rename sound', desc: 'Click to rename the sound' }"
+            class="cursor-pointer text-grey-900 hover:text-grey-800 active:text-grey-1000"
+            :title="$t({ en: 'Rename', zh: '重命名' })"
+            type="edit"
+            @click="handleNameEdit"
+          />
+        </div>
+        <div class="text-grey-700 leading-4.5">
+          {{ formattedTrimmedDuration || '&nbsp;' }}
+        </div>
       </div>
-      <div class="text-grey-700 leading-4.5">
-        {{ formattedTrimmedDuration || '&nbsp;' }}
-      </div>
-    </div>
-    <WaveformPlayer
-      ref="waveformPlayerRef"
-      v-model:range="audioRange"
-      style="height: 222px"
-      :audio-src="audioUrl || undefined"
-      :gain="gain"
-      @progress="handleProgress"
-      @stop="handleStop"
-      @play="handlePlay"
-    />
-    <div class="flex">
-      <PlayControl
-        class="flex-none"
-        :playing="playing"
-        :play-handler="handlePlayClick"
-        :loading="audioLoading"
-        @stop="handleStopClick"
+      <WaveformPlayer
+        ref="waveformPlayerRef"
+        v-model:range="audioRange"
+        style="height: 222px"
+        :audio-src="audioUrl || undefined"
+        :gain="gain"
+        @progress="handleProgress"
+        @stop="handleStop"
+        @play="handlePlay"
       />
-      <VolumeSlider class="mx-6 flex-[0_1_438px]" :value="gain" @update:value="handleGainUpdate" />
-      <div class="flex-[1_1_0]" />
-      <div v-if="isDeveloperMode || editing" class="flex-none flex items-center gap-2">
-        <UIButton
-          v-if="isDeveloperMode"
-          v-radar="{ name: 'Adapt audio button', desc: 'Click to adapt the current sound file' }"
-          type="neutral"
-          :loading="handleAdaptAudio.isLoading.value"
-          @click="handleAdaptAudio.fn"
-        >
-          {{ $t({ en: 'Adapt audio', zh: '适配音频' }) }}
-        </UIButton>
-        <template v-if="editing">
+      <div class="flex">
+        <PlayControl
+          class="flex-none"
+          :playing="playing"
+          :play-handler="handlePlayClick"
+          :loading="audioLoading"
+          @stop="handleStopClick"
+        />
+        <VolumeSlider class="mx-6 flex-[0_1_438px]" :value="gain" @update:value="handleGainUpdate" />
+        <div class="flex-[1_1_0]" />
+        <div v-if="isDeveloperMode || editing" class="flex-none flex items-center gap-2">
           <UIButton
-            v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
+            v-if="isDeveloperMode"
+            v-radar="{ name: 'Adapt audio button', desc: 'Click to adapt the current sound file' }"
             type="neutral"
-            @click="handleResetEdit"
+            :loading="handleAdaptAudio.isLoading.value"
+            @click="handleAdaptAudio.fn"
           >
-            {{ $t({ en: 'Cancel', zh: '取消' }) }}
+            {{ $t({ en: 'Adapt audio', zh: '适配音频' }) }}
           </UIButton>
-          <UIButton
-            v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
-            type="green"
-            :loading="handleSave.isLoading.value"
-            @click="handleSave.fn"
-          >
-            {{ $t({ en: 'Save', zh: '保存' }) }}
-          </UIButton>
-        </template>
+          <template v-if="editing">
+            <UIButton
+              v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
+              type="neutral"
+              @click="handleResetEdit"
+            >
+              {{ $t({ en: 'Cancel', zh: '取消' }) }}
+            </UIButton>
+            <UIButton
+              v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
+              type="green"
+              :loading="handleSave.isLoading.value"
+              @click="handleSave.fn"
+            >
+              {{ $t({ en: 'Save', zh: '保存' }) }}
+            </UIButton>
+          </template>
+        </div>
       </div>
     </div>
   </div>
