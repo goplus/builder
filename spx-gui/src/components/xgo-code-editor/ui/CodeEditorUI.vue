@@ -40,6 +40,7 @@ import { userLocalStorageRef } from '@/utils/user-storage'
 
 const props = defineProps<{
   codeFilePath: string
+  bottomInset?: number
 }>()
 
 const i18n = useI18n()
@@ -78,10 +79,15 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   tabSize,
   insertSpaces,
   fontSize: fontSize.value,
-  contextmenu: false
+  contextmenu: false,
+  padding: { bottom: props.bottomInset ?? 0 }
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
+
+watchEffect(() => {
+  monacoEditorRef.value?.updateOptions({ padding: { bottom: props.bottomInset ?? 0 } })
+})
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor

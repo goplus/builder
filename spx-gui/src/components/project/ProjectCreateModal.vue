@@ -7,22 +7,53 @@
     @update:visible="handleCancel"
   >
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <div class="h-7.5 text-grey-900">
-        {{
-          $t({
-            en: 'The project name will also be used in project URLs.',
-            zh: '项目名同时也会用于项目 URL。'
-          })
-        }}
-      </div>
-      <UIFormItem path="name">
+      <UIFormItem path="name" :label="$t({ en: 'Project name', zh: '项目名' })">
         <UITextInput
           v-model:value="form.value.name"
           v-radar="{ name: 'Project name input', desc: 'Input field for project name' }"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
-      <footer class="mt-10 flex justify-center">
+
+      <div v-if="props.remixSource == null" class="mt-6">
+        <div class="mb-3 text-title">{{ $t({ en: 'Template', zh: '模板' }) }}</div>
+        <div class="grid grid-cols-3 gap-3">
+          <button
+            v-for="template in projectTemplates"
+            :key="template.id"
+            v-radar="{
+              name: `${template.name.en} project template`,
+              desc: `Create a project from the ${template.name.en} template`
+            }"
+            type="button"
+            class="min-w-0 rounded-md border p-2 text-left transition-colors"
+            :data-testid="`project-template-${template.id}`"
+            :class="
+              selectedTemplateId === template.id
+                ? 'border-primary-500 bg-primary-100 text-primary-700'
+                : 'border-grey-400 bg-grey-100 hover:bg-grey-300'
+            "
+            :aria-pressed="selectedTemplateId === template.id"
+            @click="selectedTemplateId = template.id"
+          >
+            <div class="h-24 flex items-center justify-center overflow-hidden rounded-sm bg-grey-200 p-2">
+              <div
+                class="template-canvas relative h-full max-w-full overflow-hidden rounded-sm border border-grey-400 bg-grey-100"
+                :style="{ aspectRatio: `${template.viewportSize.width} / ${template.viewportSize.height}` }"
+              >
+                <div class="absolute left-2 right-2 top-2 h-1.5 rounded-full bg-grey-300"></div>
+                <div
+                  class="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-400"
+                ></div>
+                <div class="absolute bottom-2 left-2 right-2 h-1 rounded-full bg-grey-300"></div>
+              </div>
+            </div>
+            <div class="mt-2 truncate text-xs">{{ $t(template.name) }}</div>
+          </button>
+        </div>
+      </div>
+
+      <footer class="mt-8 flex justify-center">
         <UIButton
           v-radar="{ name: 'Create button', desc: 'Click to create the project' }"
           class="create-button"
@@ -38,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   UIButton,
   UIForm,
@@ -63,6 +94,7 @@ import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import { useProjectConfig } from './config'
 import { createDefaultProject } from './default-project'
+import { getProjectTemplate, projectTemplates, type ProjectTemplateId } from './templates'
 
 const props = defineProps<{
   remixSource?: string
@@ -87,6 +119,7 @@ const initialName = props.remixSource == null ? '' : parseRemixSource(props.remi
 const form = useForm({
   name: [initialName, validateName]
 })
+const selectedTemplateId = ref<ProjectTemplateId>('classic')
 
 function handleCancel() {
   emit('cancelled')
@@ -107,7 +140,13 @@ const handleSubmit = useMessageHandle(
     } else {
       const signedInState = await untilLoaded(signedInStateQuery)
       if (!signedInState.isSignedIn) throw new Error('login required')
-      const project = await createDefaultProject(signedInState.user.username, projectName, defaultFontPreferences)
+      const template = getProjectTemplate(selectedTemplateId.value)
+      const project = await createDefaultProject(
+        signedInState.user.username,
+        projectName,
+        defaultFontPreferences,
+        template.viewportSize
+      )
       project.setDisplayName(projectName)
       project.setVisibility(Visibility.Private)
       const exported = await project.export()
@@ -151,3 +190,9 @@ async function validateName(name: string): Promise<FormValidationResult> {
     })
 }
 </script>
+
+<style scoped>
+.template-canvas {
+  max-height: 100%;
+}
+</style>

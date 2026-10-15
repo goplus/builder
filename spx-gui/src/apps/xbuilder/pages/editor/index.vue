@@ -1,9 +1,14 @@
 <template>
   <section class="min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
-      <EditorNavbar :project="state?.project ?? null" :state="state" />
+      <EditorNavbar
+        :project="state?.project ?? null"
+        :state="state"
+        :preview-focused="previewFocused"
+        @update:preview-focused="previewFocused = $event"
+      />
     </header>
-    <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
+    <main class="min-h-0 flex-[1_1_0] flex gap-xl p-4 pt-2">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
         <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
       </UIDetailedLoading>
@@ -12,7 +17,7 @@
       </UIError>
       <EditorContextProvider v-else :project="state!.project" :state="state!">
         <CodeEditorProvider :monaco="monacoQueryRet.data.value!">
-          <ProjectEditor />
+          <ProjectEditor :layout="editorLayout" />
         </CodeEditorProvider>
       </EditorContextProvider>
     </main>
@@ -37,7 +42,7 @@ class LocalCache implements ILocalCache {
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { computed, onMounted, onUnmounted, nextTick, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
@@ -138,6 +143,12 @@ const stateQueryRet = useQuery(
 )
 
 const state = stateQueryRet.data
+const previewFocused = ref(false)
+const editorLayout = computed(() => {
+  if (previewFocused.value) return 'focused'
+  const viewportSize = state.value?.project.viewportSize
+  return viewportSize != null && viewportSize.height > viewportSize.width ? 'portrait' : 'landscape'
+})
 const currentProjectIdentifier = computed(() =>
   toProjectIdentifier(state.value?.project.owner, state.value?.project.name)
 )
