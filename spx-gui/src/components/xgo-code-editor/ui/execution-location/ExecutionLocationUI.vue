@@ -5,39 +5,39 @@ import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import { useDecorations } from '../common'
 
 const { ui } = useCodeEditorUICtx()
-const location = shallowRef<ExecutionLocation | null>(null)
+const locations = shallowRef<readonly ExecutionLocation[]>([])
 
 watch(
   () => ui.codeEditor.executionLocationProvider,
   (provider, _, onCleanup) => {
     const refreshLocation = () => {
-      location.value = provider?.provideExecutionLocation() ?? null
+      locations.value = provider?.provideExecutionLocations() ?? []
     }
     refreshLocation()
-    if (provider != null) onCleanup(provider.on('didChangeExecutionLocation', refreshLocation))
+    if (provider != null) onCleanup(provider.on('didChangeExecutionLocations', refreshLocation))
   },
   { immediate: true }
 )
 
 useDecorations(() => {
-  const currentLocation = location.value
-  const line =
-    currentLocation != null && currentLocation.textDocument.uri === ui.activeTextDocument?.id.uri
-      ? currentLocation.line
-      : null
-  if (line == null) return []
+  const lines = new Set(
+    locations.value
+      .filter((location) => location.textDocument.uri === ui.activeTextDocument?.id.uri)
+      .map((location) => location.line)
+  )
+  if (lines.size === 0) return []
   const model = ui.editor.getModel()
-  if (model == null || line < 1 || line > model.getLineCount()) return []
-  return [
-    {
+  if (model == null) return []
+  return [...lines]
+    .filter((line) => line >= 1 && line <= model.getLineCount())
+    .map((line) => ({
       range: { startLineNumber: line, startColumn: 1, endLineNumber: line, endColumn: 1 },
       options: {
         isWholeLine: true,
         className: 'code-editor-execution-location',
         linesDecorationsClassName: 'code-editor-execution-location-header'
       }
-    }
-  ]
+    }))
 })
 </script>
 

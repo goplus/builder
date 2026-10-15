@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/goplus/ixgo"
+	"github.com/visualfc/gid"
 )
 
 // logger is the JSON logger for ispx.
@@ -18,7 +19,11 @@ func logExecutionLocation(info *ixgo.DebugInfo) {
 	if position.Line < 1 || !strings.HasSuffix(position.Filename, ".spx") {
 		return
 	}
-	logger.Info("__spx_loc__", "file", position.Filename, "line", position.Line)
+	logger.Info("__spx_loc__", "goroutine", gid.Get(), "file", position.Filename, "line", position.Line)
+}
+
+func logExecutionEnd() {
+	logger.Info("__spx_execution_end__", "goroutine", gid.Get())
 }
 
 // logWithCallerInfo logs msg with caller information extracted from frame.

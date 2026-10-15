@@ -47,7 +47,7 @@ export class Runtime extends Emitter<{
   didChangeOutputSnapshot: void
   /** Emitted once after a run or rerun succeeds. */
   didStart: void
-  didChangeLocation: void
+  didChangeLocations: void
   didExit: number
 }> {
   static readonly defaultMaxOutputs = 500
@@ -55,7 +55,7 @@ export class Runtime extends Emitter<{
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
   private outputSnapshotRef = shallowRef<RuntimeOutput[]>([])
-  private locationRef = shallowRef<RuntimeLocation | null>(null)
+  private locationsRef = shallowRef<readonly RuntimeLocation[]>([])
 
   get running() {
     return this.runningRef.value
@@ -74,21 +74,19 @@ export class Runtime extends Emitter<{
     return this.outputSnapshotRef.value
   }
 
-  get location(): RuntimeLocation | null {
-    return this.locationRef.value
+  get locations(): readonly RuntimeLocation[] {
+    return this.locationsRef.value
   }
 
-  setLocation(location: RuntimeLocation | null) {
-    if (this.running.mode !== 'debug' && location != null) return
-    const current = this.locationRef.value
-    if (current?.textDocument.uri === location?.textDocument.uri && current?.line === location?.line) return
-    this.locationRef.value = location
-    this.emit('didChangeLocation')
+  setLocations(locations: readonly RuntimeLocation[]) {
+    if (this.running.mode !== 'debug' && locations.length > 0) return
+    this.locationsRef.value = locations
+    this.emit('didChangeLocations')
   }
 
   setRunning(running: RunningState, filesHash?: string) {
-    if (running.mode === 'none') this.setLocation(null)
-    else if (running.initializing) this.setLocation(null)
+    if (running.mode === 'none') this.setLocations([])
+    else if (running.initializing) this.setLocations([])
     this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
       const nextHash = filesHash ?? this.filesHash
