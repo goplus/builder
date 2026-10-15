@@ -40,6 +40,7 @@ import type { PartialMetadata, ProjectSerialized } from '@/models/project'
 import { TutorialProject } from '@/models/tutorial/project'
 import type { DeleteCourse } from '@/stores/course'
 import type { UpdateCourseSeries } from '@/stores/course-series'
+import { courseKindNames } from './kind'
 
 const manifestFileName = 'course-series.json'
 const format = 'xbuilder-course-series'
@@ -85,6 +86,8 @@ type ParsedProjectFullName = {
 }
 
 export type CourseSeriesFileImportInspection = {
+  /** The kind of series the file holds. */
+  kind: CourseKind
   deletedCourses: string[]
   overwrittenProjects: string[]
 }
@@ -190,24 +193,26 @@ export async function importCourseSeriesFile(
   return importCourseSeriesFileData({ courseSeries, writes }, data, signedInUsername, signal)
 }
 
+/** Create a series of the kind the file holds, with the courses of the file. */
 export async function importCourseSeriesFileAsNew(
   file: globalThis.File,
-  kind: CourseKind,
+  /** The `order` of the new series, which the file does not decide: it is relative to the other series here. */
+  order: number,
   signedInUsername: string,
   signal?: AbortSignal
 ) {
-  const data = await loadCourseSeriesFile(file, kind, signal)
-  return importCourseSeriesFileData(null, data, signedInUsername, signal)
+  const data = await loadCourseSeriesFile(file, null, signal)
+  return importCourseSeriesFileData({ newSeriesOrder: order }, data, signedInUsername, signal)
 }
 
+/** What importing the file would change: into `courseSeries`, or as a new series when it is null. */
 export async function inspectCourseSeriesFileImport(
   courseSeries: CourseSeries | null,
-  kind: CourseKind,
   file: globalThis.File,
   signedInUsername: string,
   signal?: AbortSignal
 ): Promise<CourseSeriesFileImportInspection> {
-  const data = await loadCourseSeriesFile(file, kind, signal)
+  const data = await loadCourseSeriesFile(file, courseSeries?.kind ?? null, signal)
   const deletedCourses =
     courseSeries == null
       ? []
@@ -218,15 +223,20 @@ export async function inspectCourseSeriesFileImport(
       return existingProject?.name ?? null
     })
   )
-  return { deletedCourses, overwrittenProjects: [...new Set(overwrittenProjects.filter((p) => p != null))] }
+  return {
+    kind: data.manifest.courseSeries.kind,
+    deletedCourses,
+    overwrittenProjects: [...new Set(overwrittenProjects.filter((p) => p != null))]
+  }
 }
 
 /**
- * Read a course series file of `kind`, and refuse it with what is wrong before anything is written. Whatever in the
+ * Read a course series file of `kind`, or of any kind when it is null, and refuse it with what is wrong before anything
+ * is written. Whatever in the
  * file could break an import is read here: the manifest, every thumbnail, every guided project, and every Playground
  * Course, which is loaded and checked course by course.
  */
-async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind, signal?: AbortSignal) {
+async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind | null, signal?: AbortSignal) {
   const arrayBuffer = await file.arrayBuffer()
   const unzipped = await unzip(new Uint8Array(arrayBuffer), { signal })
   const manifest = JSON.parse(
@@ -239,17 +249,23 @@ async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind, sig
     })
   }
   manifest.courseSeries.kind ??= 'guided'
-  if (manifest.courseSeries.kind !== kind) {
-    const fileKind = kindNames[manifest.courseSeries.kind] ?? { en: 'unknown', zh: '未知' }
+  const fileKind: LocaleMessage | undefined = courseKindNames[manifest.courseSeries.kind]
+  if (fileKind == null) {
     throw new DefaultException({
-      en: `The file holds a ${fileKind.en} course series, which cannot be imported as a ${kindNames[kind].en} one`,
-      zh: `文件里是${fileKind.zh}课程系列，不能作为${kindNames[kind].zh}课程系列导入`
+      en: 'The file holds a course series of an unknown kind',
+      zh: '文件里的课程系列类型未知'
+    })
+  }
+  if (kind != null && manifest.courseSeries.kind !== kind) {
+    throw new DefaultException({
+      en: `The file holds a ${fileKind.en} course series, which cannot be imported as a ${courseKindNames[kind].en} one`,
+      zh: `文件里是${fileKind.zh}课程系列，不能作为${courseKindNames[kind].zh}课程系列导入`
     })
   }
   for (const thumbnail of [manifest.courseSeries.thumbnail, ...manifest.courses.map((course) => course.thumbnail)]) {
     getRequiredEntry(unzipped, thumbnail.path)
   }
-  if (kind === 'playground') {
+  if (manifest.courseSeries.kind === 'playground') {
     if (manifest.projects.length > 0) {
       throw new DefaultException({
         en: 'Playground courses cannot come with separate projects; each keeps its project among its own files',
@@ -316,11 +332,6 @@ async function loadGuidedProjects(
     }
   }
   return projects
-}
-
-const kindNames: Record<CourseKind, LocaleMessage> = {
-  guided: { en: 'Guided', zh: '引导式' },
-  playground: { en: 'Playground', zh: '目标式' }
 }
 
 /**
@@ -402,12 +413,13 @@ type ImportChanges = {
  * - after the commit the import stands, and old courses that cannot be deleted are only reported.
  */
 async function importCourseSeriesFileData(
-  target: { courseSeries: CourseSeries; writes: CourseSeriesImportWrites } | null,
+  target: { courseSeries: CourseSeries; writes: CourseSeriesImportWrites } | { newSeriesOrder: number },
   { manifest, unzipped, courseFiles, projects }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
   signedInUsername: string,
   signal?: AbortSignal
 ): Promise<CourseSeriesImportResult> {
-  const courseSeries = target?.courseSeries ?? null
+  const into = 'courseSeries' in target ? target : null
+  const courseSeries = into?.courseSeries ?? null
   const changes: ImportChanges = { courseIDs: [], createdProjects: [], overwrittenProjects: [] }
   let params: AddCourseSeriesParams
   try {
@@ -460,7 +472,7 @@ async function importCourseSeriesFileData(
       thumbnail: await importThumbnail(manifest.courseSeries.thumbnail, unzipped, signal),
       description: manifest.courseSeries.description,
       // Keep the local sort order because it depends on other course series in the current environment.
-      order: courseSeries?.order ?? 1,
+      order: 'courseSeries' in target ? target.courseSeries.order : target.newSeriesOrder,
       courseIDs: changes.courseIDs
     }
   } catch (error) {
@@ -470,9 +482,9 @@ async function importCourseSeriesFileData(
   let importedCourseSeries: CourseSeries
   try {
     importedCourseSeries =
-      target == null
+      into == null
         ? await addCourseSeries(params, signal)
-        : await target.writes.updateCourseSeries(target.courseSeries.id, params, signal)
+        : await into.writes.updateCourseSeries(into.courseSeries.id, params, signal)
   } catch (error) {
     let committed: CourseSeries | null
     try {
@@ -491,9 +503,9 @@ async function importCourseSeriesFileData(
   }
 
   const undeletedCourseIDs: string[] = []
-  if (target != null) {
-    const oldCourseIDs = target.courseSeries.courseIDs
-    const results = await Promise.allSettled(oldCourseIDs.map((courseID) => target.writes.deleteCourse(courseID)))
+  if (into != null) {
+    const oldCourseIDs = into.courseSeries.courseIDs
+    const results = await Promise.allSettled(oldCourseIDs.map((courseID) => into.writes.deleteCourse(courseID)))
     results.forEach((result, index) => {
       if (result.status === 'rejected') undeletedCourseIDs.push(oldCourseIDs[index])
     })
