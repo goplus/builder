@@ -1,6 +1,7 @@
 package main
 
 import (
+	"reflect"
 	"sync"
 	"testing"
 
@@ -18,9 +19,8 @@ func Wait(wait func()) { wait() }
 func main() {}
 `
 
-func newTrackedInterp(t *testing.T, onEnd func()) *ixgo.Interp {
+func newTrackedInterp(t *testing.T, tracker *executionTracker) *ixgo.Interp {
 	t.Helper()
-	tracker := newExecutionTracker(onEnd)
 	ctx := ixgo.NewContext(ixgo.SupportMultipleInterp | ixgo.EnableCachedReg)
 	ctx.SetExecutionHooks(tracker.enter, tracker.leave)
 	i, err := ctx.LoadInterp("execution.go", executionSource)
@@ -34,13 +34,18 @@ func newTrackedInterp(t *testing.T, onEnd func()) *ixgo.Interp {
 func TestExecutionTrackerNestedAndPanic(t *testing.T) {
 	ended := 0
 	owner := gid.Get()
-	i := newTrackedInterp(t, func() {
+	tracker := newExecutionTracker(func(locations []executionLocation) {
+		if len(locations) != 0 {
+			return
+		}
 		if gid.Get() != owner {
 			t.Error("completion ran on a different goroutine")
 		}
 		ended++
 	})
+	i := newTrackedInterp(t, tracker)
 	check := func() {
+		tracker.report("Sprite.spx", 3)
 		if ended != 0 {
 			t.Error("nested callback completed the outer invocation")
 		}
@@ -52,6 +57,7 @@ func TestExecutionTrackerNestedAndPanic(t *testing.T) {
 		t.Fatalf("completion count = %d; want 1", ended)
 	}
 	_, err := i.RunFunc("Panic", func() {
+		tracker.report("Sprite.spx", 5)
 		if ended != 1 {
 			t.Error("completion preceded interpreted defer")
 		}
@@ -59,7 +65,7 @@ func TestExecutionTrackerNestedAndPanic(t *testing.T) {
 	if err == nil || ended != 2 {
 		t.Fatalf("panic: err=%v, completions=%d; want error and 2", err, ended)
 	}
-	if _, err := i.RunFunc("main"); err != nil {
+	if _, err := i.RunFunc("Wait", func() { tracker.report("Sprite.spx", 3) }); err != nil {
 		t.Fatal(err)
 	}
 	if ended != 3 {
@@ -68,36 +74,74 @@ func TestExecutionTrackerNestedAndPanic(t *testing.T) {
 }
 
 func TestExecutionTrackerConcurrentCallbacks(t *testing.T) {
-	ended := make(chan uint64, 2)
-	i := newTrackedInterp(t, func() { ended <- gid.Get() })
+	snapshots := make(chan []executionLocation, 4)
+	tracker := newExecutionTracker(func(locations []executionLocation) { snapshots <- locations })
+	i := newTrackedInterp(t, tracker)
 	fn, ok := i.GetFunc("Wait")
 	if !ok {
 		t.Fatal("missing function")
 	}
-	entered := make(chan uint64, 2)
+	entered := make(chan struct{}, 2)
 	release := make(chan struct{})
 	var wg sync.WaitGroup
-	for range 2 {
+	for _, file := range []string{"Sprite.spx", "main.spx"} {
 		wg.Go(func() {
 			fn.(func(func()))(func() {
-				entered <- gid.Get()
+				tracker.report(file, 3)
+				entered <- struct{}{}
 				<-release
 			})
 		})
 	}
-	ids := map[uint64]bool{<-entered: true, <-entered: true}
-	select {
-	case <-ended:
-		t.Error("waiting invocation reported completion")
-	default:
+	<-entered
+	<-entered
+	first, both := <-snapshots, <-snapshots
+	if len(first) != 1 || len(both) != 2 {
+		t.Fatalf("expected one then two active positions, got %v and %v", first, both)
+	}
+	files := map[string]bool{}
+	for _, location := range both {
+		files[location.File] = true
+	}
+	if !files["Sprite.spx"] || !files["main.spx"] {
+		t.Fatalf("missing concurrent positions: %v", both)
 	}
 	close(release)
 	wg.Wait()
+	remaining, empty := <-snapshots, <-snapshots
+	if len(remaining) != 1 || len(empty) != 0 || empty == nil {
+		t.Fatalf("expected one then an empty array after completion, got %v and %v", remaining, empty)
+	}
+	if len(both) != 2 {
+		t.Fatal("later updates mutated an earlier snapshot")
+	}
+}
+
+func TestExecutionTrackerReportsLocationChanges(t *testing.T) {
+	var snapshots [][]executionLocation
+	tracker := newExecutionTracker(func(locations []executionLocation) {
+		snapshots = append(snapshots, locations)
+	})
+	i := newTrackedInterp(t, tracker)
+	want := [][]executionLocation{
+		{{File: "Sprite.spx", Line: 3}},
+		{{File: "Sprite.spx", Line: 4}},
+		{{File: "Other.spx", Line: 4}},
+		{},
+	}
 	for range 2 {
-		id := <-ended
-		if !ids[id] {
-			t.Fatalf("unexpected completion for goroutine %d", id)
+		snapshots = nil
+		_, err := i.RunFunc("Wait", func() {
+			for _, location := range want[:3] {
+				tracker.report(location[0].File, location[0].Line)
+				tracker.report(location[0].File, location[0].Line)
+			}
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
-		delete(ids, id)
+		if !reflect.DeepEqual(snapshots, want) {
+			t.Fatalf("snapshots = %v; want %v", snapshots, want)
+		}
 	}
 }

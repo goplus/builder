@@ -6,35 +6,67 @@ import (
 	"github.com/visualfc/gid"
 )
 
-// executionTracker groups nested interpreter invocations on the same goroutine.
-type executionTracker struct {
-	mu    sync.Mutex
-	depth map[uint64]int
-	onEnd func()
+type executionLocation struct {
+	File string `json:"file"`
+	Line int    `json:"line"`
 }
 
-func newExecutionTracker(onEnd func()) *executionTracker {
-	return &executionTracker{depth: make(map[uint64]int), onEnd: onEnd}
+// executionTracker tracks source locations until the outermost interpreter invocation ends.
+type executionTracker struct {
+	mu        sync.Mutex
+	depth     map[uint64]int
+	locations map[uint64]executionLocation
+	onChange  func([]executionLocation)
+}
+
+func newExecutionTracker(onChange func([]executionLocation)) *executionTracker {
+	return &executionTracker{
+		depth:     make(map[uint64]int),
+		locations: make(map[uint64]executionLocation),
+		onChange:  onChange,
+	}
 }
 
 func (t *executionTracker) enter() {
 	id := gid.Get()
 	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.depth[id]++
-	t.mu.Unlock()
+}
+
+func (t *executionTracker) report(file string, line int) {
+	id := gid.Get()
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	location := executionLocation{File: file, Line: line}
+	if t.locations[id] == location {
+		return
+	}
+	t.locations[id] = location
+	t.emitLocations()
 }
 
 func (t *executionTracker) leave() {
 	id := gid.Get()
 	t.mu.Lock()
+	defer t.mu.Unlock()
 	depth := t.depth[id] - 1
 	if depth == 0 {
 		delete(t.depth, id)
+		if _, ok := t.locations[id]; ok {
+			delete(t.locations, id)
+			t.emitLocations()
+		}
 	} else {
 		t.depth[id] = depth
 	}
-	t.mu.Unlock()
-	if depth == 0 {
-		t.onEnd()
+}
+
+// Called with mu held so snapshots are emitted in the same order as updates.
+func (t *executionTracker) emitLocations() {
+	locations := make([]executionLocation, 0, len(t.locations))
+	for _, location := range t.locations {
+		locations = append(locations, location)
 	}
+	t.onChange(locations)
 }

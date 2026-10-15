@@ -10,17 +10,17 @@ describe('SPX log', () => {
     expect(parseSpxLog(JSON.stringify({ level: 'WARN', time, msg: 'warning' }))).toBeNull()
   })
 
-  it('converts execution markers to source locations', () => {
-    const log = JSON.stringify({ level: 'INFO', time, msg: '__spx_loc__', goroutine: 17, file: 'Sprite.spx', line: 3 })
-    expect(parseSpxLog(log)).toEqual({
-      type: 'executionLocation',
-      executionLocation: { goroutine: 17, file: 'Sprite.spx', line: 3 }
-    })
-  })
-
-  it('identifies execution completion separately from user logs', () => {
-    const log = JSON.stringify({ level: 'INFO', time, msg: '__spx_execution_end__', goroutine: 17 })
-    expect(parseSpxLog(log)).toEqual({ type: 'executionEnd', goroutine: 17 })
+  it('parses complete execution location snapshots, including an empty snapshot', () => {
+    for (const locations of [
+      [
+        { file: 'Sprite.spx', line: 3 },
+        { file: 'main.spx', line: 5 }
+      ],
+      []
+    ]) {
+      const log = JSON.stringify({ level: 'INFO', time, msg: '__spx_locations__', locations })
+      expect(parseSpxLog(log)).toEqual({ type: 'executionLocations', executionLocations: locations })
+    }
   })
 
   it('preserves info and panic log fields', () => {
