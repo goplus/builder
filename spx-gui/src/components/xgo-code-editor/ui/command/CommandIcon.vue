@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import iconView from '@/components/ui/icons/eye.svg?raw'
 import { type CommandIconType } from '../../common'
 import iconExplain from './explain.svg?raw'
 import iconFix from './fix.svg?raw'
@@ -19,7 +20,8 @@ const typeIconMap = {
   modify: iconModify,
   rename: iconRename,
   copy: iconCopy,
-  copilot: iconCopilot
+  copilot: iconCopilot,
+  view: iconView
 }
 </script>
 
