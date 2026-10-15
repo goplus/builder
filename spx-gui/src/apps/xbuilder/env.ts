@@ -9,6 +9,7 @@ export const defaultFontPreferences = (import.meta.env.VITE_DEFAULT_FONT_PREFERE
   .split(',')
   .map((name) => name.trim())
   .filter((name) => name !== '')
+export const previewDefaultRoute = (import.meta.env.VITE_PREVIEW_DEFAULT_ROUTE as string) || null
 export const accountOAuthClientId = import.meta.env.VITE_ACCOUNT_OAUTH_CLIENT_ID as string
 const sentryTracesSampleRate = parseFloat(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string)
 const sentryLSPSampleRate = parseFloat(import.meta.env.VITE_SENTRY_LSP_SAMPLE_RATE as string)

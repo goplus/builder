@@ -18,7 +18,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { useI18n } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/xgo'
 import { theme, tabSize, insertSpaces } from '@/utils/xgo/highlighter'
-import { providePopupContainer, useModal } from '@/components/ui'
+import { providePopupContainer, UIIcon, UITooltip, useModal } from '@/components/ui'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { useCodeEditor } from '../context'
 import { getDdiDragData, getTextDocumentId, type Position, type Range, type TextDocumentIdentifier } from '../common'
@@ -34,7 +34,8 @@ import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
 import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
-import DocumentTabs from './document-tab/DocumentTabs.vue'
+import ReferenceSelectionModal from './ReferenceSelectionModal.vue'
+import FunctionChangeReview from './FunctionChangeReview.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
 
@@ -79,6 +80,17 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   insertSpaces,
   fontSize: fontSize.value,
   contextmenu: false
+}))
+
+const referencePreviewEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
+  ...monacoEditorOptions.value,
+  readOnly: true,
+  domReadOnly: true,
+  glyphMargin: false,
+  folding: false,
+  lineDecorationsWidth: 16,
+  lineNumbersMinChars: 4,
+  selectOnLineNumbers: false
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
@@ -256,16 +268,79 @@ providePopupContainer(codeEditorEl)
       :class="{ 'bg-black/10': isResizing }"
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
-    <MonacoEditorComp
-      v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
-      class="my-3 min-w-0 flex-[1_1_0]"
-      :monaco="codeEditor.monaco"
-      :options="monacoEditorOptions"
-      @init="handleMonacoEditorInit"
-      @dragover="handleMonacoEditorDragOver"
-      @dragleave="handleMonacoEditorDragLeave"
-      @drop="handleMonacoEditorDrop"
-    />
+    <section class="my-3 min-w-0 flex flex-[1_1_0] flex-col">
+      <FunctionChangeReview
+        v-if="codeEditor.functionChangeReview != null"
+        :review="codeEditor.functionChangeReview"
+        :checking-call="uiRef.isReviewingFunctionCall"
+        @inspect="uiRef.continueFunctionReview()"
+      />
+      <div
+        v-if="uiRef.previousNavigationLocation != null"
+        class="mx-3 mb-2 h-9 flex flex-none items-center justify-between rounded-sm bg-primary-100 px-3 text-body-medium"
+      >
+        <button
+          v-radar="{ name: 'Back from definition', desc: 'Return to the previous code location' }"
+          class="min-w-0 flex cursor-pointer items-center gap-1.5 border-0 bg-transparent text-primary-main hover:text-primary-700"
+          @click="uiRef.goBack()"
+        >
+          <UIIcon class="h-4 w-4 flex-none" type="back" />
+          <span class="truncate">
+            {{ $t({ en: 'Back to', zh: '返回' }) }}
+            {{ $t(uiRef.previousNavigationLocation.textDocument.displayName) }}
+            <template v-if="uiRef.previousNavigationLocation.position != null">
+              ·
+              {{
+                $t({
+                  en: `Line ${uiRef.previousNavigationLocation.position.line}`,
+                  zh: `第 ${uiRef.previousNavigationLocation.position.line} 行`
+                })
+              }}
+            </template>
+          </span>
+        </button>
+        <div class="ml-3 min-w-0 flex items-center gap-2">
+          <span v-if="uiRef.activeTextDocument != null" class="truncate text-grey-800">
+            {{
+              $t({
+                en: `Current: ${$t(uiRef.activeTextDocument.displayName)}`,
+                zh: `当前位置：${$t(uiRef.activeTextDocument.displayName)}`
+              })
+            }}
+          </span>
+          <UITooltip>
+            <template #trigger>
+              <button
+                v-radar="{ name: 'Exit code navigation', desc: 'Return to the location where navigation started' }"
+                class="h-7 w-7 flex flex-none cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent text-grey-900 hover:bg-grey-300"
+                :aria-label="$t({ en: 'Exit navigation', zh: '退出导航' })"
+                @click="uiRef.exitNavigation()"
+              >
+                <UIIcon class="h-4 w-4" type="close" />
+              </button>
+            </template>
+            {{ $t({ en: 'Exit navigation', zh: '退出导航' }) }}
+          </UITooltip>
+        </div>
+      </div>
+      <div class="min-h-0 min-w-0 flex flex-[1_1_0]">
+        <div class="min-h-0 min-w-0 flex flex-[1_1_0]">
+          <MonacoEditorComp
+            v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
+            class="min-h-0 min-w-0 flex-[1_1_0]"
+            :monaco="codeEditor.monaco"
+            :options="monacoEditorOptions"
+            @init="handleMonacoEditorInit"
+            @dragover="handleMonacoEditorDragOver"
+            @dragleave="handleMonacoEditorDragLeave"
+            @drop="handleMonacoEditorDrop"
+          />
+        </div>
+        <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-end px-2">
+          <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+        </aside>
+      </div>
+    </section>
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
@@ -273,9 +348,12 @@ providePopupContainer(codeEditorEl)
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
-      <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
-    </aside>
+    <ReferenceSelectionModal
+      :monaco="codeEditor.monaco"
+      :options="referencePreviewEditorOptions"
+      :selection="uiRef.referenceSelection"
+      @close="uiRef.closeReferenceSelection()"
+      @open="uiRef.openSelectedReference($event)"
+    />
   </div>
 </template>
