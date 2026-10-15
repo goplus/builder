@@ -113,7 +113,7 @@
             :stop-loading="handleStop.isLoading.value"
             :inline-anchor="getStageInlineAnchor"
             @log="handleLog"
-            @execution-location="handleExecutionLocation"
+            @execution-locations="handleExecutionLocations"
             @update:fullscreen="handleFullscreenChange"
             @exit="handleExit"
           />
@@ -275,12 +275,12 @@ function handleLog(log: SpxLog) {
   })
 }
 
-function handleExecutionLocation(location: SpxExecutionLocation) {
-  runtime.value.setLocation({ textDocument: { uri: `file:///${location.file}` }, line: location.line })
+function handleExecutionLocations(locations: readonly SpxExecutionLocation[]) {
+  runtime.value.setLocations(locations.map(({ file, line }) => ({ textDocument: { uri: `file:///${file}` }, line })))
 }
 
 function handleExit(code: number) {
-  runtime.value.setLocation(null)
+  runtime.value.setLocations([])
   runtime.value.emit('didExit', code)
   if (exitGuard.value === 'manualStopPending') {
     exitGuard.value = 'idle'

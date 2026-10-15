@@ -7,7 +7,7 @@ export type ExecutionLocation = {
   line: number
 }
 
-/** Provides the current execution location and reports when it changes. */
-export interface IExecutionLocationProvider extends Emitter<{ didChangeExecutionLocation: void }> {
-  provideExecutionLocation(): ExecutionLocation | null
+/** Provides active execution locations and reports when they change. */
+export interface IExecutionLocationProvider extends Emitter<{ didChangeExecutionLocations: void }> {
+  provideExecutionLocations(): readonly ExecutionLocation[]
 }

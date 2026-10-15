@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SpxProject } from '@/models/spx/project'
-import { Runtime, RuntimeOutputKind } from './runtime'
+import { Runtime, RuntimeOutputKind, type RuntimeOutput } from './runtime'
 
 function makeRuntime() {
   return new Runtime(new SpxProject())
@@ -82,34 +82,29 @@ describe('Runtime', () => {
     runtime.dispose()
   })
 
-  it('reports location changes and clears location when debug mode ends', () => {
+  it('reports concurrent locations and clears them when debug mode ends', () => {
     const runtime = makeRuntime()
-    const events: Array<number | null> = []
-    runtime.on('didChangeLocation', () => events.push(runtime.location?.line ?? null))
+    const events: number[][] = []
+    runtime.on('didChangeLocations', () => events.push(runtime.locations.map(({ line }) => line)))
     runtime.setRunning({ mode: 'debug', initializing: true })
-    const location = (line: number) => ({
-      textDocument: { uri: 'file:///Sprite.spx' },
-      line
-    })
+    const location = (line: number) => ({ textDocument: { uri: 'file:///Sprite.spx' }, line })
 
-    runtime.setLocation(location(1))
-    runtime.setLocation(location(1))
-    runtime.setLocation(location(2))
-    expect(events).toEqual([1, 2])
+    runtime.setLocations([location(1), location(5)])
+    runtime.setLocations([location(5)])
+    expect(runtime.locations).toEqual([location(5)])
+    expect(events.slice(-2)).toEqual([[1, 5], [5]])
 
-    runtime.setLocation(location(3))
-    runtime.setRunning({ mode: 'none' })
-    expect(events).toEqual([1, 2, 3, null])
-
-    runtime.setLocation(location(4))
-    expect(runtime.location).toBeNull()
-
-    runtime.setRunning({ mode: 'debug', initializing: true })
-    runtime.setLocation(location(5))
     runtime.clearOutputs()
-    expect(runtime.location).toEqual(location(5))
+    expect(runtime.locations).toEqual([location(5)])
+    runtime.setRunning({ mode: 'none' })
+    expect(runtime.locations).toEqual([])
+    runtime.setLocations([location(9)])
+    expect(runtime.locations).toEqual([])
+
     runtime.setRunning({ mode: 'debug', initializing: true })
-    expect(runtime.location).toBeNull()
+    runtime.setLocations([location(2), location(7)])
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    expect(runtime.locations).toEqual([])
     runtime.dispose()
   })
 

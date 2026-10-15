@@ -173,14 +173,15 @@ const props = defineProps<{ project: SpxProject; trackExecutionLocation?: boolea
 
 const emit = defineEmits<{
   log: [log: SpxLog]
-  executionLocation: [location: SpxExecutionLocation]
+  executionLocations: [locations: readonly SpxExecutionLocation[]]
   exit: [code: number]
 }>()
-const emitExecutionLocation = throttle(
-  (location: SpxExecutionLocation) => {
+const executionLocations = new Map<number, SpxExecutionLocation>()
+const emitExecutionLocations = throttle(
+  () => {
     if (unmounted) return
     if (state.value.type !== 'starting' && state.value.type !== 'running') return
-    emit('executionLocation', location)
+    emit('executionLocations', [...executionLocations.values()])
   },
   33,
   { leading: false }
@@ -211,7 +212,12 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
       return
     }
     if (event.type === 'log') emit('log', event.log)
-    else emitExecutionLocation(event.executionLocation)
+    else if (event.type === 'executionLocation') {
+      executionLocations.set(event.executionLocation.goroutine, event.executionLocation)
+      emitExecutionLocations()
+    } else if (executionLocations.delete(event.goroutine)) {
+      emitExecutionLocations()
+    }
   }
   iframeWindow.console.warn = function (...args: unknown[]) {
     console.warn(...args)
@@ -224,7 +230,8 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
       capture(err, 'ProjectRunner game error')
     })
     iframeWindow.onGameExit((code: number) => {
-      emitExecutionLocation.cancel()
+      emitExecutionLocations.cancel()
+      executionLocations.clear()
       emit('exit', code)
     })
     iframeWindow.onEngineCrash((err: string) => {
@@ -393,6 +400,7 @@ const startingProgress = computed(() => {
 
 defineExpose({
   async run() {
+    executionLocations.clear()
     const ctrl = getRunCtrl()
     const promise = runInternal(ctrl)
     runPromise = promise

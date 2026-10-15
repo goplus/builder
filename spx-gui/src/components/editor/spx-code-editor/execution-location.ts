@@ -3,15 +3,15 @@ import type { Runtime } from '@/components/editor/runtime'
 import type { ExecutionLocation, IExecutionLocationProvider } from '@/components/xgo-code-editor'
 
 export class SpxExecutionLocationProvider
-  extends Emitter<{ didChangeExecutionLocation: void }>
+  extends Emitter<{ didChangeExecutionLocations: void }>
   implements IExecutionLocationProvider
 {
   constructor(private runtime: Runtime) {
     super()
-    this.addDisposer(runtime.on('didChangeLocation', () => this.emit('didChangeExecutionLocation')))
+    this.addDisposer(runtime.on('didChangeLocations', () => this.emit('didChangeExecutionLocations')))
   }
 
-  provideExecutionLocation(): ExecutionLocation | null {
-    return this.runtime.location
+  provideExecutionLocations(): readonly ExecutionLocation[] {
+    return this.runtime.locations
   }
 }

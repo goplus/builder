@@ -11,11 +11,16 @@ describe('SPX log', () => {
   })
 
   it('converts execution markers to source locations', () => {
-    const log = JSON.stringify({ level: 'INFO', time, msg: '__spx_loc__', file: 'Sprite.spx', line: 3 })
+    const log = JSON.stringify({ level: 'INFO', time, msg: '__spx_loc__', goroutine: 17, file: 'Sprite.spx', line: 3 })
     expect(parseSpxLog(log)).toEqual({
       type: 'executionLocation',
-      executionLocation: { file: 'Sprite.spx', line: 3 }
+      executionLocation: { goroutine: 17, file: 'Sprite.spx', line: 3 }
     })
+  })
+
+  it('identifies execution completion separately from user logs', () => {
+    const log = JSON.stringify({ level: 'INFO', time, msg: '__spx_execution_end__', goroutine: 17 })
+    expect(parseSpxLog(log)).toEqual({ type: 'executionEnd', goroutine: 17 })
   })
 
   it('preserves info and panic log fields', () => {

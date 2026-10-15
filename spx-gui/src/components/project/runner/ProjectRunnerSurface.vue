@@ -40,7 +40,7 @@ const emit = defineEmits<{
   'update:fullscreen': [value: boolean]
   exit: [code: number]
   log: [log: SpxLog]
-  executionLocation: [location: SpxExecutionLocation]
+  executionLocations: [locations: readonly SpxExecutionLocation[]]
 }>()
 
 const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
@@ -481,7 +481,7 @@ defineExpose({
           class="runner"
           :project="project"
           @log="emit('log', $event)"
-          @execution-location="emit('executionLocation', $event)"
+          @execution-locations="emit('executionLocations', $event)"
           @exit="emit('exit', $event)"
         />
         <slot v-if="!overlayActive" name="inline-overlay" />
