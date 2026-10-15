@@ -32,6 +32,10 @@ export class ResourceReferenceController extends Emitter<{
 
   init() {
     const refreshItems = debounce(() => this.itemsMgr.start(), 100)
+    this.addDisposer(() => {
+      refreshItems.cancel()
+      this.itemsMgr.stop()
+    })
 
     this.addDisposer(
       watch(

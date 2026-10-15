@@ -40,11 +40,15 @@ import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
 
-const props = defineProps<{
-  codeFilePath: string
-  simpleMode?: boolean
-  readOnly?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    codeFilePath: string
+    simpleMode?: boolean
+    showApiReference?: boolean
+    readOnly?: boolean
+  }>(),
+  { showApiReference: true }
+)
 
 const i18n = useI18n()
 const codeEditor = useCodeEditor()
@@ -266,12 +270,14 @@ providePopupContainer(codeEditorEl)
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
     <aside
+      v-if="showApiReference !== false"
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
       <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" :disabled="readOnly" />
     </aside>
     <div
+      v-if="showApiReference !== false"
       ref="resizeHandleEl"
       v-radar="{ name: 'resize-handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"

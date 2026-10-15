@@ -254,6 +254,12 @@ export class HoverController extends Emitter<{
       this.hoverMgr.start(target)
     }, 50)
 
+    this.addDisposer(() => {
+      hideHoverWithDebounce.cancel()
+      handleMouseEnter.cancel()
+      this.hoverMgr.stop()
+    })
+
     /** Handle mouse move event in Monaco editor. */
     function handleEditorMouseMove(target: monaco.editor.IMouseTarget) {
       if (target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) {

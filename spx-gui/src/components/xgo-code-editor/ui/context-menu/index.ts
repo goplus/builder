@@ -109,6 +109,7 @@ export class ContextMenuController extends Disposable {
   }
 
   init() {
+    this.addDisposer(() => this.menuMgr.stop())
     const { editor, monaco } = this.ui
 
     const MTT = monaco.editor.MouseTargetType

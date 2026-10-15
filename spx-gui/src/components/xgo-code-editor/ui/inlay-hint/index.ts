@@ -24,6 +24,10 @@ export class InlayHintController extends Disposable {
 
   init() {
     const refresh = debounce(() => this.mgr.start(), 100)
+    this.addDisposer(() => {
+      refresh.cancel()
+      this.mgr.stop()
+    })
 
     this.addDisposer(
       watch(

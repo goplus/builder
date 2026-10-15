@@ -20,7 +20,7 @@ import { useUpdateCourse } from '@/stores/course'
 import { useCopilot } from '@/components/copilot/context'
 import type { SessionExported } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
-import { History, type Action } from '@/components/editor/history'
+import { History } from '@/components/editor/history'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
@@ -84,9 +84,6 @@ const history = new History({
   exportFiles: () => props.project.exportFiles(),
   loadFiles: (files) => props.project.loadFiles(files)
 })
-
-// Typing in the program is recorded as one step, as long as nothing else is done in between.
-const editProgramAction: Action = { name: { en: 'Update program', zh: '修改程序' }, mergeable: true }
 
 const editPathPrefix = 'edit'
 const previewPathPrefix = 'preview'
@@ -601,12 +598,7 @@ onUnmounted(() => {
           :view="open.view"
           :history="history"
         />
-        <CourseTextDoc
-          v-else
-          :text="project.mainCourse.code"
-          language="xgo"
-          @update:text="(text) => history.doAction(editProgramAction, () => project.mainCourse.setCode(text))"
-        />
+        <CourseTextDoc v-else :project="project" :history="history" />
       </UICard>
       <!-- Always mounted, so the author's editor state outlives view switches and the preview; the host renders the
            Project Editor UI only while `active`. -->

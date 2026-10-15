@@ -29,7 +29,10 @@ export type LSPMessage<M extends Message> = {
 export type WorkerMessage = LSPMessage<ResponseMessage | NotificationMessage>
 
 /** Message that main thread send to worker. */
-export type MainMessage = LSPMessage<RequestMessage | NotificationMessage> | FilesMessage
+export type MainMessage =
+  | LSPMessage<RequestMessage | NotificationMessage>
+  | FilesMessage
+  | { type: 'configure'; classfileConfig: string }
 
 interface WorkerScope {
   postMessage(message: WorkerMessage): void
@@ -65,6 +68,7 @@ type LSState =
 
 let files: Files = {}
 let lsState: LSState
+let classfileConfig: string
 
 async function newLS(onStopped: () => void): Promise<XGoLanguageServer> {
   const go = new Go()
@@ -77,11 +81,7 @@ async function newLS(onStopped: () => void): Promise<XGoLanguageServer> {
     () => files,
     (message) => scope.postMessage({ type: 'lsp', message }),
     {
-      // Keep the classfile registration aligned with tools/ispx/main.go.
-      classfileConfig: `project main.spx Game github.com/goplus/spx/v3 math
-class -embed *.spx SpriteImpl
-import ai github.com/goplus/builder/tools/ai
-`,
+      classfileConfig,
       pkgDataZip: new Uint8Array(spxlsPkgdataZip)
     }
   )
@@ -115,6 +115,10 @@ function startLS() {
 
 async function handleMainMessage(message: MainMessage) {
   switch (message.type) {
+    case 'configure':
+      classfileConfig = message.classfileConfig
+      startLS()
+      return
     case 'files':
       files = message.files
       return
@@ -147,8 +151,6 @@ async function handleMainMessage(message: MainMessage) {
 }
 
 function main() {
-  startLS()
-
   scope.addEventListener('message', async (event) => {
     handleMainMessage(event.data)
   })
