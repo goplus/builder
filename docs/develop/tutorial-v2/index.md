@@ -64,6 +64,19 @@ See [Copilot](./module_Copilot.ts).
 
 Course Editor owns authoring and validating Course content, then saving it through Course APIs. It also provides Preview by using the same learning capabilities with an isolated representation of the author's current work.
 
+The Course program uses the generic XGo Code Editor with a Tutorial project adapter and a session-local language
+server Worker. Its classfile registration matches `tools/tutorial/gox.mod`; `tools/spxls` packages the Tutorial SDK's
+type data alongside the SPX SDK. The embedded SPX editor retains its own workspace and language server.
+
+Unsaved program edits update `TutorialProject.mainCourse` through the Course History. As in the SPX editor, the
+language client watches model file exports and waits for file synchronization before issuing requests. The Tutorial
+workspace contains the Course program, without the embedded SPX sources or binary media. No parallel LSP document
+overlay is maintained. The adapter keeps the exported file map stable while the program is unchanged.
+
+The program view owns its code editor and language client. Switching away, entering Preview, or leaving the Course
+Editor releases that view's models, requests, timers, and Worker; returning creates them from the current working
+copy. The program's editor injection stays local to its component tree, independently of the embedded SPX editor.
+
 See [Course Editor](./module_CourseEditor.ts).
 
 ## Module relationships

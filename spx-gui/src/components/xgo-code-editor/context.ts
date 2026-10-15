@@ -3,14 +3,18 @@
  * No spx-specific knowledge should be imported here.
  */
 
-import { computed, toValue, type InjectionKey, type WatchSource } from 'vue'
+import { computed, inject, provide, toValue, type InjectionKey, type WatchSource } from 'vue'
 import type { CodeEditor } from './code-editor'
 import { useAppInject, useAppProvide } from '@/utils/app-state'
 
 const codeEditorInjectionKey: InjectionKey<WatchSource<CodeEditor | null>> = Symbol('code-editor')
 
-export function useProvideCodeEditor(editorSource: WatchSource<CodeEditor | null>) {
-  useAppProvide(codeEditorInjectionKey, editorSource)
+export function useProvideCodeEditor(
+  editorSource: WatchSource<CodeEditor | null>,
+  options: { appWide?: boolean } = {}
+) {
+  provide(codeEditorInjectionKey, editorSource)
+  if (options.appWide !== false) useAppProvide(codeEditorInjectionKey, editorSource)
 }
 
 /**
@@ -20,6 +24,8 @@ export function useProvideCodeEditor(editorSource: WatchSource<CodeEditor | null
  * - The editor is still initializing and not ready yet
  */
 export function useCodeEditorRef() {
+  const local = inject(codeEditorInjectionKey, null)
+  if (local != null) return computed(() => toValue(local) ?? null)
   const ref = useAppInject(codeEditorInjectionKey)
   return computed(() => {
     if (ref.value == null) return null

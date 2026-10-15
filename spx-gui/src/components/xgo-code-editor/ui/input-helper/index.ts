@@ -65,6 +65,10 @@ export class InputHelperController extends Disposable {
   init() {
     const { editor } = this.ui
     const refreshSlots = debounce(() => this.mgr.start(), 100)
+    this.addDisposer(() => {
+      refreshSlots.cancel()
+      this.mgr.stop()
+    })
 
     this.addDisposer(
       watch(

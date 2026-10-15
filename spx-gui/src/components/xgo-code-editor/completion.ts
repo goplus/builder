@@ -44,7 +44,8 @@ export class CompletionProvider implements ICompletionProvider {
   constructor(
     private lspClient: ILSPClient,
     private documentBase: IDocumentBase,
-    private classFramework: ClassFramework
+    private classFramework: ClassFramework,
+    private options: { includeUndocumentedFrameworkAPIs?: boolean } = {}
   ) {}
 
   private getCompletionItemKind(kind: lsp.CompletionItemKind | undefined): DefinitionKind {
@@ -119,7 +120,12 @@ export class CompletionProvider implements ICompletionProvider {
         // Kwarg snippets are synthesized from call-site context and have no documentation entry by design.
         const classFrameworkPkg = this.classFramework.pkgPaths[0]
         const isUndocumentedFrameworkItem = defId != null && defId.package === classFrameworkPkg && definition == null
-        if (isUndocumentedFrameworkItem && !isKwargCompletionItem(result)) return null
+        if (
+          isUndocumentedFrameworkItem &&
+          !this.options.includeUndocumentedFrameworkAPIs &&
+          !isKwargCompletionItem(result)
+        )
+          return null
         if (definition != null && definition.hiddenFromList) return null
 
         if (definition != null) {
