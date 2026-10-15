@@ -2,7 +2,7 @@ import {
   arrow as floatingArrow,
   autoUpdate,
   computePosition,
-  flip,
+  flip as floatingFlip,
   offset as floatingOffset,
   shift,
   type Placement as FloatingPlacement,
@@ -48,6 +48,7 @@ export type PopupVirtualAnchor = {
 export type UseFloatingPopupOptions = {
   visible: WatchSource<boolean>
   placement?: WatchSource<PopupPlacement>
+  flip?: WatchSource<boolean>
   offset?: WatchSource<PopupOffset>
   virtualAnchor?: WatchSource<PopupVirtualAnchor | null>
   showArrow?: boolean
@@ -73,11 +74,9 @@ export function useFloatingPopup(options: UseFloatingPopupOptions): UseFloatingP
     const { arrowEl, floatingEl, placement, popupOffset, reference, showArrow } = state
     if (floatingEl == null || reference == null) return
 
-    const middleware = [
-      floatingOffset(resolveFloatingOffset(placement, popupOffset)),
-      flip(),
-      shift({ padding: options.shiftPadding ?? 8 })
-    ]
+    const middleware = [floatingOffset(resolveFloatingOffset(placement, popupOffset))]
+    if (options.flip == null || toValue(options.flip)) middleware.push(floatingFlip())
+    middleware.push(shift({ padding: options.shiftPadding ?? 8 }))
     if (arrowEl != null) middleware.push(floatingArrow({ element: arrowEl }))
 
     const {

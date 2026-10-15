@@ -1,6 +1,7 @@
 import { debounce } from 'lodash'
 import { escapeHTML } from '@/utils/utils'
 import Emitter from '@/utils/emitter'
+import { shallowRef } from 'vue'
 import { TaskManager } from '@/utils/task'
 import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import {
@@ -28,6 +29,7 @@ import {
 } from '../code-editor-ui'
 import { fromMonacoPosition } from '../common'
 import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
+import { EditorTranslationError, type EditorTranslationRequest, type EditorTranslationStatus } from '../../translation'
 
 type TextHover = Hover & {
   range: Range
@@ -67,6 +69,54 @@ export class HoverController extends Emitter<{
 }> {
   constructor(private ui: CodeEditorUIController) {
     super()
+  }
+
+  private translationStateRef = shallowRef<{
+    key: string
+    items: Array<{
+      contentIndex: number
+      status: EditorTranslationStatus
+      translated: string | null
+    }>
+  } | null>(null)
+
+  get translationState() {
+    return this.translationStateRef.value
+  }
+
+  resetTranslation() {
+    this.translationStateRef.value = null
+  }
+
+  async translate(requests: EditorTranslationRequest[]) {
+    const key = requests.map((request) => `${request.kind}:${request.contentIndex}:${request.source}`).join('|')
+    this.translationStateRef.value = {
+      key,
+      items: requests.map((request) => ({
+        contentIndex: request.contentIndex ?? 0,
+        status: 'loading',
+        translated: null
+      }))
+    }
+    const results = await Promise.allSettled(requests.map((request) => this.ui.translationProvider.translate(request)))
+    if (this.translationStateRef.value?.key !== key) return
+    this.translationStateRef.value = {
+      key,
+      items: results.map((result, index) => {
+        if (result.status === 'fulfilled') {
+          return {
+            contentIndex: requests[index].contentIndex ?? 0,
+            status: 'success' as const,
+            translated: result.value
+          }
+        }
+        return {
+          contentIndex: requests[index].contentIndex ?? 0,
+          status: result.reason instanceof EditorTranslationError ? result.reason.kind : ('failed' as const),
+          translated: null
+        }
+      })
+    }
   }
 
   private hoverMgr = new TaskManager(async (signal, target: HoverRequest): Promise<InternalHover | null> => {
