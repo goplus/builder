@@ -1,14 +1,12 @@
 // SPX runtime log format is defined in tools/ispx/log.go.
 /** The SPX source line currently being executed by the runner. */
 export type SpxExecutionLocation = {
-  goroutine: number
   file: string
   /** Line number, starting from 1. */
   line: number
 }
 
-const spxLocationLogMessage = '__spx_loc__'
-const spxExecutionEndLogMessage = '__spx_execution_end__'
+const spxLocationsLogMessage = '__spx_locations__'
 
 type SpxLogBase = {
   level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
@@ -41,7 +39,7 @@ type SpxInfoLog = SpxLogBase & {
 }
 
 function isSpxInfoLog(obj: SpxLogBase): obj is SpxInfoLog {
-  return obj.level === 'INFO' && obj.msg !== spxLocationLogMessage
+  return obj.level === 'INFO' && obj.msg !== spxLocationsLogMessage
 }
 
 type SpxPanicLog = SpxLogBase & {
@@ -64,35 +62,26 @@ function isSpxPanicLog(obj: SpxLogBase): obj is SpxPanicLog {
   return obj.level === 'ERROR' && typeof obj.error === 'string' && obj.msg === 'panic'
 }
 
-type SpxLocationLog = SpxLogBase & {
-  msg: typeof spxLocationLogMessage
-  goroutine: number
-  file: string
-  line: number
+type SpxLocationsLog = SpxLogBase & {
+  msg: typeof spxLocationsLogMessage
+  locations: SpxExecutionLocation[]
 }
 
-function isSpxLocationLog(log: SpxLogBase): log is SpxLocationLog {
-  return log.msg === spxLocationLogMessage && typeof log.file === 'string' && typeof log.line === 'number'
+function isSpxLocationsLog(log: SpxLogBase): log is SpxLocationsLog {
+  return log.msg === spxLocationsLogMessage
 }
 
 type ParsedSpxLog =
   | { type: 'log'; log: SpxLog }
-  | { type: 'executionLocation'; executionLocation: SpxExecutionLocation }
-  | { type: 'executionEnd'; goroutine: number }
+  | { type: 'executionLocations'; executionLocations: SpxExecutionLocation[] }
 
 export function parseSpxLog(jsonStr: string): ParsedSpxLog | null {
   if (!jsonStr.startsWith('{')) return null
   try {
     const log = JSON.parse(jsonStr)
     if (!isSpxLogBase(log)) return null
-    if (isSpxLocationLog(log)) {
-      return {
-        type: 'executionLocation',
-        executionLocation: { goroutine: log.goroutine, file: log.file, line: log.line }
-      }
-    }
-    if (log.msg === spxExecutionEndLogMessage && typeof log.goroutine === 'number') {
-      return { type: 'executionEnd', goroutine: log.goroutine }
+    if (isSpxLocationsLog(log)) {
+      return { type: 'executionLocations', executionLocations: log.locations }
     }
     if (isSpxInfoLog(log) || isSpxPanicLog(log)) return { type: 'log', log }
   } catch {

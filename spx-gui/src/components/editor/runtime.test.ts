@@ -162,7 +162,7 @@ describe('Runtime', () => {
     vi.unstubAllGlobals()
   })
 
-  it('should throttle didChangeOutput for addOutput and keep clear immediate', () => {
+  it('should throttle didChangeOutputSnapshot for addOutput and keep clear immediate', () => {
     vi.useFakeTimers()
     withMockedAnimationFrame()
     const runtime = makeRuntime()

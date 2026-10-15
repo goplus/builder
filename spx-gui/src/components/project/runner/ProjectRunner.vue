@@ -176,12 +176,11 @@ const emit = defineEmits<{
   executionLocations: [locations: readonly SpxExecutionLocation[]]
   exit: [code: number]
 }>()
-const executionLocations = new Map<number, SpxExecutionLocation>()
 const emitExecutionLocations = throttle(
-  () => {
+  (locations: readonly SpxExecutionLocation[]) => {
     if (unmounted) return
     if (state.value.type !== 'starting' && state.value.type !== 'running') return
-    emit('executionLocations', [...executionLocations.values()])
+    emit('executionLocations', locations)
   },
   33,
   { leading: false }
@@ -212,12 +211,7 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
       return
     }
     if (event.type === 'log') emit('log', event.log)
-    else if (event.type === 'executionLocation') {
-      executionLocations.set(event.executionLocation.goroutine, event.executionLocation)
-      emitExecutionLocations()
-    } else if (executionLocations.delete(event.goroutine)) {
-      emitExecutionLocations()
-    }
+    else emitExecutionLocations(event.executionLocations)
   }
   iframeWindow.console.warn = function (...args: unknown[]) {
     console.warn(...args)
@@ -231,7 +225,6 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
     })
     iframeWindow.onGameExit((code: number) => {
       emitExecutionLocations.cancel()
-      executionLocations.clear()
       emit('exit', code)
     })
     iframeWindow.onEngineCrash((err: string) => {
@@ -400,7 +393,6 @@ const startingProgress = computed(() => {
 
 defineExpose({
   async run() {
-    executionLocations.clear()
     const ctrl = getRunCtrl()
     const promise = runInternal(ctrl)
     runPromise = promise
