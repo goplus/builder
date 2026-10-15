@@ -4,7 +4,7 @@
       <div
         ref="itemsWrapper"
         v-radar="listRadarInfo"
-        class="items mx-1.5 flex-[1_1_0] flex flex-col gap-2 overflow-y-auto"
+        class="items mx-0.5 flex-[1_1_0] flex flex-col gap-2 overflow-y-auto"
       >
         <slot></slot>
       </div>
@@ -84,18 +84,15 @@ useDragSortable(sortableList, itemsWrapper, {
 
 <style scoped>
 .items {
-  /* Here we keep the horizontal padding no more than `10px`, */
-  /* as SortableJS uses `10` as `spacer` when deciding whether to put dragging item to the end of the list. */
-  /* Padding no more than `10px` disables the `_ghostIsLast` check. */
-  /* See details in https://github.com/SortableJS/Sortable/blob/ddd059717333d07b5b1125b7e1dc89514734bcf0/src/Sortable.js#L1822 */
+  /* Keep horizontal padding within the SortableJS drag-end threshold. */
+  /* The extra 2px visual spacing comes from the wrapper margin above. */
   padding: 12px 10px;
 }
 
 .items:deep(.sortable-ghost-item) {
-  /* Shadow-like effect */
-  /* TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem` */
-  border-color: var(--ui-color-grey-400) !important;
-  background-color: var(--ui-color-grey-400) !important;
+  opacity: 0.6;
+  filter: grayscale(1);
+  box-shadow: var(--ui-box-shadow-sm);
 }
 
 .items:deep(.sortable-ghost-item *) {
