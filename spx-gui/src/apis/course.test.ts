@@ -16,6 +16,8 @@ function makeCourses(): Course[] {
       kind: 'guided',
       title: 'Create a project',
       thumbnail: '',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
       content: { entrypoint: '/', prompt: 'Guide the learner.' }
     },
     {
@@ -24,6 +26,8 @@ function makeCourses(): Course[] {
       kind: 'playground',
       title: 'Move a sprite',
       thumbnail: '',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
       content: { 'main_course.gox': 'https://example.com/main_course.gox' }
     }
   ]

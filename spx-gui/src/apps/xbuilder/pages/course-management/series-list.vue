@@ -27,6 +27,16 @@ import CourseSeriesDrawer from '@/components/course/management/CourseSeriesDrawe
 import { useCourseSeriesFileActions } from '@/components/course/management/series-file-actions'
 import { deleteCourseSeriesWithCourses } from '@/components/course/management/series-deletion'
 import { getNextSeriesOrder, planSeriesOrder } from '@/components/course/management/series-order'
+import ListControls from '@/components/course/management/ListControls.vue'
+import ListSections from '@/components/course/management/ListSections.vue'
+import {
+  matchesQuery,
+  sectionByTitle,
+  sectionByUpdatedAt,
+  titleIndex,
+  updatedAtIndex
+} from '@/components/course/management/list-view'
+import { useListViewQuery } from '@/components/course/management/list-view-query'
 import { getCourseManagementRoute } from '@/apps/xbuilder/router'
 
 usePageTitle({ en: 'Course management', zh: '课程管理' })
@@ -76,9 +86,20 @@ watch(seriesQueryRet.data, (data) => (allSeries.value = data ?? []), { immediate
 // A new series goes after the others, which have to be known first.
 const canAddSeries = computed(() => seriesQueryRet.data.value != null)
 
+const { query, sortBy } = useListViewQuery()
+
 const shownSeries = computed(() => {
   const kind = kindFilter.value
-  return kind === 'all' ? allSeries.value : allSeries.value.filter((series) => series.kind === kind)
+  return allSeries.value.filter(
+    (series) =>
+      (kind === 'all' || series.kind === kind) && matchesQuery([series.title, series.description], query.value)
+  )
+})
+
+const sections = computed(() => {
+  if (sortBy.value === 'title') return sectionByTitle(shownSeries.value, (series) => series.title)
+  if (sortBy.value === 'updatedAt') return sectionByUpdatedAt(shownSeries.value, (series) => series.updatedAt)
+  return []
 })
 
 const listRef = ref<HTMLElement>()
@@ -189,22 +210,66 @@ const handleRemove = useMessageHandle(
       </UIButton>
     </header>
 
-    <p class="m-0 text-grey-700">
-      {{
-        $t({
-          en: 'Drag course series to change the order learners see them in.',
-          zh: '拖动课程系列可以调整它们在教程页面中的顺序。'
-        })
-      }}
-    </p>
+    <div class="flex flex-wrap items-center gap-4">
+      <ListControls
+        v-model:query="query"
+        v-model:sort-by="sortBy"
+        :placeholder="$t({ en: 'Search course series', zh: '搜索课程系列' })"
+      />
+      <p class="m-0 text-grey-700">
+        {{
+          sortBy === 'order'
+            ? $t({
+                en: 'Drag course series to change the order learners see them in.',
+                zh: '拖动课程系列可以调整它们在教程页面中的顺序。'
+              })
+            : $t({
+                en: 'Sort by display order to drag course series into another order.',
+                zh: '按显示顺序排列时，可以拖动调整顺序。'
+              })
+        }}
+      </p>
+    </div>
 
     <ListResultWrapper :query-ret="seriesQueryRet" :height="400">
       <template #empty>
         <UIEmpty size="large">{{ $t({ en: 'No course series yet', zh: '还没有课程系列' }) }}</UIEmpty>
       </template>
       <UIEmpty v-if="shownSeries.length === 0" size="large">
-        {{ $t({ en: 'No course series of this kind', zh: '没有这种类型的课程系列' }) }}
+        {{
+          query.trim() !== ''
+            ? $t({ en: 'No course series found', zh: '没有找到匹配的课程系列' })
+            : $t({ en: 'No course series of this kind', zh: '没有这种类型的课程系列' })
+        }}
       </UIEmpty>
+      <ListSections
+        v-else-if="sortBy !== 'order'"
+        :sections="sections"
+        :index="sortBy === 'title' ? titleIndex : updatedAtIndex"
+        show-index
+      >
+        <template #default="{ section }">
+          <ul class="m-0 flex flex-wrap gap-5 p-0">
+            <CourseSeriesItem
+              v-for="courseSeries in section.items"
+              :key="courseSeries.id"
+              v-radar="{
+                name: 'course-series-item',
+                desc: 'Click to open the courses of the series',
+                attrs: { name: courseSeries.title }
+              }"
+              :course-series="courseSeries"
+              @click="handleOpen(courseSeries)"
+            >
+              <CourseSeriesItemCornerMenu
+                :course-series="courseSeries"
+                @edit="handleEdit(courseSeries)"
+                @remove="handleRemove(courseSeries)"
+              />
+            </CourseSeriesItem>
+          </ul>
+        </template>
+      </ListSections>
       <ul
         v-else
         ref="listRef"

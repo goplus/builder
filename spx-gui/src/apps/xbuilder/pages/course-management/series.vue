@@ -31,6 +31,17 @@ import PlaygroundCourseDrawer from '@/components/course/management/PlaygroundCou
 import { courseKindNames } from '@/components/course/management/kind'
 import { useCourseSeriesFileActions } from '@/components/course/management/series-file-actions'
 import { deleteCourseSeriesWithCourses } from '@/components/course/management/series-deletion'
+import ListControls from '@/components/course/management/ListControls.vue'
+import ListSections from '@/components/course/management/ListSections.vue'
+import {
+  matchesQuery,
+  placeReordered,
+  sectionByTitle,
+  sectionByUpdatedAt,
+  titleIndex,
+  updatedAtIndex
+} from '@/components/course/management/list-view'
+import { useListViewQuery } from '@/components/course/management/list-view-query'
 import { getCourseEditorRoute, getCourseManagementRoute } from '@/apps/xbuilder/router'
 
 const props = defineProps<{
@@ -76,6 +87,16 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 const courses = shallowRef<Course[]>([])
 watch(coursesQueryRet.data, (data) => (courses.value = data ?? []), { immediate: true })
 
+const { query, sortBy } = useListViewQuery()
+const shownCourses = computed(() => courses.value.filter((course) => matchesQuery([course.title], query.value)))
+const sections = computed(() => {
+  if (sortBy.value === 'title') return sectionByTitle(shownCourses.value, (course) => course.title)
+  if (sortBy.value === 'updatedAt') return sectionByUpdatedAt(shownCourses.value, (course) => course.updatedAt)
+  return []
+})
+// A series of a few courses is seen at a glance, without an index.
+const indexMinCourseCount = 20
+
 function refetch() {
   seriesQueryRet.refetch()
   coursesQueryRet.refetch()
@@ -94,9 +115,10 @@ const handleSorted = useMessageHandle(
         zh: '这个系列的课程没有全部显示，无法在这里调整顺序'
       })
     }
-    const reordered = [...courses.value]
-    const [moved] = reordered.splice(oldIndex, 1)
-    reordered.splice(newIndex, 0, moved)
+    const reorderedShown = [...shownCourses.value]
+    const [moved] = reorderedShown.splice(oldIndex, 1)
+    reorderedShown.splice(newIndex, 0, moved)
+    const reordered = placeReordered(courses.value, reorderedShown, (course) => course.id)
     courses.value = reordered
     try {
       await updateCourseSeries(series.id, { courseIDs: reordered.map((course) => course.id) })
@@ -108,7 +130,7 @@ const handleSorted = useMessageHandle(
   { en: 'Failed to reorder courses', zh: '调整课程顺序失败' }
 ).fn
 
-useDragSortable(courses, listRef, {
+useDragSortable(shownCourses, listRef, {
   ghostClass: 'sortable-ghost-item',
   onSorted: handleSorted
 })
@@ -282,12 +304,24 @@ const handleRemoveSeries = useMessageHandle(
       </section>
 
       <section class="flex flex-col gap-4">
-        <header class="flex items-center gap-4">
+        <header class="flex flex-wrap items-center gap-4">
           <h2 class="m-0 text-xl text-title">
             {{ $t({ en: `Courses (${courses.length})`, zh: `课程（${courses.length}）` }) }}
           </h2>
+          <ListControls
+            v-model:query="query"
+            v-model:sort-by="sortBy"
+            :placeholder="$t({ en: 'Search courses', zh: '搜索课程' })"
+          />
           <p class="m-0 flex-1 text-grey-700">
-            {{ $t({ en: 'Drag courses to change their order.', zh: '拖动课程可以调整顺序。' }) }}
+            {{
+              sortBy === 'order'
+                ? $t({ en: 'Drag courses to change their order.', zh: '拖动课程可以调整顺序。' })
+                : $t({
+                    en: 'Sort by display order to drag courses into another order.',
+                    zh: '按显示顺序排列时，可以拖动调整顺序。'
+                  })
+            }}
           </p>
           <UIButton
             v-radar="{ name: 'create-course-button', desc: 'Click to create a course in the series' }"
@@ -306,6 +340,34 @@ const handleRemoveSeries = useMessageHandle(
         <UIEmpty v-else-if="courses.length === 0" size="large">
           {{ $t({ en: 'No courses in this series yet', zh: '这个系列还没有课程' }) }}
         </UIEmpty>
+        <UIEmpty v-else-if="shownCourses.length === 0" size="large">
+          {{ $t({ en: 'No courses found', zh: '没有找到匹配的课程' }) }}
+        </UIEmpty>
+        <ListSections
+          v-else-if="sortBy !== 'order'"
+          :sections="sections"
+          :index="sortBy === 'title' ? titleIndex : updatedAtIndex"
+          :show-index="courses.length >= indexMinCourseCount"
+        >
+          <template #default="{ section }">
+            <ul class="m-0 flex flex-wrap gap-5 p-0">
+              <CourseItem
+                v-for="course in section.items"
+                :key="course.id"
+                v-radar="{ name: 'course-item', desc: 'Click to edit the course', attrs: { name: course.title } }"
+                :course="course"
+                @click="handleOpenCourse(courseSeries, course)"
+              >
+                <CourseItemCornerMenu
+                  :course="course"
+                  @edit="handleOpenCourse(courseSeries, course)"
+                  @open-editor="openInCourseEditor(courseSeries, course)"
+                  @remove="handleRemoveCourse(course)"
+                />
+              </CourseItem>
+            </ul>
+          </template>
+        </ListSections>
         <ul
           v-else
           ref="listRef"
@@ -313,7 +375,7 @@ const handleRemoveSeries = useMessageHandle(
           class="m-0 flex flex-wrap gap-5 p-0"
         >
           <CourseItem
-            v-for="course in courses"
+            v-for="course in shownCourses"
             :key="course.id"
             v-radar="{ name: 'course-item', desc: 'Click to edit the course', attrs: { name: course.title } }"
             :course="course"

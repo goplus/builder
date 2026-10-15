@@ -94,6 +94,8 @@ const existingCourse: GuidedCourse = {
   kind: 'guided',
   title: 'Course 1',
   thumbnail: 'kodo://bucket/course-thumbnail.png',
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
   content: { entrypoint: '/editor/curator/EntryProject/lesson?tab=code', prompt: 'Prompt' }
 }
 
@@ -831,6 +833,8 @@ describe('Playground course series files', () => {
     kind: 'playground',
     title: 'Measure it',
     thumbnail: 'kodo://bucket/course-thumbnail.png',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
     content: {
       'index.json': 'kodo://bucket/index.json',
       'main_course.gox': 'kodo://bucket/main_course.gox',

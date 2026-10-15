@@ -1,4 +1,5 @@
 import type { CourseSeries } from '@/apis/course-series'
+import { placeReordered } from './list-view'
 
 export type SeriesOrderUpdate = {
   id: string
@@ -14,14 +15,7 @@ export type SeriesOrderUpdate = {
  * relative to them.
  */
 export function planSeriesOrder(all: CourseSeries[], reorderedShown: CourseSeries[]) {
-  const shownIDs = new Set(reorderedShown.map((series) => series.id))
-  const next = [...all]
-  let shownIndex = 0
-  for (const [index, series] of all.entries()) {
-    if (!shownIDs.has(series.id)) continue
-    next[index] = reorderedShown[shownIndex++]
-  }
-  if (shownIndex !== reorderedShown.length) throw new Error('Reordered series must be among all series')
+  const next = placeReordered(all, reorderedShown, (series) => series.id)
 
   const updates: SeriesOrderUpdate[] = []
   const series = next.map((s, index) => {
