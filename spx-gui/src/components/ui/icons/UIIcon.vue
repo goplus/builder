@@ -19,6 +19,7 @@ import check from './check.svg?raw'
 import microphone from './microphone.svg?raw'
 import reload from './reload.svg?raw'
 import stop from './stop.svg?raw'
+import stopHollow from './stop-hollow.svg?raw'
 import plus from './plus.svg?raw'
 import trash from './trash.svg?raw'
 import edit from './edit.svg?raw'
@@ -86,6 +87,7 @@ import zoomReset from './zoom-reset.svg?raw'
 import backdropTile from './backdrop-tile.svg?raw'
 import backdropScale from './backdrop-scale.svg?raw'
 import backdropOriginal from './backdrop-original.svg?raw'
+import format from './format.svg?raw'
 
 const typeIconMap = {
   file,
@@ -100,6 +102,7 @@ const typeIconMap = {
   microphone,
   reload,
   stop,
+  stopHollow,
   plus,
   trash,
   edit,
@@ -166,7 +169,8 @@ const typeIconMap = {
   zoomReset,
   backdropTile,
   backdropScale,
-  backdropOriginal
+  backdropOriginal,
+  format
 }
 
 export type Type = keyof typeof typeIconMap
