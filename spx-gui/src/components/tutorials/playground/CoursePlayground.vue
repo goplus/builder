@@ -15,11 +15,12 @@ import { cloudHelpers } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { useCopilot } from '@/components/copilot/context'
 import { useRadar } from '@/utils/radar'
+import type { IScopedRouter } from '@/utils/route'
 import { useSpotlight } from '@/utils/spotlight'
 import type { SpotlightOptions } from '@/utils/tutorial-framework'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import type { ILocalCache } from '@/components/editor/editing'
-import { EditorState, type IInEditorRouter } from '@/components/editor/editor-state'
+import { EditorState } from '@/components/editor/editor-state'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
@@ -30,11 +31,11 @@ import type { PlaygroundCourseCompletion } from './program'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 import CoursePlaygroundVideoModal from './CoursePlaygroundVideoModal.vue'
 import { PlaygroundCourseSession } from './session'
-import { repeatableParamToPathSegments } from '@/utils/route'
 
 const props = defineProps<{
   projectQueryRet: QueryRet<TutorialProject>
-  inEditorPath: string | string[]
+  /** Navigation scoped to this Course Playground. */
+  router: IScopedRouter
 }>()
 
 const emit = defineEmits<{
@@ -43,7 +44,7 @@ const emit = defineEmits<{
 }>()
 
 const i18n = useI18n()
-const router = useRouter()
+const globalRouter = useRouter()
 const copilot = useCopilot()
 const radar = useRadar()
 const spotlight = useSpotlight()
@@ -61,7 +62,7 @@ const handleSaveAsMyProject = useMessageHandle(
     if (project == null) return
     const snapshot = await project.project.export()
     const name = await saveProjectAs(snapshot)
-    await router.push(getOwnProjectEditorRoute(name))
+    await globalRouter.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to save project', zh: '保存项目失败' }
 ).fn
@@ -110,23 +111,6 @@ const noLocalCache: ILocalCache = {
   async clear() {}
 }
 
-const inEditorRouter: IInEditorRouter = {
-  currentPath: computed(() => repeatableParamToPathSegments(props.inEditorPath)),
-  push: (newPath, options) => {
-    const currentRoute = router.currentRoute.value
-    // Vue Router checks if we are already on the same route, and prevents redundant navigation.
-    // So we do not need to check it manually to avoid infinite loops.
-    return router.push({
-      params: {
-        ...currentRoute.params,
-        inEditorPath: newPath
-      },
-      query: currentRoute.query,
-      replace: options?.replace
-    })
-  }
-}
-
 const readiness = useProvideReadiness()
 // Query preparation completes when Session is constructed; Course startup continues separately.
 const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
@@ -144,7 +128,7 @@ const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery(
     ctx.signal.throwIfAborted()
     const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
     editorState.editing.startEditing()
-    editorState.syncWithRouter(inEditorRouter)
+    editorState.syncWithRouter(props.router)
     const session = new PlaygroundCourseSession({
       project,
       editorState,

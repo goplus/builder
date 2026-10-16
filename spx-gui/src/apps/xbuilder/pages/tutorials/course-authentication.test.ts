@@ -113,7 +113,7 @@ async function openPage(destination: string) {
       { path: '/course-series/:courseSeriesIdInput', component: CourseSeries, props: true },
       { path: '/course/:courseSeriesIdInput/:courseIdInput/start', component: CourseStart, props: true },
       {
-        path: '/course/:courseSeriesIdInput/:courseIdInput/playground/:inEditorPath*',
+        path: '/course/:courseSeriesIdInput/:courseIdInput/playground/:inPlaygroundPath*',
         component: CoursePlayground,
         props: true
       }

@@ -156,7 +156,7 @@ function createProjectQueryRet(
 
 function mountPlayground(queryRet = createProjectQueryRet()) {
   const wrapper = mount(CoursePlayground, {
-    props: { projectQueryRet: queryRet, inEditorPath: [] },
+    props: { projectQueryRet: queryRet, router: { currentPath: ref([]), push: vi.fn() } },
     global: { mocks: { $t: (message: { en: string }) => message.en } }
   })
   wrappers.push(wrapper)
