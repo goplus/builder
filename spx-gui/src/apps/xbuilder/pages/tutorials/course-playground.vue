@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
-import { composeQuery, untilLoaded, useQuery } from '@/utils/query'
+import { untilLoaded, useQuery, type QueryRet } from '@/utils/query'
 import { repeatableParamToPathSegments } from '@/utils/route'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useSeriesCourses } from '@/stores/course-series'
@@ -15,7 +16,7 @@ import CoursePlaygroundCompletionModal, {
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
 import { useTutorial } from '@/components/tutorials/tutorial'
-import { UIDetailedLoading, UIError, useModal } from '@/components/ui'
+import { useModal } from '@/components/ui'
 
 const props = defineProps<{
   courseSeriesIdInput: string
@@ -34,12 +35,14 @@ const sessionQueryRet = useQuery(
   async (ctx) => {
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
+    ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
     const [signedInState, series, courses] = await Promise.all([
       // Use untilLoaded instead of composeQuery to avoid resetting the session on token refresh.
       // See https://github.com/goplus/builder/issues/3590
       untilLoaded(signedInStateQuery, ctx.signal),
       getCourseSeries(courseSeriesID, ctx.signal),
-      composeQuery(ctx, seriesCoursesQueryRet)
+      // Only route inputs restart preparation; list loading must not become a query dependency.
+      untilLoaded(seriesCoursesQueryRet, ctx.signal)
     ])
     ctx.signal.throwIfAborted()
     if (!signedInState.isSignedIn) {
@@ -71,16 +74,21 @@ const sessionQueryRet = useQuery(
     })
     tutorial.notifyPlaygroundCourseStarted(course, series)
 
+    ctx.reporter.report(1)
     return { course, series, project }
   },
   {
     en: 'Failed to start course',
     zh: '启动课程失败'
   },
-  { clearDataOnFetch: true }
+  { clearResultOnFetch: true }
 )
 
 const session = sessionQueryRet.data
+const projectQueryRet: QueryRet<TutorialProject> = {
+  ...sessionQueryRet,
+  data: computed(() => session.value?.project ?? null)
+}
 
 const { fn: handleRestart } = useMessageHandle(
   async () => {
@@ -122,19 +130,9 @@ const { fn: handleCompleted } = useMessageHandle(
 
 <template>
   <CoursePlayground
-    v-if="session != null"
-    :key="session.course.id"
-    :project="session.project"
+    :project-query-ret="projectQueryRet"
     :in-editor-path="inEditorPath"
     @course-completed="handleCompleted"
     @course-restart="handleRestart"
   />
-  <section v-else class="h-full w-full flex items-center justify-center">
-    <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">
-      <span>{{ $t({ zh: '加载课程中...', en: 'Loading course...' }) }}</span>
-    </UIDetailedLoading>
-    <UIError v-else-if="sessionQueryRet.error.value != null" :retry="sessionQueryRet.refetch">
-      {{ $t(sessionQueryRet.error.value.userMessage) }}
-    </UIError>
-  </section>
 </template>

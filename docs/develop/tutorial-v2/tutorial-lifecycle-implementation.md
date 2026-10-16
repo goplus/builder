@@ -319,7 +319,7 @@ The current prototype validates the central boundary without requiring the publi
 
 The second prototype adds a deliberately narrow end-to-end runtime example:
 
-- `CoursePlayground` creates one component-local `PlaygroundCourseSession` and starts its Program after the temporary 300ms UI mounting delay (#3533);
+- `CoursePlayground` creates one component-local `PlaygroundCourseSession` and starts its Program in parallel with editor mounting, using the startup handshake described below (#3533);
 - Session starts and retains the non-proactive Copilot Topic; Program runs only `main_course.gox` and owns the executor, event subscriptions and pending capability lifetime;
 - Runtime start, exit, and log signals plus Copilot round completion wait for executor startup before forwarding directly; the Framework queues received events;
 - `showMessage` is represented by route-local blocking presentation, while `complete` and `completeWith` publish a terminal outcome for the page to handle;
@@ -343,3 +343,39 @@ The prototype still exposes implementation questions that do not change the publ
 3. Copilot round completion is currently observed from reactive session state because #3421's explicit round-finish event is not present on this branch. The ownership stays route-local when that event replaces the prototype watch.
 4. The current Copilot Topic can disable proactive event reactions, but this branch does not yet expose #3421's code-helper controls.
 5. Direct refresh intentionally reloads Course data. Guided restoration, by contrast, remains isolated in `GuidedTutorial` session storage rather than serializing unified facade state.
+
+## Playground startup coordination
+
+The executor and Host prepare in parallel. After MainEntry registers callbacks,
+`lifecycle.waitForHostReady` waits for Host capabilities to become usable before
+`onStart` runs. Each callback advances to its first waiting capability or return;
+fast configuration calls wait for Host acknowledgment without yielding. Then
+`lifecycle.started` applies initial configuration effects before revealing
+Playground content and releasing queued Host events.
+
+Initial configuration should precede presentation or Copilot calls in the same
+callback; separate callbacks have no ordering guarantee. Startup does not wait for
+learner interaction or generation to finish. Completion retains Session long
+enough to apply initial effects; leaving, retrying or replacing a Course cancels
+pending handshakes. Preview follows the same flow.
+
+In the current SPX Host, the editor mounts under a cover limited to the main
+content; the Navbar remains visible while dependencies load. Host readiness includes
+Monaco attachment and API Reference loading/rendering;
+initial configuration updates are committed before the cover is removed.
+
+CoursePlayground consumes a Project QueryRet as part of Session construction.
+It combines Session and Monaco preparation progress with separate Course startup
+progress. One loading UI stays mounted throughout preparation.
+Preview wraps its loaded snapshot in a completed QueryRet; its existing loading
+and error feedback remain unchanged.
+
+### Shared readiness scopes
+
+App provides a page Scope around RouterView and passes it to TutorialRoot and
+CopilotRoot. CoursePlayground passes a nested Host Scope to Session, which owns
+startup state, the borrowed CodeEditor reference and runtime errors. The loading
+cover gates the parent page Scope while Host readiness remains independent,
+avoiding a startup dependency cycle. Preview uses the same
+coordination. See the [readiness module README](../../../spx-gui/src/utils/readiness/README.md)
+for its API and behavior.

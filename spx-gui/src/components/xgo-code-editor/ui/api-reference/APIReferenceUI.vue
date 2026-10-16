@@ -28,7 +28,7 @@ import { UIError } from '@/components/ui'
 import { stringifyDefinitionId, type DefinitionDocumentationItem } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
-import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import { useRegisterLoading } from '@/utils/readiness'
 
 const props = defineProps<{
   controller: APIReferenceController
@@ -43,10 +43,10 @@ const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue
 const categorizationThreshold = 5
 const needsCategorization = computed(() => (itemsForDisplay.value?.length ?? 0) >= categorizationThreshold)
 
-const loaded = ref(false)
-// APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial)
-// Register a provider with PageLoaded to notify dependent modules that APIReferenceUI has finished loading
-useRegisterUpdateRouteLoaded(loaded)
+const loading = ref(true)
+// APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial).
+// Report loading until the deferred rendering finishes so those modules can wait for the UI.
+useRegisterLoading(loading)
 
 const err = computed(() => {
   const err = props.controller.error
@@ -86,7 +86,7 @@ watch(categoriesComputed, async (categories, oldValue, onCleanUp) => {
   categoriesForItems.value = categories.slice(0, 1)
   await untilTaskScheduled('background', getCleanupSignal(onCleanUp))
   categoriesForItems.value = categories
-  loaded.value = true
+  loading.value = false
 })
 
 const activeCategoryIdRef = ref<string | null>(null)

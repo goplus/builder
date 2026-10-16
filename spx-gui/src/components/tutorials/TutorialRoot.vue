@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useRouter } from 'vue-router'
-import { useIsRouteLoaded } from '@/utils/route-loading'
+import type { ReadinessScope } from '@/utils/readiness'
 
 import { useCopilot } from '@/components/copilot/context'
 
@@ -8,11 +8,11 @@ import { GuidedTutorial } from './guided/guided-tutorial'
 import GuidedTutorialRoot from './guided/GuidedTutorialRoot.vue'
 import { provideTutorial, Tutorial } from './tutorial'
 
+const props = defineProps<{ routeReadiness: ReadinessScope }>()
+
 const copilot = useCopilot()
 const router = useRouter()
-const isRouteLoaded = useIsRouteLoaded()
-
-const guidedTutorial = new GuidedTutorial(copilot, router, isRouteLoaded)
+const guidedTutorial = new GuidedTutorial(copilot, router, props.routeReadiness)
 const tutorial = new Tutorial(guidedTutorial, router)
 
 provideTutorial(tutorial)

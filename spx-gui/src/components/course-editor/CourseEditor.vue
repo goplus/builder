@@ -6,6 +6,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalizedGeneric } from 'vue-router'
 import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
+import { createResolvedQueryRet } from '@/utils/query'
 import { useI18n } from '@/utils/i18n'
 import { getCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
@@ -188,6 +189,7 @@ const saving = computed(() => handleSave.isLoading.value)
 // edits and course execution never touch the working copy. It lives on its own route (the playground drives
 // that route's `inEditorPath`); entering and leaving it, also through browser history, drives the state below.
 const preview = shallowRef<TutorialProject | null>(null)
+const previewProjectQueryRet = createResolvedQueryRet(preview)
 // The editor owns every snapshot it hands the playground, which runs it but does not dispose it: one taken off
 // the screen is disposed once the playground has unmounted, and the one on screen when the editor goes, in
 // `onUnmounted`.
@@ -607,7 +609,7 @@ onUnmounted(() => {
         </UIError>
         <CoursePlayground
           v-else-if="preview != null"
-          :project="preview"
+          :project-query-ret="previewProjectQueryRet"
           :in-editor-path="route.params.inEditorPath"
           @course-completed="handlePreviewCompleted"
           @course-restart="restartPreview"

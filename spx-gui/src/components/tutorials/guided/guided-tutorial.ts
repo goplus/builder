@@ -1,8 +1,8 @@
 import { inject, provide, ref } from 'vue'
-import type { InjectionKey, Ref } from 'vue'
+import type { InjectionKey } from 'vue'
 import { isNavigationFailure, type Router } from 'vue-router'
 
-import { timeout, until } from '@/utils/utils'
+import type { ReadinessScope } from '@/utils/readiness'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import type { GuidedCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
@@ -43,7 +43,7 @@ export class GuidedTutorial {
   constructor(
     private copilot: Copilot,
     private router: Router,
-    private isRouteLoaded: Ref<boolean>
+    private routeReadiness: ReadinessScope
   ) {}
 
   get currentCourse(): CurrentCourse | null {
@@ -73,8 +73,7 @@ export class GuidedTutorial {
       if (entrypoint) {
         const failure = await this.router.replace(entrypoint)
         if (isNavigationFailure(failure)) throw failure
-        await until(this.isRouteLoaded)
-        await timeout(100) // Wait for detailed UI rendering
+        await this.routeReadiness.untilReady()
       }
 
       this.copilot.open()
