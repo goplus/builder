@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { createI18n } from '@/utils/i18n'
+import { createReadinessScope, ReadinessProvider } from '@/utils/readiness'
 import { fromConfig, fromText } from '@/models/common/file'
 import { TutorialProject } from '@/models/tutorial/project'
 import { mainCourseFilePath } from '@/models/tutorial/course'
@@ -90,12 +91,21 @@ describe('Course Code Editor session', () => {
       return () =>
         query.data.value == null ? null : view.value === 'preview' ? h(Preview) : h(Consumer, { key: view.value })
     })
-    const wrapper = mount(Host, { global: { plugins: [createI18n({ lang: 'en' })] } })
+    const readiness = createReadinessScope()
+    const wrapper = mount(
+      defineComponent(() => () => h(ReadinessProvider, { scope: readiness }, { default: () => h(Host) })),
+      { global: { plugins: [createI18n({ lang: 'en' })] } }
+    )
+    expect(readiness.ready.value).toBe(false)
     await flushPromises()
     expect(query.error.value).not.toBeNull()
     expect(query.data.value).toBeNull()
+    expect(readiness.ready.value).toBe(true)
     query.refetch()
+    expect(query.error.value).toBeNull()
+    expect(readiness.ready.value).toBe(false)
     await flushPromises()
+    expect(readiness.ready.value).toBe(true)
     const editor = query.data.value!
     const documentId = getTextDocumentId(mainCourseFilePath)
     const document = editor.getTextDocument(documentId)

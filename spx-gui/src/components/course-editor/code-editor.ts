@@ -1,6 +1,7 @@
 import { computed, toValue, type WatchSource } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
+import { useRegisterLoading } from '@/utils/readiness'
 import type { Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import type { TutorialProject } from '@/models/tutorial/project'
@@ -79,8 +80,9 @@ export function useCourseCodeEditor(projectSource: WatchSource<TutorialProject>,
       return editor
     },
     { en: 'Failed to load code editor', zh: '加载代码编辑器失败' },
-    { clearDataOnFetch: true }
+    { clearResultOnFetch: true }
   )
+  useRegisterLoading(query.isLoading)
   useProvideCodeEditor(query.data, { appWide: false })
   return query
 }
