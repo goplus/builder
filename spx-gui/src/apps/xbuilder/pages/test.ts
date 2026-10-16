@@ -310,18 +310,25 @@ export function setupPageTests() {
     }
     vi.mocked(courseSeriesApis.listCourseSeries).mockResolvedValue({ total: 1, data: [series] })
     vi.mocked(courseSeriesApis.getCourseSeries).mockResolvedValue(series)
-    vi.mocked(courseApis.listCourses).mockResolvedValue({
-      total: 1,
-      data: [
-        {
-          id: 'first-flight',
-          owner: 'alice',
-          kind: 'guided',
-          title: 'First flight',
-          thumbnail: '',
-          content: { entrypoint: '/editor/alice/first-flight', prompt: 'Build a spaceship' }
-        }
-      ]
-    })
+    const courses: courseApis.Course[] = [
+      {
+        id: 'first-flight',
+        owner: 'alice',
+        kind: 'guided',
+        title: 'First flight',
+        thumbnail: '',
+        content: { entrypoint: '/editor/alice/first-flight', prompt: 'Build a spaceship' }
+      },
+      {
+        id: 'landing',
+        owner: 'alice',
+        kind: 'guided',
+        title: 'Moon landing',
+        thumbnail: '',
+        content: { entrypoint: '/editor/alice/landing', prompt: 'Land on the moon' }
+      }
+    ]
+    vi.mocked(courseApis.listCourses).mockResolvedValue({ total: courses.length, data: courses })
+    vi.mocked(courseApis.getCourse).mockImplementation(async (id) => courses.find((course) => course.id === id)!)
   })
 }

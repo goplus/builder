@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { listCourses, type Course } from '@/apis/course'
+import { getCourse, type Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
@@ -65,15 +65,13 @@ const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) 
 
 const courseQuery = useQuery(
   async (ctx) => {
-    return listCourses(
-      {
-        courseSeriesID: props.courseSeriesIdInput,
-        pageIndex: page.value,
-        pageSize: pageSize.value,
-        orderBy: 'sequenceInCourseSeries'
-      },
-      ctx.signal
+    const courseIDs = courseSeries.value?.courseIDs ?? []
+    const start = (page.value - 1) * pageSize.value
+    // Paginate the authored order before fetching; the list endpoint may return a different order.
+    const data = await Promise.all(
+      courseIDs.slice(start, start + pageSize.value).map((id) => getCourse(id, ctx.signal))
     )
+    return { total: courseIDs.length, data }
   },
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
 )
