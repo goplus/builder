@@ -47,7 +47,9 @@ export class Runtime extends Emitter<{
   didChangeOutputSnapshot: void
   /** Emitted once after a run or rerun succeeds. */
   didStart: void
+  /** Emitted synchronously after the active source locations are updated or cleared. */
   didChangeLocations: void
+  /** Emitted when the runner reports an exit, including manual stops; payload is the exit code. */
   didExit: number
 }> {
   static readonly defaultMaxOutputs = 500
@@ -74,6 +76,7 @@ export class Runtime extends Emitter<{
     return this.outputSnapshotRef.value
   }
 
+  /** Active SPX source lines across concurrent executions; empty when no locations are tracked. */
   get locations(): readonly RuntimeLocation[] {
     return this.locationsRef.value
   }

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/goplus/ixgo"
-	"github.com/visualfc/gid"
 )
 
 const executionSource = `package main
@@ -16,13 +15,18 @@ func Nested(invoke func(func()), check func()) {
 }
 func Panic(check func()) { defer check(); panic("cancelled") }
 func Wait(wait func()) { wait() }
+func PanicLeaf(report func()) { report(); panic("cancelled") }
+func Recovered(report func()) {
+	defer func() { recover() }()
+	PanicLeaf(report)
+}
 func main() {}
 `
 
 func newTrackedInterp(t *testing.T, tracker *executionTracker) *ixgo.Interp {
 	t.Helper()
 	ctx := ixgo.NewContext(ixgo.SupportMultipleInterp | ixgo.EnableCachedReg)
-	ctx.SetExecutionHooks(tracker.enter, tracker.leave)
+	ctx.SetFuncHook(tracker.enter, tracker.leave)
 	i, err := ctx.LoadInterp("execution.go", executionSource)
 	if err != nil {
 		t.Fatal(err)
@@ -33,12 +37,12 @@ func newTrackedInterp(t *testing.T, tracker *executionTracker) *ixgo.Interp {
 
 func TestExecutionTrackerNestedAndPanic(t *testing.T) {
 	ended := 0
-	owner := gid.Get()
+	owner := ixgo.GoroutineID()
 	tracker := newExecutionTracker(func(locations []executionLocation) {
 		if len(locations) != 0 {
 			return
 		}
-		if gid.Get() != owner {
+		if ixgo.GoroutineID() != owner {
 			t.Error("completion ran on a different goroutine")
 		}
 		ended++
@@ -142,6 +146,25 @@ func TestExecutionTrackerReportsLocationChanges(t *testing.T) {
 		}
 		if !reflect.DeepEqual(snapshots, want) {
 			t.Fatalf("snapshots = %v; want %v", snapshots, want)
+		}
+	}
+}
+
+func TestExecutionTrackerRecoveredPanic(t *testing.T) {
+	var snapshots [][]executionLocation
+	tracker := newExecutionTracker(func(locations []executionLocation) {
+		snapshots = append(snapshots, locations)
+	})
+	i := newTrackedInterp(t, tracker)
+	for _, name := range []string{"Recovered", "Wait"} {
+		snapshots = nil
+		_, err := i.RunFunc(name, func() { tracker.report("Sprite.spx", 3) })
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := [][]executionLocation{{{File: "Sprite.spx", Line: 3}}, {}}
+		if !reflect.DeepEqual(snapshots, want) {
+			t.Fatalf("%s snapshots = %v; want %v", name, snapshots, want)
 		}
 	}
 }

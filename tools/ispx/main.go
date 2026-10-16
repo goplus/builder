@@ -39,7 +39,7 @@ func ispxInit() error {
 			}
 			tracker.report(position.Filename, position.Line)
 		})
-		ixgoCtx.SetExecutionHooks(tracker.enter, tracker.leave)
+		ixgoCtx.SetFuncHook(tracker.enter, tracker.leave)
 	}
 
 	// Override fmt.Print* functions to log with caller info.
