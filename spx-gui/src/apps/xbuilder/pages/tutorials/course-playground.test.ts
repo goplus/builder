@@ -74,7 +74,7 @@ describe('Course page startup progress', () => {
     mocks.seriesQueryRet.isLoading.value = false
     mocks.getSeries.mockResolvedValue({ id: 'series', courseIDs: ['course', 'next'] })
     wrapper = mount(CoursePlaygroundPage, {
-      props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inEditorPath: ['code'] },
+      props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inPlaygroundPath: ['code'] },
       global: { mocks: { $t: (message: { en: string }) => message.en } }
     })
     await flushPromises()
@@ -90,7 +90,7 @@ describe('Course page startup progress', () => {
     const finishSeries: Array<(series: object) => void> = []
     mocks.getSeries.mockImplementation(() => new Promise((resolve) => finishSeries.push(resolve)))
     wrapper = mount(CoursePlaygroundPage, {
-      props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inEditorPath: ['code'] },
+      props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inPlaygroundPath: ['code'] },
       global: { mocks: { $t: (message: { en: string }) => message.en } }
     })
     const playground = wrapper.findComponent({ name: 'CoursePlayground' }).vm
