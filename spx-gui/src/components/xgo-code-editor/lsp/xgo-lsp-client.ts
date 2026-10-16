@@ -1,0 +1,573 @@
+import { shallowRef, watchEffect } from 'vue'
+import * as lsp from 'vscode-languageserver-protocol'
+import * as Sentry from '@sentry/vue'
+import { Cancelled } from '@/utils/exception'
+import { serializeGoxMod, type GoxMod } from '@/utils/xgo/gox-mod'
+import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
+import Emitter from '@/utils/emitter'
+import { timeout, until, untilNotNull } from '@/utils/utils'
+import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
+import {
+  fromLSPRange,
+  type DefinitionIdentifier,
+  type Position,
+  type ResourceReference,
+  type TextDocumentIdentifier,
+  containsPosition,
+  type InputSlot,
+  type Property,
+  type ILSPClient,
+  type RequestContext,
+  type LSPClientEvents,
+  type PropertyRenamedEvent,
+  type IXGoProject
+} from '@/components/xgo-code-editor'
+import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
+import type { Files as SpxlsFiles, MessageID, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
+import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/commands'
+import { xgoPropertyRenamedNotification } from './spxls/notifications'
+import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } from './spxls/methods'
+import type { WorkerHandler } from './worker'
+
+export type XGoLSPClientOptions = {
+  classFrameworkConfig: GoxMod
+}
+
+interface IConnectionWithFiles extends IConnection {
+  sendFiles(files: SpxlsFiles): void
+  dispose(): void
+}
+
+function isServerNotInitializedError(error: unknown): error is ResponseError {
+  return error instanceof ResponseError && error.code === lsp.ErrorCodes.ServerNotInitialized
+}
+
+/** Connection between LS client and server when the server runs in a Web Worker. */
+class WorkerConnection implements IConnectionWithFiles {
+  private worker: WorkerHandler
+  constructor(classFrameworkConfig: string) {
+    this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+    this.worker.postMessage({ type: 'configure', classFrameworkConfig })
+  }
+  sendMessage(message: RequestMessage | NotificationMessage) {
+    this.worker.postMessage({ type: 'lsp', message })
+  }
+  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void) {
+    this.worker.addEventListener('message', (event) => {
+      const message = event.data
+      handler(message.message)
+    })
+  }
+  sendFiles(files: SpxlsFiles): void {
+    this.worker.postMessage({ type: 'files', files })
+  }
+  dispose() {
+    this.worker.terminate()
+  }
+}
+
+// Enhanced method for LSP requests with Sentry tracing
+async function tracedRequest<T>(
+  method: string,
+  operation: (span: Sentry.Span) => Promise<T>,
+  options?: LSPTraceOptions
+): Promise<T> {
+  const opName = createLSPOperationName(method, options)
+  // We construct an inactive span to avoid inrelevant child spans, e.g., concurrent HTTP requests.
+  const span = Sentry.startInactiveSpan({
+    name: opName,
+    op: 'lsp.request',
+    attributes: {
+      'lsp.method': method,
+      ...(options?.command ? { 'lsp.command': options.command } : {})
+    }
+  })
+  return operation(span)
+    .then(
+      (result) => {
+        span.setStatus({ code: 1 }) // OK
+        return result
+      },
+      (error) => {
+        span.setStatus({
+          code: 2, // ERROR
+          message: error instanceof Cancelled ? 'cancelled' : undefined
+        })
+        throw error
+      }
+    )
+    .finally(() => {
+      span.end()
+    })
+}
+
+type TelemetryEventBaseParams = {
+  initTimestamp: number
+  startTimestamp: number
+  endTimestamp: number
+  success: boolean
+}
+
+type TelemetryEventParamsForCall = TelemetryEventBaseParams & {
+  call: RequestMessage
+}
+
+type TelemetryEventParamsForNotification = TelemetryEventBaseParams & {
+  notification: NotificationMessage
+}
+
+type TelemetryEventParams = TelemetryEventParamsForCall | TelemetryEventParamsForNotification
+
+export class XGoLSPClient extends Disposable implements ILSPClient {
+  private emitter = new Emitter<LSPClientEvents>()
+
+  constructor(
+    private project: IXGoProject,
+    private options: XGoLSPClientOptions
+  ) {
+    super()
+    this.addDisposable(this.emitter)
+  }
+
+  private get projectClassName() {
+    return this.options.classFrameworkConfig.projects[0]?.projectClass.className ?? ''
+  }
+
+  /** Register a handler for property rename events; an empty target denotes the project class. */
+  onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void) {
+    return this.emitter.on('propertyRenamed', handler)
+  }
+
+  private connection: IConnectionWithFiles | undefined
+  private isFilesStale = shallowRef(true)
+
+  private shouldSyncFile(path: string) {
+    if (path.endsWith('.gox') || path.endsWith('.json')) return true
+    return this.options.classFrameworkConfig.projects.some(({ projectClass, workClasses }) =>
+      [projectClass, ...workClasses].some(({ ext }) => ext !== '' && path.endsWith(ext))
+    )
+  }
+
+  async loadFiles(signal: AbortSignal) {
+    this.isFilesStale.value = true
+    const files = this.project.exportFiles()
+    const loadedFiles: SpxlsFiles = {}
+    await Promise.all(
+      Object.entries(files).map(async ([path, file]) => {
+        if (file == null) return
+        if (this.shouldSyncFile(path)) {
+          // Binary media is not needed for analysis.
+          const ab = await file.arrayBuffer(signal)
+          loadedFiles[path] = {
+            content: new Uint8Array(ab),
+            modTime: file.lastModified
+          }
+        }
+      })
+    )
+    signal.throwIfAborted()
+    this.connection?.sendFiles(loadedFiles)
+    this.isFilesStale.value = false
+  }
+
+  private lcRef = shallowRef<XGoLanguageClient | null>(null)
+  private initializePromise: Promise<void> | null = null
+  private activeSpans = new Map<MessageID, Sentry.Span>()
+
+  private async prepareRequest() {
+    const lc = await untilNotNull(this.lcRef)
+    const initializePromise = this.initializePromise ?? this.startInitialize(lc)
+    // Typically requests are triggered earlier than file-loading:
+    // * file-loading: editor-event -> model-update -> file-loading
+    // * request: editor-event -> request
+    // Here we add `timeout(0)` to ensure that file-loading triggered before request really starts.
+    await timeout(0)
+    await until(() => !this.isFilesStale.value)
+    await initializePromise
+    return { lc, initializePromise }
+  }
+
+  init() {
+    this.connection = new WorkerConnection(serializeGoxMod(this.options.classFrameworkConfig))
+    this.addDisposer(
+      watchEffect(async (cleanUp) => {
+        const signal = getCleanupSignal(cleanUp)
+        try {
+          await this.loadFiles(signal)
+        } catch (error) {
+          // Superseded syncs and editor disposal abort loading; ignore cancellation to avoid unhandled rejections.
+          if (!signal.aborted) throw error
+        }
+      })
+    )
+    const lc = new XGoLanguageClient(this.connection)
+    this.lcRef.value = lc
+
+    // Register handler for telemetry event notifications
+    lc.onNotification(lsp.TelemetryEventNotification.method, (params) => {
+      this.handleTelemetryEventNotification(params)
+    })
+
+    this.startInitialize(lc)
+
+    // Register handler for property renamed notifications
+    lc.onNotification(xgoPropertyRenamedNotification.method, (params: xgoPropertyRenamedNotification.Params) => {
+      this.emitter.emit('propertyRenamed', {
+        target: params.target === this.projectClassName ? '' : params.target,
+        oldName: params.oldName,
+        newName: params.newName
+      })
+    })
+  }
+
+  private createInitializeParams(): lsp.InitializeParams {
+    return {
+      processId: null,
+      clientInfo: {
+        name: 'XBuilder'
+      },
+      rootUri: 'file:///',
+      workspaceFolders: [
+        {
+          uri: 'file:///',
+          name: 'workspace'
+        }
+      ],
+      capabilities: {
+        workspace: {
+          workspaceFolders: true
+        },
+        general: {
+          positionEncodings: [lsp.PositionEncodingKind.UTF16]
+        },
+        textDocument: {
+          completion: {
+            completionItem: {
+              snippetSupport: true,
+              documentationFormat: [lsp.MarkupKind.Markdown]
+            }
+          },
+          hover: {
+            contentFormat: [lsp.MarkupKind.Markdown]
+          },
+          rename: {
+            prepareSupport: true
+          },
+          signatureHelp: {
+            contextSupport: true
+          }
+        }
+      }
+    }
+  }
+
+  /** Performs the LSP initialize handshake for a server instance. */
+  private async initialize(lc: XGoLanguageClient) {
+    await this.sendRequest<lsp.InitializeResult>(lc, {}, lsp.InitializeRequest.method, this.createInitializeParams())
+    lc.notify(lsp.InitializedNotification.method, {})
+  }
+
+  /** Starts an initialize attempt and clears it on rejection only while it remains current. */
+  private startInitialize(lc: XGoLanguageClient) {
+    const initializePromise = this.initialize(lc)
+    this.initializePromise = initializePromise
+    initializePromise.catch(() => {
+      if (this.initializePromise === initializePromise) {
+        this.initializePromise = null
+      }
+    })
+    return initializePromise
+  }
+
+  /** Reuses a newer initialize attempt or replaces the stale attempt after a server restart. */
+  private reinitialize(lc: XGoLanguageClient, staleInitializePromise: Promise<void>) {
+    const currentInitializePromise = this.initializePromise
+    if (currentInitializePromise != null && currentInitializePromise !== staleInitializePromise) {
+      return currentInitializePromise
+    }
+    return this.startInitialize(lc)
+  }
+
+  dispose() {
+    this.lcRef.value?.dispose()
+    this.connection?.dispose()
+    super.dispose()
+  }
+
+  private async sendRequest<T>(
+    lc: XGoLanguageClient,
+    { signal, traceOptions }: RequestContext,
+    method: string,
+    params: any
+  ): Promise<T> {
+    return tracedRequest(
+      method,
+      async (span: Sentry.Span) => {
+        let unlisten: Disposer | undefined
+        const ongoingReq = lc.request<T>(method, params)
+
+        // Store the span immediately when request is created
+        const requestId = ongoingReq.id
+        this.activeSpans.set(requestId, span)
+
+        if (signal != null) {
+          const cancel = () => this.cancelRequest(ongoingReq.id)
+          if (signal.aborted) {
+            cancel()
+          } else {
+            signal.addEventListener('abort', cancel)
+            unlisten = () => signal.removeEventListener('abort', cancel)
+          }
+        }
+        return ongoingReq
+          .response()
+          .catch((e) => {
+            if (e instanceof ResponseError && e.code === lsp.LSPErrorCodes.RequestCancelled) {
+              throw new Cancelled(e.message)
+            }
+            console.warn(`[LSP] ${method} error:`, e, ', params:', params)
+            throw e
+          })
+          .finally(() => {
+            unlisten?.()
+            this.activeSpans.delete(requestId)
+          })
+      },
+      traceOptions
+    )
+  }
+
+  /** Do LSP request, with cancellation and tracing. */
+  private async request<T>(ctx: RequestContext, method: string, params: any): Promise<T> {
+    const { lc, initializePromise } = await this.prepareRequest()
+    try {
+      return await this.sendRequest<T>(lc, ctx, method, params)
+    } catch (e) {
+      if (!isServerNotInitializedError(e)) throw e
+      await this.reinitialize(lc, initializePromise)
+      const { lc: reinitializedLC } = await this.prepareRequest()
+      return this.sendRequest<T>(reinitializedLC, ctx, method, params)
+    }
+  }
+
+  private async cancelRequest(id: MessageID) {
+    const lc = await untilNotNull(this.lcRef)
+    // The method `$/cancelRequest` is defined in https://github.com/microsoft/vscode-languageserver-node/blob/4c20197acf4c499345a18e79945e706345cbc50f/protocol/src/common/protocol.%24.ts#L46-L58 ,
+    // while not exported by package `vscode-languageserver-protocol`.
+    lc.notify('$/cancelRequest', { id })
+  }
+
+  private async executeCommand<A extends any[], R>(ctx: RequestContext, command: string, ...args: A): Promise<R> {
+    return this.request<R>({ ...ctx, traceOptions: { command } }, lsp.ExecuteCommandRequest.method, {
+      command,
+      arguments: args
+    })
+  }
+
+  async workspaceExecuteCommandXGoRenameResources(
+    ctx: RequestContext,
+    ...params: xgoRenameResources.Arguments
+  ): Promise<xgoRenameResources.Result> {
+    return this.executeCommand<xgoRenameResources.Arguments, xgoRenameResources.Result>(
+      ctx,
+      xgoRenameResources.command,
+      ...params
+    )
+  }
+
+  async workspaceExecuteCommandXGoGetInputSlots(
+    ctx: RequestContext,
+    ...params: xgoGetInputSlots.Arguments
+  ): Promise<xgoGetInputSlots.Result> {
+    return this.executeCommand<xgoGetInputSlots.Arguments, xgoGetInputSlots.Result>(
+      ctx,
+      xgoGetInputSlots.command,
+      ...params
+    )
+  }
+
+  async workspaceExecuteCommandXGoGetProperties(
+    ctx: RequestContext,
+    ...params: xgoGetProperties.Arguments
+  ): Promise<xgoGetProperties.Result> {
+    return this.executeCommand<xgoGetProperties.Arguments, xgoGetProperties.Result>(
+      ctx,
+      xgoGetProperties.command,
+      ...params
+    )
+  }
+
+  async textDocumentDocumentLink(
+    ctx: RequestContext,
+    params: lsp.DocumentLinkParams
+  ): Promise<lsp.DocumentLink[] | null> {
+    return this.request<lsp.DocumentLink[] | null>(ctx, lsp.DocumentLinkRequest.method, params)
+  }
+
+  async textDocumentDiagnostic(
+    ctx: RequestContext,
+    params: lsp.DocumentDiagnosticParams
+  ): Promise<lsp.DocumentDiagnosticReport> {
+    return this.request<lsp.DocumentDiagnosticReport>(ctx, lsp.DocumentDiagnosticRequest.method, params)
+  }
+
+  async workspaceDiagnostic(
+    ctx: RequestContext,
+    params: lsp.WorkspaceDiagnosticParams
+  ): Promise<lsp.WorkspaceDiagnosticReport> {
+    return this.request<lsp.WorkspaceDiagnosticReport>(ctx, lsp.WorkspaceDiagnosticRequest.method, params)
+  }
+
+  async textDocumentHover(ctx: RequestContext, params: lsp.HoverParams): Promise<lsp.Hover | null> {
+    return this.request<lsp.Hover | null>(ctx, lsp.HoverRequest.method, params)
+  }
+
+  async textDocumentCompletion(
+    ctx: RequestContext,
+    params: lsp.CompletionParams
+  ): Promise<lsp.CompletionList | lsp.CompletionItem[] | null> {
+    return this.request<lsp.CompletionList | lsp.CompletionItem[] | null>(ctx, lsp.CompletionRequest.method, params)
+  }
+
+  async textDocumentDefinition(ctx: RequestContext, params: lsp.DefinitionParams): Promise<lsp.Definition | null> {
+    return this.request<lsp.Definition | null>(ctx, lsp.DefinitionRequest.method, params)
+  }
+
+  async textDocumentTypeDefinition(
+    ctx: RequestContext,
+    params: lsp.TypeDefinitionParams
+  ): Promise<lsp.Definition | null> {
+    return this.request<lsp.Definition | null>(ctx, lsp.TypeDefinitionRequest.method, params)
+  }
+
+  async textDocumentPrepareRename(
+    ctx: RequestContext,
+    params: lsp.PrepareRenameParams
+  ): Promise<lsp.PrepareRenameResult | null> {
+    return this.request<lsp.PrepareRenameResult | null>(ctx, lsp.PrepareRenameRequest.method, params)
+  }
+
+  async textDocumentRename(ctx: RequestContext, params: lsp.RenameParams): Promise<lsp.WorkspaceEdit | null> {
+    return this.request<lsp.WorkspaceEdit | null>(ctx, lsp.RenameRequest.method, params)
+  }
+
+  async textDocumentFormatting(
+    ctx: RequestContext,
+    params: lsp.DocumentFormattingParams
+  ): Promise<lsp.TextEdit[] | null> {
+    return this.request<lsp.TextEdit[] | null>(ctx, lsp.DocumentFormattingRequest.method, params)
+  }
+
+  async textDocumentInlayHint(ctx: RequestContext, params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null> {
+    return this.request<lsp.InlayHint[] | null>(ctx, lsp.InlayHintRequest.method, params)
+  }
+
+  /**
+   * Handles performance notifications from the WASM language server
+   */
+  private handleTelemetryEventNotification(params: TelemetryEventParams): void {
+    const { initTimestamp, startTimestamp, endTimestamp, success } = params
+
+    // Drop telemetry events for notifications temporarily. TODO: report them properly
+    if (!('call' in params)) return
+
+    const call = params.call
+    const id = call.id
+    const method = call.method
+
+    let command: string | undefined
+    if (
+      method === lsp.ExecuteCommandRequest.method &&
+      call.params &&
+      typeof call.params === 'object' &&
+      'command' in call.params
+    ) {
+      command = call.params.command as string | undefined
+    }
+
+    const parentSpan = this.activeSpans.get(id)
+
+    if (!parentSpan) {
+      console.warn(`[LSP] No active span found for request ID: ${id}`)
+      return
+    }
+    this.activeSpans.delete(id)
+    const opName = createLSPServerOperationName(method, { command })
+
+    // Create a child span for WASM execution
+    const span = Sentry.startInactiveSpan({
+      name: opName,
+      op: 'lsp.server.execution',
+      attributes: {
+        'lsp.method': method,
+        queue_time_ms: startTimestamp - initTimestamp,
+        duration_ms: endTimestamp - startTimestamp,
+        success: success,
+        ...(command ? { 'lsp.command': command } : {})
+      },
+      startTime: startTimestamp,
+      parentSpan
+    })
+    // `parentSpanIsAlwaysRootSpan` is set to `true` by default in browser, the parent span we passed to
+    // `Sentry.startInactiveSpan` is not used, see details in https://github.com/getsentry/sentry-javascript/issues/16769 .
+    // As a workaround, here we set the `_parentSpanId` property manually to ensure that the parent span is correctly linked in Sentry.
+    // TODO: remove this workaround when new version of Sentry is released with this issue fixed.
+    ;(span as any)._parentSpanId = parentSpan.spanContext().spanId
+    span.end(endTimestamp)
+  }
+
+  // Higher-level APIs
+
+  async getResourceReferences(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<ResourceReference[]> {
+    const documentLinks = await this.textDocumentDocumentLink(ctx, { textDocument })
+    if (documentLinks == null) return []
+    const rrs: ResourceReference[] = []
+    for (const documentLink of documentLinks) {
+      if (!isDocumentLinkForResourceReference(documentLink)) continue
+      rrs.push({
+        kind: documentLink.data.kind,
+        range: fromLSPRange(documentLink.range),
+        resource: { uri: documentLink.target }
+      })
+    }
+    return rrs
+  }
+
+  async getDefinition(
+    ctx: RequestContext,
+    textDocument: TextDocumentIdentifier,
+    position: Position
+  ): Promise<DefinitionIdentifier | null> {
+    const documentLinks = await this.textDocumentDocumentLink(ctx, { textDocument })
+    if (documentLinks == null) return null
+    for (const documentLink of documentLinks) {
+      const definition = parseDocumentLinkForDefinition(documentLink)
+      if (definition == null) continue
+      const range = fromLSPRange(documentLink.range)
+      if (!containsPosition(range, position)) continue
+      return definition
+    }
+    return null
+  }
+
+  async getCompletionList(ctx: RequestContext, params: lsp.CompletionParams): Promise<lsp.CompletionList> {
+    const completionResult = await this.textDocumentCompletion(ctx, params)
+    if (completionResult == null) return { items: [], isIncomplete: false }
+    if (Array.isArray(completionResult)) return { items: completionResult, isIncomplete: false }
+    return completionResult
+  }
+
+  async getInputSlots(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<InputSlot[]> {
+    const result = await this.workspaceExecuteCommandXGoGetInputSlots(ctx, { textDocument })
+    if (result == null) return []
+    return result.map((item) => ({
+      ...item,
+      range: fromLSPRange(item.range)
+    }))
+  }
+
+  /** Get properties of a named type; an empty target denotes the default project class. */
+  async getProperties(ctx: RequestContext, target: string): Promise<Property[]> {
+    return this.workspaceExecuteCommandXGoGetProperties(ctx, { target: target === '' ? this.projectClassName : target })
+  }
+}

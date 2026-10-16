@@ -6,17 +6,23 @@ tool github.com/goplus/xgolsw/cmd/pkgdatagen
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
+	github.com/goplus/builder/tools/tutorial v0.0.0
 	github.com/goplus/xgolsw v0.22.2-0.20261008151630-3afeb3b412c4
 )
 
 require (
+	github.com/goplus/builder/tools/xgoexec v0.0.0 // indirect
 	github.com/goplus/gogen v1.23.6-0.20260816085451-b240c8b2c5b1 // indirect
+	github.com/goplus/ixgo v1.1.7 // indirect
 	github.com/goplus/mod v0.22.0 // indirect
+	github.com/goplus/reflectx v1.7.8 // indirect
 	github.com/goplus/spbase v0.1.1 // indirect
 	github.com/goplus/spx/v3 v3.3.0 // indirect
 	github.com/goplus/xgo v1.7.6-0.20260818050008-fd36b6192e30 // indirect
 	github.com/qiniu/x v1.18.3 // indirect
+	github.com/visualfc/funcval v0.1.5 // indirect
 	github.com/visualfc/gid v0.3.5 // indirect
+	github.com/visualfc/xtype v0.3.3 // indirect
 	golang.org/x/image v0.23.0 // indirect
 	golang.org/x/mod v0.40.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
@@ -24,3 +30,7 @@ require (
 )
 
 replace github.com/goplus/builder/tools/ai => ../ai
+
+replace github.com/goplus/builder/tools/tutorial => ../tutorial
+
+replace github.com/goplus/builder/tools/xgoexec => ../xgoexec

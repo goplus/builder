@@ -18,7 +18,7 @@ import { useUpdateCourse } from '@/stores/course'
 import { useCopilot } from '@/components/copilot/context'
 import type { SessionExported } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
-import { History, type Action } from '@/components/editor/history'
+import { History } from '@/components/editor/history'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
@@ -40,6 +40,7 @@ import CourseActivityBar from './CourseActivityBar.vue'
 import CourseConfigDoc from './CourseConfigDoc.vue'
 import CourseResourceGrid from './CourseResourceGrid.vue'
 import CourseTextDoc from './CourseTextDoc.vue'
+import { useCourseCodeEditor } from './code-editor'
 import { useCourseEditorCopilot } from './copilot'
 import { getProjectEditorHost } from './project'
 import { getChangedPaths, getDirtyViews, getViewPath, resolveView, type CourseView } from './course-views'
@@ -83,8 +84,7 @@ const history = new History({
   loadFiles: (files) => props.project.loadFiles(files)
 })
 
-// Typing in the program is recorded as one step, as long as nothing else is done in between.
-const editProgramAction: Action = { name: { en: 'Update program', zh: '修改程序' }, mergeable: true }
+const codeEditorQuery = useCourseCodeEditor(() => props.project, history)
 
 const editPathPrefix = 'edit'
 const previewPathPrefix = 'preview'
@@ -593,12 +593,18 @@ onUnmounted(() => {
           :view="open.view"
           :history="history"
         />
-        <CourseTextDoc
-          v-else
-          :text="project.mainCourse.code"
-          language="xgo"
-          @update:text="(text) => history.doAction(editProgramAction, () => project.mainCourse.setCode(text))"
-        />
+        <template v-else>
+          <UIDetailedLoading
+            v-if="codeEditorQuery.isLoading.value"
+            :percentage="codeEditorQuery.progress.value.percentage"
+          >
+            <span>{{ $t({ en: 'Loading code editor...', zh: '加载代码编辑器中...' }) }}</span>
+          </UIDetailedLoading>
+          <UIError v-else-if="codeEditorQuery.error.value != null" :retry="codeEditorQuery.refetch">
+            {{ $t(codeEditorQuery.error.value.userMessage) }}
+          </UIError>
+          <CourseTextDoc v-else-if="codeEditorQuery.data.value != null" />
+        </template>
       </UICard>
       <!-- Always mounted, so the author's editor state outlives view switches and the preview; the host renders the
            Project Editor UI only while `active`. -->

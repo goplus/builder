@@ -7,6 +7,7 @@ import { watch } from 'vue'
 import { parseDefinitionId, type CodeEditor } from '@/components/xgo-code-editor'
 import { FilteredCompletionProvider } from './api-filter'
 import { SpxAPIReferenceProvider } from './api-reference'
+import { SpxCompletionProvider } from './completion'
 import { SpxDiagnosticsProvider } from './diagnostics'
 import { SpxResourceAdapter, useResourceRenameHelpers, useResourceSelectorHelpers } from './resource'
 import { SpxInputHelperProvider } from './input-helper'
@@ -49,7 +50,7 @@ watch(
     codeEditor.registerInputHelperProvider(inputHelperProvider)
     codeEditor.registerSnippetVariablesProvider(snippetVariablesProvider)
 
-    const completionProvider = codeEditor.completionProvider
+    const completionProvider = new SpxCompletionProvider(codeEditor.completionProvider, documentBase)
     const stopAPIWatch = watch(
       () => props.apiWhitelist,
       (apiWhitelist) => {

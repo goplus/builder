@@ -1,5 +1,5 @@
 /**
- * This file is worker script for spxls (spx language server).
+ * Runs the XGo language server with the caller's class framework configuration.
  * It runs in a Web Worker.
  */
 
@@ -10,8 +10,8 @@ declare const self: DedicatedWorkerGlobalScope
 import '@/assets/wasm/wasm_exec.js'
 import type { Files, Message, NotificationMessage, RequestMessage, ResponseMessage, XGoLanguageServer } from './spxls'
 
-const spxlsWasmUrl = new URL('@/assets/wasm/spxls.wasm', import.meta.url).href
-const spxlsPkgdataZipUrl = new URL('@/assets/wasm/spxls-pkgdata.zip', import.meta.url).href
+const languageServerWasmUrl = new URL('@/assets/wasm/spxls.wasm', import.meta.url).href
+const packageDataZipUrl = new URL('@/assets/wasm/spxls-pkgdata.zip', import.meta.url).href
 
 /** Message for files synchronization */
 export type FilesMessage = {
@@ -25,11 +25,17 @@ export type LSPMessage<M extends Message> = {
   message: M
 }
 
+/** Message for language server configuration */
+export type ConfigureMessage = {
+  type: 'configure'
+  classFrameworkConfig: string
+}
+
 /** Message that worker send to main thread. */
 export type WorkerMessage = LSPMessage<ResponseMessage | NotificationMessage>
 
 /** Message that main thread send to worker. */
-export type MainMessage = LSPMessage<RequestMessage | NotificationMessage> | FilesMessage
+export type MainMessage = LSPMessage<RequestMessage | NotificationMessage> | FilesMessage | ConfigureMessage
 
 interface WorkerScope {
   postMessage(message: WorkerMessage): void
@@ -65,24 +71,21 @@ type LSState =
 
 let files: Files = {}
 let lsState: LSState
+let classFrameworkConfig: string
 
 async function newLS(onStopped: () => void): Promise<XGoLanguageServer> {
   const go = new Go()
-  const [wasmResp, spxlsPkgdataZipResp] = await Promise.all([fetch(spxlsWasmUrl), fetch(spxlsPkgdataZipUrl)])
+  const [wasmResp, packageDataZipResp] = await Promise.all([fetch(languageServerWasmUrl), fetch(packageDataZipUrl)])
   const { instance } = await WebAssembly.instantiateStreaming(wasmResp, go.importObject)
   go.run(instance).finally(onStopped)
 
-  const spxlsPkgdataZip = await spxlsPkgdataZipResp.arrayBuffer()
+  const packageDataZip = await packageDataZipResp.arrayBuffer()
   const ls = NewXGoLanguageServer(
     () => files,
     (message) => scope.postMessage({ type: 'lsp', message }),
     {
-      // Keep the classfile registration aligned with tools/ispx/main.go.
-      classfileConfig: `project main.spx Game github.com/goplus/spx/v3 math
-class -embed *.spx SpriteImpl
-import ai github.com/goplus/builder/tools/ai
-`,
-      pkgDataZip: new Uint8Array(spxlsPkgdataZip)
+      classfileConfig: classFrameworkConfig,
+      pkgDataZip: new Uint8Array(packageDataZip)
     }
   )
   if (ls instanceof Error) throw ls
@@ -115,6 +118,10 @@ function startLS() {
 
 async function handleMainMessage(message: MainMessage) {
   switch (message.type) {
+    case 'configure':
+      classFrameworkConfig = message.classFrameworkConfig
+      startLS()
+      return
     case 'files':
       files = message.files
       return
@@ -147,8 +154,6 @@ async function handleMainMessage(message: MainMessage) {
 }
 
 function main() {
-  startLS()
-
   scope.addEventListener('message', async (event) => {
     handleMainMessage(event.data)
   })

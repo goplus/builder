@@ -13,6 +13,8 @@ import type { History } from '@/components/editor/history'
 import type { PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { useScopedRouterWithPathParam } from '@/utils/route'
+import { CodeChangeKind } from '@/components/xgo-code-editor'
+import { TutorialCodeEditorProject } from './code-editor'
 import CourseEditor from './CourseEditor.vue'
 
 const courseEditorRouteName = 'course-editor'
@@ -92,6 +94,16 @@ vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
     emits: ['courseCompleted', 'courseRestart'],
     render: () => null
   }
+}))
+vi.mock('./code-editor', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./code-editor')>()),
+  useCourseCodeEditor: () => ({
+    data: ref(null),
+    isLoading: ref(false),
+    error: ref(null),
+    progress: ref({ percentage: 0 }),
+    refetch: vi.fn()
+  })
 }))
 vi.mock('./CourseTextDoc.vue', () => ({ default: { name: 'CourseTextDoc', render: () => null } }))
 vi.mock('./CourseConfigDoc.vue', () => ({ default: { name: 'CourseConfigDoc', render: () => null } }))
@@ -596,8 +608,9 @@ describe('CourseEditor history', () => {
     /** The history the undo and redo buttons in the navbar work on. */
     const buttonsHistory = () => wrapper.findComponent({ name: 'EditorHistoryButtons' }).props('history') as History
     /** Type into the program editor, the way Monaco reports an edit. */
+    const adapter = new TutorialCodeEditorProject(project, buttonsHistory())
     async function typeProgram(code: string) {
-      wrapper.findComponent({ name: 'CourseTextDoc' }).vm.$emit('update:text', code)
+      adapter.getCodeOwner('main_course.gox')!.setCode(code, CodeChangeKind.User)
       await flushPromises()
     }
     return { wrapper, router, project, buttonsHistory, typeProgram }
