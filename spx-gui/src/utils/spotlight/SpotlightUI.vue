@@ -50,18 +50,20 @@ function getDefaultPosition(): Position {
 
 <script lang="ts" setup>
 import { watch, ref, computed } from 'vue'
+import { throttle } from 'lodash'
 import { useSpotlight } from '@/utils/spotlight/index'
 import anchor from './anchor.svg?raw'
-import { throttle } from 'lodash'
 
 const anchorSize = 26
 const anchorOffset = [0, 0]
 const conflictBuffer = 20
+const maskCutoutPadding = 6
 
 const spotlightRef = ref<HTMLElement | null>(null)
 const placementRef = ref<Placement>(Placement.BOTTOM_RIGHT)
 const positionRef = ref<Position>(getDefaultPosition())
 const spotlightAnimated = ref(false)
+const maskRectRef = ref<DOMRect | null>(null)
 
 const spotlight = useSpotlight()
 
@@ -184,6 +186,7 @@ function syncPlacementAndPosition() {
   placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
 
   spotlightEl.style.transform = `translateX(${position.x}px) translateY(${position.y}px)`
+  maskRectRef.value = revealEl.getBoundingClientRect()
 }
 
 function revealElement(revealEl: HTMLElement) {
@@ -207,25 +210,17 @@ function handleScrollEnd() {
   spotlightAnimated.value = true
 }
 
-let lastBodyWidth = 0
-let lastBodyHeight = 0
-const throttledHandleRefresh = throttle((entries) => {
-  for (const entry of entries) {
-    const { width, height } = entry.contentRect
-    // ResizeObserver triggers too frequently — avoid triggering in non-resize
-    if (width === lastBodyWidth && height === lastBodyHeight) {
-      continue
-    }
-    lastBodyWidth = width
-    lastBodyHeight = height
-    syncPlacementAndPosition()
-  }
-}, 20)
+const throttledHandleRefresh = throttle(syncPlacementAndPosition, 20)
 const resizeObserver = new ResizeObserver(throttledHandleRefresh)
 watch(
   () => spotlightItem.value,
   (value, _, onCleanUp) => {
-    if (!value) return
+    if (value == null) {
+      maskRectRef.value = null
+      return
+    }
+
+    maskRectRef.value = value.el.getBoundingClientRect()
 
     // After the spotlight is concealed, if it is revealed again,
     // the positions of `center` and `reveal` will be recalculated — this position represents a portion of the distance between them.
@@ -246,10 +241,13 @@ watch(
     })
 
     resizeObserver.observe(document.body)
+    resizeObserver.observe(value.el)
     document.body.addEventListener('scroll', throttledHandleScroll, { capture: true, passive: true })
     document.body.addEventListener('scrollend', handleScrollEnd, { capture: true })
     onCleanUp(() => {
       resizeObserver.disconnect()
+      throttledHandleScroll.cancel()
+      throttledHandleRefresh.cancel()
       document.body.removeEventListener('scroll', throttledHandleScroll, { capture: true })
       document.body.removeEventListener('scrollend', handleScrollEnd, { capture: true })
       concealElement(value.el)
@@ -261,7 +259,18 @@ watch(
 
 <template>
   <div class="spotlight-ui">
-    <div v-if="spotlightItem?.mask" class="fixed inset-0 bg-black/45"></div>
+    <Transition>
+      <div
+        v-if="spotlightItem?.mask && maskRectRef != null"
+        class="mask-cutout"
+        :style="{
+          left: `${maskRectRef.left - maskCutoutPadding}px`,
+          top: `${maskRectRef.top - maskCutoutPadding}px`,
+          width: `${maskRectRef.width + 2 * maskCutoutPadding}px`,
+          height: `${maskRectRef.height + 2 * maskCutoutPadding}px`
+        }"
+      ></div>
+    </Transition>
     <Transition>
       <div
         v-if="spotlightItem"
@@ -281,8 +290,6 @@ watch(
 
 <style scoped>
 :global(.spotlight-attach-element-highlight) {
-  position: relative;
-  z-index: 10001;
   box-shadow: var(--ui-box-shadow-sm);
 }
 
@@ -308,8 +315,8 @@ watch(
   --spotlight-transform-transition: transform 0.4s cubic-bezier(0.8, -0.3, 0.265, 1.2);
   --spotlight-z-index: 10000; /* TODO: Adjust as needed */
 
-  position: absolute;
-  overflow: hidden;
+  position: fixed;
+  overflow: visible;
   inset: 0;
   pointer-events: none;
   z-index: var(--spotlight-z-index);
@@ -317,6 +324,13 @@ watch(
 
 .spotlight-ui .spotlight-item {
   position: absolute;
+}
+
+/* The outer shadow leaves the target visible across stacking contexts. */
+.spotlight-ui .mask-cutout {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: 0 0 24px 100vmax rgba(15, 23, 42, 0.45);
 }
 
 .spotlight-ui .spotlight-item.animated {
