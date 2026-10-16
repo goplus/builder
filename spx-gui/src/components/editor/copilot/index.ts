@@ -5,6 +5,7 @@ import { useCopilot } from '@/components/copilot/context'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from '@/components/copilot/common'
 import { type ICopilotContextProvider, type ToolDefinition } from '@/components/copilot/copilot'
 import { skillSpxProject, skillXgoLanguage } from '@/components/copilot/skills/built-in'
+import { stringifyDefinitionId } from '@/components/xgo-code-editor'
 import { cloudHelpers, type CloudHelpers } from '@/models/common/cloud'
 import { SpxProject } from '@/models/spx/project'
 import type { Sprite } from '@/models/spx/sprite'
@@ -188,6 +189,30 @@ class GetCodeDiagnosticsTool implements ToolDefinition {
   }
 }
 
+const listApiReferenceItemsParamsSchema = z.object({})
+
+class ListApiReferenceItemsTool implements ToolDefinition {
+  name = 'list_api_reference_items'
+  description =
+    'List the available API reference items (definition id and signature) for the code file the user is currently ' +
+    'editing. Use the returned ids with the `api-reference-filter` element to narrow the "API References" panel.'
+  parameters = listApiReferenceItemsParamsSchema
+
+  constructor(private codeEditor: CodeEditor) {}
+
+  async implementation(_: z.infer<typeof listApiReferenceItemsParamsSchema>, signal?: AbortSignal) {
+    const textDocument = this.codeEditor.getAttachedUI()?.activeTextDocument
+    if (textDocument == null) return []
+    const items = await this.codeEditor.apiReferenceProvider.provideAPIReference({
+      textDocument,
+      signal: signal ?? new AbortController().signal
+    })
+    return items
+      .filter((item) => item.hiddenFromList !== true)
+      .map((item) => ({ id: stringifyDefinitionId(item.definition), overview: item.overview }))
+  }
+}
+
 class ProjectContextProvider implements ICopilotContextProvider {
   constructor(private editorCtx: EditorCtx) {}
 
@@ -286,6 +311,7 @@ export function useSpxEditorCopilot(): void {
   d.addDisposer(copilot.registerTool(new GetSpriteContentTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetProjectCodeTool(retriever)))
   d.addDisposer(copilot.registerTool(new GetCodeDiagnosticsTool(codeEditor)))
+  d.addDisposer(copilot.registerTool(new ListApiReferenceItemsTool(codeEditor)))
   d.addDisposer(
     copilot.registerCustomElement({
       tagName: codeLink.tagName,
