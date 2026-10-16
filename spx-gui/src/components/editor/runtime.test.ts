@@ -82,6 +82,32 @@ describe('Runtime', () => {
     runtime.dispose()
   })
 
+  it('reports concurrent locations and clears them when debug mode ends', () => {
+    const runtime = makeRuntime()
+    const events: number[][] = []
+    runtime.on('didChangeLocations', () => events.push(runtime.locations.map(({ line }) => line)))
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    const location = (line: number) => ({ textDocument: { uri: 'file:///Sprite.spx' }, line })
+
+    runtime.setLocations([location(1), location(5)])
+    runtime.setLocations([location(5)])
+    expect(runtime.locations).toEqual([location(5)])
+    expect(events.slice(-2)).toEqual([[1, 5], [5]])
+
+    runtime.clearOutputs()
+    expect(runtime.locations).toEqual([location(5)])
+    runtime.setRunning({ mode: 'none' })
+    expect(runtime.locations).toEqual([])
+    runtime.setLocations([location(9)])
+    expect(runtime.locations).toEqual([])
+
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    runtime.setLocations([location(2), location(7)])
+    runtime.setRunning({ mode: 'debug', initializing: true })
+    expect(runtime.locations).toEqual([])
+    runtime.dispose()
+  })
+
   it('should keep latest outputs within default max size and assign stable ids', () => {
     vi.useFakeTimers()
     withMockedAnimationFrame()

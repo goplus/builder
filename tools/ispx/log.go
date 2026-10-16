@@ -12,6 +12,10 @@ import (
 // logger is the JSON logger for ispx.
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
+func logExecutionLocations(locations []executionLocation) {
+	logger.Info("__spx_locations__", "locations", locations)
+}
+
 // logWithCallerInfo logs msg with caller information extracted from frame.
 func logWithCallerInfo(msg string, frame *ixgo.Frame) {
 	if frs := frame.CallerFrames(); len(frs) > 0 {

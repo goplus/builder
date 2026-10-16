@@ -2,7 +2,7 @@ import { effectScope, ref, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
 import type { SpxProject } from '@/models/spx/project'
-import type { TextDocumentRange } from '@/components/xgo-code-editor'
+import type { TextDocumentIdentifier, TextDocumentRange } from '@/components/xgo-code-editor'
 
 export type RunningState =
   | {
@@ -34,6 +34,12 @@ export interface RuntimeOutput {
 
 export type RuntimeOutputDraft = Omit<RuntimeOutput, 'id'>
 
+export interface RuntimeLocation {
+  textDocument: TextDocumentIdentifier
+  /** Line number, starting from 1. */
+  line: number
+}
+
 export class Runtime extends Emitter<{
   /** Every appended entry, emitted synchronously before any UI snapshot flush. */
   didAppendOutput: RuntimeOutput
@@ -41,6 +47,9 @@ export class Runtime extends Emitter<{
   didChangeOutputSnapshot: void
   /** Emitted once after a run or rerun succeeds. */
   didStart: void
+  /** Emitted synchronously after the active source locations are updated or cleared. */
+  didChangeLocations: void
+  /** Emitted when the runner reports an exit, including manual stops; payload is the exit code. */
   didExit: number
 }> {
   static readonly defaultMaxOutputs = 500
@@ -48,6 +57,7 @@ export class Runtime extends Emitter<{
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
   private outputSnapshotRef = shallowRef<RuntimeOutput[]>([])
+  private locationsRef = shallowRef<readonly RuntimeLocation[]>([])
 
   get running() {
     return this.runningRef.value
@@ -66,7 +76,20 @@ export class Runtime extends Emitter<{
     return this.outputSnapshotRef.value
   }
 
+  /** Active SPX source lines across concurrent executions; empty when no locations are tracked. */
+  get locations(): readonly RuntimeLocation[] {
+    return this.locationsRef.value
+  }
+
+  setLocations(locations: readonly RuntimeLocation[]) {
+    if (this.running.mode !== 'debug' && locations.length > 0) return
+    this.locationsRef.value = locations
+    this.emit('didChangeLocations')
+  }
+
   setRunning(running: RunningState, filesHash?: string) {
+    if (running.mode === 'none') this.setLocations([])
+    else if (running.initializing) this.setLocations([])
     this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
       const nextHash = filesHash ?? this.filesHash
@@ -154,9 +177,7 @@ export class Runtime extends Emitter<{
         }
       )
     })
-    this.addDisposer(() => {
-      this.cancelScheduledDidChangeOutputSnapshot()
-    })
+    this.addDisposer(() => this.cancelScheduledDidChangeOutputSnapshot())
     this.addDisposer(() => scope.stop())
   }
 }
