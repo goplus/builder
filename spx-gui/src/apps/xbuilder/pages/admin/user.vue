@@ -4,7 +4,13 @@ import type { AccountIdentityProviderName } from '@/apis/account/common'
 
 export const accountAdminRole = 'accountAdmin'
 export const authorizationAdminRole = 'authorizationAdmin'
-export const managedAdminRoles = [accountAdminRole, authorizationAdminRole, 'assetAdmin', 'courseAdmin'] as const
+export const managedAdminRoles = [
+  accountAdminRole,
+  authorizationAdminRole,
+  'assetAdmin',
+  'courseAdmin',
+  'feedbackAdmin'
+] as const
 
 export type ManagedAdminRole = (typeof managedAdminRoles)[number]
 
@@ -35,7 +41,8 @@ const adminRoleLabels: Record<ManagedAdminRole, LocaleMessage> = {
   accountAdmin: { en: 'Account admin', zh: '账号管理员' },
   authorizationAdmin: { en: 'Authorization admin', zh: '授权管理员' },
   assetAdmin: { en: 'Asset admin', zh: '素材管理员' },
-  courseAdmin: { en: 'Course admin', zh: '课程管理员' }
+  courseAdmin: { en: 'Course admin', zh: '课程管理员' },
+  feedbackAdmin: { en: 'Feedback admin', zh: '反馈管理员' }
 }
 </script>
 
@@ -204,6 +211,10 @@ const adminRoleDescriptions: Record<ManagedAdminRole, { en: string; zh: string }
   courseAdmin: {
     en: 'Manage courses and course series.',
     zh: '管理课程与课程系列。'
+  },
+  feedbackAdmin: {
+    en: 'Review and handle user feedback.',
+    zh: '查看并处理用户反馈。'
   }
 }
 
@@ -212,6 +223,7 @@ const capabilityLabels = {
   canManageAuthorization: { en: 'Manage authorization', zh: '管理授权' },
   canManageAssets: { en: 'Manage assets', zh: '管理素材' },
   canManageCourses: { en: 'Manage courses', zh: '管理课程' },
+  canManageFeedback: { en: 'Manage feedback', zh: '管理反馈' },
   canUsePremiumLLM: { en: 'Use premium AI models', zh: '使用高级 AI 模型' }
 } as const
 

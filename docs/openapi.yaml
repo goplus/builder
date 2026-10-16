@@ -4648,6 +4648,44 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /user/feedback:
+    post:
+      operationId: createFeedback
+      tags:
+        - Feedback
+      summary: Submit feedback
+      description: Submit feedback as the authenticated user.
+      requestBody:
+        description: Encoded JSON request body, limited to 256 KiB.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  $ref: "#/components/schemas/Feedback/properties/title"
+                description:
+                  $ref: "#/components/schemas/Feedback/properties/description"
+                context:
+                  $ref: "#/components/schemas/Feedback/properties/context"
+      responses:
+        "201":
+          description: Successfully submitted the feedback.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+
   /admin/account/users:
     get:
       operationId: listAdminAccountUsers
@@ -5792,6 +5830,143 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /admin/feedback:
+    get:
+      operationId: listAdminFeedback
+      tags:
+        - Feedback Admin
+      summary: List feedback as admin
+      description: |
+        Retrieve a list of feedback submitted by users.
+
+        Requires the `feedbackAdmin` role.
+      parameters:
+        - name: status
+          description: Filter feedback by status.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Feedback/properties/status"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Feedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/feedback/{feedbackID}:
+    get:
+      operationId: getAdminFeedback
+      tags:
+        - Feedback Admin
+      summary: Get feedback as admin
+      description: |
+        Retrieve feedback submitted by a user.
+
+        Requires the `feedbackAdmin` role.
+      parameters:
+        - name: feedbackID
+          description: ID of the feedback to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAdminFeedback
+      tags:
+        - Feedback Admin
+      summary: Update feedback as admin
+      description: |
+        Update the status of feedback submitted by a user.
+
+        Only feedback in the `new` status can be updated. Updating feedback in any other status fails with `409`.
+
+        Requires the `feedbackAdmin` role.
+      parameters:
+        - name: feedbackID
+          description: ID of the feedback to update.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  description: New status of the feedback.
+                  type: string
+                  enum:
+                    - handled
+                  examples:
+                    - handled
+      responses:
+        "200":
+          description: Feedback updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
 components:
   securitySchemes:
@@ -7238,6 +7413,7 @@ components:
         - canManageAuthorization
         - canManageAssets
         - canManageCourses
+        - canManageFeedback
         - canUsePremiumLLM
       properties:
         canManageAccount:
@@ -7257,6 +7433,11 @@ components:
             - true
         canManageCourses:
           description: Whether the user can manage courses and course series.
+          type: boolean
+          examples:
+            - true
+        canManageFeedback:
+          description: Whether the user can manage feedback.
           type: boolean
           examples:
             - true
@@ -7649,6 +7830,61 @@ components:
           format: int32
           examples:
             - 1
+
+    Feedback:
+      description: Problem report submitted by a user.
+      type: object
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - owner
+        - title
+        - description
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        owner:
+          description: Username of the user who submitted the feedback.
+          $ref: "#/components/schemas/User/properties/username"
+        title:
+          description: Summary of the problem. Must contain at least one non-whitespace character.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - Sprite stops moving after renaming
+        description:
+          description: Details about the problem. Must contain at least one non-whitespace character.
+          type: string
+          minLength: 1
+          maxLength: 2000
+          examples:
+            - After I renamed the sprite, pressing the arrow keys no longer moves it.
+        context:
+          description: |
+            Diagnostic information the user chose to share, captured when the feedback was submitted.
+
+            Its structure is defined by the client.
+          type: object
+          additionalProperties: true
+        status:
+          description: |
+            Processing status of the feedback.
+
+            - `new`: Awaiting administrator processing.
+            - `handled`: Marked as handled by an administrator.
+          type: string
+          enum:
+            - new
+            - handled
+          examples:
+            - new
 
     FileObject:
       description: A content-addressed file object stored in Kodo.

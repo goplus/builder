@@ -4,7 +4,13 @@ import { isAccountAdminRequired, isManagedAdminRole, managedAdminRoles, normaliz
 
 describe('Admin authorization role dependency', () => {
   it('recognizes the admin roles managed by this form', () => {
-    expect(managedAdminRoles).toEqual(['accountAdmin', 'authorizationAdmin', 'assetAdmin', 'courseAdmin'])
+    expect(managedAdminRoles).toEqual([
+      'accountAdmin',
+      'authorizationAdmin',
+      'assetAdmin',
+      'courseAdmin',
+      'feedbackAdmin'
+    ])
     expect(isManagedAdminRole('assetAdmin')).toBe(true)
     expect(isManagedAdminRole('unknownRole')).toBe(false)
   })
