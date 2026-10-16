@@ -3,7 +3,7 @@ package main
 import (
 	"sync"
 
-	"github.com/visualfc/gid"
+	"github.com/goplus/ixgo"
 )
 
 type executionLocation struct {
@@ -27,15 +27,15 @@ func newExecutionTracker(onChange func([]executionLocation)) *executionTracker {
 	}
 }
 
-func (t *executionTracker) enter() {
-	id := gid.Get()
+func (t *executionTracker) enter(_ *ixgo.FuncInfo) {
+	id := ixgo.GoroutineID()
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.depth[id]++
 }
 
 func (t *executionTracker) report(file string, line int) {
-	id := gid.Get()
+	id := ixgo.GoroutineID()
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	location := executionLocation{File: file, Line: line}
@@ -46,8 +46,8 @@ func (t *executionTracker) report(file string, line int) {
 	t.emitLocations()
 }
 
-func (t *executionTracker) leave() {
-	id := gid.Get()
+func (t *executionTracker) leave(_ *ixgo.FuncInfo) {
+	id := ixgo.GoroutineID()
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	depth := t.depth[id] - 1
