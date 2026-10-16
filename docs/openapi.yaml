@@ -1365,6 +1365,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /user/notifications/read:
     put:
       operationId: markAllAuthenticatedUserNotificationsRead
       tags:
