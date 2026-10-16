@@ -129,8 +129,9 @@ func resetAIDefaultTransport() {
 	if aiInteractionAPIEndpoint == "" || aiInteractionAPITokenProvider == nil {
 		return
 	}
-	ai.SetDefaultTransport(wasmtrans.New(
+	base := wasmtrans.New(
 		wasmtrans.WithEndpoint(aiInteractionAPIEndpoint),
 		wasmtrans.WithTokenProvider(aiInteractionAPITokenProvider),
-	))
+	)
+	ai.SetDefaultTransport(newTraceTransport(base, currentTraceHook()))
 }
