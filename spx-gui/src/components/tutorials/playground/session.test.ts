@@ -130,6 +130,7 @@ function makeHarness() {
     executor,
     presentation,
     formatWorkspace,
+    readiness,
     untilReady,
     codeEditor,
     courseSession,
@@ -335,8 +336,10 @@ describe('PlaygroundCourseSession', () => {
       editorState: harness.editorState,
       copilot: harness.copilot as unknown as Copilot,
       presentation: harness.presentation,
-      formatWorkspace: harness.formatWorkspace
+      readiness: harness.readiness,
+      startReporter: new ProgressReporter(() => {})
     })
+    replacement.setCodeEditor(harness.codeEditor)
     cleanups.push(() => replacement.dispose())
     const executor = executorMocks.instances.at(-1)!
     await replacement.start()
