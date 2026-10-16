@@ -6,7 +6,7 @@ tool github.com/goplus/ixgo/cmd/qexp
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/ixgo v1.2.3
+	github.com/goplus/ixgo v1.2.4-0.20261016070941-725937421f76
 	github.com/goplus/mod v0.22.0
 	github.com/goplus/spx/v3 v3.3.0
 )
@@ -27,9 +27,6 @@ require (
 )
 
 replace github.com/goplus/builder/tools/ai => ../ai
-
-// TODO: Use an upstream release containing https://github.com/goplus/ixgo/pull/554.
-replace github.com/goplus/ixgo => github.com/visualfc/ixgo v1.1.5-0.20261016051605-2e7abc927653
 
 // Keep the existing compiler versions: the newer combination indents //line
 // directives, which breaks source location mapping.
