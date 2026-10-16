@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { Course } from '@/apis/course'
+import { isPlaygroundCourse, type Course } from '@/apis/course'
 import { UIDropdown, UIIcon, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 
 defineProps<{
@@ -7,7 +7,10 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
+  /** Edit a Guided Course, whose form is all of it. */
   edit: []
+  /** Open a Playground Course in the Course Editor. */
+  openEditor: []
   remove: []
 }>()
 </script>
@@ -16,6 +19,7 @@ const emit = defineEmits<{
   <UIDropdown trigger="click" placement="bottom-end">
     <template #trigger>
       <div
+        v-radar="{ name: 'course-menu', desc: 'Click to open the actions for the course' }"
         class="corner-menu h-8 w-8 cursor-pointer flex items-center justify-center rounded-full bg-grey-100 text-grey-800 transition-all duration-100 hover:bg-primary-main hover:text-grey-100"
         @click.stop.prevent
       >
@@ -24,14 +28,17 @@ const emit = defineEmits<{
     </template>
     <UIMenu>
       <UIMenuGroup>
-        <UIMenuItem @click="emit('edit')">
+        <UIMenuItem v-if="isPlaygroundCourse(course)" @click="emit('openEditor')">
+          {{ $t({ en: 'Edit course', zh: '编辑课程' }) }}
+        </UIMenuItem>
+        <UIMenuItem v-else @click="emit('edit')">
           {{ $t({ en: 'Edit', zh: '编辑' }) }}
         </UIMenuItem>
       </UIMenuGroup>
 
       <UIMenuGroup>
         <UIMenuItem @click="emit('remove')">
-          {{ $t({ en: 'Remove', zh: '删除' }) }}
+          {{ $t({ en: 'Delete', zh: '删除' }) }}
         </UIMenuItem>
       </UIMenuGroup>
     </UIMenu>

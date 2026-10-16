@@ -16,6 +16,7 @@ const emit = defineEmits<{
   <UIDropdown trigger="click" placement="bottom-end">
     <template #trigger>
       <div
+        v-radar="{ name: 'course-series-menu', desc: 'Click to open the actions for the course series' }"
         class="corner-menu h-8 w-8 cursor-pointer flex items-center justify-center rounded-full bg-grey-100 text-grey-800 transition-all duration-100 hover:bg-primary-main hover:text-grey-100"
         @click.stop.prevent
       >
@@ -31,7 +32,7 @@ const emit = defineEmits<{
 
       <UIMenuGroup>
         <UIMenuItem @click="emit('remove')">
-          {{ $t({ en: 'Remove', zh: '删除' }) }}
+          {{ $t({ en: 'Delete', zh: '删除' }) }}
         </UIMenuItem>
       </UIMenuGroup>
     </UIMenu>

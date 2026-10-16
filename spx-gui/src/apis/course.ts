@@ -22,6 +22,8 @@ export type CourseBase = {
   title: string
   /** Universal URL of the course's thumbnail image */
   thumbnail: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type GuidedCourse = CourseBase & {

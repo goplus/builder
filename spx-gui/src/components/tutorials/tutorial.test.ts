@@ -30,6 +30,8 @@ function makeGuidedCourse(): GuidedCourse {
     kind: 'guided',
     title: 'Guided',
     thumbnail: '',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
     content: { entrypoint: '/tutorials', prompt: 'Learn Builder' }
   }
 }
@@ -41,6 +43,8 @@ function makePlaygroundCourse(): PlaygroundCourse {
     kind: 'playground',
     title: 'Playground',
     thumbnail: '',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
     content: {}
   }
 }

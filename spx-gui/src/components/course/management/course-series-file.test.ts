@@ -94,6 +94,8 @@ const existingCourse: GuidedCourse = {
   kind: 'guided',
   title: 'Course 1',
   thumbnail: 'kodo://bucket/course-thumbnail.png',
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
   content: { entrypoint: '/editor/curator/EntryProject/lesson?tab=code', prompt: 'Prompt' }
 }
 
@@ -312,7 +314,7 @@ describe('exportCourseSeriesFile', () => {
     const manifest = JSON.parse(new TextDecoder().decode(unzipped['course-series.json']!)) as Record<string, any>
     expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual(['curator/EntryProject'])
 
-    await importCourseSeriesFileAsNew(file, 'guided', 'alice')
+    await importCourseSeriesFileAsNew(file, 1, 'alice')
 
     expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
     expect(vi.mocked(addCourse).mock.calls.map(([params]) => (params as GuidedCourse).content.entrypoint)).toEqual([
@@ -328,7 +330,7 @@ describe('importCourseSeriesFile', () => {
 
     await importCourseSeriesFileAsNew(
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
-      'guided',
+      7,
       'alice',
       ctrl.signal
     )
@@ -339,7 +341,7 @@ describe('importCourseSeriesFile', () => {
         title: 'Imported series',
         thumbnail: 'kodo://imported/thumbnails/course-series.png',
         description: 'Imported description',
-        order: 1,
+        order: 7,
         courseIDs: ['imported-course']
       },
       ctrl.signal
@@ -356,7 +358,7 @@ describe('importCourseSeriesFile', () => {
           { fullName: 'Curator/entryproject', name: 'entryproject', path: 'projects/1.xbp' }
         ]
       }),
-      'guided',
+      1,
       'alice'
     )
 
@@ -677,7 +679,7 @@ describe('importCourseSeriesFile when it fails', () => {
 
     const result = await importCourseSeriesFileAsNew(
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
-      'guided',
+      1,
       'alice'
     )
 
@@ -793,21 +795,30 @@ describe('importCourseSeriesFile when it fails', () => {
   it('reads a file written before series had kinds as a guided series', async () => {
     const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', { kind: null })
 
-    await importCourseSeriesFileAsNew(file, 'guided', 'alice')
+    await importCourseSeriesFileAsNew(file, 1, 'alice')
     expect(addCourseSeries).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'guided', courseIDs: ['imported-course'] }),
       undefined
     )
-    await expect(importCourseSeriesFileAsNew(file, 'playground', 'alice')).rejects.toThrow(
-      'holds a Guided course series, which cannot be imported as a Playground one'
-    )
+    await expect(
+      inspectCourseSeriesFileImport({ ...existingSeries, kind: 'playground' }, file, 'alice')
+    ).rejects.toThrow('holds a Guided course series, which cannot be imported as a Playground one')
   })
 
-  it('refuses a file of the other kind', async () => {
+  it('refuses a file of the other kind for an existing series', async () => {
     const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code')
 
-    await expect(importCourseSeriesFileAsNew(file, 'playground', 'alice')).rejects.toThrow(
-      'holds a Guided course series, which cannot be imported as a Playground one'
+    await expect(
+      importCourseSeriesFile({ ...existingSeries, kind: 'playground' }, file, 'alice', writes)
+    ).rejects.toThrow('holds a Guided course series, which cannot be imported as a Playground one')
+    expect(addCourse).not.toHaveBeenCalled()
+  })
+
+  it('refuses a file of an unknown kind', async () => {
+    const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', { kind: 'lecture' })
+
+    await expect(importCourseSeriesFileAsNew(file, 1, 'alice')).rejects.toThrow(
+      'The file holds a course series of an unknown kind'
     )
     expect(addCourse).not.toHaveBeenCalled()
   })
@@ -822,6 +833,8 @@ describe('Playground course series files', () => {
     kind: 'playground',
     title: 'Measure it',
     thumbnail: 'kodo://bucket/course-thumbnail.png',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
     content: {
       'index.json': 'kodo://bucket/index.json',
       'main_course.gox': 'kodo://bucket/main_course.gox',
@@ -855,7 +868,7 @@ describe('Playground course series files', () => {
 
     const result = await importCourseSeriesFileAsNew(
       await makePlaygroundSeriesFile([playgroundCourseFiles('onStart => {\n\tshowVideo "step"\n}')]),
-      'playground',
+      1,
       'alice',
       ctrl.signal
     )
@@ -886,7 +899,7 @@ describe('Playground course series files', () => {
       playgroundCourseFiles('', ['index.json'])
     ])
 
-    await expect(inspectCourseSeriesFileImport(playgroundSeries, 'playground', file, 'alice')).rejects.toThrow(
+    await expect(inspectCourseSeriesFileImport(playgroundSeries, file, 'alice')).rejects.toThrow(
       'The course series file cannot be imported: "Course 0": The course cannot be loaded: file main_course.gox not found; "Course 1": The course cannot be loaded: file index.json not found'
     )
     await expect(importCourseSeriesFile(playgroundSeries, file, 'alice', writes)).rejects.toBeInstanceOf(
@@ -936,12 +949,11 @@ describe('Playground course series files', () => {
   it('reports no projects to overwrite', async () => {
     const inspection = await inspectCourseSeriesFileImport(
       playgroundSeries,
-      'playground',
       await makePlaygroundSeriesFile([playgroundCourseFiles('onStart => {}')]),
       'alice'
     )
 
-    expect(inspection).toEqual({ deletedCourses: ['Course 1'], overwrittenProjects: [] })
+    expect(inspection).toEqual({ kind: 'playground', deletedCourses: ['Course 1'], overwrittenProjects: [] })
   })
 })
 
@@ -1005,12 +1017,12 @@ describe('inspectCourseSeriesFileImport', () => {
 
     const inspection = await inspectCourseSeriesFileImport(
       existingSeries,
-      'guided',
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
       'alice'
     )
 
     expect(inspection).toEqual({
+      kind: 'guided',
       deletedCourses: ['Course 1'],
       overwrittenProjects: ['EntryProject']
     })
@@ -1024,7 +1036,6 @@ describe('inspectCourseSeriesFileImport', () => {
 
     const inspection = await inspectCourseSeriesFileImport(
       null,
-      'guided',
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', {
         projects: [
           { fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' },
