@@ -30,7 +30,7 @@ watch(
     const { project: spxProject, history } = editorState
 
     const project = new SpxCodeEditorProject(spxProject, history)
-    const lspClient = new SpxLSPClient(spxProject)
+    const lspClient = new SpxLSPClient(project)
     lspClient.onPropertyRenamed(({ target, oldName, newName }) => {
       for (const widget of spxProject.stage.widgets) {
         if (widget.type === 'monitor' && widget.target === target && widget.variableName === oldName) {

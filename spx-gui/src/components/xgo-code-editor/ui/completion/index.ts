@@ -149,7 +149,6 @@ export class CompletionController extends Emitter<{
   }
 
   init() {
-    this.addDisposer(() => this.stopCompletion())
     const { editor, monaco } = this.ui
 
     // Forward keydown event (for `CompletionCard`)

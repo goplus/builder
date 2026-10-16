@@ -34,7 +34,7 @@ export namespace xgoGetInputSlots {
 export namespace xgoGetProperties {
   export const command = 'xgo.getProperties'
   type XGoGetPropertiesParams = {
-    /** The target name, `Game` for stage or a specific sprite name. */
+    /** The target type name in the current workspace. */
     target: string
   }
   export type Arguments = [XGoGetPropertiesParams]

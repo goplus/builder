@@ -9,7 +9,7 @@ export namespace xgoPropertyRenamedNotification {
   export const method = 'textDocument/xgo.propertyRenamed'
   export const messageDirection = MessageDirection.serverToClient
   export type Params = {
-    /** The target name (e.g., "Game" for stage, sprite name for sprite) */
+    /** The target type name in the current workspace. */
     target: string
     /** The original name of the property before renaming */
     oldName: string

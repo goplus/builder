@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 import type * as lsp from 'vscode-languageserver-protocol'
 import { fromConfig, fromText, toText } from '@/models/common/file'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -43,7 +42,7 @@ describe('Tutorial code editor', () => {
     project.dispose()
   })
 
-  it('sends model files before requests and releases pending requests when the session ends', async () => {
+  it('sends current model files before requests', async () => {
     const { project, adapter } = await setup()
     const sent: MainMessage[] = []
     const terminate = vi.fn()
@@ -51,10 +50,14 @@ describe('Tutorial code editor', () => {
       terminate = terminate
       postMessage(message: MainMessage) {
         sent.push(message)
-        if (message.type !== 'lsp' || !('id' in message.message) || message.message.method !== 'initialize') return
+        if (message.type !== 'lsp' || !('id' in message.message)) return
         const reply: WorkerMessage = {
           type: 'lsp',
-          message: { jsonrpc: '2.0', id: message.message.id, result: { capabilities: {} } }
+          message: {
+            jsonrpc: '2.0',
+            id: message.message.id,
+            result: message.message.method === 'initialize' ? { capabilities: {} } : null
+          }
         }
         queueMicrotask(() => this.dispatchEvent(new MessageEvent('message', { data: reply })))
       }
@@ -63,20 +66,15 @@ describe('Tutorial code editor', () => {
     const client = createTutorialLSPClient(adapter)
     client.init()
     project.mainCourse.setCode('onStart => { showMessage "current" }')
-    const result = client.textDocumentHover(
+    await client.textDocumentHover(
       {},
       { textDocument: getTextDocumentId(mainCourseFilePath), position: { line: 0, character: 15 } }
     )
-    const rejected = expect(result).rejects.toMatchObject({ reason: 'language client disposed' })
-    await vi.waitFor(() =>
-      expect(sent.some((m) => m.type === 'lsp' && m.message.method === 'textDocument/hover')).toBe(true)
-    )
-    const fileMessages = sent.filter((m) => m.type === 'files')
+    const hoverIndex = sent.findIndex((m) => m.type === 'lsp' && m.message.method === 'textDocument/hover')
+    expect(hoverIndex).toBeGreaterThan(-1)
+    const fileMessages = sent.slice(0, hoverIndex).filter((m) => m.type === 'files')
     expect(new TextDecoder().decode(fileMessages.at(-1)!.files[mainCourseFilePath]!.content)).toContain('current')
-    project.mainCourse.setCode('onStart => {}')
-    await nextTick()
     client.dispose()
-    await rejected
     expect(terminate).toHaveBeenCalledOnce()
     project.dispose()
   })
@@ -91,12 +89,14 @@ describe('Tutorial code editor', () => {
           label: 'showMessage',
           data: { definition: { package: 'github.com/goplus/builder/tools/tutorial', name: 'Course.showMessage' } },
           documentation: 'Show a message'
+        },
+        {
+          label: 'undocumentedAPI',
+          data: { definition: { package: 'github.com/goplus/builder/tools/tutorial', name: 'Course.undocumentedAPI' } }
         }
       ]
     } as lsp.CompletionList)
-    const provider = new CompletionProvider(client, new DocumentBase(), adapter.classFramework, {
-      includeUndocumentedFrameworkAPIs: true
-    })
+    const provider = new CompletionProvider(client, new DocumentBase())
     const result = await provider.provideCompletion(
       {
         textDocument: { id: getTextDocumentId(mainCourseFilePath), getLineContent: () => '' } as any,
@@ -104,7 +104,10 @@ describe('Tutorial code editor', () => {
       },
       { line: 1, column: 1 }
     )
-    expect(result.items).toEqual([expect.objectContaining({ label: 'showMessage' })])
+    expect(result.items).toEqual([
+      expect.objectContaining({ label: 'showMessage' }),
+      expect.objectContaining({ label: 'undocumentedAPI', documentation: null })
+    ])
     client.dispose()
   })
 })

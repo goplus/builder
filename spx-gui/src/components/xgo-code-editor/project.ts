@@ -1,33 +1,8 @@
+import type { ClassFramework } from '@/utils/xgo/gox-mod'
 import type { Files } from '@/models/common/file'
 import type { ICodeOwner } from './text-document'
 
-/**
- * Describes the class framework in use for a project.
- * The fields map directly to `modfile.Project` in the XGo module system.
- * This is the single source of truth for all framework-level structural information.
- */
-export interface ClassFramework {
-  projectClass: {
-    /** File extension for the project class file, e.g. ".spx" */
-    ext: string
-    /** Base class name, e.g. "Game" */
-    className: string
-  }
-  workClasses: Array<{
-    /** File extension for work class files, e.g. ".spx" */
-    ext: string
-    /** Base class name, e.g. "Sprite" */
-    className: string
-    /** Method name prefix (from `class -prefix=T`) */
-    prefix?: string
-    /** Whether instance is embedded into project (from `class -embed`) */
-    embedded?: boolean
-  }>
-  /** Package import paths; pkgPaths[0] is the classfile package itself */
-  pkgPaths: string[]
-  /** Packages auto-imported into every classfile */
-  autoImports: Array<{ name?: string; path: string }>
-}
+export type { ClassFramework } from '@/utils/xgo/gox-mod'
 
 /**
  * The key abstraction that replaces direct SpxProject usage in the Code Editor core.

@@ -73,9 +73,12 @@ language client watches model file exports and waits for file synchronization be
 workspace contains the Course program, without the embedded SPX sources or binary media. No parallel LSP document
 overlay is maintained. The adapter keeps the exported file map stable while the program is unchanged.
 
-The program view owns its code editor and language client. Switching away, entering Preview, or leaving the Course
-Editor releases that view's models, requests, timers, and Worker; returning creates them from the current working
-copy. The program's editor injection stays local to its component tree, independently of the embedded SPX editor.
+The Course Editor session owns its Tutorial Code Editor, language client, documents, and Worker, making language
+services available throughout the authoring UI. Switching authoring views or entering Preview only detaches the
+program editing UI; the authoring workspace continues to track the working copy and is reused on return. Preview
+uses its isolated snapshot and SPX editor without replacing the author's Tutorial workspace. Switching Courses or
+leaving the Course Editor disposes the authoring session. The Tutorial editor is provided
+locally to the Course Editor component tree; embedded and preview SPX editors provide their own editor contexts.
 
 See [Course Editor](./module_CourseEditor.ts).
 

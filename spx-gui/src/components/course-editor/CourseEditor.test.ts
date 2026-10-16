@@ -95,6 +95,16 @@ vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
     render: () => null
   }
 }))
+vi.mock('./code-editor', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./code-editor')>()),
+  useCourseCodeEditor: () => ({
+    data: ref(null),
+    isLoading: ref(false),
+    error: ref(null),
+    progress: ref({ percentage: 0 }),
+    refetch: vi.fn()
+  })
+}))
 vi.mock('./CourseTextDoc.vue', () => ({ default: { name: 'CourseTextDoc', render: () => null } }))
 vi.mock('./CourseConfigDoc.vue', () => ({ default: { name: 'CourseConfigDoc', render: () => null } }))
 vi.mock('./CourseResourceGrid.vue', () => ({ default: { name: 'CourseResourceGrid', render: () => null } }))
