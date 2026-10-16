@@ -22,6 +22,7 @@ export { SpxLSPClient } from './lsp/spx-lsp-client'
 // Spx-specific providers
 export * from './api-reference'
 export * from './diagnostics'
+export * from './completion'
 export * from './input-helper'
 export * from './resource'
 

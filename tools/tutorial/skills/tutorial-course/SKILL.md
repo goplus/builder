@@ -73,14 +73,3 @@ project shows the full SPX editor; ask about that project with the spx-project s
 - **Preview** runs the unsaved working copy through the real learner-side lifecycle. It is the only way to see
   what the program actually does.
 - **Saving** writes the course content; it does not publish anything and does not touch the course's title.
-
-## Program editing assistance
-
-The Course Editor's Program view provides syntax and type diagnostics, API completion, and hover information for
-`main_course.gox`. Feedback follows the current code, including unsaved edits and undo/redo; saving is not required.
-Type an API name or member access to see completions, or hover over an identifier to inspect its type and documentation.
-Use **Format** to format the program, and **Rename** from a symbol's hover or context menu to update its references.
-Formatting and renaming can be undone with the Course Editor's history controls.
-
-Switching views or entering Preview preserves the program in the Course's working copy. Returning to Program starts
-language assistance from that current copy. Preview runs an isolated snapshot and does not change the authored program.

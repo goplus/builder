@@ -1,4 +1,3 @@
-import { Cancelled } from '@/utils/exception'
 import type {
   MessageID,
   NotificationMessage,
@@ -138,7 +137,6 @@ export class XGoLanguageClient {
    * Cleans up client resources.
    */
   dispose(): void {
-    for (const pending of this.pendingRequests.values()) pending.reject(new Cancelled('language client disposed'))
     this.pendingRequests.clear()
     this.notificationHandlers.clear()
   }

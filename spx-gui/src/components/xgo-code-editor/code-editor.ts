@@ -81,9 +81,7 @@ export class CodeEditor extends Disposable {
     this.inlayHintProviderRef = shallowRef(new InlayHintProvider(params.lspClient))
     this.inputHelperProviderRef = shallowRef(new InputHelperProvider(params.lspClient, () => this.resourceAdapter))
     this.apiReferenceProviderRef = shallowRef(new EmptyAPIReferenceProvider())
-    this.completionProviderRef = shallowRef(
-      new CompletionProvider(params.lspClient, documentBase, params.project.classFramework)
-    )
+    this.completionProviderRef = shallowRef(new CompletionProvider(params.lspClient, documentBase))
     this.diagnosticsProviderRef = shallowRef(new DiagnosticsProvider(params.lspClient, params.project))
     this.snippetVariablesProviderRef = shallowRef(new SnippetVariablesProvider())
   }
@@ -203,7 +201,6 @@ export class CodeEditor extends Disposable {
         options: lsp.FormattingOptions.create(formatTabSize, formatInsertSpaces)
       }
     )
-    this.getSignal().throwIfAborted()
     if (edits == null) return
     textDocument.pushEdits(edits.map(fromLSPTextEdit))
   }
@@ -264,7 +261,6 @@ export class CodeEditor extends Disposable {
         newName
       }
     )
-    this.getSignal().throwIfAborted()
     if (edit == null) return
     this.applyWorkspaceEdit(edit)
   }
@@ -272,7 +268,6 @@ export class CodeEditor extends Disposable {
   /** Update code for resource renaming, should be called before model name update */
   async renameResource(resource: ResourceIdentifier, newName: string) {
     const edit = await this.lspClient.workspaceExecuteCommandXGoRenameResources({}, { resource, newName })
-    this.getSignal().throwIfAborted()
     if (edit == null) return
     this.applyWorkspaceEdit(edit)
   }

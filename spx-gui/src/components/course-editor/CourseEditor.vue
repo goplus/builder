@@ -42,6 +42,7 @@ import CourseActivityBar from './CourseActivityBar.vue'
 import CourseConfigDoc from './CourseConfigDoc.vue'
 import CourseResourceGrid from './CourseResourceGrid.vue'
 import CourseTextDoc from './CourseTextDoc.vue'
+import { useCourseCodeEditor } from './code-editor'
 import { useCourseEditorCopilot } from './copilot'
 import { getProjectEditorHost } from './project'
 import { getChangedPaths, getDirtyViews, getViewPath, resolveView, type CourseView } from './course-views'
@@ -84,6 +85,8 @@ const history = new History({
   exportFiles: () => props.project.exportFiles(),
   loadFiles: (files) => props.project.loadFiles(files)
 })
+
+const codeEditorQuery = useCourseCodeEditor(() => props.project, history)
 
 const editPathPrefix = 'edit'
 const previewPathPrefix = 'preview'
@@ -598,7 +601,18 @@ onUnmounted(() => {
           :view="open.view"
           :history="history"
         />
-        <CourseTextDoc v-else :project="project" :history="history" />
+        <template v-else>
+          <UIDetailedLoading
+            v-if="codeEditorQuery.isLoading.value"
+            :percentage="codeEditorQuery.progress.value.percentage"
+          >
+            <span>{{ $t({ en: 'Loading code editor...', zh: '加载代码编辑器中...' }) }}</span>
+          </UIDetailedLoading>
+          <UIError v-else-if="codeEditorQuery.error.value != null" :retry="codeEditorQuery.refetch">
+            {{ $t(codeEditorQuery.error.value.userMessage) }}
+          </UIError>
+          <CourseTextDoc v-else-if="codeEditorQuery.data.value != null" />
+        </template>
       </UICard>
       <!-- Always mounted, so the author's editor state outlives view switches and the preview; the host renders the
            Project Editor UI only while `active`. -->

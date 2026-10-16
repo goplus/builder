@@ -2,12 +2,11 @@ import { shallowRef, watchEffect } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as Sentry from '@sentry/vue'
 import { Cancelled } from '@/utils/exception'
+import { serializeGoxMod, type GoxMod } from '@/utils/xgo/gox-mod'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { timeout, until, untilNotNull } from '@/utils/utils'
-import { extname } from '@/utils/path'
 import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
-import type { Files } from '@/models/common/file'
 import {
   fromLSPRange,
   type DefinitionIdentifier,
@@ -20,7 +19,8 @@ import {
   type ILSPClient,
   type RequestContext,
   type LSPClientEvents,
-  type PropertyRenamedEvent
+  type PropertyRenamedEvent,
+  type IXGoProject
 } from '@/components/xgo-code-editor'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, MessageID, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
@@ -30,8 +30,7 @@ import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } fr
 import type { WorkerHandler } from './worker'
 
 export type XGoLSPClientOptions = {
-  classfileConfig: string
-  sourceExtensions: string[]
+  classFrameworkConfig: GoxMod
 }
 
 interface IConnectionWithFiles extends IConnection {
@@ -46,9 +45,9 @@ function isServerNotInitializedError(error: unknown): error is ResponseError {
 /** Connection between LS client and server when the server runs in a Web Worker. */
 class WorkerConnection implements IConnectionWithFiles {
   private worker: WorkerHandler
-  constructor(options: XGoLSPClientOptions) {
+  constructor(classFrameworkConfig: string) {
     this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
-    this.worker.postMessage({ type: 'configure', classfileConfig: options.classfileConfig })
+    this.worker.postMessage({ type: 'configure', classFrameworkConfig })
   }
   sendMessage(message: RequestMessage | NotificationMessage) {
     this.worker.postMessage({ type: 'lsp', message })
@@ -123,20 +122,31 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
   private emitter = new Emitter<LSPClientEvents>()
 
   constructor(
-    private project: { exportFiles(): Files },
+    private project: IXGoProject,
     private options: XGoLSPClientOptions
   ) {
     super()
     this.addDisposable(this.emitter)
   }
 
-  /** Register a handler for property rename events from the class framework. */
+  private get projectClassName() {
+    return this.options.classFrameworkConfig.projects[0]?.projectClass.className ?? ''
+  }
+
+  /** Register a handler for property rename events; an empty target denotes the project class. */
   onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void) {
     return this.emitter.on('propertyRenamed', handler)
   }
 
   private connection: IConnectionWithFiles | undefined
   private isFilesStale = shallowRef(true)
+
+  private shouldSyncFile(path: string) {
+    if (path.endsWith('.gox') || path.endsWith('.json')) return true
+    return this.options.classFrameworkConfig.projects.some(({ projectClass, workClasses }) =>
+      [projectClass, ...workClasses].some(({ ext }) => ext !== '' && path.endsWith(ext))
+    )
+  }
 
   async loadFiles(signal: AbortSignal) {
     this.isFilesStale.value = true
@@ -145,8 +155,7 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
     await Promise.all(
       Object.entries(files).map(async ([path, file]) => {
         if (file == null) return
-        const ext = extname(path)
-        if (this.options.sourceExtensions.includes(ext)) {
+        if (this.shouldSyncFile(path)) {
           // Binary media is not needed for analysis.
           const ab = await file.arrayBuffer(signal)
           loadedFiles[path] = {
@@ -166,21 +175,20 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
   private activeSpans = new Map<MessageID, Sentry.Span>()
 
   private async prepareRequest() {
-    const lc = await untilNotNull(this.lcRef, this.getSignal())
+    const lc = await untilNotNull(this.lcRef)
     const initializePromise = this.initializePromise ?? this.startInitialize(lc)
     // Typically requests are triggered earlier than file-loading:
     // * file-loading: editor-event -> model-update -> file-loading
     // * request: editor-event -> request
     // Here we add `timeout(0)` to ensure that file-loading triggered before request really starts.
     await timeout(0)
-    await until(() => !this.isFilesStale.value, this.getSignal())
+    await until(() => !this.isFilesStale.value)
     await initializePromise
-    this.getSignal().throwIfAborted()
     return { lc, initializePromise }
   }
 
   init() {
-    this.connection = new WorkerConnection(this.options)
+    this.connection = new WorkerConnection(serializeGoxMod(this.options.classFrameworkConfig))
     this.addDisposer(
       watchEffect(async (cleanUp) => {
         const signal = getCleanupSignal(cleanUp)
@@ -205,7 +213,7 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
     // Register handler for property renamed notifications
     lc.onNotification(xgoPropertyRenamedNotification.method, (params: xgoPropertyRenamedNotification.Params) => {
       this.emitter.emit('propertyRenamed', {
-        target: params.target,
+        target: params.target === this.projectClassName ? '' : params.target,
         oldName: params.oldName,
         newName: params.newName
       })
@@ -281,9 +289,9 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
   }
 
   dispose() {
-    super.dispose()
     this.lcRef.value?.dispose()
     this.connection?.dispose()
+    super.dispose()
   }
 
   private async sendRequest<T>(
@@ -295,8 +303,6 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
     return tracedRequest(
       method,
       async (span: Sentry.Span) => {
-        this.getSignal().throwIfAborted()
-        signal?.throwIfAborted()
         let unlisten: Disposer | undefined
         const ongoingReq = lc.request<T>(method, params)
 
@@ -319,7 +325,7 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
             if (e instanceof ResponseError && e.code === lsp.LSPErrorCodes.RequestCancelled) {
               throw new Cancelled(e.message)
             }
-            if (!(e instanceof Cancelled)) console.warn(`[LSP] ${method} error:`, e, ', params:', params)
+            console.warn(`[LSP] ${method} error:`, e, ', params:', params)
             throw e
           })
           .finally(() => {
@@ -344,9 +350,8 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
     }
   }
 
-  private cancelRequest(id: MessageID) {
-    const lc = this.lcRef.value
-    if (lc == null || this.isDisposed) return
+  private async cancelRequest(id: MessageID) {
+    const lc = await untilNotNull(this.lcRef)
     // The method `$/cancelRequest` is defined in https://github.com/microsoft/vscode-languageserver-node/blob/4c20197acf4c499345a18e79945e706345cbc50f/protocol/src/common/protocol.%24.ts#L46-L58 ,
     // while not exported by package `vscode-languageserver-protocol`.
     lc.notify('$/cancelRequest', { id })
@@ -561,8 +566,8 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
     }))
   }
 
-  /** Get properties for a given target (empty string for stage, sprite name otherwise) */
+  /** Get properties of a named type; an empty target denotes the default project class. */
   async getProperties(ctx: RequestContext, target: string): Promise<Property[]> {
-    return this.workspaceExecuteCommandXGoGetProperties(ctx, { target })
+    return this.workspaceExecuteCommandXGoGetProperties(ctx, { target: target === '' ? this.projectClassName : target })
   }
 }

@@ -24,10 +24,6 @@ export class DiagnosticsController extends Disposable {
 
   init() {
     const refreshDiagnostics = debounce(() => this.diagnosticsMgr.start(), 100)
-    this.addDisposer(() => {
-      refreshDiagnostics.cancel()
-      this.diagnosticsMgr.stop()
-    })
 
     this.addDisposer(
       watch(
