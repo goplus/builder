@@ -12,6 +12,7 @@
         <EditorPanels layout="portrait" />
       </div>
       <UICard
+        ref="spriteRailRef"
         v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
         class="min-w-0 flex-none"
         :style="{ width: `${paneLayout?.spriteRailWidth ?? 104}px` }"
@@ -121,11 +122,19 @@ const isFocusedLayout = computed(() => props.layout === 'focused')
 const isPortraitLayout = computed(() => props.layout === 'portrait')
 const isLargeScreen = useResponsive('desktop-large')
 const previewColumnRef = ref<HTMLElement | null>(null)
+const spriteRailRef = ref<InstanceType<typeof UICard> | null>(null)
+const spriteListEl = computed(() => {
+  const railEl = spriteRailRef.value?.$el as HTMLElement | null
+  return railEl?.querySelector<HTMLElement>('.sprite-list-vertical') ?? null
+})
+const spriteListSize = useContentSize(spriteListEl)
 const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
 const paneLayout = computed(() => {
   const size = editorSize.value
   if (size == null) return null
-  return getPaneLayout(size, project.value.viewportSize, props.layout, isLargeScreen.value)
+  const listEl = spriteListEl.value
+  const scrollbarWidth = listEl != null && spriteListSize.value != null ? listEl.offsetWidth - listEl.clientWidth : 0
+  return getPaneLayout(size, project.value.viewportSize, props.layout, isLargeScreen.value, scrollbarWidth)
 })
 const previewColumnStyle = computed(() => ({ width: `${paneLayout.value?.previewWidth ?? 496}px` }))
 const CONSOLE_LINE_HEIGHT = 16

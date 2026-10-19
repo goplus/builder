@@ -141,7 +141,7 @@ const handleSpriteGenClick = useMessageHandle(
   --editor-sprite-thumbnail-size: 40px;
   --editor-sprite-thumbnail-margin-top: 2px;
   --editor-sprite-thumbnail-margin-bottom: 4px;
-  padding: 12px 0 12px 12px; /* no right padding to allow optional scrollbar */
+  padding: 12px 8px;
   scrollbar-width: thin;
 }
 
@@ -171,7 +171,7 @@ const handleSpriteGenClick = useMessageHandle(
 
 .sprite-list-vertical {
   flex: 1 1 0;
-  padding-left: 8px;
+  scrollbar-gutter: stable;
 }
 
 /* Shadow-like effect */

@@ -1,9 +1,16 @@
 <template>
   <div
     class="flex-[1_1_0] flex"
-    :class="{ 'editor-list-compact': props.resourceType === 'sound' || props.resourceType === 'backdrop' }"
+    :class="{
+      'editor-list-compact':
+        props.resourceType === 'sound' ||
+        props.resourceType === 'backdrop' ||
+        props.resourceType === 'costume' ||
+        props.resourceType === 'animation' ||
+        props.resourceType === 'widget'
+    }"
   >
-    <div class="flex-none flex flex-col border-r border-dividing-line-2">
+    <div class="editor-list-sidebar flex-none flex flex-col border-r border-dividing-line-2">
       <div
         ref="itemsWrapper"
         v-radar="listRadarInfo"
@@ -89,6 +96,19 @@ useDragSortable(sortableList, itemsWrapper, {
 .editor-list-compact {
   --editor-card-corner-inset: 2px;
   --editor-card-corner-icon-size: 14px;
+  --editor-sprite-thumbnail-size: 40px;
+  --editor-sprite-thumbnail-margin-top: 2px;
+  --editor-sprite-thumbnail-margin-bottom: 4px;
+}
+
+.editor-list-compact .editor-list-sidebar {
+  width: 92px;
+}
+
+.editor-list-compact .items {
+  min-width: 0;
+  margin-inline: 0;
+  align-items: center;
 }
 
 .editor-list-compact :deep(.items > .ui-block-item) {
@@ -121,6 +141,13 @@ useDragSortable(sortableList, itemsWrapper, {
 .editor-list-compact :deep(.items > .ui-block-item .backdrop-thumbnail) {
   width: 64px;
   height: 44px;
+}
+
+.editor-list-compact :deep(.items > .ui-block-item .icon-container) {
+  width: 36px;
+  height: 36px;
+  margin-top: 4px;
+  margin-bottom: 6px;
 }
 
 .items {

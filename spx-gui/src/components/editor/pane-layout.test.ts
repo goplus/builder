@@ -60,6 +60,15 @@ describe('editor pane layout', () => {
     expect(result.spriteRailWidth - leftInset - cardsWidth).toBe(leftInset)
   })
 
+  it.each([0, 6, 8, 15])('reserves a %ipx scrollbar gutter outside the portrait sprite columns', (scrollbarWidth) => {
+    const container = { width: 1888, height: 1008 }
+    const overlay = getPaneLayout(container, portrait, 'portrait', true)
+    const result = getPaneLayout(container, portrait, 'portrait', true, scrollbarWidth)
+    expect(result.spriteRailWidth - scrollbarWidth - 8 * 2).toBe(72 * 2 + 6)
+    expect(result.previewWidth - result.spriteRailWidth).toBe(overlay.previewWidth - overlay.spriteRailWidth)
+    expect(result.codeWidth).toBeGreaterThanOrEqual(384)
+  })
+
   it('preserves the minimum code width when the two-column portrait layout needs overflow', () => {
     const result = getPaneLayout({ width: 500, height: 782 }, portrait, 'portrait', true)
     expect(result.spriteRailWidth).toBe(166)
