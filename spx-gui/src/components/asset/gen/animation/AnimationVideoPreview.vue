@@ -284,6 +284,8 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
     seek(getPreviewTimeForDragTarget(target))
   }
   e.preventDefault()
+  const handle = e.currentTarget as HTMLElement
+  handle.setPointerCapture(e.pointerId)
   window.addEventListener('pointermove', handleDragMove)
   window.addEventListener('pointerup', handleDragEnd)
   window.addEventListener('pointercancel', handleDragEnd)
