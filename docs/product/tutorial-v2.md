@@ -53,7 +53,7 @@ One boundary that is easy to confuse: the distinction lies in "who drives the fl
 
 A Course Series organizes a set of Courses into an ordered series, carrying course order and "next course" progression. Courses within one series share the same type; mixing types within a series is not supported for now. A Course belongs to exactly one Course Series: it is created in its series, and leaves it only by being deleted.
 
-Course Gallery remains as designed. Course Admin is a page of the author's Course Series, each opening onto its Courses, where Courses are created, ordered, edited and deleted.
+Course Gallery remains as designed. Course management is a page of the author's Course Series, each opening onto its Courses, where Courses are created, ordered, edited and deleted.
 
 ### Playground Course
 
@@ -142,6 +142,6 @@ Same as the [User Stories in the existing document](./tutorial.md#user-stories):
 
 ## Course Authoring
 
-* **Course Editor**: the editing entry for Playground Courses, where the course data (course project, course code, course assets) is edited. Guided Courses, and the metadata and order of courses and course series, are edited in Course Admin
+* **Course Editor**: the editing entry for Playground Courses, where the course data (course project, course code, course assets) is edited. Guided Courses, and the metadata and order of courses and course series, are edited in course management
 * **Course Preview**: runs the real course flow from a learner's perspective (rather than a separate simulation), supporting single-course preview and whole-series walkthroughs; changes made during preview are not written back into the course data
 * Course data can be exported and imported, fitting different authoring workflows such as local editing

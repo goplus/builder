@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
+import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { useDragSortable } from '@/utils/drag-and-drop'
+import type { CourseKind } from '@/apis/course'
 import { listSignedInUserCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { useDeleteCourse } from '@/stores/course'
 import { useDeleteCourseSeries, useUpdateCourseSeries } from '@/stores/course-series'
@@ -44,6 +45,7 @@ usePageTitle({ en: 'Course management', zh: '课程管理' })
 const i18n = useI18n()
 const m = useMessage()
 const confirm = useConfirmDialog()
+const route = useRoute()
 const router = useRouter()
 const updateCourseSeries = useUpdateCourseSeries()
 const deleteCourse = useDeleteCourse()
@@ -51,11 +53,16 @@ const deleteCourseSeries = useDeleteCourseSeries()
 const fileActions = useCourseSeriesFileActions()
 const invokeSeriesDrawer = useModal(CourseSeriesDrawer)
 
-const kindFilter = useRouteQueryParamStrEnum(
-  'kind',
-  { all: 'all', guided: 'guided', playground: 'playground' } as const,
-  'all'
-)
+// Written like the search and the sort, replacing the history entry instead of adding one.
+const kindFilter = computed<'all' | CourseKind>({
+  get() {
+    const kind = route.query.kind
+    return kind === 'guided' || kind === 'playground' ? kind : 'all'
+  },
+  set(kind) {
+    router.replace({ query: { ...route.query, kind: kind === 'all' ? undefined : kind } })
+  }
+})
 
 function handleKindFilterUpdate(value: string) {
   if (value === 'all' || value === 'guided' || value === 'playground') kindFilter.value = value
@@ -103,6 +110,7 @@ const sections = computed(() => {
 })
 
 const listRef = ref<HTMLElement>()
+const seriesUpdateConcurrency = 5
 
 const handleSorted = useMessageHandle(
   async (oldIndex: number, newIndex: number) => {
@@ -111,9 +119,12 @@ const handleSorted = useMessageHandle(
     reordered.splice(newIndex, 0, moved)
     const { series, updates } = planSeriesOrder(allSeries.value, reordered)
     allSeries.value = series
-    // TODO: Reorder in one request once the backend offers one. Until then each series is updated on its own, and a
-    // failure leaves the others updated.
-    const results = await Promise.allSettled(updates.map(({ id, order }) => updateCourseSeries(id, { order })))
+    // TODO: Reorder in one request once the backend offers one. Until then each series is updated on its own, a few at
+    // a time with the rest queued, and a failure leaves the others updated.
+    const limit = new ConcurrencyLimitController(seriesUpdateConcurrency)
+    const results = await Promise.allSettled(
+      updates.map(({ id, order }) => limit.run(() => updateCourseSeries(id, { order })))
+    )
     if (results.some((result) => result.status === 'rejected')) {
       seriesQueryRet.refetch()
       throw new DefaultException({

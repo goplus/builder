@@ -23,15 +23,17 @@ const contentRef = ref<HTMLElement>()
 const activeKey = ref<string | null>(null)
 const sectionKeys = computed(() => new Set(props.sections.map((section) => section.key)))
 
-function getSectionElements() {
-  return Array.from(contentRef.value?.querySelectorAll<HTMLElement>('[data-section-key]') ?? [])
+/** The elements of the sections, found again only when the sections change, not on each scroll. */
+let sectionElements: HTMLElement[] = []
+function findSectionElements() {
+  sectionElements = Array.from(contentRef.value?.querySelectorAll<HTMLElement>('[data-section-key]') ?? [])
 }
 
 /** The section being looked at: the last whose top has reached the top of the list or of the viewport. */
 function updateActiveKey(scroller: Element | null) {
   const content = contentRef.value
   if (content == null) return
-  const elements = getSectionElements()
+  const elements = sectionElements
   if (scroller != null && scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2) {
     // At the end, a last section too short to reach the top is the one being looked at.
     activeKey.value = elements.at(-1)?.dataset.sectionKey ?? null
@@ -80,15 +82,21 @@ watch(
   { immediate: true }
 )
 
-onMounted(() => updateActiveKey(null))
+onMounted(() => {
+  findSectionElements()
+  updateActiveKey(null)
+})
 watch(
   () => props.sections,
-  () => requestAnimationFrame(() => updateActiveKey(null)),
+  () => {
+    findSectionElements()
+    requestAnimationFrame(() => updateActiveKey(null))
+  },
   { flush: 'post' }
 )
 
 function jumpTo(key: string) {
-  const element = getSectionElements().find((e) => e.dataset.sectionKey === key)
+  const element = sectionElements.find((e) => e.dataset.sectionKey === key)
   if (element == null) return
   activeKey.value = key
   jumpingUntil = Date.now() + 1000

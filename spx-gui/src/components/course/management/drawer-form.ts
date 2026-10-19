@@ -5,6 +5,9 @@ import { useConfirmDialog } from '@/components/ui'
 /**
  * For a drawer holding a form: whether the form has changed since the drawer opened, and asking before closing it
  * would lose the changes. `confirmDiscard` throws `Cancelled` when the author keeps them.
+ *
+ * The values are compared as JSON, so they must survive it unchanged: plain strings, numbers, booleans, arrays and
+ * objects, with keys in a stable order; `undefined`, dates and the like would compare wrongly.
  */
 export function useDrawerFormChanges(getValues: () => unknown) {
   const i18n = useI18n()
