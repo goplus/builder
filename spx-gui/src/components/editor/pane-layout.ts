@@ -35,8 +35,8 @@ function getPreviewWidthForArea(viewport: Size, area: number) {
 export function getPaneLayout(container: Size, viewport: Size, layout: EditorLayout, isLargeScreen = false) {
   const gap = panelGap
   const minCodeWidth = 384
-  // Two 72px cards, a 4px column gap, and 8px padding on each side.
-  const spriteRailWidth = isLargeScreen ? 164 : 104
+  // Two 72px cards, a 6px column gap, and 8px padding on each side.
+  const spriteRailWidth = isLargeScreen ? 166 : 104
   const portraitExtraWidth = layout === 'portrait' ? panelGap + spriteRailWidth : 0
   const minPreviewWidth =
     layout === 'focused' ? 320 : getPreviewWidthForArea(viewport, minPreviewArea) + portraitExtraWidth

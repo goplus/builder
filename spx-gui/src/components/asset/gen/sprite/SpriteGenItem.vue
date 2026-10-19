@@ -22,6 +22,15 @@ const isLoading = computed(() => {
   )
 })
 const highlight = computed(() => props.gen.contentPreparingState.status === 'finished')
+const failed = computed(() =>
+  [
+    props.gen.contentPreparingState,
+    props.gen.imagesGenState,
+    props.gen.enrichState,
+    ...props.gen.costumes.flatMap((gen) => [gen.enrichState, gen.generateState, gen.finishState]),
+    ...props.gen.animations.flatMap((gen) => [gen.enrichState, gen.generateVideoState, gen.finishState])
+  ].some((state) => state.status === 'failed')
+)
 </script>
 
 <template>
@@ -32,6 +41,8 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
     }"
     :loading="isLoading"
     :highlight="highlight"
+    :failed="failed"
+    ai
     :placeholder="spriteSVG"
   >
     <UIBlockItemTitle size="medium" :title="gen.settings.name">{{ gen.settings.name }}</UIBlockItemTitle>

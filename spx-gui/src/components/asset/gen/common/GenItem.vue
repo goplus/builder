@@ -8,12 +8,16 @@ withDefaults(
     loading?: boolean
     /** highlight will highlight the placeholder. */
     highlight?: boolean
+    failed?: boolean
+    ai?: boolean
     placeholder: string
   }>(),
   {
     active: false,
     loading: false,
-    highlight: false
+    highlight: false,
+    failed: false,
+    ai: false
   }
 )
 </script>
@@ -24,7 +28,18 @@ withDefaults(
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>
       <slot v-else name="preview"></slot>
+      <span
+        v-if="failed"
+        class="generation-failure-dot"
+        role="img"
+        :aria-label="$t({ en: 'Generation failed', zh: '生成失败' })"
+      ></span>
     </div>
+    <span v-if="ai" class="generation-ai-marker" aria-hidden="true">
+      <svg viewBox="0 0 12 12">
+        <path d="M6 0 7.5 4.5 12 6 7.5 7.5 6 12 4.5 7.5 0 6 4.5 4.5Z" fill="currentColor" />
+      </svg>
+    </span>
     <slot></slot>
   </UIBlockItem>
 </template>
@@ -73,6 +88,7 @@ withDefaults(
 }
 
 .gen-item .preview-wrapper {
+  position: relative;
   margin-bottom: 5px;
   height: 60px;
   width: 60px;
@@ -85,5 +101,35 @@ withDefaults(
   width: 24px;
   height: 24px;
   color: var(--ui-color-grey-700);
+}
+
+.generation-failure-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  left: calc(50% + 6px);
+  top: calc(50% - 14px);
+  border-radius: 50%;
+  background: var(--ui-color-red-500);
+  outline: 2px solid var(--ui-color-grey-100);
+}
+
+.generation-ai-marker {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px 0 4px 0;
+  color: var(--ui-color-grey-100);
+  background: var(--ui-color-primary-main);
+}
+
+.generation-ai-marker svg {
+  width: 9px;
+  height: 9px;
 }
 </style>

@@ -86,6 +86,11 @@ useDragSortable(sortableList, itemsWrapper, {
 </script>
 
 <style scoped>
+.editor-list-compact {
+  --editor-card-corner-inset: 2px;
+  --editor-card-corner-icon-size: 14px;
+}
+
 .editor-list-compact :deep(.items > .ui-block-item) {
   width: 72px;
   height: 72px;

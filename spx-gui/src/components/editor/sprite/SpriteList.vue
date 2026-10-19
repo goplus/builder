@@ -135,7 +135,9 @@ const handleSpriteGenClick = useMessageHandle(
 <style scoped>
 .sprite-list {
   flex: 1 0 96px; /* 96px: 1 row of sprite items height */
-  column-gap: 4px;
+  column-gap: 6px;
+  --editor-card-corner-inset: 2px;
+  --editor-card-corner-icon-size: 14px;
   --editor-sprite-thumbnail-size: 40px;
   --editor-sprite-thumbnail-margin-top: 2px;
   --editor-sprite-thumbnail-margin-bottom: 4px;
@@ -146,6 +148,20 @@ const handleSpriteGenClick = useMessageHandle(
 .sprite-list :deep(> .ui-block-item) {
   width: 72px;
   height: 72px;
+}
+
+.sprite-list :deep(> .ui-block-item-active) {
+  z-index: 1;
+}
+
+.sprite-list :deep(.generation-ai-marker) {
+  width: 12px;
+  height: 12px;
+}
+
+.sprite-list :deep(.generation-ai-marker svg) {
+  width: 8px;
+  height: 8px;
 }
 
 .sprite-list :deep(.gen-item .preview-wrapper) {
