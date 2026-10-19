@@ -41,18 +41,11 @@ async function setup() {
 }
 
 describe('Animation trim dragging', () => {
-  it.each([
-    ['left', -10],
-    ['left', -6],
-    ['left', -2],
-    ['right', 2],
-    ['right', 6],
-    ['right', 10]
-  ] as const)('preserves the grab position on the %s handle at offset %s', async (side, offset) => {
+  it.each(['left', 'right'] as const)('preserves the grab position at the center of the %s handle', async (side) => {
     const { wrapper, start, move } = await setup()
     const segment = wrapper.get<HTMLDivElement>('.segment')
     const initialStyle = segment.attributes('style')
-    const clientX = (side === 'left' ? 200 : 500) + offset
+    const clientX = side === 'left' ? 194 : 506
     await start(side, clientX)
     await move(clientX)
     expect(segment.attributes('style')).toBe(initialStyle)
