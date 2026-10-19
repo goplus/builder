@@ -1313,9 +1313,9 @@ paths:
         - Notifications
       summary: List notifications for the authenticated user
       description: |
-        List one category of notifications, newest first. The unread count covers the whole category, not only the
-        returned page, and comes from the same snapshot as the page. Reading a notification does not change its
-        position in the list.
+        List one category of notifications, newest first. The total and unread counts cover the whole category, not
+        only the returned page, and come from the same snapshot as the page. Reading a notification does not change
+        its position in the list.
       parameters:
         - name: category
           description: Category of notifications to list.
@@ -1323,14 +1323,8 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/NotificationCategory"
+        - $ref: "#/components/parameters/PageIndex"
         - $ref: "#/components/parameters/PageSize"
-        - name: cursor
-          description: The `nextCursor` value returned by an earlier page of the same category.
-          in: query
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 512
       responses:
         "200":
           description: Successful response.
@@ -1339,10 +1333,12 @@ paths:
               schema:
                 type: object
                 required:
+                  - total
                   - unreadCount
-                  - nextCursor
                   - data
                 properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
                   unreadCount:
                     description: Number of unread notifications in the requested category.
                     type: integer
@@ -1350,13 +1346,6 @@ paths:
                     minimum: 0
                     examples:
                       - 3
-                  nextCursor:
-                    description: Cursor for the next page, or `null` if there are no more notifications.
-                    type:
-                      - string
-                      - "null"
-                    minLength: 1
-                    maxLength: 512
                   data:
                     type: array
                     items:
