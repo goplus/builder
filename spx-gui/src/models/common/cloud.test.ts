@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { createFileURLSignatures, createUploadSession, getFileObject } from '@/apis/file'
 import { capture } from '@/utils/exception'
-import { cloudHelpers, saveFile } from './cloud'
+import { cloudHelpers, saveFile, saveFiles } from './cloud'
 import { fromBlob } from './file'
 
 vi.mock('qiniu-js', () => ({
@@ -182,6 +182,7 @@ describe('saveFile', () => {
     vi.mocked(createDirectUploadTask).mockReturnValue({
       start: vi.fn(),
       cancel: vi.fn(),
+      onProgress: vi.fn(),
       onError: vi.fn(),
       onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
     } as unknown as ReturnType<typeof createDirectUploadTask>)
@@ -202,6 +203,7 @@ describe('saveFile', () => {
     vi.mocked(createDirectUploadTask).mockReturnValue({
       start: vi.fn(),
       cancel: vi.fn(),
+      onProgress: vi.fn(),
       onError: vi.fn(),
       onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
     } as unknown as ReturnType<typeof createDirectUploadTask>)
@@ -211,10 +213,42 @@ describe('saveFile', () => {
     expect(capture).not.toHaveBeenCalled()
   })
 
+  it('reports the bytes of a set of files saved as their uploads go on', async () => {
+    let reportUploadProgress!: (progress: { percent: number }) => void
+    let completeUpload!: (respBody: string) => void
+    vi.mocked(createDirectUploadTask).mockReturnValue({
+      start: vi.fn(),
+      cancel: vi.fn(),
+      onProgress: vi.fn((callback) => (reportUploadProgress = callback)),
+      onError: vi.fn(),
+      onComplete: vi.fn((callback) => (completeUpload = callback))
+    } as unknown as ReturnType<typeof createDirectUploadTask>)
+    const progress: Array<{ loaded: number; total: number }> = []
+    const saving = saveFiles(
+      {
+        // Inlined, as a small text file
+        'index.json': fromBlob('index.json', new Blob(['{}'], { type: 'application/json' })),
+        'assets/step.mp4': fromBlob('step.mp4', new Blob([new Uint8Array(1000)], { type: 'video/mp4' }))
+      },
+      undefined,
+      (p) => progress.push(p)
+    )
+
+    await vi.waitFor(() => expect(reportUploadProgress).toBeDefined())
+    reportUploadProgress({ percent: 0.5 })
+    completeUpload('{"key":"files/step.mp4","hash":"hash"}')
+    await saving
+
+    expect(progress.map(({ total }) => total)).toEqual(progress.map(() => 1002))
+    expect(progress.map(({ loaded }) => loaded)).toEqual(expect.arrayContaining([500 + 2]))
+    expect(progress.at(-1)).toEqual({ loaded: 1002, total: 1002 })
+  })
+
   it('uploads a small file without checking for reuse', async () => {
     vi.mocked(createDirectUploadTask).mockReturnValue({
       start: vi.fn(),
       cancel: vi.fn(),
+      onProgress: vi.fn(),
       onError: vi.fn(),
       onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
     } as unknown as ReturnType<typeof createDirectUploadTask>)

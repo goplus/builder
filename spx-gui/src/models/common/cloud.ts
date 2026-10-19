@@ -176,20 +176,47 @@ async function parseProjectData({ files: fileCollection, thumbnail: thumbnailUni
   return { metadata, files }
 }
 
+/** Bytes of a set of files saved so far, of `total`. */
+export type SaveFilesProgress = {
+  loaded: number
+  total: number
+}
+
 export async function saveFiles(
   files: Files,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onProgress?: (progress: SaveFilesProgress) => void
 ): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
+  const paths = Object.keys(files)
+  let reportFraction: ((index: number, fraction: number) => void) | undefined
+  if (onProgress != null) {
+    const sizes = await Promise.all(paths.map(async (path) => (await files[path]!.arrayBuffer(signal)).byteLength))
+    const total = sizes.reduce((sum, size) => sum + size, 0)
+    const loaded = sizes.map(() => 0)
+    reportFraction = (index, fraction) => {
+      loaded[index] = sizes[index] * fraction
+      onProgress({ loaded: loaded.reduce((sum, bytes) => sum + bytes, 0), total })
+    }
+  }
   const fileCollection = Object.fromEntries(
-    await Promise.all(Object.keys(files).map((path) => saveFileAtPath(path, files[path]!, signal)))
+    await Promise.all(
+      paths.map((path, index) =>
+        saveFileAtPath(path, files[path]!, signal, reportFraction && ((fraction) => reportFraction(index, fraction)))
+      )
+    )
   )
   const fileCollectionHash = await hashFileCollection(fileCollection)
   return { fileCollection, fileCollectionHash }
 }
 
-async function saveFileAtPath(path: string, file: File, signal?: AbortSignal): Promise<[string, UniversalUrl]> {
+async function saveFileAtPath(
+  path: string,
+  file: File,
+  signal?: AbortSignal,
+  onProgress?: (fraction: number) => void
+): Promise<[string, UniversalUrl]> {
   try {
-    return [path, await saveFile(file, signal)]
+    return [path, await saveFile(file, signal, onProgress)]
   } catch (e) {
     if (e instanceof Cancelled) throw e
     throw new ActionException(e, {
@@ -319,13 +346,19 @@ See details in file \`src/apps/xbuilder/.env\`.
 }
 
 /** Save file to cloud and return its universal URL */
-export async function saveFile(file: File, signal?: AbortSignal) {
-  const savedUrl = getUniversalUrl(file)
-  if (savedUrl != null) return savedUrl
-
-  // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
-  const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
-  setUniversalUrl(file, url)
+export async function saveFile(
+  file: File,
+  signal?: AbortSignal,
+  /** Reports the part of the file saved so far, from 0 to 1. */
+  onProgress?: (fraction: number) => void
+) {
+  let url = getUniversalUrl(file)
+  if (url == null) {
+    // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
+    url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal, onProgress))
+    setUniversalUrl(file, url)
+  }
+  onProgress?.(1)
   return url
 }
 
@@ -365,7 +398,7 @@ async function getExistingKodoUrl(file: File, data: ArrayBuffer, signal?: AbortS
 
 const saveToKodoController = new ConcurrencyLimitController(20)
 
-const saveToKodo = (file: File, signal?: AbortSignal) =>
+const saveToKodo = (file: File, signal?: AbortSignal, onProgress?: (fraction: number) => void) =>
   saveToKodoController.run<UniversalUrl>(async () => {
     const ab = await file.arrayBuffer(signal)
     if (ab.byteLength >= minFileSizeForExistingCheck) {
@@ -397,6 +430,7 @@ const saveToKodo = (file: File, signal?: AbortSignal) =>
         task.cancel()
       })
       task.start()
+      task.onProgress((progress) => onProgress?.(progress.percent))
       task.onError(reject)
       task.onComplete((respBody) => {
         if (respBody == null) {

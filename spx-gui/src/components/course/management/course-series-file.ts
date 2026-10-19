@@ -1,7 +1,8 @@
 import dayjs from 'dayjs'
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { extname, filename } from '@/utils/path'
-import { capture, DefaultException } from '@/utils/exception'
+import { forEachConcurrently } from '@/utils/concurrency-limit'
+import { Cancelled, capture, DefaultException } from '@/utils/exception'
 import type { LocaleMessage } from '@/utils/i18n'
 import { getExtFromMime } from '@/utils/file'
 import type { FileCollection } from '@/apis/common'
@@ -12,6 +13,7 @@ import {
   deleteCourse,
   isGuidedCourse,
   isPlaygroundCourse,
+  type AddCourseParams,
   type CourseKind,
   type GuidedCourse,
   type PlaygroundCourse
@@ -43,6 +45,8 @@ import type { UpdateCourseSeries } from '@/stores/course-series'
 import { courseKindNames } from './kind'
 
 const manifestFileName = 'course-series.json'
+/** How many courses are checked, uploaded or created at a time; a course often has many small files. */
+const courseConcurrency = 3
 const format = 'xbuilder-course-series'
 const version = 3
 
@@ -92,56 +96,98 @@ export type CourseSeriesFileImportInspection = {
   overwrittenProjects: string[]
 }
 
-export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?: AbortSignal) {
-  const courses = await Promise.all(courseSeries.courseIDs.map((id) => getCourse(id, signal)))
+export async function exportCourseSeriesFile(
+  courseSeries: CourseSeries,
+  { signal, onProgress }: CourseSeriesFileTaskOptions = {}
+) {
+  let read = 0
+  onProgress?.({ step: 'read', done: read, total: courseSeries.courseIDs.length, bytes: null })
+  const courses = await Promise.all(
+    courseSeries.courseIDs.map(async (id) => {
+      const course = await getCourse(id, signal)
+      onProgress?.({ step: 'read', done: ++read, total: courseSeries.courseIDs.length, bytes: null })
+      return course
+    })
+  )
   const zippable: Zippable = {}
+  const guided = courseSeries.kind === 'guided'
+  const guidedCourses = courses.filter(isGuidedCourse)
+  const playgroundCourses = courses.filter(isPlaygroundCourse)
+  if ((guided ? guidedCourses : playgroundCourses).length !== courses.length) {
+    throw new Error(`${courseSeries.kind} courses expected`)
+  }
+  const projects = collectEntrypointProjects(guidedCourses)
+  const sharingName = findProjectsSharingName(projects)
+  if (sharingName != null) {
+    const { first, second } = sharingName
+    throw new DefaultException({
+      en: `Cannot export the course series: projects ${first} and ${second} have the same name. Rename one of them.`,
+      zh: `无法导出课程系列：项目 ${first} 和 ${second} 同名，请修改其中一个项目的名字`
+    })
+  }
+
+  // Downloads are counted as they finish: thumbnails, then course files or projects.
+  const downloads = {
+    done: 0,
+    total:
+      1 +
+      courses.length +
+      (guided ? projects.length : playgroundCourses.reduce((n, c) => n + Object.keys(c.content).length, 0)),
+    loaded: 0
+  }
+  const reportDownloads = () =>
+    onProgress?.({
+      step: 'download',
+      done: downloads.done,
+      total: downloads.total,
+      bytes: { loaded: downloads.loaded, total: null }
+    })
+  const download: Download = async (path, load) => {
+    const data = await load()
+    zippable[path] = data
+    downloads.done++
+    downloads.loaded += data.byteLength
+    reportDownloads()
+  }
+  reportDownloads()
 
   const courseSeriesThumbnail = await exportThumbnail(
     courseSeries.thumbnail,
     'thumbnails/course-series',
-    zippable,
+    download,
     signal
   )
   let exportedCourses: CourseSeriesFileManifest['courses']
   let exportedProjects: CourseSeriesFileProject[] = []
-  if (courseSeries.kind === 'guided') {
-    if (!courses.every(isGuidedCourse)) throw new Error('Guided courses expected')
+  if (guided) {
     exportedCourses = await Promise.all(
-      courses.map(
+      guidedCourses.map(
         async (course, index): Promise<CourseSeriesFileGuidedCourse> => ({
           title: course.title,
           content: course.content,
-          thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, zippable, signal)
+          thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, download, signal)
         })
       )
     )
-    const projects = collectEntrypointProjects(courses)
-    const sharingName = findProjectsSharingName(projects)
-    if (sharingName != null) {
-      const { first, second } = sharingName
-      throw new DefaultException({
-        en: `Cannot export the course series: projects ${first} and ${second} have the same name. Rename one of them.`,
-        zh: `无法导出课程系列：项目 ${first} 和 ${second} 同名，请修改其中一个项目的名字`
-      })
-    }
     exportedProjects = await Promise.all(
       projects.map(async (project, index): Promise<CourseSeriesFileProject> => {
-        const serialized = await cloudHelpers.load(project.owner, project.name, true, signal)
-        const file = await xbpHelpers.save(serialized, signal)
         const path = `projects/${index}.xbp`
-        zippable[path] = new Uint8Array(await file.arrayBuffer())
+        await download(path, async () => {
+          const serialized = await cloudHelpers.load(project.owner, project.name, true, signal)
+          const file = await xbpHelpers.save(serialized, signal)
+          return new Uint8Array(await file.arrayBuffer())
+        })
         return { fullName: project.fullName, name: project.name, path }
       })
     )
   } else {
-    if (!courses.every(isPlaygroundCourse)) throw new Error('Playground courses expected')
     exportedCourses = await Promise.all(
-      courses.map(async (course, index): Promise<CourseSeriesFilePlaygroundCourse> => {
+      playgroundCourses.map(async (course, index): Promise<CourseSeriesFilePlaygroundCourse> => {
         const files = `courses/${index}`
-        await exportCourseFiles(course.content, files, zippable, signal)
+        await exportCourseFiles(course.content, files, download, signal)
         return {
           title: course.title,
-          thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, zippable, signal),
+          thumbnail: await exportThumbnail(course.thumbnail, `thumbnails/courses/${index}`, download, signal),
           files
         }
       })
@@ -162,6 +208,7 @@ export async function exportCourseSeriesFile(courseSeries: CourseSeries, signal?
   }
   zippable[manifestFileName] = new TextEncoder().encode(JSON.stringify(manifest))
 
+  onProgress?.({ step: 'pack', done: 0, total: 0, bytes: null })
   const zipped = await zip(zippable, { level: 6, signal })
   return new File([zipped], `${courseSeries.title}.xbcs.zip`, { type: 'application/zip' })
 }
@@ -178,70 +225,138 @@ export type CourseSeriesImportResult = {
   undeletedCourseIDs: string[]
 }
 
+/** The steps an import or export of a course series file goes through, as reported to `onProgress`. */
+export type CourseSeriesFileStep =
+  /** Reading the file to import, or the courses to export. */
+  | 'read'
+  /** Checking the courses and projects of the file to import. */
+  | 'check'
+  /** Uploading and creating the projects and courses of the file. */
+  | 'upload'
+  /** Switching the series to the imported courses, after which an import is no longer cancelled. */
+  | 'commit'
+  /** Deleting the courses the series held before. */
+  | 'cleanup'
+  /** Undoing what a failed or cancelled import wrote. */
+  | 'undo'
+  /** Downloading the files of the courses to export. */
+  | 'download'
+  /** Packing the file to export. */
+  | 'pack'
+
+/** Where an import or export of a course series file is. */
+export type CourseSeriesFileProgress = {
+  step: CourseSeriesFileStep
+  /** Items of the step done, of `total`: courses, projects, files or old courses, by step; `total` is 0 if not counted. */
+  done: number
+  total: number
+  /** Bytes moved so far in the step, of `total` when known; null when the step does not count bytes. */
+  bytes: { loaded: number; total: number | null } | null
+}
+
+export type CourseSeriesFileTaskOptions = {
+  signal?: AbortSignal
+  onProgress?: (progress: CourseSeriesFileProgress) => void
+}
+
+export type CourseSeriesFileProblem = {
+  /** Title of the course the problem is with. */
+  course: string
+  problem: LocaleMessage
+}
+
+/** A course series file refused for what is wrong with its courses, all of which are in `problems`. */
+export class CourseSeriesFileProblems extends DefaultException {
+  constructor(readonly problems: CourseSeriesFileProblem[]) {
+    super(describeProblems(problems))
+  }
+}
+
+/** A failed or cancelled import that could not undo all it wrote; the message tells what is left. */
+export class CourseSeriesImportNotUndone extends DefaultException {}
+
+/** A course series file, read and checked by `readCourseSeriesFile`, ready to be imported. */
+export type CourseSeriesFileContent = Awaited<ReturnType<typeof loadCourseSeriesFile>>
+
 /**
- * Replace the courses of `courseSeries` with those of the file. Should it fail before the series holds the imported
- * courses, what it wrote is undone: the series is then as it was.
+ * Read and check a course series file to import, into `courseSeries` or as a new series when it is null, refusing it
+ * with what is wrong before anything is written.
  */
-export async function importCourseSeriesFile(
-  courseSeries: CourseSeries,
+export function readCourseSeriesFile(
   file: globalThis.File,
-  signedInUsername: string,
-  writes: CourseSeriesImportWrites,
-  signal?: AbortSignal
-) {
-  const data = await loadCourseSeriesFile(file, courseSeries.kind, signal)
-  return importCourseSeriesFileData({ courseSeries, writes }, data, signedInUsername, signal)
-}
-
-/** Create a series of the kind the file holds, with the courses of the file. */
-export async function importCourseSeriesFileAsNew(
-  file: globalThis.File,
-  /** The `order` of the new series, which the file does not decide: it is relative to the other series here. */
-  order: number,
-  signedInUsername: string,
-  signal?: AbortSignal
-) {
-  const data = await loadCourseSeriesFile(file, null, signal)
-  return importCourseSeriesFileData({ newSeriesOrder: order }, data, signedInUsername, signal)
-}
-
-/** What importing the file would change: into `courseSeries`, or as a new series when it is null. */
-export async function inspectCourseSeriesFileImport(
   courseSeries: CourseSeries | null,
-  file: globalThis.File,
+  options: CourseSeriesFileTaskOptions = {}
+): Promise<CourseSeriesFileContent> {
+  return loadCourseSeriesFile(file, courseSeries?.kind ?? null, options)
+}
+
+/** What importing `content` would change: into `courseSeries`, or as a new series when it is null. */
+export async function inspectCourseSeriesFileContent(
+  content: CourseSeriesFileContent,
+  courseSeries: CourseSeries | null,
   signedInUsername: string,
   signal?: AbortSignal
 ): Promise<CourseSeriesFileImportInspection> {
-  const data = await loadCourseSeriesFile(file, courseSeries?.kind ?? null, signal)
   const deletedCourses =
     courseSeries == null
       ? []
       : await Promise.all(courseSeries.courseIDs.map(async (id) => (await getCourse(id, signal)).title))
   const overwrittenProjects = await Promise.all(
-    data.manifest.projects.map(async (project) => {
+    content.manifest.projects.map(async (project) => {
       const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
       return existingProject?.name ?? null
     })
   )
   return {
-    kind: data.manifest.courseSeries.kind,
+    kind: content.manifest.courseSeries.kind,
     deletedCourses,
     overwrittenProjects: [...new Set(overwrittenProjects.filter((p) => p != null))]
   }
 }
 
 /**
- * Read a course series file of `kind`, or of any kind when it is null, and refuse it with what is wrong before anything
- * is written. Whatever in the
- * file could break an import is read here: the manifest, every thumbnail, every guided project, and every Playground
- * Course, which is loaded and checked course by course.
+ * Import `content`: into `target.courseSeries`, replacing its courses, or as a new series of `target.newSeriesOrder`.
+ * Should it fail or be cancelled before the series holds the imported courses, what it wrote is undone, and the series
+ * is as it was; from then on it is not cancelled, and runs to the end.
  */
-async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind | null, signal?: AbortSignal) {
+export function importCourseSeriesFileContent(
+  content: CourseSeriesFileContent,
+  target: CourseSeriesImportTarget,
+  signedInUsername: string,
+  options: CourseSeriesFileTaskOptions = {}
+): Promise<CourseSeriesImportResult> {
+  return importCourseSeriesFileData(target, content, signedInUsername, options)
+}
+
+export type CourseSeriesImportTarget =
+  | { courseSeries: CourseSeries; writes: CourseSeriesImportWrites }
+  /** A new series, of the given `order`, which the file does not decide: it is relative to the other series here. */
+  | { newSeriesOrder: number }
+
+/**
+ * Read a course series file of `kind`, or of any kind when it is null, and refuse it with what is wrong before anything
+ * is written. Whatever in the file could break an import is read here: the manifest, every thumbnail, every guided
+ * project, and every Playground Course, which is loaded to be checked.
+ */
+async function loadCourseSeriesFile(
+  file: globalThis.File,
+  kind: CourseKind | null,
+  { signal, onProgress }: CourseSeriesFileTaskOptions
+) {
+  onProgress?.({ step: 'read', done: 0, total: 0, bytes: null })
   const arrayBuffer = await file.arrayBuffer()
-  const unzipped = await unzip(new Uint8Array(arrayBuffer), { signal })
-  const manifest = JSON.parse(
-    new TextDecoder().decode(getRequiredEntry(unzipped, manifestFileName))
-  ) as CourseSeriesFileManifest
+  let unzipped: Record<string, Uint8Array<ArrayBuffer>>
+  let manifest: CourseSeriesFileManifest
+  try {
+    unzipped = await unzip(new Uint8Array(arrayBuffer), { signal })
+    manifest = JSON.parse(new TextDecoder().decode(getRequiredEntry(unzipped, manifestFileName)))
+  } catch (e) {
+    if (e instanceof Cancelled || e instanceof DefaultException) throw e
+    throw new DefaultException({
+      en: 'The file is not a course series file, or it is damaged',
+      zh: '这个文件不是课程系列文件，或者已经损坏'
+    })
+  }
   if (manifest.format !== format || manifest.version !== version) {
     throw new DefaultException({
       en: 'Unsupported course series file format',
@@ -272,7 +387,8 @@ async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind | nu
         zh: '目标式课程不能单独上传新项目，课程的工程应放在课程自己的文件里'
       })
     }
-    return { manifest, unzipped, courseFiles: await loadPlaygroundCourseFiles(manifest, unzipped), projects: [] }
+    const courseFiles = await loadPlaygroundCourseFiles(manifest, unzipped, { signal, onProgress })
+    return { manifest, unzipped, courseFiles, projects: [] }
   }
   for (const course of manifest.courses) {
     if (!('content' in course) || typeof course.content?.entrypoint !== 'string') {
@@ -290,7 +406,8 @@ async function loadCourseSeriesFile(file: globalThis.File, kind: CourseKind | nu
       zh: `无效的课程系列文件：项目 ${first} 和 ${second} 同名，请修改其中一个项目的名字后重新导出`
     })
   }
-  return { manifest, unzipped, courseFiles: [], projects: await loadGuidedProjects(manifest, unzipped) }
+  const projects = await loadGuidedProjects(manifest, unzipped, { signal, onProgress })
+  return { manifest, unzipped, courseFiles: [], projects }
 }
 
 /**
@@ -316,10 +433,14 @@ function projectKey(fullName: string) {
 /** The projects the file holds for its guided courses, in the order of `manifest.projects`. */
 async function loadGuidedProjects(
   manifest: CourseSeriesFileManifest,
-  unzipped: Record<string, Uint8Array<ArrayBuffer>>
+  unzipped: Record<string, Uint8Array<ArrayBuffer>>,
+  { signal, onProgress }: CourseSeriesFileTaskOptions
 ) {
   const projects: ProjectSerialized[] = []
+  const total = manifest.projects.length
+  onProgress?.({ step: 'check', done: 0, total, bytes: null })
   for (const project of manifest.projects) {
+    signal?.throwIfAborted()
     const entry = getRequiredEntry(unzipped, project.path)
     try {
       projects.push(await xbpHelpers.load(new File([entry], `${project.name}.xbp`)))
@@ -330,6 +451,7 @@ async function loadGuidedProjects(
         zh: `无效的课程系列文件：项目“${project.name}”无法读取`
       })
     }
+    onProgress?.({ step: 'check', done: projects.length, total, bytes: null })
   }
   return projects
 }
@@ -340,11 +462,10 @@ async function loadGuidedProjects(
  */
 async function loadPlaygroundCourseFiles(
   manifest: CourseSeriesFileManifest,
-  unzipped: Record<string, Uint8Array<ArrayBuffer>>
+  unzipped: Record<string, Uint8Array<ArrayBuffer>>,
+  { signal, onProgress }: CourseSeriesFileTaskOptions
 ) {
-  const problems: Array<{ course: string; problem: LocaleMessage }> = []
-  const courseFiles: Files[] = []
-  for (const course of manifest.courses) {
+  const courseFiles: Files[] = manifest.courses.map((course) => {
     if (!('files' in course) || typeof course.files !== 'string') {
       throw new DefaultException({
         en: `Invalid course series file: course "${course.title}" has no files`,
@@ -359,25 +480,35 @@ async function loadPlaygroundCourseFiles(
       const coursePath = path.slice(prefix.length)
       files[coursePath] = createLazyFile(filename(coursePath), data)
     }
+    return files
+  })
+
+  const total = manifest.courses.length
+  let done = 0
+  onProgress?.({ step: 'check', done, total, bytes: null })
+  const problems: Array<CourseSeriesFileProblem | null> = manifest.courses.map(() => null)
+  await forEachConcurrently(manifest.courses, courseConcurrency, async (course, index) => {
+    signal?.throwIfAborted()
     const project = new TutorialProject()
     try {
-      await project.loadFiles(files)
+      await project.loadFiles(courseFiles[index])
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
-      problems.push({
+      problems[index] = {
         course: course.title,
         problem: { en: `The course cannot be loaded: ${message}`, zh: `课程无法加载：${message}` }
-      })
+      }
     } finally {
       project.dispose()
     }
-    courseFiles.push(files)
-  }
-  if (problems.length > 0) throw new DefaultException(describeProblems(problems))
+    onProgress?.({ step: 'check', done: ++done, total, bytes: null })
+  })
+  const found = problems.filter((problem) => problem != null)
+  if (found.length > 0) throw new CourseSeriesFileProblems(found)
   return courseFiles
 }
 
-function describeProblems(problems: Array<{ course: string; problem: LocaleMessage }>): LocaleMessage {
+function describeProblems(problems: CourseSeriesFileProblem[]): LocaleMessage {
   const shown = problems.slice(0, 3)
   const more = problems.length - shown.length
   return {
@@ -413,20 +544,52 @@ type ImportChanges = {
  * - after the commit the import stands, and old courses that cannot be deleted are only reported.
  */
 async function importCourseSeriesFileData(
-  target: { courseSeries: CourseSeries; writes: CourseSeriesImportWrites } | { newSeriesOrder: number },
-  { manifest, unzipped, courseFiles, projects }: Awaited<ReturnType<typeof loadCourseSeriesFile>>,
+  target: CourseSeriesImportTarget,
+  { manifest, unzipped, courseFiles, projects }: CourseSeriesFileContent,
   signedInUsername: string,
-  signal?: AbortSignal
+  { signal, onProgress }: CourseSeriesFileTaskOptions
 ): Promise<CourseSeriesImportResult> {
   const into = 'courseSeries' in target ? target : null
   const courseSeries = into?.courseSeries ?? null
   const changes: ImportChanges = { courseIDs: [], createdProjects: [], overwrittenProjects: [] }
   let params: AddCourseSeriesParams
   try {
+    // Files written before projects were told apart ignoring case may hold one project twice, spelled two ways.
+    const projectIndexes = manifest.projects.flatMap((project, index) =>
+      manifest.projects.findIndex((p) => projectKey(p.fullName) === projectKey(project.fullName)) === index
+        ? [index]
+        : []
+    )
+    const courseSizes = await Promise.all(
+      courseFiles.map(async (files) => {
+        const sizes = await Promise.all(
+          Object.values(files).map(async (file) => (file == null ? 0 : (await file.arrayBuffer()).byteLength))
+        )
+        return sizes.reduce((sum, size) => sum + size, 0)
+      })
+    )
+    const uploaded = courseSizes.map(() => 0)
+    const total = projectIndexes.length + manifest.courses.length
+    let done = 0
+    const report = () =>
+      onProgress?.({
+        step: 'upload',
+        done,
+        total,
+        bytes:
+          courseFiles.length === 0
+            ? null
+            : {
+                loaded: uploaded.reduce((sum, bytes) => sum + bytes, 0),
+                total: courseSizes.reduce((sum, size) => sum + size, 0)
+              }
+      })
+    report()
+
     const projectFullNameMap = new Map<string, string>()
-    for (const [index, project] of manifest.projects.entries()) {
-      // Files written before projects were told apart ignoring case may hold one project twice, spelled two ways.
-      if (projectFullNameMap.has(projectKey(project.fullName))) continue
+    for (const index of projectIndexes) {
+      const project = manifest.projects[index]
+      signal?.throwIfAborted()
       const importedFullName = await importProject(
         project,
         projects[index],
@@ -436,35 +599,45 @@ async function importCourseSeriesFileData(
         signal
       )
       projectFullNameMap.set(projectKey(project.fullName), importedFullName)
+      done++
+      report()
     }
 
-    for (const [index, course] of manifest.courses.entries()) {
+    const courseIDs: string[] = []
+    await forEachConcurrently(manifest.courses, courseConcurrency, async (course, index) => {
+      signal?.throwIfAborted()
       const thumbnail = await importThumbnail(course.thumbnail, unzipped, signal)
-      const imported =
+      const courseParams: AddCourseParams =
         'files' in course
-          ? await addCourse(
-              {
-                title: course.title,
-                thumbnail,
-                kind: 'playground',
-                content: (await saveFiles(courseFiles[index], signal)).fileCollection
-              },
-              signal
-            )
-          : await addCourse(
-              {
-                title: course.title,
-                thumbnail,
-                kind: 'guided',
-                content: {
-                  entrypoint: rewriteProjectFullNames(course.content.entrypoint, projectFullNameMap),
-                  prompt: course.content.prompt
-                }
-              },
-              signal
-            )
+          ? {
+              title: course.title,
+              thumbnail,
+              kind: 'playground',
+              content: (
+                await saveFiles(courseFiles[index], signal, ({ loaded }) => {
+                  uploaded[index] = loaded
+                  report()
+                })
+              ).fileCollection
+            }
+          : {
+              title: course.title,
+              thumbnail,
+              kind: 'guided',
+              content: {
+                entrypoint: rewriteProjectFullNames(course.content.entrypoint, projectFullNameMap),
+                prompt: course.content.prompt
+              }
+            }
+      signal?.throwIfAborted()
+      // Not cancelled once sent: a course created by a request cut short would be left out of the undoing, which needs
+      // its ID.
+      const imported = await addCourse(courseParams)
       changes.courseIDs.push(imported.id)
-    }
+      courseIDs[index] = imported.id
+      done++
+      report()
+    })
 
     params = {
       kind: manifest.courseSeries.kind,
@@ -473,18 +646,21 @@ async function importCourseSeriesFileData(
       description: manifest.courseSeries.description,
       // Keep the local sort order because it depends on other course series in the current environment.
       order: 'courseSeries' in target ? target.courseSeries.order : target.newSeriesOrder,
-      courseIDs: changes.courseIDs
+      courseIDs
     }
+    signal?.throwIfAborted()
   } catch (error) {
+    onProgress?.({ step: 'undo', done: 0, total: 0, bytes: null })
     return undoImport(changes, manifest, error)
   }
 
+  // From here on the import is not cancelled: once the series may hold the imported courses, stopping would leave it
+  // part done.
+  onProgress?.({ step: 'commit', done: 0, total: 1, bytes: null })
   let importedCourseSeries: CourseSeries
   try {
     importedCourseSeries =
-      into == null
-        ? await addCourseSeries(params, signal)
-        : await into.writes.updateCourseSeries(into.courseSeries.id, params, signal)
+      into == null ? await addCourseSeries(params) : await into.writes.updateCourseSeries(into.courseSeries.id, params)
   } catch (error) {
     let committed: CourseSeries | null
     try {
@@ -498,14 +674,27 @@ async function importCourseSeriesFileData(
         zh: '无法确认课程系列文件是否已导入，请先查看课程系列再决定是否重新导入。'
       })
     }
-    if (committed == null) return undoImport(changes, manifest, error)
+    if (committed == null) {
+      onProgress?.({ step: 'undo', done: 0, total: 0, bytes: null })
+      return undoImport(changes, manifest, error)
+    }
     importedCourseSeries = committed
   }
 
   const undeletedCourseIDs: string[] = []
   if (into != null) {
     const oldCourseIDs = into.courseSeries.courseIDs
-    const results = await Promise.allSettled(oldCourseIDs.map((courseID) => into.writes.deleteCourse(courseID)))
+    let deleted = 0
+    onProgress?.({ step: 'cleanup', done: deleted, total: oldCourseIDs.length, bytes: null })
+    const results = await Promise.allSettled(
+      oldCourseIDs.map(async (courseID) => {
+        try {
+          await into.writes.deleteCourse(courseID)
+        } finally {
+          onProgress?.({ step: 'cleanup', done: ++deleted, total: oldCourseIDs.length, bytes: null })
+        }
+      })
+    )
     results.forEach((result, index) => {
       if (result.status === 'rejected') undeletedCourseIDs.push(oldCourseIDs[index])
     })
@@ -580,7 +769,7 @@ async function undoImport(changes: ImportChanges, manifest: CourseSeriesFileMani
   }
   if (notUndone.length === 0) throw error
   capture(error, 'failed to import course series file')
-  throw new DefaultException({
+  throw new CourseSeriesImportNotUndone({
     en: `Failed to import the course series file, and some changes could not be undone: ${notUndone.map((m) => m.en).join(', ')}`,
     zh: `导入课程系列文件失败，且以下改动未能还原：${notUndone.map((m) => m.zh).join('、')}`
   })
@@ -620,19 +809,24 @@ async function restoreProject(backup: ProjectData, manifest: CourseSeriesFileMan
   return !releasedByImport || published != null
 }
 
-async function exportCourseFiles(content: FileCollection, dir: string, zippable: Zippable, signal?: AbortSignal) {
+/** Put the data `load` gives at `path` in the file to export, counting it as downloaded. */
+type Download = (path: string, load: () => Promise<Uint8Array<ArrayBuffer>>) => Promise<void>
+
+async function exportCourseFiles(content: FileCollection, dir: string, download: Download, signal?: AbortSignal) {
   await Promise.all(
-    Object.entries(content).map(async ([path, universalUrl]) => {
-      const file = createFileWithUniversalUrl(universalUrl)
-      zippable[`${dir}/${path}`] = new Uint8Array(await file.arrayBuffer(signal))
-    })
+    Object.entries(content).map(([path, universalUrl]) =>
+      download(
+        `${dir}/${path}`,
+        async () => new Uint8Array(await createFileWithUniversalUrl(universalUrl).arrayBuffer(signal))
+      )
+    )
   )
 }
 
 async function exportThumbnail(
   universalUrl: string,
   pathWithoutExt: string,
-  zippable: Zippable,
+  download: Download,
   signal?: AbortSignal
 ): Promise<CourseSeriesFileThumbnail> {
   if (universalUrl === '') {
@@ -645,7 +839,7 @@ async function exportThumbnail(
   const file = createFileWithUniversalUrl(universalUrl)
   const ext = extname(file.name) || `.${getExtFromMime(file.type) ?? 'jpg'}`
   const path = `${pathWithoutExt}${ext}`
-  zippable[path] = new Uint8Array(await file.arrayBuffer(signal))
+  await download(path, async () => new Uint8Array(await file.arrayBuffer(signal)))
   return { path }
 }
 

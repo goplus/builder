@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { ConcurrencyLimitController } from './concurrency-limit'
+import { ConcurrencyLimitController, forEachConcurrently } from './concurrency-limit'
 import { sleep } from './test'
 
 describe('ConcurrencyLimitController', () => {
@@ -310,5 +310,61 @@ describe('ConcurrencyLimitController', () => {
         expect(results).toContain(`task-${i}`)
       }
     })
+  })
+})
+
+describe('forEachConcurrently', () => {
+  function deferred() {
+    let resolve!: () => void
+    let reject!: (e: unknown) => void
+    const promise = new Promise<void>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  it('runs at most the given number of items at a time, each once', async () => {
+    const tasks = Array.from({ length: 5 }, deferred)
+    const started: number[] = []
+    const done = forEachConcurrently(tasks, 2, (task, index) => {
+      started.push(index)
+      return task.promise
+    })
+
+    await Promise.resolve()
+    expect(started).toEqual([0, 1])
+    tasks[1].resolve()
+    await vi.waitFor(() => expect(started).toEqual([0, 1, 2]))
+    tasks[0].resolve()
+    tasks[2].resolve()
+    await vi.waitFor(() => expect(started).toEqual([0, 1, 2, 3, 4]))
+    tasks[3].resolve()
+    tasks[4].resolve()
+    await expect(done).resolves.toBeUndefined()
+  })
+
+  it('starts no more items after a failure, and throws once the started ones settle', async () => {
+    const tasks = Array.from({ length: 4 }, deferred)
+    const started: number[] = []
+    let settled = false
+    const done = forEachConcurrently(tasks, 2, (task, index) => {
+      started.push(index)
+      return task.promise
+    }).finally(() => (settled = true))
+
+    await Promise.resolve()
+    tasks[0].reject(new Error('first'))
+    await Promise.resolve()
+    await Promise.resolve()
+    // The failure does not end the run while item 1 is still going.
+    expect(settled).toBe(false)
+    tasks[1].reject(new Error('second'))
+    await expect(done).rejects.toThrow('first')
+    expect(started).toEqual([0, 1])
+  })
+
+  it('does nothing without items', async () => {
+    await expect(forEachConcurrently([], 3, async () => {})).resolves.toBeUndefined()
   })
 })

@@ -32,3 +32,27 @@ export class ConcurrencyLimitController {
     }
   }
 }
+
+/**
+ * Run `fn` on each item, at most `maxConcurrency` at a time. After a failure no more items are started, and the first
+ * error is thrown once the items already started have settled, so that nothing is still running when it is handled.
+ */
+export async function forEachConcurrently<T>(
+  items: readonly T[],
+  maxConcurrency: number,
+  fn: (item: T, index: number) => Promise<void>
+): Promise<void> {
+  const state: { next: number; failure: { error: unknown } | null } = { next: 0, failure: null }
+  async function work() {
+    while (state.failure == null && state.next < items.length) {
+      const index = state.next++
+      try {
+        await fn(items[index], index)
+      } catch (error) {
+        state.failure ??= { error }
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(maxConcurrency, items.length) }, work))
+  if (state.failure != null) throw state.failure.error
+}

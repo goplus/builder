@@ -147,8 +147,12 @@ const handleEdit = useMessageHandle(async (courseSeries: CourseSeries) => {
 }).fn
 
 const handleImport = useMessageHandle(async () => {
-  await fileActions.importAsNewSeries(getNextSeriesOrder(allSeries.value))
-  seriesQueryRet.refetch()
+  try {
+    await fileActions.importAsNewSeries(getNextSeriesOrder(allSeries.value))
+  } finally {
+    // A cancelled or failed import may have left something its undoing could not.
+    seriesQueryRet.refetch()
+  }
 }).fn
 
 const handleRemove = useMessageHandle(
