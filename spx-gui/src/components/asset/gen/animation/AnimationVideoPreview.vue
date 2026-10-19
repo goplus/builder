@@ -270,6 +270,8 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
   if (rect == null || rect.width <= 0) return
   const videoDuration = videoDurationRef.value
   if (videoDuration == null) return
+  const handle = e.currentTarget as HTMLElement
+  handle.setPointerCapture(e.pointerId)
   shouldNudge.value = false
   const wasPlaying = isPlaying.value
   stop()
@@ -288,8 +290,6 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
     seek(getPreviewTimeForDragTarget(target))
   }
   e.preventDefault()
-  const handle = e.currentTarget as HTMLElement
-  handle.setPointerCapture(e.pointerId)
   window.addEventListener('pointermove', handleDragMove)
   window.addEventListener('pointerup', handleDragEnd)
   window.addEventListener('pointercancel', handleDragEnd)
@@ -310,6 +310,7 @@ function handleDragMove(e: PointerEvent) {
     seek(clamp(time, cutStartRef.value, cutEndRef.value))
     return
   }
+  // Move the original cut boundary by the pointer displacement to preserve the grab offset.
   const time = dragging.initialTime + ((e.clientX - dragging.initialClientX) / dragging.rect.width) * videoDuration
   if (dragging.target === 'start') {
     cutStartRef.value = adjustStartTime(time)

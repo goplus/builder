@@ -31,6 +31,7 @@ async function setup() {
   async function start(side: 'left' | 'right', clientX: number) {
     await wrapper.get(`.segment-marker.${side}`).trigger('pointerdown', { pointerId: 1, clientX })
   }
+  // Start each test with a 1–4s cut range in the 5s video.
   await start('left', 100)
   await move(200)
   await move(200, 'pointerup')
