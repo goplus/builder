@@ -75,6 +75,17 @@ const hoverCardActions = computed<Action[]>(() => {
   ]
 })
 
+const explainAction = computed(() => codeEditorUICtx.ui.resolveAction(hoverCardActions.value[0]))
+
+const handleExplain = useMessageHandle(
+  async () => {
+    const action = explainAction.value
+    if (action == null) return
+    await codeEditorUICtx.ui.executeCommand(action.command, ...action.arguments)
+  },
+  { en: 'Failed to execute command', zh: '执行命令失败' }
+).fn
+
 function hideDropdown() {
   // TODO: proper typing for UIDropdown exposed
   ;(hoverDropdown.value as any)?.setVisible(false)
@@ -107,7 +118,12 @@ function handleMouseUp(e: MouseEvent) {
 </script>
 
 <template>
-  <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
+  <UIDropdown
+    ref="hoverDropdown"
+    placement="bottom-start"
+    :offset="{ x: 0, y: 4 }"
+    :disabled="interactionDisabled || showDescription"
+  >
     <template #trigger>
       <li
         v-radar="{
@@ -122,10 +138,28 @@ function handleMouseUp(e: MouseEvent) {
         @mouseup.passive="handleMouseUp"
         @click="handleInsert"
       >
-        <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">
-          {{ parsed.overview }}
-        </DefinitionOverviewWrapper>
-        <p v-if="showDescription" class="mt-1 line-clamp-2 text-xs text-hint-1">{{ description }}</p>
+        <div :class="{ 'flex items-center gap-2': showDescription }">
+          <DefinitionOverviewWrapper
+            class="overview min-w-0 flex-[1_1_0]"
+            :kind="item.kind"
+            :inlay-hints="parsed.inlayHints"
+          >
+            {{ parsed.overview }}
+          </DefinitionOverviewWrapper>
+          <button
+            v-if="showDescription && explainAction != null"
+            v-radar="{ name: 'Explain API', desc: 'Explain this API with Copilot' }"
+            type="button"
+            class="flex-none cursor-pointer rounded-sm border-0 bg-transparent px-1 py-0.5 text-xs text-hint-1 hover:bg-grey-400 hover:text-title focus-visible:outline-primary-main"
+            :disabled="interactionDisabled"
+            @mousedown.stop
+            @mouseup.stop
+            @click.stop="handleExplain"
+          >
+            {{ explainAction.title }}
+          </button>
+        </div>
+        <p v-if="showDescription" class="mt-1 text-xs text-hint-1">{{ description }}</p>
       </li>
     </template>
     <HoverCard :actions="hoverCardActions" @action="hideDropdown">
