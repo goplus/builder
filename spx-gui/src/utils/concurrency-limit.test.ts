@@ -324,6 +324,13 @@ describe('forEachConcurrently', () => {
     return { promise, resolve, reject }
   }
 
+  it('refuses to run fewer than one item at a time', async () => {
+    const fn = vi.fn(async () => {})
+    await expect(forEachConcurrently([1, 2], 0, fn)).rejects.toThrow(RangeError)
+    await expect(forEachConcurrently([1, 2], Number.NaN, fn)).rejects.toThrow(RangeError)
+    expect(fn).not.toHaveBeenCalled()
+  })
+
   it('runs at most the given number of items at a time, each once', async () => {
     const tasks = Array.from({ length: 5 }, deferred)
     const started: number[] = []

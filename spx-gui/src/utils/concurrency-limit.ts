@@ -42,6 +42,8 @@ export async function forEachConcurrently<T>(
   maxConcurrency: number,
   fn: (item: T, index: number) => Promise<void>
 ): Promise<void> {
+  // Fewer than one at a time would run nothing, and resolve as though every item had run.
+  if (!(maxConcurrency >= 1)) throw new RangeError(`maxConcurrency must be at least 1, not ${maxConcurrency}`)
   const state: { next: number; failure: { error: unknown } | null } = { next: 0, failure: null }
   async function work() {
     while (state.failure == null && state.next < items.length) {

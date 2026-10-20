@@ -87,6 +87,8 @@ const form = useForm({
 const { confirmDiscard } = useDrawerFormChanges(() => form.value)
 
 const handleClose = useMessageHandle(async () => {
+  // A save under way goes on after the drawer closes, and the page would not take in what it saved.
+  if (handleSubmit.isLoading.value) return
   await confirmDiscard()
   emit('cancelled')
 }).fn
@@ -171,7 +173,9 @@ async function submit() {
     </UIForm>
 
     <template #footer>
-      <UIButton type="neutral" @click="handleClose">{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton>
+      <UIButton type="neutral" :disabled="handleSubmit.isLoading.value" @click="handleClose">
+        {{ $t({ en: 'Cancel', zh: '取消' }) }}
+      </UIButton>
       <UIButton
         v-radar="{ name: 'submit-button', desc: 'Click to save the course series' }"
         type="primary"

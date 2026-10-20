@@ -17,11 +17,25 @@ export function useListViewQuery() {
     router.replace({ path, query: { ...route.query, ...query } })
   }
 
+  const readQuery = () => (typeof route.query.q === 'string' ? route.query.q : '')
   /** The search as typed, which filters the list at once and reaches the route once typing pauses. */
-  const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
-  const writeQuery = debounce((q: string) => replaceQuery({ q: q === '' ? undefined : q }), 300)
+  const query = ref(readQuery())
+  let lastWritten = query.value
+  const writeQuery = debounce((q: string) => {
+    if (q === readQuery()) return
+    lastWritten = q
+    replaceQuery({ q: q === '' ? undefined : q })
+  }, 300)
   watch(query, writeQuery)
   onScopeDispose(() => writeQuery.cancel())
+  // The search follows the route when it changes otherwise, as by a link to this page with another search; its own
+  // write, landing after more typing, does not undo that typing.
+  watch(readQuery, (q) => {
+    if (q === lastWritten || q === query.value) return
+    writeQuery.cancel()
+    lastWritten = q
+    query.value = q
+  })
 
   const sortBy = computed<ListSortBy>({
     get() {

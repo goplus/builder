@@ -113,15 +113,22 @@ export const updatedAtIndex: ListIndexEntry[] = [
   { key: 'earlier', label: { en: 'Earlier', zh: '更早' } }
 ]
 
-/** Which period, as the side index names them, `time` falls in, by local calendar, weeks starting on Monday. */
-export function getUpdatedAtPeriod(time: Date, now: Date) {
+/** Which period a time in milliseconds falls in, from `now`: the periods' starts are worked out once for all times. */
+function getUpdatedAtPeriodAt(now: Date) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7))
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-  if (time >= today) return 'today'
-  if (time >= weekStart) return 'thisWeek'
-  if (time >= monthStart) return 'thisMonth'
-  return 'earlier'
+  return (time: number) => {
+    if (time >= today.getTime()) return 'today'
+    if (time >= weekStart.getTime()) return 'thisWeek'
+    if (time >= monthStart.getTime()) return 'thisMonth'
+    return 'earlier'
+  }
+}
+
+/** Which period, as the side index names them, `time` falls in, by local calendar, weeks starting on Monday. */
+export function getUpdatedAtPeriod(time: Date, now: Date) {
+  return getUpdatedAtPeriodAt(now)(time.getTime())
 }
 
 /** `items` from the latest edited, in sections by when they were edited. */
@@ -130,10 +137,18 @@ export function sectionByUpdatedAt<T>(
   getUpdatedAt: (item: T) => string,
   now = new Date()
 ): ListSection<T>[] {
-  const sorted = [...items].sort((a, b) => Date.parse(getUpdatedAt(b)) - Date.parse(getUpdatedAt(a)))
+  const periodOf = getUpdatedAtPeriodAt(now)
+  const dated = items.map((item) => ({ item, time: Date.parse(getUpdatedAt(item)) })).sort((a, b) => b.time - a.time)
+  const byPeriod = new Map<string, T[]>()
+  for (const { item, time } of dated) {
+    const period = periodOf(time)
+    const sectionItems = byPeriod.get(period)
+    if (sectionItems == null) byPeriod.set(period, [item])
+    else sectionItems.push(item)
+  }
   return updatedAtIndex.flatMap(({ key, label }) => {
-    const sectionItems = sorted.filter((item) => getUpdatedAtPeriod(new Date(getUpdatedAt(item)), now) === key)
-    return sectionItems.length === 0 ? [] : [{ key, label, items: sectionItems }]
+    const sectionItems = byPeriod.get(key)
+    return sectionItems == null ? [] : [{ key, label, items: sectionItems }]
   })
 }
 
