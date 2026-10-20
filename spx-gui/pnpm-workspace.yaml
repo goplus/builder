@@ -4,3 +4,4 @@ allowBuilds:
   vue-demi: true
 minimumReleaseAgeExclude:
   - '@xgo-pkgs/spx'
+  - '@ethanlita/fflate@0.8.4'
