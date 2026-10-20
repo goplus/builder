@@ -421,15 +421,16 @@ async function executeRun(action: 'run' | 'rerun') {
   await nextTick()
   const surface = await untilNotNull(projectRunnerSurfaceRef)
   runtime.value.clearOutputs()
-  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
+  runtime.value.setRunning({ mode: 'debug', initializing: true })
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
     runnerState.value = 'running'
     lastFilesHash.value = filesHash
-    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
+    runtime.value.setRunning({ mode: 'debug', initializing: false }, filesHash)
+    runtime.value.emit('didStart')
   } catch (error) {
     runnerState.value = 'running'
-    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false, initializingError: error })
+    runtime.value.setRunning({ mode: 'debug', initializing: false, initializingError: error })
     throw error
   }
 }
@@ -475,7 +476,7 @@ const handleStop = useMessageHandle(
       await surface.stop()
       lastPanicOutput.value = null
       runnerState.value = 'initial'
-      editorCtx.state.runtime.setRunning({ mode: 'none' })
+      runtime.value.setRunning({ mode: 'none' })
     } catch (error) {
       exitGuard.value = 'idle'
       throw error
@@ -487,13 +488,13 @@ const handleStop = useMessageHandle(
 function restoreDebugRuntime() {
   const filesHash = lastFilesHash.value ?? runtime.value.filesHash
   if (runnerState.value === 'loading' || filesHash == null) {
-    editorCtx.state.runtime.setRunning({
+    runtime.value.setRunning({
       mode: 'debug',
       initializing: true
     })
     return false
   }
-  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
+  runtime.value.setRunning({ mode: 'debug', initializing: false }, filesHash)
   return true
 }
 
@@ -501,7 +502,7 @@ function handleFullscreenChange(value: boolean) {
   fullscreen.value = value
   if (value) {
     if (runnerState.value !== 'initial') {
-      editorCtx.state.runtime.setRunning({
+      runtime.value.setRunning({
         mode: 'debug',
         initializing: runnerState.value !== 'running'
       })
@@ -510,7 +511,7 @@ function handleFullscreenChange(value: boolean) {
   }
   if (runnerState.value === 'initial') {
     keepRunnerHostVisibleForOverlay()
-    editorCtx.state.runtime.setRunning({ mode: 'none' })
+    runtime.value.setRunning({ mode: 'none' })
   } else {
     restoreDebugRuntime()
   }

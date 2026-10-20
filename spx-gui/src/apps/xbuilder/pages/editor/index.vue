@@ -41,7 +41,7 @@ import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
-import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import { useRegisterLoading } from '@/utils/readiness'
 import {
   getProjectEditorRouteParams,
   isSameProjectIdentifier,
@@ -54,18 +54,18 @@ import { type LocaleMessage, useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
 import { Exception } from '@/utils/exception'
+import { useScopedRouterWithPathParam } from '@/utils/route'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
-import { EditorState, type IInEditorRouter } from '@/components/editor/editor-state'
+import { EditorState } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
 import type { ProjectSerialized } from '@/models/project'
 import { SpxProject } from '@/models/spx/project'
-import { repeatableParamToPathSegments } from '@/utils/route'
 
 const props = defineProps<{
   ownerNameInput: string
@@ -105,28 +105,7 @@ const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: str
   })
 }
 
-const inEditorRouter: IInEditorRouter = {
-  currentPath: computed(() => repeatableParamToPathSegments(props.inEditorPath)),
-  push: (newPath, options) => {
-    const currentRoute = router.currentRoute.value
-
-    // Vue Router currently calculates the scroll position on every router.push navigation,
-    // which triggers layout recalculations that can negatively impact performance.
-    // See details in https://github.com/vuejs/router/issues/2393.
-    // TODO: We need to monitor the issue and update Vue Router when it is fixed.
-
-    // Vue Router checks if we are already on the same route, and prevents redundant navigation.
-    // So we do not need to check it manually to avoid infinite loops.
-    return router.push({
-      params: {
-        ...currentRoute.params,
-        inEditorPath: newPath
-      },
-      query: currentRoute.query,
-      replace: options?.replace
-    })
-  }
-}
+const inEditorRouter = useScopedRouterWithPathParam('inEditorPath', () => props.inEditorPath)
 
 const stateQueryRet = useQuery(
   async (ctx) => {
@@ -209,7 +188,8 @@ const allQueryRet = useQuery(
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
 
-useRegisterUpdateRouteLoaded(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
+// TODO: Evaluate dropping the error check: it currently keeps consumers waiting until editor context is available.
+useRegisterLoading(() => allQueryRet.isLoading.value || allQueryRet.error.value != null)
 
 const publishProject = usePublishProject()
 

@@ -1,3 +1,4 @@
+import type { IScopedRouter } from '@/utils/route'
 import { computed, defineComponent, nextTick, ref, type PropType, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -14,7 +15,7 @@ import { mockFile } from '@/models/common/test'
 import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
 import type { SignedInState } from '@/stores/user'
 import type * as editing from './editing'
-import { EditMode, EditorState, type IInEditorRouter, type Selected } from './editor-state'
+import { EditMode, EditorState, type Selected } from './editor-state'
 
 function makeCloudHelpers(): editing.CloudHelpers {
   return {
@@ -106,7 +107,7 @@ function makeRouter() {
   return {
     currentPath,
     push: vi.fn().mockResolvedValue(undefined)
-  } satisfies IInEditorRouter
+  } satisfies IScopedRouter
 }
 
 function makeEditorState(
@@ -511,7 +512,7 @@ describe('EditorState', () => {
             path: { type: Array as PropType<string[]>, required: true }
           },
           setup(props) {
-            const inEditorRouter: IInEditorRouter = {
+            const inEditorRouter: IScopedRouter = {
               currentPath: computed(() => props.path),
               push: async (path) => {
                 pushes.push({ id: props.id, path })
@@ -527,7 +528,7 @@ describe('EditorState', () => {
                 return editorState
               },
               { en: 'Failed to load editor', zh: '加载编辑器失败' },
-              { clearDataOnFetch: true }
+              { clearResultOnFetch: true }
             )
             return () => null
           }

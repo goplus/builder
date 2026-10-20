@@ -8,7 +8,7 @@ These are the rules of change.
   relate (run policies and run groups) is deferred to #3509; do not add ad-hoc guards in the framework meanwhile
 - `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long and
   restores `current` afterwards. Only `mustCallCapability` (waiting on the host) and `pause` (waiting on a timer) may
-  call it
+  call it; main-goroutine lifecycle handshakes call the bridge from `Course.Start` without touching the token
 - The contract forbids course code to start goroutines (`go`, `time.AfterFunc`), but nothing stops it, and such
   goroutines run outside the scheduler. Every exported method course code can call must refuse them before doing
   anything else: its first call is `requireRun`, or `mustCallCapability`/`register` (whose own first call is
@@ -36,6 +36,7 @@ These are the rules of change.
 
 # Capabilities and contracts
 
+- Internal `lifecycle_*` handshakes run only from `Course.Start`, outside Course runs: wait for Host capabilities, then acknowledge all start callbacks reaching their first yield or return. They are not author-facing fast/waiting capabilities.
 - Classify every new capability: waiting on the learner or the LLM goes in `capabilityKinds` as `kindWaiting`,
   host-computation-only goes in the test's `fastCapabilities` list. `TestEveryCapabilityIsClassified` enforces this.
   The framework never serializes presentation calls; how overlapping `course.show*` calls behave is the host's policy

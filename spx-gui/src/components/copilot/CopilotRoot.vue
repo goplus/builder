@@ -5,8 +5,8 @@ import { onBeforeUnmount, onUnmounted, toValue, watch, type WatchSource } from '
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
-import { escapeHTML, getStringLengthInCodePoints, unicodeSafeSlice, until } from '@/utils/utils'
-import { useIsRouteLoaded } from '@/utils/route-loading'
+import { escapeHTML, getStringLengthInCodePoints, unicodeSafeSlice } from '@/utils/utils'
+import type { ReadinessScope } from '@/utils/readiness'
 import * as projectApis from '@/apis/project'
 import { projectSearchKeywordMaxLength } from '@/apis/project'
 import { useMessageEvents, useModalEvents } from '@/components/ui'
@@ -155,6 +155,8 @@ The user is now browsing page with path: \`${this.router.currentRoute.value.full
 </script>
 
 <script setup lang="ts">
+const props = defineProps<{ routeReadiness: ReadinessScope }>()
+
 const radar = useRadar()
 const i18n = useI18n()
 const router = useRouter()
@@ -198,12 +200,10 @@ copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider(signedInStateQuery.data))
 copilot.registerContextProvider(new LocationContextProvider(router))
 
-const isRouteLoaded = useIsRouteLoaded()
-
 watch(
   router.currentRoute,
   debounce(async (route) => {
-    await until(isRouteLoaded)
+    await props.routeReadiness.untilReady()
     copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
   }, 100)
 )

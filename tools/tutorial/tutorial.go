@@ -199,8 +199,9 @@ func (p *Course) CompleteWith(message string) {
 	p.courseProgram.mustCallCapability("course_completeWith", contentRequest{Content: message}, nil)
 }
 
-// Start runs the Course program: start the runs of course start, start the
-// dispatcher goroutine, then wait for the Course to end.
+// Start waits for Host capabilities, starts each course-start run through its
+// first yield or return, acknowledges initial effects, then starts the event
+// dispatcher and waits for the Course to end.
 //
 // Course start takes the same path as host events: this is the single trigger
 // that starts every onStart. Author callbacks therefore have exactly two
@@ -225,13 +226,28 @@ func (p *Course) CompleteWith(message string) {
 // the contract does not promise it.
 func (p *Course) Start() {
 	program := &p.courseProgram
-	// The main goroutine starts the course-start runs itself, and only then
-	// starts the dispatcher for host events: the Course logically begins
-	// before it observes the world. If the Course already completed inside
-	// MainEntry, admitRun refuses to start them and no start callback runs.
+	// Terminal paths still wait for existing runs and propagate fatal errors.
+	defer program.awaitShutdown()
+	// MainEntry may already have completed or failed; skip startup in that case.
+	if program.terminated() {
+		return
+	}
+	// Main-goroutine handshakes neither hold locks nor operate the execution token.
+	if err := program.callCapability("lifecycle_waitForHostReady", nil, nil); err != nil {
+		program.recordFatal(err)
+		return
+	}
+	// The main goroutine starts onStart runs before activating Host event delivery:
+	// the Course logically begins before it observes the world.
 	startRuns(program, program.handlerSnapshot().courseStart, struct{}{})
+	if program.terminated() {
+		return
+	}
+	if err := program.callCapability("lifecycle_started", nil, nil); err != nil {
+		program.recordFatal(err)
+		return
+	}
 	events.goLive(program)
-	program.awaitShutdown()
 }
 
 // XGot_Course_Main is the program entry the classfile convention expects,

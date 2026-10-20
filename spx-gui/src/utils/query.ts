@@ -24,6 +24,17 @@ export type QueryRet<T> = {
   refetch: () => void
 }
 
+/** Wraps existing data as a successful QueryRet, preserving reactive sources; refetch is a no-op. */
+export function createResolvedQueryRet<T>(data: WatchSource<T | null>): QueryRet<T> {
+  return {
+    data: computed(() => toValue<T | null>(data)),
+    isLoading: ref(false),
+    error: shallowRef(null),
+    progress: shallowRef({ percentage: 1, timeLeft: null, desc: null }),
+    refetch: () => {}
+  }
+}
+
 /**
  * Source of query triggering.
  * - `auto`: query is triggered automatically for dependencies' change.
@@ -41,8 +52,8 @@ export type QueryContext = {
 }
 
 export type QueryOptions = {
-  /** Clear previous data when a new fetch starts. */
-  clearDataOnFetch?: boolean
+  /** Clear previous data and error when a new fetch starts. */
+  clearResultOnFetch?: boolean
 }
 
 /**
@@ -81,7 +92,10 @@ export function useQuery<T>(
       if (signal.aborted) return
       progress.value = p
     })
-    if (options.clearDataOnFetch) data.value = null
+    if (options.clearResultOnFetch) {
+      data.value = null
+      error.value = null
+    }
     isLoading.value = true
     queryFn({ signal, source, reporter }).then(
       (d) => {

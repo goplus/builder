@@ -102,7 +102,7 @@ For `kind: "playground"`, `startCourse` performs only the global entry work:
 1. navigate to the Course playground root route identified by the Series and Course IDs;
 2. resolve after navigation completes; it does not wait for project loading or XGo startup.
 
-The playground page loads the same Course and Series by route ID, validates the Playground kind and Series membership, and constructs one `TutorialProject`. `CoursePlayground` applies `TutorialProject.config.inEditorPath` to the current route. Project loading, startup, and runtime failures belong to that page.
+The playground page loads the same Course and Series by route ID, validates the Playground kind and Series membership, and constructs one `TutorialProject`. The page applies `TutorialProject.config.inEditorPath` when the URL does not specify an editor path, then renders `CoursePlayground`. Project loading, startup, and runtime failures belong to that page.
 
 When the browser directly opens or refreshes a Course playground URL, the page performs this same local loading flow. The page and Playground runtime use its exact `TutorialProject` instance, so the editor and Course program always observe the same session `SpxProject`.
 
@@ -152,15 +152,15 @@ This is not a general strategy framework. There are two concrete runtime impleme
 
 ## Course playground composition
 
-`CoursePlayground` receives one `TutorialProject` and owns everything whose lifetime is bound to displaying that project:
+`CoursePlayground` receives one borrowed `TutorialProject` and owns the editor and runtime bound to displaying that project:
 
 1. use `tutorialProject.project` as the ownerless, session-local model;
 2. construct `EditorState` without calling `editing.loadProject`;
-3. apply `tutorialProject.config.inEditorPath` through the route-backed editor state from #3416;
+3. synchronize `EditorState` with the host-provided editor path; the host handles the configured initial view;
 4. start effect-free editing;
 5. mount `EditorContextProvider`, `CodeEditorProvider`, and the existing `ProjectEditor`;
 6. create the Playground runtime after the matching editor context and Code Editor are available;
-7. dispose the runtime, `EditorState`, and session project when the component unmounts or its snapshot is replaced.
+7. dispose the runtime and `EditorState` when the component unmounts or its snapshot is replaced; the host disposes its project after the component unmounts.
 
 Readiness is tied to object identity (`editorContext.project === tutorialProject.project`), not merely to a non-null global editor context, so a stale editor cannot serve capabilities during route transitions.
 
@@ -313,13 +313,13 @@ The current prototype validates the central boundary without requiring the publi
 
 - existing callers become simpler and pass only route IDs;
 - Guided-only UI can depend on an internal `GuidedTutorial`, leaving the public facade free of `currentCourse` and `currentSeries`;
-- the Playground page can load exactly one `TutorialProject`, while `CoursePlayground` applies its in-editor path and owns it without widening the global facade;
+- the Playground page can load exactly one `TutorialProject`, while the page initializes its editor path and owns the project without widening the global facade;
 - Course Series Next reuses `startCourse` and needs no Series-specific facade method;
 - a Playground page can construct the existing `EditorState` directly from the embedded `SpxProject` without cloud loading or autosave.
 
 The second prototype adds a deliberately narrow end-to-end runtime example:
 
-- `CoursePlayground` creates one component-local `PlaygroundCourseSession` and starts its Program after the temporary 300ms UI mounting delay (#3533);
+- `CoursePlayground` creates one component-local `PlaygroundCourseSession` and starts its Program in parallel with editor mounting, using the startup handshake described below (#3533);
 - Session starts and retains the non-proactive Copilot Topic; Program runs only `main_course.gox` and owns the executor, event subscriptions and pending capability lifetime;
 - Runtime start, exit, and log signals plus Copilot round completion wait for executor startup before forwarding directly; the Framework queues received events;
 - `showMessage` is represented by route-local blocking presentation, while `complete` and `completeWith` publish a terminal outcome for the page to handle;
@@ -343,3 +343,39 @@ The prototype still exposes implementation questions that do not change the publ
 3. Copilot round completion is currently observed from reactive session state because #3421's explicit round-finish event is not present on this branch. The ownership stays route-local when that event replaces the prototype watch.
 4. The current Copilot Topic can disable proactive event reactions, but this branch does not yet expose #3421's code-helper controls.
 5. Direct refresh intentionally reloads Course data. Guided restoration, by contrast, remains isolated in `GuidedTutorial` session storage rather than serializing unified facade state.
+
+## Playground startup coordination
+
+The executor and Host prepare in parallel. After MainEntry registers callbacks,
+`lifecycle.waitForHostReady` waits for Host capabilities to become usable before
+`onStart` runs. Each callback advances to its first waiting capability or return;
+fast configuration calls wait for Host acknowledgment without yielding. Then
+`lifecycle.started` applies initial configuration effects before revealing
+Playground content and releasing queued Host events.
+
+Initial configuration should precede presentation or Copilot calls in the same
+callback; separate callbacks have no ordering guarantee. Startup does not wait for
+learner interaction or generation to finish. Completion retains Session long
+enough to apply initial effects; leaving, retrying or replacing a Course cancels
+pending handshakes. Preview follows the same flow.
+
+In the current SPX Host, the editor mounts under a cover limited to the main
+content; the Navbar remains visible while dependencies load. Host readiness includes
+Monaco attachment and API Reference loading/rendering;
+initial configuration updates are committed before the cover is removed.
+
+CoursePlayground consumes a Project QueryRet as part of Session construction.
+It combines Session and Monaco preparation progress with separate Course startup
+progress. One loading UI stays mounted throughout preparation.
+Preview wraps its loaded snapshot in a completed QueryRet; its existing loading
+and error feedback remain unchanged.
+
+### Shared readiness scopes
+
+App provides a page Scope around RouterView and passes it to TutorialRoot and
+CopilotRoot. CoursePlayground passes a nested Host Scope to Session, which owns
+startup state, the borrowed CodeEditor reference and runtime errors. The loading
+cover gates the parent page Scope while Host readiness remains independent,
+avoiding a startup dependency cycle. Preview uses the same
+coordination. See the [readiness module README](../../../spx-gui/src/utils/readiness/README.md)
+for its API and behavior.

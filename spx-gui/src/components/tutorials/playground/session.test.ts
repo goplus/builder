@@ -2,6 +2,10 @@ import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
+import { until } from '@/utils/utils'
+import { createReadinessScope } from '@/utils/readiness'
+import { ProgressReporter } from '@/utils/progress'
+import type { CodeEditor } from '@/components/editor/spx-code-editor'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -89,6 +93,7 @@ const cleanups: Array<() => void> = []
 
 afterEach(() => {
   for (const cleanup of cleanups.splice(0)) cleanup()
+  vi.unstubAllGlobals()
 })
 
 function makeHarness() {
@@ -103,13 +108,18 @@ function makeHarness() {
     revealSpotlight: vi.fn().mockResolvedValue(undefined)
   }
   const formatWorkspace = vi.fn().mockResolvedValue(undefined)
+  const readiness = createReadinessScope()
+  const untilReady = vi.spyOn(readiness, 'untilReady').mockResolvedValue(undefined)
   const courseSession = new PlaygroundCourseSession({
     project,
     editorState,
     copilot: copilot as unknown as Copilot,
     presentation,
-    formatWorkspace
+    readiness,
+    startReporter: new ProgressReporter(() => {})
   })
+  const codeEditor = { formatWorkspace, dispose: vi.fn() } as unknown as CodeEditor
+  courseSession.setCodeEditor(codeEditor)
   const executor = executorMocks.instances.at(-1)!
   const harness = {
     project,
@@ -120,6 +130,9 @@ function makeHarness() {
     executor,
     presentation,
     formatWorkspace,
+    readiness,
+    untilReady,
+    codeEditor,
     courseSession,
     getExecutorOptions: () => executor.options
   }
@@ -155,6 +168,50 @@ describe('PlaygroundCourseSession', () => {
     })
   })
 
+  it('waits for editor readiness and startup rendering acknowledgments', async () => {
+    const harness = makeHarness()
+    harness.courseSession.setCodeEditor(null)
+    expect(harness.courseSession.starting).toBe(true)
+    let ready!: () => void
+    harness.untilReady.mockImplementationOnce(() => new Promise<void>((resolve) => (ready = resolve)))
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    const acknowledged = vi.fn()
+    const waiting = Promise.resolve(capabilities.lifecycle_waitForHostReady(null)).then(acknowledged)
+    await Promise.resolve()
+    expect(acknowledged).not.toHaveBeenCalled()
+    expect(harness.untilReady).not.toHaveBeenCalled()
+    harness.courseSession.setCodeEditor(harness.codeEditor)
+    await vi.waitFor(() => expect(harness.untilReady).toHaveBeenCalledOnce())
+    ready()
+    await waiting
+    expect(acknowledged).toHaveBeenCalledOnce()
+    expect(harness.courseSession.starting).toBe(true)
+
+    let rendered!: () => void
+    harness.untilReady.mockImplementationOnce(() => new Promise<void>((resolve) => (rendered = resolve)))
+    const rendering = Promise.resolve(capabilities.lifecycle_started(null)).then(acknowledged)
+    await Promise.resolve()
+    expect(acknowledged).toHaveBeenCalledOnce()
+    rendered()
+    await rendering
+    expect(acknowledged).toHaveBeenCalledTimes(2)
+    expect(harness.courseSession.starting).toBe(false)
+  })
+
+  it.each(['lifecycle_waitForHostReady', 'lifecycle_started'])(
+    'cancels %s on disposal and rejects obsolete lifecycle calls',
+    async (name) => {
+      const harness = makeHarness()
+      harness.untilReady.mockImplementation((signal?: AbortSignal) => until(() => false, signal))
+      const capability = harness.getExecutorOptions().framework!.capabilities[name]
+      const waiting = Promise.resolve(capability(null))
+      const cancelled = expect(waiting).rejects.toThrow('cancelled')
+      harness.courseSession.dispose()
+      await cancelled
+      expect(() => capability(null)).toThrow('cancelled')
+    }
+  )
+
   it('updates the API whitelist', async () => {
     const harness = makeHarness()
     await harness.courseSession.start()
@@ -166,6 +223,16 @@ describe('PlaygroundCourseSession', () => {
     expect(harness.courseSession.apiWhitelist.apis).toEqual(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
   })
 
+  it('observes new starts without replaying the runtime already running at subscription', async () => {
+    const harness = makeHarness()
+    harness.editorRuntime.setRunning({ mode: 'debug', initializing: false }, 'files-hash')
+    await harness.courseSession.start()
+    await nextTick()
+    expect(harness.executor.dispatchEvent).not.toHaveBeenCalled()
+    harness.editorRuntime.emit('didStart')
+    await vi.waitFor(() => expect(harness.executor.dispatchEvent.mock.calls).toEqual([['editor.runtime.start', null]]))
+  })
+
   it('forwards editor and Copilot events in source order', async () => {
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
       queueMicrotask(() => callback(performance.now()))
@@ -175,15 +242,11 @@ describe('PlaygroundCourseSession', () => {
     const harness = makeHarness()
     await harness.courseSession.start()
 
-    harness.editorRuntime.setRunning({ mode: 'debug', initializing: false }, 'files-hash')
-    await nextTick()
-    await vi.waitFor(() => expect(harness.executor.dispatchEvent).toHaveBeenCalledTimes(1))
+    harness.editorRuntime.emit('didStart')
 
     harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: 1, message: 'first' })
     harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Error, time: 2, message: 'ignored' })
     harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: 3, message: 'second' })
-    await vi.waitFor(() => expect(harness.executor.dispatchEvent).toHaveBeenCalledTimes(3))
-
     harness.editorRuntime.emit('didExit', 0)
     harness.copilot.emitRoundComplete({ userMessage: 'help', resultMessages: ['done'] })
 
@@ -202,6 +265,97 @@ describe('PlaygroundCourseSession', () => {
       ]
     ])
     vi.unstubAllGlobals()
+  })
+
+  it('forwards a burst and immediate exit once in append order without flushing the UI', async () => {
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    const harness = makeHarness()
+    await harness.courseSession.start()
+    const count = Runtime.defaultMaxOutputs + 100
+    const expected: unknown[][] = []
+    for (let i = 0; i < count; i++) {
+      const message = `log-${i}`
+      harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: i, message })
+      expected.push(['editor.runtime.log', { log: message }])
+    }
+    harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Error, time: count, message: 'ignored' })
+    harness.editorRuntime.emit('didExit', 0)
+    expected.push(['editor.runtime.exit', { code: 0 }])
+    harness.editorRuntime.clearOutputs()
+    harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: count + 1, message: 'after-clear' })
+    expected.push(['editor.runtime.log', { log: 'after-clear' }])
+
+    await vi.waitFor(() => expect(harness.executor.dispatchEvent.mock.calls).toEqual(expected))
+    expect(harness.editorRuntime.outputSnapshot).toEqual([])
+  })
+
+  it('preserves rapid starts and buffers events in source order until executor startup', async () => {
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    const harness = makeHarness()
+    let finishStartup!: () => void
+    harness.executor.run.mockImplementationOnce(() => new Promise<void>((resolve) => (finishStartup = resolve)))
+    const starting = harness.courseSession.start()
+    await vi.waitFor(() => expect(harness.executor.run).toHaveBeenCalledOnce())
+    harness.editorRuntime.emit('didStart')
+    harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: 1, message: 'first' })
+    harness.editorRuntime.emit('didExit', 0)
+    harness.editorRuntime.emit('didStart')
+    harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: 2, message: 'second' })
+    harness.editorRuntime.emit('didExit', 1)
+    expect(harness.executor.dispatchEvent).not.toHaveBeenCalled()
+
+    finishStartup()
+    await starting
+    await vi.waitFor(() =>
+      expect(harness.executor.dispatchEvent.mock.calls).toEqual([
+        ['editor.runtime.start', null],
+        ['editor.runtime.log', { log: 'first' }],
+        ['editor.runtime.exit', { code: 0 }],
+        ['editor.runtime.start', null],
+        ['editor.runtime.log', { log: 'second' }],
+        ['editor.runtime.exit', { code: 1 }]
+      ])
+    )
+  })
+
+  it('forwards events only to the replacement session', async () => {
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    const harness = makeHarness()
+    let finishStartup!: () => void
+    harness.executor.run.mockImplementationOnce(() => new Promise<void>((resolve) => (finishStartup = resolve)))
+    const starting = harness.courseSession.start()
+    await vi.waitFor(() => expect(harness.executor.run).toHaveBeenCalledOnce())
+    harness.editorRuntime.emit('didStart')
+    harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: 1, message: 'stale' })
+    harness.courseSession.dispose()
+    const replacement = new PlaygroundCourseSession({
+      project: harness.project,
+      editorState: harness.editorState,
+      copilot: harness.copilot as unknown as Copilot,
+      presentation: harness.presentation,
+      readiness: harness.readiness,
+      startReporter: new ProgressReporter(() => {})
+    })
+    replacement.setCodeEditor(harness.codeEditor)
+    cleanups.push(() => replacement.dispose())
+    const executor = executorMocks.instances.at(-1)!
+    await replacement.start()
+    finishStartup()
+    await starting
+    harness.editorRuntime.emit('didStart')
+    harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: 2, message: 'new' })
+    harness.editorRuntime.emit('didExit', 0)
+    await vi.waitFor(() =>
+      expect(executor.dispatchEvent.mock.calls).toEqual([
+        ['editor.runtime.start', null],
+        ['editor.runtime.log', { log: 'new' }],
+        ['editor.runtime.exit', { code: 0 }]
+      ])
+    )
+    expect(harness.executor.dispatchEvent).not.toHaveBeenCalled()
   })
 
   it('drops events waiting for startup when the session is disposed', async () => {
@@ -223,6 +377,32 @@ describe('PlaygroundCourseSession', () => {
     await starting
     expect(harness.executor.dispatchEvent).not.toHaveBeenCalled()
     expect(failed).not.toHaveBeenCalled()
+  })
+
+  it.each(['completion', 'failure'] as const)('drops queued and future events after program %s', async (outcome) => {
+    vi.stubGlobal('requestAnimationFrame', () => 1)
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    const harness = makeHarness()
+    let finishStartup!: () => void
+    harness.executor.run.mockImplementationOnce(() => new Promise<void>((resolve) => (finishStartup = resolve)))
+    const starting = harness.courseSession.start()
+    await vi.waitFor(() => expect(harness.executor.run).toHaveBeenCalledOnce())
+    harness.editorRuntime.emit('didStart')
+    harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: 1, message: 'queued' })
+    harness.editorRuntime.emit('didExit', 0)
+    if (outcome === 'completion') {
+      await harness.getExecutorOptions().framework!.capabilities.course_complete(null)
+    } else {
+      harness.getExecutorOptions().onExit('error')
+    }
+    finishStartup()
+    await starting
+    harness.editorRuntime.emit('didStart')
+    harness.editorRuntime.addOutput({ kind: RuntimeOutputKind.Log, time: 2, message: 'after-disposal' })
+    harness.editorRuntime.emit('didExit', 0)
+    await Promise.resolve()
+    expect(harness.executor.dispatchEvent).not.toHaveBeenCalled()
+    expect(harness.executor.stop).toHaveBeenCalledOnce()
   })
 
   it('provides Copilot generation without adding a learner round', async () => {
@@ -445,6 +625,8 @@ describe('PlaygroundCourseSession', () => {
     expect(harness.courseSession.ruler.enabled).toBe(true)
     harness.courseSession.dispose()
     harness.courseSession.dispose()
+    expect(harness.courseSession.codeEditor).toBeNull()
+    expect(harness.codeEditor.dispose).not.toHaveBeenCalled()
     expect(harness.editorState.dispose).not.toHaveBeenCalled()
     expect(harness.project.isDisposed).toBe(false)
     expect(harness.executor.stop).toHaveBeenCalledOnce()
@@ -476,6 +658,7 @@ describe('PlaygroundCourseSession', () => {
     harness.courseSession.on('failed', failed)
     await expect(harness.courseSession.start()).resolves.toBeUndefined()
     expect(failed).toHaveBeenCalledOnce()
+    expect(harness.courseSession.error).toBe(failed.mock.calls[0][0])
     expect(harness.executor.run).not.toHaveBeenCalled()
     expect(harness.executor.stop).not.toHaveBeenCalled()
     expect(harness.courseSession.isDisposed).toBe(false)
@@ -502,6 +685,7 @@ describe('PlaygroundCourseSession', () => {
     harness.courseSession.on('failed', failed)
     await expect(harness.courseSession.start()).resolves.toBeUndefined()
     expect(failed).toHaveBeenCalledOnce()
+    expect(harness.courseSession.error).toBe(failed.mock.calls[0][0])
   })
 
   it('resolves startup when completion stops the executor during onStart', async () => {

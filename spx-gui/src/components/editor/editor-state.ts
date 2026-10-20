@@ -1,5 +1,5 @@
-import { computed, ref, watch, type Ref, type WatchSource } from 'vue'
-import { shiftPath, type PathSegments } from '@/utils/route'
+import { computed, ref, watch, type WatchSource } from 'vue'
+import { shiftPath, type IScopedRouter, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import type { QueryRet } from '@/utils/query'
@@ -34,18 +34,6 @@ export type Selected =
       sprite: Sprite | null
       spriteSelected: SpriteEditorSelected | null
     }
-
-export type InEditorPushOptions = {
-  /** Whether to replace the current route instead of pushing a new one. Defaults to false. */
-  replace?: boolean
-}
-
-export interface IInEditorRouter {
-  /** The current path segments in the editor. */
-  currentPath: Ref<PathSegments>
-  /** Navigate to a new path in the editor. */
-  push(newPath: PathSegments, options?: InEditorPushOptions): Promise<unknown>
-}
 
 export enum EditMode {
   Default = 'default',
@@ -377,7 +365,7 @@ export class EditorState extends Disposable {
     return pathSegments
   }
 
-  syncWithRouter(router: IInEditorRouter) {
+  syncWithRouter(router: IScopedRouter) {
     // Sync from router to selected state
     this.addDisposer(watch(router.currentPath, (currentPath) => this.selectByRoute(currentPath), { immediate: true }))
 

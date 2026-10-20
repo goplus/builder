@@ -3,13 +3,16 @@
  * Editor for one Playground Course: the course's views, switched from an activity bar, with the embedded project's
  * editor kept mounted throughout, plus saving, unsaved-change tracking, the leave guards and the learner preview.
  */
+import { isEqual } from 'lodash'
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
-import { RouterLink, useRoute, useRouter, type RouteLocationNormalizedGeneric } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
+import { createResolvedQueryRet } from '@/utils/query'
+import { makeChildScopedRouter, path2PathSegments, type IScopedRouter, type PathSegments } from '@/utils/route'
 import { useI18n } from '@/utils/i18n'
 import { getCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
-import { courseEditorPreviewRouteName, courseEditorRouteName, getCourseManagementRoute } from '@/apps/xbuilder/router'
+import { getCourseManagementRoute } from '@/apps/xbuilder/router'
 import { saveFiles } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -41,7 +44,6 @@ import CourseResourceGrid from './CourseResourceGrid.vue'
 import CourseTextDoc from './CourseTextDoc.vue'
 import { useCourseEditorCopilot } from './copilot'
 import { getProjectEditorHost } from './project'
-import { inCourseEditorPathParam, paramToSegments, pathToSegments, segmentsToPath } from './route'
 import { getChangedPaths, getDirtyViews, getViewPath, resolveView, type CourseView } from './course-views'
 
 const props = defineProps<{
@@ -49,6 +51,8 @@ const props = defineProps<{
   series: CourseSeries
   /** The author's working copy, already loaded. Its owner disposes it, not the editor. */
   project: TutorialProject
+  /** Navigation scoped to this Course Editor. */
+  router: IScopedRouter
 }>()
 
 const emit = defineEmits<{
@@ -58,8 +62,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const m = useMessage()
-const route = useRoute()
-const router = useRouter()
 const confirm = useConfirmDialogWithResult()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const copilot = useCopilot()
@@ -86,12 +88,15 @@ const history = new History({
 // Typing in the program is recorded as one step, as long as nothing else is done in between.
 const editProgramAction: Action = { name: { en: 'Update program', zh: '修改程序' }, mergeable: true }
 
-// The open view comes from the route, so it survives reloads and works with browser history. The empty path is the
-// course itself.
-const activePath = computed(() => segmentsToPath(paramToSegments(route.params[inCourseEditorPathParam])))
-const resolved = computed(() => resolveView(activePath.value, config.value.project.root))
+const editPathPrefix = 'edit'
+const previewPathPrefix = 'preview'
+
+const isPreviewRoute = computed(() => props.router.currentPath.value[0] === previewPathPrefix)
+const inEditorRouter = makeChildScopedRouter(props.router, [editPathPrefix])
+const resolved = computed(() => resolveView(inEditorRouter.currentPath.value))
 const open = computed(() => resolved.value.open)
-const isPreviewRoute = computed(() => route.name === courseEditorPreviewRouteName)
+const inProjectEditorRouter = makeChildScopedRouter(inEditorRouter, ['project'])
+const inPreviewRouter = makeChildScopedRouter(props.router, [previewPathPrefix])
 
 // Silent while previewing: there the Copilot belongs to the learner's session and must see what a learner's would.
 useCourseEditorCopilot(
@@ -100,35 +105,23 @@ useCourseEditorCopilot(
   () => isPreviewRoute.value
 )
 
-function courseRouteParams() {
-  return { courseSeriesIdInput: route.params.courseSeriesIdInput, courseIdInput: route.params.courseIdInput }
-}
-
-function openPath(path: string, replace = false) {
-  const location = {
-    name: courseEditorRouteName,
-    params: { ...courseRouteParams(), [inCourseEditorPathParam]: pathToSegments(path) }
-  }
-  return replace ? router.replace(location) : router.push(location)
-}
-
 function openView(view: CourseView) {
-  return openPath(getViewPath(view, config.value.project.root))
+  return props.router.push([editPathPrefix, ...getViewPath(view)])
 }
 
 // Keep the URL saying what is on screen: a path inside a view (a single video, as earlier versions addressed one) or
 // one no view edits is replaced by the path of the view that shows it. Not on the preview route, whose path belongs
 // to the playground.
 watch(
-  () => (isPreviewRoute.value || resolved.value.path === activePath.value ? null : resolved.value.path),
+  () =>
+    isPreviewRoute.value || isEqual([editPathPrefix, ...resolved.value.path], props.router.currentPath.value)
+      ? null
+      : resolved.value.path,
   (target) => {
-    if (target != null) void openPath(target, true)
+    if (target != null) void props.router.push([editPathPrefix, ...target], { replace: true })
   },
   { immediate: true }
 )
-
-/** Cleared on unmount, so work that outlives the editor (modals, snapshot loads) can drop its result. */
-let sessionAlive = true
 
 const dirty = ref(false)
 /** Bumped on every edit, so a save can tell whether edits happened after its snapshot was taken. */
@@ -185,9 +178,10 @@ const handleSave = useMessageHandle(
 const saving = computed(() => handleSave.isLoading.value)
 
 // Preview runs the real Tutorial lifecycle on a snapshot of the author's current work, so learner-side
-// edits and course execution never touch the working copy. It lives on its own route (the playground drives
-// that route's `inEditorPath`); entering and leaving it, also through browser history, drives the state below.
+// edits and course execution never touch the working copy. The playground drives its scoped editor path;
+// entering and leaving preview, also through browser history, drives the state below.
 const preview = shallowRef<TutorialProject | null>(null)
+const previewProjectQueryRet = createResolvedQueryRet(preview)
 // The editor owns every snapshot it hands the playground, which runs it but does not dispose it: one taken off
 // the screen is disposed once the playground has unmounted, and the one on screen when the editor goes, in
 // `onUnmounted`.
@@ -205,7 +199,7 @@ const previewCourseID = ref(props.course.id)
 /** The course the preview is running, assigned once its snapshot has loaded. */
 const previewCourse = shallowRef<PlaygroundCourse>(props.course)
 /** The editing route to return to; null when the preview was entered by URL or history. */
-let routeBeforePreview: string | null = null
+let editorRouteBeforePreview: PathSegments | null = null
 
 /**
  * Starting a preview load takes the next number; leaving the preview bumps it. A load whose number is no longer
@@ -218,7 +212,7 @@ let previewGeneration = 0
  * has left produces must not reach the one they are in now, even when it is the same course entered again.
  */
 function isCurrentPreview(generation: number) {
-  return sessionAlive && generation === previewGeneration
+  return generation === previewGeneration
 }
 
 /**
@@ -248,18 +242,15 @@ const handlePreview = useMessageHandle(
     const snapshot = await loadPreviewSnapshot(++previewGeneration)
     previewError.value = null
     preview.value = snapshot
-    routeBeforePreview = route.fullPath
-    await router.push({
-      name: courseEditorPreviewRouteName,
-      params: { ...courseRouteParams(), inEditorPath: getConfiguredPath(snapshot) }
-    })
+    editorRouteBeforePreview = inEditorRouter.currentPath.value
+    await props.router.push([previewPathPrefix, ...getConfiguredPath(snapshot)])
   },
   { en: 'Failed to start preview', zh: '启动预览失败' }
 )
 
 /** Where a learner starting the course lands, as in-editor path segments. */
 function getConfiguredPath(snapshot: TutorialProject) {
-  return pathToSegments(snapshot.config?.inEditorPath ?? '')
+  return path2PathSegments(snapshot.config?.inEditorPath ?? '')
 }
 
 /**
@@ -269,12 +260,7 @@ function getConfiguredPath(snapshot: TutorialProject) {
  */
 async function openPreviewAtConfiguredPath(snapshot: TutorialProject, generation: number) {
   try {
-    await router.replace({
-      name: courseEditorPreviewRouteName,
-      params: { ...courseRouteParams(), inEditorPath: getConfiguredPath(snapshot) },
-      query: route.query,
-      hash: route.hash
-    })
+    await inPreviewRouter.push(getConfiguredPath(snapshot), { replace: true })
   } catch (error) {
     snapshot.dispose()
     throw error
@@ -294,7 +280,7 @@ async function enterPreviewFromRoute() {
   try {
     const snapshot = await loadPreviewSnapshot(generation)
     // No path inside the project (a typed URL, say): start where a learner would.
-    if (paramToSegments(route.params.inEditorPath).length === 0) await openPreviewAtConfiguredPath(snapshot, generation)
+    if (inPreviewRouter.currentPath.value.length === 0) await openPreviewAtConfiguredPath(snapshot, generation)
     previewError.value = null
     preview.value = snapshot
   } catch (error) {
@@ -429,10 +415,9 @@ watch(
 
 function exitPreview() {
   // Consume the remembered route so a later, URL-entered preview does not reuse a stale target.
-  const target = routeBeforePreview
-  routeBeforePreview = null
-  if (target != null) return router.push(target)
-  return openPath('')
+  const target = editorRouteBeforePreview
+  editorRouteBeforePreview = null
+  return props.router.push([editPathPrefix, ...(target ?? [])])
 }
 
 async function handlePreviewCompleted(completion: PlaygroundCourseCompletion) {
@@ -470,21 +455,7 @@ function confirmDiscardingUnsavedChanges() {
   })
 }
 
-function isThisCourseEditor(location: RouteLocationNormalizedGeneric) {
-  const name = location.name
-  return (
-    (name === courseEditorRouteName || name === courseEditorPreviewRouteName) &&
-    location.params.courseSeriesIdInput === route.params.courseSeriesIdInput &&
-    location.params.courseIdInput === route.params.courseIdInput
-  )
-}
-
-// Editing, preview and document switches of this course are the same session; only leaving it asks about
-// unsaved changes. A global guard is used because the session spans two route records.
-const stopLeaveGuard = router.beforeEach((to, from) => {
-  if (!isThisCourseEditor(from) || isThisCourseEditor(to)) return true
-  return confirmDiscardingUnsavedChanges()
-})
+defineExpose({ confirmDiscardingUnsavedChanges })
 
 // Closing or reloading the tab bypasses the router guard.
 function handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -506,7 +477,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  sessionAlive = false
   // Orphan any preview load in flight. The playground has unmounted by now, so the snapshot on screen can be
   // disposed right away.
   previewGeneration++
@@ -515,7 +485,6 @@ onUnmounted(() => {
   restoreAuthorCopilot()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('keydown', handleSaveShortcut)
-  stopLeaveGuard()
   // With `Cancelled` as the abort reason, `useMessageHandle` treats the rejection as a cancellation (no error toast).
   saveController?.abort(new Cancelled('unmounted'))
 })
@@ -613,8 +582,8 @@ onUnmounted(() => {
         </UIError>
         <CoursePlayground
           v-else-if="preview != null"
-          :project="preview"
-          :in-editor-path="route.params.inEditorPath"
+          :project-query-ret="previewProjectQueryRet"
+          :router="inPreviewRouter"
           @course-completed="handlePreviewCompleted"
           @course-restart="restartPreview"
         />
@@ -645,8 +614,7 @@ onUnmounted(() => {
         :is="projectEditorHost"
         v-model:editor-state="editorState"
         :project="project.project"
-        :root-path="config.project.root"
-        :initial-path="config.inEditorPath"
+        :router="inProjectEditorRouter"
         :history="history"
         :active="!isPreviewRoute && open.view === 'project'"
       />

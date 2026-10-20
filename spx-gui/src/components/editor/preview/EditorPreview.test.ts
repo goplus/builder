@@ -1,5 +1,6 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { Cancelled } from '@/utils/exception'
 import { SpxProject } from '@/models/spx/project'
 import { Runtime } from '../runtime'
 import EditorPreview from './EditorPreview.vue'
@@ -82,13 +83,51 @@ function mountPreview() {
 }
 
 describe('Editor Preview execution lifecycle', () => {
+  it('emits starts only for successful runs and reruns, after updating runtime state', async () => {
+    const { runtime, surface, run, toggleFullscreen } = mountPreview()
+    const started = vi.fn(() => {
+      expect(runtime.running).toEqual({ mode: 'debug', initializing: false })
+      expect(runtime.filesHash).toBe('files-hash')
+    })
+    runtime.on('didStart', started)
+    let finishStartup!: (hash: string) => void
+    run.mockImplementationOnce(() => new Promise<string>((resolve) => (finishStartup = resolve)))
+    const starting = surface.props('onRun')()
+    await flushPromises()
+    expect(runtime.running).toEqual({ mode: 'debug', initializing: true })
+    expect(started).not.toHaveBeenCalled()
+    finishStartup('files-hash')
+    await starting
+    expect(started).toHaveBeenCalledTimes(1)
+    await toggleFullscreen()
+    surface.vm.$emit('exit', 0)
+    expect(started).toHaveBeenCalledTimes(1)
+    await surface.props('onRerun')()
+    expect(started).toHaveBeenCalledTimes(2)
+    await surface.props('onStop')()
+    await surface.props('onRun')()
+    expect(started).toHaveBeenCalledTimes(3)
+  })
+
+  it('does not emit a start for cancelled initialization', async () => {
+    const { runtime, surface, run } = mountPreview()
+    const started = vi.fn()
+    runtime.on('didStart', started)
+    run.mockRejectedValueOnce(new Cancelled('stop'))
+    await expect(surface.props('onRun')()).rejects.toThrow(Cancelled)
+    expect(started).not.toHaveBeenCalled()
+  })
+
   it('keeps the runtime preview open after startup failure until stopped', async () => {
     const { runtime, surface, run } = mountPreview()
+    const started = vi.fn()
+    runtime.on('didStart', started)
     const error = new Error('startup failed')
     run.mockRejectedValueOnce(error)
     await expect(surface.props('onRun')()).rejects.toThrow(error)
     expect(runtime.running).toEqual({ mode: 'debug', initializing: false, initializingError: error })
     expect(runtime.filesHash).toBeNull()
+    expect(started).not.toHaveBeenCalled()
     await surface.props('onStop')()
     expect(runtime.running).toEqual({ mode: 'none' })
   })

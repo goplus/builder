@@ -1,26 +1,29 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import { useQuery } from '@/utils/query'
+import { ProgressCollector, type Progress } from '@/utils/progress'
+import { composeQuery, useQuery, type QueryRet } from '@/utils/query'
+import { useProvideReadiness, useRegisterLoading } from '@/utils/readiness'
 import { useEnsureSignedIn } from '@/utils/user'
-import { type Exception, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
 import { useSignedInStateQuery } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { useCopilot } from '@/components/copilot/context'
 import { useRadar } from '@/utils/radar'
+import type { IScopedRouter } from '@/utils/route'
 import { useSpotlight } from '@/utils/spotlight'
 import type { SpotlightOptions } from '@/utils/tutorial-framework'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import type { ILocalCache } from '@/components/editor/editing'
-import { EditorState, type IInEditorRouter } from '@/components/editor/editor-state'
+import { EditorState } from '@/components/editor/editor-state'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
-import { CodeEditorProvider, loadMonaco, type CodeEditor } from '@/components/editor/spx-code-editor'
+import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { UIDetailedLoading, UIError, UIMenuGroup, UIMenuItem, useModal } from '@/components/ui'
 import { useSaveProjectAs } from '@/components/project'
 
@@ -28,11 +31,11 @@ import type { PlaygroundCourseCompletion } from './program'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 import CoursePlaygroundVideoModal from './CoursePlaygroundVideoModal.vue'
 import { PlaygroundCourseSession } from './session'
-import { repeatableParamToPathSegments } from '@/utils/route'
 
 const props = defineProps<{
-  project: TutorialProject
-  inEditorPath: string | string[]
+  projectQueryRet: QueryRet<TutorialProject>
+  /** Navigation scoped to this Course Playground. */
+  router: IScopedRouter
 }>()
 
 const emit = defineEmits<{
@@ -41,7 +44,7 @@ const emit = defineEmits<{
 }>()
 
 const i18n = useI18n()
-const router = useRouter()
+const globalRouter = useRouter()
 const copilot = useCopilot()
 const radar = useRadar()
 const spotlight = useSpotlight()
@@ -55,21 +58,28 @@ const handleSaveAsMyProject = useMessageHandle(
     await ensureSignedIn()
     // A learning result is a plain SPX project. Generated editor state is
     // intentionally course-local and must not be copied into the user's project.
-    const snapshot = await props.project.project.export()
+    const project = session.value?.project
+    if (project == null) return
+    const snapshot = await project.project.export()
     const name = await saveProjectAs(snapshot)
-    await router.push(getOwnProjectEditorRoute(name))
+    await globalRouter.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to save project', zh: '保存项目失败' }
 ).fn
 
-const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
-  en: 'Failed to load code editor',
-  zh: '加载代码编辑器失败'
-})
+const monacoQueryRet = useQuery(
+  async (ctx) => {
+    const lang = i18n.lang.value
+    ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
+    const monaco = await loadMonaco(lang)
+    ctx.reporter.report(1)
+    return monaco
+  },
+  { en: 'Failed to load code editor', zh: '加载代码编辑器失败' }
+)
 
 const openMessage = useModal(CoursePlaygroundMessageModal)
 const openVideo = useModal(CoursePlaygroundVideoModal)
-const codeEditor = shallowRef<CodeEditor | null>(null)
 
 const presentation = {
   showPrelude(content: string, signal: AbortSignal) {
@@ -79,7 +89,7 @@ const presentation = {
     return openMessage({ content, kind: 'message' }, { signal })
   },
   showVideo(videoName: string, signal: AbortSignal) {
-    const video = props.project.videos.find((video) => video.name === videoName)
+    const video = session.value?.project.videos.find((video) => video.name === videoName)
     if (video == null) throw new Error(`Video ${videoName} not found`)
     return openVideo({ video }, { signal })
   },
@@ -101,85 +111,85 @@ const noLocalCache: ILocalCache = {
   async clear() {}
 }
 
-const inEditorRouter: IInEditorRouter = {
-  currentPath: computed(() => repeatableParamToPathSegments(props.inEditorPath)),
-  push: (newPath, options) => {
-    const currentRoute = router.currentRoute.value
-    // Vue Router checks if we are already on the same route, and prevents redundant navigation.
-    // So we do not need to check it manually to avoid infinite loops.
-    return router.push({
-      params: {
-        ...currentRoute.params,
-        inEditorPath: newPath
-      },
-      query: currentRoute.query,
-      replace: options?.replace
-    })
-  }
-}
+const readiness = useProvideReadiness()
+// Query preparation completes when Session is constructed; Course startup continues separately.
+const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
+const progressCollector = new ProgressCollector()
+progressCollector.onProgress((value) => {
+  progress.value = value
+})
+const preparationReporter = progressCollector.getSubReporter(null, 0.5)
+const startProgressReporter = progressCollector.getSubReporter({ en: 'Starting course...', zh: '启动课程中...' }, 0.5)
 
-const runningErr = ref<Exception | null>(null)
-
-const sessionQueryRet = useQuery(
+const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery(
   async (ctx) => {
-    runningErr.value = null
-    const project = props.project
-
-    // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause unnecessary query fetching.
-    // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
-    await nextTick()
+    startProgressReporter.report(0)
+    const project = await composeQuery(ctx, props.projectQueryRet)
     ctx.signal.throwIfAborted()
-
     const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
     editorState.editing.startEditing()
-    editorState.syncWithRouter(inEditorRouter)
+    editorState.syncWithRouter(props.router)
     const session = new PlaygroundCourseSession({
       project,
       editorState,
       copilot,
       presentation,
-      async formatWorkspace() {
-        if (codeEditor.value == null) throw new Error('Course Code Editor is not ready')
-        await codeEditor.value.formatWorkspace()
-      }
+      readiness,
+      startReporter: startProgressReporter
     })
     session.disposeOnSignal(ctx.signal)
     editorState.disposeOnSignal(ctx.signal)
-    session.on('completed', (completion) => {
-      emit('courseCompleted', completion)
-    })
-    session.on('failed', (e) => {
-      runningErr.value = e
-    })
-    // Give the Editor UI time to mount before the Course accesses its targets.
-    // TODO(#3533): Replace this delay with a reliable Editor UI readiness signal.
-    const startTimer = setTimeout(() => {
-      void session.start().catch(() => {})
-    }, 300)
-    session.addDisposer(() => clearTimeout(startTimer))
+    session.on('completed', (completion) => emit('courseCompleted', completion))
+    void session.start()
+    ctx.reporter.report(1)
     return session
   },
   {
     en: 'Failed to start course',
     zh: '启动课程失败'
   },
-  { clearDataOnFetch: true }
+  { clearResultOnFetch: true }
 )
 
+const preparedQueryRet = useQuery(
+  (ctx) =>
+    Promise.all([
+      composeQuery(ctx, sessionQueryRet, [{ en: 'Loading course...', zh: '加载课程中...' }, 4]),
+      composeQuery(ctx, monacoQueryRet, [{ en: 'Loading editor...', zh: '加载编辑器中...' }, 1])
+    ]),
+  { en: 'Failed to prepare course', zh: '准备课程失败' },
+  { clearResultOnFetch: true }
+)
+
+watch(preparedQueryRet.progress, (value) => preparationReporter.report(value), { immediate: true })
+
 const session = sessionQueryRet.data
+const error = computed(() => {
+  if (preparedQueryRet.error.value != null) {
+    return { exception: preparedQueryRet.error.value, retry: preparedQueryRet.refetch }
+  }
+  if (session.value?.error != null) {
+    return { exception: session.value.error, retry: () => emit('courseRestart') }
+  }
+  return null
+})
+const preparing = computed(() => preparedQueryRet.isLoading.value || session.value?.starting === true)
+const loading = computed(() => error.value == null && preparing.value)
+const covered = computed(() => loading.value || error.value != null)
+// The page waits for presentation, while this subtree's Host can become ready under the cover.
+useRegisterLoading(loading)
 </script>
 
 <template>
-  <section class="relative min-h-full w-full flex flex-col bg-grey-300">
+  <section class="min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
       <EditorNavbar
-        v-if="session != null"
-        :project="session.project.project"
-        :state="session.editorState"
-        :title="project.title"
+        :project="session?.project.project ?? null"
+        :state="session?.editorState ?? null"
+        :title="projectQueryRet.data.value?.title"
       >
         <template #project-menu>
-          <UIMenuGroup :disabled="!isOnline">
+          <UIMenuGroup :disabled="session == null || !isOnline">
             <UIMenuItem @click="handleSaveAsMyProject">
               {{ $t({ en: 'Save as my project...', zh: '另存为我的项目...' }) }}
             </UIMenuItem>
@@ -187,38 +197,34 @@ const session = sessionQueryRet.data
         </template>
       </EditorNavbar>
     </header>
-    <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
-      <UIDetailedLoading v-if="sessionQueryRet.isLoading.value" :percentage="sessionQueryRet.progress.value.percentage">
-        <span>{{ $t({ en: 'Preparing course...', zh: '准备课程中...' }) }}</span>
-      </UIDetailedLoading>
-      <UIError v-else-if="sessionQueryRet.error.value != null" :retry="sessionQueryRet.refetch">
-        {{ $t(sessionQueryRet.error.value.userMessage) }}
-      </UIError>
-      <UIDetailedLoading
-        v-else-if="monacoQueryRet.isLoading.value"
-        :percentage="monacoQueryRet.progress.value.percentage"
-      >
-        <span>{{ $t({ en: 'Loading editor...', zh: '加载编辑器中...' }) }}</span>
-      </UIDetailedLoading>
-      <UIError v-else-if="monacoQueryRet.error.value != null" :retry="monacoQueryRet.refetch">
-        {{ $t(monacoQueryRet.error.value.userMessage) }}
-      </UIError>
-      <UIError v-else-if="runningErr != null" :retry="() => emit('courseRestart')">
-        {{ $t(runningErr.userMessage) }}
-      </UIError>
-      <EditorContextProvider
-        v-else-if="session != null"
-        :project="session.project.project"
-        :state="session.editorState"
-      >
-        <CodeEditorProvider
-          :monaco="monacoQueryRet.data.value!"
-          :api-whitelist="session.apiWhitelist.apis"
-          @ready="codeEditor = $event"
+    <main class="relative flex-[1_1_0] flex p-4 pt-2">
+      <div class="flex flex-1 min-w-0 gap-xl" :inert="covered">
+        <EditorContextProvider
+          v-if="session != null && monacoQueryRet.data.value != null"
+          :project="session.project.project"
+          :state="session.editorState"
         >
-          <ProjectEditor :ruler-enabled="session.ruler.enabled" />
-        </CodeEditorProvider>
-      </EditorContextProvider>
+          <CodeEditorProvider
+            :monaco="monacoQueryRet.data.value"
+            :api-whitelist="session.apiWhitelist.apis"
+            @ready="session.setCodeEditor($event)"
+          >
+            <ProjectEditor :ruler-enabled="session.ruler.enabled" />
+          </CodeEditorProvider>
+        </EditorContextProvider>
+      </div>
+      <div
+        v-if="covered"
+        class="absolute inset-0 z-20 flex items-center justify-center bg-grey-300"
+        :role="error != null ? 'alert' : 'status'"
+      >
+        <UIError v-if="error != null" :retry="error.retry">
+          {{ $t(error.exception.userMessage) }}
+        </UIError>
+        <UIDetailedLoading v-else :percentage="progress.percentage">
+          <span>{{ $t(progress.desc ?? { en: 'Preparing course...', zh: '准备课程中...' }) }}</span>
+        </UIDetailedLoading>
+      </div>
     </main>
   </section>
 </template>

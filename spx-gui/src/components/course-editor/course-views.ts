@@ -1,6 +1,6 @@
 /**
  * The Course Editor shows a course as views, one per part of it: the course itself (its settings), the learner's
- * project, the videos and the course program. A view is addressed in the route by the path of what it edits.
+ * project, the videos and the course program. Views have fixed route identifiers independent of course file paths.
  */
 
 import type { LocaleMessage } from '@/utils/i18n'
@@ -10,7 +10,7 @@ import { configFilePath } from '@/models/tutorial/project'
 import { imageAssetPath } from '@/models/tutorial/image'
 import { videoAssetPath } from '@/models/tutorial/video'
 import type { IconType } from '@/components/ui'
-import { isPathWithin, pathToSegments } from './route'
+import type { PathSegments } from '@/utils/route'
 
 export type CourseView = 'course' | 'project' | 'videos' | 'images' | 'program'
 
@@ -22,7 +22,7 @@ export const courseViews: CourseView[] = ['course', 'project', 'videos', 'progra
 
 export type ResourceView = 'videos' | 'images'
 
-export type OpenView = { view: Exclude<CourseView, 'project'> } | { view: 'project'; inEditorPath: string[] }
+export type OpenView = { view: CourseView }
 
 export function getViewLabel(view: CourseView): LocaleMessage {
   switch (view) {
@@ -54,34 +54,21 @@ export function getViewIcon(view: CourseView): IconType {
   }
 }
 
-export function getViewPath(view: CourseView, projectRoot: string): string {
-  switch (view) {
-    case 'course':
-      return ''
-    case 'project':
-      return projectRoot
-    case 'videos':
-      return videoAssetPath
-    case 'images':
-      return imageAssetPath
-    case 'program':
-      return mainCourseFilePath
-  }
+export function getViewPath(view: CourseView): PathSegments {
+  return view === 'course' ? [] : [view]
+}
+
+export function resolveView(path: PathSegments): { open: OpenView; path: PathSegments } {
+  const view = courseViews.find((view) => view === path[0]) ?? 'course'
+  return { open: { view }, path: view === 'project' ? path : getViewPath(view) }
 }
 
 /**
- * The view that shows `path`, and the path the route should say, which differs from `path` when `path` is not a
- * view's own. A path inside the videos' directory (a single video, as earlier versions of the editor addressed one)
- * is shown by the videos view, and any other path by the course.
+ * Whether `path` is `dir` or lies under it, compared by segment: `assets/videos` is not within `assets/vid`. The empty
+ * `dir` is the root and contains every path.
  */
-export function resolveView(path: string, projectRoot: string): { open: OpenView; path: string } {
-  if (path === '') return { open: { view: 'course' }, path }
-  if (isPathWithin(path, projectRoot)) {
-    return { open: { view: 'project', inEditorPath: pathToSegments(path.slice(projectRoot.length)) }, path }
-  }
-  if (path === mainCourseFilePath) return { open: { view: 'program' }, path }
-  if (isPathWithin(path, videoAssetPath)) return { open: { view: 'videos' }, path: videoAssetPath }
-  return { open: { view: 'course' }, path: '' }
+function isPathWithin(path: string, dir: string) {
+  return dir === '' || path === dir || path.startsWith(dir + '/')
 }
 
 /** The views that edit some changed record. A record that no view edits marks none, not even the course. */

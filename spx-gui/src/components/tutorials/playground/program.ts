@@ -1,5 +1,3 @@
-import { watch } from 'vue'
-
 import { Disposable } from '@/utils/disposable'
 import { XGoExecutor, type XGoExitReason } from '@/utils/xgoexec'
 import { ActionException, Cancelled, DefaultException, type Exception } from '@/utils/exception/base'
@@ -31,6 +29,8 @@ export type PlaygroundCourseProgramOptions = {
   apiWhitelist: APIWhitelist
   ruler: Ruler
   presentation: PlaygroundCoursePresentation
+  waitForHostReady(signal: AbortSignal): Promise<void>
+  onStarted(signal: AbortSignal): Promise<void>
   formatWorkspace(): Promise<void>
   onCompleted(completion: PlaygroundCourseCompletion): void
   onFailed(error: Exception): void
@@ -42,7 +42,6 @@ export type PlaygroundCourseProgramOptions = {
  */
 export class PlaygroundCourseProgram extends Disposable {
   private executor: XGoExecutor
-  private lastRuntimeOutputID = -1
   private lastError: Exception | null = null
   private executorStarted: Promise<void> | null = null
 
@@ -80,6 +79,16 @@ export class PlaygroundCourseProgram extends Disposable {
     const signal = this.getSignal()
     const { project, copilot, apiWhitelist, ruler, presentation, formatWorkspace } = this.options
     return {
+      lifecycle: {
+        waitForHostReady: () => {
+          signal.throwIfAborted()
+          return this.options.waitForHostReady(signal)
+        },
+        started: () => {
+          signal.throwIfAborted()
+          return this.options.onStarted(signal)
+        }
+      },
       course: {
         showPrelude: async (content) => {
           if (signal.aborted) throw new Cancelled(signal.reason)
@@ -126,26 +135,12 @@ export class PlaygroundCourseProgram extends Disposable {
     const copilotSession = copilot.currentSession
     const runtime = editorState.runtime
     this.addDisposer(
-      runtime.on('didChangeOutput', () => {
-        for (const output of runtime.outputs) {
-          if (output.id <= this.lastRuntimeOutputID) continue
-          this.lastRuntimeOutputID = output.id
-          if (output.kind === RuntimeOutputKind.Log) this.dispatchEvent('editor.runtime.log', { log: output.message })
-        }
+      runtime.on('didAppendOutput', (output) => {
+        if (output.kind === RuntimeOutputKind.Log) this.dispatchEvent('editor.runtime.log', { log: output.message })
       })
     )
     this.addDisposer(runtime.on('didExit', (code) => this.dispatchEvent('editor.runtime.exit', { code })))
-    this.addDisposer(
-      watch(
-        () => runtime.running,
-        (running, previous) => {
-          const started = running.mode === 'debug' && !running.initializing && running.initializingError == null
-          const wasStarted = previous?.mode === 'debug' && !previous.initializing && previous.initializingError == null
-          if (started && !wasStarted) this.dispatchEvent('editor.runtime.start', null)
-        },
-        { immediate: true }
-      )
-    )
+    this.addDisposer(runtime.on('didStart', () => this.dispatchEvent('editor.runtime.start', null)))
     this.addDisposer(
       copilot.on('roundComplete', (round) => {
         if (copilot.currentSession === copilotSession) this.dispatchEvent('copilot.roundComplete', round)

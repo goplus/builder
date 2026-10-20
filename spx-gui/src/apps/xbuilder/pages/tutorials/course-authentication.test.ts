@@ -94,7 +94,7 @@ vi.mock('@/components/ui', async (importOriginal) => ({
   useMessage: () => ({ error: mocks.error })
 }))
 vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
-  default: { template: '<div>Playground</div>' }
+  default: { name: 'CoursePlayground', props: ['projectQueryRet'], template: '<div>Playground</div>' }
 }))
 vi.mock('@/components/community/CommunityNavbar.vue', () => ({ default: { template: '<nav />' } }))
 vi.mock('@/components/community/footer/CommunityFooter.vue', () => ({ default: { template: '<footer />' } }))
@@ -113,7 +113,7 @@ async function openPage(destination: string) {
       { path: '/course-series/:courseSeriesIdInput', component: CourseSeries, props: true },
       { path: '/course/:courseSeriesIdInput/:courseIdInput/start', component: CourseStart, props: true },
       {
-        path: '/course/:courseSeriesIdInput/:courseIdInput/playground/:inEditorPath*',
+        path: '/course/:courseSeriesIdInput/:courseIdInput/playground/:inPlaygroundPath*',
         component: CoursePlayground,
         props: true
       }
@@ -207,7 +207,11 @@ describe('Course authentication', () => {
       mocks.signIn.mockRejectedValue(new Error('PAR failed'))
       const { router, page } = await openPage(destination)
       expect(router.currentRoute.value.fullPath).toBe(destination)
-      expect(page.findComponent({ name: 'UIError' }).exists()).toBe(true)
+      if (destination.endsWith('/playground')) {
+        expect(page.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').error.value).not.toBeNull()
+      } else {
+        expect(page.findComponent({ name: 'UIError' }).exists()).toBe(true)
+      }
       expect(mocks.enter).not.toHaveBeenCalled()
       expect(mocks.load).not.toHaveBeenCalled()
     }
@@ -235,7 +239,7 @@ describe('Course authentication', () => {
     }
   )
 
-  it('refreshes the Playground when its Course list dependency reloads', async () => {
+  it('keeps the active Playground when the Course list reloads', async () => {
     mocks.course.kind = 'playground'
     mocks.signedIn = true
     await openPage('/course/series/course/playground')
@@ -244,7 +248,8 @@ describe('Course authentication', () => {
     await flushPromises()
     mocks.seriesCoursesLoading!.value = false
     await flushPromises()
-    expect(mocks.load).toHaveBeenCalledTimes(2)
+    expect(mocks.load).toHaveBeenCalledOnce()
+    expect(mocks.notifyStarted).toHaveBeenCalledOnce()
   })
 
   it('loads a signed-in Playground on direct navigation', async () => {

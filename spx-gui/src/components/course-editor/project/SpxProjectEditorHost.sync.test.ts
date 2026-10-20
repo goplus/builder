@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, shallowRef } from 'vue'
-import { createMemoryHistory, createRouter, useRoute } from 'vue-router'
+import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { createI18n } from '@/utils/i18n'
 import { mockFile } from '@/models/common/test'
@@ -9,10 +9,10 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { Costume } from '@/models/spx/costume'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
-import { courseEditorRoutes, getCourseEditorRoute } from '@/apps/xbuilder/router'
-import type { EditorState } from '@/components/editor/editor-state'
+import { getCourseEditorRoute } from '@/apps/xbuilder/router'
+import { EditMode, type EditorState } from '@/components/editor/editor-state'
 import { History } from '@/components/editor/history'
-import { inCourseEditorPathParam, isPathWithin, paramToSegments, segmentsToPath } from '../route'
+import { makeChildScopedRouter, useScopedRouterWithPathParam } from '@/utils/route'
 import SpxProjectEditorHost from './SpxProjectEditorHost.vue'
 
 // These use a real editor state: shown a route, it selects what the route names and then navigates to wherever its
@@ -50,8 +50,6 @@ vi.mock('@/stores/user', async (importOriginal) => {
   }
 })
 
-const rootPath = 'project'
-
 /** A Course Editor path, e.g. `('project', 'stage')`. */
 function coursePath(...segments: string[]) {
   return getCourseEditorRoute('40', '2338', segments)
@@ -70,7 +68,12 @@ function makeProject() {
 }
 
 async function mountInCourseEditor(at: string) {
-  const router = createRouter({ history: createMemoryHistory(), routes: courseEditorRoutes })
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*', component: { render: () => null } }
+    ]
+  })
   await router.push(at)
   await router.isReady()
   const project = makeProject()
@@ -79,15 +82,15 @@ async function mountInCourseEditor(at: string) {
   // What `CourseEditor.vue` does: the project is open while the route's path is inside its root.
   const CourseEditorStandIn = defineComponent({
     setup() {
-      const route = useRoute()
-      const active = computed(() =>
-        isPathWithin(segmentsToPath(paramToSegments(route.params[inCourseEditorPathParam])), rootPath)
+      const inEditorRouter = useScopedRouterWithPathParam('inEditorPath')
+      const projectRouter = makeChildScopedRouter(inEditorRouter, ['edit', 'project'])
+      const active = computed(
+        () => inEditorRouter.currentPath.value[0] === 'edit' && inEditorRouter.currentPath.value[1] === 'project'
       )
       return () =>
         h(SpxProjectEditorHost, {
           project,
-          rootPath,
-          initialPath: '/sprites/Lita/code',
+          router: projectRouter,
           history,
           active: active.value,
           'onUpdate:editorState': (next: EditorState | null) => (state.value = next)
@@ -116,13 +119,50 @@ describe('SpxProjectEditorHost with a real editor state', () => {
     vi.restoreAllMocks()
   })
 
+  it('opens a new author editor at its default selection', async () => {
+    const { wrapper, router, state } = await mountInCourseEditor(coursePath('program'))
+    const editor = state.value
+    expect(router.currentRoute.value.path).toBe(coursePath('program'))
+    await go(router, coursePath('project'))
+    expect(router.currentRoute.value.path).toBe(coursePath('project', 'sprites', 'Lita', 'code'))
+    expect(state.value).toBe(editor)
+    expect(state.value?.selectedEditMode).toBe(EditMode.Default)
+    wrapper.unmount()
+  })
+
+  it('uses explicit history paths after another view is opened', async () => {
+    const { wrapper, router, state } = await mountInCourseEditor(coursePath('project', 'sprites', 'Lita', 'code'))
+    await go(router, coursePath('project', 'stage', 'code'))
+    await go(router, coursePath('program'))
+    router.back()
+    await flushPromises()
+    expect(state.value?.selected.type).toBe('stage')
+    router.back()
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe(coursePath('project', 'sprites', 'Lita', 'code'))
+    expect(state.value?.selected.type).toBe('sprite')
+    wrapper.unmount()
+  })
+
+  it('keeps project selection while a learner preview navigates', async () => {
+    const { wrapper, router, state } = await mountInCourseEditor(coursePath('project', 'stage', 'code'))
+    const editor = state.value
+    await go(router, '/course-editor/40/2338/preview/sprites/Bird/code')
+    expect(state.value?.selected.type).toBe('stage')
+    await go(router, '/course-editor/40/2338/preview/map/sprites/Lita/code')
+    await go(router, coursePath('project'))
+    expect(router.currentRoute.value.path).toBe(coursePath('project', 'stage', 'code'))
+    expect(state.value).toBe(editor)
+    wrapper.unmount()
+  })
+
   it('comes back to the stage it was left on, not to the first sprite', async () => {
     const { wrapper, router, state } = await mountInCourseEditor(coursePath('project', 'sprites', 'Lita', 'code'))
     await go(router, coursePath('project', 'stage'))
     const left = router.currentRoute.value.fullPath
     expect(state.value?.selected.type).toBe('stage')
 
-    await go(router, coursePath('main_course.gox'))
+    await go(router, coursePath('program'))
     // The activity bar's project button addresses the project itself, with no path of its own.
     await go(router, coursePath('project'))
 
@@ -137,7 +177,7 @@ describe('SpxProjectEditorHost with a real editor state', () => {
     const left = router.currentRoute.value.fullPath
     expect(state.value?.selectedEditMode).toBe('map')
 
-    await go(router, coursePath('main_course.gox'))
+    await go(router, coursePath('program'))
     await go(router, coursePath('project'))
 
     expect(router.currentRoute.value.fullPath).toBe(left)

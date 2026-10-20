@@ -69,6 +69,10 @@ Top-level statements in `main_course.gox` run once when the program starts. Use 
 register callbacks. After they finish, the course start is delivered to every `onStart` callback, so every callback is
 already registered when the opening flow runs.
 
+`onStart` runs once Host capabilities are usable. Put initial API filtering and Ruler configuration before
+waiting operations such as presentations or Copilot generation in the same callback, so the initial
+configuration is applied before the Playground content is revealed.
+
 Declarations come first. The top-level statements form the body of the course's entry function, and every `func` must be
 declared before the first of them. A `func` written after a statement is read as a function literal, and the course does
 not compile: `expected '(', found <name>`. Keep `type` declarations at the top as well, so the file reads top-down.

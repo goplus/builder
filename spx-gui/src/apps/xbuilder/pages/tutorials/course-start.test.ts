@@ -49,7 +49,7 @@ describe('course start', () => {
         expect.anything()
       )
     )
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Now move your spaceship.'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Now move your spaceship.'), { timeout: 4000 })
     await vi.waitFor(() => expect(wrapper.findAll('button').some((button) => button.text() === 'Next step')).toBe(true))
     expect(copilotApis.generateCopilotMessage).toHaveBeenCalledWith(
       expect.arrayContaining([

@@ -4,6 +4,8 @@
  * project and disposes it when the course changes or the page unmounts.
  */
 import { nextTick, onUnmounted, shallowRef, watch } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
+import { useScopedRouterWithPathParam } from '@/utils/route'
 import { Cancelled, DefaultException } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
@@ -17,9 +19,22 @@ import CourseEditor from '@/components/course-editor/CourseEditor.vue'
 const props = defineProps<{
   courseSeriesIdInput: string
   courseIdInput: string
+  inEditorPath: string | string[]
 }>()
 
 const signedInStateQuery = useSignedInStateQuery()
+const inEditorRouter = useScopedRouterWithPathParam('inEditorPath', () => props.inEditorPath)
+const editor = shallowRef<InstanceType<typeof CourseEditor> | null>(null)
+
+onBeforeRouteLeave(() => editor.value?.confirmDiscardingUnsavedChanges() ?? true)
+onBeforeRouteUpdate((to, from) => {
+  if (
+    to.params.courseIdInput === from.params.courseIdInput &&
+    to.params.courseSeriesIdInput === from.params.courseSeriesIdInput
+  )
+    return true
+  return editor.value?.confirmDiscardingUnsavedChanges() ?? true
+})
 
 type EditingSession = {
   course: PlaygroundCourse
@@ -121,10 +136,12 @@ function handleSaved(course: PlaygroundCourse) {
   <!-- Keyed by course id: switching courses remounts it with fresh state, while `handleSaved` updates it in place. -->
   <CourseEditor
     v-if="session != null"
+    ref="editor"
     :key="session.course.id"
     :course="session.course"
     :series="session.series"
     :project="session.project"
+    :router="inEditorRouter"
     @saved="handleSaved"
   />
   <section v-else class="h-full w-full flex items-center justify-center">

@@ -5,10 +5,18 @@ export type SimpleModeInEditorRoute = `/simple/sprites/${string}`;
 
 /** Existing runtime owned by `EditorState`. */
 export interface Runtime {
-  readonly outputs: readonly RuntimeOutput[];
-  /** New event needed by the Tutorial Class Framework runtime namespace. */
+  /** Latest 500 outputs for UI rendering, updated on snapshot changes. */
+  readonly outputSnapshot: readonly RuntimeOutput[];
+  /**
+   * Emitted once after a run or rerun succeeds, with runtime state and filesHash
+   * updated. Failed/cancelled initialization and UI state restoration do not
+   * emit a start; subscribing does not replay an already-running state.
+   */
   on(event: "didStart", listener: () => void): Disposer;
-  on(event: "didChangeOutput", listener: () => void): Disposer;
+  /** Every new output, synchronously in append order, including errors. */
+  on(event: "didAppendOutput", listener: (output: RuntimeOutput) => void): Disposer;
+  /** Batched UI snapshot changes; clearing updates it immediately without appending. */
+  on(event: "didChangeOutputSnapshot", listener: () => void): Disposer;
   on(event: "didExit", listener: (code: number) => void): Disposer;
 }
 

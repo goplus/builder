@@ -25,30 +25,27 @@ function makeFiles(): Files {
 describe('resolveView', () => {
   it('opens each view at its own path', () => {
     for (const view of courseViews) {
-      const path = getViewPath(view, root)
-      const resolved = resolveView(path, root)
+      const path = getViewPath(view)
+      const resolved = resolveView(path)
       expect(resolved.open.view).toBe(view)
-      expect(resolved.path).toBe(path)
+      expect(resolved.path).toEqual(path)
     }
   })
 
   it('hands the rest of a project path to the Project Editor', () => {
-    expect(resolveView('project/sprites/Lita/code', root)).toEqual({
-      open: { view: 'project', inEditorPath: ['sprites', 'Lita', 'code'] },
-      path: 'project/sprites/Lita/code'
+    expect(resolveView(['project', 'sprites', 'Lita', 'code'])).toEqual({
+      open: { view: 'project' },
+      path: ['project', 'sprites', 'Lita', 'code']
     })
   })
 
-  it('shows a single video, as older addresses name one, on the videos view', () => {
-    expect(resolveView('assets/videos/step-to', root)).toEqual({ open: { view: 'videos' }, path: 'assets/videos' })
+  it('normalizes paths within non-project views', () => {
+    expect(resolveView(['videos', 'step-to'])).toEqual({ open: { view: 'videos' }, path: ['videos'] })
+    expect(resolveView(['program', 'extra'])).toEqual({ open: { view: 'program' }, path: ['program'] })
   })
 
-  it('shows the course for anything no view edits', () => {
-    expect(resolveView('notes.md', root)).toEqual({ open: { view: 'course' }, path: '' })
-    expect(resolveView('assets/texts/lines', root)).toEqual({ open: { view: 'course' }, path: '' })
-    expect(resolveView('assets', root)).toEqual({ open: { view: 'course' }, path: '' })
-    // The images view is hidden.
-    expect(resolveView('assets/images/hint', root)).toEqual({ open: { view: 'course' }, path: '' })
+  it('opens the course settings for an unknown view', () => {
+    expect(resolveView(['unknown'])).toEqual({ open: { view: 'course' }, path: [] })
   })
 })
 
