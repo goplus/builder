@@ -202,6 +202,19 @@ function handleMouseUp(e: MouseEvent) {
   padding-bottom: 8px;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .api-reference-item.search-result button {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .api-reference-item.search-result:hover button,
+  .api-reference-item.search-result:focus-within button {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .api-reference-item.before-dragging {
   /* Adjust transparency for dragging to avoid visual obstruction */
   background-color: rgba(from var(--ui-color-grey-300) r g b / 0.6);
