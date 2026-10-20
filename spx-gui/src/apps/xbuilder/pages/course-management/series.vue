@@ -311,18 +311,9 @@ const handleRemoveSeries = useMessageHandle(
           <ListControls
             v-model:query="query"
             v-model:sort-by="sortBy"
+            class="flex-1"
             :placeholder="$t({ en: 'Search courses', zh: '搜索课程' })"
           />
-          <p class="m-0 flex-1 text-grey-700">
-            {{
-              sortBy === 'order'
-                ? $t({ en: 'Drag courses to change their order.', zh: '拖动课程可以调整顺序。' })
-                : $t({
-                    en: 'Sort by display order to drag courses into another order.',
-                    zh: '按显示顺序排列时，可以拖动调整顺序。'
-                  })
-            }}
-          </p>
           <UIButton
             v-radar="{ name: 'create-course-button', desc: 'Click to create a course in the series' }"
             type="primary"

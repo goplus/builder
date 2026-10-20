@@ -225,26 +225,11 @@ const handleRemove = useMessageHandle(
       </UIButton>
     </header>
 
-    <div class="flex flex-wrap items-center gap-4">
-      <ListControls
-        v-model:query="query"
-        v-model:sort-by="sortBy"
-        :placeholder="$t({ en: 'Search course series', zh: '搜索课程系列' })"
-      />
-      <p class="m-0 text-grey-700">
-        {{
-          sortBy === 'order'
-            ? $t({
-                en: 'Drag course series to change the order learners see them in.',
-                zh: '拖动课程系列可以调整它们在教程页面中的顺序。'
-              })
-            : $t({
-                en: 'Sort by display order to drag course series into another order.',
-                zh: '按显示顺序排列时，可以拖动调整顺序。'
-              })
-        }}
-      </p>
-    </div>
+    <ListControls
+      v-model:query="query"
+      v-model:sort-by="sortBy"
+      :placeholder="$t({ en: 'Search course series', zh: '搜索课程系列' })"
+    />
 
     <ListResultWrapper :query-ret="seriesQueryRet" :height="400">
       <template #empty>

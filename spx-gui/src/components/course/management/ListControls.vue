@@ -32,7 +32,7 @@ function handleSortByUpdate(value: string | null) {
     </UITextInput>
     <UISelect
       v-radar="{ name: 'sort-select', desc: 'Select how to sort the list' }"
-      class="w-36"
+      class="ml-auto w-36"
       :value="sortBy"
       @update:value="handleSortByUpdate"
     >
