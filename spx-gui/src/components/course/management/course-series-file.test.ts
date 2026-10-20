@@ -987,6 +987,15 @@ describe('Playground course series files', () => {
     ])
   })
 
+  it('keeps no copy of the course files besides what it unzipped', async () => {
+    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a')])
+    const { unzipped, courseFiles, courseSizes } = await readCourseSeriesFile(file, null)
+
+    expect(await courseFiles[0]['main_course.gox']!.arrayBuffer()).toBe(unzipped['courses/0/main_course.gox']!.buffer)
+    const entries = Object.entries(unzipped).filter(([path]) => path.startsWith('courses/0/'))
+    expect(courseSizes).toEqual([entries.reduce((sum, [, data]) => sum + data.byteLength, 0)])
+  })
+
   it('reports its progress step by step, counting uploads in bytes', async () => {
     vi.mocked(saveFiles).mockImplementation(async (files, _signal, onProgress) => {
       const sizes = await Promise.all(Object.values(files).map(async (file) => (await file!.arrayBuffer()).byteLength))

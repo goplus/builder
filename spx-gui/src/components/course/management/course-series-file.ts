@@ -344,11 +344,10 @@ async function loadCourseSeriesFile(
   { signal, onProgress }: CourseSeriesFileTaskOptions
 ) {
   onProgress?.({ step: 'read', done: 0, total: 0, bytes: null })
-  const arrayBuffer = await file.arrayBuffer()
   let unzipped: Record<string, Uint8Array<ArrayBuffer>>
   let manifest: CourseSeriesFileManifest
   try {
-    unzipped = await unzip(new Uint8Array(arrayBuffer), { signal })
+    unzipped = await unzipFile(file, signal)
     manifest = JSON.parse(new TextDecoder().decode(getRequiredEntry(unzipped, manifestFileName)))
   } catch (e) {
     if (e instanceof Cancelled || e instanceof DefaultException) throw e
@@ -387,8 +386,8 @@ async function loadCourseSeriesFile(
         zh: '目标式课程不能单独上传新项目，课程的工程应放在课程自己的文件里'
       })
     }
-    const courseFiles = await loadPlaygroundCourseFiles(manifest, unzipped, { signal, onProgress })
-    return { manifest, unzipped, courseFiles, projects: [] }
+    const { courseFiles, courseSizes } = await loadPlaygroundCourseFiles(manifest, unzipped, { signal, onProgress })
+    return { manifest, unzipped, courseFiles, courseSizes, projects: [] }
   }
   for (const course of manifest.courses) {
     if (!('content' in course) || typeof course.content?.entrypoint !== 'string') {
@@ -407,7 +406,7 @@ async function loadCourseSeriesFile(
     })
   }
   const projects = await loadGuidedProjects(manifest, unzipped, { signal, onProgress })
-  return { manifest, unzipped, courseFiles: [], projects }
+  return { manifest, unzipped, courseFiles: [], courseSizes: [], projects }
 }
 
 /**
@@ -457,14 +456,16 @@ async function loadGuidedProjects(
 }
 
 /**
- * The files of each Playground Course in the file, once every course loads. What its program refers to is not checked,
- * as the Course Editor saves a course without checking it either, and a series exported must import again.
+ * The files of each Playground Course in the file, with their size in bytes, once every course loads. What its program
+ * refers to is not checked, as the Course Editor saves a course without checking it either, and a series exported must
+ * import again.
  */
 async function loadPlaygroundCourseFiles(
   manifest: CourseSeriesFileManifest,
   unzipped: Record<string, Uint8Array<ArrayBuffer>>,
   { signal, onProgress }: CourseSeriesFileTaskOptions
 ) {
+  const courseSizes: number[] = []
   const courseFiles: Files[] = manifest.courses.map((course) => {
     if (!('files' in course) || typeof course.files !== 'string') {
       throw new DefaultException({
@@ -474,12 +475,15 @@ async function loadPlaygroundCourseFiles(
     }
     const prefix = `${course.files}/`
     const files: Files = {}
+    let size = 0
     for (const [path, data] of Object.entries(unzipped)) {
       // Some zip tools list directories too, as entries ending with a slash.
       if (!path.startsWith(prefix) || path.endsWith('/')) continue
       const coursePath = path.slice(prefix.length)
       files[coursePath] = createLazyFile(filename(coursePath), data)
+      size += data.byteLength
     }
+    courseSizes.push(size)
     return files
   })
 
@@ -505,7 +509,7 @@ async function loadPlaygroundCourseFiles(
   })
   const found = problems.filter((problem) => problem != null)
   if (found.length > 0) throw new CourseSeriesFileProblems(found)
-  return courseFiles
+  return { courseFiles, courseSizes }
 }
 
 function describeProblems(problems: CourseSeriesFileProblem[]): LocaleMessage {
@@ -545,7 +549,7 @@ type ImportChanges = {
  */
 async function importCourseSeriesFileData(
   target: CourseSeriesImportTarget,
-  { manifest, unzipped, courseFiles, projects }: CourseSeriesFileContent,
+  { manifest, unzipped, courseFiles, courseSizes, projects }: CourseSeriesFileContent,
   signedInUsername: string,
   { signal, onProgress }: CourseSeriesFileTaskOptions
 ): Promise<CourseSeriesImportResult> {
@@ -559,14 +563,6 @@ async function importCourseSeriesFileData(
       manifest.projects.findIndex((p) => projectKey(p.fullName) === projectKey(project.fullName)) === index
         ? [index]
         : []
-    )
-    const courseSizes = await Promise.all(
-      courseFiles.map(async (files) => {
-        const sizes = await Promise.all(
-          Object.values(files).map(async (file) => (file == null ? 0 : (await file.arrayBuffer()).byteLength))
-        )
-        return sizes.reduce((sum, size) => sum + size, 0)
-      })
     )
     const uploaded = courseSizes.map(() => 0)
     const total = projectIndexes.length + manifest.courses.length
@@ -992,10 +988,17 @@ function getRequiredEntry(unzipped: Record<string, Uint8Array<ArrayBuffer>>, pat
   return entry
 }
 
+/** A file of `data`, which shares an entry's own buffer instead of copying it, as `xbp.ts` does. */
 function createLazyFile(path: string, data: Uint8Array<ArrayBuffer>) {
+  const ownsBuffer = data.byteOffset === 0 && data.byteLength === data.buffer.byteLength
   return new LazyFile(path, () =>
-    Promise.resolve(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength))
+    Promise.resolve(ownsBuffer ? data.buffer : data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength))
   )
+}
+
+/** The entries of a zip file, read in a function of its own so that the archive is let go of once it is unzipped. */
+async function unzipFile(file: globalThis.File, signal?: AbortSignal) {
+  return unzip(new Uint8Array(await file.arrayBuffer()), { signal })
 }
 
 function generateReleaseName() {
