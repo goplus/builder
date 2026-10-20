@@ -4,4 +4,5 @@ export { default as UIModalProvider, useModal, useModalEvents } from './UIModalP
 export type { ModalOptions } from './UIModalProvider.vue'
 export { default as UIModalClose } from './UIModalClose.vue'
 export { default as UIModal } from './UIModal.vue'
+export { default as UIDrawer } from './UIDrawer.vue'
 export type { ModalTransformOrigin } from './UIModal.vue'

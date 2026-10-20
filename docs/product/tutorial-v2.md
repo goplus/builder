@@ -51,9 +51,9 @@ The essential difference between the two types: **a Guided Course teaches "opera
 
 One boundary that is easy to confuse: the distinction lies in "who drives the flow", not "whether an LLM is used". A Playground Course may well invoke LLM capabilities (judging expression-type goals, generating personalized feedback) and still be a Playground Course — its flow (opening, running, completion) is driven entirely by course code.
 
-A Course Series organizes a set of Courses into an ordered series, carrying course order and "next course" progression. Courses within one series share the same type; mixing types within a series is not supported for now.
+A Course Series organizes a set of Courses into an ordered series, carrying course order and "next course" progression. Courses within one series share the same type; mixing types within a series is not supported for now. A Course belongs to exactly one Course Series: it is created in its series, and leaves it only by being deleted.
 
-Course Gallery and Course Admin remain as designed.
+Course Gallery remains as designed. Course management is a page of the author's Course Series, each opening onto its Courses, where Courses are created, ordered, edited and deleted.
 
 ### Playground Course
 
@@ -134,7 +134,7 @@ Throughout, the learner can summon the Copilot with questions at any time; it an
 
 	- Enable editor capabilities: simple mode; an API allowlist showing only `stepTo` and previously learned APIs
 * Preview in the Course Editor, running through the whole flow from the learner's perspective
-* Once tests pass, publish and add the course to its Course Series
+* Once tests pass, publish the course in its Course Series
 
 ### Learner: completing the Guided Course "Create a Project"
 
@@ -142,6 +142,6 @@ Same as the [User Stories in the existing document](./tutorial.md#user-stories):
 
 ## Course Authoring
 
-* **Course Editor**: the editing entry for courses and course series. For Playground Courses it edits the course data (course project, course code, course assets); for Guided Courses it edits the Prompt; at the series level it manages course order and metadata
+* **Course Editor**: the editing entry for Playground Courses, where the course data (course project, course code, course assets) is edited. Guided Courses, and the metadata and order of courses and course series, are edited in course management
 * **Course Preview**: runs the real course flow from a learner's perspective (rather than a separate simulation), supporting single-course preview and whole-series walkthroughs; changes made during preview are not written back into the course data
 * Course data can be exported and imported, fitting different authoring workflows such as local editing

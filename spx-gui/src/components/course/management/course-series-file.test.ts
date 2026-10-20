@@ -16,13 +16,16 @@ import { deleteProject, getProject, ProjectType, updateProject, Visibility, type
 import { createProjectRelease, type ProjectRelease } from '@/apis/project-release'
 import { cloudHelpers, createFileWithUniversalUrl, saveFile, saveFiles } from '@/models/common/cloud'
 import { File as LazyFile, toText } from '@/models/common/file'
-import { DefaultException } from '@/utils/exception'
+import { Cancelled, DefaultException } from '@/utils/exception'
 import { xbpHelpers } from '@/models/common/xbp'
 import {
+  CourseSeriesFileProblems,
   exportCourseSeriesFile,
-  importCourseSeriesFile,
-  importCourseSeriesFileAsNew,
-  inspectCourseSeriesFileImport
+  importCourseSeriesFileContent,
+  inspectCourseSeriesFileContent,
+  readCourseSeriesFile,
+  type CourseSeriesFileProgress,
+  type CourseSeriesImportWrites
 } from './course-series-file'
 
 dayjs.extend(utc)
@@ -72,6 +75,27 @@ vi.mock('@/models/common/xbp', () => ({
   }
 }))
 
+async function importCourseSeriesFile(
+  courseSeries: CourseSeries,
+  file: File,
+  signedInUsername: string,
+  writes: CourseSeriesImportWrites,
+  signal?: AbortSignal
+) {
+  const content = await readCourseSeriesFile(file, courseSeries, { signal })
+  return importCourseSeriesFileContent(content, { courseSeries, writes }, signedInUsername, { signal })
+}
+
+async function importCourseSeriesFileAsNew(file: File, order: number, signedInUsername: string, signal?: AbortSignal) {
+  const content = await readCourseSeriesFile(file, null, { signal })
+  return importCourseSeriesFileContent(content, { newSeriesOrder: order }, signedInUsername, { signal })
+}
+
+async function inspectCourseSeriesFileImport(courseSeries: CourseSeries | null, file: File, signedInUsername: string) {
+  const content = await readCourseSeriesFile(file, courseSeries)
+  return inspectCourseSeriesFileContent(content, courseSeries, signedInUsername)
+}
+
 // The mocked APIs stand in for the store writes, so assertions can inspect them.
 const writes = { updateCourseSeries, deleteCourse }
 
@@ -94,6 +118,8 @@ const existingCourse: GuidedCourse = {
   kind: 'guided',
   title: 'Course 1',
   thumbnail: 'kodo://bucket/course-thumbnail.png',
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
   content: { entrypoint: '/editor/curator/EntryProject/lesson?tab=code', prompt: 'Prompt' }
 }
 
@@ -312,7 +338,7 @@ describe('exportCourseSeriesFile', () => {
     const manifest = JSON.parse(new TextDecoder().decode(unzipped['course-series.json']!)) as Record<string, any>
     expect(manifest.projects.map((project: { fullName: string }) => project.fullName)).toEqual(['curator/EntryProject'])
 
-    await importCourseSeriesFileAsNew(file, 'guided', 'alice')
+    await importCourseSeriesFileAsNew(file, 1, 'alice')
 
     expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
     expect(vi.mocked(addCourse).mock.calls.map(([params]) => (params as GuidedCourse).content.entrypoint)).toEqual([
@@ -328,22 +354,19 @@ describe('importCourseSeriesFile', () => {
 
     await importCourseSeriesFileAsNew(
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
-      'guided',
+      7,
       'alice',
       ctrl.signal
     )
 
-    expect(addCourseSeries).toHaveBeenCalledWith(
-      {
-        kind: 'guided',
-        title: 'Imported series',
-        thumbnail: 'kodo://imported/thumbnails/course-series.png',
-        description: 'Imported description',
-        order: 1,
-        courseIDs: ['imported-course']
-      },
-      ctrl.signal
-    )
+    expect(addCourseSeries).toHaveBeenCalledWith({
+      kind: 'guided',
+      title: 'Imported series',
+      thumbnail: 'kodo://imported/thumbnails/course-series.png',
+      description: 'Imported description',
+      order: 7,
+      courseIDs: ['imported-course']
+    })
     expect(updateCourseSeries).not.toHaveBeenCalled()
     expect(deleteCourse).not.toHaveBeenCalled()
   })
@@ -356,7 +379,7 @@ describe('importCourseSeriesFile', () => {
           { fullName: 'Curator/entryproject', name: 'entryproject', path: 'projects/1.xbp' }
         ]
       }),
-      'guided',
+      1,
       'alice'
     )
 
@@ -364,8 +387,7 @@ describe('importCourseSeriesFile', () => {
     expect(addCourse).toHaveBeenCalledWith(
       expect.objectContaining({
         content: expect.objectContaining({ entrypoint: '/editor/alice/EntryProject/lesson?tab=code' })
-      }),
-      undefined
+      })
     )
   })
 
@@ -380,25 +402,21 @@ describe('importCourseSeriesFile', () => {
       ctrl.signal
     )
 
-    expect(addCourse).toHaveBeenCalledWith(
-      {
-        kind: 'guided',
-        title: 'Imported course',
-        thumbnail: 'kodo://imported/thumbnails/courses/0.png',
-        content: {
-          entrypoint: '/editor/alice/EntryProject/lesson?tab=code',
-          prompt: 'Imported prompt'
-        }
-      },
-      ctrl.signal
-    )
+    expect(addCourse).toHaveBeenCalledWith({
+      kind: 'guided',
+      title: 'Imported course',
+      thumbnail: 'kodo://imported/thumbnails/courses/0.png',
+      content: {
+        entrypoint: '/editor/alice/EntryProject/lesson?tab=code',
+        prompt: 'Imported prompt'
+      }
+    })
     expect(updateCourseSeries).toHaveBeenCalledWith(
       existingSeries.id,
       expect.objectContaining({
         order: existingSeries.order,
         courseIDs: ['imported-course']
-      }),
-      ctrl.signal
+      })
     )
     expect(createProjectRelease).toHaveBeenCalledWith(
       'alice',
@@ -440,8 +458,7 @@ describe('importCourseSeriesFile', () => {
     expect(addCourse).toHaveBeenCalledWith(
       expect.objectContaining({
         content: { entrypoint: '/editor/saved-owner/SavedProject/lesson?tab=code', prompt: 'Imported prompt' }
-      }),
-      undefined
+      })
     )
   })
 
@@ -479,8 +496,7 @@ describe('importCourseSeriesFile', () => {
     expect(addCourse).toHaveBeenCalledWith(
       expect.objectContaining({
         content: { entrypoint: '/editor/final-owner/FinalProject/lesson?tab=code', prompt: 'Imported prompt' }
-      }),
-      undefined
+      })
     )
   })
 
@@ -495,8 +511,7 @@ describe('importCourseSeriesFile', () => {
     expect(addCourse).toHaveBeenCalledWith(
       expect.objectContaining({
         content: { entrypoint: '/editor/curator/EntryProjectPlus/lesson?tab=code', prompt: 'Imported prompt' }
-      }),
-      undefined
+      })
     )
   })
 })
@@ -677,7 +692,7 @@ describe('importCourseSeriesFile when it fails', () => {
 
     const result = await importCourseSeriesFileAsNew(
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
-      'guided',
+      1,
       'alice'
     )
 
@@ -793,21 +808,38 @@ describe('importCourseSeriesFile when it fails', () => {
   it('reads a file written before series had kinds as a guided series', async () => {
     const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', { kind: null })
 
-    await importCourseSeriesFileAsNew(file, 'guided', 'alice')
+    await importCourseSeriesFileAsNew(file, 1, 'alice')
     expect(addCourseSeries).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'guided', courseIDs: ['imported-course'] }),
-      undefined
+      expect.objectContaining({ kind: 'guided', courseIDs: ['imported-course'] })
     )
-    await expect(importCourseSeriesFileAsNew(file, 'playground', 'alice')).rejects.toThrow(
-      'holds a Guided course series, which cannot be imported as a Playground one'
-    )
+    await expect(
+      inspectCourseSeriesFileImport({ ...existingSeries, kind: 'playground' }, file, 'alice')
+    ).rejects.toThrow('holds a Guided course series, which cannot be imported as a Playground one')
   })
 
-  it('refuses a file of the other kind', async () => {
+  it('refuses a file of the other kind for an existing series', async () => {
     const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code')
 
-    await expect(importCourseSeriesFileAsNew(file, 'playground', 'alice')).rejects.toThrow(
-      'holds a Guided course series, which cannot be imported as a Playground one'
+    await expect(
+      importCourseSeriesFile({ ...existingSeries, kind: 'playground' }, file, 'alice', writes)
+    ).rejects.toThrow('holds a Guided course series, which cannot be imported as a Playground one')
+    expect(addCourse).not.toHaveBeenCalled()
+  })
+
+  it('refuses a file that is not a course series file', async () => {
+    const file = new File(['not a zip'], 'notes.xbcs.zip', { type: 'application/zip' })
+
+    await expect(importCourseSeriesFileAsNew(file, 1, 'alice')).rejects.toThrow(
+      'The file is not a course series file, or it is damaged'
+    )
+    expect(addCourse).not.toHaveBeenCalled()
+  })
+
+  it('refuses a file of an unknown kind', async () => {
+    const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', { kind: 'lecture' })
+
+    await expect(importCourseSeriesFileAsNew(file, 1, 'alice')).rejects.toThrow(
+      'The file holds a course series of an unknown kind'
     )
     expect(addCourse).not.toHaveBeenCalled()
   })
@@ -822,6 +854,8 @@ describe('Playground course series files', () => {
     kind: 'playground',
     title: 'Measure it',
     thumbnail: 'kodo://bucket/course-thumbnail.png',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
     content: {
       'index.json': 'kodo://bucket/index.json',
       'main_course.gox': 'kodo://bucket/main_course.gox',
@@ -855,7 +889,7 @@ describe('Playground course series files', () => {
 
     const result = await importCourseSeriesFileAsNew(
       await makePlaygroundSeriesFile([playgroundCourseFiles('onStart => {\n\tshowVideo "step"\n}')]),
-      'playground',
+      1,
       'alice',
       ctrl.signal
     )
@@ -863,18 +897,14 @@ describe('Playground course series files', () => {
     const [uploaded] = vi.mocked(saveFiles).mock.calls[0]
     expect(Object.keys(uploaded).sort()).toEqual(Object.keys(playgroundCourseFiles('')).sort())
     expect(await toText(uploaded['main_course.gox']!)).toBe('onStart => {\n\tshowVideo "step"\n}')
-    expect(addCourse).toHaveBeenCalledWith(
-      {
-        kind: 'playground',
-        title: 'Course 0',
-        thumbnail: 'kodo://imported/thumbnails/courses/0.png',
-        content: expect.objectContaining({ 'main_course.gox': 'kodo://imported/main_course.gox' })
-      },
-      ctrl.signal
-    )
+    expect(addCourse).toHaveBeenCalledWith({
+      kind: 'playground',
+      title: 'Course 0',
+      thumbnail: 'kodo://imported/thumbnails/courses/0.png',
+      content: expect.objectContaining({ 'main_course.gox': 'kodo://imported/main_course.gox' })
+    })
     expect(addCourseSeries).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'playground', courseIDs: ['imported-course'] }),
-      ctrl.signal
+      expect.objectContaining({ kind: 'playground', courseIDs: ['imported-course'] })
     )
     expect(result.undeletedCourseIDs).toEqual([])
     expect(getProject).not.toHaveBeenCalled()
@@ -886,7 +916,7 @@ describe('Playground course series files', () => {
       playgroundCourseFiles('', ['index.json'])
     ])
 
-    await expect(inspectCourseSeriesFileImport(playgroundSeries, 'playground', file, 'alice')).rejects.toThrow(
+    await expect(inspectCourseSeriesFileImport(playgroundSeries, file, 'alice')).rejects.toThrow(
       'The course series file cannot be imported: "Course 0": The course cannot be loaded: file main_course.gox not found; "Course 1": The course cannot be loaded: file index.json not found'
     )
     await expect(importCourseSeriesFile(playgroundSeries, file, 'alice', writes)).rejects.toBeInstanceOf(
@@ -936,12 +966,155 @@ describe('Playground course series files', () => {
   it('reports no projects to overwrite', async () => {
     const inspection = await inspectCourseSeriesFileImport(
       playgroundSeries,
-      'playground',
       await makePlaygroundSeriesFile([playgroundCourseFiles('onStart => {}')]),
       'alice'
     )
 
-    expect(inspection).toEqual({ deletedCourses: ['Course 1'], overwrittenProjects: [] })
+    expect(inspection).toEqual({ kind: 'playground', deletedCourses: ['Course 1'], overwrittenProjects: [] })
+  })
+
+  it('lists every problem with the courses of a file it refuses', async () => {
+    const file = await makePlaygroundSeriesFile([0, 1, 2, 3].map(() => playgroundCourseFiles('', ['main_course.gox'])))
+
+    const error = await readCourseSeriesFile(file, playgroundSeries).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(CourseSeriesFileProblems)
+    expect((error as CourseSeriesFileProblems).problems.map(({ course }) => course)).toEqual([
+      'Course 0',
+      'Course 1',
+      'Course 2',
+      'Course 3'
+    ])
+  })
+
+  it('keeps no copy of the course files besides what it unzipped', async () => {
+    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a')])
+    const { unzipped, courseFiles, courseSizes } = await readCourseSeriesFile(file, null)
+
+    expect(await courseFiles[0]['main_course.gox']!.arrayBuffer()).toBe(unzipped['courses/0/main_course.gox']!.buffer)
+    const entries = Object.entries(unzipped).filter(([path]) => path.startsWith('courses/0/'))
+    expect(courseSizes).toEqual([entries.reduce((sum, [, data]) => sum + data.byteLength, 0)])
+  })
+
+  it('reports its progress step by step, counting uploads in bytes', async () => {
+    vi.mocked(saveFiles).mockImplementation(async (files, _signal, onProgress) => {
+      const sizes = await Promise.all(Object.values(files).map(async (file) => (await file!.arrayBuffer()).byteLength))
+      const total = sizes.reduce((sum, size) => sum + size, 0)
+      onProgress?.({ loaded: total / 2, total })
+      onProgress?.({ loaded: total, total })
+      return { fileCollection: { 'main_course.gox': 'kodo://imported/main_course.gox' }, fileCollectionHash: 'hash' }
+    })
+    const progress: CourseSeriesFileProgress[] = []
+    const onProgress = (p: CourseSeriesFileProgress) => progress.push(p)
+
+    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a'), playgroundCourseFiles('b')])
+    const content = await readCourseSeriesFile(file, playgroundSeries, { onProgress })
+    await importCourseSeriesFileContent(content, { courseSeries: playgroundSeries, writes }, 'alice', { onProgress })
+
+    expect([...new Set(progress.map(({ step }) => step))]).toEqual(['read', 'check', 'upload', 'commit', 'cleanup'])
+    expect(progress.filter(({ step }) => step === 'check').at(-1)).toMatchObject({ done: 2, total: 2 })
+    const lastUpload = progress.filter(({ step }) => step === 'upload').at(-1)!
+    expect(lastUpload).toMatchObject({ done: 2, total: 2 })
+    expect(lastUpload.bytes!.total).toBeGreaterThan(0)
+    expect(lastUpload.bytes!.loaded).toBe(lastUpload.bytes!.total)
+    expect(progress.filter(({ step }) => step === 'cleanup').at(-1)).toMatchObject({ done: 1, total: 1 })
+  })
+
+  it('uploads and creates three courses at a time, keeping their order in the series', async () => {
+    let running = 0
+    let maxRunning = 0
+    const finishUploads: Array<() => void> = []
+    vi.mocked(saveFiles).mockImplementation(async () => {
+      running++
+      maxRunning = Math.max(maxRunning, running)
+      await new Promise<void>((resolve) => finishUploads.push(resolve))
+      running--
+      return { fileCollection: {}, fileCollectionHash: 'hash' }
+    })
+    vi.mocked(addCourse).mockImplementation(async (params) => ({ ...existingCourse, id: `id-${params.title}` }))
+
+    const importing = importCourseSeriesFileAsNew(
+      await makePlaygroundSeriesFile([0, 1, 2, 3, 4].map(() => playgroundCourseFiles(''))),
+      1,
+      'alice'
+    )
+    await vi.waitFor(() => expect(finishUploads).toHaveLength(3))
+    // Out of order: the courses keep the order of the file all the same.
+    finishUploads[2]()
+    finishUploads[0]()
+    await vi.waitFor(() => expect(finishUploads).toHaveLength(5))
+    finishUploads.forEach((finish) => finish())
+    await importing
+
+    expect(maxRunning).toBe(3)
+    expect(addCourseSeries).toHaveBeenCalledWith(
+      expect.objectContaining({ courseIDs: [0, 1, 2, 3, 4].map((i) => `id-Course ${i}`) })
+    )
+  })
+
+  it('stops when cancelled while uploading, and undoes the courses it created', async () => {
+    const ctrl = new AbortController()
+    let uploads = 0
+    vi.mocked(saveFiles).mockImplementation(async (_files, signal) => {
+      if (uploads++ > 0) {
+        await new Promise((_resolve, reject) => signal!.addEventListener('abort', () => reject(signal!.reason)))
+      }
+      return { fileCollection: {}, fileCollectionHash: 'hash' }
+    })
+    vi.mocked(addCourse).mockImplementation(async (params) => ({ ...existingCourse, id: `id-${params.title}` }))
+
+    const importing = importCourseSeriesFile(
+      playgroundSeries,
+      await makePlaygroundSeriesFile([0, 1, 2, 3].map(() => playgroundCourseFiles(''))),
+      'alice',
+      writes,
+      ctrl.signal
+    )
+    await vi.waitFor(() => expect(addCourse).toHaveBeenCalledTimes(1))
+    ctrl.abort(new Cancelled('test'))
+
+    await expect(importing).rejects.toBeInstanceOf(Cancelled)
+    expect(addCourse).toHaveBeenCalledTimes(1)
+    expect(deleteCourse).toHaveBeenCalledWith('id-Course 0')
+    expect(updateCourseSeries).not.toHaveBeenCalled()
+  })
+
+  it('undoes a course whose creation was under way when cancelled', async () => {
+    const ctrl = new AbortController()
+    let finishCreating!: () => void
+    vi.mocked(addCourse).mockImplementation(
+      () => new Promise((resolve) => (finishCreating = () => resolve({ ...existingCourse, id: 'id-late' })))
+    )
+
+    const importing = importCourseSeriesFile(
+      playgroundSeries,
+      await makePlaygroundSeriesFile([playgroundCourseFiles('')]),
+      'alice',
+      writes,
+      ctrl.signal
+    )
+    await vi.waitFor(() => expect(addCourse).toHaveBeenCalled())
+    ctrl.abort(new Cancelled('test'))
+    finishCreating()
+
+    await expect(importing).rejects.toBeInstanceOf(Cancelled)
+    // The creation is not cut short, so the course it made is known, and deleted.
+    expect(vi.mocked(addCourse).mock.calls[0]).toHaveLength(1)
+    expect(deleteCourse).toHaveBeenCalledWith('id-late')
+    expect(updateCourseSeries).not.toHaveBeenCalled()
+  })
+
+  it('reports the progress of an export', async () => {
+    vi.mocked(getCourse).mockResolvedValue(playgroundCourse)
+    const progress: CourseSeriesFileProgress[] = []
+
+    await exportCourseSeriesFile(playgroundSeries, { onProgress: (p) => progress.push(p) })
+
+    expect([...new Set(progress.map(({ step }) => step))]).toEqual(['read', 'download', 'pack'])
+    // The series thumbnail, the course thumbnail and the three files of the course
+    const lastDownload = progress.filter(({ step }) => step === 'download').at(-1)!
+    expect(lastDownload).toMatchObject({ done: 5, total: 5 })
+    expect(lastDownload.bytes!.loaded).toBeGreaterThan(0)
   })
 })
 
@@ -1005,12 +1178,12 @@ describe('inspectCourseSeriesFileImport', () => {
 
     const inspection = await inspectCourseSeriesFileImport(
       existingSeries,
-      'guided',
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code'),
       'alice'
     )
 
     expect(inspection).toEqual({
+      kind: 'guided',
       deletedCourses: ['Course 1'],
       overwrittenProjects: ['EntryProject']
     })
@@ -1024,7 +1197,6 @@ describe('inspectCourseSeriesFileImport', () => {
 
     const inspection = await inspectCourseSeriesFileImport(
       null,
-      'guided',
       await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code', {
         projects: [
           { fullName: 'curator/EntryProject', name: 'EntryProject', path: 'projects/0.xbp' },

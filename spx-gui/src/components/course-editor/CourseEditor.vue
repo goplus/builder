@@ -5,12 +5,14 @@
  */
 import { isEqual } from 'lodash'
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
 import { createResolvedQueryRet } from '@/utils/query'
 import { makeChildScopedRouter, path2PathSegments, type IScopedRouter, type PathSegments } from '@/utils/route'
 import { useI18n } from '@/utils/i18n'
 import { getCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
+import { getCourseManagementRoute } from '@/apps/xbuilder/router'
 import { saveFiles } from '@/models/common/cloud'
 import type { Files } from '@/models/common/file'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -534,7 +536,13 @@ onUnmounted(() => {
             class="flex min-w-0 items-center gap-2"
           >
             <span class="truncate font-semibold">{{ project.title }}</span>
-            <span class="truncate text-sm text-grey-700">{{ series.title }}</span>
+            <RouterLink
+              v-radar="{ name: 'series-link', desc: 'Link to the series in course management' }"
+              class="truncate text-sm text-grey-700 hover:text-primary-main"
+              :to="getCourseManagementRoute(series.id)"
+            >
+              {{ series.title }}
+            </RouterLink>
             <UITag v-if="dirty">{{ $t({ en: 'Unsaved', zh: '未保存' }) }}</UITag>
           </div>
         </template>

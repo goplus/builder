@@ -30,7 +30,8 @@ export type TutorialProjectConfig = {
   copilotContext: string
 }
 
-export type TutorialProjectMetadata = Omit<PlaygroundCourse, 'content'>
+/** The course as the project keeps it, without the timestamps the server keeps. */
+export type TutorialProjectMetadata = Omit<PlaygroundCourse, 'content' | 'createdAt' | 'updatedAt'>
 
 export type TutorialProjectSerialized = {
   metadata: TutorialProjectMetadata

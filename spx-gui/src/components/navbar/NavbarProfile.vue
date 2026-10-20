@@ -4,12 +4,11 @@ import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { useExternalUrl } from '@/utils/utils'
-import { getUserPageRoute } from '@/apps/xbuilder/router'
+import { getCourseManagementRoute, getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { canUseAdminConsole as checkCanUseAdminConsole, signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
-import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { useI18n } from '@/utils/i18n'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
@@ -45,11 +44,9 @@ function handleAdminConsole() {
 const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
 
-const manageCoursesFn = useCourseManagement()
-const manageCourses = useMessageHandle(manageCoursesFn).fn
-
-const manageCourseSeriesFn = useCourseSeriesManagement()
-const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
+function handleCourseManagement() {
+  router.push(getCourseManagementRoute())
+}
 
 async function handleSignOut() {
   await signOut()
@@ -115,11 +112,8 @@ async function handleSignOut() {
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="signedInUser?.capabilities.canManageCourses">
-        <UIMenuItem @click="manageCourses()">
-          {{ $t({ en: 'Manage courses', zh: '管理课程' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="manageCourseSeries()">
-          {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
+        <UIMenuItem @click="handleCourseManagement">
+          {{ $t({ en: 'Course management', zh: '课程管理' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="canUseAdminConsole">

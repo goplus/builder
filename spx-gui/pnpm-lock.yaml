@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@ethanlita/fflate':
+        specifier: ^0.8.4
+        version: 0.8.4
       '@floating-ui/dom':
         specifier: ^1.7.6
         version: 1.7.6
@@ -17,9 +20,6 @@ importers:
       '@lottiefiles/dotlottie-web':
         specifier: 0.41.0
         version: 0.41.0
-      '@nighca/fflate':
-        specifier: ^0.8.3
-        version: 0.8.3
       '@scalar/api-reference':
         specifier: ^1.40.0
         version: 1.40.0(sortablejs@1.15.6)(tailwindcss@4.2.2)(typescript@5.9.3)
@@ -374,6 +374,9 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@ethanlita/fflate@0.8.4':
+    resolution: {integrity: sha512-X4waf+4NxnJZzCEwPKHWf1cUdAClaEbVGPoN0B44a3QUlA0YGDpKa4BAry/BtuEOYkvR26j8DeaSxUFZTSk3Xg==}
+
   '@floating-ui/core@1.7.5':
     resolution: {integrity: sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==}
 
@@ -486,10 +489,6 @@ packages:
 
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
-
-  '@nighca/fflate@0.8.3':
-    resolution: {integrity: sha512-XdSGXBiaSoboT2w81bXyjkzPEjHP3kkRvWaMmwYKT1N3m8Y8pJXV3n+JIEaVfeCpSDKV7npJD3lhvEim3+ZsNQ==}
-    engines: {node: 20.x}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -3152,6 +3151,8 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
+  '@ethanlita/fflate@0.8.4': {}
+
   '@floating-ui/core@1.7.5':
     dependencies:
       '@floating-ui/utils': 0.2.11
@@ -3293,8 +3294,6 @@ snapshots:
       '@emnapi/runtime': 1.9.0
       '@tybys/wasm-util': 0.10.1
     optional: true
-
-  '@nighca/fflate@0.8.3': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

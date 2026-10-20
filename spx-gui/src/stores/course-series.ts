@@ -95,6 +95,8 @@ export function useDeleteCourseSeries() {
   )
 }
 
+export type DeleteCourseSeries = ReturnType<typeof useDeleteCourseSeries>
+
 /** Keeps cached series and their course lists in step with writes to courses. */
 export function useCourseChangesInSeries() {
   const seriesCache = useQueryCache<apis.CourseSeries>()

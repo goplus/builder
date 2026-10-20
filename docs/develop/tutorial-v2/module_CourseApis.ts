@@ -8,6 +8,8 @@ export type CourseBase = {
   kind: CourseKind;
   title: string;
   thumbnail: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type GuidedCourse = CourseBase & {

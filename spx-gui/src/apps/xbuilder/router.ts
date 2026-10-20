@@ -56,6 +56,12 @@ export function getCourseEditorRoute(courseSeriesID: string, courseID: string, i
   return `${base}/${inCourseEditorPath.map(encodeURIComponent).join('/')}`
 }
 
+/** Course management, at the series of `courseSeriesID` or at the list of series when it is omitted. */
+export function getCourseManagementRoute(courseSeriesID?: string) {
+  if (courseSeriesID == null) return '/course-management'
+  return `/course-management/${encodeURIComponent(courseSeriesID)}`
+}
+
 export const homePageName = 'home'
 
 declare module 'vue-router' {
@@ -135,6 +141,21 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/tutorials',
     component: () => import('./pages/tutorials/index.vue')
+  },
+  {
+    path: '/course-management',
+    component: () => import('./pages/course-management/index.vue'),
+    children: [
+      {
+        path: '',
+        component: () => import('./pages/course-management/series-list.vue')
+      },
+      {
+        path: ':courseSeriesIdInput',
+        component: () => import('./pages/course-management/series.vue'),
+        props: true
+      }
+    ]
   },
   {
     path: '/course/:courseSeriesIdInput/:courseIdInput/start',
