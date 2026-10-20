@@ -25,6 +25,7 @@ import CourseSeriesItem from '@/components/course/management/CourseSeriesItem.vu
 import CourseSeriesItemCornerMenu from '@/components/course/management/CourseSeriesItemCornerMenu.vue'
 import CourseSeriesDrawer from '@/components/course/management/CourseSeriesDrawer.vue'
 import { useCourseSeriesFileActions } from '@/components/course/management/series-file-actions'
+import { usePageModals } from '@/components/course/management/page-modals'
 import { deleteCourseSeriesWithCourses } from '@/components/course/management/series-deletion'
 import {
   createSeriesOrderWriter,
@@ -55,6 +56,7 @@ const deleteCourse = useDeleteCourse()
 const deleteCourseSeries = useDeleteCourseSeries()
 const fileActions = useCourseSeriesFileActions()
 const invokeSeriesDrawer = useModal(CourseSeriesDrawer)
+const { keepPageFor } = usePageModals()
 
 // Written like the search and the sort, replacing the history entry instead of adding one.
 const kindFilter = computed<'all' | CourseKind>({
@@ -147,19 +149,21 @@ function handleOpen(courseSeries: CourseSeries) {
 
 const handleCreate = useMessageHandle(async () => {
   const kind = kindFilter.value === 'all' ? 'guided' : kindFilter.value
-  const created = await invokeSeriesDrawer({ courseSeries: null, kind, order: getNextSeriesOrder(allSeries.value) })
+  const created = await keepPageFor(
+    invokeSeriesDrawer({ courseSeries: null, kind, order: getNextSeriesOrder(allSeries.value) })
+  )
   // Courses are created in their series, so the new series is opened for them.
   await router.push(getCourseManagementRoute(created.id))
 }).fn
 
 const handleEdit = useMessageHandle(async (courseSeries: CourseSeries) => {
-  await invokeSeriesDrawer({ courseSeries, kind: courseSeries.kind, order: courseSeries.order })
+  await keepPageFor(invokeSeriesDrawer({ courseSeries, kind: courseSeries.kind, order: courseSeries.order }))
   seriesQueryRet.refetch()
 }).fn
 
 const handleImport = useMessageHandle(async () => {
   try {
-    await fileActions.importAsNewSeries(getNextSeriesOrder(allSeries.value))
+    await keepPageFor(fileActions.importAsNewSeries(getNextSeriesOrder(allSeries.value)))
   } finally {
     // A cancelled or failed import may have left something its undoing could not.
     seriesQueryRet.refetch()
@@ -169,15 +173,17 @@ const handleImport = useMessageHandle(async () => {
 const handleRemove = useMessageHandle(
   async (courseSeries: CourseSeries) => {
     const courseCount = courseSeries.courseIDs.length
-    await confirm({
-      type: 'warning',
-      title: i18n.t({ en: 'Delete course series', zh: '删除课程系列' }),
-      content: i18n.t({
-        en: `Delete "${courseSeries.title}" and its ${courseCount} course${courseCount === 1 ? '' : 's'}? This cannot be undone.`,
-        zh: `确定删除“${courseSeries.title}”及其中的 ${courseCount} 门课程吗？此操作不可撤销。`
-      }),
-      confirmText: i18n.t({ en: 'Delete', zh: '删除' })
-    })
+    await keepPageFor(
+      confirm({
+        type: 'warning',
+        title: i18n.t({ en: 'Delete course series', zh: '删除课程系列' }),
+        content: i18n.t({
+          en: `Delete "${courseSeries.title}" and its ${courseCount} course${courseCount === 1 ? '' : 's'}? This cannot be undone.`,
+          zh: `确定删除“${courseSeries.title}”及其中的 ${courseCount} 门课程吗？此操作不可撤销。`
+        }),
+        confirmText: i18n.t({ en: 'Delete', zh: '删除' })
+      })
+    )
     try {
       await m.withLoading(
         deleteCourseSeriesWithCourses(courseSeries.id, { deleteCourse, deleteCourseSeries }),

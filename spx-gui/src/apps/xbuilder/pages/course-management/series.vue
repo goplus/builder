@@ -31,6 +31,7 @@ import GuidedCourseDrawer from '@/components/course/management/GuidedCourseDrawe
 import PlaygroundCourseDrawer from '@/components/course/management/PlaygroundCourseDrawer.vue'
 import { courseKindNames } from '@/components/course/management/kind'
 import { useCourseSeriesFileActions } from '@/components/course/management/series-file-actions'
+import { usePageModals } from '@/components/course/management/page-modals'
 import { deleteCourseSeriesWithCourses } from '@/components/course/management/series-deletion'
 import ListControls from '@/components/course/management/ListControls.vue'
 import ListSections from '@/components/course/management/ListSections.vue'
@@ -61,6 +62,7 @@ const fileActions = useCourseSeriesFileActions()
 const invokeSeriesDrawer = useModal(CourseSeriesDrawer)
 const invokeGuidedCourseDrawer = useModal(GuidedCourseDrawer)
 const invokePlaygroundCourseDrawer = useModal(PlaygroundCourseDrawer)
+const { keepPageFor } = usePageModals()
 
 const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
 const coursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
@@ -153,34 +155,36 @@ function openInCourseEditor(series: CourseSeries, course: Course) {
 
 const handleCreateCourse = useMessageHandle(async (series: CourseSeries) => {
   if (series.kind === 'guided') {
-    await invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id })
+    await keepPageFor(invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id }))
     refetch()
     return
   }
-  const { course } = await invokePlaygroundCourseDrawer({ course: null, courseSeriesID: series.id })
+  const { course } = await keepPageFor(invokePlaygroundCourseDrawer({ course: null, courseSeriesID: series.id }))
   await openInCourseEditor(series, course)
 }).fn
 
 const handleOpenCourse = useMessageHandle(async (series: CourseSeries, course: Course) => {
   if (isGuidedCourse(course)) {
-    await invokeGuidedCourseDrawer({ course, courseSeriesID: series.id })
+    await keepPageFor(invokeGuidedCourseDrawer({ course, courseSeriesID: series.id }))
     return
   }
-  const { openEditor } = await invokePlaygroundCourseDrawer({ course, courseSeriesID: series.id })
+  const { openEditor } = await keepPageFor(invokePlaygroundCourseDrawer({ course, courseSeriesID: series.id }))
   if (openEditor) await openInCourseEditor(series, course)
 }).fn
 
 const handleRemoveCourse = useMessageHandle(
   async (course: Course) => {
-    await confirm({
-      type: 'warning',
-      title: i18n.t({ en: 'Delete course', zh: '删除课程' }),
-      content: i18n.t({
-        en: `Delete "${course.title}"? This cannot be undone.`,
-        zh: `确定删除“${course.title}”吗？此操作不可撤销。`
-      }),
-      confirmText: i18n.t({ en: 'Delete', zh: '删除' })
-    })
+    await keepPageFor(
+      confirm({
+        type: 'warning',
+        title: i18n.t({ en: 'Delete course', zh: '删除课程' }),
+        content: i18n.t({
+          en: `Delete "${course.title}"? This cannot be undone.`,
+          zh: `确定删除“${course.title}”吗？此操作不可撤销。`
+        }),
+        confirmText: i18n.t({ en: 'Delete', zh: '删除' })
+      })
+    )
     await m.withLoading(deleteCourse(course.id), i18n.t({ en: 'Deleting course', zh: '删除课程中' }))
     refetch()
   },
@@ -188,10 +192,10 @@ const handleRemoveCourse = useMessageHandle(
 ).fn
 
 const handleEditSeries = useMessageHandle(async (series: CourseSeries) => {
-  await invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order })
+  await keepPageFor(invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order }))
 }).fn
 
-const handleExport = useMessageHandle((series: CourseSeries) => fileActions.exportSeries(series), {
+const handleExport = useMessageHandle((series: CourseSeries) => keepPageFor(fileActions.exportSeries(series)), {
   en: 'Failed to export course series file',
   zh: '导出课程系列文件失败'
 }).fn
@@ -199,7 +203,7 @@ const handleExport = useMessageHandle((series: CourseSeries) => fileActions.expo
 const handleImport = useMessageHandle(
   async (series: CourseSeries) => {
     try {
-      await fileActions.importIntoSeries(series)
+      await keepPageFor(fileActions.importIntoSeries(series))
     } finally {
       refetch()
     }
@@ -210,15 +214,17 @@ const handleImport = useMessageHandle(
 const handleRemoveSeries = useMessageHandle(
   async (series: CourseSeries) => {
     const courseCount = series.courseIDs.length
-    await confirm({
-      type: 'warning',
-      title: i18n.t({ en: 'Delete course series', zh: '删除课程系列' }),
-      content: i18n.t({
-        en: `Delete "${series.title}" and its ${courseCount} course${courseCount === 1 ? '' : 's'}? This cannot be undone.`,
-        zh: `确定删除“${series.title}”及其中的 ${courseCount} 门课程吗？此操作不可撤销。`
-      }),
-      confirmText: i18n.t({ en: 'Delete', zh: '删除' })
-    })
+    await keepPageFor(
+      confirm({
+        type: 'warning',
+        title: i18n.t({ en: 'Delete course series', zh: '删除课程系列' }),
+        content: i18n.t({
+          en: `Delete "${series.title}" and its ${courseCount} course${courseCount === 1 ? '' : 's'}? This cannot be undone.`,
+          zh: `确定删除“${series.title}”及其中的 ${courseCount} 门课程吗？此操作不可撤销。`
+        }),
+        confirmText: i18n.t({ en: 'Delete', zh: '删除' })
+      })
+    )
     try {
       await m.withLoading(
         deleteCourseSeriesWithCourses(series.id, { deleteCourse, deleteCourseSeries }),
