@@ -43,7 +43,10 @@ export class CourseCreation {
     }
   }
 
-  /** Delete the course if it was created but not added to the series. */
+  /**
+   * Delete the course if it was created but not added to the series. Not to be called while `run` is under way: a
+   * course still being created or added would be missed, or deleted while it is being added.
+   */
   async abandon() {
     const course = this.created
     if (course == null || this.added) return

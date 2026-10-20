@@ -77,6 +77,8 @@ async function buildStarterContent() {
 }
 
 const handleClose = useMessageHandle(async () => {
+  // Closing unmounts the drawer, which abandons the creation; a creation still under way would not be cleaned up.
+  if (handleSubmit.isLoading.value) return
   await confirmDiscard()
   emit('cancelled')
 }).fn
@@ -163,7 +165,9 @@ async function submit() {
     </p>
 
     <template #footer>
-      <UIButton type="neutral" @click="handleClose">{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton>
+      <UIButton type="neutral" :disabled="handleSubmit.isLoading.value" @click="handleClose">
+        {{ $t({ en: 'Cancel', zh: '取消' }) }}
+      </UIButton>
       <UIButton
         v-radar="{ name: 'submit-button', desc: 'Click to save the course' }"
         type="primary"
