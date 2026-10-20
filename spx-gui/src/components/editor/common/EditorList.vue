@@ -10,7 +10,10 @@
         props.resourceType === 'widget'
     }"
   >
-    <div class="editor-list-sidebar flex-none flex flex-col border-r border-dividing-line-2">
+    <div
+      class="editor-list-sidebar flex-none flex flex-col border-r border-dividing-line-2"
+      :style="{ '--editor-list-scrollbar-width': `${scrollbarWidth}px` }"
+    >
       <div
         ref="itemsWrapper"
         v-radar="listRadarInfo"
@@ -42,6 +45,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useContentSize } from '@/utils/dom'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { humanizeResourceType, type ResourceType } from '@/models/spx/common/resource'
@@ -82,6 +86,11 @@ const addButtonRadarInfo = computed<RadarNodeMeta>(() => ({
 }))
 
 const itemsWrapper = ref<HTMLElement | null>(null)
+const itemsSize = useContentSize(itemsWrapper)
+const scrollbarWidth = computed(() => {
+  const el = itemsWrapper.value
+  return el != null && itemsSize.value != null ? Math.max(0, el.offsetWidth - el.clientWidth) : 0
+})
 const sortableList = computed(() => (props.sortable ? props.sortable.list : null))
 
 useDragSortable(sortableList, itemsWrapper, {
@@ -102,13 +111,15 @@ useDragSortable(sortableList, itemsWrapper, {
 }
 
 .editor-list-compact .editor-list-sidebar {
-  width: 92px;
+  width: calc(92px + var(--editor-list-scrollbar-width, 0px));
 }
 
 .editor-list-compact .items {
   min-width: 0;
   margin-inline: 0;
+  padding-inline: 9.5px;
   align-items: center;
+  scrollbar-gutter: stable;
 }
 
 .editor-list-compact :deep(.items > .ui-block-item) {

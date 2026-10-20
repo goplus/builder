@@ -45,6 +45,13 @@ withDefaults(
 </template>
 
 <style scoped>
+.gen-item {
+  width: 72px;
+  height: 72px;
+  --editor-card-corner-inset: 2px;
+  --editor-card-corner-icon-size: 14px;
+}
+
 @property --angle {
   syntax: '<angle>';
   initial-value: 0deg;
@@ -90,8 +97,8 @@ withDefaults(
 .gen-item .preview-wrapper {
   position: relative;
   margin-bottom: 5px;
-  height: 60px;
-  width: 60px;
+  height: 41px;
+  width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,8 +125,8 @@ withDefaults(
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -129,7 +136,7 @@ withDefaults(
 }
 
 .generation-ai-marker svg {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
 }
 </style>

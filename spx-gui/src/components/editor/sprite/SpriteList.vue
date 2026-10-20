@@ -154,21 +154,6 @@ const handleSpriteGenClick = useMessageHandle(
   z-index: 1;
 }
 
-.sprite-list :deep(.generation-ai-marker) {
-  width: 12px;
-  height: 12px;
-}
-
-.sprite-list :deep(.generation-ai-marker svg) {
-  width: 8px;
-  height: 8px;
-}
-
-.sprite-list :deep(.gen-item .preview-wrapper) {
-  width: 44px;
-  height: 41px;
-}
-
 .sprite-list-vertical {
   flex: 1 1 0;
   scrollbar-gutter: stable;

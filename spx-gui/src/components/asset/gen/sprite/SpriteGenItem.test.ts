@@ -61,6 +61,31 @@ describe('SpriteGenItem generation states', () => {
     expect(wrapper.find('.generation-failure-dot').exists()).toBe(false)
   })
 
+  it('changes selection without changing generation state', async () => {
+    const { wrapper } = setup({
+      prepareContentPhase: new Phase<void>(actionName, { status: 'finished', result: undefined }),
+      genImagesPhase: new Phase(actionName, { status: 'running', timeLeft: null }),
+      enrichPhase: failedPhase()
+    })
+    const originalClasses = wrapper.classes()
+    const originalContent = wrapper.element.innerHTML
+    expect(originalClasses).not.toContain('active')
+    expect(originalClasses).not.toContain('ui-block-item-active')
+    expect(originalClasses).toContain('loading')
+    expect(originalClasses).toContain('highlight')
+    expect(wrapper.find('.generation-failure-dot').exists()).toBe(true)
+
+    for (const active of [true, false]) {
+      await wrapper.setProps({ active })
+      expect(wrapper.classes().includes('active')).toBe(active)
+      expect(wrapper.classes().includes('ui-block-item-active')).toBe(active)
+      expect(wrapper.classes().filter((name) => name !== 'active' && name !== 'ui-block-item-active')).toEqual(
+        originalClasses
+      )
+      expect(wrapper.element.innerHTML).toBe(originalContent)
+    }
+  })
+
   it('keeps the prepared placeholder while a costume finishes and waits to be adopted', async () => {
     const { wrapper, gen, i18n, project } = setup({
       prepareContentPhase: new Phase<void>(actionName, { status: 'finished', result: undefined })

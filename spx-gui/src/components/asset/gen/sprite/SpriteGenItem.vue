@@ -7,9 +7,13 @@ import spriteSVG from '../common/sprite.svg?raw'
 import { isCostumesLoading } from '../costume/CostumeGenItem.vue'
 import { isAnimationsLoading } from '../animation/AnimationGenItem.vue'
 
-const props = defineProps<{
-  gen: SpriteGen
-}>()
+const props = withDefaults(
+  defineProps<{
+    gen: SpriteGen
+    active?: boolean
+  }>(),
+  { active: false }
+)
 
 const isLoading = computed(() => {
   const { costumes, animations } = props.gen
@@ -39,6 +43,7 @@ const failed = computed(() =>
       name: `Sprite generation item '${gen.settings.name}'`,
       desc: `Click to view generation phase details for sprite '${gen.settings.name}'`
     }"
+    :active="active"
     :loading="isLoading"
     :highlight="highlight"
     :failed="failed"

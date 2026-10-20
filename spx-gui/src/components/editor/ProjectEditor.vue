@@ -15,7 +15,7 @@
         ref="spriteRailRef"
         v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
         class="min-w-0 flex-none"
-        :style="{ width: `${paneLayout?.spriteRailWidth ?? 104}px` }"
+        :style="{ width: `${paneLayout?.spriteRailWidth ?? 88}px` }"
       >
         <SpritesPanel layout="vertical" header-height="large" />
       </UICard>

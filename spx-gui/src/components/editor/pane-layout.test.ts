@@ -29,14 +29,14 @@ describe('editor pane layout', () => {
   })
 
   it('sizes the portrait preview from the available height', () => {
-    expect(getPaneLayout({ width: 1408, height: 820 }, portrait, 'portrait').previewWidth).toBe(475)
+    expect(getPaneLayout({ width: 1408, height: 820 }, portrait, 'portrait').previewWidth).toBe(459)
   })
 
   it.each([
     { width: 1248, height: 728 },
     { width: 1408, height: 828 }
   ])('keeps a single sprite column on smaller portrait screens: %s', (container) => {
-    expect(getPaneLayout(container, portrait, 'portrait').spriteRailWidth).toBe(104)
+    expect(getPaneLayout(container, portrait, 'portrait').spriteRailWidth).toBe(88)
   })
 
   it('adds a second portrait sprite column on large screens without shrinking the preview', () => {
@@ -48,7 +48,7 @@ describe('editor pane layout', () => {
     expect(twoColumns.previewWidth - twoColumns.spriteRailWidth).toBe(
       singleColumn.previewWidth - singleColumn.spriteRailWidth
     )
-    expect(twoColumns.codeWidth).toBe(singleColumn.codeWidth - 62)
+    expect(twoColumns.codeWidth).toBe(singleColumn.codeWidth - 78)
     expect(twoColumns.codeWidth).toBeGreaterThanOrEqual(384)
     expect(twoColumns.codeWidth + twoColumns.previewWidth + 16).toBe(container.width)
   })
@@ -59,6 +59,14 @@ describe('editor pane layout', () => {
     const cardsWidth = 72 * 2 + 6
     expect(result.spriteRailWidth - leftInset - cardsWidth).toBe(leftInset)
   })
+
+  it.each([0, 6, 8, 15])(
+    'fits one compact sprite card with a %ipx scrollbar gutter and balanced insets',
+    (scrollbarWidth) => {
+      const result = getPaneLayout({ width: 1408, height: 828 }, portrait, 'portrait', false, scrollbarWidth)
+      expect(result.spriteRailWidth - scrollbarWidth - 8 * 2).toBe(72)
+    }
+  )
 
   it.each([0, 6, 8, 15])('reserves a %ipx scrollbar gutter outside the portrait sprite columns', (scrollbarWidth) => {
     const container = { width: 1888, height: 1008 }
@@ -98,18 +106,18 @@ describe('editor pane layout', () => {
     for (const width of [500, 700, 720, 887, 1196, 1480]) {
       const result = getPaneLayout({ width, height: 782 }, portrait, 'portrait')
       expect(result.codeWidth).toBeGreaterThanOrEqual(384)
-      expect(result.previewWidth).toBeGreaterThanOrEqual(414)
-      expect(result.previewWidth).toBeLessThanOrEqual(453)
-      expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(Math.max(width, 814))
+      expect(result.previewWidth).toBeGreaterThanOrEqual(398)
+      expect(result.previewWidth).toBeLessThanOrEqual(437)
+      expect(result.codeWidth + result.previewWidth + 16).toBeCloseTo(Math.max(width, 798))
     }
   })
 
   it('preserves the portrait preview ratio at the minimum supported 1280x800 screen size', () => {
     const minimumScreenContent = getPaneLayout({ width: 1248, height: 728 }, portrait, 'portrait')
     expect(minimumScreenContent.codeWidth).toBeGreaterThanOrEqual(384)
-    expect(minimumScreenContent.previewWidth).toBe(423)
+    expect(minimumScreenContent.previewWidth).toBe(407)
 
-    const previewBodyWidth = minimumScreenContent.previewWidth - 104 - 16 - 24
+    const previewBodyWidth = minimumScreenContent.previewWidth - 88 - 16 - 24
     const previewBodyHeight = 728 - 48 - 24 - 16 - 144
     expect(previewBodyWidth / previewBodyHeight).toBeCloseTo(portrait.width / portrait.height, 2)
   })

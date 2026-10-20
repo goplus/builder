@@ -41,8 +41,8 @@ export function getPaneLayout(
 ) {
   const gap = panelGap
   const minCodeWidth = 384
-  // Two 72px cards, a 6px column gap, and 8px padding on each side.
-  const spriteRailWidth = (isLargeScreen ? 166 : 104) + spriteScrollbarWidth
+  // One or two 72px cards, a 6px column gap, and 8px padding on each side.
+  const spriteRailWidth = (isLargeScreen ? 166 : 88) + spriteScrollbarWidth
   const portraitExtraWidth = layout === 'portrait' ? panelGap + spriteRailWidth : 0
   const minPreviewWidth =
     layout === 'focused' ? 320 : getPreviewWidthForArea(viewport, minPreviewArea) + portraitExtraWidth
