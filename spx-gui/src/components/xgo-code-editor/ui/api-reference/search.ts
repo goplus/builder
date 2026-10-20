@@ -13,6 +13,6 @@ export function searchAPIReferenceItems(items: APIReferenceItem[], query: string
     ]
       .join(' ')
       .toLowerCase()
-    return keywords.every((keyword) => text.includes(keyword))
+    return keywords.some((keyword) => text.includes(keyword))
   })
 }

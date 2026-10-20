@@ -37,12 +37,16 @@ describe('searchAPIReferenceItems', () => {
     }
   )
 
-  it.each(['换装', '换服装', '更换服装', '换衣服', 'change clothes', 'change costume'])(
+  it.each(['换装', '换服装', '更换服装', '换衣服'])(
     'distinguishes changing a costume from querying its name with %s',
     (query) => {
       expect(searchAPIReferenceItems([costumeName, setCostume], query)).toEqual([setCostume])
     }
   )
+
+  it.each(['change clothes', 'change costume'])('finds either costume term in %s', (query) => {
+    expect(searchAPIReferenceItems([costumeName, setCostume], query)).toEqual([costumeName, setCostume])
+  })
 
   it.each(['克隆', 'duplicate'])('finds both cloning and the cloned event with %s', (query) => {
     expect(searchAPIReferenceItems([animate0, clone0, onCloned1], query)).toEqual([clone0, onCloned1])
@@ -62,11 +66,19 @@ describe('searchAPIReferenceItems', () => {
     expect(searchAPIReferenceItems([animate0, ...motionItems, gamePlay0], query)).toEqual(motionItems)
   })
 
-  it.each(['animate', 'ANIMATE', 'Sprite.animate', 'play animation', '  PLAY   ANIMATION  ', '播放动画', '播放 动画'])(
+  it.each(['animate', 'ANIMATE', 'Sprite.animate', '播放动画'])(
     'finds all three playback variants with %s, without sound playback or stopping animation',
     (query) => {
       const items = [gamePlay0, animate0, animate1, animateAndWait, stopAnimation]
       expect(searchAPIReferenceItems(items, query)).toEqual([animate0, animate1, animateAndWait])
+    }
+  )
+
+  it.each(['play animation', '  PLAY   ANIMATION  ', '播放 动画'])(
+    'finds entries matching either playback or animation in %s',
+    (query) => {
+      const items = [gamePlay0, animate0, animate1, animateAndWait, stopAnimation]
+      expect(searchAPIReferenceItems(items, query)).toEqual(items)
     }
   )
 
@@ -83,11 +95,26 @@ describe('searchAPIReferenceItems', () => {
   })
 
   it('returns only items in the provided scope', () => {
-    expect(searchAPIReferenceItems([gamePlay0, forIterate], 'play animation')).toEqual([])
+    expect(searchAPIReferenceItems([gamePlay0, forIterate], 'play animation')).toEqual([gamePlay0])
   })
 
-  it('requires all search words to match', () => {
-    expect(searchAPIReferenceItems([animate0, gamePlay0], 'play nonexistent')).toEqual([])
+  it('keeps matching APIs when extra words do not match', () => {
+    expect(searchAPIReferenceItems([animate0, gamePlay0, forIterate], 'play nonexistent')).toEqual([
+      animate0,
+      gamePlay0
+    ])
+  })
+
+  it.each(['数组 服装', 'ARRAY clothes'])('finds different functions from either term in %s', (query) => {
+    expect(searchAPIReferenceItems([forIterate, costumeName, setCostume, animate0], query)).toEqual([
+      forIterate,
+      costumeName,
+      setCostume
+    ])
+  })
+
+  it('returns no results when none of the search words match', () => {
+    expect(searchAPIReferenceItems([animate0, gamePlay0], 'nonexistent 不存在')).toEqual([])
   })
 
   it('returns the original items for empty or whitespace-only queries', () => {
