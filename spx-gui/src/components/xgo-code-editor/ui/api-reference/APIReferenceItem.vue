@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
+import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown } from '@/components/ui'
 import { type Action, setDdiDragData } from '../../common'
@@ -17,10 +18,17 @@ import type { APIReferenceItem } from '.'
 const props = defineProps<{
   item: APIReferenceItem
   interactionDisabled: boolean
+  showDescription?: boolean
 }>()
 
+const i18n = useI18n()
 const codeEditor = useCodeEditor()
 const codeEditorUICtx = useCodeEditorUICtx()
+
+const description = computed(() => {
+  const detail = props.item.detail.value
+  return typeof detail === 'string' ? detail : i18n.t(detail)
+})
 
 const handleInsert = useMessageHandle(
   () =>
@@ -107,6 +115,7 @@ function handleMouseUp(e: MouseEvent) {
           desc: ''
         }"
         class="api-reference-item"
+        :class="{ 'search-result': showDescription }"
         draggable="true"
         @dragstart="handleDragStart"
         @mousedown.passive="handleMouseDown"
@@ -116,6 +125,7 @@ function handleMouseUp(e: MouseEvent) {
         <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">
           {{ parsed.overview }}
         </DefinitionOverviewWrapper>
+        <p v-if="showDescription" class="mt-1 line-clamp-2 text-xs text-hint-1">{{ description }}</p>
       </li>
     </template>
     <HoverCard :actions="hoverCardActions" @action="hideDropdown">
@@ -150,6 +160,12 @@ function handleMouseUp(e: MouseEvent) {
 
 .api-reference-item:hover {
   background: var(--ui-color-grey-300);
+}
+
+.api-reference-item.search-result {
+  align-self: stretch;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
 .api-reference-item.before-dragging {

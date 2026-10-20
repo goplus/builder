@@ -10,6 +10,7 @@ export const forIterate: DefinitionDocumentationItem = {
   definition: { name: 'for_iterate' },
   insertSnippet: 'for ${1:v} in ${2:[]} {\n\t$0\n}',
   overview: 'for v in arr {}',
+  searchKeywords: ['array', 'iterate array', 'loop array', '数组', '遍历数组'],
   detail: makeBasicMarkdownString({
     en: 'Iterate within given list',
     zh: '遍历指定列表'
@@ -22,6 +23,7 @@ export const forIterateWithIndex: DefinitionDocumentationItem = {
   definition: { name: 'for_iterate_with_index' },
   insertSnippet: 'for ${1:i}, ${2:v} in ${3:[]} {\n\t$0\n}',
   overview: 'for i, v in arr {}',
+  searchKeywords: ['array', 'iterate array', 'loop array', '数组', '遍历数组'],
   detail: makeBasicMarkdownString({
     en: 'Iterate with index within given list',
     zh: '遍历指定列表（带序号）'

@@ -381,6 +381,8 @@ export type DefinitionDocumentationItem = {
   overview: string
   /** Detailed explanation for the definition, overview not included */
   detail: BasicMarkdownString
+  /** Additional terms for finding the definition by function or concept. */
+  searchKeywords?: string[]
   /**
    * If the definition should be hidden from the list. Typically a definition is hidden when:
    * - It is for internal usage only

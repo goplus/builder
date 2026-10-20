@@ -24,20 +24,34 @@ import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilTaskScheduled } from '@/utils/utils'
-import { UIError } from '@/components/ui'
-import { stringifyDefinitionId, type DefinitionDocumentationItem } from '../../common'
+import { UIError, UIIcon, UITextInput } from '@/components/ui'
+import { stringifyDefinitionId } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
+import { searchAPIReferenceItems } from './search'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
 const props = defineProps<{
   controller: APIReferenceController
 }>()
 
-const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
+const itemsForDisplay = computed<APIReferenceItem[] | null>((oldValue) => {
   // Ignore intermediate empty data to keep UI stable
   return props.controller.items ?? oldValue ?? null
 })
+
+const searchQuery = ref('')
+const isSearching = computed(() => searchQuery.value.trim() !== '')
+const searchResults = computed(() => searchAPIReferenceItems(itemsForDisplay.value ?? [], searchQuery.value))
+const searchResultsWrapperRef = ref<HTMLElement>()
+
+watch(
+  searchResults,
+  () => {
+    if (searchResultsWrapperRef.value != null) searchResultsWrapperRef.value.scrollTop = 0
+  },
+  { flush: 'post' }
+)
 
 const loaded = ref(false)
 // APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial)
@@ -150,45 +164,92 @@ function handleCategoryClick(id: string) {
       name: 'API References',
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
-    class="flex min-h-0"
+    class="flex min-h-0 flex-col"
   >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
-        <li
-          v-for="c in categoriesComputed"
-          :key="c.id"
-          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
-          :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
-          @click="handleCategoryClick(c.id)"
+      <div class="flex-none border-b border-dividing-line-2 p-3">
+        <UITextInput
+          v-model:value="searchQuery"
+          v-radar="{ name: 'Search API Reference', desc: 'Search API names and functions in English or Chinese' }"
+          :placeholder="$t({ en: 'Search APIs or functions', zh: '搜索 API 或功能' })"
+          clearable
+          @keydown.esc.stop="searchQuery = ''"
         >
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="h-6 w-6" v-html="c.icon"></div>
-          <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
-        </li>
-      </ul>
-      <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
-        <li
-          v-for="c in categoriesForItems"
-          :key="c.id"
-          :data-category-id="c.id"
-          class="[&:last-child>section:last-child]:border-b-0"
+          <template #prefix><UIIcon type="search" /></template>
+        </UITextInput>
+      </div>
+      <div v-if="isSearching" class="flex min-h-0 flex-[1_1_0] flex-col">
+        <p class="flex-none px-4 py-3 text-xs text-hint-2" role="status" aria-live="polite">
+          {{
+            $t({
+              en: searchResults.length === 1 ? '1 result' : `${searchResults.length} results`,
+              zh: `${searchResults.length} 个结果`
+            })
+          }}
+        </p>
+        <ul
+          v-if="searchResults.length > 0"
+          ref="searchResultsWrapperRef"
+          class="flex min-h-0 flex-col gap-2 overflow-y-auto px-3 pb-3 [scrollbar-width:thin]"
         >
-          <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
-            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
-            <ul class="flex flex-col gap-md pb-5">
-              <APIReferenceItemComp
-                v-for="item in sc.items"
-                :key="stringifyDefinitionId(item.definition)"
-                :item="item"
-                :interaction-disabled="scrolling"
-              />
-            </ul>
-          </section>
-        </li>
-      </ul>
+          <APIReferenceItemComp
+            v-for="item in searchResults"
+            :key="stringifyDefinitionId(item.definition)"
+            :item="item"
+            :interaction-disabled="false"
+            show-description
+          />
+        </ul>
+        <p v-else class="px-4 py-3 text-sm text-hint-2">
+          {{
+            $t({
+              en: 'No matching APIs. Try another name or function.',
+              zh: '没有找到匹配的 API，试试其他名称或功能词。'
+            })
+          }}
+        </p>
+      </div>
+      <div v-show="!isSearching" class="flex min-h-0 flex-[1_1_0]">
+        <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
+          <li
+            v-for="c in categoriesComputed"
+            :key="c.id"
+            class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
+            :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
+            @click="handleCategoryClick(c.id)"
+          >
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="h-6 w-6" v-html="c.icon"></div>
+            <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
+          </li>
+        </ul>
+        <ul
+          ref="itemsWrapperRef"
+          class="relative flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
+        >
+          <li
+            v-for="c in categoriesForItems"
+            :key="c.id"
+            :data-category-id="c.id"
+            class="[&:last-child>section:last-child]:border-b-0"
+          >
+            <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
+              <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+              <ul class="flex flex-col gap-md pb-5">
+                <APIReferenceItemComp
+                  v-for="item in sc.items"
+                  :key="stringifyDefinitionId(item.definition)"
+                  :item="item"
+                  :interaction-disabled="scrolling"
+                />
+              </ul>
+            </section>
+          </li>
+        </ul>
+      </div>
     </template>
   </section>
 </template>
