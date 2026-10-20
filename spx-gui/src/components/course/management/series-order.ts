@@ -1,3 +1,4 @@
+import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import type { CourseSeries } from '@/apis/course-series'
 import { placeReordered } from './list-view'
 
@@ -30,4 +31,21 @@ export function planSeriesOrder(all: CourseSeries[], reorderedShown: CourseSerie
 /** The `order` for a new series, which comes after all of the author's series. */
 export function getNextSeriesOrder(all: CourseSeries[]) {
   return all.reduce((max, series) => Math.max(max, series.order), 0) + 1
+}
+
+/**
+ * Write the updates of each reorder, a few at a time, once those of the reorder before it have settled, so that an
+ * update left over from one reorder never lands after a later one's. A write resolves to how each update went.
+ */
+export function createSeriesOrderWriter(
+  update: (id: string, order: number) => Promise<unknown>,
+  /** How many updates of a reorder are sent at a time. */
+  concurrency: number
+) {
+  const reorders = new ConcurrencyLimitController(1)
+  return (updates: SeriesOrderUpdate[]) =>
+    reorders.run(() => {
+      const limit = new ConcurrencyLimitController(concurrency)
+      return Promise.allSettled(updates.map(({ id, order }) => limit.run(() => update(id, order))))
+    })
 }

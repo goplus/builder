@@ -5,7 +5,6 @@ import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import type { CourseKind } from '@/apis/course'
 import { listSignedInUserCourseSeries, type CourseSeries } from '@/apis/course-series'
@@ -27,7 +26,11 @@ import CourseSeriesItemCornerMenu from '@/components/course/management/CourseSer
 import CourseSeriesDrawer from '@/components/course/management/CourseSeriesDrawer.vue'
 import { useCourseSeriesFileActions } from '@/components/course/management/series-file-actions'
 import { deleteCourseSeriesWithCourses } from '@/components/course/management/series-deletion'
-import { getNextSeriesOrder, planSeriesOrder } from '@/components/course/management/series-order'
+import {
+  createSeriesOrderWriter,
+  getNextSeriesOrder,
+  planSeriesOrder
+} from '@/components/course/management/series-order'
 import ListControls from '@/components/course/management/ListControls.vue'
 import ListSections from '@/components/course/management/ListSections.vue'
 import {
@@ -110,7 +113,9 @@ const sections = computed(() => {
 })
 
 const listRef = ref<HTMLElement>()
-const seriesUpdateConcurrency = 5
+// TODO: Reorder in one request once the backend offers one. Until then each series is updated on its own, a few at a
+// time with the rest queued, and a failure leaves the others updated.
+const writeSeriesOrder = createSeriesOrderWriter((id, order) => updateCourseSeries(id, { order }), 5)
 
 const handleSorted = useMessageHandle(
   async (oldIndex: number, newIndex: number) => {
@@ -119,12 +124,7 @@ const handleSorted = useMessageHandle(
     reordered.splice(newIndex, 0, moved)
     const { series, updates } = planSeriesOrder(allSeries.value, reordered)
     allSeries.value = series
-    // TODO: Reorder in one request once the backend offers one. Until then each series is updated on its own, a few at
-    // a time with the rest queued, and a failure leaves the others updated.
-    const limit = new ConcurrencyLimitController(seriesUpdateConcurrency)
-    const results = await Promise.allSettled(
-      updates.map(({ id, order }) => limit.run(() => updateCourseSeries(id, { order })))
-    )
+    const results = await writeSeriesOrder(updates)
     if (results.some((result) => result.status === 'rejected')) {
       seriesQueryRet.refetch()
       throw new DefaultException({

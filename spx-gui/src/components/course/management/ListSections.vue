@@ -55,11 +55,19 @@ function updateActiveKey(scroller: Element | null) {
  */
 let jumpingUntil = 0
 
+/** The element a scroll moved, if it holds the list; scrolls elsewhere, as in a drawer, are none of the list's. */
+function getListScroller(e: Event) {
+  const scroller = e.target instanceof Element ? e.target : document.scrollingElement
+  if (scroller == null || contentRef.value == null || !scroller.contains(contentRef.value)) return null
+  return scroller
+}
+
 let frame: number | null = null
 function handleScroll(e: Event) {
   if (Date.now() < jumpingUntil) return
   if (frame != null) return
-  const scroller = e.target instanceof Element ? e.target : document.scrollingElement
+  const scroller = getListScroller(e)
+  if (scroller == null) return
   frame = requestAnimationFrame(() => {
     frame = null
     updateActiveKey(scroller)
@@ -71,7 +79,9 @@ watch(
   (showIndex, _, onCleanup) => {
     if (!showIndex) return
     // The page scrolls in an element of its own, so scrolls are listened to wherever they happen.
-    const handleScrollEnd = () => (jumpingUntil = 0)
+    const handleScrollEnd = (e: Event) => {
+      if (getListScroller(e) != null) jumpingUntil = 0
+    }
     document.addEventListener('scroll', handleScroll, { capture: true, passive: true })
     document.addEventListener('scrollend', handleScrollEnd, { capture: true, passive: true })
     onCleanup(() => {

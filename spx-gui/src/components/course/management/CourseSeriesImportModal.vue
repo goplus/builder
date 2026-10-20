@@ -87,8 +87,11 @@ const steps = computed(() => {
   const keys: CourseSeriesFileStep[] = ['read', 'check']
   if (importStarted.value) {
     keys.push('upload')
-    if (progress.value?.step === 'undo' || (cancelling.value && phase.value === 'importing')) keys.push('undo')
-    else {
+    if (progress.value?.step === 'undo' || (cancelling.value && phase.value === 'importing')) {
+      // A commit found not to have taken is undone too, and stays listed as the step that failed.
+      if (interrupted.value === 'commit') keys.push('commit')
+      keys.push('undo')
+    } else {
       keys.push('commit')
       if (props.courseSeries != null && props.courseSeries.courseIDs.length > 0) keys.push('cleanup')
     }
@@ -353,7 +356,7 @@ const summary = computed<LocaleMessage | null>(() => {
         </UIButton>
       </footer>
       <p
-        v-if="phase === 'importing' && !canCancel && !cancelling"
+        v-if="phase === 'importing' && !canCancel && !cancelling && progress?.step !== 'undo'"
         class="m-0 px-6 pb-4 text-right text-sm text-grey-700"
       >
         {{

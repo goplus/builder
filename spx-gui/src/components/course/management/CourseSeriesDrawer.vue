@@ -118,9 +118,14 @@ const handleSubmit = useMessageHandle(
   }
 )
 
+/** Submit unless a submission is under way, which pressing Enter or clicking again would start a second time. */
+function submitIfIdle() {
+  if (!handleSubmit.isLoading.value) void handleSubmit.fn()
+}
+
 async function submit() {
   const { hasError } = await form.validate()
-  if (!hasError) await handleSubmit.fn()
+  if (!hasError) submitIfIdle()
 }
 </script>
 
@@ -135,7 +140,7 @@ async function submit() {
     "
     @update:visible="handleClose"
   >
-    <UIForm :form="form" @submit="handleSubmit.fn">
+    <UIForm :form="form" @submit="submitIfIdle">
       <UIFormItem class="mt-0" path="kind" :label="$t({ en: 'Kind', zh: '类型' })">
         <UIRadioGroup
           v-if="!isEditMode"

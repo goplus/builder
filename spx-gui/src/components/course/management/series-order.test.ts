@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CourseSeries } from '@/apis/course-series'
-import { getNextSeriesOrder, planSeriesOrder } from './series-order'
+import { createSeriesOrderWriter, getNextSeriesOrder, planSeriesOrder } from './series-order'
 
 function makeSeries(id: string, order: number, kind: CourseSeries['kind'] = 'guided') {
   return { id, order, kind, title: `Series ${id}` } as CourseSeries
@@ -78,5 +78,55 @@ describe('getNextSeriesOrder', () => {
 
   it('is 1 without series', () => {
     expect(getNextSeriesOrder([])).toBe(1)
+  })
+})
+
+describe('createSeriesOrderWriter', () => {
+  function deferred() {
+    let resolve!: () => void
+    let reject!: (e: unknown) => void
+    const promise = new Promise<void>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  it('starts the updates of a reorder once those of the one before have settled', async () => {
+    const pending = new Map<string, ReturnType<typeof deferred>>()
+    const sent: string[] = []
+    const write = createSeriesOrderWriter((id, order) => {
+      const key = `${id}:${order}`
+      sent.push(key)
+      const d = deferred()
+      pending.set(key, d)
+      return d.promise
+    }, 2)
+
+    const first = write([
+      { id: 'a', order: 1 },
+      { id: 'b', order: 2 },
+      { id: 'c', order: 3 }
+    ])
+    const second = write([
+      { id: 'c', order: 1 },
+      { id: 'a', order: 3 }
+    ])
+    await Promise.resolve()
+    expect(sent).toEqual(['a:1', 'b:2'])
+
+    pending.get('a:1')!.resolve()
+    await new Promise((r) => setTimeout(r))
+    expect(sent).toEqual(['a:1', 'b:2', 'c:3'])
+    pending.get('b:2')!.reject(new Error('lost'))
+    pending.get('c:3')!.resolve()
+    const firstResults = await first
+    expect(firstResults.map((r) => r.status)).toEqual(['fulfilled', 'rejected', 'fulfilled'])
+
+    await new Promise((r) => setTimeout(r))
+    expect(sent).toEqual(['a:1', 'b:2', 'c:3', 'c:1', 'a:3'])
+    pending.get('c:1')!.resolve()
+    pending.get('a:3')!.resolve()
+    expect((await second).every((r) => r.status === 'fulfilled')).toBe(true)
   })
 })

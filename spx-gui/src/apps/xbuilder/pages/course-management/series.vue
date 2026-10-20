@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
@@ -104,6 +105,9 @@ function refetch() {
 
 const listRef = ref<HTMLElement>()
 
+// One reorder is written at a time, so that an earlier one never lands after a later one.
+const courseOrderWrites = new ConcurrencyLimitController(1)
+
 const handleSorted = useMessageHandle(
   async (oldIndex: number, newIndex: number) => {
     const series = courseSeries.value
@@ -121,7 +125,8 @@ const handleSorted = useMessageHandle(
     const reordered = placeReordered(courses.value, reorderedShown, (course) => course.id)
     courses.value = reordered
     try {
-      await updateCourseSeries(series.id, { courseIDs: reordered.map((course) => course.id) })
+      const courseIDs = reordered.map((course) => course.id)
+      await courseOrderWrites.run(() => updateCourseSeries(series.id, { courseIDs }))
     } catch (e) {
       refetch()
       throw e
