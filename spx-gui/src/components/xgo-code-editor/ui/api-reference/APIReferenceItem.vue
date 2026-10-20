@@ -150,7 +150,7 @@ function handleMouseUp(e: MouseEvent) {
             v-if="showDescription && explainAction != null"
             v-radar="{ name: 'Explain API', desc: 'Explain this API with Copilot' }"
             type="button"
-            class="flex-none cursor-pointer rounded-sm border-0 bg-transparent px-1 py-0.5 text-xs hover:bg-grey-400 focus-visible:outline-primary-main"
+            class="flex-none cursor-pointer rounded-sm border-0 bg-transparent px-1 py-0.5 text-xs text-primary-main transition-colors enabled:hover:text-primary-400 enabled:active:text-primary-600 disabled:cursor-not-allowed disabled:text-disabled-text"
             :disabled="interactionDisabled"
             @mousedown.stop
             @mouseup.stop
@@ -200,10 +200,6 @@ function handleMouseUp(e: MouseEvent) {
   align-self: stretch;
   padding-top: 8px;
   padding-bottom: 8px;
-}
-
-.api-reference-item.search-result button {
-  color: var(--ui-color-primary-main);
 }
 
 .api-reference-item.before-dragging {
