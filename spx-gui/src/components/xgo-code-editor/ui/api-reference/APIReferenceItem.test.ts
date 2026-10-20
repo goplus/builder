@@ -94,6 +94,16 @@ describe('APIReferenceItem', () => {
     expect(mocks.insertDefinition).not.toHaveBeenCalled()
   })
 
+  it('prevents the explain button from starting native dragging of the result row', () => {
+    const { wrapper } = mountItem(true)
+    const dataTransfer = { setData: vi.fn() }
+    const dragStart = Object.assign(new Event('dragstart', { bubbles: true, cancelable: true }), { dataTransfer })
+    const dragSource = wrapper.get('button').element.closest('[draggable="true"]')!
+    dragSource.dispatchEvent(dragStart)
+    expect(dragStart.defaultPrevented).toBe(true)
+    expect(dataTransfer.setData).not.toHaveBeenCalled()
+  })
+
   it('still inserts search results when clicking the code', async () => {
     const { wrapper, item } = mountItem(true)
     await wrapper.get('code').trigger('click')

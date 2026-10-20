@@ -146,12 +146,15 @@ function handleMouseUp(e: MouseEvent) {
           >
             {{ parsed.overview }}
           </DefinitionOverviewWrapper>
+          <!-- Cancel dragging on the action itself instead of letting the row become the drag source. -->
           <button
             v-if="showDescription && explainAction != null"
             v-radar="{ name: 'Explain API', desc: 'Explain this API with Copilot' }"
             type="button"
+            draggable="true"
             class="flex-none cursor-pointer rounded-sm border-0 bg-transparent px-1 py-0.5 text-xs text-primary-main transition-colors enabled:hover:text-primary-400 enabled:active:text-primary-600 disabled:cursor-not-allowed disabled:text-disabled-text"
             :disabled="interactionDisabled"
+            @dragstart.stop.prevent
             @mousedown.stop
             @mouseup.stop
             @click.stop="handleExplain"
