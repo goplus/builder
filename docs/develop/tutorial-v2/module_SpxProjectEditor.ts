@@ -3,8 +3,16 @@ import type { Disposer, RuntimeOutput, SpxProject, UI } from "./base";
 /** Route added to the existing Project Editor route space for Simple Mode. */
 export type SimpleModeInEditorRoute = `/simple/sprites/${string}`;
 
+export type RuntimeLocation = {
+  textDocument: { uri: string };
+  /** Line number, starting from 1. */
+  line: number;
+};
+
 /** Existing runtime owned by `EditorState`. */
 export interface Runtime {
+  /** Active SPX source lines reported by the runtime. */
+  readonly locations: readonly RuntimeLocation[];
   /** Latest 500 outputs for UI rendering, updated on snapshot changes. */
   readonly outputSnapshot: readonly RuntimeOutput[];
   /**
@@ -17,6 +25,7 @@ export interface Runtime {
   on(event: "didAppendOutput", listener: (output: RuntimeOutput) => void): Disposer;
   /** Batched UI snapshot changes; clearing updates it immediately without appending. */
   on(event: "didChangeOutputSnapshot", listener: () => void): Disposer;
+  on(event: "didChangeLocations", listener: () => void): Disposer;
   on(event: "didExit", listener: (code: number) => void): Disposer;
 }
 
