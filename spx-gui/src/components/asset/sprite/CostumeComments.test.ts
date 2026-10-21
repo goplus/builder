@@ -42,6 +42,7 @@ describe('CostumeComments', () => {
   it('anchors comments to the contained image and saves, reopens, and deletes them', async () => {
     const { wrapper, gen } = setup()
     const canvas = wrapper.get('button')
+    expect(wrapper.get('[role="status"]').text()).toBe('Click where you want to make a change')
     expect(canvas.element.parentElement?.style.cssText).toContain('left: 350px')
     expect(canvas.element.parentElement?.style.cssText).toContain('width: 300px')
     vi.spyOn(canvas.element, 'getBoundingClientRect').mockReturnValue({
@@ -51,6 +52,7 @@ describe('CostumeComments', () => {
       height: 600
     } as DOMRect)
     await canvas.trigger('click', { detail: 1, clientX: 575, clientY: 400 })
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
     await wrapper.get('textarea').setValue('  Make this white  ')
     await wrapper.get('form').trigger('submit')
     expect(gen.editComments).toEqual([{ id: expect.any(String), x: 0.75, y: 0.5, content: 'Make this white' }])

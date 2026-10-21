@@ -117,6 +117,11 @@ function setup<T extends Mode>(mode: T) {
             (_, { slots }) =>
               () =>
                 h('div', slots.trigger?.())
+          ),
+          UIDropdown: defineComponent(
+            (_, { slots }) =>
+              () =>
+                h('div', [slots.trigger?.(), slots.default?.()])
           )
         },
         directives: {
@@ -152,9 +157,11 @@ describe('Sprite generation adoption', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.get('button[aria-label="Edit costume"]').attributes('disabled')).toBeUndefined()
     await wrapper.get('button[aria-label="Point edit tool"]').trigger('click')
-    expect(wrapper.get('button[aria-label="Point edit tool"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('button[aria-label="Point edit tool"]').attributes('aria-expanded')).toBe('true')
+    expect(wrapper.find('button[aria-label="Image comments"]').exists()).toBe(false)
     await wrapper.get('button[aria-label="Remove comment 1"]').trigger('click')
     expect(costume.editComments).toHaveLength(0)
+    expect(wrapper.get('button[aria-label="Point edit tool"]').attributes('aria-expanded')).toBeUndefined()
     expect(wrapper.get('button[aria-label="Edit costume"]').attributes('disabled')).toBeDefined()
     costume.setEditComments([{ id: 'point', x: 0.5, y: 0.5, content: 'Make this blue' }])
     const finish = vi.spyOn(edit, 'finish')
