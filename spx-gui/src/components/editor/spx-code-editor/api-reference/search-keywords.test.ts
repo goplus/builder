@@ -7,6 +7,7 @@ import * as spxDefinitions from '../document-base'
 import { keys } from '../document-base/key'
 import { SpxAPIReferenceProvider } from '.'
 import { withSearchKeywords } from './search-keywords'
+import keywordsDocument from '../../../../../../docs/product/api-reference-search-keywords.zh.md?raw'
 
 function createReferenceProvider() {
   return new SpxAPIReferenceProvider(new DocumentBase([...Object.values(spxDefinitions), ...keys]))
@@ -47,6 +48,13 @@ describe('Spx API Reference search keywords', () => {
     ['switch scene', 'Game.setBackdrop'],
     ['置顶', 'Front'],
     ['亮度', 'Sprite.setGraphicEffect'],
+    ['鱼眼', 'Sprite.setGraphicEffect'],
+    ['马赛克', 'Sprite.changeGraphicEffect'],
+    ['像素化', 'Sprite.setGraphicEffect'],
+    ['fisheye', 'Sprite.changeGraphicEffect'],
+    ['mosaic', 'Sprite.setGraphicEffect'],
+    ['pixelate', 'Sprite.changeGraphicEffect'],
+    ['透明度', 'Sprite.setGraphicEffect'],
     ['背景音乐', 'Sprite.play'],
     ['BGM', 'Sprite.play'],
     ['继续播放', 'Sprite.resumePlaying'],
@@ -104,6 +112,82 @@ describe('Spx API Reference search keywords', () => {
         .map((item) => item.definition.overloadId)
     ).toEqual(['0'])
     expect(names('前进')).not.toContain('Forward')
+    expect(names('播放动画')).toEqual(['Sprite.animate', 'Sprite.animate', 'Sprite.animateAndWait'])
+  })
+
+  it('finds beginner expressions and keeps unrelated concepts separate', async () => {
+    const items = await createReferenceProvider().provideAPIReference(context('牛小七.spx'))
+    const names = (query: string) => searchAPIReferenceItems(items, query).map((item) => item.definition.name)
+    expect(names('朝向')).toContain('Sprite.heading')
+    expect(names('转向')).toEqual(expect.arrayContaining(['Sprite.turn', 'Sprite.turnTo', 'Sprite.setHeading']))
+    expect(names('转圈')).toEqual(['Sprite.turn', 'Sprite.turn', 'Sprite.changeHeading'])
+    expect(names('spin')).toEqual(['Sprite.turn', 'Sprite.turn', 'Sprite.changeHeading'])
+    expect(names('死掉')).toEqual(['Sprite.die'])
+    expect(names('触碰')).toEqual(['Sprite.touching', 'Sprite.touching', 'Sprite.onTouchStart', 'Sprite.onTouchStart'])
+    expect(names('是否碰到')).toEqual(['Sprite.touching', 'Sprite.touching'])
+    expect(names('碰到时执行')).toEqual(['Sprite.onTouchStart', 'Sprite.onTouchStart'])
+    expect(names('摔倒')).toEqual([])
+    expect(names('删除角色')).toEqual([])
+  })
+
+  it.each(['牛小七.spx', 'main.spx'])('makes variable and function syntax available in %s', async (path) => {
+    const provider = createReferenceProvider()
+    const items = await provider.provideAPIReference(context(path))
+    const names = (query: string) => searchAPIReferenceItems(items, query).map((item) => item.definition.name)
+    expect(names('定义变量')).toEqual(['var_declaration'])
+    expect(names('变量')).toContain('var_declaration')
+    expect(names('函数')).toEqual(['func_declaration'])
+    expect(names('定义')).toEqual(['var_declaration', 'func_declaration'])
+    expect(names('variable')).toContain('var_declaration')
+    expect(names('function')).toContain('func_declaration')
+    expect(provider.provideCategoryViewInfos().flatMap((category) => category.subCategories)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'declaration' })])
+    )
+  })
+
+  it('finds every listed writing with the Chinese and English keywords in the document', async () => {
+    const rows = keywordsDocument
+      .split('\n')
+      .filter((line) => line.startsWith('| `'))
+      .map((line) =>
+        line
+          .split('|')
+          .slice(1, -1)
+          .map((column) => column.trim())
+      )
+      .filter((columns) => columns.length === 5)
+    const provider = createReferenceProvider()
+    const normalize = (overview: string) =>
+      overview
+        .replace(/^resume /, 'resumePlaying ')
+        .replace(/^stop /, 'stopPlaying ')
+        .replace(/\s+/g, '')
+    const covered = new Set<string>()
+    for (const [scope, path] of [
+      ['精灵', '牛小七.spx'],
+      ['舞台', 'main.spx']
+    ]) {
+      const items = await provider.provideAPIReference(context(path))
+      for (const [label, scopes, zh, en] of rows) {
+        if (!scopes.includes(scope)) continue
+        const [name, overview = name] = [...label.matchAll(/`([^`]+)`/g)].map((match) => match[1])
+        const expected = items.filter((item) => {
+          if (item.definition.name?.replace(/^(Game|Sprite)\./, '') !== name) return false
+          if (normalize(item.overview) !== normalize(overview)) return false
+          if (name === 'rand') return item.definition.overloadId === (label.includes('整数') ? '0' : '1')
+          return true
+        })
+        expect(expected.length, `${scope}: ${label}`).toBeGreaterThan(0)
+        expected.forEach((item) => covered.add(stringifyDefinitionId(item.definition)))
+        for (const match of `${zh} ${en}`.matchAll(/`([^`]+)`/g)) {
+          expect(searchAPIReferenceItems(items, match[1]), `${scope}: ${label}, ${match[1]}`).toEqual(
+            expect.arrayContaining(expected)
+          )
+        }
+      }
+      expect(items.every((item) => covered.has(stringifyDefinitionId(item.definition)))).toBe(true)
+    }
+    expect(covered.size).toBe(148)
   })
 
   it('preserves existing documentation, insertion data and aliases without mutating them', () => {

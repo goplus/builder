@@ -35,6 +35,8 @@ const apiReferenceItems = [
   'xgo:?for_iterate',
   'xgo:?if_statement',
   'xgo:?if_else_statement',
+  'xgo:?var_declaration',
+  'xgo:?func_declaration',
 
   `xgo:${packageSpx}?Game.wait`,
   `xgo:${packageSpx}?waitUntil`,
@@ -325,6 +327,12 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
     const isStage = isTextDocumentStageCode(ctx.textDocument.id)
     const items = await (isStage ? this.getStageAPIReferenceItems() : this.getSpriteAPIReferenceItems())
     return items.map(withSearchKeywords)
+  }
+
+  provideScopeLabel(ctx: APIReferenceContext) {
+    return isTextDocumentStageCode(ctx.textDocument.id)
+      ? { en: 'For stage', zh: '舞台可用' }
+      : { en: 'For sprites', zh: '精灵可用' }
   }
 
   provideCategoryViewInfos(): APICategoryViewInfo[] {

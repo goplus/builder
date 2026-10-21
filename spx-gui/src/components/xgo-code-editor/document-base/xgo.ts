@@ -82,7 +82,7 @@ export const varDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
   definition: { name: 'var_declaration' },
-  insertSnippet: 'var ${1:name} ${2:type}',
+  insertSnippet: 'var ${1:count} ${2:int}',
   overview: 'var name type',
   detail: makeBasicMarkdownString({
     en: 'Variable declaration, e.g., `var count int`',
@@ -106,7 +106,8 @@ export const functionDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
   definition: { name: 'func_declaration' },
-  insertSnippet: 'func ${1:name}(${2:params}) ${3:returnType} {\n\t${4}\n}',
+  insertSnippet: 'func ${1:doSomething}() {\n\t$0\n}',
+  insertAtTopLevel: true,
   overview: 'func name(params) {}',
   detail: makeBasicMarkdownString({
     en: 'Function declaration, e.g., `func add(a int, b int) int {}`',

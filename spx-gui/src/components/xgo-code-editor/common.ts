@@ -375,6 +375,8 @@ export type DefinitionDocumentationItem = {
   definition: DefinitionIdentifier
   /** Snippet text to insert when completion / snippet is applied */
   insertSnippet: string
+  /** Insert after package/import declarations rather than at the cursor. */
+  insertAtTopLevel?: boolean
   /** Parameter hints for the inserted snippet, indexed by [TabStop / Placeholder](https://macromates.com/manual/en/snippets#tab_stops) in snippet */
   insertSnippetParameterHints?: string[]
   /** Brief explanation for the definition, typically the signature string */

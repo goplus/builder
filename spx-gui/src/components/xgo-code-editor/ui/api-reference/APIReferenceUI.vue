@@ -24,7 +24,7 @@ import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilTaskScheduled } from '@/utils/utils'
-import { UIError, UIIcon, UITextInput } from '@/components/ui'
+import { UIError, UIIcon, UITextInput, UITooltip } from '@/components/ui'
 import { stringifyDefinitionId } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
@@ -112,6 +112,17 @@ watch(
 )
 
 const itemsWrapperRef = ref<HTMLElement>()
+const categoriesWrapperRef = ref<HTMLElement>()
+
+watch(
+  activeCategoryIdRef,
+  () => {
+    categoriesWrapperRef.value
+      ?.querySelector('[aria-pressed="true"]')
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  },
+  { flush: 'post' }
+)
 
 const scrolling = ref(false)
 
@@ -133,6 +144,11 @@ watchEffect((onCleanup) => {
     const categories = categoriesComputed.value ?? []
     const categoryWrappers = itemsWrapper.querySelectorAll('[data-category-id]')
     if (categoryWrappers.length <= 1) return
+    // The final category may be too short to reach the top of the scroll area.
+    if (scrollTop + itemsWrapper.clientHeight >= itemsWrapper.scrollHeight - 1) {
+      activeCategoryIdRef.value = categories[categories.length - 1].id
+      return
+    }
     for (let i = 1; i < categoryWrappers.length; i++) {
       if ((categoryWrappers[i] as HTMLElement).offsetTop > scrollTop) {
         activeCategoryIdRef.value = categories[i - 1].id
@@ -170,11 +186,20 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <div class="flex-none border-b border-dividing-line-2 p-3">
+      <div class="flex-none border-b border-dividing-line-2 px-3 py-2.5">
+        <div class="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <h4 class="text-sm font-medium text-title">{{ $t({ en: 'API Reference', zh: 'API 参考' }) }}</h4>
+          <span
+            v-if="controller.scopeLabel != null"
+            class="shrink-0 whitespace-nowrap rounded-sm bg-grey-300 px-1.5 py-0.5 text-2xs text-hint-1"
+          >
+            {{ $t(controller.scopeLabel) }}
+          </span>
+        </div>
         <UITextInput
           v-model:value="searchQuery"
           v-radar="{ name: 'Search API Reference', desc: 'Search API names and functions in English or Chinese' }"
-          :placeholder="$t({ en: 'Search APIs or functions', zh: '搜索 API 或功能' })"
+          :placeholder="$t({ en: 'Search API names or functions', zh: '搜索 API 名称或功能' })"
           clearable
           @keydown.esc.stop="searchQuery = ''"
         >
@@ -185,8 +210,8 @@ function handleCategoryClick(id: string) {
         <p class="flex-none px-4 py-3 text-xs text-hint-2" role="status" aria-live="polite">
           {{
             $t({
-              en: searchResults.length === 1 ? '1 result' : `${searchResults.length} results`,
-              zh: `${searchResults.length} 个结果`
+              en: searchResults.length === 1 ? 'Found 1 snippet' : `Found ${searchResults.length} snippets`,
+              zh: `找到 ${searchResults.length} 种写法`
             })
           }}
         </p>
@@ -212,23 +237,37 @@ function handleCategoryClick(id: string) {
           }}
         </p>
       </div>
-      <div v-show="!isSearching" class="flex min-h-0 flex-[1_1_0]">
-        <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
-          <li
-            v-for="c in categoriesComputed"
-            :key="c.id"
-            class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
-            :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
-            @click="handleCategoryClick(c.id)"
-          >
-            <!-- eslint-disable-next-line vue/no-v-html -->
-            <div class="h-6 w-6" v-html="c.icon"></div>
-            <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
+      <div v-show="!isSearching" class="flex min-h-0 flex-[1_1_0] flex-col">
+        <ul
+          ref="categoriesWrapperRef"
+          class="h-10 flex flex-none items-center gap-1 overflow-x-auto border-b border-dividing-line-2 px-2 [scrollbar-width:none]"
+        >
+          <li v-for="c in categoriesComputed" :key="c.id" class="flex-none">
+            <UITooltip placement="bottom">
+              <template #trigger>
+                <button
+                  v-radar="{ name: $t(c.label), desc: 'Click to view APIs in this category' }"
+                  type="button"
+                  class="size-7 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 transition-colors duration-100"
+                  :class="
+                    c.id === activeCategoryIdRef
+                      ? 'bg-grey-400 text-grey-1000'
+                      : 'bg-transparent text-grey-800 hover:bg-grey-300'
+                  "
+                  :aria-pressed="c.id === activeCategoryIdRef"
+                  @click="handleCategoryClick(c.id)"
+                >
+                  <!-- eslint-disable-next-line vue/no-v-html -->
+                  <div class="size-4 [&>svg]:h-full [&>svg]:w-full" v-html="c.icon"></div>
+                </button>
+              </template>
+              {{ $t(c.label) }}
+            </UITooltip>
           </li>
         </ul>
         <ul
           ref="itemsWrapperRef"
-          class="relative flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
+          class="relative min-h-0 flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
         >
           <li
             v-for="c in categoriesForItems"

@@ -22,6 +22,7 @@ import {
   isBlockDefinitionKind
 } from '../common'
 import { TextDocument } from '../text-document'
+import { getTopLevelDeclarationOffset } from '../utils'
 import type { MonacoEditor, monaco } from '../monaco'
 import { HoverController } from './hover'
 import { CompletionController } from './completion'
@@ -434,6 +435,13 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
     // so we transform snippet to text and insert it directly.
     const text = parsed.toString()
+    if (ddi.insertAtTopLevel) {
+      const textDocument = this.activeTextDocument
+      if (textDocument == null) return
+      const position = textDocument.getPositionAt(getTopLevelDeclarationOffset(textDocument.getValue()))
+      const prefix = position.column === 1 ? '' : '\n'
+      return this.insertText(`${prefix}${text}\n`, { start: position, end: position })
+    }
     if (isBlockDefinitionKind(ddi.kind)) return this.insertBlockText(text, range)
     else return this.insertInlineText(text, range)
   }
