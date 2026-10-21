@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nanoid } from 'nanoid'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useId, watch } from 'vue'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImage } from '@/utils/img-rendering'
 import type { CostumeGen, CostumeEditComment } from '@/models/spx/gen/costume-gen'
@@ -26,8 +26,18 @@ const areaStyle = computed(() => {
 })
 const draft = ref<CostumeEditComment | null>(null)
 const canvas = ref<HTMLButtonElement | null>(null)
+const hintId = useId()
+const showHint = computed(() => props.gen.editComments.length === 0 && draft.value == null)
 const markerButtons = new Map<string, HTMLButtonElement>()
 let returnFocus: HTMLButtonElement | null = null
+
+watch(
+  canvas,
+  (el) => {
+    if (showHint.value) el?.focus({ preventScroll: true })
+  },
+  { flush: 'post' }
+)
 
 function open(comment: CostumeEditComment) {
   returnFocus = markerButtons.get(comment.id) ?? canvas.value
@@ -87,18 +97,24 @@ function position(comment: CostumeEditComment) {
         v-radar="{ name: 'Add image comment', desc: 'Click a point in the image to describe a local edit' }"
         type="button"
         class="absolute inset-0 h-full w-full cursor-crosshair border-none bg-transparent pointer-events-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-main"
+        :class="showHint ? 'outline-2 -outline-offset-2 outline-primary-main' : ''"
+        :aria-describedby="showHint ? hintId : undefined"
         @click="add"
       ></button>
       <div
         v-for="(comment, index) in gen.editComments"
         v-show="draft?.id !== comment.id"
         :key="comment.id"
-        class="group absolute pointer-events-auto"
+        class="comment-chip group isolate absolute pointer-events-auto"
         :class="[
           comment.x > 0.5 ? '-translate-x-full' : '',
           comment.y < 0.05 ? '' : comment.y > 0.95 ? '-translate-y-full' : '-translate-y-1/2'
         ]"
-        :style="{ ...position(comment), maxWidth: `min(160px, ${Math.max(comment.x, 1 - comment.x) * 100}%)` }"
+        :style="{
+          ...position(comment),
+          left: `min(${comment.x * 100}%, calc(100% - 28px))`,
+          maxWidth: `min(160px, calc(${Math.max(comment.x, 1 - comment.x) * 100}% - 28px))`
+        }"
       >
         <button
           :ref="
@@ -109,7 +125,7 @@ function position(comment: CostumeEditComment) {
           "
           v-radar="{ name: `Comment ${index + 1}: ${comment.content}`, desc: 'Edit this image comment' }"
           type="button"
-          class="comment-marker block max-w-full truncate rounded-md border-none bg-grey-100/95 px-2 py-1.5 text-xs text-text shadow-sm cursor-pointer transition-colors duration-150 hover:bg-primary-100 hover:text-primary-main focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
+          class="comment-marker block max-w-full truncate rounded-md border-none bg-transparent px-2 py-1.5 text-xs text-text cursor-pointer hover:text-primary-main active:bg-grey-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
           :title="comment.content"
           @click.stop="open(comment)"
         >
@@ -118,8 +134,7 @@ function position(comment: CostumeEditComment) {
         <button
           v-radar="{ name: `Delete comment ${index + 1}`, desc: 'Delete this image comment' }"
           type="button"
-          class="absolute inset-y-0 w-7 flex items-center justify-center rounded-md border-none bg-grey-100/95 text-text shadow-sm cursor-pointer opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto hover:bg-grey-300 focus-visible:outline-2 focus-visible:outline-primary-main"
-          :class="comment.x * area.width < 28 ? 'start-full' : 'end-full'"
+          class="absolute inset-y-0 start-full w-7 flex items-center justify-center rounded-md border-none bg-transparent text-text cursor-pointer opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto hover:text-primary-main active:bg-grey-300 focus-visible:outline-2 focus-visible:outline-primary-main"
           :title="$t({ en: 'Delete comment', zh: '删除注释' })"
           @click.stop="remove(comment.id)"
         >
@@ -187,10 +202,34 @@ function position(comment: CostumeEditComment) {
         </form>
       </UIDropdown>
     </div>
-    <div class="absolute inset-x-0 bottom-3 flex justify-center">
-      <span class="rounded-md bg-grey-100 px-3 py-1.5 text-xs text-hint-1 shadow-sm">
-        {{ $t({ en: 'Click the image to add a comment', zh: '点击图片，添加注释' }) }}
+    <div v-if="showHint" class="absolute inset-x-0 bottom-3 flex justify-center">
+      <span :id="hintId" role="status" class="rounded-md bg-grey-100 px-3 py-2 text-sm text-text shadow-sm">
+        {{ $t({ en: 'Click where you want to make a change', zh: '点击图片中想修改的位置' }) }}
       </span>
     </div>
   </div>
 </template>
+
+<style scoped>
+.comment-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: var(--ui-border-radius-md);
+  background: var(--ui-color-grey-100);
+  box-shadow: var(--ui-box-shadow-sm);
+}
+
+.comment-chip:hover::before,
+.comment-chip:focus-within::before {
+  inset-inline-end: -28px;
+}
+
+@media (prefers-contrast: more) {
+  .comment-chip::before {
+    outline: 1px solid var(--ui-color-grey-900);
+  }
+}
+</style>
