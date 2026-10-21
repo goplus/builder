@@ -22,7 +22,9 @@ const emit = defineEmits<{
     class="flex-[1_1_0] flex flex-col gap-5 px-5 py-6"
   >
     <header class="flex-none grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-      <div aria-hidden="true"></div>
+      <div class="flex items-center">
+        <slot name="leading"></slot>
+      </div>
       <div class="flex items-center justify-center gap-1 min-w-0">
         <!-- TODO: confirm style details with @qingqing-ux here -->
         <AssetName>{{ name }}</AssetName>

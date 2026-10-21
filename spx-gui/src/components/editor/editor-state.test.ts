@@ -1,7 +1,8 @@
 import { ref, type WatchSource } from 'vue'
-import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, vi, it, onTestFinished } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { createI18n } from '@/utils/i18n'
+import { ProgressReporter } from '@/utils/progress'
 import type { QueryRet } from '@/utils/query'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
@@ -10,7 +11,8 @@ import { Backdrop } from '@/models/spx/backdrop'
 import { Monitor } from '@/models/spx/widget/monitor'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
-import { mockFile } from '@/models/common/test'
+import { mockFile, sndFiles } from '@/models/common/test'
+import type { ProjectSerialized } from '@/models/project'
 import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
 import type { SignedInState } from '@/stores/user'
 import type * as editing from './editing'
@@ -136,6 +138,89 @@ describe('EditorState', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('restores another owner’s edit draft after refresh and persists the adopted animation locally', async () => {
+    const project = makeProjectWithResources()
+    const cloudData = await project.export()
+    const cloudHelpers = makeCloudHelpers()
+    vi.mocked(cloudHelpers.load).mockResolvedValue(cloudData as Awaited<ReturnType<typeof cloudHelpers.load>>)
+    let cached: ProjectSerialized | null = null
+    const localCache: editing.ILocalCache = {
+      load: async () => cached,
+      save: async (value) => {
+        cached = { metadata: value.metadata, files: sndFiles(value.files) }
+      },
+      clear: async () => {
+        cached = null
+      }
+    }
+    const state = makeEditorState(
+      project,
+      ref(true),
+      makeSignedInStateQuery(makeSignedInState('user')),
+      cloudHelpers,
+      localCache
+    )
+    const states = [state]
+    onTestFinished(() =>
+      states.forEach((state) => {
+        state.dispose()
+        state.project.dispose()
+      })
+    )
+    state.editing.startEditing()
+    const draft = state.spriteEditState.start(project.sprites[0])
+    const animation = draft.animations[0]
+    animation.result!.setCostumes(
+      Array.from({ length: 8 }, (_, i) => new Costume(`edited-frame-${i}`, mockFile('edited.png')))
+    )
+    animation.result!.setDuration(0.8)
+    draft.setAnimationInstruction(animation.id, 'White hair')
+    draft.addAnimation()
+    await vi.advanceTimersByTimeAsync(1500)
+    expect(cached).not.toBeNull()
+    expect(cloudHelpers.save).not.toHaveBeenCalled()
+    state.dispose()
+
+    async function reload() {
+      const restored = makeEditorState(
+        makeEmptyProject(),
+        ref(true),
+        makeSignedInStateQuery(makeSignedInState('user')),
+        cloudHelpers,
+        localCache
+      )
+      states.push(restored)
+      await restored.editing.loadProject(
+        'test-owner',
+        'test-project',
+        {
+          confirmOpenTargetWithAnotherInCache: vi.fn().mockResolvedValue(true),
+          openProject: vi.fn()
+        },
+        new ProgressReporter(() => {}),
+        new AbortController().signal
+      )
+      restored.editing.startEditing()
+      return restored
+    }
+    const restored = await reload()
+    expect(restored.spriteEditState.edits).toHaveLength(1)
+    const restoredDraft = restored.spriteEditState.edits[0]
+    expect(restoredDraft.getAnimationInstruction(animation.id)).toBe('White hair')
+    expect(restoredDraft.animations[0].result!.costumes[0].img.name).toBe('edited.png')
+    expect(restored.project.sprites[0].animations[0].costumes[0].img.name).not.toBe('edited.png')
+    restoredDraft.applyToSprite(restored.project.sprites[0], { type: 'animation', id: restoredDraft.animations[0].id })
+    restored.spriteEditState.remove(restoredDraft.id)
+    await vi.advanceTimersByTimeAsync(1500)
+    restored.dispose()
+
+    const adopted = await reload()
+    expect(adopted.spriteEditState.edits).toHaveLength(0)
+    expect(adopted.project.sprites[0].animations[0].costumes[0].img.name).toBe('edited.png')
+    expect(adopted.project.sprites[0].animations[0].duration).toBe(0.8)
+    expect(cloudHelpers.save).not.toHaveBeenCalled()
   })
 
   describe('initialization', () => {

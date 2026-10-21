@@ -3913,6 +3913,16 @@ paths:
                       properties:
                         settings:
                           $ref: "#/components/schemas/AIGCCostumeSettings"
+                        editInstruction:
+                          description: |
+                            Edit the image at settings.referenceImageUrl using this instruction, preserving
+                            details not explicitly changed. Requires a nonempty referenceImageUrl and a nonblank
+                            instruction after trimming whitespace. Replaces the generation prompt derived from
+                            name, description, artStyle, perspective, and facing. Omit for normal generation.
+                          type: string
+                          minLength: 1
+                          examples:
+                            - Change the shirt to red, keeping everything else unchanged.
                         n:
                           description: Number of costume images to generate.
                           type: integer
@@ -3939,6 +3949,16 @@ paths:
                       properties:
                         settings:
                           $ref: "#/components/schemas/AIGCAnimationSettings"
+                        editInstruction:
+                          description: |
+                            Edit the video at settings.referenceVideoUrl using this instruction, preserving
+                            details not explicitly changed. Requires a nonempty referenceVideoUrl and a nonblank
+                            instruction after trimming whitespace. Replaces the generation prompt derived from
+                            name, description, artStyle, perspective, and loopMode. Omit for normal generation.
+                          type: string
+                          minLength: 1
+                          examples:
+                            - Change the shirt to red while keeping the running motion.
                 - title: extractVideoFrames
                   type: object
                   required:
@@ -8538,6 +8558,14 @@ components:
           properties:
             referenceFrameUrl:
               description: Universal URL of the animation reference frame image (e.g. kodo://bucket/key).
+              type:
+                - string
+                - "null"
+              format: uri
+            referenceVideoUrl:
+              description: |
+                Universal URL of the animation reference video (e.g. kodo://bucket/animation.mp4).
+                May be used together with referenceFrameUrl. The configured video model must support video references.
               type:
                 - string
                 - "null"

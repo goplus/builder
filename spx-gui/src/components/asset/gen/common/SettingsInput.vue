@@ -30,17 +30,21 @@ const enrichingFileUrl = new URL('./enriching.lottie', import.meta.url).href
 const props = withDefaults(
   defineProps<{
     description: string
+    placeholder?: string
     /**
      * If `descriptionPlaceholder` is provided and `description` is empty,
      * `description` will be synchronized with the placeholder value on the first focus.
      */
     descriptionPlaceholder?: string
     enriching?: boolean
+    enrichable?: boolean
     disabled?: boolean
     readonly?: boolean
   }>(),
   {
     enriching: false,
+    enrichable: true,
+    placeholder: undefined,
     descriptionPlaceholder: undefined,
     disabled: false,
     readonly: false
@@ -53,7 +57,7 @@ const emit = defineEmits<{
 }>()
 
 const focus = ref(false)
-const enrichShow = computed(() => !ctx.readonly && focus.value && props.description.length > 0)
+const enrichShow = computed(() => props.enrichable && !ctx.readonly && focus.value && props.description.length > 0)
 
 const onInput = (e: InputEvent) => {
   const target = e.target
@@ -130,9 +134,10 @@ provide(settingsInputCtxKey, ctx)
         v-radar="{ name: 'Description', desc: 'Description input field for generation' }"
         class="description"
         :placeholder="
-          !adopted && descriptionPlaceholder != null && descriptionPlaceholder.length > 0
+          placeholder ??
+          (!adopted && descriptionPlaceholder != null && descriptionPlaceholder.length > 0
             ? descriptionPlaceholder
-            : $t({ zh: '请输入描述', en: 'Please enter description' })
+            : $t({ zh: '请输入描述', en: 'Please enter description' }))
         "
         :value="description"
         :disabled="ctx.disabled"
