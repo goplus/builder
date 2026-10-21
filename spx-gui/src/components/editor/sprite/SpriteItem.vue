@@ -175,10 +175,10 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <UIMenuItem
-        v-radar="{ name: 'Edit sprite', desc: 'Open the sprite editor to modify costumes and animations' }"
+        v-radar="{ name: 'Edit with AI', desc: 'Open the sprite editor to modify costumes and animations with AI' }"
         @click="handleEdit"
       >
-        {{ $t({ en: 'Edit sprite', zh: '编辑精灵' }) }}
+        {{ $t({ en: 'Edit with AI', zh: '使用 AI 编辑' }) }}
       </UIMenuItem>
       <UIMenuItem
         v-radar="{ name: 'Visibility', desc: 'Click to toggle visibility the sprite' }"
