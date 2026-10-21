@@ -15,7 +15,7 @@
         ref="spriteRailRef"
         v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
         class="min-w-0 flex-none"
-        :style="{ width: `${paneLayout?.spriteRailWidth ?? 104}px` }"
+        :style="{ width: `${paneLayout?.spriteRailWidth ?? 88}px` }"
       >
         <SpritesPanel layout="vertical" header-height="large" />
       </UICard>
@@ -90,7 +90,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { useContentSize } from '@/utils/dom'
+import { useContentSize, useScrollbarWidth } from '@/utils/dom'
 import { getCleanupSignal } from '@/utils/disposable'
 import { UICard, useResponsive } from '@/components/ui'
 import SpriteEditor from './sprite/SpriteEditor.vue'
@@ -127,14 +127,7 @@ const spriteListEl = computed(() => {
   const railEl = spriteRailRef.value?.$el as HTMLElement | null
   return railEl?.querySelector<HTMLElement>('.sprite-list-vertical') ?? null
 })
-const spriteListSize = useContentSize(spriteListEl)
-const spriteScrollbarWidth = computed(() => {
-  const listEl = spriteListEl.value
-  const width =
-    listEl != null && spriteListSize.value != null ? Math.max(0, listEl.offsetWidth - listEl.clientWidth) : 0
-  // Overlay scrollbars report no layout width but still intercept clicks near the list edge.
-  return width || 16
-})
+const spriteScrollbarWidth = useScrollbarWidth(spriteListEl)
 const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
 const paneLayout = computed(() => {
   const size = editorSize.value

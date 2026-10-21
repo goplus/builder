@@ -12,10 +12,7 @@
   >
     <div
       class="editor-list-sidebar flex-none flex flex-col border-r border-dividing-line-2"
-      :style="{
-        '--editor-list-scrollbar-width': `${scrollbarWidth}px`,
-        '--editor-list-overlay-scrollbar-width': `${overlayScrollbarWidth}px`
-      }"
+      :style="{ '--editor-list-scrollbar-width': `${scrollbarWidth}px` }"
     >
       <div
         ref="itemsWrapper"
@@ -48,7 +45,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useContentSize } from '@/utils/dom'
+import { useScrollbarWidth } from '@/utils/dom'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import type { RadarNodeMeta } from '@/utils/radar'
 import { humanizeResourceType, type ResourceType } from '@/models/spx/common/resource'
@@ -89,13 +86,7 @@ const addButtonRadarInfo = computed<RadarNodeMeta>(() => ({
 }))
 
 const itemsWrapper = ref<HTMLElement | null>(null)
-const itemsSize = useContentSize(itemsWrapper)
-const scrollbarWidth = computed(() => {
-  const el = itemsWrapper.value
-  return el != null && itemsSize.value != null ? Math.max(0, el.offsetWidth - el.clientWidth) : 0
-})
-// Overlay scrollbars report zero width but their hit area can still cover corner menus.
-const overlayScrollbarWidth = computed(() => (scrollbarWidth.value === 0 ? 16 : 0))
+const scrollbarWidth = useScrollbarWidth(itemsWrapper)
 const sortableList = computed(() => (props.sortable ? props.sortable.list : null))
 
 useDragSortable(sortableList, itemsWrapper, {
@@ -108,7 +99,7 @@ useDragSortable(sortableList, itemsWrapper, {
 
 <style scoped>
 .editor-list-compact .editor-list-sidebar {
-  width: calc(92px + var(--editor-list-scrollbar-width, 0px) + var(--editor-list-overlay-scrollbar-width, 0px));
+  width: calc(92px + var(--editor-list-scrollbar-width, 0px));
 }
 
 .editor-list-compact .items {
@@ -117,6 +108,7 @@ useDragSortable(sortableList, itemsWrapper, {
   padding-inline: 9.5px;
   align-items: flex-start;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 .items {

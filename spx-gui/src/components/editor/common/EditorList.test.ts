@@ -6,8 +6,11 @@ import EditorList from './EditorList.vue'
 
 const dispose: (() => void)[] = []
 let resizeCallback: ResizeObserverCallback
-const observe = vi.fn()
-const disconnect = vi.fn()
+let mutationCallback: MutationCallback
+const resizeObserve = vi.fn()
+const resizeDisconnect = vi.fn()
+const mutationObserve = vi.fn()
+const mutationDisconnect = vi.fn()
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -16,8 +19,18 @@ beforeEach(() => {
       constructor(callback: ResizeObserverCallback) {
         resizeCallback = callback
       }
-      observe = observe
-      disconnect = disconnect
+      observe = resizeObserve
+      disconnect = resizeDisconnect
+    }
+  )
+  vi.stubGlobal(
+    'MutationObserver',
+    class {
+      constructor(callback: MutationCallback) {
+        mutationCallback = callback
+      }
+      observe = mutationObserve
+      disconnect = mutationDisconnect
     }
   )
 })
@@ -42,40 +55,72 @@ async function setup(resourceType: ResourceType) {
   await nextTick()
   const items = wrapper.get('.items').element as HTMLElement
   let gutterWidth = 0
+  let contentHeight = 400
   Object.defineProperties(items, {
     offsetWidth: { get: () => 91 + gutterWidth },
-    clientWidth: { get: () => 91 }
+    clientWidth: { get: () => 91 },
+    clientHeight: { get: () => 400 },
+    scrollHeight: { get: () => contentHeight }
   })
-  async function resizeWithGutter(width: number) {
+  async function resizeWithGutter(width: number, height = 400) {
     gutterWidth = width
+    contentHeight = height
     resizeCallback([{ contentRect: { width: 72, height: 400 } } as ResizeObserverEntry], {} as ResizeObserver)
     await nextTick()
   }
-  return { wrapper, items, resizeWithGutter }
+  async function changeContent(height: number) {
+    contentHeight = height
+    mutationCallback([{ type: 'childList', target: items } as unknown as MutationRecord], {} as MutationObserver)
+    await nextTick()
+  }
+  return { wrapper, items, resizeWithGutter, changeContent }
 }
 
 describe('EditorList compact sidebar', () => {
   it.each(['costume', 'animation', 'backdrop', 'sound', 'widget'] as const)(
-    'reserves native or overlay scrollbar space outside the %s card area',
+    'fits the %s card area and reserves only the scrollbar space it needs',
     async (resourceType) => {
       const { wrapper, items, resizeWithGutter } = await setup(resourceType)
       expect(wrapper.classes()).toContain('editor-list-compact')
-      expect(observe).toHaveBeenCalledWith(items)
+      expect(resizeObserve).toHaveBeenCalledWith(items)
+      expect(mutationObserve).toHaveBeenCalledWith(items, { childList: true })
+      const sidebar = wrapper.get('.editor-list-sidebar').element as HTMLElement
 
-      for (const gutterWidth of [0, 8, 15, 0]) {
-        await resizeWithGutter(gutterWidth)
-        const sidebar = wrapper.get('.editor-list-sidebar').element as HTMLElement
-        expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe(`${gutterWidth}px`)
-        expect(sidebar.style.getPropertyValue('--editor-list-overlay-scrollbar-width')).toBe(
-          gutterWidth === 0 ? '16px' : '0px'
-        )
+      await resizeWithGutter(0)
+      expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe('0px')
+
+      for (const [gutterWidth, expectedWidth] of [
+        [0, 8],
+        [8, 8],
+        [15, 15],
+        [0, 8]
+      ]) {
+        await resizeWithGutter(gutterWidth, 800)
+        expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe(`${expectedWidth}px`)
       }
+
+      await resizeWithGutter(15)
+      expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe('15px')
+      await resizeWithGutter(0)
+      expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe('0px')
     }
   )
+
+  it('updates scrollbar clearance when cards are added or removed without resizing the list', async () => {
+    const { wrapper, changeContent } = await setup('costume')
+    const sidebar = wrapper.get('.editor-list-sidebar').element as HTMLElement
+
+    expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe('0px')
+    await changeContent(800)
+    expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe('8px')
+    await changeContent(400)
+    expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe('0px')
+  })
 
   it('stops observing a removed list', async () => {
     const { wrapper } = await setup('sound')
     wrapper.unmount()
-    expect(disconnect).toHaveBeenCalledOnce()
+    expect(resizeDisconnect).toHaveBeenCalledOnce()
+    expect(mutationDisconnect).toHaveBeenCalledOnce()
   })
 })
