@@ -69,6 +69,38 @@ describe('CostumeGen', () => {
     project.dispose()
   })
 
+  it('persists point comments, submits them without a global instruction, and retains them on failure', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.costumes[0]
+    const comments = [{ id: 'point', x: 0.6, y: 0.4, content: 'Make this white' }]
+    const originalImage = source.img
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      image: mockFile('visible-candidate.png'),
+      finishPhase: new Phase({ en: 'save', zh: '保存' }, { status: 'finished', result: source }),
+      editComments: comments
+    })
+    const [config, files] = gen.export()
+    const loaded = CostumeGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    onTestFinished(() => {
+      loaded.dispose()
+      gen.dispose()
+      project.dispose()
+    })
+    expect(loaded.editComments).toEqual(comments)
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Edit unavailable'))
+    await expect(loaded.edit('')).rejects.toThrow('Edit unavailable')
+    expect(loaded.editComments).toEqual(comments)
+    await loaded.edit('')
+    expect([...aigcMock.tasks.values()].at(-1)?.params).toMatchObject({
+      settings: { referenceImageUrl: 'kodo://mock-bucket/visible-candidate.png' },
+      editInstruction: expect.stringContaining('At (599, 400): Make this white')
+    })
+    expect(loaded.editComments).toEqual([])
+    expect(source.img).toBe(originalImage)
+  })
+
   it('keeps the original bounds when editing generated costumes again after reload', async () => {
     const project = makeSpxProject()
     const sprite = project.sprites[0]

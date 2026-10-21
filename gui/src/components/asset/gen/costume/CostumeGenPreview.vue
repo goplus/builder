@@ -81,6 +81,7 @@ const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.gen.image)
     </GenLoading>
     <PreviewWithCheckerboardBg v-else>
       <UIImg v-if="gen.image != null" class="h-full w-full" :src="imgSrc" :loading="imgLoading" />
+      <slot v-if="gen.finishState.status !== 'running'" name="overlay"></slot>
       <GenLoading v-if="gen.finishState.status === 'running'" cover>
         {{ $t({ en: 'Saving costume...', zh: '正在保存造型...' }) }}
       </GenLoading>
@@ -95,6 +96,9 @@ const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.gen.image)
     </PreviewWithCheckerboardBg>
   </GenPreview>
   <CostumeDetail v-else :style="{ background: 'transparent' }" :costume="gen.result" @rename="handleRenameCostume">
+    <template #overlay>
+      <slot name="overlay"></slot>
+    </template>
     <template v-if="$slots.leading != null" #leading>
       <slot name="leading"></slot>
     </template>

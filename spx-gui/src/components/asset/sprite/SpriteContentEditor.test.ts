@@ -144,6 +144,28 @@ beforeEach(() => {
 })
 
 describe('Sprite generation adoption', () => {
+  it('allows editing with comments alone and confirms before dropping them during adoption', async () => {
+    const { wrapper, edit } = setup('generate')
+    const costume = edit.costumes[0]
+    edit.setSelectedItem({ type: 'costume', id: costume.id })
+    costume.setEditComments([{ id: 'point', x: 0.5, y: 0.5, content: 'Make this blue' }])
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('button[aria-label="Edit costume"]').attributes('disabled')).toBeUndefined()
+    await wrapper.get('button[aria-label="Point edit tool"]').trigger('click')
+    expect(wrapper.get('button[aria-label="Point edit tool"]').attributes('aria-pressed')).toBe('true')
+    await wrapper.get('button[aria-label="Remove comment 1"]').trigger('click')
+    expect(costume.editComments).toHaveLength(0)
+    expect(wrapper.get('button[aria-label="Edit costume"]').attributes('disabled')).toBeDefined()
+    costume.setEditComments([{ id: 'point', x: 0.5, y: 0.5, content: 'Make this blue' }])
+    const finish = vi.spyOn(edit, 'finish')
+    openModal.mockRejectedValueOnce(new Cancelled())
+    await wrapper.get('button[aria-label="Use"]').trigger('click')
+    await flushPromises()
+    expect(openModal).toHaveBeenCalledOnce()
+    expect(finish).not.toHaveBeenCalled()
+    expect(costume.editComments).toHaveLength(1)
+  })
+
   it('allows adopting saved content without requiring another change', async () => {
     const { wrapper, parent, edit } = setup('generate')
     const finish = vi.spyOn(edit, 'finish')
