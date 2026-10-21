@@ -63,7 +63,7 @@ describe('CostumeComments', () => {
     await wrapper.get('form').trigger('submit')
     expect(gen.editComments).toHaveLength(1)
     expect(gen.editComments[0].content).toBe('Make this blue')
-    await wrapper.get('button[title="Delete comment"]').trigger('click')
+    await wrapper.get('button[title="Remove edit"]').trigger('click')
     await flushPromises()
     expect(gen.editComments).toEqual([])
   })

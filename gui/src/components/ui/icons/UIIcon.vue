@@ -94,10 +94,8 @@ import backdropScale from './backdrop-scale.svg?raw'
 import backdropOriginal from './backdrop-original.svg?raw'
 import angleLeft from './angle-left.svg?raw'
 import notification from './notification.svg?raw'
-import comment from './comment.svg?raw'
 
 const typeIconMap = {
-  comment,
   file,
   folder,
   arrowDown,

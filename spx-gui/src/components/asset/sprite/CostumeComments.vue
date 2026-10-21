@@ -94,7 +94,7 @@ function position(comment: CostumeEditComment) {
     <div v-if="area != null" class="absolute" :style="areaStyle">
       <button
         ref="canvas"
-        v-radar="{ name: 'Add image comment', desc: 'Click a point in the image to describe a local edit' }"
+        v-radar="{ name: 'Add local edit', desc: 'Click a point in the image to describe a local edit' }"
         type="button"
         class="absolute inset-0 h-full w-full cursor-crosshair border-none bg-transparent pointer-events-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-main"
         :class="showHint ? 'outline-2 -outline-offset-2 outline-primary-main' : ''"
@@ -123,7 +123,10 @@ function position(comment: CostumeEditComment) {
               else markerButtons.delete(comment.id)
             }
           "
-          v-radar="{ name: `Comment ${index + 1}: ${comment.content}`, desc: 'Edit this image comment' }"
+          v-radar="{
+            name: `Local edit ${index + 1}: ${comment.content}`,
+            desc: 'Update the edit instruction at this point'
+          }"
           type="button"
           class="comment-marker block max-w-full truncate rounded-md border-none bg-transparent px-2 py-1.5 text-xs text-text cursor-pointer hover:text-primary-main active:bg-grey-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
           :title="comment.content"
@@ -132,10 +135,10 @@ function position(comment: CostumeEditComment) {
           {{ comment.content }}
         </button>
         <button
-          v-radar="{ name: `Delete comment ${index + 1}`, desc: 'Delete this image comment' }"
+          v-radar="{ name: `Remove local edit ${index + 1}`, desc: 'Remove the edit instruction at this point' }"
           type="button"
           class="absolute inset-y-0 start-full w-7 flex items-center justify-center rounded-md border-none bg-transparent text-text cursor-pointer opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto hover:text-primary-main active:bg-grey-300 focus-visible:outline-2 focus-visible:outline-primary-main"
-          :title="$t({ en: 'Delete comment', zh: '删除注释' })"
+          :title="$t({ en: 'Remove edit', zh: '移除修改' })"
           @click.stop="remove(comment.id)"
         >
           <UIIcon type="close" class="h-4 w-4" />
@@ -157,11 +160,11 @@ function position(comment: CostumeEditComment) {
           <span
             class="absolute -translate-x-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-full border-2 border-grey-100 bg-primary-main text-grey-100 shadow-sm"
             :style="position(draft)"
-            ><UIIcon type="comment" class="h-4 w-4"
+            ><UIIcon type="position" class="h-4 w-4"
           /></span>
         </template>
         <form
-          v-radar="{ name: 'Image comment', desc: 'Describe the edit at this point' }"
+          v-radar="{ name: 'Local edit', desc: 'Describe the edit at this point' }"
           class="w-72 max-w-[calc(100vw-32px)] flex flex-col gap-3 p-3 pointer-events-auto"
           @submit.prevent="save"
           @keydown.esc.stop.prevent="close(true)"
@@ -169,11 +172,11 @@ function position(comment: CostumeEditComment) {
           @keydown.meta.enter.prevent="save"
         >
           <label class="block">
-            <span class="sr-only">{{ $t({ en: 'Comment', zh: '注释' }) }}</span>
+            <span class="sr-only">{{ $t({ en: 'Edit instruction', zh: '修改要求' }) }}</span>
             <textarea
               :key="draft.id"
               v-model="draft.content"
-              v-radar="{ name: 'Comment text', desc: 'Describe the change at the selected point' }"
+              v-radar="{ name: 'Edit instruction', desc: 'Describe the change at the selected point' }"
               v-autofocus
               class="block w-full h-16 resize-none border-none bg-transparent p-0 text-sm text-text outline-none placeholder:text-hint-2"
               :placeholder="$t({ en: 'Describe the change here', zh: '描述这里的修改' })"
@@ -181,21 +184,21 @@ function position(comment: CostumeEditComment) {
           </label>
           <div class="flex items-center justify-between">
             <UIButton
-              v-radar="{ name: 'Delete comment', desc: 'Remove this comment without changing the image' }"
+              v-radar="{ name: 'Remove local edit', desc: 'Remove this instruction without changing the image' }"
               type="white"
               shape="square"
               class="border-transparent!"
-              :title="$t({ en: 'Delete comment', zh: '删除注释' })"
+              :title="$t({ en: 'Remove edit', zh: '移除修改' })"
               @click="remove()"
               ><UIIcon type="trash" class="h-4 w-4"
             /></UIButton>
             <UIButton
-              v-radar="{ name: 'Save comment', desc: 'Save this comment without generating an image' }"
+              v-radar="{ name: 'Confirm local edit', desc: 'Save this instruction without generating an image' }"
               type="primary"
               shape="circle"
               html-type="submit"
               :disabled="draft.content.trim() === ''"
-              :title="$t({ en: 'Save comment', zh: '保存注释' })"
+              :title="$t({ en: 'Done', zh: '确认' })"
               ><UIIcon type="check" class="h-4 w-4"
             /></UIButton>
           </div>
