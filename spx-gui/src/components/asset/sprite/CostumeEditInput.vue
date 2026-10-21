@@ -22,6 +22,15 @@ const disabled = computed(() => submitting.value || props.gen.finishState.status
 const commentsVisible = ref(false)
 const commentButton = ref<InstanceType<typeof UIButton> | null>(null)
 watch([() => props.gen, disabled], () => (commentsVisible.value = false))
+watch(
+  () => props.gen.editComments.length,
+  (count, previousCount) => {
+    if (count !== 0 || previousCount === 0) return
+    commentsVisible.value = false
+    emit('update:commenting', false)
+    nextTick(() => commentButton.value?.focus())
+  }
+)
 
 function toggleCommenting() {
   if (props.gen.editComments.length > 0) {
@@ -35,8 +44,7 @@ function toggleCommenting() {
 
 function removeComment(id: string) {
   props.gen.setEditComments(props.gen.editComments.filter((comment) => comment.id !== id))
-  if (props.gen.editComments.length === 0) commentsVisible.value = false
-  nextTick(() => commentButton.value?.focus())
+  if (props.gen.editComments.length > 0) nextTick(() => commentButton.value?.focus())
 }
 
 const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(props.instruction), {
