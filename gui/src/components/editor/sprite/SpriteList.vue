@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { type ComponentPublicInstance, computed, onBeforeUnmount, ref, shallowReactive } from 'vue'
 import { Sprite } from '@/models/spx/sprite'
-import { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import { useMessageHandle } from '@/utils/exception'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { SpriteEdit } from '@/models/spx/edit/sprite-edit'
+import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
 import { type DragSortableOptions, useDragSortable } from '@/utils/drag-and-drop'
 
-import { useSpriteGenModal } from '@/components/asset'
+import { useEditSprite, useSpriteGenModal } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
+import SpriteEditItem from '@/components/asset/edit/sprite/SpriteEditItem.vue'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import { UIEmpty } from '@/components/ui'
 
@@ -42,27 +44,28 @@ onBeforeUnmount(
   })
 )
 
-const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.genState.sprites])
+const edits = computed(() => editorCtx.state.spriteEditState.edits.filter((edit) => edit.hasPendingChanges))
+const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.genState.sprites, ...edits.value])
 const listWrapper = ref<HTMLElement | null>(null)
 
 const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
   filterItem: (item: unknown) => {
-    return item instanceof SpriteGen
+    return !(item instanceof Sprite)
   },
   filterMove: (oldIndex: number, newIndex: number) => {
     const totalList = list.value
-    // spriteGens cannot be moved
+    // Drafts cannot be moved.
     const fromItem = totalList[oldIndex]
-    if (fromItem instanceof SpriteGen) return true
-    // sprites can only be moved to positions before spriteGens, i.e., cannot be moved to positions of spriteGens or after
+    if (!(fromItem instanceof Sprite)) return true
+    // Keep sprites before all drafts.
     const toItem = totalList[newIndex]
-    if (toItem instanceof SpriteGen) return true
+    if (!(toItem instanceof Sprite)) return true
     return false
   }
 }
 
 const handleSorted = useMessageHandle(
-  // sprites are always before spriteGens, so the index is correct theoretically
+  // Sprites appear before drafts, so these indices match the project order.
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update sprite order', zh: '更新精灵顺序' } }
     await editorCtx.state.history.doAction(action, () => editorCtx.project.moveSprite(oldIdx, newIdx))
@@ -82,6 +85,7 @@ useDragSortable(list, listWrapper, {
 })
 
 const invokeSpriteGenModal = useSpriteGenModal()
+const editSprite = useEditSprite()
 
 const handleSpriteGenClick = useMessageHandle(
   async (gen: SpriteGen) => {
@@ -97,6 +101,15 @@ const handleSpriteGenClick = useMessageHandle(
     en: 'Failed to add generated sprite',
     zh: '添加生成的精灵失败'
   }
+).fn
+
+const handleSpriteEditClick = useMessageHandle(
+  async (edit: SpriteEdit) => {
+    const sprite = editorCtx.project.sprites.find((sprite) => sprite.id === edit.sourceSpriteId)
+    if (sprite == null) throw new Cancelled('Sprite being edited not found')
+    return editSprite(sprite)
+  },
+  { en: 'Failed to edit sprite', zh: '编辑精灵失败' }
 ).fn
 </script>
 
@@ -121,6 +134,7 @@ const handleSpriteGenClick = useMessageHandle(
       :gen="gen"
       @click="handleSpriteGenClick(gen)"
     />
+    <SpriteEditItem v-for="edit in edits" :key="edit.id" :edit="edit" @click="handleSpriteEditClick(edit)" />
   </div>
 </template>
 

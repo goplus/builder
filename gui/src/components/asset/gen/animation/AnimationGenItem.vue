@@ -25,6 +25,7 @@ import animationSVG from '../common/animation.svg?raw'
 const props = defineProps<{
   gen: AnimationGen
   active: boolean
+  operable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -67,9 +68,9 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
       <UIImg v-else class="h-full w-full" :src="imgSrc" :loading="imgLoading" />
     </template>
     <UIBlockItemTitle size="medium" :title="gen.name">{{ gen.name }}</UIBlockItemTitle>
-    <CornerMenu v-if="active">
-      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the animation' }" @click="emit('rename')" />
-      <RemoveMenuItem v-radar="{ name: 'remove', desc: 'Click to remove the animation' }" @click="emit('remove')" />
+    <CornerMenu v-if="active && operable !== false">
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="emit('rename')" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="emit('remove')" />
     </CornerMenu>
   </GenItem>
 </template>
