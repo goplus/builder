@@ -5,6 +5,7 @@ import * as fileHelpers from '@/models/common/file'
 import { mockFile } from '@/models/common/test'
 import { makeSpxProject } from '../common/test'
 import { setupAigcMock } from './aigc-mock'
+import { TaskType } from '@/apis/aigc'
 import { SpriteEdit } from '../edit/sprite-edit'
 import { CostumeGen } from './costume-gen'
 import { mockSaveFile } from './test-helpers'
@@ -41,22 +42,33 @@ function setup() {
 }
 
 describe('Sprite editing live demo', () => {
-  it('waits three seconds, then allows undo, redo and adoption without an AI edit task', async () => {
+  it('edits costumes through the existing image API and preserves undo, redo and adoption', async () => {
     const { source, edit } = setup()
     const gen = edit.costumes[0]
     const original = source.costumes[0].img
+    gen.setSettings({ description: 'Original costume description' })
     const item = { type: 'costume' as const, id: gen.id }
     const pending = edit.editCostume(gen.id, 'Make the hat blue')
-    await vi.advanceTimersByTimeAsync(2999)
-    expect(gen.generateState.status).toBe('running')
     expect(source.costumes[0].img).toBe(original)
-    await vi.advanceTimersByTimeAsync(1)
+    await vi.runAllTimersAsync()
     await pending
-    expect(aigc.tasks.size).toBe(0)
+    expect(aigc.tasks.size).toBe(1)
+    const task = [...aigc.tasks.values()][0]
+    expect(task.task.type).toBe(TaskType.GenerateCostume)
+    expect(task.params).toMatchObject({
+      settings: {
+        referenceImageUrl: `kodo://mock-bucket/${original.name}`,
+        description: expect.stringContaining('Edit instruction: Make the hat blue')
+      },
+      n: 1
+    })
+    expect(task.params).not.toHaveProperty('editInstruction')
+    expect(JSON.stringify(task.params)).not.toContain('Original costume description')
+    expect(gen.settings.description).toBe('Original costume description')
     expect(edit.hasResourceChanges(item)).toBe(true)
     expect(source.costumes[0].img).toBe(original)
     const candidate = gen.result!.img
-    expect(await candidate.arrayBuffer()).toEqual(await original.arrayBuffer())
+    expect(candidate).not.toBe(original)
 
     edit.editHistory.undo(gen)
     expect(edit.hasResourceChanges(item)).toBe(false)
