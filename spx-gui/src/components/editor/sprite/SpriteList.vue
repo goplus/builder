@@ -106,11 +106,9 @@ const handleSpriteGenClick = useMessageHandle(
   <div
     ref="listWrapper"
     class="sprite-list overflow-y-auto m-0 gap-2"
-    :class="
-      props.layout === 'vertical' ? 'sprite-list-vertical flex flex-wrap content-start' : 'flex flex-wrap content-start'
-    "
+    :class="props.layout === 'vertical' ? 'sprite-list-vertical grid content-start' : 'flex flex-wrap content-start'"
   >
-    <UIEmpty v-if="list.length === 0" size="medium">
+    <UIEmpty v-if="list.length === 0" class="col-span-full" size="medium">
       {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
     </UIEmpty>
     <SpriteItem
@@ -146,6 +144,8 @@ const handleSpriteGenClick = useMessageHandle(
 
 .sprite-list-vertical {
   flex: 1 1 0;
+  grid-template-columns: repeat(auto-fill, 72px);
+  justify-content: center;
   scrollbar-gutter: stable;
 }
 

@@ -106,7 +106,7 @@ useDragSortable(sortableList, itemsWrapper, {
   min-width: 0;
   margin-inline: 0;
   padding-inline: 9.5px;
-  align-items: flex-start;
+  align-items: center;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
 }
