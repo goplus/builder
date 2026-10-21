@@ -200,6 +200,7 @@ export class SpriteEdit extends Disposable implements SpriteContent {
 
   get hasPendingChanges() {
     if (this.isBusy) return true
+    if (this.costumes.some((gen) => gen.editComments.length > 0)) return true
     return [
       ...this.costumes.map((gen) => ({ type: 'costume' as const, id: gen.id })),
       ...this.animations.map((gen) => ({ type: 'animation' as const, id: gen.id }))

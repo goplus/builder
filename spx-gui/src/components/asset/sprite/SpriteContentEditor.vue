@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { computedShallowReactive, humanizeListWithLimit, useComputedDisposable } from '@/utils/utils'
@@ -24,6 +24,7 @@ import CostumeGenPreview from '../gen/costume/CostumeGenPreview.vue'
 import AnimationGenPreview from '../gen/animation/AnimationGenPreview.vue'
 import CostumeEditInput from './CostumeEditInput.vue'
 import AnimationEditInput from './AnimationEditInput.vue'
+import CostumeComments from './CostumeComments.vue'
 
 const props = defineProps<{
   content: SpriteContent
@@ -70,6 +71,11 @@ watch(
 
 const selectedCostume = computed(() => selected.value?.costume ?? null)
 const selectedAnimation = computed(() => selected.value?.animation ?? null)
+const commenting = ref(false)
+watch(
+  () => selectedCostume.value?.image,
+  () => (commenting.value = false)
+)
 
 const selectedGen = computed(() => selectedCostume.value ?? selectedAnimation.value)
 const selectedPreview = computed(() => {
@@ -181,6 +187,7 @@ const handleDiscard = useMessageHandle(
       confirmText: i18n.t({ en: 'Discard changes', zh: '放弃修改' })
     })
     props.content.editHistory.discard(gen)
+    if (item.type === 'costume') props.content.getCostumeById(item.id)?.setEditComments([])
     if (item.type === 'costume') props.content.setCostumeInstruction(item.id, '')
     else props.content.setAnimationInstruction(item.id, '')
   },
@@ -254,7 +261,7 @@ function toCapitalize(str: string) {
 }
 async function confirmBeforeSubmit() {
   const unfinishedCostumes = props.content.costumes.filter(
-    (gen) => isCostumeGenProcessing(gen) || props.content.editHistory.hasChanges(gen.id)
+    (gen) => isCostumeGenProcessing(gen) || props.content.editHistory.hasChanges(gen.id) || gen.editComments.length > 0
   )
   const unfinishedAnimations = props.content.animations.filter(
     (gen) => isAnimationGenProcessing(gen) || props.content.editHistory.hasChanges(gen.id)
@@ -348,6 +355,7 @@ const handleSubmit = useMessageHandle(
           <template v-if="selectedCostume != null">
             <CostumeEditInput
               v-if="selectedCostume.result != null"
+              v-model:commenting="commenting"
               :gen="selectedCostume"
               :instruction="content.getCostumeInstruction(selectedCostume.id)"
               :submit="
@@ -409,6 +417,9 @@ const handleSubmit = useMessageHandle(
                 </template>
               </UITooltip>
             </div>
+          </template>
+          <template v-if="commenting && selectedCostume != null && !selectedBusy" #overlay>
+            <CostumeComments :key="selectedCostume.id" :gen="selectedCostume" />
           </template>
           <template v-if="applyingResource && selectedGen != null" #ops>
             <div class="flex items-center gap-2">

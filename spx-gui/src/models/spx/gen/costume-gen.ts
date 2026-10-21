@@ -40,6 +40,14 @@ import {
 import type { SpriteContent } from '../common/sprite-content'
 import { spriteEditDemoEnabled } from './edit-demo'
 
+export type CostumeEditComment = {
+  id: string
+  /** Coordinates relative to the original image, in the range 0–1. */
+  x: number
+  y: number
+  content: string
+}
+
 export type CostumeGenInits = {
   id?: string
   settings?: Partial<Omit<CostumeSettings, 'referenceImageUrl'>>
@@ -53,6 +61,7 @@ export type CostumeGenInits = {
   savedTaskId?: string
   editSource?: Costume
   lastEdit?: { instruction: string; referenceImageUrl: string }
+  editComments?: CostumeEditComment[]
 }
 
 export type RawCostumeGenConfig = Prettify<
@@ -102,6 +111,7 @@ export class CostumeGen extends Disposable {
   private savedTaskId: string | null
   private editSource: Costume | null
   private lastEdit: CostumeGenInits['lastEdit'] | null
+  editComments: CostumeEditComment[]
 
   constructor(i18n: I18n, parent: Sprite | SpriteContent, project: SpxProject, inits: CostumeGenInits = {}) {
     super()
@@ -117,6 +127,7 @@ export class CostumeGen extends Disposable {
     this.savedResult = this.finishPhase.state.result ?? null
     this.editSource = inits.editSource ?? null
     this.lastEdit = inits.lastEdit ?? null
+    this.editComments = inits.editComments ?? []
     this.savedTaskId =
       inits.savedTaskId ??
       (this.savedResult != null && this.generateTask?.data?.status === TaskStatus.Completed
@@ -201,6 +212,7 @@ export class CostumeGen extends Disposable {
 
   image: File | null = null
   setImage(file: File | null) {
+    if (file !== this.image) this.setEditComments([])
     this.image = file
   }
 
@@ -216,6 +228,11 @@ export class CostumeGen extends Disposable {
   acceptEdit() {
     this.editSource = null
     this.lastEdit = null
+    this.setEditComments([])
+  }
+
+  setEditComments(comments: CostumeEditComment[]) {
+    this.editComments = comments
   }
   async generate() {
     this.editSource = null
@@ -225,9 +242,21 @@ export class CostumeGen extends Disposable {
   async edit(instruction: string) {
     const source = this.result
     if (source == null) throw new Error('Saved costume expected')
+    if (this.editComments.length > 0) {
+      instruction = [
+        instruction.trim(),
+        'Apply the following comments to the reference image. Coordinates use a 0–999 scale: origin at the top-left, x increases rightward, y increases downward.',
+        ...this.editComments.map(
+          (comment) => `At (${Math.round(comment.x * 999)}, ${Math.round(comment.y * 999)}): ${comment.content}`
+        ),
+        'Each coordinate identifies only the part containing that point. Preserve everything else. Do not draw markers, labels, or coordinates.'
+      ]
+        .filter((line) => line !== '')
+        .join('\n')
+    }
     if (instruction.trim() === '') throw new Error('Edit instruction expected')
     this.editSource ??= source.clone(true)
-    return this.runGeneration({ image: source.img, instruction: instruction.trim() })
+    return this.runGeneration({ image: this.image ?? source.img, instruction: instruction.trim() })
   }
 
   private async runGeneration(edit: { image: File; instruction: string } | null = null) {
@@ -355,6 +384,7 @@ export class CostumeGen extends Disposable {
       id: this.id,
       savedTaskId: this.savedTaskId ?? undefined,
       lastEdit: this.lastEdit ?? undefined,
+      editComments: this.editComments,
       settings: this.settings,
       reference:
         selection?.type === 'local-image'
@@ -404,6 +434,7 @@ export class CostumeGen extends Disposable {
     const inits: CostumeGenInits = { id: genId }
     inits.savedTaskId = config.savedTaskId
     inits.lastEdit = config.lastEdit
+    inits.editComments = config.editComments
     if (config.editSourceConfig != null) {
       inits.editSource = Costume.load(config.editSourceConfig, files, {
         basePath: `${assetsPath}/source`,
