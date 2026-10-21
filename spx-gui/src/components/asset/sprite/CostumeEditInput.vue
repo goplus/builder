@@ -67,9 +67,9 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
         <template #trigger>
           <UIButton
             ref="commentButton"
-            v-radar="{ name: 'Point edit tool', desc: 'Add, review, and remove image comments' }"
+            v-radar="{ name: 'Local edit tool', desc: 'Select locations and describe changes to them' }"
             type="white"
-            icon="edit"
+            icon="position"
             class="gap-1.5 px-2 text-sm"
             :class="{ 'text-primary-main': commenting && !disabled }"
             :aria-pressed="commenting"
@@ -80,10 +80,10 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
             {{
               $t(
                 gen.editComments.length === 0
-                  ? { en: 'Point edit', zh: '点选修改' }
+                  ? { en: 'Local edit', zh: '局部修改' }
                   : {
-                      en: `${gen.editComments.length} ${gen.editComments.length === 1 ? 'annotation' : 'annotations'}`,
-                      zh: `${gen.editComments.length} 条注释`
+                      en: `${gen.editComments.length} ${gen.editComments.length === 1 ? 'local edit' : 'local edits'}`,
+                      zh: `${gen.editComments.length} 处修改`
                     }
               )
             }}
@@ -98,10 +98,10 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
           >
             <span class="min-w-0 flex-1 break-words">{{ comment.content }}</span>
             <button
-              v-radar="{ name: `Remove comment ${index + 1}`, desc: 'Remove this point comment' }"
+              v-radar="{ name: `Remove local edit ${index + 1}`, desc: 'Remove the edit instruction at this point' }"
               type="button"
               class="h-7 w-7 shrink-0 flex items-center justify-center rounded-sm border-none bg-transparent text-grey-900 cursor-pointer hover:text-primary-main focus-visible:outline-2 focus-visible:outline-primary-main"
-              :title="$t({ en: 'Delete comment', zh: '删除注释' })"
+              :title="$t({ en: 'Remove edit', zh: '移除修改' })"
               @click="removeComment(comment.id)"
             >
               <UIIcon type="trash" class="h-4 w-4" />
