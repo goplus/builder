@@ -195,7 +195,7 @@ watch(
       >
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="anchor" v-html="anchor"></div>
-        <div ref="tipsEl" class="tips" :style="{ pointerEvents: tipScrollable ? 'auto' : 'none' }">
+        <div ref="tipsEl" class="tips" :class="{ scrollable: tipScrollable }">
           <div class="content">{{ spotlightItem.tip }}</div>
         </div>
       </div>
@@ -345,6 +345,10 @@ watch(
   );
   overflow: auto;
   box-shadow: var(--ui-box-shadow-sm);
+}
+
+.spotlight-ui .spotlight-item:not(.v-leave-active) .tips.scrollable {
+  pointer-events: auto;
 }
 
 .spotlight-ui .spotlight-item .tips .content {
