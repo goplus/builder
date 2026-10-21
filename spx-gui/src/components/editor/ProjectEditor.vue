@@ -15,7 +15,7 @@
         ref="spriteRailRef"
         v-radar="{ name: 'Sprites panel', desc: 'Panel containing sprites for the project' }"
         class="min-w-0 flex-none"
-        :style="{ width: `${paneLayout?.spriteRailWidth ?? 88}px` }"
+        :style="{ width: `${paneLayout?.spriteRailWidth ?? 104}px` }"
       >
         <SpritesPanel layout="vertical" header-height="large" />
       </UICard>
@@ -128,13 +128,18 @@ const spriteListEl = computed(() => {
   return railEl?.querySelector<HTMLElement>('.sprite-list-vertical') ?? null
 })
 const spriteListSize = useContentSize(spriteListEl)
+const spriteScrollbarWidth = computed(() => {
+  const listEl = spriteListEl.value
+  const width =
+    listEl != null && spriteListSize.value != null ? Math.max(0, listEl.offsetWidth - listEl.clientWidth) : 0
+  // Overlay scrollbars report no layout width but still intercept clicks near the list edge.
+  return width || 16
+})
 const editorSize = useContentSize(() => previewColumnRef.value?.parentElement ?? null)
 const paneLayout = computed(() => {
   const size = editorSize.value
   if (size == null) return null
-  const listEl = spriteListEl.value
-  const scrollbarWidth = listEl != null && spriteListSize.value != null ? listEl.offsetWidth - listEl.clientWidth : 0
-  return getPaneLayout(size, project.value.viewportSize, props.layout, isLargeScreen.value, scrollbarWidth)
+  return getPaneLayout(size, project.value.viewportSize, props.layout, isLargeScreen.value, spriteScrollbarWidth.value)
 })
 const previewColumnStyle = computed(() => ({ width: `${paneLayout.value?.previewWidth ?? 496}px` }))
 const CONSOLE_LINE_HEIGHT = 16

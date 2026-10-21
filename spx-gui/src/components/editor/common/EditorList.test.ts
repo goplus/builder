@@ -56,7 +56,7 @@ async function setup(resourceType: ResourceType) {
 
 describe('EditorList compact sidebar', () => {
   it.each(['costume', 'animation', 'backdrop', 'sound', 'widget'] as const)(
-    'reserves native scrollbar space outside the %s card area',
+    'reserves native or overlay scrollbar space outside the %s card area',
     async (resourceType) => {
       const { wrapper, items, resizeWithGutter } = await setup(resourceType)
       expect(wrapper.classes()).toContain('editor-list-compact')
@@ -66,6 +66,9 @@ describe('EditorList compact sidebar', () => {
         await resizeWithGutter(gutterWidth)
         const sidebar = wrapper.get('.editor-list-sidebar').element as HTMLElement
         expect(sidebar.style.getPropertyValue('--editor-list-scrollbar-width')).toBe(`${gutterWidth}px`)
+        expect(sidebar.style.getPropertyValue('--editor-list-overlay-scrollbar-width')).toBe(
+          gutterWidth === 0 ? '16px' : '0px'
+        )
       }
     }
   )

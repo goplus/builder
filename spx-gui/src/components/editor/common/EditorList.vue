@@ -12,7 +12,10 @@
   >
     <div
       class="editor-list-sidebar flex-none flex flex-col border-r border-dividing-line-2"
-      :style="{ '--editor-list-scrollbar-width': `${scrollbarWidth}px` }"
+      :style="{
+        '--editor-list-scrollbar-width': `${scrollbarWidth}px`,
+        '--editor-list-overlay-scrollbar-width': `${overlayScrollbarWidth}px`
+      }"
     >
       <div
         ref="itemsWrapper"
@@ -91,6 +94,8 @@ const scrollbarWidth = computed(() => {
   const el = itemsWrapper.value
   return el != null && itemsSize.value != null ? Math.max(0, el.offsetWidth - el.clientWidth) : 0
 })
+// Overlay scrollbars report zero width but their hit area can still cover corner menus.
+const overlayScrollbarWidth = computed(() => (scrollbarWidth.value === 0 ? 16 : 0))
 const sortableList = computed(() => (props.sortable ? props.sortable.list : null))
 
 useDragSortable(sortableList, itemsWrapper, {
@@ -103,14 +108,14 @@ useDragSortable(sortableList, itemsWrapper, {
 
 <style scoped>
 .editor-list-compact .editor-list-sidebar {
-  width: calc(92px + var(--editor-list-scrollbar-width, 0px));
+  width: calc(92px + var(--editor-list-scrollbar-width, 0px) + var(--editor-list-overlay-scrollbar-width, 0px));
 }
 
 .editor-list-compact .items {
   min-width: 0;
   margin-inline: 0;
   padding-inline: 9.5px;
-  align-items: center;
+  align-items: flex-start;
   scrollbar-gutter: stable;
 }
 
