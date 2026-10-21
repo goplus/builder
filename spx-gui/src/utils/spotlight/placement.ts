@@ -11,7 +11,10 @@ export const spotlightMetrics = {
   edgePadding: 16
 }
 
-/** Position the complete arrow/tip footprint, including the CSS offsets between them. */
+/**
+ * Position the complete arrow/tip footprint, including the CSS offsets between them.
+ * Keep these extents in sync with the placement-specific .tips transforms in SpotlightUI.vue.
+ */
 export function getSpotlightPosition(target: TargetRect, tip: Size, viewport: Size) {
   const { anchorSize, anchorOffsetX, anchorOffsetY, gap, edgePadding } = spotlightMetrics
   // The tip follows the arrow in normal flow before its placement transform is applied.

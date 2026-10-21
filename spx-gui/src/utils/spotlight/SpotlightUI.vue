@@ -39,6 +39,7 @@ const maskCutoutPadding = 6
 const maskCutoutRadius = 8
 
 const spotlightRef = ref<HTMLElement | null>(null)
+const tipsEl = ref<HTMLElement | null>(null)
 const placementRef = ref<SpotlightPlacement>('bottom-right')
 const positionRef = ref<Position>(getDefaultPosition())
 const spotlightAnimated = ref(false)
@@ -76,19 +77,11 @@ function providerRevealEl() {
   return revealEl
 }
 
-function providerSpotlightEl() {
-  const spotlightEl = spotlightRef.value
-  if (!spotlightEl) {
-    throw new Error('SpotlightUI element is not mounted yet')
-  }
-  return spotlightEl
-}
-
 function syncPlacementAndPosition() {
   const revealEl = providerRevealEl()
-  const spotlightEl = providerSpotlightEl()
+  const tipEl = tipsEl.value
+  if (tipEl == null) throw new Error('Spotlight tip is not mounted yet')
   const revealRect = revealEl.getBoundingClientRect()
-  const tipEl = spotlightEl.getElementsByClassName('tips')[0]
   const tipRect = tipEl.getBoundingClientRect()
   tipScrollable.value = tipEl.scrollHeight > tipEl.clientHeight
   viewportRef.value = { width: window.innerWidth, height: window.innerHeight }

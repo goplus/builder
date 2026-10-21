@@ -78,7 +78,6 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
 
   install(app: App<unknown>) {
     app.provide(spotlightKey, this)
-    ;(window as any).spotlight = this // TODO: remove this line in production
   }
 
   dispose() {
