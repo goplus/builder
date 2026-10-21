@@ -2,7 +2,7 @@ import { shallowRef, watchEffect } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as Sentry from '@sentry/vue'
 import { Cancelled } from '@/utils/exception'
-import { serializeGoxMod, type GoxMod } from '@/utils/xgo/gox-mod'
+import { getClassFileExtension, serializeGoxMod, type GoxMod } from '@/utils/xgo/gox-mod'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { timeout, until, untilNotNull } from '@/utils/utils'
@@ -144,7 +144,10 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
   private shouldSyncFile(path: string) {
     if (path.endsWith('.gox') || path.endsWith('.json')) return true
     return this.options.classFrameworkConfig.projects.some(({ projectClass, workClasses }) =>
-      [projectClass, ...workClasses].some(({ ext }) => ext !== '' && path.endsWith(ext))
+      [projectClass, ...workClasses].some(({ pattern }) => {
+        const ext = getClassFileExtension(pattern)
+        return ext !== '' && path.endsWith(ext)
+      })
     )
   }
 

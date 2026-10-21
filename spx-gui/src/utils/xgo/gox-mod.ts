@@ -1,6 +1,5 @@
-/** A classfile registration, retaining both its normalized extension and file pattern. */
+/** A classfile registration in gox.mod. */
 export type ClassFile = {
-  ext: string
   pattern: string
   className: string
 }
@@ -81,8 +80,9 @@ function isExtension(value: string, project: boolean) {
   return value.length > 1 && (/^(?:\*|_|\.)/.test(value) || (project && /^main[_.]/.test(value)))
 }
 
-function classFile(pattern: string, className: string): ClassFile {
-  return { pattern, ext: pattern.replace(/^(?:\*|main(?=[_.]))/, ''), className }
+/** Get the classfile extension from a gox.mod file pattern. */
+export function getClassFileExtension(pattern: string): string {
+  return pattern.replace(/^(?:\*|main(?=[_.]))/, '')
 }
 
 /** Parse gox.mod declarations. Comments and layout are discarded; invalid directives throw. */
@@ -126,11 +126,11 @@ export function parseGoxMod(source: string): GoxMod {
         flat = true
       }
       requireArgs(1, Infinity)
-      let projectClass = classFile('', '')
+      let projectClass: ClassFile = { pattern: '', className: '' }
       if (isExtension(args[0], true)) {
         requireArgs(3, Infinity)
         if (!/^\*?[A-Z]\w*$/.test(args[1])) fail(line, 'invalid project class name')
-        projectClass = classFile(args.shift()!, args.shift()!)
+        projectClass = { pattern: args.shift()!, className: args.shift()! }
       }
       if (args.some((path) => path === '' || /^[._]/.test(path))) fail(line, 'invalid package path')
       config.projects.push({
@@ -160,7 +160,7 @@ export function parseGoxMod(source: string): GoxMod {
         requireArgs(2, 3)
         if (!isExtension(args[0], false)) fail(line, 'invalid class extension')
         if (!args.slice(1).every((name) => /^\*?[A-Z]\w*$/.test(name))) fail(line, 'invalid work class name')
-        project.workClasses.push({ ...classFile(args[0], args[1]), prefix, embedded, prototype: args[2] ?? null })
+        project.workClasses.push({ pattern: args[0], className: args[1], prefix, embedded, prototype: args[2] ?? null })
         break
       }
       case 'import':

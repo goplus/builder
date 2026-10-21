@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseGoxMod, serializeGoxMod } from './gox-mod'
+import { getClassFileExtension, parseGoxMod, serializeGoxMod } from './gox-mod'
 
 describe('gox.mod', () => {
   it('parses SPX registrations into framework metadata', () => {
@@ -13,10 +13,9 @@ import ai github.com/goplus/builder/tools/ai
       xgoVersion: '1.7.5',
       projects: [
         {
-          projectClass: { ext: '.spx', pattern: 'main.spx', className: 'Game' },
+          projectClass: { pattern: 'main.spx', className: 'Game' },
           workClasses: [
             {
-              ext: '.spx',
               pattern: '*.spx',
               className: 'SpriteImpl',
               prototype: '*Sprite',
@@ -50,7 +49,7 @@ project example.com/implicit
 class *_worker.gox Worker
 `)
     expect(config.projects).toHaveLength(3)
-    expect(config.projects[0].projectClass.ext).toBe('_course.gox')
+    expect(config.projects[0].projectClass.pattern).toBe('_course.gox')
     expect(config.projects[0].autoLambdas).toEqual({ times: 1, forEver: 0, onKey: 1 })
     expect(config.projects[0].pack).toEqual({ directory: 'assets with spaces', indexFile: 'index.json' })
     expect(config.projects[1].flat).toBe(true)
@@ -67,6 +66,18 @@ pack "assets\040with\u0020spaces" "index\056json"
     expect(config.projects[0].autoImports).toEqual([{ name: 'ai', path: 'example.com/path//name' }])
     expect(config.projects[0].pack).toEqual({ directory: 'assets with spaces', indexFile: 'index.json' })
     expect(parseGoxMod(serializeGoxMod(config))).toEqual(config)
+  })
+
+  it.each([
+    ['main.spx', '.spx'],
+    ['*.spx', '.spx'],
+    ['.scene', '.scene'],
+    ['main_course.gox', '_course.gox'],
+    ['*_course.gox', '_course.gox'],
+    ['_course.gox', '_course.gox'],
+    ['', '']
+  ])('derives the classfile extension of %s', (pattern, extension) => {
+    expect(getClassFileExtension(pattern)).toBe(extension)
   })
 
   it('accepts empty configuration for ordinary XGo', () => {

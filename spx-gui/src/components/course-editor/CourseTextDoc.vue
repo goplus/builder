@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { CodeEditorUI, getTextDocumentId, useCodeEditor } from '@/components/xgo-code-editor'
 import { UIButton } from '@/components/ui'
 
 const editor = useCodeEditor()
-const i18n = useI18n()
 
 const handleFormat = useMessageHandle(
   () =>
@@ -28,5 +26,5 @@ const handleFormat = useMessageHandle(
       {{ $t({ en: 'Format', zh: '格式化' }) }}
     </UIButton>
   </div>
-  <CodeEditorUI :key="i18n.lang.value" :code-file-path="mainCourseFilePath" :has-api-reference="false" />
+  <CodeEditorUI :code-file-path="mainCourseFilePath" :has-api-reference="false" />
 </template>
