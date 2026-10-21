@@ -194,7 +194,7 @@ const handleSubmit = useMessageHandle(
     class="h-full flex flex-col items-stretch"
   >
     <div class="flex-[1_1_0] flex flex-row items-stretch">
-      <aside class="w-102 flex-none bg-grey-100 pt-4 border-r border-grey-400 flex flex-col justify-between">
+      <aside class="w-min flex-none bg-grey-100 pt-4 border-r border-grey-400 flex flex-col justify-between">
         <div class="flex-[1_1_0] overflow-y-auto px-4 flex flex-col gap-6">
           <ListItemWrapper v-radar="{ name: 'Costume list', desc: 'List of costumes' }" @add="handleAddCostume">
             <template #title>{{ $t({ zh: '造型', en: 'Costume' }) }}</template>
@@ -225,7 +225,7 @@ const handleSubmit = useMessageHandle(
           </ListItemWrapper>
         </div>
 
-        <div class="px-4 py-5 mt-0">
+        <div class="px-4 py-5 mt-0 [contain:inline-size]">
           <CostumeSettingInput v-if="selectedCostume != null" :gen="selectedCostume" />
           <AnimationSettingInput v-if="selectedAnimation != null" :gen="selectedAnimation" />
         </div>

@@ -37,18 +37,13 @@ export function useScrollbarWidth(elSource: WatchSource<HTMLElement | null>) {
         return
       }
       const update = () => {
-        const nativeWidth = Math.max(0, el.offsetWidth - el.clientWidth)
-        // Thin overlay scrollbars need clearance only while the list actually scrolls.
-        width.value = nativeWidth || (el.scrollHeight > el.clientHeight ? 8 : 0)
+        width.value = Math.max(0, el.offsetWidth - el.clientWidth)
       }
       const resizeObserver = new ResizeObserver(update)
-      const mutationObserver = new MutationObserver(update)
       resizeObserver.observe(el)
-      mutationObserver.observe(el, { childList: true })
       update()
       onCleanup(() => {
         resizeObserver.disconnect()
-        mutationObserver.disconnect()
       })
     },
     { immediate: true, flush: 'post' }
