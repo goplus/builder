@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UIImg, UIEditorSpriteItem, useModal } from '@/components/ui'
+import { UIImg, UIEditorSpriteItem, UIMenuItem, useModal } from '@/components/ui'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { useHovered } from '@/utils/dom'
 import type { Animation } from '@/models/spx/animation'
@@ -9,7 +9,7 @@ import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationRemoveModal from './AnimationRemoveModal.vue'
 import CornerMenu from '../common/CornerMenu.vue'
-import { useRenameAnimation } from '@/components/asset'
+import { useEditSprite, useRenameAnimation } from '@/components/asset'
 import { RenameMenuItem, RemoveMenuItem, DuplicateMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
@@ -36,6 +36,19 @@ const radarNodeMeta = computed(() => {
   const desc = props.selectable ? 'Click to select the animation and view more options' : ''
   return { name: 'animation-item', desc, attrs: { name: props.animation.name } }
 })
+
+const editSprite = useEditSprite()
+const { fn: handleEdit } = useMessageHandle(
+  () => {
+    const sprite = props.animation.sprite
+    if (sprite == null) throw new Error('sprite expected')
+    return editSprite(sprite, props.animation)
+  },
+  {
+    en: 'Failed to edit animation',
+    zh: '修改动画失败'
+  }
+)
 
 const { fn: handleDuplicate } = useMessageHandle(
   async () => {
@@ -90,6 +103,12 @@ const { fn: handleRename } = useMessageHandle(() => renameAnimation(props.animat
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
+      <UIMenuItem
+        v-radar="{ name: 'Edit with AI', desc: 'Open the sprite editor with this animation selected' }"
+        @click="handleEdit"
+      >
+        {{ $t({ en: 'Edit with AI', zh: '使用 AI 编辑' }) }}
+      </UIMenuItem>
       <DuplicateMenuItem
         v-radar="{ name: 'duplicate', desc: 'Click to duplicate the animation' }"
         @click="handleDuplicate"

@@ -53,12 +53,17 @@ export function useEditSprite() {
   const codeEditor = useCodeEditor()
   const ensureSignedIn = useEnsureSignedIn()
   const invokeSpriteEditModal = useModal(SpriteEditModal)
-  return async function editSprite(sprite: Sprite) {
+  return async function editSprite(sprite: Sprite, resource?: Costume | Animation) {
     await ensureSignedIn()
     const editState = editorCtx.state.spriteEditState
     const isNew = !editState.edits.some((edit) => edit.sourceSpriteId === sprite.id)
     const edit = editState.start(sprite)
-    if (isNew && editorCtx.state.selectedSprite?.id === sprite.id) {
+    if (resource != null) {
+      const type = resource instanceof Costume ? 'costume' : 'animation'
+      const items = type === 'costume' ? edit.costumes : edit.animations
+      const item = items.find((gen) => gen.result?.id === resource.id)
+      if (item != null) edit.setSelectedItem({ type, id: item.id })
+    } else if (isNew && editorCtx.state.selectedSprite?.id === sprite.id) {
       const costume = edit.costumes.find((gen) => gen.result?.id === editorCtx.state.selectedCostume?.id)
       const animation = edit.animations.find((gen) => gen.result?.id === editorCtx.state.selectedAnimation?.id)
       if (costume != null) edit.setSelectedItem({ type: 'costume', id: costume.id })
