@@ -4,6 +4,3 @@ allowBuilds:
   vue-demi: true
 minimumReleaseAgeExclude:
   - '@xgo-pkgs/spx'
-  # TODO(#3403): Remove before issue-3403-tutorial-v2 merges into dev. 0.8.4 was published on 2026-10-20
-  # and passes the minimum release age from 2026-10-21 on.
-  - '@ethanlita/fflate@0.8.4'
