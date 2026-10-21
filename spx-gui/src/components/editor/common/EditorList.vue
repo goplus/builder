@@ -102,14 +102,6 @@ useDragSortable(sortableList, itemsWrapper, {
 </script>
 
 <style scoped>
-.editor-list-compact {
-  --editor-card-corner-inset: 2px;
-  --editor-card-corner-icon-size: 14px;
-  --editor-sprite-thumbnail-size: 40px;
-  --editor-sprite-thumbnail-margin-top: 2px;
-  --editor-sprite-thumbnail-margin-bottom: 4px;
-}
-
 .editor-list-compact .editor-list-sidebar {
   width: calc(92px + var(--editor-list-scrollbar-width, 0px));
 }
@@ -120,45 +112,6 @@ useDragSortable(sortableList, itemsWrapper, {
   padding-inline: 9.5px;
   align-items: center;
   scrollbar-gutter: stable;
-}
-
-.editor-list-compact :deep(.items > .ui-block-item) {
-  width: 72px;
-  height: 72px;
-}
-
-.editor-list-compact :deep(.items > .ui-block-item .player-wrapper) {
-  margin-top: 8px;
-  margin-bottom: 0;
-}
-
-.editor-list-compact :deep(.items > .ui-block-item .play-control-play) {
-  box-sizing: border-box;
-  padding: 2px;
-  background-clip: content-box;
-}
-
-.editor-list-compact :deep(.items > .ui-block-item .play-control-icon) {
-  width: 14px;
-  height: 14px;
-}
-
-.editor-list-compact :deep(.items > .ui-block-item .play-control-stop .progress) {
-  inset: 2px;
-  width: 32px;
-  height: 32px;
-}
-
-.editor-list-compact :deep(.items > .ui-block-item .backdrop-thumbnail) {
-  width: 64px;
-  height: 44px;
-}
-
-.editor-list-compact :deep(.items > .ui-block-item .icon-container) {
-  width: 36px;
-  height: 36px;
-  margin-top: 4px;
-  margin-bottom: 6px;
 }
 
 .items {

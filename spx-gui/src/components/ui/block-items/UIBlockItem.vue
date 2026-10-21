@@ -65,7 +65,9 @@ withDefaults(
   }
 
   .ui-block-item.ui-block-item-medium {
-    --block-item-size: 88px;
+    --block-item-size: 72px;
+    --editor-card-corner-inset: 2px;
+    --editor-card-corner-icon-size: 14px;
   }
 
   .ui-block-item.ui-block-item-large {

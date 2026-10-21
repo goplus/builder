@@ -45,13 +45,6 @@ withDefaults(
 </template>
 
 <style scoped>
-.gen-item {
-  width: 72px;
-  height: 72px;
-  --editor-card-corner-inset: 2px;
-  --editor-card-corner-icon-size: 14px;
-}
-
 @property --angle {
   syntax: '<angle>';
   initial-value: 0deg;

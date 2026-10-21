@@ -136,18 +136,8 @@ const handleSpriteGenClick = useMessageHandle(
 .sprite-list {
   flex: 1 0 96px; /* 96px: 1 row of sprite items height */
   column-gap: 6px;
-  --editor-card-corner-inset: 2px;
-  --editor-card-corner-icon-size: 14px;
-  --editor-sprite-thumbnail-size: 40px;
-  --editor-sprite-thumbnail-margin-top: 2px;
-  --editor-sprite-thumbnail-margin-bottom: 4px;
   padding: 12px 8px;
   scrollbar-width: thin;
-}
-
-.sprite-list :deep(> .ui-block-item) {
-  width: 72px;
-  height: 72px;
 }
 
 .sprite-list :deep(> .ui-block-item-active) {

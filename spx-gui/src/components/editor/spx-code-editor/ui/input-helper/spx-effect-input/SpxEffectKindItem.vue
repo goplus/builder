@@ -21,8 +21,10 @@ const item = computed(() => {
 })
 
 const imgStyle = {
-  height: '60px',
-  width: '60px'
+  marginTop: '2px',
+  marginBottom: '4px',
+  height: '40px',
+  width: '40px'
 }
 </script>
 

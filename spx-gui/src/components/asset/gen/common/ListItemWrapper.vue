@@ -16,7 +16,7 @@ defineEmits<{
       <slot></slot>
       <UIBlockItem
         v-radar="{ name: 'Add', desc: 'Click to add a new item' }"
-        class="h-18 w-18 justify-center text-primary-main"
+        class="justify-center text-primary-main"
         @click="$emit('add')"
       >
         <UIIcon class="w-6 h-6" type="plus" />

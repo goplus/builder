@@ -32,12 +32,16 @@ const loading = computed(() => props.loading || fileLoading.value)
       desc: 'Click to select this image as the backdrop'
     }"
     class="justify-center"
-    :class="compact ? 'h-16.5' : 'h-27'"
+    :class="compact ? 'h-13.5' : 'h-27'"
     :size="compact ? 'medium' : 'large'"
     :interactive="!disabled && !loading"
     :active="active"
   >
-    <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" cover />
-    <UIImg v-else :class="compact ? 'h-14.5 w-20 rounded-[4px]' : 'h-25 w-33 rounded-sm'" :src="url" size="cover" />
+    <GenLoading
+      v-if="loading"
+      :animation-style="compact ? 'width: 40px; height: 40px;' : 'width: 60px; height: 60px;'"
+      cover
+    />
+    <UIImg v-else :class="compact ? 'h-11.5 w-16 rounded-[4px]' : 'h-25 w-33 rounded-sm'" :src="url" size="cover" />
   </UIBlockItem>
 </template>

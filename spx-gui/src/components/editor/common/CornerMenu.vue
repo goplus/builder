@@ -16,16 +16,3 @@ import { UIDropdown, UICornerIcon, UIMenu } from '@/components/ui'
     </UIMenu>
   </UIDropdown>
 </template>
-
-<style scoped>
-.corner-menu {
-  box-sizing: border-box;
-  padding: var(--editor-card-corner-inset, 0);
-  background-clip: content-box;
-}
-
-.corner-menu :deep(.ui-icon) {
-  width: var(--editor-card-corner-icon-size, 16px);
-  height: var(--editor-card-corner-icon-size, 16px);
-}
-</style>

@@ -97,7 +97,7 @@ const iconOnly = computed(() => settingsInputCtx.iconOnly)
             @click="$emit('update:value', clearable && value === item.value ? null : item.value)"
           >
             <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
-              <UIImg class="h-15 w-20 rounded-sm" :src="item.image ?? null" />
+              <UIImg class="h-11 w-16 rounded-sm" :src="item.image ?? null" />
             </div>
             <UIBlockItemTitle size="medium" :title="$t(item.label)">
               {{ $t(item.label) }}

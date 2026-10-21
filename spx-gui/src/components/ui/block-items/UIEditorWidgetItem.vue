@@ -1,6 +1,6 @@
 <template>
   <UIBlockItem :active="selectable && selectable.selected" :interactive="!!selectable">
-    <div class="icon-container mt-2.5 mb-3 h-10 w-10">
+    <div class="icon-container mt-1 mb-1.5 h-9 w-9">
       <slot name="icon"></slot>
     </div>
     <UIBlockItemTitle size="medium" :title="name">
