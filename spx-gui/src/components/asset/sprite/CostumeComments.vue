@@ -128,11 +128,19 @@ function position(comment: CostumeEditComment) {
             desc: 'Update the edit instruction at this point'
           }"
           type="button"
-          class="comment-marker block max-w-full truncate rounded-md border-none bg-transparent px-2 py-1.5 text-xs text-text cursor-pointer hover:text-primary-main active:bg-grey-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
+          class="comment-marker relative block max-w-full rounded-md border-none bg-transparent px-2 py-1.5 text-xs text-text cursor-pointer hover:text-primary-main active:bg-grey-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
           :title="comment.content"
           @click.stop="open(comment)"
         >
-          {{ comment.content }}
+          <span class="block truncate">{{ comment.content }}</span>
+          <span
+            aria-hidden="true"
+            class="absolute z-1 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-grey-100 bg-primary-main"
+            :style="{
+              left: comment.x > 0.5 ? `calc(100% + ${Math.max(0, 28 - (1 - comment.x) * area.width)}px)` : '0',
+              top: comment.y < 0.05 ? '0' : comment.y > 0.95 ? '100%' : '50%'
+            }"
+          ></span>
         </button>
         <button
           v-radar="{ name: `Remove local edit ${index + 1}`, desc: 'Remove the edit instruction at this point' }"
