@@ -1313,9 +1313,9 @@ paths:
         - Notifications
       summary: List notifications for the authenticated user
       description: |
-        List one category of notifications, newest first. The total and unread counts cover the whole category, not
-        only the returned page, and come from the same snapshot as the page. Reading a notification does not change
-        its position in the list.
+        List one category of notifications, newest first. Reading a notification does not change its position among
+        all notifications of the category, but removes it from `read=false` results. To count unread notifications,
+        use the `total` of a `read=false` request.
       parameters:
         - name: category
           description: Category of notifications to list.
@@ -1323,6 +1323,11 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/NotificationCategory"
+        - name: read
+          description: Filter notifications by read state. Omit to list both read and unread notifications.
+          in: query
+          schema:
+            type: boolean
         - $ref: "#/components/parameters/PageIndex"
         - $ref: "#/components/parameters/PageSize"
       responses:
@@ -1334,18 +1339,10 @@ paths:
                 type: object
                 required:
                   - total
-                  - unreadCount
                   - data
                 properties:
                   total:
                     $ref: "#/components/schemas/ByPage/properties/total"
-                  unreadCount:
-                    description: Number of unread notifications in the requested category.
-                    type: integer
-                    format: int64
-                    minimum: 0
-                    examples:
-                      - 3
                   data:
                     type: array
                     items:
