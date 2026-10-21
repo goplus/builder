@@ -209,6 +209,10 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'ui-design',
         component: () => import('./pages/docs/ui-design/index.vue')
+      },
+      {
+        path: 'ui-design/spotlight',
+        component: () => import('./pages/docs/ui-design/spotlight.vue')
       }
     ]
   },

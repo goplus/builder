@@ -17,7 +17,8 @@ describe('Spotlight', () => {
       timer: null
     })
 
-    document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    const clickTarget = mask ? element : document
+    clickTarget.dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
     expect(spotlight.spotlightItem.value).toBeNull()
     spotlight.dispose()

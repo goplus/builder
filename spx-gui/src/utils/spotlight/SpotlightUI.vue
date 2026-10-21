@@ -1,24 +1,7 @@
 <script lang="ts">
-enum Placement {
-  BOTTOM_RIGHT = 'bottom-right',
-  TOP_RIGHT = 'top-right',
-  TOP_LEFT = 'top-left',
-  BOTTOM_LEFT = 'bottom-left'
-}
-
-type Rect = {
-  top: number
-  left: number
-  bottom: number
-  right: number
-  width: number
-  height: number
-}
-
 type Position = {
   x: number
   y: number
-  half: 'lower' | 'upper'
 }
 
 function getPointAlongDirection(x1: number, y1: number, x2: number, y2: number, distance: number): Position {
@@ -26,24 +9,21 @@ function getPointAlongDirection(x1: number, y1: number, x2: number, y2: number, 
   if (len === 0) {
     return {
       x: x1,
-      y: y1,
-      half: 'lower'
+      y: y1
     }
   }
   const ux = (x2 - x1) / len
   const uy = (y2 - y1) / len
   return {
     x: x2 - ux * distance,
-    y: y2 - uy * distance,
-    half: 'lower'
+    y: y2 - uy * distance
   }
 }
 
 function getDefaultPosition(): Position {
   return {
     x: window.innerWidth / 2,
-    y: window.innerHeight / 2,
-    half: 'lower'
+    y: window.innerHeight / 2
   }
 }
 </script>
@@ -53,112 +33,40 @@ import { watch, ref, computed } from 'vue'
 import { throttle } from 'lodash'
 import { useSpotlight } from '@/utils/spotlight/index'
 import anchor from './anchor.svg?raw'
+import { getSpotlightPosition, spotlightMetrics, type SpotlightPlacement } from './placement'
 
-const anchorSize = 26
-const anchorOffset = [0, 0]
-const conflictBuffer = 20
 const maskCutoutPadding = 6
+const maskCutoutRadius = 8
 
 const spotlightRef = ref<HTMLElement | null>(null)
-const placementRef = ref<Placement>(Placement.BOTTOM_RIGHT)
+const placementRef = ref<SpotlightPlacement>('bottom-right')
 const positionRef = ref<Position>(getDefaultPosition())
 const spotlightAnimated = ref(false)
+const tipScrollable = ref(false)
 const maskRectRef = ref<DOMRect | null>(null)
+const viewportRef = ref({ width: window.innerWidth, height: window.innerHeight })
 
 const spotlight = useSpotlight()
 
 const spotlightItem = computed(() => spotlight.spotlightItem.value)
+const maskPath = computed(() => {
+  const rect = maskRectRef.value
+  if (rect == null) return ''
 
-function getRect(el: HTMLElement): Rect {
-  const rect = el.getBoundingClientRect()
-  return {
-    top: rect.top,
-    left: rect.left,
-    bottom: window.innerHeight - rect.bottom,
-    right: window.innerWidth - rect.right,
-    width: rect.width,
-    height: rect.height
-  }
-}
+  const left = rect.left - maskCutoutPadding
+  const top = rect.top - maskCutoutPadding
+  const right = rect.right + maskCutoutPadding
+  const bottom = rect.bottom + maskCutoutPadding
+  const radius = Math.min(maskCutoutRadius, (right - left) / 2, (bottom - top) / 2)
+  const { width, height } = viewportRef.value
 
-function setRectByPosition(rect: Rect, position: Position) {
-  const { x, y } = position
-  const { left, top, right, bottom, width, height } = rect
-  const offsetX = left - x
-  const offsety = top - y
-
-  return {
-    left: x,
-    top: y,
-    right: right + offsetX,
-    bottom: bottom + offsety,
-    width,
-    height
-  }
-}
-
-function correctSpotlightRect(placement: Placement, spotlightRect: Rect) {
-  let { top, left, bottom, right, width, height } = spotlightRect
-  width += anchorSize
-  right -= anchorSize
-  const tipsWidth = width - anchorSize
-  const tipsHeight = height - anchorSize
-
-  switch (placement) {
-    case Placement.TOP_RIGHT:
-      bottom += tipsHeight
-      top -= tipsHeight
-      break
-    case Placement.TOP_LEFT:
-      right += tipsWidth
-      left -= tipsWidth
-      top -= tipsHeight
-      bottom += tipsHeight
-      break
-    case Placement.BOTTOM_LEFT:
-      right += tipsWidth
-      left -= tipsWidth
-      break
-  }
-
-  return {
-    top,
-    left,
-    bottom,
-    right,
-    width,
-    height
-  }
-}
-
-function getPlacementByHalf(spotlightRect: Rect, lowerHalf: boolean) {
-  const placement = lowerHalf ? Placement.BOTTOM_RIGHT : Placement.TOP_RIGHT
-  const correctRect = correctSpotlightRect(placement, spotlightRect)
-  const { right } = correctRect
-  const conflictRight = right - conflictBuffer
-
-  if (lowerHalf) {
-    return conflictRight > 0 ? Placement.BOTTOM_RIGHT : Placement.BOTTOM_LEFT
-  }
-  return conflictRight > 0 ? Placement.TOP_RIGHT : Placement.TOP_LEFT
-}
-
-function getRevealPosition(revealRect: Rect, spotlightRect: Rect): Position {
-  const { left, top, bottom, width, height } = revealRect
-  const [anchorOffsetLeft, anchorOffsetTop] = anchorOffset
-  const spotlightHeight = spotlightRect.height
-
-  const conflictTop = top - anchorOffsetTop
-  const conflictBottom = bottom - anchorOffsetTop - conflictBuffer
-  const lowerHalf = conflictBottom - spotlightHeight > 0
-  const centerX = left + Math.round(width / 2)
-
-  return {
-    x: centerX + anchorOffsetLeft,
-    y: lowerHalf ? conflictTop + height : conflictTop,
-    half: lowerHalf ? 'lower' : 'upper'
-  }
-}
+  return `M0 0H${width}V${height}H0Z
+    M${left + radius} ${top}H${right - radius}
+    A${radius} ${radius} 0 0 1 ${right} ${top + radius}V${bottom - radius}
+    A${radius} ${radius} 0 0 1 ${right - radius} ${bottom}H${left + radius}
+    A${radius} ${radius} 0 0 1 ${left} ${bottom - radius}V${top + radius}
+    A${radius} ${radius} 0 0 1 ${left + radius} ${top}Z`
+})
 
 function providerRevealEl() {
   const revealEl = spotlightItem.value?.el
@@ -179,14 +87,16 @@ function providerSpotlightEl() {
 function syncPlacementAndPosition() {
   const revealEl = providerRevealEl()
   const spotlightEl = providerSpotlightEl()
-  const revealRect = getRect(revealEl)
-  const spotlightRect = getRect(spotlightEl)
+  const revealRect = revealEl.getBoundingClientRect()
+  const tipEl = spotlightEl.getElementsByClassName('tips')[0]
+  const tipRect = tipEl.getBoundingClientRect()
+  tipScrollable.value = tipEl.scrollHeight > tipEl.clientHeight
+  viewportRef.value = { width: window.innerWidth, height: window.innerHeight }
+  const { x, y, placement } = getSpotlightPosition(revealRect, tipRect, viewportRef.value)
 
-  const position = (positionRef.value = getRevealPosition(revealRect, spotlightRect))
-  placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
-
-  spotlightEl.style.transform = `translateX(${position.x}px) translateY(${position.y}px)`
-  maskRectRef.value = revealEl.getBoundingClientRect()
+  placementRef.value = placement
+  positionRef.value = { x, y }
+  maskRectRef.value = revealRect
 }
 
 function revealElement(revealEl: HTMLElement) {
@@ -221,6 +131,7 @@ watch(
     }
 
     maskRectRef.value = value.el.getBoundingClientRect()
+    viewportRef.value = { width: window.innerWidth, height: window.innerHeight }
 
     // After the spotlight is concealed, if it is revealed again,
     // the positions of `center` and `reveal` will be recalculated — this position represents a portion of the distance between them.
@@ -244,8 +155,10 @@ watch(
     resizeObserver.observe(value.el)
     document.body.addEventListener('scroll', throttledHandleScroll, { capture: true, passive: true })
     document.body.addEventListener('scrollend', handleScrollEnd, { capture: true })
+    window.addEventListener('resize', throttledHandleRefresh)
     onCleanUp(() => {
       resizeObserver.disconnect()
+      window.removeEventListener('resize', throttledHandleRefresh)
       throttledHandleScroll.cancel()
       throttledHandleRefresh.cancel()
       document.body.removeEventListener('scroll', throttledHandleScroll, { capture: true })
@@ -258,18 +171,27 @@ watch(
 </script>
 
 <template>
-  <div class="spotlight-ui">
+  <div
+    class="spotlight-ui"
+    :style="{
+      '--spotlight-anchor-size': `${spotlightMetrics.anchorSize}px`,
+      '--spotlight-anchor-offset-x': `${spotlightMetrics.anchorOffsetX}px`,
+      '--spotlight-anchor-offset-y': `${spotlightMetrics.anchorOffsetY}px`,
+      '--spotlight-edge-padding': `${spotlightMetrics.edgePadding}px`
+    }"
+  >
     <Transition>
-      <div
-        v-if="spotlightItem?.mask && maskRectRef != null"
-        class="mask-cutout"
-        :style="{
-          left: `${maskRectRef.left - maskCutoutPadding}px`,
-          top: `${maskRectRef.top - maskCutoutPadding}px`,
-          width: `${maskRectRef.width + 2 * maskCutoutPadding}px`,
-          height: `${maskRectRef.height + 2 * maskCutoutPadding}px`
-        }"
-      ></div>
+      <svg v-if="spotlightItem?.mask && maskRectRef != null" class="mask" aria-hidden="true">
+        <path
+          :d="maskPath"
+          fill-rule="evenodd"
+          @pointerdown.stop.prevent
+          @pointerup.stop.prevent
+          @mousedown.stop.prevent
+          @mouseup.stop.prevent
+          @click.stop.prevent="spotlight.conceal()"
+        />
+      </svg>
     </Transition>
     <Transition>
       <div
@@ -280,7 +202,7 @@ watch(
       >
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="anchor" v-html="anchor"></div>
-        <div ref="tipsEl" class="tips">
+        <div ref="tipsEl" class="tips" :style="{ pointerEvents: tipScrollable ? 'auto' : 'none' }">
           <div class="content">{{ spotlightItem.tip }}</div>
         </div>
       </div>
@@ -309,9 +231,6 @@ watch(
 }
 
 .spotlight-ui {
-  --spotlight-anchor-size: 26px;
-  --spotlight-anchor-offset-x: 6px;
-  --spotlight-anchor-offset-y: 4px;
   --spotlight-transform-transition: transform 0.4s cubic-bezier(0.8, -0.3, 0.265, 1.2);
   --spotlight-z-index: 10000; /* TODO: Adjust as needed */
 
@@ -326,11 +245,21 @@ watch(
   position: absolute;
 }
 
-/* The outer shadow leaves the target visible across stacking contexts. */
-.spotlight-ui .mask-cutout {
+.spotlight-ui .mask {
   position: absolute;
-  border-radius: 8px;
-  box-shadow: 0 0 24px 100vmax rgba(15, 23, 42, 0.45);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.spotlight-ui .mask path {
+  fill: rgba(15, 23, 42, 0.45);
+  pointer-events: fill;
+}
+
+.spotlight-ui .mask.v-leave-active path {
+  pointer-events: none;
 }
 
 .spotlight-ui .spotlight-item.animated {
@@ -413,7 +342,15 @@ watch(
   font-size: 12px;
   background: var(--ui-color-grey-100);
   word-wrap: break-word;
-  max-width: 300px;
+  box-sizing: border-box;
+  max-width: min(
+    300px,
+    calc(100vw - var(--spotlight-edge-padding) - var(--spotlight-edge-padding) - var(--spotlight-anchor-size))
+  );
+  max-height: calc(
+    100vh - var(--spotlight-edge-padding) - var(--spotlight-edge-padding) - var(--spotlight-anchor-size)
+  );
+  overflow: auto;
   box-shadow: var(--ui-box-shadow-sm);
 }
 
