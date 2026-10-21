@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { UIButton, UIDropdown, UIIcon } from '@/components/ui'
@@ -19,6 +19,21 @@ const emit = defineEmits<{
 
 const submitting = computed(() => props.gen.generateState.status === 'running')
 const disabled = computed(() => submitting.value || props.gen.finishState.status === 'running')
+const commentsVisible = ref(false)
+const commentButton = ref<InstanceType<typeof UIButton> | null>(null)
+watch([() => props.gen, disabled], () => (commentsVisible.value = false))
+
+function openComments() {
+  emit('update:commenting', true)
+  commentsVisible.value = props.gen.editComments.length > 0 && !commentsVisible.value
+}
+
+function removeComment(id: string) {
+  props.gen.setEditComments(props.gen.editComments.filter((comment) => comment.id !== id))
+  if (props.gen.editComments.length === 0) commentsVisible.value = false
+  nextTick(() => commentButton.value?.focus())
+}
+
 const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(props.instruction), {
   en: 'Failed to edit costume',
   zh: '修改造型失败'
@@ -35,51 +50,48 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
     @update:description="emit('update:instruction', $event)"
   >
     <template #extra>
-      <button
-        v-radar="{ name: 'Point edit tool', desc: 'Select points in the image and describe local edits' }"
-        type="button"
-        class="h-8 flex items-center gap-1.5 rounded-md border px-2 text-xs cursor-pointer transition-colors disabled:cursor-not-allowed disabled:text-grey-600 focus-visible:outline-2 focus-visible:outline-primary-main"
-        :class="
-          commenting
-            ? 'border-primary-300 bg-primary-200 text-primary-main'
-            : 'border-grey-400 bg-grey-200 text-grey-900 enabled:hover:bg-grey-300'
-        "
-        :aria-pressed="commenting"
-        :disabled="disabled"
-        @click="emit('update:commenting', !commenting)"
-      >
-        <UIIcon type="edit" class="h-4 w-4" />
-        {{ $t({ en: 'Point edit', zh: '点选修改' }) }}
-      </button>
-      <UIDropdown v-if="gen.editComments.length > 0" trigger="click" placement="top-start" :disabled="disabled">
+      <UIDropdown v-model:visible="commentsVisible" trigger="manual" placement="top-start" :disabled="disabled">
         <template #trigger>
-          <button
-            v-radar="{ name: 'Image comments', desc: 'Review and remove individual point comments' }"
-            type="button"
-            class="h-8 rounded-md border-none bg-transparent px-2 text-xs text-grey-900 cursor-pointer enabled:hover:bg-grey-200 disabled:cursor-not-allowed disabled:text-grey-600 focus-visible:outline-2 focus-visible:outline-primary-main"
+          <UIButton
+            ref="commentButton"
+            v-radar="{ name: 'Point edit tool', desc: 'Add, review, and remove image comments' }"
+            type="white"
+            icon="edit"
+            class="gap-1.5 px-2 text-sm"
+            :class="{ 'text-primary-main': commenting && !disabled }"
+            :aria-expanded="gen.editComments.length > 0 ? commentsVisible : undefined"
             :disabled="disabled"
+            @click="openComments"
           >
             {{
-              $t({
-                en: `${gen.editComments.length} ${gen.editComments.length === 1 ? 'comment' : 'comments'}`,
-                zh: `${gen.editComments.length} 条注释`
-              })
+              $t(
+                gen.editComments.length === 0
+                  ? { en: 'Point edit', zh: '点选修改' }
+                  : {
+                      en: `${gen.editComments.length} ${gen.editComments.length === 1 ? 'annotation' : 'annotations'}`,
+                      zh: `${gen.editComments.length} 条注释`
+                    }
+              )
             }}
-          </button>
+            <UIIcon v-if="gen.editComments.length > 0" type="arrowDown" class="h-3 w-3" />
+          </UIButton>
         </template>
         <ul class="w-72 max-h-64 overflow-y-auto p-2">
-          <li v-for="(comment, index) in gen.editComments" :key="comment.id" class="flex items-center gap-2 p-1">
-            <span class="min-w-0 flex-1 px-1 text-sm text-text break-words">{{ comment.content }}</span>
-            <UIButton
+          <li
+            v-for="(comment, index) in gen.editComments"
+            :key="comment.id"
+            class="flex items-center gap-2 rounded-sm px-2 py-1 text-sm text-grey-900 hover:bg-grey-300 focus-within:bg-grey-300"
+          >
+            <span class="min-w-0 flex-1 break-words">{{ comment.content }}</span>
+            <button
               v-radar="{ name: `Remove comment ${index + 1}`, desc: 'Remove this point comment' }"
-              type="white"
-              shape="square"
-              class="shrink-0 border-transparent!"
+              type="button"
+              class="h-7 w-7 shrink-0 flex items-center justify-center rounded-sm border-none bg-transparent text-grey-900 cursor-pointer hover:text-primary-main focus-visible:outline-2 focus-visible:outline-primary-main"
               :title="$t({ en: 'Delete comment', zh: '删除注释' })"
-              @click="gen.setEditComments(gen.editComments.filter((item) => item.id !== comment.id))"
+              @click="removeComment(comment.id)"
             >
-              <UIIcon type="close" class="h-4 w-4" />
-            </UIButton>
+              <UIIcon type="trash" class="h-4 w-4" />
+            </button>
           </li>
         </ul>
       </UIDropdown>
