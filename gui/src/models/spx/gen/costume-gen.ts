@@ -38,7 +38,7 @@ import {
   validateReferenceImage
 } from './reference-image'
 import type { SpriteContent } from '../common/sprite-content'
-import { simulateSpriteEdit, spriteEditDemoEnabled } from './edit-demo'
+import { spriteEditDemoEnabled } from './edit-demo'
 
 export type CostumeGenInits = {
   id?: string
@@ -242,7 +242,6 @@ export class CostumeGen extends Disposable {
       if (edit != null) {
         referenceImageUrl = await saveFile(edit.image, signal)
         this.lastEdit = { instruction: edit.instruction, referenceImageUrl }
-        if (spriteEditDemoEnabled) return simulateSpriteEdit(edit.image, signal)
       } else if (this.referenceImageSelection?.type === 'local-image') {
         referenceImageUrl = await saveFile(this.referenceImageSelection.file, signal)
       } else if (this.referenceCostume != null) {
@@ -252,10 +251,19 @@ export class CostumeGen extends Disposable {
       }
       signal.throwIfAborted()
       if (edit == null) this.lastEdit = null
+      const settings = { ...this.settings, referenceImageUrl }
+      if (edit != null && spriteEditDemoEnabled) {
+        // The deployed API supports image editing through a reference image and description.
+        settings.description = [
+          'Edit the provided game sprite image according to the instruction below.',
+          "Preserve the subject's identity, pose, art style, proportions, framing, and all other details unless the instruction explicitly asks to change them.",
+          `Edit instruction: ${edit.instruction}`
+        ].join('\n')
+      }
       await task.start({
-        settings: { ...this.settings, referenceImageUrl },
+        settings,
         n: 1,
-        ...(edit == null ? {} : { editInstruction: edit.instruction })
+        ...(edit == null || spriteEditDemoEnabled ? {} : { editInstruction: edit.instruction })
       })
       const { imageUrls } = await task.untilCompleted(reporter)
       if (imageUrls.length < 1) throw new Error('no costume image generated')
