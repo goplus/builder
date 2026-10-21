@@ -22,8 +22,6 @@ export type APICategoryViewInfo = {
 
 export interface IAPIReferenceProvider {
   provideAPIReference(ctx: APIReferenceContext): Promise<APIReferenceItem[]>
-  /** Provide a label describing where the available APIs can be used. */
-  provideScopeLabel?(ctx: APIReferenceContext): LocaleMessage
   /** Provide view info (labels and icons) for categories. Returns null if not available. */
   provideCategoryViewInfos(): APICategoryViewInfo[] | null
 }

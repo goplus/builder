@@ -20,17 +20,11 @@ export class APIReferenceController extends Disposable {
     const provider = this.ui.codeEditor.apiReferenceProvider
     const { activeTextDocument: textDocument } = this.ui
     if (textDocument == null) return null
-    const ctx = { textDocument, signal }
-    const items = await provider.provideAPIReference(ctx)
-    return { items, scopeLabel: provider.provideScopeLabel?.(ctx) ?? null }
+    return provider.provideAPIReference({ textDocument, signal })
   }, true)
 
   get items() {
-    return this.itemsMgr.result.data?.items ?? null
-  }
-
-  get scopeLabel() {
-    return this.itemsMgr.result.data?.scopeLabel ?? null
+    return this.itemsMgr.result.data
   }
 
   get error() {

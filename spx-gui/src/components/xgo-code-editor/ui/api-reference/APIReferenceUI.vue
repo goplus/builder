@@ -19,12 +19,12 @@ function belongs(item: APIReferenceItem, mcid: string, scid: string) {
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, ref, shallowRef, watch, watchEffect } from 'vue'
 import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilTaskScheduled } from '@/utils/utils'
-import { UIError, UIIcon, UITextInput, UITooltip } from '@/components/ui'
+import { UIDropdown, UIError, UIIcon, UITextInput, UITooltip } from '@/components/ui'
 import { stringifyDefinitionId } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
@@ -41,9 +41,31 @@ const itemsForDisplay = computed<APIReferenceItem[] | null>((oldValue) => {
 })
 
 const searchQuery = ref('')
+const isSearchExpanded = ref(false)
+const searchInputRef = ref<InstanceType<typeof UITextInput>>()
+const searchToggleRef = ref<HTMLButtonElement>()
 const isSearching = computed(() => searchQuery.value.trim() !== '')
 const searchResults = computed(() => searchAPIReferenceItems(itemsForDisplay.value ?? [], searchQuery.value))
 const searchResultsWrapperRef = ref<HTMLElement>()
+
+function closeSearch() {
+  searchQuery.value = ''
+  isSearchExpanded.value = false
+  searchToggleRef.value?.focus()
+}
+
+async function toggleSearch() {
+  if (isSearchExpanded.value) return closeSearch()
+  isSearchExpanded.value = true
+  await nextTick()
+  searchInputRef.value?.focus()
+}
+
+function handleSearchEscape(event: KeyboardEvent) {
+  if (event.isComposing) return
+  if (isCategoryMenuVisible.value) void setCategoryMenuVisible(false)
+  else closeSearch()
+}
 
 watch(
   searchResults,
@@ -112,17 +134,22 @@ watch(
 )
 
 const itemsWrapperRef = ref<HTMLElement>()
-const categoriesWrapperRef = ref<HTMLElement>()
+const isCategoryMenuVisible = ref(false)
+const categoryToggleRef = ref<HTMLButtonElement>()
+const categoryMenuRef = ref<HTMLElement>()
 
-watch(
-  activeCategoryIdRef,
-  () => {
-    categoriesWrapperRef.value
-      ?.querySelector('[aria-pressed="true"]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  },
-  { flush: 'post' }
-)
+async function setCategoryMenuVisible(visible: boolean) {
+  const hadFocus = categoryMenuRef.value?.contains(document.activeElement)
+  isCategoryMenuVisible.value = visible
+  if (!visible) {
+    if (hadFocus) categoryToggleRef.value?.focus()
+    return
+  }
+  await nextTick()
+  await untilTaskScheduled('user-visible')
+  if (!isCategoryMenuVisible.value) return
+  categoryMenuRef.value?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus()
+}
 
 const scrolling = ref(false)
 
@@ -134,6 +161,7 @@ watchEffect((onCleanup) => {
   let clearScrollingTimer: ReturnType<typeof setTimeout> | null = null
 
   const handleScroll = throttle(() => {
+    if (itemsWrapper.clientHeight === 0) return
     scrolling.value = true
     if (clearScrollingTimer != null) clearTimeout(clearScrollingTimer)
     clearScrollingTimer = setTimeout(() => {
@@ -150,7 +178,7 @@ watchEffect((onCleanup) => {
       return
     }
     for (let i = 1; i < categoryWrappers.length; i++) {
-      if ((categoryWrappers[i] as HTMLElement).offsetTop > scrollTop) {
+      if ((categoryWrappers[i] as HTMLElement).offsetTop > scrollTop + 1) {
         activeCategoryIdRef.value = categories[i - 1].id
         break
       }
@@ -162,7 +190,9 @@ watchEffect((onCleanup) => {
   itemsWrapper.addEventListener('scroll', handleScroll, { signal })
 })
 
-function handleCategoryClick(id: string) {
+async function handleCategoryClick(id: string) {
+  searchQuery.value = ''
+  await nextTick()
   const itemsWrapper = itemsWrapperRef.value
   if (itemsWrapper == null) return
   const categoryWrapper = itemsWrapper.querySelector(`[data-category-id="${id}"]`)
@@ -171,6 +201,7 @@ function handleCategoryClick(id: string) {
     top: (categoryWrapper as HTMLElement).offsetTop,
     behavior: 'smooth'
   })
+  await setCategoryMenuVisible(false)
 }
 </script>
 
@@ -186,33 +217,118 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <div class="flex-none border-b border-dividing-line-2 px-3 py-2.5">
-        <div class="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      <div class="flex-none px-3 py-2.5">
+        <div class="flex items-center justify-between gap-2">
           <h4 class="text-sm font-medium text-title">{{ $t({ en: 'API Reference', zh: 'API 参考' }) }}</h4>
-          <span
-            v-if="controller.scopeLabel != null"
-            class="shrink-0 whitespace-nowrap rounded-sm bg-grey-300 px-1.5 py-0.5 text-2xs text-hint-1"
-          >
-            {{ $t(controller.scopeLabel) }}
-          </span>
+          <div class="flex items-center gap-1">
+            <UITooltip>
+              <template #trigger>
+                <button
+                  ref="searchToggleRef"
+                  v-radar="{ name: 'Toggle API search', desc: 'Show or hide the API search field' }"
+                  type="button"
+                  class="size-7 shrink-0 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 transition-colors duration-100"
+                  :class="
+                    isSearchExpanded
+                      ? 'bg-primary-200 text-primary-main hover:bg-primary-100 active:bg-primary-300'
+                      : 'bg-transparent text-grey-800 hover:bg-grey-300 active:bg-grey-400'
+                  "
+                  :aria-expanded="isSearchExpanded"
+                  @click="toggleSearch"
+                >
+                  <UIIcon class="size-4" type="search" />
+                </button>
+              </template>
+              {{ $t(isSearchExpanded ? { en: 'Hide search', zh: '收起搜索' } : { en: 'Search APIs', zh: '搜索 API' }) }}
+            </UITooltip>
+            <UIDropdown
+              :visible="isCategoryMenuVisible"
+              trigger="manual"
+              placement="right-start"
+              :offset="{ x: 8, y: 0 }"
+              @update:visible="setCategoryMenuVisible"
+            >
+              <template #trigger>
+                <UITooltip :disabled="isCategoryMenuVisible">
+                  <template #trigger>
+                    <button
+                      ref="categoryToggleRef"
+                      v-radar="{ name: 'API categories', desc: 'Choose an API category to browse' }"
+                      type="button"
+                      class="size-7 shrink-0 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 transition-colors duration-100"
+                      :class="
+                        isCategoryMenuVisible
+                          ? 'bg-primary-200 text-primary-main hover:bg-primary-100 active:bg-primary-300'
+                          : 'bg-transparent text-grey-800 hover:bg-grey-300 active:bg-grey-400'
+                      "
+                      :aria-expanded="isCategoryMenuVisible"
+                      @click="setCategoryMenuVisible(!isCategoryMenuVisible)"
+                    >
+                      <UIIcon class="size-4" type="filter" />
+                    </button>
+                  </template>
+                  {{ $t({ en: 'API categories', zh: 'API 分类' }) }}
+                </UITooltip>
+              </template>
+              <ul
+                ref="categoryMenuRef"
+                v-radar="{ name: 'API category list', desc: 'Available API categories' }"
+                class="w-40 flex flex-col gap-1 p-1.5"
+              >
+                <li v-for="c in categoriesComputed" :key="c.id">
+                  <button
+                    v-radar="{ name: $t(c.label), desc: 'Click to view APIs in this category' }"
+                    type="button"
+                    class="h-8 w-full cursor-pointer appearance-none flex items-center gap-2 rounded-sm border-none px-2 text-xs transition-colors duration-100"
+                    :class="
+                      c.id === activeCategoryIdRef
+                        ? 'bg-grey-400 text-grey-1000'
+                        : 'bg-transparent text-grey-800 hover:bg-grey-300 active:bg-grey-400'
+                    "
+                    :aria-pressed="c.id === activeCategoryIdRef"
+                    @click="handleCategoryClick(c.id)"
+                  >
+                    <!-- eslint-disable-next-line vue/no-v-html -->
+                    <span class="size-4 shrink-0 [&>svg]:h-full [&>svg]:w-full" v-html="c.icon"></span>
+                    {{ $t(c.label) }}
+                  </button>
+                </li>
+              </ul>
+            </UIDropdown>
+          </div>
         </div>
         <UITextInput
+          v-if="isSearchExpanded"
+          ref="searchInputRef"
           v-model:value="searchQuery"
           v-radar="{ name: 'Search API Reference', desc: 'Search API names and functions in English or Chinese' }"
+          class="mt-2"
           :placeholder="$t({ en: 'Search API names or functions', zh: '搜索 API 名称或功能' })"
           clearable
-          @keydown.esc.stop="searchQuery = ''"
+          @keydown.esc.stop="handleSearchEscape"
         >
           <template #prefix><UIIcon type="search" /></template>
         </UITextInput>
       </div>
       <div v-if="isSearching" class="flex min-h-0 flex-[1_1_0] flex-col">
-        <p class="flex-none px-4 py-3 text-xs text-hint-2" role="status" aria-live="polite">
+        <p
+          class="flex-none px-4 py-3 text-hint-2"
+          :class="searchResults.length > 0 ? 'text-xs' : 'text-sm'"
+          role="status"
+          aria-live="polite"
+        >
           {{
-            $t({
-              en: searchResults.length === 1 ? 'Found 1 snippet' : `Found ${searchResults.length} snippets`,
-              zh: `找到 ${searchResults.length} 种写法`
-            })
+            $t(
+              searchResults.length > 0
+                ? {
+                    en: searchResults.length === 1 ? 'Found 1 snippet' : `Found ${searchResults.length} snippets`,
+                    zh: `找到 ${searchResults.length} 种写法`
+                  }
+                : {
+                    en: 'No matching APIs. Try another name or function.',
+                    zh: '没有找到匹配的 API，试试其他名称或功能词。'
+                  }
+            )
           }}
         </p>
         <ul
@@ -228,43 +344,8 @@ function handleCategoryClick(id: string) {
             show-description
           />
         </ul>
-        <p v-else class="px-4 py-3 text-sm text-hint-2">
-          {{
-            $t({
-              en: 'No matching APIs. Try another name or function.',
-              zh: '没有找到匹配的 API，试试其他名称或功能词。'
-            })
-          }}
-        </p>
       </div>
       <div v-show="!isSearching" class="flex min-h-0 flex-[1_1_0] flex-col">
-        <ul
-          ref="categoriesWrapperRef"
-          class="h-10 flex flex-none items-center gap-1 overflow-x-auto border-b border-dividing-line-2 px-2 [scrollbar-width:none]"
-        >
-          <li v-for="c in categoriesComputed" :key="c.id" class="flex-none">
-            <UITooltip placement="bottom">
-              <template #trigger>
-                <button
-                  v-radar="{ name: $t(c.label), desc: 'Click to view APIs in this category' }"
-                  type="button"
-                  class="size-7 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 transition-colors duration-100"
-                  :class="
-                    c.id === activeCategoryIdRef
-                      ? 'bg-grey-400 text-grey-1000'
-                      : 'bg-transparent text-grey-800 hover:bg-grey-300'
-                  "
-                  :aria-pressed="c.id === activeCategoryIdRef"
-                  @click="handleCategoryClick(c.id)"
-                >
-                  <!-- eslint-disable-next-line vue/no-v-html -->
-                  <div class="size-4 [&>svg]:h-full [&>svg]:w-full" v-html="c.icon"></div>
-                </button>
-              </template>
-              {{ $t(c.label) }}
-            </UITooltip>
-          </li>
-        </ul>
         <ul
           ref="itemsWrapperRef"
           class="relative min-h-0 flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"

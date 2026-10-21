@@ -329,12 +329,6 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
     return items.map(withSearchKeywords)
   }
 
-  provideScopeLabel(ctx: APIReferenceContext) {
-    return isTextDocumentStageCode(ctx.textDocument.id)
-      ? { en: 'For stage', zh: '舞台可用' }
-      : { en: 'For sprites', zh: '精灵可用' }
-  }
-
   provideCategoryViewInfos(): APICategoryViewInfo[] {
     return categoryViewInfos
   }
