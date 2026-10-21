@@ -14,7 +14,7 @@ import { provideProjectConfig } from '@/components/project/config'
 import * as env from './env'
 
 export function setupXBuilder() {
-  // This branch is an interaction demo; AI edits return the input media after 3 seconds.
+  // Demo: use the existing image editing API and simulate video editing after 3 seconds.
   setSpriteEditDemoEnabled(true)
   client.setBaseUrl(env.apiBaseUrl)
   accountOAuthClientForXBuilder.setBaseUrl(env.apiBaseUrl + '/account')
