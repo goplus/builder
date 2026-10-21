@@ -422,25 +422,19 @@ const handleSubmit = useMessageHandle(
                 :disabled="selectedBusy"
                 @click="handleDiscard"
               >
-                {{ $t({ en: 'Discard changes', zh: '放弃修改' }) }}
+                {{ $t({ en: 'Discard', zh: '放弃' }) }}
               </UIButton>
               <UIButton
                 v-radar="{
-                  name: 'Apply resource',
-                  desc: 'Apply only this costume or animation and clear its draft history'
+                  name: 'Save resource',
+                  desc: 'Save only this costume or animation and clear its draft history'
                 }"
                 type="green"
                 :disabled="!canApply"
                 :loading="handleApply.isLoading.value"
                 @click="handleApply.fn"
               >
-                {{
-                  $t(
-                    selectedAnimation != null
-                      ? { en: 'Use animation', zh: '采用动画' }
-                      : { en: 'Use costume', zh: '采用造型' }
-                  )
-                }}
+                {{ $t({ en: 'Save', zh: '保存' }) }}
               </UIButton>
             </div>
           </template>
