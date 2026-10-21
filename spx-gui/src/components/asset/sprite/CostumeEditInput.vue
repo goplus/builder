@@ -23,9 +23,10 @@ const commentsVisible = ref(false)
 const commentButton = ref<InstanceType<typeof UIButton> | null>(null)
 watch([() => props.gen, disabled], () => (commentsVisible.value = false))
 
-function openComments() {
-  emit('update:commenting', true)
-  commentsVisible.value = props.gen.editComments.length > 0 && !commentsVisible.value
+function toggleCommenting() {
+  const active = !props.commenting
+  emit('update:commenting', active)
+  commentsVisible.value = active && props.gen.editComments.length > 0
 }
 
 function removeComment(id: string) {
@@ -59,9 +60,10 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
             icon="edit"
             class="gap-1.5 px-2 text-sm"
             :class="{ 'text-primary-main': commenting && !disabled }"
+            :aria-pressed="commenting"
             :aria-expanded="gen.editComments.length > 0 ? commentsVisible : undefined"
             :disabled="disabled"
-            @click="openComments"
+            @click="toggleCommenting"
           >
             {{
               $t(
