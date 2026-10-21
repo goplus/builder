@@ -86,10 +86,8 @@ import zoomReset from './zoom-reset.svg?raw'
 import backdropTile from './backdrop-tile.svg?raw'
 import backdropScale from './backdrop-scale.svg?raw'
 import backdropOriginal from './backdrop-original.svg?raw'
-import comment from './comment.svg?raw'
 
 const typeIconMap = {
-  comment,
   file,
   folder,
   arrowDown,
