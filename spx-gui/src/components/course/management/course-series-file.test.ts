@@ -997,11 +997,9 @@ describe('Playground course series files', () => {
   })
 
   it('reports its progress step by step, counting uploads in bytes', async () => {
-    vi.mocked(saveFiles).mockImplementation(async (files, _signal, onProgress) => {
-      const sizes = await Promise.all(Object.values(files).map(async (file) => (await file!.arrayBuffer()).byteLength))
-      const total = sizes.reduce((sum, size) => sum + size, 0)
-      onProgress?.({ loaded: total / 2, total })
-      onProgress?.({ loaded: total, total })
+    vi.mocked(saveFiles).mockImplementation(async (_files, _signal, reporter) => {
+      reporter?.report(0.5)
+      reporter?.report(1)
       return { fileCollection: { 'main_course.gox': 'kodo://imported/main_course.gox' }, fileCollectionHash: 'hash' }
     })
     const progress: CourseSeriesFileProgress[] = []

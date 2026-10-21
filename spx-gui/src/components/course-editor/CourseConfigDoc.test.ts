@@ -84,7 +84,15 @@ const ButtonStub = defineComponent({
 async function mountDoc() {
   const project = new TutorialProject()
   await project.load({
-    metadata: { id: '2338', owner: 'curator', kind: 'playground', title: 'Move Lita', thumbnail: 'kodo://thumbnail' },
+    metadata: {
+      id: '2338',
+      owner: 'curator',
+      kind: 'playground',
+      title: 'Move Lita',
+      thumbnail: 'kodo://thumbnail',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-02T00:00:00Z'
+    },
     files: makeFiles()
   })
   const history = new History({

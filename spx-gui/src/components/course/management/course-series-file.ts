@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { ProgressReporter } from '@/utils/progress'
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { extname, filename } from '@/utils/path'
 import { forEachConcurrently } from '@/utils/concurrency-limit'
@@ -610,10 +611,14 @@ async function importCourseSeriesFileData(
               thumbnail,
               kind: 'playground',
               content: (
-                await saveFiles(courseFiles[index], signal, ({ loaded }) => {
-                  uploaded[index] = loaded
-                  report()
-                })
+                await saveFiles(
+                  courseFiles[index],
+                  signal,
+                  new ProgressReporter(({ percentage }) => {
+                    uploaded[index] = courseSizes[index] * percentage
+                    report()
+                  })
+                )
               ).fileCollection
             }
           : {

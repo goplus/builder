@@ -1,6 +1,7 @@
 import { createDirectUploadTask } from 'qiniu-js'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
+import { ProgressReporter, type Progress } from '@/utils/progress'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { createFileURLSignatures, createUploadSession, getFileObject } from '@/apis/file'
 import { capture } from '@/utils/exception'
@@ -213,7 +214,7 @@ describe('saveFile', () => {
     expect(capture).not.toHaveBeenCalled()
   })
 
-  it('reports the bytes of a set of files saved as their uploads go on', async () => {
+  it('reports byte-weighted progress as file uploads go on', async () => {
     let reportUploadProgress!: (progress: { percent: number }) => void
     let completeUpload!: (respBody: string) => void
     vi.mocked(createDirectUploadTask).mockReturnValue({
@@ -223,7 +224,7 @@ describe('saveFile', () => {
       onError: vi.fn(),
       onComplete: vi.fn((callback) => (completeUpload = callback))
     } as unknown as ReturnType<typeof createDirectUploadTask>)
-    const progress: Array<{ loaded: number; total: number }> = []
+    const progress: Progress[] = []
     const saving = saveFiles(
       {
         // Inlined, as a small text file
@@ -231,7 +232,7 @@ describe('saveFile', () => {
         'assets/step.mp4': fromBlob('step.mp4', new Blob([new Uint8Array(1000)], { type: 'video/mp4' }))
       },
       undefined,
-      (p) => progress.push(p)
+      new ProgressReporter((p) => progress.push(p))
     )
 
     await vi.waitFor(() => expect(reportUploadProgress).toBeDefined())
@@ -239,9 +240,8 @@ describe('saveFile', () => {
     completeUpload('{"key":"files/step.mp4","hash":"hash"}')
     await saving
 
-    expect(progress.map(({ total }) => total)).toEqual(progress.map(() => 1002))
-    expect(progress.map(({ loaded }) => loaded)).toEqual(expect.arrayContaining([500 + 2]))
-    expect(progress.at(-1)).toEqual({ loaded: 1002, total: 1002 })
+    expect(progress.map(({ percentage }) => percentage)).toContain(502 / 1002)
+    expect(progress.at(-1)).toEqual({ percentage: 1, desc: null, timeLeft: null })
   })
 
   it('uploads a small file without checking for reuse', async () => {
