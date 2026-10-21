@@ -1,8 +1,9 @@
 import { shallowMount } from '@vue/test-utils'
-import { nextTick, ref } from 'vue'
+import { defineComponent, h, nextTick, ref, shallowRef } from 'vue'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
 import { mockFile } from '@/models/common/test'
+import type { FramesConfig } from '@/models/spx/gen/animation-gen'
 import AnimationVideoPreview from './AnimationVideoPreview.vue'
 
 vi.mock('@/utils/file', async (importOriginal) => ({
@@ -10,67 +11,93 @@ vi.mock('@/utils/file', async (importOriginal) => ({
   useFileUrl: () => [ref('blob:animation')]
 }))
 
-async function setup() {
-  const wrapper = shallowMount(AnimationVideoPreview, {
-    props: { video: mockFile('animation.mp4'), framesConfig: null },
-    global: { plugins: [createI18n({ lang: 'en' })], directives: { radar: () => {} } }
-  })
-  onTestFinished(() => wrapper.unmount())
-  await nextTick()
-  const video = wrapper.get('video')
-  Object.defineProperty(video.element, 'duration', { configurable: true, value: 5 })
-  await video.trigger('loadedmetadata')
-  vi.spyOn(wrapper.get('.track-inner').element, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 0, 500, 20))
-  for (const marker of wrapper.findAll('.segment-marker')) marker.element.setPointerCapture = vi.fn()
-  wrapper.get('.segment').element.setPointerCapture = vi.fn()
+function setup(initialConfig: FramesConfig | null) {
+  const framesConfig = shallowRef(initialConfig)
+  const visible = ref(true)
+  const video = mockFile('animation.mp4')
+  const host = shallowMount(
+    defineComponent(
+      () => () =>
+        visible.value
+          ? h(AnimationVideoPreview, {
+              video,
+              framesConfig: framesConfig.value,
+              'onUpdate:framesConfig': (config) => (framesConfig.value = config)
+            })
+          : null
+    ),
+    {
+      global: {
+        plugins: [createI18n({ lang: 'zh' })],
+        stubs: { AnimationVideoPreview: false },
+        directives: { radar: () => {} }
+      }
+    }
+  )
+  onTestFinished(() => host.unmount())
 
-  async function move(clientX: number, type = 'pointermove') {
-    window.dispatchEvent(new PointerEvent(type, { pointerId: 1, clientX }))
+  async function loadVideo(duration = 5) {
+    await nextTick()
+    const wrapper = host.getComponent(AnimationVideoPreview)
+    const element = wrapper.get('video').element
+    Object.defineProperty(element, 'duration', { configurable: true, value: duration })
+    await wrapper.get('video').trigger('loadedmetadata')
+    vi.spyOn(wrapper.get('.track-inner').element, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 500, 20))
+    return wrapper
+  }
+
+  async function dragMarker(side: 'left' | 'right', clientX: number) {
+    const marker = host.get(`.segment-marker.${side}`)
+    await marker.trigger('pointerdown', { pointerId: 1, clientX })
+    window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX }))
+    window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX }))
     await nextTick()
   }
-  async function start(side: 'left' | 'right', clientX: number) {
-    await wrapper.get(`.segment-marker.${side}`).trigger('pointerdown', { pointerId: 1, clientX })
-  }
-  // Start each test with a 1–4s cut range in the 5s video.
-  await start('left', 100)
-  await move(200)
-  await move(200, 'pointerup')
-  await start('right', 600)
-  await move(500)
-  await move(500, 'pointerup')
-  return { wrapper, start, move }
+
+  return { host, framesConfig, visible, loadVideo, dragMarker }
 }
 
-describe('Animation trim dragging', () => {
-  it.each(['left', 'right'] as const)('preserves the grab position at the center of the %s handle', async (side) => {
-    const { wrapper, start, move } = await setup()
-    const segment = wrapper.get<HTMLDivElement>('.segment')
-    const initialStyle = segment.attributes('style')
-    const clientX = side === 'left' ? 194 : 506
-    await start(side, clientX)
-    await move(clientX)
-    expect(segment.attributes('style')).toBe(initialStyle)
+describe('AnimationVideoPreview', () => {
+  it('preserves the saved cut range and frame interval when metadata loads and when reopened', async () => {
+    const initialConfig = { startTime: 1000, duration: 800, interval: 200 }
+    const { framesConfig, visible, loadVideo, dragMarker } = setup(initialConfig)
+    const wrapper = await loadVideo()
+    expect(framesConfig.value).toBe(initialConfig)
+    expect(wrapper.emitted('update:framesConfig')).toBeUndefined()
+    expect(wrapper.get('.segment').attributes('style')).toBe('left: 20%; right: 64%;')
 
-    const movedX = clientX + (side === 'left' ? 20 : -20)
-    await move(movedX)
-    expect(parseFloat(segment.element.style[side])).toBeCloseTo(24)
-    expect(parseFloat(segment.element.style[side === 'left' ? 'right' : 'left'])).toBeCloseTo(20)
-    await move(movedX, 'pointerup')
-    expect(wrapper.emitted('update:framesConfig')!.at(-1)).toEqual([
-      { startTime: side === 'left' ? 1200 : 1000, duration: 2800, interval: 100 }
-    ])
+    await dragMarker('right', 225)
+    expect(framesConfig.value).toEqual({ startTime: 1000, duration: 1300, interval: 200 })
+    visible.value = false
+    await nextTick()
+    visible.value = true
+    const reopened = await loadVideo()
+    expect(reopened.emitted('update:framesConfig')).toBeUndefined()
+    expect(reopened.get('.segment').attributes('style')).toBe('left: 20%; right: 54%;')
+    expect(framesConfig.value).toEqual({ startTime: 1000, duration: 1300, interval: 200 })
   })
 
-  it('keeps preview seeking anchored to the pointer without changing the cut range', async () => {
-    const { wrapper, move } = await setup()
-    const initialStyle = wrapper.get('.segment').attributes('style')
-    const updates = wrapper.emitted('update:framesConfig')!.length
-    await wrapper.get('.segment').trigger('pointerdown', { pointerId: 1, clientX: 350 })
-    expect(wrapper.get('video').element.currentTime).toBe(2.5)
-    await move(400)
-    expect(wrapper.get('video').element.currentTime).toBe(3)
-    await move(400, 'pointerup')
-    expect(wrapper.get('.segment').attributes('style')).toBe(initialStyle)
-    expect(wrapper.emitted('update:framesConfig')).toHaveLength(updates)
+  it('keeps short saved segments within bounds and preserves fractional frame intervals', async () => {
+    const { framesConfig, loadVideo, dragMarker } = setup({ duration: 50, interval: 1000 / 60 })
+    await loadVideo()
+    await dragMarker('left', 500)
+    expect(framesConfig.value).toEqual({ startTime: 0, duration: 50, interval: 1000 / 60 })
+    await dragMarker('right', 0)
+    expect(framesConfig.value).toEqual({ startTime: 0, duration: 50, interval: 1000 / 60 })
+  })
+
+  it('initializes a newly generated video with the full range and the default frame interval', async () => {
+    const { framesConfig, loadVideo } = setup(null)
+    const wrapper = await loadVideo(5.17)
+    expect(framesConfig.value).toEqual({ startTime: 0, duration: 5170, interval: 100 })
+    expect(wrapper.get('.segment').attributes('style')).toBe('left: 0%; right: 0%;')
+  })
+
+  it('keeps a video shorter than the snapping interval selectable', async () => {
+    const { framesConfig, loadVideo, dragMarker } = setup(null)
+    await loadVideo(0.05)
+    expect(framesConfig.value).toEqual({ startTime: 0, duration: 50, interval: 100 })
+    await dragMarker('right', 0)
+    expect(framesConfig.value).toEqual({ startTime: 0, duration: 50, interval: 100 })
   })
 })

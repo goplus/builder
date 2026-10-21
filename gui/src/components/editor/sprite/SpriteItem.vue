@@ -17,7 +17,7 @@ import {
   DuplicateMenuItem
 } from '@/components/editor/common/'
 import CornerMenu from '../common/CornerMenu.vue'
-import { useRenameSprite } from '@/components/asset'
+import { useEditSprite, useRenameSprite } from '@/components/asset'
 
 const props = withDefaults(
   defineProps<{
@@ -38,6 +38,11 @@ const props = withDefaults(
 )
 
 const editorCtx = useEditorCtx()
+const editSprite = useEditSprite()
+const handleEdit = useMessageHandle(() => editSprite(props.sprite), {
+  en: 'Failed to edit sprite',
+  zh: '编辑精灵失败'
+}).fn
 
 const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.sprite.defaultCostume?.img)
 const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
@@ -169,7 +174,13 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <UIMenuItem
-        v-radar="{ name: 'visibility', desc: 'Click to toggle visibility the sprite' }"
+        v-radar="{ name: 'Edit sprite', desc: 'Open the sprite editor to modify costumes and animations' }"
+        @click="handleEdit"
+      >
+        {{ $t({ en: 'Edit sprite', zh: '编辑精灵' }) }}
+      </UIMenuItem>
+      <UIMenuItem
+        v-radar="{ name: 'Visibility', desc: 'Click to toggle visibility the sprite' }"
         @click="toggleSpriteVisible"
       >
         {{ $t({ en: `${sprite.visible ? 'Hide' : 'Show'}`, zh: `${sprite.visible ? '隐藏' : '显示'}` }) }}

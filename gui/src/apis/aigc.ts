@@ -55,6 +55,7 @@ export type AnimationSettings = {
   perspective: Perspective
   loopMode: AnimationLoopMode
   referenceFrameUrl: UniversalUrl | null
+  referenceVideoUrl?: UniversalUrl | null
 }
 
 export type BackdropSettings = {
@@ -151,12 +152,16 @@ export const taskRemoveBackgroundSupportedImgExts = ['jpeg', 'jpg', 'png', 'bmp'
 
 export type TaskParamsGenerateCostume = {
   settings: CostumeSettings
+  /** Edits settings.referenceImageUrl while preserving details not explicitly changed. Must not be blank. */
+  editInstruction?: string
   /** Number of costume images to generate. Defaults to 1. */
   n: number
 }
 
 export type TaskParamsGenerateAnimationVideo = {
   settings: AnimationSettings
+  /** Edits settings.referenceVideoUrl while preserving details not explicitly changed. Must not be blank. */
+  editInstruction?: string
 }
 
 export type TaskParamsExtractVideoFrames = {

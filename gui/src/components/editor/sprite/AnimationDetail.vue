@@ -1,5 +1,11 @@
 <template>
   <EditorItemDetail :name="animation.name" @rename="emit('rename')">
+    <template v-if="$slots.leading != null" #leading>
+      <slot name="leading"></slot>
+    </template>
+    <template v-if="$slots.ops != null" #ops>
+      <slot name="ops"></slot>
+    </template>
     <AnimationPlayer
       :costumes="animation.costumes"
       :sound="sound"

@@ -13,17 +13,20 @@ const props = defineProps<{
   gen: CostumeGen
 }>()
 
-const readonly = computed(() => props.gen.result != null)
 const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
   en: 'Failed to enrich costume details',
   zh: '丰富造型细节失败'
+}).fn
+const handleGenerate = useMessageHandle(() => props.gen.generate(), {
+  en: 'Failed to generate costume',
+  zh: '生成造型失败'
 }).fn
 const buttonDisabled = computed(
   () => props.gen.enrichState.status === 'running' || props.gen.settings.description === ''
 )
 const submitting = computed(() => props.gen.generateState.status === 'running')
 const submitText = computed(() => {
-  if (props.gen.generateState.status === 'initial') return { en: 'Generate', zh: '生成' }
+  if (props.gen.result == null && props.gen.generateState.status === 'initial') return { en: 'Generate', zh: '生成' }
   return { en: 'Regenerate', zh: '重新生成' }
 })
 </script>
@@ -36,7 +39,6 @@ const submitText = computed(() => {
     }"
     :description="gen.settings.description"
     :enriching="gen.enrichState.status === 'running'"
-    :readonly="readonly"
     :disabled="submitting"
     @update:description="gen.setSettings({ description: $event })"
     @enrich="handleEnrich"
@@ -61,7 +63,7 @@ const submitText = computed(() => {
         }"
         :disabled="buttonDisabled"
         :loading="submitting"
-        @click="gen.generate()"
+        @click="handleGenerate"
       >
         {{ $t(submitText) }}
       </UIButton>
