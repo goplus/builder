@@ -135,7 +135,7 @@ function position(comment: CostumeEditComment) {
           <span class="block truncate">{{ comment.content }}</span>
           <span
             aria-hidden="true"
-            class="absolute z-1 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-grey-100 bg-primary-main"
+            class="absolute z-1 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-grey-100 bg-primary-main group-hover:opacity-0 group-focus-within:opacity-0"
             :style="{
               left: comment.x > 0.5 ? `calc(100% + ${Math.max(0, 28 - (1 - comment.x) * area.width)}px)` : '0',
               top: comment.y < 0.05 ? '0' : comment.y > 0.95 ? '100%' : '50%'
