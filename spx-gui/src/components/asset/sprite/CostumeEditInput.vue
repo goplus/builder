@@ -47,6 +47,12 @@ function removeComment(id: string) {
   if (props.gen.editComments.length > 0) nextTick(() => commentButton.value?.focus())
 }
 
+function handleFocusIn(event: FocusEvent) {
+  if (event.target instanceof HTMLTextAreaElement && props.gen.editComments.length === 0) {
+    emit('update:commenting', false)
+  }
+}
+
 const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(props.instruction), {
   en: 'Failed to edit costume',
   zh: '修改造型失败'
@@ -61,6 +67,7 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
     :enrichable="false"
     :disabled="disabled"
     @update:description="emit('update:instruction', $event)"
+    @focusin="handleFocusIn"
   >
     <template #extra>
       <UIDropdown v-model:visible="commentsVisible" trigger="manual" placement="top-start" :disabled="disabled">
