@@ -24,9 +24,13 @@ const commentButton = ref<InstanceType<typeof UIButton> | null>(null)
 watch([() => props.gen, disabled], () => (commentsVisible.value = false))
 
 function toggleCommenting() {
-  const active = !props.commenting
-  emit('update:commenting', active)
-  commentsVisible.value = active && props.gen.editComments.length > 0
+  if (props.gen.editComments.length > 0) {
+    emit('update:commenting', true)
+    commentsVisible.value = !commentsVisible.value
+  } else {
+    emit('update:commenting', !props.commenting)
+    commentsVisible.value = false
+  }
 }
 
 function removeComment(id: string) {
