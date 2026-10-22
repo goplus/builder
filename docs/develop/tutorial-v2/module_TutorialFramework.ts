@@ -164,6 +164,14 @@ export interface TutorialFrameworkHost {
       disable(): void;
     };
   };
+  /**
+   * Generation rejects when it cannot produce a usable result (network,
+   * sign-in, quota, or a response that is not the requested shape). Unlike
+   * other capability failures, the framework returns a rejection to Course
+   * code as an error rather than failing the Course program, so the Host must
+   * not treat it as fatal on its own; the executor still reports it through
+   * `onError('capability')`.
+   */
   copilot: {
     /** Generates text without adding a Copilot conversation round. */
     generateText(message: string): Promise<string>;

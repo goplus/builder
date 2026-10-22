@@ -7,6 +7,9 @@ export const mockLearnerCode = `onClick => {
 }
 `
 
+/** Copilot requests whose message starts with this are rejected, as a failed request (network, quota) would be. */
+export const failingCopilotMessagePrefix = '[fail] '
+
 /**
  * Mock TutorialFrameworkHost: reports every capability call through `log` and
  * answers with canned values, so Course programs can run end-to-end through
@@ -66,10 +69,12 @@ export function createMockTutorialHost(log: (message: string) => void): Tutorial
     copilot: {
       async generateText(message) {
         log(`[host] copilot.generateText: ${message}`)
+        if (message.startsWith(failingCopilotMessagePrefix)) throw new Error('mock Copilot request failed')
         return 'You used stepTo to walk Lita right up to the mushroom.'
       },
       async generateJSON(message, schema) {
         log(`[host] copilot.generateJSON: ${message} (schema: ${JSON.stringify(schema)})`)
+        if (message.startsWith(failingCopilotMessagePrefix)) throw new Error('mock Copilot request failed')
         return {}
       }
     },

@@ -17,9 +17,9 @@ import (
 //     runFrame and yieldWhile may call them: a run has exactly one yield
 //     point, with no ad-hoc yielding scattered elsewhere. The token holder's
 //     goroutine ID is written only alongside the token itself.
-//  2. yieldWhile is entered only from mustCallCapability, which waits on the
+//  2. yieldWhile is entered only from tryCallCapability, which waits on the
 //     host, and pause, which waits on a timer; the bridge's callCapability
-//     appears only in mustCallCapability or the main-goroutine Start handshakes.
+//     appears only in tryCallCapability or the main-goroutine Start handshakes.
 //  3. No operation that can block appears while schedulerMu is held (channel
 //     send or receive, select, Wait, taking the token, calling the bridge);
 //     registryMu is a leaf lock whose regions allow only allowlisted calls.
@@ -31,9 +31,9 @@ import (
 //     events.goLive only by Start.
 //  6. Every exported method of a type holding the course program (the API
 //     Course code calls) refuses a caller outside a run before doing anything
-//     else: its first call is requireRun, a guard delegate (mustCallCapability
-//     or register, whose own first call must be requireRun), or another such
-//     method of the same receiver.
+//     else: its first call is requireRun, a guard delegate (tryCallCapability,
+//     mustCallCapability or register, whose own first call must be requireRun
+//     or another guard delegate), or another such method of the same receiver.
 //
 // The checks work on the AST rather than on observed behavior, so a violating
 // way of writing things turns red as it enters the repository instead of
@@ -108,9 +108,10 @@ func courseFacingTypes(files []*ast.File) map[string]bool {
 }
 
 // guardDelegates are the functions an ability may call first instead of
-// requireRun. Each must call requireRun first itself (checkGuardDelegate), so
-// the refusal still comes before anything else the ability does.
-var guardDelegates = map[string]bool{"mustCallCapability": true, "register": true}
+// requireRun. Each must call requireRun or another guard delegate first itself
+// (checkGuardDelegate), so the refusal still comes before anything else the
+// ability does.
+var guardDelegates = map[string]bool{"tryCallCapability": true, "mustCallCapability": true, "register": true}
 
 // firstCall returns the first call in fn's body in source order, or nil. A
 // call's arguments come after the call itself, so for register(..., func()
@@ -133,13 +134,18 @@ func calleeName(callee string) string {
 }
 
 // checkGuardDelegate checks the other half of rule 6, that a guard delegate's
-// own first call is requireRun, and reports whether fn is a guard delegate.
+// own first call is requireRun or another guard delegate, and reports whether
+// fn is a guard delegate.
 func checkGuardDelegate(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) bool {
 	if !guardDelegates[fn.Name.Name] {
 		return false
 	}
-	if first := firstCall(fn); first == nil || calleeName(renderExpr(first.Fun)) != "requireRun" {
-		t.Errorf("%s: %s must call requireRun first: abilities that call it first rely on that refusal", fset.Position(fn.Pos()), fn.Name.Name)
+	var callee string
+	if first := firstCall(fn); first != nil {
+		callee = calleeName(renderExpr(first.Fun))
+	}
+	if callee != "requireRun" && (!guardDelegates[callee] || callee == fn.Name.Name) {
+		t.Errorf("%s: %s must call requireRun or another guard delegate first: abilities that call it first rely on that refusal", fset.Position(fn.Pos()), fn.Name.Name)
 	}
 	return true
 }
@@ -178,8 +184,8 @@ func checkGuardedEntry(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl, cour
 var (
 	tokenOperators   = map[string]bool{"runFrame": true, "yieldWhile": true}
 	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
-	yieldCallers     = map[string]bool{"mustCallCapability": true, "pause": true}
-	blockingWaitHome = "mustCallCapability"
+	yieldCallers     = map[string]bool{"tryCallCapability": true, "pause": true}
+	blockingWaitHome = "tryCallCapability"
 	admitCallers     = map[string]bool{"startRuns": true, "goLive": true}
 	yieldMarkers     = map[string]bool{"runFrame": true, "yieldWhile": true}
 )
@@ -206,7 +212,7 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				}
 			case strings.HasSuffix(callee, ".yieldWhile"):
 				if !yieldCallers[name] {
-					report(n.Pos(), "%s yields the token: only mustCallCapability and pause may wait", name)
+					report(n.Pos(), "%s yields the token: only tryCallCapability and pause may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
 				if name != blockingWaitHome && name != "Start" {

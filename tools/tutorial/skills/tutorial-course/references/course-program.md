@@ -23,7 +23,10 @@ onStart => {
 Editor.Runtime.onLog log => {
 	if log == "reached-target" {
 		code := Editor.Project.getCode("Lita")
-		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
+		feedback, err := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
+		if err != nil {
+			feedback = "Lita reached Mushroom. Well done!"
+		}
 		completeWith feedback
 	}
 }
@@ -31,7 +34,8 @@ Editor.Runtime.onLog log => {
 
 When the course starts, it limits the Code Editor to one API, shows the task, plays a video and highlights the API
 list. Then it waits. The learner's project prints `reached-target` when Lita touches Mushroom (`println "reached-target"`
-in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback.
+in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback, or with a
+fixed line when generation fails.
 
 This is the usual pattern. The learner's project prints an agreed log line when something happens, and the course listens
 for it with `Editor.Runtime.onLog`.
@@ -59,8 +63,8 @@ onStart => {
 Using a command-style call as a value is the most common reason a course does not compile:
 
 ```text
-feedback := Copilot.generateText "Give one sentence of feedback about: " + code   // does not compile
-feedback := Copilot.generateText("Give one sentence of feedback about: " + code)  // compiles
+feedback, err := Copilot.generateText "Give one sentence of feedback about: " + code   // does not compile
+feedback, err := Copilot.generateText("Give one sentence of feedback about: " + code)  // compiles
 ```
 
 ### Top-level code and course start
@@ -167,7 +171,7 @@ to the host as errors, and a signal the course waits for may never arrive.
   `complete`.
 
 `completeWith` shows its message to the learner as feedback. The first course above generates that message from the
-learner's code.
+learner's code and falls back to a fixed line when generation fails.
 
 ## API reference
 
@@ -258,8 +262,8 @@ Calls from course code never appear in the learner's Copilot conversation.
 | Call | Returns | Notes |
 | --- | --- | --- |
 | `Copilot.onRoundComplete round => { ... }` | | Called when the learner completes a round with Copilot. `round.UserMessage` is the learner's message and `round.ResultMessages` holds the replies. |
-| `Copilot.generateText(message)` | The generated text | Waits for generation. |
-| `Copilot.generateJSON message, result` | After `result` is filled | Waits for generation. |
+| `Copilot.generateText(message)` | The generated text, and an error when generation fails | Waits for generation. |
+| `Copilot.generateJSON(message, result)` | An error when generation fails; on success `result` is filled | Waits for generation. |
 
 `generateJSON` derives a JSON Schema from the struct type of `result` and fills the struct with the generated value:
 
@@ -280,7 +284,10 @@ type Review struct {
 Editor.Runtime.onExit code => {
 	question := "Does this code move Lita to Mushroom?\n" + Editor.Project.getCode("Lita")
 	review := &Review{}
-	Copilot.generateJSON question, review
+	if err := Copilot.generateJSON(question, review); err != nil {
+		showMessage "Run your program again when Lita is ready."
+		return
+	}
 	if review.Correct {
 		complete
 	} else {
@@ -288,6 +295,44 @@ Editor.Runtime.onExit code => {
 	}
 }
 ```
+
+#### When generation fails
+
+Generation can fail for reasons the course cannot prevent: the network drops, the learner's sign-in expires, or the
+service is out of quota. Instead of stopping the course, `generateText` and `generateJSON` return the failure as an
+error, and the course decides what the learner sees next. Plan a fallback for every generation call.
+
+XGo's `?:` gives `generateText` a fallback in one expression:
+
+```go
+Editor.Runtime.onLog log => {
+	if log == "reached-target" {
+		completeWith Copilot.generateText("Praise the learner in one sentence.")?:"Lita made it. Well done!"
+	}
+}
+```
+
+Check the error yourself when the fallback is more than a value:
+
+```go
+Editor.Runtime.onExit code => {
+	hint, err := Copilot.generateText("Give one hint for this code:\n" + Editor.Project.getCode("Lita"))
+	if err != nil {
+		hint = "Read your code line by line and compare it with the task."
+	}
+	showMessage hint
+}
+```
+
+- A non-nil error means only that this generation produced nothing usable. Branch on `err != nil`, not on the message,
+  which is for diagnosis and may change.
+- A failed `generateJSON` leaves `result` untouched, including when the response does not fit the struct. Values set
+  before the call therefore survive as the fallback.
+- Leaving the error unchecked does not stop the course. `Copilot.generateJSON question, review` written as a statement
+  drops the error, and the course goes on with whatever `review` held before. Check it unless those values are a fine
+  answer by themselves.
+- To stop the course instead, write `Copilot.generateText(message)!`. The course then fails as described in
+  [When a call fails](#when-a-call-fails), and the learner has to restart it.
 
 ### Spotlight
 
@@ -331,9 +376,11 @@ example:
 - `getCode` names a sprite the project does not have.
 - `showVideo` names a video the course does not declare.
 - A spotlight selector is malformed.
-- Generation fails, or its result cannot be decoded.
 - `generateJSON` receives an unsupported `result`.
 
 This is deliberate. A course that continued after a failed read or a dialog that never appeared could judge the learner
-wrongly. Failures of this kind are authoring mistakes and should surface while the course is being tried. The one
-exception is a well-formed spotlight selector that currently matches nothing, described above.
+wrongly. Failures of this kind are authoring mistakes and should surface while the course is being tried. Two
+exceptions do not stop the course: a well-formed spotlight selector that currently matches nothing, and a failed
+Copilot generation, which `generateText` and `generateJSON` return as an error (see
+[When generation fails](#when-generation-fails)). Generation fails for reasons outside the course, so a course that
+stopped on it would lose the learner's progress for nothing they or the author did.

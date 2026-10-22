@@ -7,12 +7,12 @@ These are the rules of change.
   Every trigger starts a new run of each registered callback, so runs of one callback may overlap. How such runs
   relate (run policies and run groups) is deferred to #3509; do not add ad-hoc guards in the framework meanwhile
 - `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long and
-  restores `current` afterwards. Only `mustCallCapability` (waiting on the host) and `pause` (waiting on a timer) may
+  restores `current` afterwards. Only `tryCallCapability` (waiting on the host) and `pause` (waiting on a timer) may
   call it; main-goroutine lifecycle handshakes call the bridge from `Course.Start` without touching the token
 - The contract forbids course code to start goroutines (`go`, `time.AfterFunc`), but nothing stops it, and such
   goroutines run outside the scheduler. Every exported method course code can call must refuse them before doing
-  anything else: its first call is `requireRun`, or `mustCallCapability`/`register` (whose own first call is
-  `requireRun`), or another such method. The invariant checker enforces both halves. `holding` compares goroutine IDs with `holder`, which only
+  anything else: its first call is `requireRun`, or `tryCallCapability`/`mustCallCapability`/`register` (whose own
+  first call is `requireRun` or another of them), or another such method. The invariant checker enforces both halves. `holding` compares goroutine IDs with `holder`, which only
   `acquireExec`, `releaseExec` and `init` write
 - Only framework calls yield. Do not redirect Go's own blocking calls (say `time.Sleep` through
   `ixgo.RegisterExternal`): channel operations, timers and I/O could not follow, and a rule with one exception is
@@ -40,6 +40,9 @@ These are the rules of change.
 - Classify every new capability: waiting on the learner or the LLM goes in `capabilityKinds` as `kindWaiting`,
   host-computation-only goes in the test's `fastCapabilities` list. `TestEveryCapabilityIsClassified` enforces this.
   The framework never serializes presentation calls; how overlapping `course.show*` calls behave is the host's policy
+- A capability failure is fatal (`mustCallCapability`) unless its cause lies outside the author's control, in which
+  case the ability returns it as an error (`tryCallCapability`). Today only Copilot generation does. A mistake in
+  the Course code (an invalid argument, a call from a goroutine the Course started) stays fatal either way
 - Wire names and request shapes are a two-sided contract between the Go files and `client.ts`; change both sides
   together. `client_contract_test.go` extracts and compares them automatically
 - The contracts in `docs/develop/tutorial-v2` are the source of truth. Align parameter names and shapes to the
