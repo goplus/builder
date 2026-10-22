@@ -156,8 +156,8 @@ async function save(signal: AbortSignal) {
   const saved = (await updateCourse(props.course.id, { content: fileCollection }, signal)) as PlaygroundCourse
   if (revision.value === savedRevision) dirty.value = false
   filesBaseline.value = files
-  // Pick up metadata edited elsewhere in the meantime.
-  props.project.setMetadata({ title: saved.title, thumbnail: saved.thumbnail })
+  // Pick up metadata edited elsewhere in the meantime, and the time of this save.
+  props.project.setMetadata({ title: saved.title, thumbnail: saved.thumbnail, updatedAt: saved.updatedAt })
   emit('saved', saved)
 }
 
