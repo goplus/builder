@@ -1,5 +1,5 @@
 onStart => {
-	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
+	Editor.CodeEditor.filterAPIs ["xgo:spx?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
 	Spotlight.reveal "api-references", "Here is stepTo, the only block you need in this lesson."

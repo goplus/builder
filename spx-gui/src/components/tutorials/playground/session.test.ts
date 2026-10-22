@@ -6,6 +6,7 @@ import { until } from '@/utils/utils'
 import { createReadinessScope } from '@/utils/readiness'
 import { ProgressReporter } from '@/utils/progress'
 import type { CodeEditor } from '@/components/editor/spx-code-editor'
+import { spxClassFramework } from '@/components/editor/spx-code-editor/spx-project'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -118,7 +119,11 @@ function makeHarness() {
     readiness,
     startReporter: new ProgressReporter(() => {})
   })
-  const codeEditor = { formatWorkspace, dispose: vi.fn() } as unknown as CodeEditor
+  const codeEditor = {
+    project: { classFramework: { ...spxClassFramework, pkgPaths: ['example.com/spx/v99'] } },
+    formatWorkspace,
+    dispose: vi.fn()
+  } as unknown as CodeEditor
   courseSession.setCodeEditor(codeEditor)
   const executor = executorMocks.instances.at(-1)!
   const harness = {
@@ -218,9 +223,21 @@ describe('PlaygroundCourseSession', () => {
     const filterAPIs = harness.getExecutorOptions().framework?.capabilities.editor_codeEditor_filterAPIs
     if (filterAPIs == null) throw new Error('editor_codeEditor_filterAPIs capability not found')
 
-    await filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'] })
+    await filterAPIs({ apis: ['xgo:spx?Sprite.stepTo#0', 'xgo:spx?Sprite.say'] })
 
-    expect(harness.courseSession.apiWhitelist.apis).toEqual(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
+    expect(harness.courseSession.apiWhitelist.apis).toEqual([
+      'xgo:example.com/spx/v99?Sprite.stepTo#0',
+      'xgo:example.com/spx/v99?Sprite.say'
+    ])
+
+    expect(() => filterAPIs({ apis: ['xgo:spx?Sprite.turn', 'stepTo'] })).toThrow('Invalid definition ID')
+    expect(harness.courseSession.apiWhitelist.apis).toEqual([
+      'xgo:example.com/spx/v99?Sprite.stepTo#0',
+      'xgo:example.com/spx/v99?Sprite.say'
+    ])
+
+    await filterAPIs({ apis: [] })
+    expect(harness.courseSession.apiWhitelist.apis).toEqual([])
   })
 
   it('observes new starts without replaying the runtime already running at subscription', async () => {
@@ -618,10 +635,10 @@ describe('PlaygroundCourseSession', () => {
   it('retains API and ruler state after completion and borrows the editor and project', async () => {
     const harness = makeHarness()
     const capabilities = harness.getExecutorOptions().framework!.capabilities
-    await capabilities.editor_codeEditor_filterAPIs({ apis: ['stepTo'] })
+    await capabilities.editor_codeEditor_filterAPIs({ apis: ['xgo:spx?Sprite.stepTo'] })
     await capabilities.editor_ruler_enable(null)
     await capabilities.course_complete(null)
-    expect(harness.courseSession.apiWhitelist.apis).toEqual(['stepTo'])
+    expect(harness.courseSession.apiWhitelist.apis).toEqual(['xgo:example.com/spx/v99?Sprite.stepTo'])
     expect(harness.courseSession.ruler.enabled).toBe(true)
     harness.courseSession.dispose()
     harness.courseSession.dispose()

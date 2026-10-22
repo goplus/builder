@@ -126,10 +126,12 @@ export interface TutorialFrameworkHost {
   editor: {
     codeEditor: {
       /**
-       * Limits APIs offered by Code Editor assistance. Each entry is a
-       * definition identifier string (`xgo:<package>?<name>#<overloadId>`),
-       * the same identifiers the Code Editor uses elsewhere; omitting
-       * `#<overloadId>` addresses every overload of the name.
+       * Limits APIs offered by Code Editor assistance. Prefer `xgo:spx?Sprite.stepTo`:
+       * `spx` resolves to the active editor's SPX package across version upgrades.
+       * Entries use `xgo:<package>?<name>#<overloadId>`; omitting the suffix
+       * selects all overloads. Other packages (including full paths) match literally.
+       * Unknown packages/removed APIs match nothing. Invalid IDs or missing SPX
+       * configuration fail the call without changing the whitelist; [] hides all APIs.
        */
       filterAPIs(apis: string[]): void;
       /**

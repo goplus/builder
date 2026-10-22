@@ -8,6 +8,7 @@ import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot, Session as CopilotSession, Topic } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
 import type { CodeEditor } from '@/components/editor/spx-code-editor'
+import { resolveDefinitionId } from '@/components/editor/spx-code-editor/definition-id'
 
 import { PlaygroundCourseProgram, type PlaygroundCourseCompletion, type PlaygroundCoursePresentation } from './program'
 import { APIWhitelist } from './api-whitelist'
@@ -84,6 +85,10 @@ export class PlaygroundCourseSession extends Emitter<{
         await options.readiness.untilReady(signal)
       },
       onStarted: (signal) => this.finishStarting(signal),
+      resolveDefinitionId: (id) => {
+        if (this.codeEditor == null) throw new Error('Course Code Editor is not ready')
+        return resolveDefinitionId(id, this.codeEditor.project)
+      },
       formatWorkspace: async () => {
         if (this.codeEditor == null) throw new Error('Course Code Editor is not ready')
         await this.codeEditor.formatWorkspace()
