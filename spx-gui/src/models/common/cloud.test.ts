@@ -6,7 +6,7 @@ import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { createFileURLSignatures, createUploadSession, getFileObject } from '@/apis/file'
 import { capture } from '@/utils/exception'
 import { cloudHelpers, saveFile, saveFiles } from './cloud'
-import { fromBlob } from './file'
+import { File, fromBlob } from './file'
 
 vi.mock('qiniu-js', () => ({
   createDirectUploadTask: vi.fn()
@@ -214,13 +214,11 @@ describe('saveFile', () => {
     expect(capture).not.toHaveBeenCalled()
   })
 
-  it('reports byte-weighted progress as file uploads go on', async () => {
-    let reportUploadProgress!: (progress: { percent: number }) => void
+  it('reports progress by the number of saved files', async () => {
     let completeUpload!: (respBody: string) => void
     vi.mocked(createDirectUploadTask).mockReturnValue({
       start: vi.fn(),
       cancel: vi.fn(),
-      onProgress: vi.fn((callback) => (reportUploadProgress = callback)),
       onError: vi.fn(),
       onComplete: vi.fn((callback) => (completeUpload = callback))
     } as unknown as ReturnType<typeof createDirectUploadTask>)
@@ -235,13 +233,34 @@ describe('saveFile', () => {
       new ProgressReporter((p) => progress.push(p))
     )
 
-    await vi.waitFor(() => expect(reportUploadProgress).toBeDefined())
-    reportUploadProgress({ percent: 0.5 })
+    await vi.waitFor(() => {
+      expect(completeUpload).toBeDefined()
+      expect(progress.map(({ percentage }) => percentage)).toEqual([0.5])
+    })
     completeUpload('{"key":"files/step.mp4","hash":"hash"}')
     await saving
 
-    expect(progress.map(({ percentage }) => percentage)).toContain(502 / 1002)
     expect(progress.at(-1)).toEqual({ percentage: 1, desc: null, timeLeft: null })
+  })
+
+  it.each([0, 1, 2])('saves %i remote files without loading their contents', async (count) => {
+    const load = vi.fn(async () => new ArrayBuffer(0))
+    const files = Object.fromEntries(
+      Array.from({ length: count }, (_, index) => {
+        const name = `remote-${index}.png`
+        return [name, new File(name, load, { meta: { universalUrl: `kodo://bucket/${name}` } })]
+      })
+    )
+    const progress: Progress[] = []
+
+    const saved = await saveFiles(files, undefined, new ProgressReporter((p) => progress.push(p)))
+
+    expect(saved.fileCollection).toEqual(
+      Object.fromEntries(Object.keys(files).map((name) => [name, `kodo://bucket/${name}`]))
+    )
+    expect(load).not.toHaveBeenCalled()
+    expect(progress.at(-1)?.percentage).toBe(1)
+    if (count === 2) expect(progress[0].percentage).toBe(0.5)
   })
 
   it('uploads a small file without checking for reuse', async () => {

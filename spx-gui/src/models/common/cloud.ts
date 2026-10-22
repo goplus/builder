@@ -1,6 +1,6 @@
 import { createDirectUploadTask } from 'qiniu-js'
 import { filename } from '@/utils/path'
-import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
+import type { ProgressReporter } from '@/utils/progress'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
 import { mergeSignals } from '@/utils/disposable'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
@@ -183,30 +183,24 @@ export async function saveFiles(
   reporter?: ProgressReporter
 ): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
   const paths = Object.keys(files)
-  const collector = reporter == null ? null : ProgressCollector.collectorFor(reporter)
-  const reporters = await Promise.all(
-    paths.map(async (path) => {
-      if (collector == null) return null
-      const size = (await files[path]!.arrayBuffer(signal)).byteLength
-      return collector.getSubReporter(null, size)
-    })
-  )
+  let completed = 0
   const fileCollection = Object.fromEntries(
-    await Promise.all(paths.map((path, index) => saveFileAtPath(path, files[path]!, signal, reporters[index])))
+    await Promise.all(
+      paths.map(async (path) => {
+        const entry = await saveFileAtPath(path, files[path]!, signal)
+        reporter?.report(++completed / paths.length)
+        return entry
+      })
+    )
   )
   const fileCollectionHash = await hashFileCollection(fileCollection)
   reporter?.report(1)
   return { fileCollection, fileCollectionHash }
 }
 
-async function saveFileAtPath(
-  path: string,
-  file: File,
-  signal?: AbortSignal,
-  reporter?: ProgressReporter | null
-): Promise<[string, UniversalUrl]> {
+async function saveFileAtPath(path: string, file: File, signal?: AbortSignal): Promise<[string, UniversalUrl]> {
   try {
-    return [path, await saveFile(file, signal, reporter)]
+    return [path, await saveFile(file, signal)]
   } catch (e) {
     if (e instanceof Cancelled) throw e
     throw new ActionException(e, {
@@ -336,14 +330,13 @@ See details in file \`src/apps/xbuilder/.env\`.
 }
 
 /** Save file to cloud and return its universal URL */
-export async function saveFile(file: File, signal?: AbortSignal, reporter?: ProgressReporter | null) {
+export async function saveFile(file: File, signal?: AbortSignal) {
   let url = getUniversalUrl(file)
   if (url == null) {
     // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
-    url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal, reporter))
+    url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
     setUniversalUrl(file, url)
   }
-  reporter?.report(1)
   return url
 }
 
@@ -383,7 +376,7 @@ async function getExistingKodoUrl(file: File, data: ArrayBuffer, signal?: AbortS
 
 const saveToKodoController = new ConcurrencyLimitController(20)
 
-const saveToKodo = (file: File, signal?: AbortSignal, reporter?: ProgressReporter | null) =>
+const saveToKodo = (file: File, signal?: AbortSignal) =>
   saveToKodoController.run<UniversalUrl>(async () => {
     const ab = await file.arrayBuffer(signal)
     if (ab.byteLength >= minFileSizeForExistingCheck) {
@@ -415,7 +408,6 @@ const saveToKodo = (file: File, signal?: AbortSignal, reporter?: ProgressReporte
         task.cancel()
       })
       task.start()
-      task.onProgress((progress) => reporter?.report(progress.percent))
       task.onError(reject)
       task.onComplete((respBody) => {
         if (respBody == null) {
