@@ -71,6 +71,13 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		common
 		Score int
 	}
+	// encoding/json fills an unexported embedded struct with a json name,
+	// although the schema leaves it out.
+	type secret struct{ Score grade }
+	type withSecret struct {
+		Praise string
+		secret `json:"details"`
+	}
 	for _, test := range []struct {
 		name   string
 		result any
@@ -87,6 +94,7 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		{name: "self reference through slice", result: &tree{}, want: "refers to itself"},
 		{name: "mutual reference", result: &left{}, want: "refers to itself"},
 		{name: "untagged embedded field", result: &embedded{}, want: "embedded fields are not supported"},
+		{name: "unexported embedded field", result: &withSecret{}, want: "embedded fields need an exported type"},
 		{name: "field with UnmarshalJSON", result: &struct{ Score grade }{}, want: "decodes itself"},
 		{name: "field with UnmarshalText", result: &struct{ Name label }{}, want: "decodes itself"},
 		{name: "pointer to a type with UnmarshalJSON", result: &struct{ Score *grade }{}, want: "decodes itself"},

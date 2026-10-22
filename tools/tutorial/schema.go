@@ -80,6 +80,9 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 				"generateJSON: %s embeds %s without a json tag; embedded fields are not supported — use a named field or give it an explicit json name",
 				t, field.Type)
 		}
+		if field.Anonymous && field.PkgPath != "" {
+			return nil, fmt.Errorf("generateJSON: %s embeds the unexported %s; embedded fields need an exported type", t, field.Type)
+		}
 		if field.PkgPath != "" {
 			// An unexported field: encoding/json can neither read nor fill it,
 			// so putting it in the schema would only mislead the LLM.
