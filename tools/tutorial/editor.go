@@ -95,7 +95,8 @@ func (p *Runtime) OnExit(handler func(code int)) {
 // agreed string when something important happens (say "reached-target"), and
 // Course code waiting for that signal here learns what the learner achieved.
 // Only kind=log output arrives; runtime errors take another path, so they
-// cannot pollute judging.
+// cannot pollute judging. A log is the entry as printed: print gives the bare
+// text, while println ends it with a line break.
 //
 // Several callbacks may be registered: with two judging clues in one Course,
 // writing two handlers reads better than cramming both into one if-else.
