@@ -120,28 +120,13 @@ type Copilot interface {
 	// completes.
 	onRoundComplete(callback func(round CopilotRound))
 	// generateText asks Copilot to generate text without adding a conversation round.
-	// A failed generation returns an error; see Copilot generation failures below.
+	// A failed generation (network, quota) returns an error instead of failing the Course program.
 	generateText(message string) (string, error)
 	// generateJSON derives a JSON Schema from result's struct type and fills result with the generated value.
-	// A failed generation returns an error and leaves result untouched; see Copilot generation failures below.
+	// A failed generation returns an error and leaves result untouched.
 	// result must be a non-nil pointer to a struct; anything else fails the Course program.
 	generateJSON(message string, result any) error
 }
-
-// Copilot generation failures: generation can fail for reasons outside the
-// author's control, such as the network or exhausted service quota, so
-// generateText and generateJSON return the failure instead of failing the
-// Course program. The Course decides what happens next and keeps the learner's
-// session either way:
-//
-//	completeWith Copilot.generateText("give feedback on: " + code)?:"Well done!"
-//
-// A non-nil error means only that this generation produced nothing usable; its
-// message is for diagnosis and is not a stable contract. A response that does
-// not decode into generateJSON's result is a failed generation too. A Course
-// that stops with the error (expr!, or panicking with it) fails the Course
-// program as any fatal error does. A generateJSON error left unchecked is
-// dropped: result keeps its earlier values and the Course carries on.
 
 // CopilotRound is what onRoundComplete receives. Its fields are read as
 // written here (round.UserMessage): XGo lowercases method calls, not field
