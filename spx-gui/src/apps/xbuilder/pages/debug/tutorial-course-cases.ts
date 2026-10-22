@@ -1,9 +1,7 @@
 // Copied from docs/develop/tutorial-v2/example-tutorial-course/main_course.gox
 // (frontend code does not import from outside its own directory). Keep in sync
 // manually; the docs copy itself is compile-guarded by tools/xgoexec-bundle.
-export const exampleCourseSource = `import "strings"
-
-onStart => {
+export const exampleCourseSource = `onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
@@ -11,7 +9,7 @@ onStart => {
 }
 
 Editor.Runtime.onLog log => {
-	if strings.TrimSpace(log) == "reached-target" {
+	if log == "reached-target" {
 		code := Editor.Project.getCode("Lita")
 		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\\n" + code)
 		completeWith feedback
@@ -37,8 +35,6 @@ export type CourseCase = {
 // A course exercising every author-facing framework API, adapted from the
 // native integration test in tools/xgoexec-bundle/tutorial_test.go.
 const fullApiCourseSource = `
-import "strings"
-
 type Feedback struct {
 	Praise string
 	Score  int
@@ -66,7 +62,7 @@ Copilot.onRoundComplete round => {
 }
 
 Editor.Runtime.onLog log => {
-	if strings.TrimSpace(log) != "reached-target" {
+	if log != "reached-target" {
 		return
 	}
 	for sprite <- Editor.Project.listSprites() {
@@ -89,10 +85,8 @@ onStart => {
 `
 
 const unsubscribedEventsCourseSource = `
-import "strings"
-
 Editor.Runtime.onLog log => {
-	if strings.TrimSpace(log) == "done" {
+	if log == "done" {
 		complete
 	}
 }
@@ -119,14 +113,12 @@ Editor.Runtime.onExit code => {
 }
 `
 
-// Runtime logs end with the line break println prints, as the real host passes them on, so a course comparing a log
-// with its bare text fails here as it would in the Playground.
 export const courseCases: CourseCase[] = [
   {
     name: 'Docs example course',
     description: 'The example from docs/develop/tutorial-v2 completes on the reached-target signal.',
     source: exampleCourseSource,
-    events: [{ name: 'editor.runtime.log', payload: { log: 'reached-target\n' } }]
+    events: [{ name: 'editor.runtime.log', payload: { log: 'reached-target' } }]
   },
   {
     name: 'Full API surface',
@@ -136,7 +128,7 @@ export const courseCases: CourseCase[] = [
       { name: 'editor.runtime.start', payload: null },
       { name: 'copilot.roundComplete', payload: { userMessage: 'why', resultMessages: ['because'] } },
       { name: 'editor.runtime.exit', payload: { code: 0 } },
-      { name: 'editor.runtime.log', payload: { log: 'reached-target\n' } }
+      { name: 'editor.runtime.log', payload: { log: 'reached-target' } }
     ]
   },
   {
@@ -152,7 +144,7 @@ export const courseCases: CourseCase[] = [
     events: [
       { name: 'editor.runtime.start', payload: null },
       { name: 'copilot.roundComplete', payload: { userMessage: 'hi', resultMessages: ['hello'] } },
-      { name: 'editor.runtime.log', payload: { log: 'done\n' } }
+      { name: 'editor.runtime.log', payload: { log: 'done' } }
     ]
   },
   {
@@ -160,7 +152,7 @@ export const courseCases: CourseCase[] = [
     description: 'While onLog pauses with wait, a later event starts its callback instead of waiting for the pause.',
     source: waitCourseSource,
     events: [
-      { name: 'editor.runtime.log', payload: { log: 'pause\n' } },
+      { name: 'editor.runtime.log', payload: { log: 'pause' } },
       { name: 'editor.runtime.exit', payload: { code: 0 } }
     ]
   }

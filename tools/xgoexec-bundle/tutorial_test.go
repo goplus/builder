@@ -25,8 +25,6 @@ import (
 //     preparing this fail. The second one is especially easy to miss, since
 //     it otherwise only surfaces at run time.
 const courseSource = `
-import "strings"
-
 type Feedback struct {
 	Praise string
 	Score  int
@@ -55,7 +53,7 @@ Copilot.onRoundComplete round => {
 }
 
 Editor.Runtime.onLog log => {
-	if strings.TrimSpace(log) != "reached-target" {
+	if log != "reached-target" {
 		return
 	}
 	for sprite <- Editor.Project.listSprites() {

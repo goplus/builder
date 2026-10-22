@@ -1,5 +1,3 @@
-import "strings"
-
 onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
@@ -8,7 +6,7 @@ onStart => {
 }
 
 Editor.Runtime.onLog log => {
-	if strings.TrimSpace(log) == "reached-target" {
+	if log == "reached-target" {
 		code := Editor.Project.getCode("Lita")
 		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
 		completeWith feedback

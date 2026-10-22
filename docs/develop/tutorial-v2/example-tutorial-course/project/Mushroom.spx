@@ -1,4 +1,5 @@
 // The Tutorial program in main.gox consumes this signal through editor.runtime.onLog.
+// print, not println: println would end the log with a line break, and main.gox compares the bare text.
 onTouchStart "Lita", => {
-	println "reached-target"
+	print "reached-target"
 }

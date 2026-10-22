@@ -178,8 +178,7 @@ async function stopFreeForm() {
 async function dispatchRuntimeLog() {
   if (courseExecutor == null) return
   try {
-    // Sent as println prints it, line break included, which is what the real host passes on.
-    await courseExecutor.dispatchEvent('editor.runtime.log', { log: runtimeLog.value + '\n' })
+    await courseExecutor.dispatchEvent('editor.runtime.log', { log: runtimeLog.value })
     addFreeOutput(`Runtime log: ${runtimeLog.value}`)
   } catch (error) {
     courseStatus.value = String(error)

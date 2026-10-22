@@ -13,8 +13,6 @@ Where this guide and a contract disagree, the contract wins and this guide is ou
 This is the `main_course.gox` of the [example course](../../../../../docs/develop/tutorial-v2/example-tutorial-course/):
 
 ```go
-import "strings"
-
 onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
@@ -23,7 +21,7 @@ onStart => {
 }
 
 Editor.Runtime.onLog log => {
-	if strings.TrimSpace(log) == "reached-target" {
+	if log == "reached-target" {
 		code := Editor.Project.getCode("Lita")
 		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
 		completeWith feedback
@@ -32,10 +30,10 @@ Editor.Runtime.onLog log => {
 ```
 
 When the course starts, it limits the Code Editor to one API, shows the task, plays a video and highlights the API
-list. Then it waits. The learner's project prints `reached-target` when Lita touches Mushroom (`println "reached-target"`
-in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback. The log
-arrives as printed, ending with the line break `println` adds, so the callback compares it with `strings.TrimSpace`,
-which drops that line break; see [Editor.Runtime](#editorruntime).
+list. Then it waits. The learner's project prints `reached-target` when Lita touches Mushroom (`print "reached-target"`
+in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback. `print`
+adds nothing to the text, so the callback compares the log as it is. A signal printed with `println` ends with a line
+break and has to be matched differently; see [Editor.Runtime](#editorruntime).
 
 This is the usual pattern. The learner's project prints an agreed log line when something happens, and the course listens
 for it with `Editor.Runtime.onLog`.
@@ -144,10 +142,8 @@ Keep waiting calls off the common path of busy events. Return early for triggers
 runs finish immediately:
 
 ```go
-import "strings"
-
 Editor.Runtime.onLog log => {
-	if strings.TrimSpace(log) != "reached-target" {
+	if log != "reached-target" {
 		return
 	}
 	completeWith "Lita reached Mushroom!"
@@ -217,19 +213,28 @@ Observes runs of the learner's project, not the course program.
 | `Editor.Runtime.onExit code => { ... }` | The learner's project exits. `code` is the exit code. Exiting does not mean the goal was reached. |
 | `Editor.Runtime.onLog log => { ... }` | The learner's project prints a log line, once per line and in output order. `log` is the line as printed, including the line break `println` ends it with. Runtime errors are not part of this channel. This is the main way to detect what the learner achieved. |
 
-Neither the console nor a dialog shows the line break `println` ends a log with, so a comparison with the bare text
-looks right and never matches. `println "reached-target"` delivers `"reached-target\n"`, and this course never completes:
+Neither the console nor a dialog shows the line break `println` ends a log with, so comparing a `println` signal
+with its bare text looks right and never matches. If the project prints `println "reached-target"`, the log is
+`"reached-target\n"`, and this course never completes:
 
 ```go
 Editor.Runtime.onLog log => {
-	if log == "reached-target" { // never true
+	if log == "reached-target" { // never true for a println signal
 		complete
 	}
 }
 ```
 
-Compare the log with `strings.TrimSpace`, which drops that line break, instead. When the project prints more with its
-signal, such as `println "picked up", name`, look for the signal in the line:
+Match a signal according to how the project prints it:
+
+| The project prints | The course matches |
+| --- | --- |
+| `print "reached-target"`, which adds nothing to the text | `log == "reached-target"` |
+| `println "reached-target"`, which ends it with a line break | `strings.TrimSpace(log) == "reached-target"` |
+| a signal with a varying part, such as `print "picked up " + name` | `strings.HasPrefix(log, "picked up")` or `strings.Contains` |
+
+`print` adds no space next to a string, so `print "picked up", name` prints `picked upMushroom`; join the parts
+yourself. The `strings` forms need `import "strings"` at the top of `main_course.gox`:
 
 ```go
 import "strings"
