@@ -15,7 +15,7 @@ onStart => {
 }
 
 // The learner's project can print a marker this course recognizes, for example \`println "done"\`.
-// A log keeps the line break println ends it with, so compare it without the surrounding space.
+// A log keeps the line break println ends it with, which strings.TrimSpace drops before the comparison.
 Editor.Runtime.onLog log => {
 	if strings.TrimSpace(log) == "done" {
 		completeWith "Well done!"

@@ -34,8 +34,8 @@ Editor.Runtime.onLog log => {
 When the course starts, it limits the Code Editor to one API, shows the task, plays a video and highlights the API
 list. Then it waits. The learner's project prints `reached-target` when Lita touches Mushroom (`println "reached-target"`
 in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback. The log
-arrives as printed, ending with the line break `println` adds, so the callback compares it without the surrounding
-space; see [Editor.Runtime](#editorruntime).
+arrives as printed, ending with the line break `println` adds, so the callback compares it with `strings.TrimSpace`,
+which drops that line break; see [Editor.Runtime](#editorruntime).
 
 This is the usual pattern. The learner's project prints an agreed log line when something happens, and the course listens
 for it with `Editor.Runtime.onLog`.
@@ -217,8 +217,8 @@ Observes runs of the learner's project, not the course program.
 | `Editor.Runtime.onExit code => { ... }` | The learner's project exits. `code` is the exit code. Exiting does not mean the goal was reached. |
 | `Editor.Runtime.onLog log => { ... }` | The learner's project prints a log line, once per line and in output order. `log` is the line as printed, including the line break `println` ends it with. Runtime errors are not part of this channel. This is the main way to detect what the learner achieved. |
 
-Neither the console nor a dialog shows the line break at the end of a log, so a comparison with the bare text looks
-right and never matches. `println "reached-target"` delivers `"reached-target\n"`, and this course never completes:
+Neither the console nor a dialog shows the line break `println` ends a log with, so a comparison with the bare text
+looks right and never matches. `println "reached-target"` delivers `"reached-target\n"`, and this course never completes:
 
 ```go
 Editor.Runtime.onLog log => {
@@ -228,8 +228,8 @@ Editor.Runtime.onLog log => {
 }
 ```
 
-Compare the log without the surrounding space instead. When the project prints more with its signal, such as
-`println "picked up", name`, look for the signal in the line:
+Compare the log with `strings.TrimSpace`, which drops that line break, instead. When the project prints more with its
+signal, such as `println "picked up", name`, look for the signal in the line:
 
 ```go
 import "strings"
