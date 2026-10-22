@@ -8,13 +8,16 @@ const starterProjectRoot = 'project'
 // Uses only calls every host implements, so a new course's first Preview works. Left in English, like the course
 // format's other examples; the author rewrites these lines in their course's language.
 const starterProgram = `// This program runs while the learner works. Replace the messages with your own.
+import "strings"
+
 onStart => {
 	showMessage "Tell the learner what to do here."
 }
 
 // The learner's project can print a marker this course recognizes, for example \`println "done"\`.
+// A log keeps the line break println ends it with, so compare it without the surrounding space.
 Editor.Runtime.onLog log => {
-	if log == "done" {
+	if strings.TrimSpace(log) == "done" {
 		completeWith "Well done!"
 	}
 }

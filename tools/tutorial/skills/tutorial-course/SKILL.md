@@ -46,6 +46,10 @@ the course's mistake; see goplus/builder#3419.
   API to use, or where to look. Never put the solution in a message.
 - **Judge what the learner did, not what they typed.** Read the project (`Editor.Project.getCode`) or the
   runtime's output (`Editor.Runtime.onLog`) rather than guessing from the editor's state.
+- **Compare logs without the line break.** A log arrives as printed, so `println "done"` delivers `"done\n"`, and
+  `log == "done"` never matches although nothing on screen shows why. Compare `strings.TrimSpace(log)`, or use
+  `strings.Contains` or `strings.HasPrefix` when the project prints more with its signal; see the Editor.Runtime
+  section of `references/course-program.md`.
 - **Name resources, not paths.** `showVideo "step-to"` addresses the video named `step-to`; the course never
   spells out where its file sits.
 - **Keep messages short.** Every `showPrelude`, `showMessage` and `showVideo` blocks the learner until they

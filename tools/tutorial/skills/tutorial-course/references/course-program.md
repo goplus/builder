@@ -13,6 +13,8 @@ Where this guide and a contract disagree, the contract wins and this guide is ou
 This is the `main_course.gox` of the [example course](../../../../../docs/develop/tutorial-v2/example-tutorial-course/):
 
 ```go
+import "strings"
+
 onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
@@ -21,7 +23,7 @@ onStart => {
 }
 
 Editor.Runtime.onLog log => {
-	if log == "reached-target" {
+	if strings.TrimSpace(log) == "reached-target" {
 		code := Editor.Project.getCode("Lita")
 		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
 		completeWith feedback
@@ -31,7 +33,9 @@ Editor.Runtime.onLog log => {
 
 When the course starts, it limits the Code Editor to one API, shows the task, plays a video and highlights the API
 list. Then it waits. The learner's project prints `reached-target` when Lita touches Mushroom (`println "reached-target"`
-in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback.
+in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback. The log
+arrives as printed, ending with the line break `println` adds, so the callback compares it without the surrounding
+space; see [Editor.Runtime](#editorruntime).
 
 This is the usual pattern. The learner's project prints an agreed log line when something happens, and the course listens
 for it with `Editor.Runtime.onLog`.
@@ -76,6 +80,7 @@ configuration is applied before the Playground content is revealed.
 Declarations come first. The top-level statements form the body of the course's entry function, and every `func` must be
 declared before the first of them. A `func` written after a statement is read as a function literal, and the course does
 not compile: `expected '(', found <name>`. Keep `type` declarations at the top as well, so the file reads top-down.
+Imports of standard packages, such as `import "strings"`, go before everything else.
 
 A callback can also register other callbacks. They take effect from the next event. An `onStart` callback registered
 after the course has started never runs.
@@ -139,8 +144,10 @@ Keep waiting calls off the common path of busy events. Return early for triggers
 runs finish immediately:
 
 ```go
+import "strings"
+
 Editor.Runtime.onLog log => {
-	if log != "reached-target" {
+	if strings.TrimSpace(log) != "reached-target" {
 		return
 	}
 	completeWith "Lita reached Mushroom!"
@@ -208,7 +215,34 @@ Observes runs of the learner's project, not the course program.
 | --- | --- |
 | `Editor.Runtime.onStart => { ... }` | The learner's project starts running. |
 | `Editor.Runtime.onExit code => { ... }` | The learner's project exits. `code` is the exit code. Exiting does not mean the goal was reached. |
-| `Editor.Runtime.onLog log => { ... }` | The learner's project prints a log line, once per line and in output order. Runtime errors are not part of this channel. This is the main way to detect what the learner achieved. |
+| `Editor.Runtime.onLog log => { ... }` | The learner's project prints a log line, once per line and in output order. `log` is the line as printed, including the line break `println` ends it with. Runtime errors are not part of this channel. This is the main way to detect what the learner achieved. |
+
+Neither the console nor a dialog shows the line break at the end of a log, so a comparison with the bare text looks
+right and never matches. `println "reached-target"` delivers `"reached-target\n"`, and this course never completes:
+
+```go
+Editor.Runtime.onLog log => {
+	if log == "reached-target" { // never true
+		complete
+	}
+}
+```
+
+Compare the log without the surrounding space instead. When the project prints more with its signal, such as
+`println "picked up", name`, look for the signal in the line:
+
+```go
+import "strings"
+
+Editor.Runtime.onLog log => {
+	if strings.TrimSpace(log) == "reached-target" {
+		completeWith "Lita reached Mushroom!"
+	}
+	if strings.HasPrefix(log, "picked up") {
+		showMessage "Now bring it home."
+	}
+}
+```
 
 ```go
 Editor.Runtime.onStart => {
