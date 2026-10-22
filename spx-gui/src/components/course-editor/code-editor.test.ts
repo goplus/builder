@@ -5,8 +5,9 @@ import { TutorialProject } from '@/models/tutorial/project'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { History } from '@/components/editor/history'
 import { CodeChangeKind, CompletionProvider, DocumentBase, getTextDocumentId } from '@/components/xgo-code-editor'
+import { XGoLSPClient } from '@/components/xgo-code-editor/lsp/xgo-lsp-client'
 import type { MainMessage, WorkerMessage } from '@/components/xgo-code-editor/lsp/worker'
-import { createTutorialLSPClient, TutorialCodeEditorProject } from './code-editor'
+import { TutorialCodeEditorProject } from './code-editor'
 
 async function setup() {
   const project = new TutorialProject()
@@ -63,7 +64,7 @@ describe('Tutorial code editor', () => {
       }
     }
     vi.stubGlobal('Worker', LanguageWorker)
-    const client = createTutorialLSPClient(adapter)
+    const client = new XGoLSPClient(adapter)
     client.init()
     project.mainCourse.setCode('onStart => { showMessage "current" }')
     await client.textDocumentHover(
@@ -81,7 +82,7 @@ describe('Tutorial code editor', () => {
 
   it('offers Tutorial framework completions without a separate static documentation entry', async () => {
     const { adapter } = await setup()
-    const client = createTutorialLSPClient(adapter)
+    const client = new XGoLSPClient(adapter)
     vi.spyOn(client, 'getCompletionList').mockResolvedValue({
       isIncomplete: false,
       items: [

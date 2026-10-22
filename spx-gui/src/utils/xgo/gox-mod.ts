@@ -1,3 +1,10 @@
+/**
+ * gox.mod parsing and serialization.
+ * Format documentation: https://github.com/goplus/xgo/wiki/gox.mod-Detail
+ * Reference parser (version used by our language server):
+ * https://github.com/goplus/mod/blob/v0.22.0/modfile/rule.go
+ */
+
 /** A classfile registration in gox.mod. */
 export type ClassFile = {
   pattern: string

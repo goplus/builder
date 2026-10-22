@@ -3,7 +3,7 @@ import { fromText } from '@/models/common/file'
 import { SpxProject } from '@/models/spx/project'
 import { History } from '@/components/editor/history'
 import { SpxCodeEditorProject } from '../spx-project'
-import { SpxLSPClient } from './spx-lsp-client'
+import { XGoLSPClient } from '@/components/xgo-code-editor/lsp/xgo-lsp-client'
 
 describe('SPX language client', () => {
   it('loads SPX sources together with gox files and JSON metadata', async () => {
@@ -23,7 +23,7 @@ describe('SPX language client', () => {
       })
     }
     vi.spyOn(adapter, 'exportFiles').mockReturnValue(files)
-    const client = new SpxLSPClient(adapter)
+    const client = new XGoLSPClient(adapter)
     await client.loadFiles(new AbortController().signal)
     expect(loaded).toEqual(['main.spx', 'assets/index.json', 'Other.gox'])
     client.dispose()

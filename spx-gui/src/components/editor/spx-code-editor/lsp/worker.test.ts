@@ -4,9 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type * as lsp from 'vscode-languageserver-protocol'
 import { startWorker } from '@/components/xgo-code-editor/lsp/test'
 import type { xgoGetInputSlots, xgoGetProperties } from '@/components/xgo-code-editor/lsp/spxls/commands'
-import { spxClassFrameworkConfig } from './class-framework'
+import { spxClassFramework } from './class-framework'
 
-const startSpxWorker = (sources: Record<string, string>) => startWorker(sources, spxClassFrameworkConfig)
+const startSpxWorker = (sources: Record<string, string>) => startWorker(sources, spxClassFramework)
 
 describe('SPX language server Worker', () => {
   afterEach(() => vi.unstubAllGlobals())

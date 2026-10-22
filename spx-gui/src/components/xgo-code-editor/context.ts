@@ -9,6 +9,11 @@ import { useAppInject, useAppProvide } from '@/utils/app-state'
 
 const codeEditorInjectionKey: InjectionKey<WatchSource<CodeEditor | null>> = Symbol('code-editor')
 
+/**
+ * Always provide locally; appWide preserves access for consumers outside the provider subtree.
+ * Nested workspaces can opt out to avoid replacing the editor used by those existing consumers.
+ * Migration to explicit workspace dependencies: https://github.com/goplus/builder/issues/3635
+ */
 export function useProvideCodeEditor(
   editorSource: WatchSource<CodeEditor | null>,
   options: { appWide?: boolean } = {}

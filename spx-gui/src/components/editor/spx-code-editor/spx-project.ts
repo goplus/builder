@@ -9,9 +9,7 @@ import type { SpxProject } from '@/models/spx/project'
 import type { History } from '@/components/editor/history'
 import type { IXGoProject, ICodeOwner } from '@/components/xgo-code-editor'
 import { CodeOwnerStage, CodeOwnerSprite } from './text-document'
-import { spxClassFrameworkConfig } from './lsp/class-framework'
-
-export const spxClassFramework = spxClassFrameworkConfig.projects[0]
+import { spxClassFramework } from './lsp/class-framework'
 
 /**
  * Adapts a SpxProject to the IXGoProject interface consumed by the generic CodeEditor.

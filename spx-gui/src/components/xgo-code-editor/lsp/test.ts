@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { basename } from 'node:path'
 import { onTestFinished, vi } from 'vitest'
-import { parseGoxMod, serializeGoxMod, type GoxMod } from '@/utils/xgo/gox-mod'
+import { serializeGoxMod, type ClassFramework } from '@/utils/xgo/gox-mod'
 import { XGoLanguageClient } from './spxls/client'
 import type { Files } from './spxls'
 import { xgoPropertyRenamedNotification } from './spxls/notifications'
@@ -9,7 +9,7 @@ import type { MainMessage, WorkerMessage } from './worker'
 
 export async function startWorker(
   initialSources: Record<string, string>,
-  classFrameworkConfig: GoxMod = parseGoxMod('')
+  classFramework: ClassFramework | null = null
 ) {
   const incoming = new EventTarget()
   const outgoing = new EventTarget()
@@ -42,7 +42,13 @@ export async function startWorker(
   })
   vi.resetModules()
   await import('./worker')
-  send({ type: 'configure', classFrameworkConfig: serializeGoxMod(classFrameworkConfig) })
+  send({
+    type: 'initialize',
+    classFrameworkConfig: serializeGoxMod({
+      xgoVersion: null,
+      projects: classFramework == null ? [] : [classFramework]
+    })
+  })
 
   let revision = 0
   const encoder = new TextEncoder()

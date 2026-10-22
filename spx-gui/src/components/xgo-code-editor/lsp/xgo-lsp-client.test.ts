@@ -1,21 +1,26 @@
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { parseGoxMod } from '@/utils/xgo/gox-mod'
 import { fromText } from '@/models/common/file'
-import { ResourceReferenceKind, type IXGoProject, type PropertyRenamedEvent } from '@/components/xgo-code-editor'
+import { ResourceReferenceKind } from '../common'
+import type { IXGoProject } from '../project'
+import type { PropertyRenamedEvent } from './types'
 import type { MainMessage, WorkerMessage } from './worker'
-import { XGoLSPClient, type XGoLSPClientOptions } from './xgo-lsp-client'
+import { XGoLSPClient } from './xgo-lsp-client'
 
-function createProject(paths = ['main.gox', 'nested/Actor.gox', 'main.spx', 'index.json', 'gox.mod']): IXGoProject {
+function createProject(
+  source = 'project .gox App example.com/framework',
+  paths = ['main.gox', 'nested/Actor.gox', 'main.spx', 'index.json', 'gox.mod']
+): IXGoProject {
   const files = Object.fromEntries(paths.map((path) => [path, fromText(path, path)]))
   return {
-    classFramework: parseGoxMod('project .gox App example.com/framework').projects[0],
+    classFramework: parseGoxMod(source).projects[0],
     getCodeFiles: () => ['main.gox', 'nested/Actor.gox'],
     getCodeOwner: () => null,
     exportFiles: () => files
   }
 }
 
-async function startClient(options: XGoLSPClientOptions, project = createProject()) {
+async function startClient(project = createProject()) {
   const sent: MainMessage[] = []
   const workers: LanguageWorker[] = []
   class LanguageWorker extends EventTarget {
@@ -39,7 +44,7 @@ async function startClient(options: XGoLSPClientOptions, project = createProject
     }
   }
   vi.stubGlobal('Worker', LanguageWorker)
-  const client = new XGoLSPClient(project, options)
+  const client = new XGoLSPClient(project)
   onTestFinished(() => client.dispose())
   client.init()
   await client.textDocumentHover({}, { textDocument: { uri: 'file:///main.gox' }, position: { line: 0, character: 0 } })
@@ -51,26 +56,26 @@ describe('XGo language client', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   it('serializes framework configuration before sending it to the Worker', async () => {
-    const { sent } = await startClient({
-      classFrameworkConfig: parseGoxMod(`// Application framework
+    const { sent } = await startClient(
+      createProject(`// Application framework
 project main.spx Game github.com/goplus/spx/v3 math
 class -embed *.spx SpriteImpl
 import ai github.com/goplus/builder/tools/ai
 `)
-    })
+    )
     expect(sent[0]).toEqual({
-      type: 'configure',
+      type: 'initialize',
       classFrameworkConfig:
         'project main.spx Game github.com/goplus/spx/v3 math\nclass -embed *.spx SpriteImpl\nimport ai github.com/goplus/builder/tools/ai\n'
     })
   })
 
   it('synchronizes gox files and JSON metadata by default', async () => {
-    const { files } = await startClient({ classFrameworkConfig: parseGoxMod('') })
+    const { files } = await startClient()
     expect(Object.keys(files)).toEqual(['main.gox', 'nested/Actor.gox', 'index.json'])
   })
 
-  it('includes project and work class sources from every framework registration', async () => {
+  it('includes the project and work class sources of the project framework', async () => {
     const paths = [
       'main.scene',
       'nested/Second.scene',
@@ -84,31 +89,25 @@ import ai github.com/goplus/builder/tools/ai
       'unregistered.spx'
     ]
     const { files } = await startClient(
-      {
-        classFrameworkConfig: parseGoxMod(`project main.scene Scene example.com/scene
+      createProject(
+        `project main.scene Scene example.com/scene
 class *.actor Actor
-project _other.gox Other example.com/other
-class *_other.gox Widget
-`)
-      },
-      createProject(paths)
+`,
+        paths
+      )
     )
     expect(Object.keys(files)).toEqual(paths.slice(0, 7))
   })
 
   it('does not treat an implicit project registration as matching all files', async () => {
-    const { files } = await startClient({
-      classFrameworkConfig: parseGoxMod('project example.com/implicit')
-    })
+    const { files } = await startClient(createProject('project example.com/implicit'))
     expect(Object.keys(files)).toEqual(['main.gox', 'nested/Actor.gox', 'index.json'])
   })
 
   it.each(['Game', 'Course'])(
     'uses the configured %s project class for properties and rename events',
     async (className) => {
-      const { client, worker } = await startClient({
-        classFrameworkConfig: parseGoxMod(`project .gox ${className} example.com/framework`)
-      })
+      const { client, worker } = await startClient(createProject(`project .gox ${className} example.com/framework`))
       const getProperties = vi.spyOn(client, 'workspaceExecuteCommandXGoGetProperties').mockResolvedValue([])
       await client.getProperties({}, '')
       expect(getProperties).toHaveBeenLastCalledWith({}, { target: className })
@@ -135,13 +134,14 @@ class *_other.gox Widget
     }
   )
 
-  it('converts resource links independently of their URI scheme', async () => {
-    const client = new XGoLSPClient(createProject(), { classFrameworkConfig: parseGoxMod('') })
+  it('identifies resource links by their resource URI', async () => {
+    const client = new XGoLSPClient(createProject())
     onTestFinished(() => client.dispose())
     const range = { start: { line: 0, character: 5 }, end: { line: 0, character: 11 } }
     vi.spyOn(client, 'textDocumentDocumentLink').mockResolvedValue([
       { target: 'spx://resources/sounds/beep', range, data: { kind: ResourceReferenceKind.StringLiteral } },
-      { target: 'tutorial://resources/video/intro', range, data: { kind: ResourceReferenceKind.AutoBinding } },
+      { target: 'spx://resources/videos/intro', range, data: { kind: ResourceReferenceKind.AutoBinding } },
+      { target: 'file:///other.gox', range, data: { kind: ResourceReferenceKind.StringLiteral } },
       { target: 'file:///README.md', range },
       { target: 'github.com/goplus/spx/v3?Game', range }
     ])
@@ -152,7 +152,7 @@ class *_other.gox Widget
         kind: ResourceReferenceKind.StringLiteral
       },
       {
-        resource: { uri: 'tutorial://resources/video/intro' },
+        resource: { uri: 'spx://resources/videos/intro' },
         range: { start: { line: 1, column: 6 }, end: { line: 1, column: 12 } },
         kind: ResourceReferenceKind.AutoBinding
       }

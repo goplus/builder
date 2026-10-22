@@ -21,6 +21,7 @@ export class SpxCompletionProvider implements ICompletionProvider {
     const visible = await Promise.all(
       result.items.map(async (item) => {
         const definition = item.definition
+        // Undocumented SPX APIs are treated as not recommended and omitted from the completion list.
         return (
           definition == null ||
           definition.package !== packageSpx ||

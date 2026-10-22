@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type * as lsp from 'vscode-languageserver-protocol'
 import { startWorker } from '@/components/xgo-code-editor/lsp/test'
-import { tutorialClassFrameworkConfig } from './class-framework'
+import { tutorialClassFramework } from './class-framework'
 
 describe('Tutorial language server Worker', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -11,7 +11,7 @@ describe('Tutorial language server Worker', () => {
   it('analyzes and edits the current Tutorial program with the author SDK', async () => {
     const source = 'var title = "hello"\nonStart => { showMessage title }\n'
     const textDocument = { uri: 'file:///main_course.gox' }
-    const { request, setFiles } = await startWorker({ 'main_course.gox': source }, tutorialClassFrameworkConfig)
+    const { request, setFiles } = await startWorker({ 'main_course.gox': source }, tutorialClassFramework)
     const diagnostics = () => request<lsp.WorkspaceDiagnosticReport>('workspace/diagnostic', { previousResultIds: [] })
     expect((await diagnostics()).items).toContainEqual(expect.objectContaining({ ...textDocument, items: [] }))
     const hover = await request<lsp.Hover>('textDocument/hover', { textDocument, position: { line: 1, character: 16 } })

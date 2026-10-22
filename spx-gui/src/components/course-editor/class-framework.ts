@@ -1,5 +1,4 @@
 import { parseGoxMod } from '@/utils/xgo/gox-mod'
+import goxMod from './gox.mod.raw?raw'
 
-export const tutorialClassFrameworkConfig = parseGoxMod(
-  'project _course.gox Course github.com/goplus/builder/tools/tutorial\n'
-)
+export const tutorialClassFramework = parseGoxMod(goxMod).projects[0]

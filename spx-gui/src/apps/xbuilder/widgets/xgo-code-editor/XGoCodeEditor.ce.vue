@@ -33,7 +33,8 @@ import { cloudHelpers } from '@/models/common/cloud'
 import { History } from '@/components/editor/history'
 import * as spxDefinitionsByName from '@/components/editor/spx-code-editor/document-base'
 import { keys as spxKeyDefinitions } from '@/components/editor/spx-code-editor/document-base/key'
-import { SpxCodeEditorProject, SpxCompletionProvider, SpxLSPClient } from '@/components/editor/spx-code-editor'
+import { SpxCodeEditorProject, SpxCompletionProvider } from '@/components/editor/spx-code-editor'
+import { XGoLSPClient } from '@/components/xgo-code-editor/lsp/xgo-lsp-client'
 import {
   type Config,
   UIConfigProvider,
@@ -70,7 +71,7 @@ const {
 
     const history = new History(project)
     const editorProject = new SpxCodeEditorProject(project, history)
-    const lspClient = new SpxLSPClient(editorProject)
+    const lspClient = new XGoLSPClient(editorProject)
     lspClient.init()
     const documentBase = new DocumentBase([...Object.values(spxDefinitionsByName), ...spxKeyDefinitions])
 

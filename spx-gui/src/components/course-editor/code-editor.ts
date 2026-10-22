@@ -17,10 +17,10 @@ import {
 } from '@/components/xgo-code-editor'
 import { XGoLSPClient } from '@/components/xgo-code-editor/lsp/xgo-lsp-client'
 
-import { tutorialClassFrameworkConfig } from './class-framework'
+import { tutorialClassFramework } from './class-framework'
 
 export class TutorialCodeEditorProject implements IXGoProject {
-  readonly classFramework = tutorialClassFrameworkConfig.projects[0]
+  readonly classFramework = tutorialClassFramework
 
   private files = computed(() => this.project.mainCourse.export())
   private editAction = { name: { en: 'Update program', zh: '修改程序' }, mergeable: true }
@@ -56,12 +56,6 @@ export class TutorialCodeEditorProject implements IXGoProject {
   }
 }
 
-export function createTutorialLSPClient(project: TutorialCodeEditorProject) {
-  return new XGoLSPClient(project, {
-    classFrameworkConfig: tutorialClassFrameworkConfig
-  })
-}
-
 /** The Course Editor owns this session; program views only attach their UI to it. */
 export function useCourseCodeEditor(projectSource: WatchSource<TutorialProject>, history: History) {
   const lang = useI18n().lang.value
@@ -71,7 +65,7 @@ export function useCourseCodeEditor(projectSource: WatchSource<TutorialProject>,
       const monaco = await loadMonaco(lang)
       signal.throwIfAborted()
       const editorProject = new TutorialCodeEditorProject(project, history)
-      const lspClient = createTutorialLSPClient(editorProject)
+      const lspClient = new XGoLSPClient(editorProject)
       const editor = new CodeEditor({ project: editorProject, history, monaco, lspClient })
       editor.disposeOnSignal(signal)
       lspClient.init()
@@ -83,6 +77,8 @@ export function useCourseCodeEditor(projectSource: WatchSource<TutorialProject>,
     { clearResultOnFetch: true }
   )
   useRegisterLoading(query.isLoading)
+  // Keep the Course program editor local; app-wide consumers still depend on the embedded SPX editor.
+  // Track migration to explicit workspace dependencies: https://github.com/goplus/builder/issues/3635
   useProvideCodeEditor(query.data, { appWide: false })
   return query
 }

@@ -2,7 +2,7 @@ import { shallowRef, watchEffect } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as Sentry from '@sentry/vue'
 import { Cancelled } from '@/utils/exception'
-import { getClassFileExtension, serializeGoxMod, type GoxMod } from '@/utils/xgo/gox-mod'
+import { getClassFileExtension, serializeGoxMod } from '@/utils/xgo/gox-mod'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { timeout, until, untilNotNull } from '@/utils/utils'
@@ -15,23 +15,16 @@ import {
   type TextDocumentIdentifier,
   containsPosition,
   type InputSlot,
-  type Property,
-  type ILSPClient,
-  type RequestContext,
-  type LSPClientEvents,
-  type PropertyRenamedEvent,
-  type IXGoProject
-} from '@/components/xgo-code-editor'
+  type Property
+} from '../common'
+import type { IXGoProject } from '../project'
+import type { ILSPClient, RequestContext, LSPClientEvents, PropertyRenamedEvent } from './types'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, MessageID, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
 import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/commands'
 import { xgoPropertyRenamedNotification } from './spxls/notifications'
 import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } from './spxls/methods'
 import type { WorkerHandler } from './worker'
-
-export type XGoLSPClientOptions = {
-  classFrameworkConfig: GoxMod
-}
 
 interface IConnectionWithFiles extends IConnection {
   sendFiles(files: SpxlsFiles): void
@@ -47,7 +40,7 @@ class WorkerConnection implements IConnectionWithFiles {
   private worker: WorkerHandler
   constructor(classFrameworkConfig: string) {
     this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
-    this.worker.postMessage({ type: 'configure', classFrameworkConfig })
+    this.worker.postMessage({ type: 'initialize', classFrameworkConfig })
   }
   sendMessage(message: RequestMessage | NotificationMessage) {
     this.worker.postMessage({ type: 'lsp', message })
@@ -121,16 +114,13 @@ type TelemetryEventParams = TelemetryEventParamsForCall | TelemetryEventParamsFo
 export class XGoLSPClient extends Disposable implements ILSPClient {
   private emitter = new Emitter<LSPClientEvents>()
 
-  constructor(
-    private project: IXGoProject,
-    private options: XGoLSPClientOptions
-  ) {
+  constructor(private project: IXGoProject) {
     super()
     this.addDisposable(this.emitter)
   }
 
   private get projectClassName() {
-    return this.options.classFrameworkConfig.projects[0]?.projectClass.className ?? ''
+    return this.project.classFramework.projectClass.className
   }
 
   /** Register a handler for property rename events; an empty target denotes the project class. */
@@ -141,14 +131,14 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
   private connection: IConnectionWithFiles | undefined
   private isFilesStale = shallowRef(true)
 
+  /** Sync framework project/work class sources, ordinary .gox code, and .json metadata; omit binary media. */
   private shouldSyncFile(path: string) {
     if (path.endsWith('.gox') || path.endsWith('.json')) return true
-    return this.options.classFrameworkConfig.projects.some(({ projectClass, workClasses }) =>
-      [projectClass, ...workClasses].some(({ pattern }) => {
-        const ext = getClassFileExtension(pattern)
-        return ext !== '' && path.endsWith(ext)
-      })
-    )
+    const { projectClass, workClasses } = this.project.classFramework
+    return [projectClass, ...workClasses].some(({ pattern }) => {
+      const ext = getClassFileExtension(pattern)
+      return ext !== '' && path.endsWith(ext)
+    })
   }
 
   async loadFiles(signal: AbortSignal) {
@@ -159,7 +149,6 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
       Object.entries(files).map(async ([path, file]) => {
         if (file == null) return
         if (this.shouldSyncFile(path)) {
-          // Binary media is not needed for analysis.
           const ab = await file.arrayBuffer(signal)
           loadedFiles[path] = {
             content: new Uint8Array(ab),
@@ -191,7 +180,14 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
   }
 
   init() {
-    this.connection = new WorkerConnection(serializeGoxMod(this.options.classFrameworkConfig))
+    this.connection = new WorkerConnection(
+      serializeGoxMod({
+        // Omit the xgo version directive because the bundled WASM determines the running XGo version.
+        xgoVersion: null,
+        // Each editor project uses one class framework. Only its registration is sent to the server.
+        projects: [this.project.classFramework]
+      })
+    )
     this.addDisposer(
       watchEffect(async (cleanUp) => {
         const signal = getCleanupSignal(cleanUp)

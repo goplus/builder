@@ -1,8 +1,9 @@
 import type * as lsp from 'vscode-languageserver-protocol'
-import { ResourceReferenceKind, parseDefinitionId, type DefinitionIdentifier } from '@/components/xgo-code-editor'
+import { isResourceUri, parseDefinitionId, type DefinitionIdentifier, type ResourceReferenceKind } from '../../common'
 
 export type DocumentLinkForResourceReference = {
   range: lsp.Range
+  /** Resource URI */
   target: string
   data: {
     kind: ResourceReferenceKind
@@ -10,7 +11,7 @@ export type DocumentLinkForResourceReference = {
 }
 
 export function isDocumentLinkForResourceReference(link: lsp.DocumentLink): link is DocumentLinkForResourceReference {
-  return link.target != null && Object.values(ResourceReferenceKind).includes(link.data?.kind)
+  return link.target != null && isResourceUri(link.target)
 }
 
 export type DocumentLinkForDefinition = {

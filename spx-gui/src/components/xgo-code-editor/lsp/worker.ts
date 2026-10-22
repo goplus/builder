@@ -25,9 +25,9 @@ export type LSPMessage<M extends Message> = {
   message: M
 }
 
-/** Message for language server configuration */
-export type ConfigureMessage = {
-  type: 'configure'
+/** One-time message that initializes the language server Worker. */
+export type InitializeMessage = {
+  type: 'initialize'
   classFrameworkConfig: string
 }
 
@@ -35,12 +35,7 @@ export type ConfigureMessage = {
 export type WorkerMessage = LSPMessage<ResponseMessage | NotificationMessage>
 
 /** Message that main thread send to worker. */
-export type MainMessage = LSPMessage<RequestMessage | NotificationMessage> | FilesMessage | ConfigureMessage
-
-interface WorkerScope {
-  postMessage(message: WorkerMessage): void
-  addEventListener(type: 'message', listener: (event: MessageEvent<MainMessage>) => void): void
-}
+export type MainMessage = LSPMessage<RequestMessage | NotificationMessage> | FilesMessage | InitializeMessage
 
 export interface WorkerHandler {
   postMessage(message: MainMessage): void
@@ -48,7 +43,7 @@ export interface WorkerHandler {
   terminate(): void
 }
 
-const scope: WorkerScope = self
+const scope = self
 
 // 10 seconds cooldown between language server restarts.
 const LS_RESTART_COOLDOWN = 10_000
@@ -69,94 +64,92 @@ type LSState =
       startAt: number
     }
 
-let files: Files = {}
-let lsState: LSState
-let classFrameworkConfig: string
+function main(classFrameworkConfig: string) {
+  let files: Files = {}
+  let lsState: LSState
 
-async function newLS(onStopped: () => void): Promise<XGoLanguageServer> {
-  const go = new Go()
-  const [wasmResp, packageDataZipResp] = await Promise.all([fetch(languageServerWasmUrl), fetch(packageDataZipUrl)])
-  const { instance } = await WebAssembly.instantiateStreaming(wasmResp, go.importObject)
-  go.run(instance).finally(onStopped)
+  async function newLS(onStopped: () => void): Promise<XGoLanguageServer> {
+    const go = new Go()
+    const [wasmResp, packageDataZipResp] = await Promise.all([fetch(languageServerWasmUrl), fetch(packageDataZipUrl)])
+    const { instance } = await WebAssembly.instantiateStreaming(wasmResp, go.importObject)
+    go.run(instance).finally(onStopped)
 
-  const packageDataZip = await packageDataZipResp.arrayBuffer()
-  const ls = NewXGoLanguageServer(
-    () => files,
-    (message) => scope.postMessage({ type: 'lsp', message }),
-    {
-      classfileConfig: classFrameworkConfig,
-      pkgDataZip: new Uint8Array(packageDataZip)
+    const packageDataZip = await packageDataZipResp.arrayBuffer()
+    const ls = NewXGoLanguageServer(
+      () => files,
+      (message) => scope.postMessage({ type: 'lsp', message }),
+      {
+        classfileConfig: classFrameworkConfig,
+        pkgDataZip: new Uint8Array(packageDataZip)
+      }
+    )
+    if (ls instanceof Error) throw ls
+    return ls
+  }
+
+  function startLS() {
+    function onLSStarted(ls: XGoLanguageServer) {
+      lsState = {
+        state: 'running',
+        startAt: lsState.startAt,
+        ls
+      }
     }
-  )
-  if (ls instanceof Error) throw ls
-  return ls
-}
+    function onLSStopped() {
+      lsState = {
+        state: 'stopped',
+        startAt: lsState.startAt
+      }
+    }
 
-function startLS() {
-  function onLSStarted(ls: XGoLanguageServer) {
+    const lsPromise = newLS(onLSStopped)
     lsState = {
-      state: 'running',
-      startAt: lsState.startAt,
-      ls
+      state: 'starting',
+      startAt: Date.now(),
+      lsPromise
     }
-  }
-  function onLSStopped() {
-    lsState = {
-      state: 'stopped',
-      startAt: lsState.startAt
-    }
+    lsPromise.then(onLSStarted, onLSStopped)
   }
 
-  const lsPromise = newLS(onLSStopped)
-  lsState = {
-    state: 'starting',
-    startAt: Date.now(),
-    lsPromise
-  }
-  lsPromise.then(onLSStarted, onLSStopped)
-}
-
-async function handleMainMessage(message: MainMessage) {
-  switch (message.type) {
-    case 'configure':
-      classFrameworkConfig = message.classFrameworkConfig
-      startLS()
-      return
-    case 'files':
-      files = message.files
-      return
-    case 'lsp': {
-      switch (lsState.state) {
-        case 'starting': {
-          const ls = await lsState.lsPromise
-          const err = ls.handleMessage(message.message)
-          if (err != null) console.warn('[LSP] ls.handleMessage error:', err)
-          break
-        }
-        case 'running': {
-          const err = lsState.ls.handleMessage(message.message)
-          if (err != null) console.warn('[LSP] ls.handleMessage error:', err)
-          break
-        }
-        case 'stopped': {
-          const restartDelay = lsState.startAt + LS_RESTART_COOLDOWN - Date.now()
-          if (restartDelay > 0) {
-            await new Promise((resolve) => setTimeout(resolve, restartDelay))
+  async function handleMainMessage(message: Exclude<MainMessage, InitializeMessage>) {
+    switch (message.type) {
+      case 'files':
+        files = message.files
+        return
+      case 'lsp': {
+        switch (lsState.state) {
+          case 'starting': {
+            const ls = await lsState.lsPromise
+            const err = ls.handleMessage(message.message)
+            if (err != null) console.warn('[LSP] ls.handleMessage error:', err)
+            break
+          }
+          case 'running': {
+            const err = lsState.ls.handleMessage(message.message)
+            if (err != null) console.warn('[LSP] ls.handleMessage error:', err)
+            break
+          }
+          case 'stopped': {
+            const restartDelay = lsState.startAt + LS_RESTART_COOLDOWN - Date.now()
+            if (restartDelay > 0) {
+              await new Promise((resolve) => setTimeout(resolve, restartDelay))
+              return handleMainMessage(message)
+            }
+            startLS()
             return handleMainMessage(message)
           }
-          startLS()
-          return handleMainMessage(message)
         }
+        break
       }
-      break
     }
   }
-}
 
-function main() {
-  scope.addEventListener('message', async (event) => {
+  scope.addEventListener('message', (event: MessageEvent<Exclude<MainMessage, InitializeMessage>>) => {
     handleMainMessage(event.data)
   })
+  startLS()
 }
 
-main()
+scope.addEventListener('message', (event: MessageEvent<InitializeMessage>) => main(event.data.classFrameworkConfig), {
+  once: true
+})

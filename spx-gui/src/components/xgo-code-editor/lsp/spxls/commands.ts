@@ -1,5 +1,5 @@
 import type * as lsp from 'vscode-languageserver-protocol'
-import type { Input, InputSlotKind, Property, ResourceIdentifier, InputSlotAccept } from '@/components/xgo-code-editor'
+import type { Input, InputSlotKind, Property, ResourceIdentifier, InputSlotAccept } from '../../common'
 
 export namespace xgoRenameResources {
   export const command = 'xgo.renameResources'

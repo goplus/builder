@@ -42,6 +42,14 @@ export enum ResourceReferenceKind {
   ConstantReference = 'constantReference'
 }
 
+// The spx scheme is retained for compatibility; migrate it to a framework-independent scheme later.
+export const resourceURIPrefix = 'spx://resources/'
+
+/** Check if given URI is a resource URI or a resource context URI. */
+export function isResourceUri(uri: string): boolean {
+  return uri.startsWith(resourceURIPrefix)
+}
+
 /**
  * URI of the resource. Examples:
  * - `spx://resources/sprites/<name>`
