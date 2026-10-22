@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { ProgressReporter } from '@/utils/progress'
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { extname, filename } from '@/utils/path'
 import { forEachConcurrently } from '@/utils/concurrency-limit'
@@ -11,9 +12,11 @@ import {
   getCourse,
   addCourse,
   deleteCourse,
+  listCourses,
   isGuidedCourse,
   isPlaygroundCourse,
   type AddCourseParams,
+  type Course,
   type CourseKind,
   type GuidedCourse,
   type PlaygroundCourse
@@ -101,11 +104,11 @@ export async function exportCourseSeriesFile(
   { signal, onProgress }: CourseSeriesFileTaskOptions = {}
 ) {
   let read = 0
-  onProgress?.({ step: 'read', done: read, total: courseSeries.courseIDs.length, bytes: null })
+  onProgress?.({ step: 'read', done: read, total: courseSeries.courseIDs.length, files: null })
   const courses = await Promise.all(
     courseSeries.courseIDs.map(async (id) => {
       const course = await getCourse(id, signal)
-      onProgress?.({ step: 'read', done: ++read, total: courseSeries.courseIDs.length, bytes: null })
+      onProgress?.({ step: 'read', done: ++read, total: courseSeries.courseIDs.length, files: null })
       return course
     })
   )
@@ -132,21 +135,19 @@ export async function exportCourseSeriesFile(
     total:
       1 +
       courses.length +
-      (guided ? projects.length : playgroundCourses.reduce((n, c) => n + Object.keys(c.content).length, 0)),
-    loaded: 0
+      (guided ? projects.length : playgroundCourses.reduce((n, c) => n + Object.keys(c.content).length, 0))
   }
   const reportDownloads = () =>
     onProgress?.({
       step: 'download',
       done: downloads.done,
       total: downloads.total,
-      bytes: { loaded: downloads.loaded, total: null }
+      files: null
     })
   const download: Download = async (path, load) => {
     const data = await load()
     zippable[path] = data
     downloads.done++
-    downloads.loaded += data.byteLength
     reportDownloads()
   }
   reportDownloads()
@@ -208,7 +209,7 @@ export async function exportCourseSeriesFile(
   }
   zippable[manifestFileName] = new TextEncoder().encode(JSON.stringify(manifest))
 
-  onProgress?.({ step: 'pack', done: 0, total: 0, bytes: null })
+  onProgress?.({ step: 'pack', done: 0, total: 0, files: null })
   const zipped = await zip(zippable, { level: 6, signal })
   return new File([zipped], `${courseSeries.title}.xbcs.zip`, { type: 'application/zip' })
 }
@@ -250,8 +251,8 @@ export type CourseSeriesFileProgress = {
   /** Items of the step done, of `total`: courses, projects, files or old courses, by step; `total` is 0 if not counted. */
   done: number
   total: number
-  /** Bytes moved so far in the step, of `total` when known; null when the step does not count bytes. */
-  bytes: { loaded: number; total: number | null } | null
+  /** Files saved so far during upload; null for steps counted by `done` and `total`. */
+  files: { done: number; total: number } | null
 }
 
 export type CourseSeriesFileTaskOptions = {
@@ -297,10 +298,13 @@ export async function inspectCourseSeriesFileContent(
   signedInUsername: string,
   signal?: AbortSignal
 ): Promise<CourseSeriesFileImportInspection> {
-  const deletedCourses =
-    courseSeries == null
-      ? []
-      : await Promise.all(courseSeries.courseIDs.map(async (id) => (await getCourse(id, signal)).title))
+  let deletedCourses: string[] = []
+  if (courseSeries != null && courseSeries.courseIDs.length > 0) {
+    const titles = new Map(
+      (await listSeriesCourses(courseSeries.id, signal)).map((course) => [course.id, course.title])
+    )
+    deletedCourses = courseSeries.courseIDs.flatMap((id) => titles.get(id) ?? [])
+  }
   const overwrittenProjects = await Promise.all(
     content.manifest.projects.map(async (project) => {
       const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
@@ -343,7 +347,7 @@ async function loadCourseSeriesFile(
   kind: CourseKind | null,
   { signal, onProgress }: CourseSeriesFileTaskOptions
 ) {
-  onProgress?.({ step: 'read', done: 0, total: 0, bytes: null })
+  onProgress?.({ step: 'read', done: 0, total: 0, files: null })
   let unzipped: Record<string, Uint8Array<ArrayBuffer>>
   let manifest: CourseSeriesFileManifest
   try {
@@ -386,8 +390,8 @@ async function loadCourseSeriesFile(
         zh: '目标式课程不能单独上传新项目，课程的工程应放在课程自己的文件里'
       })
     }
-    const { courseFiles, courseSizes } = await loadPlaygroundCourseFiles(manifest, unzipped, { signal, onProgress })
-    return { manifest, unzipped, courseFiles, courseSizes, projects: [] }
+    const courseFiles = await loadPlaygroundCourseFiles(manifest, unzipped, { signal, onProgress })
+    return { manifest, unzipped, courseFiles, projects: [] }
   }
   for (const course of manifest.courses) {
     if (!('content' in course) || typeof course.content?.entrypoint !== 'string') {
@@ -406,7 +410,7 @@ async function loadCourseSeriesFile(
     })
   }
   const projects = await loadGuidedProjects(manifest, unzipped, { signal, onProgress })
-  return { manifest, unzipped, courseFiles: [], courseSizes: [], projects }
+  return { manifest, unzipped, courseFiles: [], projects }
 }
 
 /**
@@ -437,7 +441,7 @@ async function loadGuidedProjects(
 ) {
   const projects: ProjectSerialized[] = []
   const total = manifest.projects.length
-  onProgress?.({ step: 'check', done: 0, total, bytes: null })
+  onProgress?.({ step: 'check', done: 0, total, files: null })
   for (const project of manifest.projects) {
     signal?.throwIfAborted()
     const entry = getRequiredEntry(unzipped, project.path)
@@ -450,13 +454,13 @@ async function loadGuidedProjects(
         zh: `无效的课程系列文件：项目“${project.name}”无法读取`
       })
     }
-    onProgress?.({ step: 'check', done: projects.length, total, bytes: null })
+    onProgress?.({ step: 'check', done: projects.length, total, files: null })
   }
   return projects
 }
 
 /**
- * The files of each Playground Course in the file, with their size in bytes, once every course loads. What its program
+ * The files of each Playground Course in the file, once every course loads. What its program
  * refers to is not checked, as the Course Editor saves a course without checking it either, and a series exported must
  * import again.
  */
@@ -465,7 +469,6 @@ async function loadPlaygroundCourseFiles(
   unzipped: Record<string, Uint8Array<ArrayBuffer>>,
   { signal, onProgress }: CourseSeriesFileTaskOptions
 ) {
-  const courseSizes: number[] = []
   const courseFiles: Files[] = manifest.courses.map((course) => {
     if (!('files' in course) || typeof course.files !== 'string') {
       throw new DefaultException({
@@ -475,21 +478,18 @@ async function loadPlaygroundCourseFiles(
     }
     const prefix = `${course.files}/`
     const files: Files = {}
-    let size = 0
     for (const [path, data] of Object.entries(unzipped)) {
       // Some zip tools list directories too, as entries ending with a slash.
       if (!path.startsWith(prefix) || path.endsWith('/')) continue
       const coursePath = path.slice(prefix.length)
       files[coursePath] = createLazyFile(filename(coursePath), data)
-      size += data.byteLength
     }
-    courseSizes.push(size)
     return files
   })
 
   const total = manifest.courses.length
   let done = 0
-  onProgress?.({ step: 'check', done, total, bytes: null })
+  onProgress?.({ step: 'check', done, total, files: null })
   const problems: Array<CourseSeriesFileProblem | null> = manifest.courses.map(() => null)
   await forEachConcurrently(manifest.courses, courseConcurrency, async (course, index) => {
     signal?.throwIfAborted()
@@ -505,11 +505,11 @@ async function loadPlaygroundCourseFiles(
     } finally {
       project.dispose()
     }
-    onProgress?.({ step: 'check', done: ++done, total, bytes: null })
+    onProgress?.({ step: 'check', done: ++done, total, files: null })
   })
   const found = problems.filter((problem) => problem != null)
   if (found.length > 0) throw new CourseSeriesFileProblems(found)
-  return { courseFiles, courseSizes }
+  return courseFiles
 }
 
 function describeProblems(problems: CourseSeriesFileProblem[]): LocaleMessage {
@@ -549,7 +549,7 @@ type ImportChanges = {
  */
 async function importCourseSeriesFileData(
   target: CourseSeriesImportTarget,
-  { manifest, unzipped, courseFiles, courseSizes, projects }: CourseSeriesFileContent,
+  { manifest, unzipped, courseFiles, projects }: CourseSeriesFileContent,
   signedInUsername: string,
   { signal, onProgress }: CourseSeriesFileTaskOptions
 ): Promise<CourseSeriesImportResult> {
@@ -557,6 +557,8 @@ async function importCourseSeriesFileData(
   const courseSeries = into?.courseSeries ?? null
   const changes: ImportChanges = { courseIDs: [], createdProjects: [], overwrittenProjects: [] }
   let params: AddCourseSeriesParams
+  // Other files of a course whose upload failed go on saving, and report after the upload step has ended.
+  let uploading = true
   try {
     // Files written before projects were told apart ignoring case may hold one project twice, spelled two ways.
     const projectIndexes = manifest.projects.flatMap((project, index) =>
@@ -564,22 +566,26 @@ async function importCourseSeriesFileData(
         ? [index]
         : []
     )
-    const uploaded = courseSizes.map(() => 0)
+    const courseFileCounts = courseFiles.map((files) => Object.keys(files).length)
+    const totalFiles = courseFileCounts.reduce((sum, count) => sum + count, 0)
+    const uploaded = courseFiles.map(() => 0)
     const total = projectIndexes.length + manifest.courses.length
     let done = 0
-    const report = () =>
+    const report = () => {
+      if (!uploading) return
       onProgress?.({
         step: 'upload',
         done,
         total,
-        bytes:
+        files:
           courseFiles.length === 0
             ? null
             : {
-                loaded: uploaded.reduce((sum, bytes) => sum + bytes, 0),
-                total: courseSizes.reduce((sum, size) => sum + size, 0)
+                done: uploaded.reduce((sum, count) => sum + count, 0),
+                total: totalFiles
               }
       })
+    }
     report()
 
     const projectFullNameMap = new Map<string, string>()
@@ -610,10 +616,14 @@ async function importCourseSeriesFileData(
               thumbnail,
               kind: 'playground',
               content: (
-                await saveFiles(courseFiles[index], signal, ({ loaded }) => {
-                  uploaded[index] = loaded
-                  report()
-                })
+                await saveFiles(
+                  courseFiles[index],
+                  signal,
+                  new ProgressReporter(({ percentage }) => {
+                    uploaded[index] = Math.round(courseFileCounts[index] * percentage)
+                    report()
+                  })
+                )
               ).fileCollection
             }
           : {
@@ -646,13 +656,15 @@ async function importCourseSeriesFileData(
     }
     signal?.throwIfAborted()
   } catch (error) {
-    onProgress?.({ step: 'undo', done: 0, total: 0, bytes: null })
+    uploading = false
+    onProgress?.({ step: 'undo', done: 0, total: 0, files: null })
     return undoImport(changes, manifest, error)
   }
+  uploading = false
 
   // From here on the import is not cancelled: once the series may hold the imported courses, stopping would leave it
   // part done.
-  onProgress?.({ step: 'commit', done: 0, total: 1, bytes: null })
+  onProgress?.({ step: 'commit', done: 0, total: 1, files: null })
   let importedCourseSeries: CourseSeries
   try {
     importedCourseSeries =
@@ -671,7 +683,7 @@ async function importCourseSeriesFileData(
       })
     }
     if (committed == null) {
-      onProgress?.({ step: 'undo', done: 0, total: 0, bytes: null })
+      onProgress?.({ step: 'undo', done: 0, total: 0, files: null })
       return undoImport(changes, manifest, error)
     }
     importedCourseSeries = committed
@@ -681,13 +693,13 @@ async function importCourseSeriesFileData(
   if (into != null) {
     const oldCourseIDs = into.courseSeries.courseIDs
     let deleted = 0
-    onProgress?.({ step: 'cleanup', done: deleted, total: oldCourseIDs.length, bytes: null })
+    onProgress?.({ step: 'cleanup', done: deleted, total: oldCourseIDs.length, files: null })
     const results = await Promise.allSettled(
       oldCourseIDs.map(async (courseID) => {
         try {
           await into.writes.deleteCourse(courseID)
         } finally {
-          onProgress?.({ step: 'cleanup', done: ++deleted, total: oldCourseIDs.length, bytes: null })
+          onProgress?.({ step: 'cleanup', done: ++deleted, total: oldCourseIDs.length, files: null })
         }
       })
     )
@@ -927,6 +939,15 @@ async function importProject(
     signal
   )
   return `${owner}/${name}`
+}
+
+async function listSeriesCourses(courseSeriesID: string, signal?: AbortSignal) {
+  const all: Course[] = []
+  for (let pageIndex = 1; ; pageIndex++) {
+    const { data, total } = await listCourses({ courseSeriesID, pageIndex, pageSize: 100 }, signal)
+    all.push(...data)
+    if (data.length === 0 || all.length >= total) return all
+  }
 }
 
 async function getSignedInUserProject(owner: string, name: string, signal?: AbortSignal) {

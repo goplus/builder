@@ -33,9 +33,10 @@ Editor.Runtime.onLog log => {
 ```
 
 When the course starts, it limits the Code Editor to one API, shows the task, plays a video and highlights the API
-list. Then it waits. The learner's project prints `reached-target` when Lita touches Mushroom (`println "reached-target"`
+list. Then it waits. The learner's project prints `reached-target` when Lita touches Mushroom (`print "reached-target"`
 in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback, or with a
-fixed line when generation fails.
+fixed line when generation fails. `print` adds nothing to the text, so the callback compares the log as it is. A signal
+printed with `println` ends with a line break and has to be matched differently; see [Editor.Runtime](#editorruntime).
 
 This is the usual pattern. The learner's project prints an agreed log line when something happens, and the course listens
 for it with `Editor.Runtime.onLog`.
@@ -80,6 +81,7 @@ configuration is applied before the Playground content is revealed.
 Declarations come first. The top-level statements form the body of the course's entry function, and every `func` must be
 declared before the first of them. A `func` written after a statement is read as a function literal, and the course does
 not compile: `expected '(', found <name>`. Keep `type` declarations at the top as well, so the file reads top-down.
+Imports of standard packages, such as `import "strings"`, go before everything else.
 
 A callback can also register other callbacks. They take effect from the next event. An `onStart` callback registered
 after the course has started never runs.
@@ -212,7 +214,43 @@ Observes runs of the learner's project, not the course program.
 | --- | --- |
 | `Editor.Runtime.onStart => { ... }` | The learner's project starts running. |
 | `Editor.Runtime.onExit code => { ... }` | The learner's project exits. `code` is the exit code. Exiting does not mean the goal was reached. |
-| `Editor.Runtime.onLog log => { ... }` | The learner's project prints a log line, once per line and in output order. Runtime errors are not part of this channel. This is the main way to detect what the learner achieved. |
+| `Editor.Runtime.onLog log => { ... }` | The learner's project prints a log line, once per line and in output order. `log` is the line as printed, including the line break `println` ends it with. Runtime errors are not part of this channel. This is the main way to detect what the learner achieved. |
+
+Neither the console nor a dialog shows the line break `println` ends a log with, so comparing a `println` signal
+with its bare text looks right and never matches. If the project prints `println "reached-target"`, the log is
+`"reached-target\n"`, and this course never completes:
+
+```go
+Editor.Runtime.onLog log => {
+	if log == "reached-target" { // never true for a println signal
+		complete
+	}
+}
+```
+
+Match a signal according to how the project prints it:
+
+| The project prints | The course matches |
+| --- | --- |
+| `print "reached-target"`, which adds nothing to the text | `log == "reached-target"` |
+| `println "reached-target"`, which ends it with a line break | `log == "reached-target\n"` |
+| a signal with a varying part, such as `print "picked up " + name` | `strings.HasPrefix(log, "picked up")` or `strings.Contains` |
+
+`print` adds no space next to a string, so `print "picked up", name` prints `picked upMushroom`; join the parts
+yourself. `strings.HasPrefix` and `strings.Contains` need `import "strings"` at the top of `main_course.gox`:
+
+```go
+import "strings"
+
+Editor.Runtime.onLog log => {
+	if log == "reached-target\n" { // printed with println
+		completeWith "Lita reached Mushroom!"
+	}
+	if strings.HasPrefix(log, "picked up") {
+		showMessage "Now bring it home."
+	}
+}
+```
 
 ```go
 Editor.Runtime.onStart => {

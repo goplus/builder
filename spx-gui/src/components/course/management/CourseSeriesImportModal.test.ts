@@ -4,6 +4,7 @@ import { defineComponent, h } from 'vue'
 import { DefaultException } from '@/utils/exception'
 import type { CourseSeries } from '@/apis/course-series'
 import CourseSeriesImportModal from './CourseSeriesImportModal.vue'
+import CourseSeriesFileSteps from './CourseSeriesFileSteps.vue'
 import type { CourseSeriesFileProgress, CourseSeriesFileTaskOptions } from './course-series-file'
 
 const mocks = vi.hoisted(() => ({
@@ -70,7 +71,7 @@ async function mountConfirming() {
 }
 
 function report(options: CourseSeriesFileTaskOptions, ...steps: CourseSeriesFileProgress['step'][]) {
-  for (const step of steps) options.onProgress?.({ step, done: 0, total: 1, bytes: null })
+  for (const step of steps) options.onProgress?.({ step, done: 0, total: 1, files: null })
 }
 
 describe('CourseSeriesImportModal', () => {
@@ -123,5 +124,20 @@ describe('CourseSeriesImportModal', () => {
     fail()
     await flushPromises()
     expect(stepStates(wrapper).at(-1)).toBe('Undo what was written: done')
+  })
+})
+
+describe('CourseSeriesFileSteps', () => {
+  it.each<{ progress: CourseSeriesFileProgress; count: string }>([
+    { progress: { step: 'upload', done: 1, total: 2, files: { done: 5, total: 10 } }, count: '5 / 10 files' },
+    { progress: { step: 'download', done: 2, total: 4, files: null }, count: '2 / 4 files' }
+  ])('shows file counts for $progress.step', ({ progress, count }) => {
+    const wrapper = mount(CourseSeriesFileSteps, {
+      props: { steps: [{ step: progress.step, label: { en: 'Transfer', zh: '传输' }, status: 'running' }], progress },
+      global: { mocks: { $t: (message: { en: string }) => message.en } }
+    })
+
+    expect(wrapper.text()).toContain(count)
+    expect(wrapper.find('[style="width: 50%;"]').exists()).toBe(true)
   })
 })

@@ -7,7 +7,6 @@ export type StepStatus = 'pending' | 'running' | 'done' | 'failed' | 'stopped'
 /** The steps of an import or export of a course series file, with the progress of the one under way. */
 import { computed } from 'vue'
 import type { LocaleMessage } from '@/utils/i18n'
-import { humanizeFileSize } from '@/utils/utils'
 import { UIIcon } from '@/components/ui'
 import type { CourseSeriesFileProgress, CourseSeriesFileStep } from './course-series-file'
 
@@ -22,7 +21,7 @@ const props = defineProps<{
 const fraction = computed(() => {
   const progress = props.progress
   if (progress == null) return null
-  if (progress.bytes?.total != null && progress.bytes.total > 0) return progress.bytes.loaded / progress.bytes.total
+  if (progress.files != null && progress.files.total > 0) return progress.files.done / progress.files.total
   if (progress.total > 0) return progress.done / progress.total
   return null
 })
@@ -31,16 +30,16 @@ const details = computed(() => {
   const progress = props.progress
   if (progress == null) return null
   const parts: LocaleMessage[] = []
-  if (progress.total > 0)
-    parts.push({ en: `${progress.done} / ${progress.total}`, zh: `${progress.done} / ${progress.total}` })
-  const bytes = progress.bytes
-  if (bytes != null) {
-    const loaded = humanizeFileSize(bytes.loaded)
-    if (bytes.total == null) parts.push(loaded)
-    else {
-      const total = humanizeFileSize(bytes.total)
-      parts.push({ en: `${loaded.en} / ${total.en}`, zh: `${loaded.zh} / ${total.zh}` })
-    }
+  if (progress.total > 0) {
+    const count = `${progress.done} / ${progress.total}`
+    parts.push(
+      progress.step === 'download' ? { en: `${count} files`, zh: `${count} 个文件` } : { en: count, zh: count }
+    )
+  }
+  const files = progress.files
+  if (files != null) {
+    const count = `${files.done} / ${files.total}`
+    parts.push({ en: `${count} files`, zh: `${count} 个文件` })
   }
   return parts.length === 0 ? null : parts
 })

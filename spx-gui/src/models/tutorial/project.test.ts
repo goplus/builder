@@ -13,7 +13,9 @@ function makeMetadata(): TutorialProjectMetadata {
     owner: 'teacher',
     kind: 'playground',
     title: 'Move Lita',
-    thumbnail: 'https://example.com/thumbnail.png'
+    thumbnail: 'https://example.com/thumbnail.png',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-02T00:00:00Z'
   }
 }
 
@@ -54,6 +56,8 @@ describe('TutorialProject', () => {
     const tutorial = await loadProject()
 
     expect(tutorial.id).toBe('course-id')
+    expect(tutorial.createdAt).toBe(makeMetadata().createdAt)
+    expect(tutorial.updatedAt).toBe(makeMetadata().updatedAt)
     expect(tutorial.project.owner).toBeUndefined()
     expect(tutorial.mainCourse.code).toBe('onStart => {}')
     expect(tutorial.videos.map((video) => video.name)).toEqual(['step-to'])
@@ -87,10 +91,14 @@ describe('TutorialProject', () => {
 
   it('loads and exports metadata with files', async () => {
     const tutorial = await loadProject()
-    tutorial.setMetadata({ title: 'Updated title' })
+    tutorial.setMetadata({ title: 'Updated title', updatedAt: '2026-01-03T00:00:00Z' })
 
     const serialized = await tutorial.export()
-    expect(serialized.metadata.title).toBe('Updated title')
+    expect(serialized.metadata).toEqual({
+      ...makeMetadata(),
+      title: 'Updated title',
+      updatedAt: '2026-01-03T00:00:00Z'
+    })
     expect(await toText(serialized.files[mainCourseFilePath]!)).toBe('onStart => {}')
   })
 

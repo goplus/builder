@@ -94,7 +94,8 @@ type Runtime interface {
 	onExit(callback func(code int))
 	// onLog registers a callback that is called for every newly appended
 	// runtime log: each entry starts one run. Error output is not part of this
-	// channel.
+	// channel. log is the entry as printed, so one printed by println ends with
+	// a line break.
 	onLog(callback func(log string))
 }
 

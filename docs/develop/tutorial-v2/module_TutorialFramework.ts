@@ -45,7 +45,8 @@ export type TutorialEvent =
   /**
    * One newly appended runtime log entry. Fired exactly once per new entry,
    * in append order, for `log`-kind outputs only: error output is not part
-   * of this channel.
+   * of this channel. `log` is the entry as printed, so one printed by
+   * `println` ends with a line break.
    */
   | { name: "editor.runtime.log"; payload: { log: string } }
   /** A Copilot conversation round completed. */

@@ -12,7 +12,8 @@ onStart => {
 	showMessage "Tell the learner what to do here."
 }
 
-// The learner's project can print a marker this course recognizes, for example \`println "done"\`.
+// The learner's project can print a marker this course recognizes, for example \`print "done"\`. Use print:
+// println ends the log with a line break, and the comparison below would not match.
 Editor.Runtime.onLog log => {
 	if log == "done" {
 		completeWith "Well done!"

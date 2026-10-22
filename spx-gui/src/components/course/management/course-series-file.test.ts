@@ -4,7 +4,14 @@ import utc from 'dayjs/plugin/utc'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { addCourse, deleteCourse, getCourse, type GuidedCourse, type PlaygroundCourse } from '@/apis/course'
+import {
+  addCourse,
+  deleteCourse,
+  getCourse,
+  listCourses,
+  type GuidedCourse,
+  type PlaygroundCourse
+} from '@/apis/course'
 import {
   addCourseSeries,
   getCourseSeries,
@@ -33,6 +40,7 @@ dayjs.extend(timezone)
 
 vi.mock('@/apis/course', () => ({
   getCourse: vi.fn(),
+  listCourses: vi.fn(),
   addCourse: vi.fn(),
   deleteCourse: vi.fn(),
   isGuidedCourse: (course: GuidedCourse) => course.kind === 'guided',
@@ -130,6 +138,7 @@ beforeEach(() => {
     if (id === existingCourse.id) return existingCourse
     return { ...existingCourse, id, title: `Old ${id}` }
   })
+  vi.mocked(listCourses).mockResolvedValue({ total: 1, data: [existingCourse] })
   vi.mocked(createFileWithUniversalUrl).mockImplementation((url) => {
     const data = new TextEncoder().encode(`content:${url}`)
     return new LazyFile(url.split('/').pop() ?? 'thumbnail.png', () => Promise.resolve(data.buffer), {
@@ -989,25 +998,21 @@ describe('Playground course series files', () => {
 
   it('keeps no copy of the course files besides what it unzipped', async () => {
     const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a')])
-    const { unzipped, courseFiles, courseSizes } = await readCourseSeriesFile(file, null)
+    const { unzipped, courseFiles } = await readCourseSeriesFile(file, null)
 
     expect(await courseFiles[0]['main_course.gox']!.arrayBuffer()).toBe(unzipped['courses/0/main_course.gox']!.buffer)
-    const entries = Object.entries(unzipped).filter(([path]) => path.startsWith('courses/0/'))
-    expect(courseSizes).toEqual([entries.reduce((sum, [, data]) => sum + data.byteLength, 0)])
   })
 
-  it('reports its progress step by step, counting uploads in bytes', async () => {
-    vi.mocked(saveFiles).mockImplementation(async (files, _signal, onProgress) => {
-      const sizes = await Promise.all(Object.values(files).map(async (file) => (await file!.arrayBuffer()).byteLength))
-      const total = sizes.reduce((sum, size) => sum + size, 0)
-      onProgress?.({ loaded: total / 2, total })
-      onProgress?.({ loaded: total, total })
+  it('reports its progress step by step, counting uploaded files', async () => {
+    vi.mocked(saveFiles).mockImplementation(async (files, _signal, reporter) => {
+      reporter?.report(1 / Object.keys(files).length)
+      reporter?.report(1)
       return { fileCollection: { 'main_course.gox': 'kodo://imported/main_course.gox' }, fileCollectionHash: 'hash' }
     })
     const progress: CourseSeriesFileProgress[] = []
     const onProgress = (p: CourseSeriesFileProgress) => progress.push(p)
 
-    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a'), playgroundCourseFiles('b')])
+    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a'), playgroundCourseFiles('b'.repeat(4000))])
     const content = await readCourseSeriesFile(file, playgroundSeries, { onProgress })
     await importCourseSeriesFileContent(content, { courseSeries: playgroundSeries, writes }, 'alice', { onProgress })
 
@@ -1015,9 +1020,29 @@ describe('Playground course series files', () => {
     expect(progress.filter(({ step }) => step === 'check').at(-1)).toMatchObject({ done: 2, total: 2 })
     const lastUpload = progress.filter(({ step }) => step === 'upload').at(-1)!
     expect(lastUpload).toMatchObject({ done: 2, total: 2 })
-    expect(lastUpload.bytes!.total).toBeGreaterThan(0)
-    expect(lastUpload.bytes!.loaded).toBe(lastUpload.bytes!.total)
+    expect(lastUpload.files).toEqual({ done: 10, total: 10 })
+    expect(progress.some((p) => p.step === 'upload' && p.files?.done === 1 && p.files.total === 10)).toBe(true)
     expect(progress.filter(({ step }) => step === 'cleanup').at(-1)).toMatchObject({ done: 1, total: 1 })
+  })
+
+  it('reports no upload progress once a failed upload is being undone', async () => {
+    vi.mocked(saveFiles).mockImplementation(async (_files, _signal, reporter) => {
+      // Another file of the course is still being saved, and reports once it is saved.
+      setTimeout(() => reporter?.report(1))
+      throw new Error('network')
+    })
+    const progress: CourseSeriesFileProgress[] = []
+    const onProgress = (p: CourseSeriesFileProgress) => progress.push(p)
+
+    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a')])
+    const content = await readCourseSeriesFile(file, playgroundSeries, { onProgress })
+    await expect(
+      importCourseSeriesFileContent(content, { courseSeries: playgroundSeries, writes }, 'alice', { onProgress })
+    ).rejects.toThrow()
+    await new Promise((resolve) => setTimeout(resolve))
+
+    const steps = progress.map(({ step }) => step)
+    expect(steps.slice(steps.indexOf('undo'))).toEqual(['undo'])
   })
 
   it('uploads and creates three courses at a time, keeping their order in the series', async () => {
@@ -1114,7 +1139,6 @@ describe('Playground course series files', () => {
     // The series thumbnail, the course thumbnail and the three files of the course
     const lastDownload = progress.filter(({ step }) => step === 'download').at(-1)!
     expect(lastDownload).toMatchObject({ done: 5, total: 5 })
-    expect(lastDownload.bytes!.loaded).toBeGreaterThan(0)
   })
 })
 
@@ -1166,6 +1190,27 @@ async function makePlaygroundSeriesFile(
 }
 
 describe('inspectCourseSeriesFileImport', () => {
+  it('looks up the courses to delete a page at a time, listing them in the order of the series', async () => {
+    const courseIDs = Array.from({ length: 150 }, (_, i) => `course-${i}`)
+    const courses = courseIDs.map((id) => ({ ...existingCourse, id, title: `Title of ${id}` }))
+    // The order the server lists them in need not be the series' own.
+    const listed = [...courses].reverse()
+    vi.mocked(listCourses).mockImplementation(async (params) => {
+      const { pageIndex = 1, pageSize = 10 } = params ?? {}
+      return { total: listed.length, data: listed.slice((pageIndex - 1) * pageSize, pageIndex * pageSize) }
+    })
+    const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code')
+
+    const inspection = await inspectCourseSeriesFileImport({ ...existingSeries, courseIDs }, file, 'alice')
+
+    expect(inspection.deletedCourses).toEqual(courses.map((course) => course.title))
+    expect(vi.mocked(listCourses).mock.calls.map(([params]) => params)).toEqual([
+      { courseSeriesID: existingSeries.id, pageIndex: 1, pageSize: 100 },
+      { courseSeriesID: existingSeries.id, pageIndex: 2, pageSize: 100 }
+    ])
+    expect(getCourse).not.toHaveBeenCalled()
+  })
+
   it('reports deleted courses and overwritten projects', async () => {
     vi.mocked(getProject).mockImplementation(async (_owner, name) => {
       if (name !== 'EntryProject') {
