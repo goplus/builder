@@ -57,6 +57,58 @@ describe('SpotlightUI', () => {
     return wrapper.get('.mask path').attributes('d')?.replace(/\s+/g, ' ').trim()
   }
 
+  it.each(['pointerdown', 'pointerup', 'mousedown', 'mouseup'])(
+    'blocks %s on the mask without concealing the spotlight',
+    async (type) => {
+      spotlight.reveal(target, { tip: 'Ask Copilot', mask: true, duration: 0 })
+      await render()
+
+      const handleEvent = vi.fn()
+      wrapper.element.addEventListener(type, handleEvent)
+      const event = new Event(type, { bubbles: true, cancelable: true })
+      wrapper.get('.mask path').element.dispatchEvent(event)
+
+      expect(event.defaultPrevented).toBe(true)
+      expect(handleEvent).not.toHaveBeenCalled()
+      expect(spotlight.spotlightItem.value?.el).toBe(target)
+      expect(wrapper.find('.mask').exists()).toBe(true)
+    }
+  )
+
+  it.each([0, 30])('conceals the spotlight on a mask click with duration %s and blocks the event', async (duration) => {
+    spotlight.reveal(target, { tip: 'Ask Copilot', mask: true, duration })
+    await render()
+
+    const handleClick = vi.fn()
+    wrapper.element.addEventListener('click', handleClick)
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+    wrapper.get('.mask path').element.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(handleClick).not.toHaveBeenCalled()
+    expect(spotlight.spotlightItem.value).toBeNull()
+    await render()
+    expect(wrapper.find('.mask').exists()).toBe(false)
+    expect(target.classList.contains('spotlight-attach-element-highlight')).toBe(false)
+  })
+
+  it('enables scrolling only while the tip content overflows', async () => {
+    spotlight.reveal(target, { tip: 'Ask Copilot', mask: true, duration: 0 })
+    await render()
+
+    const tips = wrapper.get<HTMLElement>('.tips')
+    vi.spyOn(tips.element, 'clientHeight', 'get').mockReturnValue(40)
+    const scrollHeight = vi.spyOn(tips.element, 'scrollHeight', 'get').mockReturnValue(120)
+    refreshSize()
+    await render()
+    expect(tips.classes()).toContain('scrollable')
+
+    scrollHeight.mockReturnValue(40)
+    refreshSize()
+    await render()
+    expect(tips.classes()).not.toContain('scrollable')
+  })
+
   it('leaves 6px around the target and follows scrolling and target resizing', async () => {
     spotlight.reveal(target, { tip: 'Ask Copilot', mask: true, duration: 0 })
     await render()
