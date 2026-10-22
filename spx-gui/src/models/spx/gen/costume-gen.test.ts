@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { ArtStyle, Perspective } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
@@ -10,6 +10,7 @@ import { Sprite } from '../sprite'
 import { Costume } from '../costume'
 import { createI18n } from '@/utils/i18n'
 import { CostumeGen } from './costume-gen'
+import { Phase } from './common'
 import { mockSaveFile } from './test-helpers'
 
 const aigcMock = setupAigcMock()
@@ -21,6 +22,237 @@ describe('CostumeGen', () => {
   beforeEach(() => {
     aigcMock.reset()
     mockSaveFile()
+  })
+
+  it('edits the saved costume with a separate instruction and retains it on failure', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.costumes[0]
+    source.setImg(mockFile('current.png'))
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: source.name, description: 'Original costume description' },
+      image: source.img,
+      referenceImageSelection: { type: 'local-image', file: mockFile('unrelated.png') },
+      finishPhase: new Phase({ en: 'save costume', zh: '保存造型' }, { status: 'finished', result: source.clone(true) })
+    })
+    const saved = gen.result
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Edit unavailable'))
+    await expect(gen.edit('Make the hat blue')).rejects.toThrow('Edit unavailable')
+    expect(gen.result).toBe(saved)
+    expect(gen.image).toBe(source.img)
+
+    await gen.edit('Make the hat blue')
+    expect([...aigcMock.tasks.values()].at(-1)?.params).toMatchObject({
+      settings: { description: 'Original costume description', referenceImageUrl: 'kodo://mock-bucket/current.png' },
+      editInstruction: 'Make the hat blue',
+      n: 1
+    })
+    expect(gen.settings.description).toBe('Original costume description')
+    expect(gen.result).toBe(saved)
+    expect(gen.image).not.toBe(source.img)
+    const result = await gen.finish()
+    expect(result.id).toBe(source.id)
+    expect(result.img).toBe(gen.image)
+    gen.dispose()
+    project.dispose()
+  })
+
+  it('requires a saved costume and a nonempty instruction for editing', async () => {
+    const project = makeSpxProject()
+    const gen = new CostumeGen(i18n, project.sprites[0], project)
+    await expect(gen.edit('Make it blue')).rejects.toThrow('Saved costume expected')
+    gen.setImage(mockFile('saved.png'))
+    await gen.finish()
+    await expect(gen.edit('   ')).rejects.toThrow('Edit instruction expected')
+    expect(aigcMock.tasks.size).toBe(0)
+    gen.dispose()
+    project.dispose()
+  })
+
+  it('persists point comments, submits them without a global instruction, and retains them on failure', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.costumes[0]
+    const comments = [{ id: 'point', x: 0.6, y: 0.4, content: 'Make this white' }]
+    const originalImage = source.img
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      image: mockFile('visible-candidate.png'),
+      finishPhase: new Phase({ en: 'save', zh: '保存' }, { status: 'finished', result: source }),
+      editComments: comments
+    })
+    const [config, files] = gen.export()
+    const loaded = CostumeGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    onTestFinished(() => {
+      loaded.dispose()
+      gen.dispose()
+      project.dispose()
+    })
+    expect(loaded.editComments).toEqual(comments)
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Edit unavailable'))
+    await expect(loaded.edit('')).rejects.toThrow('Edit unavailable')
+    expect(loaded.editComments).toEqual(comments)
+    await loaded.edit('')
+    expect([...aigcMock.tasks.values()].at(-1)?.params).toMatchObject({
+      settings: { referenceImageUrl: 'kodo://mock-bucket/visible-candidate.png' },
+      editInstruction: expect.stringContaining('At (599, 400): Make this white')
+    })
+    expect(loaded.editComments).toEqual([])
+    expect(source.img).toBe(originalImage)
+  })
+
+  it('keeps the original bounds when editing generated costumes again after reload', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const gen = new CostumeGen(i18n, sprite, project, { settings: { name: 'new-costume' } })
+    const getImageSize = vi.mocked(fileHelpers.getImageSize)
+    getImageSize.mockImplementation(async (file) => file.meta.imgSize ?? { width: 100, height: 100 })
+    onTestFinished(() => {
+      gen.dispose()
+      project.dispose()
+      getImageSize.mockResolvedValue({ width: 100, height: 100 })
+    })
+    await gen.generate()
+    const original = await gen.finish()
+    await gen.edit('A blue hat')
+    gen.image!.meta.imgSize = { width: 400, height: 200 }
+    const candidate = await gen.finish()
+    expect(await candidate.getSize()).toEqual({ width: 50, height: 25 })
+
+    const [config, files] = gen.export()
+    const restored = CostumeGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    onTestFinished(() => restored.dispose())
+    await flushPromises()
+    await restored.edit('A red coat')
+    restored.image!.meta.imgSize = { width: 200, height: 400 }
+    const result = await restored.finish()
+    expect([...aigcMock.tasks.values()].at(-1)!.params).toMatchObject({
+      settings: { referenceImageUrl: `kodo://mock-bucket/${candidate.img.name}` },
+      editInstruction: 'A red coat'
+    })
+    expect(result.id).toBe(original.id)
+    expect(await result.getSize()).toEqual({ width: 25, height: 50 })
+    expect(result.pivot).toEqual({ x: 12.5, y: 25 })
+  })
+
+  it('preserves a regenerated costume identity, bounds, pivot and facing after export/load', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.costumes[0]
+    source.setBitmapResolution(2)
+    source.setPivot({ x: 12, y: 39 })
+    source.setFaceRight(-90)
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      referenceCostumeId: source.id,
+      finishPhase: new Phase(
+        { en: 'Save costume', zh: '保存造型' },
+        { status: 'finished', result: source.clone(true) }
+      ),
+      image: mockFile('generated.png')
+    })
+    const [config, files] = gen.export()
+    const loaded = CostumeGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    vi.spyOn(loaded.result!, 'getSize').mockResolvedValueOnce({ width: 50, height: 50 })
+    vi.mocked(fileHelpers.getImageSize).mockResolvedValueOnce({ width: 400, height: 200 })
+    const result = await loaded.finish()
+
+    expect(result.bitmapResolution).toBe(8)
+    expect(result.pivot).toEqual({ x: 12, y: 19.5 })
+    expect(result.faceRight).toBe(-90)
+    expect(result.id).toBe(source.id)
+    expect(source.pivot).toEqual({ x: 12, y: 39 })
+    expect(source.bitmapResolution).toBe(2)
+    gen.dispose()
+    loaded.dispose()
+    project.dispose()
+  })
+
+  it('retains the saved result and description when regeneration fails, then retries with it as reference', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.costumes[0]
+    source.setImg(mockFile('original.png'))
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: source.name, description: 'Make the hat blue' },
+      image: source.img,
+      finishPhase: new Phase({ en: 'Save costume', zh: '保存造型' }, { status: 'finished', result: source.clone(true) })
+    })
+    const saved = gen.result
+    const originalImage = gen.image
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Generation unavailable'))
+    await expect(gen.generate()).rejects.toThrow('Generation unavailable')
+    expect(gen.result).toBe(saved)
+    expect(gen.image).toBe(originalImage)
+    expect(gen.settings.description).toBe('Make the hat blue')
+
+    await gen.generate()
+    expect([...aigcMock.tasks.values()].at(-1)?.params).toMatchObject({
+      settings: { description: 'Make the hat blue', referenceImageUrl: 'kodo://mock-bucket/original.png' },
+      n: 1
+    })
+    expect(gen.result).toBe(saved)
+    expect(gen.image).not.toBe(originalImage)
+    const candidate = gen.image
+    const result = await gen.finish()
+    expect(result.id).toBe(source.id)
+    expect(result.img).toBe(candidate)
+    expect(gen.settings.description).toBe('Make the hat blue')
+    gen.dispose()
+    project.dispose()
+  })
+
+  it('keeps the saved costume after saving a candidate fails, including across reload and retry', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.costumes[0]
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: source.name, description: 'Change the color' },
+      image: mockFile('candidate.png'),
+      finishPhase: new Phase({ en: 'Save costume', zh: '保存造型' }, { status: 'finished', result: source.clone(true) })
+    })
+    const saved = gen.result!
+    vi.spyOn(saved, 'getSize').mockRejectedValueOnce(new Error('Image unavailable'))
+    await expect(gen.finish()).rejects.toThrow('Image unavailable')
+    expect(gen.finishState.status).toBe('failed')
+    expect(gen.result).toBe(saved)
+    expect(saved.img).toBe(source.img)
+
+    const [config, files] = gen.export()
+    const restored = CostumeGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    expect(restored.result?.id).toBe(source.id)
+    expect(restored.image?.name).toBe('candidate.png')
+    const retried = await gen.finish()
+    expect(retried.id).toBe(source.id)
+    expect(retried.img.name).toBe('candidate.png')
+    expect((await restored.finish()).id).toBe(source.id)
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
+  })
+
+  it('retains the saved image task when another candidate is generated but not saved', async () => {
+    const project = makeSpxProject()
+    const gen = new CostumeGen(i18n, project.sprites[0], project, {
+      settings: { name: 'new-costume', description: 'A red hat' }
+    })
+    await gen.generate()
+    await gen.finish()
+    const [savedTaskId] = gen.getTaskIds()
+    gen.setSettings({ description: 'A blue hat' })
+    await gen.generate()
+    expect(gen.getTaskIds()).toContain(savedTaskId)
+    expect(gen.getTaskIds()).toHaveLength(2)
+    const [config, files] = gen.export()
+    const restored = CostumeGen.load(i18n, project.sprites[0], project, sndConfig(config), sndFiles(files))
+    expect(restored.getTaskIds()).toEqual(gen.getTaskIds())
+    expect(restored.image).not.toBe(restored.result?.img)
+    await restored.finish()
+    expect(restored.getTaskIds()).toHaveLength(1)
+    expect(restored.getTaskIds()).not.toContain(savedTaskId)
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
   })
 
   it('rejects an unsupported reference without replacing the selection', () => {
@@ -228,7 +460,7 @@ describe('CostumeGen', () => {
     // Reset finish state
     gen.resetFinishState()
     expect(gen.finishState.status).toBe('initial')
-    expect(gen.result).toBeUndefined()
+    expect(gen.result).toBe(costume)
   })
 
   it('should cancel running costume generation', async () => {

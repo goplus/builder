@@ -29,7 +29,13 @@ import {
   type PhaseSerialized,
   type TaskSerialized
 } from './common'
-import type { SpriteGen } from './sprite-gen'
+import type { SpriteContent } from '../common/sprite-content'
+import { simulateSpriteEdit, spriteEditDemoEnabled } from './edit-demo'
+import {
+  createAnimationReferenceVideo,
+  getAnimationReferenceLayout,
+  prepareAnimationReferenceVideo
+} from './animation-reference-video'
 import {
   loadReferenceImageSelection,
   resolveInitialReferenceImageSelection,
@@ -54,6 +60,10 @@ export type AnimationGenInits = {
   generateVideoPhase?: Phase<File>
   extractFramesTask?: Task<TaskType.ExtractVideoFrames>
   finishPhase?: Phase<Animation>
+  hasPendingVideo?: boolean
+  savedTaskIds?: string[]
+  editSource?: Animation
+  lastEdit?: { instruction: string; referenceVideoUrl: string }
 }
 
 export type RawAnimationGenConfig = Prettify<
@@ -65,10 +75,15 @@ export type RawAnimationGenConfig = Prettify<
     | 'extractFramesTask'
     | 'finishPhase'
     | 'video'
+    | 'editSource'
     | 'referenceCostumeId'
     | 'referenceImageSelection'
   > & {
     videoPath?: string
+    editSourceConfig?: {
+      animationConfig: RawAnimationConfig
+      costumeConfigs: RawCostumeConfig[]
+    }
     reference?: StoredReferenceImageSelection
     /** Read only for migration; new saves use reference. */
     referenceCostumeId?: string
@@ -96,7 +111,7 @@ function sameReferenceSelection(left: ReferenceImageSelection, right: ReferenceI
 
 export class AnimationGen extends Disposable {
   id: string
-  parent: Sprite | SpriteGen
+  parent: Sprite | SpriteContent
   get sprite(): Sprite {
     if (this.parent instanceof Sprite) return this.parent
     return this.parent.previewSprite
@@ -109,8 +124,13 @@ export class AnimationGen extends Disposable {
   private generateVideoPhase: Phase<File>
   private extractFramesTask: Task<TaskType.ExtractVideoFrames> | null
   private finishPhase: Phase<Animation>
+  private savedResult: Animation | null
+  private savedTaskIds: string[]
+  private videoPending: boolean
+  private editSource: Animation | null
+  private lastEdit: AnimationGenInits['lastEdit'] | null
 
-  constructor(i18n: I18n, parent: Sprite | SpriteGen, project: SpxProject, inits: AnimationGenInits = {}) {
+  constructor(i18n: I18n, parent: Sprite | SpriteContent, project: SpxProject, inits: AnimationGenInits = {}) {
     super()
     this.id = inits.id ?? nanoid()
     this.i18n = i18n
@@ -139,15 +159,22 @@ export class AnimationGen extends Disposable {
     this.extractFramesTask = inits.extractFramesTask ?? null
     this.finishPhase =
       inits.finishPhase ?? new Phase({ en: 'extract frames and save animation', zh: '提取帧并保存动画' })
+    this.savedResult = this.finishPhase.state.result ?? null
+    this.editSource = inits.editSource ?? null
+    this.lastEdit = inits.lastEdit ?? null
+    this.savedTaskIds = inits.savedTaskIds ?? []
+    this.videoPending = inits.hasPendingVideo ?? (this.video != null && this.savedResult == null)
+    if (this.extractFramesTask != null) this.addDisposable(this.extractFramesTask)
     return reactive(this) as this
   }
 
   /** Get IDs for (completed) tasks. */
   getTaskIds() {
-    return [this.generateVideoTask, this.extractFramesTask]
+    const taskIds = [this.generateVideoTask, this.extractFramesTask]
       .filter((t): t is Task<TaskType.GenerateAnimationVideo> | Task<TaskType.ExtractVideoFrames> => t != null)
       .filter((t) => t.data?.status === TaskStatus.Completed)
       .map((t) => t.data!.id)
+    return [...new Set([...this.savedTaskIds, ...taskIds])]
   }
 
   get name() {
@@ -208,28 +235,72 @@ export class AnimationGen extends Disposable {
   get generateVideoState() {
     return this.generateVideoPhase.state
   }
+  resetGenerateVideoState() {
+    this.generateVideoPhase.reset()
+  }
+  get editInstruction() {
+    return this.lastEdit?.instruction ?? null
+  }
+  acceptEdit() {
+    this.editSource = null
+    this.lastEdit = null
+  }
   async generateVideo() {
+    this.editSource = null
     this.setVideo(null)
     this.setFramesConfig(null)
+    return this.runVideoGeneration()
+  }
+  async editVideo(instruction: string) {
+    if (instruction.trim() === '') throw new Error('Edit instruction expected')
+    const source = this.video ?? this.result?.clone(true)
+    if (source == null) throw new Error('Video or saved animation expected')
+    if (this.result != null) this.editSource ??= this.result.clone(true)
+    return this.runVideoGeneration({
+      source,
+      framesConfig: this.framesConfig == null ? null : { ...this.framesConfig },
+      instruction: instruction.trim()
+    })
+  }
+  private async runVideoGeneration(
+    edit: { source: Animation | File; framesConfig: FramesConfig | null; instruction: string } | null = null
+  ) {
     this.resetGenerateVideoTasks()
     this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
     const task = this.generateVideoTask
     this.addDisposable(task)
     const signal = task.getSignal()
     const video = await this.generateVideoPhase.run(async (reporter) => {
-      const image =
-        this.referenceImageSelection?.type === 'local-image'
-          ? this.referenceImageSelection.file
-          : this.referenceCostume?.img
-      if (image == null) throw new Error('reference image or costume expected')
-      await validateAnimationReferenceImage(image)
-      signal.throwIfAborted()
-      const referenceFrameUrl = await saveFile(image, signal)
-      signal.throwIfAborted()
-      await task.start({ settings: { ...this.settings, referenceFrameUrl } })
+      if (edit != null) {
+        const referenceVideo =
+          edit.source instanceof Animation
+            ? await createAnimationReferenceVideo(edit.source, signal)
+            : await prepareAnimationReferenceVideo(edit.source, edit.framesConfig, signal)
+        const referenceVideoUrl = await saveFile(referenceVideo, signal)
+        this.lastEdit = { instruction: edit.instruction, referenceVideoUrl }
+        signal.throwIfAborted()
+        if (spriteEditDemoEnabled) return simulateSpriteEdit(referenceVideo, signal)
+        await task.start({
+          settings: { ...this.settings, referenceFrameUrl: null, referenceVideoUrl },
+          editInstruction: edit.instruction
+        })
+      } else {
+        this.lastEdit = null
+        const image =
+          this.referenceImageSelection?.type === 'local-image'
+            ? this.referenceImageSelection.file
+            : this.referenceCostume?.img
+        if (image == null) throw new Error('reference image or costume expected')
+        await validateAnimationReferenceImage(image)
+        signal.throwIfAborted()
+        const referenceFrameUrl = await saveFile(image, signal)
+        signal.throwIfAborted()
+        await task.start({ settings: { ...this.settings, referenceFrameUrl } })
+      }
       const { videoUrl } = await task.untilCompleted(reporter)
       return createFileWithUniversalUrl(videoUrl)
     })
+    this.setFramesConfig(null)
     this.setVideo(video)
   }
   private resetGenerateVideoTasks() {
@@ -239,10 +310,17 @@ export class AnimationGen extends Disposable {
   }
   restoreGenerateVideoTask() {
     const task = this.generateVideoTask
-    if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
+    if (task?.data == null) return
+    if (
+      isTerminalTaskStatus(task.data.status) &&
+      (task.data.status !== TaskStatus.Completed || this.generateVideoPhase.state.status === 'finished')
+    ) {
+      return
+    }
     this.generateVideoPhase.run(async (reporter) => {
       const { videoUrl } = await task.untilCompleted(reporter)
       const video = createFileWithUniversalUrl(videoUrl)
+      this.setFramesConfig(null)
       this.setVideo(video)
       return video
     })
@@ -250,7 +328,16 @@ export class AnimationGen extends Disposable {
 
   video: File | null
   setVideo(video: File | null) {
+    if (this.video !== video) {
+      this.extractFramesTask?.tryCancel()
+      this.extractFramesTask?.dispose()
+      this.extractFramesTask = null
+    }
     this.video = video
+    this.videoPending = video != null
+  }
+  get hasPendingVideo() {
+    return this.video != null && this.videoPending
   }
 
   framesConfig: FramesConfig | null
@@ -265,42 +352,65 @@ export class AnimationGen extends Disposable {
     this.finishPhase.reset()
   }
   get result() {
-    return this.finishPhase.state.result
+    return this.finishPhase.state.result ?? this.savedResult ?? undefined
   }
   private async createAnimationFromFrames(frameUrls: string[], durationInMs: number) {
+    const source = this.editSource ?? this.result
+    const layout = source == null ? null : await getAnimationReferenceLayout(source)
     const frameImgs = frameUrls.map((url) => createFileWithUniversalUrl(url))
     const costumes = await Promise.all(
       frameImgs.map(async (img, i) => {
         const costumeName = `${this.settings.name}_frame_${i + 1}`
         const costume = await Costume.create(costumeName, img)
-        await costume.autoFit()
+        if (layout == null) {
+          await costume.autoFit()
+        } else {
+          const { width } = await costume.getRawSize()
+          costume.setBitmapResolution((width / layout.size) * layout.scale)
+          costume.setPivot({ x: layout.origin.x / layout.scale, y: layout.origin.y / layout.scale })
+          costume.setFaceRight(source!.costumes[0].faceRight)
+        }
         return costume
       })
     )
     return Animation.create(this.settings.name, costumes, {
-      duration: durationInMs / 1000
+      duration: durationInMs / 1000,
+      id: source?.id,
+      sound: source?.sound ?? undefined,
+      soundPlayback: source?.soundPlayback
     })
   }
   async finish() {
     const { video, framesConfig } = this
     if (video == null) throw new Error('video not ready yet')
     if (framesConfig == null) throw new Error('frames config not set')
-    return this.finishPhase.run(async (reporter) => {
+    const result = await this.finishPhase.run(async (reporter) => {
       const videoUrl = await saveFile(video)
       this.extractFramesTask?.tryCancel()
+      this.extractFramesTask?.dispose()
       this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
+      this.addDisposable(this.extractFramesTask)
       await this.extractFramesTask.start({ videoUrl, ...framesConfig })
       const { frameUrls } = await this.extractFramesTask.untilCompleted(reporter)
       return this.createAnimationFromFrames(frameUrls, framesConfig.duration)
     })
+    this.savedResult = result
+    this.savedTaskIds = this.getTaskIds()
+    this.videoPending = false
+    return result
   }
   restoreExtractFramesTask() {
     const task = this.extractFramesTask
     const framesConfig = this.framesConfig
-    if (task?.data == null || isTerminalTaskStatus(task.data.status) || framesConfig == null) return
+    if (task?.data == null || framesConfig == null || !this.hasPendingVideo) return
+    if (isTerminalTaskStatus(task.data.status) && task.data.status !== TaskStatus.Completed) return
     this.finishPhase.run(async (reporter) => {
       const { frameUrls } = await task.untilCompleted(reporter)
-      return this.createAnimationFromFrames(frameUrls, framesConfig.duration)
+      const result = await this.createAnimationFromFrames(frameUrls, framesConfig.duration)
+      this.savedResult = result
+      this.savedTaskIds = this.getTaskIds()
+      this.videoPending = false
+      return result
     })
   }
 
@@ -323,8 +433,15 @@ export class AnimationGen extends Disposable {
     const assetsPath = assetsPathFor(basePath, this.name)
 
     const selection = this.referenceImageSelection
+    const savedPhase = this.finishPhase.export()
+    if (savedPhase.state.status !== 'finished' && this.savedResult != null) {
+      savedPhase.state = { status: 'finished', result: this.savedResult }
+    }
     const config: RawAnimationGenConfig = {
       id: this.id,
+      hasPendingVideo: this.hasPendingVideo,
+      savedTaskIds: this.savedTaskIds,
+      lastEdit: this.lastEdit ?? undefined,
       settings: this.settings,
       reference:
         selection?.type === 'local-image'
@@ -339,9 +456,9 @@ export class AnimationGen extends Disposable {
         return filePath
       }),
       extractFramesTaskSerialized: this.extractFramesTask?.export(),
-      finishPhaseSerialized: mapPhaseResult(this.finishPhase.export(), (result) => {
+      finishPhaseSerialized: mapPhaseResult(savedPhase, (result) => {
         const [animationConfig, costumeConfigs, animationFiles] = result.export(`${assetsPath}/result`, {
-          sounds: [],
+          sounds: this.project.sounds,
           includeId: true
         })
         Object.assign(files, animationFiles)
@@ -354,17 +471,26 @@ export class AnimationGen extends Disposable {
       files[videoPath] = this.video
       config.videoPath = videoPath
     }
+    if (this.editSource != null) {
+      const [animationConfig, costumeConfigs, sourceFiles] = this.editSource.export(`${assetsPath}/source`, {
+        sounds: this.project.sounds,
+        includeId: true
+      })
+      config.editSourceConfig = { animationConfig, costumeConfigs }
+      Object.assign(files, sourceFiles)
+    }
 
     return [config, files]
   }
 
   static load(
     i18n: I18n,
-    parent: Sprite | SpriteGen,
+    parent: Sprite | SpriteContent,
     project: SpxProject,
     config: RawAnimationGenConfig,
     files: Files,
-    basePath = 'gen/assets'
+    basePath = 'gen/assets',
+    restoreTasks = true
   ) {
     const {
       id,
@@ -385,8 +511,24 @@ export class AnimationGen extends Disposable {
     const settingsName = settings.name
     const assetsPath = assetsPathFor(basePath, settingsName)
 
-    const inits: AnimationGenInits = { id: genId }
+    const inits: AnimationGenInits = {
+      id: genId,
+      hasPendingVideo: config.hasPendingVideo,
+      savedTaskIds: config.savedTaskIds,
+      lastEdit: config.lastEdit
+    }
     inits.settings = settings
+    if (config.editSourceConfig != null) {
+      const { animationConfig, costumeConfigs } = config.editSourceConfig
+      const costumes = costumeConfigs.map((costumeConfig) =>
+        Costume.load(costumeConfig, files, { basePath: `${assetsPath}/source`, includeId: true })
+      )
+      const [source] = Animation.load(settingsName, animationConfig, costumes, {
+        sounds: project.sounds,
+        includeId: true
+      })
+      inits.editSource = source
+    }
     inits.referenceImageSelection = loadReferenceImageSelection(reference, referenceCostumeId, files)
     if (framesConfig != null) inits.framesConfig = framesConfig
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
@@ -407,7 +549,10 @@ export class AnimationGen extends Disposable {
           const costumes = costumeConfigs.map((costumeConfig) =>
             Costume.load(costumeConfig, files, { basePath: `${assetsPath}/result`, includeId: true })
           )
-          const [animation] = Animation.load(settingsName, animationConfig, costumes, { sounds: [], includeId: true })
+          const [animation] = Animation.load(settingsName, animationConfig, costumes, {
+            sounds: project.sounds,
+            includeId: true
+          })
           return animation
         })
       )
@@ -419,8 +564,10 @@ export class AnimationGen extends Disposable {
     }
 
     const gen = new AnimationGen(i18n, parent, project, inits)
-    gen.restoreGenerateVideoTask()
-    gen.restoreExtractFramesTask()
+    if (restoreTasks) {
+      gen.restoreGenerateVideoTask()
+      gen.restoreExtractFramesTask()
+    }
     return gen
   }
 }

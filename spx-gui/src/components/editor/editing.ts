@@ -17,6 +17,7 @@ export enum SavingState {
 }
 
 export interface ILocalCache {
+  setProject?(owner: string, name: string): void
   load(signal?: AbortSignal): Promise<ProjectSerialized | null>
   save(serialized: ProjectSerialized, signal?: AbortSignal): Promise<void>
   clear(): Promise<void>
@@ -197,9 +198,16 @@ export class Editing extends Disposable {
       watch(
         [() => this.project.exportFiles(), () => this.mode],
         ([, mode], __, onCleanup) => {
-          if (mode === EditingMode.EffectFree || !this.dirty) return
+          if (!this.dirty) return
 
           const signal = getCleanupSignal(onCleanup)
+          if (mode === EditingMode.EffectFree) {
+            timeout(1000, signal)
+              .then(() => this.project.export(signal))
+              .then((serialized) => this.localCacheHelper.save(serialized, signal))
+              .catch((e) => capture(e, 'Failed to save local project draft'))
+            return
+          }
           const saving = new Saving(this.project, this.cloudHelpers, this.localCacheHelper, this.isOnline, signal)
 
           this.savingRef.value = saving
@@ -237,6 +245,7 @@ export class Editing extends Disposable {
     loadFromCloudReporter.startAutoReport(1000, { signal })
     const cloudData = await this.cloudHelpers.load(ownerInput, projectNameInput, preferPublished, signal)
     signal.throwIfAborted()
+    this.localCacheHelper.setProject?.(cloudData.metadata.owner, cloudData.metadata.name)
     loadFromCloudReporter.report(1)
 
     // For details about local-cache saving & restoring

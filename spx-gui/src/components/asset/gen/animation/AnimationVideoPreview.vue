@@ -159,14 +159,14 @@ const cutStartRef = ref(0)
 /** Timepoint in ms to cut end */
 const cutEndRef = ref(0)
 
-/** Interval in ms between extracted animation frames */
-const frameInterval = 100
+/** Timeline snapping precision in ms */
+const timelinePrecision = 100
 
 function notifyFramesConfigChanged() {
   emit('update:framesConfig', {
     startTime: cutStartRef.value,
     duration: cutEndRef.value - cutStartRef.value,
-    interval: frameInterval
+    interval: props.framesConfig?.interval ?? 100
   })
 }
 
@@ -195,13 +195,16 @@ watch(
   videoDurationRef,
   (newDuration) => {
     if (newDuration == null) return
-    // Initialize cut range when video duration is known
-    // This causes cut range to reset when selected animation / costume changes, it'll be better
-    // to persist the cut range across animation / costume selections. TODO: Improve this later
     if (newDuration > 0 && cutEndRef.value === 0) {
-      cutStartRef.value = 0
-      cutEndRef.value = snapDown(newDuration)
-      notifyFramesConfigChanged()
+      const config = props.framesConfig
+      if (config != null) {
+        cutStartRef.value = clamp(config.startTime ?? 0, 0, newDuration)
+        cutEndRef.value = clamp(cutStartRef.value + config.duration, cutStartRef.value, newDuration)
+      } else {
+        cutStartRef.value = 0
+        cutEndRef.value = newDuration
+        notifyFramesConfigChanged()
+      }
     }
   },
   { immediate: true }
@@ -330,24 +333,31 @@ function handleDragEnd(e: PointerEvent) {
 
 function adjustStartTime(newTime: number, withSnap = false) {
   const time = withSnap ? snap(newTime) : newTime
-  return clamp(time, 0, cutEndRef.value - minDuration)
+  return clamp(time, 0, Math.max(0, cutEndRef.value - minDuration.value))
 }
 
 function adjustEndTime(newTime: number, videoDuration: number, withSnap = false) {
-  const time = withSnap ? snap(newTime) : newTime
-  const maxTime = withSnap ? snapDown(videoDuration) : videoDuration
-  return clamp(time, cutStartRef.value + minDuration, maxTime)
+  const minTime = Math.min(videoDuration, cutStartRef.value + minDuration.value)
+  const time = withSnap && newTime > minTime ? snap(newTime) : newTime
+  const maxTime = withSnap ? Math.max(minTime, snapDown(videoDuration)) : videoDuration
+  return clamp(time, minTime, maxTime)
 }
 
 /** Minimum allowed segment duration in ms */
-const minDuration = frameInterval
+const minDuration = computed(() =>
+  Math.min(
+    timelinePrecision,
+    props.framesConfig?.duration ?? timelinePrecision,
+    videoDurationRef.value ?? timelinePrecision
+  )
+)
 
 function snap(timeInMs: number) {
-  return Math.round(timeInMs / frameInterval) * frameInterval
+  return Math.round(timeInMs / timelinePrecision) * timelinePrecision
 }
 
 function snapDown(timeInMs: number) {
-  return Math.floor(timeInMs / frameInterval) * frameInterval
+  return Math.floor(timeInMs / timelinePrecision) * timelinePrecision
 }
 
 function clamp(timeInMs: number, min: number, max: number) {

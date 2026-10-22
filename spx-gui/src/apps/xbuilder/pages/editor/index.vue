@@ -19,23 +19,6 @@
   </section>
 </template>
 
-<script lang="ts">
-const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
-
-class LocalCache implements ILocalCache {
-  constructor(private helpers: LocalHelpers) {}
-  load(signal?: AbortSignal) {
-    return this.helpers.load(LOCAL_CACHE_KEY, signal)
-  }
-  save(serialized: ProjectSerialized, signal?: AbortSignal): Promise<void> {
-    return this.helpers.save(LOCAL_CACHE_KEY, serialized, signal)
-  }
-  clear() {
-    return this.helpers.clear(LOCAL_CACHE_KEY)
-  }
-}
-</script>
-
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
@@ -59,18 +42,17 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
-import { EditingMode, type ILocalCache } from '@/components/editor/editing'
+import { EditingMode } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
-import { localHelpers, type LocalHelpers } from '@/models/common/local'
-import type { ProjectSerialized } from '@/models/project'
+import { localHelpers } from '@/models/common/local'
 import { SpxProject } from '@/models/spx/project'
+import { LocalCache } from './local-cache'
 
 const props = defineProps<{
   ownerNameInput: string
   projectNameInput: string
 }>()
-const localCache = new LocalCache(localHelpers)
 
 const signedInStateQuery = useSignedInStateQuery()
 
@@ -118,6 +100,10 @@ const stateQueryRet = useQuery(
     project.disposeOnSignal(ctx.signal)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     ctx.signal.throwIfAborted()
+    const localCache = new LocalCache(localHelpers, () => {
+      const signedInState = signedInStateQuery.data.value
+      return signedInState?.isSignedIn ? signedInState.user.username : null
+    })
     const state = new EditorState(i18n, project, isOnline, signedInStateQuery, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
     await state.editing.loadProject(
@@ -217,8 +203,8 @@ async function checkChangesNotToBeSaved(es: EditorState) {
   const hasEdits = es.editing.mode === EditingMode.EffectFree && es.editing.dirty
   if (!hasEdits) return true
   return confirmLeaveEditor({
-    en: `Project edits will not be saved if you leave now. Are you sure to leave?`,
-    zh: `若现在离开，对项目的修改将不会被保存。确定要离开吗？`
+    en: `Your changes have not been saved to your cloud project. Are you sure to leave?`,
+    zh: `当前修改尚未保存到你的云端项目。确定要离开吗？`
   })
 }
 

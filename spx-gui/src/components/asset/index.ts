@@ -5,6 +5,8 @@ import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
+import { Cancelled, DefaultException } from '@/utils/exception'
+import { useEnsureSignedIn } from '@/utils/user'
 import { humanizeAssetType, type AssetGenModel, type AssetModel } from '@/models/spx/common/asset'
 import { resourceAnimationName, resourceMonitorName, resourceSpriteName } from '@/models/spx/common/resource'
 import { fromNativeFile } from '@/models/common/file'
@@ -33,14 +35,72 @@ import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
+import SpriteEditModal from './edit/sprite/SpriteEditModal.vue'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
 import type { GenHelpers } from './gen/modal'
+import type { SpriteContentSelected } from '@/models/spx/common/sprite-content'
 
 export function useSpriteGenModal() {
   const helpers = useGenHelpers()
   const invokeModal = useModal(SpriteGenModal)
   return function invokeSpriteGenModal(project: SpxProject, gen?: SpriteGen) {
     return invokeModal({ project, gen, helpers })
+  }
+}
+
+export function useEditSprite() {
+  const editorCtx = useEditorCtx()
+  const codeEditor = useCodeEditor()
+  const ensureSignedIn = useEnsureSignedIn()
+  const invokeSpriteEditModal = useModal(SpriteEditModal)
+  return async function editSprite(sprite: Sprite, resource?: Costume | Animation) {
+    await ensureSignedIn()
+    const editState = editorCtx.state.spriteEditState
+    const isNew = !editState.edits.some((edit) => edit.sourceSpriteId === sprite.id)
+    const edit = editState.start(sprite)
+    if (resource != null) {
+      const type = resource instanceof Costume ? 'costume' : 'animation'
+      const items = type === 'costume' ? edit.costumes : edit.animations
+      const item = items.find((gen) => gen.result?.id === resource.id)
+      if (item != null) edit.setSelectedItem({ type, id: item.id })
+    } else if (isNew && editorCtx.state.selectedSprite?.id === sprite.id) {
+      const costume = edit.costumes.find((gen) => gen.result?.id === editorCtx.state.selectedCostume?.id)
+      const animation = edit.animations.find((gen) => gen.result?.id === editorCtx.state.selectedAnimation?.id)
+      if (costume != null) edit.setSelectedItem({ type: 'costume', id: costume.id })
+      else if (animation != null) edit.setSelectedItem({ type: 'animation', id: animation.id })
+    }
+    async function apply(item: SpriteContentSelected) {
+      const result =
+        item.type === 'costume' ? edit.getCostumeById(item.id)?.result : edit.getAnimationById(item.id)?.result
+      if (result == null) throw new Error('Resource not ready')
+      const originals = item.type === 'costume' ? sprite.costumes : sprite.animations
+      const original = originals.find((resource) => resource.id === result.id)
+      const nameError =
+        item.type === 'costume'
+          ? assetName.validateCostumeName(result.name, { costumes: sprite.costumes.filter((c) => c !== original) })
+          : assetName.validateAnimationName(result.name, {
+              animations: sprite.animations.filter((a) => a !== original)
+            })
+      if (nameError != null) throw new DefaultException(nameError)
+      await editorCtx.state.history.doAction(
+        {
+          name:
+            item.type === 'costume' ? { en: 'Edit costume', zh: '修改造型' } : { en: 'Edit animation', zh: '修改动画' }
+        },
+        async () => {
+          if (!editorCtx.project.sprites.includes(sprite)) throw new Cancelled('Sprite changed while editing')
+          if (original != null && original.name !== result.name) {
+            await codeEditor.renameResource(getResourceIdentifier(original), result.name)
+          }
+          edit.applyToSprite(sprite, item)
+        }
+      )
+    }
+    try {
+      return await invokeSpriteEditModal({ edit, apply })
+    } finally {
+      editState.finish(edit)
+    }
   }
 }
 

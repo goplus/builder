@@ -38,11 +38,8 @@ import {
 import { resourceAnimationName, resourceCostumeName } from '../common/resource'
 import { sprite2Asset } from '../common/asset'
 
-/** User selected item in sprite gen */
-type SpriteGenSelected = {
-  type: 'costume' | 'animation'
-  id: string
-}
+import type { SpriteContent, SpriteContentSelected } from '../common/sprite-content'
+import { SpriteContentHistory, type RawSpriteContentHistory } from '../common/sprite-content-history'
 
 export const spriteGenAssetPath = 'assets/sprite-gens'
 const spriteGenConfigFileName = 'index.json'
@@ -56,7 +53,9 @@ export type SpriteGenInits = {
   settings?: Partial<SpriteSettings>
   referenceImage?: File | null
   imageIndex?: number | null
-  selectedItem?: SpriteGenSelected | null
+  selectedItem?: SpriteContentSelected | null
+  costumeInstructions?: Record<string, string>
+  animationInstructions?: Record<string, string>
   animationGenIdBindings?: Partial<Record<State, string>>
   enrichPhase?: Phase<SpriteSettings>
   genImagesTask?: Task<TaskType.GenerateCostume>
@@ -77,6 +76,7 @@ export type RawSpriteGenConfig = Prettify<
     | 'animations'
     | 'referenceImage'
   > & {
+    editHistory?: RawSpriteContentHistory
     referenceImagePath?: string
     enrichPhaseSerialized?: PhaseSerialized<SpriteSettings>
     genImagesTaskSerialized?: TaskSerialized<TaskType.GenerateCostume>
@@ -87,7 +87,8 @@ export type RawSpriteGenConfig = Prettify<
   }
 >
 
-export class SpriteGen extends Disposable {
+export class SpriteGen extends Disposable implements SpriteContent {
+  editHistory: SpriteContentHistory
   id: string
   private i18n: I18n
   private project: SpxProject
@@ -96,12 +97,15 @@ export class SpriteGen extends Disposable {
   private genImagesPhase: Phase<File[]>
   private prepareContentPhase: Phase<void>
   private animationGenIdBindings: Partial<Record<State, string>> = {}
+  private costumeInstructions: Record<string, string>
+  private animationInstructions: Record<string, string>
 
   constructor(i18n: I18n, project: SpxProject, inits: SpriteGenInits | string = {}) {
     super()
     const initialDescription = typeof inits === 'string' ? inits : ''
     if (typeof inits === 'string') inits = {}
     this.id = inits.id ?? nanoid()
+    this.editHistory = new SpriteContentHistory(i18n, project, this, () => assetsPathFor(this.name))
     this.i18n = i18n
     this.project = project
     this.enrichPhase = inits.enrichPhase ?? new Phase({ en: 'enrich sprite settings', zh: '丰富角色设置' })
@@ -125,6 +129,8 @@ export class SpriteGen extends Disposable {
     if (this.referenceImage != null) validateReferenceImage(this.referenceImage)
     this.imageIndex = inits.imageIndex ?? null
     this.selectedItem = inits.selectedItem ?? null
+    this.costumeInstructions = inits.costumeInstructions ?? {}
+    this.animationInstructions = inits.animationInstructions ?? {}
     this.previewProject = new SpxProject()
     this.previewSprite = this.createSprite()
     this.previewProject.addSprite(this.previewSprite)
@@ -273,18 +279,21 @@ export class SpriteGen extends Disposable {
     this.previewSprite = sprite
     this.previewProject.addSprite(sprite)
     // Sync results of generations to sprite
-    // NOTE: the order of costumes & animations on the sprite may be different
-    // from the order of generations, which is acceptable for now.
     sprite.addDisposer(
       watch(
         () => this.costumes.map((c) => c.result).filter((c): c is Costume => c != null),
         (generatedCostumes) => {
-          generatedCostumes.forEach((c) => {
-            if (!sprite.costumes.includes(c)) sprite.addCostume(c)
-          })
+          const defaultCostumeId = this.defaultCostume?.result?.id ?? sprite.defaultCostume?.id
           sprite.costumes.slice().forEach((c) => {
             if (!generatedCostumes.includes(c)) sprite.removeCostume(c.id)
           })
+          generatedCostumes.forEach((c) => {
+            if (!sprite.costumes.includes(c)) sprite.addCostume(c)
+          })
+          sprite.costumes.splice(0, sprite.costumes.length, ...generatedCostumes)
+          if (defaultCostumeId != null && sprite.costumes.some((c) => c.id === defaultCostumeId)) {
+            sprite.setDefaultCostume(defaultCostumeId)
+          }
         },
         { immediate: true }
       )
@@ -292,24 +301,30 @@ export class SpriteGen extends Disposable {
     sprite.addDisposer(
       watch(
         () => this.animations.map((a) => a.result).filter((a): a is Animation => a != null),
-        (generatedAnimations) => {
+        (generatedAnimations, previousAnimations) => {
+          const bindings = new Map(
+            previousAnimations?.map((animation) => [animation.id, sprite.getAnimationBoundStates(animation.id)])
+          )
+          sprite.animations.slice().forEach((a) => {
+            if (!generatedAnimations.includes(a)) sprite.removeAnimation(a.id)
+          })
           generatedAnimations.forEach((a) => {
             if (!sprite.animations.includes(a)) {
               sprite.addAnimation(a)
-              // Auto bind states based on recommended animation bindings
+              // Preserve bindings when replacing an edited animation.
               const aGen = this.animations.find((gen) => gen.result?.id === a.id)
               if (aGen == null) return
-              const statesToBind = (Object.entries(this.animationGenIdBindings) as Array<[State, string]>)
-                .filter(([, genId]) => genId === aGen.id)
-                .map(([state]) => state)
+              const statesToBind =
+                bindings.get(a.id) ??
+                (Object.entries(this.animationGenIdBindings) as Array<[State, string]>)
+                  .filter(([, genId]) => genId === aGen.id)
+                  .map(([state]) => state)
               if (statesToBind.length > 0) {
                 sprite.setAnimationBoundStates(a.id, statesToBind, false)
               }
             }
           })
-          sprite.animations.slice().forEach((a) => {
-            if (!generatedAnimations.includes(a)) sprite.removeAnimation(a.id)
-          })
+          sprite.animations.splice(0, sprite.animations.length, ...generatedAnimations)
         },
         { immediate: true }
       )
@@ -332,6 +347,8 @@ export class SpriteGen extends Disposable {
       // Clear existing costumes & animations
       this.costumes.splice(0).forEach((c) => c.dispose())
       this.animations.splice(0).forEach((a) => a.dispose())
+      this.costumeInstructions = {}
+      this.animationInstructions = {}
 
       // Prepare preview sprite
       this.preparePreviewSprite()
@@ -398,6 +415,8 @@ export class SpriteGen extends Disposable {
     const [c] = this.costumes.splice(index, 1)
     c.cancel()
     c.dispose()
+    this.editHistory.clear(id)
+    delete this.costumeInstructions[id]
     if (this.selectedItem?.type === 'costume' && this.selectedItem.id === id) {
       this.selectedItem = null
     }
@@ -429,6 +448,8 @@ export class SpriteGen extends Disposable {
     const [a] = this.animations.splice(index, 1)
     a.cancel()
     a.dispose()
+    this.editHistory.clear(id)
+    delete this.animationInstructions[id]
     if (this.selectedItem?.type === 'animation' && this.selectedItem.id === id) {
       this.selectedItem = null
     }
@@ -440,26 +461,53 @@ export class SpriteGen extends Disposable {
   result: Sprite | null
 
   /** Persist the user selected item state across modal sessions */
-  selectedItem: SpriteGenSelected | null = null
+  selectedItem: SpriteContentSelected | null = null
 
-  setSelectedItem(item: SpriteGenSelected | null) {
+  setSelectedItem(item: SpriteContentSelected | null) {
     this.selectedItem = item
+  }
+
+  getCostumeInstruction(id: string) {
+    return this.costumeInstructions[id] ?? ''
+  }
+  setCostumeInstruction(id: string, instruction: string) {
+    this.costumeInstructions[id] = instruction
+  }
+  getAnimationInstruction(id: string) {
+    return this.animationInstructions[id] ?? ''
+  }
+  setAnimationInstruction(id: string, instruction: string) {
+    this.animationInstructions[id] = instruction
+  }
+  async editCostume(id: string, instruction: string) {
+    const gen = this.getCostumeById(id)
+    if (gen == null) throw new Error('Costume not found')
+    this.editHistory.record(gen)
+    await gen.edit(instruction)
+    await gen.finish()
+  }
+  async editAnimation(id: string, instruction: string) {
+    const gen = this.getAnimationById(id)
+    if (gen == null) throw new Error('Animation not found')
+    this.editHistory.record(gen)
+    await gen.editVideo(instruction)
   }
 
   async finish() {
     const previewSprite = this.previewSprite
     const sprite = this.createSprite()
     for (const gen of this.costumes) {
-      if (gen.result == null) continue
-      previewSprite.removeCostume(gen.result.id)
-      sprite.addCostume(gen.result)
+      const costume = this.editHistory.appliedResult(gen)
+      if (costume == null) continue
+      previewSprite.removeCostume(costume.id)
+      sprite.addCostume(costume.clone(true))
     }
     for (const gen of this.animations) {
-      const animation = gen.result
+      const animation = this.editHistory.appliedResult(gen)
       if (animation == null) continue
       const boundStates = previewSprite.getAnimationBoundStates(animation.id)
       previewSprite.removeAnimation(animation.id)
-      sprite.addAnimation(animation)
+      sprite.addAnimation(animation.clone(true))
       sprite.setAnimationBoundStates(animation.id, boundStates)
     }
     if (shouldUseFeetPivot(this.settings.category, this.settings.perspective) && sprite.defaultCostume != null) {
@@ -522,7 +570,16 @@ export class SpriteGen extends Disposable {
 
   static async loadAll(i18n: I18n, project: SpxProject, files: Files) {
     const names = listDirs(files, spriteGenAssetPath)
-    return Promise.all(names.map((name) => SpriteGen.load(name, i18n, project, files)))
+    const gens = await Promise.all(
+      names.map(async (name) => {
+        const config = (await toConfig(files[`${spriteGenAssetPath}/${name}/${spriteGenConfigFileName}`]!)) as {
+          editingSpriteId?: string
+        }
+        if (config.editingSpriteId != null) return null
+        return SpriteGen.load(name, i18n, project, files)
+      })
+    )
+    return gens.filter((gen): gen is SpriteGen => gen != null)
   }
 
   static async load(name: string, i18n: I18n, project: SpxProject, files: Files) {
@@ -534,6 +591,8 @@ export class SpriteGen extends Disposable {
       settings,
       imageIndex,
       selectedItem,
+      costumeInstructions,
+      animationInstructions,
       animationGenIdBindings,
       referenceImagePath,
       enrichPhaseSerialized,
@@ -555,6 +614,8 @@ export class SpriteGen extends Disposable {
     }
     if (imageIndex != null) inits.imageIndex = imageIndex
     if (selectedItem != null) inits.selectedItem = selectedItem
+    inits.costumeInstructions = costumeInstructions
+    inits.animationInstructions = animationInstructions
     if (animationGenIdBindings != null) inits.animationGenIdBindings = animationGenIdBindings
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (genImagesTaskSerialized != null) inits.genImagesTask = Task.load(genImagesTaskSerialized)
@@ -582,12 +643,13 @@ export class SpriteGen extends Disposable {
     if (gen.contentPreparingState.status === 'finished') {
       gen.preparePreviewSprite()
     }
+    gen.editHistory.load(config.editHistory ?? {}, files)
     gen.restoreGenImagesTask()
     return gen
   }
 
   export(): Files {
-    const files: Files = {}
+    const [editHistory, files] = this.editHistory.export()
     const basePath = assetsPathFor(this.name)
 
     const costumeConfigs: RawCostumeGenConfig[] = this.costumes.map((c) => {
@@ -606,9 +668,19 @@ export class SpriteGen extends Disposable {
 
     const config: RawSpriteGenConfig = {
       id: this.id,
+      editHistory,
       settings: this.settings,
+      costumeInstructions: this.costumeInstructions,
+      animationInstructions: this.animationInstructions,
       referenceImagePath: referenceImagePath ?? undefined,
-      animationGenIdBindings: this.animationGenIdBindings,
+      animationGenIdBindings: Object.fromEntries([
+        ...Object.entries(this.animationGenIdBindings).filter(([, id]) => this.getAnimationById(id)?.result == null),
+        ...this.animations.flatMap((gen) =>
+          gen.result == null
+            ? []
+            : this.previewSprite.getAnimationBoundStates(gen.result.id).map((state) => [state, gen.id])
+        )
+      ]),
       enrichPhaseSerialized: this.enrichPhase.export(),
       genImagesTaskSerialized: this.genImagesTask?.export(),
       genImagesPhaseSerialized: mapPhaseResult(this.genImagesPhase.export(), (result) =>

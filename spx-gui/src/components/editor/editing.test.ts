@@ -322,7 +322,7 @@ describe('Editing', () => {
     expect(cloudHelpers.save).toHaveBeenCalledTimes(1)
   })
 
-  it('should not trigger auto-save for effect-free mode', async () => {
+  it("saves effect-free edits locally without writing to the project owner's cloud data", async () => {
     const project = makeProject({ owner: 'project-owner' })
     const cloudHelpers = makeCloudHelpers()
     const localCacheHelper = makeLocalCache()
@@ -348,11 +348,12 @@ describe('Editing', () => {
     vi.advanceTimersByTime(autoSaveToCloudDelay)
     await flushPromises()
 
-    // Auto-save should not have been triggered
-    expect(localCacheHelper.save).toHaveBeenCalledTimes(0)
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(1)
     expect(cloudHelpers.save).toHaveBeenCalledTimes(0)
-    expect(editing.dirty).toBe(true) // Files are dirty, but no saving is triggered
+    expect(editing.dirty).toBe(true)
     expect(editing.saving).toBeNull()
+    expect((await localCacheHelper.load())?.files['file1.txt']).toBe(project.exportFiles()['file1.txt'])
+    editing.dispose()
   })
 
   it('should update mode and trigger auto-save when signed-in username changes to owner', async () => {
@@ -382,7 +383,7 @@ describe('Editing', () => {
 
     vi.advanceTimersByTime(autoSaveToLocalCacheDelay)
     await flushPromises()
-    expect(localCacheHelper.save).toHaveBeenCalledTimes(1)
+    expect(localCacheHelper.save).toHaveBeenCalledTimes(2)
 
     vi.advanceTimersByTime(autoSaveToCloudDelay - autoSaveToLocalCacheDelay + 1)
     await flushPromises()

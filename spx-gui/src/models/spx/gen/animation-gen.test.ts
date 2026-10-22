@@ -11,6 +11,19 @@ import { createI18n } from '@/utils/i18n'
 import { AnimationGen } from './animation-gen'
 import { Costume } from '../costume'
 import { mockSaveFile } from './test-helpers'
+import { Animation, AnimationSoundPlayback } from '../animation'
+import { Phase } from './common'
+import {
+  createAnimationReferenceVideo,
+  getAnimationReferenceLayout,
+  prepareAnimationReferenceVideo
+} from './animation-reference-video'
+
+vi.mock('./animation-reference-video', () => ({
+  createAnimationReferenceVideo: vi.fn(),
+  prepareAnimationReferenceVideo: vi.fn(),
+  getAnimationReferenceLayout: vi.fn()
+}))
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
@@ -21,6 +34,15 @@ describe('AnimationGen', () => {
     aigcMock.reset()
     vi.mocked(fileHelpers.getImageSize).mockResolvedValue({ width: 512, height: 512 })
     mockSaveFile()
+    vi.mocked(createAnimationReferenceVideo).mockReset().mockResolvedValue(mockFile('reference.mp4'))
+    vi.mocked(prepareAnimationReferenceVideo)
+      .mockReset()
+      .mockImplementation(async (video) => video)
+    vi.mocked(getAnimationReferenceLayout).mockResolvedValue({
+      size: 768,
+      scale: 3,
+      origin: { x: 240, y: 600 }
+    })
   })
 
   it('rejects an unsupported reference without replacing the selection', () => {
@@ -294,7 +316,274 @@ describe('AnimationGen', () => {
     // Reset finish state
     gen.resetFinishState()
     expect(gen.finishState.status).toBe('initial')
+    expect(gen.result).toBe(animation)
+  })
+
+  it('edits a saved animation using its frames and keeps the old result until extraction succeeds', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = Animation.create('walk', [new Costume('frame', mockFile('frame.png'))], {
+      duration: 1,
+      sound: project.sounds[0].id,
+      soundPlayback: AnimationSoundPlayback.Loop
+    })
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    const editing = gen.editVideo('  Make the hat blue  ')
+    expect(gen.result).toBe(source)
+    await editing
+    expect(createAnimationReferenceVideo).toHaveBeenCalledWith(
+      expect.objectContaining({ id: source.id }),
+      expect.any(AbortSignal)
+    )
+    expect([...aigcMock.tasks.values()][0].params).toMatchObject({
+      settings: { referenceVideoUrl: 'kodo://mock-bucket/reference.mp4', referenceFrameUrl: null },
+      editInstruction: 'Make the hat blue'
+    })
+    expect(gen.result).toBe(source)
+    expect(gen.hasPendingVideo).toBe(true)
+    gen.setFramesConfig({ duration: 1000, interval: 200 })
+
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Extraction failed'))
+    await expect(gen.finish()).rejects.toThrow('Extraction failed')
+    expect(gen.result).toBe(source)
+    expect(gen.hasPendingVideo).toBe(true)
+    gen.resetFinishState()
+    expect(gen.result).toBe(source)
+
+    const result = await gen.finish()
+    expect(result.id).toBe(source.id)
+    expect(result.sound).toBe(source.sound)
+    expect(result.soundPlayback).toBe(source.soundPlayback)
+    expect(result.costumes[0].bitmapResolution).toBe(2)
+    expect(result.costumes[0].pivot).toEqual({ x: 80, y: 200 })
+    expect(result.costumes[0].img).not.toBe(source.costumes[0].img)
+    expect(gen.hasPendingVideo).toBe(false)
+    expect(gen.result).toBe(result)
+    const [config, files] = gen.export()
+    const restored = AnimationGen.load(i18n, sprite, project, config, sndFiles(files))
+    expect(restored.hasPendingVideo).toBe(false)
+    expect(restored.result?.id).toBe(source.id)
+    await restored.editVideo('Make the coat red')
+    expect(createAnimationReferenceVideo).toHaveBeenCalledTimes(1)
+    expect([...aigcMock.tasks.values()].at(-1)!.params).toMatchObject({
+      settings: { referenceVideoUrl: `kodo://mock-bucket/${gen.video!.name}`, referenceFrameUrl: null },
+      editInstruction: 'Make the coat red'
+    })
+    restored.setFramesConfig({ duration: 800, interval: 200 })
+    await restored.finish()
+    const layoutSource = vi.mocked(getAnimationReferenceLayout).mock.calls.at(-1)![0]
+    expect(layoutSource.costumes.map((costume) => costume.id)).toEqual(source.costumes.map((costume) => costume.id))
+    expect(restored.result?.sound).toBe(source.sound)
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
+  })
+
+  it('uses the default generation duration and saves the full video instead of pre-cropping it', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = Animation.create(
+      'walk',
+      Array.from({ length: 4 }, (_, i) => new Costume(`frame${i}`, mockFile('frame.png'))),
+      { duration: 0.8 }
+    )
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    await gen.editVideo('Make the hat blue')
+    expect(gen.framesConfig).toBeNull()
+    expect([...aigcMock.tasks.values()][0].params).not.toHaveProperty('duration')
+    gen.setFramesConfig({
+      startTime: 0,
+      duration: 5000,
+      interval: 100
+    })
+    const result = await gen.finish()
+    expect([...aigcMock.tasks.values()][1].params).toMatchObject({
+      duration: 5000,
+      interval: 100
+    })
+    expect(result.duration).toBe(5)
+    expect(result.costumes).toHaveLength(50)
+    const [config, files] = gen.export()
+    const restored = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    expect(restored.result?.duration).toBe(5)
+    expect(restored.result?.costumes).toHaveLength(50)
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
+  })
+
+  it('edits an unsaved video directly without extracting or encoding frames', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const video = mockFile('unsaved.mp4')
+    const gen = new AnimationGen(i18n, sprite, project, { video })
+
+    await gen.editVideo('Make the hat blue')
+
+    expect([...aigcMock.tasks.values()].map(({ task }) => task.type)).toEqual([TaskType.GenerateAnimationVideo])
+    expect([...aigcMock.tasks.values()][0].params).toMatchObject({
+      settings: { referenceVideoUrl: 'kodo://mock-bucket/unsaved.mp4', referenceFrameUrl: null },
+      editInstruction: 'Make the hat blue'
+    })
+    expect(createAnimationReferenceVideo).not.toHaveBeenCalled()
     expect(gen.result).toBeUndefined()
+    expect(gen.finishState.status).toBe('initial')
+    expect(gen.hasPendingVideo).toBe(true)
+    expect(gen.framesConfig).toBeNull()
+    gen.dispose()
+    project.dispose()
+  })
+
+  it('uses the selected video segment for another edit before adopting it', async () => {
+    const project = makeSpxProject()
+    const video = mockFile('unsaved.mp4')
+    const range = { startTime: 1000, duration: 800, interval: 100 }
+    const gen = new AnimationGen(i18n, project.sprites[0], project, { video, framesConfig: range })
+    vi.mocked(prepareAnimationReferenceVideo).mockResolvedValue(mockFile('selected-reference.mp4'))
+
+    await gen.editVideo('Make the hat blue')
+
+    expect(prepareAnimationReferenceVideo).toHaveBeenCalledWith(video, range, expect.any(AbortSignal))
+    expect([...aigcMock.tasks.values()].map(({ task }) => task.type)).toEqual([TaskType.GenerateAnimationVideo])
+    expect([...aigcMock.tasks.values()][0].params).toMatchObject({
+      settings: { referenceVideoUrl: 'kodo://mock-bucket/selected-reference.mp4' }
+    })
+    expect(gen.result).toBeUndefined()
+    gen.dispose()
+    project.dispose()
+  })
+
+  it('retains the current video and source when editing fails', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.animations[0]
+    const video = mockFile('candidate.mp4')
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      video,
+      hasPendingVideo: true,
+      framesConfig: { duration: 1000, interval: 200 },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Generation failed'))
+    await expect(gen.editVideo('Change the hat')).rejects.toThrow('Generation failed')
+    expect(gen.result).toBe(source)
+    expect(sprite.animations[0]).toBe(source)
+    expect(gen.video).toBe(video)
+    expect(gen.framesConfig?.duration).toBe(1000)
+    expect(gen.hasPendingVideo).toBe(true)
+    expect([...aigcMock.tasks.values()].map(({ task }) => task.type)).toEqual([TaskType.GenerateAnimationVideo])
+    await expect(gen.editVideo(' \n ')).rejects.toThrow('Edit instruction expected')
+    expect(createAnimationReferenceVideo).not.toHaveBeenCalled()
+    gen.dispose()
+    project.dispose()
+  })
+
+  it('restores a completed video without pre-cropping it to the original animation duration', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.animations[0]
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    await gen.editVideo('Change the hat')
+    const [config, files] = gen.export()
+    config.generateVideoPhaseSerialized!.state = { status: 'initial' }
+    delete config.videoPath
+    delete config.framesConfig
+    const restored = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    await flushPromises()
+    expect(restored.generateVideoState.status).toBe('finished')
+    expect(restored.hasPendingVideo).toBe(true)
+    expect(restored.framesConfig).toBeNull()
+    expect(aigcMock.tasks.size).toBe(1)
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
+  })
+
+  it('restores completed extraction while the edited frames are still being created', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.animations[0]
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      video: mockFile('edited.mp4'),
+      hasPendingVideo: true,
+      framesConfig: { duration: 1000, interval: 200 },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    const layout = { size: 768, scale: 3, origin: { x: 240, y: 600 } }
+    let resolveLayout: ((value: typeof layout) => void) | null = null
+    const pendingLayout = new Promise<typeof layout>((resolve) => {
+      resolveLayout = resolve
+    })
+    vi.mocked(getAnimationReferenceLayout).mockReturnValueOnce(pendingLayout)
+
+    const finishing = gen.finish()
+    await flushPromises()
+    expect(gen.finishState.status).toBe('running')
+    expect(gen.result).toBe(source)
+    expect(getAnimationReferenceLayout).toHaveBeenCalledTimes(1)
+    expect(aigcMock.tasks.size).toBe(1)
+    const [config, files] = gen.export()
+    expect(config.extractFramesTaskSerialized?.data?.status).toBe(TaskStatus.Completed)
+
+    const restored = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    await flushPromises()
+
+    expect(restored.finishState.status).toBe('finished')
+    expect(restored.hasPendingVideo).toBe(false)
+    expect(restored.result?.id).toBe(source.id)
+    expect(restored.result?.costumes).toHaveLength(5)
+    expect(restored.result?.costumes[0].img.meta.universalUrl).toBe('kodo://mock-bucket/frame-1.webp')
+    expect(aigcMock.tasks.size).toBe(1)
+    expect(aigcMock.createTask).toHaveBeenCalledTimes(1)
+
+    resolveLayout!(layout)
+    await finishing
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
+  })
+
+  it('does not restore extraction from the previous video after generating another edit', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.animations[0]
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      video: mockFile('first-edit.mp4'),
+      hasPendingVideo: true,
+      framesConfig: { duration: 1000, interval: 200 },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    const saved = await gen.finish()
+    await gen.editVideo('Make the hat blue')
+    gen.setFramesConfig({ duration: 2000, interval: 200 })
+    vi.mocked(getAnimationReferenceLayout).mockClear()
+    const [config, files] = gen.export()
+
+    const restored = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    await flushPromises()
+
+    expect(restored.hasPendingVideo).toBe(true)
+    expect(restored.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
+    expect(restored.result?.id).toBe(saved.id)
+    expect(restored.result?.duration).toBe(saved.duration)
+    expect(restored.framesConfig?.duration).toBe(2000)
+    expect(getAnimationReferenceLayout).not.toHaveBeenCalled()
+    expect(aigcMock.tasks.size).toBe(2)
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
   })
 
   it('should cancel running animation tasks', async () => {

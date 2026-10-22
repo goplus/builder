@@ -75,12 +75,13 @@ const handleModalClose = useMessageHandle(
   <UIModal
     ref="modalRef"
     :radar="{ name: 'Sprite generation modal', desc: 'Modal for sprite generation' }"
-    style="width: 1076px; height: 800px"
+    style="width: 1076px; max-width: calc(100vw - 32px); height: 800px"
+    :style="{ maxHeight: gen?.isPreparePhase === false ? 'calc(100dvh - 32px)' : null }"
     :visible="visible"
     mask-closable
     @update:visible="handleModalClose"
   >
-    <header class="h-14 flex items-center justify-between border-b border-grey-400 px-6">
+    <header class="min-h-14 shrink-0 flex items-center justify-between gap-4 border-b border-grey-400 px-6">
       <h2 class="text-xl text-title">{{ $t({ zh: '生成精灵', en: 'Sprite Generator' }) }}</h2>
       <UIModalClose class="close" @click="handleModalClose" />
     </header>
