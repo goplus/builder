@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { useContentSize } from '@/utils/dom'
 import { useMessageHandle } from '@/utils/exception'
 import { untilTaskScheduled } from '@/utils/utils'
 import { UIDropdown, UIIcon, UITooltip } from '@/components/ui'
@@ -26,7 +27,39 @@ const actions = computed(() =>
   props.actions.map((action) => ui.resolveAction(action)).filter((action) => action != null)
 )
 const primaryAction = computed(() => actions.value[0] ?? null)
-const moreActions = computed(() => actions.value.slice(1))
+const inlineCount = ref(1)
+const inlineActions = computed(() => actions.value.slice(0, props.compact ? 1 : inlineCount.value))
+const moreActions = computed(() => actions.value.slice(inlineActions.value.length))
+const actionsRef = ref<HTMLElement | null>(null)
+const measurementRef = ref<HTMLElement | null>(null)
+const actionsSize = useContentSize(computed(() => (props.compact ? null : actionsRef.value)))
+const measurementSize = useContentSize(measurementRef)
+
+watch(
+  [actions, () => props.compact, actionsSize, measurementSize],
+  () => {
+    const measurement = measurementRef.value
+    const availableWidth = actionsSize.value?.width
+    if (props.compact || measurement == null || availableWidth == null) return
+    const widths = Array.from(measurement.querySelectorAll('button'), (button) => button.offsetWidth)
+    const gap = parseFloat(getComputedStyle(measurement).columnGap) || 0
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, widths.length - 1)
+    if (totalWidth <= availableWidth) {
+      inlineCount.value = widths.length
+      return
+    }
+    let usedWidth = (measurement.lastElementChild as HTMLElement).offsetWidth
+    let count = 0
+    for (const width of widths) {
+      usedWidth += gap + width
+      if (usedWidth > availableWidth) break
+      count++
+    }
+    inlineCount.value = count
+  },
+  { flush: 'post' }
+)
+
 const menuVisible = ref(false)
 const menuRef = ref<HTMLElement>()
 const moreButtonRef = ref<HTMLButtonElement>()
@@ -36,7 +69,11 @@ async function setMenuVisible(visible: boolean) {
   menuVisible.value = visible
   emit('menuVisibleChange', visible)
   if (!visible) {
-    if (hadFocus) moreButtonRef.value?.focus()
+    if (hadFocus) {
+      if (moreActions.value.length === 0) await nextTick()
+      const target = moreButtonRef.value ?? actionsRef.value?.querySelector<HTMLButtonElement>('[data-inline-action]')
+      target?.focus()
+    }
     return
   }
   await nextTick()
@@ -50,12 +87,21 @@ function moveMenuFocus(event: KeyboardEvent, direction: number) {
   buttons[(index + direction + buttons.length) % buttons.length]?.focus()
 }
 
-watch(
-  () => props.disabled || moreActions.value.length === 0,
-  (unavailable) => {
-    if (unavailable && menuVisible.value) void setMenuVisible(false)
+watch([() => props.disabled, () => moreActions.value.length], async ([disabled, count], [, previousCount]) => {
+  if (menuVisible.value && (disabled || count !== previousCount)) {
+    await setMenuVisible(false)
+    return
   }
-)
+  if (disabled || count === previousCount) return
+  const active = document.activeElement
+  const buttons = Array.from(actionsRef.value?.querySelectorAll<HTMLButtonElement>('[data-inline-action]') ?? [])
+  const index = buttons.indexOf(active as HTMLButtonElement)
+  if (active !== moreButtonRef.value && (index < 0 || index < inlineActions.value.length)) return
+  await nextTick()
+  if (active?.isConnected || document.activeElement !== document.body) return
+  const target = moreButtonRef.value ?? actionsRef.value?.querySelector<HTMLButtonElement>('[data-inline-action]')
+  target?.focus()
+})
 
 const handleAction = useMessageHandle(
   async (action: InternalAction) => {
@@ -71,7 +117,9 @@ const handleAction = useMessageHandle(
 <template>
   <div
     v-if="primaryAction != null"
-    class="flex shrink-0 items-center gap-1"
+    ref="actionsRef"
+    class="relative flex min-w-0 items-center gap-1"
+    :class="compact ? 'shrink-0' : 'w-0 flex-1'"
     :data-menu-open="menuVisible"
     draggable="true"
     @dragstart.stop.prevent
@@ -93,15 +141,20 @@ const handleAction = useMessageHandle(
       </template>
       {{ primaryAction.title }}
     </UITooltip>
-    <ActionButton
-      v-else
-      v-radar="{ name: primaryAction.title, desc: 'Run this API action' }"
-      :icon="primaryAction.commandInfo.icon"
-      :disabled="disabled"
-      @click="handleAction(primaryAction)"
-    >
-      {{ primaryAction.title }}
-    </ActionButton>
+    <template v-else>
+      <ActionButton
+        v-for="(action, i) in inlineActions"
+        :key="i"
+        v-radar="{ name: action.title, desc: 'Run this API action' }"
+        data-inline-action
+        class="shrink-0 whitespace-nowrap"
+        :icon="action.commandInfo.icon"
+        :disabled="disabled"
+        @click="handleAction(action)"
+      >
+        {{ action.title }}
+      </ActionButton>
+    </template>
     <UIDropdown
       v-if="moreActions.length > 0"
       :visible="menuVisible"
@@ -158,5 +211,23 @@ const handleAction = useMessageHandle(
         </li>
       </ul>
     </UIDropdown>
+    <div
+      v-if="!compact"
+      ref="measurementRef"
+      aria-hidden="true"
+      class="pointer-events-none invisible absolute flex items-center gap-1 whitespace-nowrap"
+    >
+      <ActionButton
+        v-for="(action, i) in actions"
+        :key="i"
+        class="shrink-0"
+        :icon="action.commandInfo.icon"
+        disabled
+        tabindex="-1"
+      >
+        {{ action.title }}
+      </ActionButton>
+      <span class="size-6 shrink-0"></span>
+    </div>
   </div>
 </template>

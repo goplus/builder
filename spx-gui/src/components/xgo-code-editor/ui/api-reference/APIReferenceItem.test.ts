@@ -1,4 +1,5 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
+import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DefinitionKind, type DefinitionDocumentationItem, makeBasicMarkdownString } from '../../common'
 import { CopilotExplainKind, builtInCommandCopilotExplain } from '../code-editor-ui'
@@ -23,6 +24,8 @@ vi.mock('../CodeEditorUI.vue', () => ({
     }
   })
 }))
+
+vi.mock('@/utils/dom', () => ({ useContentSize: () => ref(null) }))
 
 vi.mock('@/utils/i18n', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/i18n')>()),
