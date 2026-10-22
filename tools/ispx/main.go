@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"syscall/js"
 
 	"github.com/goplus/ixgo"
@@ -31,15 +30,8 @@ func ispxInit() error {
 	ixgoCtx.SetPanic(logWithPanicInfo)
 	trackLocation := js.Global().Get("__xb_track_execution_location")
 	if trackLocation.Type() == js.TypeBoolean && trackLocation.Bool() {
-		tracker := newExecutionTracker(logExecutionLocations)
-		ixgoCtx.SetDebug(func(info *ixgo.DebugInfo) {
-			position := info.Position()
-			if position.Line < 1 || !strings.HasSuffix(position.Filename, ".spx") {
-				return
-			}
-			tracker.report(position.Filename, position.Line)
-		})
-		ixgoCtx.SetFuncHook(tracker.enter, tracker.leave)
+		// The tracking session shares the iframe's lifetime, including game reruns.
+		ixgoCtx.SetExecutionTracker(newExecutionTracker(logExecutionLocations))
 	}
 
 	// Override fmt.Print* functions to log with caller info.

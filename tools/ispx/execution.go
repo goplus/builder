@@ -1,6 +1,8 @@
 package main
 
 import (
+	"go/token"
+	"strings"
 	"sync"
 
 	"github.com/goplus/ixgo"
@@ -11,59 +13,48 @@ type executionLocation struct {
 	Line int    `json:"line"`
 }
 
-// executionTracker tracks source locations until the outermost interpreter invocation ends.
-type executionTracker struct {
-	mu        sync.Mutex
-	depth     map[uint64]int
-	locations map[uint64]executionLocation
-	onChange  func([]executionLocation)
+// executionLocations adapts per-goroutine events to ordered editor snapshots.
+type executionLocations struct {
+	mu           sync.Mutex
+	lastSequence map[uint64]uint64
+	locations    map[uint64]executionLocation
+	onChange     func([]executionLocation)
 }
 
-func newExecutionTracker(onChange func([]executionLocation)) *executionTracker {
-	return &executionTracker{
-		depth:     make(map[uint64]int),
-		locations: make(map[uint64]executionLocation),
-		onChange:  onChange,
+func newExecutionTracker(onChange func([]executionLocation)) *ixgo.ExecutionTracker {
+	locations := &executionLocations{
+		lastSequence: make(map[uint64]uint64),
+		locations:    make(map[uint64]executionLocation),
+		onChange:     onChange,
 	}
+	return ixgo.NewExecutionTracker(locations.report, ixgo.ExecutionOptions{
+		Filter: func(position token.Position) bool {
+			return position.Line > 0 && strings.HasSuffix(position.Filename, ".spx")
+		},
+	})
 }
 
-func (t *executionTracker) enter(_ *ixgo.FuncInfo) {
-	id := ixgo.GoroutineID()
+func (t *executionLocations) report(event ixgo.ExecutionPosition) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.depth[id]++
-}
-
-func (t *executionTracker) report(file string, line int) {
-	id := ixgo.GoroutineID()
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	location := executionLocation{File: file, Line: line}
-	if t.locations[id] == location {
+	if event.Sequence <= t.lastSequence[event.GoroutineID] {
 		return
 	}
-	t.locations[id] = location
-	t.emitLocations()
-}
-
-func (t *executionTracker) leave(_ *ixgo.FuncInfo) {
-	id := ixgo.GoroutineID()
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	depth := t.depth[id] - 1
-	if depth == 0 {
-		delete(t.depth, id)
-		if _, ok := t.locations[id]; ok {
-			delete(t.locations, id)
-			t.emitLocations()
+	// Keep clear watermarks: in-flight callbacks may arrive after removal.
+	t.lastSequence[event.GoroutineID] = event.Sequence
+	if event.Clear {
+		if _, ok := t.locations[event.GoroutineID]; !ok {
+			return
 		}
+		delete(t.locations, event.GoroutineID)
 	} else {
-		t.depth[id] = depth
+		location := executionLocation{File: event.Position.Filename, Line: event.Position.Line}
+		if t.locations[event.GoroutineID] == location {
+			return
+		}
+		t.locations[event.GoroutineID] = location
 	}
-}
-
-// Called with mu held so snapshots are emitted in the same order as updates.
-func (t *executionTracker) emitLocations() {
+	// Emit under the lock so snapshots cannot overtake each other.
 	locations := make([]executionLocation, 0, len(t.locations))
 	for _, location := range t.locations {
 		locations = append(locations, location)
