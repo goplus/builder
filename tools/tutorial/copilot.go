@@ -13,10 +13,6 @@ import (
 // the Course code's own means of judging and generating. In product terms,
 // Copilot in a Playground Course is an assistant standing by for the learner
 // and a capability called on demand by the Course code.
-//
-// Generation can fail for reasons outside the author's control (the network,
-// service quota), so it returns the error and lets the Course fall back
-// instead of ending the learner's session.
 type Copilot struct {
 	courseProgram *courseProgram
 }
@@ -72,10 +68,8 @@ func (p *Copilot) GenerateText(message string) (string, error) {
 // result, returns an error and leaves result untouched.
 //
 // result must be a non-nil pointer to a struct with at least one serializable
-// exported field, and anything else fails the Course program rather than
-// returning an error. That check is not pedantry: an XGo author very easily
-// writes a field in lower case, which encoding/json can neither read nor
-// fill, leaving the Course with an all-zero value and no hint as to why.
+// exported field; anything else fails the Course program rather than
+// returning an error.
 func (p *Copilot) GenerateJSON(message string, result any) error {
 	p.courseProgram.requireRun("calling generateJSON")
 	schema, err := deriveSchema(result)
@@ -90,9 +84,7 @@ func (p *Copilot) GenerateJSON(message string, result any) error {
 	if err != nil {
 		return fmt.Errorf("generateJSON: %w", err)
 	}
-	// Validate on a fresh value first so a failure leaves result untouched, then
-	// decode into result to keep encoding/json's handling of omitted fields.
-	// deriveSchema rejects self-decoding types, so the second cannot fail.
+	// Decode into a fresh value first so that a failure leaves result untouched.
 	if err := json.Unmarshal(raw, reflect.New(reflect.TypeOf(result).Elem()).Interface()); err != nil {
 		return fmt.Errorf("generateJSON: decode the generated value: %w", err)
 	}

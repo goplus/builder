@@ -84,9 +84,7 @@ Editor.Runtime.onLog log => {
 }
 `
 
-// A course whose Copilot requests the mock host rejects, standing in for a
-// network or quota failure: it must get the errors back and complete with its
-// fallback instead of failing.
+// The mock host rejects these Copilot requests; the course completes with its fallback.
 const copilotFailureCourseSource = `
 type Review struct {
 	Passed bool

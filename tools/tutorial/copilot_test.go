@@ -24,9 +24,8 @@ func TestGenerateTextReturnsTheText(t *testing.T) {
 	}
 }
 
-// TestFailedGenerationIsReturnedToTheCourse checks the point of returning the
-// error: the Course falls back and goes on, and the program still ends as
-// completed rather than failed.
+// TestFailedGenerationIsReturnedToTheCourse checks that the Course can fall
+// back and complete.
 func TestFailedGenerationIsReturnedToTheCourse(t *testing.T) {
 	host := newFakeHost()
 	host.fail["copilot_generateText"] = fmt.Errorf("capability failed: [42900] quota exceeded")
@@ -54,11 +53,8 @@ func TestFailedGenerationIsReturnedToTheCourse(t *testing.T) {
 	}
 }
 
-// TestFailedGenerateJSONLeavesTheResultUntouched covers both ways structured
-// generation fails, the host rejecting the request and a response that does
-// not decode into the result, and checks that values set beforehand survive
-// either way. The undecodable response puts a decodable field first, so a
-// decoder writing straight into the result would leave it half filled.
+// TestFailedGenerateJSONLeavesTheResultUntouched puts a decodable field first
+// in the undecodable response, so a half-filled result would show.
 func TestFailedGenerateJSONLeavesTheResultUntouched(t *testing.T) {
 	type review struct {
 		Praise string `json:"praise"`
@@ -99,10 +95,9 @@ func TestFailedGenerateJSONLeavesTheResultUntouched(t *testing.T) {
 	}
 }
 
-// TestUnhandledGenerationErrors pins down what a Course that does not handle
-// the error gets. Ignoring generateJSON's error leaves the result as it was
-// and the Course carries on; stopping with the error (XGo's expr! panics with
-// it) fails the program like any other fatal error.
+// TestUnhandledGenerationErrors checks that an ignored generateJSON error
+// leaves result as it was and the Course goes on, and that stopping with the
+// error (XGo's expr! panics with it) fails the Course.
 func TestUnhandledGenerationErrors(t *testing.T) {
 	t.Run("ignored", func(t *testing.T) {
 		host := newFakeHost()
@@ -150,11 +145,8 @@ func TestUnhandledGenerationErrors(t *testing.T) {
 	})
 }
 
-// TestSelfDecodingResultFailsTheCourse covers the case that made the
-// framework reject types with their own decoder: grade decodes into a fresh
-// value but refuses to overwrite a preset one, so validating on a fresh value
-// and then decoding into result would fail halfway, after Praise was already
-// written, and report an error with result half filled.
+// TestSelfDecodingResultFailsTheCourse also checks that result is left
+// untouched.
 func TestSelfDecodingResultFailsTheCourse(t *testing.T) {
 	host := newFakeHost()
 	host.responses["copilot_generateJSON"] = `{"Praise":"generated","Score":5}`
@@ -180,9 +172,8 @@ func TestSelfDecodingResultFailsTheCourse(t *testing.T) {
 	}
 }
 
-// TestInvalidGenerateJSONResultFailsTheCourse checks that returning
-// generation errors does not extend to mistakes in the Course code: an
-// unsupported result is not something a fallback should paper over.
+// TestInvalidGenerateJSONResultFailsTheCourse also checks that an unsupported
+// result never reaches the host.
 func TestInvalidGenerateJSONResultFailsTheCourse(t *testing.T) {
 	host := newFakeHost()
 	type lowercase struct{ score int }

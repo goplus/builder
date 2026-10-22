@@ -87,8 +87,6 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		{name: "self reference through slice", result: &tree{}, want: "refers to itself"},
 		{name: "mutual reference", result: &left{}, want: "refers to itself"},
 		{name: "untagged embedded field", result: &embedded{}, want: "embedded fields are not supported"},
-		// A type with its own decoder: its schema cannot be derived from its
-		// kind, and its decoding may depend on the value it decodes into.
 		{name: "field with UnmarshalJSON", result: &struct{ Score grade }{}, want: "decodes itself"},
 		{name: "field with UnmarshalText", result: &struct{ Name label }{}, want: "decodes itself"},
 		{name: "pointer to a type with UnmarshalJSON", result: &struct{ Score *grade }{}, want: "decodes itself"},
@@ -136,10 +134,8 @@ func TestGenerateJSONFillsTheResult(t *testing.T) {
 	}
 }
 
-// Types that decode themselves. Methods cannot be declared on local types,
-// hence package level. grade refuses to overwrite a value already set, the
-// case where decoding into a fresh value succeeds and decoding into the
-// result fails halfway.
+// Types with their own decoder, at package level because local types cannot
+// have methods. grade refuses to overwrite a value already set.
 type grade int
 
 func (g *grade) UnmarshalJSON(data []byte) error {

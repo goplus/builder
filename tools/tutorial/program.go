@@ -427,15 +427,6 @@ func (p *courseProgram) isCompleted() bool {
 
 // mustCallCapability performs one capability call, treating a failure as fatal
 // to the Course program.
-//
-// Why a panic rather than a returned error: most of the author-facing API has
-// no error channel, because the DSL must keep reading like straight-line code,
-// and a failure means the presentation or editor operation the Course asked
-// for did not happen. Carrying on would judge the learner on a false premise.
-// runFrame catches the panic and records it as fatal; it is re-raised on the
-// main goroutine, and the executor reports a runtime-stage error.
-//
-// Copilot generation returns its failure instead, through tryCallCapability.
 func (p *courseProgram) mustCallCapability(name string, request, result any) {
 	if err := p.tryCallCapability(name, request, result); err != nil {
 		panic(err)
@@ -450,11 +441,7 @@ func (p *courseProgram) tryCallCapability(name string, request, result any) erro
 		return p.callCapability(name, request, result)
 	}
 
-	// While the token is released, a waiting call must not write memory the
-	// Course can see: result may be a variable the author shares between
-	// callbacks, and with the token in another run's hands, letting the bridge
-	// decode straight into it is a data race. Decode into a private buffer
-	// first and fill result in after the token is back.
+	// Decode into a private buffer, and into result only once the token is back.
 	var raw json.RawMessage
 	var target any
 	if result != nil {

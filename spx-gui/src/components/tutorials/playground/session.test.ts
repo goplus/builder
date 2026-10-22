@@ -440,8 +440,7 @@ describe('PlaygroundCourseSession', () => {
       harness.getExecutorOptions().framework?.capabilities ?? {}
     if (generateText == null || completeWith == null) throw new Error('capabilities not found')
 
-    // The rejection goes back to the Course code as an error, and the executor
-    // reports it too; the Course may fall back and carry on, so neither ends it.
+    // The real executor also reports the rejection through onError.
     await expect(generateText({ content: 'Give feedback' })).rejects.toThrow('quota exceeded')
     harness.getExecutorOptions().onError('capability', 'quota exceeded')
     await completeWith({ content: 'Well done!' })

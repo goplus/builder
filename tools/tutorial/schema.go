@@ -118,8 +118,7 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 // else — maps, interfaces, channels — is an error, which beats generating a
 // schema the LLM has no way to satisfy.
 //
-// So is a type with its own decoder (UnmarshalJSON or UnmarshalText): its
-// format is its own, and it could break GenerateJSON's all-or-nothing decode.
+// So is a type with its own decoder (UnmarshalJSON or UnmarshalText).
 func schemaOfType(t reflect.Type, visiting map[reflect.Type]bool) (map[string]any, error) {
 	if decodesItself(t) {
 		return nil, fmt.Errorf("generateJSON: %s decodes itself through UnmarshalJSON or UnmarshalText, which a derived schema cannot describe", t)
@@ -149,10 +148,8 @@ func schemaOfType(t reflect.Type, visiting map[reflect.Type]bool) (map[string]an
 	}
 }
 
-// decodesItself reports whether encoding/json hands values of t to t's own
-// decoder instead of decoding them by kind. The pointer type counts too:
-// encoding/json decodes into addressable values, so a method with a pointer
-// receiver is found as well.
+// decodesItself reports whether t or *t implements json.Unmarshaler or
+// encoding.TextUnmarshaler.
 func decodesItself(t reflect.Type) bool {
 	for _, candidate := range []reflect.Type{t, reflect.PointerTo(t)} {
 		if candidate.Implements(jsonUnmarshalerType) || candidate.Implements(textUnmarshalerType) {
