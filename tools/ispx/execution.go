@@ -14,11 +14,14 @@ type executionLocation struct {
 }
 
 // executionLocations adapts per-goroutine events to ordered editor snapshots.
+// Watermarks retain one entry per tracked goroutine across game reruns;
+// the state is released when the iframe is destroyed.
 type executionLocations struct {
 	mu           sync.Mutex
 	lastSequence map[uint64]uint64
 	locations    map[uint64]executionLocation
-	onChange     func([]executionLocation)
+	// Called under mu; must return promptly and must not re-enter report.
+	onChange func([]executionLocation)
 }
 
 func newExecutionTracker(onChange func([]executionLocation)) *ixgo.ExecutionTracker {
@@ -55,6 +58,8 @@ func (t *executionLocations) report(event ixgo.ExecutionPosition) {
 		t.locations[event.GoroutineID] = location
 	}
 	// Emit under the lock so snapshots cannot overtake each other.
+	// If profiling shows a bottleneck, consider a single timer publisher that
+	// coalesces snapshots and emits outside mu while preserving their order.
 	locations := make([]executionLocation, 0, len(t.locations))
 	for _, location := range t.locations {
 		locations = append(locations, location)
