@@ -230,17 +230,17 @@ Match a signal according to how the project prints it:
 | The project prints | The course matches |
 | --- | --- |
 | `print "reached-target"`, which adds nothing to the text | `log == "reached-target"` |
-| `println "reached-target"`, which ends it with a line break | `strings.TrimSpace(log) == "reached-target"` |
+| `println "reached-target"`, which ends it with a line break | `log == "reached-target\n"` |
 | a signal with a varying part, such as `print "picked up " + name` | `strings.HasPrefix(log, "picked up")` or `strings.Contains` |
 
 `print` adds no space next to a string, so `print "picked up", name` prints `picked upMushroom`; join the parts
-yourself. The `strings` forms need `import "strings"` at the top of `main_course.gox`:
+yourself. `strings.HasPrefix` and `strings.Contains` need `import "strings"` at the top of `main_course.gox`:
 
 ```go
 import "strings"
 
 Editor.Runtime.onLog log => {
-	if strings.TrimSpace(log) == "reached-target" {
+	if log == "reached-target\n" { // printed with println
 		completeWith "Lita reached Mushroom!"
 	}
 	if strings.HasPrefix(log, "picked up") {
