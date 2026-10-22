@@ -150,6 +150,36 @@ func TestUnhandledGenerationErrors(t *testing.T) {
 	})
 }
 
+// TestSelfDecodingResultFailsTheCourse covers the case that made the
+// framework reject types with their own decoder: grade decodes into a fresh
+// value but refuses to overwrite a preset one, so validating on a fresh value
+// and then decoding into result would fail halfway, after Praise was already
+// written, and report an error with result half filled.
+func TestSelfDecodingResultFailsTheCourse(t *testing.T) {
+	host := newFakeHost()
+	host.responses["copilot_generateJSON"] = `{"Praise":"generated","Score":5}`
+	type review struct {
+		Praise string
+		Score  grade
+	}
+	result := review{Praise: "fallback", Score: 1}
+
+	outcome := courseOutcome(host, func(course *testCourse) {
+		course.OnStart(func() {
+			if err := course.Copilot.GenerateJSON("review this", &result); err != nil {
+				course.CompleteWith("fallback")
+			}
+		})
+	})
+
+	if failure := awaitOne(t, outcome, "the course to end"); !strings.Contains(fmt.Sprint(failure), "decodes itself") {
+		t.Errorf("failure = %v, want the Course to fail on a result type with its own decoder", failure)
+	}
+	if result != (review{Praise: "fallback", Score: 1}) {
+		t.Errorf("result = %+v, want it untouched", result)
+	}
+}
+
 // TestInvalidGenerateJSONResultFailsTheCourse checks that returning
 // generation errors does not extend to mistakes in the Course code: an
 // unsupported result is not something a fallback should paper over.

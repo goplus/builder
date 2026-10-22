@@ -101,7 +101,9 @@ func (p *Copilot) GenerateJSON(message string, result any) error {
 	// Decoding into result directly could fail halfway and leave it partly
 	// written, so first decode into a fresh value of the same type. Only when
 	// that succeeds is result filled, with the usual encoding/json semantics
-	// for fields the response leaves out.
+	// for fields the response leaves out. Both decodes go the same way because
+	// deriveSchema admits no type with its own decoder, whose outcome could
+	// depend on the value it decodes into.
 	if err := json.Unmarshal(raw, reflect.New(reflect.TypeOf(result).Elem()).Interface()); err != nil {
 		return fmt.Errorf("generateJSON: decode the generated value: %w", err)
 	}

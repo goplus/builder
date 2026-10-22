@@ -272,8 +272,8 @@ Calls from course code never appear in the learner's Copilot conversation.
   required.
 - `json` tags rename fields, and `json:"-"` excludes one. Every other field is required in the schema.
 - Supported field types are strings, booleans, integers, floating-point numbers, nested structs, and pointers, slices or
-  arrays of supported types. Maps, interfaces, channels, recursive types and embedded fields without a `json` name are
-  rejected.
+  arrays of supported types. Maps, interfaces, channels, recursive types, embedded fields without a `json` name, and
+  types with their own `UnmarshalJSON` or `UnmarshalText` are rejected.
 
 ```go
 type Review struct {
