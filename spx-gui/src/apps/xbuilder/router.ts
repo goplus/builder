@@ -190,11 +190,6 @@ const routes: Array<RouteRecordRaw> = [
     path: '/sign-in/token',
     component: () => import('./pages/sign-in/token.vue')
   },
-  // TODO: Remove this temporary Tutorial v2 development page before merging to dev.
-  {
-    path: '/debug/tutorial-courses',
-    component: () => import('./pages/debug/tutorial-courses.vue')
-  },
   {
     path: '/share/:owner/:name',
     redirect: (to) => getProjectPageRoute(to.params.owner as string, to.params.name as string)
