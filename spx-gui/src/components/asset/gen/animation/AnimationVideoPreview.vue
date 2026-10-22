@@ -233,6 +233,8 @@ type Dragging = {
   target: DragTarget
   pointerId: number
   rect: DOMRect
+  initialClientX: number
+  initialTime: number
   wasPlaying: boolean
 }
 
@@ -265,9 +267,11 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
   // Ignore extra pointerdowns (for example from multi-touch) until the current drag finishes.
   if (dragging != null) return
   const rect = trackInnerRef.value?.getBoundingClientRect() ?? null
-  if (rect == null) return
+  if (rect == null || rect.width <= 0) return
   const videoDuration = videoDurationRef.value
   if (videoDuration == null) return
+  const handle = e.currentTarget as HTMLElement
+  handle.setPointerCapture(e.pointerId)
   shouldNudge.value = false
   const wasPlaying = isPlaying.value
   stop()
@@ -275,6 +279,8 @@ function handleDragStart(target: DragTarget, e: PointerEvent) {
     target,
     pointerId: e.pointerId,
     rect,
+    initialClientX: e.clientX,
+    initialTime: target === 'start' ? cutStartRef.value : cutEndRef.value,
     wasPlaying
   }
   if (target === 'preview') {
@@ -299,11 +305,13 @@ function handleDragMove(e: PointerEvent) {
   if (dragging == null || e.pointerId !== dragging.pointerId) return
   const videoDuration = videoDurationRef.value
   if (videoDuration == null) return
-  const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
   if (dragging.target === 'preview') {
+    const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
     seek(clamp(time, cutStartRef.value, cutEndRef.value))
     return
   }
+  // Move the original cut boundary by the pointer displacement to preserve the grab offset.
+  const time = dragging.initialTime + ((e.clientX - dragging.initialClientX) / dragging.rect.width) * videoDuration
   if (dragging.target === 'start') {
     cutStartRef.value = adjustStartTime(time)
   } else {
