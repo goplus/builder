@@ -1,7 +1,7 @@
 <template>
   <UIBlockItem :active="selectable && selectable.selected" :interactive="!!selectable">
     <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
-      <UIImg class="h-15 w-20 rounded-[4px]" size="cover" :src="imgSrc" :loading="imgLoading" />
+      <UIImg class="backdrop-thumbnail h-11 w-16 rounded-[4px]" size="cover" :src="imgSrc" :loading="imgLoading" />
     </div>
     <UIBlockItemTitle size="medium" :title="name">
       {{ name }}

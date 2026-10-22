@@ -26,6 +26,32 @@ export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
   return size
 }
 
+export function useScrollbarWidth(elSource: WatchSource<HTMLElement | null>) {
+  const width = ref(0)
+
+  watch(
+    elSource,
+    (el, _, onCleanup) => {
+      if (el == null) {
+        width.value = 0
+        return
+      }
+      const update = () => {
+        width.value = Math.max(0, el.offsetWidth - el.clientWidth)
+      }
+      const resizeObserver = new ResizeObserver(update)
+      resizeObserver.observe(el)
+      update()
+      onCleanup(() => {
+        resizeObserver.disconnect()
+      })
+    },
+    { immediate: true, flush: 'post' }
+  )
+
+  return width
+}
+
 export function loadImg(src: string, timeout?: number) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new window.Image()

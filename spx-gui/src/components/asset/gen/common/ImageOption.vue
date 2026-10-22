@@ -22,7 +22,7 @@ const emit = defineEmits<{
 <template>
   <UIBlockItem :active="active" :interactive="interactive" :button-label="label">
     <div class="mt-0.5 flex min-h-0 w-full flex-col items-center">
-      <UIImg class="h-15 w-20 rounded-sm" :src="image" />
+      <UIImg class="h-11 w-16 rounded-sm" :src="image" />
     </div>
     <UIBlockItemTitle size="medium" :title="label">{{ label }}</UIBlockItemTitle>
     <UICornerIcon

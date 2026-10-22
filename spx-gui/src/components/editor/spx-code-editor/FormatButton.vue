@@ -1,16 +1,22 @@
 <template>
-  <UIButton
-    v-radar="{ name: 'Format button', desc: 'Click to format the code' }"
-    type="white"
-    :loading="handleFormat.isLoading.value"
-    @click="handleFormat.fn"
-  >
+  <UITooltip placement="top-end">
+    <template #trigger>
+      <UIButton
+        v-radar="{ name: 'Format button', desc: 'Click to format the code' }"
+        type="neutral"
+        :aria-label="$t({ en: 'Format', zh: '格式化' })"
+        :loading="handleFormat.isLoading.value"
+        @click="handleFormat.fn"
+      >
+        {{ $t({ en: 'Format', zh: '格式化' }) }}
+      </UIButton>
+    </template>
     {{ $t({ en: 'Format', zh: '格式化' }) }}
-  </UIButton>
+  </UITooltip>
 </template>
 
 <script setup lang="ts">
-import { UIButton } from '@/components/ui'
+import { UIButton, UITooltip } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getTextDocumentId, useCodeEditor } from '@/components/xgo-code-editor'
 import { useEditorCtx } from '../EditorContextProvider.vue'

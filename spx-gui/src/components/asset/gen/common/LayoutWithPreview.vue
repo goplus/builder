@@ -44,7 +44,8 @@ defineProps<{
 }
 
 .layout-with-preview.has-preview .main-panel {
-  width: 416px;
+  /* Four 72px cards, three 8px gaps, and 20px padding on each side. */
+  width: 352px;
   padding: 20px;
   justify-content: flex-start;
 }

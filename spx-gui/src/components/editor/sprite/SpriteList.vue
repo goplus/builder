@@ -12,6 +12,8 @@ import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import { UIEmpty } from '@/components/ui'
 
+const props = withDefaults(defineProps<{ layout?: 'wrap' | 'vertical' }>(), { layout: 'wrap' })
+
 const editorCtx = useEditorCtx()
 const sprites = computed(() => editorCtx.project.sprites)
 const selectedSprite = computed(() => editorCtx.state.selectedSprite)
@@ -101,8 +103,12 @@ const handleSpriteGenClick = useMessageHandle(
 </script>
 
 <template>
-  <div ref="listWrapper" class="sprite-list overflow-y-auto m-0 flex flex-wrap content-start gap-2">
-    <UIEmpty v-if="list.length === 0" size="medium">
+  <div
+    ref="listWrapper"
+    class="sprite-list overflow-y-auto m-0 gap-2"
+    :class="props.layout === 'vertical' ? 'sprite-list-vertical grid content-start' : 'flex flex-wrap content-start'"
+  >
+    <UIEmpty v-if="list.length === 0" class="col-span-full" size="medium">
       {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
     </UIEmpty>
     <SpriteItem
@@ -126,9 +132,21 @@ const handleSpriteGenClick = useMessageHandle(
 
 <style scoped>
 .sprite-list {
-  flex: 1 0 112px; /* 112px: 1 row of sprite items height */
-  padding: 12px 0 12px 12px; /* no right padding to allow optional scrollbar */
+  flex: 1 0 96px; /* 96px: 1 row of sprite items height */
+  column-gap: 6px;
+  padding: 12px 8px;
   scrollbar-width: thin;
+}
+
+.sprite-list :deep(> .ui-block-item-active) {
+  z-index: 1;
+}
+
+.sprite-list-vertical {
+  flex: 1 1 0;
+  grid-template-columns: repeat(auto-fill, 72px);
+  justify-content: center;
+  scrollbar-gutter: stable;
 }
 
 /* Shadow-like effect */

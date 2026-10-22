@@ -4,7 +4,6 @@ import { debounce } from 'lodash'
 import type { SpxProject } from '@/models/spx/project'
 
 import { UINumberInput } from '@/components/ui'
-import { defaultMapSize } from '@/models/spx/stage'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
@@ -15,12 +14,14 @@ const editorCtx = useEditorCtx()
 
 const handleWidthChange = debounce((v: number | null) => {
   const action = { name: { en: `Configure map width`, zh: `修改地图宽度` } }
-  editorCtx.state.history.doAction(action, () => props.project.stage.setMapWidth(v != null ? v : defaultMapSize.width))
+  editorCtx.state.history.doAction(action, () =>
+    props.project.stage.setMapWidth(v != null ? v : props.project.viewportSize.width)
+  )
 }, 300)
 const handleHeightChange = debounce((v: number | null) => {
   const action = { name: { en: `Configure map height`, zh: `修改地图高度` } }
   editorCtx.state.history.doAction(action, () =>
-    props.project.stage.setMapHeight(v != null ? v : defaultMapSize.height)
+    props.project.stage.setMapHeight(v != null ? v : props.project.viewportSize.height)
   )
 }, 300)
 </script>
@@ -30,6 +31,7 @@ const handleHeightChange = debounce((v: number | null) => {
     <UINumberInput
       v-radar="{ name: 'width input', desc: 'Input to set map width' }"
       :value="project.stage.mapWidth"
+      :min="project.viewportSize.width"
       @update:value="handleWidthChange"
     >
       <template #prefix>{{ $t({ en: 'Width', zh: '宽' }) }}</template>
@@ -37,6 +39,7 @@ const handleHeightChange = debounce((v: number | null) => {
     <UINumberInput
       v-radar="{ name: 'height input', desc: 'Input to set map height' }"
       :value="project.stage.mapHeight"
+      :min="project.viewportSize.height"
       @update:value="handleHeightChange"
     >
       <template #prefix>{{ $t({ en: 'Height', zh: '高' }) }}</template>

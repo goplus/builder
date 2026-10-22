@@ -2,11 +2,15 @@
   <UIDropdownForm
     v-radar="{ name: 'Sound editor dropdown form', desc: 'Dropdown form for selecting animation sound' }"
     :title="$t(actionName)"
-    style="width: 408px; max-height: 400px"
+    class="sound-editor w-min"
+    style="max-height: 400px"
     @cancel="emit('close')"
     @confirm="handleConfirm"
   >
-    <ul class="flex-[1_1_0] flex flex-wrap content-start gap-2">
+    <ul
+      class="w-max grid content-start gap-2"
+      :style="{ gridTemplateColumns: `repeat(${Math.min(editorCtx.project.sounds.length + 1, 4)}, max-content)` }"
+    >
       <SoundItem
         v-for="sound in editorCtx.project.sounds"
         :key="sound.id"
@@ -167,3 +171,13 @@ async function handleConfirm() {
   emit('close')
 }
 </script>
+
+<style scoped>
+.sound-editor :deep(footer) {
+  flex-wrap: wrap;
+}
+
+.sound-editor :deep(footer > :last-child) {
+  margin-left: auto;
+}
+</style>

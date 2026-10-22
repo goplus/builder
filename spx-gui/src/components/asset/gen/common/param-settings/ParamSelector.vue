@@ -30,9 +30,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-defineSlots<{
+const slots = defineSlots<{
   'additional-options'(props: { disabled: boolean }): unknown
 }>()
+
+const columns = computed(() => Math.min(Math.max(props.options.length + (slots['additional-options'] ? 1 : 0), 1), 4))
 
 const showPlaceholder = computed(() => props.value == null && props.placeholder != null)
 const selectedItem = computed(() => {
@@ -97,9 +99,9 @@ async function removeOption(value: T) {
       {{ $t(tooltipText) }}
     </template>
     <template #dropdown-content>
-      <div class="max-w-102 flex flex-col gap-3 p-4">
+      <div class="w-min flex flex-col gap-3 p-4">
         <div>{{ $t(tips) }}</div>
-        <ul class="flex flex-row flex-wrap gap-2">
+        <ul class="w-max grid gap-2" :style="{ gridTemplateColumns: `repeat(${columns}, max-content)` }">
           <ImageOption
             v-for="(item, index) in options"
             :key="index"

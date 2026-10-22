@@ -49,7 +49,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <ul v-if="selector != null" class="w-94 max-h-70 flex-none flex flex-wrap content-start gap-2 overflow-y-auto">
+  <ul
+    v-if="selector != null"
+    class="w-max max-h-70 flex-none grid content-start gap-2 overflow-y-auto"
+    :style="{ gridTemplateColumns: `repeat(${Math.min(items.length + 1, 4)}, max-content)` }"
+  >
     <component
       :is="itemRenderer"
       v-for="item in items"

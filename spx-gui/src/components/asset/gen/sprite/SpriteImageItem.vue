@@ -36,7 +36,11 @@ const loading = computed(() => props.loading || fileLoading.value)
     :interactive="!disabled && !loading"
     :active="active"
   >
-    <GenLoading v-if="loading" animation-style="width: 60px; height: 60px;" cover />
-    <UIImg v-else :class="compact ? 'h-15 w-15' : 'h-25 w-25'" :src="url" :alt="file?.name" />
+    <GenLoading
+      v-if="loading"
+      :animation-style="compact ? 'width: 40px; height: 40px;' : 'width: 60px; height: 60px;'"
+      cover
+    />
+    <UIImg v-else :class="compact ? 'h-10 w-10' : 'h-25 w-25'" :src="url" :alt="file?.name" />
   </UIBlockItem>
 </template>

@@ -126,7 +126,7 @@ const handleUpload = useReferenceImageUpload(async (file) => {
           desc: 'Click to upload a local reference image'
         }"
         type="button"
-        class="h-22 w-22 flex-none flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-grey-400 bg-grey-100 text-xs text-grey-700 cursor-pointer transition-colors enabled:hover:border-primary-main enabled:hover:bg-grey-300 enabled:active:bg-grey-400 focus-visible:border-primary-main focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
+        class="h-18 w-18 flex-none flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-grey-400 bg-grey-100 text-xs text-grey-700 cursor-pointer transition-colors enabled:hover:border-primary-main enabled:hover:bg-grey-300 enabled:active:bg-grey-400 focus-visible:border-primary-main focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
         :disabled="disabled"
         @click="handleUpload"
       >

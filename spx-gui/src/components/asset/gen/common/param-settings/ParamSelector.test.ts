@@ -89,6 +89,20 @@ describe('ParamSelector', () => {
     expect(wrapper.emitted('remove:option')).toBeUndefined()
   })
 
+  it('returns focus to the trigger after removing a local image', async () => {
+    const { wrapper, localImage } = mountSelector()
+    document.body.appendChild(wrapper.element)
+    try {
+      await wrapper.setProps({ value: localImage })
+      const trigger = wrapper.get('button').element
+      await wrapper.get('[data-test-id="corner-icon"]').trigger('click')
+      expect(document.activeElement).toBe(trigger)
+    } finally {
+      wrapper.unmount()
+      wrapper.element.remove()
+    }
+  })
+
   it('keeps a required costume selected and allows selecting the local image', async () => {
     const { wrapper, costume, localImage } = mountSelector(false)
     expect(wrapper.find('[data-test-id="corner-icon"]').exists()).toBe(false)

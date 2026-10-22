@@ -4,20 +4,18 @@
   <UIDropdownForm
     v-radar="{ name: 'Bound state editor dropdown form', desc: 'Dropdown form for editing animation bound state' }"
     :title="$t(actionName)"
-    style="width: 320px"
+    class="w-min"
     @cancel="emit('close')"
     @confirm="handleConfirm"
   >
-    <ul class="flex-[1_1_0] flex flex-wrap content-start gap-3">
+    <ul class="w-max grid grid-cols-[repeat(3,max-content)] content-start gap-3">
       <UIBlockItem
         v-radar="{ name: 'State default', desc: 'Click to select state \u0022default\u0022' }"
         :active="isBound(State.Default)"
         @click="handleStateItemClick(State.Default)"
       >
-        <div class="mt-1 h-14 w-14" v-html="iconStateDefault"></div>
-        <p
-          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title"
-        >
+        <div class="state-icon h-11.5 w-11.5 flex-none" v-html="iconStateDefault"></div>
+        <p class="w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title">
           {{ $t({ en: 'Default', zh: '默认' }) }}
         </p>
         <UICornerIcon v-show="isBound(State.Default)" type="check" />
@@ -27,10 +25,8 @@
         :active="isBound(State.Step)"
         @click="handleStateItemClick(State.Step)"
       >
-        <div class="mt-1 h-14 w-14" v-html="iconStateStep"></div>
-        <p
-          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title"
-        >
+        <div class="state-icon h-11.5 w-11.5 flex-none" v-html="iconStateStep"></div>
+        <p class="w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title">
           {{ $t({ en: 'Step', zh: '行走' }) }}
         </p>
         <UICornerIcon v-show="isBound(State.Step)" type="check" />
@@ -40,10 +36,8 @@
         :active="isBound(State.Die)"
         @click="handleStateItemClick(State.Die)"
       >
-        <div class="mt-1 h-14 w-14" v-html="iconStateDie"></div>
-        <p
-          class="mt-0.5 w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title"
-        >
+        <div class="state-icon h-11.5 w-11.5 flex-none" v-html="iconStateDie"></div>
+        <p class="w-full overflow-hidden px-2 py-0.75 text-center text-2xs whitespace-nowrap text-ellipsis text-title">
           {{ $t({ en: 'Die', zh: '死亡' }) }}
         </p>
         <UICornerIcon v-show="isBound(State.Die)" type="check" />
@@ -93,3 +87,10 @@ async function handleConfirm() {
   emit('close')
 }
 </script>
+
+<style scoped>
+.state-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+}
+</style>
