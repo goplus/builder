@@ -44,26 +44,28 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
     this.conceal() // Clear any previous spotlight
 
     const duration = options.duration == null ? autoConcealDelay : options.duration * 1_000
+    const mask = options.mask ?? false
     const autoConcealTimer = duration > 0 ? this.createTimeoutConceal(duration) : null
     let mouseEnterConcealTimer: ReturnType<typeof setTimeout> | null = null
     const handleMouseEnter = () => (mouseEnterConcealTimer = this.createTimeoutConceal(mouseEnterConcealDelay))
-    const handleDocumentClick = () => this.conceal()
+    const clickTarget = mask ? el : document
+    const handleClick = () => this.conceal()
     this.spotlightItem.value = {
       timer: autoConcealTimer,
       tip: options.tip ?? '',
       el,
-      mask: options.mask ?? false,
+      mask,
       dispose: () => {
         if (autoConcealTimer != null) clearTimeout(autoConcealTimer)
         if (mouseEnterConcealTimer != null) clearTimeout(mouseEnterConcealTimer)
         el.removeEventListener('mouseenter', handleMouseEnter)
-        document.removeEventListener('click', handleDocumentClick, { capture: true })
+        clickTarget.removeEventListener('click', handleClick, { capture: true })
       }
     }
     if (duration > 0) {
       el.addEventListener('mouseenter', handleMouseEnter, { once: true })
     }
-    if (duration === 0) document.addEventListener('click', handleDocumentClick, { capture: true, once: true })
+    if (duration === 0) clickTarget.addEventListener('click', handleClick, { capture: true, once: true })
   }
 
   conceal() {
@@ -76,7 +78,6 @@ export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
 
   install(app: App<unknown>) {
     app.provide(spotlightKey, this)
-    ;(window as any).spotlight = this // TODO: remove this line in production
   }
 
   dispose() {
