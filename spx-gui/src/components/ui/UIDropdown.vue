@@ -15,7 +15,7 @@ export function useDropdown() {
 
 export type Placement = Extract<
   PopupPlacement,
-  'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end'
+  'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'right-start'
 >
 export type TriggerType = 'click' | 'hover' | 'manual'
 export type Pos = {
