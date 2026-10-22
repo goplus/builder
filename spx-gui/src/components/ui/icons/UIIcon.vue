@@ -70,6 +70,7 @@ import setting from './setting.svg?raw'
 import undo from './undo.svg?raw'
 import redo from './redo.svg?raw'
 import localFile from './local-file.svg?raw'
+import upload from './upload.svg?raw'
 import assetLibrary from './asset-library.svg?raw'
 import minus from './minus.svg?raw'
 import layer from './layer.svg?raw'
@@ -153,6 +154,7 @@ const typeIconMap = {
   undo,
   redo,
   localFile,
+  upload,
   assetLibrary,
   minus,
   layer,

@@ -32,6 +32,27 @@ function makeProject() {
 }
 
 describe('Animation', () => {
+  it.each([0, 2])('should restore frame names and preserve duration %s', (duration) => {
+    const animation = new Animation('animation', { duration })
+    const costumes = [new Costume('', mockFile()), new Costume('a'.repeat(101), mockFile())]
+    animation.setCostumes(costumes, true)
+    expect(animation.costumes.map((c) => c.name)).toEqual(['', 'a'.repeat(101)])
+    expect(animation.costumes.every((c) => c.parent === animation)).toBe(true)
+    expect(animation.duration).toBe(duration)
+    const clone = animation.clone()
+    expect(clone.duration).toBe(duration)
+    expect(clone.costumes.map((c) => c.name)).toEqual(['', 'a'.repeat(101)])
+  })
+
+  it('should correct frame names and initialize duration by default', () => {
+    const animation = new Animation('animation')
+    const costume = new Costume('', mockFile())
+    animation.setCostumes([costume])
+    expect(costume.name).toBe('costume1')
+    expect(costume.parent).toBe(animation)
+    expect(animation.duration).toBe(0.1)
+  })
+
   it('should work well', () => {
     const project = makeProject()
     const sprite = project.sprites[0]

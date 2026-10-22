@@ -6,9 +6,9 @@
       <h1 class="flex-[1_1_0] min-w-0 truncate text-xl text-title">
         <slot></slot>
       </h1>
-      <label class="flex-none">
+      <div class="flex-none">
         <slot name="options"></slot>
-      </label>
+      </div>
     </CenteredWrapper>
   </section>
 </template>

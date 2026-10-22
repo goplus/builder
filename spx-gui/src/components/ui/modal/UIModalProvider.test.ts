@@ -1,8 +1,10 @@
 import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
-import { defineComponent, h, nextTick, onUnmounted } from 'vue'
+import { defineComponent, h, nextTick, onUnmounted, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Cancelled } from '@/utils/exception'
+import { useProvideLastClickEvent } from '../utils'
 import { provideLayerStack } from '../utils/layer-stack'
+import UIModal from './UIModal.vue'
 import UIModalProvider, { useModal, useModalEvents } from './UIModalProvider.vue'
 
 async function flushModalProvider() {
@@ -13,10 +15,6 @@ async function flushModalProvider() {
 
 function getByTestId(testId: string) {
   return document.body.querySelector(`[data-test-id="${testId}"]`) as HTMLElement | null
-}
-
-function getActiveState(testId: string) {
-  return getByTestId(testId)?.getAttribute('data-active') ?? null
 }
 
 async function clickByTestId(testId: string) {
@@ -32,10 +30,11 @@ function mountWithModalProvider(component: ReturnType<typeof defineComponent>) {
     defineComponent({
       setup() {
         provideLayerStack()
+        useProvideLastClickEvent()
         return () => h(component)
       }
     }),
-    { attachTo: document.body }
+    { attachTo: document.body, global: { directives: { radar: () => null } } }
   )
   mountedWrappers.push(wrapper)
   return wrapper
@@ -57,7 +56,6 @@ const ProgrammaticModal = defineComponent({
       type: Boolean,
       required: true
     },
-    active: Boolean,
     label: {
       type: String,
       required: true
@@ -69,26 +67,28 @@ const ProgrammaticModal = defineComponent({
   },
   setup(props, { emit }) {
     return () =>
-      props.visible
-        ? h('div', { 'data-test-id': props.label, 'data-active': String(props.active ?? false) }, [
+      h(
+        UIModal,
+        {
+          visible: props.visible,
+          'data-test-id': props.label,
+          'onUpdate:visible': () => emit('cancelled', props.label)
+        },
+        {
+          default: () => [
             h(
               'button',
-              {
-                'data-test-id': `${props.label}-resolve`,
-                onClick: () => emit('resolved', props.label)
-              },
+              { 'data-test-id': `${props.label}-resolve`, onClick: () => emit('resolved', props.label) },
               'Resolve'
             ),
             h(
               'button',
-              {
-                'data-test-id': `${props.label}-cancel`,
-                onClick: () => emit('cancelled', props.label)
-              },
+              { 'data-test-id': `${props.label}-cancel`, onClick: () => emit('cancelled', props.label) },
               'Cancel'
             )
-          ])
-        : null
+          ]
+        }
+      )
   }
 })
 
@@ -180,52 +180,60 @@ describe('UIModalProvider', () => {
     expect(getByTestId('beta')).toBeNull()
   })
 
-  it('passes active only to the topmost modal', async () => {
-    vi.useFakeTimers()
-
-    let openModal!: (props: { label: string }) => Promise<unknown>
-
-    const Consumer = defineComponent({
-      setup() {
-        openModal = useModal(ProgrammaticModal as any)
-        return () => null
-      }
-    })
-
-    mountWithModalProvider(
-      defineComponent({
+  it.each(['programmatic', 'direct'] as const)(
+    'closes only the topmost %s modal and lets the underlying modal handle the next Escape',
+    async (topModalKind) => {
+      vi.useFakeTimers()
+      let openModal!: (props: { label: string }) => Promise<unknown>
+      const directVisible = ref(false)
+      const Consumer = defineComponent({
         setup() {
-          return () => h(UIModalProvider, null, { default: () => h(Consumer) })
+          openModal = useModal(ProgrammaticModal as any)
+          return () =>
+            directVisible.value
+              ? h(UIModal, {
+                  visible: true,
+                  'data-test-id': 'direct',
+                  'onUpdate:visible': () => (directVisible.value = false)
+                })
+              : null
         }
       })
-    )
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup() {
+            return () => h(UIModalProvider, null, { default: () => h(Consumer) })
+          }
+        })
+      )
+      const alphaResult = openModal({ label: 'alpha' }).catch((error: unknown) => error)
+      await flushModalProvider()
 
-    const alphaPromise = openModal({ label: 'alpha' })
-    await flushModalProvider()
+      let betaResult: Promise<unknown> | null = null
+      if (topModalKind === 'programmatic') {
+        betaResult = openModal({ label: 'beta' }).catch((error: unknown) => error)
+      } else {
+        directVisible.value = true
+      }
+      await flushModalProvider()
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await flushModalProvider()
 
-    expect(getActiveState('alpha')).toBe('true')
+      expect(getByTestId('alpha')).toBeInstanceOf(HTMLElement)
+      if (betaResult != null) {
+        expect(await betaResult).toEqual(new Cancelled('beta'))
+        expect(wrapper.findAllComponents(ProgrammaticModal)).toHaveLength(2)
+        expect(wrapper.findAllComponents(ProgrammaticModal)[1].props('visible')).toBe(false)
+      } else {
+        expect(directVisible.value).toBe(false)
+      }
 
-    const betaPromise = openModal({ label: 'beta' })
-    await flushModalProvider()
-
-    expect(getActiveState('alpha')).toBe('false')
-    expect(getActiveState('beta')).toBe('true')
-
-    await clickByTestId('beta-resolve')
-    await flushModalProvider()
-    await expect(betaPromise).resolves.toBe('beta')
-
-    await vi.advanceTimersByTimeAsync(300)
-    await flushModalProvider()
-
-    expect(getActiveState('alpha')).toBe('true')
-
-    await clickByTestId('alpha-resolve')
-    await flushModalProvider()
-    await expect(alphaPromise).resolves.toBe('alpha')
-
-    await vi.advanceTimersByTimeAsync(300)
-    await flushModalProvider()
-    expect(getByTestId('alpha')).toBeNull()
-  })
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await flushModalProvider()
+      expect(await alphaResult).toEqual(new Cancelled('alpha'))
+      await vi.advanceTimersByTimeAsync(300)
+      await flushModalProvider()
+      expect(wrapper.findAllComponents(ProgrammaticModal)).toHaveLength(0)
+    }
+  )
 })

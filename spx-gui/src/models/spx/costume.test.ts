@@ -21,6 +21,13 @@ function makeSprite() {
 }
 
 describe('Costume', () => {
+  it.each(['', 'a'.repeat(101)])('should restore a name outside interactive constraints (%s)', (name) => {
+    const costume = new Costume('costume', mockFile())
+    expect(() => costume.setName(name)).toThrow('invalid name')
+    costume.setName(name, true)
+    expect(costume.name).toBe(name)
+  })
+
   it('should clone correctly', () => {
     const { sprite, costume } = makeSprite()
 

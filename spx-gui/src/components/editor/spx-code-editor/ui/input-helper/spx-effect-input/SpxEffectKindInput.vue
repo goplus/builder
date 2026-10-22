@@ -21,7 +21,7 @@ const modelValue = defineModel<string>('value')
 </script>
 
 <template>
-  <ul class="w-94 max-h-70 overflow-y-auto flex-none flex flex-wrap content-start gap-2">
+  <ul class="w-max max-h-70 overflow-y-auto flex-none grid grid-cols-[repeat(4,max-content)] content-start gap-2">
     <SpxEffectKindItem
       v-for="item in effectKinds"
       :key="item.name"

@@ -73,8 +73,8 @@ func TestHTTPTransportInteract(t *testing.T) {
 			io.NopCloser(strings.NewReader(`{"code":40301,"msg":"quota exceeded"}`)))
 
 		_, err := transport.Interact(t.Context(), ai.Request{})
-		var clientErr *ai.ClientError
-		if !errors.As(err, &clientErr) {
+		clientErr, ok := errors.AsType[*ai.ClientError](err)
+		if !ok {
 			t.Fatalf("got error %v, want *ai.ClientError", err)
 		}
 		if got, want := clientErr.StatusCode, http.StatusForbidden; got != want {
@@ -83,8 +83,7 @@ func TestHTTPTransportInteract(t *testing.T) {
 		if got, want := clientErr.RetryAfter, time.Hour; got != want {
 			t.Errorf("got retry after %v, want %v", got, want)
 		}
-		var tooManyRequestsErr *ai.TooManyRequestsError
-		if errors.As(err, &tooManyRequestsErr) {
+		if _, ok := errors.AsType[*ai.TooManyRequestsError](err); ok {
 			t.Errorf("got error %v, do not want *ai.TooManyRequestsError", err)
 		}
 	})
@@ -94,8 +93,7 @@ func TestHTTPTransportInteract(t *testing.T) {
 			io.NopCloser(strings.NewReader(`{"code":50300,"msg":"unavailable"}`)))
 
 		_, err := transport.Interact(t.Context(), ai.Request{})
-		var retryableErr *ai.RetryableError
-		if !errors.As(err, &retryableErr) {
+		if _, ok := errors.AsType[*ai.RetryableError](err); !ok {
 			t.Errorf("got error %v, want *ai.RetryableError", err)
 		}
 	})
@@ -106,8 +104,8 @@ func TestHTTPTransportInteract(t *testing.T) {
 			io.NopCloser(iotest.ErrReader(readErr)))
 
 		_, err := transport.Interact(t.Context(), ai.Request{})
-		var tooManyRequestsErr *ai.TooManyRequestsError
-		if !errors.As(err, &tooManyRequestsErr) {
+		tooManyRequestsErr, ok := errors.AsType[*ai.TooManyRequestsError](err)
+		if !ok {
 			t.Fatalf("got error %v, want *ai.TooManyRequestsError", err)
 		}
 		if got, want := tooManyRequestsErr.RetryAfter, time.Minute; got != want {
@@ -124,8 +122,8 @@ func TestHTTPTransportInteract(t *testing.T) {
 			io.NopCloser(iotest.ErrReader(readErr)))
 
 		_, err := transport.Interact(t.Context(), ai.Request{})
-		var clientErr *ai.ClientError
-		if !errors.As(err, &clientErr) {
+		clientErr, ok := errors.AsType[*ai.ClientError](err)
+		if !ok {
 			t.Fatalf("got error %v, want *ai.ClientError", err)
 		}
 		if got, want := clientErr.StatusCode, http.StatusForbidden; got != want {
@@ -145,8 +143,7 @@ func TestHTTPTransportInteract(t *testing.T) {
 			io.NopCloser(iotest.ErrReader(readErr)))
 
 		_, err := transport.Interact(t.Context(), ai.Request{})
-		var retryableErr *ai.RetryableError
-		if !errors.As(err, &retryableErr) {
+		if _, ok := errors.AsType[*ai.RetryableError](err); !ok {
 			t.Fatalf("got error %v, want *ai.RetryableError", err)
 		}
 		if !errors.Is(err, readErr) {

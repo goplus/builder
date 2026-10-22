@@ -4,11 +4,11 @@
   <UIDropdownForm
     v-radar="{ name: 'Bound state editor dropdown form', desc: 'Dropdown form for editing animation bound state' }"
     :title="$t(actionName)"
-    style="width: 320px"
+    class="w-min"
     @cancel="emit('close')"
     @confirm="handleConfirm"
   >
-    <ul class="flex-[1_1_0] flex flex-wrap content-start gap-3">
+    <ul class="w-max grid grid-cols-[repeat(3,max-content)] content-start gap-3">
       <UIBlockItem
         v-radar="{ name: 'State default', desc: 'Click to select state \u0022default\u0022' }"
         :active="isBound(State.Default)"

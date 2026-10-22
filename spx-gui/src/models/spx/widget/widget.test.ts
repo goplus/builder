@@ -53,6 +53,40 @@ describe('Widget', () => {
 })
 
 describe('Monitor.load', () => {
+  it.each([
+    { mode: 3, sliderMin: -1.5, sliderMax: 20, isDiscrete: true },
+    { mode: 3, sliderMin: 0, sliderMax: 0, isDiscrete: false },
+    { mode: 4, width: 180, height: 260 },
+    { mode: 4, width: 0, height: 0 }
+  ])('should preserve monitor configuration %j', (config) => {
+    const monitor = Monitor.load({ type: 'monitor', name: 'monitor1', val: 'value', ...config })
+    expect(monitor).toMatchObject(config)
+    expect(monitor.clone()).toMatchObject(config)
+    expect(monitor.clone().export()).toMatchObject(config)
+    const exported = JSON.parse(JSON.stringify(monitor.export()))
+    expect(exported).toMatchObject(config)
+    expect(Monitor.load(exported)).toMatchObject(config)
+  })
+
+  it.each([1, 2, 3, 4])('should default missing fields for mode %i', (mode) => {
+    const monitor = Monitor.load({ type: 'monitor', name: 'monitor1', val: 'value', mode })
+    expect(monitor).toMatchObject({ sliderMin: 0, sliderMax: 100, isDiscrete: true, width: 0, height: 0 })
+    const exported = monitor.export()
+    if (mode === 3) {
+      expect(exported).toMatchObject({ sliderMin: 0, sliderMax: 100, isDiscrete: true })
+    } else {
+      expect(exported).not.toHaveProperty('sliderMin')
+      expect(exported).not.toHaveProperty('sliderMax')
+      expect(exported).not.toHaveProperty('isDiscrete')
+    }
+    if (mode === 4) {
+      expect(exported).toMatchObject({ width: 0, height: 0 })
+    } else {
+      expect(exported).not.toHaveProperty('width')
+      expect(exported).not.toHaveProperty('height')
+    }
+  })
+
   it('should default target to empty string when not provided', () => {
     const monitor = Monitor.load({
       type: 'monitor',
@@ -80,21 +114,23 @@ describe('Monitor.load', () => {
     expect(monitor.variableName).toEqual('score')
   })
 
-  it('should load mode 2', () => {
+  it.each([1, 2, 3, 4])('should load and preserve mode %i', (mode) => {
     const monitor = Monitor.load({
       type: 'monitor',
       name: 'monitor1',
-      mode: 2,
+      mode,
       style: 'scratch',
       target: 'MySprite',
       val: 'score',
       label: 'Score'
     })
-    expect(monitor.mode).toEqual(2)
+    expect(monitor.mode).toEqual(mode)
     expect(monitor.style).toEqual('scratch')
     expect(monitor.target).toEqual('MySprite')
     expect(monitor.variableName).toEqual('score')
-    expect(monitor.export().mode).toEqual(2)
+    expect(monitor.clone().mode).toEqual(mode)
+    expect(monitor.export().mode).toEqual(mode)
+    expect(Monitor.load(monitor.export()).mode).toEqual(mode)
     expect(monitor.export().style).toEqual('scratch')
   })
 

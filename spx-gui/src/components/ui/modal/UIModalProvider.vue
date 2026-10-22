@@ -6,7 +6,6 @@
         :is="modal.component"
         v-bind="modal.props"
         :visible="modal.visible"
-        :active="currentModals.at(-1)?.id === modal.id"
         @cancelled="(reason?: unknown) => handleCancelled(modal.id, reason)"
         @resolved="(resolved?: unknown) => handleResolved(modal.id, resolved)"
       />
@@ -17,7 +16,7 @@
 <script lang="ts">
 /**
  * UIModalProvider owns programmatic modal instances: creation, promise lifecycle,
- * delayed removal, events, and the provider-level `active` prop.
+ * delayed removal, and events.
  */
 import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component, ref } from 'vue'
 import type { ComponentDefinition, EmitsForComponent, PropsForComponent, Prettify } from '@/utils/types'
@@ -28,11 +27,6 @@ import { provideModalContainer } from '../utils'
 // The Modal Component should provide Props as following:
 export type ModalComponentProps = {
   readonly visible: boolean
-  /**
-   * Indicates whether the current modal is at the top layer.
-   * This property is automatically set by UIModalProvider and should not be set manually.
-   */
-  readonly active?: boolean
 }
 
 // The Modal Component should provide Emits as following:

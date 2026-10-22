@@ -5,6 +5,7 @@ import { mergeSignals } from '@/utils/disposable'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
+import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import type { ProjectData } from '@/apis/project'
 import {
   isSupportedProjectType,
@@ -14,9 +15,14 @@ import {
   type UpdateProjectParams,
   updateProject
 } from '@/apis/project'
-import { createFileURLSignatures, createUploadSession, type UploadSession as RawUploadSession } from '@/apis/file'
-import { DefaultException, TimeoutException } from '@/utils/exception'
-import { getUphostsByRegion } from '@/utils/kodo'
+import {
+  createFileURLSignatures,
+  createUploadSession,
+  getFileObject,
+  type UploadSession as RawUploadSession
+} from '@/apis/file'
+import { ActionException, Cancelled, capture, DefaultException, TimeoutException } from '@/utils/exception'
+import { calculateQiniuEtag, getUphostsByRegion } from '@/utils/kodo'
 import type { Metadata, PartialMetadata, ProjectSerialized } from '../project'
 import { File, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
@@ -175,10 +181,22 @@ export async function saveFiles(
   signal?: AbortSignal
 ): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
   const fileCollection = Object.fromEntries(
-    await Promise.all(Object.keys(files).map(async (path) => [path, await saveFile(files[path]!, signal)] as const))
+    await Promise.all(Object.keys(files).map((path) => saveFileAtPath(path, files[path]!, signal)))
   )
   const fileCollectionHash = await hashFileCollection(fileCollection)
   return { fileCollection, fileCollectionHash }
+}
+
+async function saveFileAtPath(path: string, file: File, signal?: AbortSignal): Promise<[string, UniversalUrl]> {
+  try {
+    return [path, await saveFile(file, signal)]
+  } catch (e) {
+    if (e instanceof Cancelled) throw e
+    throw new ActionException(e, {
+      en: `Failed to save file ${path}`,
+      zh: `保存文件 ${path} 失败`
+    })
+  }
 }
 
 export function getFiles(fileCollection: FileCollection): Files {
@@ -306,7 +324,7 @@ export async function saveFile(file: File, signal?: AbortSignal) {
   if (savedUrl != null) return savedUrl
 
   // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
-  const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : uploadToKodo(file, signal))
+  const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
   setUniversalUrl(file, url)
   return url
 }
@@ -328,14 +346,39 @@ type KodoUploadRes = {
   hash: string
 }
 
-const uploadToKodoController = new ConcurrencyLimitController(20)
+// Minimum size for checking an existing Kodo object (1 MiB); for smaller files, the added hashing and query may not justify the upload saved on a hit.
+const minFileSizeForExistingCheck = 1024 * 1024
 
-const uploadToKodo = (file: File, signal?: AbortSignal) =>
-  uploadToKodoController.run<UniversalUrl>(async () => {
+async function getExistingKodoUrl(file: File, data: ArrayBuffer, signal?: AbortSignal): Promise<UniversalUrl | null> {
+  const hash = await calculateQiniuEtag(data)
+  signal?.throwIfAborted()
+  try {
+    return (await getFileObject(hash, data.byteLength, file.name, signal)).url
+  } catch (err) {
+    signal?.throwIfAborted()
+    if (!(err instanceof ApiException && err.code === ApiExceptionCode.errorNotFound)) {
+      capture(err, 'Failed to get existing Kodo file object')
+    }
+    return null
+  }
+}
+
+const saveToKodoController = new ConcurrencyLimitController(20)
+
+const saveToKodo = (file: File, signal?: AbortSignal) =>
+  saveToKodoController.run<UniversalUrl>(async () => {
     const ab = await file.arrayBuffer(signal)
+    if (ab.byteLength >= minFileSizeForExistingCheck) {
+      const existingUrl = await getExistingKodoUrl(file, ab, signal)
+      if (existingUrl != null) return existingUrl
+    }
     const { token, maxSize, bucket, region } = await getUploadSessionWithCache()
     signal?.throwIfAborted()
-    if (ab.byteLength > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
+    if (ab.byteLength > maxSize)
+      throw new DefaultException({
+        en: `Single file size must not exceed ${humanizeFileSize(maxSize).en}`,
+        zh: `单个文件尺寸不得超过 ${humanizeFileSize(maxSize).zh}`
+      })
     const task = createDirectUploadTask(
       {
         type: 'array-buffer',

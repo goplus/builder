@@ -1,6 +1,7 @@
 import { shikiToMonaco } from '@shikijs/monaco'
 import type * as monaco from 'monaco-editor'
 import { getHighlighter } from '@/utils/xgo/highlighter'
+import rawXgoLanguageConfiguration from '@/utils/xgo/language-configuration.json'
 
 export type { monaco }
 export type Monaco = typeof monaco
@@ -38,44 +39,23 @@ async function getMonaco(lang: Lang) {
   return import('monaco-editor')
 }
 
-// copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json
 const xgoLanguageConfiguration: monaco.languages.LanguageConfiguration = {
-  comments: {
-    lineComment: '//',
-    blockComment: ['/*', '*/']
-  },
-  brackets: [
-    ['{', '}'],
-    ['[', ']'],
-    ['(', ')']
-  ],
-  autoClosingPairs: [
-    { open: '{', close: '}' },
-    { open: '[', close: ']' },
-    { open: '(', close: ')' },
-    { open: '`', close: '`', notIn: ['string'] },
-    { open: '"', close: '"', notIn: ['string'] },
-    { open: "'", close: "'", notIn: ['string', 'comment'] }
-  ],
-  surroundingPairs: [
-    { open: '{', close: '}' },
-    { open: '[', close: ']' },
-    { open: '(', close: ')' },
-    { open: '"', close: '"' },
-    { open: "'", close: "'" },
-    { open: '`', close: '`' }
-  ],
+  comments: rawXgoLanguageConfiguration.comments as monaco.languages.CommentRule,
+  brackets: rawXgoLanguageConfiguration.brackets as monaco.languages.CharacterPair[],
+  autoClosingPairs: rawXgoLanguageConfiguration.autoClosingPairs.map((pair) =>
+    Array.isArray(pair) ? { open: pair[0], close: pair[1] } : pair
+  ),
+  surroundingPairs: rawXgoLanguageConfiguration.surroundingPairs.map(([open, close]) => ({ open, close })),
   indentationRules: {
-    increaseIndentPattern: new RegExp(
-      '^.*(\\bcase\\b.*:|\\bdefault\\b:|(\\b(func|if|else|switch|select|for|struct)\\b.*)?{[^}"\'"`]*|\\([^)"\'"`]*)$'
-    ),
-    // Modified based on copied version to decrease indent for `else` & `else if`
+    increaseIndentPattern: new RegExp(rawXgoLanguageConfiguration.indentationRules.increaseIndentPattern),
+    // Deliberately override the JSON's decreaseIndentPattern to also handle `else` & `else if`.
+    // Keep the base rules in sync when updating the upstream JSON.
     decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|}\\s*else\\b.*{|\\)[,]?)$')
   },
   folding: {
     markers: {
-      start: new RegExp('^\\s*//\\s*#?region\\b'),
-      end: new RegExp('^\\s*//\\s*#?endregion\\b')
+      start: new RegExp(rawXgoLanguageConfiguration.folding.markers.start),
+      end: new RegExp(rawXgoLanguageConfiguration.folding.markers.end)
     }
   }
 }
