@@ -14,13 +14,9 @@ import (
 // Copilot in a Playground Course is an assistant standing by for the learner
 // and a capability called on demand by the Course code.
 //
-// Generation returns its failure instead of failing the Course program. A
-// request can fail for reasons outside the author's control, such as the
-// network or exhausted service quota, and failing the program would end the
-// learner's session halfway through. The Course decides instead: fall back
-// to fixed content, or stop with the error. The error tells only that this
-// generation produced nothing usable; its message is for diagnosis, not
-// something to branch on.
+// Generation can fail for reasons outside the author's control (the network,
+// service quota), so it returns the error and lets the Course fall back
+// instead of ending the learner's session.
 type Copilot struct {
 	courseProgram *courseProgram
 }
