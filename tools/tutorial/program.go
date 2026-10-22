@@ -435,9 +435,7 @@ func (p *courseProgram) isCompleted() bool {
 // runFrame catches the panic and records it as fatal; it is re-raised on the
 // main goroutine, and the executor reports a runtime-stage error.
 //
-// Copilot generation is the exception: it fails for reasons the author can
-// neither prevent nor fix (the network, the learner's sign-in, service quota),
-// so it calls tryCallCapability and hands the error to the Course instead.
+// Copilot generation returns its failure instead, through tryCallCapability.
 func (p *courseProgram) mustCallCapability(name string, request, result any) {
 	if err := p.tryCallCapability(name, request, result); err != nil {
 		panic(err)

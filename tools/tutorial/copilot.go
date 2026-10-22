@@ -46,10 +46,6 @@ func (p *Copilot) OnRoundComplete(handler func(round CopilotRound)) {
 // personalized feedback from the learner's actual code. The calling run is
 // suspended for the duration, possibly for seconds, which is why the dispatch
 // queue is generously sized (see pendingEventLimit in events.go).
-//
-// In Course code, XGo's error expressions keep the fallback on one line:
-//
-//	completeWith Copilot.generateText("give feedback on: " + code)?:"Well done!"
 func (p *Copilot) GenerateText(message string) (string, error) {
 	var text string
 	if err := p.courseProgram.tryCallCapability("copilot_generateText", contentRequest{Content: message}, &text); err != nil {
@@ -72,18 +68,14 @@ func (p *Copilot) GenerateText(message string) (string, error) {
 // with that schema, and the response is decoded into result. See deriveSchema
 // for why reflection works on Course types.
 //
-// A failed generation leaves result untouched, so values set beforehand
-// survive as the fallback. That covers a response that does not decode into
-// result as well: the generation failed just the same, and a half-filled
-// struct would let the Course judge the learner on values nobody generated.
+// A failed generation, including a response that does not decode into
+// result, returns an error and leaves result untouched.
 //
 // result must be a non-nil pointer to a struct with at least one serializable
 // exported field, and anything else fails the Course program rather than
 // returning an error. That check is not pedantry: an XGo author very easily
 // writes a field in lower case, which encoding/json can neither read nor
-// fill, leaving the Course with an all-zero value and no hint as to why. A
-// mistake in the Course code is for the author to fix while trying the
-// Course, not for a fallback to hide.
+// fill, leaving the Course with an all-zero value and no hint as to why.
 func (p *Copilot) GenerateJSON(message string, result any) error {
 	p.courseProgram.requireRun("calling generateJSON")
 	schema, err := deriveSchema(result)
@@ -98,12 +90,9 @@ func (p *Copilot) GenerateJSON(message string, result any) error {
 	if err != nil {
 		return fmt.Errorf("generateJSON: %w", err)
 	}
-	// Decoding into result directly could fail halfway and leave it partly
-	// written, so first decode into a fresh value of the same type. Only when
-	// that succeeds is result filled, with the usual encoding/json semantics
-	// for fields the response leaves out. Both decodes go the same way because
-	// deriveSchema admits no type with its own decoder, whose outcome could
-	// depend on the value it decodes into.
+	// Validate on a fresh value first so a failure leaves result untouched, then
+	// decode into result to keep encoding/json's handling of omitted fields.
+	// deriveSchema rejects self-decoding types, so the second cannot fail.
 	if err := json.Unmarshal(raw, reflect.New(reflect.TypeOf(result).Elem()).Interface()); err != nil {
 		return fmt.Errorf("generateJSON: decode the generated value: %w", err)
 	}

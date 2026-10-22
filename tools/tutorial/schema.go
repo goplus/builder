@@ -118,10 +118,8 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 // else — maps, interfaces, channels — is an error, which beats generating a
 // schema the LLM has no way to satisfy.
 //
-// So is a type with its own decoder (UnmarshalJSON or UnmarshalText): the
-// schema derived from its kind need not be what the decoder accepts, and a
-// decoder may act on the value it decodes into, which would break
-// GenerateJSON's promise to leave result untouched on failure (see there).
+// So is a type with its own decoder (UnmarshalJSON or UnmarshalText): its
+// format is its own, and it could break GenerateJSON's all-or-nothing decode.
 func schemaOfType(t reflect.Type, visiting map[reflect.Type]bool) (map[string]any, error) {
 	if decodesItself(t) {
 		return nil, fmt.Errorf("generateJSON: %s decodes itself through UnmarshalJSON or UnmarshalText, which a derived schema cannot describe", t)
