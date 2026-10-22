@@ -12,9 +12,11 @@ import {
   getCourse,
   addCourse,
   deleteCourse,
+  listCourses,
   isGuidedCourse,
   isPlaygroundCourse,
   type AddCourseParams,
+  type Course,
   type CourseKind,
   type GuidedCourse,
   type PlaygroundCourse
@@ -296,10 +298,13 @@ export async function inspectCourseSeriesFileContent(
   signedInUsername: string,
   signal?: AbortSignal
 ): Promise<CourseSeriesFileImportInspection> {
-  const deletedCourses =
-    courseSeries == null
-      ? []
-      : await Promise.all(courseSeries.courseIDs.map(async (id) => (await getCourse(id, signal)).title))
+  let deletedCourses: string[] = []
+  if (courseSeries != null && courseSeries.courseIDs.length > 0) {
+    const titles = new Map(
+      (await listSeriesCourses(courseSeries.id, signal)).map((course) => [course.id, course.title])
+    )
+    deletedCourses = courseSeries.courseIDs.flatMap((id) => titles.get(id) ?? [])
+  }
   const overwrittenProjects = await Promise.all(
     content.manifest.projects.map(async (project) => {
       const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
@@ -934,6 +939,15 @@ async function importProject(
     signal
   )
   return `${owner}/${name}`
+}
+
+async function listSeriesCourses(courseSeriesID: string, signal?: AbortSignal) {
+  const all: Course[] = []
+  for (let pageIndex = 1; ; pageIndex++) {
+    const { data, total } = await listCourses({ courseSeriesID, pageIndex, pageSize: 100 }, signal)
+    all.push(...data)
+    if (data.length === 0 || all.length >= total) return all
+  }
 }
 
 async function getSignedInUserProject(owner: string, name: string, signal?: AbortSignal) {
