@@ -116,13 +116,15 @@ type CodeEditor struct {
 // Reference, completion and so on), so one Course exposes only what it
 // teaches and the cognitive load stays low.
 //
-// Each entry is a full definition identifier, of the form
-// "xgo:github.com/goplus/spx/v3?Sprite.stepTo"; omitting #<overloadId>
-// addresses every overload of the name. A shorthand like "stepTo" is
-// deliberately not supported: resolving one into a full identifier needs
-// mapping logic, and that logic cannot reliably assume the package is spx and
-// the receiver is Sprite. The typing burden on authors is for the Course
-// Editor's authoring assistance to solve.
+// Use "xgo:spx?Sprite.stepTo" to follow the active editor's SPX package across
+// version upgrades. Entries have the form "xgo:<package>?<name>#<overloadId>";
+// omitting #<overloadId> selects every overload. Short names like "stepTo"
+// are not supported.
+//
+// Only "spx" is an alias. Other package names, including fully qualified paths,
+// match literally and are not migrated; unknown packages or removed APIs match
+// nothing. Invalid identifiers or a missing SPX package configuration fail the
+// call without changing the whitelist. An empty list hides all assisted APIs.
 func (p *CodeEditor) FilterAPIs(apis []string) {
 	p.courseProgram.mustCallCapability("editor_codeEditor_filterAPIs", struct {
 		APIs []string `json:"apis"`

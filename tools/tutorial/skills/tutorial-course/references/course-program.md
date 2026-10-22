@@ -14,7 +14,7 @@ This is the `main_course.gox` of the [example course](../../../../../docs/develo
 
 ```go
 onStart => {
-	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
+	Editor.CodeEditor.filterAPIs ["xgo:spx?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
 	Spotlight.reveal "api-references", "Here is stepTo, the only block you need in this lesson."
@@ -266,17 +266,31 @@ Editor.Runtime.onExit code => {
 
 | Call | Returns | Notes |
 | --- | --- | --- |
-| `Editor.CodeEditor.filterAPIs apis` | Immediately | Limits the APIs offered by Code Editor assistance. Each entry is a full definition identifier, `xgo:<package>?<name>#<overloadId>`. Omitting `#<overloadId>` includes every overload of the name. Short names such as `"stepTo"` are not accepted. |
+| `Editor.CodeEditor.filterAPIs apis` | Immediately | Limits the APIs offered by Code Editor assistance. Prefer the stable SPX alias, e.g. `xgo:spx?Sprite.stepTo`. Each entry is a definition reference, `xgo:<package>?<name>#<overloadId>`. Omitting `#<overloadId>` includes every overload of the name. Short names such as `"stepTo"` are not accepted. |
 | `Editor.CodeEditor.formatWorkspace` | After formatting is done | Formats the learner's code. |
 
 ```go
 onStart => {
 	Editor.CodeEditor.filterAPIs [
-		"xgo:github.com/goplus/spx/v3?Sprite.stepTo",
-		"xgo:github.com/goplus/spx/v3?Sprite.say",
+		"xgo:spx?Sprite.stepTo",
+		"xgo:spx?Sprite.say",
 	]
 }
 ```
+
+Use `spx` for SPX APIs in new Courses. The Host resolves it to the active learning
+project's SPX package before updating the shared API-reference and completion
+whitelist, so changing the SPX package version does not require editing Course code.
+`xgo:spx?Sprite.stepTo#0` selects only overload `0`; omitting `#0` selects all overloads.
+
+Only `spx` is an alias. Fully qualified paths remain supported for compatibility,
+but match exactly and do not follow version upgrades. Other package names such as
+`fmt` and `main` also match literally. Unknown names (including misspellings like
+`spxx`) and removed or renamed APIs match nothing; no fallback is attempted.
+Malformed identifiers or unavailable SPX package configuration fail the Course call
+through the normal runtime error handling, leaving the previous whitelist unchanged.
+An empty list hides all APIs covered by the filter; project-local completions and
+completion items without a definition remain available.
 
 ### Editor.Ruler
 

@@ -100,10 +100,12 @@ type Runtime interface {
 }
 
 type CodeEditor interface {
-	// filterAPIs limits the APIs available in the Code Editor. Each entry is a
-	// definition identifier ("xgo:<package>?<name>#<overloadId>"), the same
-	// identifiers the Code Editor uses elsewhere; omitting "#<overloadId>"
-	// addresses every overload of the name.
+	// filterAPIs limits Code Editor assistance. Prefer "xgo:spx?Sprite.stepTo":
+	// spx resolves to the active editor's SPX package, including after upgrades.
+	// Entries use "xgo:<package>?<name>#<overloadId>"; omitting # selects all
+	// overloads. Other package names and full paths match literally; unknown
+	// packages or removed APIs match nothing. Invalid IDs or missing SPX config
+	// fail the call without changing the whitelist. An empty list hides all APIs.
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
 	formatWorkspace()
