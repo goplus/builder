@@ -331,12 +331,12 @@ See details in file \`src/apps/xbuilder/.env\`.
 
 /** Save file to cloud and return its universal URL */
 export async function saveFile(file: File, signal?: AbortSignal) {
-  let url = getUniversalUrl(file)
-  if (url == null) {
-    // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
-    url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
-    setUniversalUrl(file, url)
-  }
+  const savedUrl = getUniversalUrl(file)
+  if (savedUrl != null) return savedUrl
+
+  // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
+  const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
+  setUniversalUrl(file, url)
   return url
 }
 

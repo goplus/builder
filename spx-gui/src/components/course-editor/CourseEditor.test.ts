@@ -30,6 +30,8 @@ const courseEditorRoutes = [
 const { mocks } = vi.hoisted(() => ({
   mocks: {
     getCourse: vi.fn(),
+    updateCourse: vi.fn(),
+    saveFiles: vi.fn(),
     /** What the completion modal resolves with, i.e. which button the learner is taken to have pressed. */
     completionAction: 'exit' as 'continueEditing' | 'retry' | 'next' | 'exit',
     /** The props the completion modal was opened with, one entry per completed course. */
@@ -41,7 +43,13 @@ const { mocks } = vi.hoisted(() => ({
 
 vi.mock('@/apis/course', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/apis/course')>()),
-  getCourse: mocks.getCourse
+  getCourse: mocks.getCourse,
+  updateCourse: mocks.updateCourse
+}))
+
+vi.mock('@/models/common/cloud', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/models/common/cloud')>()),
+  saveFiles: mocks.saveFiles
 }))
 
 vi.mock('@/components/ui', async (importOriginal) => ({
@@ -544,6 +552,28 @@ describe('CourseEditor unsaved changes', () => {
     expect(holdsPageClose()).toBe(true)
     expect(activityBar.props('dirtyViews')).toEqual(new Set(['program']))
     expect(exportFiles).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CourseEditor saving', () => {
+  it('takes the title, thumbnail and update time the server answers with', async () => {
+    const course = makeCourse('2338', 'First')
+    const { project } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+    const saved = { ...course, title: 'Renamed', thumbnail: 'kodo://bucket/new', updatedAt: '2026-10-22T08:00:00Z' }
+    mocks.saveFiles.mockResolvedValue({ fileCollection: {}, fileCollectionHash: 'hash' })
+    mocks.updateCourse.mockResolvedValue(saved)
+
+    project.mainCourse.setCode('onStart => { completeWith "Well done" }')
+    await flushPromises()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }))
+    await flushPromises()
+
+    expect(mocks.updateCourse).toHaveBeenCalledTimes(1)
+    expect({ title: project.title, thumbnail: project.thumbnail, updatedAt: project.updatedAt }).toEqual({
+      title: 'Renamed',
+      thumbnail: 'kodo://bucket/new',
+      updatedAt: '2026-10-22T08:00:00Z'
+    })
   })
 })
 

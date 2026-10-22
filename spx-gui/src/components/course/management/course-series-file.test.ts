@@ -4,7 +4,14 @@ import utc from 'dayjs/plugin/utc'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { addCourse, deleteCourse, getCourse, type GuidedCourse, type PlaygroundCourse } from '@/apis/course'
+import {
+  addCourse,
+  deleteCourse,
+  getCourse,
+  listCourses,
+  type GuidedCourse,
+  type PlaygroundCourse
+} from '@/apis/course'
 import {
   addCourseSeries,
   getCourseSeries,
@@ -33,6 +40,7 @@ dayjs.extend(timezone)
 
 vi.mock('@/apis/course', () => ({
   getCourse: vi.fn(),
+  listCourses: vi.fn(),
   addCourse: vi.fn(),
   deleteCourse: vi.fn(),
   isGuidedCourse: (course: GuidedCourse) => course.kind === 'guided',
@@ -130,6 +138,7 @@ beforeEach(() => {
     if (id === existingCourse.id) return existingCourse
     return { ...existingCourse, id, title: `Old ${id}` }
   })
+  vi.mocked(listCourses).mockResolvedValue({ total: 1, data: [existingCourse] })
   vi.mocked(createFileWithUniversalUrl).mockImplementation((url) => {
     const data = new TextEncoder().encode(`content:${url}`)
     return new LazyFile(url.split('/').pop() ?? 'thumbnail.png', () => Promise.resolve(data.buffer), {
@@ -1016,6 +1025,26 @@ describe('Playground course series files', () => {
     expect(progress.filter(({ step }) => step === 'cleanup').at(-1)).toMatchObject({ done: 1, total: 1 })
   })
 
+  it('reports no upload progress once a failed upload is being undone', async () => {
+    vi.mocked(saveFiles).mockImplementation(async (_files, _signal, reporter) => {
+      // Another file of the course is still being saved, and reports once it is saved.
+      setTimeout(() => reporter?.report(1))
+      throw new Error('network')
+    })
+    const progress: CourseSeriesFileProgress[] = []
+    const onProgress = (p: CourseSeriesFileProgress) => progress.push(p)
+
+    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a')])
+    const content = await readCourseSeriesFile(file, playgroundSeries, { onProgress })
+    await expect(
+      importCourseSeriesFileContent(content, { courseSeries: playgroundSeries, writes }, 'alice', { onProgress })
+    ).rejects.toThrow()
+    await new Promise((resolve) => setTimeout(resolve))
+
+    const steps = progress.map(({ step }) => step)
+    expect(steps.slice(steps.indexOf('undo'))).toEqual(['undo'])
+  })
+
   it('uploads and creates three courses at a time, keeping their order in the series', async () => {
     let running = 0
     let maxRunning = 0
@@ -1161,6 +1190,27 @@ async function makePlaygroundSeriesFile(
 }
 
 describe('inspectCourseSeriesFileImport', () => {
+  it('looks up the courses to delete a page at a time, listing them in the order of the series', async () => {
+    const courseIDs = Array.from({ length: 150 }, (_, i) => `course-${i}`)
+    const courses = courseIDs.map((id) => ({ ...existingCourse, id, title: `Title of ${id}` }))
+    // The order the server lists them in need not be the series' own.
+    const listed = [...courses].reverse()
+    vi.mocked(listCourses).mockImplementation(async (params) => {
+      const { pageIndex = 1, pageSize = 10 } = params ?? {}
+      return { total: listed.length, data: listed.slice((pageIndex - 1) * pageSize, pageIndex * pageSize) }
+    })
+    const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code')
+
+    const inspection = await inspectCourseSeriesFileImport({ ...existingSeries, courseIDs }, file, 'alice')
+
+    expect(inspection.deletedCourses).toEqual(courses.map((course) => course.title))
+    expect(vi.mocked(listCourses).mock.calls.map(([params]) => params)).toEqual([
+      { courseSeriesID: existingSeries.id, pageIndex: 1, pageSize: 100 },
+      { courseSeriesID: existingSeries.id, pageIndex: 2, pageSize: 100 }
+    ])
+    expect(getCourse).not.toHaveBeenCalled()
+  })
+
   it('reports deleted courses and overwritten projects', async () => {
     vi.mocked(getProject).mockImplementation(async (_owner, name) => {
       if (name !== 'EntryProject') {

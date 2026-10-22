@@ -12,9 +12,11 @@ import {
   getCourse,
   addCourse,
   deleteCourse,
+  listCourses,
   isGuidedCourse,
   isPlaygroundCourse,
   type AddCourseParams,
+  type Course,
   type CourseKind,
   type GuidedCourse,
   type PlaygroundCourse
@@ -296,10 +298,13 @@ export async function inspectCourseSeriesFileContent(
   signedInUsername: string,
   signal?: AbortSignal
 ): Promise<CourseSeriesFileImportInspection> {
-  const deletedCourses =
-    courseSeries == null
-      ? []
-      : await Promise.all(courseSeries.courseIDs.map(async (id) => (await getCourse(id, signal)).title))
+  let deletedCourses: string[] = []
+  if (courseSeries != null && courseSeries.courseIDs.length > 0) {
+    const titles = new Map(
+      (await listSeriesCourses(courseSeries.id, signal)).map((course) => [course.id, course.title])
+    )
+    deletedCourses = courseSeries.courseIDs.flatMap((id) => titles.get(id) ?? [])
+  }
   const overwrittenProjects = await Promise.all(
     content.manifest.projects.map(async (project) => {
       const existingProject = await getSignedInUserProject(signedInUsername, project.name, signal)
@@ -552,6 +557,8 @@ async function importCourseSeriesFileData(
   const courseSeries = into?.courseSeries ?? null
   const changes: ImportChanges = { courseIDs: [], createdProjects: [], overwrittenProjects: [] }
   let params: AddCourseSeriesParams
+  // Other files of a course whose upload failed go on saving, and report after the upload step has ended.
+  let uploading = true
   try {
     // Files written before projects were told apart ignoring case may hold one project twice, spelled two ways.
     const projectIndexes = manifest.projects.flatMap((project, index) =>
@@ -564,7 +571,8 @@ async function importCourseSeriesFileData(
     const uploaded = courseFiles.map(() => 0)
     const total = projectIndexes.length + manifest.courses.length
     let done = 0
-    const report = () =>
+    const report = () => {
+      if (!uploading) return
       onProgress?.({
         step: 'upload',
         done,
@@ -577,6 +585,7 @@ async function importCourseSeriesFileData(
                 total: totalFiles
               }
       })
+    }
     report()
 
     const projectFullNameMap = new Map<string, string>()
@@ -647,9 +656,11 @@ async function importCourseSeriesFileData(
     }
     signal?.throwIfAborted()
   } catch (error) {
+    uploading = false
     onProgress?.({ step: 'undo', done: 0, total: 0, files: null })
     return undoImport(changes, manifest, error)
   }
+  uploading = false
 
   // From here on the import is not cancelled: once the series may hold the imported courses, stopping would leave it
   // part done.
@@ -928,6 +939,15 @@ async function importProject(
     signal
   )
   return `${owner}/${name}`
+}
+
+async function listSeriesCourses(courseSeriesID: string, signal?: AbortSignal) {
+  const all: Course[] = []
+  for (let pageIndex = 1; ; pageIndex++) {
+    const { data, total } = await listCourses({ courseSeriesID, pageIndex, pageSize: 100 }, signal)
+    all.push(...data)
+    if (data.length === 0 || all.length >= total) return all
+  }
 }
 
 async function getSignedInUserProject(owner: string, name: string, signal?: AbortSignal) {
