@@ -552,6 +552,8 @@ async function importCourseSeriesFileData(
   const courseSeries = into?.courseSeries ?? null
   const changes: ImportChanges = { courseIDs: [], createdProjects: [], overwrittenProjects: [] }
   let params: AddCourseSeriesParams
+  // Other files of a course whose upload failed go on saving, and report after the upload step has ended.
+  let uploading = true
   try {
     // Files written before projects were told apart ignoring case may hold one project twice, spelled two ways.
     const projectIndexes = manifest.projects.flatMap((project, index) =>
@@ -564,7 +566,8 @@ async function importCourseSeriesFileData(
     const uploaded = courseFiles.map(() => 0)
     const total = projectIndexes.length + manifest.courses.length
     let done = 0
-    const report = () =>
+    const report = () => {
+      if (!uploading) return
       onProgress?.({
         step: 'upload',
         done,
@@ -577,6 +580,7 @@ async function importCourseSeriesFileData(
                 total: totalFiles
               }
       })
+    }
     report()
 
     const projectFullNameMap = new Map<string, string>()
@@ -647,9 +651,11 @@ async function importCourseSeriesFileData(
     }
     signal?.throwIfAborted()
   } catch (error) {
+    uploading = false
     onProgress?.({ step: 'undo', done: 0, total: 0, files: null })
     return undoImport(changes, manifest, error)
   }
+  uploading = false
 
   // From here on the import is not cancelled: once the series may hold the imported courses, stopping would leave it
   // part done.

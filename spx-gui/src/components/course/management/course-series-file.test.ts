@@ -1016,6 +1016,26 @@ describe('Playground course series files', () => {
     expect(progress.filter(({ step }) => step === 'cleanup').at(-1)).toMatchObject({ done: 1, total: 1 })
   })
 
+  it('reports no upload progress once a failed upload is being undone', async () => {
+    vi.mocked(saveFiles).mockImplementation(async (_files, _signal, reporter) => {
+      // Another file of the course is still being saved, and reports once it is saved.
+      setTimeout(() => reporter?.report(1))
+      throw new Error('network')
+    })
+    const progress: CourseSeriesFileProgress[] = []
+    const onProgress = (p: CourseSeriesFileProgress) => progress.push(p)
+
+    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a')])
+    const content = await readCourseSeriesFile(file, playgroundSeries, { onProgress })
+    await expect(
+      importCourseSeriesFileContent(content, { courseSeries: playgroundSeries, writes }, 'alice', { onProgress })
+    ).rejects.toThrow()
+    await new Promise((resolve) => setTimeout(resolve))
+
+    const steps = progress.map(({ step }) => step)
+    expect(steps.slice(steps.indexOf('undo'))).toEqual(['undo'])
+  })
+
   it('uploads and creates three courses at a time, keeping their order in the series', async () => {
     let running = 0
     let maxRunning = 0
