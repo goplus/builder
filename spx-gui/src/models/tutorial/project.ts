@@ -30,8 +30,8 @@ export type TutorialProjectConfig = {
   copilotContext: string
 }
 
-/** The course as the project keeps it, without the timestamps the server keeps. */
-export type TutorialProjectMetadata = Omit<PlaygroundCourse, 'content' | 'createdAt' | 'updatedAt'>
+/** Course metadata kept by the tutorial project. */
+export type TutorialProjectMetadata = Omit<PlaygroundCourse, 'content'>
 
 export type TutorialProjectSerialized = {
   metadata: TutorialProjectMetadata
@@ -48,6 +48,8 @@ export class TutorialProject extends Disposable {
   kind = 'playground' as const
   title = ''
   thumbnail = ''
+  createdAt = ''
+  updatedAt = ''
 
   /** Tutorial-project configuration. */
   config: TutorialProjectConfig | null = null
@@ -196,7 +198,9 @@ export class TutorialProject extends Disposable {
         owner: this.owner,
         kind: this.kind,
         title: this.title,
-        thumbnail: this.thumbnail
+        thumbnail: this.thumbnail,
+        createdAt: this.createdAt,
+        updatedAt: this.updatedAt
       },
       files: this.exportFiles()
     }))

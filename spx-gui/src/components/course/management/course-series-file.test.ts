@@ -989,25 +989,21 @@ describe('Playground course series files', () => {
 
   it('keeps no copy of the course files besides what it unzipped', async () => {
     const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a')])
-    const { unzipped, courseFiles, courseSizes } = await readCourseSeriesFile(file, null)
+    const { unzipped, courseFiles } = await readCourseSeriesFile(file, null)
 
     expect(await courseFiles[0]['main_course.gox']!.arrayBuffer()).toBe(unzipped['courses/0/main_course.gox']!.buffer)
-    const entries = Object.entries(unzipped).filter(([path]) => path.startsWith('courses/0/'))
-    expect(courseSizes).toEqual([entries.reduce((sum, [, data]) => sum + data.byteLength, 0)])
   })
 
-  it('reports its progress step by step, counting uploads in bytes', async () => {
-    vi.mocked(saveFiles).mockImplementation(async (files, _signal, onProgress) => {
-      const sizes = await Promise.all(Object.values(files).map(async (file) => (await file!.arrayBuffer()).byteLength))
-      const total = sizes.reduce((sum, size) => sum + size, 0)
-      onProgress?.({ loaded: total / 2, total })
-      onProgress?.({ loaded: total, total })
+  it('reports its progress step by step, counting uploaded files', async () => {
+    vi.mocked(saveFiles).mockImplementation(async (files, _signal, reporter) => {
+      reporter?.report(1 / Object.keys(files).length)
+      reporter?.report(1)
       return { fileCollection: { 'main_course.gox': 'kodo://imported/main_course.gox' }, fileCollectionHash: 'hash' }
     })
     const progress: CourseSeriesFileProgress[] = []
     const onProgress = (p: CourseSeriesFileProgress) => progress.push(p)
 
-    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a'), playgroundCourseFiles('b')])
+    const file = await makePlaygroundSeriesFile([playgroundCourseFiles('a'), playgroundCourseFiles('b'.repeat(4000))])
     const content = await readCourseSeriesFile(file, playgroundSeries, { onProgress })
     await importCourseSeriesFileContent(content, { courseSeries: playgroundSeries, writes }, 'alice', { onProgress })
 
@@ -1015,8 +1011,8 @@ describe('Playground course series files', () => {
     expect(progress.filter(({ step }) => step === 'check').at(-1)).toMatchObject({ done: 2, total: 2 })
     const lastUpload = progress.filter(({ step }) => step === 'upload').at(-1)!
     expect(lastUpload).toMatchObject({ done: 2, total: 2 })
-    expect(lastUpload.bytes!.total).toBeGreaterThan(0)
-    expect(lastUpload.bytes!.loaded).toBe(lastUpload.bytes!.total)
+    expect(lastUpload.files).toEqual({ done: 10, total: 10 })
+    expect(progress.some((p) => p.step === 'upload' && p.files?.done === 1 && p.files.total === 10)).toBe(true)
     expect(progress.filter(({ step }) => step === 'cleanup').at(-1)).toMatchObject({ done: 1, total: 1 })
   })
 
@@ -1114,7 +1110,6 @@ describe('Playground course series files', () => {
     // The series thumbnail, the course thumbnail and the three files of the course
     const lastDownload = progress.filter(({ step }) => step === 'download').at(-1)!
     expect(lastDownload).toMatchObject({ done: 5, total: 5 })
-    expect(lastDownload.bytes!.loaded).toBeGreaterThan(0)
   })
 })
 

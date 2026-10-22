@@ -50,6 +50,10 @@ Keep import statements in order:
 2. Internal libraries: from base to specific, e.g., from `utils` to `models` to `components`
 3. Local files: relative paths starting with `./` or `../`
 
+### Progress Reporting
+
+* Use `src/utils/progress.ts` to construct, pass, and consume progress.
+
 ### String Length Validation
 
 * Use native `string.length`, browser input constraints, and `z.string().max()` for ordinary frontend input validation,
