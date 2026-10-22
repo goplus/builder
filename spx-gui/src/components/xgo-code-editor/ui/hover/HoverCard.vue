@@ -36,14 +36,16 @@ const handleAction = useMessageHandle(
       <slot></slot>
     </ul>
     <footer v-if="actions.length > 0" class="mt-1.5 flex gap-3 border-t border-dividing-line-2 px-2 pt-3.5 pb-2">
-      <ActionButton
-        v-for="(action, i) in actions"
-        :key="i"
-        :icon="action.commandInfo.icon"
-        @click="handleAction(action)"
-      >
-        {{ action.title }}
-      </ActionButton>
+      <slot name="actions">
+        <ActionButton
+          v-for="(action, i) in actions"
+          :key="i"
+          :icon="action.commandInfo.icon"
+          @click="handleAction(action)"
+        >
+          {{ action.title }}
+        </ActionButton>
+      </slot>
     </footer>
   </CodeEditorCard>
 </template>
