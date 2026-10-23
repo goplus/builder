@@ -12,7 +12,6 @@ export * from './common'
 
 // Spx project adapter
 export * from './spx-project'
-export { resolveDefinitionId } from './definition-id'
 
 // Spx code owners
 export * from './text-document'

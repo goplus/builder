@@ -54,13 +54,6 @@ SPX Project Editor provides the learner-facing project editing experience and it
 
 See [SPX Project Editor](./module_SpxProjectEditor.ts).
 
-Course API filters use the SPX editor's `resolveDefinitionId` entry point at the
-Course Host boundary. It resolves the reserved `spx` alias from the active editor
-project's class-framework package configuration. Session only connects this capability
-to Program; Program resolves the entire batch before updating the whitelist. API
-references and completion consume the same full identifiers. Generic definition parsing,
-LSP results, documentation storage, and internal identity comparisons stay unchanged.
-
 ### Copilot
 
 Copilot supplies generic assistant sessions, context, generation, and conversation events. Tutorial and Course Editor configure those generic capabilities for their respective learning and authoring experiences; Copilot itself has no Course-specific behavior.

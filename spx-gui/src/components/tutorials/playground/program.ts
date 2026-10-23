@@ -7,7 +7,6 @@ import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
-import { stringifyDefinitionId, type DefinitionIdentifier } from '@/components/xgo-code-editor'
 
 import type { APIWhitelist } from './api-whitelist'
 import type { Ruler } from './ruler'
@@ -33,7 +32,6 @@ export type PlaygroundCourseProgramOptions = {
   waitForHostReady(signal: AbortSignal): Promise<void>
   onStarted(signal: AbortSignal): Promise<void>
   formatWorkspace(): Promise<void>
-  resolveDefinitionId(id: string): DefinitionIdentifier
   onCompleted(completion: PlaygroundCourseCompletion): void
   onFailed(error: Exception): void
 }
@@ -79,7 +77,7 @@ export class PlaygroundCourseProgram extends Disposable {
 
   private createHost(): TutorialFrameworkHost {
     const signal = this.getSignal()
-    const { project, copilot, apiWhitelist, ruler, presentation, formatWorkspace, resolveDefinitionId } = this.options
+    const { project, copilot, apiWhitelist, ruler, presentation, formatWorkspace } = this.options
     return {
       lifecycle: {
         waitForHostReady: () => {
@@ -109,7 +107,7 @@ export class PlaygroundCourseProgram extends Disposable {
       },
       editor: {
         codeEditor: {
-          filterAPIs: (apis) => apiWhitelist.set(apis.map((id) => stringifyDefinitionId(resolveDefinitionId(id)))),
+          filterAPIs: (apis) => apiWhitelist.set(apis),
           formatWorkspace: () => formatWorkspace()
         },
         project: {

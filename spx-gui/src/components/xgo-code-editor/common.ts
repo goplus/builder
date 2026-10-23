@@ -3,6 +3,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import type { StringWithTypeInfo } from '@/utils/types'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
+import type { DefinitionIdentifier } from './definition-id'
 
 /**
  * Position stands for the position of a **character** in the document.
@@ -120,67 +121,6 @@ export enum DefinitionKind {
   Type,
   /** Unknown definition kind */
   Unknown
-}
-
-export type DefinitionIdentifier = {
-  /**
-   * Full name of source package.
-   * If not provided, it's assumed to be kind-statement.
-   * If `main`, it's the current user package.
-   * Exmples:
-   * - `fmt`
-   * - `github.com/goplus/spx/v3`
-   * - `main`
-   */
-  package?: string
-  /**
-   * Exported name of the definition.
-   * If not provided, it's assumed to be kind-package.
-   * Examples:
-   * - `Println`
-   * - `Sprite`
-   * - `Sprite.turn`
-   * - `for_statement_with_single_condition`: kind-statement
-   */
-  name?: string
-  /** Overload Identifier. */
-  overloadId?: string
-}
-
-/** xgo:<package>?<name>#<overloadId> */
-export type DefinitionIdString = string
-
-export function stringifyDefinitionId(defId: DefinitionIdentifier): DefinitionIdString {
-  let idStr = 'xgo:'
-  if (defId.package != null) idStr += `${defId.package}`
-  if (defId.name != null) idStr += `?${encodeURIComponent(defId.name)}`
-  if (defId.overloadId != null) idStr += `#${encodeURIComponent(defId.overloadId)}`
-  return idStr
-}
-
-export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifier {
-  if (!idStr.startsWith('xgo:')) throw new Error(`Invalid definition ID: ${idStr}`)
-  idStr = idStr.slice(4)
-  const [withoutHash, hash = ''] = idStr.split('#')
-  const [hostWithPath, query = ''] = withoutHash.split('?')
-  return {
-    package: hostWithPath === '' ? undefined : hostWithPath,
-    name: query === '' ? undefined : decodeURIComponent(query),
-    overloadId: hash === '' ? undefined : decodeURIComponent(hash)
-  }
-}
-
-/**
- * Parse receiver & method in `DefinitionIdentifier.name`.
- * For example:
- *  - 'Game.timer' => ['Game', 'timer']
- *  - 'Sprite.heading' => ['Sprite', 'heading']
- *  - 'hour' => [null, 'hour']
- */
-export function parseDefinitionName(name: string | undefined): [receiver: string | null, method: string] {
-  const parts = (name ?? '').split('.')
-  if (parts.length > 1) return [parts[0], parts[1]]
-  return [null, parts[0]]
 }
 
 /**

@@ -2,7 +2,7 @@
 // (frontend code does not import from outside its own directory). Keep in sync
 // manually; the docs copy itself is compile-guarded by tools/xgoexec-bundle.
 export const exampleCourseSource = `onStart => {
-	Editor.CodeEditor.filterAPIs ["xgo:spx?Sprite.stepTo"]
+	Editor.CodeEditor.filterAPIs ["xgo:preset/spx?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
 	Spotlight.reveal "api-references", "Here is stepTo, the only block you need in this lesson."
@@ -41,7 +41,7 @@ type Feedback struct {
 }
 
 onStart => {
-	Editor.CodeEditor.filterAPIs ["xgo:spx?Sprite.stepTo"]
+	Editor.CodeEditor.filterAPIs ["xgo:preset/spx?Sprite.stepTo"]
 	Editor.Ruler.enable
 	showPrelude "Move Lita to Mushroom."
 	showVideo "step-to"

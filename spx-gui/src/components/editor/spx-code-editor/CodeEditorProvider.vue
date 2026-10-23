@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
 import { useCopilot } from '@/components/copilot/context'
-import { type Monaco, CodeEditor, DocumentBase, useProvideCodeEditor } from '@/components/xgo-code-editor'
-import { XGoLSPClient } from '@/components/xgo-code-editor/lsp/xgo-lsp-client'
+import { type Monaco, CodeEditor, DocumentBase, XGoLSPClient, useProvideCodeEditor } from '@/components/xgo-code-editor'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import * as spxDefinitionsByName from './document-base'
 import './document-base/helpers'
@@ -47,7 +46,8 @@ watch(
       copilot,
       monaco,
       lspClient,
-      documentBase
+      documentBase,
+      presetPackages: { spx: project.classFramework.pkgPaths[0] }
     })
     codeEditorRef.value = codeEditor
     onCleanup(() => {

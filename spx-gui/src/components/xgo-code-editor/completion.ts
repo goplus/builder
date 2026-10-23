@@ -4,7 +4,8 @@
  */
 
 import * as lsp from 'vscode-languageserver-protocol'
-import type { BaseContext, DefinitionDocumentationString, DefinitionIdentifier, Position } from './common'
+import type { BaseContext, DefinitionDocumentationString, Position } from './common'
+import type { DefinitionIdentifier } from './definition-id'
 import { DefinitionKind, fromLSPTextEdit, makeAdvancedMarkdownString, toLSPPosition, type TextEdit } from './common'
 import type { ILSPClient } from './lsp/types'
 import type { IDocumentBase } from './document-base'
