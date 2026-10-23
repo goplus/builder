@@ -1,6 +1,6 @@
 import type * as lsp from 'vscode-languageserver-protocol'
-import { parseDefinitionId, type DefinitionIdentifier, type ResourceReferenceKind } from '@/components/xgo-code-editor'
-import { isResourceUri } from '../../common'
+import { isResourceUri, type ResourceReferenceKind } from '../../common'
+import { parseDefinitionId, type DefinitionIdentifier } from '../../definition-id'
 
 export type DocumentLinkForResourceReference = {
   range: lsp.Range

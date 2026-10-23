@@ -3,6 +3,7 @@ import { shallowRef, type ShallowRef } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import type { History } from '@/components/editor/history'
 import type { IXGoProject } from './project'
+import { resolveDefinitionId, type DefinitionIdentifier, type PresetPackages } from './definition-id'
 import { type IDocumentBase, DocumentBase } from './document-base'
 import type { ILSPClient } from './lsp/types'
 import { EmptyAPIReferenceProvider } from './api-reference'
@@ -56,6 +57,8 @@ export type CodeEditorParams = {
   monaco: Monaco
   lspClient: ILSPClient
   documentBase?: IDocumentBase
+  /** Maps preset names (without `preset/`) to full package paths for definition resolution. */
+  presetPackages?: PresetPackages
 }
 
 export class CodeEditor extends Disposable {
@@ -65,9 +68,11 @@ export class CodeEditor extends Disposable {
   readonly copilot: ICopilot | null
   readonly lspClient: ILSPClient
   readonly documentBase: IDocumentBase
+  private readonly presetPackages: PresetPackages
 
   constructor(params: CodeEditorParams) {
     super()
+    this.presetPackages = params.presetPackages ?? {}
     this.project = params.project
     this.history = params.history
     this.copilot = params.copilot ?? null
@@ -81,11 +86,13 @@ export class CodeEditor extends Disposable {
     this.inlayHintProviderRef = shallowRef(new InlayHintProvider(params.lspClient))
     this.inputHelperProviderRef = shallowRef(new InputHelperProvider(params.lspClient, () => this.resourceAdapter))
     this.apiReferenceProviderRef = shallowRef(new EmptyAPIReferenceProvider())
-    this.completionProviderRef = shallowRef(
-      new CompletionProvider(params.lspClient, documentBase, params.project.classFramework)
-    )
+    this.completionProviderRef = shallowRef(new CompletionProvider(params.lspClient, documentBase))
     this.diagnosticsProviderRef = shallowRef(new DiagnosticsProvider(params.lspClient, params.project))
     this.snippetVariablesProviderRef = shallowRef(new SnippetVariablesProvider())
+  }
+
+  resolveDefinitionId(definition: DefinitionIdentifier) {
+    return resolveDefinitionId(definition, this.presetPackages)
   }
 
   private hoverProviderRef: ShallowRef<IHoverProvider>

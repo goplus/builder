@@ -7,6 +7,7 @@ import { watch } from 'vue'
 import { parseDefinitionId, type CodeEditor } from '@/components/xgo-code-editor'
 import { FilteredCompletionProvider } from './api-filter'
 import { SpxAPIReferenceProvider } from './api-reference'
+import { SpxCompletionProvider } from './completion'
 import { SpxDiagnosticsProvider } from './diagnostics'
 import { SpxExecutionLocationProvider } from './execution-location'
 import { SpxResourceAdapter, useResourceRenameHelpers, useResourceSelectorHelpers } from './resource'
@@ -52,11 +53,17 @@ watch(
     codeEditor.registerInputHelperProvider(inputHelperProvider)
     codeEditor.registerSnippetVariablesProvider(snippetVariablesProvider)
 
-    const completionProvider = codeEditor.completionProvider
+    const completionProvider = new SpxCompletionProvider(codeEditor.completionProvider, documentBase)
     const stopAPIWatch = watch(
       () => props.apiWhitelist,
       (apiWhitelist) => {
-        const whitelist = apiWhitelist == null ? null : apiWhitelist.map(parseDefinitionId)
+        const whitelist =
+          apiWhitelist == null
+            ? null
+            : apiWhitelist
+                .map(parseDefinitionId)
+                .map((definition) => codeEditor.resolveDefinitionId(definition))
+                .filter((definition) => definition != null)
         codeEditor.registerAPIReferenceProvider(new SpxAPIReferenceProvider(documentBase, whitelist))
         codeEditor.registerCompletionProvider(
           whitelist == null ? completionProvider : new FilteredCompletionProvider(completionProvider, whitelist)

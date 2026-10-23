@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
 import { useCopilot } from '@/components/copilot/context'
-import { type Monaco, CodeEditor, DocumentBase, useProvideCodeEditor } from '@/components/xgo-code-editor'
+import { type Monaco, CodeEditor, DocumentBase, XGoLSPClient, useProvideCodeEditor } from '@/components/xgo-code-editor'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import * as spxDefinitionsByName from './document-base'
 import './document-base/helpers'
 import { keys as spxKeyDefinitions } from './document-base/key'
-import { SpxLSPClient } from './lsp/spx-lsp-client'
 import { SpxCodeEditorProject } from './spx-project'
 import CodeEditorInitializer from './CodeEditorInitializer.vue'
 
@@ -30,7 +29,7 @@ watch(
     const { project: spxProject, history } = editorState
 
     const project = new SpxCodeEditorProject(spxProject, history)
-    const lspClient = new SpxLSPClient(spxProject)
+    const lspClient = new XGoLSPClient(project)
     lspClient.onPropertyRenamed(({ target, oldName, newName }) => {
       for (const widget of spxProject.stage.widgets) {
         if (widget.type === 'monitor' && widget.target === target && widget.variableName === oldName) {
@@ -47,7 +46,8 @@ watch(
       copilot,
       monaco,
       lspClient,
-      documentBase
+      documentBase,
+      presetPackages: { spx: project.classFramework.pkgPaths[0] }
     })
     codeEditorRef.value = codeEditor
     onCleanup(() => {

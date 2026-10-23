@@ -6,14 +6,16 @@
 
 import { once } from 'lodash'
 import { packageSpx } from '@/utils/spx'
-import type {
-  APICategoryViewInfo,
-  DefinitionIdentifier,
-  IDocumentBase,
-  IAPIReferenceProvider,
-  APIReferenceContext
+import {
+  type APICategoryViewInfo,
+  type DefinitionIdentifier,
+  type IDocumentBase,
+  type IAPIReferenceProvider,
+  type APIReferenceContext,
+  mainCategories,
+  subCategories,
+  parseDefinitionName
 } from '@/components/xgo-code-editor'
-import { mainCategories, subCategories, parseDefinitionName } from '@/components/xgo-code-editor/common'
 import { isTextDocumentStageCode } from '../common'
 import { matchesAPI } from '../api-filter'
 import iconEvent from './icons/event.svg?raw'

@@ -24,11 +24,12 @@ import {
   type ResourceInputSlotAccept,
   InputKind,
   InputHelperProvider,
+  ResourceInput,
+  getResourceInputDefaultValue,
   type InputTypeHandler,
   type InputValuePreview,
   type ILSPClient
 } from '@/components/xgo-code-editor'
-import ResourceInput, * as resourceInput from '@/components/xgo-code-editor/ui/input-helper/ResourceInput.vue'
 import { SpxInputType, type InputValueForSpxType } from './common'
 import SpxDirectionInput, * as spxDirectionInput from './ui/input-helper/SpxDirectionInput.vue'
 import SpxLayerActionInput, * as spxLayerActionInput from './ui/input-helper/SpxLayerActionInput.vue'
@@ -64,7 +65,7 @@ export class SpxInputHelperProvider extends InputHelperProvider {
               }
             )
           },
-          getDefaultValue: resourceInput.getDefaultValue,
+          getDefaultValue: getResourceInputDefaultValue,
           exprForInput: (input: InPlaceInput) => {
             if (input.type !== SpxInputType.SpxSpriteInstance) return null
             const value = input.value as InputValueForSpxType<SpxInputType.SpxSpriteInstance> | null

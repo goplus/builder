@@ -2,35 +2,29 @@ import { shallowRef, watchEffect } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as Sentry from '@sentry/vue'
 import { Cancelled } from '@/utils/exception'
+import { getClassFileExtension, serializeGoxMod } from '@/utils/xgo/gox-mod'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { timeout, until, untilNotNull } from '@/utils/utils'
-import { extname } from '@/utils/path'
 import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
-import type { SpxProject } from '@/models/spx/project'
 import {
   fromLSPRange,
-  type DefinitionIdentifier,
   type Position,
   type ResourceReference,
   type TextDocumentIdentifier,
   containsPosition,
   type InputSlot,
-  type Property,
-  type ILSPClient,
-  type RequestContext,
-  type LSPClientEvents,
-  type PropertyRenamedEvent
-} from '@/components/xgo-code-editor'
+  type Property
+} from '../common'
+import type { DefinitionIdentifier } from '../definition-id'
+import type { IXGoProject } from '../project'
+import type { ILSPClient, RequestContext, LSPClientEvents, PropertyRenamedEvent } from './types'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, MessageID, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
 import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/commands'
 import { xgoPropertyRenamedNotification } from './spxls/notifications'
 import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } from './spxls/methods'
 import type { WorkerHandler } from './worker'
-
-/** The LSP target name for stage (the "Game" type in spx). */
-const lspStageTarget = 'Game'
 
 interface IConnectionWithFiles extends IConnection {
   sendFiles(files: SpxlsFiles): void
@@ -44,8 +38,9 @@ function isServerNotInitializedError(error: unknown): error is ResponseError {
 /** Connection between LS client and server when the server runs in a Web Worker. */
 class WorkerConnection implements IConnectionWithFiles {
   private worker: WorkerHandler
-  constructor() {
+  constructor(classFrameworkConfig: string) {
     this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+    this.worker.postMessage({ type: 'initialize', classFrameworkConfig })
   }
   sendMessage(message: RequestMessage | NotificationMessage) {
     this.worker.postMessage({ type: 'lsp', message })
@@ -116,24 +111,35 @@ type TelemetryEventParamsForNotification = TelemetryEventBaseParams & {
 
 type TelemetryEventParams = TelemetryEventParamsForCall | TelemetryEventParamsForNotification
 
-export class SpxLSPClient extends Disposable implements ILSPClient {
+export class XGoLSPClient extends Disposable implements ILSPClient {
   private emitter = new Emitter<LSPClientEvents>()
 
-  constructor(private project: SpxProject) {
+  constructor(private project: IXGoProject) {
     super()
     this.addDisposable(this.emitter)
   }
 
-  /**
-   * Register a handler for property rename events.
-   * The event's `target` is empty string for stage, or a sprite name.
-   */
+  private get projectClassName() {
+    return this.project.classFramework.projectClass.className
+  }
+
+  /** Register a handler for property rename events; an empty target denotes the project class. */
   onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void) {
     return this.emitter.on('propertyRenamed', handler)
   }
 
   private connection: IConnectionWithFiles | undefined
   private isFilesStale = shallowRef(true)
+
+  /** Sync framework project/work class sources, ordinary .gox code, and .json metadata; omit binary media. */
+  private shouldSyncFile(path: string) {
+    if (path.endsWith('.gox') || path.endsWith('.json')) return true
+    const { projectClass, workClasses } = this.project.classFramework
+    return [projectClass, ...workClasses].some(({ pattern }) => {
+      const ext = getClassFileExtension(pattern)
+      return ext !== '' && path.endsWith(ext)
+    })
+  }
 
   async loadFiles(signal: AbortSignal) {
     this.isFilesStale.value = true
@@ -142,9 +148,7 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     await Promise.all(
       Object.entries(files).map(async ([path, file]) => {
         if (file == null) return
-        const ext = extname(path)
-        if (['.spx', '.json'].includes(ext)) {
-          // Only code files & `.json` files are needed for the language server
+        if (this.shouldSyncFile(path)) {
           const ab = await file.arrayBuffer(signal)
           loadedFiles[path] = {
             content: new Uint8Array(ab),
@@ -176,7 +180,14 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
   }
 
   init() {
-    this.connection = new WorkerConnection()
+    this.connection = new WorkerConnection(
+      serializeGoxMod({
+        // Omit the xgo version directive because the bundled WASM determines the running XGo version.
+        xgoVersion: null,
+        // Each editor project uses one class framework. Only its registration is sent to the server.
+        projects: [this.project.classFramework]
+      })
+    )
     this.addDisposer(
       watchEffect(async (cleanUp) => {
         const signal = getCleanupSignal(cleanUp)
@@ -201,7 +212,7 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     // Register handler for property renamed notifications
     lc.onNotification(xgoPropertyRenamedNotification.method, (params: xgoPropertyRenamedNotification.Params) => {
       this.emitter.emit('propertyRenamed', {
-        target: params.target === lspStageTarget ? '' : params.target,
+        target: params.target === this.projectClassName ? '' : params.target,
         oldName: params.oldName,
         newName: params.newName
       })
@@ -554,9 +565,8 @@ export class SpxLSPClient extends Disposable implements ILSPClient {
     }))
   }
 
-  /** Get properties for a given target (empty string for stage, sprite name otherwise) */
+  /** Get properties of a named type; an empty target denotes the default project class. */
   async getProperties(ctx: RequestContext, target: string): Promise<Property[]> {
-    const lspTarget = target === '' ? lspStageTarget : target
-    return this.workspaceExecuteCommandXGoGetProperties(ctx, { target: lspTarget })
+    return this.workspaceExecuteCommandXGoGetProperties(ctx, { target: target === '' ? this.projectClassName : target })
   }
 }

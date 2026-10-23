@@ -1,12 +1,6 @@
 import type { LocaleMessage } from '@/utils/i18n'
-import type {
-  CodeSegment,
-  DefinitionIdentifier,
-  Diagnostic,
-  Range,
-  TextDocumentIdentifier,
-  TextDocumentRange
-} from './common'
+import type { CodeSegment, Diagnostic, Range, TextDocumentIdentifier, TextDocumentRange } from './common'
+import type { DefinitionIdentifier } from './definition-id'
 
 /**
  * Minimal topic shape required by code-editor initiated Copilot requests.

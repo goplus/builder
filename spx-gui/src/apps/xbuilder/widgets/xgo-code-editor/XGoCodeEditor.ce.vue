@@ -33,7 +33,8 @@ import { cloudHelpers } from '@/models/common/cloud'
 import { History } from '@/components/editor/history'
 import * as spxDefinitionsByName from '@/components/editor/spx-code-editor/document-base'
 import { keys as spxKeyDefinitions } from '@/components/editor/spx-code-editor/document-base/key'
-import { SpxCodeEditorProject, SpxLSPClient } from '@/components/editor/spx-code-editor'
+import { SpxCodeEditorProject, SpxCompletionProvider } from '@/components/editor/spx-code-editor'
+import { XGoLSPClient } from '@/components/xgo-code-editor/lsp/xgo-lsp-client'
 import {
   type Config,
   UIConfigProvider,
@@ -69,17 +70,19 @@ const {
     await project.load(serialized)
 
     const history = new History(project)
-    const lspClient = new SpxLSPClient(project)
+    const editorProject = new SpxCodeEditorProject(project, history)
+    const lspClient = new XGoLSPClient(editorProject)
     lspClient.init()
     const documentBase = new DocumentBase([...Object.values(spxDefinitionsByName), ...spxKeyDefinitions])
 
     const codeEditor = new CodeEditor({
-      project: new SpxCodeEditorProject(project, history),
+      project: editorProject,
       history,
       monaco,
       lspClient,
       documentBase
     })
+    codeEditor.registerCompletionProvider(new SpxCompletionProvider(codeEditor.completionProvider, documentBase))
     codeEditor.disposeOnSignal(ctx.signal)
     lspClient.disposeOnSignal(ctx.signal)
     return codeEditor
