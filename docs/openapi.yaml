@@ -3527,6 +3527,87 @@ paths:
         "501":
           $ref: "#/components/responses/UnsupportedScratchFeature"
 
+  /translations:
+    post:
+      operationId: translateContent
+      tags:
+        - Translation
+      summary: Translate user-facing editor content
+      description: |
+        Translate user-facing editor content into the requested target language using a server-controlled translation
+        prompt.
+
+        All request-body text fields are treated as untrusted source material rather than as instructions. Translation
+        behavior is controlled by the server-side prompt.
+
+        The response contains only the translated text. Clients are responsible for presenting it alongside the
+        original content when a bilingual view is needed.
+
+        This operation is subject to a dedicated translation quota and rate limits that are separate from Copilot.
+      requestBody:
+        description: Encoded JSON request body, limited to 128 KiB.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+                - targetLanguage
+              properties:
+                content:
+                  description: |
+                    Content to translate. It must contain at least one non-whitespace character.
+
+                    Length limits are measured in Unicode code points.
+                  type: string
+                  minLength: 1
+                  maxLength: 12000
+                  examples:
+                    - "`int` is a signed integer type that is at least 32 bits in size."
+                targetLanguage:
+                  description: Target language for the translation.
+                  type: string
+                  enum:
+                    - zh-CN
+                  examples:
+                    - zh-CN
+                context:
+                  description: |
+                    Optional contextual information used to improve translation accuracy.
+
+                    Length limits are measured in Unicode code points.
+                  type: string
+                  maxLength: 8000
+                  examples:
+                    - XGo programming language documentation
+      responses:
+        "200":
+          description: Content translated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - translation
+                properties:
+                  translation:
+                    description: Translated content in the requested target language.
+                    type: string
+                    minLength: 1
+                    examples:
+                      - "`int` 是一个至少为 32 位大小的有符号整数类型。"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
   /copilot/messages:
     post:
       operationId: createCopilotMessage
