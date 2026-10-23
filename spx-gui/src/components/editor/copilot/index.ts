@@ -19,7 +19,10 @@ import {
   type TextDocument
 } from '../spx-code-editor'
 import * as codeLink from './CodeLink'
-import * as codeChange from './CodeChange.vue'
+import * as codeChangeHint from './CodeChange.vue'
+import * as codeDragHint from './CodeDragHint.vue'
+import * as codeTypeHint from './CodeTypeHint.vue'
+import * as codeDeleteHint from './CodeDeleteHint.vue'
 import CodeBlock from './CodeBlock.vue'
 
 class Retriever {
@@ -297,11 +300,38 @@ export function useSpxEditorCopilot(): void {
   )
   d.addDisposer(
     copilot.registerCustomElement({
-      tagName: codeChange.tagName,
-      description: codeChange.detailedDescription,
-      attributes: codeChange.attributes,
-      isRaw: codeChange.isRaw,
-      component: codeChange.default
+      tagName: codeChangeHint.tagName,
+      description: codeChangeHint.detailedDescription,
+      attributes: codeChangeHint.attributes,
+      isRaw: codeChangeHint.isRaw,
+      component: codeChangeHint.default
+    })
+  )
+  d.addDisposer(
+    copilot.registerCustomElement({
+      tagName: codeDragHint.tagName,
+      description: codeDragHint.detailedDescription,
+      attributes: codeDragHint.attributes,
+      isRaw: codeDragHint.isRaw,
+      component: codeDragHint.default
+    })
+  )
+  d.addDisposer(
+    copilot.registerCustomElement({
+      tagName: codeTypeHint.tagName,
+      description: codeTypeHint.detailedDescription,
+      attributes: codeTypeHint.attributes,
+      isRaw: codeTypeHint.isRaw,
+      component: codeTypeHint.default
+    })
+  )
+  d.addDisposer(
+    copilot.registerCustomElement({
+      tagName: codeDeleteHint.tagName,
+      description: codeDeleteHint.detailedDescription,
+      attributes: codeDeleteHint.attributes,
+      isRaw: codeDeleteHint.isRaw,
+      component: codeDeleteHint.default
     })
   )
   d.addDisposer(copilot.registerContextProvider(new ProjectContextProvider(editorCtx)))
