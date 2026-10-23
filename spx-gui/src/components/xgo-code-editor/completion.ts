@@ -1,6 +1,6 @@
 /**
  * @desc ICompletionProvider interface + CompletionProvider default implementation.
- * Uses ILSPClient + DocumentBase + pkgPaths. No spx-specific knowledge.
+ * Uses ILSPClient and DocumentBase.
  */
 
 import * as lsp from 'vscode-languageserver-protocol'
@@ -8,7 +8,6 @@ import type { BaseContext, DefinitionDocumentationString, DefinitionIdentifier, 
 import { DefinitionKind, fromLSPTextEdit, makeAdvancedMarkdownString, toLSPPosition, type TextEdit } from './common'
 import type { ILSPClient } from './lsp/types'
 import type { IDocumentBase } from './document-base'
-import type { ClassFramework } from './project'
 
 export { DefinitionKind as CompletionItemKind }
 
@@ -43,8 +42,7 @@ export interface ICompletionProvider {
 export class CompletionProvider implements ICompletionProvider {
   constructor(
     private lspClient: ILSPClient,
-    private documentBase: IDocumentBase,
-    private classFramework: ClassFramework
+    private documentBase: IDocumentBase
   ) {}
 
   private getCompletionItemKind(kind: lsp.CompletionItemKind | undefined): DefinitionKind {
@@ -115,11 +113,6 @@ export class CompletionProvider implements ICompletionProvider {
         const defId = item.data?.definition
         const definition = defId != null ? await this.documentBase.getDocumentation(defId) : null
 
-        // Skip undocumented framework APIs because they are treated as not recommended.
-        // Kwarg snippets are synthesized from call-site context and have no documentation entry by design.
-        const classFrameworkPkg = this.classFramework.pkgPaths[0]
-        const isUndocumentedFrameworkItem = defId != null && defId.package === classFrameworkPkg && definition == null
-        if (isUndocumentedFrameworkItem && !isKwargCompletionItem(result)) return null
         if (definition != null && definition.hiddenFromList) return null
 
         if (definition != null) {
@@ -158,9 +151,4 @@ function fromLSPCompletionItemTextEdit(textEdit: lsp.CompletionItem['textEdit'])
   if (textEdit == null) return null
   if ('range' in textEdit) return fromLSPTextEdit(textEdit)
   return fromLSPTextEdit({ range: textEdit.insert, newText: textEdit.newText })
-}
-
-// XGo LSP kwarg completions are snippets with insertText of the form `<label> = ${1:}`.
-function isKwargCompletionItem(item: CompletionItem) {
-  return item.insertTextFormat === InsertTextFormat.Snippet && item.insertText.startsWith(`${item.label} = `)
 }

@@ -16,12 +16,10 @@ export * from './spx-project'
 // Spx code owners
 export * from './text-document'
 
-// Spx LSP client
-export { SpxLSPClient } from './lsp/spx-lsp-client'
-
 // Spx-specific providers
 export * from './api-reference'
 export * from './diagnostics'
+export * from './completion'
 export * from './input-helper'
 export * from './resource'
 
