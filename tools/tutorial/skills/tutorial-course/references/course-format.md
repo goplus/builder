@@ -40,17 +40,6 @@ whatever its payload is called. Names are unique within each type of resource, s
 share one. The manifest points at the payload and carries an editor-managed id; the editor
 writes both, so a course program never reads a manifest and never needs a path.
 
-Video manifests also declare `kind`: `knowledge` videos are always muted and have no sound toggle;
-`story` videos keep sound controls. For example:
-
-```json
-{ "path": "step-to.mp4", "kind": "knowledge" }
-```
-
-New videos default to `knowledge`. Older manifests without `kind` retain their previous sound controls
-as `story` videos; set their type explicitly when updating them. In the editor, choose the video type
-from the resource card's menu. Type changes are saved with the resource and support undo and redo.
-
 Adding a video in the editor happens on the videos page: the page decides the directory and the manifest, and
 the name comes from the file and is made unique. Renaming a video renames what the program addresses, so the
 program has to be updated with it.

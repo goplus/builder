@@ -7,7 +7,6 @@ import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { Video, type Image } from '@/models/tutorial/project'
-import type { VideoKind } from '@/models/tutorial/video'
 import { UIDropdown, UIIcon, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 
 const props = defineProps<{
@@ -21,11 +20,9 @@ const emit = defineEmits<{
   rename: []
   /** "Delete..." was chosen. */
   remove: []
-  changeKind: [kind: VideoKind]
 }>()
 
 const isVideo = computed(() => props.resource instanceof Video)
-const videoKind = computed(() => (props.resource instanceof Video ? props.resource.kind : null))
 
 // NOTE: The whole video is loaded before its first frame shows, see https://github.com/goplus/builder/issues/3573.
 const [videoUrl] = useFileUrl(() => (isVideo.value ? props.resource.file : null))
@@ -77,7 +74,7 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
           <div
             v-radar="{
               name: 'resource-card-menu',
-              desc: 'Click to edit or delete this resource',
+              desc: 'Click to rename or delete this resource',
               attrs: { name: resource.name }
             }"
             class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-grey-100 text-grey-800 transition-all duration-100 hover:bg-primary-main hover:text-grey-100"
@@ -87,32 +84,6 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
           </div>
         </template>
         <UIMenu>
-          <UIMenuGroup v-if="isVideo">
-            <UIMenuItem
-              v-radar="{
-                name: 'video-kind-menu-item',
-                label: $t({ en: 'Knowledge video (muted)', zh: '知识点视频（静音）' }),
-                desc: 'Use this video as a silent knowledge-point explanation',
-                attrs: { kind: 'knowledge' }
-              }"
-              :disabled="videoKind === 'knowledge'"
-              @click="emit('changeKind', 'knowledge')"
-            >
-              {{ $t({ en: 'Knowledge video (muted)', zh: '知识点视频（静音）' }) }}
-            </UIMenuItem>
-            <UIMenuItem
-              v-radar="{
-                name: 'video-kind-menu-item',
-                label: $t({ en: 'Story video (sound controls)', zh: '剧情视频（声音开关）' }),
-                desc: 'Use this video as a story with sound controls',
-                attrs: { kind: 'story' }
-              }"
-              :disabled="videoKind === 'story'"
-              @click="emit('changeKind', 'story')"
-            >
-              {{ $t({ en: 'Story video (sound controls)', zh: '剧情视频（声音开关）' }) }}
-            </UIMenuItem>
-          </UIMenuGroup>
           <UIMenuGroup>
             <UIMenuItem
               v-radar="{ name: 'rename-menu-item', desc: 'Click to rename this resource' }"

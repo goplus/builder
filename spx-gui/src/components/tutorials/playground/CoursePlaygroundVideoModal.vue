@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 
 import { Cancelled } from '@/utils/exception'
 import type { Video } from '@/models/tutorial/video'
@@ -19,7 +19,6 @@ const videoElement = ref<HTMLVideoElement | null>(null)
 const src = ref<string | null>(null)
 const failed = ref(false)
 const needsPlay = ref(true)
-const isStory = computed(() => props.video.kind === 'story')
 const muted = ref(false)
 const controller = new AbortController()
 
@@ -77,7 +76,7 @@ onBeforeUnmount(() => {
           ref="videoElement"
           class="block h-full w-full object-contain"
           :src="src"
-          :muted="!isStory || muted"
+          :muted="muted"
           playsinline
           @loadeddata="play"
           @pause="needsPlay = true"
@@ -85,14 +84,11 @@ onBeforeUnmount(() => {
           @error="failed = true"
         ></video>
         <button
-          v-if="isStory && src != null && !failed"
-          v-radar="{
-            name: 'course-video-sound',
-            label: $t(muted ? { en: 'Turn sound on', zh: '打开声音' } : { en: 'Turn sound off', zh: '关闭声音' }),
-            desc: 'Turn the Course video sound on or off'
-          }"
+          v-if="src != null && !failed"
+          v-radar="{ name: 'course-video-sound', desc: 'Turn the Course video sound on or off' }"
           type="button"
           class="absolute right-3 top-3 flex size-8 appearance-none items-center justify-center rounded-full border border-solid border-grey-500 bg-grey-100 p-0 text-grey-800 hover:bg-grey-300"
+          :aria-label="$t(muted ? { en: 'Turn sound on', zh: '打开声音' } : { en: 'Turn sound off', zh: '关闭声音' })"
           :aria-pressed="!muted"
           @click="muted = !muted"
         >
@@ -100,13 +96,10 @@ onBeforeUnmount(() => {
         </button>
         <button
           v-if="src != null && needsPlay && !failed"
-          v-radar="{
-            name: 'course-video-play',
-            label: $t({ en: 'Play video', zh: '播放视频' }),
-            desc: 'Play or replay the Course video'
-          }"
+          v-radar="{ name: 'course-video-play', desc: 'Play or replay the Course video' }"
           type="button"
           class="absolute left-1/2 top-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 appearance-none items-center justify-center rounded-full border-0 bg-[rgba(36,41,47,0.25)] p-3.5 text-white outline-none transition-colors hover:bg-[rgba(36,41,47,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          :aria-label="$t({ en: 'Play video', zh: '播放视频' })"
           @click="play"
         >
           <UIIcon type="play" class="size-7" />

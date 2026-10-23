@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 
 import { createI18n } from '@/utils/i18n'
-import { fromConfig, fromText, toConfig, type Files } from '@/models/common/file'
+import { fromConfig, fromText, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { TutorialProject, Video } from '@/models/tutorial/project'
 import { Cancelled } from '@/utils/exception'
@@ -82,7 +82,7 @@ async function makeCourse() {
 const CardStub = defineComponent({
   name: 'CourseResourceCard',
   props: { resource: { type: Object, required: true } },
-  emits: ['preview', 'rename', 'remove', 'changeKind'],
+  emits: ['preview', 'rename', 'remove'],
   render: () => null
 })
 
@@ -220,26 +220,5 @@ describe('CourseResourceGrid', () => {
     await flushPromises()
 
     expect(mocks.modals).toEqual([{ name: 'CourseResourcePreviewModal', props: { resource: project.videos[0] } }])
-  })
-
-  it('records video type changes with undo and redo while keeping the same resource', async () => {
-    const { project, history, card } = await mountGrid('videos')
-    const video = project.videos[0]
-    expect(video.kind).toBe('story')
-
-    card('step-to').vm.$emit('changeKind', 'knowledge')
-    await flushPromises()
-    expect(video.kind).toBe('knowledge')
-    expect(history.getUndoAction()?.name.en).toBe('Change video type')
-    expect(await toConfig(project.exportFiles()['assets/videos/step-to/index.json']!)).toMatchObject({
-      kind: 'knowledge'
-    })
-
-    await history.undo()
-    expect(project.videos[0]).toBe(video)
-    expect(video.kind).toBe('story')
-    await history.redo()
-    expect(project.videos[0]).toBe(video)
-    expect(video.kind).toBe('knowledge')
   })
 })

@@ -24,7 +24,6 @@ import { selectFilesWithUploadLimit } from '@/models/common/cloud'
 import { fromNativeFile } from '@/models/common/file'
 import { validateImageName, validateVideoName } from '@/models/tutorial/asset-name'
 import { Image, Video, type TutorialProject } from '@/models/tutorial/project'
-import type { VideoKind } from '@/models/tutorial/video'
 import type { History } from '@/components/editor/history'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { UIButton, UIEmpty, useConfirmDialog, useModal } from '@/components/ui'
@@ -78,16 +77,6 @@ const handleAdd = useMessageHandle(
 )
 
 const handlePreview = useMessageHandle((resource: Video | Image) => openPreview({ resource }))
-
-const handleChangeKind = useMessageHandle(
-  async (resource: Video | Image, kind: VideoKind) => {
-    if (!(resource instanceof Video) || resource.kind === kind) return
-    await props.history.doAction({ name: { en: 'Change video type', zh: '修改视频类型' } }, () =>
-      resource.setKind(kind)
-    )
-  },
-  { en: 'Failed to change video type', zh: '修改视频类型失败' }
-)
 
 const handleRename = useMessageHandle(
   (resource: Video | Image) =>
@@ -188,7 +177,6 @@ const handleRemove = useMessageHandle(
         @preview="handlePreview.fn(resource)"
         @rename="handleRename.fn(resource)"
         @remove="handleRemove.fn(resource)"
-        @change-kind="handleChangeKind.fn(resource, $event)"
       />
     </ul>
   </div>

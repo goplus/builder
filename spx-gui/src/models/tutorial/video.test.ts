@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { fromConfig, fromText, toConfig, toText, type Files } from '@/models/common/file'
 import { getVideoName, validateVideoName } from './asset-name'
-import { Video, type VideoKind } from './video'
+import { Video } from './video'
 
 function makeFiles(): Files {
   return {
@@ -17,34 +17,14 @@ describe('Video', () => {
     if (video == null) throw new Error('video expected')
 
     expect(video.id).toBe('video-id')
-    expect(video.kind).toBe('story')
     expect(await toText(video.file)).toBe('video')
 
     const exported = video.export()
     expect(await toConfig(exported['assets/videos/step-to/index.json']!)).toEqual({
       path: 'step-to.mp4',
-      builder_id: 'video-id',
-      kind: 'story'
+      builder_id: 'video-id'
     })
     expect(await toText(exported['assets/videos/step-to/step-to.mp4']!)).toBe('video')
-  })
-
-  it('creates knowledge videos by default', () => {
-    const video = new Video('lesson', fromText('lesson.mp4', 'video'))
-    expect(video.kind).toBe('knowledge')
-  })
-
-  it.each<VideoKind>(['knowledge', 'story'])('preserves an explicit %s type through export and load', async (kind) => {
-    const video = new Video('lesson', fromText('lesson.mp4', 'video'), { kind })
-    const loaded = await Video.load('lesson', video.export())
-    expect(loaded?.kind).toBe(kind)
-    expect(await toConfig(loaded!.export()['assets/videos/lesson/index.json']!)).toMatchObject({ kind })
-  })
-
-  it('rejects an unknown declared video type', async () => {
-    const files = makeFiles()
-    files['assets/videos/step-to/index.json'] = fromConfig('index.json', { path: 'step-to.mp4', kind: 'other' })
-    await expect(Video.load('step-to', files)).rejects.toThrow('invalid video kind other')
   })
 
   it('loads every declared video', async () => {
@@ -71,9 +51,6 @@ describe('Video', () => {
     expect(video.export()['assets/videos/step-to/index.json']).toBe(manifest)
     video.setFile(fromText('step-to.webm', 'video'))
     expect(video.export()['assets/videos/step-to/index.json']).not.toBe(manifest)
-    const changedFileManifest = video.export()['assets/videos/step-to/index.json']
-    video.setKind('story')
-    expect(video.export()['assets/videos/step-to/index.json']).not.toBe(changedFileManifest)
   })
 
   it('rejects names that cannot identify a video directory', () => {

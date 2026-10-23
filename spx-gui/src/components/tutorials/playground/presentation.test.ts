@@ -1,15 +1,15 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createRadar } from '@/utils/radar'
 import { File } from '@/models/common/file'
-import { Video, type VideoKind } from '@/models/tutorial/video'
+import { Video } from '@/models/tutorial/video'
 
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 import CoursePlaygroundVideoModal from './CoursePlaygroundVideoModal.vue'
 
 const globalOptions = {
   mocks: { $t: (message: { en: string }) => message.en },
+  directives: { radar: () => {} },
   stubs: {
     UIModal: { props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
     UIButton: { template: '<button><slot /></button>' },
@@ -30,12 +30,12 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function mountVideo(kind: VideoKind = 'knowledge') {
+function mountVideo() {
   const file = new File('lesson.mp4', async () => new ArrayBuffer(0), { type: 'video/mp4' })
   vi.spyOn(file, 'url').mockResolvedValue('blob:lesson')
   const wrapper = mount(CoursePlaygroundVideoModal, {
-    props: { visible: true, video: new Video('lesson', file, { kind }) },
-    global: { ...globalOptions, plugins: [createRadar()] }
+    props: { visible: true, video: new Video('lesson', file) },
+    global: globalOptions
   })
   wrappers.push(wrapper)
   return { wrapper, file }
@@ -45,7 +45,7 @@ describe('Course presentation', () => {
   it.each(['prelude', 'message'] as const)('renders %s Markdown and waits for confirmation', async (kind) => {
     const wrapper = mount(CoursePlaygroundMessageModal, {
       props: { visible: true, kind, content: '**Goal**: use `stepTo`' },
-      global: { ...globalOptions, plugins: [createRadar()] }
+      global: globalOptions
     })
     wrappers.push(wrapper)
     expect(wrapper.find('strong').text()).toBe('Goal')
@@ -93,37 +93,18 @@ describe('Course presentation', () => {
   })
 
   it('toggles sound without restarting playback and preserves it for replay', async () => {
-    const { wrapper } = mountVideo('story')
+    const { wrapper } = mountVideo()
     await flushPromises()
     const video = wrapper.find('video')
-    expect(wrapper.find('button[aria-label="Turn sound off"]').attributes('aria-pressed')).toBe('true')
     await wrapper.find('button[aria-label="Turn sound off"]').trigger('click')
     expect(video.element.muted).toBe(true)
-    expect(wrapper.find('button[aria-label="Turn sound on"]').attributes('aria-pressed')).toBe('false')
     await video.trigger('ended')
     await wrapper.find('button[aria-label="Play video"]').trigger('click')
     expect(video.element.muted).toBe(true)
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
     await wrapper.find('button[aria-label="Turn sound on"]').trigger('click')
     expect(video.element.muted).toBe(false)
-    expect(wrapper.find('button[aria-label="Turn sound off"]').attributes('aria-pressed')).toBe('true')
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
-    expect(wrapper.emitted('resolved')).toBeUndefined()
-  })
-
-  it('keeps knowledge videos silent without a sound button, including replay', async () => {
-    const { wrapper } = mountVideo('knowledge')
-    await flushPromises()
-    const video = wrapper.get('video')
-    expect(video.element.muted).toBe(true)
-    expect(wrapper.findAll('button')).toHaveLength(2)
-    expect(wrapper.find('button[aria-label="Turn sound on"]').exists()).toBe(false)
-    expect(wrapper.find('button[aria-label="Turn sound off"]').exists()).toBe(false)
-
-    await video.trigger('loadeddata')
-    await video.trigger('ended')
-    await wrapper.get('button[aria-label="Play video"]').trigger('click')
-    expect(video.element.muted).toBe(true)
     expect(wrapper.emitted('resolved')).toBeUndefined()
   })
 

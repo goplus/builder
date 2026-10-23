@@ -7,11 +7,8 @@ import { fromConfig, listDirs, toConfig, type File, type Files } from '@/models/
 import { validateVideoName } from './asset-name'
 import type { TutorialProject } from './project'
 
-export type VideoKind = 'knowledge' | 'story'
-
 export type VideoInits = {
   id?: string
-  kind?: VideoKind
 }
 
 export type RawVideoConfig = Omit<VideoInits, 'id'> & {
@@ -24,11 +21,6 @@ const videoConfigFileName = 'index.json'
 
 export class Video {
   id: string
-
-  kind: VideoKind
-  setKind(kind: VideoKind) {
-    this.kind = kind
-  }
 
   _project: TutorialProject | null = null
   setProject(project: TutorialProject | null) {
@@ -57,16 +49,11 @@ export class Video {
 
   constructor(name: string, file: File, inits?: VideoInits) {
     this.id = inits?.id ?? nanoid()
-    this.kind = inits?.kind ?? 'knowledge'
     this.name = name
     this.file = file
     const reactiveThis = reactive(this) as this
     this.configFile = computed(() => {
-      const config: RawVideoConfig = {
-        path: reactiveThis.filename,
-        builder_id: reactiveThis.id,
-        kind: reactiveThis.kind
-      }
+      const config: RawVideoConfig = { path: reactiveThis.filename, builder_id: reactiveThis.id }
       return fromConfig(videoConfigFileName, config)
     })
     return reactiveThis
@@ -76,13 +63,11 @@ export class Video {
     const pathPrefix = join(videoAssetPath, name)
     const configFile = files[join(pathPrefix, videoConfigFileName)]
     if (configFile == null) return null
-    const { builder_id: id, path, kind } = (await toConfig(configFile)) as RawVideoConfig
+    const { builder_id: id, path } = (await toConfig(configFile)) as RawVideoConfig
     if (path == null) throw new Error(`path expected for video ${name}`)
-    if (kind != null && kind !== 'knowledge' && kind !== 'story') throw new Error(`invalid video kind ${kind}`)
     const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for video ${name} not found`)
-    // Older courses had sound controls for every video.
-    return new Video(name, file, { id, kind: kind ?? 'story' })
+    return new Video(name, file, { id })
   }
 
   static async loadAll(files: Files) {
