@@ -38,7 +38,7 @@ defineExpose({ el })
   >
     <span
       :class="
-        cn('copilot-trigger-content flex h-full items-center rounded-[16px] bg-grey-100 px-1', {
+        cn('copilot-trigger-content flex h-full items-center rounded-[15px] bg-grey-100 px-1', {
           'rounded-l-none py-0 pr-1.25 pl-2.5': props.attachedTo === 'left',
           'rounded-r-none py-0 pr-2.5 pl-1.25': props.attachedTo === 'right'
         })
