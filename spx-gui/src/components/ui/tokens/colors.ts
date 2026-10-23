@@ -79,20 +79,6 @@ export const grey = {
 
 // Semantic colors
 
-export const copilotBorder = {
-  start: '#72bbff',
-  end: '#c390ff'
-} as const
-
-export const copilotTrigger = {
-  start: '#9a77ff',
-  end: '#735ffa',
-  hover: {
-    start: '#ae92ff',
-    end: '#9181fb'
-  }
-} as const
-
 export const primary = turquoise
 
 export const danger = red

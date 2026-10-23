@@ -65,8 +65,8 @@ function toggle() {
       >
         <defs>
           <linearGradient :id="gradientId" gradientUnits="userSpaceOnUse" x1="0" :x2="panelOutline.width" y1="0" y2="0">
-            <stop stop-color="var(--ui-color-copilot-border-start)" />
-            <stop offset="1" stop-color="var(--ui-color-copilot-border-end)" />
+            <stop stop-color="#72bbff" />
+            <stop offset="1" stop-color="#c390ff" />
           </linearGradient>
         </defs>
         <path

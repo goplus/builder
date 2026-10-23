@@ -50,9 +50,7 @@ export const borderRadius = {
   // Primary 8px radius used by buttons, panels, and most cards.
   md: '8px',
   // Auxiliary 12px radius used by popups and outer floating surfaces around 8px content.
-  lg: '12px',
-  // The Copilot entry's inset surface subtracts its 1px outline from this outer radius.
-  copilotTrigger: '16px'
+  lg: '12px'
 } as const
 
 export const boxShadow = {
