@@ -3,7 +3,12 @@ import { computed, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 import { untilNotNull, usePageTitle } from '@/utils/utils'
-import { canUseAdminConsole as checkCanUseAdminConsole, useSignIn, useSignedInStateQuery } from '@/stores/user'
+import {
+  canUseAdminConsole as checkCanUseAdminConsole,
+  useSignIn,
+  useSignedInStateQuery,
+  type AdminConsoleCapabilities
+} from '@/stores/user'
 import { UIError, UILoading, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
@@ -17,6 +22,7 @@ const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
 const canManageAccount = computed(() => signedInUser.value?.capabilities.canManageAccount === true)
+const canManageFeedback = computed(() => signedInUser.value?.capabilities.canManageFeedback === true)
 const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
 
 const accountNavItems = [
@@ -25,8 +31,9 @@ const accountNavItems = [
 ]
 const isAccountRoute = computed(() => accountNavItems.some((item) => route.path.startsWith(item.to)))
 
-function getAdminDefaultRoute(capabilities: { canManageAccount: boolean; canManageAuthorization: boolean }) {
+function getAdminDefaultRoute(capabilities: AdminConsoleCapabilities) {
   if (capabilities.canManageAccount) return '/admin/users'
+  if (capabilities.canManageFeedback) return '/admin/feedback'
   if (capabilities.canManageAuthorization) return '/admin/audit-logs'
   return null
 }
@@ -88,6 +95,15 @@ watch(
                 </UIMenuGroup>
               </UIMenu>
             </NavbarDropdown>
+            <RouterLink
+              v-if="canManageFeedback"
+              v-radar="{ name: 'Feedback', desc: 'Open admin feedback list' }"
+              class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
+              :class="route.path.startsWith('/admin/feedback') ? 'text-primary-main' : 'text-inherit'"
+              to="/admin/feedback"
+            >
+              {{ $t({ en: 'Feedback', zh: '用户反馈' }) }}
+            </RouterLink>
             <RouterLink
               v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"

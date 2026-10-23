@@ -6,7 +6,9 @@ enableAutoUnmount(afterEach)
 
 type MockSignedInState = {
   isSignedIn: boolean
-  user: { capabilities: { canManageAccount: boolean; canManageAuthorization: boolean } } | null
+  user: {
+    capabilities: { canManageAccount: boolean; canManageAuthorization: boolean; canManageFeedback: boolean }
+  } | null
 }
 
 const mocks = vi.hoisted(() => ({
@@ -15,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   signIn: vi.fn(),
   signedInState: {
     isSignedIn: true,
-    user: { capabilities: { canManageAccount: true, canManageAuthorization: false } }
+    user: { capabilities: { canManageAccount: true, canManageAuthorization: false, canManageFeedback: false } }
   } as MockSignedInState | null,
   signedInData: null as Ref<MockSignedInState | null> | null
 }))
@@ -37,10 +39,14 @@ vi.mock('@/stores/user', () => ({
       | {
           canManageAccount: boolean
           canManageAuthorization: boolean
+          canManageFeedback: boolean
         }
       | null
       | undefined
-  ) => capabilities?.canManageAccount === true || capabilities?.canManageAuthorization === true,
+  ) =>
+    capabilities?.canManageAccount === true ||
+    capabilities?.canManageAuthorization === true ||
+    capabilities?.canManageFeedback === true,
   useSignIn: () => mocks.signIn,
   useSignedInStateQuery: () => {
     const data = ref(mocks.signedInState)
@@ -68,7 +74,7 @@ describe('Admin page routing', () => {
     mocks.signIn.mockReset()
     mocks.signedInState = {
       isSignedIn: true,
-      user: { capabilities: { canManageAccount: true, canManageAuthorization: false } }
+      user: { capabilities: { canManageAccount: true, canManageAuthorization: false, canManageFeedback: false } }
     }
   })
 
@@ -86,22 +92,32 @@ describe('Admin page routing', () => {
   it.each([
     {
       name: 'Account management only',
-      capabilities: { canManageAccount: true, canManageAuthorization: false },
+      capabilities: { canManageAccount: true, canManageAuthorization: false, canManageFeedback: false },
       defaultRoute: '/admin/users'
     },
     {
       name: 'Authorization management only',
-      capabilities: { canManageAccount: false, canManageAuthorization: true },
+      capabilities: { canManageAccount: false, canManageAuthorization: true, canManageFeedback: false },
       defaultRoute: '/admin/audit-logs'
     },
     {
       name: 'Account and Authorization management',
-      capabilities: { canManageAccount: true, canManageAuthorization: true },
+      capabilities: { canManageAccount: true, canManageAuthorization: true, canManageFeedback: false },
       defaultRoute: '/admin/users'
     },
     {
+      name: 'Feedback management only',
+      capabilities: { canManageAccount: false, canManageAuthorization: false, canManageFeedback: true },
+      defaultRoute: '/admin/feedback'
+    },
+    {
+      name: 'Authorization and Feedback management',
+      capabilities: { canManageAccount: false, canManageAuthorization: true, canManageFeedback: true },
+      defaultRoute: '/admin/feedback'
+    },
+    {
       name: 'no management capability',
-      capabilities: { canManageAccount: false, canManageAuthorization: false },
+      capabilities: { canManageAccount: false, canManageAuthorization: false, canManageFeedback: false },
       defaultRoute: null
     }
   ])('uses the expected default route for $name', async ({ capabilities, defaultRoute }) => {
@@ -138,7 +154,7 @@ describe('Admin page routing', () => {
 
     mocks.signedInData!.value = {
       isSignedIn: true,
-      user: { capabilities: { canManageAccount: true, canManageAuthorization: false } }
+      user: { capabilities: { canManageAccount: true, canManageAuthorization: false, canManageFeedback: false } }
     }
     await nextTick()
     await flushPromises()
