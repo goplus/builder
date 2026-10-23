@@ -9,7 +9,6 @@ import { timeout, until, untilNotNull } from '@/utils/utils'
 import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
 import {
   fromLSPRange,
-  type DefinitionIdentifier,
   type Position,
   type ResourceReference,
   type TextDocumentIdentifier,
@@ -17,6 +16,7 @@ import {
   type InputSlot,
   type Property
 } from '../common'
+import type { DefinitionIdentifier } from '../definition-id'
 import type { IXGoProject } from '../project'
 import type { ILSPClient, RequestContext, LSPClientEvents, PropertyRenamedEvent } from './types'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'

@@ -31,7 +31,7 @@ type Feedback struct {
 }
 
 onStart => {
-	Editor.CodeEditor.filterAPIs ["xgo:spx?Sprite.stepTo"]
+	Editor.CodeEditor.filterAPIs ["xgo:preset/spx?Sprite.stepTo"]
 	Editor.Ruler.enable
 	showPrelude "Move Lita to Mushroom."
 	showVideo "step-to"

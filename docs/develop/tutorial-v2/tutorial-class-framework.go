@@ -100,12 +100,12 @@ type Runtime interface {
 }
 
 type CodeEditor interface {
-	// filterAPIs limits Code Editor assistance. Prefer "xgo:spx?Sprite.stepTo":
-	// spx resolves to the active editor's SPX package, including after upgrades.
+	// filterAPIs limits Code Editor assistance. Prefer "xgo:preset/spx?Sprite.stepTo":
+	// preset/spx resolves to the active editor's SPX package, including after upgrades.
 	// Entries use "xgo:<package>?<name>#<overloadId>"; omitting # selects all
-	// overloads. Other package names and full paths match literally; unknown
-	// packages or removed APIs match nothing. Invalid IDs or missing SPX config
-	// fail the call without changing the whitelist. An empty list hides all APIs.
+	// overloads. preset/<name> selects a project-provided package; other package
+	// names and full paths match literally. Unknown presets, packages and APIs
+	// match nothing. An empty list hides all filtered APIs.
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
 	formatWorkspace()

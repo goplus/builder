@@ -5,10 +5,12 @@
 export * from './project'
 export * from './code-editor'
 export * from './common'
+export * from './definition-id'
 export * from './context'
 export * from './document-base'
 export * as xgoDefinitions from './document-base/xgo'
 export * from './lsp/types'
+export { XGoLSPClient } from './lsp/xgo-lsp-client'
 export * from './monaco'
 export * from './text-document'
 
@@ -27,7 +29,10 @@ export * from './utils'
 // Vue components
 export { default as CodeEditorUI, useCodeEditorUICtx } from './ui/CodeEditorUI.vue'
 export { default as CodeEditorCard } from './ui/CodeEditorCard.vue'
-export { default as ResourceInput } from './ui/input-helper/ResourceInput.vue'
+export {
+  default as ResourceInput,
+  getDefaultValue as getResourceInputDefaultValue
+} from './ui/input-helper/ResourceInput.vue'
 
 export type { ICopilot, CopilotTopic } from './copilot'
 export type { CodeEditorUIController } from './ui/code-editor-ui'

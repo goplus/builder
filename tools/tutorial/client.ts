@@ -56,9 +56,6 @@ export interface TutorialFrameworkHost {
   };
   editor: {
     codeEditor: {
-      /** Prefer xgo:spx?Sprite.stepTo; the Host resolves spx using the active editor.
-       * Other packages match literally; an omitted overload suffix selects all overloads.
-       * Invalid IDs or missing SPX configuration fail without changing the whitelist. */
       filterAPIs(apis: string[]): void;
       formatWorkspace(): Promise<void>;
     };
