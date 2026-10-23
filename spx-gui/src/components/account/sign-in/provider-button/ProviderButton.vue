@@ -72,10 +72,11 @@ const logo = computed(() => {
 })
 
 const signInMessage = computed<LocaleMessage>(() => {
-  const { displayName } = props.provider
+  const { name, displayName } = props.provider
+  const zhDisplayName = name === 'wechat' ? '微信' : displayName
   return spacingLocaleZhMessage({
     en: `Sign in with ${displayName}`,
-    zh: `使用${displayName}登录`
+    zh: `使用${zhDisplayName}登录`
   })
 })
 </script>
