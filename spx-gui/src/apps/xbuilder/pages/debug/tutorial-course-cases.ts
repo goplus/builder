@@ -1,3 +1,5 @@
+import { failingCopilotMessagePrefix } from './tutorial-mock-host'
+
 // Copied from docs/develop/tutorial-v2/example-tutorial-course/main_course.gox
 // (frontend code does not import from outside its own directory). Keep in sync
 // manually; the docs copy itself is compile-guarded by tools/xgoexec-bundle.
@@ -11,7 +13,10 @@ export const exampleCourseSource = `onStart => {
 Editor.Runtime.onLog log => {
 	if log == "reached-target" {
 		code := Editor.Project.getCode("Lita")
-		feedback := Copilot.generateText("Give one short sentence of feedback about this solution:\\n" + code)
+		feedback, err := Copilot.generateText("Give one short sentence of feedback about this solution:\\n" + code)
+		if err != nil {
+			feedback = "Lita reached Mushroom. Well done!"
+		}
 		completeWith feedback
 	}
 }
@@ -72,8 +77,29 @@ Editor.Runtime.onLog log => {
 	Editor.Ruler.disable
 
 	feedback := &Feedback{}
-	Copilot.generateJSON "judge this", feedback
-	completeWith Copilot.generateText("praise the learner")
+	if err := Copilot.generateJSON("judge this", feedback); err != nil {
+		echo "generateJSON failed:", err
+	}
+	completeWith Copilot.generateText("praise the learner")?:"Well done!"
+}
+`
+
+// The mock host rejects these Copilot requests; the course completes with its fallback.
+const copilotFailureCourseSource = `
+type Review struct {
+	Passed bool
+}
+
+Editor.Runtime.onLog log => {
+	_, err := Copilot.generateText("${failingCopilotMessagePrefix}praise the learner")
+	if err == nil {
+		panic "generateText did not return the failure"
+	}
+	review := &Review{Passed: true}
+	if err := Copilot.generateJSON("${failingCopilotMessagePrefix}judge this", review); err == nil || !review.Passed {
+		panic "generateJSON did not return the failure and keep the result"
+	}
+	completeWith Copilot.generateText("${failingCopilotMessagePrefix}praise again")?:"Well done!"
 }
 `
 
@@ -130,6 +156,12 @@ export const courseCases: CourseCase[] = [
       { name: 'editor.runtime.exit', payload: { code: 0 } },
       { name: 'editor.runtime.log', payload: { log: 'reached-target' } }
     ]
+  },
+  {
+    name: 'Copilot failures fall back',
+    description: 'Rejected Copilot requests come back to the course as errors, and it completes with its fallback.',
+    source: copilotFailureCourseSource,
+    events: [{ name: 'editor.runtime.log', payload: { log: 'reached-target' } }]
   },
   {
     name: 'Completes during onStart',

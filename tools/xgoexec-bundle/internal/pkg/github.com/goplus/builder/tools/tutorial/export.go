@@ -15,6 +15,7 @@ func init() {
 		Name: "tutorial",
 		Path: "github.com/goplus/builder/tools/tutorial",
 		Deps: map[string]string{
+			"encoding":      "encoding",
 			"encoding/json": "json",
 			"fmt":           "fmt",
 			"github.com/goplus/builder/tools/xgoexec": "xgoexec",

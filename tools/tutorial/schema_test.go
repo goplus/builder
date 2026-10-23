@@ -2,6 +2,7 @@ package tutorial
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -70,6 +71,13 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		common
 		Score int
 	}
+	// encoding/json fills an unexported embedded struct with a json name,
+	// although the schema leaves it out.
+	type secret struct{ Score grade }
+	type withSecret struct {
+		Praise string
+		secret `json:"details"`
+	}
 	for _, test := range []struct {
 		name   string
 		result any
@@ -86,6 +94,12 @@ func TestDeriveSchemaRejectsUnusableResults(t *testing.T) {
 		{name: "self reference through slice", result: &tree{}, want: "refers to itself"},
 		{name: "mutual reference", result: &left{}, want: "refers to itself"},
 		{name: "untagged embedded field", result: &embedded{}, want: "embedded fields are not supported"},
+		{name: "unexported embedded field", result: &withSecret{}, want: "embedded fields need an exported type"},
+		{name: "field with UnmarshalJSON", result: &struct{ Score grade }{}, want: "decodes itself"},
+		{name: "field with UnmarshalText", result: &struct{ Name label }{}, want: "decodes itself"},
+		{name: "pointer to a type with UnmarshalJSON", result: &struct{ Score *grade }{}, want: "decodes itself"},
+		{name: "slice of a type with UnmarshalJSON", result: &struct{ Scores []grade }{}, want: "decodes itself"},
+		{name: "result with a value-receiver UnmarshalJSON", result: &verdict{}, want: "decodes itself"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := deriveSchema(test.result)
@@ -127,6 +141,28 @@ func TestGenerateJSONFillsTheResult(t *testing.T) {
 		t.Errorf("request did not carry the derived schema: %s", request)
 	}
 }
+
+// Types with their own decoder, at package level because local types cannot
+// have methods. grade refuses to overwrite a value already set.
+type grade int
+
+func (g *grade) UnmarshalJSON(data []byte) error {
+	if *g != 0 {
+		return errors.New("grade already set")
+	}
+	return json.Unmarshal(data, (*int)(g))
+}
+
+type label string
+
+func (l *label) UnmarshalText(text []byte) error {
+	*l = label(text)
+	return nil
+}
+
+type verdict struct{ Passed bool }
+
+func (v verdict) UnmarshalJSON([]byte) error { return nil }
 
 // left and right reference each other, to check that cycle detection is not
 // limited to direct self-reference. Mutually referencing types have to be

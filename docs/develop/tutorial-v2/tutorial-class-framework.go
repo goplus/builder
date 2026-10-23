@@ -121,10 +121,12 @@ type Copilot interface {
 	// completes.
 	onRoundComplete(callback func(round CopilotRound))
 	// generateText asks Copilot to generate text without adding a conversation round.
-	generateText(message string) string
+	// A failed generation (network, quota) returns an error instead of failing the Course program.
+	generateText(message string) (string, error)
 	// generateJSON derives a JSON Schema from result's struct type and fills result with the generated value.
-	// result must be a non-nil pointer to a struct.
-	generateJSON(message string, result any)
+	// A failed generation returns an error and leaves result untouched.
+	// result must be a non-nil pointer to a struct; anything else fails the Course program.
+	generateJSON(message string, result any) error
 }
 
 // CopilotRound is what onRoundComplete receives. Its fields are read as

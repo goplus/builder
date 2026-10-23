@@ -132,7 +132,7 @@ func collectContractEventNames(t *testing.T) []string {
 // Course capability or internal lifecycle call across this package's Go sources.
 func collectGoWireNames(t *testing.T) []string {
 	t.Helper()
-	pattern := regexp.MustCompile(`(?:mustCallCapability|callCapability)\("([A-Za-z_]+)"`)
+	pattern := regexp.MustCompile(`(?:mustCallCapability|tryCallCapability|callCapability)\("([A-Za-z_]+)"`)
 
 	files, err := filepath.Glob("*.go")
 	if err != nil {

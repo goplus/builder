@@ -63,10 +63,13 @@ Editor.Runtime.onLog log => {
 	Editor.Ruler.disable
 
 	feedback := &Feedback{}
-	Copilot.generateJSON "judge this", feedback
+	if err := Copilot.generateJSON("judge this", feedback); err != nil {
+		echo err
+	}
 	if feedback.Score > 3 {
-		completeWith Copilot.generateText("praise the learner")
+		completeWith Copilot.generateText("praise the learner")?:"Well done!"
 	} else {
+		echo Copilot.generateText("say goodbye")!
 		complete
 	}
 }

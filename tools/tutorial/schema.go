@@ -1,9 +1,17 @@
 package tutorial
 
 import (
+	"encoding"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
+)
+
+// The interfaces through which a type takes over its own JSON decoding.
+var (
+	jsonUnmarshalerType = reflect.TypeFor[json.Unmarshaler]()
+	textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
 )
 
 // deriveSchema derives a JSON Schema from the value a Course passed to
@@ -35,7 +43,7 @@ func deriveSchema(result any) (map[string]any, error) {
 	if elem.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("generateJSON: result must point to a struct, got a pointer to %s", elem.Kind())
 	}
-	return schemaOfStruct(elem, map[reflect.Type]bool{})
+	return schemaOfType(elem, map[reflect.Type]bool{})
 }
 
 // schemaOfStruct describes a struct as an object schema. Every field goes
@@ -71,6 +79,9 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 			return nil, fmt.Errorf(
 				"generateJSON: %s embeds %s without a json tag; embedded fields are not supported — use a named field or give it an explicit json name",
 				t, field.Type)
+		}
+		if field.Anonymous && field.PkgPath != "" {
+			return nil, fmt.Errorf("generateJSON: %s embeds the unexported %s; embedded fields need an exported type", t, field.Type)
 		}
 		if field.PkgPath != "" {
 			// An unexported field: encoding/json can neither read nor fill it,
@@ -109,7 +120,12 @@ func schemaOfStruct(t reflect.Type, visiting map[reflect.Type]bool) (map[string]
 // structs, and pointers, which pass through to the element type. Everything
 // else — maps, interfaces, channels — is an error, which beats generating a
 // schema the LLM has no way to satisfy.
+//
+// So is a type with its own decoder (UnmarshalJSON or UnmarshalText).
 func schemaOfType(t reflect.Type, visiting map[reflect.Type]bool) (map[string]any, error) {
+	if decodesItself(t) {
+		return nil, fmt.Errorf("generateJSON: %s decodes itself through UnmarshalJSON or UnmarshalText, which a derived schema cannot describe", t)
+	}
 	switch t.Kind() {
 	case reflect.String:
 		return map[string]any{"type": "string"}, nil
@@ -133,6 +149,17 @@ func schemaOfType(t reflect.Type, visiting map[reflect.Type]bool) (map[string]an
 	default:
 		return nil, fmt.Errorf("unsupported type %s", t)
 	}
+}
+
+// decodesItself reports whether t or *t implements json.Unmarshaler or
+// encoding.TextUnmarshaler.
+func decodesItself(t reflect.Type) bool {
+	for _, candidate := range []reflect.Type{t, reflect.PointerTo(t)} {
+		if candidate.Implements(jsonUnmarshalerType) || candidate.Implements(textUnmarshalerType) {
+			return true
+		}
+	}
+	return false
 }
 
 // hasJSONName reports whether a field carries an explicit json name tag.

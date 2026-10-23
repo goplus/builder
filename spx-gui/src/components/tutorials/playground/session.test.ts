@@ -428,6 +428,27 @@ describe('PlaygroundCourseSession', () => {
     )
   })
 
+  it('keeps the program running when a Copilot generation fails', async () => {
+    const harness = makeHarness()
+    const failed = vi.fn()
+    const completed = vi.fn()
+    harness.courseSession.on('failed', failed)
+    harness.courseSession.on('completed', completed)
+    await harness.courseSession.start()
+    harness.copilot.generateTextResponse.mockRejectedValueOnce(new Error('quota exceeded'))
+    const { copilot_generateText: generateText, course_completeWith: completeWith } =
+      harness.getExecutorOptions().framework?.capabilities ?? {}
+    if (generateText == null || completeWith == null) throw new Error('capabilities not found')
+
+    // The real executor also reports the rejection through onError.
+    await expect(generateText({ content: 'Give feedback' })).rejects.toThrow('quota exceeded')
+    harness.getExecutorOptions().onError('capability', 'quota exceeded')
+    await completeWith({ content: 'Well done!' })
+
+    expect(failed).not.toHaveBeenCalled()
+    expect(completed).toHaveBeenCalledWith({ feedback: 'Well done!' })
+  })
+
   it('disposes the program on completion while retaining the editor and Copilot session', async () => {
     const harness = makeHarness()
     const completed = vi.fn()

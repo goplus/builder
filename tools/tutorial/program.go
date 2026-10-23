@@ -425,30 +425,23 @@ func (p *courseProgram) isCompleted() bool {
 	return p.completed
 }
 
-// mustCallCapability performs one capability call with the execution semantics
-// registered in capabilityKinds, treating a failure as fatal to the Course
-// program.
-//
-// Why a panic rather than a returned error: the author-facing API has no error
-// channel, because the DSL must keep reading like straight-line code, and a
-// failure means the presentation or editor operation the Course asked for did
-// not happen. Carrying on would judge the learner on a false premise. runFrame
-// catches the panic and records it as fatal; it is re-raised on the main
-// goroutine, and the executor reports a runtime-stage error.
+// mustCallCapability performs one capability call, treating a failure as fatal
+// to the Course program.
 func (p *courseProgram) mustCallCapability(name string, request, result any) {
+	if err := p.tryCallCapability(name, request, result); err != nil {
+		panic(err)
+	}
+}
+
+// tryCallCapability performs one capability call with the execution semantics
+// registered in capabilityKinds and returns its failure, decoding included.
+func (p *courseProgram) tryCallCapability(name string, request, result any) error {
 	p.requireRun("calling " + name)
 	if capabilityKinds[name] == kindFast {
-		if err := p.callCapability(name, request, result); err != nil {
-			panic(err)
-		}
-		return
+		return p.callCapability(name, request, result)
 	}
 
-	// While the token is released, a waiting call must not write memory the
-	// Course can see: result may be a struct the author shares (generateJSON),
-	// and with the token in another run's hands, letting the bridge decode
-	// straight into it is a data race. Decode into a private buffer first and
-	// fill result in after the token is back.
+	// Decode into a private buffer, and into result only once the token is back.
 	var raw json.RawMessage
 	var target any
 	if result != nil {
@@ -457,11 +450,12 @@ func (p *courseProgram) mustCallCapability(name string, request, result any) {
 	var err error
 	p.yieldWhile(func() { err = p.callCapability(name, request, target) })
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if result != nil && len(raw) > 0 {
 		if err := json.Unmarshal(raw, result); err != nil {
-			panic(fmt.Errorf("decode capability %q result: %w", name, err))
+			return fmt.Errorf("decode capability %q result: %w", name, err)
 		}
 	}
+	return nil
 }

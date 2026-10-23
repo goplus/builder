@@ -1,5 +1,11 @@
 package tutorial
 
+import (
+	"encoding/json"
+	"fmt"
+	"reflect"
+)
+
 // Copilot gives the Course its LLM capabilities.
 //
 // This is a separate thing from the learner asking Copilot for help: requests
@@ -28,46 +34,62 @@ func (p *Copilot) OnRoundComplete(handler func(round CopilotRound)) {
 		func(h *handlers, r *registration[CopilotRound]) { h.copilotRound = append(h.copilotRound, r) })
 }
 
-// GenerateText has Copilot generate a piece of plain text and returns it.
+// GenerateText has Copilot generate a piece of plain text and returns it, or
+// returns an error when the generation fails.
 //
 // It covers what deterministic checks cannot: judging expressive goals (have
 // the sprite say hello, where anything sensible counts) or generating
 // personalized feedback from the learner's actual code. The calling run is
 // suspended for the duration, possibly for seconds, which is why the dispatch
 // queue is generously sized (see pendingEventLimit in events.go).
-func (p *Copilot) GenerateText(message string) string {
+func (p *Copilot) GenerateText(message string) (string, error) {
 	var text string
-	p.courseProgram.mustCallCapability("copilot_generateText", contentRequest{Content: message}, &text)
-	return text
+	if err := p.courseProgram.tryCallCapability("copilot_generateText", contentRequest{Content: message}, &text); err != nil {
+		return "", fmt.Errorf("generateText: %w", err)
+	}
+	return text, nil
 }
 
 // GenerateJSON has Copilot generate a structured result, filled straight into
-// the struct result points at.
+// the struct result points at, or returns an error when the generation fails.
 //
 // In Course code:
 //
 //	feedback := &Feedback{}
-//	Copilot.generateJSON "review this code", feedback
-//	if feedback.Score > 3 { ... }
+//	err := Copilot.generateJSON("review this code", feedback)
+//	if err == nil && feedback.Score > 3 { ... }
 //
 // The framework derives a JSON Schema from result's struct type by reflection
 // and sends it along with message; the frontend constrains the LLM's output
-// with that schema, and xgoexec's bridge decodes the returned JSON into
-// result. See deriveSchema for why reflection works on Course types.
+// with that schema, and the response is decoded into result. See deriveSchema
+// for why reflection works on Course types.
+//
+// A failed generation, including a response that does not decode into
+// result, returns an error and leaves result untouched.
 //
 // result must be a non-nil pointer to a struct with at least one serializable
-// exported field, and anything else is an error and therefore a panic. That
-// check is not pedantry: an XGo author very easily writes a field in lower
-// case, which encoding/json can neither read nor fill, leaving the Course with
-// an all-zero value and no hint as to why.
-func (p *Copilot) GenerateJSON(message string, result any) {
+// exported field; anything else fails the Course program rather than
+// returning an error.
+func (p *Copilot) GenerateJSON(message string, result any) error {
 	p.courseProgram.requireRun("calling generateJSON")
 	schema, err := deriveSchema(result)
 	if err != nil {
 		panic(err)
 	}
-	p.courseProgram.mustCallCapability("copilot_generateJSON", struct {
+	var raw json.RawMessage
+	err = p.courseProgram.tryCallCapability("copilot_generateJSON", struct {
 		Content string         `json:"content"`
 		Schema  map[string]any `json:"schema"`
-	}{Content: message, Schema: schema}, result)
+	}{Content: message, Schema: schema}, &raw)
+	if err != nil {
+		return fmt.Errorf("generateJSON: %w", err)
+	}
+	// Decode into a fresh value first so that a failure leaves result untouched.
+	if err := json.Unmarshal(raw, reflect.New(reflect.TypeOf(result).Elem()).Interface()); err != nil {
+		return fmt.Errorf("generateJSON: decode the generated value: %w", err)
+	}
+	if err := json.Unmarshal(raw, result); err != nil {
+		return fmt.Errorf("generateJSON: decode the generated value: %w", err)
+	}
+	return nil
 }
