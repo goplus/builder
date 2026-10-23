@@ -66,10 +66,8 @@ onBeforeUnmount(() => {
     @update:visible="dismiss"
   >
     <div class="flex flex-col items-center gap-5 p-6">
-      <div
-        class="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-grey-1000"
-      >
-        <UIError v-if="failed" class="p-6 text-white" :retry="load">
+      <div class="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-grey-300">
+        <UIError v-if="failed" class="p-6" :retry="load">
           {{ $t({ en: 'Failed to play the Course video', zh: '课程视频播放失败' }) }}
         </UIError>
         <UILoading v-else-if="src == null" class="p-6" />
