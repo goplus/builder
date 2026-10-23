@@ -7,15 +7,18 @@ import { useIsRouteLoaded } from '@/utils/route-loading'
 import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/context'
+import { useCodeEditorRef } from '@/components/xgo-code-editor'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
+import * as apiReferenceFilter from './api-reference-filter'
 import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 
 const i18n = useI18n()
 const copilot = useCopilot()
 const router = useRouter()
 const isRouteLoaded = useIsRouteLoaded()
+const codeEditorRef = useCodeEditorRef()
 
 const tutorial = new Tutorial(copilot, router, isRouteLoaded)
 
@@ -44,6 +47,13 @@ watch(
       }),
       copilot.registerCustomElement(tutorialCourseAbandonPrediction),
       copilot.registerCustomElement(tutorialCourseAbandonDismissal),
+      copilot.registerCustomElement({
+        tagName: apiReferenceFilter.tagName,
+        description: apiReferenceFilter.detailedDescription,
+        attributes: apiReferenceFilter.attributes,
+        isRaw: apiReferenceFilter.isRaw,
+        component: apiReferenceFilter.default
+      }),
       copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default),
       copilot.registerQuickInputProvider({
         provideQuickInput(lastCopilotMessage, topic) {
@@ -75,6 +85,8 @@ watch(
       for (const dispose of disposers) {
         dispose()
       }
+      // Reset the API references panel when leaving the course, so the filter never outlives it.
+      codeEditorRef.value?.setAPIReferenceFilter(null)
     })
   },
   {
