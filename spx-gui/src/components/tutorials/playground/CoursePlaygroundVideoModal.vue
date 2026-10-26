@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { ref } from 'vue'
 
-import { Cancelled } from '@/utils/exception'
+import { useFileMediaUrl } from '@/utils/media'
 import type { Video } from '@/models/tutorial/video'
 import { UIButton, UIError, UIIcon, UILoading, UIModal } from '@/components/ui'
 
@@ -16,15 +16,17 @@ const emit = defineEmits<{
 }>()
 
 const videoElement = ref<HTMLVideoElement | null>(null)
-const src = ref<string | null>(null)
-const failed = ref(false)
+const {
+  url: src,
+  loading,
+  failed,
+  reload
+} = useFileMediaUrl(() => (props.visible ? props.video.file : null), videoElement)
 const needsPlay = ref(true)
 const muted = ref(false)
-const controller = new AbortController()
 
 function dismiss() {
   videoElement.value?.pause()
-  controller.abort(new Cancelled('Video dismissed'))
   emit('resolved')
 }
 
@@ -38,23 +40,13 @@ async function play() {
   } catch {
     needsPlay.value = true
   }
-  if (controller.signal.aborted) video.pause()
+  if (!props.visible || videoElement.value !== video) video.pause()
 }
 
-async function load() {
-  failed.value = false
-  try {
-    src.value = await props.video.file.url(controller.signal)
-  } catch {
-    if (!controller.signal.aborted) failed.value = true
-  }
+function onLoadedData() {
+  loading.value = false
+  void play()
 }
-
-onMounted(() => void load())
-onBeforeUnmount(() => {
-  videoElement.value?.pause()
-  controller.abort(new Cancelled('Video unmounted'))
-})
 </script>
 
 <template>
@@ -67,18 +59,25 @@ onBeforeUnmount(() => {
   >
     <div class="flex flex-col items-center gap-5 p-6">
       <div class="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-grey-300">
-        <UIError v-if="failed" class="p-6" :retry="load">
+        <UIError v-if="failed" class="p-6" :retry="reload">
           {{ $t({ en: 'Failed to play the Course video', zh: '课程视频播放失败' }) }}
         </UIError>
-        <UILoading v-else-if="src == null" class="p-6" />
+        <UILoading
+          v-else-if="loading"
+          class="absolute inset-0 z-10 flex items-center justify-center p-6 pointer-events-none"
+        />
         <video
-          v-else
+          v-if="src != null && !failed"
           ref="videoElement"
           class="block h-full w-full object-contain"
+          crossorigin="anonymous"
           :src="src"
           :muted="muted"
           playsinline
-          @loadeddata="play"
+          @loadeddata="onLoadedData"
+          @canplay="loading = false"
+          @playing="loading = false"
+          @waiting="loading = true"
           @pause="needsPlay = true"
           @ended="needsPlay = true"
           @error="failed = true"

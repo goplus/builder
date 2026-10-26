@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { timeout } from '@/utils/utils'
 import { File } from './file'
 
@@ -46,6 +46,43 @@ function makeLoader() {
 }
 
 describe('File', () => {
+  describe('mediaUrl', () => {
+    afterEach(() => vi.restoreAllMocks())
+
+    it('provides a remote source without waiting for the file bytes', async () => {
+      const file = new File('lesson.mp4', () => new Promise(() => {}), {
+        resolveMediaUrl: async () => 'https://example.com/lesson.mp4'
+      })
+      const controller = new AbortController()
+      await expect(file.mediaUrl(controller.signal)).resolves.toBe('https://example.com/lesson.mp4')
+    })
+
+    it('creates and releases an object URL for local media', async () => {
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local-video')
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+      const file = new File('lesson.mp4', async () => makeAB('video'), { type: 'video/mp4' })
+      const controller = new AbortController()
+      await expect(file.mediaUrl(controller.signal)).resolves.toBe('blob:local-video')
+      const blob = vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob
+      expect(blob.type).toBe('video/mp4')
+      expect(await blob.text()).toBe('video')
+      controller.abort()
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:local-video')
+    })
+
+    it('discards a remote URL resolved after cancellation', async () => {
+      let resolve!: (url: string) => void
+      const file = new File('lesson.mp4', async () => makeAB(), {
+        resolveMediaUrl: () => new Promise((done) => (resolve = done))
+      })
+      const controller = new AbortController()
+      const result = file.mediaUrl(controller.signal)
+      controller.abort(new Error('closed'))
+      resolve('https://example.com/lesson.mp4')
+      await expect(result).rejects.toThrow('closed')
+    })
+  })
+
   it('infers font MIME types from file names', () => {
     expect(new File('handlee.ttf', async () => makeAB()).type).toBe('font/ttf')
     expect(new File('NotoSans.otf', async () => makeAB()).type).toBe('font/otf')

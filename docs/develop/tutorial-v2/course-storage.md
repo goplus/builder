@@ -33,6 +33,12 @@ For a Playground Course, `content` is a `FileCollection`: a JSON object from fil
 
 See the [example Tutorial Course project](./example-tutorial-course/) for a concrete directory before its paths are converted into a persisted `FileCollection`.
 
+Course video consumers use `File.mediaUrl(cleanup)` to let the browser progressively load HTTP(S)-backed media. Cloud file factories supply a lazy URL resolver using the existing universal URL resolution; local and imported files without that capability fall back to the object URL returned by `File.url(cleanup)`. Preview snapshots retain the original File instances. Existing byte-loading and object-URL consumers keep their current contracts.
+
+Video elements use `crossorigin="anonymous"` so remote media passes CORS under Builder's `Cross-Origin-Embedder-Policy: require-corp`. The content service must allow CORS on both ordinary and Range responses and support byte ranges for seeking. Closing, replacing or disposing a video source pauses the media element, removes its source and resets it with `load()` before releasing any owned object URL.
+
+Resolved HTTP URLs are not persisted or cached on File instances. Each opening or retry uses the cloud resolver's cache policy. The current file-signature workaround returns CDN URLs without expiring signatures; restoring signed URLs also requires an expiry-aware cache and renewal for subsequent media requests during long playback sessions.
+
 Keeping `content` opaque has these consequences:
 
 - changes to the Tutorial project format do not require database migrations;

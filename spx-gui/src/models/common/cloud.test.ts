@@ -5,7 +5,7 @@ import { ProgressReporter, type Progress } from '@/utils/progress'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { createFileURLSignatures, createUploadSession, getFileObject } from '@/apis/file'
 import { capture } from '@/utils/exception'
-import { cloudHelpers, saveFile, saveFiles } from './cloud'
+import { cloudHelpers, createFileWithUniversalUrl, createFileWithWebUrl, saveFile, saveFiles } from './cloud'
 import { File, fromBlob } from './file'
 
 vi.mock('qiniu-js', () => ({
@@ -47,6 +47,34 @@ describe('universalUrlToWebUrl', () => {
     const result = await cloudHelpers.universalUrlToWebUrl(httpUrl)
     expect(result).toBe(httpUrl)
     expect(createFileURLSignatures).not.toHaveBeenCalled()
+  })
+
+  it('resolves remote media when opened again after the URL cache expires', async () => {
+    const universalUrl = 'kodo://bucket/lesson.mp4'
+    vi.mocked(createFileURLSignatures)
+      .mockResolvedValueOnce({ [universalUrl]: 'https://bucket.example.com/lesson.mp4?version=1' })
+      .mockResolvedValueOnce({ [universalUrl]: 'https://bucket.example.com/lesson.mp4?version=2' })
+    const file = createFileWithUniversalUrl(universalUrl)
+    const first = file.mediaUrl(new AbortController().signal)
+    await vi.advanceTimersByTimeAsync(batchDelay)
+    await expect(first).resolves.toBe('https://bucket.example.com/lesson.mp4?version=1')
+    await vi.advanceTimersByTimeAsync(cacheTtl)
+    const second = file.mediaUrl(new AbortController().signal)
+    await vi.advanceTimersByTimeAsync(batchDelay)
+    await expect(second).resolves.toBe('https://bucket.example.com/lesson.mp4?version=2')
+  })
+
+  it('keeps byte loading available for HTTP-backed media', async () => {
+    const url = 'https://example.com/lesson.mp4'
+    const bytes = new TextEncoder().encode('video').buffer
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(bytes))
+    try {
+      const file = createFileWithWebUrl(url)
+      await expect(file.mediaUrl(new AbortController().signal)).resolves.toBe(url)
+      expect(await file.arrayBuffer()).toEqual(bytes)
+    } finally {
+      fetchSpy.mockRestore()
+    }
   })
 
   it('should transform kodo URL correctly', async () => {

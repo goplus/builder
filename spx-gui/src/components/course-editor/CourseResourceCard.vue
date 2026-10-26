@@ -3,9 +3,9 @@
  * One resource on its page, drawn like a course in course management: its picture (for a video, the first frame)
  * filling the card, its name along the bottom, and a menu in the corner that shows on hover.
  */
-import { computed } from 'vue'
-import { useFileUrl } from '@/utils/file'
+import { computed, ref } from 'vue'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { useFileMediaUrl } from '@/utils/media'
 import { Video, type Image } from '@/models/tutorial/project'
 import { UIDropdown, UIIcon, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 
@@ -24,8 +24,8 @@ const emit = defineEmits<{
 
 const isVideo = computed(() => props.resource instanceof Video)
 
-// NOTE: The whole video is loaded before its first frame shows, see https://github.com/goplus/builder/issues/3573.
-const [videoUrl] = useFileUrl(() => (isVideo.value ? props.resource.file : null))
+const videoElement = ref<HTMLVideoElement | null>(null)
+const { url: videoUrl } = useFileMediaUrl(() => (isVideo.value ? props.resource.file : null), videoElement)
 
 const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
@@ -43,7 +43,9 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
     <!-- `#t=0.1` asks for the frame just after the start, which browsers then draw as the poster. -->
     <video
       v-if="isVideo && videoUrl != null"
+      ref="videoElement"
       class="h-full w-full object-cover"
+      crossorigin="anonymous"
       :src="`${videoUrl}#t=0.1`"
       preload="metadata"
       muted

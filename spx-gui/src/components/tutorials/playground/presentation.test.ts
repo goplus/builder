@@ -23,6 +23,7 @@ const wrappers: VueWrapper[] = []
 beforeEach(() => {
   vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+  vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {})
 })
 
 afterEach(() => {
@@ -30,11 +31,11 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function mountVideo() {
+function mountVideo(visible = true) {
   const file = new File('lesson.mp4', async () => new ArrayBuffer(0), { type: 'video/mp4' })
-  vi.spyOn(file, 'url').mockResolvedValue('blob:lesson')
+  vi.spyOn(file, 'mediaUrl').mockResolvedValue('https://example.com/lesson.mp4')
   const wrapper = mount(CoursePlaygroundVideoModal, {
-    props: { visible: true, video: new Video('lesson', file) },
+    props: { visible, video: new Video('lesson', file) },
     global: globalOptions
   })
   wrappers.push(wrapper)
@@ -71,12 +72,48 @@ describe('Course presentation', () => {
   it('aborts video loading and pauses playback when unmounted', async () => {
     const { wrapper, file } = mountVideo()
     await flushPromises()
-    const signal = vi.mocked(file.url).mock.calls[0][0] as AbortSignal
+    const signal = vi.mocked(file.mediaUrl).mock.calls[0][0] as AbortSignal
     wrapper.unmount()
     wrappers.splice(wrappers.indexOf(wrapper), 1)
     expect(signal.aborted).toBe(true)
     expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
     expect(wrapper.emitted('resolved')).toBeUndefined()
+  })
+
+  it('loads remote media with CORS and shows buffering until media is ready', async () => {
+    const { wrapper } = mountVideo()
+    await flushPromises()
+    const video = wrapper.get('video')
+    expect(video.attributes('src')).toBe('https://example.com/lesson.mp4')
+    expect(video.attributes('crossorigin')).toBe('anonymous')
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(true)
+    await video.trigger('loadeddata')
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(false)
+    await video.trigger('waiting')
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(true)
+    await video.trigger('playing')
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(false)
+  })
+
+  it('stops native loading when hidden before the modal unmounts', async () => {
+    const { wrapper, file } = mountVideo()
+    await flushPromises()
+    const media = wrapper.get('video').element
+    const signal = vi.mocked(file.mediaUrl).mock.calls[0][0] as AbortSignal
+    await wrapper.setProps({ visible: false })
+    expect(signal.aborted).toBe(true)
+    expect(media.hasAttribute('src')).toBe(false)
+    expect(HTMLMediaElement.prototype.load).toHaveBeenCalled()
+    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
+    expect(wrapper.emitted('resolved')).toBeUndefined()
+  })
+
+  it('can open after the modal provider initially mounts it hidden', async () => {
+    const { wrapper, file } = mountVideo(false)
+    await wrapper.setProps({ visible: true })
+    await flushPromises()
+    expect(wrapper.get('video').attributes('src')).toBe('https://example.com/lesson.mp4')
+    expect(vi.mocked(file.mediaUrl).mock.calls.at(-1)![0]).toHaveProperty('aborted', false)
   })
 
   it('offers manual playback when autoplay is blocked', async () => {
