@@ -8,6 +8,12 @@ info:
     **The API endpoints documented here are not yet stable and may change or break without notice. Use them at your own
     risk.**
 
+    ## Pagination
+
+    List endpoints that support jumping to a page take `pageIndex` and `pageSize` and return `ByPage`. Those that only
+    move to the next page take `pageToken` and `pageSize` and return `ByPageToken`. When passing `pageToken`, keep all
+    other query parameters except `pageSize` unchanged; otherwise the server responds with `400`.
+
     ## Error responses
 
     Most non-OAuth JSON endpoints return the shared `APIError` body for non-2xx responses:
@@ -34,12 +40,6 @@ info:
     return `409` with `MovedResourceError`.
 
     Server-Sent Events endpoints may emit a stream-level `error` event after the HTTP response has already started.
-
-    ## Pagination
-
-    List endpoints that support jumping to a page take `pageIndex` and `pageSize` and return `ByPage`. Those that only
-    move to the next page take `pageToken` and `pageSize` and return `ByPageToken`. When passing `pageToken`, keep all
-    other query parameters except `pageSize` unchanged; otherwise the server responds with `400`.
 
 security:
   - bearerAuth: []
@@ -8824,6 +8824,14 @@ components:
         examples:
           - 1
 
+    PageToken:
+      name: pageToken
+      description: The `nextPageToken` of the previous page. Omit to retrieve the first page.
+      in: query
+      schema:
+        type: string
+        minLength: 1
+
     PageSize:
       name: pageSize
       description: Number of items per page.
@@ -8836,11 +8844,3 @@ components:
         default: 20
         examples:
           - 20
-
-    PageToken:
-      name: pageToken
-      description: The `nextPageToken` of the previous page. Omit to retrieve the first page.
-      in: query
-      schema:
-        type: string
-        minLength: 1
