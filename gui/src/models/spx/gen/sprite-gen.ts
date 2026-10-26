@@ -9,6 +9,7 @@ import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import {
   enrichSpriteSettings,
   type SpriteSettings,
+  type SpriteContentSettings,
   generateSpriteContentSettings,
   type CostumeSettings,
   Facing,
@@ -86,6 +87,11 @@ export type RawSpriteGenConfig = Prettify<
     animationConfigs?: RawAnimationGenConfig[]
   }
 >
+
+export type SpriteGenResult = {
+  sprite: Sprite
+  contentSettings: SpriteContentSettings | null
+}
 
 export class SpriteGen extends Disposable implements SpriteContent {
   editHistory: SpriteContentHistory
@@ -344,20 +350,7 @@ export class SpriteGen extends Disposable implements SpriteContent {
     await this.prepareContentPhase.run(async () => {
       const project = this.project
 
-      // Clear existing costumes & animations
-      this.costumes.splice(0).forEach((c) => c.dispose())
-      this.animations.splice(0).forEach((a) => a.dispose())
-      this.costumeInstructions = {}
-      this.animationInstructions = {}
-
-      // Prepare preview sprite
-      this.preparePreviewSprite()
-
-      // Generate default costume
-      const defaultCostumeGen = new CostumeGen(this.i18n, this, project, { settings: this.getDefaultCostumeSettings() })
-      defaultCostumeGen.setImage(image)
-      const defaultCostume = await defaultCostumeGen.finish()
-      this.costumes.push(defaultCostumeGen)
+      const defaultCostume = await this.prepareDefaultCostume(image)
 
       // Generate additional costumes & animations
       const settings = await generateSpriteContentSettings(this.settings, this.i18n.lang.value)
@@ -384,6 +377,35 @@ export class SpriteGen extends Disposable implements SpriteContent {
           .filter(([, genId]) => genId != null)
       )
     })
+  }
+
+  private async prepareDefaultCostume(image: File) {
+    // Clear existing costumes & animations
+    this.costumes.splice(0).forEach((c) => c.dispose())
+    this.animations.splice(0).forEach((a) => a.dispose())
+    this.costumeInstructions = {}
+    this.animationInstructions = {}
+
+    // Prepare preview sprite
+    this.preparePreviewSprite()
+
+    // Generate default costume
+    const defaultCostumeGen = new CostumeGen(this.i18n, this, this.project, {
+      settings: this.getDefaultCostumeSettings()
+    })
+    defaultCostumeGen.setImage(image)
+    const defaultCostume = await defaultCostumeGen.finish()
+    this.costumes.push(defaultCostumeGen)
+
+    return defaultCostume
+  }
+
+  async finishDefaultCostume(): Promise<SpriteGenResult> {
+    const image = this.image
+    if (image == null) throw new Error('image expected')
+    const contentSettings = await generateSpriteContentSettings(this.settings, this.i18n.lang.value, this.getSignal())
+    await this.prepareDefaultCostume(image)
+    return { sprite: await this.finish(), contentSettings }
   }
 
   /** Costumes gen */
@@ -484,7 +506,6 @@ export class SpriteGen extends Disposable implements SpriteContent {
     if (gen == null) throw new Error('Costume not found')
     this.editHistory.record(gen)
     await gen.edit(instruction)
-    await gen.finish()
   }
   async editAnimation(id: string, instruction: string) {
     const gen = this.getAnimationById(id)

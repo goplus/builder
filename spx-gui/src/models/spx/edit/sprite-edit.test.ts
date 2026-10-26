@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { SpriteCategory, Perspective } from '@/apis/common'
 import { setupAigcMock } from '../gen/aigc-mock'
@@ -29,6 +29,44 @@ describe('SpriteEdit', () => {
     aigcMock.reset()
     mockSaveFile()
     vi.mocked(createAnimationReferenceVideo).mockResolvedValue(mockFile('reference.mp4'))
+  })
+
+  it('restores planned resources and applies their recommended animation bindings when generated', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(i18n, project, { settings: { name: 'Kitten', description: 'A pixel kitten' } })
+    onTestFinished(() => {
+      gen.dispose()
+      project.dispose()
+    })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    const { sprite, contentSettings } = await gen.finishDefaultCostume()
+    project.addSprite(sprite)
+    const edit = SpriteEdit.fromSprite(i18n, project, sprite)
+    onTestFinished(() => edit.dispose())
+    edit.prefill(contentSettings!)
+    expect(sprite.costumes).toHaveLength(1)
+    expect(sprite.animations).toHaveLength(0)
+    expect(edit.hasPendingChanges).toBe(true)
+    expect(aigcMock.tasks.size).toBe(1)
+
+    const [restored] = await SpriteEdit.loadAll(i18n, project, sndFiles(edit.export()))
+    onTestFinished(() => restored.dispose())
+    expect(restored.costumes.slice(1).map((costume) => costume.settings)).toEqual(contentSettings!.costumes)
+    expect(restored.animations.map((animation) => animation.settings)).toEqual(contentSettings!.animations)
+    for (const resource of [...restored.costumes.slice(1), ...restored.animations]) {
+      expect(resource.result).toBeUndefined()
+      expect(resource.referenceCostume?.id).toBe(sprite.defaultCostume!.id)
+    }
+    const animation = restored.animations[0]
+    await animation.generateVideo()
+    animation.setFramesConfig({ startTime: 0, duration: 1000, interval: 300 })
+    await animation.finish()
+    await flushPromises()
+    expect(restored.previewSprite.getAnimationBoundStates(animation.result!.id)).toEqual([State.Default])
+    expect(sprite.animations).toHaveLength(0)
+    restored.applyToSprite(sprite, { type: 'animation', id: animation.id })
+    expect(sprite.getAnimationBoundStates(animation.result!.id)).toEqual([State.Default])
   })
 
   it('restores a running animation edit and applies its result without changing sound or bindings', async () => {
@@ -94,7 +132,9 @@ describe('SpriteEdit', () => {
     await flushPromises()
     expect(restored.costumes[0].generateState.status).toBe('finished')
     expect(restored.costumes[0].image?.meta.universalUrl).toBe(costume.image?.meta.universalUrl)
-    expect(restored.costumes[0].image).toBe(restored.costumes[0].result?.img)
+    expect(restored.costumes[0].image).not.toBe(restored.costumes[0].result?.img)
+    expect(await restored.costumes[0].result!.img.arrayBuffer()).toEqual(await source.costumes[0].img.arrayBuffer())
+    expect(aigcMock.tasks.size).toBe(1)
     edit.dispose()
     restored.dispose()
     project.dispose()
@@ -125,7 +165,7 @@ describe('SpriteEdit', () => {
     expect(restored.defaultCostume?.result?.id).toBe(source.defaultCostume!.id)
     expect(restored.getCostumeInstruction(edit.costumes[0].id)).toBe('Make the hat blue')
     await flushPromises()
-    expect(restored.costumes[0].image).toBe(restored.costumes[0].result?.img)
+    expect(restored.costumes[0].image).not.toBe(restored.costumes[0].result?.img)
     expect(source.costumes[0].img).not.toBe(restored.costumes[0].image)
     expect(restored.costumes[0].getTaskIds()).toEqual(edit.costumes[0].getTaskIds())
     expect(Object.keys(restored.export()).every((path) => path.startsWith(`edit/sprites/${source.id}/`))).toBe(true)

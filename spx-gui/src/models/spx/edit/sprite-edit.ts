@@ -1,13 +1,14 @@
 import { isEqualWith } from 'lodash'
 import { nanoid } from 'nanoid'
 import { reactive, watch } from 'vue'
+import type { SpriteContentSettings } from '@/apis/aigc'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { encodePathSegment } from '@/utils/path'
 import { File, fromConfig, listDirs, toConfig, type Files } from '../../common/file'
 import { hashFile } from '../../common/hash'
 import { SpxProject } from '../project'
-import { Sprite, type State } from '../sprite'
+import { Sprite, State } from '../sprite'
 import type { Costume } from '../costume'
 import { Animation } from '../animation'
 import { getAnimationName, getCostumeName } from '../common/asset-name'
@@ -146,6 +147,24 @@ export class SpriteEdit extends Disposable implements SpriteContent {
     return edit
   }
 
+  prefill(settings: SpriteContentSettings) {
+    const referenceCostumeId = this.defaultCostumeId
+    if (referenceCostumeId == null) throw new Error('Default costume expected')
+    this.costumes.push(
+      ...settings.costumes.map(
+        (settings) => new CostumeGen(this.i18n, this, this.project, { settings, referenceCostumeId })
+      )
+    )
+    const animations = settings.animations.map(
+      (settings) => new AnimationGen(this.i18n, this, this.project, { settings, referenceCostumeId })
+    )
+    this.animations.push(...animations)
+    for (const state of [State.Default, State.Step, State.Die]) {
+      const animation = animations.find((gen) => gen.name === settings.animationBindings?.[state])
+      if (animation != null) this.animationGenIdBindings[state] = animation.id
+    }
+  }
+
   get name() {
     return this.previewSprite.name
   }
@@ -221,7 +240,6 @@ export class SpriteEdit extends Disposable implements SpriteContent {
     if (gen == null) throw new Error('Costume not found')
     this.editHistory.record(gen)
     await gen.edit(instruction)
-    await gen.finish()
   }
 
   async editAnimation(id: string, instruction: string) {
@@ -372,13 +390,20 @@ export class SpriteEdit extends Disposable implements SpriteContent {
       selectedItem: this.selectedItem,
       costumeInstructions: this.costumeInstructions,
       animationInstructions: this.animationInstructions,
-      animationGenIdBindings: Object.fromEntries(
-        this.animations.flatMap((gen) =>
-          gen.result == null
-            ? []
-            : this.previewSprite.getAnimationBoundStates(gen.result.id).map((state) => [state, gen.id])
+      animationGenIdBindings: {
+        ...Object.fromEntries(
+          Object.entries(this.animationGenIdBindings).filter(([, id]) =>
+            this.animations.some((gen) => gen.id === id && gen.result == null)
+          )
+        ),
+        ...Object.fromEntries(
+          this.animations.flatMap((gen) =>
+            gen.result == null
+              ? []
+              : this.previewSprite.getAnimationBoundStates(gen.result.id).map((state) => [state, gen.id])
+          )
         )
-      ),
+      },
       costumeConfigs: this.costumes.map((costume) => {
         const [config, assets] = costume.export(basePath)
         Object.assign(files, assets)

@@ -14,8 +14,8 @@ import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackg
       <div class="relative h-full w-full flex items-center justify-center text-hint-2">
         {{
           $t({
-            en: 'Enter details in the lower-left box and click "Generate".',
-            zh: '请在左下方描述细节，然后点击“生成”。'
+            en: 'Describe what you want, then click "Generate".',
+            zh: '描述你想要的效果，然后点击“生成”。'
           })
         }}
       </div>

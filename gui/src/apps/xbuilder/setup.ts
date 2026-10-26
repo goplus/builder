@@ -14,8 +14,8 @@ import { provideProjectConfig } from '@/components/project/config'
 import * as env from './env'
 
 export function setupXBuilder() {
-  // Demo: use the existing image editing API and simulate video editing after 3 seconds.
-  setSpriteEditDemoEnabled(true)
+  // Demo: use the existing image API; simulate video and point edits after 3 seconds.
+  setSpriteEditDemoEnabled(env.spriteEditDemoEnabled)
   client.setBaseUrl(env.apiBaseUrl)
   accountOAuthClientForXBuilder.setBaseUrl(env.apiBaseUrl + '/account')
   cloudHelpers.setConfig({

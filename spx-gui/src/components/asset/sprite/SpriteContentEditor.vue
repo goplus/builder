@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, watch } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { computedShallowReactive, humanizeListWithLimit, useComputedDisposable } from '@/utils/utils'
@@ -15,19 +15,17 @@ import { provideLocalEditorCtx } from '@/components/editor/EditorContextProvider
 import { EditorState } from '@/components/editor/editor-state'
 import type { ILocalCache } from '@/components/editor/editing'
 import { useRenameAnimationGen, useRenameCostumeGen } from '..'
-import CostumeSettingsInput from '../gen/costume/CostumeSettingsInput.vue'
-import AnimationSettingsInput from '../gen/animation/AnimationSettingsInput.vue'
 import ListItemWrapper from '../gen/common/ListItemWrapper.vue'
 import CostumeGenItem from '../gen/costume/CostumeGenItem.vue'
 import AnimationGenItem from '../gen/animation/AnimationGenItem.vue'
 import CostumeGenPreview from '../gen/costume/CostumeGenPreview.vue'
 import AnimationGenPreview from '../gen/animation/AnimationGenPreview.vue'
-import CostumeEditInput from './CostumeEditInput.vue'
-import AnimationEditInput from './AnimationEditInput.vue'
 import CostumeComments from './CostumeComments.vue'
+import SpriteResourceInput from './SpriteResourceInput.vue'
 
 const props = defineProps<{
   content: SpriteContent
+  embedded?: boolean
   submit?: () => Promise<void>
   applyResource?: (item: SpriteContentSelected) => Promise<void>
   beforeSubmit?: () => Promise<void>
@@ -36,6 +34,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   collapse: []
 }>()
+const commenting = defineModel<boolean>('commenting', { default: false })
 
 const selected = computed(() => {
   const selectedItem = props.content.selectedItem
@@ -58,6 +57,7 @@ function select(type: 'costume' | 'animation', id: string) {
 watch(
   selected,
   (selected) => {
+    if (props.embedded) return
     // Select the first item of current type if no item is selected
     if (selected?.animation != null || selected?.costume != null) return
     if (selected?.type === 'animation' && props.content.animations.length > 0) {
@@ -71,10 +71,10 @@ watch(
 
 const selectedCostume = computed(() => selected.value?.costume ?? null)
 const selectedAnimation = computed(() => selected.value?.animation ?? null)
-const commenting = ref(false)
 watch(
-  () => selectedCostume.value?.image,
-  () => (commenting.value = false)
+  [selectedCostume, () => selectedCostume.value?.image, () => selectedCostume.value?.editComments.length],
+  () => (commenting.value = (selectedCostume.value?.editComments.length ?? 0) > 0),
+  { immediate: true }
 )
 
 const selectedGen = computed(() => selectedCostume.value ?? selectedAnimation.value)
@@ -109,6 +109,16 @@ const canDiscard = computed(() => {
   return gen != null && (props.content.editHistory.canUndo(gen.id) || props.content.editHistory.canRedo(gen.id))
 })
 const applyingResource = computed(() => props.submit == null || canDiscard.value)
+const showResourceActions = computed(() => {
+  if (!props.embedded || canDiscard.value) return true
+  const item = props.content.selectedItem
+  if (!(props.content instanceof SpriteEdit) || item == null || !props.content.hasResourceChanges(item)) return false
+  return (
+    selectedCostume.value?.image != null ||
+    selectedAnimation.value?.video != null ||
+    selectedAnimation.value?.result != null
+  )
+})
 const selectedBusy = computed(() => {
   const gen = selectedGen.value
   const status = selectedCostume.value?.generateState.status ?? selectedAnimation.value?.generateVideoState.status
@@ -313,10 +323,11 @@ const handleSubmit = useMessageHandle(
 <template>
   <main
     v-radar="{ name: 'Sprite content editor', desc: 'Edit sprite costumes and animations' }"
-    class="h-full min-h-0 flex flex-col"
+    class="h-full min-h-0 min-w-0 flex-1 flex flex-col"
+    :class="{ 'bg-grey-200': embedded }"
   >
     <div class="flex-1 min-h-0 flex">
-      <aside class="w-102 flex-none min-h-0 border-e border-grey-400 bg-grey-100 pt-4 flex flex-col">
+      <aside v-if="!embedded" class="w-102 flex-none min-h-0 border-e border-grey-400 bg-grey-100 pt-4 flex flex-col">
         <div class="min-h-0 flex-[1_1_0] overflow-y-auto px-4 flex flex-col gap-6">
           <ListItemWrapper v-radar="{ name: 'Costume list', desc: 'List of costumes' }" @add="handleAddCostume">
             <template #title>{{ $t({ zh: '造型', en: 'Costume' }) }}</template>
@@ -352,38 +363,19 @@ const handleSubmit = useMessageHandle(
           </ListItemWrapper>
         </div>
         <div class="flex-none px-4 py-5">
-          <template v-if="selectedCostume != null">
-            <CostumeEditInput
-              v-if="selectedCostume.result != null"
-              v-model:commenting="commenting"
-              :gen="selectedCostume"
-              :instruction="content.getCostumeInstruction(selectedCostume.id)"
-              :submit="
-                () => content.editCostume(selectedCostume!.id, content.getCostumeInstruction(selectedCostume!.id))
-              "
-              @update:instruction="content.setCostumeInstruction(selectedCostume.id, $event)"
-            />
-            <CostumeSettingsInput v-else :gen="selectedCostume" />
-          </template>
-          <template v-if="selectedAnimation != null">
-            <AnimationEditInput
-              v-if="selectedAnimation.video != null || selectedAnimation.result != null"
-              :gen="selectedAnimation"
-              :instruction="content.getAnimationInstruction(selectedAnimation.id)"
-              :submit="
-                () =>
-                  content.editAnimation(selectedAnimation!.id, content.getAnimationInstruction(selectedAnimation!.id))
-              "
-              @update:instruction="content.setAnimationInstruction(selectedAnimation.id, $event)"
-            />
-            <AnimationSettingsInput v-else :gen="selectedAnimation" />
-          </template>
+          <SpriteResourceInput
+            v-model:commenting="commenting"
+            :content="content"
+            :costume="selectedCostume"
+            :animation="selectedAnimation"
+          />
         </div>
       </aside>
       <div class="relative min-w-0 min-h-0 flex-1 overflow-hidden flex">
         <component :is="selectedPreview.component" v-if="selectedPreview != null" v-bind="selectedPreview.props">
           <template v-if="applyingResource && selectedGen != null" #leading>
             <div
+              v-if="!embedded || canDiscard"
               v-radar="{ name: 'Resource edit history', desc: 'Undo or redo changes to the current resource' }"
               role="group"
               class="flex items-center gap-1"
@@ -422,7 +414,7 @@ const handleSubmit = useMessageHandle(
             <CostumeComments :key="selectedCostume.id" :gen="selectedCostume" />
           </template>
           <template v-if="applyingResource && selectedGen != null" #ops>
-            <div class="flex items-center gap-2">
+            <div v-if="showResourceActions" class="flex items-center gap-2">
               <UIButton
                 v-if="canDiscard"
                 v-radar="{
@@ -452,7 +444,16 @@ const handleSubmit = useMessageHandle(
         </component>
       </div>
     </div>
-    <footer class="flex-none px-6 py-5 flex flex-wrap items-center justify-end gap-4">
+    <div v-if="embedded" class="flex-none px-5 pb-5">
+      <SpriteResourceInput
+        v-model:commenting="commenting"
+        :content="content"
+        :costume="selectedCostume"
+        :animation="selectedAnimation"
+        compact
+      />
+    </div>
+    <footer v-else class="flex-none px-6 py-5 flex flex-wrap items-center justify-end gap-4">
       <UITooltip>
         {{
           $t({
