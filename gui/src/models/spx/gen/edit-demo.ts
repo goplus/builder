@@ -6,7 +6,7 @@ export function setSpriteEditDemoEnabled(enabled: boolean) {
   spriteEditDemoEnabled = enabled
 }
 
-/** Demo-only video result: preserve the reference instead of calling an AI video editing API. */
+/** Demo-only result: preserve the reference instead of calling an AI editing API. */
 export async function simulateSpriteEdit(source: File, signal: AbortSignal) {
   signal.throwIfAborted()
   await new Promise<void>((resolve, reject) => {

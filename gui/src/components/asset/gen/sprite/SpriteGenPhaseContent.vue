@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { capture } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import type { Sprite } from '@/models/spx/sprite'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { SpriteGen, SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import { useConfirmDialog } from '@/components/ui'
 import SpriteContentEditor from '../../sprite/SpriteContentEditor.vue'
 
@@ -12,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   collapse: []
-  resolved: [Sprite]
+  resolved: [SpriteGenResult]
 }>()
 
 const { t } = useI18n()
@@ -43,7 +42,7 @@ async function handleSubmit() {
   props.gen.recordAdoption().catch((err) => {
     capture(err, 'failed to record sprite asset adoption')
   })
-  emit('resolved', sprite)
+  emit('resolved', { sprite, contentSettings: null })
 }
 </script>
 

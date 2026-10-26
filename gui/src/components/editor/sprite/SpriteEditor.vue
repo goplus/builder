@@ -34,9 +34,14 @@
     }"
     :code-file-path="sprite.codeFilePath"
   />
-  <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
+  <SpriteResourceEditor
+    v-if="(state.aiEditorOpen || hasDrafts) && state.selected.type !== 'code'"
+    :sprite="sprite"
+    :type="state.selected.type === 'costumes' ? 'costume' : 'animation'"
+  />
+  <CostumesEditor v-else-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
-  <AnimationEditor v-if="state.selected.type === 'animations'" :sprite="sprite" :state="state.animationsState" />
+  <AnimationEditor v-else-if="state.selected.type === 'animations'" :sprite="sprite" :state="state.animationsState" />
 </template>
 
 <script lang="ts">
@@ -66,6 +71,30 @@ export class SpriteEditorState extends Disposable {
   costumesState: CostumesEditorState
   animationsState: AnimationsEditorState
   private selectedTypeRef: Ref<SelectedType>
+  private aiEditorRef = ref(false)
+  private aiCommentingRef = ref(false)
+
+  get aiCommenting() {
+    return this.aiCommentingRef.value
+  }
+
+  set aiCommenting(commenting: boolean) {
+    this.aiCommentingRef.value = commenting
+  }
+
+  get aiEditorOpen() {
+    return this.aiEditorRef.value
+  }
+
+  openAIEditor(type: 'costume' | 'animation') {
+    this.select(type === 'costume' ? 'costumes' : 'animations')
+    this.aiEditorRef.value = true
+    this.aiCommenting = false
+  }
+
+  closeAIEditor() {
+    this.aiEditorRef.value = false
+  }
 
   /** The current selection */
   get selected(): Selected {
@@ -141,7 +170,7 @@ export class SpriteEditorState extends Disposable {
 </script>
 
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Costume } from '@/models/spx/costume'
@@ -150,11 +179,20 @@ import { type Sprite } from '@/models/spx/sprite'
 import { UITabs, UITab } from '@/components/ui'
 import { CodeEditorUI, FormatButton } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
+import SpriteResourceEditor from './SpriteResourceEditor.vue'
 import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
 
-defineProps<{
+const props = defineProps<{
   sprite: Sprite
   state: SpriteEditorState
 }>()
+
+const editorCtx = useEditorCtx()
+const hasDrafts = computed(() =>
+  editorCtx.state.spriteEditState.edits.some(
+    (edit) => edit.sourceSpriteId === props.sprite.id && edit.hasPendingChanges
+  )
+)
 </script>

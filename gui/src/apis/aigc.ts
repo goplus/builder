@@ -152,7 +152,7 @@ export const taskRemoveBackgroundSupportedImgExts = ['jpeg', 'jpg', 'png', 'bmp'
 
 export type TaskParamsGenerateCostume = {
   settings: CostumeSettings
-  /** Edits settings.referenceImageUrl while preserving details not explicitly changed. Must not be blank. */
+  /** Edits settings.referenceImageUrl. Must not be blank. Returns previews to remove background from on adoption. */
   editInstruction?: string
   /** Number of costume images to generate. Defaults to 1. */
   n: number

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { Sprite } from '@/models/spx/sprite'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { SpriteGen, SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import SpriteGenPhaseSettings from './SpriteGenPhaseSettings.vue'
 import SpriteGenPhaseContent from './SpriteGenPhaseContent.vue'
 
@@ -12,7 +11,7 @@ defineProps<{
 
 const emit = defineEmits<{
   collapse: []
-  resolved: [Sprite]
+  resolved: [SpriteGenResult]
 }>()
 </script>
 

@@ -60,6 +60,35 @@ describe('SpriteGen', () => {
     vi.mocked(createAnimationReferenceVideo).mockResolvedValue(mockFile('reference.mp4'))
   })
 
+  it('saves the default costume and plans additional resources without generating them', async () => {
+    const project = makeSpxProject()
+    const originalCount = project.sprites.length
+    const gen = new SpriteGen(i18n, project, { settings: { name: 'Kitten', description: 'A pixel kitten' } })
+    onTestFinished(() => {
+      gen.dispose()
+      project.dispose()
+    })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    const { sprite, contentSettings } = await gen.finishDefaultCostume()
+    expect(sprite.costumes).toHaveLength(1)
+    expect(sprite.animations).toHaveLength(0)
+    expect(sprite.defaultCostume?.name).toBe('default')
+    expect(project.sprites).toHaveLength(originalCount)
+    expect(aigcMock.generateSpriteContentSettings).toHaveBeenCalledOnce()
+    expect(contentSettings).toMatchObject({
+      costumes: [
+        { name: 'costume-1', description: 'A costume for Kitten' },
+        { name: 'costume-2', description: 'Another costume for Kitten' }
+      ],
+      animations: [
+        { name: 'walk', description: 'A walking animation for Kitten' },
+        { name: 'jump', description: 'A jumping animation for Kitten' }
+      ]
+    })
+    expect(aigcMock.tasks.size).toBe(1)
+  })
+
   it('edits generated costumes and keeps instructions and retry references after reopening', async () => {
     const project = makeSpxProject()
     const originalImages = project.sprites[0].costumes.map((costume) => costume.img)
@@ -78,6 +107,7 @@ describe('SpriteGen', () => {
     await flushPromises()
     expect(gen.previewSprite.defaultCostume).toBe(costume.result)
     expect(costume.result!.id).toBe(originalId)
+    expect(costume.image).not.toBe(costume.result!.img)
     expect(costume.settings.description).toBe('A knight')
 
     gen.setCostumeInstruction(costume.id, 'Red helmet')
@@ -87,15 +117,16 @@ describe('SpriteGen', () => {
     expect(restored.costumes[0].editInstruction).toBe('Blue helmet')
     await restored.editCostume(costume.id, 'Blue helmet')
     expect([...aigcMock.tasks.values()].at(-1)!.params).toMatchObject({
-      settings: { referenceImageUrl: `kodo://mock-bucket/${costume.result!.img.name}` },
+      settings: { referenceImageUrl: `kodo://mock-bucket/${costume.image!.name}` },
       editInstruction: 'Blue helmet'
     })
 
     const saved = restored.costumes[0].result
+    const preview = restored.costumes[0].image
     aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Unavailable'))
     await expect(restored.editCostume(costume.id, 'Red helmet')).rejects.toThrow('Unavailable')
     expect(restored.costumes[0].result).toBe(saved)
-    expect(restored.costumes[0].image).toBe(saved!.img)
+    expect(restored.costumes[0].image).toBe(preview)
     expect(project.sprites[0].costumes.map((costume) => costume.img)).toEqual(originalImages)
   })
 

@@ -8,7 +8,7 @@ import { Animation } from '@/models/spx/animation'
 import { Costume } from '@/models/spx/costume'
 import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { CostumeGen } from '@/models/spx/gen/costume-gen'
-import { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import { SpriteGen, type SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import { Phase } from '@/models/spx/gen/common'
 import { SpriteEdit } from '@/models/spx/edit/sprite-edit'
 import { SpxProject } from '@/models/spx/project'
@@ -97,6 +97,7 @@ function setup<T extends Mode>(mode: T) {
           SpriteEditModal: false,
           SpriteGenPhaseContent: false,
           SpriteContentEditor: false,
+          SpriteResourceInput: false,
           CostumeEditInput: false,
           CostumeSettingsInput: false,
           AnimationEditInput: false,
@@ -230,7 +231,7 @@ describe('Sprite generation adoption', () => {
     confirm()
     await flushPromises()
     expect(finish).toHaveBeenCalledTimes(1)
-    const result = parent.emitted<[Sprite]>('resolved')![0][0]
+    const { sprite: result } = parent.emitted<[SpriteGenResult]>('resolved')![0][0]
     onTestFinished(() => result.dispose())
     expect(result.costumes).toHaveLength(1)
     expect(result.costumes[0].img).toBe(source.costumes[0].img)
@@ -314,6 +315,32 @@ describe('Existing sprite resource actions', () => {
 })
 
 describe.each<Mode>(['generate', 'edit'])('Sprite content editing (%s)', (mode) => {
+  it('reactivates local editing when returning to a draft with comments', async () => {
+    const { wrapper, edit } = setup(mode)
+    const gen = edit.costumes[0]
+    edit.editHistory.record(gen)
+    gen.setImage(mockFile('first.png'))
+    gen.setEditComments([{ id: 'point', x: 0.5, y: 0.5, content: 'Make this blue' }])
+    edit.editHistory.record(gen)
+    gen.setImage(mockFile('second.png'))
+    await wrapper.vm.$nextTick()
+
+    await wrapper.get('button[aria-label="Undo edit"]').trigger('click')
+    expect(wrapper.get('button[aria-label="Local edit tool"]').attributes('aria-pressed')).toBe('true')
+    await wrapper.get('button[aria-label="Undo edit"]').trigger('click')
+    expect(wrapper.get('button[aria-label="Local edit tool"]').attributes('aria-pressed')).toBe('false')
+    await wrapper.get('button[aria-label="Redo edit"]').trigger('click')
+    expect(wrapper.get('button[aria-label="Local edit tool"]').attributes('aria-pressed')).toBe('true')
+
+    edit.setSelectedItem({ type: 'animation', id: edit.animations[0].id })
+    await wrapper.vm.$nextTick()
+    edit.setSelectedItem({ type: 'costume', id: gen.id })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('button[aria-label="Local edit tool"]').attributes('aria-pressed')).toBe('true')
+    await wrapper.get('button[aria-label="Remove local edit 1"]').trigger('click')
+    expect(wrapper.get('button[aria-label="Local edit tool"]').attributes('aria-pressed')).toBe('false')
+  })
+
   it('undoes and redoes only the selected resource before adoption', async () => {
     const { wrapper, edit, source } = setup(mode)
     const gen = edit.costumes[0]

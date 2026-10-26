@@ -50,9 +50,23 @@ describe('CostumeGen', () => {
     expect(gen.settings.description).toBe('Original costume description')
     expect(gen.result).toBe(saved)
     expect(gen.image).not.toBe(source.img)
+    expect([...aigcMock.tasks.values()].every(({ task }) => task.type === TaskType.GenerateCostume)).toBe(true)
+    const preview = gen.image
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Background removal unavailable'))
+    await expect(gen.finish()).rejects.toThrow('Background removal unavailable')
+    expect(gen.image).toBe(preview)
+    expect(gen.result).toBe(saved)
     const result = await gen.finish()
+    expect([...aigcMock.tasks.values()].at(-1)).toMatchObject({
+      task: { type: TaskType.RemoveBackground },
+      params: { imageUrl: `kodo://mock-bucket/${preview!.name}` }
+    })
+    expect(result.img).not.toBe(preview)
     expect(result.id).toBe(source.id)
     expect(result.img).toBe(gen.image)
+    const taskCount = aigcMock.tasks.size
+    await gen.finish()
+    expect(aigcMock.tasks.size).toBe(taskCount)
     gen.dispose()
     project.dispose()
   })
@@ -95,7 +109,7 @@ describe('CostumeGen', () => {
     await loaded.edit('')
     expect([...aigcMock.tasks.values()].at(-1)?.params).toMatchObject({
       settings: { referenceImageUrl: 'kodo://mock-bucket/visible-candidate.png' },
-      editInstruction: expect.stringContaining('At (599, 400): Make this white')
+      editInstruction: expect.stringContaining('<point>599 400</point>: Make this white')
     })
     expect(loaded.editComments).toEqual([])
     expect(source.img).toBe(originalImage)
@@ -106,7 +120,10 @@ describe('CostumeGen', () => {
     const sprite = project.sprites[0]
     const gen = new CostumeGen(i18n, sprite, project, { settings: { name: 'new-costume' } })
     const getImageSize = vi.mocked(fileHelpers.getImageSize)
-    getImageSize.mockImplementation(async (file) => file.meta.imgSize ?? { width: 100, height: 100 })
+    let editedSize = { width: 400, height: 200 }
+    getImageSize.mockImplementation(async (file) =>
+      file.meta.universalUrl?.includes('/bg-removed-') ? editedSize : file.meta.imgSize ?? { width: 100, height: 100 }
+    )
     onTestFinished(() => {
       gen.dispose()
       project.dispose()
@@ -125,11 +142,12 @@ describe('CostumeGen', () => {
     await flushPromises()
     await restored.edit('A red coat')
     restored.image!.meta.imgSize = { width: 200, height: 400 }
-    const result = await restored.finish()
     expect([...aigcMock.tasks.values()].at(-1)!.params).toMatchObject({
       settings: { referenceImageUrl: `kodo://mock-bucket/${candidate.img.name}` },
       editInstruction: 'A red coat'
     })
+    editedSize = { width: 200, height: 400 }
+    const result = await restored.finish()
     expect(result.id).toBe(original.id)
     expect(await result.getSize()).toEqual({ width: 25, height: 50 })
     expect(result.pivot).toEqual({ x: 12.5, y: 25 })

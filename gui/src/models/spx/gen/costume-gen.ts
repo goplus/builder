@@ -38,7 +38,7 @@ import {
   validateReferenceImage
 } from './reference-image'
 import type { SpriteContent } from '../common/sprite-content'
-import { spriteEditDemoEnabled } from './edit-demo'
+import { simulateSpriteEdit, spriteEditDemoEnabled } from './edit-demo'
 
 export type CostumeEditComment = {
   id: string
@@ -245,9 +245,10 @@ export class CostumeGen extends Disposable {
     if (this.editComments.length > 0) {
       instruction = [
         instruction.trim(),
-        'Apply the following comments to the reference image. Coordinates use a 0–999 scale: origin at the top-left, x increases rightward, y increases downward.',
+        'Apply the following local edits to the reference image. Coordinates use a 0–999 scale: origin at the top-left, x increases rightward, y increases downward.',
         ...this.editComments.map(
-          (comment) => `At (${Math.round(comment.x * 999)}, ${Math.round(comment.y * 999)}): ${comment.content}`
+          (comment) =>
+            `<point>${Math.round(comment.x * 999)} ${Math.round(comment.y * 999)}</point>: ${comment.content}`
         ),
         'Each coordinate identifies only the part containing that point. Preserve everything else. Do not draw markers, labels, or coordinates.'
       ]
@@ -280,6 +281,9 @@ export class CostumeGen extends Disposable {
       }
       signal.throwIfAborted()
       if (edit == null) this.lastEdit = null
+      if (edit != null && spriteEditDemoEnabled && this.editComments.length > 0) {
+        return simulateSpriteEdit(edit.image, signal)
+      }
       const settings = { ...this.settings, referenceImageUrl }
       if (edit != null && spriteEditDemoEnabled) {
         // The deployed API supports image editing through a reference image and description.
@@ -322,10 +326,23 @@ export class CostumeGen extends Disposable {
   }
 
   async finish() {
-    const image = this.image
-    if (image == null) throw new Error('Costume not generated yet')
+    const preview = this.image
+    if (preview == null) throw new Error('Costume not generated yet')
     const source = this.editSource ?? this.result
-    const result = await this.finishPhase.run(async () => {
+    const result = await this.finishPhase.run(async (reporter) => {
+      let image = preview
+      if (this.editInstruction != null && preview !== this.result?.img && !spriteEditDemoEnabled) {
+        const task = new Task(TaskType.RemoveBackground)
+        this.addDisposable(task)
+        try {
+          const imageUrl = await saveFile(image, task.getSignal())
+          await task.start({ imageUrl })
+          const removed = await task.untilCompleted(reporter)
+          image = createFileWithUniversalUrl(removed.imageUrl)
+        } finally {
+          task.dispose()
+        }
+      }
       const costume = source != null ? source.clone(true) : await Costume.create(this.settings.name, image)
       if (source != null) {
         costume.setName(this.settings.name, true)
@@ -344,6 +361,7 @@ export class CostumeGen extends Disposable {
       return costume
     })
     this.savedResult = result
+    this.setImage(result.img)
     if (this.generateTask?.data?.status === TaskStatus.Completed) this.savedTaskId = this.generateTask.data.id
     return result
   }
@@ -467,13 +485,7 @@ export class CostumeGen extends Disposable {
       )
     }
     const gen = new CostumeGen(i18n, parent, project, inits)
-    if (restoreTasks)
-      gen
-        .restoreGenerateTask()
-        .then(async () => {
-          if (gen.editInstruction != null && gen.result != null && gen.image !== gen.result.img) await gen.finish()
-        })
-        .catch(capture)
+    if (restoreTasks) gen.restoreGenerateTask().catch(capture)
     return gen
   }
 }

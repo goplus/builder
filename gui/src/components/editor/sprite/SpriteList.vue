@@ -2,15 +2,13 @@
 import { type ComponentPublicInstance, computed, onBeforeUnmount, ref, shallowReactive } from 'vue'
 import { Sprite } from '@/models/spx/sprite'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import type { SpriteEdit } from '@/models/spx/edit/sprite-edit'
-import { Cancelled, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
 import { type DragSortableOptions, useDragSortable } from '@/utils/drag-and-drop'
 
-import { useEditSprite, useSpriteGenModal } from '@/components/asset'
+import { useGenerateSprite } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
-import SpriteEditItem from '@/components/asset/edit/sprite/SpriteEditItem.vue'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import { UIEmpty } from '@/components/ui'
 
@@ -24,6 +22,8 @@ function isSelected(sprite: Sprite) {
 
 function handleSpriteClick(sprite: Sprite) {
   editorCtx.state.selectSprite(sprite.id)
+  const edit = editorCtx.state.spriteEditState.edits.find((edit) => edit.sourceSpriteId === sprite.id)
+  if (edit?.hasPendingChanges) editorCtx.state.spriteState?.openAIEditor(edit.selectedItem?.type ?? 'costume')
 }
 
 const spriteGenItemRefs = shallowReactive(new Map<string, HTMLElement>())
@@ -44,8 +44,7 @@ onBeforeUnmount(
   })
 )
 
-const edits = computed(() => editorCtx.state.spriteEditState.edits.filter((edit) => edit.hasPendingChanges))
-const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.genState.sprites, ...edits.value])
+const list = computed(() => [...editorCtx.project.sprites, ...editorCtx.state.genState.sprites])
 const listWrapper = ref<HTMLElement | null>(null)
 
 const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
@@ -84,33 +83,10 @@ useDragSortable(list, listWrapper, {
   ...sortableOptions
 })
 
-const invokeSpriteGenModal = useSpriteGenModal()
-const editSprite = useEditSprite()
-
-const handleSpriteGenClick = useMessageHandle(
-  async (gen: SpriteGen) => {
-    const result = await invokeSpriteGenModal(editorCtx.project, gen)
-
-    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-      editorCtx.project.addSprite(result)
-      await result.autoFit()
-    })
-    editorCtx.state.selectSprite(result.id)
-  },
-  {
-    en: 'Failed to add generated sprite',
-    zh: '添加生成的精灵失败'
-  }
-).fn
-
-const handleSpriteEditClick = useMessageHandle(
-  async (edit: SpriteEdit) => {
-    const sprite = editorCtx.project.sprites.find((sprite) => sprite.id === edit.sourceSpriteId)
-    if (sprite == null) throw new Cancelled('Sprite being edited not found')
-    return editSprite(sprite)
-  },
-  { en: 'Failed to edit sprite', zh: '编辑精灵失败' }
-).fn
+const handleSpriteGenClick = useMessageHandle(useGenerateSprite(), {
+  en: 'Failed to add generated sprite',
+  zh: '添加生成的精灵失败'
+}).fn
 </script>
 
 <template>
@@ -134,7 +110,6 @@ const handleSpriteEditClick = useMessageHandle(
       :gen="gen"
       @click="handleSpriteGenClick(gen)"
     />
-    <SpriteEditItem v-for="edit in edits" :key="edit.id" :edit="edit" @click="handleSpriteEditClick(edit)" />
   </div>
 </template>
 

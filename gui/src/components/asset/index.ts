@@ -34,25 +34,34 @@ import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
-import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
-import SpriteEditModal from './edit/sprite/SpriteEditModal.vue'
+import type { SpriteEdit } from '@/models/spx/edit/sprite-edit'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
+import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
 import type { GenHelpers } from './gen/modal'
 import type { SpriteContentSelected } from '@/models/spx/common/sprite-content'
 
-export function useSpriteGenModal() {
+export function useGenerateSprite() {
+  const editorCtx = useEditorCtx()
   const helpers = useGenHelpers()
   const invokeModal = useModal(SpriteGenModal)
-  return function invokeSpriteGenModal(project: SpxProject, gen?: SpriteGen) {
-    return invokeModal({ project, gen, helpers })
+  const ensureSignedIn = useEnsureSignedIn()
+  return async (gen?: SpriteGen) => {
+    await ensureSignedIn()
+    const { sprite, contentSettings } = await invokeModal({ project: editorCtx.project, gen, helpers })
+    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
+      editorCtx.project.addSprite(sprite)
+      await sprite.autoFit()
+      if (contentSettings != null) editorCtx.state.spriteEditState.start(sprite).prefill(contentSettings)
+    })
+    editorCtx.state.selectSprite(sprite.id)
+    editorCtx.state.spriteState?.select('costumes')
+    return sprite
   }
 }
 
 export function useEditSprite() {
   const editorCtx = useEditorCtx()
-  const codeEditor = useCodeEditor()
   const ensureSignedIn = useEnsureSignedIn()
-  const invokeSpriteEditModal = useModal(SpriteEditModal)
   return async function editSprite(sprite: Sprite, resource?: Costume | Animation) {
     await ensureSignedIn()
     const editState = editorCtx.state.spriteEditState
@@ -69,38 +78,54 @@ export function useEditSprite() {
       if (costume != null) edit.setSelectedItem({ type: 'costume', id: costume.id })
       else if (animation != null) edit.setSelectedItem({ type: 'animation', id: animation.id })
     }
-    async function apply(item: SpriteContentSelected) {
-      const result =
-        item.type === 'costume' ? edit.getCostumeById(item.id)?.result : edit.getAnimationById(item.id)?.result
-      if (result == null) throw new Error('Resource not ready')
-      const originals = item.type === 'costume' ? sprite.costumes : sprite.animations
-      const original = originals.find((resource) => resource.id === result.id)
-      const nameError =
-        item.type === 'costume'
-          ? assetName.validateCostumeName(result.name, { costumes: sprite.costumes.filter((c) => c !== original) })
-          : assetName.validateAnimationName(result.name, {
-              animations: sprite.animations.filter((a) => a !== original)
-            })
-      if (nameError != null) throw new DefaultException(nameError)
-      await editorCtx.state.history.doAction(
-        {
-          name:
-            item.type === 'costume' ? { en: 'Edit costume', zh: '修改造型' } : { en: 'Edit animation', zh: '修改动画' }
-        },
-        async () => {
-          if (!editorCtx.project.sprites.includes(sprite)) throw new Cancelled('Sprite changed while editing')
-          if (original != null && original.name !== result.name) {
-            await codeEditor.renameResource(getResourceIdentifier(original), result.name)
-          }
-          edit.applyToSprite(sprite, item)
+    editorCtx.state.selectSprite(sprite.id)
+    editorCtx.state.spriteState?.openAIEditor(edit.selectedItem?.type ?? 'costume')
+    return edit
+  }
+}
+
+export function useGenerateSpriteResource() {
+  const editorCtx = useEditorCtx()
+  const ensureSignedIn = useEnsureSignedIn()
+  return async (sprite: Sprite, type: 'costume' | 'animation') => {
+    await ensureSignedIn()
+    const edit = editorCtx.state.spriteEditState.start(sprite)
+    const gen = type === 'costume' ? edit.addCostume() : edit.addAnimation()
+    edit.setSelectedItem({ type, id: gen.id })
+    editorCtx.state.selectSprite(sprite.id)
+    editorCtx.state.spriteState?.openAIEditor(type)
+  }
+}
+
+export function useApplySpriteEdit() {
+  const editorCtx = useEditorCtx()
+  const codeEditor = useCodeEditor()
+  return async function apply(edit: SpriteEdit, sprite: Sprite, item: SpriteContentSelected) {
+    const result =
+      item.type === 'costume' ? edit.getCostumeById(item.id)?.result : edit.getAnimationById(item.id)?.result
+    if (result == null) throw new Error('Resource not ready')
+    const originals = item.type === 'costume' ? sprite.costumes : sprite.animations
+    const original = originals.find((resource) => resource.id === result.id)
+    const nameError =
+      item.type === 'costume'
+        ? assetName.validateCostumeName(result.name, { costumes: sprite.costumes.filter((c) => c !== original) })
+        : assetName.validateAnimationName(result.name, {
+            animations: sprite.animations.filter((a) => a !== original)
+          })
+    if (nameError != null) throw new DefaultException(nameError)
+    await editorCtx.state.history.doAction(
+      {
+        name:
+          item.type === 'costume' ? { en: 'Edit costume', zh: '修改造型' } : { en: 'Edit animation', zh: '修改动画' }
+      },
+      async () => {
+        if (!editorCtx.project.sprites.includes(sprite)) throw new Cancelled('Sprite changed while editing')
+        if (original != null && original.name !== result.name) {
+          await codeEditor.renameResource(getResourceIdentifier(original), result.name)
         }
-      )
-    }
-    try {
-      return await invokeSpriteEditModal({ edit, apply })
-    } finally {
-      editState.finish(edit)
-    }
+        edit.applyToSprite(sprite, item)
+      }
+    )
   }
 }
 
@@ -116,13 +141,19 @@ export function useAddAssetFromLibrary() {
   const genHelpers = useGenHelpers()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: SpxProject, type: T) {
-    const models = (await invokeAssetLibraryModal({ project, type, genHelpers })) as Array<AssetModel<T>>
+    const { models: assets, spriteContentSettings } = await invokeAssetLibraryModal({
+      project,
+      type,
+      genHelpers
+    })
+    const models = assets as Array<AssetModel<T>>
     const em = humanizeAssetType(type)
     await editorCtx.state.history.doAction({ name: { en: `Add ${em.en}`, zh: `添加${em.zh}` } }, async () => {
       for (const model of models) {
         if (model instanceof Sprite) {
           project.addSprite(model)
           await model.autoFit()
+          if (spriteContentSettings != null) editorCtx.state.spriteEditState.start(model).prefill(spriteContentSettings)
         } else if (model instanceof Backdrop) {
           project.stage.addBackdrop(model)
         } else if (model instanceof Sound) {
@@ -490,15 +521,10 @@ function useGenHelpers(): GenHelpers {
     if (gen instanceof BackdropGen) return editorCtx.state.genState.backdrops.some((b) => b.id === gen.id)
     throw new Error('Unsupported gen type')
   }
-  function persist(gen: AssetGenModel) {
-    if (gen instanceof SpriteGen) return editorCtx.state.genState.addSprite(gen)
-    if (gen instanceof BackdropGen) return editorCtx.state.genState.addBackdrop(gen)
-    throw new Error('Unsupported gen type')
-  }
   function getPos(gen: AssetGenModel) {
     if (gen instanceof SpriteGen) return editorCtx.state.genState.getSpritePos(gen)
     if (gen instanceof BackdropGen) return editorCtx.state.genState.getBackdropPos(gen)
     throw new Error('Unsupported gen type')
   }
-  return { isPersisted, persist, getPos }
+  return { isPersisted, getPos }
 }
