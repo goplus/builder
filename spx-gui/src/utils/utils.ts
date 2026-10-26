@@ -341,24 +341,12 @@ export function usePageTitle(
   titleParts: LocaleMessage | LocaleMessage[] | (() => LocaleMessage | LocaleMessage[] | null)
 ) {
   const i18n = useI18n()
-  function setTitle(parts: LocaleMessage | LocaleMessage[]) {
+  watchEffect(() => {
+    let parts = typeof titleParts === 'function' ? titleParts() : titleParts
+    if (parts == null) return
     if (!Array.isArray(parts)) parts = [parts]
     document.title = [...parts.map((p) => i18n.t(p)), 'XBuilder'].join(' - ')
-  }
-
-  if (typeof titleParts !== 'function') {
-    setTitle(titleParts)
-    return
-  }
-
-  watch(
-    titleParts,
-    (parts) => {
-      if (parts == null) return
-      setTitle(parts)
-    },
-    { immediate: true }
-  )
+  })
 }
 
 export function timeout(duration = 0, signal?: AbortSignal) {

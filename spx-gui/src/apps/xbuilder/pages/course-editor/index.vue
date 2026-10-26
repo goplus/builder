@@ -46,13 +46,10 @@ type EditingSession = {
 const session = shallowRef<EditingSession | null>(null)
 
 usePageTitle(() => {
-  const current = session.value
-  if (current == null) return { en: 'Course editor', zh: '课程编辑器' }
-  // Course titles are not localized, so the same string is used for both languages.
-  return [
-    { en: current.course.title, zh: current.course.title },
-    { en: 'Course editor', zh: '课程编辑器' }
-  ]
+  if (session.value != null) return null
+  return inEditorRouter.currentPath.value[0] === 'preview'
+    ? { en: 'Course preview', zh: '课程预览' }
+    : { en: 'Course editor', zh: '课程编辑器' }
 })
 
 const entryQueryRet = useQuery(

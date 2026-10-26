@@ -4,9 +4,18 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { Cancelled } from '@/utils/exception'
+import { createI18n } from '@/utils/i18n'
 
 const mocks = vi.hoisted(() => ({
   signedIn: false,
+  courseData: null as Ref<{ id: string; kind: string; title: string } | null> | null,
+  seriesData: null as Ref<{
+    id: string
+    title: string
+    thumbnail: string
+    description: string
+    courseIDs: string[]
+  } | null> | null,
   courseLoading: null as Ref<boolean> | null,
   seriesLoading: null as Ref<boolean> | null,
   seriesCoursesLoading: null as Ref<boolean> | null,
@@ -17,7 +26,7 @@ const mocks = vi.hoisted(() => ({
   load: vi.fn(),
   notifyStarted: vi.fn(),
   error: vi.fn(),
-  course: { id: 'course', kind: 'guided' as 'guided' | 'playground' },
+  course: { id: 'course', title: 'First course', kind: 'guided' as 'guided' | 'playground' },
   series: { id: 'series', title: 'Series', thumbnail: '', description: '', courseIDs: ['course'] }
 }))
 
@@ -35,8 +44,10 @@ vi.mock('@/stores/course', () => ({
   useCourse: () => {
     const isLoading = ref(false)
     mocks.courseLoading = isLoading
+    const data = ref(mocks.course)
+    mocks.courseData = data
     return {
-      data: ref(mocks.course),
+      data,
       error: ref(null),
       isLoading,
       progress: ref({ percentage: 0 })
@@ -47,8 +58,10 @@ vi.mock('@/stores/course-series', () => ({
   useSeries: () => {
     const isLoading = ref(false)
     mocks.seriesLoading = isLoading
+    const data = ref(mocks.series)
+    mocks.seriesData = data
     return {
-      data: ref(mocks.series),
+      data,
       error: ref(null),
       isLoading,
       progress: ref({ percentage: 0 })
@@ -77,13 +90,8 @@ vi.mock('@/components/tutorials/tutorial', () => ({
     notifyPlaygroundCourseEnded: vi.fn()
   })
 }))
-vi.mock('@/utils/i18n', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/utils/i18n')>()),
-  useI18n: () => ({ t: (message: { en: string }) => message.en })
-}))
 vi.mock('@/utils/utils', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/utils')>()),
-  usePageTitle: vi.fn(),
   useAsyncComputed: () => ref(null)
 }))
 vi.mock('@/components/ui', async (importOriginal) => ({
@@ -106,7 +114,7 @@ import CourseSeries from './course-series.vue'
 
 enableAutoUnmount(afterEach)
 
-async function openPage(destination: string) {
+async function openPage(destination: string, lang: 'en' | 'zh' = 'en') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -124,7 +132,7 @@ async function openPage(destination: string) {
   const page = shallowMount(router.currentRoute.value.matched[0].components!.default, {
     props: router.currentRoute.value.params,
     global: {
-      plugins: [router],
+      plugins: [createI18n({ lang }), router],
       renderStubDefaultSlot: true,
       mocks: { $t: (message: { en: string }) => message.en },
       stubs: {
@@ -259,5 +267,53 @@ describe('Course authentication', () => {
     expect(mocks.load).toHaveBeenCalledWith(mocks.course)
     expect(mocks.notifyStarted).toHaveBeenCalled()
     expect(mocks.signIn).not.toHaveBeenCalled()
+  })
+})
+
+describe('Tutorial page titles', () => {
+  beforeEach(() => {
+    document.title = 'Previous page - XBuilder'
+    mocks.signedIn = true
+    mocks.course.kind = 'playground'
+    mocks.load.mockReset().mockResolvedValue({ config: {}, disposeOnSignal: vi.fn() })
+  })
+
+  it.each(['en', 'zh'] as const)('sets localized titles across Tutorial routes in %s', async (lang) => {
+    for (const [path, title] of [
+      ['/course-series/series', lang === 'en' ? 'Series - Course Series' : 'Series - 课程系列'],
+      ['/course/series/course/start', lang === 'en' ? 'First course - Course' : 'First course - 课程'],
+      ['/course/series/course/playground', lang === 'en' ? 'First course - Course' : 'First course - 课程']
+    ]) {
+      const { page } = await openPage(path, lang)
+      expect(document.title).toBe(`${title} - XBuilder`)
+      page.unmount()
+    }
+  })
+
+  it('updates the Course Series title while loading another series', async () => {
+    const { page } = await openPage('/course-series/series')
+    mocks.seriesData!.value = null
+    await page.setProps({ courseSeriesIdInput: 'next-series' })
+    expect(document.title).toBe('Course Series - XBuilder')
+    mocks.seriesData!.value = { ...mocks.series, id: 'next-series', title: 'Next series' }
+    await flushPromises()
+    expect(document.title).toBe('Next series - Course Series - XBuilder')
+  })
+
+  it('updates the Start title when Course data arrives', async () => {
+    const { page } = await openPage('/course/series/course/start')
+    mocks.courseData!.value = null
+    await page.setProps({ courseIdInput: 'next' })
+    expect(document.title).toBe('Course - XBuilder')
+    mocks.courseData!.value = { ...mocks.course, id: 'next', title: 'Next course' }
+    await flushPromises()
+    expect(document.title).toBe('Next course - Course - XBuilder')
+  })
+
+  it('clears the learning title while preparing another Course', async () => {
+    const { page } = await openPage('/course/series/course/playground')
+    mocks.load.mockImplementation(() => new Promise(() => {}))
+    await page.setProps({ courseIdInput: 'next' })
+    expect(document.title).toBe('Course - XBuilder')
   })
 })

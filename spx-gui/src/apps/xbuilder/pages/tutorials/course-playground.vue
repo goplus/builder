@@ -7,6 +7,7 @@ import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { untilLoaded, useQuery, type QueryRet } from '@/utils/query'
 import { path2PathSegments, useScopedRouterWithPathParam } from '@/utils/route'
+import { usePageTitle } from '@/utils/utils'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useSeriesCourses } from '@/stores/course-series'
 import { useSignIn, useSignedInStateQuery } from '@/stores/user'
@@ -79,6 +80,12 @@ const sessionQueryRet = useQuery(
 )
 
 const session = sessionQueryRet.data
+usePageTitle(() => {
+  const title = session.value?.course.title
+  const page = { en: 'Course', zh: '课程' }
+  return title == null ? page : [{ en: title, zh: title }, page]
+})
+
 const projectQueryRet: QueryRet<TutorialProject> = {
   ...sessionQueryRet,
   data: computed(() => session.value?.project ?? null)

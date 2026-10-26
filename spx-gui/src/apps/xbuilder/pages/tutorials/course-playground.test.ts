@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref, shallowRef, type PropType } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createI18n } from '@/utils/i18n'
 import type { Progress } from '@/utils/progress'
 import type { QueryRet } from '@/utils/query'
 import type { TutorialProject } from '@/models/tutorial/project'
@@ -68,21 +69,23 @@ beforeEach(() => {
 describe('Course page startup progress', () => {
   it('loads the new course when the course route changes', async () => {
     mocks.seriesQueryRet.data.value = [
-      { id: 'course', kind: 'playground' },
-      { id: 'next', kind: 'playground' }
+      { id: 'course', kind: 'playground', title: 'First course' },
+      { id: 'next', kind: 'playground', title: 'Next course' }
     ]
     mocks.seriesQueryRet.isLoading.value = false
     mocks.getSeries.mockResolvedValue({ id: 'series', courseIDs: ['course', 'next'] })
     wrapper = mount(CoursePlaygroundPage, {
       props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inPlaygroundPath: ['code'] },
-      global: { mocks: { $t: (message: { en: string }) => message.en } }
+      global: { plugins: [createI18n({ lang: 'en' })] }
     })
     await flushPromises()
-    expect(mocks.loadProject).toHaveBeenLastCalledWith({ id: 'course', kind: 'playground' })
+    expect(mocks.loadProject).toHaveBeenLastCalledWith({ id: 'course', kind: 'playground', title: 'First course' })
+    expect(document.title).toBe('First course - Course - XBuilder')
     await wrapper.setProps({ courseIdInput: 'next' })
     await flushPromises()
+    expect(document.title).toBe('Next course - Course - XBuilder')
     expect(mocks.getSeries).toHaveBeenCalledTimes(2)
-    expect(mocks.loadProject).toHaveBeenLastCalledWith({ id: 'next', kind: 'playground' })
+    expect(mocks.loadProject).toHaveBeenLastCalledWith({ id: 'next', kind: 'playground', title: 'Next course' })
   })
 
   it('does not restart data loading when the course-list query finishes, and keeps the Playground mounted', async () => {
@@ -91,7 +94,7 @@ describe('Course page startup progress', () => {
     mocks.getSeries.mockImplementation(() => new Promise((resolve) => finishSeries.push(resolve)))
     wrapper = mount(CoursePlaygroundPage, {
       props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inPlaygroundPath: ['code'] },
-      global: { mocks: { $t: (message: { en: string }) => message.en } }
+      global: { plugins: [createI18n({ lang: 'en' })] }
     })
     const playground = wrapper.findComponent({ name: 'CoursePlayground' }).vm
     await flushPromises()
@@ -99,7 +102,7 @@ describe('Course page startup progress', () => {
     await nextTick()
     const firstProgress = Number(wrapper.find('.project-progress').attributes('data-percentage'))
     expect(firstProgress).toBeGreaterThan(0)
-    mocks.seriesQueryRet.data.value = [{ id: 'course', kind: 'playground' }]
+    mocks.seriesQueryRet.data.value = [{ id: 'course', kind: 'playground', title: 'First course' }]
     mocks.seriesQueryRet.isLoading.value = false
     await flushPromises()
     expect(mocks.getSeries).toHaveBeenCalledOnce()

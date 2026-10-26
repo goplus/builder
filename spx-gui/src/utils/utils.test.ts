@@ -1,4 +1,5 @@
-import { nextTick, watch } from 'vue'
+import { defineComponent, nextTick, ref, watch } from 'vue'
+import { mount } from '@vue/test-utils'
 import { describe, it, expect, vitest } from 'vitest'
 import {
   isImage,
@@ -11,9 +12,53 @@ import {
   humanizeFileSize,
   isCrossOriginUrl,
   withRetry,
-  spacingTextZh
+  spacingTextZh,
+  usePageTitle
 } from './utils'
+import { createI18n } from './i18n'
 import { sleep } from './test'
+
+describe('usePageTitle', () => {
+  it.each([false, true])('updates localized titles on language changes (getter: %s)', async (getter) => {
+    const i18n = createI18n({ lang: 'en' })
+    const title = { en: 'Course', zh: '课程' }
+    const wrapper = mount(
+      defineComponent(() => {
+        usePageTitle(getter ? () => title : title)
+        return () => null
+      }),
+      { global: { plugins: [i18n] } }
+    )
+    expect(document.title).toBe('Course - XBuilder')
+    i18n.setLang('zh')
+    await nextTick()
+    expect(document.title).toBe('课程 - XBuilder')
+    wrapper.unmount()
+  })
+
+  it('updates dynamic titles and stops updating when the page unmounts', async () => {
+    const title = ref('First')
+    const wrapper = mount(
+      defineComponent(() => {
+        usePageTitle(() => [
+          { en: title.value, zh: title.value },
+          { en: 'Course', zh: '课程' }
+        ])
+        return () => null
+      }),
+      { global: { plugins: [createI18n({ lang: 'en' })] } }
+    )
+    expect(document.title).toBe('First - Course - XBuilder')
+    title.value = 'Next'
+    await nextTick()
+    expect(document.title).toBe('Next - Course - XBuilder')
+    wrapper.unmount()
+    document.title = 'Course Series - XBuilder'
+    title.value = 'Late update'
+    await nextTick()
+    expect(document.title).toBe('Course Series - XBuilder')
+  })
+})
 
 describe('isImage', () => {
   it('should return true for valid image extensions', () => {

@@ -14,10 +14,6 @@ vi.mock('@/models/tutorial/project', () => ({ TutorialProject: { load: mocks.loa
 vi.mock('@/stores/user', () => ({
   useSignedInStateQuery: () => ({ data: ref({ isSignedIn: true, user: { capabilities: { canManageCourses: true } } }) })
 }))
-vi.mock('@/utils/utils', async (original) => ({
-  ...(await original<typeof import('@/utils/utils')>()),
-  usePageTitle: vi.fn()
-}))
 vi.mock('@/components/course-editor/CourseEditor.vue', () => ({
   default: defineComponent({
     name: 'CourseEditor',
@@ -65,6 +61,16 @@ describe('Course Editor page navigation guards', () => {
     mocks.getCourse.mockReset().mockImplementation(async (id: string) => ({ id, kind: 'playground', title: id }))
     mocks.getSeries.mockReset().mockImplementation(async (id: string) => ({ id, courseIDs: ['c', 'next'] }))
     mocks.load.mockReset().mockImplementation(async () => ({ dispose: vi.fn() }))
+  })
+
+  it('sets a localized fallback title while loading edit and preview routes', async () => {
+    mocks.getCourse.mockImplementation(() => new Promise(() => {}))
+    const { router } = await openEditor()
+    expect(document.title).toBe('Course editor - XBuilder')
+    await router.push('/course-editor/s/c/preview')
+    expect(document.title).toBe('Course preview - XBuilder')
+    await router.push('/course-editor/s/next/edit')
+    expect(document.title).toBe('Course editor - XBuilder')
   })
 
   it('keeps one editing session through view, preview and query/hash changes', async () => {
