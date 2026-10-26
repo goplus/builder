@@ -10,7 +10,6 @@ import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception
 import { createResolvedQueryRet } from '@/utils/query'
 import { makeChildScopedRouter, path2PathSegments, type IScopedRouter, type PathSegments } from '@/utils/route'
 import { useI18n } from '@/utils/i18n'
-import { usePageTitle } from '@/utils/utils'
 import { getCourse, type PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { getCourseManagementRoute } from '@/apps/xbuilder/router'
@@ -199,15 +198,6 @@ const previewError = ref<Error | null>(null)
 const previewCourseID = ref(props.course.id)
 /** The course the preview is running, assigned once its snapshot has loaded. */
 const previewCourse = shallowRef<PlaygroundCourse>(props.course)
-
-usePageTitle(() => {
-  const title = isPreviewRoute.value ? preview.value?.title : props.course.title
-  const page = isPreviewRoute.value
-    ? { en: 'Course preview', zh: '课程预览' }
-    : { en: 'Course editor', zh: '课程编辑器' }
-  return title == null ? page : [{ en: title, zh: title }, page]
-})
-
 /** The editing route to return to; null when the preview was entered by URL or history. */
 let editorRouteBeforePreview: PathSegments | null = null
 

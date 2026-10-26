@@ -46,10 +46,12 @@ type EditingSession = {
 const session = shallowRef<EditingSession | null>(null)
 
 usePageTitle(() => {
-  if (session.value != null) return null
-  return inEditorRouter.currentPath.value[0] === 'preview'
-    ? { en: 'Course preview', zh: '课程预览' }
-    : { en: 'Course editor', zh: '课程编辑器' }
+  const title = session.value?.course.title
+  const page =
+    inEditorRouter.currentPath.value[0] === 'preview'
+      ? { en: 'Course preview', zh: '课程预览' }
+      : { en: 'Course editor', zh: '课程编辑器' }
+  return title == null ? page : [{ en: title, zh: title }, page]
 })
 
 const entryQueryRet = useQuery(

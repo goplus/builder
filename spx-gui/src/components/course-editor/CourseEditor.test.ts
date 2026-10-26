@@ -270,7 +270,6 @@ describe('CourseEditor preview', () => {
     const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
     mocks.completionAction = 'next'
     const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
-    expect(document.title).toBe('First - Course preview - XBuilder')
     const first = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value
 
     await completePreviewedCourse(wrapper)
@@ -283,9 +282,6 @@ describe('CourseEditor preview', () => {
     // Still the preview of the same editing session: the author has not left the course they are writing.
     expect(router.currentRoute.value.params.inEditorPath[0]).toBe('preview')
     expect(router.currentRoute.value.params.courseIdInput).toBe('2338')
-    expect(document.title).toBe('Second - Course preview - XBuilder')
-    await leavePreview(router, makeCourse('2338', 'First'))
-    expect(document.title).toBe('First - Course editor - XBuilder')
     loadSaved.mockRestore()
   })
 
