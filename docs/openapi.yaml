@@ -35,6 +35,12 @@ info:
 
     Server-Sent Events endpoints may emit a stream-level `error` event after the HTTP response has already started.
 
+    ## Pagination
+
+    List endpoints that support jumping to a page take `pageIndex` and `pageSize` and return `ByPage`. Those that only
+    move to the next page take `pageToken` and `pageSize` and return `ByPageToken`. When passing `pageToken`, keep all
+    other query parameters except `pageSize` unchanged; otherwise the server responds with `400`.
+
 security:
   - bearerAuth: []
 
@@ -1328,7 +1334,7 @@ paths:
           in: query
           schema:
             type: boolean
-        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageToken"
         - $ref: "#/components/parameters/PageSize"
       responses:
         "200":
@@ -1340,13 +1346,16 @@ paths:
                 required:
                   - total
                   - data
+                  - nextPageToken
                 properties:
                   total:
-                    $ref: "#/components/schemas/ByPage/properties/total"
+                    $ref: "#/components/schemas/ByPageToken/properties/total"
                   data:
                     type: array
                     items:
                       $ref: "#/components/schemas/Notification"
+                  nextPageToken:
+                    $ref: "#/components/schemas/ByPageToken/properties/nextPageToken"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6417,6 +6426,25 @@ components:
           items:
             type: object
 
+    ByPageToken:
+      description: Paginated response wrapper using page tokens.
+      type: object
+      required:
+        - total
+        - data
+        - nextPageToken
+      properties:
+        total:
+          $ref: "#/components/schemas/ByPage/properties/total"
+        data:
+          $ref: "#/components/schemas/ByPage/properties/data"
+        nextPageToken:
+          description: Opaque token for the next page, or `null` when pagination is complete.
+          type:
+            - string
+            - "null"
+          minLength: 1
+
     Model:
       type: object
       description: Base model with common fields for all entities.
@@ -8808,3 +8836,11 @@ components:
         default: 20
         examples:
           - 20
+
+    PageToken:
+      name: pageToken
+      description: The `nextPageToken` of the previous page. Omit to retrieve the first page.
+      in: query
+      schema:
+        type: string
+        minLength: 1
