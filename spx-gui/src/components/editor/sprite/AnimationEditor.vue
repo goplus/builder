@@ -3,6 +3,14 @@
     {{ $t({ en: 'No animations', zh: '没有动画' }) }}
     <template #op>
       <UIButton
+        v-radar="{ name: 'Generate animation', desc: 'Generate a new animation with AI' }"
+        type="primary"
+        size="large"
+        @click="handleGenerate"
+      >
+        {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
+      </UIButton>
+      <UIButton
         v-radar="{ name: 'Group costumes button', desc: 'Click to group costumes as animation' }"
         type="neutral"
         size="large"
@@ -34,6 +42,12 @@
     <template #add-options>
       <UIMenu>
         <UIMenuItem
+          v-radar="{ name: 'Generate resource', desc: 'Generate a new resource with AI' }"
+          @click="handleGenerate"
+        >
+          {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
+        </UIMenuItem>
+        <UIMenuItem
           v-radar="{ name: 'Group costumes option', desc: 'Click to group costumes as animation' }"
           @click="handleGroupCostumes"
           >{{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}</UIMenuItem
@@ -41,11 +55,12 @@
       </UIMenu>
     </template>
     <template #detail>
-      <AnimationDetail
-        v-if="state.selected != null"
-        :animation="state.selected"
-        @rename="handleRename(state.selected)"
-      />
+      <div v-if="state.selected != null" class="min-h-0 min-w-0 flex-1 flex flex-col bg-grey-200">
+        <AnimationDetail :animation="state.selected" @rename="handleRename(state.selected)" />
+        <div class="flex-none px-5 pb-5">
+          <SpriteResourcePrompt :key="state.selected.id" :sprite="sprite" :resource="state.selected" />
+        </div>
+      </div>
     </template>
   </EditorList>
 </template>
@@ -113,8 +128,9 @@ import type { Sprite } from '@/models/spx/sprite'
 import EditorList from '../common/EditorList.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
 import { capture, useMessageHandle } from '@/utils/exception'
-import { useAddAnimationByGroupingCostumes, useRenameAnimation } from '@/components/asset'
+import { useGenerateSpriteResource, useAddAnimationByGroupingCostumes, useRenameAnimation } from '@/components/asset'
 import AnimationDetail from './AnimationDetail.vue'
+import SpriteResourcePrompt from './SpriteResourcePrompt.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationItem from './AnimationItem.vue'
 import galleryIcon from './gallery.svg'
@@ -125,6 +141,8 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const generateResource = useGenerateSpriteResource()
+const handleGenerate = useMessageHandle(() => generateResource(props.sprite, 'animation')).fn
 
 const addAnimationByGroupingCostumes = useAddAnimationByGroupingCostumes()
 

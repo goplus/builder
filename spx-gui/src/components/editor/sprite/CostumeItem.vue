@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg, UIEditorSpriteItem, UIMenuItem } from '@/components/ui'
+import { UIImg, UIEditorSpriteItem } from '@/components/ui'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import type { Costume } from '@/models/spx/costume'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { useMessageHandle } from '@/utils/exception'
 import { Sprite } from '@/models/spx/sprite'
 import CornerMenu from '../common/CornerMenu.vue'
-import { useEditSprite, useRenameCostume } from '@/components/asset'
+import { useRenameCostume } from '@/components/asset'
 import { RenameMenuItem, RemoveMenuItem, DuplicateMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
@@ -42,18 +42,6 @@ const removable = computed(() => {
   const costumes = parent.value.costumes
   return costumes.length > 1
 })
-
-const editSprite = useEditSprite()
-const { fn: handleEdit } = useMessageHandle(
-  () => {
-    if (!(parent.value instanceof Sprite)) throw new Error('parent expected to be Sprite')
-    return editSprite(parent.value, props.costume)
-  },
-  {
-    en: 'Failed to edit costume',
-    zh: '修改造型失败'
-  }
-)
 
 const { fn: handleDuplicate } = useMessageHandle(
   async () => {
@@ -106,12 +94,6 @@ const { fn: handleRename } = useMessageHandle(() => renameCostume(props.costume)
       <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
-      <UIMenuItem
-        v-radar="{ name: 'Edit with AI', desc: 'Open the sprite editor with this costume selected' }"
-        @click="handleEdit"
-      >
-        {{ $t({ en: 'Edit with AI', zh: '使用 AI 编辑' }) }}
-      </UIMenuItem>
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the costume' }"
         @click="handleDuplicate"

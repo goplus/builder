@@ -1,4 +1,5 @@
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string
+export const spriteEditDemoEnabled = import.meta.env.VITE_SPRITE_EDIT_DEMO !== 'false'
 export const usercontentBaseUrl = import.meta.env.VITE_USERCONTENT_BASE_URL as string
 export const usercontentBucket = import.meta.env.VITE_USERCONTENT_BUCKET as string
 export const disableAIGC = import.meta.env.VITE_DISABLE_AIGC === 'true'

@@ -317,31 +317,35 @@ describe('EditorState', () => {
       editorState.dispose()
     })
 
-    it('should select correctly with undo/redo', async () => {
+    it('keeps costume selection separate from undoable default-costume changes', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)
 
-      editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[0].id)
+      editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
       await flushPromises()
+      expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[1].name)
+      expect(project.sprites[0].defaultCostume?.name).toBe(project.sprites[0].costumes[0].name)
 
       await editorState.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
-        editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
+        project.sprites[0].setDefaultCostume(project.sprites[0].costumes[1].id)
       )
       await flushPromises()
 
       expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[1].name)
+      expect(project.sprites[0].defaultCostume?.name).toBe(project.sprites[0].costumes[1].name)
 
       await editorState.history.undo()
       await flushPromises()
 
-      expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[0].name)
+      expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[1].name)
+      expect(project.sprites[0].defaultCostume?.name).toBe(project.sprites[0].costumes[0].name)
 
-      await editorState.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
-        editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
-      )
+      await editorState.history.redo()
       await flushPromises()
 
       expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[1].name)
+      expect(project.sprites[0].defaultCostume?.name).toBe(project.sprites[0].costumes[1].name)
+      editorState.dispose()
     })
   })
 

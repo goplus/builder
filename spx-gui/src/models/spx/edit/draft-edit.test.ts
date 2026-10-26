@@ -43,14 +43,18 @@ describe('Resource edit drafts', () => {
     const originalImage = source.costumes[0].img
     await edit.editCostume(gen.id, 'Red hair')
     gen.setImage(mockFile('first-result.png'))
-    await gen.finish()
-    const first = gen.result!.img
+    const first = gen.image!
     await edit.editCostume(gen.id, 'Blue coat')
     expect([...aigc.tasks.values()].at(-1)!.params).toMatchObject({
       settings: { referenceImageUrl: `kodo://mock-bucket/${first.name}` },
       editInstruction: 'Blue coat'
     })
-    const second = gen.result!.img
+    const second = gen.image!
+    expect([...aigc.tasks.values()].map(({ task }) => task.type)).toEqual([
+      TaskType.GenerateCostume,
+      TaskType.GenerateCostume
+    ])
+    expect(gen.result!.img).toBe(originalImage)
     edit.editHistory.undo(gen)
     expect(edit.costumes[0].image).toBe(first)
     const taskCount = aigc.tasks.size
@@ -59,6 +63,7 @@ describe('Resource edit drafts', () => {
     expect(restored.editHistory.canRedo(gen.id)).toBe(true)
     restored.editHistory.redo(restored.costumes[0])
     expect(restored.costumes[0].image?.name).toBe(second.name)
+    expect(restored.costumes[0].image).not.toBe(restored.costumes[0].result!.img)
     expect(aigc.tasks.size).toBe(taskCount)
     restored.editHistory.undo(restored.costumes[0])
     await restored.editCostume(gen.id, 'Green coat')
@@ -67,6 +72,18 @@ describe('Resource edit drafts', () => {
     })
     expect(restored.editHistory.canRedo(gen.id)).toBe(false)
     expect(source.costumes[0].img).toBe(originalImage)
+
+    const candidate = restored.costumes[0].image!
+    await restored.costumes[0].finish()
+    expect([...aigc.tasks.values()].at(-1)).toMatchObject({
+      task: { type: TaskType.RemoveBackground },
+      params: { imageUrl: `kodo://mock-bucket/${candidate.name}` }
+    })
+    expect(source.costumes[0].img).toBe(originalImage)
+    restored.applyToSprite(source, { type: 'costume', id: gen.id })
+    expect(source.costumes[0].img).toBe(restored.costumes[0].image)
+    expect(source.costumes[0].img).not.toBe(candidate)
+    expect(restored.editHistory.canUndo(gen.id)).toBe(false)
   })
 
   it('adopts only the selected resource and clears only its history', async () => {
@@ -90,6 +107,7 @@ describe('Resource edit drafts', () => {
     expect(edit.editHistory.canRedo(animation.id)).toBe(false)
     expect(edit.editHistory.canUndo(costume.id)).toBe(true)
 
+    await costume.finish()
     edit.applyToSprite(source, { type: 'costume', id: costume.id })
     expect(source.costumes[0].img).toBe(costume.result!.img)
     expect(edit.editHistory.export()).toEqual([{}, {}])
@@ -132,13 +150,14 @@ describe('Resource edit drafts', () => {
     const gen = edit.costumes[0]
     const originalImage = source.costumes[0].img
     await edit.editCostume(gen.id, 'Red hair')
-    const preview = gen.result!
+    const preview = gen.image
     aigc.injectErrorOnce('subscribeTaskEvents', new Error('Unavailable'))
     await expect(edit.editCostume(gen.id, 'Blue coat')).rejects.toThrow('Unavailable')
-    expect(gen.result).toBe(preview)
+    expect(gen.image).toBe(preview)
     edit.editHistory.undo(gen)
     expect(edit.costumes[0].generateState.status).toBe('finished')
-    expect(edit.costumes[0].result?.img).toBe(preview.img)
+    expect(edit.costumes[0].image).toBe(preview)
+    expect(edit.costumes[0].result?.img).toBe(originalImage)
     expect(source.costumes[0].img).toBe(originalImage)
   })
 })

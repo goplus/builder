@@ -22,7 +22,7 @@
             </UIMenuItem>
             <UIMenuItem
               v-radar="{ name: 'Generate sprite', desc: 'Click to generate sprite with AI' }"
-              @click="handleGenerate"
+              @click="handleGenerate()"
             >
               {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
             </UIMenuItem>
@@ -38,10 +38,9 @@
 import { computed } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useGenerateSprite } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
-import type { Sprite } from '@/models/spx/sprite'
 import SpriteList from '@/components/editor/sprite/SpriteList.vue'
 import PanelHeader from '../common/PanelHeader.vue'
 
@@ -74,19 +73,8 @@ const handleAddFromAssetLibrary = useMessageHandle(
   }
 ).fn
 
-const invokeSpriteGenModal = useSpriteGenModal()
-const handleGenerate = useMessageHandle(
-  async () => {
-    const sprite: Sprite = await invokeSpriteGenModal(editorCtx.project)
-    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-      editorCtx.project.addSprite(sprite)
-      await sprite.autoFit()
-    })
-    editorCtx.state.selectSprite(sprite.id)
-  },
-  {
-    en: 'Failed to generate sprite',
-    zh: '生成精灵失败'
-  }
-).fn
+const handleGenerate = useMessageHandle(useGenerateSprite(), {
+  en: 'Failed to generate sprite',
+  zh: '生成精灵失败'
+}).fn
 </script>

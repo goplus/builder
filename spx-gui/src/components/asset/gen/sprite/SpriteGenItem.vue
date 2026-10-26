@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { UIBlockItemTitle } from '@/components/ui'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { computed } from 'vue'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import { UIBlockItemTitle, UIImg } from '@/components/ui'
 import GenItem from '../common/GenItem.vue'
 import spriteSVG from '../common/sprite.svg?raw'
 import { isCostumesLoading } from '../costume/CostumeGenItem.vue'
@@ -10,6 +11,8 @@ import { isAnimationsLoading } from '../animation/AnimationGenItem.vue'
 const props = defineProps<{
   gen: SpriteGen
 }>()
+
+const [imageUrl, imageLoading] = useRenderableImageUrl(() => props.gen.image)
 
 const isLoading = computed(() => {
   const { costumes, animations } = props.gen
@@ -34,6 +37,9 @@ const highlight = computed(() => props.gen.contentPreparingState.status === 'fin
     :highlight="highlight"
     :placeholder="spriteSVG"
   >
+    <template v-if="gen.image != null" #preview>
+      <UIImg class="h-full w-full" :src="imageUrl" :loading="imageLoading" />
+    </template>
     <UIBlockItemTitle size="medium" :title="gen.settings.name">{{ gen.settings.name }}</UIBlockItemTitle>
   </GenItem>
 </template>

@@ -16,6 +16,12 @@
     <template #add-options>
       <UIMenu>
         <UIMenuItem
+          v-radar="{ name: 'Generate resource', desc: 'Generate a new resource with AI' }"
+          @click="handleGenerate"
+        >
+          {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
+        </UIMenuItem>
+        <UIMenuItem
           v-radar="{ name: 'Add from local file', desc: 'Click to add costume from local file' }"
           @click="handleAddFromLocalFile"
           >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
@@ -23,12 +29,12 @@
       </UIMenu>
     </template>
     <template #detail>
-      <CostumeDetail
-        v-if="state.selected != null"
-        :sprite="sprite"
-        :costume="state.selected"
-        @rename="handleRename(state.selected)"
-      />
+      <div v-if="state.selected != null" class="min-h-0 min-w-0 flex-1 flex flex-col bg-grey-200">
+        <CostumeDetail :sprite="sprite" :costume="state.selected" @rename="handleRename(state.selected)" />
+        <div class="flex-none px-5 pb-5">
+          <SpriteResourcePrompt :key="state.selected.id" :sprite="sprite" :resource="state.selected" />
+        </div>
+      </div>
     </template>
   </EditorList>
 </template>
@@ -37,13 +43,16 @@
 export class CostumesEditorState {
   constructor(private getSprite: () => Sprite | null) {}
 
+  private selectedId = ref<string | null>(null)
+
   /** The currently selected costume */
   get selected() {
-    return this.getSprite()?.defaultCostume ?? null
+    const sprite = this.getSprite()
+    return sprite?.costumes.find((costume) => costume.id === this.selectedId.value) ?? sprite?.defaultCostume ?? null
   }
   /** Select a costume by its ID */
   select(id: string) {
-    this.getSprite()?.setDefaultCostume(id)
+    this.selectedId.value = id
   }
   /** Select a costume by its name */
   selectByName(name: string): void {
@@ -69,15 +78,17 @@ export class CostumesEditorState {
 </script>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
 import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/spx/sprite'
 import { Costume } from '@/models/spx/costume'
-import { useAddCostumeFromLocalFile, useRenameCostume } from '@/components/asset'
+import { useGenerateSpriteResource, useAddCostumeFromLocalFile, useRenameCostume } from '@/components/asset'
 import EditorList from '../common/EditorList.vue'
 import CostumeItem from './CostumeItem.vue'
 import CostumeDetail from './CostumeDetail.vue'
+import SpriteResourcePrompt from './SpriteResourcePrompt.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
@@ -86,8 +97,11 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const generateResource = useGenerateSpriteResource()
+const handleGenerate = useMessageHandle(() => generateResource(props.sprite, 'costume')).fn
 
 function handleSelect(costume: Costume) {
+  props.state.select(costume.id)
   const action = { name: { en: 'Set default costume', zh: '设置默认造型' } }
   editorCtx.state.history.doAction(action, () => props.sprite.setDefaultCostume(costume.id))
 }

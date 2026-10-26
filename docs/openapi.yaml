@@ -3919,6 +3919,8 @@ paths:
                             details not explicitly changed. Requires a nonempty referenceImageUrl and a nonblank
                             instruction after trimming whitespace. Replaces the generation prompt derived from
                             name, description, artStyle, perspective, and facing. Omit for normal generation.
+                            Returns previews with their background intact.
+                            Call removeBackground only when adopting a preview.
                           type: string
                           minLength: 1
                           examples:

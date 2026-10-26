@@ -1,4 +1,9 @@
 <script lang="ts">
+export type AssetLibraryResult = {
+  models: AssetModel[]
+  spriteContentSettings: SpriteContentSettings | null
+}
+
 const searchRecommendations: Record<AssetType, LocaleMessage[]> = {
   [AssetType.Sprite]: [
     { en: 'People', zh: '人物' },
@@ -31,6 +36,7 @@ import {
   UIModalClose,
   useConfirmDialog
 } from '@/components/ui'
+import type { SpriteContentSettings } from '@/apis/aigc'
 import { listAssets, listSignedInUserAssets, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -51,7 +57,7 @@ import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
 import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
-import { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import { SpriteGen, type SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
@@ -71,7 +77,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [AssetModel[]]
+  resolved: [AssetLibraryResult]
 }>()
 
 const i18n = useI18n()
@@ -107,9 +113,9 @@ function resetGen() {
 }
 
 const gen = useWatchResult(
-  () => [props.type, props.project, props.genHelpers, genVersion.value] as const, // depend on genVersion so that it resets when genVersion changes
-  ([type, project, genHelpers], onCleanup) => {
-    if (type === AssetType.Sprite) return initSpriteGen(i18n, project, genHelpers, onCleanup)
+  () => [props.type, props.project, genVersion.value] as const, // depend on genVersion so that it resets when genVersion changes
+  ([type, project], onCleanup) => {
+    if (type === AssetType.Sprite) return initSpriteGen(i18n, project, onCleanup)
     if (type === AssetType.Backdrop) return initBackdropGen(i18n, project, onCleanup)
     if (type === AssetType.Sound) return null
     throw new Error(`Unsupported asset type: ${type}`)
@@ -206,7 +212,7 @@ const handleConfirm = useMessageHandle(
         throw new Error(`Unsupported asset type: ${data.type}`)
       })
     )
-    emit('resolved', assetModels)
+    emit('resolved', { models: assetModels, spriteContentSettings: null })
   },
   { en: 'Failed to parse asset', zh: '素材解析失败' }
 )
@@ -263,7 +269,7 @@ async function collapseGen() {
 }
 
 function handleGenResolved(model: AssetModel) {
-  emit('resolved', [model])
+  emit('resolved', { models: [model], spriteContentSettings: null })
 }
 
 const GenComp = computed(() => {
@@ -275,7 +281,8 @@ const GenComp = computed(() => {
         gen: g,
         descriptionPlaceholder: keyword.value.trim(),
         onCollapse: collapseGen,
-        onResolved: handleGenResolved
+        onResolved: ({ sprite, contentSettings }: SpriteGenResult) =>
+          emit('resolved', { models: [sprite], spriteContentSettings: contentSettings })
       })
   } else if (g instanceof BackdropGen) {
     return (attrs: Record<string, unknown>) =>

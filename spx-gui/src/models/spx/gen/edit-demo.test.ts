@@ -67,16 +67,58 @@ describe('Sprite editing live demo', () => {
     expect(gen.settings.description).toBe('Original costume description')
     expect(edit.hasResourceChanges(item)).toBe(true)
     expect(source.costumes[0].img).toBe(original)
-    const candidate = gen.result!.img
+    const candidate = gen.image
     expect(candidate).not.toBe(original)
 
     edit.editHistory.undo(gen)
     expect(edit.hasResourceChanges(item)).toBe(false)
     edit.editHistory.redo(edit.costumes[0])
     expect(edit.hasResourceChanges(item)).toBe(true)
+    await edit.costumes[0].finish()
     edit.applyToSprite(source, item)
     expect(source.costumes[0].img).toBe(candidate)
     expect(edit.editHistory.canUndo(gen.id)).toBe(false)
+  })
+
+  it('simulates point edits with undo, redo, cancellation and adoption without creating AI tasks', async () => {
+    const { source, edit } = setup()
+    const gen = edit.costumes[0]
+    const original = source.costumes[0].img
+    const comments = [{ id: 'point', x: 0.6, y: 0.4, content: 'Make this blue' }]
+    gen.setEditComments(comments)
+    const pending = edit.editCostume(gen.id, '')
+    await vi.advanceTimersByTimeAsync(2999)
+    expect(gen.generateState.status).toBe('running')
+    expect(gen.image).toBe(original)
+    await vi.advanceTimersByTimeAsync(1)
+    await pending
+    const preview = gen.image!
+    expect(preview).not.toBe(original)
+    expect(await preview.arrayBuffer()).toEqual(await original.arrayBuffer())
+    expect(gen.editComments).toEqual([])
+    expect(source.costumes[0].img).toBe(original)
+    expect(aigc.tasks.size).toBe(0)
+
+    edit.editHistory.undo(gen)
+    expect(edit.costumes[0].editComments).toEqual(comments)
+    edit.editHistory.redo(edit.costumes[0])
+    const restored = edit.costumes[0]
+    expect(restored.image).toBe(preview)
+    restored.setEditComments(comments)
+    const cancelled = restored.edit('Make it green')
+    const rejection = expect(cancelled).rejects.toBeInstanceOf(Cancelled)
+    await vi.advanceTimersByTimeAsync(1000)
+    await restored.cancel()
+    await rejection
+    expect(restored.image).toBe(preview)
+    expect(restored.editComments).toEqual(comments)
+
+    restored.resetGenerateState()
+    await restored.finish()
+    edit.applyToSprite(source, { type: 'costume', id: restored.id })
+    expect(source.costumes[0].img).toBe(preview)
+    expect(edit.editHistory.canUndo(restored.id)).toBe(false)
+    expect(aigc.tasks.size).toBe(0)
   })
 
   it('returns the reference video and supports cancelling the simulated edit', async () => {

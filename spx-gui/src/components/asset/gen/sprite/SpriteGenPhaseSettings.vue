@@ -8,9 +8,8 @@
 import { computed, ref } from 'vue'
 import { UIButton } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
-import type { Sprite } from '@/models/spx/sprite'
 import { asset2Sprite } from '@/models/spx/common/asset'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { SpriteGen, SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
 import { humanizeTimeLeft } from '../common/time-left'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
@@ -35,14 +34,14 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  resolved: [Sprite]
+  resolved: [SpriteGenResult]
 }>()
 
-const canSubmit = computed(() => props.gen.image != null)
+const canSubmit = computed(() => props.gen.image != null && props.gen.imagesGenState.status !== 'running')
 
-const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
-  en: 'Failed to generate sprite content',
-  zh: '生成精灵内容失败'
+const handleSubmit = useMessageHandle(async () => emit('resolved', await props.gen.finishDefaultCostume()), {
+  en: 'Failed to create sprite',
+  zh: '创建精灵失败'
 })
 
 // The preview area remains visible once the user has selected any generated image.
@@ -70,7 +69,7 @@ const handleUseAsset = useMessageHandle(
   async () => {
     if (selectedAsset.value == null) throw new Error('no asset selected')
     const sprite = await asset2Sprite(selectedAsset.value)
-    emit('resolved', sprite)
+    emit('resolved', { sprite, contentSettings: null })
   },
   {
     en: 'Failed to use asset',
@@ -91,6 +90,7 @@ const handleUseAsset = useMessageHandle(
       <SpriteSettingsInput
         :class="{ 'h-75': hasPreview }"
         :gen="gen"
+        :disabled="handleSubmit.isLoading.value"
         :description-placeholder="descriptionPlaceholder"
       />
       <!-- Fixed height to prevent layout shift when suggestions appear/disappear -->
@@ -157,8 +157,8 @@ const handleUseAsset = useMessageHandle(
       <UIButton
         v-else
         v-radar="{
-          name: 'Next',
-          desc: 'Click to proceed to the next phase of sprite generation (costume & animation generation)'
+          name: 'Use sprite',
+          desc: 'Add the sprite with its default costume and continue in the editor'
         }"
         type="primary"
         size="large"
@@ -166,7 +166,7 @@ const handleUseAsset = useMessageHandle(
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"
       >
-        {{ $t({ en: 'Next', zh: '下一步' }) }}
+        {{ $t({ en: 'Use', zh: '采用' }) }}
       </UIButton>
     </footer>
   </main>

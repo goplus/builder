@@ -7,8 +7,7 @@ import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 
 import { UICard, UIIcon, UIMenu, UIMenuItem, UITooltip } from '@/components/ui'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
-import { useEditorCtx } from '../EditorContextProvider.vue'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useGenerateSprite } from '@/components/asset'
 import SpriteList from '../sprite/SpriteList.vue'
 import PanelHeader from '../panels/common/PanelHeader.vue'
 import PanelFooter from '../panels/common/PanelFooter.vue'
@@ -22,8 +21,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:selectedSprite': [sprite: Sprite]
 }>()
-
-const editorCtx = useEditorCtx()
 
 const footerExpanded = ref(props.selectedSprite != null)
 watch(
@@ -59,21 +56,11 @@ const handleAddFromAssetLibrary = useMessageHandle(
   }
 ).fn
 
-const invokeSpriteGenModal = useSpriteGenModal()
-const handleGenerate = useMessageHandle(
-  async () => {
-    const sprite = await invokeSpriteGenModal(editorCtx.project)
-    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-      editorCtx.project.addSprite(sprite)
-      await sprite.autoFit()
-    })
-    selectSprite(sprite)
-  },
-  {
-    en: 'Failed to generate sprite',
-    zh: '生成精灵失败'
-  }
-).fn
+const generateSprite = useGenerateSprite()
+const handleGenerate = useMessageHandle(async () => selectSprite(await generateSprite()), {
+  en: 'Failed to generate sprite',
+  zh: '生成精灵失败'
+}).fn
 </script>
 
 <template>
