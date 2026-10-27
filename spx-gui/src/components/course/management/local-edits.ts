@@ -2,6 +2,27 @@ import { shallowRef, toValue, watch, type ShallowRef, type WatchSource } from 'v
 
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 
+/** Writes run one at a time, in the order they are made. */
+export class WriteQueue {
+  private controller = new ConcurrencyLimitController(1)
+  private last: Promise<unknown> = Promise.resolve()
+
+  run<T>(write: () => Promise<T>): Promise<T> {
+    const writing = this.controller.run(write)
+    this.last = writing.catch(() => {})
+    return writing
+  }
+
+  /** Wait until the writes made so far, and any made while waiting, are done or have failed. */
+  async settled() {
+    let waited: Promise<unknown>
+    do {
+      waited = this.last
+      await waited
+    } while (waited !== this.last)
+  }
+}
+
 /**
  * A value edited ahead of the server. An edit shows at once, and its write, carrying the whole value as edited, runs
  * after the writes before it in `writes`, so that an earlier one never lands after a later one; values written to the
@@ -9,10 +30,9 @@ import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
  * follows `source` again only once none is: it then takes what the last write returned, if anything, or `source` as
  * it is after a failure.
  */
-export function useLocalEdits<T>(source: WatchSource<T>, writes = new ConcurrencyLimitController(1)) {
+export function useLocalEdits<T>(source: WatchSource<T>, writes = new WriteQueue()) {
   const value = shallowRef(toValue(source)) as ShallowRef<T>
   let pending = 0
-  let lastWrite: Promise<unknown> = Promise.resolve()
   watch(source, (current) => {
     if (pending === 0) value.value = current
   })
@@ -21,10 +41,8 @@ export function useLocalEdits<T>(source: WatchSource<T>, writes = new Concurrenc
     value.value = edited
     pending++
     let settled: { value: T } | null = null
-    const writing = writes.run(() => write(edited))
-    lastWrite = writing.catch(() => {})
     try {
-      const written = await writing
+      const written = await writes.run(() => write(edited))
       if (written !== undefined) settled = { value: written }
     } catch (e) {
       settled = { value: toValue(source) }
@@ -35,14 +53,5 @@ export function useLocalEdits<T>(source: WatchSource<T>, writes = new Concurrenc
     }
   }
 
-  /** Wait until the edits made so far, and any made while waiting, are written or have failed to be. */
-  async function settled() {
-    let waited: Promise<unknown>
-    do {
-      waited = lastWrite
-      await waited
-    } while (waited !== lastWrite)
-  }
-
-  return { value, edit, settled }
+  return { value, edit }
 }

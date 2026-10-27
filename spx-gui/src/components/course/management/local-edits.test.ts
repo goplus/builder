@@ -1,8 +1,7 @@
 import { nextTick, shallowRef } from 'vue'
 import { describe, expect, it } from 'vitest'
 
-import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
-import { useLocalEdits } from './local-edits'
+import { useLocalEdits, WriteQueue } from './local-edits'
 
 /** A write that settles when the test says, as the server answers it. */
 function makeServer(source: { value: string[] }) {
@@ -70,7 +69,7 @@ describe('useLocalEdits', () => {
   })
 
   it('writes values sharing a queue in the order they were edited', async () => {
-    const writes = new ConcurrencyLimitController(1)
+    const writes = new WriteQueue()
     const order = useLocalEdits(shallowRef(['One', 'Two']), writes)
     const units = useLocalEdits(shallowRef<string[]>([]), writes)
     const written: string[] = []
@@ -91,44 +90,6 @@ describe('useLocalEdits', () => {
     expect(written).toEqual(['order Two One', 'units Unit: Two One'])
   })
 
-  it('tells when the edits made so far are written, failed ones included', async () => {
-    const source = shallowRef(['One'])
-    const { edit, settled } = useLocalEdits(source)
-    const server = makeServer(source)
-    let isSettled = false
-
-    const failed = expect(edit(['A'], server.write)).rejects.toThrow('write failed')
-    const written = edit(['B'], server.write)
-    void settled().then(() => (isSettled = true))
-    await server.answer(false)
-    await failed
-    expect(isSettled).toBe(false)
-    await server.answer()
-    await written
-
-    await settled()
-    expect(isSettled).toBe(true)
-  })
-
-  it('waits as well for the edits made while it waits', async () => {
-    const source = shallowRef(['One'])
-    const { edit, settled } = useLocalEdits(source)
-    const server = makeServer(source)
-    let isSettled = false
-
-    const first = edit(['A'], server.write)
-    void settled().then(() => (isSettled = true))
-    const second = edit(['B'], server.write)
-    await server.answer()
-    await first
-    expect(isSettled).toBe(false)
-    await server.answer()
-    await second
-
-    await settled()
-    expect(isSettled).toBe(true)
-  })
-
   it('keeps the edits shown when the write returns nothing', async () => {
     const source = shallowRef(['One', 'Two'])
     const { value, edit } = useLocalEdits(source)
@@ -136,5 +97,50 @@ describe('useLocalEdits', () => {
     await edit(['Two', 'One'], async () => {})
 
     expect(value.value).toEqual(['Two', 'One'])
+  })
+})
+
+describe('WriteQueue', () => {
+  it('tells when the writes made so far are done, failed ones included', async () => {
+    const writes = new WriteQueue()
+    const source = shallowRef(['One'])
+    const { edit } = useLocalEdits(source, writes)
+    const server = makeServer(source)
+    let isSettled = false
+
+    const failed = expect(edit(['A'], server.write)).rejects.toThrow('write failed')
+    const written = edit(['B'], server.write)
+    void writes.settled().then(() => (isSettled = true))
+    await server.answer(false)
+    await failed
+    expect(isSettled).toBe(false)
+    await server.answer()
+    await written
+
+    await writes.settled()
+    expect(isSettled).toBe(true)
+  })
+
+  it('waits as well for the writes made while it waits, of any value sharing it', async () => {
+    const writes = new WriteQueue()
+    const unitSource = shallowRef(['Unit'])
+    const courseSource = shallowRef(['One'])
+    const units = useLocalEdits(unitSource, writes)
+    const courses = useLocalEdits(courseSource, writes)
+    const unitServer = makeServer(unitSource)
+    const courseServer = makeServer(courseSource)
+    let isSettled = false
+
+    const unitsEdited = units.edit([], unitServer.write)
+    void writes.settled().then(() => (isSettled = true))
+    const coursesEdited = courses.edit(['A'], courseServer.write)
+    await unitServer.answer()
+    await unitsEdited
+    expect(isSettled).toBe(false)
+    await courseServer.answer()
+    await coursesEdited
+
+    await writes.settled()
+    expect(isSettled).toBe(true)
   })
 })

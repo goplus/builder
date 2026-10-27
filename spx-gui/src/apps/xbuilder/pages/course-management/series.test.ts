@@ -4,7 +4,10 @@ import { isNavigationFailure } from 'vue-router'
 import { setupPageTests, mountPages, signIn } from '@/apps/xbuilder/pages/test'
 import * as courseApis from '@/apis/course'
 import * as courseSeriesApis from '@/apis/course-series'
+import * as courseSeriesFile from '@/components/course/management/course-series-file'
 import type { CourseSeries, CourseSeriesUnit, UpdateCourseSeriesParams } from '@/apis/course-series'
+
+vi.mock('@/components/course/management/course-series-file', { spy: true })
 
 function makeCourse(id: string, title: string): courseApis.Course {
   return {
@@ -181,5 +184,22 @@ describe('course management series page', () => {
     expect(isNavigationFailure(await left)).toBe(true)
     expect(router.currentRoute.value.path).toBe('/course-management/space')
     await vi.waitFor(() => expect(document.querySelector('input[placeholder="Enter course title"]')).not.toBeNull())
+  })
+
+  it('exports the series as the edits made before leave it', async () => {
+    const { writes } = serveSeries()
+    vi.mocked(courseSeriesFile.exportCourseSeriesFile).mockReturnValue(new Promise(() => {}))
+    await mountSeriesPage()
+
+    await click(getByText('button', 'New unit'))
+    await vi.waitFor(() => expect(document.querySelector('input[placeholder="Unit title"]')).not.toBeNull())
+    await enterTitle('input[placeholder="Unit title"]', 'Deep space')
+    await click(getByText('button', 'Export to file'))
+    expect(courseSeriesFile.exportCourseSeriesFile).not.toHaveBeenCalled()
+    await writes[0].answer()
+
+    await vi.waitFor(() => expect(courseSeriesFile.exportCourseSeriesFile).toHaveBeenCalled())
+    const [exported] = vi.mocked(courseSeriesFile.exportCourseSeriesFile).mock.calls[0]
+    expect(exported.units.map((unit) => unit.title)).toEqual(['Basics', 'Arrival', 'Deep space'])
   })
 })

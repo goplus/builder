@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter } from 'vue-router'
-import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import { isGuidedCourse, type Course } from '@/apis/course'
-import type { CourseSeries, CourseSeriesUnitParams } from '@/apis/course-series'
+import { getCourseSeries, type CourseSeries, type CourseSeriesUnitParams } from '@/apis/course-series'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useDeleteCourse } from '@/stores/course'
 import { useDeleteCourseSeries, useSeries, useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
@@ -28,7 +27,7 @@ import CourseItem from '@/components/course/management/CourseItem.vue'
 import CourseItemCornerMenu from '@/components/course/management/CourseItemCornerMenu.vue'
 import CourseSeriesDrawer from '@/components/course/management/CourseSeriesDrawer.vue'
 import UnitHeaderItem from '@/components/course/management/UnitHeaderItem.vue'
-import { useLocalEdits } from '@/components/course/management/local-edits'
+import { useLocalEdits, WriteQueue } from '@/components/course/management/local-edits'
 import UnitTitleModal from '@/components/course/management/UnitTitleModal.vue'
 import {
   addUnit,
@@ -103,14 +102,10 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 })
 
 // The course order and the units are both written to the order of the series' courses, so they share a queue.
-const seriesWrites = new ConcurrencyLimitController(1)
+const seriesWrites = new WriteQueue()
 
 /** The courses as shown, which a drag reorders before the server has the new order. */
-const {
-  value: courses,
-  edit: editCourses,
-  settled: courseEditsWritten
-} = useLocalEdits(() => coursesQueryRet.data.value ?? [], seriesWrites)
+const { value: courses, edit: editCourses } = useLocalEdits(() => coursesQueryRet.data.value ?? [], seriesWrites)
 
 const { query, sortBy } = useListViewQuery()
 const shownCourses = computed(() => courses.value.filter((course) => matchesQuery([course.title], query.value)))
@@ -167,15 +162,14 @@ useDragSortable(shownCourses, listRef, {
 })
 
 /** The units as shown, which an edit changes before the server has them. */
-const {
-  value: units,
-  edit: editUnits,
-  settled: unitEditsWritten
-} = useLocalEdits<CourseSeriesUnitParams[]>(() => seriesQueryRet.data.value?.units ?? [], seriesWrites)
+const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnitParams[]>(
+  () => seriesQueryRet.data.value?.units ?? [],
+  seriesWrites
+)
 
-/** Done once the edits made so far are written: what goes on with the series next starts from them. */
-async function editsWritten() {
-  await Promise.all([courseEditsWritten(), unitEditsWritten()])
+/** Done once the edits made so far, and any made meanwhile, are written: what is done next starts from them. */
+function editsWritten() {
+  return seriesWrites.settled()
 }
 
 // A page opened next for the series would read it without the edits still being written, which would then overwrite
@@ -420,10 +414,11 @@ const handleEditSeries = useMessageHandle(async (series: CourseSeries) => {
   await keepPageFor(invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order }))
 }).fn
 
-const handleExport = useMessageHandle((series: CourseSeries) => keepPageFor(fileActions.exportSeries(series)), {
-  en: 'Failed to export course series file',
-  zh: '导出课程系列文件失败'
-}).fn
+const handleExport = useMessageHandle(
+  // The series is read again once the edits are written, as the one shown may be from before them.
+  (series: CourseSeries) => openAfterEdits(async () => fileActions.exportSeries(await getCourseSeries(series.id))),
+  { en: 'Failed to export course series file', zh: '导出课程系列文件失败' }
+).fn
 
 const handleImport = useMessageHandle(
   async (series: CourseSeries) => {
