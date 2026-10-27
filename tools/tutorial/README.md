@@ -14,7 +14,7 @@ people and the Course Editor's assistant read the same text: spx-gui links the d
 - [`SKILL.md`](./skills/tutorial-course/SKILL.md): what a course is made of, how its program drives the learner's
   session, and how to work on a course in the Course Editor.
 - [`references/course-program.md`](./skills/tutorial-course/references/course-program.md): the course program, from a
-  first course to the execution model, the API reference and what happens when a call fails.
+  first course to the execution model, run groups, the API reference and what happens when a call fails.
 - [`references/course-format.md`](./skills/tutorial-course/references/course-format.md): the files a course is made of
   and its settings.
 
