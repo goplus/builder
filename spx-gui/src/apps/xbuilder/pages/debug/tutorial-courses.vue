@@ -2,9 +2,12 @@
 import { onBeforeUnmount, ref } from 'vue'
 import { XGoExecutor, type XGoExitReason } from '@/utils/xgoexec'
 import { createTutorialFramework } from '@/utils/tutorial-framework'
+import { usePageTitle } from '@/utils/utils'
 import { UIButton, UICard, UITextInput } from '@/components/ui'
 import { createMockTutorialHost } from './tutorial-mock-host'
 import { courseCases, exampleCourseSource } from './tutorial-course-cases'
+
+usePageTitle({ en: 'Tutorial course debugger', zh: '教程课程调试器' })
 
 const CASE_TIMEOUT_MS = 15000
 

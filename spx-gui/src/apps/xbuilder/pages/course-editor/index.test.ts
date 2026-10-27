@@ -14,10 +14,6 @@ vi.mock('@/models/tutorial/project', () => ({ TutorialProject: { load: mocks.loa
 vi.mock('@/stores/user', () => ({
   useSignedInStateQuery: () => ({ data: ref({ isSignedIn: true, user: { capabilities: { canManageCourses: true } } }) })
 }))
-vi.mock('@/utils/utils', async (original) => ({
-  ...(await original<typeof import('@/utils/utils')>()),
-  usePageTitle: vi.fn()
-}))
 vi.mock('@/components/course-editor/CourseEditor.vue', () => ({
   default: defineComponent({
     name: 'CourseEditor',
@@ -35,7 +31,7 @@ vi.mock('@/components/course-editor/CourseEditor.vue', () => ({
 }))
 enableAutoUnmount(afterEach)
 
-async function openEditor() {
+async function openEditor(lang: 'en' | 'zh' = 'en') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -50,7 +46,7 @@ async function openEditor() {
   await router.push(getCourseEditorRoute('s', 'c'))
   const wrapper = mount(RouterView, {
     global: {
-      plugins: [createI18n({ lang: 'en' }), router],
+      plugins: [createI18n({ lang }), router],
       directives: { radar: {} },
       stubs: { UIDetailedLoading: true, UIError: true }
     }
@@ -66,6 +62,36 @@ describe('Course Editor page navigation guards', () => {
     mocks.getSeries.mockReset().mockImplementation(async (id: string) => ({ id, courseIDs: ['c', 'next'] }))
     mocks.load.mockReset().mockImplementation(async () => ({ dispose: vi.fn() }))
   })
+
+  it('sets a localized fallback title while loading edit and preview routes', async () => {
+    mocks.getCourse.mockImplementation(() => new Promise(() => {}))
+    const { router } = await openEditor()
+    expect(document.title).toBe('Course editor - XBuilder')
+    await router.push('/course-editor/s/c/preview')
+    expect(document.title).toBe('Course preview - XBuilder')
+    await router.push('/course-editor/s/next/edit')
+    expect(document.title).toBe('Course editor - XBuilder')
+  })
+
+  it.each(['en', 'zh'] as const)(
+    'updates the page title across editing, preview and Course changes in %s',
+    async (lang) => {
+      const { router, wrapper } = await openEditor(lang)
+      const editorTitle = lang === 'en' ? 'Course editor' : '课程编辑器'
+      const previewTitle = lang === 'en' ? 'Course preview' : '课程预览'
+      expect(document.title).toBe(`c - ${editorTitle} - XBuilder`)
+      await router.push('/course-editor/s/c/preview')
+      await flushPromises()
+      expect(document.title).toBe(`c - ${previewTitle} - XBuilder`)
+      await router.push('/course-editor/s/next/edit')
+      await flushPromises()
+      expect(document.title).toBe(`next - ${editorTitle} - XBuilder`)
+      const editor = wrapper.findComponent({ name: 'CourseEditor' })
+      editor.vm.$emit('saved', { ...editor.props('course'), title: 'Renamed' })
+      await flushPromises()
+      expect(document.title).toBe(`Renamed - ${editorTitle} - XBuilder`)
+    }
+  )
 
   it('keeps one editing session through view, preview and query/hash changes', async () => {
     const { router, wrapper } = await openEditor()

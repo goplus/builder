@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Cancelled } from '@/utils/exception'
 import { composeQuery, untilLoaded, useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
 import { useCourse } from '@/stores/course'
 import { useSeries } from '@/stores/course-series'
 import { useSignIn, useSignedInStateQuery } from '@/stores/user'
@@ -18,6 +19,12 @@ const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const courseQueryRet = useCourse(() => props.courseIdInput)
 const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
+
+usePageTitle(() => {
+  const title = courseQueryRet.data.value?.title
+  const page = { en: 'Course', zh: '课程' }
+  return title == null ? page : [{ en: title, zh: title }, page]
+})
 
 const allQueryRet = useQuery(
   async (ctx) => {
