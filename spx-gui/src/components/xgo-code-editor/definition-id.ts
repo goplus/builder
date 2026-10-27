@@ -38,13 +38,16 @@ export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifi
   if (idStr === 'xgo:' || !/^xgo:[^?#\s]*(?:\?[^?#\s]+)?(?:#[^?#\s]+)?$/.test(idStr)) {
     throw new Error(`Invalid definition ID: ${idStr}`)
   }
-  idStr = idStr.slice(4)
-  const [withoutHash, hash = ''] = idStr.split('#')
+  const [withoutHash, hash = ''] = idStr.slice(4).split('#')
   const [hostWithPath, query = ''] = withoutHash.split('?')
-  return {
-    package: hostWithPath === '' ? undefined : hostWithPath,
-    name: query === '' ? undefined : decodeURIComponent(query),
-    overloadId: hash === '' ? undefined : decodeURIComponent(hash)
+  try {
+    return {
+      package: hostWithPath === '' ? undefined : hostWithPath,
+      name: query === '' ? undefined : decodeURIComponent(query),
+      overloadId: hash === '' ? undefined : decodeURIComponent(hash)
+    }
+  } catch (cause) {
+    throw new Error(`Invalid definition ID: ${idStr}`, { cause })
   }
 }
 

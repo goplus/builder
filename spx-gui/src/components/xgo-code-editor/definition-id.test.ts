@@ -49,8 +49,20 @@ describe('parseDefinitionId', () => {
     'xgo:preset/spx?Sprite.stepTo#0#1',
     'xgo:preset/spx?Sprite.stepTo?',
     'xgo:preset/spx?bad name',
-    'xgo:preset/spx?%'
-  ])('rejects malformed input: %s', (id) => expect(() => parseDefinitionId(id)).toThrow())
+    'xgo:preset/spx?%',
+    'xgo:preset/spx?Sprite.stepTo#%'
+  ])('rejects malformed input: %s', (id) =>
+    expect(() => parseDefinitionId(id)).toThrowError(new Error(`Invalid definition ID: ${id}`))
+  )
+
+  it.each(['xgo:preset/spx?%', 'xgo:preset/spx?Sprite.stepTo#%', 'xgo:preset/spx?%FF'])(
+    'preserves the decoding error as the cause: %s',
+    (id) => {
+      expect(() => parseDefinitionId(id)).toThrowError(
+        expect.objectContaining({ message: `Invalid definition ID: ${id}`, cause: expect.any(URIError) })
+      )
+    }
+  )
 })
 
 describe('resolveDefinitionId', () => {
