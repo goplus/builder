@@ -1,15 +1,12 @@
 import { flushPromises } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { effectScope, ref, shallowRef, type EffectScope } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { effectScope, shallowRef, type EffectScope } from 'vue'
 import { File } from '@/models/common/file'
+import { cloudHelpers } from '@/models/common/cloud'
+import * as exceptions from './exception'
 import { useFileMediaUrl } from './media'
 
 const scopes: EffectScope[] = []
-
-beforeEach(() => {
-  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
-  vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {})
-})
 
 afterEach(() => {
   scopes.splice(0).forEach((scope) => scope.stop())
@@ -18,58 +15,77 @@ afterEach(() => {
 
 function setup(file: File) {
   const source = shallowRef<File | null>(file)
-  const element = ref<HTMLMediaElement | null>(document.createElement('video'))
   const scope = effectScope()
   scopes.push(scope)
-  const media = scope.run(() => useFileMediaUrl(source, element))!
-  return { source, element, scope, ...media }
+  const [url, loading] = scope.run(() => useFileMediaUrl(source))!
+  return { source, scope, url, loading }
 }
 
 describe('useFileMediaUrl', () => {
-  it('discards a replaced source even if its resolver ignores cancellation', async () => {
-    let resolve!: (url: string) => void
-    const oldFile = new File('old.mp4', async () => new ArrayBuffer(0))
-    const resolveOld = vi.spyOn(oldFile, 'mediaUrl').mockImplementation(() => new Promise((done) => (resolve = done)))
-    const media = setup(oldFile)
-    const newFile = new File('new.mp4', async () => new ArrayBuffer(0), {
-      resolveMediaUrl: async () => 'https://example.com/new.mp4'
-    })
-    media.source.value = newFile
+  it('keeps a pending replacement loading when an old resolver ignores cancellation', async () => {
+    let resolveOld!: (url: string) => void
+    let resolveNew!: (url: string) => void
+    const resolver = vi
+      .spyOn(cloudHelpers, 'getFileWebUrl')
+      .mockImplementationOnce(() => new Promise((done) => (resolveOld = done)))
+      .mockImplementationOnce(() => new Promise((done) => (resolveNew = done)))
+    const media = setup(new File('old.mp4', async () => new ArrayBuffer(0)))
+    media.source.value = new File('new.mp4', async () => new ArrayBuffer(0))
     await flushPromises()
-    resolve('https://example.com/old.mp4')
+    resolveOld('https://example.com/old.mp4')
     await flushPromises()
-    expect((resolveOld.mock.calls[0][0] as AbortSignal).aborted).toBe(true)
-    expect(media.url.value).toBe('https://example.com/new.mp4')
+    expect(resolver.mock.calls[0][1]).toHaveProperty('aborted', true)
+    expect(media.url.value).toBeNull()
     expect(media.loading.value).toBe(true)
-    expect(media.failed.value).toBe(false)
+    resolveNew('https://example.com/new.mp4')
+    await flushPromises()
+    expect(media.url.value).toBe('https://example.com/new.mp4')
+    expect(media.loading.value).toBe(false)
   })
 
-  it('resolves the source again when retrying a failed load', async () => {
-    const file = new File('lesson.mp4', async () => new ArrayBuffer(0))
-    vi.spyOn(file, 'mediaUrl')
-      .mockRejectedValueOnce(new Error('offline'))
-      .mockResolvedValueOnce('https://example.com/lesson.mp4')
-    const media = setup(file)
-    await flushPromises()
-    expect(media.failed.value).toBe(true)
-    media.reload()
-    await flushPromises()
-    expect(media.failed.value).toBe(false)
-    expect(media.url.value).toBe('https://example.com/lesson.mp4')
-  })
+  it.each(['https://example.com/lesson.mp4', 'data:video/mp4;base64,dmlkZW8='])(
+    'uses WebUrl %s without reading the file bytes',
+    async (webUrl) => {
+      vi.spyOn(cloudHelpers, 'getFileWebUrl').mockResolvedValue(webUrl)
+      const loader = vi.fn(async () => new ArrayBuffer(0))
+      const media = setup(new File('lesson.mp4', loader))
+      await flushPromises()
+      expect(media.url.value).toBe(webUrl)
+      expect(media.loading.value).toBe(false)
+      expect(loader).not.toHaveBeenCalled()
+    }
+  )
 
-  it('detaches the native source before revoking a local object URL', async () => {
+  it('acquires and releases an object URL for a file without a WebUrl', async () => {
+    vi.spyOn(cloudHelpers, 'getFileWebUrl').mockResolvedValue(null)
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:lesson')
-    const file = new File('lesson.mp4', async () => new ArrayBuffer(0))
-    const media = setup(file)
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+    const media = setup(new File('lesson.mp4', async () => new TextEncoder().encode('video').buffer))
     await flushPromises()
-    media.element.value!.src = media.url.value!
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {
-      expect(media.element.value!.hasAttribute('src')).toBe(false)
-      expect(HTMLMediaElement.prototype.load).toHaveBeenCalled()
-    })
+    expect(media.url.value).toBe('blob:lesson')
+    expect(media.loading.value).toBe(false)
     media.scope.stop()
-    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:lesson')
+  })
+
+  it('clears the URL and loading state when no file is selected', async () => {
+    vi.spyOn(cloudHelpers, 'getFileWebUrl').mockResolvedValue('https://example.com/lesson.mp4')
+    const media = setup(new File('lesson.mp4', async () => new ArrayBuffer(0)))
+    await flushPromises()
+    media.source.value = null
+    await flushPromises()
+    expect(media.url.value).toBeNull()
+    expect(media.loading.value).toBe(false)
+  })
+
+  it('reports an acquisition failure and finishes URL loading', async () => {
+    const error = new Error('offline')
+    vi.spyOn(cloudHelpers, 'getFileWebUrl').mockRejectedValue(error)
+    const capture = vi.spyOn(exceptions, 'capture').mockImplementation(() => {})
+    const media = setup(new File('lesson.mp4', async () => new ArrayBuffer(0)))
+    await flushPromises()
+    expect(media.url.value).toBeNull()
+    expect(media.loading.value).toBe(false)
+    expect(capture).toHaveBeenCalledWith(error)
   })
 })

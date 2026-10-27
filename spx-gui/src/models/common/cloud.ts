@@ -72,6 +72,16 @@ export class CloudHelpers {
     return universalUrlToWebUrlImpl(universalUrl, this.ensureConfig())
   }
 
+  /** Resolve an existing saved file URL without loading or uploading its contents. */
+  async getFileWebUrl(file: File, signal?: AbortSignal): Promise<WebUrl | null> {
+    signal?.throwIfAborted()
+    const universalUrl = getUniversalUrl(file)
+    if (universalUrl == null) return null
+    const webUrl = await this.universalUrlToWebUrl(universalUrl)
+    signal?.throwIfAborted()
+    return webUrl
+  }
+
   clearUniversalUrlCache() {
     universalUrlCache.clear()
   }
@@ -232,25 +242,17 @@ function getUniversalUrl(file: File): UniversalUrl | null {
 }
 
 export function createFileWithUniversalUrl(url: UniversalUrl, name = getUniversalUrlFilename(url)) {
-  const resolveMediaUrl = async (signal?: AbortSignal) => {
+  const file = new File(name, async (signal) => {
     const webUrl = await cloudHelpers.universalUrlToWebUrl(url)
     signal?.throwIfAborted()
-    return webUrl
-  }
-  const file = new File(name, async (signal) => fetchFile(await resolveMediaUrl(signal), signal), {
-    resolveMediaUrl: async (signal) => {
-      const webUrl = await resolveMediaUrl(signal)
-      return /^https?:\/\//.test(webUrl) ? webUrl : null
-    }
+    return fetchFile(webUrl, signal)
   })
   setUniversalUrl(file, url)
   return file
 }
 
 export function createFileWithWebUrl(url: WebUrl, name = getUniversalUrlFilename(url)) {
-  return new File(name, async (signal) => fetchFile(url, signal), {
-    resolveMediaUrl: async () => (/^https?:\/\//.test(url) ? url : null)
-  })
+  return new File(name, async (signal) => fetchFile(url, signal))
 }
 
 const fetchFileController = new ConcurrencyLimitController(20)

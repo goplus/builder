@@ -2,6 +2,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { File } from '@/models/common/file'
+import { cloudHelpers } from '@/models/common/cloud'
 import { Video } from '@/models/tutorial/video'
 
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
@@ -13,7 +14,7 @@ const globalOptions = {
   stubs: {
     UIModal: { props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
     UIButton: { template: '<button><slot /></button>' },
-    UIError: { template: '<div><slot /></div>' },
+    UIError: { props: ['retry'], template: '<div><slot /><button @click="retry">Retry</button></div>' },
     UILoading: true,
     UIIcon: true
   }
@@ -23,7 +24,6 @@ const wrappers: VueWrapper[] = []
 beforeEach(() => {
   vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
-  vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {})
 })
 
 afterEach(() => {
@@ -33,13 +33,13 @@ afterEach(() => {
 
 function mountVideo(visible = true) {
   const file = new File('lesson.mp4', async () => new ArrayBuffer(0), { type: 'video/mp4' })
-  vi.spyOn(file, 'mediaUrl').mockResolvedValue('https://example.com/lesson.mp4')
+  vi.spyOn(cloudHelpers, 'getFileWebUrl').mockResolvedValue('https://example.com/lesson.mp4')
   const wrapper = mount(CoursePlaygroundVideoModal, {
     props: { visible, video: new Video('lesson', file) },
     global: globalOptions
   })
   wrappers.push(wrapper)
-  return { wrapper, file }
+  return { wrapper }
 }
 
 describe('Course presentation', () => {
@@ -70,9 +70,9 @@ describe('Course presentation', () => {
   })
 
   it('aborts video loading and pauses playback when unmounted', async () => {
-    const { wrapper, file } = mountVideo()
+    const { wrapper } = mountVideo()
     await flushPromises()
-    const signal = vi.mocked(file.mediaUrl).mock.calls[0][0] as AbortSignal
+    const signal = vi.mocked(cloudHelpers.getFileWebUrl).mock.calls[0][1] as AbortSignal
     wrapper.unmount()
     wrappers.splice(wrappers.indexOf(wrapper), 1)
     expect(signal.aborted).toBe(true)
@@ -80,40 +80,15 @@ describe('Course presentation', () => {
     expect(wrapper.emitted('resolved')).toBeUndefined()
   })
 
-  it('loads remote media with CORS and shows buffering until media is ready', async () => {
-    const { wrapper } = mountVideo()
+  it('opens initially hidden remote media with CORS and plays when data is ready', async () => {
+    const { wrapper } = mountVideo(false)
+    await wrapper.setProps({ visible: true })
     await flushPromises()
     const video = wrapper.get('video')
     expect(video.attributes('src')).toBe('https://example.com/lesson.mp4')
     expect(video.attributes('crossorigin')).toBe('anonymous')
-    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(true)
     await video.trigger('loadeddata')
-    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(false)
-    await video.trigger('waiting')
-    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(true)
-    await video.trigger('playing')
-    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(false)
-  })
-
-  it('stops native loading when hidden before the modal unmounts', async () => {
-    const { wrapper, file } = mountVideo()
-    await flushPromises()
-    const media = wrapper.get('video').element
-    const signal = vi.mocked(file.mediaUrl).mock.calls[0][0] as AbortSignal
-    await wrapper.setProps({ visible: false })
-    expect(signal.aborted).toBe(true)
-    expect(media.hasAttribute('src')).toBe(false)
-    expect(HTMLMediaElement.prototype.load).toHaveBeenCalled()
-    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled()
-    expect(wrapper.emitted('resolved')).toBeUndefined()
-  })
-
-  it('can open after the modal provider initially mounts it hidden', async () => {
-    const { wrapper, file } = mountVideo(false)
-    await wrapper.setProps({ visible: true })
-    await flushPromises()
-    expect(wrapper.get('video').attributes('src')).toBe('https://example.com/lesson.mp4')
-    expect(vi.mocked(file.mediaUrl).mock.calls.at(-1)![0]).toHaveProperty('aborted', false)
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
   })
 
   it('offers manual playback when autoplay is blocked', async () => {
@@ -150,7 +125,38 @@ describe('Course presentation', () => {
     await flushPromises()
     await wrapper.find('video').trigger('error')
     expect(wrapper.text()).toContain('Failed to play the Course video')
-    await wrapper.find('button').trigger('click')
+    await wrapper.findAll('button').at(-1)!.trigger('click')
     expect(wrapper.emitted('resolved')).toHaveLength(1)
+  })
+
+  it('lets the component retry a failed native source and resolve the URL again', async () => {
+    const { wrapper } = mountVideo()
+    await flushPromises()
+    await wrapper.get('video').trigger('error')
+    expect(wrapper.find('video').exists()).toBe(false)
+    vi.mocked(cloudHelpers.getFileWebUrl).mockResolvedValueOnce('https://example.com/retried.mp4')
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('video').attributes('src')).toBe('https://example.com/retried.mp4')
+    expect(cloudHelpers.getFileWebUrl).toHaveBeenCalledTimes(2)
+    await wrapper.get('video').trigger('loadeddata')
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
+  })
+
+  it('shows and retries URL acquisition failures without a media element', async () => {
+    vi.spyOn(cloudHelpers, 'getFileWebUrl')
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce('https://example.com/retried.mp4')
+    const file = new File('lesson.mp4', async () => new ArrayBuffer(0))
+    const wrapper = mount(CoursePlaygroundVideoModal, {
+      props: { visible: true, video: new Video('lesson', file) },
+      global: globalOptions
+    })
+    wrappers.push(wrapper)
+    await flushPromises()
+    expect(wrapper.text()).toContain('Failed to play the Course video')
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('video').attributes('src')).toBe('https://example.com/retried.mp4')
   })
 })

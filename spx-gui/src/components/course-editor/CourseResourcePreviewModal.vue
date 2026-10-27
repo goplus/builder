@@ -3,11 +3,11 @@
  * A resource at full size: a video to play, or a picture to look at. For a video it also gives the line of course
  * program that plays it, ready to copy, since that is what its name is for.
  */
-import { computed, ref } from 'vue'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { computed } from 'vue'
 import { useFileMediaUrl } from '@/utils/media'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { Video, type Image } from '@/models/tutorial/project'
-import { UIError, UILoading, UIModal, UIModalClose } from '@/components/ui'
+import { UIModal, UIModalClose } from '@/components/ui'
 import CodeView from '@/components/common/CodeView.vue'
 import CopyButton from '@/components/common/CopyButton.vue'
 
@@ -26,13 +26,7 @@ const isVideo = computed(() => props.resource instanceof Video)
 // `JSON.stringify` writes the name as a string literal, so a name holding a quote or a backslash still compiles.
 const playCall = computed(() => `showVideo ${JSON.stringify(props.resource.name)}`)
 
-const videoElement = ref<HTMLVideoElement | null>(null)
-const {
-  url: videoUrl,
-  loading,
-  failed,
-  reload
-} = useFileMediaUrl(() => (props.visible && isVideo.value ? props.resource.file : null), videoElement)
+const [videoUrl] = useFileMediaUrl(() => (props.visible && isVideo.value ? props.resource.file : null))
 
 const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
@@ -56,31 +50,15 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
           <CopyButton :value="playCall" :label="{ en: 'Copy code', zh: '复制代码' }" />
         </span>
       </div>
-      <div v-if="isVideo" class="relative flex min-h-40 items-center justify-center rounded bg-black">
-        <UIError v-if="failed" class="p-6" :retry="reload">
-          {{ $t({ en: 'Failed to play the Course video', zh: '课程视频播放失败' }) }}
-        </UIError>
-        <UILoading
-          v-else-if="loading"
-          class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6"
-        />
-        <video
-          v-if="videoUrl != null && !failed"
-          ref="videoElement"
-          class="w-full rounded"
-          style="max-height: 70vh"
-          crossorigin="anonymous"
-          :src="videoUrl"
-          controls
-          autoplay
-          playsinline
-          @loadeddata="loading = false"
-          @canplay="loading = false"
-          @playing="loading = false"
-          @waiting="loading = true"
-          @error="failed = true"
-        ></video>
-      </div>
+      <video
+        v-if="isVideo && videoUrl != null"
+        class="w-full rounded bg-black"
+        style="max-height: 70vh"
+        crossorigin="anonymous"
+        :src="videoUrl"
+        controls
+        autoplay
+      ></video>
       <img
         v-else-if="!isVideo && imageUrl != null"
         class="mx-auto block max-w-full rounded"

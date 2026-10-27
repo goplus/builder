@@ -24,6 +24,56 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
   capture: vi.fn()
 }))
 
+describe('CloudHelpers.getFileWebUrl', () => {
+  beforeEach(() => cloudHelpers.setConfig({ baseUrl: 'https://example.com', bucket: 'bucket' }))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('uses saved media without loading bytes or changing its saved identity', async () => {
+    const url = 'https://example.com/lesson.mp4'
+    const loader = vi.fn(async () => new ArrayBuffer(0))
+    const file = new File('lesson.mp4', loader, { meta: { universalUrl: url } })
+    await expect(cloudHelpers.getFileWebUrl(file)).resolves.toBe(url)
+    expect(loader).not.toHaveBeenCalled()
+    expect(file.meta.universalUrl).toBe(url)
+  })
+
+  it.each([null, 'data:video/mp4;base64,dmlkZW8='])(
+    'returns saved WebUrl %s without loading content',
+    async (universalUrl) => {
+      const loader = vi.fn(async () => new ArrayBuffer(0))
+      const file = new File('lesson.mp4', loader, {
+        meta: universalUrl == null ? {} : { universalUrl }
+      })
+      await expect(cloudHelpers.getFileWebUrl(file, new AbortController().signal)).resolves.toBe(universalUrl)
+      expect(loader).not.toHaveBeenCalled()
+    }
+  )
+
+  it('returns null for an unsaved Web URL file without marking it as saved', async () => {
+    const file = createFileWithWebUrl('https://example.com/video.mp4')
+    await expect(cloudHelpers.getFileWebUrl(file, new AbortController().signal)).resolves.toBeNull()
+    expect(file.meta.universalUrl).toBeUndefined()
+  })
+
+  it('rejects a URL resolved after cancellation', async () => {
+    let resolve!: (url: string) => void
+    vi.spyOn(cloudHelpers, 'universalUrlToWebUrl').mockImplementation(() => new Promise((done) => (resolve = done)))
+    const controller = new AbortController()
+    const result = cloudHelpers.getFileWebUrl(createFileWithUniversalUrl('kodo://bucket/lesson.mp4'), controller.signal)
+    controller.abort(new Error('closed'))
+    resolve('https://example.com/lesson.mp4')
+    await expect(result).rejects.toThrow('closed')
+  })
+
+  it('reports resolution errors without falling back to a full download', async () => {
+    vi.spyOn(cloudHelpers, 'universalUrlToWebUrl').mockRejectedValue(new Error('offline'))
+    const loader = vi.fn(async () => new ArrayBuffer(0))
+    const file = new File('lesson.mp4', loader, { meta: { universalUrl: 'kodo://bucket/lesson.mp4' } })
+    await expect(cloudHelpers.getFileWebUrl(file, new AbortController().signal)).rejects.toThrow('offline')
+    expect(loader).not.toHaveBeenCalled()
+  })
+})
+
 describe('universalUrlToWebUrl', () => {
   const batchDelay = 15 + 1 // 15ms + 1ms
   const cacheTtl = 60 * 60 * 1000 + 1 // 1 hour in milliseconds + 1ms
@@ -47,34 +97,6 @@ describe('universalUrlToWebUrl', () => {
     const result = await cloudHelpers.universalUrlToWebUrl(httpUrl)
     expect(result).toBe(httpUrl)
     expect(createFileURLSignatures).not.toHaveBeenCalled()
-  })
-
-  it('resolves remote media when opened again after the URL cache expires', async () => {
-    const universalUrl = 'kodo://bucket/lesson.mp4'
-    vi.mocked(createFileURLSignatures)
-      .mockResolvedValueOnce({ [universalUrl]: 'https://bucket.example.com/lesson.mp4?version=1' })
-      .mockResolvedValueOnce({ [universalUrl]: 'https://bucket.example.com/lesson.mp4?version=2' })
-    const file = createFileWithUniversalUrl(universalUrl)
-    const first = file.mediaUrl(new AbortController().signal)
-    await vi.advanceTimersByTimeAsync(batchDelay)
-    await expect(first).resolves.toBe('https://bucket.example.com/lesson.mp4?version=1')
-    await vi.advanceTimersByTimeAsync(cacheTtl)
-    const second = file.mediaUrl(new AbortController().signal)
-    await vi.advanceTimersByTimeAsync(batchDelay)
-    await expect(second).resolves.toBe('https://bucket.example.com/lesson.mp4?version=2')
-  })
-
-  it('keeps byte loading available for HTTP-backed media', async () => {
-    const url = 'https://example.com/lesson.mp4'
-    const bytes = new TextEncoder().encode('video').buffer
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(bytes))
-    try {
-      const file = createFileWithWebUrl(url)
-      await expect(file.mediaUrl(new AbortController().signal)).resolves.toBe(url)
-      expect(await file.arrayBuffer()).toEqual(bytes)
-    } finally {
-      fetchSpy.mockRestore()
-    }
   })
 
   it('should transform kodo URL correctly', async () => {
@@ -115,24 +137,19 @@ describe('universalUrlToWebUrl', () => {
     expect(webUrl1).toBe(webUrl2)
   })
 
-  it('should invalidate cache after TTL', async () => {
-    const mockObjectUrls = {
-      'kodo://bucket/key1': 'https://bucket.example.com/key1'
-    }
-    vi.mocked(createFileURLSignatures).mockResolvedValue(mockObjectUrls)
-
-    const universalUrl = 'kodo://bucket/key1'
-
-    const promise1 = cloudHelpers.universalUrlToWebUrl(universalUrl)
-    vi.advanceTimersByTime(batchDelay)
-    await promise1
-
-    vi.advanceTimersByTime(cacheTtl)
-
-    const promise2 = cloudHelpers.universalUrlToWebUrl(universalUrl)
-    vi.advanceTimersByTime(batchDelay)
-    await promise2
-
+  it('refreshes a saved file URL after TTL', async () => {
+    const universalUrl = 'kodo://bucket/lesson.mp4'
+    vi.mocked(createFileURLSignatures)
+      .mockResolvedValueOnce({ [universalUrl]: 'https://bucket.example.com/lesson.mp4?version=1' })
+      .mockResolvedValueOnce({ [universalUrl]: 'https://bucket.example.com/lesson.mp4?version=2' })
+    const file = createFileWithUniversalUrl(universalUrl)
+    const first = cloudHelpers.getFileWebUrl(file)
+    await vi.advanceTimersByTimeAsync(batchDelay)
+    await expect(first).resolves.toBe('https://bucket.example.com/lesson.mp4?version=1')
+    await vi.advanceTimersByTimeAsync(cacheTtl)
+    const second = cloudHelpers.getFileWebUrl(file)
+    await vi.advanceTimersByTimeAsync(batchDelay)
+    await expect(second).resolves.toBe('https://bucket.example.com/lesson.mp4?version=2')
     expect(createFileURLSignatures).toHaveBeenCalledTimes(2)
   })
 

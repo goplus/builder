@@ -24,8 +24,6 @@ export type Options = {
   lastModified?: number
   /** Metadata related to current file */
   meta?: Metadata
-  /** Resolve an HTTP(S) source for native media loading, without reading the file bytes. */
-  resolveMediaUrl?: (signal: AbortSignal) => Promise<string | null>
 }
 
 export type Loader = (signal?: AbortSignal) => Promise<ArrayBuffer>
@@ -86,8 +84,6 @@ export class File {
    */
   readonly meta: Metadata
 
-  private readonly resolveMediaUrl: NonNullable<Options['resolveMediaUrl']> | null
-
   constructor(
     /** File name */
     public readonly name: string,
@@ -99,7 +95,6 @@ export class File {
     this.type = options?.type ?? getMimeFromExt(extname(name).slice(1)) ?? ''
     this.lastModified = options?.lastModified ?? Date.now()
     this.meta = { ...options?.meta }
-    this.resolveMediaUrl = options?.resolveMediaUrl ?? null
     markRaw(this)
   }
 
@@ -120,15 +115,6 @@ export class File {
         })
     )
     return this.loading.wait(signal)
-  }
-
-  /** Native media source. Cross-origin HTTP sources require CORS-enabled media elements. */
-  async mediaUrl(cleanup: OnCleanup | AbortSignal) {
-    const signal = typeof cleanup === 'function' ? getCleanupSignal(cleanup) : cleanup
-    signal.throwIfAborted()
-    const url = await this.resolveMediaUrl?.(signal)
-    signal.throwIfAborted()
-    return url ?? this.url(signal)
   }
 
   async url(cleanup: OnCleanup | AbortSignal) {

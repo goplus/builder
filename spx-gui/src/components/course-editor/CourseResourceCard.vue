@@ -3,9 +3,9 @@
  * One resource on its page, drawn like a course in course management: its picture (for a video, the first frame)
  * filling the card, its name along the bottom, and a menu in the corner that shows on hover.
  */
-import { computed, ref } from 'vue'
-import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { computed } from 'vue'
 import { useFileMediaUrl } from '@/utils/media'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { Video, type Image } from '@/models/tutorial/project'
 import { UIDropdown, UIIcon, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 
@@ -24,8 +24,7 @@ const emit = defineEmits<{
 
 const isVideo = computed(() => props.resource instanceof Video)
 
-const videoElement = ref<HTMLVideoElement | null>(null)
-const { url: videoUrl } = useFileMediaUrl(() => (isVideo.value ? props.resource.file : null), videoElement)
+const [videoUrl] = useFileMediaUrl(() => (isVideo.value ? props.resource.file : null))
 
 const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
@@ -43,7 +42,6 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
     <!-- `#t=0.1` asks for the frame just after the start, which browsers then draw as the poster. -->
     <video
       v-if="isVideo && videoUrl != null"
-      ref="videoElement"
       class="h-full w-full object-cover"
       crossorigin="anonymous"
       :src="`${videoUrl}#t=0.1`"
