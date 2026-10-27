@@ -156,6 +156,17 @@ describe('course management series page', () => {
     expect(getUnitHeader('Deep space').querySelector('button')!.disabled).toBe(false)
   })
 
+  it('leaves the page without waiting for the edits being written', async () => {
+    serveSeries()
+    const { router } = await mountSeriesPage()
+
+    await openUnitMenu('Arrival')
+    await click(getByText('.ui-menu-item', 'Move up'))
+    await router.push('/elsewhere')
+
+    expect(router.currentRoute.value.path).toBe('/elsewhere')
+  })
+
   it('keeps the page while a course is created after the edits are written', async () => {
     const { writes } = serveSeries()
     const { router } = await mountSeriesPage()
@@ -164,22 +175,6 @@ describe('course management series page', () => {
     await click(getByText('.ui-menu-item', 'Move up'))
     await click(getUnitHeader('Arrival').querySelector('button')!)
     const left = router.push('/elsewhere')
-    await writes[0].answer()
-
-    expect(isNavigationFailure(await left)).toBe(true)
-    expect(router.currentRoute.value.path).toBe('/course-management/space')
-    await vi.waitFor(() => expect(document.querySelector('input[placeholder="Enter course title"]')).not.toBeNull())
-  })
-
-  it('keeps the page when a course is created while it is being left', async () => {
-    const { writes } = serveSeries()
-    const { router } = await mountSeriesPage()
-
-    await openUnitMenu('Arrival')
-    await click(getByText('.ui-menu-item', 'Move up'))
-    const left = router.push('/elsewhere')
-    await flushPromises()
-    await click(getUnitHeader('Arrival').querySelector('button')!)
     await writes[0].answer()
 
     expect(isNavigationFailure(await left)).toBe(true)

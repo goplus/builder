@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
-import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
@@ -168,26 +168,14 @@ const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnitParams[]
   seriesWrites
 )
 
-/** Done once the edits made so far, and any made meanwhile, are written: what is done next starts from them. */
-function editsWritten() {
-  return seriesWrites.settled()
-}
-
-// A page opened next for the series would read it without the edits still being written, which would then overwrite
-// what is done there.
-onBeforeRouteLeave(editsWritten)
-onBeforeRouteUpdate(async (to, from) => {
-  if (to.path !== from.path) await editsWritten()
-})
-// Its guards run after those above, so that a dialog opened while the edits are written keeps the page.
 const { keepPageFor } = usePageModals()
 
 const pageSignal = getCleanupSignal(onUnmounted)
 
-/** Open a dialog once the edits made so far are written, the page kept from the start. */
+/** Open a dialog once the edits made so far are written, the page kept from the start: what it does starts from them. */
 function openAfterEdits<T>(open: () => Promise<T>) {
   return keepPageFor(
-    editsWritten().then(() => {
+    seriesWrites.settled().then(() => {
       // The page also goes without being left, as when the author signs out.
       pageSignal.throwIfAborted()
       return open()
