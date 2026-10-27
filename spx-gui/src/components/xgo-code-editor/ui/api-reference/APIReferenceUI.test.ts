@@ -171,13 +171,13 @@ describe('API Reference search disclosure', () => {
     await wrapper.get('input').setValue('没有这个功能')
     const statusElement = wrapper.get('[role="status"]').element
     expect(wrapper.findAll('[role="status"]')).toHaveLength(1)
-    expect(wrapper.get('[role="status"]').text()).toBe('没有找到匹配的 API，试试其他名称或功能词。')
+    expect(wrapper.get('[role="status"]').text()).toBe('未找到 API，试试其他关键词。')
     expect(wrapper.text()).not.toContain('找到 0 种写法')
     await wrapper.get('input').setValue('开始')
     expect(wrapper.findAll('[role="status"]')).toHaveLength(1)
     expect(wrapper.get('[role="status"]').text()).toBe('找到 1 种写法')
     expect(wrapper.get('[role="status"]').element).toBe(statusElement)
-    expect(wrapper.text()).not.toContain('没有找到匹配的 API')
+    expect(wrapper.text()).not.toContain('未找到 API')
   })
 
   it('opens category names from the header instead of displaying the category row inline', async () => {

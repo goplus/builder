@@ -266,7 +266,7 @@ async function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <div class="flex-none px-3 py-2.5">
+      <div class="flex-none px-3 py-2">
         <div class="flex items-center justify-between gap-2">
           <h4 class="text-sm font-medium text-title">{{ $t({ en: 'API Reference', zh: 'API 参考' }) }}</h4>
           <div class="flex items-center gap-1">
@@ -367,12 +367,7 @@ async function handleCategoryClick(id: string) {
         </UITextInput>
       </div>
       <div v-if="isSearching" class="flex min-h-0 flex-[1_1_0] flex-col">
-        <p
-          class="flex-none px-4 py-3 text-hint-2"
-          :class="searchResults.length > 0 ? 'text-xs' : 'text-sm'"
-          role="status"
-          aria-live="polite"
-        >
+        <p class="flex-none px-3 pt-0.5 pb-1.5 text-sm text-hint-2" role="status" aria-live="polite">
           {{
             $t(
               searchResults.length > 0
@@ -381,8 +376,8 @@ async function handleCategoryClick(id: string) {
                     zh: `找到 ${searchResults.length} 种写法`
                   }
                 : {
-                    en: 'No matching APIs. Try another name or function.',
-                    zh: '没有找到匹配的 API，试试其他名称或功能词。'
+                    en: 'No APIs found. Try another keyword.',
+                    zh: '未找到 API，试试其他关键词。'
                   }
             )
           }}
@@ -392,15 +387,10 @@ async function handleCategoryClick(id: string) {
           ref="searchResultsWrapperRef"
           class="relative flex min-h-0 flex-col overflow-y-auto px-3 pb-3 [scrollbar-width:thin]"
         >
-          <li
-            v-for="group in searchResultGroups"
-            :key="group.id"
-            :data-category-id="group.id"
-            class="[&:last-child>section:last-child]:border-b-0"
-          >
-            <section v-for="sc in group.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
-              <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
-              <ul class="flex flex-col gap-2 pb-3">
+          <li v-for="group in searchResultGroups" :key="group.id" :data-category-id="group.id">
+            <section v-for="sc in group.subCategories" :key="sc.id">
+              <h5 class="sticky top-0 z-10 bg-grey-100 py-2 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+              <ul class="flex flex-col gap-1 pb-4">
                 <APIReferenceItemComp
                   v-for="item in sc.items"
                   :key="stringifyDefinitionId(item.definition)"
@@ -416,17 +406,12 @@ async function handleCategoryClick(id: string) {
       <div v-show="!isSearching" class="flex min-h-0 flex-[1_1_0] flex-col">
         <ul
           ref="itemsWrapperRef"
-          class="relative min-h-0 flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
+          class="relative min-h-0 flex-[1_1_0] min-w-0 overflow-y-auto px-3 pb-3 [scrollbar-width:thin]"
         >
-          <li
-            v-for="c in categoriesForItems"
-            :key="c.id"
-            :data-category-id="c.id"
-            class="[&:last-child>section:last-child]:border-b-0"
-          >
-            <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
-              <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
-              <ul class="flex flex-col gap-md pb-5">
+          <li v-for="c in categoriesForItems" :key="c.id" :data-category-id="c.id">
+            <section v-for="sc in c.subCategories" :key="sc.id">
+              <h5 class="sticky top-0 z-10 bg-grey-100 py-2 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+              <ul class="flex flex-col gap-md pb-4">
                 <APIReferenceItemComp
                   v-for="item in sc.items"
                   :key="stringifyDefinitionId(item.definition)"

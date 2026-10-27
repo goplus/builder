@@ -209,8 +209,8 @@ function handleMouseUp(e: MouseEvent) {
   background: var(--ui-color-grey-100);
   transition: all 0.2s;
   cursor: pointer;
-  /* 42px for sticky title, to ensure the item correctly scrolled into view. */
-  scroll-margin-top: 42px;
+  /* 34px for sticky title, to ensure the item correctly scrolled into view. */
+  scroll-margin-top: 34px;
   /* With 16px offset it is easier to find when scrolled into view. */
   scroll-margin-bottom: 16px;
   /* Preserve `border-radius` when dragging, see details: https://github.com/react-dnd/react-dnd/issues/788 */
@@ -223,8 +223,8 @@ function handleMouseUp(e: MouseEvent) {
 
 .api-reference-item.search-result {
   align-self: stretch;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 @media (hover: hover) and (pointer: fine) {
