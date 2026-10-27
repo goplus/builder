@@ -9,8 +9,6 @@ const props = defineProps<{
   action: LocaleMessage
   /** The unit's title so far, empty for a new unit. */
   title: string
-  /** What else the action does. */
-  tip?: LocaleMessage
 }>()
 
 const emit = defineEmits<{
@@ -56,7 +54,6 @@ function handleSubmit() {
           v-radar="{ name: 'unit-title-input', desc: 'Input field for the unit title' }"
           :placeholder="$t({ en: 'Unit title', zh: '单元名称' })"
         />
-        <template v-if="tip != null" #tip>{{ $t(tip) }}</template>
       </UIFormItem>
       <footer class="mt-10 flex justify-end gap-xl">
         <UIButton

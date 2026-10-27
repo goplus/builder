@@ -250,21 +250,13 @@ useDragSortable(() => (canDragUnitList.value ? shownUnitList.value : null), unit
   onSorted: handleUnitListSorted
 })
 
-function askUnitTitle(action: { en: string; zh: string }, title = '', tip?: { en: string; zh: string }) {
-  return keepPageFor(invokeUnitTitleModal({ action, title, tip }))
+function askUnitTitle(action: { en: string; zh: string }, title = '') {
+  return keepPageFor(invokeUnitTitleModal({ action, title }))
 }
 
 const handleAddUnit = useMessageHandle(
   async (series: CourseSeries) => {
-    const wasDivided = isDivided.value
-    const tip = wasDivided
-      ? undefined
-      : {
-          en: 'All courses of the series go into the first unit, in their order.',
-          zh: '系列现有的课程会按原来的顺序全部放进第一个单元。'
-        }
-    const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' }, '', tip)
-    if (isDivided.value !== wasDivided) throw unitsChanged()
+    const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' })
     // The courses as shown, in an order a reorder still being written may have given them, go into the first unit.
     const courseIDs = courses.value.map((course) => course.id)
     if (!isDivided.value && !hasSameIDs(courseIDs, courseSeries.value?.courseIDs ?? [])) {
@@ -329,10 +321,7 @@ const handleRemoveUnit = useMessageHandle(
 
 const handleSplitUnit = useMessageHandle(
   async (series: CourseSeries, course: Course) => {
-    const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' }, '', {
-      en: `"${course.title}" and the courses after it in its unit form the new unit.`,
-      zh: `“${course.title}”和本单元里它之后的课程会组成新单元。`
-    })
+    const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' })
     if (!canSplitAt(course.id)) throw unitsChanged()
     await writeUnits(series, splitUnitAt(units.value, course.id, title))
   },
