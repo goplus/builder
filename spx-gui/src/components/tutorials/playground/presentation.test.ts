@@ -59,6 +59,7 @@ describe('Course presentation', () => {
   it('keeps an ended video open for replay and resolves only on Continue', async () => {
     const { wrapper } = mountVideo()
     await flushPromises()
+    await wrapper.find('video').trigger('playing')
     await wrapper.find('video').trigger('ended')
     expect(wrapper.emitted('resolved')).toBeUndefined()
     await wrapper.find('button[aria-label="Play video"]').trigger('click')
@@ -80,15 +81,34 @@ describe('Course presentation', () => {
     expect(wrapper.emitted('resolved')).toBeUndefined()
   })
 
-  it('opens initially hidden remote media with CORS and plays when data is ready', async () => {
+  it('keeps loading over remote media until a video frame reaches the compositor', async () => {
+    let startPlayback!: () => void
+    const playback = new Promise<void>((resolve) => (startPlayback = resolve))
+    vi.mocked(HTMLMediaElement.prototype.play).mockReturnValueOnce(playback)
     const { wrapper } = mountVideo(false)
     await wrapper.setProps({ visible: true })
     await flushPromises()
     const video = wrapper.get('video')
+    let presentFrame!: () => void
+    Object.defineProperty(video.element, 'requestVideoFrameCallback', {
+      value: (callback: () => void) => (presentFrame = callback)
+    })
     expect(video.attributes('src')).toBe('https://example.com/lesson.mp4')
     expect(video.attributes('crossorigin')).toBe('anonymous')
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Play video"]').exists()).toBe(false)
     await video.trigger('loadeddata')
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Play video"]').exists()).toBe(false)
+    await video.trigger('playing')
+    startPlayback()
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Play video"]').exists()).toBe(false)
+    presentFrame()
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(false)
   })
 
   it('offers manual playback when autoplay is blocked', async () => {
@@ -97,6 +117,7 @@ describe('Course presentation', () => {
     await flushPromises()
     await wrapper.find('video').trigger('loadeddata')
     await flushPromises()
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(false)
     expect(wrapper.find('button[aria-label="Play video"]').exists()).toBe(true)
     await wrapper.find('button[aria-label="Play video"]').trigger('click')
     await flushPromises()
@@ -110,6 +131,7 @@ describe('Course presentation', () => {
     const video = wrapper.find('video')
     await wrapper.find('button[aria-label="Turn sound off"]').trigger('click')
     expect(video.element.muted).toBe(true)
+    await video.trigger('playing')
     await video.trigger('ended')
     await wrapper.find('button[aria-label="Play video"]').trigger('click')
     expect(video.element.muted).toBe(true)
@@ -138,6 +160,8 @@ describe('Course presentation', () => {
     await wrapper.get('button').trigger('click')
     await flushPromises()
     expect(wrapper.get('video').attributes('src')).toBe('https://example.com/retried.mp4')
+    expect(wrapper.findComponent({ name: 'UILoading' }).exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Play video"]').exists()).toBe(false)
     expect(cloudHelpers.getFileWebUrl).toHaveBeenCalledTimes(2)
     await wrapper.get('video').trigger('loadeddata')
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
