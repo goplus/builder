@@ -60,6 +60,7 @@ const entryQueryRet = useQuery(
     // Read route params synchronously so that their change re-runs the query.
     const courseIdInput = props.courseIdInput
     const courseSeriesIdInput = props.courseSeriesIdInput
+    ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
     // Keep the reads below from becoming dependencies, which would re-run the query endlessly.
     await nextTick()
 
@@ -92,6 +93,7 @@ const entryQueryRet = useQuery(
       project.dispose()
       throw new Cancelled('superseded')
     }
+    ctx.reporter.report(1)
     return { course, series, project }
   },
   {

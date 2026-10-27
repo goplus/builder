@@ -17,10 +17,7 @@ import type {
 export type RequestContext = {
   /** Optional signal to cancel the request */
   signal?: AbortSignal
-  /**
-   * Optional tracing options for the request.
-   * TODO: Consider moving this to spx layer instead of generic LSP client layer.
-   */
+  /** Optional tracing metadata for the request. */
   traceOptions?: { command?: string }
 }
 
@@ -39,10 +36,7 @@ export type LSPClientEvents = {
   propertyRenamed: PropertyRenamedEvent
 }
 
-/**
- * Generic LSP client interface — extracted from SpxLSPClient method signatures.
- * The base generic providers use this interface so they have no dependency on SpxLSPClient.
- */
+/** Language-server operations consumed by the framework-independent editor providers. */
 export interface ILSPClient {
   dispose(): void
 

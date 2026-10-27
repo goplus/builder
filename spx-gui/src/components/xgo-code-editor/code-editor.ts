@@ -81,9 +81,7 @@ export class CodeEditor extends Disposable {
     this.inlayHintProviderRef = shallowRef(new InlayHintProvider(params.lspClient))
     this.inputHelperProviderRef = shallowRef(new InputHelperProvider(params.lspClient, () => this.resourceAdapter))
     this.apiReferenceProviderRef = shallowRef(new EmptyAPIReferenceProvider())
-    this.completionProviderRef = shallowRef(
-      new CompletionProvider(params.lspClient, documentBase, params.project.classFramework)
-    )
+    this.completionProviderRef = shallowRef(new CompletionProvider(params.lspClient, documentBase))
     this.diagnosticsProviderRef = shallowRef(new DiagnosticsProvider(params.lspClient, params.project))
     this.snippetVariablesProviderRef = shallowRef(new SnippetVariablesProvider())
   }
