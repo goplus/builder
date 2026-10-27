@@ -602,12 +602,7 @@ onUnmounted(() => {
           :history="history"
         />
         <template v-else>
-          <UIDetailedLoading
-            v-if="codeEditorQuery.isLoading.value"
-            :percentage="codeEditorQuery.progress.value.percentage"
-          >
-            <span>{{ $t({ en: 'Loading code editor...', zh: '加载代码编辑器中...' }) }}</span>
-          </UIDetailedLoading>
+          <UILoading v-if="codeEditorQuery.isLoading.value" />
           <UIError v-else-if="codeEditorQuery.error.value != null" :retry="codeEditorQuery.refetch">
             {{ $t(codeEditorQuery.error.value.userMessage) }}
           </UIError>
