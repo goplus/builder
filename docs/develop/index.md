@@ -12,6 +12,10 @@
 
 See `package.json` or `go.mod` files in subdirectories for details.
 
+### Project Maintenance
+
+- [Issue Management](./issue-management.md)
+
 ### Frontend Development
 
 - [spx-gui Apps](./spx-gui-apps.md)
