@@ -1,6 +1,7 @@
 import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { isNavigationFailure } from 'vue-router'
+import { OAuthFlow } from '@/utils/oauth'
 import { setupPageTests, mountPages, signIn } from '@/apps/xbuilder/pages/test'
 import * as courseApis from '@/apis/course'
 import * as courseSeriesApis from '@/apis/course-series'
@@ -184,6 +185,24 @@ describe('course management series page', () => {
     expect(isNavigationFailure(await left)).toBe(true)
     expect(router.currentRoute.value.path).toBe('/course-management/space')
     await vi.waitFor(() => expect(document.querySelector('input[placeholder="Enter course title"]')).not.toBeNull())
+  })
+
+  it('opens no drawer once the page is gone, though it was not left', async () => {
+    const { writes } = serveSeries()
+    await mountSeriesPage()
+
+    await openUnitMenu('Arrival')
+    await click(getByText('.ui-menu-item', 'Move up'))
+    await click(getUnitHeader('Arrival').querySelector('button')!)
+    // Signing out elsewhere takes the page away without leaving it; the page asked to sign in again stays put.
+    vi.spyOn(OAuthFlow.prototype, 'createAuthorization').mockReturnValue(new Promise(() => {}))
+    localStorage.removeItem('builder-user')
+    window.dispatchEvent(new StorageEvent('storage', { key: 'builder-user' }))
+    await vi.waitFor(() => expect(findByText('h3', 'Arrival')).toBeUndefined())
+    await writes[0].answer()
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    expect(document.querySelector('input[placeholder="Enter course title"]')).toBeNull()
   })
 
   it('exports the series as the edits made before leave it', async () => {

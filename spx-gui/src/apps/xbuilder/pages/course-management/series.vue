@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { getCleanupSignal } from '@/utils/disposable'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import { isGuidedCourse, type Course } from '@/apis/course'
@@ -181,9 +182,17 @@ onBeforeRouteUpdate(async (to, from) => {
 // Its guards run after those above, so that a dialog opened while the edits are written keeps the page.
 const { keepPageFor } = usePageModals()
 
+const pageSignal = getCleanupSignal(onUnmounted)
+
 /** Open a dialog once the edits made so far are written, the page kept from the start. */
 function openAfterEdits<T>(open: () => Promise<T>) {
-  return keepPageFor(editsWritten().then(open))
+  return keepPageFor(
+    editsWritten().then(() => {
+      // The page also goes without being left, as when the author signs out.
+      pageSignal.throwIfAborted()
+      return open()
+    })
+  )
 }
 
 const isDivided = computed(() => units.value.length > 0)
