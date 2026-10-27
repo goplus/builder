@@ -177,7 +177,11 @@ const { fn: handleCourseClick } = useMessageHandle(
             <UITab
               v-for="(_, index) in units"
               :key="index"
-              v-radar="{ name: 'unit-tab', desc: 'Click to show the courses of this unit' }"
+              v-radar="{
+                name: 'unit-tab',
+                desc: 'Click to show the courses of this unit',
+                attrs: { name: $t(getUnitLabel(index)) }
+              }"
               :value="String(index)"
             >
               {{ $t(getUnitLabel(index)) }}
