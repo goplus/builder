@@ -179,8 +179,9 @@ describe('Spx API Reference search keywords', () => {
         })
         expect(expected.length, `${scope}: ${label}`).toBeGreaterThan(0)
         expected.forEach((item) => covered.add(stringifyDefinitionId(item.definition)))
+        // Validate each writing without sorting the full catalogue again for every synonym.
         for (const match of `${zh} ${en}`.matchAll(/`([^`]+)`/g)) {
-          expect(searchAPIReferenceItems(items, match[1]), `${scope}: ${label}, ${match[1]}`).toEqual(
+          expect(searchAPIReferenceItems(expected, match[1]), `${scope}: ${label}, ${match[1]}`).toEqual(
             expect.arrayContaining(expected)
           )
         }
