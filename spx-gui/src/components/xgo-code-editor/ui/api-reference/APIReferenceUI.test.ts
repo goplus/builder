@@ -2,14 +2,14 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { UIDropdown, UITextInput } from '@/components/ui'
 import { DefinitionKind, makeBasicMarkdownString } from '../../common'
-import type { APIReferenceController } from '.'
+import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceUI from './APIReferenceUI.vue'
 
 vi.mock('@/utils/route-loading', () => ({ useRegisterUpdateRouteLoaded: () => undefined }))
 
 const wrappers: Array<ReturnType<typeof mount>> = []
 
-function mountReference() {
+function mountReference(extraItems: APIReferenceItem[] = []) {
   const controller = {
     items: [
       {
@@ -18,7 +18,8 @@ function mountReference() {
         kind: DefinitionKind.Listen,
         insertSnippet: 'onStart => {}',
         overview: 'onStart => {}',
-        detail: makeBasicMarkdownString({ en: 'When game starts', zh: '游戏开始时执行' })
+        detail: makeBasicMarkdownString({ en: 'When game starts', zh: '游戏开始时执行' }),
+        searchKeywords: ['共同', 'onClick handler']
       },
       {
         categories: [['game', 'others']],
@@ -26,21 +27,29 @@ function mountReference() {
         kind: DefinitionKind.Command,
         insertSnippet: 'println "hi"',
         overview: 'println msg',
-        detail: makeBasicMarkdownString({ en: 'Print a message', zh: '打印消息' })
-      }
+        detail: makeBasicMarkdownString({ en: 'Print a message', zh: '打印消息' }),
+        searchKeywords: ['共同']
+      },
+      ...extraItems
     ],
     categoryViewInfos: [
       {
         id: 'event',
         label: { en: 'Event', zh: '事件' },
         icon: '',
-        subCategories: [{ id: 'game', label: { en: 'Game Events', zh: '游戏事件' } }]
+        subCategories: [
+          { id: 'game', label: { en: 'Game Events', zh: '游戏事件' } },
+          { id: 'sensing', label: { en: 'Sensing Events', zh: '感知事件' } }
+        ]
       },
       {
         id: 'game',
         label: { en: 'Game', zh: '游戏' },
         icon: '',
-        subCategories: [{ id: 'others', label: { en: 'Others', zh: '其他' } }]
+        subCategories: [
+          { id: 'sprite', label: { en: 'Sprite Actions', zh: '精灵行为' } },
+          { id: 'others', label: { en: 'Others', zh: '其他' } }
+        ]
       }
     ],
     error: null
@@ -50,7 +59,12 @@ function mountReference() {
     props: { controller },
     global: {
       mocks: { $t: (message: { zh: string }) => message.zh },
-      directives: { radar: (el, { value }) => el.setAttribute('aria-label', value.name) },
+      directives: {
+        radar: (el, { value }) => {
+          el.setAttribute('aria-label', value.name)
+          el.setAttribute('aria-description', value.desc)
+        }
+      },
       stubs: {
         APIReferenceItemComp: { props: ['item'], template: '<li>{{ item.overview }}</li>' },
         UITooltip: { props: ['disabled'], template: '<slot name="trigger" />' },
@@ -73,8 +87,34 @@ describe('API Reference search disclosure', () => {
     vi.unstubAllGlobals()
   })
 
-  it('starts collapsed and opens an empty, focused search field beside the persistent toggle', async () => {
-    const wrapper = mountReference()
+  it('keeps the same secondary headings in browsing and search while retaining main category anchors', async () => {
+    const wrapper = mountReference([
+      {
+        categories: [['event', 'sensing']],
+        definition: { name: 'onClick' },
+        kind: DefinitionKind.Listen,
+        insertSnippet: 'onClick => {}',
+        overview: 'onClick => {}',
+        detail: makeBasicMarkdownString({ en: 'When clicked', zh: '点击时执行' }),
+        searchKeywords: ['共同']
+      },
+      {
+        categories: [['game', 'sprite']],
+        definition: { name: 'clone' },
+        kind: DefinitionKind.Command,
+        insertSnippet: 'clone',
+        overview: 'clone',
+        detail: makeBasicMarkdownString({ en: 'Clone the sprite', zh: '复制精灵' }),
+        searchKeywords: ['共同']
+      }
+    ])
+    const visibleHeadings = () =>
+      wrapper
+        .findAll('h5')
+        .filter((heading) => heading.isVisible())
+        .map((heading) => heading.text())
+    const browseHeadings = visibleHeadings()
+    expect(browseHeadings).toEqual(['游戏事件', '感知事件', '精灵行为', '其他'])
     const toggle = wrapper.get('button[aria-expanded]')
     expect(toggle.attributes('aria-expanded')).toBe('false')
     expect(wrapper.find('input').exists()).toBe(false)
@@ -83,6 +123,17 @@ describe('API Reference search disclosure', () => {
     expect(document.activeElement).toBe(wrapper.get('input').element)
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
     expect(wrapper.findAll('h5').every((heading) => heading.isVisible())).toBe(true)
+    await wrapper.get('input').setValue('共同')
+    expect(visibleHeadings()).toEqual(browseHeadings)
+    expect(
+      wrapper
+        .findAll('[data-category-id]')
+        .filter((group) => group.isVisible())
+        .map((group) => group.attributes('data-category-id'))
+    ).toEqual(['event', 'game'])
+    await wrapper.get('input').setValue('开始')
+    expect(visibleHeadings()).toEqual(['游戏事件'])
+    expect(wrapper.get('[role="status"]').text()).toBe('找到 1 种写法')
   })
 
   it.each(['toggle', 'Escape'])('clears and collapses through %s, returning focus to the toggle', async (action) => {
@@ -135,28 +186,203 @@ describe('API Reference search disclosure', () => {
     expect(wrapper.find('[aria-label="API category list"]').exists()).toBe(false)
     await toggle.trigger('click')
     await flushPromises()
-    expect(wrapper.get('[aria-label="API category list"]').text()).toBe('事件 游戏')
+    expect(wrapper.findAll('[aria-label="API category list"] button').map((button) => button.text())).toEqual([
+      '事件',
+      '游戏'
+    ])
     expect(document.activeElement).toBe(wrapper.get('button[aria-pressed="true"]').element)
     await toggle.trigger('click')
     expect(wrapper.find('[aria-label="API category list"]').exists()).toBe(false)
   })
 
-  it('returns from search to the chosen category, closes the popup and restores trigger focus', async () => {
+  it('navigates between result groups without clearing the query or hiding other matches', async () => {
     const wrapper = mountReference()
-    const list = wrapper.get('[data-category-id="game"]').element.parentElement!
-    list.scrollTo = vi.fn()
+    const browseList = wrapper.get('[data-category-id="game"]').element.parentElement!
+    browseList.scrollTo = vi.fn()
     await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
-    await wrapper.get('input').setValue('开始')
+    await wrapper.get('input').setValue('共同')
+    const groups = wrapper.findAll('[data-category-id]').filter((group) => group.isVisible())
+    expect(groups.map((group) => group.attributes('data-category-id'))).toEqual(['event', 'game'])
+    const list = groups[0].element.parentElement!
+    list.scrollTo = vi.fn()
+    Object.defineProperty(groups[1].element, 'offsetTop', { value: 240 })
     await wrapper.get('[aria-label="API categories"]').trigger('click')
     await flushPromises()
     await wrapper.get('[aria-label="游戏"]').trigger('click')
     await flushPromises()
-    expect(wrapper.get<HTMLInputElement>('input').element.value).toBe('')
-    expect(wrapper.find('[role="status"]').exists()).toBe(false)
-    expect(list.scrollTo).toHaveBeenCalledOnce()
+    expect(wrapper.get<HTMLInputElement>('input').element.value).toBe('共同')
+    expect(wrapper.get('[role="status"]').text()).toBe('找到 2 种写法')
+    expect(groups.flatMap((group) => group.findAll('h5').map((heading) => heading.text()))).toEqual([
+      '游戏事件',
+      '其他'
+    ])
+    expect(list.scrollTo).toHaveBeenCalledWith({ top: 240, behavior: 'smooth' })
+    expect(browseList.scrollTo).not.toHaveBeenCalled()
+    expect(groups.every((group) => group.isVisible())).toBe(true)
     expect(wrapper.find('[aria-label="API category list"]').exists()).toBe(false)
     expect(document.activeElement).toBe(wrapper.get('[aria-label="API categories"]').element)
+    await wrapper.get('[aria-label="API categories"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-pressed')).toBe('true')
+    await wrapper.get('[aria-label="事件"]').trigger('click')
+    await flushPromises()
+    expect(list.scrollTo).toHaveBeenLastCalledWith({ top: 0, behavior: 'smooth' })
+    expect(wrapper.get<HTMLInputElement>('input').element.value).toBe('共同')
   })
+
+  it('keeps secondary category order while ranking matching APIs stably within each secondary category', async () => {
+    const wrapper = mountReference([
+      {
+        categories: [['event', 'sensing']],
+        definition: { name: 'onSwipe' },
+        kind: DefinitionKind.Listen,
+        insertSnippet: 'onSwipe => {}',
+        overview: 'onSwipe => {}',
+        detail: makeBasicMarkdownString({ en: 'When swiped', zh: '滑动时执行' }),
+        searchKeywords: ['onClick handler']
+      },
+      {
+        categories: [['event', 'game']],
+        definition: { name: 'Sprite.onClick' },
+        kind: DefinitionKind.Listen,
+        insertSnippet: 'onClick => {}',
+        overview: 'onClick => {}',
+        detail: makeBasicMarkdownString({ en: 'When clicked', zh: '点击时执行' })
+      },
+      {
+        categories: [['event', 'sensing']],
+        definition: { name: 'Game.onClick' },
+        kind: DefinitionKind.Listen,
+        insertSnippet: 'stageClick => {}',
+        overview: 'stageClick => {}',
+        detail: makeBasicMarkdownString({ en: 'When stage clicked', zh: '舞台被点击时执行' })
+      },
+      {
+        categories: [['event', 'sensing']],
+        definition: { name: 'Scene.onClick' },
+        kind: DefinitionKind.Listen,
+        insertSnippet: 'sceneClick => {}',
+        overview: 'sceneClick => {}',
+        detail: makeBasicMarkdownString({ en: 'When scene clicked', zh: '场景被点击时执行' })
+      }
+    ])
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    await wrapper.get('input').setValue('onClick')
+    const groups = wrapper.findAll('[data-category-id]').filter((group) => group.isVisible())
+    expect(groups.map((group) => group.attributes('data-category-id'))).toEqual(['event'])
+    const subCategories = groups[0].findAll('section')
+    expect(subCategories.map((category) => category.get('h5').text())).toEqual(['游戏事件', '感知事件'])
+    expect(subCategories[0].findAll('ul > li').map((item) => item.text())).toEqual(['onClick => {}', 'onStart => {}'])
+    expect(subCategories[1].findAll('ul > li').map((item) => item.text())).toEqual([
+      'stageClick => {}',
+      'sceneClick => {}',
+      'onSwipe => {}'
+    ])
+  })
+
+  it('assigns a shared API to its first complete available path and sums secondary counts without duplicates', async () => {
+    const wrapper = mountReference([
+      {
+        categories: [
+          ['unknown', 'missing'],
+          ['event', 'missing'],
+          ['game', 'sprite'],
+          ['game', 'others'],
+          ['event', 'game'],
+          ['event', 'sensing']
+        ],
+        definition: { name: 'shared' },
+        kind: DefinitionKind.Command,
+        insertSnippet: 'shared',
+        overview: 'shared',
+        detail: makeBasicMarkdownString({ en: 'Shared API', zh: '共享写法' }),
+        searchKeywords: ['共同']
+      }
+    ])
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    await wrapper.get('input').setValue('共同')
+    const groups = wrapper.findAll('[data-category-id]').filter((group) => group.isVisible())
+    expect(groups.map((group) => group.attributes('data-category-id'))).toEqual(['event', 'game'])
+    expect(groups[0].text()).not.toContain('shared')
+    expect(groups[0].findAll('h5').map((heading) => heading.text())).toEqual(['游戏事件'])
+    const subCategories = groups[1].findAll('section')
+    expect(subCategories.map((category) => category.get('h5').text())).toEqual(['精灵行为', '其他'])
+    expect(subCategories[0].findAll('ul > li').map((item) => item.text())).toEqual(['shared'])
+    expect(subCategories[1].findAll('ul > li').map((item) => item.text())).toEqual(['println msg'])
+    expect(groups.flatMap((group) => group.findAll('ul > li')).filter((item) => item.text() === 'shared')).toHaveLength(
+      1
+    )
+    expect(wrapper.get('[role="status"]').text()).toBe('找到 3 种写法')
+    await wrapper.get('[aria-label="API categories"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[aria-label="事件"]').attributes('aria-description')).toBe('1 种匹配写法')
+    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-description')).toBe('2 种匹配写法')
+  })
+
+  it('disables categories without matches and updates the selected group when the query changes', async () => {
+    const wrapper = mountReference()
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    await wrapper.get('input').setValue('开始')
+    await wrapper.get('[aria-label="API categories"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[aria-label="游戏"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[aria-label="游戏"]').text()).toContain('0')
+    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-description')).toBe('0 种匹配写法')
+    await wrapper.get('[aria-label="游戏"]').trigger('click')
+    expect(wrapper.get<HTMLInputElement>('input').element.value).toBe('开始')
+    expect(wrapper.get('[aria-label="事件"]').attributes('aria-pressed')).toBe('true')
+    await wrapper.get('input').setValue('打印')
+    expect(wrapper.get('[aria-label="游戏"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.get('[aria-label="事件"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('input').setValue('没有这个功能')
+    expect(wrapper.findAll('[aria-pressed="true"]')).toHaveLength(0)
+    expect(
+      wrapper
+        .findAll('[aria-label="API category list"] button')
+        .every((button) => button.attributes('disabled') != null)
+    ).toBe(true)
+  })
+
+  it('restores the browse position and category when the search is cleared', async () => {
+    const wrapper = mountReference()
+    await flushPromises()
+    const browseGroup = wrapper.get('[data-category-id="game"]').element
+    const browseList = browseGroup.parentElement!
+    Object.defineProperties(browseList, { clientHeight: { value: 100 }, scrollHeight: { value: 1000 } })
+    Object.defineProperty(browseGroup, 'offsetTop', { value: 200 })
+    browseList.scrollTop = 200
+    browseList.dispatchEvent(new Event('scroll'))
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    await wrapper.get('input').setValue('开始')
+    await wrapper.getComponent(UITextInput).get('button').trigger('click')
+    await wrapper.get('[aria-label="API categories"]').trigger('click')
+    await flushPromises()
+    expect(browseList.scrollTop).toBe(200)
+    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-pressed')).toBe('true')
+  })
+
+  it.each([
+    { scrollTop: 199.75, height: 100, scrollHeight: 1000, expected: '游戏' },
+    { scrollTop: 150, height: 100, scrollHeight: 250, expected: '游戏' },
+    { scrollTop: 0, height: 500, scrollHeight: 300, expected: '事件' }
+  ])(
+    'tracks the visible search group with scroll geometry %j',
+    async ({ scrollTop, height, scrollHeight, expected }) => {
+      const wrapper = mountReference()
+      await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+      await wrapper.get('input').setValue('共同')
+      const groups = wrapper.findAll('[data-category-id]').filter((group) => group.isVisible())
+      const list = groups[0].element.parentElement!
+      Object.defineProperties(list, { clientHeight: { value: height }, scrollHeight: { value: scrollHeight } })
+      Object.defineProperty(groups[1].element, 'offsetTop', { value: 200 })
+      list.scrollTop = scrollTop
+      list.dispatchEvent(new Event('scroll'))
+      await wrapper.get('[aria-label="API categories"]').trigger('click')
+      await flushPromises()
+      expect(wrapper.get(`[aria-label="${expected}"]`).attributes('aria-pressed')).toBe('true')
+    }
+  )
 
   it('restores popup focus on dismissal without stealing focus from another control', async () => {
     const wrapper = mountReference()

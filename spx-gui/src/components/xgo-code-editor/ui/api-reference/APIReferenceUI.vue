@@ -67,14 +67,6 @@ function handleSearchEscape(event: KeyboardEvent) {
   else closeSearch()
 }
 
-watch(
-  searchResults,
-  () => {
-    if (searchResultsWrapperRef.value != null) searchResultsWrapperRef.value.scrollTop = 0
-  },
-  { flush: 'post' }
-)
-
 const loaded = ref(false)
 // APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial)
 // Register a provider with PageLoaded to notify dependent modules that APIReferenceUI has finished loading
@@ -106,6 +98,39 @@ const categoriesComputed = computed<MainCategory[] | null>((oldValue) => {
   return result
 })
 
+const searchResultGroups = computed(() => {
+  const groups = (categoriesComputed.value ?? []).map((category) => ({
+    ...category,
+    subCategories: category.subCategories.map((subCategory) => ({
+      ...subCategory,
+      items: [] as APIReferenceItem[]
+    }))
+  }))
+  for (const item of searchResults.value) {
+    // Assign shared APIs to their first available category path so results stay unique.
+    for (const [mainId, subId] of item.categories) {
+      const subCategory = groups.find((group) => group.id === mainId)?.subCategories.find((group) => group.id === subId)
+      if (subCategory == null) continue
+      subCategory.items.push(item)
+      break
+    }
+  }
+  return groups
+    .map((group) => ({
+      ...group,
+      subCategories: group.subCategories.filter((subCategory) => subCategory.items.length > 0),
+      resultCount: group.subCategories.reduce((count, subCategory) => count + subCategory.items.length, 0)
+    }))
+    .filter((group) => group.resultCount > 0)
+})
+
+const categoryMenuItems = computed(() =>
+  (categoriesComputed.value ?? []).map((category) => ({
+    ...category,
+    resultCount: searchResultGroups.value.find((group) => group.id === category.id)?.resultCount ?? 0
+  }))
+)
+
 // Initially display only items of the first category to improve rendering performance. After a delay, display all items.
 // Delay is applied only for the first update (from empty to non-empty).
 const categoriesForItems = shallowRef(categoriesComputed.value ?? [])
@@ -122,6 +147,19 @@ watch(categoriesComputed, async (categories, oldValue, onCleanUp) => {
 })
 
 const activeCategoryIdRef = ref<string | null>(null)
+const activeSearchCategoryIdRef = ref<string | null>(null)
+const currentActiveCategoryId = computed(() =>
+  isSearching.value ? activeSearchCategoryIdRef.value : activeCategoryIdRef.value
+)
+
+watch(
+  searchResultGroups,
+  (groups) => {
+    activeSearchCategoryIdRef.value = groups[0]?.id ?? null
+    if (searchResultsWrapperRef.value != null) searchResultsWrapperRef.value.scrollTop = 0
+  },
+  { immediate: true, flush: 'post' }
+)
 
 watch(
   categoriesComputed,
@@ -134,6 +172,7 @@ watch(
 )
 
 const itemsWrapperRef = ref<HTMLElement>()
+const currentItemsWrapper = computed(() => (isSearching.value ? searchResultsWrapperRef.value : itemsWrapperRef.value))
 const isCategoryMenuVisible = ref(false)
 const categoryToggleRef = ref<HTMLButtonElement>()
 const categoryMenuRef = ref<HTMLElement>()
@@ -148,20 +187,24 @@ async function setCategoryMenuVisible(visible: boolean) {
   await nextTick()
   await untilTaskScheduled('user-visible')
   if (!isCategoryMenuVisible.value) return
-  categoryMenuRef.value?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus()
+  const button =
+    categoryMenuRef.value?.querySelector<HTMLButtonElement>('[aria-pressed="true"]:not(:disabled)') ??
+    categoryMenuRef.value?.querySelector<HTMLButtonElement>('button:not(:disabled)')
+  button?.focus()
 }
 
 const scrolling = ref(false)
 
 // Update `activeCategoryId` & `scrolling` when scrolling
 watchEffect((onCleanup) => {
-  const itemsWrapper = itemsWrapperRef.value
+  const itemsWrapper = currentItemsWrapper.value
   if (itemsWrapper == null) return
+  const searching = isSearching.value
   const signal = getCleanupSignal(onCleanup)
   let clearScrollingTimer: ReturnType<typeof setTimeout> | null = null
 
   const handleScroll = throttle(() => {
-    if (itemsWrapper.clientHeight === 0) return
+    if (itemsWrapper !== currentItemsWrapper.value || itemsWrapper.clientHeight === 0) return
     scrolling.value = true
     if (clearScrollingTimer != null) clearTimeout(clearScrollingTimer)
     clearScrollingTimer = setTimeout(() => {
@@ -169,34 +212,40 @@ watchEffect((onCleanup) => {
     }, 200)
 
     const scrollTop = itemsWrapper.scrollTop
-    const categories = categoriesComputed.value ?? []
-    const categoryWrappers = itemsWrapper.querySelectorAll('[data-category-id]')
-    if (categoryWrappers.length <= 1) return
+    const categoryWrappers = Array.from(itemsWrapper.querySelectorAll<HTMLElement>('[data-category-id]'))
+    let active = categoryWrappers[0]
+    if (active == null) return
     // The final category may be too short to reach the top of the scroll area.
-    if (scrollTop + itemsWrapper.clientHeight >= itemsWrapper.scrollHeight - 1) {
-      activeCategoryIdRef.value = categories[categories.length - 1].id
-      return
-    }
-    for (let i = 1; i < categoryWrappers.length; i++) {
-      if ((categoryWrappers[i] as HTMLElement).offsetTop > scrollTop + 1) {
-        activeCategoryIdRef.value = categories[i - 1].id
-        break
-      }
-      if (i === categoryWrappers.length - 1) {
-        activeCategoryIdRef.value = categories[i].id
+    if (
+      itemsWrapper.scrollHeight > itemsWrapper.clientHeight &&
+      scrollTop + itemsWrapper.clientHeight >= itemsWrapper.scrollHeight - 1
+    ) {
+      active = categoryWrappers[categoryWrappers.length - 1]
+    } else {
+      for (const category of categoryWrappers) {
+        if (category.offsetTop > scrollTop + 1) break
+        active = category
       }
     }
+    if (searching) activeSearchCategoryIdRef.value = active.dataset.categoryId ?? null
+    else activeCategoryIdRef.value = active.dataset.categoryId ?? null
   }, 100)
   itemsWrapper.addEventListener('scroll', handleScroll, { signal })
+  signal.addEventListener('abort', () => {
+    handleScroll.cancel()
+    if (clearScrollingTimer != null) clearTimeout(clearScrollingTimer)
+    scrolling.value = false
+  })
 })
 
 async function handleCategoryClick(id: string) {
-  searchQuery.value = ''
   await nextTick()
-  const itemsWrapper = itemsWrapperRef.value
+  const itemsWrapper = currentItemsWrapper.value
   if (itemsWrapper == null) return
   const categoryWrapper = itemsWrapper.querySelector(`[data-category-id="${id}"]`)
   if (categoryWrapper == null) return
+  if (isSearching.value) activeSearchCategoryIdRef.value = id
+  else activeCategoryIdRef.value = id
   itemsWrapper.scrollTo({
     top: (categoryWrapper as HTMLElement).offsetTop,
     behavior: 'smooth'
@@ -275,22 +324,29 @@ async function handleCategoryClick(id: string) {
                 v-radar="{ name: 'API category list', desc: 'Available API categories' }"
                 class="w-40 flex flex-col gap-1 p-1.5"
               >
-                <li v-for="c in categoriesComputed" :key="c.id">
+                <li v-for="c in categoryMenuItems" :key="c.id">
                   <button
-                    v-radar="{ name: $t(c.label), desc: 'Click to view APIs in this category' }"
+                    v-radar="{
+                      name: $t(c.label),
+                      desc: isSearching
+                        ? $t({ en: `${c.resultCount} matching snippets`, zh: `${c.resultCount} 种匹配写法` })
+                        : 'Click to view APIs in this category'
+                    }"
                     type="button"
-                    class="h-8 w-full cursor-pointer appearance-none flex items-center gap-2 rounded-sm border-none px-2 text-xs transition-colors duration-100"
+                    class="h-8 w-full appearance-none flex items-center gap-2 rounded-sm border-none px-2 text-xs transition-colors duration-100 enabled:cursor-pointer disabled:cursor-not-allowed disabled:text-disabled-text"
                     :class="
-                      c.id === activeCategoryIdRef
+                      c.id === currentActiveCategoryId
                         ? 'bg-grey-400 text-grey-1000'
-                        : 'bg-transparent text-grey-800 hover:bg-grey-300 active:bg-grey-400'
+                        : 'bg-transparent text-grey-800 enabled:hover:bg-grey-300 enabled:active:bg-grey-400'
                     "
-                    :aria-pressed="c.id === activeCategoryIdRef"
+                    :disabled="isSearching && c.resultCount === 0"
+                    :aria-pressed="c.id === currentActiveCategoryId"
                     @click="handleCategoryClick(c.id)"
                   >
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="size-4 shrink-0 [&>svg]:h-full [&>svg]:w-full" v-html="c.icon"></span>
                     {{ $t(c.label) }}
+                    <span v-if="isSearching" class="ml-auto text-hint-2">{{ c.resultCount }}</span>
                   </button>
                 </li>
               </ul>
@@ -334,15 +390,27 @@ async function handleCategoryClick(id: string) {
         <ul
           v-if="searchResults.length > 0"
           ref="searchResultsWrapperRef"
-          class="flex min-h-0 flex-col gap-2 overflow-y-auto px-3 pb-3 [scrollbar-width:thin]"
+          class="relative flex min-h-0 flex-col overflow-y-auto px-3 pb-3 [scrollbar-width:thin]"
         >
-          <APIReferenceItemComp
-            v-for="item in searchResults"
-            :key="stringifyDefinitionId(item.definition)"
-            :item="item"
-            :interaction-disabled="false"
-            show-description
-          />
+          <li
+            v-for="group in searchResultGroups"
+            :key="group.id"
+            :data-category-id="group.id"
+            class="[&:last-child>section:last-child]:border-b-0"
+          >
+            <section v-for="sc in group.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
+              <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+              <ul class="flex flex-col gap-2 pb-3">
+                <APIReferenceItemComp
+                  v-for="item in sc.items"
+                  :key="stringifyDefinitionId(item.definition)"
+                  :item="item"
+                  :interaction-disabled="false"
+                  show-description
+                />
+              </ul>
+            </section>
+          </li>
         </ul>
       </div>
       <div v-show="!isSearching" class="flex min-h-0 flex-[1_1_0] flex-col">
