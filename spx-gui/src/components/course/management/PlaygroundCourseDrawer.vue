@@ -162,15 +162,6 @@ async function submit() {
       </UIFormItem>
     </UIForm>
 
-    <p v-if="!isEditMode" class="m-0 text-sm text-grey-700">
-      {{
-        $t({
-          en: 'The course starts with a default project and a short program, and opens in the Course Editor.',
-          zh: '新课程会带上一个默认工程和一段起始程序，创建后在课程编辑器中打开。'
-        })
-      }}
-    </p>
-
     <template #footer>
       <UIButton type="neutral" :disabled="handleSubmit.isLoading.value" @click="handleClose">
         {{ $t({ en: 'Cancel', zh: '取消' }) }}

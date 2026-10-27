@@ -258,7 +258,7 @@ const handleAddUnit = useMessageHandle(
   async (series: CourseSeries) => {
     const wasDivided = isDivided.value
     const tip = wasDivided
-      ? { en: 'The new unit is added at the end, empty.', zh: '新单元是空的，加在最后。' }
+      ? undefined
       : {
           en: 'All courses of the series go into the first unit, in their order.',
           zh: '系列现有的课程会按原来的顺序全部放进第一个单元。'
