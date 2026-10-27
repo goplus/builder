@@ -1,0 +1,83 @@
+// This Course exists to show how run groups relate runs that overlap. The
+// lesson itself is the one in example-tutorial-course: walk Lita to Mushroom
+// with stepTo.
+//
+// Judging can start from three places, and only the latest trigger should
+// count: a learner who fixes the code and runs again while Copilot is still
+// judging the previous attempt must see one verdict, the newer one. All three
+// callbacks therefore start runs of one group with CancelPrevious. Hints are a
+// separate concern with a separate policy: from the third stop on each stop
+// gets a hint, shown one after another, so they live in their own group with
+// OneAtATime.
+
+type Verdict struct {
+	Passed  bool
+	Comment string
+}
+
+func judge(trigger string) {
+	code := Editor.Project.getCode("Lita")
+	prompt := "Trigger: " + trigger + "\nLita's code:\n" + code +
+		"\nDoes this code walk Lita to Mushroom with stepTo? Set Passed accordingly and comment in one sentence."
+	verdict := &Verdict{}
+	if err := Copilot.generateJSON(prompt, verdict); err != nil {
+		showMessage "Copilot could not judge this attempt. Run the project again to try once more."
+		return
+	}
+	if verdict.Passed {
+		completeWith verdict.Comment
+		return
+	}
+	showMessage verdict.Comment
+}
+
+judging := newRunGroup(CancelPrevious)
+hints := newRunGroup(OneAtATime)
+attempts := 0
+
+onStart => {
+	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
+	showPrelude "Walk Lita to Mushroom with stepTo, then run the project: Mushroom prints \"reached-target\" when Lita gets there."
+	Spotlight.reveal "api-references", "stepTo is the only block you need."
+}
+
+// The project printing the signal. Logs arrive for every print, so the
+// callback filters first and only then starts a judging run: output that is
+// not the signal never touches the group and cancels nothing.
+Editor.Runtime.onLog log => {
+	if log != "reached-target" {
+		return
+	}
+	judging.start => {
+		judge("the project printed reached-target")
+	}
+}
+
+// The project exiting. Same group, so an exit while an earlier judgement is
+// still waiting cancels that judgement.
+Editor.Runtime.onExit code => {
+	judging.start => {
+		judge("the project exited")
+	}
+}
+
+// A Copilot round completing. Same group again: it cancels a judgement
+// started by a log or an exit, and is cancelled by them in turn.
+Copilot.onRoundComplete round => {
+	judging.start => {
+		judge("the learner finished a Copilot round about: " + round.UserMessage)
+	}
+}
+
+// Hints are independent of judging, so they have their own group. Counting
+// the stop stays outside it; only the dialog is protected, and quick stops in
+// a row show their hints one after another rather than as a pile of dialogs.
+Editor.Runtime.onExit code => {
+	attempts++
+	if attempts < 3 {
+		return
+	}
+	hints.start => {
+		showMessage "Hint: stepTo takes a sprite name, like stepTo Mushroom."
+	}
+}
