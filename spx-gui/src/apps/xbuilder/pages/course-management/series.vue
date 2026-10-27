@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
@@ -51,6 +51,7 @@ import { deleteCourseSeriesWithCourses } from '@/components/course/management/se
 import ListControls from '@/components/course/management/ListControls.vue'
 import ListSections from '@/components/course/management/ListSections.vue'
 import {
+  hasSameIDs,
   matchesQuery,
   placeReordered,
   sectionByTitle,
@@ -106,7 +107,11 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 const seriesWrites = new ConcurrencyLimitController(1)
 
 /** The courses as shown, which a drag reorders before the server has the new order. */
-const { value: courses, edit: editCourses } = useLocalEdits(() => coursesQueryRet.data.value ?? [], seriesWrites)
+const {
+  value: courses,
+  edit: editCourses,
+  settled: courseEditsWritten
+} = useLocalEdits(() => coursesQueryRet.data.value ?? [], seriesWrites)
 
 const { query, sortBy } = useListViewQuery()
 const shownCourses = computed(() => courses.value.filter((course) => matchesQuery([course.title], query.value)))
@@ -130,7 +135,12 @@ const handleSorted = useMessageHandle(
     const series = courseSeries.value
     if (series == null) return
     // A course missing from the list, such as one added since it was loaded, would be dropped by the reorder.
-    if (courses.value.length !== series.courseIDs.length) {
+    if (
+      !hasSameIDs(
+        courses.value.map((course) => course.id),
+        series.courseIDs
+      )
+    ) {
       throw new DefaultException({
         en: 'The courses of this series are not all shown, so they cannot be reordered here',
         zh: '这个系列的课程没有全部显示，无法在这里调整顺序'
@@ -158,10 +168,23 @@ useDragSortable(shownCourses, listRef, {
 })
 
 /** The units as shown, which an edit changes before the server has them. */
-const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnitParams[]>(
-  () => seriesQueryRet.data.value?.units ?? [],
-  seriesWrites
-)
+const {
+  value: units,
+  edit: editUnits,
+  settled: unitEditsWritten
+} = useLocalEdits<CourseSeriesUnitParams[]>(() => seriesQueryRet.data.value?.units ?? [], seriesWrites)
+
+/** Done once the edits made so far are written: what goes on with the series next starts from them. */
+async function editsWritten() {
+  await Promise.all([courseEditsWritten(), unitEditsWritten()])
+}
+
+// A page opened next for the series would read it without the edits still being written, which would then overwrite
+// what is done there.
+onBeforeRouteLeave(editsWritten)
+onBeforeRouteUpdate(async (to, from) => {
+  if (to.path !== from.path) await editsWritten()
+})
 const isDivided = computed(() => units.value.length > 0)
 /** Set while a unit is being added: it has no ID until the server answers, and a later write would add it again. */
 const isAddingUnit = ref(false)
@@ -229,13 +252,13 @@ const handleAddUnit = useMessageHandle(
         }
     const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' }, '', tip)
     // The courses as shown, in an order a reorder still being written may have given them, go into the first unit.
-    if (!isDivided.value && courses.value.length !== courseSeries.value?.courseIDs.length) {
+    const courseIDs = courses.value.map((course) => course.id)
+    if (!isDivided.value && !hasSameIDs(courseIDs, courseSeries.value?.courseIDs ?? [])) {
       throw new DefaultException({
         en: 'The courses of this series are not all shown, so they cannot be put into a unit here',
         zh: '这个系列的课程没有全部显示，无法在这里放进单元'
       })
     }
-    const courseIDs = courses.value.map((course) => course.id)
     await writeUnits(series, addUnit(units.value, title, courseIDs))
   },
   { en: 'Failed to add unit', zh: '新建单元失败' }
@@ -328,6 +351,8 @@ function openInCourseEditor(series: CourseSeries, course: Course) {
 }
 
 const handleCreateCourse = useMessageHandle(async (series: CourseSeries, unitID: string | null = null) => {
+  // The course is added to the series as the server has it then, which edits still being written would overwrite.
+  await editsWritten()
   if (series.kind === 'guided') {
     await keepPageFor(invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id, unitID }))
     refetch()
@@ -379,6 +404,8 @@ const handleExport = useMessageHandle((series: CourseSeries) => keepPageFor(file
 const handleImport = useMessageHandle(
   async (series: CourseSeries) => {
     try {
+      // An import replaces the courses and units of the series, which edits still being written would overwrite.
+      await editsWritten()
       await keepPageFor(fileActions.importIntoSeries(series))
     } finally {
       refetch()

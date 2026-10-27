@@ -12,6 +12,7 @@ import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 export function useLocalEdits<T>(source: WatchSource<T>, writes = new ConcurrencyLimitController(1)) {
   const value = shallowRef(toValue(source)) as ShallowRef<T>
   let pending = 0
+  let lastWrite: Promise<unknown> = Promise.resolve()
   watch(source, (current) => {
     if (pending === 0) value.value = current
   })
@@ -20,8 +21,10 @@ export function useLocalEdits<T>(source: WatchSource<T>, writes = new Concurrenc
     value.value = edited
     pending++
     let settled: { value: T } | null = null
+    const writing = writes.run(() => write(edited))
+    lastWrite = writing.catch(() => {})
     try {
-      const written = await writes.run(() => write(edited))
+      const written = await writing
       if (written !== undefined) settled = { value: written }
     } catch (e) {
       settled = { value: toValue(source) }
@@ -32,5 +35,10 @@ export function useLocalEdits<T>(source: WatchSource<T>, writes = new Concurrenc
     }
   }
 
-  return { value, edit }
+  /** Wait until the edits made so far are written, or have failed to be. */
+  async function settled() {
+    await lastWrite
+  }
+
+  return { value, edit, settled }
 }

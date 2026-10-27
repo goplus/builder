@@ -3,6 +3,7 @@ import {
   getTitleInitial,
   getUpdatedAtPeriod,
   matchesQuery,
+  hasSameIDs,
   placeReordered,
   sectionByTitle,
   sectionByUpdatedAt
@@ -89,6 +90,21 @@ describe('sectionByUpdatedAt', () => {
       ['thisMonth', ['c']],
       ['earlier', ['a']]
     ])
+  })
+})
+
+describe('hasSameIDs', () => {
+  it('takes the same IDs in another order', () => {
+    expect(hasSameIDs(['b', 'a'], ['a', 'b'])).toBe(true)
+  })
+
+  it('refuses IDs that repeat one and miss another, as many as expected', () => {
+    expect(hasSameIDs(['a', 'a'], ['a', 'b'])).toBe(false)
+  })
+
+  it('refuses IDs missing or adding one', () => {
+    expect(hasSameIDs(['a'], ['a', 'b'])).toBe(false)
+    expect(hasSameIDs(['a', 'b', 'c'], ['a', 'b'])).toBe(false)
   })
 })
 

@@ -91,6 +91,25 @@ describe('useLocalEdits', () => {
     expect(written).toEqual(['order Two One', 'units Unit: Two One'])
   })
 
+  it('tells when the edits made so far are written, failed ones included', async () => {
+    const source = shallowRef(['One'])
+    const { edit, settled } = useLocalEdits(source)
+    const server = makeServer(source)
+    let isSettled = false
+
+    const failed = expect(edit(['A'], server.write)).rejects.toThrow('write failed')
+    const written = edit(['B'], server.write)
+    void settled().then(() => (isSettled = true))
+    await server.answer(false)
+    await failed
+    expect(isSettled).toBe(false)
+    await server.answer()
+    await written
+
+    await settled()
+    expect(isSettled).toBe(true)
+  })
+
   it('keeps the edits shown when the write returns nothing', async () => {
     const source = shallowRef(['One', 'Two'])
     const { value, edit } = useLocalEdits(source)

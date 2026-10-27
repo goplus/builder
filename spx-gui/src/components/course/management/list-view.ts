@@ -153,6 +153,15 @@ export function sectionByUpdatedAt<T>(
 }
 
 /**
+ * Whether `ids` are those of `expected`, each once, in any order. A list read a page at a time while it changed may
+ * repeat an item and miss another, so writing it back would drop one.
+ */
+export function hasSameIDs(ids: string[], expected: string[]) {
+  const unique = new Set(ids)
+  return unique.size === ids.length && unique.size === expected.length && expected.every((id) => unique.has(id))
+}
+
+/**
  * `all` with the items of `reordered`, some of them in a new order, put in the places those items had; the others keep
  * theirs. This is how a list shown in part, by a filter or a search, is reordered.
  */
