@@ -3284,7 +3284,7 @@ paths:
         Every course named in `courseIDs` must have the series' `kind`.
 
         A nonempty `units` divides the series into units, all of them new, so none may have an `id`. `courseIDs` must
-        then be the course IDs of the units joined in order, and may be left out.
+        then be the course IDs of the units joined in order.
 
         Permission requirements:
 
