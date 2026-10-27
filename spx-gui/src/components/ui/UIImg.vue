@@ -4,19 +4,24 @@
       cn(
         // Disable image smoothing to keep pixelated look, so it looks good for pixel art assets.
         // See details in https://github.com/goplus/builder/issues/2214.
-        'relative flex items-center justify-center bg-center bg-no-repeat [image-rendering:pixelated]',
+        'relative flex items-center justify-center overflow-hidden [image-rendering:pixelated]',
         props.class
       )
     "
-    :style="backgroundStyle"
   >
+    <img
+      v-if="src != null"
+      crossorigin="anonymous"
+      :src="src"
+      alt=""
+      class="absolute inset-0 h-full w-full"
+      :style="{ objectFit: size }"
+    />
     <UILoading :visible="loading" cover :mask="false" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, type CSSProperties } from 'vue'
-
 import { cn, type ClassValue } from './utils'
 import UILoading from './loading/UILoading.vue'
 
@@ -34,12 +39,4 @@ const props = withDefaults(
     class: undefined
   }
 )
-
-const backgroundStyle = computed<CSSProperties | null>(() => {
-  if (props.src == null) return null
-  return {
-    backgroundImage: `url("${props.src}")`,
-    backgroundSize: props.size
-  }
-})
 </script>
