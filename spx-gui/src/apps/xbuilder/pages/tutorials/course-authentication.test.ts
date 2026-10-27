@@ -136,9 +136,9 @@ async function openPage(destination: string, lang: 'en' | 'zh' = 'en') {
       renderStubDefaultSlot: true,
       mocks: { $t: (message: { en: string }) => message.en },
       stubs: {
-        ListResultWrapper: defineComponent({
+        PagedCourseList: defineComponent({
           setup(_props, { slots }) {
-            return () => slots.default?.({ data: { data: [mocks.course] } })
+            return () => slots.course?.({ course: mocks.course })
           }
         })
       }
