@@ -79,7 +79,6 @@ const invokeSeriesDrawer = useModal(CourseSeriesDrawer)
 const invokeGuidedCourseDrawer = useModal(GuidedCourseDrawer)
 const invokePlaygroundCourseDrawer = useModal(PlaygroundCourseDrawer)
 const invokeUnitTitleModal = useModal(UnitTitleModal)
-const { keepPageFor } = usePageModals()
 
 const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
 const coursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
@@ -185,9 +184,17 @@ onBeforeRouteLeave(editsWritten)
 onBeforeRouteUpdate(async (to, from) => {
   if (to.path !== from.path) await editsWritten()
 })
+// Its guards run after those above, so that a dialog opened while the edits are written keeps the page.
+const { keepPageFor } = usePageModals()
+
+/** Open a dialog once the edits made so far are written, the page kept from the start. */
+function openAfterEdits<T>(open: () => Promise<T>) {
+  return keepPageFor(editsWritten().then(open))
+}
+
 const isDivided = computed(() => units.value.length > 0)
-/** Set while a unit is being added: it has no ID until the server answers, and a later write would add it again. */
-const isAddingUnit = ref(false)
+/** Whether a unit is being added: it has no ID until the server answers, and a later write would add it again. */
+const isAddingUnit = computed(() => units.value.some((unit) => unit.id == null))
 
 const coursesByID = computed(() => new Map(courses.value.map((course) => [course.id, course])))
 /** The units and their courses as listed: with a search, only the courses that match, under every unit. */
@@ -208,17 +215,28 @@ const canDragUnitList = computed(
 const unitListRef = ref<HTMLElement>()
 
 async function writeUnits(series: CourseSeries, edited: CourseSeriesUnitParams[]) {
-  const addsUnit = edited.some((unit) => unit.id == null)
-  if (addsUnit) isAddingUnit.value = true
   try {
     // The units the server returns give a new unit its ID.
     await editUnits(edited, async (units) => (await updateCourseSeries(series.id, { units })).units)
   } catch (e) {
     refetch()
     throw e
-  } finally {
-    if (addsUnit) isAddingUnit.value = false
   }
+}
+
+/** The units changed while a dialog about them was open, as when an edit made before it failed. */
+function unitsChanged() {
+  return new DefaultException({
+    en: 'The units have changed meanwhile, please try again',
+    zh: '单元在这期间有变化，请重新操作'
+  })
+}
+
+/** Where the unit is now, which an edit failing while a dialog was open may have changed. */
+function findUnitIndex(unitID: string | undefined) {
+  const unitIndex = units.value.findIndex((unit) => unit.id === unitID)
+  if (unitID == null || unitIndex < 0) throw unitsChanged()
+  return unitIndex
 }
 
 const handleUnitListSorted = useMessageHandle(
@@ -244,13 +262,15 @@ function askUnitTitle(action: { en: string; zh: string }, title = '', tip?: { en
 
 const handleAddUnit = useMessageHandle(
   async (series: CourseSeries) => {
-    const tip = isDivided.value
+    const wasDivided = isDivided.value
+    const tip = wasDivided
       ? { en: 'The new unit is added at the end, empty.', zh: '新单元是空的，加在最后。' }
       : {
           en: 'All courses of the series go into the first unit, in their order.',
           zh: '系列现有的课程会按原来的顺序全部放进第一个单元。'
         }
     const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' }, '', tip)
+    if (isDivided.value !== wasDivided) throw unitsChanged()
     // The courses as shown, in an order a reorder still being written may have given them, go into the first unit.
     const courseIDs = courses.value.map((course) => course.id)
     if (!isDivided.value && !hasSameIDs(courseIDs, courseSeries.value?.courseIDs ?? [])) {
@@ -265,9 +285,9 @@ const handleAddUnit = useMessageHandle(
 ).fn
 
 const handleRenameUnit = useMessageHandle(
-  async (series: CourseSeries, unitIndex: number) => {
-    const title = await askUnitTitle({ en: 'Rename unit', zh: '重命名单元' }, units.value[unitIndex].title)
-    await writeUnits(series, renameUnit(units.value, unitIndex, title))
+  async (series: CourseSeries, unitID: string | undefined) => {
+    const title = await askUnitTitle({ en: 'Rename unit', zh: '重命名单元' }, units.value[findUnitIndex(unitID)].title)
+    await writeUnits(series, renameUnit(units.value, findUnitIndex(unitID), title))
   },
   { en: 'Failed to rename unit', zh: '重命名单元失败' }
 ).fn
@@ -278,33 +298,36 @@ const handleMoveUnit = useMessageHandle(
   { en: 'Failed to move unit', zh: '移动单元失败' }
 ).fn
 
-const handleRemoveUnit = useMessageHandle(
-  async (series: CourseSeries, unitIndex: number) => {
-    const unit = units.value[unitIndex]
-    const count = unit.courseIDs.length
-    let content: { en: string; zh: string }
-    if (units.value.length === 1) {
-      content = {
-        en: `Delete "${unit.title}"? The series will no longer be divided into units; its courses keep their order.`,
-        zh: `确定删除“${unit.title}”吗？删除后系列不再分单元，课程保持原来的顺序。`
-      }
-    } else if (count === 0) {
-      content = { en: `Delete "${unit.title}"?`, zh: `确定删除“${unit.title}”吗？` }
-    } else {
-      const into =
-        unitIndex === 0 ? { en: 'the next unit', zh: '下一个单元' } : { en: 'the unit before', zh: '上一个单元' }
-      content = {
-        en: `Delete "${unit.title}"? Its ${count} course${count === 1 ? '' : 's'} will join ${into.en}.`,
-        zh: `确定删除“${unit.title}”吗？其中的 ${count} 门课程会并入${into.zh}。`
-      }
+/** What deleting the unit does, as the author is asked to confirm it. */
+function describeUnitRemoval(unitIndex: number): { en: string; zh: string } {
+  const unit = units.value[unitIndex]
+  const count = unit.courseIDs.length
+  if (units.value.length === 1) {
+    return {
+      en: `Delete "${unit.title}"? The series will no longer be divided into units; its courses keep their order.`,
+      zh: `确定删除“${unit.title}”吗？删除后系列不再分单元，课程保持原来的顺序。`
     }
+  }
+  if (count === 0) return { en: `Delete "${unit.title}"?`, zh: `确定删除“${unit.title}”吗？` }
+  const into = unitIndex === 0 ? { en: 'the next unit', zh: '下一个单元' } : { en: 'the unit before', zh: '上一个单元' }
+  return {
+    en: `Delete "${unit.title}"? Its ${count} course${count === 1 ? '' : 's'} will join ${into.en}.`,
+    zh: `确定删除“${unit.title}”吗？其中的 ${count} 门课程会并入${into.zh}。`
+  }
+}
+
+const handleRemoveUnit = useMessageHandle(
+  async (series: CourseSeries, unitID: string | undefined) => {
+    const asked = describeUnitRemoval(findUnitIndex(unitID))
     await keepPageFor(
       confirm({
         title: i18n.t({ en: 'Delete unit', zh: '删除单元' }),
-        content: i18n.t(content),
+        content: i18n.t(asked),
         confirmText: i18n.t({ en: 'Delete', zh: '删除' })
       })
     )
+    const unitIndex = findUnitIndex(unitID)
+    if (describeUnitRemoval(unitIndex).en !== asked.en) throw unitsChanged()
     await writeUnits(series, removeUnit(units.value, unitIndex))
   },
   { en: 'Failed to delete unit', zh: '删除单元失败' }
@@ -316,6 +339,7 @@ const handleSplitUnit = useMessageHandle(
       en: `"${course.title}" and the courses after it in its unit form the new unit.`,
       zh: `“${course.title}”和本单元里它之后的课程会组成新单元。`
     })
+    if (!canSplitAt(course.id)) throw unitsChanged()
     await writeUnits(series, splitUnitAt(units.value, course.id, title))
   },
   { en: 'Failed to add unit', zh: '新建单元失败' }
@@ -327,16 +351,17 @@ const handleMoveCourseToUnit = useMessageHandle(
   { en: 'Failed to move course', zh: '移动课程失败' }
 ).fn
 
-/** The other units a course can be moved to. */
+/** The other units a course can be moved to, none while a unit is being added. */
 function getMoveTargets(courseID: string) {
+  if (isAddingUnit.value) return []
   return units.value.flatMap((unit, unitIndex) =>
     unit.courseIDs.includes(courseID) ? [] : [{ unitIndex, label: getUnitLabel(unitIndex) }]
   )
 }
 
-/** Whether a new unit can start at the course: it is not the first of its unit. */
+/** Whether a new unit can start at the course: it is not the first of its unit, and no unit is being added. */
 function canSplitAt(courseID: string) {
-  return units.value.some((unit) => unit.courseIDs.indexOf(courseID) > 0)
+  return !isAddingUnit.value && units.value.some((unit) => unit.courseIDs.indexOf(courseID) > 0)
 }
 
 function handleBack() {
@@ -352,13 +377,12 @@ function openInCourseEditor(series: CourseSeries, course: Course) {
 
 const handleCreateCourse = useMessageHandle(async (series: CourseSeries, unitID: string | null = null) => {
   // The course is added to the series as the server has it then, which edits still being written would overwrite.
-  await editsWritten()
   if (series.kind === 'guided') {
-    await keepPageFor(invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id, unitID }))
+    await openAfterEdits(() => invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id, unitID }))
     refetch()
     return
   }
-  const { course } = await keepPageFor(
+  const { course } = await openAfterEdits(() =>
     invokePlaygroundCourseDrawer({ course: null, courseSeriesID: series.id, unitID })
   )
   await openInCourseEditor(series, course)
@@ -405,8 +429,7 @@ const handleImport = useMessageHandle(
   async (series: CourseSeries) => {
     try {
       // An import replaces the courses and units of the series, which edits still being written would overwrite.
-      await editsWritten()
-      await keepPageFor(fileActions.importIntoSeries(series))
+      await openAfterEdits(() => fileActions.importIntoSeries(series))
     } finally {
       refetch()
     }
@@ -608,10 +631,10 @@ const handleRemoveSeries = useMessageHandle(
               :can-move-down="item.unitIndex < units.length - 1"
               :disabled="isAddingUnit"
               @create-course="handleCreateCourse(courseSeries, units[item.unitIndex].id ?? null)"
-              @rename="handleRenameUnit(courseSeries, item.unitIndex)"
+              @rename="handleRenameUnit(courseSeries, units[item.unitIndex].id)"
               @move-up="handleMoveUnit(courseSeries, item.unitIndex, -1)"
               @move-down="handleMoveUnit(courseSeries, item.unitIndex, 1)"
-              @remove="handleRemoveUnit(courseSeries, item.unitIndex)"
+              @remove="handleRemoveUnit(courseSeries, units[item.unitIndex].id)"
             />
             <CourseItem
               v-else

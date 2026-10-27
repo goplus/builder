@@ -35,9 +35,13 @@ export function useLocalEdits<T>(source: WatchSource<T>, writes = new Concurrenc
     }
   }
 
-  /** Wait until the edits made so far are written, or have failed to be. */
+  /** Wait until the edits made so far, and any made while waiting, are written or have failed to be. */
   async function settled() {
-    await lastWrite
+    let waited: Promise<unknown>
+    do {
+      waited = lastWrite
+      await waited
+    } while (waited !== lastWrite)
   }
 
   return { value, edit, settled }

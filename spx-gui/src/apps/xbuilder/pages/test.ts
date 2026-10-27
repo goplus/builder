@@ -36,6 +36,8 @@ import Search from './community/search.vue'
 import Tutorials from './tutorials/index.vue'
 import CourseSeries from './tutorials/course-series.vue'
 import CourseStart from './tutorials/course-start.vue'
+import CourseManagement from './course-management/index.vue'
+import CourseManagementSeries from './course-management/series.vue'
 import User from './community/user/index.vue'
 import UserOverview from './community/user/overview.vue'
 import UserProjects from './community/user/projects.vue'
@@ -175,6 +177,11 @@ export async function mountPages(path: string) {
         { path: 'users/:userID/app-grants/:grantID', component: AdminGrant, props: true },
         { path: 'audit-logs', component: AdminAuditLogs }
       ]
+    },
+    {
+      path: '/course-management',
+      component: CourseManagement,
+      children: [{ path: ':courseSeriesIdInput', component: CourseManagementSeries, props: true }]
     },
     { path: '/course-series/:courseSeriesIdInput', component: CourseSeries, props: true },
     { path: '/course/:courseSeriesIdInput/:courseIdInput/start', component: CourseStart, props: true },

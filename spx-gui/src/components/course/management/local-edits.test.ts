@@ -110,6 +110,25 @@ describe('useLocalEdits', () => {
     expect(isSettled).toBe(true)
   })
 
+  it('waits as well for the edits made while it waits', async () => {
+    const source = shallowRef(['One'])
+    const { edit, settled } = useLocalEdits(source)
+    const server = makeServer(source)
+    let isSettled = false
+
+    const first = edit(['A'], server.write)
+    void settled().then(() => (isSettled = true))
+    const second = edit(['B'], server.write)
+    await server.answer()
+    await first
+    expect(isSettled).toBe(false)
+    await server.answer()
+    await second
+
+    await settled()
+    expect(isSettled).toBe(true)
+  })
+
   it('keeps the edits shown when the write returns nothing', async () => {
     const source = shallowRef(['One', 'Two'])
     const { value, edit } = useLocalEdits(source)
