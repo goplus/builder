@@ -274,7 +274,12 @@ providePopupContainer(codeEditorEl)
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
-      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" :disabled="readOnly" />
+      <APIReferenceUI
+        class="flex-[1_1_0]"
+        :controller="uiRef.apiReferenceController"
+        :simple-mode="simpleMode"
+        :disabled="readOnly"
+      />
     </aside>
     <div
       v-if="hasApiReference"
