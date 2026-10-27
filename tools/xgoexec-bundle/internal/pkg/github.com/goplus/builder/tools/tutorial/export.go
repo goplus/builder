@@ -17,6 +17,7 @@ func init() {
 		Deps: map[string]string{
 			"encoding":      "encoding",
 			"encoding/json": "json",
+			"errors":        "errors",
 			"fmt":           "fmt",
 			"github.com/goplus/builder/tools/xgoexec": "xgoexec",
 			"github.com/visualfc/gid":                 "gid",
@@ -30,6 +31,7 @@ func init() {
 		},
 		Interfaces: map[string]reflect.Type{
 			"CourseProto": reflect.TypeOf((*q.CourseProto)(nil)).Elem(),
+			"RunGroup":    reflect.TypeOf((*q.RunGroup)(nil)).Elem(),
 		},
 		NamedTypes: map[string]reflect.Type{
 			"CodeEditor":       reflect.TypeOf((*q.CodeEditor)(nil)).Elem(),
@@ -39,6 +41,7 @@ func init() {
 			"Editor":           reflect.TypeOf((*q.Editor)(nil)).Elem(),
 			"Project":          reflect.TypeOf((*q.Project)(nil)).Elem(),
 			"Ruler":            reflect.TypeOf((*q.Ruler)(nil)).Elem(),
+			"RunPolicy":        reflect.TypeOf((*q.RunPolicy)(nil)).Elem(),
 			"Runtime":          reflect.TypeOf((*q.Runtime)(nil)).Elem(),
 			"Spotlight":        reflect.TypeOf((*q.Spotlight)(nil)).Elem(),
 			"SpotlightOptions": reflect.TypeOf((*q.SpotlightOptions)(nil)).Elem(),
@@ -48,7 +51,11 @@ func init() {
 		Funcs: map[string]reflect.Value{
 			"XGot_Course_Main": reflect.ValueOf(q.XGot_Course_Main),
 		},
-		TypedConsts: map[string]ixgo.TypedConst{},
+		TypedConsts: map[string]ixgo.TypedConst{
+			"CancelPrevious": {Typ: reflect.TypeOf(q.CancelPrevious), Value: constant.MakeInt64(int64(q.CancelPrevious))},
+			"OneAtATime":     {Typ: reflect.TypeOf(q.OneAtATime), Value: constant.MakeInt64(int64(q.OneAtATime))},
+			"SkipWhileBusy":  {Typ: reflect.TypeOf(q.SkipWhileBusy), Value: constant.MakeInt64(int64(q.SkipWhileBusy))},
+		},
 		UntypedConsts: map[string]ixgo.UntypedConst{
 			"XGoPackage": {Typ: "untyped bool", Value: constant.MakeBool(bool(q.XGoPackage))},
 		},

@@ -99,12 +99,20 @@ func (p *Course) initCourse() *Course {
 // without worrying that the event callbacks are not attached yet.
 //
 // Course start is an event that fires once and takes the same path as the
-// other onXxx: several callbacks may be registered, they are independent of
-// each other, and the contract promises no order among them. A start callback
-// registered after the Course has started is never called.
+// other onXxx: several callbacks may be registered, they start in
+// registration order, each running to its first wait before the next starts,
+// and then proceed independently (see startRuns). A start callback registered
+// after the Course has started is never called.
 func (p *Course) OnStart(handler func()) {
 	register(&p.courseProgram, func(struct{}) { handler() },
 		func(h *handlers, r *registration[struct{}]) { h.courseStart = append(h.courseStart, r) })
+}
+
+// NewRunGroup creates a run group; see RunPolicy and RunGroup. Course code
+// spells it newRunGroup.
+func (p *Course) NewRunGroup(policy RunPolicy) RunGroup {
+	p.courseProgram.requireRun("creating a run group")
+	return &runGroup{courseProgram: &p.courseProgram, policy: policy}
 }
 
 // ShowPrelude presents the opening task guide and returns once the learner
@@ -208,22 +216,25 @@ func (p *Course) CompleteWith(message string) {
 // execution paths, runFrame on a run goroutine and the one MainEntry frame on
 // the main goroutine.
 //
-// Two constraints make up the execution model (see the comments on
-// courseProgram and startRuns for the details):
+// Three constraints make up the execution model (see the comments on
+// courseProgram, runGroup and startRuns for the details):
 //   - One at a time, several in flight: only the holder of the execution
 //     token runs Course code at any instant, so shared variables never race;
 //     a run releases the token while it waits on a waiting capability
-//     (presentation, LLM) or pauses with wait and the other runs proceed,
-//     which means runs of one callback may overlap (how they relate: see
-//     #3509).
-//   - Completion winds down: after complete, no new trigger starts a run;
-//     runs already executing or suspended finish their remaining statements
-//     unless a capability fails or is cancelled, and the program ends once
-//     they all finish or a fatal error occurs.
-//
-// Triggers being handled in arrival order, and the callbacks of one trigger
-// starting in registration order, is what the implementation currently does;
-// the contract does not promise it.
+//     (presentation, LLM) or pauses with wait and the other runs proceed, so
+//     runs of one callback may overlap, constrained by their run group's
+//     policy.
+//   - Starts are ordered: triggers are handled in arrival order, and within
+//     one trigger the callbacks start in registration order, each running to
+//     its first wait or its end before the next starts; a run started with
+//     RunGroup.start begins when the starting run next waits or ends, before
+//     whatever waits on that run moves on. That is what backs the contract's
+//     promise for editor.runtime.log, one run started per entry, started in
+//     append order.
+//   - Completion winds down: after complete, no new trigger starts a run and
+//     no started run begins; runs already executing or suspended finish their
+//     remaining statements unless a capability fails or is cancelled, and the
+//     program ends once they all finish or a fatal error occurs.
 func (p *Course) Start() {
 	program := &p.courseProgram
 	// Terminal paths still wait for existing runs and propagate fatal errors.
@@ -268,6 +279,6 @@ func (p *Course) Start() {
 func XGot_Course_Main(course CourseProto) {
 	program := &course.initCourse().courseProgram
 	events.attach(program)
-	program.runFrame(newRun(), course.MainEntry)
+	program.runFrame(newRun(course.MainEntry))
 	course.Start()
 }

@@ -22,18 +22,23 @@ import (
 //     appears only in tryCallCapability or the main-goroutine Start handshakes.
 //  3. No operation that can block appears while schedulerMu is held (channel
 //     send or receive, select, Wait, taking the token, calling the bridge);
-//     registryMu is a leaf lock whose regions allow only allowlisted calls.
-//  4. Runs have a single lifecycle entry: startRuns is called only by Start
-//     and the package-level event deliverers; admitRun only by startRuns and
-//     goLive; markYielded only by runFrame and yieldWhile.
+//     registryMu and groupMu are leaf locks whose regions allow only
+//     allowlisted calls.
+//  4. Runs have a single lifecycle entry: startRun is called only by
+//     startRuns (itself called only by Start and the package-level event
+//     deliverers) and by startChildren (called only by runFrame and
+//     yieldWhile, when a run yields or ends); admitRun only by startRun and
+//     goLive; cancel only by Start, the run group gate; markYielded only by
+//     runFrame and yieldWhile.
 //  5. Events have a single entry: handlers are registered with the executor
 //     only in init; events.attach is called only by XGot_Course_Main and
 //     events.goLive only by Start.
 //  6. Every exported method of a type holding the course program (the API
-//     Course code calls) refuses a caller outside a run before doing anything
-//     else: its first call is requireRun, a guard delegate (tryCallCapability,
-//     mustCallCapability or register, whose own first call must be requireRun
-//     or another guard delegate), or another such method of the same receiver.
+//     Course code calls, run groups included) refuses a caller outside a run
+//     before doing anything else: its first call is requireRun, a guard
+//     delegate (tryCallCapability, mustCallCapability or register, whose own
+//     first call must be requireRun or another guard delegate), or another
+//     such method of the same receiver.
 //
 // The checks work on the AST rather than on observed behavior, so a violating
 // way of writing things turns red as it enters the repository instead of
@@ -83,7 +88,8 @@ func TestSchedulingInvariants(t *testing.T) {
 }
 
 // courseFacingTypes returns the types holding the course program, by value or
-// by pointer, in a field named courseProgram: Course and its namespaces.
+// by pointer, in a field named courseProgram: Course, its namespaces and the
+// run group.
 func courseFacingTypes(files []*ast.File) map[string]bool {
 	types := map[string]bool{}
 	for _, file := range files {
@@ -150,17 +156,18 @@ func checkGuardDelegate(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) boo
 	return true
 }
 
-// checkGuardedEntry checks rule 6. Start is exempt: it is the program entry
-// the generated Main calls on the main goroutine, not an ability.
+// checkGuardedEntry checks rule 6. Course.Start is exempt: it is the program
+// entry the generated Main calls on the main goroutine, not an ability.
 func checkGuardedEntry(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl, courseFacing map[string]bool) {
-	if fn.Recv == nil || !fn.Name.IsExported() || fn.Name.Name == "Start" {
+	if fn.Recv == nil || !fn.Name.IsExported() {
 		return
 	}
 	recvType := fn.Recv.List[0].Type
 	if star, ok := recvType.(*ast.StarExpr); ok {
 		recvType = star.X
 	}
-	if ident, ok := recvType.(*ast.Ident); !ok || !courseFacing[ident.Name] {
+	ident, ok := recvType.(*ast.Ident)
+	if !ok || !courseFacing[ident.Name] || (ident.Name == "Course" && fn.Name.Name == "Start") {
 		return
 	}
 
@@ -186,7 +193,9 @@ var (
 	tokenPlumbing    = map[string]bool{"acquireExec": true, "releaseExec": true, "init": true}
 	yieldCallers     = map[string]bool{"tryCallCapability": true, "pause": true}
 	blockingWaitHome = "tryCallCapability"
-	admitCallers     = map[string]bool{"startRuns": true, "goLive": true}
+	admitCallers     = map[string]bool{"startRun": true, "goLive": true}
+	runStarters      = map[string]bool{"startRuns": true, "startChildren": true}
+	childStarters    = map[string]bool{"runFrame": true, "yieldWhile": true}
 	yieldMarkers     = map[string]bool{"runFrame": true, "yieldWhile": true}
 )
 
@@ -222,9 +231,21 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 				if name != "Start" {
 					report(n.Pos(), "%s starts runs: only Course.Start and the event deliverers may", name)
 				}
+			case strings.HasSuffix(callee, ".startRun"):
+				if !runStarters[name] {
+					report(n.Pos(), "%s starts a run: only startRuns and startChildren may", name)
+				}
+			case strings.HasSuffix(callee, ".startChildren"):
+				if !childStarters[name] {
+					report(n.Pos(), "%s starts a run's children: only runFrame and yieldWhile may, when the run yields or ends", name)
+				}
 			case strings.HasSuffix(callee, ".admitRun"):
 				if !admitCallers[name] {
-					report(n.Pos(), "%s admits a goroutine to runs: only startRuns and goLive may", name)
+					report(n.Pos(), "%s admits a goroutine to runs: only startRun and goLive may", name)
+				}
+			case strings.HasSuffix(callee, ".cancel"):
+				if name != "Start" {
+					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only Start may", name)
 				}
 			case strings.HasSuffix(callee, ".markYielded"):
 				if !yieldMarkers[name] {
@@ -251,10 +272,10 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 		return true
 	})
 
-	// Rule 3: no blocking operation while schedulerMu is held; registryMu is a
-	// leaf lock whose regions allow only allowlisted calls.
+	// Rule 3: no blocking operation while schedulerMu is held; registryMu and
+	// groupMu are leaf locks whose regions allow only allowlisted calls.
 	recv := receiverName(fn)
-	for _, guard := range []string{"schedulerMu", "registryMu"} {
+	for _, guard := range []string{"schedulerMu", "registryMu", "groupMu"} {
 		for _, region := range heldRegions(fn, recv, guard) {
 			ast.Inspect(fn.Body, func(node ast.Node) bool {
 				if node == nil || node.Pos() < region.from || node.Pos() >= region.to {
@@ -299,9 +320,11 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 
 // leafLockAllowedCalls lists the only calls allowed while each leaf lock is
 // held: all pure computation, unable to block and unable to reach another
-// lock. Decoding, dispatching and waiting must happen outside the lock.
+// lock. Decoding, dispatching, cancelling and waiting must happen outside the
+// lock.
 var leafLockAllowedCalls = map[string]map[string]bool{
 	"registryMu": {"len": true, "append": true, "make": true, "fmt.Errorf": true, "json.RawMessage": true},
+	"groupMu":    {"len": true, "append": true},
 }
 
 type lockRegion struct {

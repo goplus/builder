@@ -44,33 +44,42 @@ Editor.Runtime.onStart => {
 	wait 0.5
 }
 
+judging := newRunGroup(SkipWhileBusy)
+hints := newRunGroup(OneAtATime)
+
 Editor.Runtime.onExit code => {
-	echo code
+	hints.start => {
+		echo code
+	}
 }
 
 Copilot.onRoundComplete round => {
-	echo round.UserMessage
+	judging.start => {
+		echo round.UserMessage
+	}
 }
 
 Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	for sprite <- Editor.Project.listSprites() {
-		echo Editor.Project.getCode(sprite)
-	}
-	Editor.CodeEditor.formatWorkspace
-	Editor.Ruler.disable
+	judging.start => {
+		for sprite <- Editor.Project.listSprites() {
+			echo Editor.Project.getCode(sprite)
+		}
+		Editor.CodeEditor.formatWorkspace
+		Editor.Ruler.disable
 
-	feedback := &Feedback{}
-	if err := Copilot.generateJSON("judge this", feedback); err != nil {
-		echo err
-	}
-	if feedback.Score > 3 {
-		completeWith Copilot.generateText("praise the learner")?:"Well done!"
-	} else {
-		echo Copilot.generateText("say goodbye")!
-		complete
+		feedback := &Feedback{}
+		if err := Copilot.generateJSON("judge this", feedback); err != nil {
+			echo err
+		}
+		if feedback.Score > 3 {
+			completeWith Copilot.generateText("praise the learner")?:"Well done!"
+		} else {
+			echo Copilot.generateText("say goodbye")!
+			complete
+		}
 	}
 }
 `

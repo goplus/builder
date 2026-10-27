@@ -4,11 +4,14 @@ Course callbacks execute as runs under a cooperative scheduler; design rationale
 These are the rules of change.
 
 - Course callbacks execute only through `runFrame`. At any instant, only the `execToken` holder runs course code.
-  Every trigger starts a new run of each registered callback, so runs of one callback may overlap. How such runs
-  relate (run policies and run groups) is deferred to #3509; do not add ad-hoc guards in the framework meanwhile
-- `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long and
-  restores `current` afterwards. Only `tryCallCapability` (waiting on the host) and `pause` (waiting on a timer) may
-  call it; main-goroutine lifecycle handshakes call the bridge from `Course.Start` without touching the token
+  Every trigger starts a new run of each registered callback, so runs of one callback may overlap; a `runGroup`'s
+  `RunPolicy` (CancelPrevious, OneAtATime, SkipWhileBusy) is the only thing that relates runs, and its gate sits in
+  `RunGroup.Start`: a group holds at most one run, whichever callback started it. Course code reaches a group only
+  through `newRunGroup` and `start`; registration takes a plain callback and nothing else
+- `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long, restores
+  `current` afterwards, and is where cancellation takes effect (checked before the wait and after it, so a cancelled
+  run never uses a pending result). Only `tryCallCapability` (waiting on the host) and `pause` (waiting on a timer)
+  may call it; main-goroutine lifecycle handshakes call the bridge from `Course.Start` without touching the token
 - The contract forbids course code to start goroutines (`go`, `time.AfterFunc`), but nothing stops it, and such
   goroutines run outside the scheduler. Every exported method course code can call must refuse them before doing
   anything else: its first call is `requireRun`, or `tryCallCapability`/`mustCallCapability`/`register` (whose own
@@ -17,12 +20,14 @@ These are the rules of change.
 - Only framework calls yield. Do not redirect Go's own blocking calls (say `time.Sleep` through
   `ixgo.RegisterExternal`): channel operations, timers and I/O could not follow, and a rule with one exception is
   harder for authors than none. Authors pause with `wait`; the contract lists what blocks
-- Runs are started only by `startRuns`, from `Course.Start` and the event deliverers, in registration order, each to
-  its first yield (`yielded`) before the next. That order is an implementation detail the contract does not promise
-  (see #3509); keep `startRuns` the sole start path and never spawn course code elsewhere
+- Runs begin only through `startRun`, from `startRuns` (`Course.Start` and the event deliverers, in registration
+  order) and from `startChildren` (the runs a run started with `RunGroup.Start`, in start order, when that run yields
+  or ends), each to its first yield (`yielded`) before the next. Keep those the sole start paths; never spawn course
+  code elsewhere. A started run that has not begun is just a closure: it costs no goroutine, and after completion it
+  never begins
 - Hold no lock across a blocking operation: `schedulerMu` regions stay free of channel ops, `select`, `Wait`, token
-  ops, and other locks; `registryMu` is a leaf lock whose regions may only touch fields and call the allowlisted
-  builtins. Waiting, decoding, and delivery happen outside every lock
+  ops, and other locks; `registryMu` and `groupMu` are leaf locks whose regions may only touch fields and call the
+  allowlisted builtins. Cancellation, waiting, decoding, and delivery happen outside every lock
 - `scheduling_invariants_test.go` machine-checks these rules by identifier name. When it fails, suspect your change
   first; when a locking change is legitimate, update the checker's rules in the same commit
 - Decode a waiting capability's response only after reacquiring `execToken`. Never write course-visible memory while
@@ -61,7 +66,7 @@ These are the rules of change.
   (or call `resetEventRegistry`), or the event goes to the previous, completed program and is silently dropped.
   Dispatching from inside `MainEntry` or a callback is always safe: the queue accumulates until the dispatcher starts
 - After releasing a held capability, do not assume the run has ended: synchronize on a signal the run sends at its
-  end before dispatching a trigger whose outcome depends on that run having released the token
+  end before dispatching a trigger whose outcome depends on that run having released its group or the token
 - A test that fails by timeout leaves its course alive; a later test that sees events vanish should suspect that
   zombie first
 - Never block on a channel while holding the token inside a course callback; simulate a slow host with
