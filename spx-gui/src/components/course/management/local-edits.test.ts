@@ -1,6 +1,7 @@
 import { nextTick, shallowRef } from 'vue'
 import { describe, expect, it } from 'vitest'
 
+import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { useLocalEdits } from './local-edits'
 
 /** A write that settles when the test says, as the server answers it. */
@@ -66,6 +67,28 @@ describe('useLocalEdits', () => {
 
     await failed
     expect(value.value).toEqual(['One'])
+  })
+
+  it('writes values sharing a queue in the order they were edited', async () => {
+    const writes = new ConcurrencyLimitController(1)
+    const order = useLocalEdits(shallowRef(['One', 'Two']), writes)
+    const units = useLocalEdits(shallowRef<string[]>([]), writes)
+    const written: string[] = []
+    let answerOrder!: () => void
+
+    const ordered = order.edit(['Two', 'One'], async (edited) => {
+      await new Promise<void>((resolve) => (answerOrder = resolve))
+      written.push(`order ${edited.join(' ')}`)
+    })
+    const divided = units.edit(['Unit: Two One'], async (edited) => {
+      written.push(`units ${edited.join(' ')}`)
+    })
+    await nextTick()
+    expect(written).toEqual([])
+    answerOrder()
+    await Promise.all([ordered, divided])
+
+    expect(written).toEqual(['order Two One', 'units Unit: Two One'])
   })
 
   it('keeps the edits shown when the write returns nothing', async () => {

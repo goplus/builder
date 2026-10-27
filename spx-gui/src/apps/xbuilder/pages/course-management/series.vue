@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
@@ -101,8 +102,11 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   return createFileWithUniversalUrl(thumbnail).url(onCleanup)
 })
 
+// The course order and the units are both written to the order of the series' courses, so they share a queue.
+const seriesWrites = new ConcurrencyLimitController(1)
+
 /** The courses as shown, which a drag reorders before the server has the new order. */
-const { value: courses, edit: editCourses } = useLocalEdits(() => coursesQueryRet.data.value ?? [])
+const { value: courses, edit: editCourses } = useLocalEdits(() => coursesQueryRet.data.value ?? [], seriesWrites)
 
 const { query, sortBy } = useListViewQuery()
 const shownCourses = computed(() => courses.value.filter((course) => matchesQuery([course.title], query.value)))
@@ -155,7 +159,8 @@ useDragSortable(shownCourses, listRef, {
 
 /** The units as shown, which an edit changes before the server has them. */
 const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnitParams[]>(
-  () => seriesQueryRet.data.value?.units ?? []
+  () => seriesQueryRet.data.value?.units ?? [],
+  seriesWrites
 )
 const isDivided = computed(() => units.value.length > 0)
 /** Set while a unit is being added: it has no ID until the server answers, and a later write would add it again. */
@@ -205,6 +210,8 @@ const handleUnitListSorted = useMessageHandle(
 useDragSortable(() => (canDragUnitList.value ? shownUnitList.value : null), unitListRef, {
   ghostClass: 'sortable-ghost-item',
   filterItem: (item) => (item as UnitListItem).type === 'unit',
+  // Every course is in a unit; one dropped before the first header would be put back, leaving the list out of step.
+  filterMove: (_, newIndex) => newIndex === 0,
   onSorted: handleUnitListSorted
 })
 
@@ -221,7 +228,15 @@ const handleAddUnit = useMessageHandle(
           zh: '系列现有的课程会按原来的顺序全部放进第一个单元。'
         }
     const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' }, '', tip)
-    await writeUnits(series, addUnit(units.value, title, series.courseIDs))
+    // The courses as shown, in an order a reorder still being written may have given them, go into the first unit.
+    if (!isDivided.value && courses.value.length !== courseSeries.value?.courseIDs.length) {
+      throw new DefaultException({
+        en: 'The courses of this series are not all shown, so they cannot be put into a unit here',
+        zh: '这个系列的课程没有全部显示，无法在这里放进单元'
+      })
+    }
+    const courseIDs = courses.value.map((course) => course.id)
+    await writeUnits(series, addUnit(units.value, title, courseIDs))
   },
   { en: 'Failed to add unit', zh: '新建单元失败' }
 ).fn
