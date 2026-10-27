@@ -7,7 +7,7 @@ import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import { isGuidedCourse, type Course } from '@/apis/course'
-import type { CourseSeries } from '@/apis/course-series'
+import type { CourseSeries, CourseSeriesUnitParams } from '@/apis/course-series'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useDeleteCourse } from '@/stores/course'
 import { useDeleteCourseSeries, useSeries, useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
@@ -27,6 +27,20 @@ import {
 import CourseItem from '@/components/course/management/CourseItem.vue'
 import CourseItemCornerMenu from '@/components/course/management/CourseItemCornerMenu.vue'
 import CourseSeriesDrawer from '@/components/course/management/CourseSeriesDrawer.vue'
+import UnitHeaderItem from '@/components/course/management/UnitHeaderItem.vue'
+import UnitTitleModal from '@/components/course/management/UnitTitleModal.vue'
+import {
+  addUnit,
+  moveCourseInUnitList,
+  moveCourseToUnit,
+  moveUnit,
+  removeUnit,
+  renameUnit,
+  splitUnitAt,
+  toUnitList,
+  type UnitListItem
+} from '@/components/course/management/units'
+import { getUnitLabel } from '@/components/tutorials/units'
 import GuidedCourseDrawer from '@/components/course/management/GuidedCourseDrawer.vue'
 import PlaygroundCourseDrawer from '@/components/course/management/PlaygroundCourseDrawer.vue'
 import { courseKindNames } from '@/components/course/management/kind'
@@ -62,6 +76,7 @@ const fileActions = useCourseSeriesFileActions()
 const invokeSeriesDrawer = useModal(CourseSeriesDrawer)
 const invokeGuidedCourseDrawer = useModal(GuidedCourseDrawer)
 const invokePlaygroundCourseDrawer = useModal(PlaygroundCourseDrawer)
+const invokeUnitTitleModal = useModal(UnitTitleModal)
 const { keepPageFor } = usePageModals()
 
 const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
@@ -142,6 +157,157 @@ useDragSortable(shownCourses, listRef, {
   onSorted: handleSorted
 })
 
+/** The units as shown, which an edit changes before the server has them. */
+const units = shallowRef<CourseSeriesUnitParams[]>([])
+watch(
+  () => seriesQueryRet.data.value?.units,
+  (data) => (units.value = data ?? []),
+  { immediate: true }
+)
+const isDivided = computed(() => units.value.length > 0)
+/** Set while a unit is being added: it has no ID until the server answers, and a later write would add it again. */
+const isAddingUnit = ref(false)
+
+const coursesByID = computed(() => new Map(courses.value.map((course) => [course.id, course])))
+/** The units and their courses as listed: with a search, only the courses that match, under every unit. */
+const shownUnitList = computed(() =>
+  toUnitList(units.value).flatMap(
+    (item): Array<Extract<UnitListItem, { type: 'unit' }> | { type: 'course'; course: Course }> => {
+      if (item.type === 'unit') return [item]
+      const course = coursesByID.value.get(item.courseID)
+      return course != null && matchesQuery([course.title], query.value) ? [{ type: 'course', course }] : []
+    }
+  )
+)
+// A course moved in a list that leaves some out would take its place among them, so only the whole list is dragged.
+const canDragUnitList = computed(
+  () => !isAddingUnit.value && shownUnitList.value.length === toUnitList(units.value).length
+)
+
+const unitListRef = ref<HTMLElement>()
+
+async function writeUnits(series: CourseSeries, edited: CourseSeriesUnitParams[]) {
+  units.value = edited
+  const addsUnit = edited.some((unit) => unit.id == null)
+  if (addsUnit) isAddingUnit.value = true
+  try {
+    await courseOrderWrites.run(() => updateCourseSeries(series.id, { units: edited }))
+  } catch (e) {
+    refetch()
+    throw e
+  } finally {
+    if (addsUnit) isAddingUnit.value = false
+  }
+}
+
+const handleUnitListSorted = useMessageHandle(
+  async (oldIndex: number, newIndex: number) => {
+    const series = courseSeries.value
+    if (series == null) return
+    await writeUnits(series, moveCourseInUnitList(units.value, oldIndex, newIndex))
+  },
+  { en: 'Failed to move course', zh: '移动课程失败' }
+).fn
+
+useDragSortable(() => (canDragUnitList.value ? shownUnitList.value : null), unitListRef, {
+  ghostClass: 'sortable-ghost-item',
+  filterItem: (item) => (item as UnitListItem).type === 'unit',
+  onSorted: handleUnitListSorted
+})
+
+function askUnitTitle(action: { en: string; zh: string }, title = '', tip?: { en: string; zh: string }) {
+  return keepPageFor(invokeUnitTitleModal({ action, title, tip }))
+}
+
+const handleAddUnit = useMessageHandle(
+  async (series: CourseSeries) => {
+    const tip = isDivided.value
+      ? { en: 'The new unit is added at the end, empty.', zh: '新单元是空的，加在最后。' }
+      : {
+          en: 'All courses of the series go into the first unit, in their order.',
+          zh: '系列现有的课程会按原来的顺序全部放进第一个单元。'
+        }
+    const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' }, '', tip)
+    await writeUnits(series, addUnit(units.value, title, series.courseIDs))
+  },
+  { en: 'Failed to add unit', zh: '新建单元失败' }
+).fn
+
+const handleRenameUnit = useMessageHandle(
+  async (series: CourseSeries, unitIndex: number) => {
+    const title = await askUnitTitle({ en: 'Rename unit', zh: '重命名单元' }, units.value[unitIndex].title)
+    await writeUnits(series, renameUnit(units.value, unitIndex, title))
+  },
+  { en: 'Failed to rename unit', zh: '重命名单元失败' }
+).fn
+
+const handleMoveUnit = useMessageHandle(
+  (series: CourseSeries, unitIndex: number, offset: number) =>
+    writeUnits(series, moveUnit(units.value, unitIndex, offset)),
+  { en: 'Failed to move unit', zh: '移动单元失败' }
+).fn
+
+const handleRemoveUnit = useMessageHandle(
+  async (series: CourseSeries, unitIndex: number) => {
+    const unit = units.value[unitIndex]
+    const count = unit.courseIDs.length
+    let content: { en: string; zh: string }
+    if (units.value.length === 1) {
+      content = {
+        en: `Delete "${unit.title}"? The series will no longer be divided into units; its courses keep their order.`,
+        zh: `确定删除“${unit.title}”吗？删除后系列不再分单元，课程保持原来的顺序。`
+      }
+    } else if (count === 0) {
+      content = { en: `Delete "${unit.title}"?`, zh: `确定删除“${unit.title}”吗？` }
+    } else {
+      const into =
+        unitIndex === 0 ? { en: 'the next unit', zh: '下一个单元' } : { en: 'the unit before', zh: '上一个单元' }
+      content = {
+        en: `Delete "${unit.title}"? Its ${count} course${count === 1 ? '' : 's'} will join ${into.en}.`,
+        zh: `确定删除“${unit.title}”吗？其中的 ${count} 门课程会并入${into.zh}。`
+      }
+    }
+    await keepPageFor(
+      confirm({
+        title: i18n.t({ en: 'Delete unit', zh: '删除单元' }),
+        content: i18n.t(content),
+        confirmText: i18n.t({ en: 'Delete', zh: '删除' })
+      })
+    )
+    await writeUnits(series, removeUnit(units.value, unitIndex))
+  },
+  { en: 'Failed to delete unit', zh: '删除单元失败' }
+).fn
+
+const handleSplitUnit = useMessageHandle(
+  async (series: CourseSeries, course: Course) => {
+    const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' }, '', {
+      en: `"${course.title}" and the courses after it in its unit form the new unit.`,
+      zh: `“${course.title}”和本单元里它之后的课程会组成新单元。`
+    })
+    await writeUnits(series, splitUnitAt(units.value, course.id, title))
+  },
+  { en: 'Failed to add unit', zh: '新建单元失败' }
+).fn
+
+const handleMoveCourseToUnit = useMessageHandle(
+  (series: CourseSeries, course: Course, unitIndex: number) =>
+    writeUnits(series, moveCourseToUnit(units.value, course.id, unitIndex)),
+  { en: 'Failed to move course', zh: '移动课程失败' }
+).fn
+
+/** The other units a course can be moved to. */
+function getMoveTargets(courseID: string) {
+  return units.value.flatMap((unit, unitIndex) =>
+    unit.courseIDs.includes(courseID) ? [] : [{ unitIndex, label: getUnitLabel(unitIndex) }]
+  )
+}
+
+/** Whether a new unit can start at the course: it is not the first of its unit. */
+function canSplitAt(courseID: string) {
+  return units.value.some((unit) => unit.courseIDs.indexOf(courseID) > 0)
+}
+
 function handleBack() {
   // Back to the list as the author left it, filter included, when that is where they came from.
   const back = router.options.history.state.back
@@ -153,13 +319,15 @@ function openInCourseEditor(series: CourseSeries, course: Course) {
   return router.push(getCourseEditorRoute(series.id, course.id))
 }
 
-const handleCreateCourse = useMessageHandle(async (series: CourseSeries) => {
+const handleCreateCourse = useMessageHandle(async (series: CourseSeries, unitID: string | null = null) => {
   if (series.kind === 'guided') {
-    await keepPageFor(invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id }))
+    await keepPageFor(invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id, unitID }))
     refetch()
     return
   }
-  const { course } = await keepPageFor(invokePlaygroundCourseDrawer({ course: null, courseSeriesID: series.id }))
+  const { course } = await keepPageFor(
+    invokePlaygroundCourseDrawer({ course: null, courseSeriesID: series.id, unitID })
+  )
   await openInCourseEditor(series, course)
 }).fn
 
@@ -326,6 +494,15 @@ const handleRemoveSeries = useMessageHandle(
             :placeholder="$t({ en: 'Search courses', zh: '搜索课程' })"
           />
           <UIButton
+            v-radar="{ name: 'add-unit-button', desc: 'Click to add a unit to the series' }"
+            type="secondary"
+            :disabled="isAddingUnit"
+            @click="handleAddUnit(courseSeries)"
+          >
+            <template #icon><UIIcon type="plus" /></template>
+            {{ $t({ en: 'New unit', zh: '新建单元' }) }}
+          </UIButton>
+          <UIButton
             v-radar="{ name: 'create-course-button', desc: 'Click to create a course in the series' }"
             type="primary"
             @click="handleCreateCourse(courseSeries)"
@@ -339,10 +516,10 @@ const handleRemoveSeries = useMessageHandle(
         <UIError v-else-if="coursesQueryRet.error.value != null" class="h-60" :retry="coursesQueryRet.refetch">
           {{ $t(coursesQueryRet.error.value.userMessage) }}
         </UIError>
-        <UIEmpty v-else-if="courses.length === 0" size="large">
+        <UIEmpty v-else-if="courses.length === 0 && !isDivided" size="large">
           {{ $t({ en: 'No courses in this series yet', zh: '这个系列还没有课程' }) }}
         </UIEmpty>
-        <UIEmpty v-else-if="shownCourses.length === 0" size="large">
+        <UIEmpty v-else-if="shownCourses.length === 0 && (!isDivided || query !== '')" size="large">
           {{ $t({ en: 'No courses found', zh: '没有找到匹配的课程' }) }}
         </UIEmpty>
         <ListSections
@@ -362,14 +539,64 @@ const handleRemoveSeries = useMessageHandle(
               >
                 <CourseItemCornerMenu
                   :course="course"
+                  :move-targets="getMoveTargets(course.id)"
+                  :can-split="canSplitAt(course.id)"
                   @edit="handleOpenCourse(courseSeries, course)"
                   @open-editor="openInCourseEditor(courseSeries, course)"
+                  @split="handleSplitUnit(courseSeries, course)"
+                  @move-to-unit="handleMoveCourseToUnit(courseSeries, course, $event)"
                   @remove="handleRemoveCourse(course)"
                 />
               </CourseItem>
             </ul>
           </template>
         </ListSections>
+        <ul
+          v-else-if="isDivided"
+          ref="unitListRef"
+          v-radar="{
+            name: 'unit-list',
+            desc: 'The units of the series, each followed by its courses, which can be dragged to reorder them or to move them to another unit'
+          }"
+          class="m-0 flex flex-wrap gap-5 p-0"
+        >
+          <template
+            v-for="item in shownUnitList"
+            :key="item.type === 'unit' ? `unit:${units[item.unitIndex].id ?? item.unitIndex}` : item.course.id"
+          >
+            <UnitHeaderItem
+              v-if="item.type === 'unit'"
+              :unit-index="item.unitIndex"
+              :title="units[item.unitIndex].title"
+              :course-count="units[item.unitIndex].courseIDs.length"
+              :can-move-up="item.unitIndex > 0"
+              :can-move-down="item.unitIndex < units.length - 1"
+              :disabled="isAddingUnit"
+              @create-course="handleCreateCourse(courseSeries, units[item.unitIndex].id ?? null)"
+              @rename="handleRenameUnit(courseSeries, item.unitIndex)"
+              @move-up="handleMoveUnit(courseSeries, item.unitIndex, -1)"
+              @move-down="handleMoveUnit(courseSeries, item.unitIndex, 1)"
+              @remove="handleRemoveUnit(courseSeries, item.unitIndex)"
+            />
+            <CourseItem
+              v-else
+              v-radar="{ name: 'course-item', desc: 'Click to edit the course', attrs: { name: item.course.title } }"
+              :course="item.course"
+              @click="handleOpenCourse(courseSeries, item.course)"
+            >
+              <CourseItemCornerMenu
+                :course="item.course"
+                :move-targets="getMoveTargets(item.course.id)"
+                :can-split="canSplitAt(item.course.id)"
+                @edit="handleOpenCourse(courseSeries, item.course)"
+                @open-editor="openInCourseEditor(courseSeries, item.course)"
+                @split="handleSplitUnit(courseSeries, item.course)"
+                @move-to-unit="handleMoveCourseToUnit(courseSeries, item.course, $event)"
+                @remove="handleRemoveCourse(item.course)"
+              />
+            </CourseItem>
+          </template>
+        </ul>
         <ul
           v-else
           ref="listRef"

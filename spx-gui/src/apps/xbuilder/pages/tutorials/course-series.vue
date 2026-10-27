@@ -9,9 +9,10 @@ import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/community/TextView.vue'
 import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
 import { useTutorial } from '@/components/tutorials/tutorial'
-import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
+import { getSeriesUnits, getUnitLabel } from '@/components/tutorials/units'
+import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, UITab, UITabs, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
-import { useSeries } from '@/stores/course-series'
+import { useSeries, useSeriesCourses } from '@/stores/course-series'
 import { useQuery } from '@/utils/query'
 import { useEnsureSignedIn } from '@/utils/user'
 import { useRouteQueryParamInt } from '@/utils/route'
@@ -78,6 +79,23 @@ const courseQuery = useQuery(
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
 )
 
+/** The units of a series divided into units, which then shows one unit at a time, all its courses at once. */
+const units = computed(() => {
+  const series = courseSeries.value
+  if (series == null || series.units.length === 0) return null
+  return getSeriesUnits(series)
+})
+const unitParam = useRouteQueryParamInt('unit', 1)
+const unitIndex = computed(() => Math.min(Math.max(unitParam.value - 1, 0), (units.value?.length ?? 1) - 1))
+const unit = computed(() => units.value?.[unitIndex.value] ?? null)
+const seriesCoursesQuery = useSeriesCourses(() => (units.value != null ? props.courseSeriesIdInput : null))
+const unitCourses = computed(() => {
+  const courses = seriesCoursesQuery.data.value
+  if (unit.value == null || courses == null) return []
+  const coursesByID = new Map(courses.map((course) => [course.id, course]))
+  return unit.value.courseIDs.flatMap((id) => coursesByID.get(id) ?? [])
+})
+
 const { fn: handleCourseClick } = useMessageHandle(
   async (event: MouseEvent, course: Course, courseSeries: CourseSeries) => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
@@ -140,7 +158,54 @@ const { fn: handleCourseClick } = useMessageHandle(
         </div>
       </UICard>
 
-      <div class="mt-7 flex flex-col">
+      <div v-if="courseSeries != null && units != null" class="mt-7 flex flex-col">
+        <UIEmpty v-if="unit == null" size="large" img="box">
+          {{
+            $t({
+              zh: `${courseSeries.title}没有可用的课程`,
+              en: `${courseSeries.title} has no available courses`
+            })
+          }}
+        </UIEmpty>
+        <template v-else>
+          <UITabs
+            v-radar="{ name: 'unit-tabs', desc: 'Tabs to switch between the units of the course series' }"
+            class="flex-wrap gap-x-6 gap-y-0 px-0"
+            :value="String(unitIndex)"
+            @update:value="(value) => (unitParam = Number(value) + 1)"
+          >
+            <UITab
+              v-for="(_, index) in units"
+              :key="index"
+              v-radar="{ name: 'unit-tab', desc: 'Click to show the courses of this unit' }"
+              :value="String(index)"
+            >
+              {{ $t(getUnitLabel(index)) }}
+            </UITab>
+          </UITabs>
+          <h3 class="mt-6 mb-4 text-lg font-semibold text-title">{{ unit.title }}</h3>
+          <UILoading v-if="seriesCoursesQuery.isLoading.value" class="h-60" :mask="false" />
+          <UIError v-else-if="seriesCoursesQuery.error.value != null" class="h-60" :retry="seriesCoursesQuery.refetch">
+            {{ $t(seriesCoursesQuery.error.value.userMessage) }}
+          </UIError>
+          <ul
+            v-else
+            class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-5"
+            :style="{ '--num-in-row': numInRow }"
+          >
+            <a
+              v-for="course in unitCourses"
+              :key="course.id"
+              :href="tutorial.getCourseStartRoute(courseSeries.id, course.id)"
+              class="no-underline"
+              @click="handleCourseClick($event, course, courseSeries)"
+            >
+              <CourseItem :course="course" />
+            </a>
+          </ul>
+        </template>
+      </div>
+      <div v-else class="mt-7 flex flex-col">
         <div v-if="courseSeries" :style="{ '--num-in-row': numInRow }">
           <ListResultWrapper :query-ret="courseQuery" :height="height">
             <template #empty="{ style }">

@@ -14,7 +14,7 @@ const { addCourse, deleteCourse, getCourseSeries, updateCourseSeries } = vi.hois
 vi.mock('@/apis/course', () => ({ addCourse, deleteCourse }))
 vi.mock('@/apis/course-series', () => ({ getCourseSeries }))
 
-function makeSeries(id: string, courseIDs: string[]): CourseSeries {
+function makeSeries(id: string, courseIDs: string[], units: CourseSeries['units'] = []): CourseSeries {
   return {
     id,
     owner: 'curator',
@@ -23,6 +23,7 @@ function makeSeries(id: string, courseIDs: string[]): CourseSeries {
     thumbnail: 'kodo://bucket/thumbnail',
     description: '',
     courseIDs,
+    units,
     order: 1,
     createdAt: '2026-09-21T00:00:00Z',
     updatedAt: '2026-09-21T00:00:00Z'
@@ -128,5 +129,38 @@ describe('appendCourseToSeries', () => {
 
     expect(updateCourseSeries).not.toHaveBeenCalled()
     expect(current.courseIDs).toEqual(['2337', '2345'])
+  })
+
+  describe('in a series divided into units', () => {
+    const units = [
+      { id: 'unit-1', title: 'Unit 1', courseIDs: ['2337'] },
+      { id: 'unit-2', title: 'Unit 2', courseIDs: ['2340'] }
+    ]
+    beforeEach(() => getCourseSeries.mockResolvedValue(makeSeries('39', ['2337', '2340'], units)))
+
+    it('adds a course at the end of the unit it is created in', async () => {
+      await appendCourseToSeries('39', '2345', updateCourseSeries, 'unit-1')
+
+      expect(updateCourseSeries).toHaveBeenCalledWith('39', {
+        units: [
+          { id: 'unit-1', title: 'Unit 1', courseIDs: ['2337', '2345'] },
+          { id: 'unit-2', title: 'Unit 2', courseIDs: ['2340'] }
+        ]
+      })
+    })
+
+    it('adds a course at the end of the last unit when no unit is given, or the unit is gone', async () => {
+      await appendCourseToSeries('39', '2345', updateCourseSeries)
+      await appendCourseToSeries('39', '2345', updateCourseSeries, 'deleted-unit')
+
+      const lastUnitAdded = {
+        units: [
+          { id: 'unit-1', title: 'Unit 1', courseIDs: ['2337'] },
+          { id: 'unit-2', title: 'Unit 2', courseIDs: ['2340', '2345'] }
+        ]
+      }
+      expect(updateCourseSeries).toHaveBeenNthCalledWith(1, '39', lastUnitAdded)
+      expect(updateCourseSeries).toHaveBeenNthCalledWith(2, '39', lastUnitAdded)
+    })
   })
 })

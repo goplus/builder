@@ -17,7 +17,9 @@ import {
   getCourseSeries,
   listSignedInUserCourseSeries,
   updateCourseSeries,
-  type CourseSeries
+  type CourseSeries,
+  type CourseSeriesUnit,
+  type CourseSeriesUnitParams
 } from '@/apis/course-series'
 import { deleteProject, getProject, ProjectType, updateProject, Visibility, type ProjectData } from '@/apis/project'
 import { createProjectRelease, type ProjectRelease } from '@/apis/project-release'
@@ -104,6 +106,11 @@ async function inspectCourseSeriesFileImport(courseSeries: CourseSeries | null, 
   return inspectCourseSeriesFileContent(content, courseSeries, signedInUsername)
 }
 
+/** Units as the server keeps them: a new one is given an ID. */
+function toSavedUnits(units: CourseSeriesUnitParams[]): CourseSeriesUnit[] {
+  return units.map((unit, index) => ({ ...unit, id: unit.id ?? `new-unit-${index}` }))
+}
+
 // The mocked APIs stand in for the store writes, so assertions can inspect them.
 const writes = { updateCourseSeries, deleteCourse }
 
@@ -116,6 +123,7 @@ const existingSeries: CourseSeries = {
   description: 'Course series description',
   order: 42,
   courseIDs: ['course-1'],
+  units: [],
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z'
 }
@@ -222,14 +230,16 @@ beforeEach(() => {
     ...existingSeries,
     id,
     owner: 'alice',
-    ...params
+    ...params,
+    units: toSavedUnits(params.units ?? existingSeries.units)
   }))
   vi.mocked(addCourseSeries).mockImplementation(async (params) => ({
     id: 'created-series',
     owner: 'alice',
     createdAt: existingSeries.createdAt,
     updatedAt: existingSeries.updatedAt,
-    ...params
+    ...params,
+    units: toSavedUnits(params.units ?? [])
   }))
   vi.mocked(deleteCourse).mockResolvedValue(undefined)
   // Read back after a failed series write: by default it did not take effect.
@@ -374,7 +384,8 @@ describe('importCourseSeriesFile', () => {
       thumbnail: 'kodo://imported/thumbnails/course-series.png',
       description: 'Imported description',
       order: 7,
-      courseIDs: ['imported-course']
+      courseIDs: ['imported-course'],
+      units: []
     })
     expect(updateCourseSeries).not.toHaveBeenCalled()
     expect(deleteCourse).not.toHaveBeenCalled()
@@ -885,6 +896,7 @@ describe('Playground course series files', () => {
       { title: 'Measure it', thumbnail: { path: 'thumbnails/courses/0.png' }, files: 'courses/0' }
     ])
     expect(manifest.projects).toEqual([])
+    expect(manifest).not.toHaveProperty('units')
     expect(new TextDecoder().decode(unzipped['courses/0/main_course.gox'])).toBe(
       'content:kodo://bucket/main_course.gox'
     )
@@ -917,6 +929,92 @@ describe('Playground course series files', () => {
     )
     expect(result.undeletedCourseIDs).toEqual([])
     expect(getProject).not.toHaveBeenCalled()
+  })
+
+  it('exports the units of a series divided into units, as how many courses each holds', async () => {
+    vi.mocked(getCourse).mockResolvedValue(playgroundCourse)
+    const series: CourseSeries = {
+      ...playgroundSeries,
+      courseIDs: ['course-1', 'course-2', 'course-3'],
+      units: [
+        { id: 'unit-1', title: 'Moving', courseIDs: ['course-1'] },
+        { id: 'unit-2', title: 'Turning', courseIDs: ['course-2', 'course-3'] }
+      ]
+    }
+
+    const file = await exportCourseSeriesFile(series)
+    const unzipped = await unzip(new Uint8Array(await file.arrayBuffer()))
+    const manifest = JSON.parse(new TextDecoder().decode(unzipped['course-series.json']!)) as Record<string, any>
+
+    expect(manifest.courses).toHaveLength(3)
+    expect(manifest.units).toEqual([
+      { title: 'Moving', courseCount: 1 },
+      { title: 'Turning', courseCount: 2 }
+    ])
+  })
+
+  it('imports the units of the file, holding the courses imported for them', async () => {
+    vi.mocked(addCourse).mockImplementation(async (params) => ({ ...existingCourse, id: `imported ${params.title}` }))
+    const units = [
+      { title: 'Moving', courseCount: 1 },
+      { title: 'Turning', courseCount: 2 }
+    ]
+
+    await importCourseSeriesFileAsNew(
+      await makePlaygroundSeriesFile(
+        [0, 1, 2].map(() => playgroundCourseFiles('')),
+        [],
+        units
+      ),
+      1,
+      'alice'
+    )
+
+    expect(addCourseSeries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        courseIDs: ['imported Course 0', 'imported Course 1', 'imported Course 2'],
+        units: [
+          { title: 'Moving', courseIDs: ['imported Course 0'] },
+          { title: 'Turning', courseIDs: ['imported Course 1', 'imported Course 2'] }
+        ]
+      })
+    )
+  })
+
+  it('replaces the units of the series it imports into, by none when the file has none', async () => {
+    const series: CourseSeries = {
+      ...playgroundSeries,
+      units: [{ id: 'unit-1', title: 'Moving', courseIDs: ['course-1'] }]
+    }
+
+    await importCourseSeriesFile(series, await makePlaygroundSeriesFile([playgroundCourseFiles('')]), 'alice', writes)
+
+    expect(updateCourseSeries).toHaveBeenCalledWith(
+      series.id,
+      expect.objectContaining({ courseIDs: ['imported-course'], units: [] })
+    )
+  })
+
+  it('refuses units that do not divide the courses of the file, before writing anything', async () => {
+    for (const units of [
+      [{ title: 'Moving', courseCount: 1 }],
+      [
+        { title: 'Moving', courseCount: 3 },
+        { title: 'Turning', courseCount: -1 }
+      ],
+      [{ title: ' ', courseCount: 2 }],
+      { title: 'Moving', courseCount: 2 }
+    ]) {
+      const file = await makePlaygroundSeriesFile(
+        [0, 1].map(() => playgroundCourseFiles('')),
+        [],
+        units
+      )
+      await expect(importCourseSeriesFileAsNew(file, 1, 'alice')).rejects.toThrow(
+        'Invalid course series file: its units do not match its courses'
+      )
+    }
+    expect(addCourse).not.toHaveBeenCalled()
   })
 
   it('refuses a file with a course it cannot load, before writing anything', async () => {
@@ -1157,7 +1255,8 @@ function playgroundCourseFiles(program: string, omit: string[] = []): Record<str
 
 async function makePlaygroundSeriesFile(
   courses: Array<Record<string, string>>,
-  projects: Array<{ fullName: string; name: string; path: string }> = []
+  projects: Array<{ fullName: string; name: string; path: string }> = [],
+  units?: unknown
 ) {
   const encoder = new TextEncoder()
   const zippable: Zippable = {
@@ -1176,7 +1275,8 @@ async function makePlaygroundSeriesFile(
           thumbnail: { path: `thumbnails/courses/${index}.png` },
           files: `courses/${index}`
         })),
-        projects
+        projects,
+        units
       })
     ),
     'thumbnails/course-series.png': encoder.encode('series thumbnail')

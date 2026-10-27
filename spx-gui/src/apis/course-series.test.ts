@@ -11,6 +11,7 @@ function makeSeries(kind: CourseSeries['kind']): CourseSeries {
     thumbnail: '',
     description: 'Practice courses',
     courseIDs: ['course-2', 'course-1'],
+    units: [],
     order: 1,
     createdAt: '2026-10-13T00:00:00Z',
     updatedAt: '2026-10-13T00:00:00Z'

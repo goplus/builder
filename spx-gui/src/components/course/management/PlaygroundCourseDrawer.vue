@@ -23,6 +23,8 @@ const props = defineProps<{
   course: PlaygroundCourse | null
   /** The series the course is in, or is created in. */
   courseSeriesID: string
+  /** The unit a new course is created in, in a series divided into units; the last one if not given. */
+  unitID?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -62,7 +64,7 @@ const form = useForm({
 const { confirmDiscard } = useDrawerFormChanges(() => form.value)
 
 // Outlives a failed submit, so submitting again finishes what is left instead of creating a second course.
-const creation = new CourseCreation(props.courseSeriesID, useUpdateCourseSeries())
+const creation = new CourseCreation(props.courseSeriesID, useUpdateCourseSeries(), props.unitID ?? null)
 // A course created but not added to the series would be in no series, so it does not outlive the drawer.
 onUnmounted(() => creation.abandon())
 

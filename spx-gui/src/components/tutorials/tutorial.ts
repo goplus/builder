@@ -5,10 +5,11 @@ import { isNavigationFailure, type Router } from 'vue-router'
 
 import type { Course, PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
-import { getCoursePlaygroundRoute, getCourseSeriesPageRoute, getCourseStartRoute } from '@/apps/xbuilder/router'
+import { getCoursePlaygroundRoute, getCourseStartRoute } from '@/apps/xbuilder/router'
 import { Cancelled } from '@/utils/exception'
 
 import type { GuidedTutorial } from './guided/guided-tutorial'
+import { getCourseSeriesPageRouteOfCourse } from './units'
 type GuidedTutorialController = Pick<GuidedTutorial, 'currentCourse' | 'enterCourse' | 'endCurrentCourse'>
 type TutorialRouter = Pick<Router, 'push' | 'replace'>
 
@@ -90,7 +91,7 @@ export class Tutorial {
     if (currentCourse.kind === 'guided') {
       this.guidedTutorial.endCurrentCourse()
     } else if (currentCourse.kind === 'playground') {
-      await this.router.push(getCourseSeriesPageRoute(currentCourse.series.id))
+      await this.router.push(getCourseSeriesPageRouteOfCourse(currentCourse.series, currentCourse.id))
     }
   }
 

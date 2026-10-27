@@ -3084,7 +3084,8 @@ paths:
         - Courses
       summary: Delete a course
       description: |
-        Permanently delete a specific course.
+        Permanently delete a specific course. The course is also taken out of every course series, and unit, that
+        holds it.
 
         Permission requirements:
 
@@ -3282,6 +3283,9 @@ paths:
 
         Every course named in `courseIDs` must have the series' `kind`.
 
+        A nonempty `units` divides the series into units, all of them new, so none may have an `id`. `courseIDs` must
+        then be the course IDs of the units joined in order, and may be left out.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can create course series.
@@ -3308,6 +3312,11 @@ paths:
                   $ref: "#/components/schemas/CourseSeries/properties/description"
                 courseIDs:
                   $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                units:
+                  description: Units to divide the series into, in order. Omitted or empty, the series is undivided.
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/CourseSeriesUnitInput"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
@@ -3374,6 +3383,12 @@ paths:
         The course series kind is immutable: a `kind` field is accepted only when it matches the series' current kind.
         Every course named in `courseIDs` must have that kind.
 
+        `units` replaces the units of the series. A unit with an `id` keeps it, and must be a current unit of the
+        series; one without is new, and is given an ID. A nonempty `units` also sets the courses of the series: the
+        course IDs of the units joined in order, which `courseIDs`, if also given, must equal. An empty `units` leaves
+        the series undivided, with its courses as they are. While the series is divided into units, `courseIDs` alone
+        cannot change its courses, as a course it adds would belong to no unit.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can update course series.
@@ -3402,6 +3417,11 @@ paths:
                   $ref: "#/components/schemas/CourseSeries/properties/description"
                 courseIDs:
                   $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                units:
+                  description: Units to divide the series into, in order; empty to leave it undivided.
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/CourseSeriesUnitInput"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
@@ -7819,6 +7839,7 @@ components:
         - thumbnail
         - description
         - courseIDs
+        - units
         - order
       properties:
         id:
@@ -7862,12 +7883,62 @@ components:
             $ref: "#/components/schemas/Model/properties/id"
           examples:
             - ["1", "2", "3"]
+        units:
+          description: |
+            Units the series is divided into, in order; empty if it is not divided. The course IDs of the units, joined
+            in unit order, are `courseIDs`: every course of the series is in exactly one unit.
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseSeriesUnit"
         order:
           description: Order/priority of the course series for sorting.
           type: integer
           format: int32
           examples:
             - 1
+
+    CourseSeriesUnit:
+      description: A unit of a course series, a titled run of its courses.
+      type: object
+      required:
+        - id
+        - title
+        - courseIDs
+      properties:
+        id:
+          description: Identifier of the unit, a UUID the server gives it when it is created.
+          type: string
+          format: uuid
+          examples:
+            - 9b2f3c4e-1d5a-4e8b-9c7d-2a6f0e1b3c5d
+        title:
+          description: Title of the unit.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - Running, moving and planning routes
+        courseIDs:
+          description: IDs of the courses in the unit, in order.
+          type: array
+          items:
+            $ref: "#/components/schemas/Model/properties/id"
+          examples:
+            - ["1", "2"]
+
+    CourseSeriesUnitInput:
+      description: A unit of a course series to write. Without `id`, it is a new unit.
+      type: object
+      required:
+        - title
+        - courseIDs
+      properties:
+        id:
+          $ref: "#/components/schemas/CourseSeriesUnit/properties/id"
+        title:
+          $ref: "#/components/schemas/CourseSeriesUnit/properties/title"
+        courseIDs:
+          $ref: "#/components/schemas/CourseSeriesUnit/properties/courseIDs"
 
     FileObject:
       description: A content-addressed file object stored in Kodo.

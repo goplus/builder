@@ -46,8 +46,10 @@ export function getCourseStartRoute(courseSeriesID: string, courseID: string) {
   return `/course/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/start`
 }
 
-export function getCourseSeriesPageRoute(courseSeriesID: string) {
-  return `/course-series/${encodeURIComponent(courseSeriesID)}`
+/** `unitIndex` selects a unit of a series divided into units; the first is shown by default. */
+export function getCourseSeriesPageRoute(courseSeriesID: string, unitIndex = 0) {
+  const route = `/course-series/${encodeURIComponent(courseSeriesID)}`
+  return unitIndex === 0 ? route : `${route}?unit=${unitIndex + 1}`
 }
 
 export function getCourseEditorRoute(courseSeriesID: string, courseID: string, inCourseEditorPath: string[] = []) {

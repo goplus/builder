@@ -42,13 +42,16 @@ Keeping `content` opaque has these consequences:
 
 ### `course_series`
 
-The existing table keeps its metadata and ordered `course_ids` collection, with one added column:
+The existing table keeps its metadata and ordered `course_ids` collection, with added columns:
 
-| Column | Type   | Constraint                         |
-| ------ | ------ | ---------------------------------- |
-| `kind` | `text` | Not null, `guided` or `playground` |
+| Column  | Type    | Constraint                         |
+| ------- | ------- | ---------------------------------- |
+| `kind`  | `text`  | Not null, `guided` or `playground` |
+| `units` | `jsonb` | Not null, a JSON array             |
 
 Kind-filtered Course Series lists retain the existing default ordering by `order` and `id`. Add an index on `(kind, order, id)` for this new query path. Existing indexes, including `(owner_id, order, id)`, remain unchanged.
+
+`units` divides a Course Series into units, in order: each element is `{"id": "<UUID>", "title": "...", "courseIDs": [<course ID>, ...]}`. The array is empty for a Series that is not divided. A unit is a titled run of the Series' Courses: when `units` is not empty, the course IDs of the units joined in unit order equal `course_ids`, so every Course of the Series is in exactly one unit, and `course_ids` stays the single order learners follow, across units. Units are not referenced on their own and are always read and written with their Series, so they live in its row rather than in a table of their own.
 
 ## Write transactions and invariants
 
@@ -56,14 +59,17 @@ Creating or updating a Course writes one `course` row. The API validates only th
 
 Creating or updating a Course Series follows the existing course-locking order:
 
-1. Normalize, sort and deduplicate the requested Course IDs.
+1. Normalize, sort and deduplicate the requested Course IDs: those of the requested units joined in order when units are given and not empty, otherwise the requested `courseIDs`.
 2. Lock the referenced `course` rows in ID order.
 3. Verify that every Course exists.
 4. Verify that every Course kind equals `course_series.kind`.
 5. Lock the Course Series row when updating it.
-6. Write `course_ids` and other Series fields.
+6. Resolve the requested units: one naming an ID must be a current unit of the Series and keeps it; a new one is given a UUID. Without requested units, refuse a change to the Courses of a Series that is divided into units, as a Course it adds would belong to no unit.
+7. Write `course_ids`, `units` and other Series fields.
 
 This prevents a Course deletion or concurrent Series update from invalidating the kind check between validation and write.
+
+Deleting a Course locks the Series that hold it, in ID order, and takes the Course out of their `course_ids` and of their units in the same transaction.
 
 ## Migration from the current schema
 
@@ -74,8 +80,9 @@ All existing courses are Guided Courses, so migration can be deterministic:
 3. Backfill `content` from each row's existing `entrypoint` and `prompt`.
 4. Make `content` non-null.
 5. Add `course_series.kind` as non-null with temporary default `guided`.
-6. Add the `course_series (kind, order, id)` index.
-7. Remove `course.entrypoint` and `course.prompt` after the application reads Guided Course data from `content`.
-8. Remove the temporary defaults if Course creation must always provide kind explicitly.
+6. Add `course_series.units` as non-null with temporary default `[]`: every existing Series is undivided.
+7. Add the `course_series (kind, order, id)` index.
+8. Remove `course.entrypoint` and `course.prompt` after the application reads Guided Course data from `content`.
+9. Remove the temporary defaults if Course creation must always provide kind explicitly.
 
 No Course IDs or Course Series ordering changes during migration.

@@ -46,9 +46,31 @@ export type CourseSeries = {
   thumbnail: string;
   description: string;
   courseIDs: string[];
+  /**
+   * Units the series is divided into, empty if it is not. Their course IDs,
+   * joined in unit order, are `courseIDs`. While the series is divided into
+   * units, its courses change only through `units`.
+   */
+  units: CourseSeriesUnit[];
   order: number;
   createdAt: string;
   updatedAt: string;
+};
+
+/** A unit of a course series: a titled run of its courses. */
+export type CourseSeriesUnit = {
+  /** A UUID given by the server when the unit is created. */
+  id: string;
+  title: string;
+  courseIDs: string[];
+};
+
+/** A unit to write: one without `id` is new, and is given one. */
+export type CourseSeriesUnitParams = Pick<
+  CourseSeriesUnit,
+  "title" | "courseIDs"
+> & {
+  id?: string;
 };
 
 export type AddCourseParams =
@@ -60,11 +82,11 @@ export type UpdateCourseParams =
 export type AddCourseSeriesParams = Pick<
   CourseSeries,
   "kind" | "title" | "thumbnail" | "description" | "courseIDs" | "order"
->;
+> & { units?: CourseSeriesUnitParams[] };
 export type UpdateCourseSeriesParams = Pick<
   CourseSeries,
   "title" | "thumbnail" | "description" | "courseIDs" | "order"
->;
+> & { units?: CourseSeriesUnitParams[] };
 
 export type ListCoursesParams = {
   kind?: CourseKind;

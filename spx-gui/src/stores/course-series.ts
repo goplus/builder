@@ -111,7 +111,8 @@ export function useCourseChangesInSeries() {
       // The server takes a deleted course out of every series that held it.
       seriesCache.update([seriesQueryKeyPrefix], (series) => ({
         ...series,
-        courseIDs: series.courseIDs.filter((id) => id !== courseID)
+        courseIDs: series.courseIDs.filter((id) => id !== courseID),
+        units: series.units.map((unit) => ({ ...unit, courseIDs: unit.courseIDs.filter((id) => id !== courseID) }))
       }))
       coursesCache.update([seriesCoursesQueryKeyPrefix], (courses) => courses.filter((c) => c.id !== courseID))
     }

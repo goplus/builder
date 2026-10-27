@@ -24,7 +24,14 @@ function makeCourse(id: string) {
 }
 
 function makeSeries(id: string, courseIDs: string[]) {
-  return { id, owner: 'curator', kind: 'playground', title: `Series ${id}`, courseIDs } as CourseSeries
+  return {
+    id,
+    owner: 'curator',
+    kind: 'playground',
+    title: `Series ${id}`,
+    courseIDs,
+    units: [] as CourseSeries['units']
+  } as CourseSeries
 }
 
 describe('course series writes', () => {
