@@ -12,11 +12,10 @@ import {
   getCourse,
   addCourse,
   deleteCourse,
-  listCourses,
+  listAllSeriesCourses,
   isGuidedCourse,
   isPlaygroundCourse,
   type AddCourseParams,
-  type Course,
   type CourseKind,
   type GuidedCourse,
   type PlaygroundCourse
@@ -313,7 +312,7 @@ export async function inspectCourseSeriesFileContent(
   let deletedCourses: string[] = []
   if (courseSeries != null && courseSeries.courseIDs.length > 0) {
     const titles = new Map(
-      (await listSeriesCourses(courseSeries.id, signal)).map((course) => [course.id, course.title])
+      (await listAllSeriesCourses(courseSeries.id, signal)).map((course) => [course.id, course.title])
     )
     deletedCourses = courseSeries.courseIDs.flatMap((id) => titles.get(id) ?? [])
   }
@@ -985,15 +984,6 @@ async function importProject(
     signal
   )
   return `${owner}/${name}`
-}
-
-async function listSeriesCourses(courseSeriesID: string, signal?: AbortSignal) {
-  const all: Course[] = []
-  for (let pageIndex = 1; ; pageIndex++) {
-    const { data, total } = await listCourses({ courseSeriesID, pageIndex, pageSize: 100 }, signal)
-    all.push(...data)
-    if (data.length === 0 || all.length >= total) return all
-  }
 }
 
 async function getSignedInUserProject(owner: string, name: string, signal?: AbortSignal) {

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
@@ -28,6 +27,7 @@ import CourseItem from '@/components/course/management/CourseItem.vue'
 import CourseItemCornerMenu from '@/components/course/management/CourseItemCornerMenu.vue'
 import CourseSeriesDrawer from '@/components/course/management/CourseSeriesDrawer.vue'
 import UnitHeaderItem from '@/components/course/management/UnitHeaderItem.vue'
+import { useLocalEdits } from '@/components/course/management/local-edits'
 import UnitTitleModal from '@/components/course/management/UnitTitleModal.vue'
 import {
   addUnit,
@@ -102,8 +102,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 })
 
 /** The courses as shown, which a drag reorders before the server has the new order. */
-const courses = shallowRef<Course[]>([])
-watch(coursesQueryRet.data, (data) => (courses.value = data ?? []), { immediate: true })
+const { value: courses, edit: editCourses } = useLocalEdits(() => coursesQueryRet.data.value ?? [])
 
 const { query, sortBy } = useListViewQuery()
 const shownCourses = computed(() => courses.value.filter((course) => matchesQuery([course.title], query.value)))
@@ -122,14 +121,11 @@ function refetch() {
 
 const listRef = ref<HTMLElement>()
 
-// One reorder is written at a time, so that an earlier one never lands after a later one.
-const courseOrderWrites = new ConcurrencyLimitController(1)
-
 const handleSorted = useMessageHandle(
   async (oldIndex: number, newIndex: number) => {
     const series = courseSeries.value
     if (series == null) return
-    // The list holds at most one page of courses; reordering a longer series from it would drop the rest.
+    // A course missing from the list, such as one added since it was loaded, would be dropped by the reorder.
     if (courses.value.length !== series.courseIDs.length) {
       throw new DefaultException({
         en: 'The courses of this series are not all shown, so they cannot be reordered here',
@@ -140,10 +136,10 @@ const handleSorted = useMessageHandle(
     const [moved] = reorderedShown.splice(oldIndex, 1)
     reorderedShown.splice(newIndex, 0, moved)
     const reordered = placeReordered(courses.value, reorderedShown, (course) => course.id)
-    courses.value = reordered
     try {
-      const courseIDs = reordered.map((course) => course.id)
-      await courseOrderWrites.run(() => updateCourseSeries(series.id, { courseIDs }))
+      await editCourses(reordered, async (edited) => {
+        await updateCourseSeries(series.id, { courseIDs: edited.map((course) => course.id) })
+      })
     } catch (e) {
       refetch()
       throw e
@@ -158,11 +154,8 @@ useDragSortable(shownCourses, listRef, {
 })
 
 /** The units as shown, which an edit changes before the server has them. */
-const units = shallowRef<CourseSeriesUnitParams[]>([])
-watch(
-  () => seriesQueryRet.data.value?.units,
-  (data) => (units.value = data ?? []),
-  { immediate: true }
+const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnitParams[]>(
+  () => seriesQueryRet.data.value?.units ?? []
 )
 const isDivided = computed(() => units.value.length > 0)
 /** Set while a unit is being added: it has no ID until the server answers, and a later write would add it again. */
@@ -187,11 +180,11 @@ const canDragUnitList = computed(
 const unitListRef = ref<HTMLElement>()
 
 async function writeUnits(series: CourseSeries, edited: CourseSeriesUnitParams[]) {
-  units.value = edited
   const addsUnit = edited.some((unit) => unit.id == null)
   if (addsUnit) isAddingUnit.value = true
   try {
-    await courseOrderWrites.run(() => updateCourseSeries(series.id, { units: edited }))
+    // The units the server returns give a new unit its ID.
+    await editUnits(edited, async (units) => (await updateCourseSeries(series.id, { units })).units)
   } catch (e) {
     refetch()
     throw e

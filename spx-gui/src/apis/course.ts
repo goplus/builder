@@ -120,6 +120,19 @@ export function listCourses(params?: ListCoursesParams, signal?: AbortSignal) {
   return client.get('/courses', params, { signal }) as Promise<ByPage<Course>>
 }
 
+/** All courses of a course series, in their order in it, listed a page at a time. */
+export async function listAllSeriesCourses(courseSeriesID: string, signal?: AbortSignal) {
+  const all: Course[] = []
+  for (let pageIndex = 1; ; pageIndex++) {
+    const { data, total } = await listCourses(
+      { courseSeriesID, pageIndex, pageSize: 100, orderBy: 'sequenceInCourseSeries' },
+      signal
+    )
+    all.push(...data)
+    if (data.length === 0 || all.length >= total) return all
+  }
+}
+
 export function listSignedInUserCourses(params?: ListCoursesParams, signal?: AbortSignal) {
   return client.get('/user/courses', params, { signal }) as Promise<ByPage<Course>>
 }

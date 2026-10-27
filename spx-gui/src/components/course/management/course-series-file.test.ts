@@ -8,7 +8,7 @@ import {
   addCourse,
   deleteCourse,
   getCourse,
-  listCourses,
+  listAllSeriesCourses,
   type GuidedCourse,
   type PlaygroundCourse
 } from '@/apis/course'
@@ -42,7 +42,7 @@ dayjs.extend(timezone)
 
 vi.mock('@/apis/course', () => ({
   getCourse: vi.fn(),
-  listCourses: vi.fn(),
+  listAllSeriesCourses: vi.fn(),
   addCourse: vi.fn(),
   deleteCourse: vi.fn(),
   isGuidedCourse: (course: GuidedCourse) => course.kind === 'guided',
@@ -146,7 +146,7 @@ beforeEach(() => {
     if (id === existingCourse.id) return existingCourse
     return { ...existingCourse, id, title: `Old ${id}` }
   })
-  vi.mocked(listCourses).mockResolvedValue({ total: 1, data: [existingCourse] })
+  vi.mocked(listAllSeriesCourses).mockResolvedValue([existingCourse])
   vi.mocked(createFileWithUniversalUrl).mockImplementation((url) => {
     const data = new TextEncoder().encode(`content:${url}`)
     return new LazyFile(url.split('/').pop() ?? 'thumbnail.png', () => Promise.resolve(data.buffer), {
@@ -1290,24 +1290,17 @@ async function makePlaygroundSeriesFile(
 }
 
 describe('inspectCourseSeriesFileImport', () => {
-  it('looks up the courses to delete a page at a time, listing them in the order of the series', async () => {
+  it('looks up the courses to delete all at once, listing them in the order of the series', async () => {
     const courseIDs = Array.from({ length: 150 }, (_, i) => `course-${i}`)
     const courses = courseIDs.map((id) => ({ ...existingCourse, id, title: `Title of ${id}` }))
-    // The order the server lists them in need not be the series' own.
-    const listed = [...courses].reverse()
-    vi.mocked(listCourses).mockImplementation(async (params) => {
-      const { pageIndex = 1, pageSize = 10 } = params ?? {}
-      return { total: listed.length, data: listed.slice((pageIndex - 1) * pageSize, pageIndex * pageSize) }
-    })
+    // The order the courses are listed in need not be the series' own as it was read.
+    vi.mocked(listAllSeriesCourses).mockResolvedValue([...courses].reverse())
     const file = await makeCourseSeriesFile('/editor/curator/EntryProject/lesson?tab=code')
 
     const inspection = await inspectCourseSeriesFileImport({ ...existingSeries, courseIDs }, file, 'alice')
 
     expect(inspection.deletedCourses).toEqual(courses.map((course) => course.title))
-    expect(vi.mocked(listCourses).mock.calls.map(([params]) => params)).toEqual([
-      { courseSeriesID: existingSeries.id, pageIndex: 1, pageSize: 100 },
-      { courseSeriesID: existingSeries.id, pageIndex: 2, pageSize: 100 }
-    ])
+    expect(listAllSeriesCourses).toHaveBeenCalledTimes(1)
     expect(getCourse).not.toHaveBeenCalled()
   })
 

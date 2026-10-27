@@ -1,6 +1,6 @@
 import { computed, toRef, type WatchSource } from 'vue'
 
-import { listCourses, type Course } from '@/apis/course'
+import { listAllSeriesCourses, type Course } from '@/apis/course'
 import * as apis from '@/apis/course-series'
 import { useAction } from '@/utils/exception'
 import { useQueryCache, useQueryWithCache } from '@/utils/query'
@@ -37,18 +37,7 @@ export function useSeriesCourses(seriesID: WatchSource<string | null>) {
     async queryFn(signal) {
       const id = seriesIDRef.value
       if (id == null) return []
-      // Assume a series fits in one API page (at most 100 courses).
-      // TODO: Load subsequent pages when a series can exceed this limit.
-      const result = await listCourses(
-        {
-          courseSeriesID: id,
-          pageIndex: 1,
-          pageSize: 100,
-          orderBy: 'sequenceInCourseSeries'
-        },
-        signal
-      )
-      return result.data
+      return listAllSeriesCourses(id, signal)
     },
     staleTime
   })
