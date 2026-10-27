@@ -13,7 +13,7 @@
       v-if="src != null"
       crossorigin="anonymous"
       :src="src"
-      alt=""
+      :alt="alt"
       class="absolute inset-0 h-full w-full"
       :style="{ objectFit: size }"
     />
@@ -28,11 +28,13 @@ import UILoading from './loading/UILoading.vue'
 const props = withDefaults(
   defineProps<{
     src: string | null
+    alt?: string
     loading?: boolean
     size?: 'contain' | 'cover'
     class?: ClassValue
   }>(),
   {
+    alt: '',
     // TODO: loading for public URL fetching
     loading: false,
     size: 'contain',

@@ -15,7 +15,12 @@ const signedInUser = useSignedInUser()
     class="self-stretch px-4 py-5"
     :class="message.type === 'text' ? 'flex flex-col items-start gap-2' : 'flex flex-row items-center gap-2'"
   >
-    <img class="h-8 w-8 rounded-full" crossorigin="anonymous" :src="signedInUser?.avatar" />
+    <img
+      class="h-8 w-8 rounded-full"
+      crossorigin="anonymous"
+      :src="signedInUser?.avatar"
+      :alt="signedInUser?.displayName ?? ''"
+    />
     <MarkdownView
       v-if="message.type === 'text'"
       class="self-stretch rounded-sm rounded-tl-none bg-[#e9ecf7] p-2"

@@ -8,10 +8,12 @@ describe('UIImg', () => {
     const image = wrapper.get('img')
     expect(image.attributes('src')).toBe('https://example.com/image.png')
     expect(image.attributes('crossorigin')).toBe('anonymous')
+    expect(image.attributes('alt')).toBe('')
     expect(image.element.style.objectFit).toBe('contain')
     expect(wrapper.get('[role="status"]').element.parentElement?.classList.contains('visible')).toBe(true)
 
-    await wrapper.setProps({ size: 'cover', loading: false })
+    await wrapper.setProps({ size: 'cover', loading: false, alt: 'Sprite preview' })
+    expect(image.attributes('alt')).toBe('Sprite preview')
     expect(image.element.style.objectFit).toBe('cover')
     expect(wrapper.get('[role="status"]').element.parentElement?.classList.contains('invisible')).toBe(true)
     wrapper.unmount()

@@ -69,7 +69,12 @@ async function handleSignOut() {
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
       <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
-        <img class="h-8 w-8 rounded-full" crossorigin="anonymous" :src="signedInUser?.avatar" />
+        <img
+          class="h-8 w-8 rounded-full"
+          crossorigin="anonymous"
+          :src="signedInUser?.avatar"
+          :alt="signedInUser?.displayName ?? ''"
+        />
       </div>
     </template>
     <UIMenu class="min-w-30">
