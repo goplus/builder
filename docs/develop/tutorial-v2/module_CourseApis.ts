@@ -83,10 +83,15 @@ export type AddCourseSeriesParams = Pick<
   CourseSeries,
   "kind" | "title" | "thumbnail" | "description" | "courseIDs" | "order"
 > & { units?: CourseSeriesUnitParams[] };
-export type UpdateCourseSeriesParams = Pick<
-  CourseSeries,
-  "title" | "thumbnail" | "description" | "courseIDs" | "order"
-> & { units?: CourseSeriesUnitParams[] };
+export type UpdateCourseSeriesParams = Partial<
+  Pick<
+    CourseSeries,
+    "title" | "thumbnail" | "description" | "courseIDs" | "order"
+  > & {
+    /** Replaces the units, and with them the courses unless empty. */
+    units: CourseSeriesUnitParams[];
+  }
+>;
 
 export type ListCoursesParams = {
   kind?: CourseKind;
