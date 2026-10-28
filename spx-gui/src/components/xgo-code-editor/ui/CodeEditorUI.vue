@@ -267,6 +267,7 @@ providePopupContainer(codeEditorEl)
   <div
     ref="codeEditorEl"
     class="relative flex min-h-0 flex-[1_1_0] justify-stretch"
+    :class="{ 'pr-3': simpleMode }"
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
     <aside
@@ -302,9 +303,9 @@ providePopupContainer(codeEditorEl)
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
     <ExecutionLocationUI v-if="props.simpleMode" />
-    <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
+    <aside v-if="!simpleMode" class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl v-if="!simpleMode" class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>
