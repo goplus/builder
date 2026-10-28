@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"unicode/utf8"
 
-	"github.com/goplus/spx/v3/pkg/spx"
+	"github.com/goplus/spx/v4/pkg/spx"
 )
 
 const (

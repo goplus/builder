@@ -78,7 +78,7 @@ async function newLS(onStopped: () => void): Promise<XGoLanguageServer> {
     (message) => scope.postMessage({ type: 'lsp', message }),
     {
       // Keep the classfile registration aligned with tools/ispx/main.go.
-      classfileConfig: `project main.spx Game github.com/goplus/spx/v3 math
+      classFrameworkConfig: `project main.spx Game github.com/goplus/spx/v4 math
 class -embed *.spx SpriteImpl
 import ai github.com/goplus/builder/tools/ai
 `,

@@ -18,7 +18,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/goplus/spx/v3/pkg/spx"
+	"github.com/goplus/spx/v4/pkg/spx"
 )
 
 // GopPackage indicates that this package is a XGo package.
