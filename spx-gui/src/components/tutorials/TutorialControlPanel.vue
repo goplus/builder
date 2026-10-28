@@ -1,9 +1,12 @@
 <script lang="ts" setup>
+import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
-import { useMessageHandle } from '@/utils/exception'
+import { getCleanupSignal } from '@/utils/disposable'
+import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { untilNotNull } from '@/utils/utils'
 import { useSeriesCourses } from '@/stores/course-series'
 import { EditingMode } from '@/components/editor/editing'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -20,6 +23,20 @@ const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
 const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.series.id ?? null)
 const courses = coursesQueryRet.data
+const courseRows = useTemplateRef<InstanceType<typeof TutorialStatusCourseRow>[]>('courseRows')
+const signal = getCleanupSignal(onBeforeUnmount)
+
+// The dropdown remounts the panel on each opening; wait for the course rows to render.
+onMounted(async () => {
+  try {
+    const currentCourseID = tutorial.currentCourse?.id
+    if (currentCourseID == null) return
+    const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === currentCourseID), signal)
+    if (!signal.aborted) row.scrollIntoView()
+  } catch (error) {
+    if (!(error instanceof Cancelled)) throw error
+  }
+})
 
 async function confirmCourseAction(
   action: LocaleMessage,
@@ -121,6 +138,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
         <TutorialStatusCourseRow
           v-for="(course, index) in courses ?? []"
           :key="course.id"
+          ref="courseRows"
           :course="course"
           :sequence="index + 1"
           :active="course.id === tutorial.currentCourse?.id"
