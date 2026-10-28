@@ -18,7 +18,8 @@ import (
 //     point, with no ad-hoc yielding scattered elsewhere. The token holder's
 //     goroutine ID is written only alongside the token itself.
 //  2. yieldWhile is entered only from tryCallCapability, which waits on the
-//     host, and pause, which waits on a timer; the bridge's callCapability
+//     host, pause, which waits on a timer, and runGroup.Run, which waits for
+//     the run it started; the bridge's callCapability
 //     appears only in tryCallCapability or the main-goroutine Start handshakes.
 //  3. No operation that can block appears while schedulerMu is held (channel
 //     send or receive, select, Wait, taking the token, calling the bridge);
@@ -28,7 +29,7 @@ import (
 //     startRuns (itself called only by Start and the package-level event
 //     deliverers) and by startChildren (called only by runFrame and
 //     yieldWhile, when a run yields or ends); admitRun only by startRun and
-//     goLive; cancel only by Start, the run group gate; markYielded only by
+//     goLive; cancel only by runGroup.Run, the run group gate; markYielded only by
 //     runFrame and yieldWhile.
 //  5. Events have a single entry: handlers are registered with the executor
 //     only in init; events.attach is called only by XGot_Course_Main and
@@ -223,8 +224,8 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 					report(n.Pos(), "%s writes the token holder: only acquireExec, releaseExec and init may", name)
 				}
 			case strings.HasSuffix(callee, ".yieldWhile"):
-				if !yieldCallers[name] {
-					report(n.Pos(), "%s yields the token: only tryCallCapability and pause may wait", name)
+				if !yieldCallers[name] && qualified != "runGroup.Run" {
+					report(n.Pos(), "%s yields the token: only tryCallCapability, pause and runGroup.Run may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
 				if name != blockingWaitHome && qualified != "Course.Start" {
@@ -247,8 +248,8 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 					report(n.Pos(), "%s admits a goroutine to runs: only startRun and goLive may", name)
 				}
 			case strings.HasSuffix(callee, ".cancel"):
-				if qualified != "runGroup.Start" {
-					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only runGroup.Start may", name)
+				if qualified != "runGroup.Run" {
+					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only runGroup.Run may", name)
 				}
 			case strings.HasSuffix(callee, ".markYielded"):
 				if !yieldMarkers[name] {

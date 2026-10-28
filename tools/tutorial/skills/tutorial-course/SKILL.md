@@ -60,9 +60,9 @@ the course's mistake; see goplus/builder#3419.
   reactions belong in their own callbacks.
 - **Relate overlapping runs with a run group.** A callback that waits runs again for every trigger, so a judgement
   can still be waiting on Copilot when the next trigger arrives. Create a group at the top level,
-  `judging := newRunGroup(CancelPrevious)`, filter the trigger, then put the work inside `judging.start => { ... }`;
-  one group shared by several callbacks makes their judgements cancel each other. `OneAtATime` queues hints,
-  `SkipWhileBusy` ignores a signal that repeats every frame. See Run groups in `references/course-program.md`.
+  `judging := newRunGroup(CancelPreviousPolicy)`, filter the trigger, then put the work inside `judging.run => { ... }`;
+  one group shared by several callbacks makes their judgements cancel each other. `QueuePolicy` queues hints,
+  `SkipPolicy` ignores a signal that repeats every frame. See Run groups in `references/course-program.md`.
 - **Plan for generation failing.** `Copilot.generateText` and `generateJSON` return an error when Copilot cannot
   answer. Give every call a fallback, such as `Copilot.generateText(prompt)?:"Well done!"`, so the learner keeps going.
 - **Pause with `wait`, never block.** `wait 2` pauses one callback while the others keep running. `time.Sleep`,

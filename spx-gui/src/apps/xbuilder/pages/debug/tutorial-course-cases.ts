@@ -12,13 +12,13 @@ export const exampleCourseSource = `onStart => {
 
 // Only the latest "reached-target" matters: a newer signal cancels a
 // judgement that is still waiting on Copilot.
-judging := newRunGroup(CancelPrevious)
+judging := newRunGroup(CancelPreviousPolicy)
 
 Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.start => {
+	judging.run => {
 		code := Editor.Project.getCode("Lita")
 		feedback, err := Copilot.generateText("Give one short sentence of feedback about this solution:\\n" + code)
 		if err != nil {
@@ -38,10 +38,10 @@ export const runGroupsExampleCourseSource = `// This Course exists to show how r
 // Judging can start from three places, and only the latest trigger should
 // count: a learner who fixes the code and runs again while Copilot is still
 // judging the previous attempt must see one verdict, the newer one. All three
-// callbacks therefore start runs of one group with CancelPrevious. Hints are a
-// separate concern with a separate policy: from the third stop on each stop
-// gets a hint, shown one after another, so they live in their own group with
-// OneAtATime.
+// callbacks therefore run judging in one group with CancelPreviousPolicy.
+// Hints are a separate concern with a separate policy: from the third stop on
+// each stop gets a hint, shown one after another, so they live in their own
+// group with QueuePolicy.
 
 type Verdict struct {
 	Passed  bool
@@ -64,8 +64,8 @@ func judge(trigger string) {
 	showMessage verdict.Comment
 }
 
-judging := newRunGroup(CancelPrevious)
-hints := newRunGroup(OneAtATime)
+judging := newRunGroup(CancelPreviousPolicy)
+hints := newRunGroup(QueuePolicy)
 attempts := 0
 
 onStart => {
@@ -75,13 +75,13 @@ onStart => {
 }
 
 // The project printing the signal. Logs arrive for every print, so the
-// callback filters first and only then starts a judging run: output that is
+// callback filters first and only then runs the judgement: output that is
 // not the signal never touches the group and cancels nothing.
 Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.start => {
+	judging.run => {
 		judge("the project printed reached-target")
 	}
 }
@@ -89,7 +89,7 @@ Editor.Runtime.onLog log => {
 // The project exiting. Same group, so an exit while an earlier judgement is
 // still waiting cancels that judgement.
 Editor.Runtime.onExit code => {
-	judging.start => {
+	judging.run => {
 		judge("the project exited")
 	}
 }
@@ -97,7 +97,7 @@ Editor.Runtime.onExit code => {
 // A Copilot round completing. Same group again: it cancels a judgement
 // started by a log or an exit, and is cancelled by them in turn.
 Copilot.onRoundComplete round => {
-	judging.start => {
+	judging.run => {
 		judge("the learner finished a Copilot round about: " + round.UserMessage)
 	}
 }
@@ -110,7 +110,7 @@ Editor.Runtime.onExit code => {
 	if attempts < 3 {
 		return
 	}
-	hints.start => {
+	hints.run => {
 		showMessage "Hint: stepTo takes a sprite name, like stepTo Mushroom."
 	}
 }

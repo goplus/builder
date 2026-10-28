@@ -22,13 +22,13 @@ onStart => {
 
 // Only the latest "reached-target" matters: a newer signal cancels a
 // judgement that is still waiting on Copilot.
-judging := newRunGroup(CancelPrevious)
+judging := newRunGroup(CancelPreviousPolicy)
 
 Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.start => {
+	judging.run => {
 		code := Editor.Project.getCode("Lita")
 		feedback, err := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
 		if err != nil {
@@ -44,7 +44,7 @@ list. Then it waits. The learner's project prints `reached-target` when Lita tou
 in `Mushroom.spx`), and the `onLog` callback turns that signal into a completion with generated feedback, or with a
 fixed line when generation fails. `print` adds nothing to the text, so the callback compares the log as it is. A signal
 printed with `println` ends with a line break and has to be matched differently; see [Editor.Runtime](#editorruntime).
-The judgement runs inside `judging.start`, a [run group](#run-groups) with `CancelPrevious`: should the signal arrive
+The judgement runs inside `judging.run`, a [run group](#run-groups) with `CancelPreviousPolicy`: should the signal arrive
 again while Copilot is still judging the previous one, the earlier judgement is cancelled and only the latest counts.
 
 This is the usual pattern. The learner's project prints an agreed log line when something happens, and the course listens
@@ -107,8 +107,9 @@ after the course has started never runs.
   unless a [run group](#run-groups) relates them.
 - **Starts are ordered.** Triggers are handled in arrival order. Within one trigger, the callbacks start in registration
   order, each running to its first wait or its end before the next starts, and proceed independently from there,
-  several `onStart` callbacks included. A run started with `start` begins when the starting run next waits or ends.
-  Steps that must happen in order belong in one callback.
+  several `onStart` callbacks included. `run` starts a run of a group and waits for it to end: the run begins at
+  once, the statements after `run` execute afterwards, and other callbacks proceed meanwhile. Steps that must happen
+  in order belong in one callback.
 - **Presentations are not serialized.** When runs request `showPrelude`, `showMessage` or `showVideo` at the same time,
   the host decides whether the later call waits for its turn, is rejected, or dismisses the earlier one. Keep a
   sequence of presentations in one callback. Spotlight is not a presentation: `reveal` returns as soon as the highlight
@@ -134,40 +135,41 @@ happens when a run of the group is started while another run still holds it:
 
 | Policy | While the group is held | Use it for |
 | --- | --- | --- |
-| `CancelPrevious` | The run holding the group is cancelled and the new run takes its place. | Triggers where only the latest counts: judging when the project exits or a Copilot round completes. |
-| `OneAtATime` | The new run waits its turn and begins when the holder ends. | Triggers that must each be handled in full and in order, such as one hint per failed attempt. |
-| `SkipWhileBusy` | The new run never starts. | Signals that repeat while a condition holds, such as a line the project prints every frame: judge once, ignore the rest. |
+| `CancelPreviousPolicy` | The run holding the group is cancelled and the new run takes its place. | Triggers where only the latest counts: judging when the project exits or a Copilot round completes. |
+| `QueuePolicy` | The new run waits its turn and begins when the holder ends. | Triggers that must each be handled in full and in order, such as one hint per failed attempt. |
+| `SkipPolicy` | The new run never starts and `run` returns at once. | Signals that repeat while a condition holds, such as a line the project prints every frame: judge once, ignore the rest. |
 
 A trigger that fires once per learner action, such as the project exiting or a Copilot round completing, suits
-`CancelPrevious`: the learner acted again, so the earlier judgement is stale. A signal that repeats on its own while
-nothing changed suits `SkipWhileBusy`: the repeats carry no news, and cancelling for each of them would never let a
+`CancelPreviousPolicy`: the learner acted again, so the earlier judgement is stale. A signal that repeats on its own while
+nothing changed suits `SkipPolicy`: the repeats carry no news, and cancelling for each of them would never let a
 judgement finish.
 
-`newRunGroup policy` creates a group, and `start` starts a run of it:
+`newRunGroup policy` creates a group, and `run` runs work in it as a run of the group, waiting until that run ends:
 
 ```go
-judging := newRunGroup(CancelPrevious)
+judging := newRunGroup(CancelPreviousPolicy)
 
 Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.start => {
+	judging.run => {
 		code := Editor.Project.getCode("Lita")
 		completeWith Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)?:"Well done!"
 	}
 }
 ```
 
-`start` does not wait for the run it starts. The new run begins when the calling run next waits or ends, and the
-statements after `start` are not part of it: they still belong to the calling run, and the two interleave at waiting
-points like any other runs. Everything the policy must protect goes inside the braces. Create groups at the top level: a
-group created inside a callback is new for every run and relates nothing.
+`run` waits for the run it starts. The new run begins at once, other callbacks proceed while the caller waits, and the
+statements after `run` execute once the new run has ended, cancelled or not: what the body assigned is visible to them.
+The body is a run of its own, so the policy acts on it alone; the calling run is never cancelled or skipped by the
+group. Everything the policy must protect goes inside the braces. Create groups at the top level: a group created inside
+a callback is new for every run and relates nothing.
 
 Put the group where the work is, not around the whole callback. Registration takes a plain callback; the callback
-filters its triggers first and calls `start` only for the ones that matter. Had the whole `onLog` callback above been
+filters its triggers first and calls `run` only for the ones that matter. Had the whole `onLog` callback above been
 one run of the group, every line the project prints would be a run of it, and every unrelated print would cancel a
-judgement in progress. A callback with nothing to filter, such as `onExit`, simply calls `start` as its only statement.
+judgement in progress. A callback with nothing to filter, such as `onExit`, simply calls `run` as its only statement.
 
 #### One group across events
 
@@ -195,25 +197,25 @@ func judge(trigger string) {
 	showMessage verdict.Comment
 }
 
-judging := newRunGroup(CancelPrevious)
+judging := newRunGroup(CancelPreviousPolicy)
 
 Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.start => {
+	judging.run => {
 		judge("made the project print reached-target")
 	}
 }
 
 Editor.Runtime.onExit code => {
-	judging.start => {
+	judging.run => {
 		judge("stopped the project")
 	}
 }
 
 Copilot.onRoundComplete round => {
-	judging.start => {
+	judging.run => {
 		judge("asked Copilot about: " + round.UserMessage)
 	}
 }
@@ -230,12 +232,12 @@ Cancellation takes effect at waiting points and is quiet. A cancelled run ends a
 waiting, the call's result is discarded when the host settles it, so a `generateJSON` struct is never filled; otherwise
 it ends before making its next waiting call. Statements between two waits still run. The host is not told: a dialog the
 cancelled run has opened is not withdrawn, and the learner still closes it. Cancellation is not an error, and the course
-goes on.
+goes on: the callback that called `run` resumes after the cancelled run has ended.
 
 #### Hints one at a time
 
 ```go
-hints := newRunGroup(OneAtATime)
+hints := newRunGroup(QueuePolicy)
 attempts := 0
 
 Editor.Runtime.onExit code => {
@@ -243,22 +245,24 @@ Editor.Runtime.onExit code => {
 	if attempts < 3 {
 		return
 	}
-	hints.start => {
+	hints.run => {
 		showMessage "Hint: stepTo takes a sprite name, like stepTo Mushroom."
 	}
 }
 ```
 
 Three quick stops show one hint after another instead of three dialogs at once. A run waiting its turn costs nothing and
-holds nothing else up; it begins when the previous run ends, after the earlier hint was dismissed. Counting the stops
+holds nothing else up; it begins when the previous run ends, after the earlier hint was dismissed. The `onExit` callback
+that called `run` waits with it, which holds no other callback up either. Counting the stops
 stays outside the group, so every stop counts the moment it happens, and only the dialog is queued. After `complete`,
 runs still waiting their turn never begin.
 
 #### Rules
 
-- A run of a group must not start a run of the same group. Under `CancelPrevious` it would cancel itself, under the
-  other two policies the new run could never begin. The framework reports it as an error and the course fails.
-- A callback on a frequent event never waits outside a group. Filter first, then `start`.
+- A run of a group must not call `run` on the same group. Under `CancelPreviousPolicy` it would cancel itself, under the
+  other two it would wait for a run that cannot begin before it ends. The framework reports it as an error and the
+  course fails.
+- A callback on a frequent event never waits outside a group. Filter first, then `run`.
 - Shared state a run updates should be updated before its first waiting call, because other runs go on while it waits.
 
 ### Busy events
@@ -280,23 +284,23 @@ Editor.Runtime.onLog log => {
 }
 ```
 
-Let a group with `SkipWhileBusy` absorb a signal that repeats while a condition holds:
+Let a group with `SkipPolicy` absorb a signal that repeats while a condition holds:
 
 ```go
-touching := newRunGroup(SkipWhileBusy)
+touching := newRunGroup(SkipPolicy)
 
 Editor.Runtime.onLog log => {
 	if log != "touching-mushroom" {
 		return
 	}
-	touching.start => {
+	touching.run => {
 		showMessage "Lita is touching Mushroom. Stop the project when you are done."
 	}
 }
 ```
 
 While the dialog is open, the project keeps printing `touching-mushroom` every frame, and every one of those triggers
-is dropped at `start`. With `CancelPrevious` each frame would cancel the run before it and the dialog would never stay.
+is dropped at `run`. With `CancelPreviousPolicy` each frame would cancel the run before it and the dialog would never stay.
 
 Events that have not been delivered yet wait in a queue of at most 1024. Runs hand control back whenever they wait, so
 a healthy course stays far below that limit. The queue fills only when a run never hands control back, such as a loop
@@ -308,7 +312,7 @@ to the host as errors, and a signal the course waits for may never arrive.
 `complete` and `completeWith message` end the course:
 
 - No new trigger starts a run, events still waiting in the queue are dropped, and a run that was started but has not
-  begun, waiting its turn under `OneAtATime` or not, never begins.
+  begun, waiting its turn under `QueuePolicy` or not, never begins.
 - The framework lets runs already executing or waiting finish their remaining statements, unless one of their calls
   fails or is cancelled. Do not rely on that in a course, see the last point.
 - Only the first `complete` or `completeWith` counts. Later calls do nothing.
@@ -334,7 +338,7 @@ learner's code and falls back to a fixed line when generation fails.
 | `wait seconds` | After that many seconds | Pauses this callback while other callbacks keep running. Zero or a negative number returns at once. |
 | `complete` | Immediately | Ends the course without feedback. See [Completion](#completion). |
 | `completeWith message` | Immediately | Ends the course and shows `message` as feedback. |
-| `newRunGroup(policy)` | A run group | `policy` is `CancelPrevious`, `OneAtATime` or `SkipWhileBusy`. See [Run groups](#run-groups). |
+| `newRunGroup(policy)` | A run group | `policy` is `CancelPreviousPolicy`, `QueuePolicy` or `SkipPolicy`. See [Run groups](#run-groups). |
 
 Presentations never advance on their own.
 
@@ -342,7 +346,7 @@ Presentations never advance on their own.
 
 | Call | Returns | Notes |
 | --- | --- | --- |
-| `group.start => { ... }` | Immediately | Starts a run of the group executing the body. The run begins when the calling run next waits or ends; the group's policy decides what happens if another run holds the group. |
+| `group.run => { ... }` | When that run ends | Starts a run of the group executing the body and waits for it. The run begins at once and other callbacks proceed meanwhile; the group's policy decides what happens if another run holds the group, and under `SkipPolicy` the body may not run. |
 
 ### Editor.Project
 

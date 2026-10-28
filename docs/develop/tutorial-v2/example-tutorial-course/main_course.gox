@@ -7,13 +7,13 @@ onStart => {
 
 // Only the latest "reached-target" matters: a newer signal cancels a
 // judgement that is still waiting on Copilot.
-judging := newRunGroup(CancelPrevious)
+judging := newRunGroup(CancelPreviousPolicy)
 
 Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.start => {
+	judging.run => {
 		code := Editor.Project.getCode("Lita")
 		feedback, err := Copilot.generateText("Give one short sentence of feedback about this solution:\n" + code)
 		if err != nil {

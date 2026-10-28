@@ -5,13 +5,14 @@ These are the rules of change.
 
 - Course callbacks execute only through `runFrame`. At any instant, only the `execToken` holder runs course code.
   Every trigger starts a new run of each registered callback, so runs of one callback may overlap; a `runGroup`'s
-  `RunPolicy` (CancelPrevious, OneAtATime, SkipWhileBusy) is the only thing that relates runs, and its gate sits in
-  `RunGroup.Start`: a group holds at most one run, whichever callback started it. Course code reaches a group only
-  through `newRunGroup` and `start`; registration takes a plain callback and nothing else
+  `RunPolicy` (CancelPreviousPolicy, QueuePolicy, SkipPolicy) is the only thing that relates runs, and its gate sits in
+  `RunGroup.Run`: a group holds at most one run, whichever callback started it, and the caller waits for the run it
+  started. Course code reaches a group only through `newRunGroup` and `run`; registration takes a plain callback and
+  nothing else
 - `yieldWhile` is the single yield point: it releases `execToken` before any wait that can block for long, restores
   `current` afterwards, and is where cancellation takes effect (checked before the wait and after it, so a cancelled
-  run never uses a pending result). Only `tryCallCapability` (waiting on the host) and `pause` (waiting on a timer)
-  may call it; main-goroutine lifecycle handshakes call the bridge from `Course.Start` without touching the token
+  run never uses a pending result). Only `tryCallCapability` (waiting on the host), `pause` (waiting on a timer) and
+  `RunGroup.Run` (waiting for the run it started) may call it; main-goroutine lifecycle handshakes call the bridge from `Course.Start` without touching the token
 - The contract forbids course code to start goroutines (`go`, `time.AfterFunc`), but nothing stops it, and such
   goroutines run outside the scheduler. Every exported method course code can call must refuse them before doing
   anything else: its first call is `requireRun`, or `tryCallCapability`/`mustCallCapability`/`register` (whose own
@@ -21,7 +22,7 @@ These are the rules of change.
   `ixgo.RegisterExternal`): channel operations, timers and I/O could not follow, and a rule with one exception is
   harder for authors than none. Authors pause with `wait`; the contract lists what blocks
 - Runs begin only through `startRun`, from `startRuns` (`Course.Start` and the event deliverers, in registration
-  order) and from `startChildren` (the runs a run started with `RunGroup.Start`, in start order, when that run yields
+  order) and from `startChildren` (the runs a run started with `RunGroup.Run`, in start order, when that run yields
   or ends), each to its first yield (`yielded`) before the next. Keep those the sole start paths; never spawn course
   code elsewhere. A started run that has not begun is just a closure: it costs no goroutine, and after completion it
   never begins

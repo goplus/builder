@@ -44,17 +44,17 @@ Editor.Runtime.onStart => {
 	wait 0.5
 }
 
-judging := newRunGroup(SkipWhileBusy)
-hints := newRunGroup(OneAtATime)
+judging := newRunGroup(SkipPolicy)
+hints := newRunGroup(QueuePolicy)
 
 Editor.Runtime.onExit code => {
-	hints.start => {
+	hints.run => {
 		echo code
 	}
 }
 
 Copilot.onRoundComplete round => {
-	judging.start => {
+	judging.run => {
 		echo round.UserMessage
 	}
 }
@@ -63,7 +63,7 @@ Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	judging.start => {
+	judging.run => {
 		for sprite <- Editor.Project.listSprites() {
 			echo Editor.Project.getCode(sprite)
 		}

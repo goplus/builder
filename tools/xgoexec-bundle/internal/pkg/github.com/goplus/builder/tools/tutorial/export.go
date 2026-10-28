@@ -52,9 +52,9 @@ func init() {
 			"XGot_Course_Main": reflect.ValueOf(q.XGot_Course_Main),
 		},
 		TypedConsts: map[string]ixgo.TypedConst{
-			"CancelPrevious": {Typ: reflect.TypeOf(q.CancelPrevious), Value: constant.MakeInt64(int64(q.CancelPrevious))},
-			"OneAtATime":     {Typ: reflect.TypeOf(q.OneAtATime), Value: constant.MakeInt64(int64(q.OneAtATime))},
-			"SkipWhileBusy":  {Typ: reflect.TypeOf(q.SkipWhileBusy), Value: constant.MakeInt64(int64(q.SkipWhileBusy))},
+			"CancelPreviousPolicy": {Typ: reflect.TypeOf(q.CancelPreviousPolicy), Value: constant.MakeInt64(int64(q.CancelPreviousPolicy))},
+			"QueuePolicy":          {Typ: reflect.TypeOf(q.QueuePolicy), Value: constant.MakeInt64(int64(q.QueuePolicy))},
+			"SkipPolicy":           {Typ: reflect.TypeOf(q.SkipPolicy), Value: constant.MakeInt64(int64(q.SkipPolicy))},
 		},
 		UntypedConsts: map[string]ixgo.UntypedConst{
 			"XGoPackage": {Typ: "untyped bool", Value: constant.MakeBool(bool(q.XGoPackage))},

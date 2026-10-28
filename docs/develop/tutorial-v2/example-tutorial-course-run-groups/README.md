@@ -13,14 +13,14 @@ example-tutorial-course-run-groups/
 
 | Trigger | What the callback does | Group and policy | Why |
 |---|---|---|---|
-| `Editor.Runtime.onLog` with `reached-target` | filters, then `judging.start => { judge(...) }` | `judging`, `CancelPrevious` | Logs arrive for every print; only the signal may touch the group |
-| `Editor.Runtime.onExit` | `judging.start => { judge(...) }` | `judging`, `CancelPrevious` | An exit cancels a judgement still waiting |
-| `Copilot.onRoundComplete` | `judging.start => { judge(...) }` | `judging`, `CancelPrevious` | Same group as the other two |
-| `Editor.Runtime.onExit`, hints | counts the stop, then `hints.start => { showMessage ... }` | `hints`, `OneAtATime` | Independent of judging; hints queue instead of piling up |
+| `Editor.Runtime.onLog` with `reached-target` | filters, then `judging.run => { judge(...) }` | `judging`, `CancelPreviousPolicy` | Logs arrive for every print; only the signal may touch the group |
+| `Editor.Runtime.onExit` | `judging.run => { judge(...) }` | `judging`, `CancelPreviousPolicy` | An exit cancels a judgement still waiting |
+| `Copilot.onRoundComplete` | `judging.run => { judge(...) }` | `judging`, `CancelPreviousPolicy` | Same group as the other two |
+| `Editor.Runtime.onExit`, hints | counts the stop, then `hints.run => { showMessage ... }` | `hints`, `QueuePolicy` | Independent of judging; hints queue instead of piling up, and the callback waits for its hint |
 
 The group holds at most one judging run, whichever callback started it. A learner who runs the project, gets `reached-target`, then stops it while Copilot is still judging sees one verdict: the exit cancels the judgement the log started, and that judgement's result is discarded when it arrives. A Copilot round completing does the same to either.
 
-Every callback is a plain registration; the group only enters where the work that must not overlap is, inside the braces after `start`. The filter stays outside: were the whole log callback one run of `judging`, every unrelated print would cancel a judgement in progress. Note the order of the file: `type` and `func` declarations come before `judging := ...`, because in a classfile every declaration has to precede the top-level statements that form the entry body.
+Every callback is a plain registration; the group only enters where the work that must not overlap is, inside the braces after `run`. The filter stays outside: were the whole log callback one run of `judging`, every unrelated print would cancel a judgement in progress. Note the order of the file: `type` and `func` declarations come before `judging := ...`, because in a classfile every declaration has to precede the top-level statements that form the entry body.
 
 ## Trying it
 
