@@ -1,5 +1,5 @@
-import { reactive, computed } from 'vue'
-import { composeQuery, useQuery, useQueryCache, useQueryWithCache } from '@/utils/query'
+import { reactive, computed, toRaw } from 'vue'
+import { useQueryCache, useQueryWithCache } from '@/utils/query'
 import { capture, useAction } from '@/utils/exception'
 import { OAuthErrorCode, OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
 import { normalizeLang, useI18n } from '@/utils/i18n'
@@ -135,27 +135,29 @@ export async function signOut() {
 
 /**
  * Returns a valid access token, or null when the user is not signed in.
+ * Does not subscribe the caller to reactive credential changes.
  *
  * Clears state and resolves null when the refresh token is invalid; preserves state and rejects
  * for other refresh failures.
  */
 export async function ensureAccessToken(): Promise<string | null> {
-  if (isAccessTokenValid()) return userState.accessToken
+  const state = toRaw(userState)
+  if (isAccessTokenValid(state)) return state.accessToken
 
   await navigator.locks.request(userAccessTokenLockName, async () => {
     // Another tab may have refreshed the token while this request waited for the lock.
     restoreUserState()
-    if (isAccessTokenValid()) return
-    if (userState.refreshToken == null) {
+    if (isAccessTokenValid(state)) return
+    if (state.refreshToken == null) {
       clearUserState()
       return
     }
 
-    const refreshTokenBeforeRefresh = userState.refreshToken
+    const refreshTokenBeforeRefresh = state.refreshToken
     try {
       const token = await ensureOAuthFlow().refreshToken(refreshTokenBeforeRefresh)
       // Reuse the cached username so a failing GET /user cannot prevent persisting rotated tokens.
-      await handleTokenResponse(token, userState.username)
+      await handleTokenResponse(token, state.username)
     } catch (e) {
       capture(e, 'Failed to refresh access token')
       if (e instanceof OAuthException && e.error === OAuthErrorCode.InvalidGrant) {
@@ -165,15 +167,15 @@ export async function ensureAccessToken(): Promise<string | null> {
       throw e
     }
   })
-  return userState.accessToken
+  return state.accessToken
 }
 
 const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
 
-function isAccessTokenValid(): boolean {
+function isAccessTokenValid(state: UserState = userState): boolean {
   return !!(
-    userState.accessToken &&
-    (userState.accessTokenExpiresAt === null || userState.accessTokenExpiresAt - tokenExpiryDelta > Date.now())
+    state.accessToken &&
+    (state.accessTokenExpiresAt === null || state.accessTokenExpiresAt - tokenExpiryDelta > Date.now())
   )
 }
 
@@ -198,36 +200,6 @@ export function getUnresolvedSignedInUsername(): string | null {
 
 const signedInUserStaleTime = 60 * 1000 // 1min
 
-/**
- * TODO: This query key still depends on `getUnresolvedSignedInUsername()`, which is only a local
- * username hint rather than a canonical auth-session identifier.
- *
- * Current limitations:
- * - auth-session changes do not change the key if the unresolved username stays the same
- * - different sessions for the same username may therefore reuse the same cache entry
- *
- * A later cleanup should replace this with a dedicated auth-session-scoping key.
- */
-function getSignedInUserQueryKey() {
-  return [...getUserQueryKey(getUnresolvedSignedInUsername() ?? ''), 'signed-in']
-}
-
-function useSignedInUserQuery() {
-  const queryKey = computed(() => getSignedInUserQueryKey())
-  return useQueryWithCache({
-    queryKey,
-    async queryFn() {
-      if (!isSignedIn()) throw new Error('User not signed in')
-      return userApis.getSignedInUser()
-    },
-    failureSummaryMessage: {
-      en: 'Failed to load signed-in user information',
-      zh: '加载当前用户信息失败'
-    },
-    staleTime: signedInUserStaleTime
-  })
-}
-
 export type SignedInState =
   | {
       isSignedIn: false
@@ -245,11 +217,22 @@ export type SignedInState =
  * - callers need to access the loading or error state of the signed-in user query
  */
 export function useSignedInStateQuery() {
-  const signedInUserQuery = useSignedInUserQuery()
-  return useQuery<SignedInState>(async (ctx) => {
-    if (!isSignedIn()) return { isSignedIn: false, user: null }
-    const user = await composeQuery(ctx, signedInUserQuery)
-    return { isSignedIn: true, user }
+  // Cache by the locally stored username, including across sessions for the same username.
+  const queryKey = computed(() => [...getUserQueryKey(getUnresolvedSignedInUsername() ?? ''), 'signed-in'])
+  return useQueryWithCache<SignedInState>({
+    queryKey,
+    async queryFn() {
+      // Clear unusable credentials before caching signed-out state.
+      const token = await ensureAccessToken()
+      if (token == null) return { isSignedIn: false, user: null }
+      const user = await userApis.getSignedInUser(token)
+      return { isSignedIn: true, user }
+    },
+    failureSummaryMessage: {
+      en: 'Failed to load signed-in user information',
+      zh: '加载当前用户信息失败'
+    },
+    staleTime: signedInUserStaleTime
   })
 }
 
