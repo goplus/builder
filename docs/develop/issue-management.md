@@ -12,8 +12,6 @@ Use the issue description and relevant discussion to assess impact, workarounds,
 
 Use the organization-level issue field **Priority** for the issue’s priority across `goplus/builder`.
 
-The XBuilder Daily project also has a separate `P0`/`P1`/`P2` Priority field. That field can be used for ordering work within the project; it is not required when creating an issue and has no automatic mapping to the issue Priority. Set the issue Priority even if the issue is not in the project.
-
 | Priority | Meaning | Examples |
 | --- | --- | --- |
 | **Urgent** | Address immediately because waiting would cause ongoing, severe harm. | An active widespread outage, serious security incident, or ongoing data loss or corruption. |
@@ -65,6 +63,10 @@ Use these additional labels when applicable:
 | `needs:triage` | The issue needs clarification: for example, its status, remaining work, impact, or current direction is unclear. Remove this label after resolving the uncertainty. |
 
 Use the issue type instead of adding `bug` or `enhancement` solely to repeat that information. Keep existing labels when they still convey useful information. Existing `spx-gui`, `spx-backend`, and `spx` labels may continue to indicate technical ownership. The existing `discuss` label does not automatically mean that the issue needs triage.
+
+## XBuilder Daily project
+
+The [XBuilder Daily project](https://github.com/orgs/goplus/projects/6) tracks work that the team has assessed as worthwhile and intends to invest time and effort in. Maintainers can add issues they create directly when they meet this criterion. Issues from external contributors do not need to be added by default; add them after the team has assessed them and decided to pursue the work.
 
 ## Examples
 
