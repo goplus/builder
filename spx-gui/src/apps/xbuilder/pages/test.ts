@@ -236,18 +236,30 @@ export async function mountPages(path: string) {
 }
 
 export function setupPageTests() {
+  const originalLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
   beforeAll(async () => {
     await loadMonaco('en')
   }, 30_000)
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
+    if (originalLocks != null) Object.defineProperty(navigator, 'locks', originalLocks)
+    else Reflect.deleteProperty(navigator, 'locks')
   })
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.clear()
     window.dispatchEvent(new StorageEvent('storage', { key: 'builder-user' }))
     vi.clearAllMocks()
+    Object.defineProperty(navigator, 'locks', {
+      configurable: true,
+      value: {
+        request: async (_name: string, callback: () => Promise<void>) => {
+          await Promise.resolve()
+          return callback()
+        }
+      }
+    })
     vi.spyOn(localHelpers, 'load').mockResolvedValue(null)
     vi.spyOn(localHelpers, 'save').mockResolvedValue()
     vi.spyOn(localHelpers, 'clear').mockResolvedValue()

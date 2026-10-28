@@ -217,12 +217,12 @@ export type SignedInState =
  * - callers need to access the loading or error state of the signed-in user query
  */
 export function useSignedInStateQuery() {
-  // Cache by the locally stored username, including across sessions for the same username.
+  // Cache by the locally stored username, including across sessions; keep the key equal on same-user token refresh.
   const queryKey = computed(() => [...getUserQueryKey(getUnresolvedSignedInUsername() ?? ''), 'signed-in'])
   return useQueryWithCache<SignedInState>({
     queryKey,
     async queryFn() {
-      // Clear unusable credentials before caching signed-out state.
+      // ensureAccessToken clears unusable credentials before we cache signed-out state.
       const token = await ensureAccessToken()
       if (token == null) return { isSignedIn: false, user: null }
       const user = await userApis.getSignedInUser(token)
