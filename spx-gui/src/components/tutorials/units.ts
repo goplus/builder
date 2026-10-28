@@ -29,7 +29,7 @@ export function getCourseSeriesPageRouteOfCourse(series: CourseSeries, courseID:
 
 const chineseDigits = '零一二三四五六七八九'
 
-/** The Chinese numeral for `n`, for 1 to 99. */
+/** The Chinese numeral for `n` from 1 to 99, and Arabic digits for any other `n`. */
 export function toChineseNumeral(n: number) {
   if (!Number.isInteger(n) || n < 1 || n > 99) return String(n)
   const tens = Math.floor(n / 10)

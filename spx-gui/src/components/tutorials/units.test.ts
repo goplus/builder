@@ -49,4 +49,9 @@ describe('series units as learners see them', () => {
     expect(getUnitLabel(9)).toEqual({ en: 'Unit 10', zh: '单元十' })
     expect(getUnitHeading(0, 'Moving')).toEqual({ en: '1. Moving', zh: '一、Moving' })
   })
+
+  it('numbers units past 99 in Arabic digits', () => {
+    expect(toChineseNumeral(100)).toBe('100')
+    expect(getUnitLabel(99)).toEqual({ en: 'Unit 100', zh: '单元100' })
+  })
 })
