@@ -448,8 +448,7 @@ func (p *Player) deferArchiveRetry(err error) {
 
 	p.archiveInProgress = false
 	p.archiveRetryAt = time.Time{}
-	var clientErr *ClientError
-	if errors.As(err, &clientErr) && clientErr.RetryAfter > 0 {
+	if clientErr, ok := errors.AsType[*ClientError](err); ok && clientErr.RetryAfter > 0 {
 		p.archiveRetryAt = time.Now().Add(clientErr.RetryAfter)
 	}
 }
