@@ -1,12 +1,12 @@
 # Issue Management
 
-Use this guide to classify open issues in `goplus/builder` consistently. Priority, type, and labels answer different questions:
+Use this guide when creating or updating an issue in `goplus/builder`. Set its priority, type, and applicable labels based on the information available. These fields answer different questions:
 
 - **Priority:** How soon should we address the issue given what we know now?
 - **Type:** What kind of work is the issue primarily about?
 - **Labels:** Which product areas does it concern, and does it need further triage?
 
-Review the issue body and relevant discussion before classifying it. Later comments may change the scope or defer an earlier proposal. Consider affected users and environments, available workarounds, dependencies, and known delivery commitments. Do not assume that an old report still reproduces, or that an issue in a current initiative is automatically urgent.
+Describe the problem or objective and relevant context in the issue so others can understand the proposed classification. Consider affected users and environments, available workarounds, dependencies, and known delivery commitments. When updating an existing issue, also read its relevant discussion: later comments may change its scope or defer an earlier proposal. Do not assume that an old report still reproduces, or that an issue in a current initiative is automatically urgent.
 
 ## Priority
 
@@ -62,7 +62,7 @@ Use these additional labels when applicable:
 | `kind:tracking` | A long-term goal, collection, or parent tracker whose concrete work may be handled in child issues. |
 | `needs:triage` | The issue needs clarification: for example, its status, remaining work, impact, or current direction is unclear. Remove this label after resolving the uncertainty. |
 
-Use the issue type instead of adding `bug` or `enhancement` solely to repeat that information. Existing labels should be preserved rather than removed in bulk. Existing `spx-gui`, `spx-backend`, and `spx` labels may continue to indicate technical ownership. The existing `discuss` label does not automatically mean that the issue needs triage.
+Use the issue type instead of adding `bug` or `enhancement` solely to repeat that information. Keep existing labels when they still convey useful information. Existing `spx-gui`, `spx-backend`, and `spx` labels may continue to indicate technical ownership. The existing `discuss` label does not automatically mean that the issue needs triage.
 
 ## Examples
 
@@ -74,6 +74,8 @@ These examples illustrate the rules, not a permanent record of each issue's curr
 - [#3247](https://github.com/goplus/builder/issues/3247): **Low**, **Task**, `area:editor`. The work is an exploration of visual spacing.
 - [#3488](https://github.com/goplus/builder/issues/3488): leave Priority unset and use `needs:triage` with `area:assets`. The publication requirement was later deferred in [#3498](https://github.com/goplus/builder/issues/3498), so its remaining direction needs clarification.
 
-## Applying the policy
+## Creating and maintaining an issue
 
-Classify open issues using the latest body, relevant discussion, and existing fields. Preserve existing classifications unless there is a reason to change them. For ambiguous or potentially outdated issues, record what needs clarification and use `needs:triage` instead of inventing a value. Revisit those issues once the missing information is available. Closed issues are outside the initial classification effort.
+When creating an issue, describe its objective and context, choose a Priority and Type, and add the relevant area labels and any applicable additional labels. If a field cannot be determined reliably, leave it unset, explain what needs clarification, and add `needs:triage`.
+
+As discussion, evidence, or delivery plans evolve, update the issue and its fields to reflect what is currently known. Resolve outstanding questions and remove `needs:triage` when it is no longer needed. Existing fields and labels do not need to be changed unless there is a reason to update them.
