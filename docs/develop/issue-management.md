@@ -47,7 +47,7 @@ Area labels describe the product area primarily affected. Normally use one; use 
 | `area:account` | Sign-in, identity, accounts, and authorization. |
 | `area:community` | Community discovery, project presentation, profiles, and social features. |
 | `area:runtime` | Project execution, SPX runtime behavior, and runtime integration. |
-| `area:admin` | Admin Console and management workflows spanning business areas. |
+| `area:admin` | Admin Console and management workflows spanning product areas. |
 | `area:platform` | Shared data, storage, and foundational capabilities not limited to one product area. |
 | `area:engineering` | CI, test infrastructure, development workflows, and engineering observability. |
 
@@ -55,25 +55,26 @@ Use these additional labels when applicable:
 
 | Label | Meaning |
 | --- | --- |
-| `kind:tracking` | A long-term goal, collection, or parent tracker whose concrete work may be handled in child issues. |
+| `kind:tracking` | A long-term goal, collection, or parent tracker whose concrete work may be handled in child issues. Tracking issues are typically **Task**. |
 | `needs:triage` | The issue needs clarification: for example, its status, remaining work, impact, or current direction is unclear. Remove this label after resolving the uncertainty. |
 
 Use the issue type instead of adding `bug` or `enhancement` solely to repeat that information. Keep existing labels when they still convey useful information. Existing `spx-gui`, `spx-backend`, and `spx` labels may continue to indicate technical ownership. The existing `discuss` label does not automatically mean that the issue needs triage.
 
-## XBuilder Daily project
+## XBuilder Daily Project
 
 The [XBuilder Daily project](https://github.com/orgs/goplus/projects/6) tracks work that the team has assessed as worthwhile and intends to invest time and effort in. Maintainers can add issues they create directly when they meet this criterion. Issues from external contributors do not need to be added by default; add them after the team has assessed them and decided to pursue the work.
 
 ## Examples
 
-These examples illustrate the rules, not a permanent record of each issue's current classification:
+These examples illustrate the rules; linked issues may have different classifications today:
 
+- A parent issue tracking the Tutorial v2 release across child issues would typically be a **Task** with `area:tutorial` and `kind:tracking`.
 - [#3644](https://github.com/goplus/builder/issues/3644): **High**, **Bug**, `area:tutorial` and `area:platform`. The reproduced cache failure blocks the Tutorial v2 release. Its discussion adds evidence beyond the original report.
 - [#3578](https://github.com/goplus/builder/issues/3578): **Medium**, **Feature**, `area:editor`. Compact resource cards improve browsing in larger projects.
 - [#3247](https://github.com/goplus/builder/issues/3247): **Low**, **Task**, `area:editor`. The work is an exploration of visual spacing.
 - [#3488](https://github.com/goplus/builder/issues/3488): leave Priority unset and use `needs:triage` with `area:assets`. The publication requirement was later deferred in [#3498](https://github.com/goplus/builder/issues/3498), so its remaining direction needs clarification.
 
-## Creating and maintaining an issue
+## Creating and Maintaining an Issue
 
 When creating an issue, choose a Priority and Type, and add the relevant area labels and any applicable additional labels. If a field cannot be determined reliably, leave it unset, explain what needs clarification, and add `needs:triage`.
 
