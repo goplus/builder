@@ -6,7 +6,7 @@ tool github.com/goplus/xgolsw/cmd/pkgdatagen
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/xgolsw v0.22.2-0.20261008151630-3afeb3b412c4
+	github.com/goplus/xgolsw v0.22.2-0.20261028032946-f278de2132cb
 )
 
 require (
@@ -24,6 +24,3 @@ require (
 )
 
 replace github.com/goplus/builder/tools/ai => ../ai
-
-// Temporary until https://github.com/goplus/xgolsw/pull/410 is merged.
-replace github.com/goplus/xgolsw => github.com/nighca/goxlsw v0.0.0-20261028013455-85b6e75d95a1
