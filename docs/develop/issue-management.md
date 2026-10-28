@@ -19,11 +19,7 @@ Use the organization-level issue field **Priority** for the issue’s priority a
 | **Medium** | Plan normally; the issue does not have High's immediate impact or delivery pressure. | A scoped defect, meaningful usability improvement, or agreed capability that is not blocking near-term delivery. |
 | **Low** | Deferring has relatively little cost. | A minor visual detail, convenience improvement, or explicitly long-term exploration. |
 
-Consider severity, affected scope and frequency, available workarounds, and confirmed delivery constraints together. Effort, age, assignment, and implementation category alone do not determine priority. Potential harm is not the same as an active incident; reserve Urgent for issues that meet its threshold.
-
-Assess parent and child issues independently. A high-priority initiative can contain lower-priority follow-ups, and a lower-priority initiative can contain a high-priority defect. Revisit priority when impact, evidence, or delivery plans change.
-
-If there is not enough information to make a defensible decision, leave Priority unset and use `needs:triage`. Do not use Medium or Low to mean unknown.
+Assess parent and child issues independently. If priority cannot be determined, leave it unset and add `needs:triage`.
 
 ## Type
 
