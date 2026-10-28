@@ -6,11 +6,13 @@ Use this guide when creating or updating an issue in `goplus/builder`. Set its p
 - **Type:** What kind of work is the issue primarily about?
 - **Labels:** Which product areas does it concern, and does it need further triage?
 
-Describe the problem or objective and relevant context in the issue so others can understand the proposed classification. Consider affected users and environments, available workarounds, dependencies, and known delivery commitments. When updating an existing issue, also read its relevant discussion: later comments may change its scope or defer an earlier proposal. Do not assume that an old report still reproduces, or that an issue in a current initiative is automatically urgent.
+Use the issue description and relevant discussion to assess impact, workarounds, dependencies, and delivery commitments.
 
 ## Priority
 
-Use the organization-level issue field **Priority**, with the options below. This is distinct from the `P0`/`P1`/`P2` Priority field on the XBuilder Daily project.
+Use the organization-level issue field **Priority** for the issue’s priority across `goplus/builder`.
+
+The XBuilder Daily project also has a separate `P0`/`P1`/`P2` Priority field. That field can be used for ordering work within the project; it is not required when creating an issue and has no automatic mapping to the issue Priority. Set the issue Priority even if the issue is not in the project.
 
 | Priority | Meaning | Examples |
 | --- | --- | --- |
@@ -76,6 +78,6 @@ These examples illustrate the rules, not a permanent record of each issue's curr
 
 ## Creating and maintaining an issue
 
-When creating an issue, describe its objective and context, choose a Priority and Type, and add the relevant area labels and any applicable additional labels. If a field cannot be determined reliably, leave it unset, explain what needs clarification, and add `needs:triage`.
+When creating an issue, choose a Priority and Type, and add the relevant area labels and any applicable additional labels. If a field cannot be determined reliably, leave it unset, explain what needs clarification, and add `needs:triage`.
 
 As discussion, evidence, or delivery plans evolve, update the issue and its fields to reflect what is currently known. Resolve outstanding questions and remove `needs:triage` when it is no longer needed. Existing fields and labels do not need to be changed unless there is a reason to update them.
