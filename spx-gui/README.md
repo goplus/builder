@@ -4,7 +4,7 @@
 
 - **Node.js**: ^24.11.1
 - **pnpm**: ^11.9.0
-- **Go**: >= 1.26.0; use 1.26.5 for builds and tests, matching SPX
+- **Go**: >= 1.26.5
 
 ## Install Dependencies
 
