@@ -6,7 +6,14 @@ package tutorial
 // generateJSON) or on time (wait); other runs proceed meanwhile.
 // Every trigger starts a new run of each callback registered for it, so runs
 // of one callback may overlap when a trigger arrives while an earlier run is
-// still waiting. Course start is delivered like any other event.
+// still waiting. A RunGroup the callbacks run such work in decides how those
+// runs relate; without one they run independently. Runs start in a fixed
+// order: triggers are handled in arrival order, and within one trigger the
+// callbacks start in registration order, each running to its first wait or
+// its end before the next starts; a run started with RunGroup.run begins at
+// once, as the caller yields to wait for it (a run waiting its turn under
+// QueuePolicy holds nothing up). Course start is delivered like any other
+// event.
 //
 // Anything else that blocks holds up every other run until it ends: Go's own
 // blocking calls such as time.Sleep, channel operations and select (receiving
@@ -17,13 +24,61 @@ package tutorial
 // (go statements, time.AfterFunc): their code runs outside this model, and
 // using the framework from one fails the Course program.
 //
-// TODO(#3509): how overlapping runs of one callback relate (cancelling the
-// stale one, running one at a time, ignoring triggers while busy) is not yet
-// specified; until it is, Course code handles that race itself. The order in
-// which runs start is not promised either.
-//
 // The framework does not serialize overlapping presentation calls from
 // different runs; the host defines how these presentations are handled.
+
+// RunPolicy decides how the runs of one run group relate: what happens to a
+// run of the group started while an earlier run still holds the group. Create
+// a RunGroup with newRunGroup and run the work that must not overlap in it,
+// after the callback filters its triggers; several callbacks may share one
+// group.
+type RunPolicy int
+
+const (
+	// CancelPreviousPolicy cancels the run holding the group so the new run
+	// takes its place. A cancelled run ends at its next waiting point: if it is
+	// waiting, the result of that call is discarded when the host settles it;
+	// otherwise it ends before making its next waiting call. Statements
+	// between waits still run, and the host may still finish presenting what
+	// it was asked. Use it when only the latest trigger matters, such as
+	// judging the latest output.
+	CancelPreviousPolicy RunPolicy = iota + 1
+	// QueuePolicy lets runs through one after another in start order: a run
+	// started while another holds the group waits its turn, holding nothing
+	// else up, and begins once that run ends. Use it when every trigger must
+	// be handled in full and in order, such as showing a hint for each failed
+	// run.
+	QueuePolicy
+	// SkipPolicy does not start the run at all while another run holds the
+	// group, and run returns at once. Use it to react once to a burst of triggers, such as judging once
+	// while a signal repeats every frame.
+	SkipPolicy
+)
+
+// RunGroup is a shared policy scope for runs. It holds at most one run at a
+// time, and its RunPolicy decides what happens when a run of it is started
+// while another still holds it, whichever callback started either run. One
+// group may therefore be shared by callbacks of different events, for example
+// an onLog and an onExit that both judge completion:
+//
+//	judging := newRunGroup(CancelPreviousPolicy)
+//	Editor.Runtime.onLog log => {
+//		if log != "reached" { return }
+//		judging.run => { judge() } // run it here, after the filter
+//	}
+//	Editor.Runtime.onExit code => {
+//		judging.run => { judge() }
+//	}
+type RunGroup interface {
+	// run starts a new run of the group executing body and waits until it
+	// ends. The new run begins at once and other callbacks proceed while the
+	// caller waits; the group's policy decides what happens if another run
+	// still holds the group, and under SkipPolicy the body may not run at
+	// all. The statements after the call execute once the run has ended,
+	// cancelled or not, and see what the body assigned. Running the group
+	// from a run of the same group is an error.
+	run(body func())
+}
 
 type Course struct {
 	CourseAbilities
@@ -37,8 +92,10 @@ type CourseAbilities interface {
 	// Playground content stays covered until every start callback reaches its first
 	// waiting operation or returns. Put initial filterAPIs/Ruler configuration
 	// before presentation or Copilot calls to apply it before first display.
-	// Several callbacks may be registered; they run independently of each
-	// other. Opening steps that must happen in order belong in one callback.
+	// Several callbacks may be registered: they start in registration order,
+	// each running to its first wait before the next starts, then proceed
+	// independently. Opening steps that must happen in order belong in one
+	// callback.
 	onStart(callback func())
 	// showPrelude presents the Course opening guide with the given message and
 	// returns after the learner finishes reading it.
@@ -63,6 +120,8 @@ type CourseAbilities interface {
 	complete()
 	// completeWith is complete with the given feedback displayed to the learner.
 	completeWith(message string)
+	// newRunGroup creates a run group with the given policy; see RunGroup.
+	newRunGroup(policy RunPolicy) RunGroup
 }
 
 type Editor struct {
@@ -93,9 +152,9 @@ type Runtime interface {
 	// onExit registers a callback that is called when the project runtime exits.
 	onExit(callback func(code int))
 	// onLog registers a callback that is called for every newly appended
-	// runtime log: each entry starts one run. Error output is not part of this
-	// channel. log is the entry as printed, so one printed by println ends with
-	// a line break.
+	// runtime log: each entry starts one run, and runs start in append order.
+	// Error output is not part of this channel. log is the entry as printed,
+	// so one printed by println ends with a line break.
 	onLog(callback func(log string))
 }
 

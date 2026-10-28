@@ -44,33 +44,42 @@ Editor.Runtime.onStart => {
 	wait 0.5
 }
 
+judging := newRunGroup(SkipPolicy)
+hints := newRunGroup(QueuePolicy)
+
 Editor.Runtime.onExit code => {
-	echo code
+	hints.run => {
+		echo code
+	}
 }
 
 Copilot.onRoundComplete round => {
-	echo round.UserMessage
+	judging.run => {
+		echo round.UserMessage
+	}
 }
 
 Editor.Runtime.onLog log => {
 	if log != "reached-target" {
 		return
 	}
-	for sprite <- Editor.Project.listSprites() {
-		echo Editor.Project.getCode(sprite)
-	}
-	Editor.CodeEditor.formatWorkspace
-	Editor.Ruler.disable
+	judging.run => {
+		for sprite <- Editor.Project.listSprites() {
+			echo Editor.Project.getCode(sprite)
+		}
+		Editor.CodeEditor.formatWorkspace
+		Editor.Ruler.disable
 
-	feedback := &Feedback{}
-	if err := Copilot.generateJSON("judge this", feedback); err != nil {
-		echo err
-	}
-	if feedback.Score > 3 {
-		completeWith Copilot.generateText("praise the learner")?:"Well done!"
-	} else {
-		echo Copilot.generateText("say goodbye")!
-		complete
+		feedback := &Feedback{}
+		if err := Copilot.generateJSON("judge this", feedback); err != nil {
+			echo err
+		}
+		if feedback.Score > 3 {
+			completeWith Copilot.generateText("praise the learner")?:"Well done!"
+		} else {
+			echo Copilot.generateText("say goodbye")!
+			complete
+		}
 	}
 }
 `
@@ -116,17 +125,28 @@ func TestTutorialCourseBuilds(t *testing.T) {
 	buildCourse(t, []byte(courseSource))
 }
 
-// TestExampleCourseBuilds compiles the example Course from docs, keeping the
-// documented example in step with the framework implementation. That example
-// used to be written entirely by hand and never compiled, and sat for a long
-// time with a syntax error in it — a paren-less command call cannot be used as
-// an expression. This test stops it rotting again.
-func TestExampleCourseBuilds(t *testing.T) {
-	source, err := os.ReadFile("../../docs/develop/tutorial-v2/example-tutorial-course/main_course.gox")
+// TestExampleCoursesBuild compiles every example Course under docs, keeping
+// the documented examples in step with the framework implementation. The first
+// example used to be written entirely by hand and never compiled, and sat for a
+// long time with a syntax error in it — a paren-less command call cannot be
+// used as an expression. This test stops that happening again.
+func TestExampleCoursesBuild(t *testing.T) {
+	courses, err := filepath.Glob("../../docs/develop/tutorial-v2/example-tutorial-course*/main_course.gox")
 	if err != nil {
-		t.Fatalf("read example course: %v", err)
+		t.Fatal(err)
 	}
-	buildCourse(t, source)
+	if len(courses) < 2 {
+		t.Fatalf("expected the example courses under docs, found %v", courses)
+	}
+	for _, path := range courses {
+		t.Run(filepath.Base(filepath.Dir(path)), func(t *testing.T) {
+			source, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read example course: %v", err)
+			}
+			buildCourse(t, source)
+		})
+	}
 }
 
 // TestGuideCoursesBuild compiles every ```go block of the course-author guide,

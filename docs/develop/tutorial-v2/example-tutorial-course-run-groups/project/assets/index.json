@@ -1,0 +1,23 @@
+{
+  "backdrops": [
+    {
+      "name": "backdrop",
+      "path": "backdrop.svg",
+      "x": 240,
+      "y": 180,
+      "bitmapResolution": 1,
+      "builder_id": "example-backdrop",
+      "imageWidth": 480,
+      "imageHeight": 360
+    }
+  ],
+  "backdropIndex": 0,
+  "run": {
+    "width": 480,
+    "height": 360
+  },
+  "zorder": ["Lita", "Mushroom"],
+  "builder_spriteOrder": ["example-lita", "example-mushroom"],
+  "builder_soundOrder": [],
+  "maxFPS": 60
+}

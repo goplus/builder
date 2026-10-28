@@ -79,6 +79,10 @@ export type SpotlightOptions = {
  * presentation calls; the Host defines how overlapping presentations are
  * handled. Generation calls can be pending concurrently.
  *
+ * The framework may discard a call's result after the fact (the run that
+ * made it was cancelled by a `RunPolicy`); the host settles every call
+ * exactly as usual and needs no cancellation protocol.
+ *
  * On completion the Host must promptly settle every still-pending call so it
  * does not hold shutdown open. The framework waits for running or suspended
  * callbacks to finish; capability failure or cancellation can end execution
