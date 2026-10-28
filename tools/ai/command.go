@@ -127,7 +127,8 @@ func extractCommandSpec(cmdType reflect.Type) (CommandSpec, error) {
 // commandStructParameters returns specifications for the exported fields of a command object.
 func commandStructParameters(structType reflect.Type, visiting map[reflect.Type]struct{}, valueDepth int) ([]CommandParamSpec, error) {
 	parameters := make([]CommandParamSpec, 0, structType.NumField())
-	for field := range structType.Fields() {
+	for i := range structType.NumField() {
+		field := structType.Field(i)
 		if field.Anonymous {
 			return nil, fmt.Errorf("field %q: anonymous fields are unsupported", field.Name)
 		}

@@ -8,6 +8,12 @@ info:
     **The API endpoints documented here are not yet stable and may change or break without notice. Use them at your own
     risk.**
 
+    ## Pagination
+
+    List endpoints that support jumping to a page take `pageIndex` and `pageSize` and return `ByPage`. Those that only
+    move to the next page take `pageToken` and `pageSize` and return `ByPageToken`. When passing `pageToken`, keep all
+    other query parameters except `pageSize` unchanged; otherwise the server responds with `400`.
+
     ## Error responses
 
     Most non-OAuth JSON endpoints return the shared `APIError` body for non-2xx responses:
@@ -1303,6 +1309,96 @@ paths:
           $ref: "#/components/responses/MovedPermanently"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /user/notifications:
+    get:
+      operationId: listAuthenticatedUserNotifications
+      tags:
+        - Notifications
+      summary: List notifications for the authenticated user
+      description: |
+        List one category of notifications, newest first. Reading a notification does not change its position among
+        all notifications of the category, but removes it from `read=false` results. To count unread notifications,
+        use the `total` of a `read=false` request.
+      parameters:
+        - name: category
+          description: Category of notifications to list.
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/NotificationCategory"
+        - name: read
+          description: Filter notifications by read state. Omit to list both read and unread notifications.
+          in: query
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/PageToken"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                  - nextPageToken
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPageToken/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notification"
+                  nextPageToken:
+                    $ref: "#/components/schemas/ByPageToken/properties/nextPageToken"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /user/notifications/read:
+    put:
+      operationId: markAllAuthenticatedUserNotificationsRead
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      description: |
+        Mark all unread notifications of the authenticated user as read, across all categories. Notifications delivered
+        after the request remain unread.
+      responses:
+        "204":
+          description: All unread notifications marked as read.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /user/notifications/{notificationID}/read:
+    put:
+      operationId: markAuthenticatedUserNotificationRead
+      tags:
+        - Notifications
+      summary: Mark a notification as read
+      description: |
+        Mark a notification of the authenticated user as read. Marking an already read notification again keeps its
+        first read time.
+      parameters:
+        - name: notificationID
+          description: ID of the notification to mark as read.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Notification marked as read, or it was already read.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -6480,6 +6576,25 @@ components:
           items:
             type: object
 
+    ByPageToken:
+      description: Paginated response wrapper using page tokens.
+      type: object
+      required:
+        - total
+        - data
+        - nextPageToken
+      properties:
+        total:
+          $ref: "#/components/schemas/ByPage/properties/total"
+        data:
+          $ref: "#/components/schemas/ByPage/properties/data"
+        nextPageToken:
+          description: Opaque token for the next page, or `null` when pagination is complete.
+          type:
+            - string
+            - "null"
+          minLength: 1
+
     Model:
       type: object
       description: Base model with common fields for all entities.
@@ -7415,6 +7530,55 @@ components:
           type: boolean
           examples:
             - true
+
+    NotificationCategory:
+      description: Category used to group notifications in the client.
+      type: string
+      enum:
+        - message
+        - announcement
+      examples:
+        - message
+
+    Notification:
+      description: Notification delivered to the authenticated user.
+      type: object
+      required:
+        - id
+        - category
+        - title
+        - body
+        - createdAt
+        - readAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        category:
+          $ref: "#/components/schemas/NotificationCategory"
+        title:
+          description: Title of the notification.
+          type: string
+          minLength: 1
+          maxLength: 200
+          examples:
+            - New follower
+        body:
+          description: Body of the notification in Markdown.
+          type: string
+          minLength: 1
+          maxLength: 5000
+          examples:
+            - "[John Doe](/user/john) started following you."
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        readAt:
+          description: Time when the user first read the notification, or `null` if the notification is unread.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
 
     Project:
       type: object
@@ -8886,6 +9050,14 @@ components:
         default: 1
         examples:
           - 1
+
+    PageToken:
+      name: pageToken
+      description: The `nextPageToken` of the previous page. Omit to retrieve the first page.
+      in: query
+      schema:
+        type: string
+        minLength: 1
 
     PageSize:
       name: pageSize

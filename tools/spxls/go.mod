@@ -1,6 +1,6 @@
 module github.com/goplus/builder/tools/spxls
 
-go 1.26.0
+go 1.25.0
 
 tool github.com/goplus/xgolsw/cmd/pkgdatagen
 

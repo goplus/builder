@@ -200,11 +200,12 @@ func (ce *ClientError) Unwrap() error {
 // isRetryableTransportError reports whether a failed transport call is
 // explicitly safe to attempt again.
 func isRetryableTransportError(err error) bool {
-	if _, ok := errors.AsType[*TooManyRequestsError](err); ok {
+	var tooManyRequestsErr *TooManyRequestsError
+	if errors.As(err, &tooManyRequestsErr) {
 		return true
 	}
-	_, ok := errors.AsType[*RetryableError](err)
-	return ok
+	var retryableErr *RetryableError
+	return errors.As(err, &retryableErr)
 }
 
 // retryTransportCall calls a transport operation with bounded timeouts,
@@ -271,7 +272,7 @@ var httpTimeFormats = []string{
 }
 
 // parseHTTPTime parses a time header (such as the Date: header), trying each of
-// the three formats allowed by HTTP/1.1: [httpTimeFormat], [time.RFC850], and
+// the three formats allowed by HTTP/1.1: [TimeFormat], [time.RFC850], and
 // [time.ANSIC].
 //
 // NOTE: This is a copy of [net/http.ParseTime], so we don't need to import
@@ -314,8 +315,8 @@ func (rlg *rateLimitGate) Wait(ctx context.Context) error {
 
 // Observe records rate limiting hints from errors returned by the [Transport].
 func (rlg *rateLimitGate) Observe(err error) {
-	tmrErr, ok := errors.AsType[*TooManyRequestsError](err)
-	if !ok {
+	var tmrErr *TooManyRequestsError
+	if !errors.As(err, &tmrErr) {
 		return
 	}
 
