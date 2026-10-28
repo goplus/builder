@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useTemplateRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
@@ -20,6 +21,19 @@ const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
 const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.series.id ?? null)
 const courses = coursesQueryRet.data
+const courseList = useTemplateRef<HTMLUListElement>('courseList')
+
+// The dropdown remounts the panel on each opening; wait for the course rows to render.
+watch(
+  [courseList, courses, () => tutorial.currentCourse?.id],
+  () => {
+    courseList.value?.querySelector('[aria-current="step"]')?.scrollIntoView({
+      block: 'center',
+      inline: 'nearest'
+    })
+  },
+  { flush: 'post' }
+)
 
 async function confirmCourseAction(
   action: LocaleMessage,
@@ -117,7 +131,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <div class="min-h-0 flex-1 overflow-y-auto p-1">
       <UILoading v-if="coursesQueryRet.isLoading.value" class="h-24" />
-      <ul v-else class="flex flex-col gap-2">
+      <ul v-else ref="courseList" class="flex flex-col gap-2">
         <TutorialStatusCourseRow
           v-for="(course, index) in courses ?? []"
           :key="course.id"
