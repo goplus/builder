@@ -68,7 +68,6 @@ The [XBuilder Daily project](https://github.com/orgs/goplus/projects/6) tracks w
 
 These examples illustrate the rules, not a permanent record of each issue's current classification:
 
-- [#3590](https://github.com/goplus/builder/issues/3590): **High**, **Bug**, `area:account` and `area:tutorial`. The reported token refresh behavior can discard unsaved work; the issue describes diagnostics with mocked HTTP responses, not a measured production frequency.
 - [#3644](https://github.com/goplus/builder/issues/3644): **High**, **Bug**, `area:tutorial` and `area:platform`. The reproduced cache failure blocks the Tutorial v2 release. Its discussion adds evidence beyond the original report.
 - [#3578](https://github.com/goplus/builder/issues/3578): **Medium**, **Feature**, `area:editor`. Compact resource cards improve browsing in larger projects.
 - [#3247](https://github.com/goplus/builder/issues/3247): **Low**, **Task**, `area:editor`. The work is an exploration of visual spacing.
