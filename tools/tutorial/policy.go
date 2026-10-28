@@ -28,7 +28,7 @@ const (
 )
 
 // RunGroup is a shared policy scope for runs, see RunPolicy. It holds at most
-// one run at a time. An author creates one with Course.newRunGroup and starts
+// one run at a time. An author creates one with newRunGroup and starts
 // runs of it from inside callbacks.
 type RunGroup interface {
 	// Start starts a new run of the group executing body. Course code spells

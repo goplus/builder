@@ -201,6 +201,9 @@ var (
 
 func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 	name := fn.Name.Name
+	// qualified is <receiver type>.<name> for a method, so that rules on a
+	// method name do not also admit a method of the same name on another type.
+	qualified := receiverType(fn) + "." + name
 	report := func(pos token.Pos, format string, args ...any) {
 		t.Errorf("%s: %s", fset.Position(pos), fmt.Sprintf(format, args...))
 	}
@@ -224,11 +227,11 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 					report(n.Pos(), "%s yields the token: only tryCallCapability and pause may wait", name)
 				}
 			case strings.HasSuffix(callee, ".callCapability"):
-				if name != blockingWaitHome && name != "Start" {
+				if name != blockingWaitHome && qualified != "Course.Start" {
 					report(n.Pos(), "%s calls the capability bridge directly: bridge waits must go through %s or Course.Start", name, blockingWaitHome)
 				}
 			case callee == "startRuns":
-				if name != "Start" {
+				if qualified != "Course.Start" {
 					report(n.Pos(), "%s starts runs: only Course.Start and the event deliverers may", name)
 				}
 			case strings.HasSuffix(callee, ".startRun"):
@@ -244,8 +247,8 @@ func checkFunction(t *testing.T, fset *token.FileSet, fn *ast.FuncDecl) {
 					report(n.Pos(), "%s admits a goroutine to runs: only startRun and goLive may", name)
 				}
 			case strings.HasSuffix(callee, ".cancel"):
-				if name != "Start" {
-					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only Start may", name)
+				if qualified != "runGroup.Start" {
+					report(n.Pos(), "%s cancels a run: cancellation is a run group policy, only runGroup.Start may", name)
 				}
 			case strings.HasSuffix(callee, ".markYielded"):
 				if !yieldMarkers[name] {
@@ -329,6 +332,22 @@ var leafLockAllowedCalls = map[string]map[string]bool{
 
 type lockRegion struct {
 	from, to token.Pos
+}
+
+// receiverType returns the method receiver's type name without the pointer,
+// or "" for a plain function.
+func receiverType(fn *ast.FuncDecl) string {
+	if fn.Recv == nil || len(fn.Recv.List) == 0 {
+		return ""
+	}
+	recvType := fn.Recv.List[0].Type
+	if star, ok := recvType.(*ast.StarExpr); ok {
+		recvType = star.X
+	}
+	if ident, ok := recvType.(*ast.Ident); ok {
+		return ident.Name
+	}
+	return ""
 }
 
 // receiverName returns the method receiver's name; a plain function such as

@@ -209,7 +209,11 @@ func newRun(body func()) *run {
 	return &run{body: body, yielded: make(chan struct{})}
 }
 
-// cancel is called only by a run group, under CancelPrevious.
+// cancel is called only by a run group, under CancelPrevious. It ends the run
+// at its next waiting point; work the host already began for it, such as a
+// generation request or an open dialog, runs on.
+// TODO: Also cancel the host-side work of a cancelled run once host
+// capabilities support cancellation.
 func (r *run) cancel() { r.cancelled.Store(true) }
 
 // markYielded is called only by runFrame (on the run's end) and yieldWhile (on
@@ -236,14 +240,25 @@ func (r *run) markYielded() {
 // startChildren comes next, so the runs this run started begin after the
 // token is back in circulation and before this run counts as yielded, which
 // is what keeps the beginning order structural; releaseExec after that; the
-// closure registered last runs first, which puts releasing the group and
-// clearing current inside the token-holding window, so a failing run never
-// carries the token away and freezes the whole Course.
+// group release is registered before the admission check, so a run that
+// holds its group releases it on every path, including not beginning at all;
+// the closure registered last runs first, which puts clearing current inside
+// the token-holding window, so a failing run never carries the token away and
+// freezes the whole Course.
 func (p *courseProgram) runFrame(r *run) {
 	defer r.markYielded()
 	p.acquireExec()
 	defer p.startChildren(r)
 	defer p.releaseExec()
+	defer func() {
+		if r.group != nil {
+			// Under OneAtATime the group hands over to the next queued run,
+			// which this run starts as its last child.
+			if next := r.group.release(r); next != nil {
+				r.children = append(r.children, next)
+			}
+		}
+	}()
 	// The admission check must come after acquiring the token: a check made
 	// before waiting for it may be stale by the time the wait ends, because
 	// another run may have completed the Course or recorded a fatal error
@@ -256,13 +271,6 @@ func (p *courseProgram) runFrame(r *run) {
 	p.current = r
 	defer func() {
 		recovered := recover()
-		if r.group != nil {
-			// Under OneAtATime the group hands over to the next queued run,
-			// which this run starts as its last child.
-			if next := r.group.release(r); next != nil {
-				r.children = append(r.children, next)
-			}
-		}
 		p.current = nil
 		if recovered != nil && recovered != errRunEnded {
 			p.recordFatal(recovered)
@@ -410,6 +418,8 @@ func (g *runGroup) Start(body func()) {
 		g.groupMu.Lock()
 		busy := g.holder != nil
 		if busy {
+			// The queue has no bound: OneAtATime promises every started run
+			// its turn, so a burst is held, not refused.
 			g.queue = append(g.queue, r)
 		} else {
 			g.holder = r
@@ -427,16 +437,25 @@ func (g *runGroup) Start(body func()) {
 // release frees the group when its holder ends. Under OneAtATime the run at
 // the head of the queue becomes the holder and is returned, for the ending
 // run to start as its last child; otherwise nil. A run that is not the holder
-// — one cancelled and replaced under CancelPrevious — releases nothing.
+// — one cancelled and replaced under CancelPrevious — releases nothing. Once
+// the Course has terminated nothing is handed over and the queue is dropped:
+// no run admitted after that point would begin, so it must not become the
+// holder either.
 func (g *runGroup) release(r *run) *run {
+	terminated := g.courseProgram.terminated()
 	g.groupMu.Lock()
 	defer g.groupMu.Unlock()
 	if g.holder != r {
 		return nil
 	}
 	g.holder = nil
+	if terminated {
+		g.queue = nil
+		return nil
+	}
 	if g.policy == OneAtATime && len(g.queue) > 0 {
 		next := g.queue[0]
+		g.queue[0] = nil
 		g.queue = g.queue[1:]
 		g.holder = next
 		return next
