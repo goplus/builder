@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue'
-import { composeQuery, useQuery, useQueryCache, useQueryWithCache } from '@/utils/query'
+import { useQueryCache, useQueryWithCache, type QueryMode, type QueryRet } from '@/utils/query'
 import { capture, useAction } from '@/utils/exception'
 import { OAuthErrorCode, OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
 import { normalizeLang, useI18n } from '@/utils/i18n'
@@ -205,10 +205,11 @@ function getSignedInUserQueryKey() {
   return [...getUserQueryKey(getUnresolvedSignedInUsername() ?? ''), 'signed-in']
 }
 
-function useSignedInUserQuery() {
+function useSignedInUserQuery(mode: QueryMode) {
   const queryKey = computed(() => getSignedInUserQueryKey())
   return useQueryWithCache({
     queryKey,
+    mode,
     async queryFn() {
       if (!isSignedIn()) throw new Error('User not signed in')
       return userApis.getSignedInUser()
@@ -237,13 +238,21 @@ export type SignedInState =
  * - callers need to know whether the user is signed in or not
  * - callers need to access the loading or error state of the signed-in user query
  */
-export function useSignedInStateQuery() {
-  const signedInUserQuery = useSignedInUserQuery()
-  return useQuery<SignedInState>(async (ctx) => {
-    if (!isSignedIn()) return { isSignedIn: false, user: null }
-    const user = await composeQuery(ctx, signedInUserQuery)
-    return { isSignedIn: true, user }
-  })
+export function useSignedInStateQuery(mode: QueryMode = 'background'): QueryRet<SignedInState> {
+  const query = useSignedInUserQuery(mode)
+  return {
+    isLoading: computed(() => isSignedIn() && query.isLoading.value),
+    data: computed(() => {
+      if (!isSignedIn()) return { isSignedIn: false, user: null }
+      if (query.data.value == null) return null
+      return { isSignedIn: true, user: query.data.value }
+    }),
+    error: computed(() => (isSignedIn() ? query.error.value : null)),
+    progress: query.progress,
+    refetch: () => {
+      if (isSignedIn()) query.refetch()
+    }
+  }
 }
 
 /**
@@ -252,8 +261,8 @@ export function useSignedInStateQuery() {
  * - callers only need the signed-in user information
  * - callers don't need to distinguish between "not signed in" and "signed in but user information not available"
  */
-export function useSignedInUser() {
-  const signedInStateQuery = useSignedInStateQuery()
+export function useSignedInUser(mode: QueryMode = 'background') {
+  const signedInStateQuery = useSignedInStateQuery(mode)
   return computed(() => signedInStateQuery.data.value?.user ?? null)
 }
 

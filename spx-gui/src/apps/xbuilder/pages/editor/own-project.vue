@@ -14,7 +14,7 @@ const props = defineProps<{
 const route = useRoute()
 const router = useRouter()
 const signIn = useSignIn()
-const signedInStateQuery = useSignedInStateQuery()
+const signedInStateQuery = useSignedInStateQuery('snapshot')
 
 onMounted(async () => {
   const signedInState = await untilNotNull(signedInStateQuery.data)

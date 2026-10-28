@@ -1,5 +1,5 @@
 import { computed, toRef, type WatchSource } from 'vue'
-import { useQueryWithCache, useQueryCache } from '@/utils/query'
+import { useQueryWithCache, useQueryCache, type QueryMode } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/user'
 import { useSignedInUser } from './user'
@@ -10,12 +10,13 @@ function getFollowingQueryKey(signedInUsernameInput: string | null, username: st
 
 const staleTime = 5 * 60 * 1000 // 5min
 
-export function useIsFollowing(username: WatchSource<string>) {
+export function useIsFollowing(username: WatchSource<string>, mode: QueryMode = 'background') {
   const usernameRef = toRef(username)
   const signedInUser = useSignedInUser()
   const queryKey = computed(() => getFollowingQueryKey(signedInUser.value?.username ?? null, usernameRef.value))
   return useQueryWithCache({
     queryKey,
+    mode,
     async queryFn() {
       const signedInUsernameInput = signedInUser.value?.username ?? null
       if (signedInUsernameInput == null || signedInUsernameInput === usernameRef.value) return false

@@ -8,7 +8,8 @@ import {
   ref,
   onUnmounted,
   toValue,
-  watch
+  watch,
+  onScopeDispose
 } from 'vue'
 import { useQuery as useVueQuery, useQueryClient as useVueQueryClient } from '@tanstack/vue-query'
 import { type LocaleMessage } from './i18n'
@@ -99,32 +100,106 @@ export function useQuery<T>(
   return { isLoading, data, error, progress, refetch }
 }
 
+export type QueryMode = 'background' | 'blocking' | 'snapshot'
+
 export type QueryWithCacheOptions<T> = {
   queryKey: unknown[] | WatchSource<unknown[]>
   queryFn: (signal: AbortSignal) => Promise<T>
   staleTime?: number
+  /** Background keeps current results; blocking waits for refreshes; snapshot retains the first valid success per key/refetch. */
+  mode?: QueryMode
   failureSummaryMessage?: LocaleMessage
 }
 
 /** `useQueryWithCache` is similar to `useQuery`, while it uses `vue-query` for caching. */
 export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRet<T> {
+  const queryClient = useVueQueryClient()
   let queryFn = options.queryFn
   if (options.failureSummaryMessage != null) {
     queryFn = useAction(queryFn, options.failureSummaryMessage)
   }
 
   const ret = useVueQuery({
-    queryKey: options.queryKey,
+    queryKey: computed(() => toValue(options.queryKey)),
     queryFn: (ctx) => queryFn(ctx.signal),
     staleTime: options.staleTime
   })
 
-  const isLoading = ret.isLoading
-  const data = computed(() => ret.data.value ?? null)
-  const error = ret.error as Ref<ActionException | null>
   const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
-  const refetch = () => ret.refetch()
-  return { isLoading, data, error, progress, refetch }
+  const mode = options.mode ?? 'background'
+  if (mode === 'background') {
+    return {
+      isLoading: ret.isLoading,
+      data: computed(() => ret.data.value ?? null),
+      error: ret.error as Ref<ActionException | null>,
+      progress,
+      refetch: () => ret.refetch()
+    }
+  }
+
+  const queryOptions = computed(() =>
+    queryClient.defaultQueryOptions({ queryKey: toValue(options.queryKey), staleTime: options.staleTime })
+  )
+  const cache = queryClient.getQueryCache()
+  const state = shallowRef<{ data: T | null; error: ActionException | null; isLoading: boolean }>({
+    data: null,
+    error: null,
+    isLoading: true
+  })
+  let captured = false
+  let waitingAfter: number | null = null
+
+  function startRead() {
+    captured = false
+    waitingAfter = cache.get(queryOptions.value.queryHash)?.state.dataUpdateCount ?? 0
+    state.value = { data: null, error: null, isLoading: true }
+  }
+
+  function update(failed = false) {
+    if (captured) return
+    const query = cache.get<T, ActionException>(queryOptions.value.queryHash)
+    if (query == null) return
+    const current = query.state
+    if (current.fetchStatus === 'idle' && current.status === 'error' && (failed || !current.isInvalidated)) {
+      state.value = { data: null, error: current.error, isLoading: false }
+    } else if (current.fetchStatus !== 'idle' || current.isInvalidated || current.status === 'pending') {
+      waitingAfter ??= current.dataUpdateCount
+      state.value = { data: null, error: null, isLoading: true }
+    } else if (waitingAfter == null || current.dataUpdateCount > waitingAfter) {
+      waitingAfter = null
+      captured = mode === 'snapshot'
+      state.value = { data: current.data ?? null, error: null, isLoading: false }
+    }
+  }
+
+  watch(
+    () => queryOptions.value.queryHash,
+    () => {
+      startRead()
+      const query = cache.get(queryOptions.value.queryHash)
+      if (query != null && !query.isStaleByTime(queryOptions.value.staleTime)) waitingAfter = null
+      update()
+    },
+    { immediate: true, flush: 'sync' }
+  )
+  // Cache events carry an atomic state, including invalidation when isStale was already true.
+  const unsubscribe = cache.subscribe((event) => {
+    if (event.type === 'updated' && event.query.queryHash === queryOptions.value.queryHash) {
+      update(event.action.type === 'error')
+    }
+  })
+  onScopeDispose(unsubscribe)
+
+  return {
+    isLoading: computed(() => state.value.isLoading),
+    data: computed(() => state.value.data),
+    error: computed(() => state.value.error),
+    progress,
+    refetch: () => {
+      startRead()
+      void ret.refetch()
+    }
+  }
 }
 
 /** Manage cache of `useQueryWithCache` */
@@ -165,7 +240,10 @@ export type SubReporterParams = Parameters<ProgressCollector['getSubReporter']>
 
 /** Wait until a query is loaded, then return its data or throw its error. */
 export async function untilLoaded<T>(queryRet: QueryRet<T>, signal?: AbortSignal): Promise<T> {
-  await until(() => !queryRet.isLoading.value, signal)
+  do {
+    await until(() => !queryRet.isLoading.value, signal)
+    signal?.throwIfAborted()
+  } while (queryRet.isLoading.value)
   if (queryRet.error.value != null) throw queryRet.error.value
   return queryRet.data.value!
 }
@@ -185,9 +263,10 @@ export async function composeQuery<T>(
   if (ctx.source === 'refetch') {
     queryRet.refetch()
   } else {
-    // Collect `queryRet.isLoading` as dependency of current query.
-    // This ensures that when sub-query re-fetches (maybe because of its own dependencies' change), the current query re-fetches too.
+    // Background refreshes can publish data/errors without a loading transition.
     toValue(queryRet.isLoading)
+    toValue(queryRet.data)
+    toValue(queryRet.error)
   }
 
   const collector = getCollector(ctx.reporter)
