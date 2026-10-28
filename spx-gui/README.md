@@ -5,6 +5,9 @@
 - **Node.js**: ^24.11.1
 - **pnpm**: ^11.9.0
 - **Go**: >= 1.25.0
+- **Rust**: >= 1.88 with the `wasm32-unknown-unknown` target
+
+The development build automatically installs the required `wasm-bindgen-cli` version.
 
 ## Install Dependencies
 
