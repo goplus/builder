@@ -19,12 +19,12 @@ function belongs(item: APIReferenceItem, mcid: string, scid: string) {
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, nextTick, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch, watchEffect } from 'vue'
 import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilTaskScheduled } from '@/utils/utils'
-import { UIDropdown, UIError, UIIcon, UITextInput, UITooltip } from '@/components/ui'
+import { UIButton, UIDropdown, UIError, UIIcon, UITextInput, UITooltip } from '@/components/ui'
 import { stringifyDefinitionId } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
@@ -44,9 +44,65 @@ const searchQuery = ref('')
 const isSearchExpanded = ref(false)
 const searchInputRef = ref<InstanceType<typeof UITextInput>>()
 const searchToggleRef = ref<HTMLButtonElement>()
-const isSearching = computed(() => searchQuery.value.trim() !== '')
-const searchResults = computed(() => searchAPIReferenceItems(itemsForDisplay.value ?? [], searchQuery.value))
+const submittedSearchQuery = ref('')
+const isSearching = computed(() => submittedSearchQuery.value !== '')
+const searchResults = shallowRef<APIReferenceItem[]>([])
+const isSearchPending = ref(false)
+const showSearchLoading = ref(false)
+const searchFailed = ref(false)
+const canSubmitSearch = computed(
+  () => searchQuery.value.trim() !== '' && (props.controller.items?.length ?? 0) > 0 && !isSearchPending.value
+)
 const searchResultsWrapperRef = ref<HTMLElement>()
+let searchVersion = 0
+let searchLoadingTimer: ReturnType<typeof setTimeout> | null = null
+
+function resetSearch() {
+  searchVersion++
+  if (searchLoadingTimer != null) clearTimeout(searchLoadingTimer)
+  searchLoadingTimer = null
+  submittedSearchQuery.value = ''
+  searchResults.value = []
+  isSearchPending.value = false
+  showSearchLoading.value = false
+  searchFailed.value = false
+}
+
+async function submitSearch() {
+  if (!canSubmitSearch.value) return
+  const query = searchQuery.value.trim()
+  const items = props.controller.items ?? []
+  const version = ++searchVersion
+  submittedSearchQuery.value = query
+  searchResults.value = []
+  searchFailed.value = false
+  isSearchPending.value = true
+  showSearchLoading.value = false
+  if (isCategoryMenuVisible.value) void setCategoryMenuVisible(false)
+  searchLoadingTimer = setTimeout(() => {
+    if (version === searchVersion) showSearchLoading.value = true
+  }, 200)
+  try {
+    const results = await searchAPIReferenceItems(items, query)
+    if (version === searchVersion) searchResults.value = results
+  } catch {
+    if (version === searchVersion) searchFailed.value = true
+  } finally {
+    if (version === searchVersion) {
+      if (searchLoadingTimer != null) clearTimeout(searchLoadingTimer)
+      searchLoadingTimer = null
+      isSearchPending.value = false
+      showSearchLoading.value = false
+    }
+  }
+}
+
+function handleSearchEnter(event: KeyboardEvent) {
+  if (event.isComposing || event.keyCode === 229) event.preventDefault()
+}
+
+watch([searchQuery, () => props.controller, () => props.controller.items], resetSearch, { flush: 'sync' })
+onBeforeUnmount(resetSearch)
 
 function closeSearch() {
   searchQuery.value = ''
@@ -334,9 +390,11 @@ async function handleCategoryClick(id: string) {
                   <button
                     v-radar="{
                       name: $t(c.label),
-                      desc: isSearching
-                        ? $t({ en: `${c.resultCount} matching snippets`, zh: `匹配到 ${c.resultCount} 个代码片段` })
-                        : 'Click to view snippets in this category'
+                      desc: isSearchPending
+                        ? $t({ en: 'Searching…', zh: '正在查找…' })
+                        : isSearching
+                          ? $t({ en: `${c.resultCount} matching snippets`, zh: `匹配到 ${c.resultCount} 个代码片段` })
+                          : 'Click to view snippets in this category'
                     }"
                     type="button"
                     class="h-8 w-full appearance-none flex items-center gap-2 rounded-sm border-none px-2 text-xs transition-colors duration-100 enabled:cursor-pointer disabled:cursor-not-allowed disabled:text-disabled-text"
@@ -345,51 +403,77 @@ async function handleCategoryClick(id: string) {
                         ? 'bg-grey-400 text-grey-1000'
                         : 'bg-transparent text-grey-800 enabled:hover:bg-grey-300 enabled:active:bg-grey-400'
                     "
-                    :disabled="isSearching && c.resultCount === 0"
+                    :disabled="isSearching && (isSearchPending || c.resultCount === 0)"
                     :aria-pressed="c.id === currentActiveCategoryId"
                     @click="handleCategoryClick(c.id)"
                   >
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="size-4 shrink-0 [&>svg]:h-full [&>svg]:w-full" v-html="c.icon"></span>
                     {{ $t(c.label) }}
-                    <span v-if="isSearching" class="ml-auto text-hint-2">{{ c.resultCount }}</span>
+                    <span v-if="isSearching && !isSearchPending" class="ml-auto text-hint-2">{{ c.resultCount }}</span>
                   </button>
                 </li>
               </ul>
             </UIDropdown>
           </div>
         </div>
-        <UITextInput
+        <form
           v-if="isSearchExpanded"
-          ref="searchInputRef"
-          v-model:value="searchQuery"
-          v-radar="{ name: 'Search API Reference', desc: 'Search snippet names and functions in English or Chinese' }"
-          class="mt-2"
-          :placeholder="$t({ en: 'Search by name or function', zh: '搜索名称或功能' })"
-          clearable
-          @keydown.esc.stop="handleSearchEscape"
+          class="mt-2 flex items-center gap-2"
+          :aria-label="$t({ en: 'Search snippets', zh: '搜索代码片段' })"
+          @submit.prevent="submitSearch"
         >
-          <template #prefix><UIIcon type="search" /></template>
-        </UITextInput>
+          <UITextInput
+            ref="searchInputRef"
+            v-model:value="searchQuery"
+            v-radar="{ name: 'Search API Reference', desc: 'Search snippet names and functions in English or Chinese' }"
+            class="min-w-0 flex-1"
+            :placeholder="$t({ en: 'Search by name or function', zh: '搜索名称或功能' })"
+            clearable
+            @keydown.enter="handleSearchEnter"
+            @keydown.esc.stop="handleSearchEscape"
+          >
+            <template #prefix><UIIcon type="search" /></template>
+          </UITextInput>
+          <UIButton
+            v-radar="{ name: 'Submit snippet search', desc: 'Submit the current snippet search' }"
+            class="min-w-14 shrink-0 px-2"
+            html-type="submit"
+            :disabled="!canSubmitSearch"
+          >
+            {{ $t(isSearchPending ? { en: 'Searching…', zh: '搜索中…' } : { en: 'Search', zh: '搜索' }) }}
+          </UIButton>
+        </form>
       </div>
-      <div v-if="isSearching" class="flex min-h-0 flex-[1_1_0] flex-col">
-        <p class="flex-none px-3 pt-0.5 pb-1.5 text-sm text-hint-2" role="status" aria-live="polite">
+      <p
+        v-show="isSearching"
+        class="min-h-7 flex-none px-3 pt-0.5 pb-1.5 text-sm text-hint-2"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <span v-if="isSearchPending && showSearchLoading" class="inline-flex items-center gap-1.5">
+          <UIIcon type="loading" class="text-primary-main motion-reduce:animate-none!" aria-hidden="true" />
+          {{ $t({ en: 'Searching…', zh: '正在查找…' }) }}
+        </span>
+        <template v-else-if="!isSearchPending && isSearching">
           {{
             $t(
-              searchResults.length > 0
-                ? {
-                    en: searchResults.length === 1 ? 'Matched 1 snippet' : `Matched ${searchResults.length} snippets`,
-                    zh: `匹配到 ${searchResults.length} 个代码片段`
-                  }
-                : {
-                    en: 'No matching snippets',
-                    zh: '未找到相关代码片段'
-                  }
+              searchFailed
+                ? { en: 'Search failed. Try again.', zh: '搜索失败，请重试' }
+                : searchResults.length > 0
+                  ? {
+                      en: searchResults.length === 1 ? 'Matched 1 snippet' : `Matched ${searchResults.length} snippets`,
+                      zh: `匹配到 ${searchResults.length} 个代码片段`
+                    }
+                  : { en: 'No matching snippets', zh: '未找到相关代码片段' }
             )
           }}
-        </p>
+        </template>
+      </p>
+      <div v-if="isSearching" class="flex min-h-0 flex-[1_1_0] flex-col" :aria-busy="isSearchPending">
         <ul
-          v-if="searchResults.length > 0"
+          v-if="!isSearchPending && searchResults.length > 0"
           ref="searchResultsWrapperRef"
           class="relative flex min-h-0 flex-col overflow-y-auto px-3 pb-3 [scrollbar-width:thin]"
         >
