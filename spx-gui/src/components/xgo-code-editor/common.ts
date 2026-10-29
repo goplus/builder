@@ -375,12 +375,16 @@ export type DefinitionDocumentationItem = {
   definition: DefinitionIdentifier
   /** Snippet text to insert when completion / snippet is applied */
   insertSnippet: string
+  /** Insert after package/import declarations rather than at the cursor. */
+  insertAtTopLevel?: boolean
   /** Parameter hints for the inserted snippet, indexed by [TabStop / Placeholder](https://macromates.com/manual/en/snippets#tab_stops) in snippet */
   insertSnippetParameterHints?: string[]
   /** Brief explanation for the definition, typically the signature string */
   overview: string
   /** Detailed explanation for the definition, overview not included */
   detail: BasicMarkdownString
+  /** Additional terms for finding the definition by function or concept. */
+  searchKeywords?: string[]
   /**
    * If the definition should be hidden from the list. Typically a definition is hidden when:
    * - It is for internal usage only

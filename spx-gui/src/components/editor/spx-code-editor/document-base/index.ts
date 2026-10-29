@@ -35,6 +35,7 @@ export const clone0: DefinitionDocumentationItem = {
   },
   insertSnippet: 'clone',
   overview: 'clone',
+  searchKeywords: ['克隆', '复制角色', 'duplicate', 'copy sprite'],
   detail: makeBasicMarkdownString({
     en: 'Make a clone of the sprite',
     zh: '复制精灵'
@@ -85,6 +86,7 @@ export const onCloned1: DefinitionDocumentationItem = {
   },
   insertSnippet: 'onCloned data => {\n\t$0\n}',
   overview: 'onCloned data => {}',
+  searchKeywords: ['克隆', '克隆事件', 'duplicate', 'when cloned'],
   detail: makeBasicMarkdownString({
     en: 'Listen to sprite cloned',
     zh: '精灵被复制时执行'
@@ -120,6 +122,7 @@ export const onTouchStart1: DefinitionDocumentationItem = {
   insertSnippet: 'onTouchStart ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, sprite => {\n\t$0\n}',
   insertSnippetParameterHints: ['name'],
   overview: 'onTouchStart name, sprite => {}',
+  searchKeywords: ['碰撞', '碰到', '碰撞事件', 'collision', 'collide'],
   detail: makeBasicMarkdownString({
     en: 'Listen to sprite touching another sprite with given name',
     zh: '精灵与指定名字的其他精灵接触时执行'
@@ -155,6 +158,7 @@ export const onTouchStart3: DefinitionDocumentationItem = {
   insertSnippet: 'onTouchStart ${1:["${BUILDER_OTHER_SPRITE_NAME:S1}"]}, sprite => {\n\t$0\n}',
   insertSnippetParameterHints: ['names'],
   overview: 'onTouchStart names, sprite => {}',
+  searchKeywords: ['碰撞', '碰到', '碰撞事件', 'collision', 'collide'],
   detail: makeBasicMarkdownString({
     en: 'Listen to sprite touching another sprite with one of given names',
     zh: '精灵与任一指定名字的其他精灵接触时执行，支持指定多个名字'
@@ -263,6 +267,7 @@ export const costumeName: DefinitionDocumentationItem = {
   },
   insertSnippet: 'costumeName',
   overview: 'costumeName',
+  searchKeywords: ['服装', '衣服', '装扮', 'costumes', 'clothes', 'clothing', 'outfit'],
   detail: makeBasicMarkdownString({
     en: 'The name of the current costume',
     zh: '当前造型的名字'
@@ -280,6 +285,21 @@ export const setCostume: DefinitionDocumentationItem = {
   insertSnippet: 'setCostume ${1:"${BUILDER_FIRST_COSTUME_NAME:c1}"}',
   insertSnippetParameterHints: ['name'],
   overview: 'setCostume name',
+  searchKeywords: [
+    '服装',
+    '衣服',
+    '装扮',
+    'costumes',
+    'clothes',
+    'clothing',
+    'outfit',
+    '换装',
+    '换服装',
+    '更换服装',
+    '换衣服',
+    'change clothes',
+    'change costume'
+  ],
   detail: makeBasicMarkdownString({
     en: 'Set the current costume by specifying name',
     zh: '设置当前造型（指定名字）'
@@ -314,6 +334,7 @@ export const animate1: DefinitionDocumentationItem = {
   insertSnippet: 'animate ${1:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}, ${2:true}',
   insertSnippetParameterHints: ['name', 'loop'],
   overview: 'animate name, loop',
+  searchKeywords: ['play animation'],
   detail: makeBasicMarkdownString({
     en: 'Loop the animation with given name',
     zh: '循环播放动画（指定名字）'
@@ -530,6 +551,7 @@ export const step0: DefinitionDocumentationItem = {
   insertSnippet: 'step ${1:100}',
   insertSnippetParameterHints: ['distance'],
   overview: 'step distance',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Step toward current heading with given distance. Animation for state "step" will be played',
     zh: '向前行走（指定距离），自动播放“行走”状态的动画'
@@ -547,6 +569,7 @@ export const step1: DefinitionDocumentationItem = {
   insertSnippet: 'step ${1:100}, ${2:1}',
   insertSnippetParameterHints: ['distance', 'speed'],
   overview: 'step distance, speed',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Step toward current heading with given distance and speed. Animation for state "step" will be played',
     zh: '向前行走（指定距离和速度），自动播放“行走”状态的动画'
@@ -581,6 +604,7 @@ export const stepTo0: DefinitionDocumentationItem = {
   insertSnippet: 'stepTo ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}',
   insertSnippetParameterHints: ['sprite'],
   overview: 'stepTo sprite',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Step to given sprite. Animation for state "step" will be played',
     zh: '行走到指定精灵，自动播放“行走”状态的动画'
@@ -633,6 +657,7 @@ export const stepTo3: DefinitionDocumentationItem = {
   insertSnippet: 'stepTo ${1:100}, ${2:100}',
   insertSnippetParameterHints: ['x', 'y'],
   overview: 'stepTo x, y',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Step to given position. Animation for state "step" will be played',
     zh: '行走到指定位置，自动播放“行走”状态的动画'
@@ -650,6 +675,7 @@ export const stepTo4: DefinitionDocumentationItem = {
   insertSnippet: 'stepTo ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}',
   insertSnippetParameterHints: ['sprite', 'speed'],
   overview: 'stepTo sprite, speed',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Step to given sprite and specify speed. Animation for state "step" will be played',
     zh: '行走到指定精灵，并指定行走速度，自动播放“行走”状态的动画'
@@ -702,6 +728,7 @@ export const stepTo7: DefinitionDocumentationItem = {
   insertSnippet: 'stepTo ${1:100}, ${2:100}, ${3:1}',
   insertSnippetParameterHints: ['x', 'y', 'speed'],
   overview: 'stepTo x, y, speed',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Step to given position and specify speed. Animation for state "step" will be played',
     zh: '行走到指定位置，并指定行走速度，自动播放“行走”状态的动画'
@@ -788,6 +815,7 @@ export const glide0: DefinitionDocumentationItem = {
   insertSnippet: 'glide ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}',
   insertSnippetParameterHints: ['sprite', 'seconds'],
   overview: 'glide sprite, seconds',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Glide to given sprite within given duration',
     zh: '在指定时间内滑行到指定精灵'
@@ -823,6 +851,7 @@ export const glide2: DefinitionDocumentationItem = {
   insertSnippet: 'glide ${1:Mouse}, ${2:1}',
   insertSnippetParameterHints: ['object', 'seconds'],
   overview: 'glide object, seconds',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Glide to given object within given duration',
     zh: '在指定时间内滑行到指定对象'
@@ -858,6 +887,7 @@ export const glide4: DefinitionDocumentationItem = {
   insertSnippet: 'glide ${1:100}, ${2:100}, ${3:1}',
   insertSnippetParameterHints: ['x', 'y', 'seconds'],
   overview: 'glide x, y, seconds',
+  searchKeywords: ['移动', 'move'],
   detail: makeBasicMarkdownString({
     en: 'Glide to given position within given duration',
     zh: '在指定时间内滑行到指定位置'
@@ -1462,6 +1492,7 @@ export const touching0: DefinitionDocumentationItem = {
   insertSnippet: 'touching(${1:${BUILDER_OTHER_SPRITE_NAME:S1}})',
   insertSnippetParameterHints: ['sprite'],
   overview: 'touching(sprite)',
+  searchKeywords: ['碰撞', '碰到', '碰撞检测', 'collision', 'collide'],
   detail: makeBasicMarkdownString({
     en: 'If sprite touching given sprite',
     zh: '精灵是否与指定的其他精灵接触'
@@ -1497,6 +1528,7 @@ export const touching2: DefinitionDocumentationItem = {
   insertSnippet: 'touching(${1:Edge})',
   insertSnippetParameterHints: ['object'],
   overview: 'touching(object)',
+  searchKeywords: ['碰撞', '碰到', '碰撞检测', 'collision', 'collide'],
   detail: makeBasicMarkdownString({
     en: 'If sprite touching given object',
     zh: '精灵是否与指定对象接触'

@@ -29,6 +29,7 @@ import eyeOff from './eye-off.svg?raw'
 import more from './more.svg?raw'
 import exchange from './exchange.svg?raw'
 import search from './search.svg?raw'
+import filter from './filter.svg?raw'
 import close from './close.svg?raw'
 import closeCircle from './close-circle.svg?raw'
 import rotate from './rotate.svg?raw'
@@ -110,6 +111,7 @@ const typeIconMap = {
   more,
   exchange,
   search,
+  filter,
   close,
   closeCircle,
   rotate,

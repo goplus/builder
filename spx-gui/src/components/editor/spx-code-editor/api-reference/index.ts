@@ -21,6 +21,7 @@ import iconSound from './icons/sound.svg?raw'
 import iconControl from './icons/control.svg?raw'
 import iconGame from './icons/game.svg?raw'
 import iconSensing from './icons/sensing.svg?raw'
+import { withSearchKeywords } from './search-keywords'
 
 /** Definition ID strings for APIReference items */
 const apiReferenceItems = [
@@ -34,6 +35,8 @@ const apiReferenceItems = [
   'xgo:?for_iterate',
   'xgo:?if_statement',
   'xgo:?if_else_statement',
+  'xgo:?var_declaration',
+  'xgo:?func_declaration',
 
   `xgo:${packageSpx}?Game.wait`,
   `xgo:${packageSpx}?waitUntil`,
@@ -322,8 +325,8 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
 
   async provideAPIReference(ctx: APIReferenceContext) {
     const isStage = isTextDocumentStageCode(ctx.textDocument.id)
-    if (isStage) return this.getStageAPIReferenceItems()
-    return this.getSpriteAPIReferenceItems()
+    const items = await (isStage ? this.getStageAPIReferenceItems() : this.getSpriteAPIReferenceItems())
+    return items.map(withSearchKeywords)
   }
 
   provideCategoryViewInfos(): APICategoryViewInfo[] {
