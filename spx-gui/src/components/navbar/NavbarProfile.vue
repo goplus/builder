@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
-import { useExternalUrl } from '@/utils/utils'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { canUseAdminConsole as checkCanUseAdminConsole, signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
@@ -23,7 +22,6 @@ const signedInStateQuery = useSignedInStateQuery()
 const loading = computed(() => signedInStateQuery.isLoading.value)
 const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
 const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
-const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 function toggleLang() {
@@ -71,7 +69,12 @@ async function handleSignOut() {
   <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
       <div class="h-full flex items-center justify-center px-3 hover:bg-grey-400">
-        <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
+        <img
+          class="h-8 w-8 rounded-full"
+          crossorigin="anonymous"
+          :src="signedInUser?.avatar"
+          :alt="signedInUser?.displayName ?? ''"
+        />
       </div>
     </template>
     <UIMenu class="min-w-30">

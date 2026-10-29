@@ -17,7 +17,7 @@ import {
   onScopeDispose
 } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
-import { getCleanupSignal, type Disposable, type OnCleanup } from './disposable'
+import type { Disposable, OnCleanup } from './disposable'
 import { capture } from './exception'
 
 export const isImage = (url: string): boolean => {
@@ -437,53 +437,6 @@ export function upFirst(str: string) {
 export function lowFirst(str: string) {
   const firstChar = unicodeSafeSlice(str, 0, 1)
   return firstChar.toLowerCase() + str.slice(firstChar.length)
-}
-
-export function isCrossOriginUrl(url: string, origin = window.location.origin) {
-  try {
-    const parsedUrl = new URL(url)
-    if (parsedUrl.protocol === 'data:') return false // Data URLs are not assumed cross-origin
-    return parsedUrl.origin !== origin
-  } catch {
-    // If URL parsing fails (for example relative URL), assume it's not a cross-origin URL
-    return false
-  }
-}
-
-/**
- * Helper for using external URLs.
- * We enable cross-origin isolation for Builder by specifying COEP header,
- * which denies cross-origin requests by default. By fetching the URL (with CORS enabled),
- * then creating an object URL from the response, we can safely use cross-origin URLs in Builder.
- *
- * NOTE: You may not need this if you are consuming URL of a `File` (see details in `src/models/common/file.ts`).
- * `File.url` automatically create an object URL for further usage.
- */
-export function useExternalUrl(urlSource: WatchSource<string | null | undefined>) {
-  const urlRef = ref<string | null>(null)
-  watch(
-    urlSource,
-    async (url, _, onCleanup) => {
-      if (url == null) {
-        urlRef.value = null
-        return
-      }
-      if (!isCrossOriginUrl(url)) {
-        urlRef.value = url
-        return
-      }
-      const signal = getCleanupSignal(onCleanup)
-      const resp = await fetch(url)
-      signal.throwIfAborted()
-      const ab = await resp.arrayBuffer()
-      signal.throwIfAborted()
-      const objectUrl = URL.createObjectURL(new Blob([ab], { type: resp.headers.get('Content-Type') ?? '' }))
-      signal.addEventListener('abort', () => URL.revokeObjectURL(objectUrl))
-      urlRef.value = objectUrl
-    },
-    { immediate: true }
-  )
-  return urlRef
 }
 
 export function createResettableObject<T extends object>(getter: () => T): [T, () => void] {

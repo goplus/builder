@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { type User } from '@/apis/user'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import { timeout, useExternalUrl } from '@/utils/utils'
+import { timeout } from '@/utils/utils'
 import { useSignIn, useSignedInUser } from '@/stores/user'
 import { UIButton, UICard, UIImg, useMessage, useModal } from '@/components/ui'
 import TextView from '../TextView.vue'
@@ -22,7 +22,6 @@ const router = useRouter()
 const route = useRoute()
 const signedInUser = useSignedInUser()
 const isSignedInUser = computed(() => props.user.username === signedInUser.value?.username)
-const avatarUrl = useExternalUrl(() => props.user.avatar)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)
@@ -75,7 +74,7 @@ const handleEditProfile = useMessageHandle(
       :style="{ backgroundImage: `url(${coverImgUrl})` }"
     ></div>
     <div class="absolute bottom-5 left-5 h-38 w-38">
-      <UIImg class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100" :src="avatarUrl" />
+      <UIImg class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100" :src="user.avatar" />
     </div>
     <div class="flex items-end gap-25 px-5 pt-5 pb-5 pl-48">
       <div class="flex-[1_1_0] flex flex-col gap-3">

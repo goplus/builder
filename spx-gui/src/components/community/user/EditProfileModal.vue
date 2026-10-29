@@ -4,7 +4,6 @@ import { userDescriptionMaxLength, userDisplayNameMaxLength, type User } from '@
 import { selectFile } from '@/utils/file'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import { useExternalUrl } from '@/utils/utils'
 import {
   UIButton,
   UIForm,
@@ -38,7 +37,6 @@ const acceptedAvatarFileExts = ['png', 'jpg', 'jpeg', 'webp']
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 const pendingAvatarRef = ref<string | null>(null)
 const currentAvatar = computed(() => pendingAvatarRef.value ?? props.user.avatar)
-const avatarUrl = useExternalUrl(() => currentAvatar.value)
 
 const form = useForm({
   displayName: [props.user.displayName, validateDisplayName],
@@ -135,7 +133,11 @@ const handleSubmit = useMessageHandle(async () => {
         type="button"
         @click="handleChooseAvatar.fn"
       >
-        <UIImg class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100" :src="avatarUrl" size="cover" />
+        <UIImg
+          class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100"
+          :src="currentAvatar"
+          size="cover"
+        />
         <UIIcon
           class="absolute right-0 bottom-0 h-8 w-8 text-turquoise-200 transition-[color,transform] duration-200 group-hover:text-turquoise-300 group-focus-visible:text-turquoise-300 group-active:scale-[0.96]"
           type="camera"
