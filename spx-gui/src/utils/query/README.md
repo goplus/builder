@@ -44,7 +44,7 @@ const query = useQueryWithCache({
 
 Snapshot reads may immediately accept fresh successful cache hits. They wait for revalidation of expired or invalidated results, exposing null data/error and loading, including offline pauses. Failure exposes an error with null data and ends loading. Successful null/falsy values and empty collections count as results. Even with `staleTime: 0`, a successful fetch satisfies the current read; expiry alone does not hide a published result.
 
-Changing the key starts a new read. Explicit `refetch()` in snapshot mode immediately clears the consumer's data/error and enters loading. A snapshot refetch captures a new result on success; failure exposes an error with null data and can be retried. Cancellation does not make the required result ready by restoring old cache data.
+Changing the key starts a new read. Explicit `refetch()` in snapshot mode immediately clears the consumer's data/error and enters loading. A snapshot refetch captures a new result on success; failure exposes an error with null data and can be retried. A canceled pending read starts or joins a replacement request instead of accepting restored old cache data. Key changes and unmounting stop the previous read from publishing results.
 
 Use live for continuous displays and mutation-driven state, and snapshot for initialization that must remain stable until the key changes or the consumer explicitly rereads. Live means following the shared cache; it does not imply server push or polling. Both modes return reactive query state.
 

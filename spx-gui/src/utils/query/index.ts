@@ -198,12 +198,7 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
   function read(refetch = false) {
     const id = ++readID
     const query = queryClient.getQueryCache().get<T, ActionException>(queryOptions.value.queryHash)
-    if (
-      !refetch &&
-      query?.state.status === 'success' &&
-      query.state.fetchStatus === 'idle' &&
-      !query.isStaleByTime(queryOptions.value.staleTime)
-    ) {
+    if (!refetch && query?.state.status === 'success' && !query.isStaleByTime(queryOptions.value.staleTime)) {
       result.value = { data: query.state.data ?? null, error: null }
       return
     }
