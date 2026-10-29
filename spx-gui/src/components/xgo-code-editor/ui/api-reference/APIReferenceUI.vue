@@ -24,7 +24,7 @@ import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { timeout, untilTaskScheduled } from '@/utils/utils'
-import { UIButton, UIDropdown, UIError, UIIcon, UITextInput, UITooltip } from '@/components/ui'
+import { UIDropdown, UIError, UIIcon, UITextInput, UITooltip } from '@/components/ui'
 import { stringifyDefinitionId } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
@@ -51,44 +51,50 @@ const searchResults = shallowRef<APIReferenceItem[]>([])
 const isSearchPending = ref(false)
 const showSearchLoading = ref(false)
 const searchFailed = ref(false)
-const canSubmitSearch = computed(
-  () => searchQuery.value.trim() !== '' && (props.controller.items?.length ?? 0) > 0 && !isSearchPending.value
-)
 const searchResultsWrapperRef = ref<HTMLElement>()
 let searchVersion = 0
+let isWaitingForInput = false
 let searchController: AbortController | null = null
 let searchLoadingTimer: ReturnType<typeof setTimeout> | null = null
 
-function resetSearch() {
+function resetSearch(keepLoading = false) {
   searchVersion++
   searchController?.abort(new Cancelled('search changed'))
   searchController = null
-  if (searchLoadingTimer != null) clearTimeout(searchLoadingTimer)
-  searchLoadingTimer = null
+  isWaitingForInput = false
+  if (!keepLoading) {
+    if (searchLoadingTimer != null) clearTimeout(searchLoadingTimer)
+    searchLoadingTimer = null
+    showSearchLoading.value = false
+  }
   submittedSearchQuery.value = ''
   searchResults.value = []
   isSearchPending.value = false
-  showSearchLoading.value = false
   searchFailed.value = false
 }
 
-async function submitSearch() {
-  if (!canSubmitSearch.value) return
+async function runSearch(waitForInput = false, keepLoading = false) {
   const query = searchQuery.value.trim()
-  const items = props.controller.items ?? []
-  const version = ++searchVersion
+  const items = props.controller.items
+  resetSearch(keepLoading && isSearchPending.value && query !== '' && (items?.length ?? 0) > 0)
+  if (query === '' || items == null || items.length === 0) return
+  const version = searchVersion
   const controller = new AbortController()
   searchController = controller
   submittedSearchQuery.value = query
-  searchResults.value = []
-  searchFailed.value = false
   isSearchPending.value = true
-  showSearchLoading.value = false
+  isWaitingForInput = waitForInput
   if (isCategoryMenuVisible.value) void setCategoryMenuVisible(false)
-  searchLoadingTimer = setTimeout(() => {
-    if (version === searchVersion) showSearchLoading.value = true
-  }, 200)
+  if (searchLoadingTimer == null && !showSearchLoading.value) {
+    // Keep the loading deadline across successive keystrokes.
+    searchLoadingTimer = setTimeout(() => {
+      searchLoadingTimer = null
+      if (isSearchPending.value) showSearchLoading.value = true
+    }, 200)
+  }
   try {
+    if (waitForInput) await timeout(300, controller.signal)
+    isWaitingForInput = false
     const results = await searchAPIReferenceItems(items, query)
     if (isSearchDemo) await timeout(600, controller.signal)
     if (version === searchVersion) searchResults.value = results
@@ -105,12 +111,18 @@ async function submitSearch() {
   }
 }
 
+function submitSearch() {
+  if (isSearchPending.value && !isWaitingForInput) return
+  void runSearch(false, true)
+}
+
 function handleSearchEnter(event: KeyboardEvent) {
   if (event.isComposing || event.keyCode === 229) event.preventDefault()
 }
 
-watch([searchQuery, () => props.controller, () => props.controller.items], resetSearch, { flush: 'sync' })
-onBeforeUnmount(resetSearch)
+watch(searchQuery, () => void runSearch(true, true), { flush: 'sync' })
+watch([() => props.controller, () => props.controller.items], () => void runSearch(true), { flush: 'sync' })
+onBeforeUnmount(() => resetSearch())
 
 function closeSearch() {
   searchQuery.value = ''
@@ -332,12 +344,7 @@ async function handleCategoryClick(id: string) {
     <template v-else>
       <div class="flex-none px-3 py-2">
         <div class="flex items-center justify-between gap-2">
-          <div class="flex min-w-0 items-center gap-1.5">
-            <h4 class="text-sm font-medium text-title">{{ $t({ en: 'Code snippets', zh: '代码片段' }) }}</h4>
-            <span v-if="isSearchDemo" class="rounded-sm bg-primary-200 px-1 text-xs text-primary-700">
-              {{ $t({ en: 'Demo', zh: '演示' }) }}
-            </span>
-          </div>
+          <h4 class="text-sm font-medium text-title">{{ $t({ en: 'Code snippets', zh: '代码片段' }) }}</h4>
           <div class="flex items-center gap-1">
             <UITooltip>
               <template #trigger>
@@ -432,8 +439,9 @@ async function handleCategoryClick(id: string) {
         </div>
         <form
           v-if="isSearchExpanded"
-          class="mt-2 flex items-center gap-2"
+          class="mt-2 flex"
           :aria-label="$t({ en: 'Search snippets', zh: '搜索代码片段' })"
+          :aria-busy="isSearchPending"
           @submit.prevent="submitSearch"
         >
           <UITextInput
@@ -448,14 +456,6 @@ async function handleCategoryClick(id: string) {
           >
             <template #prefix><UIIcon type="search" /></template>
           </UITextInput>
-          <UIButton
-            v-radar="{ name: 'Submit snippet search', desc: 'Submit the current snippet search' }"
-            class="min-w-14 shrink-0 px-2"
-            html-type="submit"
-            :disabled="!canSubmitSearch"
-          >
-            {{ $t(isSearchPending ? { en: 'Searching…', zh: '搜索中…' } : { en: 'Search', zh: '搜索' }) }}
-          </UIButton>
         </form>
       </div>
       <p
