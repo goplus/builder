@@ -64,7 +64,7 @@ func TestExtractCommandSpec(t *testing.T) {
 	}{
 		{
 			name: "SimpleCommand",
-			typ:  reflect.TypeFor[SimpleCmd](),
+			typ:  reflect.TypeOf(SimpleCmd{}),
 			wantSpec: CommandSpec{
 				Name:        "SimpleCmd",
 				Description: "Command SimpleCmd",
@@ -80,7 +80,7 @@ func TestExtractCommandSpec(t *testing.T) {
 		},
 		{
 			name: "CommandWithValueDescMethod",
-			typ:  reflect.TypeFor[CmdWithDescMethod](),
+			typ:  reflect.TypeOf(CmdWithDescMethod{}),
 			wantSpec: CommandSpec{
 				Name:        "CmdWithDescMethod",
 				Description: "Command with value receiver Desc",
@@ -95,7 +95,7 @@ func TestExtractCommandSpec(t *testing.T) {
 		},
 		{
 			name: "CommandWithPtrDescMethod",
-			typ:  reflect.TypeFor[CmdWithPtrDescMethod](),
+			typ:  reflect.TypeOf(CmdWithPtrDescMethod{}),
 			wantSpec: CommandSpec{
 				Name:        "CmdWithPtrDescMethod",
 				Description: "Command with pointer receiver Desc",
@@ -106,7 +106,7 @@ func TestExtractCommandSpec(t *testing.T) {
 		},
 		{
 			name: "CommandWithSlice",
-			typ:  reflect.TypeFor[CmdWithSlice](),
+			typ:  reflect.TypeOf(CmdWithSlice{}),
 			wantSpec: CommandSpec{
 				Name:        "CmdWithSlice",
 				Description: "Command CmdWithSlice",
@@ -667,7 +667,7 @@ func TestCallCommandHandler(t *testing.T) {
 		{
 			name: "BooleanTypeMismatch",
 			info: commandInfo{
-				typ:     reflect.TypeFor[CmdWithPtrDescMethod](),
+				typ:     reflect.TypeOf(CmdWithPtrDescMethod{}),
 				handler: func(CmdWithPtrDescMethod) error { return nil },
 				spec: CommandSpec{
 					Name: "CmdWithPtrDescMethod",

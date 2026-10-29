@@ -4,7 +4,7 @@
  * filling the card, its name along the bottom, and a menu in the corner that shows on hover.
  */
 import { computed } from 'vue'
-import { useFileUrl } from '@/utils/file'
+import { useFileMediaUrl } from '@/utils/media'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { Video, type Image } from '@/models/tutorial/project'
 import { UIDropdown, UIIcon, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
@@ -24,8 +24,7 @@ const emit = defineEmits<{
 
 const isVideo = computed(() => props.resource instanceof Video)
 
-// NOTE: The whole video is loaded before its first frame shows, see https://github.com/goplus/builder/issues/3573.
-const [videoUrl] = useFileUrl(() => (isVideo.value ? props.resource.file : null))
+const [videoUrl] = useFileMediaUrl(() => (isVideo.value ? props.resource.file : null))
 
 const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
@@ -44,6 +43,7 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
     <video
       v-if="isVideo && videoUrl != null"
       class="h-full w-full object-cover"
+      crossorigin="anonymous"
       :src="`${videoUrl}#t=0.1`"
       preload="metadata"
       muted

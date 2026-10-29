@@ -2,6 +2,7 @@ package tutorial
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"runtime"
 	"sync"
@@ -30,7 +31,8 @@ const (
 	// than admitting re-entrancy: the failure mode stays on the safe side.
 	kindFast capabilityKind = iota
 	// kindWaiting waits on an outside party (the learner or the LLM): the
-	// execution token is released for the duration of the call.
+	// execution token is released for the duration of the call, which is also
+	// where a run's cancellation takes effect (see yieldWhile).
 	kindWaiting
 )
 
@@ -45,6 +47,12 @@ var capabilityKinds = map[string]capabilityKind{
 	"copilot_generateJSON": kindWaiting,
 }
 
+// errRunEnded is the sentinel meaning "this run stops here": a run cancelled
+// by its group under CancelPreviousPolicy uses it at its waiting point. runFrame
+// recognizes it and winds down silently without recording a fatal error, so
+// the author never sees an error from it.
+var errRunEnded = errors.New("tutorial: run ended early")
+
 // courseProgram is everything one Course run owns: the registered callbacks,
 // the execution token, the completion and fatal-error flags, and the way to
 // call a capability.
@@ -55,17 +63,13 @@ var capabilityKinds = map[string]capabilityKind{
 // in Course code never race and the author needs no synchronization at all.
 // Every trigger starts a new run of each registered callback; a run releases
 // the token while it waits on a waiting capability or pauses with wait, so runs
-// of one callback may overlap.
-//
-// TODO(#3509): how overlapping runs of one callback relate (cancelling the
-// stale one, running one at a time, ignoring triggers while busy) is not
-// specified yet, and the contract does not promise anything either. Run
-// policies and run groups are being discussed in #3509, with an
-// implementation on branch issue-3417-run-policies. Until then, Course code
-// handles that race itself.
-//
-// The order in which runs start is currently the dispatcher's implementation
-// detail (see startRuns); the contract does not promise it either.
+// of one callback may overlap, and the only thing that relates runs is a run
+// group's policy (see runGroup). The order in which runs begin is structural:
+// runs begin only through startRun, from startRuns (the dispatcher goroutine
+// and Course.Start, in registration order within one trigger) and from
+// startChildren (the runs a run started with RunGroup.Run, in start order,
+// when that run yields or ends), each run reaching its first yield or its end
+// before the next one begins.
 //
 // This lives on the Course instance rather than in a package-level singleton,
 // and the namespaces share it by pointer. spx does the same: its callbacks
@@ -90,7 +94,7 @@ type courseProgram struct {
 	// token, to tell whether they do (see holding), hence atomic.
 	holder atomic.Uint64
 	// shutdown is closed once, on completion or on a fatal error, to tell the
-	// dispatcher goroutine to exit.
+	// dispatcher goroutine and anything waiting for a run to exit.
 	shutdown     chan struct{}
 	shutdownOnce sync.Once
 	// runs counts the in-flight run goroutines plus the dispatcher goroutine;
@@ -175,19 +179,45 @@ func (p *courseProgram) releaseExec() {
 	}
 }
 
-// run is one run of a callback: the dispatcher starts one per trigger per
-// registered callback, each on its own goroutine.
+// run is one run of Course code: a callback run, which the dispatcher starts
+// per trigger per registered callback, or a run of a run group, started with
+// RunGroup.Run. Each executes on its own goroutine.
 type run struct {
+	// body is the Course code this run executes.
+	body func()
+	// group is the run group this is a run of, nil for a callback run. A group
+	// run holds its group from the moment start admitted it until it ends.
+	group *runGroup
+	// children are the runs this run started with RunGroup.Run that have
+	// not begun yet: they begin, in start order, when this run next yields or
+	// ends (see startChildren). Only touched on this run's own goroutine, the
+	// only goroutine that ever executes its code.
+	children []*run
+
+	// cancelled is set by a run group under CancelPreviousPolicy: the run ends once
+	// it sees the flag at its next waiting point, and never begins if it has
+	// not begun yet.
+	cancelled atomic.Bool
 	// yielded is closed when the run first releases the token or ends,
-	// whichever comes first; the dispatcher waits on it before starting the
-	// next callback (see startRuns).
+	// whichever comes first; whoever started the run waits on it before
+	// starting the next one, which is spx's JoinYieldedOrDone.
 	yielded   chan struct{}
 	yieldOnce sync.Once
+	// ended is closed when runFrame returns, whether the run began or not;
+	// the run that called RunGroup.Run waits on it.
+	ended chan struct{}
 }
 
-func newRun() *run {
-	return &run{yielded: make(chan struct{})}
+func newRun(body func()) *run {
+	return &run{body: body, yielded: make(chan struct{}), ended: make(chan struct{})}
 }
+
+// cancel is called only by a run group, under CancelPreviousPolicy. It ends the run
+// at its next waiting point; work the host already began for it, such as a
+// generation request or an open dialog, runs on.
+// TODO: Also cancel the host-side work of a cancelled run once host
+// capabilities support cancellation.
+func (r *run) cancel() { r.cancelled.Store(true) }
 
 // markYielded is called only by runFrame (on the run's end) and yieldWhile (on
 // the first yield).
@@ -196,58 +226,92 @@ func (r *run) markYielded() {
 }
 
 // runFrame executes one run: acquire the execution token, check admission, run
-// the callback, release the token.
+// the body, release the group it holds, release the token, then start the
+// runs it started.
 //
 // A panic — a failed capability, or a mistake in the Course code itself — is
 // caught here and recorded as a fatal error. Runs execute on their own
 // goroutines, so letting a panic through would bypass the main goroutine's
 // exit path; recording it lets awaitShutdown re-raise it on the main
 // goroutine, and the executor still sees "the Course program panicked, exit
-// with an error".
+// with an error". errRunEnded is the exception: that is a run ending early by
+// policy, and it winds down silently.
 // TODO: Distinguish expected capability cancellation from execution errors.
 //
-// Mind the defer order: markYielded is registered first and therefore runs
-// last, so the dispatcher is always released when a run ends; releaseExec
-// comes next; the closure registered last runs first, which puts both the
-// recover and clearing current inside the token-holding window, so a failing
-// run never carries the token away and freezes the whole Course.
-func (p *courseProgram) runFrame(r *run, body func()) {
+// Mind the defer order: closing ended and markYielded are registered first
+// and therefore run last, so whoever waits for this run is always released
+// when it ends; startChildren comes next, so the runs this run started begin after the
+// token is back in circulation and before this run counts as yielded, which
+// is what keeps the beginning order structural; releaseExec after that; the
+// group release is registered before the admission check, so a run that
+// holds its group releases it on every path, including not beginning at all;
+// the closure registered last runs first, which puts clearing current inside
+// the token-holding window, so a failing run never carries the token away and
+// freezes the whole Course.
+func (p *courseProgram) runFrame(r *run) {
+	defer close(r.ended)
 	defer r.markYielded()
 	p.acquireExec()
+	defer p.startChildren(r)
 	defer p.releaseExec()
+	defer func() {
+		if r.group != nil {
+			// Under QueuePolicy the group hands over to the next queued run,
+			// which this run starts as its last child.
+			if next := r.group.release(r); next != nil {
+				r.children = append(r.children, next)
+			}
+		}
+	}()
 	// The admission check must come after acquiring the token: a check made
 	// before waiting for it may be stale by the time the wait ends, because
 	// another run may have completed the Course or recorded a fatal error
-	// meanwhile, and this run must then not start at all.
-	if p.terminated() {
+	// meanwhile, and this run must then not begin at all. A run cancelled
+	// before it ever began does not begin either: beginning is its first
+	// waiting point.
+	if p.terminated() || r.cancelled.Load() {
 		return
 	}
 	p.current = r
 	defer func() {
 		recovered := recover()
 		p.current = nil
-		if recovered != nil {
+		if recovered != nil && recovered != errRunEnded {
 			p.recordFatal(recovered)
 		}
 	}()
-	body()
+	r.body()
 }
 
-// yieldWhile is a run's only yield point: return the execution token, perform
-// wait, then take the token back and restore current. The token is always
-// returned before the wait, because a waiting call may take minutes and
-// holding the token through one would freeze every callback.
+// yieldWhile is a run's only yield point: return the execution token, start
+// the runs this run started, perform wait, then take the token back and
+// restore current. Cancellation takes effect here — the flag is checked once
+// before the wait and once after it, and either check ends the run with
+// errRunEnded. That is why a cancelled run never uses what the wait returned
+// and never fills in the struct the author passed: a cancelled run's pending
+// result is discarded.
+//
+// The token is always returned before the wait, because a waiting call may
+// take minutes and holding the token through one would freeze every
+// callback. Only tryCallCapability, pause and RunGroup.Run call it.
 func (p *courseProgram) yieldWhile(wait func()) {
 	r := p.current
-	if r != nil {
-		r.markYielded()
+	if r != nil && r.cancelled.Load() {
+		panic(errRunEnded)
 	}
 	p.releaseExec()
+	if r != nil {
+		p.startChildren(r)
+		r.markYielded()
+	}
 	func() {
 		defer p.acquireExec()
 		wait()
 	}()
 	p.current = r
+	if r != nil && r.cancelled.Load() {
+		panic(errRunEnded)
+	}
 }
 
 // holding reports whether the calling goroutine holds the execution token.
@@ -289,6 +353,143 @@ func (p *courseProgram) pause(d time.Duration) {
 	p.yieldWhile(func() { time.Sleep(d) })
 }
 
+// runGroup is a shared policy scope: it holds at most one run at a time, and
+// its policy decides what happens when a run of it is started while another
+// still holds it. The group records which run holds it, never which callback
+// started that run, so runs started from different events relate exactly
+// like two runs started from the same callback. One group can be shared by
+// the callbacks of different events — the kind of Course where an onLog and
+// an onExit both judge completion.
+//
+// groupMu is a leaf lock: its regions only read and write fields and
+// manipulate the queue, with cancelling and starting left outside.
+type runGroup struct {
+	courseProgram *courseProgram
+	policy        RunPolicy
+
+	groupMu sync.Mutex
+	holder  *run
+	queue   []*run // runs waiting their turn under QueuePolicy, in start order
+}
+
+// Run implements RunGroup: start a new run of the group executing body and
+// wait until it ends. It may only be called from Course code, which is where
+// the token is held. The new run is a separate run, not a frame of the
+// caller's: it is a child of the current run, and waiting for it is a yield,
+// so it begins at once and the other callbacks proceed meanwhile. The caller
+// resumes once the new run has ended, including by cancellation, so what the
+// body assigned is visible to the statements that follow.
+//
+// The gate is here, at the start, which is why the author never has to check
+// an outcome:
+//   - CancelPreviousPolicy marks the holder cancelled and the new run takes
+//     the group over;
+//   - SkipPolicy does not start the run at all while there is a holder, and
+//     Run returns at once;
+//   - QueuePolicy queues the run behind the holder; release lets it begin
+//     once the holder ends, and the caller waits through its turn.
+//
+// A run of the group starting another run of the same group is an author
+// error rather than a policy question: under CancelPreviousPolicy it would
+// cancel itself, under the other two it would wait for a run that cannot
+// begin before it ends.
+//
+// Once the Course has terminated a run that has not begun never will, so the
+// wait also ends on shutdown, and the caller then winds down like a
+// cancelled run.
+func (g *runGroup) Run(body func()) {
+	p := g.courseProgram
+	p.requireRun("calling run")
+	parent := p.current
+	if parent == nil {
+		panic("tutorial: RunGroup.run called outside Course code")
+	}
+	if parent.group == g {
+		panic("tutorial: RunGroup.run called from a run of the same group")
+	}
+	r := newRun(body)
+	r.group = g
+	switch g.policy {
+	case CancelPreviousPolicy:
+		g.groupMu.Lock()
+		holder := g.holder
+		g.holder = r
+		g.groupMu.Unlock()
+		if holder != nil {
+			holder.cancel()
+		}
+		parent.children = append(parent.children, r)
+	case SkipPolicy:
+		g.groupMu.Lock()
+		busy := g.holder != nil
+		if !busy {
+			g.holder = r
+		}
+		g.groupMu.Unlock()
+		if busy {
+			return
+		}
+		parent.children = append(parent.children, r)
+	case QueuePolicy:
+		g.groupMu.Lock()
+		busy := g.holder != nil
+		if busy {
+			// The queue has no bound: QueuePolicy promises every started run
+			// its turn, so a burst is held, not refused.
+			g.queue = append(g.queue, r)
+		} else {
+			g.holder = r
+		}
+		g.groupMu.Unlock()
+		if !busy {
+			parent.children = append(parent.children, r)
+		}
+	default:
+		// The zero policy: no gate, the run simply begins.
+		parent.children = append(parent.children, r)
+	}
+	p.yieldWhile(func() {
+		select {
+		case <-r.ended:
+		case <-p.shutdown:
+		}
+	})
+	select {
+	case <-r.ended:
+	default:
+		panic(errRunEnded)
+	}
+}
+
+// release frees the group when its holder ends. Under QueuePolicy the run at
+// the head of the queue becomes the holder and is returned, for the ending
+// run to start as its last child; otherwise nil. A run that is not the holder
+// — one cancelled and replaced under CancelPreviousPolicy — releases nothing. Once
+// the Course has terminated nothing is handed over and the queue is dropped:
+// no run admitted after that point would begin, so it must not become the
+// holder either.
+func (g *runGroup) release(r *run) *run {
+	terminated := g.courseProgram.terminated()
+	g.groupMu.Lock()
+	defer g.groupMu.Unlock()
+	if g.holder != r {
+		return nil
+	}
+	g.holder = nil
+	if terminated {
+		g.queue = nil
+		return nil
+	}
+	if g.policy == QueuePolicy && len(g.queue) > 0 {
+		next := g.queue[0]
+		g.queue[0] = nil
+		g.queue = g.queue[1:]
+		g.holder = next
+		return next
+	}
+	return nil
+}
+
 // admitRun checks the terminal state and registers a goroutine with runs under
 // one lock: after the terminal state, awaitShutdown may already be inside
 // Wait, and an Add landing after that is a WaitGroup misuse. A false result
@@ -303,28 +504,56 @@ func (p *courseProgram) admitRun() bool {
 	return true
 }
 
-// startRuns starts the runs of every registered callback for one trigger. Only
-// the dispatcher goroutine and Course.Start call it.
+// startRun starts one run on its own goroutine and waits until it reaches its
+// first yield or its end (yielded), which is spx's JoinYieldedOrDone. It
+// reports false once the Course reached its terminal state, after which no
+// run begins.
 //
-// Runs currently start in registration order, each running to its first yield
-// or its end (yielded) before the next one starts. That way the dispatcher can
-// keep handling later triggers once a callback suspends, and the runs of
-// course start always precede the runs of host events. This is an
-// implementation detail: the contract promises no order among the callbacks of
-// one trigger, and Course code must not depend on it (see #3509).
+// Only startRuns and startChildren call it, which is what makes the
+// beginning order structural.
+func (p *courseProgram) startRun(r *run) bool {
+	if !p.admitRun() {
+		return false
+	}
+	go func() {
+		defer p.runs.Done()
+		p.runFrame(r)
+	}()
+	select {
+	case <-r.yielded:
+		return true
+	case <-p.shutdown:
+		return false
+	}
+}
+
+// startRuns starts the runs of every registered callback for one trigger, in
+// registration order, each reaching its first yield or its end before the
+// next one begins. That way the dispatcher can keep handling later triggers
+// once a callback suspends, and the runs of course start always precede the
+// runs of host events.
+//
+// Only the dispatcher goroutine and Course.Start call it.
 func startRuns[T any](p *courseProgram, regs []*registration[T], event T) {
 	for _, reg := range regs {
-		if !p.admitRun() {
+		handler := reg.handler
+		if !p.startRun(newRun(func() { handler(event) })) {
 			return
 		}
-		r := newRun()
-		go func() {
-			defer p.runs.Done()
-			p.runFrame(r, func() { reg.handler(event) })
-		}()
-		select {
-		case <-r.yielded:
-		case <-p.shutdown:
+	}
+}
+
+// startChildren starts the runs r started with RunGroup.Run, in start
+// order, each reaching its first yield or its end before the next one begins.
+// It is called when r yields or ends, after r returned the token and before r
+// counts as yielded: a started run therefore always begins before whoever
+// waits on r moves on, which keeps the beginning order structural. A child
+// started after the Course reached its terminal state never begins.
+func (p *courseProgram) startChildren(r *run) {
+	children := r.children
+	r.children = nil
+	for _, child := range children {
+		if !p.startRun(child) {
 			return
 		}
 	}
@@ -334,8 +563,9 @@ func startRuns[T any](p *courseProgram, regs []*registration[T], event T) {
 //
 // The completion path waits for every in-flight run to finish on its own: a
 // suspended run resumes once the capability it waits on succeeds and executes
-// its remaining statements. Capability failure or cancellation instead takes
-// the fatal path; the dispatcher goroutine exits. The fatal path does
+// its remaining statements; a run started but not yet begun, queued under
+// QueuePolicy or not, never begins. Capability failure or cancellation instead
+// takes the fatal path; the dispatcher goroutine exits. The fatal path does
 // not wait: it re-raises on the main goroutine right away, and suspended runs
 // die with the process.
 func (p *courseProgram) awaitShutdown() {
@@ -441,7 +671,9 @@ func (p *courseProgram) tryCallCapability(name string, request, result any) erro
 		return p.callCapability(name, request, result)
 	}
 
-	// Decode into a private buffer, and into result only once the token is back.
+	// Decode into a private buffer, and into result only once the token is
+	// back. A cancelled run has already ended inside yieldWhile and never
+	// reaches the filling step.
 	var raw json.RawMessage
 	var target any
 	if result != nil {

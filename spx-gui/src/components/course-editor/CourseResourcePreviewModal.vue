@@ -4,7 +4,7 @@
  * program that plays it, ready to copy, since that is what its name is for.
  */
 import { computed } from 'vue'
-import { useFileUrl } from '@/utils/file'
+import { useFileMediaUrl } from '@/utils/media'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { Video, type Image } from '@/models/tutorial/project'
 import { UIModal, UIModalClose } from '@/components/ui'
@@ -26,8 +26,7 @@ const isVideo = computed(() => props.resource instanceof Video)
 // `JSON.stringify` writes the name as a string literal, so a name holding a quote or a backslash still compiles.
 const playCall = computed(() => `showVideo ${JSON.stringify(props.resource.name)}`)
 
-// NOTE: The whole video is loaded before it plays, see https://github.com/goplus/builder/issues/3573.
-const [videoUrl] = useFileUrl(() => (isVideo.value ? props.resource.file : null))
+const [videoUrl] = useFileMediaUrl(() => (props.visible && isVideo.value ? props.resource.file : null))
 
 const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.resource.file))
 </script>
@@ -55,6 +54,7 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
         v-if="isVideo && videoUrl != null"
         class="w-full rounded bg-black"
         style="max-height: 70vh"
+        crossorigin="anonymous"
         :src="videoUrl"
         controls
         autoplay

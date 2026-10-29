@@ -32,6 +32,7 @@ import { useRegisterLoading } from '@/utils/readiness'
 
 const props = defineProps<{
   controller: APIReferenceController
+  simpleMode?: boolean
   disabled?: boolean
 }>()
 
@@ -40,7 +41,7 @@ const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue
   return props.controller.items ?? oldValue ?? null
 })
 
-const categorizationThreshold = 5
+const categorizationThreshold = 20
 const needsCategorization = computed(() => (itemsForDisplay.value?.length ?? 0) >= categorizationThreshold)
 
 const loading = ref(true)
@@ -193,6 +194,7 @@ function handleCategoryClick(id: string) {
                   v-for="item in sc.items"
                   :key="stringifyDefinitionId(item.definition)"
                   :item="item"
+                  :block-style="simpleMode"
                   :interaction-disabled="scrolling"
                   :disabled="disabled"
                 />
@@ -205,7 +207,7 @@ function handleCategoryClick(id: string) {
             v-for="item in itemsForDisplay"
             :key="stringifyDefinitionId(item.definition)"
             :item="item"
-            block-style
+            :block-style="simpleMode"
             :interaction-disabled="false"
             :disabled="disabled"
           />

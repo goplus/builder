@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useTemplateRef } from 'vue'
+
 import type { Course } from '@/apis/course'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { UIButton, UIImg } from '@/components/ui'
@@ -21,10 +23,22 @@ const emit = defineEmits<{
 const [thumbnailUrl] = useFileUrl(() =>
   props.course.thumbnail === '' ? null : createFileWithUniversalUrl(props.course.thumbnail)
 )
+
+const row = useTemplateRef<HTMLLIElement>('row')
+
+defineExpose({
+  get courseID() {
+    return props.course.id
+  },
+  scrollIntoView() {
+    row.value?.scrollIntoView({ block: 'center', inline: 'nearest' })
+  }
+})
 </script>
 
 <template>
   <li
+    ref="row"
     v-radar="{
       name: 'tutorial-course-row',
       desc: active ? 'Current course in the series' : 'Click to start this course',

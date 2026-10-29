@@ -72,6 +72,16 @@ export class CloudHelpers {
     return universalUrlToWebUrlImpl(universalUrl, this.ensureConfig())
   }
 
+  /** Resolve an existing saved file URL without loading or uploading its contents. */
+  async getFileWebUrl(file: File, signal?: AbortSignal): Promise<WebUrl | null> {
+    signal?.throwIfAborted()
+    const universalUrl = getUniversalUrl(file)
+    if (universalUrl == null) return null
+    const webUrl = await this.universalUrlToWebUrl(universalUrl)
+    signal?.throwIfAborted()
+    return webUrl
+  }
+
   clearUniversalUrlCache() {
     universalUrlCache.clear()
   }

@@ -100,8 +100,8 @@ func (p *Runtime) OnExit(handler func(code int)) {
 //
 // Several callbacks may be registered: with two judging clues in one Course,
 // writing two handlers reads better than cramming both into one if-else.
-// Runs of one callback may overlap; how they should relate (latest wins,
-// one at a time, ignore while busy) is discussed in #3509.
+// Runs of one callback may overlap, one per entry, beginning in append order;
+// a run group (see RunPolicy) relates the runs that must not overlap.
 func (p *Runtime) OnLog(handler func(log string)) {
 	register(p.courseProgram, handler,
 		func(h *handlers, r *registration[string]) { h.runtimeLog = append(h.runtimeLog, r) })
