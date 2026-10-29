@@ -26,7 +26,7 @@ const props = defineProps<{
 
 const i18n = useI18n()
 const signedIn = useSignedIn()
-const canManageAccount = computed(() => signedIn.state.data.value?.user?.capabilities.canManageAccount === true)
+const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
 const appQuery = useQuery(
   async () => {

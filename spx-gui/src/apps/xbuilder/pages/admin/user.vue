@@ -85,10 +85,8 @@ const props = defineProps<{
 
 const i18n = useI18n()
 const signedIn = useSignedIn()
-const canManageAccount = computed(() => signedIn.state.data.value?.user?.capabilities.canManageAccount === true)
-const canManageAuthorization = computed(
-  () => signedIn.state.data.value?.user?.capabilities.canManageAuthorization === true
-)
+const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
+const canManageAuthorization = computed(() => signedIn.user?.capabilities.canManageAuthorization === true)
 const canEditUserAuthorization = computed(() => canManageAccount.value && canManageAuthorization.value)
 
 const userQuery = useQuery(

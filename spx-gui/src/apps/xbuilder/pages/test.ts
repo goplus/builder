@@ -21,7 +21,7 @@ import * as courseApis from '@/apis/course'
 import * as courseSeriesApis from '@/apis/course-series'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers } from '@/models/common/local'
-import { createSignedIn } from '@/stores/user'
+import { initSignedIn } from '@/stores/user'
 import { provideProjectConfig } from '@/components/project/config'
 import { provideCommunityConfig } from '@/components/community/config'
 import { loadMonaco } from '@/components/xgo-code-editor/monaco'
@@ -203,8 +203,7 @@ export async function mountPages(path: string) {
   await router.push(path)
   await router.isReady()
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  const signedIn = createSignedIn({ clientId: 'test-client' })
-  client.setTokenProvider(() => signedIn.ensureAccessToken())
+  let signedIn!: ReturnType<typeof initSignedIn>
   const wrapper = mount(
     defineComponent({
       setup() {
@@ -223,7 +222,12 @@ export async function mountPages(path: string) {
           createRadar(),
           createSpotlight(),
           [VueQueryPlugin, { queryClient }],
-          signedIn,
+          {
+            install(app) {
+              signedIn = initSignedIn(app, { oauthClientId: 'test-client' })
+              client.setTokenProvider(() => signedIn.ensureAccessToken())
+            }
+          },
           {
             install(app) {
               provideCommunityConfig(app, { showLicense: true, showTutorialsEntry: true })
@@ -234,7 +238,7 @@ export async function mountPages(path: string) {
       }
     }
   )
-  return { wrapper, router, queryClient, signedIn }
+  return { wrapper, router, signedIn }
 }
 
 export function setupPageTests() {

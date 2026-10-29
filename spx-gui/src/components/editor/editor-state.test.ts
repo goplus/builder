@@ -2,7 +2,6 @@ import { ref, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { createI18n } from '@/utils/i18n'
-import type { QueryRet } from '@/utils/query'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { Sound } from '@/models/spx/sound'
@@ -11,8 +10,7 @@ import { Monitor } from '@/models/spx/widget/monitor'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
 import { mockFile } from '@/models/common/test'
-import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
-import type { SignedInState } from '@/stores/user'
+import { makeSignedInMock, makeSignedInUser, makeSignedInUserQuery } from '@/stores/user/test'
 import type * as editing from './editing'
 import { EditorState, type IRouter, type Selected } from './editor-state'
 
@@ -122,11 +120,18 @@ function makeRouter(ownerNameInput = 'test-owner', projectNameInput = 'test-proj
 function makeEditorState(
   project: SpxProject = makeEmptyProject(),
   isOnline: WatchSource<boolean> = ref(true),
-  signedInStateQuery: QueryRet<SignedInState> = makeSignedInStateQuery(makeSignedInState('user')),
+  userQuery: ReturnType<typeof makeSignedInUserQuery> = makeSignedInUserQuery(makeSignedInUser('user')),
   cloudHelpers: editing.CloudHelpers = makeCloudHelpers(),
   localCache: editing.ILocalCache = makeLocalCache()
 ): EditorState {
-  return new EditorState(createI18n({ lang: 'en' }), project, isOnline, signedInStateQuery, cloudHelpers, localCache)
+  return new EditorState(
+    createI18n({ lang: 'en' }),
+    project,
+    isOnline,
+    makeSignedInMock(userQuery),
+    cloudHelpers,
+    localCache
+  )
 }
 
 describe('EditorState', () => {

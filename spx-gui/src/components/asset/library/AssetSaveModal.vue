@@ -39,7 +39,6 @@ const emit = defineEmits<{
 }>()
 
 const signedIn = useSignedIn()
-
 const advancedLibraryEnabled = computed(() => signedIn.user?.capabilities.canManageAssets === true)
 
 const { t } = useI18n()

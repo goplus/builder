@@ -12,7 +12,7 @@
           <NavbarOpenProjectItem />
         </UIMenu>
       </NavbarDropdown>
-      <NavbarLang v-if="signedIn.isSignedIn() === false" />
+      <NavbarLang v-if="!signedIn.isSignedIn" />
       <NavbarTutorials v-if="showTutorialsEntry" />
     </template>
     <template #right>

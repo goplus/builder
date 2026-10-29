@@ -34,7 +34,7 @@ const localCache: ILocalCache = {
 }
 // We should override the state to avoid history operations caused by animation / costume changes within sprite gen.
 const editorStateInGen = useComputedDisposable(
-  () => new EditorState(i18n, props.gen.previewProject, isOnline, signedIn.state, cloudHelpers, localCache)
+  () => new EditorState(i18n, props.gen.previewProject, isOnline, signedIn, cloudHelpers, localCache)
 )
 const editorCtxInGen = computedShallowReactive(() => ({
   project: props.gen.previewProject,

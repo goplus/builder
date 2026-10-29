@@ -1,5 +1,5 @@
 import { computed, toRef, type WatchSource } from 'vue'
-import { untilLoaded, useQueryWithCache, useQueryCache } from '@/utils/query'
+import { useQueryWithCache, useQueryCache } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/project'
 import { useSignedIn } from './user'
@@ -13,16 +13,14 @@ const staleTime = 5 * 60 * 1000 // 5min
 export function useIsLikingProject(project: WatchSource<{ owner: string; name: string }>) {
   const projectRef = toRef(project)
   const signedIn = useSignedIn()
-  const signedInStateQuery = signedIn.state
   const queryKey = computed(() => {
     const { owner, name } = projectRef.value
     return getLikingQueryKey(signedIn.username, owner, name)
   })
   return useQueryWithCache({
     queryKey,
-    async queryFn(signal) {
-      const signedInState = await untilLoaded(signedInStateQuery, signal)
-      if (!signedInState.isSignedIn) return false
+    async queryFn() {
+      if (!signedIn.isSignedIn) return false
       return apis.isLiking(projectRef.value.owner, projectRef.value.name)
     },
     failureSummaryMessage: { en: 'Failed to check liking status', zh: '检查喜欢状态失败' },

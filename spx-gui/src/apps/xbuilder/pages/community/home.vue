@@ -1,8 +1,8 @@
 <template>
   <CenteredWrapper class="mt-5">
-    <GuestBanner v-if="signedIn.isSignedIn() === false" class="my-3 mb-8" />
+    <GuestBanner v-if="!signedIn.isSignedIn" class="my-3 mb-8" />
     <ProjectsSection
-      v-else-if="signedIn.isSignedIn() === true"
+      v-else
       v-radar="{ name: 'Your projects', desc: 'Section showing user\'s own projects' }"
       context="home"
       :num-in-row="numInRow"
@@ -87,7 +87,7 @@
       <ProjectItem v-for="project in communityRemixingProjects.data.value" :key="project.id" :project="project" />
     </ProjectsSection>
     <ProjectsSection
-      v-if="signedIn.isSignedIn() === true"
+      v-if="signedIn.isSignedIn"
       v-radar="{ name: 'Following created', desc: 'Section showing projects created by users you follow' }"
       context="home"
       :num-in-row="numInRow"

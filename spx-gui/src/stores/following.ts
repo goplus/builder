@@ -1,5 +1,5 @@
 import { computed, toRef, type WatchSource } from 'vue'
-import { untilLoaded, useQueryWithCache, useQueryCache } from '@/utils/query'
+import { useQueryWithCache, useQueryCache } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/user'
 import { useSignedIn } from './user'
@@ -16,9 +16,8 @@ export function useIsFollowing(username: WatchSource<string>) {
   const queryKey = computed(() => getFollowingQueryKey(signedIn.username, usernameRef.value))
   return useQueryWithCache({
     queryKey,
-    async queryFn(signal) {
-      const state = await untilLoaded(signedIn.state, signal)
-      if (!state.isSignedIn || state.user.username === usernameRef.value) return false
+    async queryFn() {
+      if (!signedIn.isSignedIn || signedIn.username === usernameRef.value) return false
       return apis.isFollowing(usernameRef.value)
     },
     failureSummaryMessage: { en: 'Failed to check following status', zh: '检查关注状态失败' },

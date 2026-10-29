@@ -8,7 +8,7 @@ import * as userApis from '@/apis/user'
 describe('community project', () => {
   setupPageTests()
 
-  it('cancels the view-recording wait quietly when the page unmounts during authentication', async () => {
+  it('records views using local identity while user information is still loading', async () => {
     await signIn()
     vi.mocked(userApis.getSignedInUser).mockReturnValue(new Promise(() => {}))
     const { wrapper } = await mountPages('/project/alice/First%20flight')
@@ -18,7 +18,7 @@ describe('community project', () => {
     await flushPromises()
     wrapper.unmount()
     await flushPromises()
-    expect(projectApis.recordProjectView).not.toHaveBeenCalled()
+    expect(projectApis.recordProjectView).toHaveBeenCalledExactlyOnceWith('alice', 'First flight')
     expect(errorHandler).not.toHaveBeenCalled()
   })
 

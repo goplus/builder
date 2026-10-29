@@ -58,7 +58,6 @@ import {
 } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { untilLoaded } from '@/utils/query'
 import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import { useProjectConfig } from './config'
@@ -105,9 +104,9 @@ const handleSubmit = useMessageHandle(
         remixSource: props.remixSource
       })
     } else {
-      const signedInState = await untilLoaded(signedIn.state)
-      if (!signedInState.isSignedIn) throw new Error('login required')
-      const project = await createDefaultProject(signedInState.user.username, projectName, defaultFontPreferences)
+      const username = signedIn.username
+      if (username == null) throw new Error('login required')
+      const project = await createDefaultProject(username, projectName, defaultFontPreferences)
       project.setDisplayName(projectName)
       project.setVisibility(Visibility.Private)
       const exported = await project.export()
@@ -142,9 +141,9 @@ async function validateName(name: string): Promise<FormValidationResult> {
     })
 
   // check naming conflict
-  const signedInState = await untilLoaded(signedIn.state)
-  if (!signedInState.isSignedIn) throw new Error('login required')
-  if (await isProjectNameTaken(signedInState.user.username, name))
+  const username = signedIn.username
+  if (username == null) throw new Error('login required')
+  if (await isProjectNameTaken(username, name))
     return t({
       en: `Project ${name} already exists`,
       zh: `项目 ${name} 已存在`

@@ -1,23 +1,20 @@
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
+import { until } from '@/utils/utils'
 import { nextTick, ref, type Ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 enableAutoUnmount(afterEach)
 
-type MockSignedInState = {
-  isSignedIn: boolean
-  user: { capabilities: { canManageAccount: boolean; canManageAuthorization: boolean } } | null
-}
+type MockSignedInUser = { capabilities: { canManageAccount: boolean; canManageAuthorization: boolean } }
 
 const mocks = vi.hoisted(() => ({
   route: { path: '/admin/users', fullPath: '/admin/users' },
   replace: vi.fn(),
   signIn: vi.fn(),
-  signedInState: {
-    isSignedIn: true,
-    user: { capabilities: { canManageAccount: true, canManageAuthorization: false } }
-  } as MockSignedInState | null,
-  signedInData: null as Ref<MockSignedInState | null> | null
+  userInfo: { capabilities: { canManageAccount: true, canManageAuthorization: false } } as MockSignedInUser | null,
+  userData: null as Ref<MockSignedInUser | null> | null,
+  loading: false,
+  userLoading: null as Ref<boolean> | null
 }))
 
 vi.mock('vue-router', async (importOriginal) => {
@@ -32,26 +29,25 @@ vi.mock('vue-router', async (importOriginal) => {
 })
 
 vi.mock('@/stores/user', () => ({
-  canUseAdminConsole: (
-    capabilities:
-      | {
-          canManageAccount: boolean
-          canManageAuthorization: boolean
-        }
-      | null
-      | undefined
-  ) => capabilities?.canManageAccount === true || capabilities?.canManageAuthorization === true,
   useSignedIn: () => {
-    const data = ref(mocks.signedInState)
-    mocks.signedInData = data
+    const data = ref(mocks.userInfo)
+    const isLoading = ref(mocks.loading)
+    mocks.userData = data
+    mocks.userLoading = isLoading
     return {
-      state: { data, error: ref(null), isLoading: ref(false) },
-      signIn: mocks.signIn,
-      canUseAdminConsole: () =>
-        data.value?.user?.capabilities.canManageAccount === true ||
-        data.value?.user?.capabilities.canManageAuthorization === true,
+      getUser: async ({ signal }: { signal?: AbortSignal } = {}) => {
+        void data.value
+        await until(() => !isLoading.value, signal)
+        return data.value
+      },
       get user() {
-        return data.value?.user ?? null
+        return data.value
+      },
+      signIn: mocks.signIn,
+      get canUseAdminConsole() {
+        return (
+          data.value?.capabilities.canManageAccount === true || data.value?.capabilities.canManageAuthorization === true
+        )
       }
     }
   }
@@ -70,10 +66,8 @@ describe('Admin page routing', () => {
     mocks.route.fullPath = '/admin/users'
     mocks.replace.mockReset()
     mocks.signIn.mockReset()
-    mocks.signedInState = {
-      isSignedIn: true,
-      user: { capabilities: { canManageAccount: true, canManageAuthorization: false } }
-    }
+    mocks.userInfo = { capabilities: { canManageAccount: true, canManageAuthorization: false } }
+    mocks.loading = false
   })
 
   it('redirects again when navigating from a child page to the Admin root', async () => {
@@ -111,7 +105,7 @@ describe('Admin page routing', () => {
   ])('uses the expected default route for $name', async ({ capabilities, defaultRoute }) => {
     mocks.route.path = '/admin'
     mocks.route.fullPath = '/admin'
-    mocks.signedInState = { isSignedIn: true, user: { capabilities } }
+    mocks.userInfo = { capabilities }
 
     shallowMount(AdminPage)
     await flushPromises()
@@ -121,7 +115,7 @@ describe('Admin page routing', () => {
   })
 
   it('starts sign-in when an unauthenticated user opens an Admin child route directly', async () => {
-    mocks.signedInState = { isSignedIn: false, user: null }
+    mocks.userInfo = null
 
     shallowMount(AdminPage)
     await flushPromises()
@@ -133,17 +127,16 @@ describe('Admin page routing', () => {
   it('does not redirect from a stale root-route callback after navigation while authentication is loading', async () => {
     mocks.route.path = '/admin'
     mocks.route.fullPath = '/admin'
-    mocks.signedInState = null
+    mocks.userInfo = null
+    mocks.loading = true
     shallowMount(AdminPage)
 
     mocks.route.path = '/admin/apps'
     mocks.route.fullPath = '/admin/apps'
     await nextTick()
 
-    mocks.signedInData!.value = {
-      isSignedIn: true,
-      user: { capabilities: { canManageAccount: true, canManageAuthorization: false } }
-    }
+    mocks.userData!.value = { capabilities: { canManageAccount: true, canManageAuthorization: false } }
+    mocks.userLoading!.value = false
     await nextTick()
     await flushPromises()
 

@@ -3,7 +3,6 @@ import { onMounted } from 'vue'
 
 import type { Round } from '@/components/copilot/copilot'
 
-import { untilLoaded } from '@/utils/query'
 import { useSignedIn } from '@/stores/user'
 import { UIButton } from '@/components/ui'
 
@@ -13,9 +12,8 @@ const props = defineProps<{
 
 const signedIn = useSignedIn()
 
-onMounted(async () => {
-  const signedInState = await untilLoaded(signedIn.state)
-  if (!signedInState.isSignedIn) return
+onMounted(() => {
+  if (!signedIn.isSignedIn) return
   props.round.retry()
 })
 </script>

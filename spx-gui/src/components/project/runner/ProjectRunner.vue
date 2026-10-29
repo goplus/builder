@@ -144,7 +144,6 @@ type State =
 </script>
 
 <script setup lang="ts">
-import { untilLoaded } from '@/utils/query'
 import { throttle } from 'lodash'
 import { computed, onBeforeUnmount, onUnmounted, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { timeout, untilNotNull } from '@/utils/utils'
@@ -350,8 +349,7 @@ async function runInternal(ctrl: AbortController) {
     // Some projects (e.g. Scratch-converted ones) rely on Scratch's `username` capability.
     // For signed-out users we set an empty string, which spx treats as an anonymous user.
     // See https://github.com/goplus/builder/issues/3364.
-    const signedInState = await untilLoaded(signedIn.state, ctrl.signal)
-    iframeWindow.xbuilder_set_username(signedInState.isSignedIn ? signedInState.user.username : '')
+    iframeWindow.xbuilder_set_username(signedIn.username ?? '')
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
     startGameReporter.startAutoReport(10_000)

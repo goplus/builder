@@ -1,5 +1,5 @@
-import { computed, inject, markRaw, ref, shallowRef, type App, type InjectionKey, type ObjectPlugin } from 'vue'
-import { useQueryCache, type Loadable } from '@/utils/query'
+import { inject, ref, shallowRef, watch, type App, type InjectionKey, type Ref, type ShallowRef } from 'vue'
+import { useQueryCache } from '@/utils/query'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 import { Disposable } from '@/utils/disposable'
 import { OAuthErrorCode, OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
@@ -10,210 +10,144 @@ import { accountOAuthApisForXBuilder as oauthApis } from '@/apis/account/oauth'
 import { getUserQueryKey } from './query-keys'
 
 export type SignedInUser = userApis.SignedInUser
-export type SignedInState = { isSignedIn: false; user: null } | { isSignedIn: true; user: SignedInUser }
-
-export type SignedInOptions = { clientId: string }
+export type SignedInOptions = { oauthClientId: string }
 
 type Credentials = {
-  accessToken: string | null
-  accessTokenExpiresAt: number | null
+  accessToken: string
+  accessTokenExpiresAt: number
   refreshToken: string | null
-  username: string | null
+  username: string
 }
 
-const emptyCredentials: Credentials = {
-  accessToken: null,
-  accessTokenExpiresAt: null,
-  refreshToken: null,
-  username: null
-}
-const storageKey = 'builder-user'
-const accessTokenLockName = 'builder-user-access-token'
-const tokenExpiryDelta = 60 * 1000
+/** Storage key for user credentials. */
+const credentialsStorageKey = 'builder-user'
+/** Lock name for user token refresh. */
+const tokenRefreshLockName = 'builder-user-access-token'
+/** Time buffer for token refresh, in milliseconds. */
+const tokenRefreshBuffer = 60 * 1000
+/** Injection key for the signed-in store. */
 const signedInKey: InjectionKey<SignedIn> = Symbol('signed-in')
-const loadFailureMessage = { en: 'Failed to load signed-in user information', zh: '加载当前用户信息失败' }
 
-/** Owns the app's credentials and current user. Credential rotation does not publish reactive changes. */
-export class SignedIn extends Disposable implements ObjectPlugin<[]> {
-  private credentials = this.readCredentials()
-  private oauthFlow: OAuthFlow<{ returnTo: string }>
-  private version = 0
-  private loading: object | null = null
-  private i18n: I18n | null = null
-  private invalidateUser: (username: string) => void = () => {}
-  private data = shallowRef<SignedInState | null>(null)
-  private error = shallowRef<ActionException | null>(null)
-  private isLoading = ref(true)
+/** Owns app credentials, current user information and their asynchronous operations. */
+export class SignedIn extends Disposable {
+  private readonly oauthFlow: OAuthFlow<{ returnTo: string }>
 
-  readonly state: Loadable<SignedInState> = {
-    data: computed(() => this.data.value),
-    error: computed(() => this.error.value),
-    isLoading: computed(() => this.isLoading.value)
-  }
-  private signedIn = ref(this.credentials.refreshToken != null || this.accessTokenValid())
-  private usernameRef = ref(this.credentials.username)
-  private userRef = computed(() => this.data.value?.user ?? null)
-  private adminConsoleAllowed = computed(() => {
-    if (this.data.value == null) return null
-    const capabilities = this.data.value?.user?.capabilities
-    return capabilities?.canManageAccount === true || capabilities?.canManageAuthorization === true
-  })
-
-  constructor({ clientId }: SignedInOptions) {
+  constructor(
+    private readonly i18n: I18n,
+    private readonly queryCache: ReturnType<typeof useQueryCache>,
+    { oauthClientId }: SignedInOptions
+  ) {
     super()
-    markRaw(this)
+    const credentials = this.readStoredCredentials()
+    this.credentials = credentials
+    const isSignedIn =
+      credentials != null && (credentials.refreshToken != null || this.validateCredentials(credentials))
+    this.isSignedInRef = ref(isSignedIn)
+    this.usernameRef = ref(isSignedIn ? credentials.username : null)
+
+    this.identityScope = new Disposable()
+    this.cachedUserRef = shallowRef(null)
+    this.pendingUserRequest = null
+
     this.oauthFlow = new OAuthFlow(oauthApis, {
-      clientId,
+      clientId: oauthClientId,
       redirectUri: `${window.location.origin}/sign-in/callback`
     })
     const restore = (event: StorageEvent) => {
-      if (event.key == null || event.key === storageKey) this.restoreCredentials()
+      if (event.key == null || event.key === credentialsStorageKey) this.syncStoredCredentials()
     }
     window.addEventListener('storage', restore)
     this.addDisposer(() => window.removeEventListener('storage', restore))
-    this.addDisposer(() => {
-      this.version++
-      this.loading = null
-    })
-  }
-
-  install(app: App) {
-    const { i18n, queryCache } = app.runWithContext(() => ({ i18n: useI18n(), queryCache: useQueryCache() }))
-    this.i18n = i18n
-    this.invalidateUser = (username) => {
-      void queryCache.invalidate(getUserQueryKey(username))
-    }
-    app.provide(signedInKey, this)
-    app.onUnmount(() => this.dispose())
-    this.reload()
-  }
-
-  /** Judges locally available credentials synchronously, independently of user loading.
-   * Expiry is checked at call time; time passing alone does not trigger reactive consumers.
-   */
-  isSignedIn(): boolean {
-    return this.signedIn.value && (this.credentials.refreshToken != null || this.accessTokenValid())
-  }
-  /** Locally stored username, available before user information loads. */
-  get username() {
-    return this.isSignedIn() ? this.usernameRef.value : null
-  }
-  get user() {
-    return this.userRef.value
-  }
-
-  canUseAdminConsole() {
-    return this.adminConsoleAllowed.value
-  }
-
-  private readCredentials(): Credentials {
-    const stored = localStorage.getItem(storageKey)
-    try {
-      return stored == null ? { ...emptyCredentials } : JSON.parse(stored)
-    } catch {
-      localStorage.removeItem(storageKey)
-      return { ...emptyCredentials }
-    }
-  }
-
-  private persist(credentials: Credentials) {
-    this.credentials = credentials
-    this.usernameRef.value = credentials.username
-    this.signedIn.value = credentials.refreshToken != null || this.accessTokenValid()
-    localStorage.setItem(storageKey, JSON.stringify(credentials))
-  }
-
-  private restoreCredentials() {
-    const next = this.readCredentials()
-    const changed =
-      next.username !== this.credentials.username ||
-      (next.accessToken == null) !== (this.credentials.accessToken == null)
-    this.credentials = next
-    this.usernameRef.value = next.username
-    this.signedIn.value = next.refreshToken != null || this.accessTokenValid()
-    if (!changed) return
-    const signedOut = next.accessToken == null && next.refreshToken == null
-    this.resetSession(signedOut ? { isSignedIn: false, user: null } : null)
-    if (!signedOut) this.reload()
-  }
-
-  private publish(state: SignedInState | null) {
-    this.loading = null
-    this.data.value = state
-    this.error.value = null
-    this.isLoading.value = state == null
-  }
-
-  private resetSession(state: SignedInState | null) {
-    this.version++
-    this.publish(state)
-  }
-
-  private clearCredentials() {
-    this.persist({ ...emptyCredentials })
-    this.resetSession({ isSignedIn: false, user: null })
-  }
-
-  private assertCurrent(version: number) {
-    if (version !== this.version || this.isDisposed) throw new Cancelled('signed-in identity changed')
-  }
-
-  /** Starts a shared user load; consume its result or error through state. */
-  reload(): void {
-    if (this.loading != null) return
-    const task = {}
-    this.loading = task
-    this.isLoading.value = true
-    this.error.value = null
-    void this.load(task)
-  }
-
-  private async load(task: object) {
-    try {
-      const token = await this.ensureAccessToken()
-      if (this.loading !== task) return
-      const state: SignedInState =
-        token == null
-          ? { isSignedIn: false, user: null }
-          : { isSignedIn: true, user: await userApis.getSignedInUser(token) }
-      if (this.loading !== task) return
-      this.publish(state)
-    } catch (e) {
-      if (this.loading !== task) return
-      this.loading = null
-      this.error.value = new ActionException(e, loadFailureMessage)
-      this.isLoading.value = false
-      capture(e, 'Failed to load signed-in state')
-    }
-  }
-
-  private accessTokenValid() {
-    const state = this.credentials
-    return (
-      state.accessToken != null &&
-      (state.accessTokenExpiresAt == null || state.accessTokenExpiresAt - tokenExpiryDelta > Date.now())
+    this.addDisposer(() => this.identityScope.dispose())
+    this.addDisposer(
+      watch(
+        this.usernameRef,
+        (username) => {
+          if (username == null || this.cachedUserRef.value != null) return
+          void this.getUser().catch((e) => {
+            if (!(e instanceof Cancelled)) capture(e, 'Failed to load signed-in user information')
+          })
+        },
+        { immediate: true, flush: 'sync' }
+      )
     )
   }
 
-  /** Returns a valid token without collecting reactive dependencies; invalid credentials resolve null. */
+  private credentials: Credentials | null
+
+  private readStoredCredentials(): Credentials | null {
+    const stored = localStorage.getItem(credentialsStorageKey)
+    try {
+      const credentials: Credentials | null = stored == null ? null : JSON.parse(stored)
+      return credentials?.accessToken == null ? null : credentials
+    } catch {
+      localStorage.removeItem(credentialsStorageKey)
+      return null
+    }
+  }
+
+  private updateCredentials(credentials: Credentials | null) {
+    this.credentials = credentials
+    const isSignedIn =
+      credentials != null && (credentials.refreshToken != null || this.validateCredentials(credentials))
+    this.isSignedInRef.value = isSignedIn
+    this.usernameRef.value = isSignedIn ? credentials.username : null
+  }
+
+  private writeStoredCredentials(credentials: Credentials | null) {
+    if (credentials == null) localStorage.removeItem(credentialsStorageKey)
+    else localStorage.setItem(credentialsStorageKey, JSON.stringify(credentials))
+  }
+
+  private syncStoredCredentials() {
+    const next = this.readStoredCredentials()
+    const previous = this.credentials
+    const changed = next?.username !== previous?.username || (next == null) !== (previous == null)
+    if (!changed) {
+      this.updateCredentials(next)
+      return
+    }
+    this.resetIdentity(next)
+  }
+
+  private clearCredentials() {
+    this.resetIdentity(null)
+    this.writeStoredCredentials(null)
+  }
+
+  private validateCredentials(credentials: Credentials | null) {
+    return credentials != null && credentials.accessTokenExpiresAt - tokenRefreshBuffer > Date.now()
+  }
+
+  /**
+   * Returns a valid access token without collecting reactive dependencies, or null when signed out.
+   * Invalid refresh tokens clear the session and resolve null; other refresh failures preserve
+   * credentials and reject so callers can retry.
+   */
   async ensureAccessToken(): Promise<string | null> {
-    if (this.accessTokenValid()) return this.credentials.accessToken
-    if (this.credentials.accessToken == null && this.credentials.refreshToken == null) return null
-    await navigator.locks.request(accessTokenLockName, async () => {
-      this.restoreCredentials()
-      if (this.accessTokenValid()) return
-      const { refreshToken, username } = this.credentials
+    const credentials = this.credentials
+    if (this.validateCredentials(credentials)) return credentials!.accessToken
+    if (credentials == null) return null
+    await navigator.locks.request(tokenRefreshLockName, async () => {
+      // Another tab may have refreshed the token while this request waited for the lock.
+      this.syncStoredCredentials()
+      const credentials = this.credentials
+      if (this.validateCredentials(credentials)) return
+      const refreshToken = credentials?.refreshToken
       if (refreshToken == null) {
         this.clearCredentials()
         return
       }
-      const version = this.version
+      const signal = this.identityScope.getSignal()
       try {
         const token = await this.oauthFlow.refreshToken(refreshToken)
-        this.assertCurrent(version)
-        this.persist({ ...this.credentialsFromToken(token), username })
+        signal.throwIfAborted()
+        // Persist rotated tokens without requiring a successful profile request.
+        const next = { ...this.parseTokenResponse(token), username: this.credentials!.username }
+        this.updateCredentials(next)
+        this.writeStoredCredentials(next)
       } catch (e) {
-        this.assertCurrent(version)
+        signal.throwIfAborted()
         capture(e, 'Failed to refresh access token')
         if (e instanceof OAuthException && e.error === OAuthErrorCode.InvalidGrant) {
           this.clearCredentials()
@@ -222,19 +156,44 @@ export class SignedIn extends Disposable implements ObjectPlugin<[]> {
         throw e
       }
     })
-    return this.credentials.accessToken
+    return this.credentials?.accessToken ?? null
   }
 
-  private credentialsFromToken(token: OAuthTokenResponse): Omit<Credentials, 'username'> {
+  private parseTokenResponse(token: OAuthTokenResponse): Omit<Credentials, 'username'> {
     return {
       accessToken: token.access_token,
-      accessTokenExpiresAt: token.expires_in == null ? null : Date.now() + token.expires_in * 1000,
+      accessTokenExpiresAt: Date.now() + token.expires_in * 1000,
       refreshToken: token.refresh_token ?? null
     }
   }
 
+  /** Stable reactive login result, recomputed when credentials change. */
+  private readonly isSignedInRef: Ref<boolean>
+
+  /** Reads the maintained login state; elapsed time alone does not change it. */
+  get isSignedIn(): boolean {
+    return this.isSignedInRef.value
+  }
+
+  private readonly usernameRef: Ref<string | null>
+
+  /** Current session username, available before the profile loads; null when signed out. */
+  get username() {
+    return this.usernameRef.value
+  }
+
+  /** Cancels operations from the previous identity on sign-in, sign-out or account switching. */
+  private identityScope: Disposable
+
+  private resetIdentity(credentials: Credentials | null, user: SignedInUser | null = null) {
+    this.identityScope.dispose()
+    this.identityScope = new Disposable()
+    this.cancelPendingUserRequest()
+    this.cachedUserRef.value = user
+    this.updateCredentials(credentials)
+  }
+
   async signIn(returnTo = window.location.pathname + window.location.search + window.location.hash) {
-    if (this.i18n == null) throw new Error('SignedIn is not installed')
     const { authorizeUrl } = await this.oauthFlow.createAuthorization({
       data: { returnTo },
       uiLocales: normalizeLang(this.i18n.lang.value)
@@ -243,36 +202,106 @@ export class SignedIn extends Disposable implements ObjectPlugin<[]> {
   }
 
   async completeSignIn(search: string) {
-    const version = this.version
+    const signal = this.identityScope.getSignal()
     const { token, extraData } = await this.oauthFlow.completeAuthorization(search)
-    this.assertCurrent(version)
-    const credentials = this.credentialsFromToken(token)
+    signal.throwIfAborted()
+    const credentials = this.parseTokenResponse(token)
     const user = await userApis.getSignedInUser(token.access_token)
-    this.assertCurrent(version)
-    this.persist({ ...credentials, username: user.username })
-    this.resetSession({ isSignedIn: true, user })
+    signal.throwIfAborted()
+    const next = { ...credentials, username: user.username }
+    this.writeStoredCredentials(next)
+    this.resetIdentity(next, user)
     return extraData
   }
 
   async signOut() {
-    const { accessToken, refreshToken } = this.credentials
+    const credentials = this.credentials
     this.clearCredentials()
     await Promise.all(
-      [accessToken, refreshToken].filter((token) => token != null).map((token) => this.oauthFlow.revokeToken(token))
+      [credentials?.accessToken, credentials?.refreshToken]
+        .filter((token) => token != null)
+        .map((token) => this.oauthFlow.revokeToken(token))
     ).catch((e) => capture(e, 'Failed to revoke tokens during sign out'))
   }
 
-  private applyUser(user: SignedInUser, version: number) {
-    this.assertCurrent(version)
-    this.publish({ isSignedIn: true, user })
-    this.invalidateUser(user.username)
+  /** Last successful profile for the current identity, shared by getUser consumers. */
+  private readonly cachedUserRef: ShallowRef<SignedInUser | null>
+
+  /** Loaded user information, or null when signed out, still loading or a load has failed. */
+  get user(): SignedInUser | null {
+    return this.cachedUserRef.value
+  }
+
+  /** Shares an in-flight profile read; profile mutations cancel it to prevent stale writes. */
+  private pendingUserRequest: { scope: Disposable; promise: Promise<SignedInUser | null> } | null
+
+  /** Gets shared, cached user information. */
+  async getUser({ signal }: { signal?: AbortSignal } = {}) {
+    signal?.throwIfAborted()
+    const username = this.username
+    const cached = this.cachedUserRef.value
+    if (username == null) return null
+    if (cached != null) return cached
+    if (this.pendingUserRequest == null) {
+      const scope = new Disposable()
+      scope.disposeOnSignal(this.identityScope.getSignal())
+      const promise = this.fetchAndCacheUser(scope.getSignal())
+      const request = { scope, promise }
+      this.pendingUserRequest = request
+      const cleanup = () => {
+        if (this.pendingUserRequest === request) this.cancelPendingUserRequest()
+      }
+      void promise.then(cleanup, cleanup)
+    }
+    const user = await this.pendingUserRequest.promise
+    signal?.throwIfAborted()
+    return user
+  }
+
+  private async fetchAndCacheUser(signal: AbortSignal) {
+    try {
+      const token = await this.ensureAccessToken()
+      signal.throwIfAborted()
+      const user = token == null ? null : await userApis.getSignedInUser(token)
+      signal.throwIfAborted()
+      this.setCachedUser(user)
+      return user
+    } catch (e) {
+      signal.throwIfAborted()
+      throw new ActionException(e, {
+        en: 'Failed to load signed-in user information',
+        zh: '加载当前用户信息失败'
+      })
+    }
+  }
+
+  private cancelPendingUserRequest() {
+    this.pendingUserRequest?.scope.dispose()
+    this.pendingUserRequest = null
+  }
+
+  private setCachedUser(user: SignedInUser | null) {
+    this.getSignal().throwIfAborted()
+    const credentials = this.credentials
+    if (user != null && credentials != null && user.username !== credentials.username) {
+      void this.signOut()
+      throw new Cancelled('Signed-in username changed')
+    }
+    this.cancelPendingUserRequest()
+    this.cachedUserRef.value = user
+  }
+
+  private applyUserUpdate(user: SignedInUser, signal: AbortSignal) {
+    signal.throwIfAborted()
+    this.setCachedUser(user)
+    void this.queryCache.invalidate(getUserQueryKey(user.username))
     return user
   }
 
   async updateProfile(params: Pick<userApis.UpdateSignedInUserParams, 'displayName' | 'description'>) {
-    const version = this.version
+    const signal = this.identityScope.getSignal()
     try {
-      return this.applyUser(await userApis.updateSignedInUser(params), version)
+      return this.applyUserUpdate(await userApis.updateSignedInUser(params), signal)
     } catch (e) {
       if (e instanceof Cancelled) throw e
       throw new ActionException(e, { en: 'Failed to update profile', zh: '更新个人信息失败' })
@@ -280,26 +309,30 @@ export class SignedIn extends Disposable implements ObjectPlugin<[]> {
   }
 
   async updateAvatar(file: File) {
-    const version = this.version
+    const signal = this.identityScope.getSignal()
     try {
       await userApis.updateSignedInUserAvatar(file)
-      this.assertCurrent(version)
-      return this.applyUser(await userApis.getSignedInUser(), version)
+      signal.throwIfAborted()
+      return this.applyUserUpdate(await userApis.getSignedInUser(), signal)
     } catch (e) {
       if (e instanceof Cancelled) throw e
       throw new ActionException(e, { en: 'Failed to update avatar', zh: '更新头像失败' })
     }
   }
 
-  /** Changing username signs out the current user. */
+  /**
+   * Changes the username and signs out the current user.
+   * Callers can reload the route to trigger navigation checks or initiate sign-in again.
+   */
   async modifyUsername(username: string) {
-    const version = this.version
+    const signal = this.identityScope.getSignal()
     const oldUsername = this.username
     try {
       const user = await userApis.updateSignedInUser({ username })
-      this.assertCurrent(version)
-      if (oldUsername != null && oldUsername !== user.username) this.invalidateUser(oldUsername)
-      this.invalidateUser(user.username)
+      signal.throwIfAborted()
+      if (oldUsername != null && oldUsername !== user.username)
+        void this.queryCache.invalidate(getUserQueryKey(oldUsername))
+      void this.queryCache.invalidate(getUserQueryKey(user.username))
       await this.signOut()
       return user
     } catch (e) {
@@ -307,10 +340,21 @@ export class SignedIn extends Disposable implements ObjectPlugin<[]> {
       throw new ActionException(e, { en: 'Failed to modify username', zh: '修改用户名失败' })
     }
   }
+
+  get canUseAdminConsole(): boolean | null {
+    const user = this.cachedUserRef.value
+    if (user == null) return this.isSignedInRef.value ? null : false
+    return user.capabilities.canManageAccount === true || user.capabilities.canManageAuthorization === true
+  }
 }
 
-export function createSignedIn(options: SignedInOptions) {
-  return new SignedIn(options)
+/** Creates and provides the signed-in store after its app dependencies have been installed. */
+export function initSignedIn(app: App, options: SignedInOptions) {
+  const { i18n, queryCache } = app.runWithContext(() => ({ i18n: useI18n(), queryCache: useQueryCache() }))
+  const signedIn = new SignedIn(i18n, queryCache, options)
+  app.provide(signedInKey, signedIn)
+  app.onUnmount(() => signedIn.dispose())
+  return signedIn
 }
 
 export function useSignedIn() {

@@ -26,7 +26,7 @@ import { formatTime } from './common'
 
 const signedIn = useSignedIn()
 const router = useRouter()
-const canManageAccount = computed(() => signedIn.state.data.value?.user?.capabilities.canManageAccount === true)
+const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
 const pageSize = 20
 const page = useRouteQueryParamInt('p', 1)

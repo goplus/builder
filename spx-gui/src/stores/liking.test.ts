@@ -4,10 +4,10 @@ import { defineComponent, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ActionException } from '@/utils/exception'
 import * as apis from '@/apis/project'
-import { makeSignedInMock, makeSignedInState, makeSignedInStateQuery } from './user/test'
+import { makeSignedInMock, makeSignedInUserQuery } from './user/test'
 import { useIsLikingProject } from './liking'
 
-let auth: ReturnType<typeof makeSignedInStateQuery>
+let auth: ReturnType<typeof makeSignedInUserQuery>
 let localUsername = ref<string | null>('alice')
 let queryClient: QueryClient
 vi.mock('./user', () => ({ useSignedIn: () => makeSignedInMock(auth, localUsername) }))
@@ -29,7 +29,7 @@ function setup() {
 
 describe('useIsLikingProject authentication', () => {
   beforeEach(() => {
-    auth = makeSignedInStateQuery(null)
+    auth = makeSignedInUserQuery(null, true)
     localUsername = ref<string | null>('alice')
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     vi.spyOn(apis, 'isLiking').mockResolvedValue(true)
@@ -43,12 +43,7 @@ describe('useIsLikingProject authentication', () => {
     queryClient.setQueryData(['liking', null, 'bob', 'Space'], false)
     const result = setup()
     await flushPromises()
-    expect(result.isLoading.value).toBe(true)
-    expect(result.data.value).toBeNull()
-    expect(apis.isLiking).not.toHaveBeenCalled()
-    auth.data.value = makeSignedInState('alice')
-    auth.isLoading.value = false
-    await flushPromises()
+    expect(auth.data.value).toBeNull()
     expect(result.data.value).toBe(true)
     expect(apis.isLiking).toHaveBeenCalledOnce()
   })
@@ -62,7 +57,7 @@ describe('useIsLikingProject authentication', () => {
     expect(auth.data.value).toBeNull()
   })
 
-  it('exposes an authentication error instead of caching an anonymous false', async () => {
+  it('loads liking independently of errors loading user information', async () => {
     const result = setup()
     auth.error.value = new ActionException(new TypeError('Failed to fetch'), {
       en: 'Failed to load user',
@@ -71,9 +66,9 @@ describe('useIsLikingProject authentication', () => {
     auth.isLoading.value = false
     await flushPromises()
     expect(result.isLoading.value).toBe(false)
-    expect(result.data.value).toBeNull()
-    expect(result.error.value).not.toBeNull()
-    expect(apis.isLiking).not.toHaveBeenCalled()
+    expect(result.data.value).toBe(true)
+    expect(result.error.value).toBeNull()
+    expect(apis.isLiking).toHaveBeenCalledOnce()
     expect(queryClient.getQueryData(['liking', null, 'bob', 'Space'])).toBeUndefined()
   })
 })

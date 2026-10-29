@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { untilLoaded } from '@/utils/query'
 import { computed, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { useQuery, untilLoaded } from '@/utils/query'
 
 import { usePageTitle } from '@/utils/utils'
 import { useSignedIn } from '@/stores/user'
@@ -15,9 +15,9 @@ usePageTitle({ en: 'Admin console', zh: '管理后台' })
 const route = useRoute()
 const router = useRouter()
 const signedIn = useSignedIn()
-const signedInUser = computed(() => signedIn.state.data.value?.user ?? null)
-const canManageAccount = computed(() => signedInUser.value?.capabilities.canManageAccount === true)
-const canUseAdminConsole = computed(() => signedIn.canUseAdminConsole() === true)
+const signedInUserQuery = useQuery(({ signal }) => signedIn.getUser({ signal }))
+const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
+const canUseAdminConsole = computed(() => signedIn.canUseAdminConsole === true)
 
 const accountNavItems = [
   { to: '/admin/users', label: { en: 'Users', zh: '用户' } },
@@ -39,16 +39,16 @@ watch(
       stale = true
     })
 
-    const signedInState = await untilLoaded(signedIn.state)
+    const user = await untilLoaded(signedInUserQuery)
     if (stale) return
 
-    if (!signedInState.isSignedIn) {
+    if (user == null) {
       await signedIn.signIn(route.fullPath)
       return
     }
 
     if (path !== '/admin' && path !== '/admin/') return
-    const defaultRoute = getAdminDefaultRoute(signedInState.user.capabilities)
+    const defaultRoute = getAdminDefaultRoute(user.capabilities)
     if (defaultRoute != null) await router.replace(defaultRoute)
   },
   { immediate: true }
@@ -102,11 +102,11 @@ watch(
       </NavbarWrapper>
     </div>
     <main class="flex-1">
-      <div v-if="signedIn.state.isLoading.value" class="h-full min-h-80 flex items-center justify-center">
+      <div v-if="signedInUserQuery.isLoading.value" class="h-full min-h-80 flex items-center justify-center">
         <UILoading />
       </div>
-      <UIError v-else-if="signedIn.state.error.value != null" class="h-full min-h-80">
-        {{ $t(signedIn.state.error.value.userMessage) }}
+      <UIError v-else-if="signedInUserQuery.error.value != null" class="h-full min-h-80">
+        {{ $t(signedInUserQuery.error.value.userMessage) }}
       </UIError>
       <UIError v-else-if="!canUseAdminConsole" class="h-full min-h-80">
         {{ $t({ en: 'Access denied', zh: '没有访问权限' }) }}

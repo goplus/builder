@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Cancelled, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { isSameProjectIdentifier, toProjectIdentifier, type ProjectIdentifier } from '@/utils/project-route'
-import { untilLoaded, useQuery } from '@/utils/query'
-import { getCleanupSignal } from '@/utils/disposable'
+import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
@@ -85,7 +84,6 @@ watch(currentProjectIdentifier, (currentIdentifier) => {
 
 const { data: ownerInfo } = useUser(() => routeProjectIdentifier.value.owner)
 const signedIn = useSignedIn()
-const signedInUser = computed(() => signedIn.state.data.value?.user ?? null)
 
 usePageTitle(() => {
   if (ownerInfo.value == null || project.value == null) return null
@@ -103,14 +101,8 @@ usePageTitle(() => {
 
 watch(
   currentProjectIdentifier,
-  async (currentIdentifier, _, onCleanup) => {
-    if (currentIdentifier == null) return
-    const signal = getCleanupSignal(onCleanup)
-    const signedInState = await untilLoaded(signedIn.state, signal).catch((e) => {
-      if (e instanceof Cancelled) return null
-      throw e
-    })
-    if (!signedInState?.isSignedIn) return
+  (currentIdentifier) => {
+    if (!signedIn.isSignedIn || currentIdentifier == null) return
     recordProjectView(currentIdentifier.owner, currentIdentifier.name)
   },
   { immediate: true }
@@ -122,7 +114,7 @@ watch(routeProjectIdentifier, () => {
 })
 
 const isOwner = computed(() => {
-  const signedInUsername = signedInUser.value?.username
+  const signedInUsername = signedIn.username
   const projectOwner = project.value?.owner
   if (signedInUsername == null || projectOwner == null) return false
   return projectOwner === signedInUsername
@@ -171,10 +163,7 @@ const remixCount = computed(() => {
 const ensureSignedIn = useEnsureSignedIn()
 
 const needsSignInToRun = computed(
-  () =>
-    signedIn.state.data.value?.isSignedIn === false &&
-    project.value != null &&
-    isSignInRequiredForProject(project.value)
+  () => !signedIn.isSignedIn && project.value != null && isSignInRequiredForProject(project.value)
 )
 
 function handleSignIn() {
@@ -333,8 +322,8 @@ const handleRemove = useMessageHandle(
       routeProjectIdentifier.value.name,
       project.value!.displayName
     )
-    const { username } = await untilNotNull(signedInUser)
-    await router.push(getUserPageRoute(username, 'projects'))
+    const username = signedIn.username
+    if (username != null) await router.push(getUserPageRoute(username, 'projects'))
   },
   { en: 'Failed to remove project', zh: '删除项目失败' },
   { en: 'Project removed', zh: '项目已删除' }

@@ -6,7 +6,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 </script>
 
 <script setup lang="ts">
-import { ref, watch, watchEffect } from 'vue'
+import { ref, watchEffect } from 'vue'
 
 const props = defineProps<{
   monaco: Monaco
@@ -86,14 +86,8 @@ watchEffect(async (onClenaup) => {
   const resizeObserver = new ResizeObserver(handleResize)
   resizeObserver.observe(editorEl)
 
-  const stopOptions = watch(
-    () => props.options,
-    (options) => editor.updateOptions(options)
-  )
-
   emit('init', editor)
   signal.addEventListener('abort', () => {
-    stopOptions()
     editor.dispose()
     resizeObserver.disconnect()
   })

@@ -6,10 +6,27 @@ import * as projectApis from '@/apis/project'
 import { accountOAuthApisForXBuilder } from '@/apis/account/oauth'
 import * as userApis from '@/apis/user'
 import { mockCompleteSignIn } from '@/stores/user/test'
-import { untilLoaded } from '@/utils/query'
+import NavbarProfile from '@/components/navbar/NavbarProfile.vue'
 
 describe('community home', () => {
   setupPageTests()
+
+  it('keeps the signed-in navigation available when loading user information fails', async () => {
+    await signIn()
+    vi.mocked(userApis.getSignedInUser).mockRejectedValue(new TypeError('offline'))
+    const { wrapper, router } = await mountPages('/')
+    await flushPromises()
+    const profile = wrapper.getComponent(NavbarProfile)
+    await profile.get('.h-full').trigger('mouseenter')
+    await vi.waitFor(() =>
+      expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Profile')).toBe(true)
+    )
+    await wrapper
+      .findAll('.ui-menu-item')
+      .find((item) => item.text() === 'Profile')!
+      .trigger('click')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/user/alice'))
+  })
 
   it('reloads personalized lists for account changes and clears them on sign-out', async () => {
     await signIn()
@@ -25,9 +42,8 @@ describe('community home', () => {
       followed: countFollowed()
     }
 
-    vi.mocked(userApis.getSignedInUser).mockResolvedValue({ ...alice, displayName: 'Updated Alice' })
-    signedIn.reload()
-    await untilLoaded(signedIn.state)
+    vi.mocked(userApis.updateSignedInUser).mockResolvedValue({ ...alice, displayName: 'Updated Alice' })
+    await signedIn.updateProfile({ displayName: 'Updated Alice' })
     await flushPromises()
     expect(projectApis.listSignedInUserProjects).toHaveBeenCalledTimes(before.mine)
     expect(countFollowed()).toBe(before.followed)

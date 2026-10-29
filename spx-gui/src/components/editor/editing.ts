@@ -2,12 +2,11 @@ import { watchEffect, type WatchSource, watch, ref, shallowRef } from 'vue'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { timeout, until } from '@/utils/utils'
-import { untilLoaded, type Loadable } from '@/utils/query'
 import { Cancelled, capture } from '@/utils/exception'
 import type { ProjectData } from '@/apis/project'
 import type { IProject, ProjectSerialized } from '@/models/project'
 import type { CloudHelpers as RawCloudHelpers } from '@/models/common/cloud'
-import type { SignedInState } from '@/stores/user'
+import type { SignedIn } from '@/stores/user'
 
 export enum SavingState {
   Pending,
@@ -134,15 +133,14 @@ export class Editing extends Disposable {
     private cloudHelpers: CloudHelpers,
     private localCacheHelper: ILocalCache,
     private isOnline: WatchSource<boolean>,
-    private signedInStateQuery: Loadable<SignedInState>
+    private signedIn: Pick<SignedIn, 'username'>
   ) {
     super()
   }
 
   get mode() {
-    const signedInState = this.signedInStateQuery.data.value
-    if (signedInState == null || !signedInState.isSignedIn) return EditingMode.EffectFree
-    if (this.project.owner == null || signedInState.user.username !== this.project.owner) return EditingMode.EffectFree
+    const username = this.signedIn.username
+    if (username == null || this.project.owner == null || username !== this.project.owner) return EditingMode.EffectFree
     return EditingMode.AutoSave
   }
 
@@ -230,8 +228,7 @@ export class Editing extends Disposable {
     const projectLoadReporter = collector.getSubReporter({ en: 'Loading project...', zh: '加载项目中...' }, 5)
 
     const preferPublished = async (projectData: ProjectData) => {
-      const signedInState = await untilLoaded(this.signedInStateQuery, signal)
-      const ownedBySignedInUser = signedInState.isSignedIn && signedInState.user.username === projectData.owner
+      const ownedBySignedInUser = this.signedIn.username === projectData.owner
       return !ownedBySignedInUser
     }
     loadFromCloudReporter.startAutoReport(1000, { signal })

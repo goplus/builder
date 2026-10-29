@@ -19,7 +19,7 @@ const signedIn = useSignedIn()
       class="h-8 w-8 rounded-full"
       crossorigin="anonymous"
       :src="signedIn.user?.avatar"
-      :alt="signedInUser?.displayName ?? ''"
+      :alt="signedIn.user?.displayName ?? ''"
     />
     <MarkdownView
       v-if="message.type === 'text'"

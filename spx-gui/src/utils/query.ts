@@ -16,13 +16,6 @@ import { useAction, type ActionException, Cancelled, capture } from './exception
 import { until } from './utils'
 import { ProgressReporter, type Progress, ProgressCollector } from './progress'
 
-/** Reactive result of an asynchronous load, independent of how it is fetched or cached. */
-export type Loadable<T> = {
-  readonly isLoading: Readonly<Ref<boolean>>
-  readonly data: Readonly<Ref<T | null>>
-  readonly error: Readonly<Ref<ActionException | null>>
-}
-
 export type QueryRet<T> = {
   isLoading: Ref<boolean>
   data: ShallowRef<T | null>
@@ -171,11 +164,8 @@ function getCollector(reporter: ProgressReporter) {
 export type SubReporterParams = Parameters<ProgressCollector['getSubReporter']>
 
 /** Wait until a query is loaded, then return its data or throw its error. */
-export async function untilLoaded<T>(queryRet: Loadable<T>, signal?: AbortSignal): Promise<T> {
-  do {
-    await until(() => !queryRet.isLoading.value, signal)
-    signal?.throwIfAborted()
-  } while (queryRet.isLoading.value)
+export async function untilLoaded<T>(queryRet: QueryRet<T>, signal?: AbortSignal): Promise<T> {
+  await until(() => !queryRet.isLoading.value, signal)
   if (queryRet.error.value != null) throw queryRet.error.value
   return queryRet.data.value!
 }

@@ -1,19 +1,22 @@
-import { flushPromises } from '@vue/test-utils'
-import { ref } from 'vue'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, ref } from 'vue'
 import type { Router } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ActionException, Cancelled } from '@/utils/exception'
-import { makeSignedInMock, makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
-import type { SignedIn } from '@/stores/user'
+import { useUserSessionStorage } from '@/utils/user-storage'
+import { ActionException } from '@/utils/exception'
+import { makeSignedInMock, makeSignedInUser, makeSignedInUserQuery } from '@/stores/user/test'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import type { Copilot } from '@/components/copilot/copilot'
 import { Tutorial } from './tutorial'
 
+vi.mock('@/stores/user', () => ({ useSignedIn: () => makeSignedInMock(auth, username) }))
+enableAutoUnmount(afterEach)
+
 const course: Course = { id: 'course', owner: 'alice', title: 'First', prompt: '', thumbnail: '', entrypoint: '' }
 const series = { id: 'series' } as CourseSeries
 let tutorial: Tutorial
-let auth: ReturnType<typeof makeSignedInStateQuery>
+let auth: ReturnType<typeof makeSignedInUserQuery>
 let username = ref<string | null>('alice')
 let copilot: {
   endCurrentSession: ReturnType<typeof vi.fn>
@@ -24,7 +27,7 @@ let copilot: {
 let router: { push: ReturnType<typeof vi.fn> }
 beforeEach(() => {
   sessionStorage.clear()
-  auth = makeSignedInStateQuery(null)
+  auth = makeSignedInUserQuery(null, true)
   username = ref<string | null>('alice')
   copilot = {
     endCurrentSession: vi.fn(),
@@ -33,21 +36,21 @@ beforeEach(() => {
     close: vi.fn()
   }
   router = { push: vi.fn().mockResolvedValue(null) }
-  tutorial = new Tutorial(
-    copilot as unknown as Copilot,
-    router as unknown as Router,
-    ref(true),
-    makeSignedInMock(auth, username) as SignedIn
+  mount(
+    defineComponent({
+      setup() {
+        const course = useUserSessionStorage<Course | null>('spx-gui-tutorial-course', null)
+        const series = useUserSessionStorage<CourseSeries | null>('spx-gui-tutorial-series', null)
+        tutorial = new Tutorial(copilot as unknown as Copilot, router as unknown as Router, ref(true), course, series)
+        return () => null
+      }
+    })
   )
-})
-afterEach(() => {
-  tutorial.dispose()
-  vi.useRealTimers()
 })
 
 function resolveIdentity(nextUsername: string | null) {
   username.value = nextUsername
-  auth.data.value = makeSignedInState(nextUsername)
+  auth.data.value = makeSignedInUser(nextUsername)
   auth.isLoading.value = false
 }
 
@@ -65,7 +68,7 @@ describe('tutorial persistence and identity', () => {
     resolveIdentity('alice')
     expect(tutorial.currentCourse?.id).toBe(course.id)
     const restored = tutorial.currentCourse
-    auth.data.value = { isSignedIn: true, user: { ...auth.data.value!.user!, displayName: 'Updated' } }
+    auth.data.value = { ...auth.data.value!, displayName: 'Updated' }
     await flushPromises()
     expect(tutorial.currentCourse).toBe(restored)
   })
@@ -77,25 +80,5 @@ describe('tutorial persistence and identity', () => {
     await starting
     expect(copilot.startSession).toHaveBeenCalledOnce()
     expect(JSON.parse(sessionStorage.getItem('spx-gui-tutorial-course')!).__user__).toBe('alice')
-  })
-
-  it('does not launch an old course after the account changes during navigation', async () => {
-    vi.useFakeTimers()
-    resolveIdentity('alice')
-    let finishNavigation!: () => void
-    router.push.mockReturnValue(
-      new Promise<void>((resolve) => {
-        finishNavigation = resolve
-      })
-    )
-    const starting = tutorial.startCourse({ ...course, entrypoint: '/editor/alice/project' }, series)
-    const rejected = expect(starting).rejects.toBeInstanceOf(Cancelled)
-    await flushPromises()
-    resolveIdentity('bob')
-    finishNavigation()
-    await vi.advanceTimersByTimeAsync(110)
-    await rejected
-    expect(copilot.startSession).not.toHaveBeenCalled()
-    expect(copilot.notifyUserEvent).not.toHaveBeenCalled()
   })
 })

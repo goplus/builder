@@ -1,48 +1,97 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { userLocalStorageRef, userSessionStorageRef } from './user-storage'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
+import { defineComponent, ref } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useUserLocalStorage, useUserSessionStorage } from './user-storage'
+
+let username = ref<string | null>('alice')
+vi.mock('@/stores/user', () => ({
+  useSignedIn: () => ({
+    get username() {
+      return username.value
+    }
+  })
+}))
+enableAutoUnmount(afterEach)
+
+function setup<T>(useValue: () => T): T {
+  let value!: T
+  mount(
+    defineComponent({
+      setup() {
+        value = useValue()
+        return () => null
+      }
+    })
+  )
+  return value
+}
 
 beforeEach(() => {
+  username = ref('alice')
   localStorage.clear()
   sessionStorage.clear()
 })
 
-describe('storage bound to a determined identity', () => {
-  it('restores values without writing an initialization default', () => {
-    localStorage.setItem('size', JSON.stringify({ __user__: 'alice', __value__: 18 }))
-    const size = userLocalStorageRef('size', 12, 'alice')
+describe.each([
+  ['local', useUserLocalStorage, localStorage],
+  ['session', useUserSessionStorage, sessionStorage]
+] as const)('%s storage scoped to the current user', (_name, useStorage, storage) => {
+  it('restores preferences without writing an initialization default', () => {
+    const saved = JSON.stringify({ __user__: 'alice', __value__: 18 })
+    storage.setItem('size', saved)
+    const size = setup(() => useStorage('size', 12))
     expect(size.value).toBe(18)
-    expect(JSON.parse(localStorage.getItem('size')!).__value__).toBe(18)
+    expect(storage.getItem('size')).toBe(saved)
   })
 
-  it('allows a signed-in user to inherit guest data', () => {
-    userLocalStorageRef('size', 12, null).value = 16
-    expect(userLocalStorageRef('size', 12, 'alice').value).toBe(16)
+  it('lets a signed-in user inherit guest data and scopes subsequent writes', () => {
+    username.value = null
+    const size = setup(() => useStorage('size', 12))
+    size.value = 16
+    username.value = 'alice'
+    expect(size.value).toBe(16)
+    size.value = 18
+    expect(JSON.parse(storage.getItem('size')!)).toEqual({ __user__: 'alice', __value__: 18 })
   })
 
-  it.each([null, 'bob'])('does not expose account data to %s', (username) => {
-    userLocalStorageRef('size', 12, 'alice').value = 18
-    expect(userLocalStorageRef('size', 12, username).value).toBe(12)
+  it.each([null, 'bob'])('isolates the old account value when switching to %s', (nextUsername) => {
+    const size = setup(() => useStorage('size', 12))
+    size.value = 18
+    username.value = nextUsername
+    expect(size.value).toBe(12)
+    size.value = 20
+    expect(JSON.parse(storage.getItem('size')!)).toEqual({
+      __user__: nextUsername ?? '__guest__',
+      __value__: 20
+    })
   })
 
-  it('keeps each writable ref bound to the identity it was created for', () => {
-    const alice = userLocalStorageRef('size', 12, 'alice')
-    userLocalStorageRef('size', 12, 'bob').value = 20
-    alice.value = 18
-    expect(JSON.parse(localStorage.getItem('size')!)).toEqual({ __user__: 'alice', __value__: 18 })
+  it('writes under the current identity even before reading after a switch', () => {
+    const size = setup(() => useStorage('size', 12))
+    size.value = 18
+    username.value = 'bob'
+    size.value = 20
+    expect(JSON.parse(storage.getItem('size')!)).toEqual({ __user__: 'bob', __value__: 20 })
+    expect(size.value).toBe(20)
+    username.value = 'alice'
+    expect(size.value).toBe(12)
   })
 
   it('supports nullable values and clears the record on reset', () => {
-    const course = userSessionStorageRef<{ id: string } | null>('course', null, 'alice')
+    const course = setup(() => useStorage<{ id: string } | null>('course', null))
     expect(course.value).toBeNull()
     course.value = { id: 'first' }
-    expect(userSessionStorageRef('course', null, 'alice').value).toEqual({ id: 'first' })
+    expect(JSON.parse(storage.getItem('course')!).__value__).toEqual({ id: 'first' })
+    username.value = 'bob'
+    expect(course.value).toBeNull()
+    course.value = { id: 'second' }
     course.value = null
-    expect(sessionStorage.getItem('course')).toBeNull()
+    expect(storage.getItem('course')).toBeNull()
   })
 
   it('continues to read legacy unscoped values', () => {
-    localStorage.setItem('size', JSON.stringify(18))
-    expect(userLocalStorageRef('size', 12, 'alice').value).toBe(18)
-    expect(localStorage.getItem('size')).toBe('18')
+    storage.setItem('size', JSON.stringify(18))
+    expect(setup(() => useStorage('size', 12)).value).toBe(18)
+    expect(storage.getItem('size')).toBe('18')
   })
 })

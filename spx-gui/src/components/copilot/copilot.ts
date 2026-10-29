@@ -725,7 +725,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
   }
 
-  syncSessionWith(storage: ISessionExportedStorage): Disposer {
+  syncSessionWith(storage: ISessionExportedStorage): void {
     try {
       const saved = storage.get()
       if (saved != null) {
@@ -735,14 +735,15 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       capture(e, 'Failed to load session from storage')
     }
 
-    const save = throttle((exported: SessionExported | null) => storage.set(exported), 300)
-    const stop = watch(() => this.currentSession?.export() ?? null, save)
-    const disconnect = () => {
-      stop()
-      save.cancel()
-    }
-    this.addDisposer(disconnect)
-    return disconnect
+    this.addDisposer(
+      watch(
+        () => this.currentSession?.export() ?? null,
+        // inProgressCopilotMessageContent may change quite often when streaming, so we throttle the save operation
+        throttle((exported: SessionExported | null) => {
+          storage.set(exported)
+        }, 300)
+      )
+    )
   }
 
   /** End the current session. */

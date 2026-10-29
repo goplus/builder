@@ -118,7 +118,7 @@ const stateQueryRet = useQuery(
     project.disposeOnSignal(ctx.signal)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     ctx.signal.throwIfAborted()
-    const state = new EditorState(i18n, project, isOnline, signedIn.state, cloudHelpers, localCache)
+    const state = new EditorState(i18n, project, isOnline, signedIn, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
     await state.editing.loadProject(
       ownerInput,

@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, nextTick } from 'vue'
+import { describe, expect, it } from 'vitest'
+import { defineComponent } from 'vue'
 import { z } from 'zod'
 import {
   Copilot,
@@ -1289,33 +1289,5 @@ describe('Copilot', () => {
       }
     ])
     expect(copilot.executor.getExecution('call_legacy')).toBe(null)
-  })
-})
-
-describe('disconnecting session persistence', () => {
-  it('cancels a queued write before binding another identity', async () => {
-    vi.useFakeTimers()
-    const copilot = new Copilot(createTestSkillRegistry())
-    const first = { get: () => null, set: vi.fn() }
-    const second = { get: () => null, set: vi.fn() }
-    try {
-      const disconnect = copilot.syncSessionWith(first)
-      await copilot.startSession(createBasicTopic('First'))
-      await nextTick()
-      copilot.endCurrentSession()
-      await nextTick()
-      const before = first.set.mock.calls.length
-      disconnect()
-      copilot.syncSessionWith(second)
-      await copilot.startSession(createBasicTopic('Second'))
-      await nextTick()
-      await vi.advanceTimersByTimeAsync(400)
-      expect(first.set).toHaveBeenCalledTimes(before)
-      expect(second.set).toHaveBeenCalled()
-      expect(second.set.mock.calls.at(-1)?.[0]?.topic.title.en).toBe('Second')
-    } finally {
-      copilot.dispose()
-      vi.useRealTimers()
-    }
   })
 })
