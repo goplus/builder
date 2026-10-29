@@ -23,7 +23,7 @@ import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch, watchEffec
 import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
-import { untilTaskScheduled } from '@/utils/utils'
+import { timeout, untilTaskScheduled } from '@/utils/utils'
 import { UIButton, UIDropdown, UIError, UIIcon, UITextInput, UITooltip } from '@/components/ui'
 import { stringifyDefinitionId } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
@@ -40,6 +40,7 @@ const itemsForDisplay = computed<APIReferenceItem[] | null>((oldValue) => {
   return props.controller.items ?? oldValue ?? null
 })
 
+const isSearchDemo = new URLSearchParams(location.search).get('snippetSearchDemo') === '1'
 const searchQuery = ref('')
 const isSearchExpanded = ref(false)
 const searchInputRef = ref<InstanceType<typeof UITextInput>>()
@@ -55,10 +56,13 @@ const canSubmitSearch = computed(
 )
 const searchResultsWrapperRef = ref<HTMLElement>()
 let searchVersion = 0
+let searchController: AbortController | null = null
 let searchLoadingTimer: ReturnType<typeof setTimeout> | null = null
 
 function resetSearch() {
   searchVersion++
+  searchController?.abort(new Cancelled('search changed'))
+  searchController = null
   if (searchLoadingTimer != null) clearTimeout(searchLoadingTimer)
   searchLoadingTimer = null
   submittedSearchQuery.value = ''
@@ -73,6 +77,8 @@ async function submitSearch() {
   const query = searchQuery.value.trim()
   const items = props.controller.items ?? []
   const version = ++searchVersion
+  const controller = new AbortController()
+  searchController = controller
   submittedSearchQuery.value = query
   searchResults.value = []
   searchFailed.value = false
@@ -84,11 +90,13 @@ async function submitSearch() {
   }, 200)
   try {
     const results = await searchAPIReferenceItems(items, query)
+    if (isSearchDemo) await timeout(600, controller.signal)
     if (version === searchVersion) searchResults.value = results
   } catch {
     if (version === searchVersion) searchFailed.value = true
   } finally {
     if (version === searchVersion) {
+      searchController = null
       if (searchLoadingTimer != null) clearTimeout(searchLoadingTimer)
       searchLoadingTimer = null
       isSearchPending.value = false
@@ -324,7 +332,12 @@ async function handleCategoryClick(id: string) {
     <template v-else>
       <div class="flex-none px-3 py-2">
         <div class="flex items-center justify-between gap-2">
-          <h4 class="text-sm font-medium text-title">{{ $t({ en: 'Code snippets', zh: '代码片段' }) }}</h4>
+          <div class="flex min-w-0 items-center gap-1.5">
+            <h4 class="text-sm font-medium text-title">{{ $t({ en: 'Code snippets', zh: '代码片段' }) }}</h4>
+            <span v-if="isSearchDemo" class="rounded-sm bg-primary-200 px-1 text-xs text-primary-700">
+              {{ $t({ en: 'Demo', zh: '演示' }) }}
+            </span>
+          </div>
           <div class="flex items-center gap-1">
             <UITooltip>
               <template #trigger>

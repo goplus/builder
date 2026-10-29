@@ -666,6 +666,66 @@ describe('API Reference search disclosure', () => {
     expect(wrapper.get('[role="status"]').text()).toBe('匹配到 1 个代码片段')
   })
 
+  it('shows the real editor loading sequence in the explicitly enabled text-search demo', async () => {
+    vi.stubGlobal('location', { search: '?snippetSearchDemo=1' })
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const wrapper = mountReference()
+    expect(wrapper.text()).toContain('演示')
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    await wrapper.get('input').setValue('开始')
+    await wrapper.get('form[aria-label="搜索代码片段"]').trigger('submit')
+    await flushPromises()
+    const statusElement = wrapper.get('[role="status"]').element
+    expect(wrapper.get('[role="status"]').text()).toBe('')
+    await vi.advanceTimersByTimeAsync(199)
+    expect(wrapper.get('[role="status"]').text()).toBe('')
+    await vi.advanceTimersByTimeAsync(1)
+    expect(wrapper.get('[role="status"]').text()).toBe('正在查找…')
+    expect(wrapper.get('[aria-label="Submit snippet search"]').attributes('disabled')).toBeDefined()
+    await vi.advanceTimersByTimeAsync(399)
+    expect(wrapper.get('[role="status"]').text()).toBe('正在查找…')
+    await vi.advanceTimersByTimeAsync(1)
+    expect(wrapper.get('[role="status"]').element).toBe(statusElement)
+    expect(wrapper.get('[role="status"]').text()).toBe('匹配到 1 个代码片段')
+    expect(wrapper.get('[aria-label="Submit snippet search"]').attributes('disabled')).toBeUndefined()
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('cancels the simulated wait when the draft changes and allows another demo search', async () => {
+    vi.stubGlobal('location', { search: '?snippetSearchDemo=1' })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const wrapper = mountReference()
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    await wrapper.get('input').setValue('开始')
+    await wrapper.get('form[aria-label="搜索代码片段"]').trigger('submit')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(200)
+    await wrapper.get('input').setValue('打印')
+    await wrapper.get('form[aria-label="搜索代码片段"]').trigger('submit')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(400)
+    expect(wrapper.get('[role="status"]').text()).toBe('正在查找…')
+    await vi.advanceTimersByTimeAsync(200)
+    expect(wrapper.get('[role="status"]').text()).toBe('匹配到 1 个代码片段')
+    const result = wrapper.findAll('[data-category-id]').find((group) => group.isVisible())!
+    expect(result.text()).toContain('println msg')
+    expect(result.text()).not.toContain('onStart')
+  })
+
+  it('keeps normal text search immediate when demo mode is not enabled', async () => {
+    vi.stubGlobal('location', { search: '?snippetSearchDemo=0' })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const wrapper = mountReference()
+    expect(wrapper.text()).not.toContain('演示')
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    await search(wrapper, '开始')
+    expect(wrapper.get('[role="status"]').text()).toBe('匹配到 1 个代码片段')
+    await vi.advanceTimersByTimeAsync(600)
+    expect(wrapper.text()).not.toContain('正在查找')
+  })
+
   it('reports a failed search without claiming no results and allows retrying the same query', async () => {
     let rejectSearch!: (reason: Error) => void
     const pending = new Promise<APIReferenceItem[]>((_resolve, reject) => {
