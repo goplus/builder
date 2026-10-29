@@ -118,7 +118,10 @@ function makeHarness() {
     readiness,
     startReporter: new ProgressReporter(() => {})
   })
-  const codeEditor = { formatWorkspace, dispose: vi.fn() } as unknown as CodeEditor
+  const codeEditor = {
+    formatWorkspace,
+    dispose: vi.fn()
+  } as unknown as CodeEditor
   courseSession.setCodeEditor(codeEditor)
   const executor = executorMocks.instances.at(-1)!
   const harness = {
@@ -212,15 +215,17 @@ describe('PlaygroundCourseSession', () => {
     }
   )
 
-  it('updates the API whitelist', async () => {
+  it('forwards API references unchanged, including unknown presets', async () => {
     const harness = makeHarness()
     await harness.courseSession.start()
-    const filterAPIs = harness.getExecutorOptions().framework?.capabilities.editor_codeEditor_filterAPIs
-    if (filterAPIs == null) throw new Error('editor_codeEditor_filterAPIs capability not found')
+    const filterAPIs = harness.getExecutorOptions().framework!.capabilities.editor_codeEditor_filterAPIs
+    const apis = ['xgo:preset/spx?Sprite.stepTo#0', 'xgo:preset/unknown?Sprite.turn']
 
-    await filterAPIs({ apis: ['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'] })
+    await filterAPIs({ apis })
+    expect(harness.courseSession.apiWhitelist.apis).toEqual(apis)
 
-    expect(harness.courseSession.apiWhitelist.apis).toEqual(['xgo:github.com/goplus/spx/v3?Sprite.stepTo#0'])
+    await filterAPIs({ apis: [] })
+    expect(harness.courseSession.apiWhitelist.apis).toEqual([])
   })
 
   it('observes new starts without replaying the runtime already running at subscription', async () => {
@@ -639,10 +644,10 @@ describe('PlaygroundCourseSession', () => {
   it('retains API and ruler state after completion and borrows the editor and project', async () => {
     const harness = makeHarness()
     const capabilities = harness.getExecutorOptions().framework!.capabilities
-    await capabilities.editor_codeEditor_filterAPIs({ apis: ['stepTo'] })
+    await capabilities.editor_codeEditor_filterAPIs({ apis: ['xgo:preset/spx?Sprite.stepTo'] })
     await capabilities.editor_ruler_enable(null)
     await capabilities.course_complete(null)
-    expect(harness.courseSession.apiWhitelist.apis).toEqual(['stepTo'])
+    expect(harness.courseSession.apiWhitelist.apis).toEqual(['xgo:preset/spx?Sprite.stepTo'])
     expect(harness.courseSession.ruler.enabled).toBe(true)
     harness.courseSession.dispose()
     harness.courseSession.dispose()

@@ -131,10 +131,9 @@ export interface TutorialFrameworkHost {
   editor: {
     codeEditor: {
       /**
-       * Limits APIs offered by Code Editor assistance. Each entry is a
-       * definition identifier string (`xgo:<package>?<name>#<overloadId>`),
-       * the same identifiers the Code Editor uses elsewhere; omitting
-       * `#<overloadId>` addresses every overload of the name.
+       * Limits APIs offered by Code Editor assistance using definition IDs.
+       * Identifier syntax, preset resolution and failure semantics are defined
+       * in tutorial-class-framework.go (CodeEditor.filterAPIs).
        */
       filterAPIs(apis: string[]): void;
       /**

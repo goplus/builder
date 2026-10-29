@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { fromText } from '@/models/common/file'
 import { SpxProject } from '@/models/spx/project'
 import { History } from '@/components/editor/history'
+import { XGoLSPClient } from '@/components/xgo-code-editor'
 import { SpxCodeEditorProject } from '../spx-project'
-import { XGoLSPClient } from '@/components/xgo-code-editor/lsp/xgo-lsp-client'
 
 describe('SPX language client', () => {
   it('loads SPX sources together with gox files and JSON metadata', async () => {

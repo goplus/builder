@@ -57,7 +57,13 @@ watch(
     const stopAPIWatch = watch(
       () => props.apiWhitelist,
       (apiWhitelist) => {
-        const whitelist = apiWhitelist == null ? null : apiWhitelist.map(parseDefinitionId)
+        const whitelist =
+          apiWhitelist == null
+            ? null
+            : apiWhitelist
+                .map(parseDefinitionId)
+                .map((definition) => codeEditor.resolveDefinitionId(definition))
+                .filter((definition) => definition != null)
         codeEditor.registerAPIReferenceProvider(new SpxAPIReferenceProvider(documentBase, whitelist))
         codeEditor.registerCompletionProvider(
           whitelist == null ? completionProvider : new FilteredCompletionProvider(completionProvider, whitelist)

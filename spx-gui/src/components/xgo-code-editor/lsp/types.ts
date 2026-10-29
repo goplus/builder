@@ -5,14 +5,8 @@
 
 import type * as lsp from 'vscode-languageserver-protocol'
 import type { Disposer } from '@/utils/disposable'
-import type {
-  TextDocumentIdentifier,
-  Position,
-  ResourceReference,
-  InputSlot,
-  DefinitionIdentifier,
-  Property
-} from '../common'
+import type { TextDocumentIdentifier, Position, ResourceReference, InputSlot, Property } from '../common'
+import type { DefinitionIdentifier } from '../definition-id'
 
 export type RequestContext = {
   /** Optional signal to cancel the request */

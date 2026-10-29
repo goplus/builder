@@ -14,7 +14,7 @@ This is the `main_course.gox` of the [example course](../../../../../docs/develo
 
 ```go
 onStart => {
-	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
+	Editor.CodeEditor.filterAPIs ["xgo:preset/spx?Sprite.stepTo"]
 	showPrelude "Move Lita to Mushroom. Click Mushroom's name to insert it into your code."
 	showVideo "step-to"
 	Spotlight.reveal "api-references", "Here is stepTo, the only block you need in this lesson."
@@ -423,17 +423,29 @@ Editor.Runtime.onExit code => {
 
 | Call | Returns | Notes |
 | --- | --- | --- |
-| `Editor.CodeEditor.filterAPIs apis` | Immediately | Limits the APIs offered by Code Editor assistance. Each entry is a full definition identifier, `xgo:<package>?<name>#<overloadId>`. Omitting `#<overloadId>` includes every overload of the name. Short names such as `"stepTo"` are not accepted. |
+| `Editor.CodeEditor.filterAPIs apis` | Immediately | Limits the APIs offered by Code Editor assistance. Each entry is a definition reference, `xgo:<package>?<name>#<overloadId>`. Omitting `#<overloadId>` includes every overload of the name. Short names such as `"stepTo"` are not accepted. |
 | `Editor.CodeEditor.formatWorkspace` | After formatting is done | Formats the learner's code. |
 
 ```go
 onStart => {
 	Editor.CodeEditor.filterAPIs [
-		"xgo:github.com/goplus/spx/v3?Sprite.stepTo",
-		"xgo:github.com/goplus/spx/v3?Sprite.say",
+		"xgo:preset/spx?Sprite.stepTo",
+		"xgo:preset/spx?Sprite.say",
 	]
 }
 ```
+
+Use `preset/spx` for SPX APIs so Course code follows the active project's SPX
+package across version upgrades. The `preset/` prefix is reserved for project-provided
+packages; SPX editors provide `spx`. Other package names, including bare `spx` and
+fully qualified paths, match literally and do not follow upgrades. Unavailable APIs
+match nothing.
+
+Unknown presets (such as `preset/spxx`), packages and APIs match nothing; other
+valid entries still take effect. If none match, the result is the same as an empty
+list. An empty list hides all APIs covered by the filter; project-local completions
+and items without a definition remain available. Malformed identifiers are rejected
+when the editor applies the filter.
 
 ### Editor.Ruler
 

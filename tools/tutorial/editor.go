@@ -112,17 +112,9 @@ type CodeEditor struct {
 	courseProgram *courseProgram
 }
 
-// FilterAPIs limits which APIs appear in the editor's assistance (API
-// Reference, completion and so on), so one Course exposes only what it
-// teaches and the cognitive load stays low.
-//
-// Each entry is a full definition identifier, of the form
-// "xgo:github.com/goplus/spx/v3?Sprite.stepTo"; omitting #<overloadId>
-// addresses every overload of the name. A shorthand like "stepTo" is
-// deliberately not supported: resolving one into a full identifier needs
-// mapping logic, and that logic cannot reliably assume the package is spx and
-// the receiver is Sprite. The typing burden on authors is for the Course
-// Editor's authoring assistance to solve.
+// FilterAPIs limits the APIs offered by editor assistance. Use definition IDs
+// such as "xgo:preset/spx?Sprite.stepTo"; omitting #<overloadId> selects all overloads.
+// Identifier semantics are defined in docs/develop/tutorial-v2/tutorial-class-framework.go.
 func (p *CodeEditor) FilterAPIs(apis []string) {
 	p.courseProgram.mustCallCapability("editor_codeEditor_filterAPIs", struct {
 		APIs []string `json:"apis"`
