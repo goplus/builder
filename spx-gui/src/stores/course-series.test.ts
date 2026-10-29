@@ -5,7 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { withQueryClient } from '@/utils/test'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
-import { useDeleteCourseSeries, useSeriesCourses, useUpdateCourseSeries } from './course-series'
+import {
+  useCourseChangesInSeries,
+  useDeleteCourseSeries,
+  useSeriesCourses,
+  useSeriesCoursesByPage,
+  useUpdateCourseSeries
+} from './course-series'
 
 const apis = vi.hoisted(() => ({ listCourses: vi.fn(), updateCourseSeries: vi.fn(), deleteCourseSeries: vi.fn() }))
 
@@ -47,11 +53,11 @@ describe('course series writes', () => {
   it('publishes the saved series and makes a snapshot reader wait for the invalidated list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
     queryClient.setQueryData(
-      ['course-series-courses', '40', { pageIndex: 1, pageSize: 100 }],
+      ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
     )
     queryClient.setQueryData(
-      ['course-series-courses', '41', { pageIndex: 1, pageSize: 100 }],
+      ['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2339')])
     )
     const after = makeSeries('40', ['2338', '2340'])
@@ -62,14 +68,14 @@ describe('course series writes', () => {
 
     expect(queryClient.getQueryData(['course-series', '40'])).toEqual(after)
     expect(
-      queryClient.getQueryState(['course-series-courses', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
+      queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)
-    expect(queryClient.getQueryData(['course-series-courses', '41', { pageIndex: 1, pageSize: 100 }])).toEqual(
+    expect(queryClient.getQueryData(['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }])).toEqual(
       page([makeCourse('2339')])
     )
     // Starting a lesson of the series now waits for its list as it is, instead of taking the old one.
     apis.listCourses.mockResolvedValue({ total: 2, data: [makeCourse('2338'), makeCourse('2340')] })
-    const courses = withQueryClient(queryClient, () => useSeriesCourses(() => '40', 'snapshot'))
+    const courses = withQueryClient(queryClient, () => useSeriesCourses(() => '40', { mode: 'snapshot' }))
     expect(courses.isLoading.value).toBe(true)
     await flushPromises()
     expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')])
@@ -98,11 +104,11 @@ describe('course series writes', () => {
   it('invalidates a series and list after an uncertain write failure', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
     queryClient.setQueryData(
-      ['course-series-courses', '40', { pageIndex: 1, pageSize: 100 }],
+      ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
     )
     queryClient.setQueryData(
-      ['course-series-courses', '41', { pageIndex: 1, pageSize: 100 }],
+      ['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2339')])
     )
     apis.updateCourseSeries.mockRejectedValue(new Error('timeout'))
@@ -112,9 +118,9 @@ describe('course series writes', () => {
 
     expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
     expect(
-      queryClient.getQueryState(['course-series-courses', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
+      queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)
-    expect(queryClient.getQueryData(['course-series-courses', '41', { pageIndex: 1, pageSize: 100 }])).toEqual(
+    expect(queryClient.getQueryData(['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }])).toEqual(
       page([makeCourse('2339')])
     )
   })
@@ -122,7 +128,7 @@ describe('course series writes', () => {
   it('invalidates a deleted series and its course list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
     queryClient.setQueryData(
-      ['course-series-courses', '40', { pageIndex: 1, pageSize: 100 }],
+      ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
     )
     apis.deleteCourseSeries.mockResolvedValue(undefined)
@@ -132,7 +138,37 @@ describe('course series writes', () => {
 
     expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
     expect(
-      queryClient.getQueryState(['course-series-courses', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
+      queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)
+  })
+
+  it('refills pages and updates every total from the server after a course is deleted', async () => {
+    let courses = ['1', '2', '3', '4'].map(makeCourse)
+    apis.listCourses.mockImplementation(async ({ pageIndex, pageSize }) => ({
+      data: courses.slice((pageIndex - 1) * pageSize, pageIndex * pageSize),
+      total: courses.length
+    }))
+    const [first, second] = withQueryClient(queryClient, () => [
+      useSeriesCoursesByPage(
+        () => '40',
+        () => ({ pageIndex: 1, pageSize: 2 })
+      ),
+      useSeriesCoursesByPage(
+        () => '40',
+        () => ({ pageIndex: 2, pageSize: 2 })
+      )
+    ])
+    await flushPromises()
+    expect(first.data.value).toEqual({ data: [makeCourse('1'), makeCourse('2')], total: 4 })
+    expect(second.data.value).toEqual({ data: [makeCourse('3'), makeCourse('4')], total: 4 })
+
+    const changes = withQueryClient(queryClient, () => useCourseChangesInSeries())
+    courses = courses.slice(1)
+    changes.deleted('1')
+
+    await vi.waitFor(() => {
+      expect(first.data.value).toEqual({ data: [makeCourse('2'), makeCourse('3')], total: 3 })
+      expect(second.data.value).toEqual({ data: [makeCourse('4')], total: 3 })
+    })
   })
 })

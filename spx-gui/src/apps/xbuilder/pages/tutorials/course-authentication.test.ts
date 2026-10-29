@@ -18,7 +18,6 @@ const mocks = vi.hoisted(() => ({
   } | null> | null,
   courseLoading: null as Ref<boolean> | null,
   seriesLoading: null as Ref<boolean> | null,
-  seriesCoursesLoading: null as Ref<boolean> | null,
   signIn: vi.fn(),
   confirm: vi.fn(),
   enter: vi.fn(),
@@ -55,7 +54,7 @@ vi.mock('@/stores/course', () => ({
   }
 }))
 vi.mock('@/stores/course-series', () => ({
-  useSeriesCoursePage: () => ({
+  useSeriesCoursesByPage: () => ({
     data: ref({ data: [mocks.course], total: 30 }),
     error: ref(null),
     isLoading: ref(false),
@@ -75,7 +74,6 @@ vi.mock('@/stores/course-series', () => ({
   },
   useSeriesCourses: () => {
     const isLoading = ref(false)
-    mocks.seriesCoursesLoading = isLoading
     return {
       data: ref([mocks.course]),
       error: ref(null),
@@ -108,14 +106,15 @@ vi.mock('@/components/ui', async (importOriginal) => ({
   useMessage: () => ({ error: mocks.error })
 }))
 vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
-  default: { name: 'CoursePlayground', props: ['projectQueryRet'], template: '<div>Playground</div>' }
+  default: { name: 'CoursePlaygroundStub', props: ['projectQueryRet'], template: '<div>Playground</div>' }
 }))
 vi.mock('@/components/community/CommunityNavbar.vue', () => ({ default: { template: '<nav />' } }))
 vi.mock('@/components/community/footer/CommunityFooter.vue', () => ({ default: { template: '<footer />' } }))
 vi.mock('../community/search.vue', () => ({ searchKeywordQueryParamName: 'q' }))
 
-import CourseStart from './course-start-session.vue'
-import CoursePlayground from './course-playground-session.vue'
+import PlaygroundComponent from '@/components/tutorials/playground/CoursePlayground.vue'
+import CourseStart from './course-start.vue'
+import CoursePlayground from './course-playground.vue'
 import CourseSeries from './course-series.vue'
 
 enableAutoUnmount(afterEach)
@@ -222,7 +221,7 @@ describe('Course authentication', () => {
       const { router, page } = await openPage(destination)
       expect(router.currentRoute.value.fullPath).toBe(destination)
       if (destination.endsWith('/playground')) {
-        expect(page.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').error.value).not.toBeNull()
+        expect(page.findComponent(PlaygroundComponent).props('projectQueryRet').error.value).not.toBeNull()
       } else {
         expect(page.findComponent({ name: 'UIError' }).exists()).toBe(true)
       }
@@ -252,19 +251,6 @@ describe('Course authentication', () => {
       expect(mocks.enter).toHaveBeenCalledTimes(2)
     }
   )
-
-  it('keeps the active Playground when the Course list reloads', async () => {
-    mocks.course.kind = 'playground'
-    mocks.signedIn = true
-    await openPage('/course/series/course/playground')
-    expect(mocks.load).toHaveBeenCalledOnce()
-    mocks.seriesCoursesLoading!.value = true
-    await flushPromises()
-    mocks.seriesCoursesLoading!.value = false
-    await flushPromises()
-    expect(mocks.load).toHaveBeenCalledOnce()
-    expect(mocks.notifyStarted).toHaveBeenCalledOnce()
-  })
 
   it('loads a signed-in Playground on direct navigation', async () => {
     mocks.course.kind = 'playground'

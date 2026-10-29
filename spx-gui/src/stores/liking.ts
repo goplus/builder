@@ -12,7 +12,7 @@ const staleTime = 5 * 60 * 1000 // 5min
 
 export function useIsLikingProject(
   project: WatchSource<{ owner: string; name: string }>,
-  mode: QueryMode = 'background'
+  options: { mode?: QueryMode } = { mode: 'live' }
 ) {
   const projectRef = toRef(project)
   const signedInUser = useSignedInUser()
@@ -22,7 +22,7 @@ export function useIsLikingProject(
   })
   return useQueryWithCache({
     queryKey,
-    mode,
+    mode: options.mode,
     async queryFn() {
       if (!isSignedIn()) return false
       return apis.isLiking(projectRef.value.owner, projectRef.value.name)

@@ -12,7 +12,7 @@ import {
   onScopeDispose,
   nextTick
 } from 'vue'
-import { useQuery as useVueQuery, useQueryClient as useVueQueryClient, type QueryState } from '@tanstack/vue-query'
+import { useQuery as useVueQuery, useQueryClient as useVueQueryClient, isCancelledError } from '@tanstack/vue-query'
 import { type LocaleMessage } from '../i18n'
 import { useAction, type ActionException, Cancelled, capture } from '../exception'
 import { until } from '../utils'
@@ -131,20 +131,19 @@ export function useQuery<T>(
   return { isLoading, data, error, progress, refetch }
 }
 
-export type QueryMode = 'background' | 'blocking' | 'snapshot'
+export type QueryMode = 'live' | 'snapshot'
 
 export type QueryWithCacheOptions<T> = {
   queryKey: unknown[] | WatchSource<unknown[]>
   queryFn: (signal: AbortSignal) => Promise<T>
   staleTime?: number
   /**
-   * Consumer-local result policy; defaults to `background`.
-   * - `background`: retain data and loading state during refresh; publish new data or the refresh error.
-   * - `blocking`: expose null data/error and loading while awaiting a required result, including offline pauses.
-   *   On failure, expose the error with null data and end loading.
+   * Consumer-local result policy; defaults to `live`.
+   * - `live`: retain data and loading state during refresh; publish new data or the refresh error.
    * - `snapshot`: retain the first valid success for the current key, ignoring subsequent shared-cache changes.
    *   Invalidated/expired results needing revalidation cannot satisfy the initial read; successful null/falsy values can.
-   *   Key changes start a new read. Explicit refetch uses blocking semantics and replaces the snapshot on success.
+   *   Initial reads and explicit refetch expose null data/error and loading while awaiting a valid result, including offline pauses.
+   *   Failures expose an error with null data and end loading. Key changes start a new read; refetch replaces the snapshot.
    */
   mode?: QueryMode
   failureSummaryMessage?: LocaleMessage
@@ -165,8 +164,8 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
   })
 
   const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
-  const mode = options.mode ?? 'background'
-  if (mode === 'background') {
+  const mode = options.mode ?? 'live'
+  if (mode === 'live') {
     return {
       isLoading: ret.isLoading,
       data: computed(() => ret.data.value ?? null),
@@ -179,98 +178,99 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
   const queryOptions = computed(() =>
     queryClient.defaultQueryOptions({ queryKey: toValue(options.queryKey), staleTime: options.staleTime })
   )
-  const cache = queryClient.getQueryCache()
-  const result = shallowRef<QueryState<T, ActionException> | null>(null)
-  // A canceled fetch can restore old success; only a later successful revision satisfies a required read.
-  let waitingAfter: number | null = null
+  const result = shallowRef<{ data: T | null; error: ActionException | null } | null>(null)
+  let readID = 0
 
-  function startRead() {
-    waitingAfter = cache.get(queryOptions.value.queryHash)?.state.dataUpdateCount ?? 0
-    result.value = null
+  function fetchResult(id: number, cancelRefetch: boolean) {
+    void ret.refetch({ throwOnError: true, cancelRefetch }).then(
+      ({ data }) => {
+        if (id === readID) result.value = { data: data ?? null, error: null }
+      },
+      (error: ActionException) => {
+        if (id !== readID) return
+        // Cancellation can restore stale success; join a new fetch instead of accepting that state.
+        if (isCancelledError(error)) fetchResult(id, false)
+        else result.value = { data: null, error }
+      }
+    )
   }
 
-  function update(failed = false) {
-    if (mode === 'snapshot' && result.value?.status === 'success') return
-    const query = cache.get<T, ActionException>(queryOptions.value.queryHash)
-    if (query == null) return
-    const current = query.state
-    if (current.fetchStatus === 'idle' && current.status === 'error' && (failed || !current.isInvalidated)) {
-      result.value = current
-    } else if (current.fetchStatus !== 'idle' || current.isInvalidated || current.status === 'pending') {
-      waitingAfter ??= current.dataUpdateCount
-      result.value = null
-    } else if (waitingAfter == null || current.dataUpdateCount > waitingAfter) {
-      waitingAfter = null
-      result.value = current
+  function read(refetch = false) {
+    const id = ++readID
+    const query = queryClient.getQueryCache().get<T, ActionException>(queryOptions.value.queryHash)
+    if (
+      !refetch &&
+      query?.state.status === 'success' &&
+      query.state.fetchStatus === 'idle' &&
+      !query.isStaleByTime(queryOptions.value.staleTime)
+    ) {
+      result.value = { data: query.state.data ?? null, error: null }
+      return
     }
+    result.value = null
+    fetchResult(id, refetch)
   }
 
   watch(
     () => queryOptions.value.queryHash,
-    () => {
-      startRead()
-      const query = cache.get(queryOptions.value.queryHash)
-      if (query != null && !query.isStaleByTime(queryOptions.value.staleTime)) waitingAfter = null
-      update()
-    },
+    () => read(),
     { immediate: true, flush: 'sync' }
   )
-  // Cache events carry an atomic state, including invalidation when isStale was already true.
-  const unsubscribe = cache.subscribe((event) => {
-    if (event.type === 'updated' && event.query.queryHash === queryOptions.value.queryHash) {
-      update(event.action.type === 'error')
-    }
-  })
-  onScopeDispose(unsubscribe)
+  onScopeDispose(() => readID++)
 
   return {
     isLoading: computed(() => result.value == null),
-    data: computed(() => (result.value?.status === 'success' ? result.value.data ?? null : null)),
+    data: computed(() => result.value?.data ?? null),
     error: computed(() => result.value?.error ?? null),
     progress,
-    refetch: () => {
-      startRead()
-      void ret.refetch()
-    }
+    refetch: () => read(true)
   }
 }
 
 /** Manage cache of `useQueryWithCache` */
-export function useQueryCache<T>() {
+export function useQueryCache() {
   const queryClient = useVueQueryClient()
 
-  /**
-   * Invalidate all queries whose keys start with the provided queryKey.
-   * @see https://tanstack.com/query/latest/docs/framework/vue/guides/query-invalidation#query-matching-with-invalidatequeries
-   */
-  async function invalidate(queryKey: unknown[]) {
-    void queryClient.cancelQueries({ queryKey })
-    // Revoke stale reads before navigation; let reactive query inputs settle before refetching.
+  async function invalidateAndRefetch(filters: { queryKey: unknown[]; exact?: boolean }) {
+    // Vue Query 5.36.1 defers invalidateQueries() with setTimeout(0), including marking data invalid.
+    // Mark it synchronously so a snapshot mounted immediately after navigation cannot capture the old cache.
+    // Defer only refetching until reactive query inputs have settled.
     queryClient
       .getQueryCache()
-      .findAll({ queryKey })
+      .findAll(filters)
       .forEach((query) => query.invalidate())
     await nextTick()
     return queryClient.refetchQueries(
-      { queryKey, type: 'active', predicate: (query) => query.state.isInvalidated },
+      { ...filters, type: 'active', predicate: (query) => query.state.isInvalidated },
       { cancelRefetch: false }
     )
   }
 
-  function invalidateWithOptimisticValue(queryKey: unknown[], optimisticValue: T | ((data: T) => T)) {
-    // A response from a GET started before this write must not overwrite its new value.
-    void queryClient.cancelQueries({ queryKey })
-    if (typeof optimisticValue === 'function') {
-      queryClient.setQueriesData<T>({ queryKey }, (data) =>
-        data == null ? data : (optimisticValue as (data: T) => T)(data)
-      )
-    } else {
-      queryClient.setQueryData(queryKey, optimisticValue)
-    }
-    return invalidate(queryKey)
+  /** Invalidate queries matching a key prefix and refresh active queries. */
+  function invalidate(queryKeyPrefix: unknown[]) {
+    const filters = { queryKey: queryKeyPrefix }
+    void queryClient.cancelQueries(filters)
+    return invalidateAndRefetch(filters)
   }
 
-  return { invalidate, invalidateWithOptimisticValue }
+  /** Write one exact cache entry, then invalidate it and refresh it if active. */
+  function invalidateWithOptimisticValue<T>(queryKey: unknown[], optimisticValue: T) {
+    // A response from a GET started before this write must not overwrite its new value.
+    const filters = { queryKey, exact: true }
+    void queryClient.cancelQueries(filters)
+    queryClient.setQueryData(queryKey, optimisticValue)
+    return invalidateAndRefetch(filters)
+  }
+
+  /** Update existing non-null results matching a prefix, then invalidate and refresh active matches. */
+  function invalidateMatchingWithOptimisticUpdater<T>(queryKeyPrefix: unknown[], updater: (data: T) => T) {
+    const filters = { queryKey: queryKeyPrefix }
+    void queryClient.cancelQueries(filters)
+    queryClient.setQueriesData<T>(filters, (data) => (data == null ? data : updater(data)))
+    return invalidateAndRefetch(filters)
+  }
+
+  return { invalidate, invalidateWithOptimisticValue, invalidateMatchingWithOptimisticUpdater }
 }
 
 const composedReporterCollectorMap = new WeakMap<ProgressReporter, ProgressCollector>()
@@ -288,6 +288,8 @@ export type SubReporterParams = Parameters<ProgressCollector['getSubReporter']>
 
 /** Wait until a query is loaded, then return its data or throw its error. */
 export async function untilLoaded<T>(queryRet: QueryRet<T>, signal?: AbortSignal): Promise<T> {
+  // Await yields even when already loaded; a refetch or cancellation may occur before execution resumes.
+  // Recheck both before consuming the result.
   do {
     await until(() => !queryRet.isLoading.value, signal)
     signal?.throwIfAborted()
@@ -311,7 +313,7 @@ export async function composeQuery<T>(
   if (ctx.source === 'refetch') {
     queryRet.refetch()
   } else {
-    // Background queries can publish data and errors without changing loading state.
+    // Track the composed result so changes to its loading, data or error rerun the parent query.
     toValue(queryRet.isLoading)
     toValue(queryRet.data)
     toValue(queryRet.error)

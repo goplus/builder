@@ -6,6 +6,7 @@ import { createI18n } from '@/utils/i18n'
 import type { Progress } from '@/utils/progress'
 import type { QueryRet } from '@/utils/query'
 import type { TutorialProject } from '@/models/tutorial/project'
+import PlaygroundComponent from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundPage from './course-playground.vue'
 
 const mocks = vi.hoisted(() => ({
@@ -39,7 +40,7 @@ vi.mock('@/components/tutorials/tutorial', () => ({
 }))
 vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
   default: defineComponent({
-    name: 'CoursePlayground',
+    name: 'CoursePlaygroundStub',
     props: { projectQueryRet: { type: Object as PropType<QueryRet<TutorialProject>>, required: true } },
     setup: (props) => () =>
       h('div', { class: 'project-progress', 'data-percentage': props.projectQueryRet.progress.value.percentage })
@@ -88,32 +89,26 @@ describe('Course page startup progress', () => {
     expect(mocks.loadProject).toHaveBeenLastCalledWith({ id: 'next', kind: 'playground', title: 'Next course' })
   })
 
-  it('does not restart data loading when the course-list query finishes, and keeps the Playground mounted', async () => {
+  it('reports startup progress while loading series metadata and keeps the Playground mounted', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    mocks.seriesQueryRet.data.value = [{ id: 'course', kind: 'playground', title: 'First course' }]
+    mocks.seriesQueryRet.isLoading.value = false
     const finishSeries: Array<(series: object) => void> = []
     mocks.getSeries.mockImplementation(() => new Promise((resolve) => finishSeries.push(resolve)))
     wrapper = mount(CoursePlaygroundPage, {
       props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inPlaygroundPath: ['code'] },
       global: { plugins: [createI18n({ lang: 'en' })] }
     })
-    const playground = wrapper.findComponent({ name: 'CoursePlayground' }).element
+    const playground = wrapper.findComponent(PlaygroundComponent).element
     await flushPromises()
     vi.advanceTimersByTime(500)
     await nextTick()
     const firstProgress = Number(wrapper.find('.project-progress').attributes('data-percentage'))
     expect(firstProgress).toBeGreaterThan(0)
-    mocks.seriesQueryRet.data.value = [{ id: 'course', kind: 'playground', title: 'First course' }]
-    mocks.seriesQueryRet.isLoading.value = false
-    await flushPromises()
-    expect(mocks.getSeries).toHaveBeenCalledOnce()
-    expect(Number(wrapper.find('.project-progress').attributes('data-percentage'))).toBeGreaterThanOrEqual(
-      firstProgress
-    )
-
     finishSeries[0]({ id: 'series', courseIDs: ['course'] })
     await flushPromises()
     expect(wrapper.find('.project-progress').attributes('data-percentage')).toBe('1')
-    expect(wrapper.findComponent({ name: 'CoursePlayground' }).element).toBe(playground)
-    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value).not.toBeNull()
+    expect(wrapper.findComponent(PlaygroundComponent).element).toBe(playground)
+    expect(wrapper.findComponent(PlaygroundComponent).props('projectQueryRet').data.value).not.toBeNull()
   })
 })

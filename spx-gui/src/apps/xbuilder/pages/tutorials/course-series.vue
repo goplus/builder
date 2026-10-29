@@ -11,7 +11,7 @@ import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
-import { useSeries, useSeriesCoursePage } from '@/stores/course-series'
+import { useSeries, useSeriesCoursesByPage } from '@/stores/course-series'
 import { useEnsureSignedIn } from '@/utils/user'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
@@ -62,7 +62,7 @@ const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
 const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
 
-const courseQuery = useSeriesCoursePage(
+const courseQuery = useSeriesCoursesByPage(
   () => props.courseSeriesIdInput,
   () => ({ pageIndex: page.value, pageSize: pageSize.value })
 )
