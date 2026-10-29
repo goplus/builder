@@ -1,3 +1,4 @@
+import type { Lang } from '@/utils/i18n'
 import { client, type ByPage, type PaginationParams } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
 
@@ -25,6 +26,8 @@ export type User = {
 }
 
 export type SignedInUser = User & {
+  /** Account UI language preference */
+  preferredLanguage: Lang
   /** Capabilities of the user */
   capabilities: UserCapabilities
 }
@@ -71,7 +74,9 @@ export function getSignedInUser(
   return client.get(`/user`, undefined, options) as Promise<SignedInUser>
 }
 
-export type UpdateSignedInUserParams = Partial<Pick<User, 'username' | 'displayName' | 'description'>>
+export type UpdateSignedInUserParams = Partial<
+  Pick<SignedInUser, 'username' | 'displayName' | 'description' | 'preferredLanguage'>
+>
 
 export function updateSignedInUser(params: UpdateSignedInUserParams) {
   return client.patch(`/user`, params) as Promise<SignedInUser>

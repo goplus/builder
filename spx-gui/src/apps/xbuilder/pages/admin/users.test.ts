@@ -7,11 +7,12 @@ describe('admin users', () => {
 
   it('filters account users and preserves the query when paging', async () => {
     await signIn({ canManageAccount: true })
-    const user = {
+    const user: accountAdminApis.AccountUser = {
       id: 'pilot',
       username: 'pilot',
       displayName: 'Space pilot',
       avatar: '',
+      preferredLanguage: 'en',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z'
     }

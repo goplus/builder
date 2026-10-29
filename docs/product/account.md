@@ -64,9 +64,13 @@ standard parameter names, such as `client_id`, `client_secret`, `redirect_uri`, 
 
 XBuilder Account can reuse the existing `user` table, but the account system boundary is not the same as the physical
 table boundary. Account API only exposes user fields owned by the account system, such as `id`, `username`,
-`displayName`, and `avatar`. `avatar` is returned as a displayable HTTP URL. Writable fields are defined by concrete
-endpoints. `description`, `roles`, `plan`, `capabilities`, statistics fields, and product fields belong to the XBuilder
-product or authorization system. They are not exposed or managed by XBuilder Account API.
+`displayName`, `avatar`, and `preferredLanguage`. `avatar` is returned as a displayable HTTP URL. Writable fields are
+defined by concrete endpoints. `description`, `roles`, `plan`, `capabilities`, statistics fields, and product fields
+belong to the XBuilder product or authorization system. They are not exposed or managed by XBuilder Account API.
+
+`preferredLanguage` is the account UI language (`en` or `zh`). New and migrated accounts start with `en`.
+Explicit language changes update this preference. Signing in and loading user information only apply the stored preference;
+browser language and OAuth `ui_locales` do not overwrite it.
 
 `auth_flow` is a logical concept. It only defines lifecycle and security semantics, and it does not constrain physical
 storage. Provider redirect state, pushed authorization request, authorization code, PKCE challenge, and provider code

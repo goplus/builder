@@ -53,7 +53,9 @@ XBuilder Account 的目标是替换 Casdoor，成为 XBuilder 产品自己的账
 
 `app` 是产品和管理资源名。OAuth 协议层仍然使用标准 client 概念和标准参数名，例如 `client_id`、`client_secret`、`redirect_uri`、`request_uri`、`code` 和 `grant_type`。
 
-XBuilder Account 可以复用现有 `user` 表，但账号系统边界不等同于物理表边界。Account API 只暴露账号系统拥有的用户字段，例如 `id`、`username`、`displayName` 和 `avatar`。`avatar` 对外返回可展示的 HTTP URL。可写字段由具体接口定义。`description`、`roles`、`plan`、`capabilities`、统计字段和产品字段属于 XBuilder 产品或授权系统，不由 XBuilder Account API 暴露或管理。
+XBuilder Account 可以复用现有 `user` 表，但账号系统边界不等同于物理表边界。Account API 只暴露账号系统拥有的用户字段，例如 `id`、`username`、`displayName`、`avatar` 和 `preferredLanguage`。`avatar` 对外返回可展示的 HTTP URL。可写字段由具体接口定义。`description`、`roles`、`plan`、`capabilities`、统计字段和产品字段属于 XBuilder 产品或授权系统，不由 XBuilder Account API 暴露或管理。
+
+`preferredLanguage` 是账号的界面语言（`en` 或 `zh`）。新账号及迁移后的历史账号初始值为 `en`。用户主动切换语言时更新偏好；登录和加载用户资料只应用已保存的偏好，浏览器语言及 OAuth `ui_locales` 不覆盖它。
 
 `auth_flow` 是逻辑概念，只定义生命周期和安全语义，不约束物理存储方式。Provider redirect state、pushed authorization request、authorization code、PKCE challenge 和 provider code consumption records 都必须短生命周期保存。一次性状态必须一次性使用。失败的 provider callback、失败的 token exchange 或重复提交不得留下可 replay 的有效状态。
 

@@ -12,6 +12,7 @@ function createSignedInUser(username: string): SignedInUser {
     username,
     displayName: username,
     avatar: 'https://example.com/avatar.png',
+    preferredLanguage: 'en',
     description: '',
     plan: 'free',
     capabilities: {

@@ -316,6 +316,8 @@ paths:
               properties:
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
+                preferredLanguage:
+                  $ref: "#/components/schemas/AccountUser/properties/preferredLanguage"
       responses:
         "200":
           description: Account user updated.
@@ -983,6 +985,8 @@ paths:
                   $ref: "#/components/schemas/User/properties/displayName"
                 description:
                   $ref: "#/components/schemas/User/properties/description"
+                preferredLanguage:
+                  $ref: "#/components/schemas/AccountUser/properties/preferredLanguage"
       responses:
         "200":
           description: Successfully updated the authenticated user.
@@ -4899,6 +4903,8 @@ paths:
               properties:
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
+                preferredLanguage:
+                  $ref: "#/components/schemas/AccountUser/properties/preferredLanguage"
       responses:
         "200":
           description: Account user updated.
@@ -6493,6 +6499,7 @@ components:
         - username
         - displayName
         - avatar
+        - preferredLanguage
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -6511,6 +6518,12 @@ components:
           pattern: "^https?://"
           examples:
             - https://avatars.example.com/users/10137.png
+        preferredLanguage:
+          description: Account UI language preference. New and migrated accounts start with English.
+          type: string
+          enum:
+            - en
+            - zh
 
     AccountManagedPassword:
       description: Administrator-managed password using printable ASCII characters with no leading or trailing spaces.
@@ -7344,6 +7357,10 @@ components:
         - type: object
           required:
             - capabilities
+            - preferredLanguage
+          properties:
+            preferredLanguage:
+              $ref: "#/components/schemas/AccountUser/properties/preferredLanguage"
 
     UserCapabilities:
       type: object
