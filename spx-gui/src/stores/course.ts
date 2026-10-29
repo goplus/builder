@@ -2,7 +2,7 @@ import { computed, toRef, type WatchSource } from 'vue'
 
 import * as apis from '@/apis/course'
 import { useAction } from '@/utils/exception'
-import { useQueryCache, useQueryWithCache } from '@/utils/query'
+import { useQueryCache, useQueryWithCache, type QueryMode } from '@/utils/query'
 import { useCourseChangesInSeries } from './course-series'
 
 function getCourseQueryKey(courseID: string) {
@@ -11,9 +11,10 @@ function getCourseQueryKey(courseID: string) {
 
 const staleTime = 5 * 60 * 1000
 
-export function useCourse(courseID: WatchSource<string>) {
+export function useCourse(courseID: WatchSource<string>, mode: QueryMode = 'background') {
   const courseIDRef = toRef(courseID)
   return useQueryWithCache({
+    mode,
     queryKey: computed(() => getCourseQueryKey(courseIDRef.value)),
     queryFn: (signal) => apis.getCourse(courseIDRef.value, signal),
     staleTime,
@@ -41,7 +42,7 @@ export function useDeleteCourse() {
   return useAction(
     async function deleteCourse(courseID: string) {
       await apis.deleteCourse(courseID)
-      courseCache.discard(getCourseQueryKey(courseID))
+      courseCache.invalidate(getCourseQueryKey(courseID))
       inSeries.deleted(courseID)
     },
     { en: 'Failed to delete course', zh: '删除课程失败' }

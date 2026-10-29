@@ -96,7 +96,7 @@ describe('Course page startup progress', () => {
       props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inPlaygroundPath: ['code'] },
       global: { plugins: [createI18n({ lang: 'en' })] }
     })
-    const playground = wrapper.findComponent({ name: 'CoursePlayground' }).vm
+    const playground = wrapper.findComponent({ name: 'CoursePlayground' }).element
     await flushPromises()
     vi.advanceTimersByTime(500)
     await nextTick()
@@ -113,7 +113,7 @@ describe('Course page startup progress', () => {
     finishSeries[0]({ id: 'series', courseIDs: ['course'] })
     await flushPromises()
     expect(wrapper.find('.project-progress').attributes('data-percentage')).toBe('1')
-    expect(wrapper.findComponent({ name: 'CoursePlayground' }).vm).toBe(playground)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).element).toBe(playground)
     expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value).not.toBeNull()
   })
 })

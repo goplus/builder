@@ -55,6 +55,12 @@ vi.mock('@/stores/course', () => ({
   }
 }))
 vi.mock('@/stores/course-series', () => ({
+  useSeriesCoursePage: () => ({
+    data: ref({ data: [mocks.course], total: 30 }),
+    error: ref(null),
+    isLoading: ref(false),
+    refetch: vi.fn()
+  }),
   useSeries: () => {
     const isLoading = ref(false)
     mocks.seriesLoading = isLoading
@@ -108,8 +114,8 @@ vi.mock('@/components/community/CommunityNavbar.vue', () => ({ default: { templa
 vi.mock('@/components/community/footer/CommunityFooter.vue', () => ({ default: { template: '<footer />' } }))
 vi.mock('../community/search.vue', () => ({ searchKeywordQueryParamName: 'q' }))
 
-import CourseStart from './course-start.vue'
-import CoursePlayground from './course-playground.vue'
+import CourseStart from './course-start-session.vue'
+import CoursePlayground from './course-playground-session.vue'
 import CourseSeries from './course-series.vue'
 
 enableAutoUnmount(afterEach)
