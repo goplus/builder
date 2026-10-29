@@ -34,6 +34,7 @@ function useUserStorage<T>(key: string, initialValue: T, storage: IStorage) {
   const signedIn = useSignedIn()
   // Local identity keeps storage available synchronously, before the profile has loaded.
   const scope = computed(() => signedIn.username ?? unauthorized)
+  // Storage reads are not reactive; invalidate this computed after writes through its setter.
   const counter = ref(0)
   return computed<T>({
     get() {

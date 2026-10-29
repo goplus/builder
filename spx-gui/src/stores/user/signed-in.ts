@@ -121,8 +121,8 @@ export class SignedIn extends Disposable {
 
   /**
    * Returns a valid access token without collecting reactive dependencies, or null when signed out.
-   * Invalid refresh tokens clear the session and resolve null; other refresh failures preserve
-   * credentials and reject so callers can retry.
+   * When refresh is needed, missing or invalid refresh tokens clear the session and resolve null.
+   * Other refresh failures preserve credentials and reject so callers can retry.
    */
   async ensureAccessToken(): Promise<string | null> {
     const credentials = this.credentials
@@ -341,6 +341,7 @@ export class SignedIn extends Disposable {
     }
   }
 
+  /** Returns null when signed in but the profile is unavailable, including after a load failure. */
   get canUseAdminConsole(): boolean | null {
     const user = this.cachedUserRef.value
     if (user == null) return this.isSignedInRef.value ? null : false

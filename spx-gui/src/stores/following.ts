@@ -31,7 +31,7 @@ export function useFollow() {
   return useAction(
     async function follow(username: string) {
       await apis.follow(username)
-      const queryKey = getFollowingQueryKey(signedIn.username ?? null, username)
+      const queryKey = getFollowingQueryKey(signedIn.username, username)
       queryCache.invalidateWithOptimisticValue(queryKey, true)
     },
     { en: 'Failed to follow', zh: '关注用户失败' }
@@ -44,7 +44,7 @@ export function useUnfollow() {
   return useAction(
     async function unfollow(username: string) {
       await apis.unfollow(username)
-      const queryKey = getFollowingQueryKey(signedIn.username ?? null, username)
+      const queryKey = getFollowingQueryKey(signedIn.username, username)
       queryCache.invalidateWithOptimisticValue(queryKey, false)
     },
     { en: 'Failed to unfollow', zh: '取消关注失败' }

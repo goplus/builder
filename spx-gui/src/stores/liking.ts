@@ -34,7 +34,7 @@ export function useLikeProject() {
   return useAction(
     async function likeProject(owner: string, name: string) {
       await apis.likeProject(owner, name)
-      const queryKey = getLikingQueryKey(signedIn.username ?? null, owner, name)
+      const queryKey = getLikingQueryKey(signedIn.username, owner, name)
       queryCache.invalidateWithOptimisticValue(queryKey, true)
     },
     { en: 'Failed to like', zh: '标记喜欢失败' }
@@ -47,7 +47,7 @@ export function useUnlikeProject() {
   return useAction(
     async function unlikeProject(owner: string, name: string) {
       await apis.unlikeProject(owner, name)
-      const queryKey = getLikingQueryKey(signedIn.username ?? null, owner, name)
+      const queryKey = getLikingQueryKey(signedIn.username, owner, name)
       queryCache.invalidateWithOptimisticValue(queryKey, false)
     },
     { en: 'Failed to unlike', zh: '取消喜欢失败' }
