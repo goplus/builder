@@ -316,3 +316,41 @@ describe('composeQuery', () => {
     expect(ret3.progress.value.desc).toBeNull()
   })
 })
+
+describe('untilLoaded with a minimal loading result', () => {
+  it.each([null, false, 0])('returns the legal completed value %s', async (value) => {
+    const { untilLoaded } = await import('./query')
+    const result = { data: ref(value), isLoading: ref(false), error: ref(null) }
+    await expect(untilLoaded(result)).resolves.toBe(value)
+  })
+
+  it('rechecks readiness when a new load starts immediately after waiting resolves', async () => {
+    const { untilLoaded } = await import('./query')
+    const result = { data: ref<string | null>('old'), isLoading: ref(false), error: ref(null) }
+    const resolved = vi.fn()
+    const waiting = untilLoaded(result).then(resolved)
+    result.isLoading.value = true
+    result.data.value = null
+    await flushPromises()
+    expect(resolved).not.toHaveBeenCalled()
+    result.data.value = 'new'
+    result.isLoading.value = false
+    await waiting
+    expect(resolved).toHaveBeenCalledWith('new')
+  })
+
+  it('cancels one consumer without cancelling the shared result', async () => {
+    const { untilLoaded } = await import('./query')
+    const result = { data: ref<string | null>(null), isLoading: ref(true), error: ref(null) }
+    const ctrl = new AbortController()
+    const cancelled = untilLoaded(result, ctrl.signal)
+    const other = untilLoaded(result)
+    const error = new Error('cancelled')
+    const rejected = expect(cancelled).rejects.toBe(error)
+    ctrl.abort(error)
+    await rejected
+    result.data.value = 'loaded'
+    result.isLoading.value = false
+    await expect(other).resolves.toBe('loaded')
+  })
+})

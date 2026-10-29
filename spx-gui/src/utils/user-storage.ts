@@ -1,5 +1,4 @@
 import { computed, ref } from 'vue'
-import { getUnresolvedSignedInUsername } from '@/stores/user'
 import { isObject, isString } from 'lodash'
 
 type IStorage = {
@@ -30,17 +29,14 @@ function createUserScopeValue<T>(user: string, value: T): UserScopeValue<T> {
 }
 
 // private
-function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
-  // Ideally user-scoped storage would use a canonical signed-in username. We currently use the
-  // unresolved signed-in username as a temporary fallback because this scope needs to be computed
-  // synchronously from locally available session state.
-  const scope = computed(() => getUnresolvedSignedInUsername() ?? unauthorized)
+function userStorageRef<T>(key: string, initialValue: T, username: string | null, storage: IStorage) {
+  const scope = username ?? unauthorized
   const counter = ref(0)
   return computed<T>({
     get() {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       counter.value
-      const currentScope = scope.value
+      const currentScope = scope
       const exportedValue = storage.getItem(key)
       if (exportedValue == null) {
         return initialValue
@@ -64,17 +60,18 @@ function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = loc
       if (newValue === initialValue) {
         storage.removeItem(key)
       } else {
-        storage.setItem(key, JSON.stringify(createUserScopeValue(scope.value, newValue)))
+        storage.setItem(key, JSON.stringify(createUserScopeValue(scope, newValue)))
       }
       counter.value++
     }
   })
 }
 
-export function userLocalStorageRef<T>(key: string, initialValue: T) {
-  return userStorageRef<T>(key, initialValue, localStorage)
+/** Creates a writable value bound to a determined identity; null explicitly means guest. */
+export function userLocalStorageRef<T>(key: string, initialValue: T, username: string | null) {
+  return userStorageRef<T>(key, initialValue, username, localStorage)
 }
 
-export function userSessionStorageRef<T>(key: string, initialValue: T) {
-  return userStorageRef<T>(key, initialValue, sessionStorage)
+export function userSessionStorageRef<T>(key: string, initialValue: T, username: string | null) {
+  return userStorageRef<T>(key, initialValue, username, sessionStorage)
 }

@@ -3,7 +3,7 @@ import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } f
 import { shiftPath, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
-import type { QueryRet } from '@/utils/query'
+import type { Loadable } from '@/utils/query'
 import type { Files } from '@/models/common/file'
 import type { ResourceModel } from '@/models/spx/common/resource'
 import type { SpxProject } from '@/models/spx/project'
@@ -95,7 +95,7 @@ export class EditorState extends Disposable {
     i18n: I18n,
     readonly project: SpxProject,
     isOnline: WatchSource<boolean>,
-    signedInStateQuery: QueryRet<SignedInState>,
+    signedInStateQuery: Loadable<SignedInState>,
     cloudHelpers: editing.CloudHelpers,
     localCache: editing.ILocalCache
   ) {

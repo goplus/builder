@@ -1,8 +1,9 @@
-import { ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type Ref } from 'vue'
 import { vi } from 'vitest'
+import { OAuthFlow } from '@/utils/oauth'
 import type { ActionException } from '@/utils/exception'
 import type { QueryRet } from '@/utils/query'
-import type { SignedInState, SignedInUser } from './signed-in'
+import type { SignedIn, SignedInState, SignedInUser } from './signed-in'
 
 function createSignedInUser(username: string): SignedInUser {
   return {
@@ -46,4 +47,33 @@ export function makeSignedInStateQuery(initialState: SignedInState | null): Quer
     progress: shallowRef({ percentage: 0, timeLeft: null, desc: null }),
     refetch: vi.fn()
   }
+}
+
+export function makeSignedInMock(
+  state = makeSignedInStateQuery(null),
+  username: Readonly<Ref<string | null>> = computed(() => state.data.value?.user?.username ?? null)
+): Pick<SignedIn, 'state' | 'isSignedIn' | 'username' | 'user' | 'signIn' | 'canUseAdminConsole'> {
+  const signedIn = computed(() => username.value != null)
+  return {
+    state,
+    isSignedIn: () => signedIn.value,
+    get username() {
+      return username.value
+    },
+    get user() {
+      return state.data.value?.user ?? null
+    },
+    signIn: vi.fn(),
+    canUseAdminConsole: () =>
+      state.data.value?.user?.capabilities.canManageAccount === true ||
+      state.data.value?.user?.capabilities.canManageAuthorization === true
+  }
+}
+
+export function mockCompleteSignIn(signedIn: SignedIn, accessToken: string) {
+  vi.spyOn(OAuthFlow.prototype, 'completeAuthorization').mockResolvedValueOnce({
+    token: { access_token: accessToken, refresh_token: `${accessToken}-refresh`, expires_in: 3600 },
+    extraData: { returnTo: '/' }
+  })
+  return signedIn.completeSignIn('?code=test&state=test')
 }

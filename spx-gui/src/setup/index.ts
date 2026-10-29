@@ -4,9 +4,7 @@ import VueKonva from 'vue-konva'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import { setWasmUrl as setDotLottieWasmUrl } from '@lottiefiles/dotlottie-vue'
 
-import { client } from '@/apis/common'
 import { CustomTransformer } from '@/components/editor/common/viewer/custom-transformer'
-import { ensureAccessToken } from '@/stores/user'
 import { createAppState } from '@/utils/app-state'
 import { initDeveloperMode } from '@/utils/developer-mode'
 import { createRadar } from '@/utils/radar'
@@ -24,15 +22,10 @@ function initDotLottie() {
   setDotLottieWasmUrl(dotLottiePlayerWasmUrl)
 }
 
-function initApiClient() {
-  client.setTokenProvider(ensureAccessToken)
-}
-
 /** Do general app setup, including shared library init and app-level global state/bootstrap side effects. */
 export function setup() {
   initDotLottie()
   initDayjs()
-  initApiClient()
   initDeveloperMode()
 }
 

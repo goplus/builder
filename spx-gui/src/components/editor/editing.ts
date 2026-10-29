@@ -2,7 +2,7 @@ import { watchEffect, type WatchSource, watch, ref, shallowRef } from 'vue'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { timeout, until } from '@/utils/utils'
-import { untilLoaded, type QueryRet } from '@/utils/query'
+import { untilLoaded, type Loadable } from '@/utils/query'
 import { Cancelled, capture } from '@/utils/exception'
 import type { ProjectData } from '@/apis/project'
 import type { IProject, ProjectSerialized } from '@/models/project'
@@ -134,7 +134,7 @@ export class Editing extends Disposable {
     private cloudHelpers: CloudHelpers,
     private localCacheHelper: ILocalCache,
     private isOnline: WatchSource<boolean>,
-    private signedInStateQuery: QueryRet<SignedInState>
+    private signedInStateQuery: Loadable<SignedInState>
   ) {
     super()
   }

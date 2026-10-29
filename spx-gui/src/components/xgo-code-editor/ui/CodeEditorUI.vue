@@ -36,6 +36,7 @@ import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
+import { useSignedIn } from '@/stores/user'
 import { userLocalStorageRef } from '@/utils/user-storage'
 
 const props = defineProps<{
@@ -70,7 +71,8 @@ const uiRef = computed(() => {
 })
 
 const initialFontSize = 12
-const fontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
+const signedIn = useSignedIn()
+const fontSize = ref(initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
@@ -181,7 +183,29 @@ const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
-const sidebarWidth = userLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
+const sidebarWidth = ref(defaultSidebarWidth)
+watch(
+  () => signedIn.username,
+  (username, _, onCleanup) => {
+    fontSize.value = initialFontSize
+    sidebarWidth.value = defaultSidebarWidth
+    const savedFontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize, username)
+    const savedSidebarWidth = userLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth, username)
+    fontSize.value = savedFontSize.value
+    sidebarWidth.value = savedSidebarWidth.value
+    onCleanup(
+      watch(fontSize, (value) => {
+        savedFontSize.value = value
+      })
+    )
+    onCleanup(
+      watch(sidebarWidth, (value) => {
+        savedSidebarWidth.value = value
+      })
+    )
+  },
+  { immediate: true }
+)
 const isResizing = ref(false)
 
 watchEffect((onCleanup) => {

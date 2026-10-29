@@ -5,14 +5,16 @@
 </template>
 <script setup lang="ts">
 import { usePageTitle } from '@/utils/utils'
-import { completeSignIn } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
+
+const signedIn = useSignedIn()
 
 const title = { en: 'Signing in...', zh: '登录中...' }
 
 usePageTitle(title)
 
 try {
-  const { returnTo } = await completeSignIn(window.location.search)
+  const { returnTo } = await signedIn.completeSignIn(window.location.search)
   window.location.replace(returnTo)
 } catch (e) {
   console.error('failed to complete sign-in', e)

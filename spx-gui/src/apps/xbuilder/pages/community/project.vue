@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useMessageHandle } from '@/utils/exception'
+import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { isSameProjectIdentifier, toProjectIdentifier, type ProjectIdentifier } from '@/utils/project-route'
-import { useQuery } from '@/utils/query'
+import { untilLoaded, useQuery } from '@/utils/query'
+import { getCleanupSignal } from '@/utils/disposable'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
@@ -12,7 +13,7 @@ import { usePageTitle } from '@/utils/utils'
 import { ProjectType, listProjects, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProjectReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
-import { useSignedInUser, useUser, isSignedIn, useSignIn } from '@/stores/user'
+import { useSignedIn, useUser } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getProjectPageRoute, getUserPageRoute } from '../../router'
 import {
   UIIcon,
@@ -83,7 +84,8 @@ watch(currentProjectIdentifier, (currentIdentifier) => {
 })
 
 const { data: ownerInfo } = useUser(() => routeProjectIdentifier.value.owner)
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
+const signedInUser = computed(() => signedIn.state.data.value?.user ?? null)
 
 usePageTitle(() => {
   if (ownerInfo.value == null || project.value == null) return null
@@ -101,8 +103,14 @@ usePageTitle(() => {
 
 watch(
   currentProjectIdentifier,
-  (currentIdentifier) => {
-    if (!isSignedIn() || currentIdentifier == null) return
+  async (currentIdentifier, _, onCleanup) => {
+    if (currentIdentifier == null) return
+    const signal = getCleanupSignal(onCleanup)
+    const signedInState = await untilLoaded(signedIn.state, signal).catch((e) => {
+      if (e instanceof Cancelled) return null
+      throw e
+    })
+    if (!signedInState?.isSignedIn) return
     recordProjectView(currentIdentifier.owner, currentIdentifier.name)
   },
   { immediate: true }
@@ -161,14 +169,16 @@ const remixCount = computed(() => {
 })
 
 const ensureSignedIn = useEnsureSignedIn()
-const signIn = useSignIn()
 
 const needsSignInToRun = computed(
-  () => !isSignedIn() && project.value != null && isSignInRequiredForProject(project.value)
+  () =>
+    signedIn.state.data.value?.isSignedIn === false &&
+    project.value != null &&
+    isSignInRequiredForProject(project.value)
 )
 
 function handleSignIn() {
-  signIn()
+  signedIn.signIn()
 }
 
 const handleRun = useMessageHandle(

@@ -4,7 +4,7 @@ import Cropper from 'cropperjs'
 import { type User } from '@/apis/user'
 import { UIButton, UIFormModal } from '@/components/ui'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import { useUpdateSignedInUserAvatar } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import AvatarZoomSlider from './AvatarZoomSlider.vue'
 
 const avatarSize = 512
@@ -347,7 +347,7 @@ async function exportAvatarBlob() {
   })
 }
 
-const updateAvatar = useUpdateSignedInUserAvatar()
+const signedIn = useSignedIn()
 
 const handleConfirm = useMessageHandle(async () => {
   const blob = await exportAvatarBlob()
@@ -358,7 +358,7 @@ const handleConfirm = useMessageHandle(async () => {
     })
   }
   const file = new File([blob], 'avatar.png', { type: blob.type })
-  const updated = await updateAvatar(file)
+  const updated = await signedIn.updateAvatar(file)
   if (!props.visible) return
   emit('resolved', updated)
 })

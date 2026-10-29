@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useEnsureSignedIn } from '@/utils/user'
@@ -11,9 +11,9 @@ const props = defineProps<{
   name: string
 }>()
 
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 const followable = computed(() => {
-  const signedInUsername = signedInUser.value?.username
+  const signedInUsername = signedIn.username
   return signedInUsername != null && props.name !== signedInUsername
 })
 

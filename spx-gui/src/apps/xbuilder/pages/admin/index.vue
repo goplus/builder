@@ -1,14 +1,10 @@
 <script setup lang="ts">
+import { untilLoaded } from '@/utils/query'
 import { computed, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
-import { untilNotNull, usePageTitle } from '@/utils/utils'
-import {
-  canUseAdminConsole as checkCanUseAdminConsole,
-  useSignIn,
-  useSignedInStateQuery,
-  type AdminConsoleCapabilities
-} from '@/stores/user'
+import { usePageTitle } from '@/utils/utils'
+import { useSignedIn } from '@/stores/user'
 import { UIError, UILoading, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
@@ -18,12 +14,10 @@ usePageTitle({ en: 'Admin console', zh: '管理后台' })
 
 const route = useRoute()
 const router = useRouter()
-const signIn = useSignIn()
-const signedInStateQuery = useSignedInStateQuery()
-const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
+const signedIn = useSignedIn()
+const signedInUser = computed(() => signedIn.state.data.value?.user ?? null)
 const canManageAccount = computed(() => signedInUser.value?.capabilities.canManageAccount === true)
-const canManageFeedback = computed(() => signedInUser.value?.capabilities.canManageFeedback === true)
-const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
+const canUseAdminConsole = computed(() => signedIn.canUseAdminConsole() === true)
 
 const accountNavItems = [
   { to: '/admin/users', label: { en: 'Users', zh: '用户' } },
@@ -31,9 +25,8 @@ const accountNavItems = [
 ]
 const isAccountRoute = computed(() => accountNavItems.some((item) => route.path.startsWith(item.to)))
 
-function getAdminDefaultRoute(capabilities: AdminConsoleCapabilities) {
+function getAdminDefaultRoute(capabilities: { canManageAccount: boolean; canManageAuthorization: boolean }) {
   if (capabilities.canManageAccount) return '/admin/users'
-  if (capabilities.canManageFeedback) return '/admin/feedback'
   if (capabilities.canManageAuthorization) return '/admin/audit-logs'
   return null
 }
@@ -46,11 +39,11 @@ watch(
       stale = true
     })
 
-    const signedInState = await untilNotNull(signedInStateQuery.data)
+    const signedInState = await untilLoaded(signedIn.state)
     if (stale) return
 
     if (!signedInState.isSignedIn) {
-      await signIn(route.fullPath)
+      await signedIn.signIn(route.fullPath)
       return
     }
 
@@ -96,15 +89,6 @@ watch(
               </UIMenu>
             </NavbarDropdown>
             <RouterLink
-              v-if="canManageFeedback"
-              v-radar="{ name: 'Feedback', desc: 'Open admin feedback list' }"
-              class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
-              :class="route.path.startsWith('/admin/feedback') ? 'text-primary-main' : 'text-inherit'"
-              to="/admin/feedback"
-            >
-              {{ $t({ en: 'Feedback', zh: '用户反馈' }) }}
-            </RouterLink>
-            <RouterLink
               v-if="canUseAdminConsole"
               v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
               class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
@@ -118,11 +102,11 @@ watch(
       </NavbarWrapper>
     </div>
     <main class="flex-1">
-      <div v-if="signedInStateQuery.isLoading.value" class="h-full min-h-80 flex items-center justify-center">
+      <div v-if="signedIn.state.isLoading.value" class="h-full min-h-80 flex items-center justify-center">
         <UILoading />
       </div>
-      <UIError v-else-if="signedInStateQuery.error.value != null" class="h-full min-h-80">
-        {{ $t(signedInStateQuery.error.value.userMessage) }}
+      <UIError v-else-if="signedIn.state.error.value != null" class="h-full min-h-80">
+        {{ $t(signedIn.state.error.value.userMessage) }}
       </UIError>
       <UIError v-else-if="!canUseAdminConsole" class="h-full min-h-80">
         {{ $t({ en: 'Access denied', zh: '没有访问权限' }) }}

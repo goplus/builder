@@ -3,9 +3,101 @@ import { describe, expect, it, vi } from 'vitest'
 import { setupPageTests, mountPages, signIn, makeProject } from '@/apps/xbuilder/pages/test'
 import { ExploreOrder } from '@/apis/project'
 import * as projectApis from '@/apis/project'
+import { accountOAuthApisForXBuilder } from '@/apis/account/oauth'
+import * as userApis from '@/apis/user'
+import { mockCompleteSignIn } from '@/stores/user/test'
+import { untilLoaded } from '@/utils/query'
 
 describe('community home', () => {
   setupPageTests()
+
+  it('reloads personalized lists for account changes and clears them on sign-out', async () => {
+    await signIn()
+    const alice = await userApis.getSignedInUser()
+    const { wrapper, signedIn } = await mountPages('/')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('My spaceship'))
+    const countFollowed = () =>
+      vi
+        .mocked(projectApis.exploreProjects)
+        .mock.calls.filter(([params]) => params.order === ExploreOrder.FollowingCreated).length
+    const before = {
+      mine: vi.mocked(projectApis.listSignedInUserProjects).mock.calls.length,
+      followed: countFollowed()
+    }
+
+    vi.mocked(userApis.getSignedInUser).mockResolvedValue({ ...alice, displayName: 'Updated Alice' })
+    signedIn.reload()
+    await untilLoaded(signedIn.state)
+    await flushPromises()
+    expect(projectApis.listSignedInUserProjects).toHaveBeenCalledTimes(before.mine)
+    expect(countFollowed()).toBe(before.followed)
+
+    vi.mocked(userApis.getSignedInUser).mockResolvedValue({ ...alice, username: 'bob', displayName: 'Bob' })
+    await mockCompleteSignIn(signedIn, 'bob-token')
+    await vi.waitFor(() => expect(projectApis.listSignedInUserProjects).toHaveBeenCalledTimes(before.mine + 1))
+    expect(countFollowed()).toBe(before.followed + 1)
+    expect(wrapper.find('a[href="/user/bob/projects"]').exists()).toBe(true)
+
+    vi.spyOn(accountOAuthApisForXBuilder, 'revokeToken').mockResolvedValue()
+    await signedIn.signOut()
+    await flushPromises()
+    expect(wrapper.find('[aria-label="Your projects"]').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="Following created"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/user/bob/projects"]').exists()).toBe(false)
+    expect(projectApis.listSignedInUserProjects).toHaveBeenCalledTimes(before.mine + 1)
+    expect(countFollowed()).toBe(before.followed + 1)
+  })
+
+  it('keeps homepage lists and the New project modal stable during credential refresh', async () => {
+    let now = Date.now()
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+    await signIn()
+    const state = JSON.parse(localStorage.getItem('builder-user')!)
+    localStorage.setItem(
+      'builder-user',
+      JSON.stringify({ ...state, accessTokenExpiresAt: now + 120_000, refreshToken: 'test-refresh-token' })
+    )
+    window.dispatchEvent(new StorageEvent('storage', { key: 'builder-user' }))
+    const refresh = vi.spyOn(accountOAuthApisForXBuilder, 'refreshToken').mockResolvedValue({
+      access_token: 'rotated-token',
+      expires_in: 3600,
+      refresh_token: 'rotated-refresh-token',
+      token_type: 'Bearer'
+    })
+    const { wrapper, signedIn } = await mountPages('/')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('My spaceship'))
+    const count = (order: ExploreOrder) =>
+      vi.mocked(projectApis.exploreProjects).mock.calls.filter(([params]) => params.order === order).length
+    const before = {
+      mine: vi.mocked(projectApis.listSignedInUserProjects).mock.calls.length,
+      likes: count(ExploreOrder.MostLikes),
+      remixes: count(ExploreOrder.MostRemixes),
+      followed: count(ExploreOrder.FollowingCreated)
+    }
+    now += 65_000
+    await wrapper.get('[aria-label="Project menu"]').trigger('mouseenter')
+    await vi.waitFor(() =>
+      expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'New project...')).toBe(true)
+    )
+    await wrapper
+      .findAll('.ui-menu-item')
+      .find((item) => item.text() === 'New project...')!
+      .trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Create project modal"]').exists()).toBe(true))
+    await signedIn.ensureAccessToken()
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledOnce())
+    await flushPromises()
+    const after = {
+      mine: vi.mocked(projectApis.listSignedInUserProjects).mock.calls.length,
+      likes: count(ExploreOrder.MostLikes),
+      remixes: count(ExploreOrder.MostRemixes),
+      followed: count(ExploreOrder.FollowingCreated)
+    }
+    expect(after.likes).toBe(before.likes)
+    expect(after.remixes).toBe(before.remixes)
+    expect(after.followed).toBe(before.followed)
+    expect(after.mine).toBe(before.mine)
+  })
 
   it('loads community projects and opens a project from its card', async () => {
     const { wrapper, router } = await mountPages('/')

@@ -1,15 +1,19 @@
-import { isSignedIn, useSignIn } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { useI18n } from './i18n'
+import { untilLoaded } from './query'
 import { useConfirmDialog } from '@/components/ui'
 import { Cancelled } from './exception'
 
 export function useEnsureSignedIn() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
-  const signIn = useSignIn()
+  const signedIn = useSignedIn()
+  const signIn = signedIn.signIn.bind(signedIn)
+  const signedInStateQuery = signedIn.state
 
   return async () => {
-    if (isSignedIn()) return
+    const signedInState = await untilLoaded(signedInStateQuery)
+    if (signedInState.isSignedIn) return
     await withConfirm({
       title: t({ en: 'Sign in to continue', zh: '登录以继续' }),
       content: t({

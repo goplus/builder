@@ -8,7 +8,7 @@ import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { SortOrder } from '@/apis/common'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import {
   UIButton,
   UIError,
@@ -24,9 +24,9 @@ import AccountUserImportModal from '@/components/account/admin/account-user-impo
 import { validateAccountUserPassword } from '@/components/account/admin/password'
 import { formatTime } from './common'
 
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const router = useRouter()
-const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
+const canManageAccount = computed(() => signedIn.state.data.value?.user?.capabilities.canManageAccount === true)
 
 const pageSize = 20
 const page = useRouteQueryParamInt('p', 1)

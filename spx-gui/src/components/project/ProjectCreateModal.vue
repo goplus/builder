@@ -59,7 +59,7 @@ import {
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { untilLoaded } from '@/utils/query'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import { useProjectConfig } from './config'
 import { createDefaultProject } from './default-project'
@@ -76,7 +76,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { defaultFontPreferences } = useProjectConfig()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const title = computed(() => {
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
   return { en: `Remix ${props.remixSource}`, zh: `改编 ${props.remixSource}` }
@@ -105,7 +105,7 @@ const handleSubmit = useMessageHandle(
         remixSource: props.remixSource
       })
     } else {
-      const signedInState = await untilLoaded(signedInStateQuery)
+      const signedInState = await untilLoaded(signedIn.state)
       if (!signedInState.isSignedIn) throw new Error('login required')
       const project = await createDefaultProject(signedInState.user.username, projectName, defaultFontPreferences)
       project.setDisplayName(projectName)
@@ -142,7 +142,7 @@ async function validateName(name: string): Promise<FormValidationResult> {
     })
 
   // check naming conflict
-  const signedInState = await untilLoaded(signedInStateQuery)
+  const signedInState = await untilLoaded(signedIn.state)
   if (!signedInState.isSignedIn) throw new Error('login required')
   if (await isProjectNameTaken(signedInState.user.username, name))
     return t({

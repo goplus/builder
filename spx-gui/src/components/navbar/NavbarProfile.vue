@@ -5,7 +5,7 @@ import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
-import { canUseAdminConsole as checkCanUseAdminConsole, signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
@@ -17,12 +17,11 @@ import zhSvg from './icons/zh.svg?raw'
 const { isOnline } = useNetwork()
 const router = useRouter()
 const i18n = useI18n()
-const signIn = useSignIn()
+const signedIn = useSignedIn()
 
-const signedInStateQuery = useSignedInStateQuery()
-const loading = computed(() => signedInStateQuery.isLoading.value)
-const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
-const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
+const loading = computed(() => signedIn.state.isLoading.value)
+const signedInUser = computed(() => signedIn.state.data.value?.user ?? null)
+const canUseAdminConsole = computed(() => signedIn.canUseAdminConsole() === true)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 function toggleLang() {
@@ -53,7 +52,7 @@ const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
 const sendFeedback = useMessageHandle(useSendFeedback()).fn
 
 async function handleSignOut() {
-  await signOut()
+  await signedIn.signOut()
   router.go(0) // Reload the page to trigger navigation guards.
 }
 </script>
@@ -65,7 +64,7 @@ async function handleSignOut() {
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
-      @click="signIn()"
+      @click="signedIn.signIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>

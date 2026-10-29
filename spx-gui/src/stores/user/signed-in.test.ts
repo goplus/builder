@@ -1,23 +1,42 @@
+import { nextTick, watchEffect } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OAuthException } from '@/apis/common/exception'
 import { accountOAuthApisForXBuilder } from '@/apis/account/oauth'
 import * as userApis from '@/apis/user'
+import { untilLoaded } from '@/utils/query'
 import { OAuthErrorCode } from '@/utils/oauth'
-import { canUseAdminConsole, ensureAccessToken, initUserState } from './signed-in'
+import { createSignedIn, type SignedIn } from './signed-in'
+import { makeSignedInState } from './test'
 
+let signedIn: SignedIn | null = null
 const userStateStorageKey = 'builder-user'
 const originalNavigatorLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
 
-describe('canUseAdminConsole', () => {
+describe('SignedIn.canUseAdminConsole', () => {
   it.each([
-    [{ canManageAccount: false, canManageAuthorization: false, canManageFeedback: false }, false],
-    [{ canManageAccount: true, canManageAuthorization: false, canManageFeedback: false }, true],
-    [{ canManageAccount: false, canManageAuthorization: true, canManageFeedback: false }, true],
-    [{ canManageAccount: false, canManageAuthorization: false, canManageFeedback: true }, true],
-    [{ canManageAccount: true, canManageAuthorization: true, canManageFeedback: true }, true],
-    [null, false]
-  ])('checks the signed-in user management capabilities', (capabilities, expected) => {
-    expect(canUseAdminConsole(capabilities)).toBe(expected)
+    [{ canManageAccount: false, canManageAuthorization: false }, false],
+    [{ canManageAccount: true, canManageAuthorization: false }, true],
+    [{ canManageAccount: false, canManageAuthorization: true }, true],
+    [{ canManageAccount: true, canManageAuthorization: true }, true]
+  ])('checks the current user management capabilities', async (capabilities, expected) => {
+    localStorage.setItem(
+      userStateStorageKey,
+      JSON.stringify({ accessToken: 'token', accessTokenExpiresAt: null, refreshToken: null, username: 'alice' })
+    )
+    const instance = createSignedIn({ clientId: 'client-id' })
+    const getUser = vi.spyOn(userApis, 'getSignedInUser').mockResolvedValue({
+      ...makeSignedInState('alice').user!,
+      capabilities: { ...makeSignedInState('alice').user!.capabilities, ...capabilities }
+    })
+    try {
+      expect(instance.canUseAdminConsole()).toBeNull()
+      instance.reload()
+      await untilLoaded(instance.state)
+      expect(instance.canUseAdminConsole()).toBe(expected)
+    } finally {
+      instance.dispose()
+      getUser.mockRestore()
+    }
   })
 })
 
@@ -27,6 +46,7 @@ describe('ensureAccessToken', () => {
   })
 
   afterEach(() => {
+    signedIn?.dispose()
     vi.restoreAllMocks()
     if (originalNavigatorLocks != null) Object.defineProperty(navigator, 'locks', originalNavigatorLocks)
     else Reflect.deleteProperty(navigator, 'locks')
@@ -62,9 +82,10 @@ describe('ensureAccessToken', () => {
     })
     const refreshToken = vi.spyOn(accountOAuthApisForXBuilder, 'refreshToken')
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ clientId: 'client-id' })
 
-    await expect(ensureAccessToken()).resolves.toBe('new-access-token')
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe('new-access-token')
     expect(request).toHaveBeenCalledWith('builder-user-access-token', expect.any(Function))
     expect(refreshToken).not.toHaveBeenCalled()
   })
@@ -87,9 +108,10 @@ describe('ensureAccessToken', () => {
       }
     })
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ clientId: 'client-id' })
 
-    await expect(ensureAccessToken()).resolves.toBe('access-token')
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe('access-token')
     expect(request).not.toHaveBeenCalled()
   })
 
@@ -119,9 +141,10 @@ describe('ensureAccessToken', () => {
     })
     const getSignedInUser = vi.spyOn(userApis, 'getSignedInUser')
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ clientId: 'client-id' })
 
-    await expect(ensureAccessToken()).resolves.toBe('new-access-token')
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe('new-access-token')
     expect(getSignedInUser).not.toHaveBeenCalled()
     expect(JSON.parse(localStorage.getItem(userStateStorageKey)!)).toEqual({
       accessToken: 'new-access-token',
@@ -193,9 +216,10 @@ describe('ensureAccessToken', () => {
     })
     vi.spyOn(accountOAuthApisForXBuilder, 'refreshToken').mockRejectedValue(error)
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ clientId: 'client-id' })
 
-    await expect(ensureAccessToken()).rejects.toBe(error)
+    await expect(signedIn!.ensureAccessToken()).rejects.toBe(error)
     expect(JSON.parse(localStorage.getItem(userStateStorageKey)!)).toEqual(storedState)
   })
 
@@ -221,9 +245,10 @@ describe('ensureAccessToken', () => {
       })
     )
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ clientId: 'client-id' })
 
-    await expect(ensureAccessToken()).resolves.toBe(null)
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe(null)
     expect(JSON.parse(localStorage.getItem(userStateStorageKey)!)).toEqual({
       accessToken: null,
       accessTokenExpiresAt: null,
@@ -248,12 +273,13 @@ describe('ensureAccessToken', () => {
         request: vi.fn(async (_name: string, callback: () => Promise<void>) => callback())
       }
     })
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ clientId: 'client-id' })
 
     localStorage.removeItem(userStateStorageKey)
     window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
 
-    await expect(ensureAccessToken()).resolves.toBe(null)
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe(null)
   })
 
   it('clears cached state when the shared storage is cleared', async () => {
@@ -272,16 +298,18 @@ describe('ensureAccessToken', () => {
         request: vi.fn(async (_name: string, callback: () => Promise<void>) => callback())
       }
     })
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ clientId: 'client-id' })
 
     localStorage.clear()
     window.dispatchEvent(new StorageEvent('storage', { key: null }))
 
-    await expect(ensureAccessToken()).resolves.toBe(null)
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe(null)
   })
 
   it('does not write state back after receiving a storage event', () => {
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ clientId: 'client-id' })
     localStorage.setItem(
       userStateStorageKey,
       JSON.stringify({
@@ -296,5 +324,84 @@ describe('ensureAccessToken', () => {
     window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
 
     expect(setItem).not.toHaveBeenCalled()
+  })
+})
+
+describe('SignedIn.isSignedIn', () => {
+  afterEach(() => {
+    signedIn?.dispose()
+    signedIn = null
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it.each([
+    [null, null, false],
+    ['valid', null, true],
+    ['expired', null, false],
+    ['expired', 'refresh', true]
+  ])('judges local credentials synchronously (%s, %s)', (accessToken, refreshToken, expected) => {
+    localStorage.setItem(
+      userStateStorageKey,
+      JSON.stringify({
+        accessToken,
+        accessTokenExpiresAt: Date.now() + (accessToken === 'valid' ? 120_000 : -120_000),
+        refreshToken,
+        username: accessToken == null ? null : 'alice'
+      })
+    )
+    signedIn = createSignedIn({ clientId: 'test' })
+    expect(signedIn.state.data.value).toBeNull()
+    expect(signedIn.isSignedIn()).toBe(expected)
+    expect(signedIn.username).toBe(expected ? 'alice' : null)
+  })
+
+  it('checks expiry at call time without requiring a reactive time update', () => {
+    let now = Date.now()
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+    localStorage.setItem(
+      userStateStorageKey,
+      JSON.stringify({
+        accessToken: 'token',
+        accessTokenExpiresAt: now + 120_000,
+        refreshToken: null,
+        username: 'alice'
+      })
+    )
+    signedIn = createSignedIn({ clientId: 'test' })
+    expect(signedIn.isSignedIn()).toBe(true)
+    now += 65_000
+    expect(signedIn.isSignedIn()).toBe(false)
+  })
+
+  it('keeps effects stable when another tab rotates credentials before user data loads', async () => {
+    const credentials = {
+      accessToken: 'first',
+      accessTokenExpiresAt: Date.now() + 120_000,
+      refreshToken: 'refresh',
+      username: 'alice'
+    }
+    localStorage.setItem(userStateStorageKey, JSON.stringify(credentials))
+    signedIn = createSignedIn({ clientId: 'test' })
+    const values: unknown[] = []
+    const stop = watchEffect(() => values.push([signedIn!.isSignedIn(), signedIn!.username]))
+    try {
+      localStorage.setItem(
+        userStateStorageKey,
+        JSON.stringify({ ...credentials, accessToken: 'rotated', refreshToken: 'rotated-refresh' })
+      )
+      window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
+      await nextTick()
+      expect(values).toEqual([[true, 'alice']])
+      localStorage.removeItem(userStateStorageKey)
+      window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
+      await nextTick()
+      expect(values).toEqual([
+        [true, 'alice'],
+        [false, null]
+      ])
+    } finally {
+      stop()
+    }
   })
 })

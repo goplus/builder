@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { untilLoaded } from '@/utils/query'
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { UIError, UILoading } from '@/components/ui'
-import { useSignIn, useSignedInStateQuery } from '@/stores/user'
-import { untilNotNull } from '@/utils/utils'
+import { useSignedIn } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
 
 const props = defineProps<{
@@ -13,13 +13,12 @@ const props = defineProps<{
 
 const route = useRoute()
 const router = useRouter()
-const signIn = useSignIn()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 
 onMounted(async () => {
-  const signedInState = await untilNotNull(signedInStateQuery.data)
+  const signedInState = await untilLoaded(signedIn.state)
   if (!signedInState.isSignedIn) {
-    signIn(route.fullPath)
+    signedIn.signIn(route.fullPath)
     return
   }
   router.replace(
@@ -29,8 +28,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UILoading v-if="signedInStateQuery.error.value == null" class="h-full min-h-80" />
+  <UILoading v-if="signedIn.state.error.value == null" class="h-full min-h-80" />
   <UIError v-else class="h-full min-h-80">
-    {{ $t(signedInStateQuery.error.value.userMessage) }}
+    {{ $t(signedIn.state.error.value.userMessage) }}
   </UIError>
 </template>

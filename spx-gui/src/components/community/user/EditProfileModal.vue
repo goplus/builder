@@ -16,7 +16,7 @@ import {
   useModal
 } from '@/components/ui'
 import { getCoverImgUrl } from './cover'
-import { useUpdateSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import EditAvatarModal from './EditAvatarModal.vue'
 import UserUsernameInline from './UserUsernameInline.vue'
 
@@ -84,7 +84,7 @@ function validateAvatarInputFile(file: globalThis.File) {
   }
 }
 
-const updateProfile = useUpdateSignedInUser()
+const signedIn = useSignedIn()
 const invokeEditAvatarModal = useModal(EditAvatarModal)
 
 const handleChooseAvatar = useMessageHandle(
@@ -106,7 +106,7 @@ function handleUsernameModified(newUsername: string) {
 }
 
 const handleSubmit = useMessageHandle(async () => {
-  const updated = await updateProfile({
+  const updated = await signedIn.updateProfile({
     displayName: form.value.displayName.trim(),
     description: form.value.description.trim()
   })

@@ -1,7 +1,10 @@
-import { inject, provide, ref } from 'vue'
+import { computed, inject, provide, ref, watch } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
+import { Cancelled } from '@/utils/exception'
+import { Disposable } from '@/utils/disposable'
+import type { SignedIn } from '@/stores/user'
 import { timeout, until } from '@/utils/utils'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
@@ -35,22 +38,39 @@ export function isTutorialTopic(topic: Topic): topic is TutorialTopic {
   return (topic as TutorialTopic).isTutorialTopic === true
 }
 
-export class Tutorial {
-  private course = userSessionStorageRef<Course | null>('spx-gui-tutorial-course', null)
-  private series = userSessionStorageRef<CourseSeries | null>('spx-gui-tutorial-series', null)
+export class Tutorial extends Disposable {
+  private storage = computed(() => {
+    const username = this.signedIn.username
+    return {
+      course: userSessionStorageRef<Course | null>('spx-gui-tutorial-course', null, username),
+      series: userSessionStorageRef<CourseSeries | null>('spx-gui-tutorial-series', null, username)
+    }
+  })
+  private startCtrl: AbortController | null = null
 
   constructor(
     private copilot: Copilot,
     private router: Router,
-    private isRouteLoaded: Ref<boolean>
-  ) {}
+    private isRouteLoaded: Ref<boolean>,
+    private signedIn: SignedIn
+  ) {
+    super()
+    this.addDisposer(
+      watch(
+        () => signedIn.username,
+        () => this.startCtrl?.abort(new Cancelled('identity changed')),
+        { flush: 'sync' }
+      )
+    )
+    this.addDisposer(() => this.startCtrl?.abort(new Cancelled('disposed')))
+  }
 
   get currentCourse(): Course | null {
-    return this.course.value
+    return this.storage.value.course.value
   }
 
   get currentSeries(): CourseSeries | null {
-    return this.series.value
+    return this.storage.value.series.value
   }
 
   private abandonPredictionCountRef = ref(0)
@@ -62,21 +82,27 @@ export class Tutorial {
   }
 
   async startCourse(course: Course, series: CourseSeries): Promise<void> {
+    this.startCtrl?.abort(new Cancelled('new course'))
+    const ctrl = new AbortController()
+    this.startCtrl = ctrl
     try {
+      const storage = this.storage.value
       this.copilot.endCurrentSession()
-      this.course.value = course
-      this.series.value = series
+      storage.course.value = course
+      storage.series.value = series
       this.abandonPredictionCountRef.value = 0
 
       const { entrypoint } = course
 
       if (entrypoint) {
         await this.router.push(entrypoint)
-        await until(this.isRouteLoaded)
+        await until(this.isRouteLoaded, ctrl.signal)
         await timeout(100) // Wait for detailed UI rendering
       }
 
+      ctrl.signal.throwIfAborted()
       await this.copilot.startSession(this.generateTopic(course))
+      ctrl.signal.throwIfAborted()
 
       this.copilot.notifyUserEvent(
         {
@@ -86,6 +112,7 @@ export class Tutorial {
         'Now the course has just started.'
       )
     } catch (error) {
+      if (error instanceof Cancelled) throw error
       console.error('Failed to start course:', error)
       this.endCurrentCourse()
       throw error
@@ -209,10 +236,12 @@ This is an example for messages between you and the user in a course:
   }
 
   endCurrentCourse() {
+    this.startCtrl?.abort(new Cancelled('course ended'))
     this.copilot.close()
     this.copilot.endCurrentSession()
-    this.course.value = null
-    this.series.value = null
+    const storage = this.storage.value
+    storage.course.value = null
+    storage.series.value = null
     this.abandonPredictionCountRef.value = 0
   }
 }

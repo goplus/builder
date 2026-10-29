@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { watch } from 'vue'
+import { onUnmounted, watch } from 'vue'
+import { useSignedIn } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { useIsRouteLoaded } from '@/utils/route-loading'
@@ -17,7 +18,8 @@ const copilot = useCopilot()
 const router = useRouter()
 const isRouteLoaded = useIsRouteLoaded()
 
-const tutorial = new Tutorial(copilot, router, isRouteLoaded)
+const tutorial = new Tutorial(copilot, router, isRouteLoaded, useSignedIn())
+onUnmounted(() => tutorial.dispose())
 
 // TODO: ensure `RegExp.escape` available & use `RegExp.escape` instead
 const tutorialCourseSuccessPattern = new RegExp(`<${tutorialCourseSuccess.tagName.replace('-', '\\-')}\\b`)

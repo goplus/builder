@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useSignIn } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UIButton, UICard } from '@/components/ui'
 import bgImg from './bg.png'
 
-const signIn = useSignIn()
+const signedIn = useSignedIn()
 
 function handleJoin() {
-  signIn()
+  signedIn.signIn()
 }
 </script>
 

@@ -1,26 +1,15 @@
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { enableAutoUnmount, flushPromises, mount, shallowMount } from '@vue/test-utils'
-import { defineComponent, onUnmounted, ref, watch } from 'vue'
+import { computed, defineComponent, onUnmounted, toValue, ref, watch } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
-import { composeQuery, useQuery } from '@/utils/query'
+import { untilLoaded, useQuery } from '@/utils/query'
 import { client } from '@/apis/common'
 import { accountOAuthClientForXBuilder } from '@/apis/account/oauth'
 import AdminPage from '@/apps/xbuilder/pages/admin/index.vue'
-import {
-  ensureAccessToken,
-  initUserState,
-  isSignedIn,
-  signInWithAccessToken,
-  signOut,
-  useSignedInStateQuery,
-  useSignedInUser,
-  useUpdateSignedInUser,
-  useUpdateSignedInUserAvatar,
-  type SignedInUser
-} from './signed-in'
-import { makeSignedInState } from './test'
+import { createSignedIn, type SignedIn, type SignedInUser } from './signed-in'
+import { makeSignedInState, mockCompleteSignIn } from './test'
 
 const { fetchMock } = vi.hoisted(() => {
   const fetchMock = vi.fn<typeof fetch>()
@@ -35,6 +24,7 @@ let now: number
 let serverUser: SignedInUser
 let refreshFailure: string | null
 let queryClient: QueryClient
+let signedIn: SignedIn
 
 function restoreCredentials(username: string | null = 'alice', refreshToken: string | null = 'refresh-token') {
   localStorage.setItem(
@@ -52,13 +42,15 @@ function restoreCredentials(username: string | null = 'alice', refreshToken: str
 function setupQueries() {
   let result!: ReturnType<typeof useQueries>
   function useQueries() {
-    const auth = useSignedInStateQuery()
-    const user = useSignedInUser()
+    const auth = signedIn.state
+    const user = computed(() => signedIn.user)
     const observations: unknown[] = []
     watch([auth.data, auth.isLoading, auth.error, user], (values) => observations.push(values), { flush: 'sync' })
     const sessions: { signal: AbortSignal; draft: string }[] = []
+    const identity = computed(() => signedIn.username ?? 'guest')
     const session = useQuery(async (ctx) => {
-      const state = await composeQuery(ctx, auth)
+      toValue(identity)
+      const state = await untilLoaded(auth, ctx.signal)
       const value = { signal: ctx.signal, draft: state.user?.username ?? 'guest' }
       sessions.push(value)
       return value
@@ -69,8 +61,8 @@ function setupQueries() {
       observations,
       sessions,
       session,
-      update: useUpdateSignedInUser(),
-      avatar: useUpdateSignedInUserAvatar()
+      update: signedIn.updateProfile.bind(signedIn),
+      avatar: signedIn.updateAvatar.bind(signedIn)
     }
   }
   mount(
@@ -80,7 +72,7 @@ function setupQueries() {
         return () => null
       }
     }),
-    { global: { plugins: [[VueQueryPlugin, { queryClient }]] } }
+    { global: { plugins: [createI18n({ lang: 'en' }), [VueQueryPlugin, { queryClient }], signedIn] } }
   )
   return result
 }
@@ -120,13 +112,14 @@ beforeEach(() => {
     return Response.json({ displayName: 'Saved name' })
   })
   client.setBaseUrl('https://api.example.com')
-  client.setTokenProvider(ensureAccessToken)
+  client.setTokenProvider(() => signedIn.ensureAccessToken())
   accountOAuthClientForXBuilder.setBaseUrl('https://account.example.com')
-  initUserState('client-id')
   restoreCredentials()
+  signedIn = createSignedIn({ clientId: 'client-id' })
 })
 
 afterEach(() => {
+  signedIn.dispose()
   queryClient.clear()
   vi.restoreAllMocks()
   if (originalLocks != null) Object.defineProperty(navigator, 'locks', originalLocks)
@@ -160,7 +153,7 @@ describe('credential reads in business queries (#3588)', () => {
       expect(draft.value).toBe('Saved name')
       draft.value = 'Unsaved draft'
       now += initiallyExpired ? 3600_000 : 65_000
-      await expect(ensureAccessToken()).resolves.toBe('rotated-access-token')
+      await expect(signedIn.ensureAccessToken()).resolves.toBe('rotated-access-token')
       await flushPromises()
       expect(draft.value).toBe('Unsaved draft')
       expect(signals).toHaveLength(1)
@@ -195,7 +188,7 @@ describe('signed-in state queries (#3590)', () => {
     ).length
 
     now += 65_000
-    await expect(ensureAccessToken()).resolves.toBe('rotated-access-token')
+    await expect(signedIn.ensureAccessToken()).resolves.toBe('rotated-access-token')
     await flushPromises()
 
     expect(result.observations).toEqual([])
@@ -214,18 +207,18 @@ describe('signed-in state queries (#3590)', () => {
     expect(result.session.data.value).toBe(session)
   })
 
-  it('handles sign-out, sign-in, account switching, and same-user cache reuse', async () => {
+  it('handles sign-out, sign-in, account switching, and same-user sign-in', async () => {
     const result = setupQueries()
     await flushPromises()
-    await signOut()
+    await signedIn.signOut()
     await flushPromises()
     expect(result.auth.data.value).toEqual({ isSignedIn: false, user: null })
     expect(result.user.value).toBeNull()
-    await signInWithAccessToken('alice-new-session')
+    await mockCompleteSignIn(signedIn, 'alice-new-session')
     await flushPromises()
     expect(result.user.value?.username).toBe('alice')
     serverUser = makeSignedInState('bob').user!
-    await signInWithAccessToken('bob-access-token')
+    await mockCompleteSignIn(signedIn, 'bob-access-token')
     await flushPromises()
     expect(result.auth.data.value?.user?.username).toBe('bob')
   })
@@ -234,17 +227,16 @@ describe('signed-in state queries (#3590)', () => {
     restoreCredentials('alice', null)
     const result = setupQueries()
     await flushPromises()
-    expect(isSignedIn()).toBe(true)
+    expect(result.auth.data.value?.isSignedIn).toBe(true)
     now += 65_000
-    expect(isSignedIn()).toBe(false)
-    result.auth.refetch()
+    signedIn.reload()
     await flushPromises()
     expect(result.auth.data.value).toEqual({ isSignedIn: false, user: null })
-    await signInWithAccessToken('alice-new-session')
+    await mockCompleteSignIn(signedIn, 'alice-new-session')
     await flushPromises()
     expect(result.auth.data.value?.user?.username).toBe('alice')
-    await signOut()
-    await expect(ensureAccessToken()).resolves.toBeNull()
+    await signedIn.signOut()
+    await expect(signedIn.ensureAccessToken()).resolves.toBeNull()
     await flushPromises()
     expect(result.user.value).toBeNull()
   })
@@ -266,8 +258,8 @@ describe('signed-in state queries (#3590)', () => {
     expect(result.auth.error.value).not.toBeNull()
     expect(result.auth.data.value).toBeNull()
     expect(result.user.value).toBeNull()
-    expect(isSignedIn()).toBe(true)
-    result.auth.refetch()
+    expect(JSON.parse(localStorage.getItem('builder-user')!).username).toBe('alice')
+    signedIn.reload()
     await flushPromises()
     expect(result.auth.error.value).toBeNull()
     expect(result.user.value?.username).toBe('alice')
@@ -280,8 +272,8 @@ describe('signed-in state queries (#3590)', () => {
     result.observations.length = 0
     refreshFailure = failure
     now += 65_000
-    if (failure === 'invalid_grant') await expect(ensureAccessToken()).resolves.toBeNull()
-    else await expect(ensureAccessToken()).rejects.toThrow()
+    if (failure === 'invalid_grant') await expect(signedIn.ensureAccessToken()).resolves.toBeNull()
+    else await expect(signedIn.ensureAccessToken()).rejects.toThrow()
     await flushPromises()
     if (failure === 'invalid_grant') {
       expect(result.auth.data.value).toEqual({ isSignedIn: false, user: null })
@@ -289,7 +281,7 @@ describe('signed-in state queries (#3590)', () => {
     } else {
       expect(result.observations).toEqual([])
       expect(result.auth.data.value).toBe(state)
-      expect(isSignedIn()).toBe(true)
+      expect(result.auth.data.value?.isSignedIn).toBe(true)
     }
   })
 
@@ -303,13 +295,13 @@ describe('signed-in state queries (#3590)', () => {
       if (failure === 'invalid_grant') {
         expect(result.auth.data.value).toEqual({ isSignedIn: false, user: null })
         expect(result.auth.error.value).toBeNull()
-        expect(isSignedIn()).toBe(false)
+        expect(JSON.parse(localStorage.getItem('builder-user')!).username).toBeNull()
       } else {
         expect(result.auth.data.value).toBeNull()
         expect(result.auth.error.value).not.toBeNull()
-        expect(isSignedIn()).toBe(true)
+        expect(JSON.parse(localStorage.getItem('builder-user')!).username).toBe('alice')
         refreshFailure = null
-        result.auth.refetch()
+        signedIn.reload()
         await flushPromises()
         expect(result.auth.error.value).toBeNull()
         expect(result.user.value?.username).toBe('alice')
@@ -317,7 +309,7 @@ describe('signed-in state queries (#3590)', () => {
     }
   )
 
-  it('propagates profile, avatar, and capability changes through existing user-key invalidation', async () => {
+  it('propagates profile, avatar, and capability changes directly to consumers', async () => {
     const result = setupQueries()
     await flushPromises()
     serverUser = {
@@ -353,7 +345,7 @@ describe('signed-in state queries (#3590)', () => {
     await router.push('/admin/apps/app')
     const page = shallowMount(AdminPage, {
       global: {
-        plugins: [router, createI18n({ lang: 'en' }), [VueQueryPlugin, { queryClient }]],
+        plugins: [router, createI18n({ lang: 'en' }), [VueQueryPlugin, { queryClient }], signedIn],
         renderStubDefaultSlot: true,
         stubs: { RouterView: false, DraftPage: false },
         directives: { radar: {} }
@@ -362,7 +354,7 @@ describe('signed-in state queries (#3590)', () => {
     await flushPromises()
     await page.get('input').setValue('Unsaved admin draft')
     now += 65_000
-    await ensureAccessToken()
+    await signedIn.ensureAccessToken()
     await flushPromises()
     expect(unmounted).not.toHaveBeenCalled()
     expect((page.get('input').element as HTMLInputElement).value).toBe('Unsaved admin draft')

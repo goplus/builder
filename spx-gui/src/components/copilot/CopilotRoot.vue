@@ -13,7 +13,7 @@ import { useMessageEvents, useModalEvents } from '@/components/ui'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as pageLink from './markdown-elements/PageLink'
 import * as highlightLink from './markdown-elements/HighlightLink.vue'
-import { useSignedInStateQuery, type SignedInState } from '@/stores/user'
+import { useSignedIn, type SignedInState } from '@/stores/user'
 import { userSessionStorageRef } from '@/utils/user-storage'
 import { provideCopilot } from './context'
 import { createBuiltInSkillRegistry } from './skills/built-in'
@@ -165,19 +165,26 @@ const i18n = useI18n()
 const router = useRouter()
 const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const skillRegistry = createBuiltInSkillRegistry()
 const copilot = new Copilot(skillRegistry)
-const sessionStorageRef = userSessionStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
-
-copilot.syncSessionWith({
-  get() {
-    return sessionStorageRef.value
+watch(
+  () => signedIn.username,
+  (username, _, onCleanup) => {
+    const saved = userSessionStorageRef<SessionExported | null>('spx-gui-copilot-session', null, username)
+    const disconnect = copilot.syncSessionWith({
+      get: () => saved.value,
+      set: (value) => {
+        saved.value = value
+      }
+    })
+    onCleanup(() => {
+      disconnect()
+      copilot.endCurrentSession()
+    })
   },
-  set(value) {
-    sessionStorageRef.value = value
-  }
-})
+  { immediate: true }
+)
 
 onUnmounted(() => {
   copilot.dispose()
@@ -200,7 +207,7 @@ copilot.registerCustomElement({
 })
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
-copilot.registerContextProvider(new UserContextProvider(signedInStateQuery.data))
+copilot.registerContextProvider(new UserContextProvider(signedIn.state.data))
 copilot.registerContextProvider(new LocationContextProvider(router))
 
 const isRouteLoaded = useIsRouteLoaded()

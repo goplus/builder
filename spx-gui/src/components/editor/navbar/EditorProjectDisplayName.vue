@@ -4,7 +4,7 @@ import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useNetwork } from '@/utils/network'
 import { cloudHelpers } from '@/models/common/cloud'
 import { type SpxProject } from '@/models/spx/project'
-import { useSignedInUser, useUser } from '@/stores/user'
+import { useSignedIn, useUser } from '@/stores/user'
 import { projectDisplayNameMaxLength } from '@/apis/project'
 import { UIIcon, UITextInput } from '@/components/ui'
 
@@ -14,9 +14,9 @@ const props = defineProps<{
 
 const { isOnline } = useNetwork()
 
-const currentUser = useSignedInUser()
+const signedIn = useSignedIn()
 const isOwnedByCurrentUser = computed(() => {
-  const currentUsername = currentUser.value?.username
+  const currentUsername = signedIn.username
   const projectOwnerUsername = props.project.owner
   if (currentUsername == null || projectOwnerUsername == null) return false
   return currentUsername === projectOwnerUsername
