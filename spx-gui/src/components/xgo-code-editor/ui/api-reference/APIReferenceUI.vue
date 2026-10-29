@@ -258,7 +258,7 @@ async function handleCategoryClick(id: string) {
   <section
     v-radar="{
       name: 'API References',
-      desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
+      desc: 'All available code snippets at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
     class="flex min-h-0 flex-col"
   >
@@ -268,13 +268,13 @@ async function handleCategoryClick(id: string) {
     <template v-else>
       <div class="flex-none px-3 py-2">
         <div class="flex items-center justify-between gap-2">
-          <h4 class="text-sm font-medium text-title">{{ $t({ en: 'API Reference', zh: 'API 参考' }) }}</h4>
+          <h4 class="text-sm font-medium text-title">{{ $t({ en: 'Code snippets', zh: '代码片段' }) }}</h4>
           <div class="flex items-center gap-1">
             <UITooltip>
               <template #trigger>
                 <button
                   ref="searchToggleRef"
-                  v-radar="{ name: 'Toggle API search', desc: 'Show or hide the API search field' }"
+                  v-radar="{ name: 'Toggle API search', desc: 'Show or hide the code snippet search field' }"
                   type="button"
                   class="size-7 shrink-0 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 transition-colors duration-100"
                   :class="
@@ -288,7 +288,13 @@ async function handleCategoryClick(id: string) {
                   <UIIcon class="size-4" type="search" />
                 </button>
               </template>
-              {{ $t(isSearchExpanded ? { en: 'Hide search', zh: '收起搜索' } : { en: 'Search APIs', zh: '搜索 API' }) }}
+              {{
+                $t(
+                  isSearchExpanded
+                    ? { en: 'Hide search', zh: '收起搜索' }
+                    : { en: 'Search snippets', zh: '搜索代码片段' }
+                )
+              }}
             </UITooltip>
             <UIDropdown
               :visible="isCategoryMenuVisible"
@@ -302,7 +308,7 @@ async function handleCategoryClick(id: string) {
                   <template #trigger>
                     <button
                       ref="categoryToggleRef"
-                      v-radar="{ name: 'API categories', desc: 'Choose an API category to browse' }"
+                      v-radar="{ name: 'API categories', desc: 'Choose a snippet category to browse' }"
                       type="button"
                       class="size-7 shrink-0 cursor-pointer appearance-none flex items-center justify-center rounded-sm border-none p-0 transition-colors duration-100"
                       :class="
@@ -316,12 +322,12 @@ async function handleCategoryClick(id: string) {
                       <UIIcon class="size-4" type="filter" />
                     </button>
                   </template>
-                  {{ $t({ en: 'API categories', zh: 'API 分类' }) }}
+                  {{ $t({ en: 'Snippet categories', zh: '代码片段分类' }) }}
                 </UITooltip>
               </template>
               <ul
                 ref="categoryMenuRef"
-                v-radar="{ name: 'API category list', desc: 'Available API categories' }"
+                v-radar="{ name: 'API category list', desc: 'Available snippet categories' }"
                 class="w-40 flex flex-col gap-1 p-1.5"
               >
                 <li v-for="c in categoryMenuItems" :key="c.id">
@@ -329,8 +335,8 @@ async function handleCategoryClick(id: string) {
                     v-radar="{
                       name: $t(c.label),
                       desc: isSearching
-                        ? $t({ en: `${c.resultCount} matching snippets`, zh: `${c.resultCount} 种匹配写法` })
-                        : 'Click to view APIs in this category'
+                        ? $t({ en: `${c.resultCount} matching snippets`, zh: `匹配到 ${c.resultCount} 个代码片段` })
+                        : 'Click to view snippets in this category'
                     }"
                     type="button"
                     class="h-8 w-full appearance-none flex items-center gap-2 rounded-sm border-none px-2 text-xs transition-colors duration-100 enabled:cursor-pointer disabled:cursor-not-allowed disabled:text-disabled-text"
@@ -357,9 +363,9 @@ async function handleCategoryClick(id: string) {
           v-if="isSearchExpanded"
           ref="searchInputRef"
           v-model:value="searchQuery"
-          v-radar="{ name: 'Search API Reference', desc: 'Search API names and functions in English or Chinese' }"
+          v-radar="{ name: 'Search API Reference', desc: 'Search snippet names and functions in English or Chinese' }"
           class="mt-2"
-          :placeholder="$t({ en: 'Search API names or functions', zh: '搜索 API 名称或功能' })"
+          :placeholder="$t({ en: 'Search by name or function', zh: '搜索名称或功能' })"
           clearable
           @keydown.esc.stop="handleSearchEscape"
         >
@@ -372,12 +378,12 @@ async function handleCategoryClick(id: string) {
             $t(
               searchResults.length > 0
                 ? {
-                    en: searchResults.length === 1 ? 'Found 1 snippet' : `Found ${searchResults.length} snippets`,
-                    zh: `找到 ${searchResults.length} 种写法`
+                    en: searchResults.length === 1 ? 'Matched 1 snippet' : `Matched ${searchResults.length} snippets`,
+                    zh: `匹配到 ${searchResults.length} 个代码片段`
                   }
                 : {
-                    en: 'No APIs found. Try another keyword.',
-                    zh: '未找到 API，试试其他关键词。'
+                    en: 'No matching snippets',
+                    zh: '未找到相关代码片段'
                   }
             )
           }}

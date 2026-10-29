@@ -133,7 +133,7 @@ describe('API Reference search disclosure', () => {
     ).toEqual(['event', 'game'])
     await wrapper.get('input').setValue('开始')
     expect(visibleHeadings()).toEqual(['游戏事件'])
-    expect(wrapper.get('[role="status"]').text()).toBe('找到 1 种写法')
+    expect(wrapper.get('[role="status"]').text()).toBe('匹配到 1 个代码片段')
   })
 
   it.each(['toggle', 'Escape'])('clears and collapses through %s, returning focus to the toggle', async (action) => {
@@ -141,7 +141,7 @@ describe('API Reference search disclosure', () => {
     const toggle = wrapper.get('button[aria-expanded]')
     await toggle.trigger('click')
     await wrapper.get('input').setValue('开始')
-    expect(wrapper.get('[role="status"]').text()).toBe('找到 1 种写法')
+    expect(wrapper.get('[role="status"]').text()).toBe('匹配到 1 个代码片段')
     if (action === 'toggle') await toggle.trigger('click')
     else await wrapper.get('input').trigger('keydown', { key: 'Escape' })
     expect(toggle.attributes('aria-expanded')).toBe('false')
@@ -171,13 +171,13 @@ describe('API Reference search disclosure', () => {
     await wrapper.get('input').setValue('没有这个功能')
     const statusElement = wrapper.get('[role="status"]').element
     expect(wrapper.findAll('[role="status"]')).toHaveLength(1)
-    expect(wrapper.get('[role="status"]').text()).toBe('未找到 API，试试其他关键词。')
-    expect(wrapper.text()).not.toContain('找到 0 种写法')
+    expect(wrapper.get('[role="status"]').text()).toBe('未找到相关代码片段')
+    expect(wrapper.text()).not.toContain('匹配到 0 个代码片段')
     await wrapper.get('input').setValue('开始')
     expect(wrapper.findAll('[role="status"]')).toHaveLength(1)
-    expect(wrapper.get('[role="status"]').text()).toBe('找到 1 种写法')
+    expect(wrapper.get('[role="status"]').text()).toBe('匹配到 1 个代码片段')
     expect(wrapper.get('[role="status"]').element).toBe(statusElement)
-    expect(wrapper.text()).not.toContain('未找到 API')
+    expect(wrapper.text()).not.toContain('未找到相关代码片段')
   })
 
   it('opens category names from the header instead of displaying the category row inline', async () => {
@@ -211,7 +211,7 @@ describe('API Reference search disclosure', () => {
     await wrapper.get('[aria-label="游戏"]').trigger('click')
     await flushPromises()
     expect(wrapper.get<HTMLInputElement>('input').element.value).toBe('共同')
-    expect(wrapper.get('[role="status"]').text()).toBe('找到 2 种写法')
+    expect(wrapper.get('[role="status"]').text()).toBe('匹配到 2 个代码片段')
     expect(groups.flatMap((group) => group.findAll('h5').map((heading) => heading.text()))).toEqual([
       '游戏事件',
       '其他'
@@ -312,11 +312,11 @@ describe('API Reference search disclosure', () => {
     expect(groups.flatMap((group) => group.findAll('ul > li')).filter((item) => item.text() === 'shared')).toHaveLength(
       1
     )
-    expect(wrapper.get('[role="status"]').text()).toBe('找到 3 种写法')
+    expect(wrapper.get('[role="status"]').text()).toBe('匹配到 3 个代码片段')
     await wrapper.get('[aria-label="API categories"]').trigger('click')
     await flushPromises()
-    expect(wrapper.get('[aria-label="事件"]').attributes('aria-description')).toBe('1 种匹配写法')
-    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-description')).toBe('2 种匹配写法')
+    expect(wrapper.get('[aria-label="事件"]').attributes('aria-description')).toBe('匹配到 1 个代码片段')
+    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-description')).toBe('匹配到 2 个代码片段')
   })
 
   it('disables categories without matches and updates the selected group when the query changes', async () => {
@@ -327,7 +327,7 @@ describe('API Reference search disclosure', () => {
     await flushPromises()
     expect(wrapper.get('[aria-label="游戏"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[aria-label="游戏"]').text()).toContain('0')
-    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-description')).toBe('0 种匹配写法')
+    expect(wrapper.get('[aria-label="游戏"]').attributes('aria-description')).toBe('匹配到 0 个代码片段')
     await wrapper.get('[aria-label="游戏"]').trigger('click')
     expect(wrapper.get<HTMLInputElement>('input').element.value).toBe('开始')
     expect(wrapper.get('[aria-label="事件"]').attributes('aria-pressed')).toBe('true')
