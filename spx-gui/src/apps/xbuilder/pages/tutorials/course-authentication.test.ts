@@ -16,8 +16,6 @@ const mocks = vi.hoisted(() => ({
     description: string
     courseIDs: string[]
   } | null> | null,
-  courseLoading: null as Ref<boolean> | null,
-  seriesLoading: null as Ref<boolean> | null,
   signIn: vi.fn(),
   confirm: vi.fn(),
   enter: vi.fn(),
@@ -41,14 +39,12 @@ vi.mock('@/stores/user', () => ({
 }))
 vi.mock('@/stores/course', () => ({
   useCourse: () => {
-    const isLoading = ref(false)
-    mocks.courseLoading = isLoading
     const data = ref(mocks.course)
     mocks.courseData = data
     return {
       data,
       error: ref(null),
-      isLoading,
+      isLoading: ref(false),
       progress: ref({ percentage: 0 })
     }
   }
@@ -61,23 +57,20 @@ vi.mock('@/stores/course-series', () => ({
     refetch: vi.fn()
   }),
   useSeries: () => {
-    const isLoading = ref(false)
-    mocks.seriesLoading = isLoading
     const data = ref(mocks.series)
     mocks.seriesData = data
     return {
       data,
       error: ref(null),
-      isLoading,
+      isLoading: ref(false),
       progress: ref({ percentage: 0 })
     }
   },
   useSeriesCourses: () => {
-    const isLoading = ref(false)
     return {
       data: ref([mocks.course]),
       error: ref(null),
-      isLoading,
+      isLoading: ref(false),
       progress: ref({ percentage: 0 })
     }
   }
@@ -237,20 +230,6 @@ describe('Course authentication', () => {
     expect(mocks.enter).toHaveBeenCalledWith(mocks.course, mocks.series)
     expect(mocks.signIn).not.toHaveBeenCalled()
   })
-
-  it.each(['courseLoading', 'seriesLoading'] as const)(
-    'refreshes Start when its %s dependency reloads',
-    async (query) => {
-      mocks.signedIn = true
-      await openPage('/course/series/course/start')
-      expect(mocks.enter).toHaveBeenCalledOnce()
-      mocks[query]!.value = true
-      await flushPromises()
-      mocks[query]!.value = false
-      await flushPromises()
-      expect(mocks.enter).toHaveBeenCalledTimes(2)
-    }
-  )
 
   it('loads a signed-in Playground on direct navigation', async () => {
     mocks.course.kind = 'playground'

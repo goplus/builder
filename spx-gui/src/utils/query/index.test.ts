@@ -531,6 +531,26 @@ afterEach(() => {
 })
 
 describe('cached query refreshing modes', () => {
+  it('takes valid cached data while another consumer refreshes it', async () => {
+    const queryClient = client()
+    queryClient.setQueryData(['fresh-refresh'], 'cached')
+    const pending = deferred<string>()
+    const queryFn = vi.fn(() => pending.promise)
+    const live = setup(queryClient, () =>
+      useQueryWithCache({ queryKey: ['fresh-refresh'], queryFn, staleTime: Infinity })
+    )
+    live.refetch()
+    const snapshot = setup(queryClient, () =>
+      useQueryWithCache({ queryKey: ['fresh-refresh'], queryFn, staleTime: Infinity, mode: 'snapshot' })
+    )
+    expect(state(snapshot)).toEqual({ data: 'cached', error: null, loading: false })
+    pending.resolve('updated')
+    await flushPromises()
+    expect(live.data.value).toBe('updated')
+    expect(snapshot.data.value).toBe('cached')
+    expect(queryFn).toHaveBeenCalledOnce()
+  })
+
   it('defaults to live while revalidating expired data, including on failure', async () => {
     const queryClient = client()
     queryClient.setQueryData(['default'], 'old')
