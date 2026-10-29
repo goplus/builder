@@ -11,6 +11,7 @@ import { useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
 import { useUpdateCourse } from '@/stores/course'
 import { CourseCreation } from '@/components/course/management/course-creation'
 import { provideTutorial, Tutorial } from '@/components/tutorials/tutorial'
+import PlaygroundComponent from '@/components/tutorials/playground/CoursePlayground.vue'
 import CourseStart from './course-start.vue'
 import CoursePlayground from './course-playground.vue'
 
@@ -49,7 +50,7 @@ vi.mock('@/models/tutorial/project', () => ({ TutorialProject: { load: apis.load
 vi.mock('@/components/editor/navbar/EditorNavbar.vue', () => ({ default: { template: '<header />' } }))
 vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
   default: defineComponent({
-    name: 'CoursePlayground',
+    name: 'CoursePlaygroundStub',
     props: { projectQueryRet: { type: Object, required: true } },
     setup: (props) => () =>
       h(
@@ -142,6 +143,26 @@ async function openEntry(destination: string) {
 }
 
 describe('Course entry with shared cached queries', () => {
+  it('waits for invalidated series membership on Start before entering a newly added course', async () => {
+    client.setQueryData(['course-series', 'series'], { ...series, courseIDs: ['first'] })
+    await client.invalidateQueries({ queryKey: ['course-series', 'series'] })
+    series.courseIDs = ['first', 'new']
+    let finish!: () => void
+    apis.series.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = () => resolve(series)
+          pending.push(finish)
+        })
+    )
+    const { wrapper, enter } = await openEntry('/course/series/new/start')
+    expect(enter).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('loading')
+    finish()
+    await vi.waitFor(() => expect(wrapper.text()).toBe('new'))
+    expect(enter).toHaveBeenCalledWith(courses[1], series)
+  })
+
   it('creates and saves a course, then waits for a valid list after leaving management during refresh', async () => {
     let creation!: CourseCreation
     let save!: ReturnType<typeof useUpdateCourse>
@@ -186,25 +207,40 @@ describe('Course entry with shared cached queries', () => {
     expect(apis.load).toHaveBeenCalledWith(courses[1])
   })
 
-  it('preserves edits during background updates and reads a fresh snapshot when switching courses in the same series', async () => {
-    series.courseIDs = ['first', 'new']
-    const { wrapper, router } = await openEntry('/course/series/first/playground')
-    const query = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet')
+  it('preserves edits during background updates and reads the updated list when switching courses in the same series', async () => {
+    const { wrapper, router, tutorial, enter } = await openEntry('/course/series/first/playground')
+    const query = wrapper.findComponent(PlaygroundComponent).props('projectQueryRet')
     await vi.waitFor(() => expect(query.data.value).not.toBeNull())
-    const project = query.data.value
+    const project = query.data.value as NonNullable<typeof query.data.value> & { code: string }
     project.code = 'learner edit'
+    series.courseIDs = ['first', 'new']
     courses = courses.map((course) => ({ ...course, title: `${course.id} revised` }))
-    await client.invalidateQueries({ queryKey: ['course-series-courses', 'series'] })
-    await flushPromises()
+    const finishes: Array<() => void> = []
+    apis.list.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          const finish = () => resolve({ data: [...courses], total: 2 })
+          finishes.push(finish)
+          pending.push(finish)
+        })
+    )
+    const refresh = client.invalidateQueries({ queryKey: ['course-series-courses-by-page', 'series'] })
+    await vi.waitFor(() => expect(finishes).toHaveLength(1))
     expect(apis.load).toHaveBeenCalledOnce()
     expect(query.data.value).toBe(project)
     expect(project.code).toBe('learner edit')
     await router.push('/course/series/first/playground/sprites/Lita/costumes')
     await flushPromises()
     expect(apis.load).toHaveBeenCalledOnce()
-    await router.push('/course/series/new/playground')
-    await flushPromises()
+    await tutorial.startCourse('series', 'new')
+    await vi.waitFor(() => expect(finishes).toHaveLength(2))
+    expect(enter).toHaveBeenCalledWith(courses[1], series)
     expect(apis.dispose).toHaveBeenCalledOnce()
+    expect(apis.load).toHaveBeenCalledOnce()
+    expect(wrapper.text()).toBe('loading')
+    finishes.forEach((finish) => finish())
+    await refresh
+    await flushPromises()
     expect(apis.load).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toBe('new revised')
   })
@@ -212,13 +248,27 @@ describe('Course entry with shared cached queries', () => {
   it('retries a failed initial list read without re-entering an already completed Start step', async () => {
     apis.list.mockRejectedValueOnce(new Error('list unavailable'))
     const { wrapper, enter } = await openEntry('/course/series/first/start')
-    const query = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet')
-    expect(query.error.value).not.toBeNull()
+    const query = wrapper.findComponent(PlaygroundComponent).props('projectQueryRet')
+    await vi.waitFor(() => expect(query.error.value).not.toBeNull())
     expect(apis.load).not.toHaveBeenCalled()
-    // Session retry must explicitly renew its snapshot dependency.
     query.refetch()
     await flushPromises()
     expect(query.error.value).toBeNull()
+    expect(wrapper.text()).toBe('first')
+    expect(enter).toHaveBeenCalledOnce()
+  })
+
+  it('refetches the successful list when retrying a failed project load', async () => {
+    apis.load.mockRejectedValueOnce(new Error('project unavailable'))
+    const { wrapper, enter } = await openEntry('/course/series/first/start')
+    const query = wrapper.findComponent(PlaygroundComponent).props('projectQueryRet')
+    await vi.waitFor(() => expect(query.error.value).not.toBeNull())
+    expect(apis.list).toHaveBeenCalledOnce()
+    query.refetch()
+    await flushPromises()
+    expect(query.error.value).toBeNull()
+    expect(apis.list).toHaveBeenCalledTimes(2)
+    expect(apis.load).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toBe('first')
     expect(enter).toHaveBeenCalledOnce()
   })

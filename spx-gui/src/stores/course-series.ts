@@ -7,7 +7,7 @@ import { useAction } from '@/utils/exception'
 import { useQueryCache, useQueryWithCache, type QueryMode } from '@/utils/query'
 
 const seriesQueryKeyPrefix = 'course-series'
-const seriesCoursesQueryKeyPrefix = 'course-series-courses'
+const seriesCoursesQueryKeyPrefix = 'course-series-courses-by-page'
 
 function getSeriesQueryKey(seriesID: string) {
   return [seriesQueryKeyPrefix, seriesID]
@@ -19,10 +19,10 @@ function getSeriesCoursesQueryKey(seriesID: string | null) {
 
 const staleTime = 5 * 60 * 1000
 
-export function useSeries(seriesID: WatchSource<string>, mode: QueryMode = 'background') {
+export function useSeries(seriesID: WatchSource<string>, options: { mode?: QueryMode } = { mode: 'live' }) {
   const seriesIDRef = toRef(seriesID)
   return useQueryWithCache({
-    mode,
+    mode: options.mode,
     queryKey: computed(() => getSeriesQueryKey(seriesIDRef.value)),
     queryFn: (signal) => apis.getCourseSeries(seriesIDRef.value, signal),
     staleTime,
@@ -30,16 +30,16 @@ export function useSeries(seriesID: WatchSource<string>, mode: QueryMode = 'back
   })
 }
 
-export function useSeriesCoursePage(
+export function useSeriesCoursesByPage(
   seriesID: WatchSource<string | null>,
   pagination: WatchSource<PaginationParams>,
-  mode: QueryMode = 'background'
+  options: { mode?: QueryMode } = { mode: 'live' }
 ) {
   const seriesIDRef = toRef(seriesID)
   const queryKey = computed(() => [...getSeriesCoursesQueryKey(seriesIDRef.value), toValue(pagination)])
   return useQueryWithCache({
     queryKey,
-    mode,
+    mode: options.mode,
     async queryFn(signal) {
       const id = seriesIDRef.value
       if (id == null) return { data: [], total: 0 }
@@ -50,15 +50,17 @@ export function useSeriesCoursePage(
   })
 }
 
-export function useSeriesCourses(seriesID: WatchSource<string | null>, mode: QueryMode = 'background') {
+export function useSeriesCourses(
+  seriesID: WatchSource<string | null>,
+  options: { mode?: QueryMode } = { mode: 'live' }
+) {
   // Management and navigation currently display at most one API page.
-  const page = useSeriesCoursePage(seriesID, () => ({ pageIndex: 1, pageSize: 100 }), mode)
+  const page = useSeriesCoursesByPage(seriesID, () => ({ pageIndex: 1, pageSize: 100 }), options)
   return { ...page, data: computed(() => page.data.value?.data ?? null) }
 }
 
 export function useUpdateCourseSeries() {
-  const seriesCache = useQueryCache<apis.CourseSeries>()
-  const coursesCache = useQueryCache<ByPage<Course>>()
+  const queryCache = useQueryCache()
   return useAction(
     async function updateCourseSeries(
       courseSeriesID: string,
@@ -70,13 +72,13 @@ export function useUpdateCourseSeries() {
         series = await apis.updateCourseSeries(courseSeriesID, params, signal)
       } catch (e) {
         // A failed update may still have taken effect, its answer lost, so what is cached is no longer known.
-        seriesCache.invalidate(getSeriesQueryKey(courseSeriesID))
-        if (params.courseIDs != null) coursesCache.invalidate(getSeriesCoursesQueryKey(courseSeriesID))
+        queryCache.invalidate(getSeriesQueryKey(courseSeriesID))
+        if (params.courseIDs != null) queryCache.invalidate(getSeriesCoursesQueryKey(courseSeriesID))
         throw e
       }
-      seriesCache.invalidateWithOptimisticValue(getSeriesQueryKey(series.id), series)
+      queryCache.invalidateWithOptimisticValue(getSeriesQueryKey(series.id), series)
       // Which courses the series holds, and in what order, may have changed; the new list is not known here.
-      if (params.courseIDs != null) coursesCache.invalidate(getSeriesCoursesQueryKey(series.id))
+      if (params.courseIDs != null) queryCache.invalidate(getSeriesCoursesQueryKey(series.id))
       return series
     },
     { en: 'Failed to update course series', zh: '更新课程系列失败' }
@@ -101,25 +103,22 @@ export type DeleteCourseSeries = ReturnType<typeof useDeleteCourseSeries>
 
 /** Keeps cached series and their course lists in step with writes to courses. */
 export function useCourseChangesInSeries() {
-  const seriesCache = useQueryCache<apis.CourseSeries>()
-  const coursesCache = useQueryCache<ByPage<Course>>()
+  const queryCache = useQueryCache()
   return {
     updated(course: Course) {
-      coursesCache.invalidateWithOptimisticValue([seriesCoursesQueryKeyPrefix], (page) => ({
+      queryCache.invalidateMatchingWithOptimisticUpdater<ByPage<Course>>([seriesCoursesQueryKeyPrefix], (page) => ({
         ...page,
         data: page.data.map((c) => (c.id === course.id ? course : c))
       }))
     },
     deleted(courseID: string) {
       // The server takes a deleted course out of every series that held it.
-      seriesCache.invalidateWithOptimisticValue([seriesQueryKeyPrefix], (series) => ({
+      queryCache.invalidateMatchingWithOptimisticUpdater<apis.CourseSeries>([seriesQueryKeyPrefix], (series) => ({
         ...series,
         courseIDs: series.courseIDs.filter((id) => id !== courseID)
       }))
-      coursesCache.invalidateWithOptimisticValue([seriesCoursesQueryKeyPrefix], (page) => {
-        const data = page.data.filter((c) => c.id !== courseID)
-        return { data, total: page.total - (page.data.length - data.length) }
-      })
+      // Deletion shifts page boundaries; let the server refill pages and recalculate totals.
+      queryCache.invalidate([seriesCoursesQueryKeyPrefix])
     }
   }
 }

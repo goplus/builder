@@ -29,7 +29,7 @@ const query = useQueryWithCache({
   queryKey: () => ['project', owner.value, name.value],
   queryFn: (signal) => loadProject(owner.value, name.value, signal),
   staleTime: 60_000,
-  mode: 'blocking'
+  mode: 'snapshot'
 })
 ```
 
@@ -37,21 +37,22 @@ const query = useQueryWithCache({
 
 `mode` is local to each consumer and does not clear or freeze the shared cache:
 
-| Mode                   | Refresh behavior                                                                                                                                                                                            |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `background` (default) | Retain data and loading state during refresh. Success publishes new data; failure retains data and exposes the error. A cold request uses the underlying query's loading state.                             |
-| `blocking`             | While awaiting a required result, expose null data/error and loading. Success publishes data and ends loading. Failure leaves data null, exposes the error and ends loading. Offline pauses remain loading. |
-| `snapshot`             | Wait for the first valid success for the current key, then retain the result and observable state despite shared-cache refreshes, writes, failures or invalidations.                                        |
+| Mode             | Refresh behavior                                                                                                                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `live` (default) | Follow shared-cache results. Retain data and loading state during refresh. Success publishes new data; failure retains data and exposes the error. A cold request uses the underlying query's loading state. |
+| `snapshot`       | Wait for the first valid success for the current key, then retain the result and observable state despite shared-cache refreshes, writes, failures or invalidations.                                         |
 
-Blocking/snapshot reads may immediately accept fresh successful cache hits. They wait for revalidation of expired or invalidated results. Successful null/falsy values and empty collections count as results. Even with `staleTime: 0`, a successful fetch satisfies the current read; expiry alone does not hide a published result.
+Snapshot reads may immediately accept fresh successful cache hits. They wait for revalidation of expired or invalidated results, exposing null data/error and loading, including offline pauses. Failure exposes an error with null data and ends loading. Successful null/falsy values and empty collections count as results. Even with `staleTime: 0`, a successful fetch satisfies the current read; expiry alone does not hide a published result.
 
-Changing the key starts a new read. Explicit `refetch()` in blocking/snapshot mode immediately clears the consumer's data/error and enters loading. A snapshot refetch captures a new result on success; failure exposes an error with null data and can be retried. Cancellation does not make the required result ready by restoring old cache data.
+Changing the key starts a new read. Explicit `refetch()` in snapshot mode immediately clears the consumer's data/error and enters loading. A snapshot refetch captures a new result on success; failure exposes an error with null data and can be retried. Cancellation does not make the required result ready by restoring old cache data.
 
-Use background for continuous displays and mutation-driven state, blocking when an operation must wait for the required result, and snapshot for initialization that must remain stable until the key changes or the consumer explicitly rereads.
+Use live for continuous displays and mutation-driven state, and snapshot for initialization that must remain stable until the key changes or the consumer explicitly rereads. Live means following the shared cache; it does not imply server push or polling. Both modes return reactive query state.
+
+Business store hooks accept an options object, for example `useSeries(seriesID, { mode: 'snapshot' })`. Omitting the options or mode uses live behavior.
 
 ## Reading and composing
 
-`untilLoaded(query, signal?)` waits for the query's observable loading state to end, then returns its data or throws its error. It follows the selected mode: a background query can return its retained result during refresh. It does not independently require fresh cache data.
+`untilLoaded(query, signal?)` waits for the query's observable loading state to end, then returns its data or throws its error. It follows the selected mode: a live query can return its retained result during refresh. It does not independently require fresh cache data.
 
 `composeQuery(ctx, query, subReportParams?)` reads another query inside `useQuery`, observes its data/error/loading updates, and aggregates progress. Explicit refetch of the composed query also refetches its dependency.
 
@@ -64,9 +65,14 @@ const session = useQuery(async (ctx) => {
 
 ## Cache writes
 
-`useQueryCache<T>()` provides:
+`useQueryCache()` provides:
 
 - `invalidate(queryKey)`: invalidate queries whose keys start with this prefix and refresh active queries.
-- `invalidateWithOptimisticValue(queryKey, valueOrUpdater)`: write a known value to the exact key, or apply an updater to each existing non-null result matching the prefix, then invalidate matching queries to revalidate them. Updaters do not create missing cache entries. Older in-flight requests are canceled before writing so they cannot overwrite the new value.
+- `invalidateWithOptimisticValue(queryKey, value)`: write a known value to the exact key, creating the entry if missing, then invalidate and revalidate only that entry.
+- `invalidateMatchingWithOptimisticUpdater(queryKeyPrefix, updater)`: apply an updater to each existing non-null result matching the prefix, then invalidate matching queries and refresh active matches. It does not create missing cache entries.
 
-Write cache data after mutations so background consumers reflect the change. A snapshot consumer keeps its accepted result until its key changes or it explicitly refetches.
+Both optimistic methods cancel older matching in-flight requests before writing so they cannot overwrite the new values.
+
+The methods are generic per call, so one cache instance can handle different data types. Values infer their type; updater calls can specify it explicitly, for example `cache.invalidateMatchingWithOptimisticUpdater<ByPage<Course>>(prefix, updater)`.
+
+Write cache data after mutations so live consumers reflect the change. A snapshot consumer keeps its accepted result until its key changes or it explicitly refetches.

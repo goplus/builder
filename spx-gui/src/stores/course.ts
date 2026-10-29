@@ -11,10 +11,10 @@ function getCourseQueryKey(courseID: string) {
 
 const staleTime = 5 * 60 * 1000
 
-export function useCourse(courseID: WatchSource<string>, mode: QueryMode = 'background') {
+export function useCourse(courseID: WatchSource<string>, options: { mode?: QueryMode } = { mode: 'live' }) {
   const courseIDRef = toRef(courseID)
   return useQueryWithCache({
-    mode,
+    mode: options.mode,
     queryKey: computed(() => getCourseQueryKey(courseIDRef.value)),
     queryFn: (signal) => apis.getCourse(courseIDRef.value, signal),
     staleTime,
@@ -23,7 +23,7 @@ export function useCourse(courseID: WatchSource<string>, mode: QueryMode = 'back
 }
 
 export function useUpdateCourse() {
-  const courseCache = useQueryCache<apis.Course>()
+  const courseCache = useQueryCache()
   const inSeries = useCourseChangesInSeries()
   return useAction(
     async function updateCourse(courseID: string, params: apis.UpdateCourseParams, signal?: AbortSignal) {
