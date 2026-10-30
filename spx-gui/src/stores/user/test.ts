@@ -19,6 +19,7 @@ function createSignedInUser(username: string): SignedInUser {
       canManageAuthorization: false,
       canManageAssets: false,
       canManageCourses: false,
+      canManageFeedback: false,
       canUsePremiumLLM: false
     }
   }
