@@ -51,7 +51,7 @@ export function useSeriesCoursesByPage(
 }
 
 export function useSeriesCourses(seriesID: WatchSource<string | null>, options: { mode?: QueryMode } = {}) {
-  // Management and navigation currently display at most one API page.
+  // TODO: Load subsequent pages when a series has more than 100 courses.
   const page = useSeriesCoursesByPage(seriesID, () => ({ pageIndex: 1, pageSize: 100 }), options)
   return { ...page, data: computed(() => page.data.value?.data ?? null) }
 }
