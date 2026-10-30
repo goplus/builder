@@ -54,7 +54,10 @@ export type QueryContext = {
 }
 
 export type QueryOptions = {
-  /** Clear previous data and error when a new fetch starts. */
+  /**
+   * Clear previous data and error when a new fetch starts.
+   * TODO: Replace this option with a `mode` mechanism consistent with `useQueryWithCache`.
+   */
   clearResultOnFetch?: boolean
 }
 
