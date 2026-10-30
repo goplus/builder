@@ -1,7 +1,7 @@
 import { computed, ref, watch, type WatchSource } from 'vue'
 import { shiftPath, type IScopedRouter, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
-import type { I18n } from '@/utils/i18n'
+import type { I18n, LocaleMessage } from '@/utils/i18n'
 import type { QueryRet } from '@/utils/query'
 import type { Files } from '@/models/common/file'
 import type { ResourceModel } from '@/models/spx/common/resource'
@@ -153,6 +153,13 @@ export class EditorState extends Disposable {
 
   get codeReadOnly() {
     return this.selectedEditMode === EditMode.Simple && this.runtime.running.mode === 'debug'
+  }
+
+  get codeReadOnlyReason(): LocaleMessage {
+    return {
+      en: 'Cannot edit code while the project is running',
+      zh: '项目运行中，无法修改代码'
+    }
   }
 
   get selectedSprite() {

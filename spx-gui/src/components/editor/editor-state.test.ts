@@ -138,6 +138,10 @@ describe('EditorState', () => {
       expect(state.codeReadOnly).toBe(false)
       state.selectEditMode(EditMode.Simple)
       expect(state.codeReadOnly).toBe(true)
+      expect(state.codeReadOnlyReason).toEqual({
+        en: 'Cannot edit code while the project is running',
+        zh: '项目运行中，无法修改代码'
+      })
       state.runtime.setRunning({ mode: 'debug', initializing: false }, 'files-hash')
       state.runtime.emit('didExit', 0)
       expect(state.codeReadOnly).toBe(true)

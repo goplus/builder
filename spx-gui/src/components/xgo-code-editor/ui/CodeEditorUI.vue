@@ -46,9 +46,12 @@ const props = withDefaults(
     simpleMode?: boolean
     hasApiReference?: boolean
     readOnly?: boolean
-    readOnlyMessage?: LocaleMessage | null
+    readOnlyMessage?: LocaleMessage
   }>(),
-  { hasApiReference: true, readOnlyMessage: null }
+  {
+    hasApiReference: true,
+    readOnlyMessage: () => ({ en: 'Cannot edit in read-only editor', zh: '无法在只读编辑器中编辑' })
+  }
 )
 
 const i18n = useI18n()
@@ -85,10 +88,6 @@ const uiRef = computed(() => {
 const initialFontSize = 12
 const fontSize = props.simpleMode ? ref(16) : userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
 
-const readOnlyMessage = computed(() => ({
-  value: i18n.t(props.readOnlyMessage ?? { en: 'Cannot edit in read-only editor', zh: '无法在只读编辑器中编辑' })
-}))
-
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
   theme,
@@ -97,7 +96,7 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   fontSize: fontSize.value,
   contextmenu: false,
   readOnly: props.readOnly ?? false,
-  readOnlyMessage: readOnlyMessage.value
+  readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
@@ -105,7 +104,7 @@ const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
 watchEffect(() => {
   monacoEditorRef.value?.updateOptions({
     readOnly: props.readOnly ?? false,
-    readOnlyMessage: readOnlyMessage.value
+    readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
   })
 })
 

@@ -29,7 +29,8 @@ function mountEditor(mode = 'simple') {
   const state = reactive({
     selectedEditMode: mode,
     selected: { type: 'sprite', sprite: { codeFilePath: 'Cat.spx' } },
-    codeReadOnly: false
+    codeReadOnly: false,
+    codeReadOnlyReason: { en: 'Read-only reason', zh: '只读原因' }
   })
   useEditorCtx.mockReturnValue({ project, state })
   const wrapper = shallowMount(ProjectEditor, { global: { directives: { radar: {} }, renderStubDefaultSlot: true } })
@@ -46,10 +47,7 @@ describe('Simple Mode code editing', () => {
     state.codeReadOnly = true
     await nextTick()
     expect(editor().props('readOnly')).toBe(true)
-    expect(editor().props('readOnlyMessage')).toEqual({
-      en: 'Cannot edit code while the project is running',
-      zh: '项目运行中，无法修改代码'
-    })
+    expect(editor().props('readOnlyMessage')).toEqual(state.codeReadOnlyReason)
     state.codeReadOnly = false
     await nextTick()
     expect(editor().props('readOnly')).toBe(false)
