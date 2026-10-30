@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { useQuery, untilLoaded } from '@/utils/query'
+import { useQuery } from '@/utils/query'
 
 import { usePageTitle } from '@/utils/utils'
 import { useSignedIn } from '@/stores/user'
@@ -32,16 +32,10 @@ function getAdminDefaultRoute(capabilities: { canManageAccount: boolean; canMana
 }
 
 watch(
-  () => route.path,
-  async (path, _previousPath, onCleanup) => {
-    let stale = false
-    onCleanup(() => {
-      stale = true
-    })
-
-    const user = await untilLoaded(signedInUserQuery)
-    if (stale) return
-
+  [() => route.path, signedInUserQuery.isLoading],
+  async ([path, isLoading]) => {
+    if (isLoading || signedInUserQuery.error.value != null) return
+    const user = signedInUserQuery.data.value
     if (user == null) {
       await signedIn.signIn(route.fullPath)
       return
@@ -105,7 +99,11 @@ watch(
       <div v-if="signedInUserQuery.isLoading.value" class="h-full min-h-80 flex items-center justify-center">
         <UILoading />
       </div>
-      <UIError v-else-if="signedInUserQuery.error.value != null" class="h-full min-h-80">
+      <UIError
+        v-else-if="signedInUserQuery.error.value != null"
+        class="h-full min-h-80"
+        :retry="signedInUserQuery.refetch"
+      >
         {{ $t(signedInUserQuery.error.value.userMessage) }}
       </UIError>
       <UIError v-else-if="!canUseAdminConsole" class="h-full min-h-80">

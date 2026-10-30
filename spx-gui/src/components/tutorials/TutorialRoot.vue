@@ -1,15 +1,14 @@
 <script lang="ts" setup>
 import { watch } from 'vue'
-import { useUserSessionStorage } from '@/utils/user-storage'
-import type { Course } from '@/apis/course'
-import type { CourseSeries } from '@/apis/course-series'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { useIsRouteLoaded } from '@/utils/route-loading'
+import { useUserSessionStorage } from '@/utils/user-storage'
+import type { Course } from '@/apis/course'
+import type { CourseSeries } from '@/apis/course-series'
+import { useCopilot } from '@/components/copilot/context'
 
 import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
-
-import { useCopilot } from '@/components/copilot/context'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
