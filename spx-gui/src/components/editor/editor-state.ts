@@ -157,8 +157,8 @@ export class EditorState extends Disposable {
 
   get codeReadOnlyReason(): LocaleMessage {
     return {
-      en: 'Cannot edit code while the project is running',
-      zh: '项目运行中，无法修改代码'
+      en: 'Stop the run before editing code',
+      zh: '请先停止运行，再修改代码'
     }
   }
 

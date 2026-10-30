@@ -45,8 +45,8 @@ describe('Code Editor UI options', () => {
     })
     await wrapper.setProps({
       readOnlyMessage: {
-        en: 'Cannot edit code while the project is running',
-        zh: '项目运行中，无法修改代码'
+        en: 'Stop the run before editing code',
+        zh: '请先停止运行，再修改代码'
       }
     })
     wrapper.getComponent({ name: 'MonacoEditorComp' }).vm.$emit('init', editor as unknown as MonacoEditor)
@@ -56,20 +56,20 @@ describe('Code Editor UI options', () => {
     await wrapper.setProps({ readOnly: true })
     expect(ui.readOnly).toBe(true)
     expect(editor.updateOptions).toHaveBeenLastCalledWith(
-      expect.objectContaining({ readOnly: true, readOnlyMessage: { value: '项目运行中，无法修改代码' } })
+      expect.objectContaining({ readOnly: true, readOnlyMessage: { value: '请先停止运行，再修改代码' } })
     )
     i18n.setLang('en')
     await nextTick()
     expect(editor.updateOptions).toHaveBeenLastCalledWith(
       expect.objectContaining({
         readOnly: true,
-        readOnlyMessage: { value: 'Cannot edit code while the project is running' }
+        readOnlyMessage: { value: 'Stop the run before editing code' }
       })
     )
     i18n.setLang('zh')
     await nextTick()
     expect(editor.updateOptions).toHaveBeenLastCalledWith(
-      expect.objectContaining({ readOnly: true, readOnlyMessage: { value: '项目运行中，无法修改代码' } })
+      expect.objectContaining({ readOnly: true, readOnlyMessage: { value: '请先停止运行，再修改代码' } })
     )
     expect(wrapper.getComponent({ name: 'APIReferenceUI' }).props('disabled')).toBe(true)
     expect(wrapper.findComponent({ name: 'CompletionUI' }).exists()).toBe(false)
