@@ -134,6 +134,7 @@ export async function signIn(capabilities: Partial<UserCapabilities> = {}) {
   const user = await userApis.getUser('alice')
   vi.mocked(userApis.getSignedInUser).mockResolvedValue({
     ...user,
+    preferredLanguage: 'en',
     capabilities: {
       canManageAccount: false,
       canManageAuthorization: false,

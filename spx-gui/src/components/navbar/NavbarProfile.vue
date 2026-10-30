@@ -6,6 +6,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { canUseAdminConsole as checkCanUseAdminConsole, signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
+import { useSetPreferredLanguage } from '@/stores/user/language'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
@@ -25,8 +26,10 @@ const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
 const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
+const { fn: setPreferredLanguage, isLoading: isSavingLanguage } = useMessageHandle(useSetPreferredLanguage())
 function toggleLang() {
-  i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
+  if (isSavingLanguage.value || signedInUser.value == null) return
+  return setPreferredLanguage(i18n.lang.value === 'en' ? 'zh' : 'en')
 }
 
 function handleUserPage() {
@@ -98,6 +101,7 @@ async function handleSignOut() {
             <UIMenuItem
               v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
               class="justify-between p-2"
+              :disabled="isSavingLanguage || signedInUser == null"
               @click="toggleLang"
             >
               {{ $t({ en: 'Language', zh: '语言' }) }}

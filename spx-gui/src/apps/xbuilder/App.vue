@@ -31,6 +31,7 @@ import { useI18n } from '@/utils/i18n'
 import { useInstallRouteLoading } from '@/utils/route-loading'
 import { isMobile } from '@/utils/ua'
 import { getUIConfig } from '@/setup'
+import { useSyncUserLanguage } from '@/stores/user/language'
 
 const MobileReminder = defineAsyncComponent(() => import('@/components/app/device-check/MobileReminder.vue'))
 
@@ -40,4 +41,5 @@ const i18n = useI18n()
 const config = computed<Config>(() => getUIConfig(i18n))
 
 useInstallRouteLoading()
+useSyncUserLanguage()
 </script>

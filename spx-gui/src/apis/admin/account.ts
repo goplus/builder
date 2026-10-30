@@ -69,6 +69,8 @@ export function getAccountUser(userID: string) {
 export type UpdateAccountUserParams = {
   /** Display name of the account user */
   displayName?: string
+  /** Account UI language preference */
+  preferredLanguage?: AccountUser['preferredLanguage']
 }
 
 export function updateAccountUser(userID: string, params: UpdateAccountUserParams) {

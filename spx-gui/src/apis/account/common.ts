@@ -1,3 +1,4 @@
+import type { Lang } from '@/utils/i18n'
 import { Client } from '../common/client'
 
 export type AccountModel = {
@@ -16,6 +17,8 @@ export type AccountUser = AccountModel & {
   displayName: string
   /** Public HTTP URL of the account user's avatar image */
   avatar: string
+  /** Account UI language preference */
+  preferredLanguage: Lang
 }
 
 export type AccountIdentityProviderName = 'wechat' | 'qq' | 'github' | 'apple' | 'google' | 'x'
