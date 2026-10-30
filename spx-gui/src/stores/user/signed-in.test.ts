@@ -29,7 +29,8 @@ describe('SignedIn.canUseAdminConsole', () => {
     [{ canManageAccount: false, canManageAuthorization: false }, false],
     [{ canManageAccount: true, canManageAuthorization: false }, true],
     [{ canManageAccount: false, canManageAuthorization: true }, true],
-    [{ canManageAccount: true, canManageAuthorization: true }, true]
+    [{ canManageAccount: true, canManageAuthorization: true }, true],
+    [{ canManageAccount: false, canManageAuthorization: false, canManageFeedback: true }, true]
   ])('checks the current user management capabilities', async (capabilities, expected) => {
     localStorage.setItem(
       userStateStorageKey,

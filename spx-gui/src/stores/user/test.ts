@@ -62,7 +62,8 @@ export function makeSignedInMock(
     get canUseAdminConsole() {
       return (
         userQuery.data.value?.capabilities.canManageAccount === true ||
-        userQuery.data.value?.capabilities.canManageAuthorization === true
+        userQuery.data.value?.capabilities.canManageAuthorization === true ||
+        userQuery.data.value?.capabilities.canManageFeedback === true
       )
     }
   }

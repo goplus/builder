@@ -345,7 +345,11 @@ export class SignedIn extends Disposable {
   get canUseAdminConsole(): boolean | null {
     const user = this.cachedUserRef.value
     if (user == null) return this.isSignedInRef.value ? null : false
-    return user.capabilities.canManageAccount === true || user.capabilities.canManageAuthorization === true
+    return (
+      user.capabilities.canManageAccount === true ||
+      user.capabilities.canManageAuthorization === true ||
+      user.capabilities.canManageFeedback === true
+    )
   }
 }
 

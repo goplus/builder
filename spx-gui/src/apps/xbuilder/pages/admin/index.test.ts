@@ -6,13 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 enableAutoUnmount(afterEach)
 
-type MockSignedInUser = { capabilities: { canManageAccount: boolean; canManageAuthorization: boolean } }
+type MockSignedInUser = {
+  capabilities: { canManageAccount: boolean; canManageAuthorization: boolean; canManageFeedback: boolean }
+}
 
 const mocks = vi.hoisted(() => ({
   route: { path: '/admin/users', fullPath: '/admin/users' },
   replace: vi.fn(),
   signIn: vi.fn(),
-  userInfo: { capabilities: { canManageAccount: true, canManageAuthorization: false } } as MockSignedInUser | null,
+  userInfo: {
+    capabilities: { canManageAccount: true, canManageAuthorization: false, canManageFeedback: false }
+  } as MockSignedInUser | null,
   userData: null as Ref<MockSignedInUser | null> | null,
   loading: false,
   getUserError: null as ActionException | null,
@@ -49,7 +53,9 @@ vi.mock('@/stores/user', () => ({
       signIn: mocks.signIn,
       get canUseAdminConsole() {
         return (
-          data.value?.capabilities.canManageAccount === true || data.value?.capabilities.canManageAuthorization === true
+          data.value?.capabilities.canManageAccount === true ||
+          data.value?.capabilities.canManageAuthorization === true ||
+          data.value?.capabilities.canManageFeedback === true
         )
       }
     }
@@ -69,7 +75,9 @@ describe('Admin page routing', () => {
     mocks.route.fullPath = '/admin/users'
     mocks.replace.mockReset()
     mocks.signIn.mockReset()
-    mocks.userInfo = { capabilities: { canManageAccount: true, canManageAuthorization: false } }
+    mocks.userInfo = {
+      capabilities: { canManageAccount: true, canManageAuthorization: false, canManageFeedback: false }
+    }
     mocks.loading = false
     mocks.getUserError = null
   })
@@ -88,22 +96,32 @@ describe('Admin page routing', () => {
   it.each([
     {
       name: 'Account management only',
-      capabilities: { canManageAccount: true, canManageAuthorization: false },
+      capabilities: { canManageAccount: true, canManageAuthorization: false, canManageFeedback: false },
       defaultRoute: '/admin/users'
     },
     {
       name: 'Authorization management only',
-      capabilities: { canManageAccount: false, canManageAuthorization: true },
+      capabilities: { canManageAccount: false, canManageAuthorization: true, canManageFeedback: false },
       defaultRoute: '/admin/audit-logs'
     },
     {
       name: 'Account and Authorization management',
-      capabilities: { canManageAccount: true, canManageAuthorization: true },
+      capabilities: { canManageAccount: true, canManageAuthorization: true, canManageFeedback: false },
       defaultRoute: '/admin/users'
     },
     {
+      name: 'Feedback management only',
+      capabilities: { canManageAccount: false, canManageAuthorization: false, canManageFeedback: true },
+      defaultRoute: '/admin/feedback'
+    },
+    {
+      name: 'Authorization and Feedback management',
+      capabilities: { canManageAccount: false, canManageAuthorization: true, canManageFeedback: true },
+      defaultRoute: '/admin/feedback'
+    },
+    {
       name: 'no management capability',
-      capabilities: { canManageAccount: false, canManageAuthorization: false },
+      capabilities: { canManageAccount: false, canManageAuthorization: false, canManageFeedback: false },
       defaultRoute: null
     }
   ])('uses the expected default route for $name', async ({ capabilities, defaultRoute }) => {
@@ -163,7 +181,9 @@ describe('Admin page routing', () => {
     mocks.route.fullPath = '/admin/apps'
     await nextTick()
 
-    mocks.userData!.value = { capabilities: { canManageAccount: true, canManageAuthorization: false } }
+    mocks.userData!.value = {
+      capabilities: { canManageAccount: true, canManageAuthorization: false, canManageFeedback: false }
+    }
     mocks.userLoading!.value = false
     await nextTick()
     await flushPromises()
