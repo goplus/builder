@@ -10,7 +10,7 @@ function getFollowingQueryKey(signedInUsernameInput: string | null, username: st
 
 const staleTime = 5 * 60 * 1000 // 5min
 
-export function useIsFollowing(username: WatchSource<string>, options: { mode?: QueryMode } = { mode: 'live' }) {
+export function useIsFollowing(username: WatchSource<string>, options: { mode?: QueryMode } = {}) {
   const usernameRef = toRef(username)
   const signedIn = useSignedIn()
   const queryKey = computed(() => getFollowingQueryKey(signedIn.username, usernameRef.value))

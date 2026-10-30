@@ -12,7 +12,7 @@ Both `useQuery` and `useQueryWithCache` return reactive `data`, `error`, `isLoad
 
 ## Ordinary queries
 
-`useQuery(queryFn, failureSummaryMessage?)` runs automatically when reactive dependencies read synchronously by `queryFn` change. `refetch()` also starts a new request. Each request gets a context with `signal`, `source` (`auto` or `refetch`) and a progress `reporter`.
+`useQuery(queryFn, failureSummaryMessage?, options?)` runs automatically when reactive dependencies read synchronously by `queryFn` change. `refetch()` also starts a new request. Each request gets a context with `signal`, `source` (`auto` or `refetch`) and a progress `reporter`.
 
 ```ts
 const query = useQuery(async ({ signal }) => {
@@ -20,7 +20,7 @@ const query = useQuery(async ({ signal }) => {
 })
 ```
 
-Each request sets loading to true while retaining the previous data/error. Success replaces data and clears the error; failure exposes an error and retains previous data. Replaced or aborted requests cannot publish late results. Ordinary queries do not share a cache. Tutorial v2 also supports `clearResultOnFetch` to clear data/error before each ordinary query; this change does not alter that existing option.
+Each request sets loading to true while retaining the previous data/error. Success replaces data and clears the error; failure exposes an error and retains previous data. Replaced or aborted requests cannot publish late results. Ordinary queries do not share a cache. The optional third argument accepts `{ clearResultOnFetch: true }` to clear data/error before each request; it defaults to false.
 
 ## Cached queries
 
