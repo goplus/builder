@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { listCourses, type Course } from '@/apis/course'
+import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
@@ -11,8 +11,7 @@ import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UICard, UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
-import { useSeries } from '@/stores/course-series'
-import { useQuery } from '@/utils/query'
+import { useSeries, useSeriesCoursesByPage } from '@/stores/course-series'
 import { useEnsureSignedIn } from '@/utils/user'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
@@ -63,19 +62,9 @@ const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
 const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
 
-const courseQuery = useQuery(
-  async (ctx) => {
-    return listCourses(
-      {
-        courseSeriesID: props.courseSeriesIdInput,
-        pageIndex: page.value,
-        pageSize: pageSize.value,
-        orderBy: 'sequenceInCourseSeries'
-      },
-      ctx.signal
-    )
-  },
-  { en: 'Failed to load course list', zh: '加载课程列表失败' }
+const courseQuery = useSeriesCoursesByPage(
+  () => props.courseSeriesIdInput,
+  () => ({ pageIndex: page.value, pageSize: pageSize.value })
 )
 
 const { fn: handleCourseClick } = useMessageHandle(

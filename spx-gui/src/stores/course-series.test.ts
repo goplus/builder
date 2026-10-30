@@ -5,7 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { withQueryClient } from '@/utils/test'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
-import { useDeleteCourseSeries, useSeriesCourses, useUpdateCourseSeries } from './course-series'
+import {
+  useCourseChangesInSeries,
+  useDeleteCourseSeries,
+  useSeriesCourses,
+  useSeriesCoursesByPage,
+  useUpdateCourseSeries
+} from './course-series'
 
 const apis = vi.hoisted(() => ({ listCourses: vi.fn(), updateCourseSeries: vi.fn(), deleteCourseSeries: vi.fn() }))
 
@@ -18,6 +24,10 @@ vi.mock('@/apis/course-series', async (importOriginal) => ({
   updateCourseSeries: apis.updateCourseSeries,
   deleteCourseSeries: apis.deleteCourseSeries
 }))
+
+function page(data: Course[]) {
+  return { data, total: data.length }
+}
 
 function makeCourse(id: string) {
   return { id, owner: 'curator', kind: 'playground', title: `Course ${id}`, thumbnail: '', content: {} } as Course
@@ -40,10 +50,16 @@ describe('course series writes', () => {
   // A refetch `vue-query` has scheduled for later must not reach into the next test, with its mocks.
   afterEach(() => queryClient.clear())
 
-  it('puts an updated series in the cache, and drops its course list for the next reader to fetch', async () => {
+  it('publishes the saved series and makes a snapshot reader wait for the invalidated list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
-    queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
-    queryClient.setQueryData(['course-series-courses', '41'], [makeCourse('2339')])
+    queryClient.setQueryData(
+      ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
+      page([makeCourse('2338')])
+    )
+    queryClient.setQueryData(
+      ['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }],
+      page([makeCourse('2339')])
+    )
     const after = makeSeries('40', ['2338', '2340'])
     apis.updateCourseSeries.mockResolvedValue(after)
     const updateCourseSeries = withQueryClient(queryClient, () => useUpdateCourseSeries())
@@ -51,11 +67,15 @@ describe('course series writes', () => {
     await updateCourseSeries('40', { courseIDs: ['2338', '2340'] })
 
     expect(queryClient.getQueryData(['course-series', '40'])).toEqual(after)
-    expect(queryClient.getQueryData(['course-series-courses', '40'])).toBeUndefined()
-    expect(queryClient.getQueryData(['course-series-courses', '41'])).toEqual([makeCourse('2339')])
+    expect(
+      queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
+    ).toBe(true)
+    expect(queryClient.getQueryData(['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }])).toEqual(
+      page([makeCourse('2339')])
+    )
     // Starting a lesson of the series now waits for its list as it is, instead of taking the old one.
     apis.listCourses.mockResolvedValue({ total: 2, data: [makeCourse('2338'), makeCourse('2340')] })
-    const courses = withQueryClient(queryClient, () => useSeriesCourses(() => '40'))
+    const courses = withQueryClient(queryClient, () => useSeriesCourses(() => '40', { mode: 'snapshot' }))
     expect(courses.isLoading.value).toBe(true)
     await flushPromises()
     expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')])
@@ -81,29 +101,74 @@ describe('course series writes', () => {
     await vi.waitFor(() => expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')]))
   })
 
-  it('drops a series whose update failed, and its course list, as the update may still have taken effect', async () => {
+  it('invalidates a series and list after an uncertain write failure', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
-    queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
-    queryClient.setQueryData(['course-series-courses', '41'], [makeCourse('2339')])
+    queryClient.setQueryData(
+      ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
+      page([makeCourse('2338')])
+    )
+    queryClient.setQueryData(
+      ['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }],
+      page([makeCourse('2339')])
+    )
     apis.updateCourseSeries.mockRejectedValue(new Error('timeout'))
     const updateCourseSeries = withQueryClient(queryClient, () => useUpdateCourseSeries())
 
     await expect(updateCourseSeries('40', { courseIDs: ['2340'] })).rejects.toThrow()
 
-    expect(queryClient.getQueryData(['course-series', '40'])).toBeUndefined()
-    expect(queryClient.getQueryData(['course-series-courses', '40'])).toBeUndefined()
-    expect(queryClient.getQueryData(['course-series-courses', '41'])).toEqual([makeCourse('2339')])
+    expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
+    expect(
+      queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
+    ).toBe(true)
+    expect(queryClient.getQueryData(['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }])).toEqual(
+      page([makeCourse('2339')])
+    )
   })
 
-  it('drops a deleted series and its course list', async () => {
+  it('invalidates a deleted series and its course list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
-    queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
+    queryClient.setQueryData(
+      ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
+      page([makeCourse('2338')])
+    )
     apis.deleteCourseSeries.mockResolvedValue(undefined)
     const deleteCourseSeries = withQueryClient(queryClient, () => useDeleteCourseSeries())
 
     await deleteCourseSeries('40')
 
-    expect(queryClient.getQueryData(['course-series', '40'])).toBeUndefined()
-    expect(queryClient.getQueryData(['course-series-courses', '40'])).toBeUndefined()
+    expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
+    expect(
+      queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
+    ).toBe(true)
+  })
+
+  it('refills pages and updates every total from the server after a course is deleted', async () => {
+    let courses = ['1', '2', '3', '4'].map(makeCourse)
+    apis.listCourses.mockImplementation(async ({ pageIndex, pageSize }) => ({
+      data: courses.slice((pageIndex - 1) * pageSize, pageIndex * pageSize),
+      total: courses.length
+    }))
+    const [first, second] = withQueryClient(queryClient, () => [
+      useSeriesCoursesByPage(
+        () => '40',
+        () => ({ pageIndex: 1, pageSize: 2 })
+      ),
+      useSeriesCoursesByPage(
+        () => '40',
+        () => ({ pageIndex: 2, pageSize: 2 })
+      )
+    ])
+    await flushPromises()
+    expect(first.data.value).toEqual({ data: [makeCourse('1'), makeCourse('2')], total: 4 })
+    expect(second.data.value).toEqual({ data: [makeCourse('3'), makeCourse('4')], total: 4 })
+
+    const changes = withQueryClient(queryClient, () => useCourseChangesInSeries())
+    courses = courses.slice(1)
+    changes.deleted('1')
+
+    await vi.waitFor(() => {
+      expect(first.data.value).toEqual({ data: [makeCourse('2'), makeCourse('3')], total: 3 })
+      expect(second.data.value).toEqual({ data: [makeCourse('4')], total: 3 })
+    })
   })
 })

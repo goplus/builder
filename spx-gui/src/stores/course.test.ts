@@ -13,6 +13,10 @@ vi.mock('@/apis/course', async (importOriginal) => ({
   ...apis
 }))
 
+function page(data: Course[]) {
+  return { data, total: data.length }
+}
+
 function makeCourse(id: string, title: string) {
   return { id, owner: 'curator', kind: 'playground', title, thumbnail: '', content: {} } as Course
 }
@@ -37,35 +41,49 @@ describe('course writes', () => {
     const [before, other] = [makeCourse('2338', 'First'), makeCourse('2339', 'Second')]
     const after = makeCourse('2338', 'First, rewritten')
     queryClient.setQueryData(['course', '2338'], before)
-    queryClient.setQueryData(['course-series-courses', '40'], [before, other])
-    queryClient.setQueryData(['course-series-courses', '41'], [before])
-    queryClient.setQueryData(['course-series-courses', '42'], [other])
+    queryClient.setQueryData(
+      ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
+      page([before, other])
+    )
+    queryClient.setQueryData(['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }], page([before]))
+    queryClient.setQueryData(['course-series-courses-by-page', '42', { pageIndex: 1, pageSize: 100 }], page([other]))
     apis.updateCourse.mockResolvedValue(after)
     const updateCourse = withQueryClient(queryClient, () => useUpdateCourse())
 
     await updateCourse('2338', { title: 'First, rewritten' })
 
     expect(queryClient.getQueryData(['course', '2338'])).toEqual(after)
-    expect(queryClient.getQueryData(['course-series-courses', '40'])).toEqual([after, other])
-    expect(queryClient.getQueryData(['course-series-courses', '41'])).toEqual([after])
-    expect(queryClient.getQueryData(['course-series-courses', '42'])).toEqual([other])
+    expect(queryClient.getQueryData(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])).toEqual(
+      page([after, other])
+    )
+    expect(queryClient.getQueryData(['course-series-courses-by-page', '41', { pageIndex: 1, pageSize: 100 }])).toEqual(
+      page([after])
+    )
+    expect(queryClient.getQueryData(['course-series-courses-by-page', '42', { pageIndex: 1, pageSize: 100 }])).toEqual(
+      page([other])
+    )
   })
 
-  it('drops a deleted course, and takes it out of every cached series and course list', async () => {
+  it('invalidates a deleted course and its course pages, and updates series membership', async () => {
     const [deleted, kept] = [makeCourse('2338', 'First'), makeCourse('2339', 'Second')]
     queryClient.setQueryData(['course', '2338'], deleted)
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338', '2339']))
     queryClient.setQueryData(['course-series', '41'], makeSeries('41', ['2339']))
-    queryClient.setQueryData(['course-series-courses', '40'], [deleted, kept])
+    queryClient.setQueryData(
+      ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
+      page([deleted, kept])
+    )
     apis.deleteCourse.mockResolvedValue(undefined)
     const deleteCourse = withQueryClient(queryClient, () => useDeleteCourse())
 
     await deleteCourse('2338')
 
-    expect(queryClient.getQueryData(['course', '2338'])).toBeUndefined()
+    expect(queryClient.getQueryState(['course', '2338'])?.isInvalidated).toBe(true)
     expect(queryClient.getQueryData<CourseSeries>(['course-series', '40'])?.courseIDs).toEqual(['2339'])
     expect(queryClient.getQueryData<CourseSeries>(['course-series', '41'])?.courseIDs).toEqual(['2339'])
-    expect(queryClient.getQueryData(['course-series-courses', '40'])).toEqual([kept])
+    expect(
+      queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
+    ).toBe(true)
   })
 
   it('leaves the cache alone when the write fails', async () => {

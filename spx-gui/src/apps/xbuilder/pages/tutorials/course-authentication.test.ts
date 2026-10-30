@@ -16,9 +16,6 @@ const mocks = vi.hoisted(() => ({
     description: string
     courseIDs: string[]
   } | null> | null,
-  courseLoading: null as Ref<boolean> | null,
-  seriesLoading: null as Ref<boolean> | null,
-  seriesCoursesLoading: null as Ref<boolean> | null,
   signIn: vi.fn(),
   confirm: vi.fn(),
   enter: vi.fn(),
@@ -42,38 +39,38 @@ vi.mock('@/stores/user', () => ({
 }))
 vi.mock('@/stores/course', () => ({
   useCourse: () => {
-    const isLoading = ref(false)
-    mocks.courseLoading = isLoading
     const data = ref(mocks.course)
     mocks.courseData = data
     return {
       data,
       error: ref(null),
-      isLoading,
+      isLoading: ref(false),
       progress: ref({ percentage: 0 })
     }
   }
 }))
 vi.mock('@/stores/course-series', () => ({
+  useSeriesCoursesByPage: () => ({
+    data: ref({ data: [mocks.course], total: 30 }),
+    error: ref(null),
+    isLoading: ref(false),
+    refetch: vi.fn()
+  }),
   useSeries: () => {
-    const isLoading = ref(false)
-    mocks.seriesLoading = isLoading
     const data = ref(mocks.series)
     mocks.seriesData = data
     return {
       data,
       error: ref(null),
-      isLoading,
+      isLoading: ref(false),
       progress: ref({ percentage: 0 })
     }
   },
   useSeriesCourses: () => {
-    const isLoading = ref(false)
-    mocks.seriesCoursesLoading = isLoading
     return {
       data: ref([mocks.course]),
       error: ref(null),
-      isLoading,
+      isLoading: ref(false),
       progress: ref({ percentage: 0 })
     }
   }
@@ -102,12 +99,13 @@ vi.mock('@/components/ui', async (importOriginal) => ({
   useMessage: () => ({ error: mocks.error })
 }))
 vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
-  default: { name: 'CoursePlayground', props: ['projectQueryRet'], template: '<div>Playground</div>' }
+  default: { name: 'CoursePlaygroundStub', props: ['projectQueryRet'], template: '<div>Playground</div>' }
 }))
 vi.mock('@/components/community/CommunityNavbar.vue', () => ({ default: { template: '<nav />' } }))
 vi.mock('@/components/community/footer/CommunityFooter.vue', () => ({ default: { template: '<footer />' } }))
 vi.mock('../community/search.vue', () => ({ searchKeywordQueryParamName: 'q' }))
 
+import PlaygroundComponent from '@/components/tutorials/playground/CoursePlayground.vue'
 import CourseStart from './course-start.vue'
 import CoursePlayground from './course-playground.vue'
 import CourseSeries from './course-series.vue'
@@ -216,7 +214,7 @@ describe('Course authentication', () => {
       const { router, page } = await openPage(destination)
       expect(router.currentRoute.value.fullPath).toBe(destination)
       if (destination.endsWith('/playground')) {
-        expect(page.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').error.value).not.toBeNull()
+        expect(page.findComponent(PlaygroundComponent).props('projectQueryRet').error.value).not.toBeNull()
       } else {
         expect(page.findComponent({ name: 'UIError' }).exists()).toBe(true)
       }
@@ -231,33 +229,6 @@ describe('Course authentication', () => {
     await openPage('/course/series/course/start')
     expect(mocks.enter).toHaveBeenCalledWith(mocks.course, mocks.series)
     expect(mocks.signIn).not.toHaveBeenCalled()
-  })
-
-  it.each(['courseLoading', 'seriesLoading'] as const)(
-    'refreshes Start when its %s dependency reloads',
-    async (query) => {
-      mocks.signedIn = true
-      await openPage('/course/series/course/start')
-      expect(mocks.enter).toHaveBeenCalledOnce()
-      mocks[query]!.value = true
-      await flushPromises()
-      mocks[query]!.value = false
-      await flushPromises()
-      expect(mocks.enter).toHaveBeenCalledTimes(2)
-    }
-  )
-
-  it('keeps the active Playground when the Course list reloads', async () => {
-    mocks.course.kind = 'playground'
-    mocks.signedIn = true
-    await openPage('/course/series/course/playground')
-    expect(mocks.load).toHaveBeenCalledOnce()
-    mocks.seriesCoursesLoading!.value = true
-    await flushPromises()
-    mocks.seriesCoursesLoading!.value = false
-    await flushPromises()
-    expect(mocks.load).toHaveBeenCalledOnce()
-    expect(mocks.notifyStarted).toHaveBeenCalledOnce()
   })
 
   it('loads a signed-in Playground on direct navigation', async () => {

@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { getCourseSeries } from '@/apis/course-series'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
-import { untilLoaded, useQuery, type QueryRet } from '@/utils/query'
+import { composeQuery, untilLoaded, useQuery, type QueryRet } from '@/utils/query'
 import { path2PathSegments, useScopedRouterWithPathParam } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -30,7 +30,7 @@ const router = useRouter()
 const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
-const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
+const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput, { mode: 'snapshot' })
 const inPlaygroundRouter = useScopedRouterWithPathParam('inPlaygroundPath', () => props.inPlaygroundPath)
 
 const sessionQueryRet = useQuery(
@@ -43,8 +43,7 @@ const sessionQueryRet = useQuery(
       // See https://github.com/goplus/builder/issues/3590
       untilLoaded(signedInStateQuery, ctx.signal),
       getCourseSeries(courseSeriesID, ctx.signal),
-      // Only route inputs restart preparation; list loading must not become a query dependency.
-      untilLoaded(seriesCoursesQueryRet, ctx.signal)
+      composeQuery(ctx, seriesCoursesQueryRet)
     ])
     ctx.signal.throwIfAborted()
     if (!signedInState.isSignedIn) {

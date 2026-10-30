@@ -1,5 +1,5 @@
 import { computed, toRef, type WatchSource } from 'vue'
-import { useQueryWithCache, useQueryCache } from '@/utils/query'
+import { useQueryWithCache, useQueryCache, type QueryMode } from '@/utils/query'
 import { useAction } from '@/utils/exception'
 import * as apis from '@/apis/project'
 import { isSignedIn, useSignedInUser } from './user'
@@ -10,7 +10,10 @@ function getLikingQueryKey(signedInUsernameInput: string | null, owner: string, 
 
 const staleTime = 5 * 60 * 1000 // 5min
 
-export function useIsLikingProject(project: WatchSource<{ owner: string; name: string }>) {
+export function useIsLikingProject(
+  project: WatchSource<{ owner: string; name: string }>,
+  options: { mode?: QueryMode } = {}
+) {
   const projectRef = toRef(project)
   const signedInUser = useSignedInUser()
   const queryKey = computed(() => {
@@ -19,6 +22,7 @@ export function useIsLikingProject(project: WatchSource<{ owner: string; name: s
   })
   return useQueryWithCache({
     queryKey,
+    mode: options.mode,
     async queryFn() {
       if (!isSignedIn()) return false
       return apis.isLiking(projectRef.value.owner, projectRef.value.name)

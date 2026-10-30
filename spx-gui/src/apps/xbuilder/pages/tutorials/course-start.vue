@@ -17,8 +17,8 @@ const props = defineProps<{
 const tutorial = useTutorial()
 const signIn = useSignIn()
 const signedInStateQuery = useSignedInStateQuery()
-const courseQueryRet = useCourse(() => props.courseIdInput)
-const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
+const courseQueryRet = useCourse(() => props.courseIdInput, { mode: 'snapshot' })
+const seriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: 'snapshot' })
 
 usePageTitle(() => {
   const title = courseQueryRet.data.value?.title
