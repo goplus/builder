@@ -3,6 +3,8 @@ import { flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin, onlineManager } from '@tanstack/vue-query'
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import { type ProgressReportParams } from '../progress'
+import { ActionException, Cancelled, DefaultException } from '../exception'
+import { createI18n } from '../i18n'
 import {
   createResolvedQueryRet,
   untilLoaded,
@@ -112,11 +114,12 @@ describe('useQuery', () => {
         .mockImplementationOnce(() => new Promise<string>((resolve) => (finish = resolve)))
       const ret = withSetup(() => useQuery(query, undefined, { clearResultOnFetch }))
       await flushPromises()
-      expect(ret.error.value).toBe(error)
+      expect(ret.error.value?.cause).toBe(error)
 
+      const failure = ret.error.value
       ret.refetch()
       expect(ret.isLoading.value).toBe(true)
-      expect(ret.error.value).toBe(clearResultOnFetch ? null : error)
+      expect(ret.error.value).toBe(clearResultOnFetch ? null : failure)
       finish('recovered')
       await flushPromises()
       expect(ret.data.value).toBe('recovered')
@@ -164,7 +167,7 @@ describe('useQuery', () => {
     )
 
     await flushPromises()
-    expect(ret.error.value).toBe(error)
+    expect(ret.error.value?.cause).toBe(error)
     expect(signals[0].aborted).toBe(true)
     expect(cleanup).toHaveBeenCalledTimes(1)
 
@@ -380,21 +383,21 @@ describe('composeQuery', () => {
     await timeout(100)
     expect(ret2.isLoading.value).toBe(false)
     expect(ret2.data.value).toBe(null)
-    expect(ret2.error.value).toBe(err)
+    expect(ret2.error.value?.cause).toBe(err)
     expect(errFn).toHaveBeenCalledTimes(1)
 
     ret2.refetch()
     await timeout(100)
     expect(ret2.isLoading.value).toBe(false)
     expect(ret2.data.value).toBe(null)
-    expect(ret2.error.value).toBe(err)
+    expect(ret2.error.value?.cause).toBe(err)
     expect(errFn).toHaveBeenCalledTimes(2)
 
     ret1.refetch()
     await timeout(100)
     expect(ret2.isLoading.value).toBe(false)
     expect(ret2.data.value).toBe(null)
-    expect(ret2.error.value).toBe(err)
+    expect(ret2.error.value?.cause).toBe(err)
     expect(errFn).toHaveBeenCalledTimes(3)
 
     ret2.refetch()
@@ -420,13 +423,13 @@ describe('composeQuery', () => {
     await timeout(100)
     expect(ret3.isLoading.value).toBe(false)
     expect(ret3.data.value).toBe(null)
-    expect(ret3.error.value).toBe(err1)
+    expect(ret3.error.value?.cause).toBe(err1)
 
     ret3.refetch()
     await timeout(100)
     expect(ret3.isLoading.value).toBe(false)
     expect(ret3.data.value).toBe(null)
-    expect(ret3.error.value).toBe(err2)
+    expect(ret3.error.value?.cause).toBe(err2)
 
     ret3.refetch()
     await timeout(100)
@@ -530,6 +533,59 @@ afterEach(() => {
   onlineManager.setOnline(true)
 })
 
+describe('query error contract', () => {
+  function failingQuery(kind: 'ordinary' | QueryMode, cause: unknown, summary?: { en: string; zh: string }) {
+    return setup(client(), () => {
+      const queryFn = async () => {
+        throw cause
+      }
+      return kind === 'ordinary'
+        ? useQuery(queryFn, summary)
+        : useQueryWithCache({ queryKey: ['error-contract'], queryFn, mode: kind, failureSummaryMessage: summary })
+    })
+  }
+
+  it.each(['ordinary', 'live', 'snapshot'] as const)(
+    'provides translatable errors without a summary in %s',
+    async (kind) => {
+      const existing = new ActionException(new Error('original'), { en: 'Existing message', zh: '已有提示' })
+      for (const cause of [
+        new Error('network failed'),
+        'unexpected rejection',
+        new DefaultException({ en: 'Unavailable', zh: '不可用' }),
+        existing
+      ]) {
+        const query = failingQuery(kind, cause)
+        await flushPromises()
+        const error = query.error.value!
+        expect(error).toBeInstanceOf(ActionException)
+        expect(query.isLoading.value).toBe(false)
+        expect(createI18n({ lang: 'en' }).t(error.userMessage)).toBeTruthy()
+        expect(createI18n({ lang: 'zh' }).t(error.userMessage)).toBeTruthy()
+        if (cause === existing) expect(error).toBe(existing)
+        else expect(error.cause).toBe(cause)
+        await expect(untilLoaded(query)).rejects.toBe(error)
+      }
+    }
+  )
+
+  it.each(['ordinary', 'live', 'snapshot'] as const)('preserves the configured failure summary in %s', async (kind) => {
+    const cause = new Error('network failed')
+    const summary = { en: 'Failed to load courses', zh: '加载课程失败' }
+    const query = failingQuery(kind, cause, summary)
+    await flushPromises()
+    expect(query.error.value).toBeInstanceOf(ActionException)
+    expect(query.error.value?.userMessage).toEqual(summary)
+    expect(query.error.value?.cause).toBe(cause)
+  })
+
+  it('does not publish ordinary query cancellation as a failure', async () => {
+    const query = failingQuery('ordinary', new Cancelled('left page'))
+    await flushPromises()
+    expect(query.error.value).toBeNull()
+  })
+})
+
 describe('cached query refreshing modes', () => {
   it('takes valid cached data while another consumer refreshes it', async () => {
     const queryClient = client()
@@ -562,7 +618,7 @@ describe('cached query refreshing modes', () => {
     const error = new Error('refresh failed')
     pending.reject(error)
     await flushPromises()
-    expect(state(query)).toEqual({ data: 'old', error, loading: false })
+    expect(state(query)).toMatchObject({ data: 'old', error: { cause: error }, loading: false })
   })
 
   it('blocks an explicit snapshot refetch while offline without affecting live data', async () => {
@@ -615,7 +671,7 @@ describe('cached query refreshing modes', () => {
     const error = new Error('offline')
     pending.reject(error)
     await failedRefresh
-    expect(state(queries.live)).toEqual({ data: 'new', error, loading: false })
+    expect(state(queries.live)).toMatchObject({ data: 'new', error: { cause: error }, loading: false })
     expect(state(queries.snapshot)).toEqual({ data: 'cached', error: null, loading: false })
     queryClient.setQueryData(['shared'], 'direct update')
     expect(queries.live.data.value).toBe('direct update')
@@ -671,8 +727,9 @@ describe('cached query refreshing modes', () => {
     const error = new Error('failed')
     pending.reject(error)
     await flushPromises()
-    expect(state(query)).toEqual({ data: null, error, loading: false })
-    await expect(untilLoaded(query)).rejects.toBe(error)
+    const failure = query.error.value
+    expect(state(query)).toMatchObject({ data: null, error: { cause: error }, loading: false })
+    await expect(untilLoaded(query)).rejects.toBe(failure)
     pending = deferred<string>()
     query.refetch()
     expect(state(query)).toEqual({ data: null, error: null, loading: true })
