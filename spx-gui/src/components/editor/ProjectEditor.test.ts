@@ -8,7 +8,11 @@ const { useEditorCtx } = vi.hoisted(() => ({ useEditorCtx: vi.fn() }))
 vi.mock('./EditorContextProvider.vue', () => ({ useEditorCtx }))
 vi.mock('./copilot', () => ({ useSpxEditorCopilot: vi.fn() }))
 vi.mock('./spx-code-editor', () => ({
-  CodeEditorUI: { name: 'CodeEditorUI', props: ['codeFilePath', 'simpleMode', 'readOnly'], template: '<div />' }
+  CodeEditorUI: {
+    name: 'CodeEditorUI',
+    props: ['codeFilePath', 'simpleMode', 'readOnly', 'readOnlyMessage'],
+    template: '<div />'
+  }
 }))
 vi.mock('./sprite/SpriteEditor.vue', () => ({ default: { name: 'SpriteEditor', template: '<div />' } }))
 vi.mock('./stage/StageEditor.vue', () => ({ default: { name: 'StageEditor', template: '<div />' } }))
@@ -42,6 +46,10 @@ describe('Simple Mode code editing', () => {
     state.codeReadOnly = true
     await nextTick()
     expect(editor().props('readOnly')).toBe(true)
+    expect(editor().props('readOnlyMessage')).toEqual({
+      en: 'Cannot edit code while the project is running',
+      zh: '项目运行中，无法修改代码'
+    })
     state.codeReadOnly = false
     await nextTick()
     expect(editor().props('readOnly')).toBe(false)
