@@ -14,7 +14,7 @@ import {
 } from 'vue'
 import { useQuery as useVueQuery, useQueryClient as useVueQueryClient, isCancelledError } from '@tanstack/vue-query'
 import { type LocaleMessage } from '../i18n'
-import { useAction, type ActionException, Cancelled, capture } from '../exception'
+import { useAction, ActionException, Cancelled, capture } from '../exception'
 import { until } from '../utils'
 import { ProgressReporter, type Progress, ProgressCollector } from '../progress'
 
@@ -24,6 +24,12 @@ export type QueryRet<T> = {
   error: ShallowRef<ActionException | null>
   progress: ShallowRef<Progress>
   refetch: () => void
+}
+
+function normalizeQueryError(error: unknown): ActionException {
+  return error instanceof ActionException
+    ? error
+    : new ActionException(error, { en: 'Failed to load data', zh: '加载数据失败' })
 }
 
 /** Wraps existing data as a successful QueryRet, preserving reactive sources; refetch is a no-op. */
@@ -113,7 +119,7 @@ export function useQuery<T>(
         if (e instanceof Cancelled) return
         if (signal.aborted) return
         capture(e, 'useQuery error')
-        error.value = e
+        error.value = normalizeQueryError(e)
         isLoading.value = false
         ctrl.abort(e)
       }
@@ -172,7 +178,7 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
     return {
       isLoading: ret.isLoading,
       data: computed(() => ret.data.value ?? null),
-      error: ret.error as Ref<ActionException | null>,
+      error: computed(() => (ret.error.value == null ? null : normalizeQueryError(ret.error.value))),
       progress,
       refetch: () => ret.refetch()
     }
@@ -189,11 +195,11 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
       ({ data }) => {
         if (id === readID) result.value = { data: data ?? null, error: null }
       },
-      (error: ActionException) => {
+      (error: unknown) => {
         if (id !== readID) return
         // Cancellation can restore stale success; join a new fetch instead of accepting that state.
         if (isCancelledError(error)) fetchResult(id, false)
-        else result.value = { data: null, error }
+        else result.value = { data: null, error: normalizeQueryError(error) }
       }
     )
   }

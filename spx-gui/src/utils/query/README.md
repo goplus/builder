@@ -7,7 +7,7 @@ Import query utilities from `@/utils/query`. Call the composables during compone
 Both `useQuery` and `useQueryWithCache` return reactive `data`, `error`, `isLoading` and `progress`, plus `refetch()`.
 
 - Data is null before a result is available; a successful result may itself be null or false. Use loading/error state rather than data truthiness to determine readiness.
-- `failureSummaryMessage` wraps failures as action exceptions for user-facing error handling.
+- Errors exposed by either query helper are `ActionException` instances with a translatable `userMessage`. `failureSummaryMessage` supplies a contextual summary; without it, existing action exceptions are preserved and other errors receive a generic loading-failure summary while retaining their original cause.
 - Pass the provided abort signal to asynchronous work so replaced requests and unmounted consumers can cancel it.
 
 ## Ordinary queries
