@@ -8,6 +8,10 @@
       <CodeEditorUI
         :code-file-path="selectedSprite.codeFilePath"
         :read-only="editorCtx.state.codeReadOnly"
+        :read-only-message="{
+          en: 'Cannot edit code while the project is running',
+          zh: '项目运行中，无法修改代码'
+        }"
         simple-mode
       />
       <div class="absolute right-3 bottom-4 z-10 flex items-center gap-4">
