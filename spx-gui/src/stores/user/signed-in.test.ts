@@ -1,23 +1,59 @@
+import { nextTick, watchEffect } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OAuthException } from '@/apis/common/exception'
 import { accountOAuthApisForXBuilder } from '@/apis/account/oauth'
 import * as userApis from '@/apis/user'
 import { OAuthErrorCode } from '@/utils/oauth'
-import { canUseAdminConsole, ensureAccessToken, initUserState } from './signed-in'
+import { type SignedIn } from './signed-in'
+import { createSignedIn, makeSignedInUser } from './test'
 
+let signedIn: SignedIn | null = null
 const userStateStorageKey = 'builder-user'
 const originalNavigatorLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
 
-describe('canUseAdminConsole', () => {
+beforeEach(() => {
+  vi.spyOn(userApis, 'getSignedInUser').mockResolvedValue(makeSignedInUser('alice')!)
+})
+
+function createLockRequest() {
+  let pending = Promise.resolve()
+  return vi.fn((_name: string, callback: () => Promise<void>) => {
+    const result = pending.then(callback)
+    pending = result.catch(() => {})
+    return result
+  })
+}
+
+describe('SignedIn.canUseAdminConsole', () => {
   it.each([
-    [{ canManageAccount: false, canManageAuthorization: false, canManageFeedback: false }, false],
-    [{ canManageAccount: true, canManageAuthorization: false, canManageFeedback: false }, true],
-    [{ canManageAccount: false, canManageAuthorization: true, canManageFeedback: false }, true],
-    [{ canManageAccount: false, canManageAuthorization: false, canManageFeedback: true }, true],
-    [{ canManageAccount: true, canManageAuthorization: true, canManageFeedback: true }, true],
-    [null, false]
-  ])('checks the signed-in user management capabilities', (capabilities, expected) => {
-    expect(canUseAdminConsole(capabilities)).toBe(expected)
+    [{ canManageAccount: false, canManageAuthorization: false }, false],
+    [{ canManageAccount: true, canManageAuthorization: false }, true],
+    [{ canManageAccount: false, canManageAuthorization: true }, true],
+    [{ canManageAccount: true, canManageAuthorization: true }, true],
+    [{ canManageAccount: false, canManageAuthorization: false, canManageFeedback: true }, true]
+  ])('checks the current user management capabilities', async (capabilities, expected) => {
+    localStorage.setItem(
+      userStateStorageKey,
+      JSON.stringify({
+        accessToken: 'token',
+        accessTokenExpiresAt: Date.now() + 3_600_000,
+        refreshToken: null,
+        username: 'alice'
+      })
+    )
+    const instance = createSignedIn({ oauthClientId: 'client-id' })
+    const getUser = vi.spyOn(userApis, 'getSignedInUser').mockResolvedValue({
+      ...makeSignedInUser('alice')!,
+      capabilities: { ...makeSignedInUser('alice')!.capabilities, ...capabilities }
+    })
+    try {
+      expect(instance.canUseAdminConsole).toBeNull()
+      await instance.getUser()
+      expect(instance.canUseAdminConsole).toBe(expected)
+    } finally {
+      instance.dispose()
+      getUser.mockRestore()
+    }
   })
 })
 
@@ -27,6 +63,7 @@ describe('ensureAccessToken', () => {
   })
 
   afterEach(() => {
+    signedIn?.dispose()
     vi.restoreAllMocks()
     if (originalNavigatorLocks != null) Object.defineProperty(navigator, 'locks', originalNavigatorLocks)
     else Reflect.deleteProperty(navigator, 'locks')
@@ -62,9 +99,10 @@ describe('ensureAccessToken', () => {
     })
     const refreshToken = vi.spyOn(accountOAuthApisForXBuilder, 'refreshToken')
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ oauthClientId: 'client-id' })
 
-    await expect(ensureAccessToken()).resolves.toBe('new-access-token')
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe('new-access-token')
     expect(request).toHaveBeenCalledWith('builder-user-access-token', expect.any(Function))
     expect(refreshToken).not.toHaveBeenCalled()
   })
@@ -79,7 +117,7 @@ describe('ensureAccessToken', () => {
         username: 'alice'
       })
     )
-    const request = vi.fn(async (_name: string, callback: () => Promise<void>) => callback())
+    const request = createLockRequest()
     Object.defineProperty(navigator, 'locks', {
       configurable: true,
       value: {
@@ -87,13 +125,14 @@ describe('ensureAccessToken', () => {
       }
     })
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ oauthClientId: 'client-id' })
 
-    await expect(ensureAccessToken()).resolves.toBe('access-token')
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe('access-token')
     expect(request).not.toHaveBeenCalled()
   })
 
-  it('keeps the cached username without fetching it after refresh', async () => {
+  it('keeps the cached username while automatically loading the refreshed user', async () => {
     const now = Date.now()
     vi.spyOn(Date, 'now').mockReturnValue(now)
     localStorage.setItem(
@@ -108,7 +147,7 @@ describe('ensureAccessToken', () => {
     Object.defineProperty(navigator, 'locks', {
       configurable: true,
       value: {
-        request: vi.fn(async (_name: string, callback: () => Promise<void>) => callback())
+        request: createLockRequest()
       }
     })
     vi.spyOn(accountOAuthApisForXBuilder, 'refreshToken').mockResolvedValue({
@@ -119,10 +158,12 @@ describe('ensureAccessToken', () => {
     })
     const getSignedInUser = vi.spyOn(userApis, 'getSignedInUser')
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ oauthClientId: 'client-id' })
 
-    await expect(ensureAccessToken()).resolves.toBe('new-access-token')
-    expect(getSignedInUser).not.toHaveBeenCalled()
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe('new-access-token')
+    await signedIn!.getUser()
+    expect(getSignedInUser).toHaveBeenCalledOnce()
     expect(JSON.parse(localStorage.getItem(userStateStorageKey)!)).toEqual({
       accessToken: 'new-access-token',
       accessTokenExpiresAt: now + 60 * 60 * 1000,
@@ -188,14 +229,15 @@ describe('ensureAccessToken', () => {
     Object.defineProperty(navigator, 'locks', {
       configurable: true,
       value: {
-        request: vi.fn(async (_name: string, callback: () => Promise<void>) => callback())
+        request: createLockRequest()
       }
     })
     vi.spyOn(accountOAuthApisForXBuilder, 'refreshToken').mockRejectedValue(error)
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ oauthClientId: 'client-id' })
 
-    await expect(ensureAccessToken()).rejects.toBe(error)
+    await expect(signedIn!.ensureAccessToken()).rejects.toBe(error)
     expect(JSON.parse(localStorage.getItem(userStateStorageKey)!)).toEqual(storedState)
   })
 
@@ -212,7 +254,7 @@ describe('ensureAccessToken', () => {
     Object.defineProperty(navigator, 'locks', {
       configurable: true,
       value: {
-        request: vi.fn(async (_name: string, callback: () => Promise<void>) => callback())
+        request: createLockRequest()
       }
     })
     vi.spyOn(accountOAuthApisForXBuilder, 'refreshToken').mockRejectedValue(
@@ -221,15 +263,11 @@ describe('ensureAccessToken', () => {
       })
     )
 
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ oauthClientId: 'client-id' })
 
-    await expect(ensureAccessToken()).resolves.toBe(null)
-    expect(JSON.parse(localStorage.getItem(userStateStorageKey)!)).toEqual({
-      accessToken: null,
-      accessTokenExpiresAt: null,
-      refreshToken: null,
-      username: null
-    })
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe(null)
+    expect(localStorage.getItem(userStateStorageKey)).toBeNull()
   })
 
   it('clears cached state when the shared state is removed', async () => {
@@ -245,15 +283,16 @@ describe('ensureAccessToken', () => {
     Object.defineProperty(navigator, 'locks', {
       configurable: true,
       value: {
-        request: vi.fn(async (_name: string, callback: () => Promise<void>) => callback())
+        request: createLockRequest()
       }
     })
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ oauthClientId: 'client-id' })
 
     localStorage.removeItem(userStateStorageKey)
     window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
 
-    await expect(ensureAccessToken()).resolves.toBe(null)
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe(null)
   })
 
   it('clears cached state when the shared storage is cleared', async () => {
@@ -269,19 +308,21 @@ describe('ensureAccessToken', () => {
     Object.defineProperty(navigator, 'locks', {
       configurable: true,
       value: {
-        request: vi.fn(async (_name: string, callback: () => Promise<void>) => callback())
+        request: createLockRequest()
       }
     })
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ oauthClientId: 'client-id' })
 
     localStorage.clear()
     window.dispatchEvent(new StorageEvent('storage', { key: null }))
 
-    await expect(ensureAccessToken()).resolves.toBe(null)
+    await expect(signedIn!.ensureAccessToken()).resolves.toBe(null)
   })
 
   it('does not write state back after receiving a storage event', () => {
-    initUserState('client-id')
+    signedIn?.dispose()
+    signedIn = createSignedIn({ oauthClientId: 'client-id' })
     localStorage.setItem(
       userStateStorageKey,
       JSON.stringify({
@@ -296,5 +337,87 @@ describe('ensureAccessToken', () => {
     window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
 
     expect(setItem).not.toHaveBeenCalled()
+  })
+})
+
+describe('SignedIn.isSignedIn', () => {
+  afterEach(() => {
+    signedIn?.dispose()
+    signedIn = null
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it.each([
+    [null, null, false],
+    ['valid', null, true],
+    ['expired', null, false],
+    ['expired', 'refresh', true]
+  ])('judges local credentials synchronously (%s, %s)', (accessToken, refreshToken, expected) => {
+    localStorage.setItem(
+      userStateStorageKey,
+      JSON.stringify({
+        accessToken,
+        accessTokenExpiresAt: Date.now() + (accessToken === 'valid' ? 120_000 : -120_000),
+        refreshToken,
+        username: accessToken == null ? null : 'alice'
+      })
+    )
+    signedIn = createSignedIn({ oauthClientId: 'test' })
+    expect(signedIn.isSignedIn).toBe(expected)
+    expect(signedIn.username).toBe(expected ? 'alice' : null)
+  })
+
+  it('keeps login state stable until credentials are updated', () => {
+    let now = Date.now()
+    vi.spyOn(Date, 'now').mockImplementation(() => now)
+    localStorage.setItem(
+      userStateStorageKey,
+      JSON.stringify({
+        accessToken: 'token',
+        accessTokenExpiresAt: now + 120_000,
+        refreshToken: null,
+        username: 'alice'
+      })
+    )
+    signedIn = createSignedIn({ oauthClientId: 'test' })
+    expect(signedIn.isSignedIn).toBe(true)
+    now += 65_000
+    expect(signedIn.isSignedIn).toBe(true)
+    expect(signedIn.username).toBe('alice')
+    window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
+    expect(signedIn.isSignedIn).toBe(false)
+    expect(signedIn.username).toBeNull()
+  })
+
+  it('keeps effects stable when another tab rotates credentials before user data loads', async () => {
+    const credentials = {
+      accessToken: 'first',
+      accessTokenExpiresAt: Date.now() + 120_000,
+      refreshToken: 'refresh',
+      username: 'alice'
+    }
+    localStorage.setItem(userStateStorageKey, JSON.stringify(credentials))
+    signedIn = createSignedIn({ oauthClientId: 'test' })
+    const values: unknown[] = []
+    const stop = watchEffect(() => values.push([signedIn!.isSignedIn, signedIn!.username]))
+    try {
+      localStorage.setItem(
+        userStateStorageKey,
+        JSON.stringify({ ...credentials, accessToken: 'rotated', refreshToken: 'rotated-refresh' })
+      )
+      window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
+      await nextTick()
+      expect(values).toEqual([[true, 'alice']])
+      localStorage.removeItem(userStateStorageKey)
+      window.dispatchEvent(new StorageEvent('storage', { key: userStateStorageKey }))
+      await nextTick()
+      expect(values).toEqual([
+        [true, 'alice'],
+        [false, null]
+      ])
+    } finally {
+      stop()
+    }
   })
 })

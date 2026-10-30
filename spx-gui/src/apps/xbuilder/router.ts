@@ -138,10 +138,6 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/sign-in/callback.vue')
   },
   {
-    path: '/sign-in/token',
-    component: () => import('./pages/sign-in/token.vue')
-  },
-  {
     path: '/share/:owner/:name',
     redirect: (to) => getProjectPageRoute(to.params.owner as string, to.params.name as string)
   },

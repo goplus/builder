@@ -5,7 +5,7 @@ import { RouterLink } from 'vue-router'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { SortOrder } from '@/apis/common'
 import { FeedbackStatus } from '@/apis/feedback'
 import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption } from '@/components/ui'
@@ -20,8 +20,8 @@ const resetPage = (query: Partial<Record<string, string | null>>) => ({ ...query
 const statusFilter = useRouteQueryParamStrEnum('status', statusFilters, statusFilters.New, resetPage)
 const sortOrder = useRouteQueryParamStrEnum('order', SortOrder, SortOrder.Desc, resetPage)
 
-const signedInStateQuery = useSignedInStateQuery()
-const canManageFeedback = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageFeedback === true)
+const signedIn = useSignedIn()
+const canManageFeedback = computed(() => signedIn.user?.capabilities.canManageFeedback === true)
 
 const feedbackQuery = useQuery(
   async () => {

@@ -12,7 +12,7 @@
           <NavbarOpenProjectItem />
         </UIMenu>
       </NavbarDropdown>
-      <NavbarLang v-if="!isSignedIn()" />
+      <NavbarLang v-if="!signedIn.isSignedIn" />
       <NavbarTutorials v-if="showTutorialsEntry" />
     </template>
     <template #right>
@@ -45,11 +45,12 @@ import { searchKeywordQueryParamName } from '@/apps/xbuilder/pages/community/sea
 import { getSearchRoute } from '@/apps/xbuilder/router'
 import NavbarLang from '../navbar/NavbarLang.vue'
 import NavbarTutorials from '../navbar/NavbarTutorials.vue'
-import { isSignedIn } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { useCommunityConfig } from './config'
 
 const { showTutorialsEntry } = useCommunityConfig()
 const router = useRouter()
+const signedIn = useSignedIn()
 const searchInput = ref('')
 
 function handleSearch() {

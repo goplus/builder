@@ -1,10 +1,39 @@
 import { describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { setupPageTests, mountPages, signIn, makeProject } from '@/apps/xbuilder/pages/test'
 import * as projectApis from '@/apis/project'
 import * as releaseApis from '@/apis/project-release'
+import * as userApis from '@/apis/user'
 
 describe('community project', () => {
   setupPageTests()
+
+  it('records views using local identity while user information is still loading', async () => {
+    await signIn()
+    vi.mocked(userApis.getSignedInUser).mockReturnValue(new Promise(() => {}))
+    const { wrapper } = await mountPages('/project/alice/First%20flight')
+    const errorHandler = vi.fn()
+    wrapper.vm.$.appContext.config.errorHandler = errorHandler
+    await vi.waitFor(() => expect(wrapper.find('h2').text()).toBe('First flight'))
+    await flushPromises()
+    wrapper.unmount()
+    await flushPromises()
+    expect(projectApis.recordProjectView).toHaveBeenCalledExactlyOnceWith('alice', 'First flight')
+    expect(errorHandler).not.toHaveBeenCalled()
+  })
+
+  it('records views on project changes rather than authentication changes', async () => {
+    const { wrapper, router } = await mountPages('/project/alice/First%20flight')
+    await vi.waitFor(() => expect(wrapper.find('h2').text()).toBe('First flight'))
+    await flushPromises()
+    expect(projectApis.recordProjectView).not.toHaveBeenCalled()
+    await signIn()
+    await flushPromises()
+    expect(projectApis.recordProjectView).not.toHaveBeenCalled()
+    await router.push('/project/alice/Next')
+    await vi.waitFor(() => expect(projectApis.recordProjectView).toHaveBeenCalledWith('alice', 'Next'))
+    expect(projectApis.recordProjectView).toHaveBeenCalledOnce()
+  })
 
   it('loads a public project with its description, instructions and release history', async () => {
     const { wrapper } = await mountPages('/project/alice/First%20flight')

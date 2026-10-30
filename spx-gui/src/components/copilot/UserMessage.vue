@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import type { UserMessage } from './copilot'
 import MarkdownView from './MarkdownView.vue'
 
@@ -7,7 +7,7 @@ defineProps<{
   message: UserMessage
 }>()
 
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 </script>
 
 <template>
@@ -18,8 +18,8 @@ const signedInUser = useSignedInUser()
     <img
       class="h-8 w-8 rounded-full"
       crossorigin="anonymous"
-      :src="signedInUser?.avatar"
-      :alt="signedInUser?.displayName ?? ''"
+      :src="signedIn.user?.avatar"
+      :alt="signedIn.user?.displayName ?? ''"
     />
     <MarkdownView
       v-if="message.type === 'text'"

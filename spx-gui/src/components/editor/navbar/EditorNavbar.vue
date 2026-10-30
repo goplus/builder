@@ -162,7 +162,7 @@ import { getProjectEditorRouteParams } from '@/utils/project-route'
 import { selectFile } from '@/utils/file'
 import { convertScratchProject } from '@/apis/project-conversion'
 import { type SpxProject } from '@/models/spx/project'
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/apps/xbuilder/router'
 import { useModifyProjectName, usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
@@ -202,9 +202,9 @@ const { isOnline } = useNetwork()
 const i18n = useI18n()
 const router = useRouter()
 const confirm = useConfirmDialog()
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 const canManageProject = computed(() => {
-  const signedInUsername = signedInUser.value?.username
+  const signedInUsername = signedIn.username
   if (signedInUsername == null || props.project == null) return false
   return props.project.owner === signedInUsername
 })

@@ -55,7 +55,7 @@ import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { SortOrder } from '@/apis/common'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import {
   UIButton,
   UICheckbox,
@@ -84,11 +84,9 @@ const props = defineProps<{
 }>()
 
 const i18n = useI18n()
-const signedInStateQuery = useSignedInStateQuery()
-const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
-const canManageAuthorization = computed(
-  () => signedInStateQuery.data.value?.user?.capabilities.canManageAuthorization === true
-)
+const signedIn = useSignedIn()
+const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
+const canManageAuthorization = computed(() => signedIn.user?.capabilities.canManageAuthorization === true)
 const canEditUserAuthorization = computed(() => canManageAccount.value && canManageAuthorization.value)
 
 const userQuery = useQuery(

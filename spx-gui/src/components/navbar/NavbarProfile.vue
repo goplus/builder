@@ -5,7 +5,7 @@ import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
-import { canUseAdminConsole as checkCanUseAdminConsole, signOut, useSignIn, useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
@@ -17,12 +17,8 @@ import zhSvg from './icons/zh.svg?raw'
 const { isOnline } = useNetwork()
 const router = useRouter()
 const i18n = useI18n()
-const signIn = useSignIn()
-
-const signedInStateQuery = useSignedInStateQuery()
-const loading = computed(() => signedInStateQuery.isLoading.value)
-const signedInUser = computed(() => signedInStateQuery.data.value?.user ?? null)
-const canUseAdminConsole = computed(() => checkCanUseAdminConsole(signedInUser.value?.capabilities))
+const signedIn = useSignedIn()
+const canUseAdminConsole = computed(() => signedIn.canUseAdminConsole === true)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 function toggleLang() {
@@ -30,11 +26,13 @@ function toggleLang() {
 }
 
 function handleUserPage() {
-  router.push(getUserPageRoute(signedInUser.value!.username))
+  const username = signedIn.username
+  if (username != null) router.push(getUserPageRoute(username))
 }
 
 function handleProjects() {
-  router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
+  const username = signedIn.username
+  if (username != null) router.push(getUserPageRoute(username, 'projects'))
 }
 
 function handleAdminConsole() {
@@ -53,19 +51,19 @@ const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
 const sendFeedback = useMessageHandle(useSendFeedback()).fn
 
 async function handleSignOut() {
-  await signOut()
+  await signedIn.signOut()
   router.go(0) // Reload the page to trigger navigation guards.
 }
 </script>
 
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <div v-if="!loading && signedInUser == null" class="h-full flex items-center px-3 whitespace-nowrap">
+  <div v-if="!signedIn.isSignedIn" class="h-full flex items-center px-3 whitespace-nowrap">
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
-      @click="signIn()"
+      @click="signedIn.signIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
@@ -81,8 +79,8 @@ async function handleSignOut() {
         <img
           class="h-8 w-8 rounded-full"
           crossorigin="anonymous"
-          :src="signedInUser?.avatar"
-          :alt="signedInUser?.displayName ?? ''"
+          :src="signedIn.user?.avatar"
+          :alt="signedIn.user?.displayName ?? ''"
         />
       </div>
     </template>
@@ -90,7 +88,7 @@ async function handleSignOut() {
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
           <div class="user-info-wrapper">
-            {{ signedInUser?.displayName }}
+            {{ signedIn.user?.displayName ?? signedIn.username }}
           </div>
         </UIMenuItem>
         <UITooltip placement="left">
@@ -115,7 +113,7 @@ async function handleSignOut() {
           {{ $t({ en: 'Projects', zh: '项目列表' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="signedInUser?.capabilities.canManageAssets">
+      <UIMenuGroup v-if="signedIn.user?.capabilities.canManageAssets">
         <UIMenuItem @click="manageAssets(AssetType.Sprite)">
           {{ $t({ en: 'Manage sprites', zh: '管理精灵' }) }}
         </UIMenuItem>
@@ -126,7 +124,7 @@ async function handleSignOut() {
           {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="signedInUser?.capabilities.canManageCourses">
+      <UIMenuGroup v-if="signedIn.user?.capabilities.canManageCourses">
         <UIMenuItem @click="manageCourses()">
           {{ $t({ en: 'Manage courses', zh: '管理课程' }) }}
         </UIMenuItem>

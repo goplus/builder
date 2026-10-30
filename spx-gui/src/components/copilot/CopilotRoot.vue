@@ -1,7 +1,7 @@
 <script lang="ts">
 import { z } from 'zod'
 import { debounce } from 'lodash'
-import { onBeforeUnmount, onUnmounted, toValue, watch, type WatchSource } from 'vue'
+import { onBeforeUnmount, onUnmounted, watch } from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
@@ -13,8 +13,8 @@ import { useMessageEvents, useModalEvents } from '@/components/ui'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as pageLink from './markdown-elements/PageLink'
 import * as highlightLink from './markdown-elements/HighlightLink.vue'
-import { useSignedInStateQuery, type SignedInState } from '@/stores/user'
-import { userSessionStorageRef } from '@/utils/user-storage'
+import { useSignedIn, type SignedIn } from '@/stores/user'
+import { useUserSessionStorage } from '@/utils/user-storage'
 import { provideCopilot } from './context'
 import { createBuiltInSkillRegistry } from './skills/built-in'
 
@@ -134,16 +134,14 @@ If there's an API References UI in code editor, encourage the user to insert cod
 }
 
 class UserContextProvider implements ICopilotContextProvider {
-  constructor(private signedInState: WatchSource<SignedInState | null>) {}
+  constructor(private signedIn: Pick<SignedIn, 'isSignedIn' | 'username' | 'user'>) {}
 
   provideContext(): string {
-    const signedInState = toValue(this.signedInState)
-    const userInfo =
-      signedInState == null
-        ? 'The signed-in state is still loading'
-        : signedInState.isSignedIn
-          ? `Now the user is signed in as "${signedInState.user.username}", with display name: "${signedInState.user.displayName}"`
-          : 'The user is not signed in'
+    const user = this.signedIn.user
+    const userInfo = !this.signedIn.isSignedIn
+      ? 'The user is not signed in'
+      : `Now the user is signed in as "${this.signedIn.username}"` +
+        (user == null ? '' : `, with display name: "${user.displayName}"`)
     return `# Current user
 ${userInfo}`
   }
@@ -165,10 +163,10 @@ const i18n = useI18n()
 const router = useRouter()
 const modalEvents = useModalEvents()
 const messageEvents = useMessageEvents()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const skillRegistry = createBuiltInSkillRegistry()
 const copilot = new Copilot(skillRegistry)
-const sessionStorageRef = userSessionStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
+const sessionStorageRef = useUserSessionStorage<SessionExported | null>('spx-gui-copilot-session', null)
 
 copilot.syncSessionWith({
   get() {
@@ -200,7 +198,7 @@ copilot.registerCustomElement({
 })
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
-copilot.registerContextProvider(new UserContextProvider(signedInStateQuery.data))
+copilot.registerContextProvider(new UserContextProvider(signedIn))
 copilot.registerContextProvider(new LocationContextProvider(router))
 
 const isRouteLoaded = useIsRouteLoaded()

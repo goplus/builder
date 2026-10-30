@@ -23,7 +23,7 @@ import type { AssetModel, PartialAssetData } from '@/models/spx/common/asset'
 import { backdrop2Asset, humanizeAssetType, sound2Asset, sprite2Asset } from '@/models/spx/common/asset'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import BackdropPreview from './BackdropPreview.vue'
 import SpritePreview from './SpritePreview.vue'
 import SoundPreview from './SoundPreview.vue'
@@ -38,15 +38,8 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-const signedInUser = useSignedInUser()
-
-const user = computed(() => {
-  const u = signedInUser.value
-  if (u == null) throw new Error('user is not signed in')
-  return u
-})
-
-const advancedLibraryEnabled = computed(() => user.value.capabilities.canManageAssets)
+const signedIn = useSignedIn()
+const advancedLibraryEnabled = computed(() => signedIn.user?.capabilities.canManageAssets === true)
 
 const { t } = useI18n()
 
@@ -59,7 +52,7 @@ const {
   async () => {
     if (!advancedLibraryEnabled.value) return null
     const metadata = props.model.assetMetadata
-    if (metadata == null || metadata.id == null || metadata.owner !== user.value.username) return null
+    if (metadata == null || metadata.id == null || metadata.owner !== signedIn.username) return null
     return getAsset(metadata.id).catch((e) => {
       console.warn('failed to get existed asset', e)
       return null

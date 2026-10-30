@@ -13,7 +13,7 @@ import {
   type ListUserPublicProjectsParams
 } from '@/apis/project'
 import { getOwnProjectEditorRoute } from '../../../router'
-import { useSignedInUser, useUser } from '@/stores/user'
+import { useSignedIn, useUser } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
 import { useCreateProject } from '@/components/project'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -25,8 +25,8 @@ const props = defineProps<{
 }>()
 
 const { data: user } = useUser(() => props.nameInput)
-const signedInUser = useSignedInUser()
-const isSignedInUser = computed(() => user.value != null && user.value.username === signedInUser.value?.username)
+const signedIn = useSignedIn()
+const isSignedInUser = computed(() => user.value != null && user.value.username === signedIn.username)
 
 usePageTitle(() => {
   if (user.value == null) return null

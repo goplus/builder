@@ -21,7 +21,7 @@ import * as courseApis from '@/apis/course'
 import * as courseSeriesApis from '@/apis/course-series'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers } from '@/models/common/local'
-import { initUserState } from '@/stores/user'
+import { initSignedIn } from '@/stores/user'
 import { provideProjectConfig } from '@/components/project/config'
 import { provideCommunityConfig } from '@/components/community/config'
 import { loadMonaco } from '@/components/xgo-code-editor/monaco'
@@ -73,7 +73,6 @@ vi.mock('@/apis/feedback', { spy: true })
 
 enableAutoUnmount(afterEach)
 initDayjs()
-initUserState('test-client')
 client.setBaseUrl('http://localhost/api')
 cloudHelpers.setConfig({ baseUrl: 'https://assets.test', bucket: 'test' })
 const fetchDataUrl = globalThis.fetch
@@ -204,6 +203,7 @@ export async function mountPages(path: string) {
   await router.push(path)
   await router.isReady()
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  let signedIn!: ReturnType<typeof initSignedIn>
   const wrapper = mount(
     defineComponent({
       setup() {
@@ -224,6 +224,12 @@ export async function mountPages(path: string) {
           [VueQueryPlugin, { queryClient }],
           {
             install(app) {
+              signedIn = initSignedIn(app, { oauthClientId: 'test-client' })
+              client.setTokenProvider(() => signedIn.ensureAccessToken())
+            }
+          },
+          {
+            install(app) {
               provideCommunityConfig(app, { showLicense: true, showTutorialsEntry: true })
               provideProjectConfig(app, { defaultFontPreferences: [] })
             }
@@ -232,22 +238,34 @@ export async function mountPages(path: string) {
       }
     }
   )
-  return { wrapper, router }
+  return { wrapper, router, signedIn }
 }
 
 export function setupPageTests() {
+  const originalLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
   beforeAll(async () => {
     await loadMonaco('en')
   }, 30_000)
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
+    if (originalLocks != null) Object.defineProperty(navigator, 'locks', originalLocks)
+    else Reflect.deleteProperty(navigator, 'locks')
   })
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.clear()
     window.dispatchEvent(new StorageEvent('storage', { key: 'builder-user' }))
     vi.clearAllMocks()
+    Object.defineProperty(navigator, 'locks', {
+      configurable: true,
+      value: {
+        request: async (_name: string, callback: () => Promise<void>) => {
+          await Promise.resolve()
+          return callback()
+        }
+      }
+    })
     vi.spyOn(localHelpers, 'load').mockResolvedValue(null)
     vi.spyOn(localHelpers, 'save').mockResolvedValue()
     vi.spyOn(localHelpers, 'clear').mockResolvedValue()

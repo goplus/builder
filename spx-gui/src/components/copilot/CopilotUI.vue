@@ -29,9 +29,8 @@ import { useRouter } from 'vue-router'
 
 import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
-import { untilLoaded } from '@/utils/query'
 import { useMessageHandle } from '@/utils/exception'
-import { isSignedIn, useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
 import { providePopupContainer, UIButton, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
@@ -398,15 +397,13 @@ onBeforeUnmount(
 )
 
 // Copilot open handling, implemented here due to high business logic coupling
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const usedCopilotUsersRef = localStorageRef<string[]>('spx-gui-used-copilot-users', [])
 watch(
   router.currentRoute,
   (route) => {
     // Open copilot when not signed in and entering the homepage
-    if (route.name === homePageName && !isSignedIn()) {
-      copilot.open()
-    }
+    if (route.name === homePageName && !signedIn.isSignedIn) copilot.open()
   },
   {
     immediate: true
@@ -414,15 +411,13 @@ watch(
 )
 /** Whether the current user has not used Copilot. */
 const copilotNotUsed = computed(() => {
-  const signedInState = signedInStateQuery.data.value
-  if (signedInState == null) return false
-  return !signedInState.isSignedIn || !usedCopilotUsersRef.value.includes(signedInState.user.username)
+  const username = signedIn.username
+  return username == null || !usedCopilotUsersRef.value.includes(username)
 })
 /** Records that the current user has used Copilot when the specified condition is met. */
-async function recordCopilotUsage(shouldRecord: () => boolean) {
-  const signedInState = await untilLoaded(signedInStateQuery)
-  if (!signedInState.isSignedIn) return
-  const { username } = signedInState.user
+function recordCopilotUsage(shouldRecord: () => boolean) {
+  const username = signedIn.username
+  if (username == null) return
   const userUsedCopilot = usedCopilotUsersRef.value
   // Skip if condition is not met or user has already been recorded
   if (!shouldRecord() || userUsedCopilot.includes(username)) return
@@ -439,10 +434,10 @@ watch(
   (active) => recordCopilotUsage(() => !active)
 )
 /** Open copilot for signed-in users on their first copilot use */
-onMounted(async () => {
-  const signedInState = await untilLoaded(signedInStateQuery)
-  if (!signedInState.isSignedIn) return
-  if (usedCopilotUsersRef.value.includes(signedInState.user.username)) return
+onMounted(() => {
+  const username = signedIn.username
+  if (username == null) return
+  if (usedCopilotUsersRef.value.includes(username)) return
   copilot.open()
 })
 </script>
