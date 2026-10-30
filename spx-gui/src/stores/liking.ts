@@ -12,7 +12,7 @@ const staleTime = 5 * 60 * 1000 // 5min
 
 export function useIsLikingProject(
   project: WatchSource<{ owner: string; name: string }>,
-  options: { mode?: QueryMode } = { mode: 'live' }
+  options: { mode?: QueryMode } = {}
 ) {
   const projectRef = toRef(project)
   const signedInUser = useSignedInUser()

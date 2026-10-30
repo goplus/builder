@@ -11,7 +11,7 @@ function getCourseQueryKey(courseID: string) {
 
 const staleTime = 5 * 60 * 1000
 
-export function useCourse(courseID: WatchSource<string>, options: { mode?: QueryMode } = { mode: 'live' }) {
+export function useCourse(courseID: WatchSource<string>, options: { mode?: QueryMode } = {}) {
   const courseIDRef = toRef(courseID)
   return useQueryWithCache({
     mode: options.mode,

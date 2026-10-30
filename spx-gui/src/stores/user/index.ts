@@ -7,7 +7,7 @@ export * from './signed-in'
 
 const staleTime = 5 * 60 * 1000 // 5min
 
-export function useUser(username: WatchSource<string | null>, options: { mode?: QueryMode } = { mode: 'live' }) {
+export function useUser(username: WatchSource<string | null>, options: { mode?: QueryMode } = {}) {
   const usernameRef = toRef(username)
   const queryKey = computed(() => getUserQueryKey(usernameRef.value ?? ''))
   return useQueryWithCache({

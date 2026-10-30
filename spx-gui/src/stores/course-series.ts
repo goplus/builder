@@ -19,7 +19,7 @@ function getSeriesCoursesQueryKey(seriesID: string | null) {
 
 const staleTime = 5 * 60 * 1000
 
-export function useSeries(seriesID: WatchSource<string>, options: { mode?: QueryMode } = { mode: 'live' }) {
+export function useSeries(seriesID: WatchSource<string>, options: { mode?: QueryMode } = {}) {
   const seriesIDRef = toRef(seriesID)
   return useQueryWithCache({
     mode: options.mode,
@@ -33,7 +33,7 @@ export function useSeries(seriesID: WatchSource<string>, options: { mode?: Query
 export function useSeriesCoursesByPage(
   seriesID: WatchSource<string | null>,
   pagination: WatchSource<PaginationParams>,
-  options: { mode?: QueryMode } = { mode: 'live' }
+  options: { mode?: QueryMode } = {}
 ) {
   const seriesIDRef = toRef(seriesID)
   const queryKey = computed(() => [...getSeriesCoursesQueryKey(seriesIDRef.value), toValue(pagination)])
@@ -50,10 +50,7 @@ export function useSeriesCoursesByPage(
   })
 }
 
-export function useSeriesCourses(
-  seriesID: WatchSource<string | null>,
-  options: { mode?: QueryMode } = { mode: 'live' }
-) {
+export function useSeriesCourses(seriesID: WatchSource<string | null>, options: { mode?: QueryMode } = {}) {
   // Management and navigation currently display at most one API page.
   const page = useSeriesCoursesByPage(seriesID, () => ({ pageIndex: 1, pageSize: 100 }), options)
   return { ...page, data: computed(() => page.data.value?.data ?? null) }
