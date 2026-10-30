@@ -8,6 +8,7 @@
       <CodeEditorUI
         :code-file-path="selectedSprite.codeFilePath"
         :read-only="editorCtx.state.codeReadOnly"
+        :read-only-message="editorCtx.state.codeReadOnlyReason"
         simple-mode
       />
       <div class="absolute right-3 bottom-4 z-10 flex items-center gap-4">

@@ -8,7 +8,11 @@ const { useEditorCtx } = vi.hoisted(() => ({ useEditorCtx: vi.fn() }))
 vi.mock('./EditorContextProvider.vue', () => ({ useEditorCtx }))
 vi.mock('./copilot', () => ({ useSpxEditorCopilot: vi.fn() }))
 vi.mock('./spx-code-editor', () => ({
-  CodeEditorUI: { name: 'CodeEditorUI', props: ['codeFilePath', 'simpleMode', 'readOnly'], template: '<div />' }
+  CodeEditorUI: {
+    name: 'CodeEditorUI',
+    props: ['codeFilePath', 'simpleMode', 'readOnly', 'readOnlyMessage'],
+    template: '<div />'
+  }
 }))
 vi.mock('./sprite/SpriteEditor.vue', () => ({ default: { name: 'SpriteEditor', template: '<div />' } }))
 vi.mock('./stage/StageEditor.vue', () => ({ default: { name: 'StageEditor', template: '<div />' } }))
@@ -25,7 +29,8 @@ function mountEditor(mode = 'simple') {
   const state = reactive({
     selectedEditMode: mode,
     selected: { type: 'sprite', sprite: { codeFilePath: 'Cat.spx' } },
-    codeReadOnly: false
+    codeReadOnly: false,
+    codeReadOnlyReason: { en: 'Read-only reason', zh: '只读原因' }
   })
   useEditorCtx.mockReturnValue({ project, state })
   const wrapper = shallowMount(ProjectEditor, { global: { directives: { radar: {} }, renderStubDefaultSlot: true } })
@@ -42,6 +47,7 @@ describe('Simple Mode code editing', () => {
     state.codeReadOnly = true
     await nextTick()
     expect(editor().props('readOnly')).toBe(true)
+    expect(editor().props('readOnlyMessage')).toEqual(state.codeReadOnlyReason)
     state.codeReadOnly = false
     await nextTick()
     expect(editor().props('readOnly')).toBe(false)
