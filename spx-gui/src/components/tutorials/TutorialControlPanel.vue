@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { getCleanupSignal } from '@/utils/disposable'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -14,6 +13,7 @@ import { UIButton, UILoading, useConfirmDialogWithResult } from '@/components/ui
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
+import { findUnitIndexOfCourse, getCourseSeriesPageRouteOfCourse, getSeriesUnits, getUnitHeading } from './units'
 
 const router = useRouter()
 const tutorial = useTutorial()
@@ -22,7 +22,19 @@ const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
 const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.series.id ?? null)
-const courses = coursesQueryRet.data
+
+const units = computed(() => (tutorial.currentCourse == null ? [] : getSeriesUnits(tutorial.currentCourse.series)))
+const unitIndex = computed(() =>
+  tutorial.currentCourse == null ? -1 : findUnitIndexOfCourse(units.value, tutorial.currentCourse.id)
+)
+const unit = computed(() => units.value[unitIndex.value] ?? null)
+/** The courses of the current course's unit, each with its sequence in the whole series. */
+const shownCourses = computed(() => {
+  const courses = (coursesQueryRet.data.value ?? []).map((course, index) => ({ course, sequence: index + 1 }))
+  if (unit.value == null) return courses
+  const unitCourseIDs = new Set(unit.value.courseIDs)
+  return courses.filter(({ course }) => unitCourseIDs.has(course.id))
+})
 const courseRows = useTemplateRef<InstanceType<typeof TutorialStatusCourseRow>[]>('courseRows')
 const signal = getCleanupSignal(onBeforeUnmount)
 
@@ -78,8 +90,8 @@ const { fn: handleReturnSeries } = useMessageHandle(
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
     await tutorial.endCurrentCourse()
-    const seriesRoute = getCourseSeriesPageRoute(currentCourse.series.id)
-    if (router.currentRoute.value.path !== seriesRoute) await router.push(seriesRoute)
+    const seriesRoute = getCourseSeriesPageRouteOfCourse(currentCourse.series, currentCourse.id)
+    if (router.currentRoute.value.fullPath !== seriesRoute) await router.push(seriesRoute)
   },
   { en: 'Failed to return to series courses', zh: '返回系列课程失败' }
 )
@@ -132,15 +144,19 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
+    <h3 v-if="unit?.title != null" class="m-0 flex-none px-2 pb-1 pt-2 text-base font-semibold text-title">
+      {{ $t(getUnitHeading(unitIndex, unit.title)) }}
+    </h3>
+
     <div class="min-h-0 flex-1 overflow-y-auto p-1">
       <UILoading v-if="coursesQueryRet.isLoading.value" class="h-24" />
       <ul v-else class="flex flex-col gap-2">
         <TutorialStatusCourseRow
-          v-for="(course, index) in courses ?? []"
+          v-for="{ course, sequence } in shownCourses"
           :key="course.id"
           ref="courseRows"
           :course="course"
-          :sequence="index + 1"
+          :sequence="sequence"
           :active="course.id === tutorial.currentCourse?.id"
           :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
           @select="handleSelectCourse(course.id, course.title)"

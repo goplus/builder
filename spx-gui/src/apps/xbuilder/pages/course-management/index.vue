@@ -51,7 +51,8 @@ watch(
         </template>
       </UIError>
       <CenteredWrapper v-else class="py-8">
-        <RouterView />
+        <!-- A series page holds edits of its series not yet written, so another series gets a page of its own. -->
+        <RouterView :key="String(route.params.courseSeriesIdInput ?? '')" />
       </CenteredWrapper>
     </main>
   </div>

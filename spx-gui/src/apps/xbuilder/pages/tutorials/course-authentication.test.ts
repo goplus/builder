@@ -27,7 +27,7 @@ const mocks = vi.hoisted(() => ({
   notifyStarted: vi.fn(),
   error: vi.fn(),
   course: { id: 'course', title: 'First course', kind: 'guided' as 'guided' | 'playground' },
-  series: { id: 'series', title: 'Series', thumbnail: '', description: '', courseIDs: ['course'] }
+  series: { id: 'series', title: 'Series', thumbnail: '', description: '', courseIDs: ['course'], units: [] }
 }))
 
 vi.mock('@/stores/user', () => ({
@@ -136,9 +136,9 @@ async function openPage(destination: string, lang: 'en' | 'zh' = 'en') {
       renderStubDefaultSlot: true,
       mocks: { $t: (message: { en: string }) => message.en },
       stubs: {
-        ListResultWrapper: defineComponent({
+        PagedCourseList: defineComponent({
           setup(_props, { slots }) {
-            return () => slots.default?.({ data: { data: [mocks.course] } })
+            return () => slots.course?.({ course: mocks.course })
           }
         })
       }

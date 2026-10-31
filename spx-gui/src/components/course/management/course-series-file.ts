@@ -12,11 +12,10 @@ import {
   getCourse,
   addCourse,
   deleteCourse,
-  listCourses,
+  listAllSeriesCourses,
   isGuidedCourse,
   isPlaygroundCourse,
   type AddCourseParams,
-  type Course,
   type CourseKind,
   type GuidedCourse,
   type PlaygroundCourse
@@ -26,7 +25,8 @@ import {
   getCourseSeries,
   listSignedInUserCourseSeries,
   type AddCourseSeriesParams,
-  type CourseSeries
+  type CourseSeries,
+  type CourseSeriesUnitParams
 } from '@/apis/course-series'
 import {
   deleteProject,
@@ -73,6 +73,12 @@ type CourseSeriesFileProject = {
   path: string
 }
 
+/** A unit of the series: the next `courseCount` courses, after those of the units before it. */
+type CourseSeriesFileUnit = {
+  title: string
+  courseCount: number
+}
+
 type CourseSeriesFileManifest = {
   format: typeof format
   version: typeof version
@@ -83,6 +89,8 @@ type CourseSeriesFileManifest = {
   }
   /** Courses of the series' kind, in order. */
   courses: Array<CourseSeriesFileGuidedCourse | CourseSeriesFilePlaygroundCourse>
+  /** Units the series is divided into. Missing from files written before series had units, and from undivided ones. */
+  units?: CourseSeriesFileUnit[]
   /** Projects the guided courses open; a Playground Course carries its project among its own files. */
   projects: CourseSeriesFileProject[]
 }
@@ -207,6 +215,9 @@ export async function exportCourseSeriesFile(
     courses: exportedCourses,
     projects: exportedProjects
   }
+  if (courseSeries.units.length > 0) {
+    manifest.units = courseSeries.units.map((unit) => ({ title: unit.title, courseCount: unit.courseIDs.length }))
+  }
   zippable[manifestFileName] = new TextEncoder().encode(JSON.stringify(manifest))
 
   onProgress?.({ step: 'pack', done: 0, total: 0, files: null })
@@ -301,7 +312,7 @@ export async function inspectCourseSeriesFileContent(
   let deletedCourses: string[] = []
   if (courseSeries != null && courseSeries.courseIDs.length > 0) {
     const titles = new Map(
-      (await listSeriesCourses(courseSeries.id, signal)).map((course) => [course.id, course.title])
+      (await listAllSeriesCourses(courseSeries.id, signal)).map((course) => [course.id, course.title])
     )
     deletedCourses = courseSeries.courseIDs.flatMap((id) => titles.get(id) ?? [])
   }
@@ -383,6 +394,7 @@ async function loadCourseSeriesFile(
   for (const thumbnail of [manifest.courseSeries.thumbnail, ...manifest.courses.map((course) => course.thumbnail)]) {
     getRequiredEntry(unzipped, thumbnail.path)
   }
+  checkUnits(manifest)
   if (manifest.courseSeries.kind === 'playground') {
     if (manifest.projects.length > 0) {
       throw new DefaultException({
@@ -411,6 +423,37 @@ async function loadCourseSeriesFile(
   }
   const projects = await loadGuidedProjects(manifest, unzipped, { signal, onProgress })
   return { manifest, unzipped, courseFiles: [], projects }
+}
+
+/** Refuse units that do not divide the courses of the file. */
+function checkUnits({ units, courses }: CourseSeriesFileManifest) {
+  if (units == null) return
+  const valid =
+    Array.isArray(units) &&
+    units.every(
+      (unit) =>
+        typeof unit.title === 'string' &&
+        unit.title.trim() !== '' &&
+        Number.isInteger(unit.courseCount) &&
+        unit.courseCount >= 0
+    ) &&
+    units.reduce((sum, unit) => sum + unit.courseCount, 0) === courses.length
+  if (!valid) {
+    throw new DefaultException({
+      en: 'Invalid course series file: its units do not match its courses',
+      zh: '无效的课程系列文件：单元与课程对不上'
+    })
+  }
+}
+
+/** The units of the file, holding the imported courses: the course at index `i` of the file is `courseIDs[i]`. */
+function importUnits(units: CourseSeriesFileUnit[] | undefined, courseIDs: string[]): CourseSeriesUnitParams[] {
+  let start = 0
+  return (units ?? []).map(({ title, courseCount }) => {
+    const unitCourseIDs = courseIDs.slice(start, start + courseCount)
+    start += courseCount
+    return { title, courseIDs: unitCourseIDs }
+  })
 }
 
 /**
@@ -652,7 +695,9 @@ async function importCourseSeriesFileData(
       description: manifest.courseSeries.description,
       // Keep the local sort order because it depends on other course series in the current environment.
       order: 'courseSeries' in target ? target.courseSeries.order : target.newSeriesOrder,
-      courseIDs
+      courseIDs,
+      // Units of the series imported into are replaced too, by none if the file has none.
+      units: importUnits(manifest.units, courseIDs)
     }
     signal?.throwIfAborted()
   } catch (error) {
@@ -939,15 +984,6 @@ async function importProject(
     signal
   )
   return `${owner}/${name}`
-}
-
-async function listSeriesCourses(courseSeriesID: string, signal?: AbortSignal) {
-  const all: Course[] = []
-  for (let pageIndex = 1; ; pageIndex++) {
-    const { data, total } = await listCourses({ courseSeriesID, pageIndex, pageSize: 100 }, signal)
-    all.push(...data)
-    if (data.length === 0 || all.length >= total) return all
-  }
 }
 
 async function getSignedInUserProject(owner: string, name: string, signal?: AbortSignal) {

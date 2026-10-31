@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getCourseSeries } from '@/apis/course-series'
-import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { untilLoaded, useQuery, type QueryRet } from '@/utils/query'
 import { path2PathSegments, useScopedRouterWithPathParam } from '@/utils/route'
@@ -17,6 +16,7 @@ import CoursePlaygroundCompletionModal, {
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
 import { useTutorial } from '@/components/tutorials/tutorial'
+import { getCourseSeriesPageRouteOfCourse } from '@/components/tutorials/units'
 import { useModal } from '@/components/ui'
 
 const props = defineProps<{
@@ -122,7 +122,7 @@ const { fn: handleCompleted } = useMessageHandle(
     if (action === 'next' && nextCourseID != null) {
       await tutorial.startCourse(completedSession.series.id, nextCourseID)
     } else {
-      await router.push(getCourseSeriesPageRoute(completedSession.series.id))
+      await router.push(getCourseSeriesPageRouteOfCourse(completedSession.series, completedSession.course.id))
     }
   },
   { en: 'Failed to handle course completion', zh: '处理课程完成失败' }

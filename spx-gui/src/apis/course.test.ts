@@ -3,6 +3,7 @@ import { client } from './common'
 import {
   generatePlaygroundCourseCopilotContext,
   getCourse,
+  listAllSeriesCourses,
   listCourses,
   listSignedInUserCourses,
   type Course
@@ -56,6 +57,21 @@ describe('Course APIs', () => {
     const params = { courseSeriesID: 'series', pageIndex: 2, pageSize: 2, orderBy: 'sequenceInCourseSeries' as const }
     await expect(list(params, signal)).resolves.toEqual(result)
     expect(get).toHaveBeenCalledWith(path, params, { signal })
+  })
+
+  it('lists all courses of a series a page at a time, in their order in it', async () => {
+    const courses = Array.from({ length: 150 }, (_, i) => ({ ...makeCourses()[1], id: `course-${i}` }))
+    const get = vi.spyOn(client, 'get').mockImplementation(async (_path, params) => {
+      const { pageIndex, pageSize } = params as { pageIndex: number; pageSize: number }
+      return { total: courses.length, data: courses.slice((pageIndex - 1) * pageSize, pageIndex * pageSize) }
+    })
+    const signal = new AbortController().signal
+
+    await expect(listAllSeriesCourses('series', signal)).resolves.toEqual(courses)
+    expect(get.mock.calls.map(([, params]) => params)).toEqual([
+      { courseSeriesID: 'series', pageIndex: 1, pageSize: 100, orderBy: 'sequenceInCourseSeries' },
+      { courseSeriesID: 'series', pageIndex: 2, pageSize: 100, orderBy: 'sequenceInCourseSeries' }
+    ])
   })
 })
 
