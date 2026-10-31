@@ -88,7 +88,10 @@ export type UpdateCourseSeriesParams = Partial<
     CourseSeries,
     "title" | "thumbnail" | "description" | "courseIDs" | "order"
   > & {
-    /** Replaces the units, and with them the courses unless empty. */
+    /**
+     * Replaces the units. While the series is divided into units, their courses joined in unit order must be its
+     * courses, whether given in `courseIDs` or kept.
+     */
     units: CourseSeriesUnitParams[];
   }
 >;

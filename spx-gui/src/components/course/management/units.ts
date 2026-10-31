@@ -4,7 +4,16 @@
  * it so, and returns the units to write, leaving the given ones as they are.
  */
 
-import type { CourseSeriesUnitParams } from '@/apis/course-series'
+import type { CourseSeriesUnitParams, UpdateCourseSeriesParams } from '@/apis/course-series'
+
+/**
+ * The fields that write the units. Divided into them, the series takes their courses, joined in unit order, as its
+ * courses; left undivided, it keeps its courses.
+ */
+export function toUnitsParams(units: CourseSeriesUnitParams[]): Pick<UpdateCourseSeriesParams, 'units' | 'courseIDs'> {
+  if (units.length === 0) return { units }
+  return { units, courseIDs: units.flatMap((unit) => unit.courseIDs) }
+}
 
 /** An item of the list that shows the units in order, each as its header followed by its courses. */
 export type UnitListItem = { type: 'unit'; unitIndex: number } | { type: 'course'; courseID: string }

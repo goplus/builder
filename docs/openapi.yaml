@@ -3480,10 +3480,10 @@ paths:
         Every course named in `courseIDs` must have that kind.
 
         `units` replaces the units of the series. A unit with an `id` keeps it, and must be a current unit of the
-        series; one without is new, and is given an ID. A nonempty `units` also sets the courses of the series: the
-        course IDs of the units joined in order, which `courseIDs`, if also given, must equal. An empty `units` leaves
-        the series undivided, with its courses as they are. While the series is divided into units, `courseIDs` alone
-        cannot change its courses, as a course it adds would belong to no unit.
+        series; one without is new, and is given an ID. `units` and `courseIDs` each change only themselves, and one
+        left out keeps its value: an empty `units` leaves the series undivided, with its courses as they are. While the
+        series is divided into units after the update, the course IDs of its units joined in order must equal its
+        `courseIDs`, whether given or kept; an update that would leave them apart is rejected.
 
         Permission requirements:
 

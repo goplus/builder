@@ -59,12 +59,12 @@ Creating or updating a Course writes one `course` row. The API validates only th
 
 Creating or updating a Course Series follows the existing course-locking order:
 
-1. Normalize, sort and deduplicate the requested Course IDs: those of the requested units joined in order when units are given and not empty, otherwise the requested `courseIDs`.
+1. Normalize, sort and deduplicate the requested `courseIDs`.
 2. Lock the referenced `course` rows in ID order.
 3. Verify that every Course exists.
 4. Verify that every Course kind equals `course_series.kind`.
 5. Lock the Course Series row when updating it.
-6. Resolve the requested units: one naming an ID must be a current unit of the Series and keeps it; a new one is given a UUID. Without requested units, refuse a change to the Courses of a Series that is divided into units, as a Course it adds would belong to no unit.
+6. Resolve the requested units: one naming an ID must be a current unit of the Series and keeps it; a new one is given a UUID. Requested units and `courseIDs` each replace only themselves. If the Series is divided into units after the write, refuse it unless the Courses of its units, joined in order, are its Courses.
 7. Write `course_ids`, `units` and other Series fields.
 
 This prevents a Course deletion or concurrent Series update from invalidating the kind check between validation and write.

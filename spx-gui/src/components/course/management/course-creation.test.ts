@@ -142,6 +142,7 @@ describe('appendCourseToSeries', () => {
       await appendCourseToSeries('39', '2345', updateCourseSeries, 'unit-1')
 
       expect(updateCourseSeries).toHaveBeenCalledWith('39', {
+        courseIDs: ['2337', '2345', '2340'],
         units: [
           { id: 'unit-1', title: 'Unit 1', courseIDs: ['2337', '2345'] },
           { id: 'unit-2', title: 'Unit 2', courseIDs: ['2340'] }
@@ -154,6 +155,7 @@ describe('appendCourseToSeries', () => {
       await appendCourseToSeries('39', '2345', updateCourseSeries, 'deleted-unit')
 
       const lastUnitAdded = {
+        courseIDs: ['2337', '2340', '2345'],
         units: [
           { id: 'unit-1', title: 'Unit 1', courseIDs: ['2337'] },
           { id: 'unit-2', title: 'Unit 2', courseIDs: ['2340', '2345'] }

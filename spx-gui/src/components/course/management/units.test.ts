@@ -8,7 +8,8 @@ import {
   removeUnit,
   renameUnit,
   splitUnitAt,
-  toUnitList
+  toUnitList,
+  toUnitsParams
 } from './units'
 
 const units = [
@@ -90,5 +91,18 @@ describe('unit edits', () => {
 
   it('renames a unit', () => {
     expect(brief(renameUnit(units, 2, 'Review'))).toEqual(['Unit 1: a b', 'Unit 2: c', 'Review:'])
+  })
+})
+
+describe('unit writes', () => {
+  it('writes the courses of the units with them', () => {
+    expect(toUnitsParams(moveUnit(units, 1, -1))).toEqual({
+      units: moveUnit(units, 1, -1),
+      courseIDs: ['c', 'a', 'b']
+    })
+  })
+
+  it('leaves the courses as they are when no unit is left', () => {
+    expect(toUnitsParams(removeUnit(units.slice(0, 1), 0))).toEqual({ units: [] })
   })
 })

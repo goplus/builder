@@ -61,8 +61,13 @@ function serveSeries() {
                 ...unit,
                 id: unit.id ?? `unit-${++unitCount}`
               }))
-              series = { ...series, units, courseIDs: units.flatMap((unit) => unit.courseIDs) }
-              resolve(series)
+              const courseIDs = params.courseIDs ?? series.courseIDs
+              if (units.length > 0 && units.flatMap((unit) => unit.courseIDs).join() !== courseIDs.join()) {
+                reject(new Error('units do not match courseIDs'))
+              } else {
+                series = { ...series, units, courseIDs }
+                resolve(series)
+              }
             }
             await flushPromises()
           }
@@ -154,6 +159,19 @@ describe('course management series page', () => {
     await writes[0].answer()
     expect(findByText('.ui-menu-item', 'Move to Unit 2')).toBeDefined()
     expect(getUnitHeader('Deep space').querySelector('button')!.disabled).toBe(false)
+  })
+
+  it('writes the courses of the series with its units', async () => {
+    const { writes } = serveSeries()
+    await mountSeriesPage()
+
+    await openUnitMenu('Arrival')
+    await click(getByText('.ui-menu-item', 'Move up'))
+    await writes[0].answer()
+
+    expect(writes[0].params.courseIDs).toEqual(['landing', 'first-flight'])
+    const headings = [...document.querySelectorAll('h3')].map((h3) => h3.textContent?.trim())
+    expect(headings.filter((title) => title === 'Arrival' || title === 'Basics')).toEqual(['Arrival', 'Basics'])
   })
 
   it('leaves the page without waiting for the edits being written', async () => {

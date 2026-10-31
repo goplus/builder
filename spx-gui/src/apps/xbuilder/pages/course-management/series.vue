@@ -39,6 +39,7 @@ import {
   renameUnit,
   splitUnitAt,
   toUnitList,
+  toUnitsParams,
   type UnitListItem
 } from '@/components/course/management/units'
 import { getUnitLabel } from '@/components/tutorials/units'
@@ -208,7 +209,7 @@ const unitListRef = ref<HTMLElement>()
 async function writeUnits(series: CourseSeries, edited: CourseSeriesUnitParams[]) {
   try {
     // The units the server returns give a new unit its ID.
-    await editUnits(edited, async (units) => (await updateCourseSeries(series.id, { units })).units)
+    await editUnits(edited, async (units) => (await updateCourseSeries(series.id, toUnitsParams(units))).units)
   } catch (e) {
     refetch()
     throw e
