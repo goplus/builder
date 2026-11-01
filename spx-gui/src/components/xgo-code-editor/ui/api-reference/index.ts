@@ -35,6 +35,21 @@ export class APIReferenceController extends Disposable {
     return this.ui.codeEditor.apiReferenceProvider.provideCategoryViewInfos()
   }
 
+  get canAskCopilot() {
+    return this.ui.codeEditor.copilot?.prefillInput != null
+  }
+
+  askCopilot(query: string) {
+    const search = query.trim()
+    if (search === '') return
+    this.ui.codeEditor.copilot?.prefillInput?.(
+      this.ui.i18n.t({
+        en: `I want to ${search}. How can I do this?`,
+        zh: `我想实现「${search}」，可以怎么做？`
+      })
+    )
+  }
+
   init() {
     this.addDisposer(
       watch(

@@ -458,32 +458,46 @@ async function handleCategoryClick(id: string) {
           </UITextInput>
         </form>
       </div>
-      <p
+      <div
         v-show="isSearching"
-        class="min-h-7 flex-none px-3 pt-0.5 pb-1.5 text-sm text-hint-2"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
+        class="min-h-7 flex flex-none flex-wrap items-baseline gap-x-1.5 px-3 pt-0.5 pb-1.5 text-sm"
       >
-        <span v-if="isSearchPending && showSearchLoading" class="inline-flex items-center gap-1.5">
-          <UIIcon type="loading" class="text-primary-main motion-reduce:animate-none!" aria-hidden="true" />
-          {{ $t({ en: 'Searching…', zh: '正在查找…' }) }}
-        </span>
-        <template v-else-if="!isSearchPending && isSearching">
-          {{
-            $t(
-              searchFailed
-                ? { en: 'Search failed. Try again.', zh: '搜索失败，请重试' }
-                : searchResults.length > 0
-                  ? {
-                      en: searchResults.length === 1 ? 'Matched 1 snippet' : `Matched ${searchResults.length} snippets`,
-                      zh: `匹配到 ${searchResults.length} 个代码片段`
-                    }
-                  : { en: 'No matching snippets', zh: '未找到相关代码片段' }
-            )
-          }}
-        </template>
-      </p>
+        <p class="text-hint-2" role="status" aria-live="polite" aria-atomic="true">
+          <span v-if="isSearchPending && showSearchLoading" class="inline-flex items-center gap-1.5">
+            <UIIcon type="loading" class="text-primary-main motion-reduce:animate-none!" aria-hidden="true" />
+            {{ $t({ en: 'Searching…', zh: '正在查找…' }) }}
+          </span>
+          <template v-else-if="!isSearchPending && isSearching">
+            {{
+              $t(
+                searchFailed
+                  ? { en: 'Search failed. Try again.', zh: '搜索失败，请重试' }
+                  : searchResults.length > 0
+                    ? {
+                        en:
+                          searchResults.length === 1 ? 'Matched 1 snippet' : `Matched ${searchResults.length} snippets`,
+                        zh: `匹配到 ${searchResults.length} 个代码片段`
+                      }
+                    : { en: 'No matching snippets', zh: '未找到相关代码片段' }
+              )
+            }}
+          </template>
+        </p>
+        <button
+          v-if="
+            isSearching && !isSearchPending && !searchFailed && searchResults.length === 0 && controller.canAskCopilot
+          "
+          v-radar="{
+            name: 'Ask Copilot about snippet search',
+            desc: 'Open Copilot with this search as an unsent draft'
+          }"
+          type="button"
+          class="cursor-pointer appearance-none whitespace-nowrap rounded-sm border-none bg-transparent p-0 text-sm text-primary-main transition-colors hover:text-primary-400 active:text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
+          @click="controller.askCopilot(submittedSearchQuery)"
+        >
+          {{ $t({ en: 'Ask Copilot', zh: '问问 Copilot' }) }}
+        </button>
+      </div>
       <div v-if="isSearching" class="flex min-h-0 flex-[1_1_0] flex-col" :aria-busy="isSearchPending">
         <ul
           v-if="!isSearchPending && searchResults.length > 0"

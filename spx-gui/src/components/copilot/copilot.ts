@@ -582,6 +582,26 @@ export class Copilot extends Disposable {
     return this.activeRef.value
   }
 
+  private inputDraftRef = ref('')
+  get inputDraft() {
+    return this.inputDraftRef.value
+  }
+  set inputDraft(value: string) {
+    this.inputDraftRef.value = value
+  }
+
+  private inputFocusRequestRef = ref(0)
+  get inputFocusRequest() {
+    return this.inputFocusRequestRef.value
+  }
+
+  /** Open a question draft without sending or replacing unsent input. */
+  prefillInput(content: string): void {
+    if (this.inputDraft === '') this.inputDraft = content
+    this.open()
+    this.inputFocusRequestRef.value++
+  }
+
   private currentSessionRef = shallowRef<Session | null>(null)
   get currentSession() {
     return this.currentSessionRef.value

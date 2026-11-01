@@ -54,7 +54,9 @@ function mountReference(extraItems: APIReferenceItem[] = []) {
         ]
       }
     ],
-    error: null
+    error: null,
+    canAskCopilot: true,
+    askCopilot: vi.fn()
   }) as unknown as APIReferenceController
   const wrapper = mount(APIReferenceUI, {
     attachTo: document.body,
@@ -188,6 +190,38 @@ describe('API Reference search disclosure', () => {
     expect(wrapper.get('[role="status"]').text()).toBe('匹配到 1 个代码片段')
     expect(wrapper.get('[role="status"]').element).toBe(statusElement)
     expect(wrapper.text()).not.toContain('未找到相关代码片段')
+  })
+
+  it('offers Copilot only for completed empty searches and passes the query without clearing it', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const wrapper = mountReference()
+    const ask = '[aria-label="Ask Copilot about snippet search"]'
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    expect(wrapper.find(ask).exists()).toBe(false)
+    await wrapper.get('input').setValue('  让角色飞到云上  ')
+    await vi.advanceTimersByTimeAsync(200)
+    expect(wrapper.get('[role="status"]').text()).toBe('正在查找…')
+    expect(wrapper.find(ask).exists()).toBe(false)
+    await vi.advanceTimersByTimeAsync(100)
+    expect(wrapper.get(ask).text()).toBe('问问 Copilot')
+    await wrapper.get(ask).trigger('click')
+    expect(wrapper.props('controller').askCopilot).toHaveBeenCalledExactlyOnceWith('让角色飞到云上')
+    expect(wrapper.get<HTMLInputElement>('input').element.value).toBe('  让角色飞到云上  ')
+    expect(wrapper.get('[role="status"]').text()).toBe('未找到相关代码片段')
+    await search(wrapper, '开始')
+    expect(wrapper.find(ask).exists()).toBe(false)
+    await wrapper.get('input').setValue('')
+    expect(wrapper.find(ask).exists()).toBe(false)
+  })
+
+  it('hides the Copilot entry if prefill is unavailable', async () => {
+    const wrapper = mountReference()
+    const controller = wrapper.props('controller') as unknown as { canAskCopilot: boolean }
+    controller.canAskCopilot = false
+    await wrapper.get('[aria-label="Toggle API search"]').trigger('click')
+    await search(wrapper, '没有这个功能')
+    expect(wrapper.get('[role="status"]').text()).toBe('未找到相关代码片段')
+    expect(wrapper.find('[aria-label="Ask Copilot about snippet search"]').exists()).toBe(false)
   })
 
   it('opens category names from the header instead of displaying the category row inline', async () => {
@@ -789,6 +823,7 @@ describe('API Reference search disclosure', () => {
     rejectSearch(new Error('offline search failure'))
     await flushPromises()
     expect(wrapper.get('[role="status"]').text()).toBe('搜索失败，请重试')
+    expect(wrapper.find('[aria-label="Ask Copilot about snippet search"]').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('未找到相关代码片段')
     expect(wrapper.text()).not.toContain('匹配到 0 个代码片段')
     expect(wrapper.get('form').attributes('aria-busy')).toBe('false')
