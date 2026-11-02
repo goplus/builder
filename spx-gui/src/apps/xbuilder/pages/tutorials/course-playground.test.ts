@@ -26,12 +26,7 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
 }))
 vi.mock('@/stores/course-series', () => ({ useSeriesCourses: () => mocks.seriesQueryRet }))
 vi.mock('@/stores/user', () => ({
-  useSignIn: () => mocks.signIn,
-  useSignedInStateQuery: () => ({
-    isLoading: ref(false),
-    data: ref({ isSignedIn: true }),
-    error: ref(null)
-  })
+  useSignedIn: () => ({ isSignedIn: true, signIn: mocks.signIn })
 }))
 vi.mock('@/models/tutorial/project', () => ({ TutorialProject: { load: mocks.loadProject } }))
 vi.mock('@/components/tutorials/tutorial', () => ({

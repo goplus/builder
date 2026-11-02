@@ -27,7 +27,7 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
   useMessageHandle: (fn: unknown) => ({ fn })
 }))
 vi.mock('@/apps/xbuilder/router', () => ({ getOwnProjectEditorRoute: vi.fn() }))
-vi.mock('@/stores/user', () => ({ useSignedInStateQuery: () => ({}) }))
+vi.mock('@/stores/user', () => ({ useSignedIn: () => ({}) }))
 vi.mock('@/models/common/cloud', () => ({ cloudHelpers: {} }))
 vi.mock('@/components/copilot/context', () => ({
   useCopilot: () => ({ startSession: vi.fn().mockResolvedValue(undefined), endCurrentSession: vi.fn() })

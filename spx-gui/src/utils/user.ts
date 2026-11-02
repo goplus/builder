@@ -1,4 +1,4 @@
-import { isSignedIn, useSignIn } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { useI18n, type LocaleMessage } from './i18n'
 import { useConfirmDialog } from '@/components/ui'
 import { Cancelled } from './exception'
@@ -7,7 +7,7 @@ import { Cancelled } from './exception'
 export function useEnsureSignedIn() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
-  const signIn = useSignIn()
+  const signedIn = useSignedIn()
 
   return async (
     options: {
@@ -17,7 +17,7 @@ export function useEnsureSignedIn() {
       content?: LocaleMessage
     } = {}
   ) => {
-    if (isSignedIn()) return
+    if (signedIn.isSignedIn) return
     await withConfirm({
       title: t({ en: 'Please sign in', zh: '请先登录' }),
       content: t(
@@ -27,7 +27,7 @@ export function useEnsureSignedIn() {
         }
       ),
       confirmText: t({ en: 'Sign in', zh: '登录' }),
-      confirmHandler: () => signIn(options.returnTo)
+      confirmHandler: () => signedIn.signIn(options.returnTo)
     })
     throw new Cancelled('redirected to sign in')
   }

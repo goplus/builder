@@ -3,17 +3,17 @@ import { onMounted } from 'vue'
 
 import type { Round } from '@/components/copilot/copilot'
 
-import { isSignedIn, useSignIn } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UIButton } from '@/components/ui'
 
 const props = defineProps<{
   round: Round
 }>()
 
-const signIn = useSignIn()
+const signedIn = useSignedIn()
 
 onMounted(() => {
-  if (!isSignedIn()) return
+  if (!signedIn.isSignedIn) return
   props.round.retry()
 })
 </script>
@@ -21,7 +21,7 @@ onMounted(() => {
 <template>
   <div class="text-sm/[1.7]">
     <div>{{ $t({ en: 'Please sign in to continue.', zh: '请先登录并继续' }) }}</div>
-    <UIButton type="primary" class="mt-4" @click="signIn()">
+    <UIButton type="primary" class="mt-4" @click="signedIn.signIn()">
       {{ $t({ en: 'Sign in', zh: '登录' }) }}
     </UIButton>
   </div>

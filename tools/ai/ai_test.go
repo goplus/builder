@@ -250,7 +250,7 @@ func TestPlayerThink(t *testing.T) {
 				case 1:
 					return Response{}, &RetryableError{Err: errors.New("unavailable")}
 				case 2:
-					return Response{CommandName: reflect.TypeOf(testCommand{}).Name()}, nil
+					return Response{CommandName: reflect.TypeFor[testCommand]().Name()}, nil
 				default:
 					return Response{}, nil
 				}
@@ -285,7 +285,7 @@ func TestPlayerThink(t *testing.T) {
 			InteractFunc: func(_ context.Context, _ Request) (Response, error) {
 				interactCalls++
 				if interactCalls == 1 {
-					return Response{CommandName: reflect.TypeOf(archiveCommand{}).Name()}, nil
+					return Response{CommandName: reflect.TypeFor[archiveCommand]().Name()}, nil
 				}
 				return Response{}, nil
 			},
@@ -352,7 +352,7 @@ func TestPlayerThink(t *testing.T) {
 					t.Errorf("got continuation turn %d, want %d", got, want)
 				}
 				interactCalls++
-				return Response{CommandName: reflect.TypeOf(loopCommand{}).Name()}, nil
+				return Response{CommandName: reflect.TypeFor[loopCommand]().Name()}, nil
 			},
 		})
 

@@ -5,22 +5,22 @@
  */
 import { computed, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
-import { useSignIn, useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
+import { useQuery } from '@/utils/query'
 import { UIError, UILoading } from '@/components/ui'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 
 const route = useRoute()
-const signIn = useSignIn()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
+const signedInUserQuery = useQuery(({ signal }) => signedIn.getUser({ signal }))
 
-const signedInState = computed(() => signedInStateQuery.data.value)
-const canManageCourses = computed(() => signedInState.value?.user?.capabilities.canManageCourses === true)
+const canManageCourses = computed(() => signedIn.user?.capabilities.canManageCourses === true)
 
 watch(
-  signedInState,
-  async (state) => {
-    if (state != null && !state.isSignedIn) await signIn(route.fullPath)
+  () => signedIn.isSignedIn,
+  async (isSignedIn) => {
+    if (!isSignedIn) await signedIn.signIn(route.fullPath)
   },
   { immediate: true }
 )
@@ -31,11 +31,11 @@ watch(
     <CommunityNavbar />
     <main class="flex-1">
       <div
-        v-if="signedInState == null || !signedInState.isSignedIn"
+        v-if="signedInUserQuery.isLoading.value || signedInUserQuery.data.value == null"
         class="h-full min-h-80 flex items-center justify-center"
       >
-        <UIError v-if="signedInStateQuery.error.value != null">
-          {{ $t(signedInStateQuery.error.value.userMessage) }}
+        <UIError v-if="signedInUserQuery.error.value != null">
+          {{ $t(signedInUserQuery.error.value.userMessage) }}
         </UIError>
         <UILoading v-else />
       </div>

@@ -9,8 +9,9 @@ You are a release specialist dedicated to upgrading spx across goplus/builder sa
 - For released versions, verify they exist by running `gh release view --repo goplus/spx v<version>`
 - Verify the matching web package exists by running `npm view @xgo-pkgs/spx@<version> version`
 - Run `pnpm add @xgo-pkgs/spx@<version> --save-exact` in `spx-gui/` to update `spx-gui/package.json` and `spx-gui/pnpm-lock.yaml`
-- Refresh Go modules in `tools/ai/`, `tools/spxls/`, and `tools/ispx/` via `go get github.com/goplus/spx/v3@v<version>` followed by `go mod tidy` in each directory
+- Refresh Go modules in `tools/ai/`, `tools/spxls/`, and `tools/ispx/` via `go get github.com/goplus/spx/v4@v<version>` followed by `go mod tidy` in each directory
 - Execute `pnpm install --frozen-lockfile` in `spx-gui/` to install dependencies and expose the installed runtime assets under `spx-gui/public/` via `postinstall`
+- Align Builder's Go minor version with the target SPX runtime and satisfy SPX's minimum Go version requirement. Use the latest stable patch in that minor for builds; it need not match SPX's release build.
 - Execute `bash build-wasm.sh` in `spx-gui/` to build Wasm components
 - Run `pnpm run lint`, `pnpm run test -- --run` in `spx-gui/`, plus `go test ./...` inside `tools/ai/`, `tools/spxls/`, and `tools/ispx/` if there are packages to test
 - Verify `git status` is clean beyond the expected files, then create a commit titled `chore(deps): bump spx to <version>` and draft a PR with release notes and validation logs

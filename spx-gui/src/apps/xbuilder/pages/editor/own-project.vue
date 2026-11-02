@@ -2,9 +2,8 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { UIError, UILoading } from '@/components/ui'
-import { useSignIn, useSignedInStateQuery } from '@/stores/user'
-import { untilNotNull } from '@/utils/utils'
+import { UILoading } from '@/components/ui'
+import { useSignedIn } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
 
 const props = defineProps<{
@@ -13,24 +12,18 @@ const props = defineProps<{
 
 const route = useRoute()
 const router = useRouter()
-const signIn = useSignIn()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 
-onMounted(async () => {
-  const signedInState = await untilNotNull(signedInStateQuery.data)
-  if (!signedInState.isSignedIn) {
-    signIn(route.fullPath)
+onMounted(() => {
+  const username = signedIn.username
+  if (username == null) {
+    signedIn.signIn(route.fullPath)
     return
   }
-  router.replace(
-    getProjectEditorRoute(signedInState.user.username, props.projectNameInput, route.query.publish != null)
-  )
+  router.replace(getProjectEditorRoute(username, props.projectNameInput, route.query.publish != null))
 })
 </script>
 
 <template>
-  <UILoading v-if="signedInStateQuery.error.value == null" class="h-full min-h-80" />
-  <UIError v-else class="h-full min-h-80">
-    {{ $t(signedInStateQuery.error.value.userMessage) }}
-  </UIError>
+  <UILoading class="h-full min-h-80" />
 </template>

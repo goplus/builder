@@ -11,13 +11,13 @@ import {
 import { FilteredCompletionProvider, matchesAPI } from './api-filter'
 import { SpxAPIReferenceProvider } from './api-reference'
 
-const stepTo = parseDefinitionId('xgo:github.com/goplus/spx/v3?Sprite.stepTo#0')
-const turn = parseDefinitionId('xgo:github.com/goplus/spx/v3?Sprite.turn#0')
+const stepTo = parseDefinitionId('xgo:github.com/goplus/spx/v4?Sprite.stepTo#0')
+const turn = parseDefinitionId('xgo:github.com/goplus/spx/v4?Sprite.turn#0')
 
 describe('API whitelist', () => {
   it('matches all overloads when no overload is specified', () => {
-    expect(matchesAPI(stepTo, [parseDefinitionId('xgo:github.com/goplus/spx/v3?Sprite.stepTo')])).toBe(true)
-    expect(matchesAPI(turn, [parseDefinitionId('xgo:github.com/goplus/spx/v3?Sprite.stepTo')])).toBe(false)
+    expect(matchesAPI(stepTo, [parseDefinitionId('xgo:github.com/goplus/spx/v4?Sprite.stepTo')])).toBe(true)
+    expect(matchesAPI(turn, [parseDefinitionId('xgo:github.com/goplus/spx/v4?Sprite.stepTo')])).toBe(false)
   })
 
   it('filters SPX API reference items', async () => {

@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
-import { getUnresolvedSignedInUsername } from '@/stores/user'
 import { isObject, isString } from 'lodash'
+import { useSignedIn } from '@/stores/user'
 
 type IStorage = {
   getItem(key: string): string | null
@@ -30,11 +30,11 @@ function createUserScopeValue<T>(user: string, value: T): UserScopeValue<T> {
 }
 
 // private
-function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
-  // Ideally user-scoped storage would use a canonical signed-in username. We currently use the
-  // unresolved signed-in username as a temporary fallback because this scope needs to be computed
-  // synchronously from locally available session state.
-  const scope = computed(() => getUnresolvedSignedInUsername() ?? unauthorized)
+function useUserStorage<T>(key: string, initialValue: T, storage: IStorage) {
+  const signedIn = useSignedIn()
+  // Local identity keeps storage available synchronously, before the profile has loaded.
+  const scope = computed(() => signedIn.username ?? unauthorized)
+  // Storage reads are not reactive; invalidate this computed after writes through its setter.
   const counter = ref(0)
   return computed<T>({
     get() {
@@ -71,10 +71,12 @@ function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = loc
   })
 }
 
-export function userLocalStorageRef<T>(key: string, initialValue: T) {
-  return userStorageRef<T>(key, initialValue, localStorage)
+/** Creates a writable local-storage value scoped to the current user. */
+export function useUserLocalStorage<T>(key: string, initialValue: T) {
+  return useUserStorage<T>(key, initialValue, localStorage)
 }
 
-export function userSessionStorageRef<T>(key: string, initialValue: T) {
-  return userStorageRef<T>(key, initialValue, sessionStorage)
+/** Creates a writable session-storage value scoped to the current user. */
+export function useUserSessionStorage<T>(key: string, initialValue: T) {
+  return useUserStorage<T>(key, initialValue, sessionStorage)
 }

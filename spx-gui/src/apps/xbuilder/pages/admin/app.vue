@@ -6,7 +6,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UIButton, UIError, UILoading, UISwitch, UITextInput } from '@/components/ui'
 import CopyButton from '@/components/common/CopyButton.vue'
 import UIIcon from '@/components/ui/icons/UIIcon.vue'
@@ -25,8 +25,8 @@ const props = defineProps<{
 }>()
 
 const i18n = useI18n()
-const signedInStateQuery = useSignedInStateQuery()
-const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
+const signedIn = useSignedIn()
+const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
 const appQuery = useQuery(
   async () => {

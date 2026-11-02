@@ -186,10 +186,6 @@ const routes: Array<RouteRecordRaw> = [
     path: '/sign-in/callback',
     component: () => import('./pages/sign-in/callback.vue')
   },
-  {
-    path: '/sign-in/token',
-    component: () => import('./pages/sign-in/token.vue')
-  },
   // TODO: Remove this temporary Tutorial v2 development page before merging to dev.
   {
     path: '/debug/tutorial-courses',
@@ -246,6 +242,15 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'audit-logs',
         component: () => import('./pages/admin/audit-logs.vue')
+      },
+      {
+        path: 'feedback',
+        component: () => import('./pages/admin/feedback-list.vue')
+      },
+      {
+        path: 'feedback/:feedbackID',
+        component: () => import('./pages/admin/feedback.vue'),
+        props: true
       }
     ]
   },

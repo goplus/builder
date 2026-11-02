@@ -11,6 +11,7 @@ import { createSpotlight } from '@/utils/spotlight'
 import { initDayjs } from '@/setup/dayjs'
 import { client } from '@/apis/common'
 import { AssetType, type AssetData } from '@/apis/asset'
+import { FeedbackStatus, type Feedback } from '@/apis/feedback'
 import { ProjectType, Visibility, type ProjectData } from '@/apis/project'
 import * as projectApis from '@/apis/project'
 import * as releaseApis from '@/apis/project-release'
@@ -21,7 +22,7 @@ import * as courseSeriesApis from '@/apis/course-series'
 import type { CourseSeries as CourseSeriesData } from '@/apis/course-series'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers } from '@/models/common/local'
-import { initUserState } from '@/stores/user'
+import { initSignedIn } from '@/stores/user'
 import { provideProjectConfig } from '@/components/project/config'
 import { provideCommunityConfig } from '@/components/community/config'
 import { loadMonaco } from '@/components/xgo-code-editor/monaco'
@@ -46,6 +47,8 @@ import AdminApp from './admin/app.vue'
 import AdminGrant from './admin/grant.vue'
 import AdminUsers from './admin/users.vue'
 import AdminAuditLogs from './admin/audit-logs.vue'
+import AdminFeedbackList from './admin/feedback-list.vue'
+import AdminFeedback from './admin/feedback.vue'
 import UserFollowers from './community/user/followers.vue'
 import UserFollowing from './community/user/following.vue'
 
@@ -66,10 +69,11 @@ vi.mock('@/apis/course', { spy: true })
 vi.mock('@/apis/copilot', { spy: true })
 vi.mock('@/apis/admin/account', { spy: true })
 vi.mock('@/apis/admin/audit', { spy: true })
+vi.mock('@/apis/admin/feedback', { spy: true })
+vi.mock('@/apis/feedback', { spy: true })
 
 enableAutoUnmount(afterEach)
 initDayjs()
-initUserState('test-client')
 client.setBaseUrl('http://localhost/api')
 cloudHelpers.setConfig({ baseUrl: 'https://assets.test', bucket: 'test' })
 const fetchDataUrl = globalThis.fetch
@@ -113,6 +117,19 @@ export function makeAsset(name: string, type: AssetType, files: AssetData['files
   }
 }
 
+export function makeFeedback(overrides: Partial<Feedback> = {}): Feedback {
+  return {
+    id: '1',
+    owner: 'alice',
+    title: 'Sprite stops moving',
+    description: 'After I renamed the sprite, it no longer moves.',
+    status: FeedbackStatus.New,
+    createdAt: '2026-01-02T00:00:00Z',
+    updatedAt: '2026-01-02T00:00:00Z',
+    ...overrides
+  }
+}
+
 export async function signIn(capabilities: Partial<UserCapabilities> = {}) {
   const user = await userApis.getUser('alice')
   vi.mocked(userApis.getSignedInUser).mockResolvedValue({
@@ -122,6 +139,7 @@ export async function signIn(capabilities: Partial<UserCapabilities> = {}) {
       canManageAuthorization: false,
       canManageAssets: false,
       canManageCourses: false,
+      canManageFeedback: false,
       canUsePremiumLLM: false,
       ...capabilities
     }
@@ -173,7 +191,9 @@ export async function mountPages(path: string) {
         { path: 'apps', component: AdminApps },
         { path: 'apps/:appID', component: AdminApp, props: true },
         { path: 'users/:userID/app-grants/:grantID', component: AdminGrant, props: true },
-        { path: 'audit-logs', component: AdminAuditLogs }
+        { path: 'audit-logs', component: AdminAuditLogs },
+        { path: 'feedback', component: AdminFeedbackList },
+        { path: 'feedback/:feedbackID', component: AdminFeedback, props: true }
       ]
     },
     { path: '/course-series/:courseSeriesIdInput', component: CourseSeries, props: true },
@@ -184,6 +204,7 @@ export async function mountPages(path: string) {
   await router.push(path)
   await router.isReady()
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  let signedIn!: ReturnType<typeof initSignedIn>
   const wrapper = mount(
     defineComponent({
       setup() {
@@ -204,6 +225,12 @@ export async function mountPages(path: string) {
           [VueQueryPlugin, { queryClient }],
           {
             install(app) {
+              signedIn = initSignedIn(app, { oauthClientId: 'test-client' })
+              client.setTokenProvider(() => signedIn.ensureAccessToken())
+            }
+          },
+          {
+            install(app) {
               provideCommunityConfig(app, { showLicense: true, showTutorialsEntry: true })
               provideProjectConfig(app, { defaultFontPreferences: [] })
             }
@@ -212,22 +239,34 @@ export async function mountPages(path: string) {
       }
     }
   )
-  return { wrapper, router }
+  return { wrapper, router, signedIn }
 }
 
 export function setupPageTests() {
+  const originalLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
   beforeAll(async () => {
     await loadMonaco('en')
   }, 30_000)
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
+    if (originalLocks != null) Object.defineProperty(navigator, 'locks', originalLocks)
+    else Reflect.deleteProperty(navigator, 'locks')
   })
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.clear()
     window.dispatchEvent(new StorageEvent('storage', { key: 'builder-user' }))
     vi.clearAllMocks()
+    Object.defineProperty(navigator, 'locks', {
+      configurable: true,
+      value: {
+        request: async (_name: string, callback: () => Promise<void>) => {
+          await Promise.resolve()
+          return callback()
+        }
+      }
+    })
     vi.spyOn(localHelpers, 'load').mockResolvedValue(null)
     vi.spyOn(localHelpers, 'save').mockResolvedValue()
     vi.spyOn(localHelpers, 'clear').mockResolvedValue()

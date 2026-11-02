@@ -43,10 +43,10 @@ vi.mock('@/utils/network', async () => {
   return { useNetwork: () => ({ isOnline: ref(true) }) }
 })
 vi.mock('@/stores/user', async (importOriginal) => {
-  const { makeSignedInState, makeSignedInStateQuery } = await import('@/stores/user/test')
+  const { makeSignedInMock, makeSignedInUser, makeSignedInUserQuery } = await import('@/stores/user/test')
   return {
     ...(await importOriginal<typeof import('@/stores/user')>()),
-    useSignedInStateQuery: () => makeSignedInStateQuery(makeSignedInState('user'))
+    useSignedIn: () => makeSignedInMock(makeSignedInUserQuery(makeSignedInUser('user')))
   }
 })
 

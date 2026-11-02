@@ -8,10 +8,10 @@ import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { useScopedRouterWithPathParam } from '@/utils/route'
 import { Cancelled, DefaultException } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { untilNotNull, usePageTitle } from '@/utils/utils'
+import { usePageTitle } from '@/utils/utils'
 import { getCourse, type PlaygroundCourse } from '@/apis/course'
 import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { TutorialProject } from '@/models/tutorial/project'
 import { UIDetailedLoading, UIError } from '@/components/ui'
 import CourseEditor from '@/components/course-editor/CourseEditor.vue'
@@ -22,7 +22,7 @@ const props = defineProps<{
   inEditorPath: string | string[]
 }>()
 
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const inEditorRouter = useScopedRouterWithPathParam('inEditorPath', () => props.inEditorPath)
 const editor = shallowRef<InstanceType<typeof CourseEditor> | null>(null)
 
@@ -63,8 +63,8 @@ const entryQueryRet = useQuery(
     // Keep the reads below from becoming dependencies, which would re-run the query endlessly.
     await nextTick()
 
-    const signedInState = await untilNotNull(signedInStateQuery.data, ctx.signal)
-    if (!signedInState.isSignedIn || signedInState.user?.capabilities.canManageCourses !== true) {
+    const user = await signedIn.getUser({ signal: ctx.signal })
+    if (user?.capabilities.canManageCourses !== true) {
       throw new DefaultException({ en: 'You are not allowed to edit courses', zh: '你没有编辑课程的权限' })
     }
 

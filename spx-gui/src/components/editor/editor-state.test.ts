@@ -12,8 +12,7 @@ import { Monitor } from '@/models/spx/widget/monitor'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
 import { mockFile } from '@/models/common/test'
-import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
-import type { SignedInState } from '@/stores/user'
+import { makeSignedInMock, makeSignedInUser, makeSignedInUserQuery } from '@/stores/user/test'
 import type * as editing from './editing'
 import { EditMode, EditorState, type Selected } from './editor-state'
 
@@ -113,11 +112,18 @@ function makeRouter() {
 function makeEditorState(
   project: SpxProject = makeEmptyProject(),
   isOnline: WatchSource<boolean> = ref(true),
-  signedInStateQuery: QueryRet<SignedInState> = makeSignedInStateQuery(makeSignedInState('user')),
+  userQuery: ReturnType<typeof makeSignedInUserQuery> = makeSignedInUserQuery(makeSignedInUser('user')),
   cloudHelpers: editing.CloudHelpers = makeCloudHelpers(),
   localCache: editing.ILocalCache = makeLocalCache()
 ): EditorState {
-  return new EditorState(createI18n({ lang: 'en' }), project, isOnline, signedInStateQuery, cloudHelpers, localCache)
+  return new EditorState(
+    createI18n({ lang: 'en' }),
+    project,
+    isOnline,
+    makeSignedInMock(userQuery),
+    cloudHelpers,
+    localCache
+  )
 }
 
 describe('EditorState', () => {

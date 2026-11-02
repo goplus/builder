@@ -79,7 +79,7 @@ function main(classFrameworkConfig: string) {
       () => files,
       (message) => scope.postMessage({ type: 'lsp', message }),
       {
-        classfileConfig: classFrameworkConfig,
+        classFrameworkConfig,
         pkgDataZip: new Uint8Array(packageDataZip)
       }
     )

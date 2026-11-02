@@ -10,7 +10,7 @@ import { path2PathSegments, useScopedRouterWithPathParam } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { TutorialProject } from '@/models/tutorial/project'
 import { useSeriesCourses } from '@/stores/course-series'
-import { useSignIn, useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
   type CompletionAction
@@ -27,8 +27,7 @@ const props = defineProps<{
 
 const tutorial = useTutorial()
 const router = useRouter()
-const signIn = useSignIn()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
 const inPlaygroundRouter = useScopedRouterWithPathParam('inPlaygroundPath', () => props.inPlaygroundPath)
@@ -38,17 +37,14 @@ const sessionQueryRet = useQuery(
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
-    const [signedInState, series, courses] = await Promise.all([
-      // Use untilLoaded instead of composeQuery to avoid resetting the session on token refresh.
-      // See https://github.com/goplus/builder/issues/3590
-      untilLoaded(signedInStateQuery, ctx.signal),
+    const [series, courses] = await Promise.all([
       getCourseSeries(courseSeriesID, ctx.signal),
       // Only route inputs restart preparation; list loading must not become a query dependency.
       untilLoaded(seriesCoursesQueryRet, ctx.signal)
     ])
     ctx.signal.throwIfAborted()
-    if (!signedInState.isSignedIn) {
-      await signIn()
+    if (!signedIn.isSignedIn) {
+      await signedIn.signIn()
       throw new Cancelled('redirected to sign in')
     }
     const course = courses.find(({ id }) => id === courseID)

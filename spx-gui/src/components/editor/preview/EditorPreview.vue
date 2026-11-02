@@ -163,7 +163,7 @@ import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
 import { usePublishProject } from '@/components/project'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
@@ -201,7 +201,7 @@ const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
 const editorCtx = useEditorCtx()
 const codeEditor = useCodeEditor()
 const { isOnline } = useNetwork()
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
@@ -356,7 +356,7 @@ async function executeRun(action: 'run' | 'rerun') {
 
 const canManageProject = computed(() => {
   if (editorCtx.project == null) return false
-  const signedInUsername = signedInUser.value?.username
+  const signedInUsername = signedIn.username
   if (signedInUsername == null) return false
   if (editorCtx.project.owner !== signedInUsername) return false
   return true

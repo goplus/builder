@@ -10,7 +10,7 @@ import { Cancelled, capture, DefaultException, Exception } from '@/utils/excepti
 import type { CourseSeries } from '@/apis/course-series'
 import { useDeleteCourse } from '@/stores/course'
 import { useUpdateCourseSeries } from '@/stores/course-series'
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UIButton, UIModal } from '@/components/ui'
 import CourseSeriesFileSteps, { type StepStatus } from './CourseSeriesFileSteps.vue'
 import {
@@ -43,7 +43,7 @@ const emit = defineEmits<{
 }>()
 
 const i18n = useI18n()
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 const updateCourseSeries = useUpdateCourseSeries()
 const deleteCourse = useDeleteCourse()
 
@@ -119,7 +119,7 @@ function handleProgress(p: CourseSeriesFileProgress) {
 }
 
 function getSignedInUsername() {
-  const username = signedInUser.value?.username
+  const username = signedIn.username
   if (username == null) throw new DefaultException({ en: 'Please sign in first', zh: '请先登录' })
   return username
 }
