@@ -101,20 +101,21 @@ export interface TutorialFrameworkHost {
   course: {
     /**
      * Presents non-empty opening guides in one dialog with Next between pages.
-     * Resolves after the last page. buttonText applies only to the last page;
-     * null selects Continue. Actions resume the Course, without running the project.
+     * Resolves after the last page. buttonText applies only to the last page.
+     * A null buttonText uses the Host's default button text.
+     * Actions resume the Course, without running the project.
      * Presentation dialogs disable Escape and backdrop dismissal.
      */
     showPrelude(messages: string[], buttonText: string | null): Promise<void>;
     /**
      * Presents the given message. Resolves after the learner finishes reading
-     * it. null buttonText selects Continue.
+     * it. A null buttonText uses the Host's default button text.
      */
     showMessage(message: string, buttonText: string | null): Promise<void>;
     /**
      * Presents a Course-local video. Resolves after the learner finishes
      * watching it. The Host determines how viewing completion is established.
-     * null buttonText selects Continue.
+     * A null buttonText uses the Host's default button text.
      */
     showVideo(videoName: string, buttonText: string | null): Promise<void>;
     /**

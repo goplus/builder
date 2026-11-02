@@ -26,6 +26,7 @@ async function advance() {
     return
   }
   pageIndex.value++
+  // Reset scrolling after the new page renders; the modal may unmount while waiting.
   await nextTick()
   if (scrollContainer.value != null) scrollContainer.value.scrollTop = 0
 }

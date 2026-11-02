@@ -49,7 +49,8 @@ export interface TutorialFrameworkHost {
   };
   course: {
     /** One dialog with Next between pages; buttonText applies to the last page.
-     * null selects Continue. Actions only resume the Course program. */
+     * A null buttonText uses the Host's default button text.
+     * Actions only resume the Course program. */
     showPrelude(messages: string[], buttonText: string | null): Promise<void>;
     showMessage(message: string, buttonText: string | null): Promise<void>;
     showVideo(videoName: string, buttonText: string | null): Promise<void>;

@@ -15,6 +15,7 @@ import type { EditorState } from '@/components/editor/editor-state'
 import type { Copilot } from '@/components/copilot/copilot'
 import { DefaultException } from '@/utils/exception'
 
+import type { PlaygroundCoursePresentationOptions } from './program'
 import { PlaygroundCourseSession } from './session'
 
 const executorMocks = vi.hoisted(() => ({
@@ -560,21 +561,30 @@ describe('PlaygroundCourseSession', () => {
     await capabilities.course_showPrelude({ messages: ['First', 'Second'], buttonText: 'Next' })
     await capabilities.course_showMessage({ content: 'Hint', buttonText: 'Continue reading' })
     await capabilities.course_showVideo({ videoName: 'intro', buttonText: 'Start' })
-    expect(harness.presentation.showPrelude).toHaveBeenCalledWith(['First', 'Second'], 'Next', expect.any(AbortSignal))
-    expect(harness.presentation.showMessage).toHaveBeenCalledWith('Hint', 'Continue reading', expect.any(AbortSignal))
-    expect(harness.presentation.showVideo).toHaveBeenCalledWith('intro', 'Start', expect.any(AbortSignal))
+    expect(harness.presentation.showPrelude).toHaveBeenCalledWith(['First', 'Second'], {
+      buttonText: 'Next',
+      signal: expect.any(AbortSignal)
+    })
+    expect(harness.presentation.showMessage).toHaveBeenCalledWith('Hint', {
+      buttonText: 'Continue reading',
+      signal: expect.any(AbortSignal)
+    })
+    expect(harness.presentation.showVideo).toHaveBeenCalledWith('intro', {
+      buttonText: 'Start',
+      signal: expect.any(AbortSignal)
+    })
   })
 
   it('opens overlapping presentations directly and cancels them at completion', async () => {
     const harness = makeHarness()
     harness.presentation.showPrelude.mockImplementationOnce(
-      (_content: unknown, _buttonText: string | null, signal: AbortSignal) =>
+      (_content: unknown, { signal }: PlaygroundCoursePresentationOptions) =>
         new Promise<void>((_resolve, reject) =>
           signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
         )
     )
     harness.presentation.showMessage.mockImplementationOnce(
-      (_content: unknown, _buttonText: string | null, signal: AbortSignal) =>
+      (_content: unknown, { signal }: PlaygroundCoursePresentationOptions) =>
         new Promise<void>((_resolve, reject) =>
           signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
         )
@@ -594,7 +604,7 @@ describe('PlaygroundCourseSession', () => {
   it('delegates named videos and settles active presentation when disposed', async () => {
     const harness = makeHarness()
     harness.presentation.showVideo.mockImplementationOnce(
-      (_name: string, _buttonText: string | null, signal: AbortSignal) =>
+      (_name: string, { signal }: PlaygroundCoursePresentationOptions) =>
         new Promise<void>((_resolve, reject) =>
           signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
         )
@@ -602,7 +612,10 @@ describe('PlaygroundCourseSession', () => {
     const call = harness
       .getExecutorOptions()
       .framework!.capabilities.course_showVideo({ videoName: 'step-to', buttonText: null })
-    expect(harness.presentation.showVideo).toHaveBeenCalledWith('step-to', null, expect.any(AbortSignal))
+    expect(harness.presentation.showVideo).toHaveBeenCalledWith('step-to', {
+      buttonText: null,
+      signal: expect.any(AbortSignal)
+    })
     const cancelled = expect(call).rejects.toThrow('cancelled')
     harness.courseSession.dispose()
     await cancelled

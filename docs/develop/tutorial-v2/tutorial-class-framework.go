@@ -98,23 +98,23 @@ type CourseAbilities interface {
 	// callback.
 	onStart(callback func())
 	// showPrelude presents one opening guide or a non-empty list as pages of one
-	// dialog, and returns after the final page. Additional XGo overloads:
-	// showPrelude(messages []string)
-	// showPrelude(message string, buttonText string)
-	// showPrelude(messages []string, buttonText string)
-	// Intermediate actions use Next; buttonText applies only to the final page.
-	// Omitted text defaults to Continue. Actions resume the course without running
-	// the learner's project. These dialogs disable Escape and backdrop dismissal.
-	showPrelude(preludeMessage string)
+	// dialog, and returns after the final page. Intermediate actions use Next;
+	// buttonText applies only to the final page. Omitted text uses the Host's default.
+	// Actions resume the course without running the learner's project.
+	// These dialogs disable Escape and backdrop dismissal.
+	showPrelude(message string)
+	showPrelude(messages []string)
+	showPrelude(message string, buttonText string)
+	showPrelude(messages []string, buttonText string)
 	// showMessage presents a message and waits for learner confirmation.
-	// Additional overload: showMessage(message string, buttonText string).
-	// Omitted button text defaults to Continue.
+	// Omitted button text uses the Host's default.
 	showMessage(message string)
+	showMessage(message string, buttonText string)
 	// showVideo presents the Course-local video with the given resource name and
-	// waits for learner confirmation. The host determines viewing completion.
-	// Additional overload: showVideo(videoName string, buttonText string).
-	// Omitted button text defaults to Continue.
+	// waits for learner confirmation. The host determines viewing completion
+	// and supplies the default button text when omitted.
 	showVideo(videoName string)
+	showVideo(videoName string, buttonText string)
 	// wait pauses the calling callback for the given number of seconds; other
 	// runs proceed meanwhile. Zero or negative seconds return at once. Pause
 	// with wait rather than time.Sleep, which holds up every other run.
