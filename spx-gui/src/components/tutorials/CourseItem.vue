@@ -27,14 +27,16 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
     class="group w-58 overflow-hidden rounded-md border border-grey-400 transition-all duration-200 hover:cursor-pointer hover:shadow-sm flex flex-col"
     :style="{ height: `${courseItemHeight}px`, backgroundImage: `url(${stageBgUrl})` }"
   >
-    <UIImg class="flex-auto w-full bg-top" :src="thumbnailUrl" size="cover" />
+    <UIImg class="flex-auto w-full" :src="thumbnailUrl" size="cover" />
 
-    <div class="flex-none w-full bg-grey-100 p-4 text-lg text-title">
-      <div
-        class="overflow-hidden whitespace-nowrap text-ellipsis group-hover:whitespace-normal group-hover:line-clamp-2"
-        :title="course.title"
-      >
-        {{ course.title }}
+    <div class="relative h-14 w-full flex-none">
+      <div class="absolute bottom-0 w-full bg-grey-100 p-4 text-lg text-title">
+        <div
+          class="overflow-hidden whitespace-nowrap text-ellipsis group-hover:whitespace-normal group-hover:line-clamp-2"
+          :title="course.title"
+        >
+          {{ course.title }}
+        </div>
       </div>
     </div>
   </li>

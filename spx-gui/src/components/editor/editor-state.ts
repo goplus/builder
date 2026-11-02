@@ -2,7 +2,6 @@ import { computed, ref, watch, type WatchSource } from 'vue'
 import { shiftPath, type IScopedRouter, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
-import type { QueryRet } from '@/utils/query'
 import type { Files } from '@/models/common/file'
 import type { ResourceModel } from '@/models/spx/common/resource'
 import type { SpxProject } from '@/models/spx/project'
@@ -14,7 +13,7 @@ import { isWidget } from '@/models/spx/widget'
 import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
 import type { IProject, PartialMetadata, ProjectSerialized } from '@/models/project'
-import type { SignedInState } from '@/stores/user'
+import type { SignedIn } from '@/stores/user'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
@@ -90,7 +89,7 @@ export class EditorState extends Disposable {
     i18n: I18n,
     readonly project: SpxProject,
     isOnline: WatchSource<boolean>,
-    signedInStateQuery: QueryRet<SignedInState>,
+    signedIn: Pick<SignedIn, 'username'>,
     cloudHelpers: editing.CloudHelpers,
     localCache: editing.ILocalCache,
     /**
@@ -105,7 +104,7 @@ export class EditorState extends Disposable {
     this.addDisposable((this.genState = new GenState(i18n, project)))
     const projectWithGens = new SpxProjectWithGens(project, this.genState)
     this.addDisposable(
-      (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedInStateQuery))
+      (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedIn))
     )
     this.addDisposable(
       (this.stageState = new StageEditorState(

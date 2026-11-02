@@ -225,7 +225,7 @@ export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename' |
  * Documentation string for a definition. Typically:
  * ```mdx
  * <OverviewWrapper>func turn(dDirection float64)</OverviewWrapper>
- * <Detail id="github.com/goplus/spx/v3|Sprite.turn[0]" />
+ * <Detail id="github.com/goplus/spx/v4|Sprite.turn[0]" />
  * ```
  */
 export type DefinitionDocumentationString = BasicMarkdownString | AdvancedMarkdownString

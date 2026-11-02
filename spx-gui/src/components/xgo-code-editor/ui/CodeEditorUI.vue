@@ -38,7 +38,7 @@ import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import ExecutionLocationUI from './execution-location/ExecutionLocationUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
-import { userLocalStorageRef } from '@/utils/user-storage'
+import { useUserLocalStorage } from '@/utils/user-storage'
 
 const props = withDefaults(
   defineProps<{
@@ -82,7 +82,7 @@ const uiRef = computed(() => {
 })
 
 const initialFontSize = 12
-const fontSize = props.simpleMode ? ref(16) : userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
+const fontSize = props.simpleMode ? ref(16) : useUserLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
@@ -204,7 +204,7 @@ const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
-const sidebarWidth = userLocalStorageRef(
+const sidebarWidth = useUserLocalStorage(
   props.simpleMode ? 'builder-simple-code-editor-sidebar-width' : 'spx-code-editor-sidebar-width',
   defaultSidebarWidth
 )

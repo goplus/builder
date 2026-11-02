@@ -10,7 +10,7 @@ import {
   type FormValidationResult
 } from '@/components/ui'
 import { isUsernameTaken, usernameMaxLength } from '@/apis/user'
-import { useModifySignedInUsername } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 
@@ -57,7 +57,7 @@ function handleCancel() {
   emit('cancelled')
 }
 
-const modifySignedInUsername = useModifySignedInUsername()
+const signedIn = useSignedIn()
 
 const handleSubmit = useMessageHandle(async () => {
   const oldUsername = currentUsername.value
@@ -66,7 +66,7 @@ const handleSubmit = useMessageHandle(async () => {
     emit('resolved', newUsername)
     return newUsername
   }
-  const updated = await modifySignedInUsername(newUsername)
+  const updated = await signedIn.modifyUsername(newUsername)
   emit('resolved', updated.username)
   return updated.username
 })

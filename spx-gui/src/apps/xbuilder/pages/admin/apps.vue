@@ -7,7 +7,7 @@ import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { SortOrder } from '@/apis/common'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption, UITextInput } from '@/components/ui'
 import * as accountAdminApis from '@/apis/admin/account'
 import {
@@ -18,9 +18,9 @@ import {
   parseLines
 } from './common'
 
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const router = useRouter()
-const canManageAccount = computed(() => signedInStateQuery.data.value?.user?.capabilities.canManageAccount === true)
+const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
 const pageSize = 20
 const page = useRouteQueryParamInt('p', 1)

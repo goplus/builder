@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useExternalUrl } from '@/utils/utils'
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import type { UserMessage } from './copilot'
 import MarkdownView from './MarkdownView.vue'
 
@@ -8,8 +7,7 @@ defineProps<{
   message: UserMessage
 }>()
 
-const signedInUser = useSignedInUser()
-const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
+const signedIn = useSignedIn()
 </script>
 
 <template>
@@ -17,7 +15,12 @@ const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
     class="self-stretch px-4 py-5"
     :class="message.type === 'text' ? 'flex flex-col items-start gap-2' : 'flex flex-row items-center gap-2'"
   >
-    <img class="h-8 w-8 rounded-full" :src="avatarUrl ?? undefined" />
+    <img
+      class="h-8 w-8 rounded-full"
+      crossorigin="anonymous"
+      :src="signedIn.user?.avatar"
+      :alt="signedIn.user?.displayName ?? ''"
+    />
     <MarkdownView
       v-if="message.type === 'text'"
       class="self-stretch rounded-sm rounded-tl-none bg-[#e9ecf7] p-2"

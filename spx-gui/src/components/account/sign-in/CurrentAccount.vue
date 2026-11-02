@@ -3,7 +3,6 @@ import { computed } from 'vue'
 
 import type { CurrentAccountSession } from '@/apis/account'
 import { UIFullWidthButton } from '@/components/ui'
-import { useExternalUrl } from '@/utils/utils'
 
 const props = defineProps<{
   session: CurrentAccountSession
@@ -15,7 +14,6 @@ defineEmits<{
   switchAccount: []
 }>()
 
-const avatarUrl = useExternalUrl(() => props.session.user.avatar)
 const avatarFallbackText = computed(() => props.session.user.displayName.trim().charAt(0).toUpperCase() || '?')
 </script>
 
@@ -26,8 +24,9 @@ const avatarFallbackText = computed(() => props.session.user.displayName.trim().
         class="w-10 h-10 rounded-full bg-turquoise-200 overflow-hidden flex items-center justify-center text-2xl font-semibold text-turquoise-600"
       >
         <img
-          v-if="avatarUrl != null"
-          :src="avatarUrl"
+          v-if="session.user.avatar != null"
+          crossorigin="anonymous"
+          :src="session.user.avatar"
           :alt="session.user.displayName"
           class="h-full w-full object-cover"
         />
