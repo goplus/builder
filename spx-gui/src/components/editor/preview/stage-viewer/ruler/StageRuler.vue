@@ -30,6 +30,7 @@ const originSnapRadius = 24
 const endpointSnapRadius = 24
 const originSnapDuration = 140
 const originReleaseDuration = 80
+const dragThreshold = 4
 const minAngleDistance = 12
 const angleArcRadius = 36
 const headingRayLength = angleArcRadius
@@ -48,6 +49,7 @@ const nearStraightAngleThreshold = 8
 <script setup lang="ts">
 import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import Konva from 'konva'
+import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { LineConfig } from 'konva/lib/shapes/Line'
@@ -73,6 +75,8 @@ const layerRef = ref<{ getNode(): Konva.Layer } | null>(null)
 const measurement = ref<{ from: Pos; fromHeading: number | null; to: Pos } | null>(null)
 const start = ref<{ pos: Pos; heading: number | null } | null>(null)
 const awaitingEnd = ref(false)
+let mousePress: { pos: Pos; origin: NonNullable<typeof start.value>; dragging: boolean } | null = null
+let suppressClick = false
 const pointerPos = ref<Pos | null>(null)
 const cursorPos = ref<Pos | null>(null)
 const cursorImage = shallowRef<HTMLImageElement | null>(null)
@@ -113,13 +117,23 @@ function getPointerPos(radius: number): { pos: Pos; target: RulerSnapTarget | nu
   return pos == null ? null : snap(pos, radius)
 }
 
-function handleClick() {
+function beginMeasurement(origin: NonNullable<typeof start.value>) {
+  start.value = origin
+  measurement.value = null
+  awaitingEnd.value = true
+}
+
+function handleClick(event: KonvaEventObject<MouseEvent>) {
+  if (!props.active || event.evt.button !== 0) return
+  // Konva also emits a click after a drag on the capture rectangle.
+  if (suppressClick) {
+    suppressClick = false
+    return
+  }
   const snapped = getPointerPos(awaitingEnd.value ? endpointSnapRadius : originSnapRadius)
   if (snapped == null) return
   if (!awaitingEnd.value) {
-    start.value = { pos: snapped.pos, heading: snapped.target?.heading ?? null }
-    measurement.value = null
-    awaitingEnd.value = true
+    beginMeasurement({ pos: snapped.pos, heading: snapped.target?.heading ?? null })
     return
   }
   if (start.value == null) return
@@ -127,12 +141,64 @@ function handleClick() {
   awaitingEnd.value = false
 }
 
+function handleMouseDown(event: KonvaEventObject<MouseEvent>) {
+  if (!props.active || event.evt.button !== 0) return
+  suppressClick = false
+  event.evt.preventDefault()
+  if (awaitingEnd.value) return
+  const pos = layerRef.value?.getNode().getRelativePointerPosition()
+  if (pos == null) return
+  const snapped = snap(pos, originSnapRadius)
+  pointerPos.value = pos
+  mousePress = { pos, origin: { pos: snapped.pos, heading: snapped.target?.heading ?? null }, dragging: false }
+  window.addEventListener('mouseup', handleWindowMouseUp)
+  window.addEventListener('blur', handleWindowBlur)
+}
+
 function handleMouseMove() {
   pointerPos.value = layerRef.value?.getNode().getRelativePointerPosition() ?? null
+  if (mousePress != null && !mousePress.dragging && pointerPos.value != null) {
+    const moved = Math.hypot(pointerPos.value.x - mousePress.pos.x, pointerPos.value.y - mousePress.pos.y)
+    if (moved * props.stageScale >= dragThreshold) {
+      mousePress.dragging = true
+      beginMeasurement(mousePress.origin)
+    }
+  }
   if (!awaitingEnd.value || start.value == null) return
   const snapped = getPointerPos(endpointSnapRadius)
   if (snapped == null) return
   measurement.value = { from: start.value.pos, fromHeading: start.value.heading, to: snapped.pos }
+}
+
+function resetMousePress() {
+  mousePress = null
+  window.removeEventListener('mouseup', handleWindowMouseUp)
+  window.removeEventListener('blur', handleWindowBlur)
+}
+
+function finishDrag() {
+  if (mousePress?.dragging) {
+    awaitingEnd.value = false
+    suppressClick = true
+  }
+  resetMousePress()
+}
+
+function handleMouseUp(event: KonvaEventObject<MouseEvent>) {
+  if (event.evt.button !== 0 || mousePress == null) return
+  handleMouseMove()
+  finishDrag()
+}
+
+function handleWindowMouseUp(event: MouseEvent) {
+  if (event.button !== 0) return
+  // Outside the map, retain the last valid endpoint instead of leaving a drag active.
+  finishDrag()
+}
+
+function handleWindowBlur() {
+  finishDrag()
+  hideCursorPreview()
 }
 
 function hideCursorPreview() {
@@ -142,6 +208,8 @@ function hideCursorPreview() {
 }
 
 function stopMeasuring() {
+  resetMousePress()
+  suppressClick = false
   hideCursorPreview()
   awaitingEnd.value = false
   start.value = null
@@ -447,6 +515,8 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
     <v-rect
       :config="captureRectConfig"
       @click="handleClick"
+      @mousedown="handleMouseDown"
+      @mouseup="handleMouseUp"
       @mouseenter="handleMouseMove"
       @mousemove="handleMouseMove"
       @mouseleave="hideCursorPreview"

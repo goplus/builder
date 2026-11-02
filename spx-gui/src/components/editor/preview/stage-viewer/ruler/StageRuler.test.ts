@@ -82,7 +82,20 @@ async function setup(reducedMotion = false) {
     await nextTick()
   }
   async function click() {
-    capture.vm.$emit('click')
+    capture.vm.$emit('mousedown', { evt: new MouseEvent('mousedown', { button: 0, cancelable: true }) })
+    capture.vm.$emit('mouseup', { evt: new MouseEvent('mouseup', { button: 0 }) })
+    capture.vm.$emit('click', { evt: new MouseEvent('click', { button: 0 }) })
+    await nextTick()
+  }
+  async function press(pos: Pos, button = 0) {
+    pointer = pos
+    capture.vm.$emit('mousedown', { evt: new MouseEvent('mousedown', { button, cancelable: true }) })
+    await nextTick()
+  }
+  async function release(pos: Pos, button = 0) {
+    pointer = pos
+    capture.vm.$emit('mouseup', { evt: new MouseEvent('mouseup', { button }) })
+    capture.vm.$emit('click', { evt: new MouseEvent('click', { button }) })
     await nextTick()
   }
   function cursor() {
@@ -105,10 +118,116 @@ async function setup(reducedMotion = false) {
     callbacks.forEach((callback) => callback(time))
     await nextTick()
   }
-  return { wrapper, capture, move, click, cursor, outline, measurement, loadImage, advance, frames, motionPreference }
+  return {
+    wrapper,
+    capture,
+    move,
+    click,
+    press,
+    release,
+    cursor,
+    outline,
+    measurement,
+    loadImage,
+    advance,
+    frames,
+    motionPreference
+  }
 }
 
 describe('Ruler cursor preview', () => {
+  it('measures from the pressed origin, snaps the endpoint, and keeps the result after releasing a drag', async () => {
+    const { move, press, release, click, cursor, outline, measurement, loadImage } = await setup()
+    await loadImage()
+    await press({ x: 120, y: 100 })
+    await move({ x: 200, y: 160 })
+    expect(measurement()!.props('config').points).toEqual([100, 100, 200, 160])
+    expect(outline().props('config')).toMatchObject({ x: 200, y: 160 })
+    await move({ x: 320, y: 100 })
+    expect(cursor().props('config')).toMatchObject({ x: 300, y: 100 })
+    await release({ x: 320, y: 100 })
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(outline().exists()).toBe(false)
+    await move({ x: 400, y: 200 })
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(outline().exists()).toBe(false)
+
+    // A subsequent measurement can still use the original two-click interaction.
+    await click()
+    await move({ x: 500, y: 200 })
+    await click()
+    expect(measurement()!.props('config').points).toEqual([400, 200, 500, 200])
+    await move({ x: 450, y: 250 })
+    expect(measurement()!.props('config').points).toEqual([400, 200, 500, 200])
+  })
+
+  it('treats small pointer jitter as a click at any stage scale', async () => {
+    const { wrapper, press, move, release, outline, measurement, loadImage } = await setup()
+    await loadImage()
+    await wrapper.setProps({ stageScale: 0.5 })
+    await press({ x: 180, y: 160 })
+    await move({ x: 186, y: 160 })
+    expect(measurement()).toBeUndefined()
+    await release({ x: 186, y: 160 })
+    expect(outline().exists()).toBe(true)
+    await move({ x: 250, y: 160 })
+    expect(measurement()!.props('config').points).toEqual([186, 160, 250, 160])
+  })
+
+  it('can drag from an arbitrary point and uses the release position even without a final move event', async () => {
+    const { press, release, move, outline, measurement, loadImage } = await setup()
+    await loadImage()
+    await press({ x: 180, y: 160 })
+    await release({ x: 420, y: 220 })
+    expect(measurement()!.props('config').points).toEqual([180, 160, 420, 220])
+    expect(outline().exists()).toBe(false)
+    await move({ x: 500, y: 250 })
+    expect(measurement()!.props('config').points).toEqual([180, 160, 420, 220])
+  })
+
+  it('ignores right and middle buttons', async () => {
+    const { press, release, move, measurement } = await setup()
+    for (const button of [1, 2]) {
+      await press({ x: 120, y: 100 }, button)
+      await move({ x: 320, y: 100 })
+      await release({ x: 320, y: 100 }, button)
+      expect(measurement()).toBeUndefined()
+    }
+  })
+
+  it('fixes the last valid result when the mouse is released outside the map', async () => {
+    const { capture, press, move, click, outline, measurement, loadImage } = await setup()
+    await loadImage()
+    await press({ x: 120, y: 100 })
+    await move({ x: 320, y: 100 })
+    capture.vm.$emit('mouseleave')
+    window.dispatchEvent(new MouseEvent('mouseup', { button: 0 }))
+    await nextTick()
+    await move({ x: 400, y: 200 })
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(outline().exists()).toBe(false)
+    await click()
+    await move({ x: 500, y: 200 })
+    expect(measurement()!.props('config').points).toEqual([400, 200, 500, 200])
+  })
+
+  it('ends a drag on window blur and clears pending presses when disabled', async () => {
+    const { wrapper, press, move, outline, measurement, loadImage } = await setup()
+    await loadImage()
+    await press({ x: 120, y: 100 })
+    await move({ x: 320, y: 100 })
+    window.dispatchEvent(new Event('blur'))
+    await nextTick()
+    await move({ x: 400, y: 200 })
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(outline().exists()).toBe(false)
+    await press({ x: 120, y: 100 })
+    await wrapper.setProps({ active: false })
+    await wrapper.setProps({ active: true })
+    await move({ x: 320, y: 100 })
+    expect(measurement()).toBeUndefined()
+  })
+
   it('follows the pointer, stays at the reference point inside the origin radius, and releases outside it', async () => {
     const { move, cursor, outline, measurement, loadImage, advance } = await setup()
     await loadImage()
