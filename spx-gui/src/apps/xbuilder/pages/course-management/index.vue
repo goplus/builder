@@ -18,10 +18,9 @@ const signedInUserQuery = useQuery(({ signal }) => signedIn.getUser({ signal }))
 const canManageCourses = computed(() => signedIn.user?.capabilities.canManageCourses === true)
 
 watch(
-  signedInUserQuery.isLoading,
-  async (isLoading) => {
-    if (isLoading || signedInUserQuery.error.value != null) return
-    if (signedInUserQuery.data.value == null) await signedIn.signIn(route.fullPath)
+  () => signedIn.isSignedIn,
+  async (isSignedIn) => {
+    if (!isSignedIn) await signedIn.signIn(route.fullPath)
   },
   { immediate: true }
 )
