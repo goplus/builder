@@ -37,6 +37,7 @@ async function setup(reducedMotion = false) {
   })
   const Rect = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
   const Cursor = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
+  const Outline = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
   const Line = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
   const wrapper = mount(StageRuler, {
     props: {
@@ -55,6 +56,7 @@ async function setup(reducedMotion = false) {
         'v-layer': Layer,
         'v-rect': Rect,
         'v-image': Cursor,
+        'v-path': Outline,
         'v-line': Line,
         'v-group': true,
         'v-arc': true,
@@ -86,6 +88,9 @@ async function setup(reducedMotion = false) {
   function cursor() {
     return wrapper.findComponent(Cursor)
   }
+  function outline() {
+    return wrapper.findComponent(Outline)
+  }
   function measurement() {
     return wrapper.findAllComponents(Line).find((line) => line.props('config').dash != null)
   }
@@ -100,28 +105,32 @@ async function setup(reducedMotion = false) {
     callbacks.forEach((callback) => callback(time))
     await nextTick()
   }
-  return { wrapper, capture, move, click, cursor, measurement, loadImage, advance, frames, motionPreference }
+  return { wrapper, capture, move, click, cursor, outline, measurement, loadImage, advance, frames, motionPreference }
 }
 
 describe('Ruler origin preview', () => {
   it('follows the pointer, stays at the reference point inside the origin radius, and releases outside it', async () => {
-    const { move, cursor, measurement, loadImage, advance } = await setup()
+    const { move, cursor, outline, measurement, loadImage, advance } = await setup()
     await loadImage()
     await move({ x: 180, y: 100 })
     expect(cursor().props('config')).toMatchObject({ x: 180, y: 100, listening: false })
+    expect(outline().exists()).toBe(false)
     await move({ x: 124, y: 100 })
+    expect(outline().props('config')).toMatchObject({ x: 180, y: 100, listening: false })
     await advance(140)
     expect(cursor().props('config')).toMatchObject({ x: 100, y: 100 })
+    expect(outline().props('config')).toMatchObject({ x: 100, y: 100 })
     await move({ x: 110, y: 110 })
     expect(cursor().props('config')).toMatchObject({ x: 100, y: 100 })
     await move({ x: 125, y: 100 })
+    expect(outline().exists()).toBe(false)
     await advance(80)
     expect(cursor().props('config')).toMatchObject({ x: 125, y: 100 })
     expect(measurement()).toBeUndefined()
   })
 
   it('uses the exact reference point when clicked during the animation and preserves endpoint snapping', async () => {
-    const { wrapper, move, click, cursor, measurement, loadImage, advance, frames } = await setup()
+    const { wrapper, move, click, cursor, outline, measurement, loadImage, advance, frames } = await setup()
     await loadImage()
     await move({ x: 120, y: 100 })
     await advance(70)
@@ -129,6 +138,7 @@ describe('Ruler origin preview', () => {
     expect(cursor().props('config').x).toBeLessThan(120)
     await click()
     expect(cursor().exists()).toBe(false)
+    expect(outline().exists()).toBe(false)
     expect(frames.size).toBe(0)
     expect(wrapper.emitted('cursorPreviewChange')!.at(-1)).toEqual([false])
     await move({ x: 324, y: 100 })
@@ -146,14 +156,17 @@ describe('Ruler origin preview', () => {
   })
 
   it('keeps the cursor size in screen pixels while using map-relative positions', async () => {
-    const { wrapper, move, cursor, loadImage, advance } = await setup()
+    const { wrapper, move, cursor, outline, loadImage, advance } = await setup()
     await loadImage()
     await wrapper.setProps({ stageScale: 0.5 })
     await move({ x: 120, y: 100 })
     await advance(140)
     expect(cursor().props('config')).toMatchObject({ x: 100, y: 100, width: 64, height: 64 })
+    expect(outline().props('config').scaleX * 24).toBe(64)
+    expect(outline().props('config').strokeScaleEnabled).toBe(false)
     await wrapper.setProps({ stageScale: 2 })
     expect(cursor().props('config')).toMatchObject({ x: 100, y: 100, width: 16, height: 16 })
+    expect(outline().props('config').scaleX * 24).toBe(16)
   })
 
   it('only replaces the native cursor when the preview is loaded and restores it on leave, disable, and unmount', async () => {

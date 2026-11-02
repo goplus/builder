@@ -2,6 +2,7 @@
 import { headingToScreenDeg, segmentScreenDeg, turnAngle, type Pos } from './ruler-math'
 import { clampLabelToRect, getVisibleMapRect, type LabelLayout } from './ruler-layout'
 import { color } from '@/components/ui/tokens'
+import rulerCursorSvg from './triangle-ruler-cursor.svg?raw'
 
 export type { Pos }
 
@@ -18,6 +19,12 @@ function rgba(hex: string, alpha: number) {
 const lineColor = rgba(color.grey[1000], 0.5)
 const labelColor = rgba(color.grey[1000], 0.5)
 const angleColor = rgba(color.blue[600], 0.8)
+const cursorOutlineColor = rgba(color.grey[100], 0.65)
+const cursorSize = 32
+const cursorOutlinePath = new DOMParser()
+  .parseFromString(rulerCursorSvg, 'image/svg+xml')
+  .querySelector('path')!
+  .getAttribute('d')!
 
 const originSnapRadius = 24
 const endpointSnapRadius = 24
@@ -46,6 +53,7 @@ import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { LineConfig } from 'konva/lib/shapes/Line'
 import type { ArcConfig } from 'konva/lib/shapes/Arc'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
+import type { PathConfig } from 'konva/lib/shapes/Path'
 import rulerCursorUrl from './triangle-ruler-cursor.svg?url&no-inline'
 
 const props = defineProps<{
@@ -201,8 +209,26 @@ const cursorConfig = computed<ImageConfig | null>(() => {
     ...cursorPos.value,
     image: cursorImage.value,
     // Match the native cursor's 32px size and top-left hotspot at any stage scale.
-    width: 32 / props.stageScale,
-    height: 32 / props.stageScale,
+    width: cursorSize / props.stageScale,
+    height: cursorSize / props.stageScale,
+    listening: false
+  }
+})
+
+const cursorOutlineConfig = computed<PathConfig | null>(() => {
+  if (cursorConfig.value == null || cursorPos.value == null || cursorSnap.value?.target == null) return null
+  const scale = cursorSize / 24 / props.stageScale
+  return {
+    ...cursorPos.value,
+    data: cursorOutlinePath,
+    scaleX: scale,
+    scaleY: scale,
+    stroke: cursorOutlineColor,
+    strokeWidth: 4,
+    strokeScaleEnabled: false,
+    lineJoin: 'round',
+    lineCap: 'round',
+    fillEnabled: false,
     listening: false
   }
 })
@@ -479,6 +505,7 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
         />
       </v-group>
     </template>
+    <v-path v-if="cursorOutlineConfig != null" :config="cursorOutlineConfig" />
     <v-image v-if="cursorConfig != null" :config="cursorConfig" />
   </v-layer>
 </template>
