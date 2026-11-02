@@ -1,5 +1,5 @@
 import { createHighlighterCore } from 'shiki/core'
-import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
+import { createOnigurumaEngine } from 'shiki/engine/oniguruma'
 import gopLang from './gop-tm-language.json'
 import defaultLightTheme from './default-light-theme.json'
 
@@ -23,7 +23,8 @@ export function getHighlighter(): Promise<Highlighter> {
         spx: 'xgo'
       },
       themes: [defaultLightTheme as any],
-      engine: createJavaScriptRegexEngine()
+      // Keep TextMate matching independent of browser RegExp implementations.
+      engine: createOnigurumaEngine(import('shiki/wasm'))
     })
   }
   return highlighterPromise
