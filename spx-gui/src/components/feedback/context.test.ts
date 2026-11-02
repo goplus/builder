@@ -12,7 +12,7 @@ function makeEditorCtx(outputs: RuntimeOutput[] = [], { saved = true } = {}) {
       displayName: 'Space'
     },
     state: {
-      runtime: { outputs }
+      runtime: { outputSnapshot: outputs }
     }
   } as unknown as EditorCtx
 }
