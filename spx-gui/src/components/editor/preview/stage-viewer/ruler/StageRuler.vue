@@ -19,7 +19,8 @@ const lineColor = rgba(color.grey[1000], 0.5)
 const labelColor = rgba(color.grey[1000], 0.5)
 const angleColor = rgba(color.blue[600], 0.8)
 
-const snapRadius = 24
+const originSnapRadius = 48
+const endpointSnapRadius = 24
 const minAngleDistance = 12
 const angleArcRadius = 36
 const headingRayLength = angleArcRadius
@@ -62,7 +63,7 @@ const distance = computed(() => {
   return Math.round(Math.hypot(to.x - from.x, to.y - from.y))
 })
 
-function snap(pos: Pos): { pos: Pos; target: RulerSnapTarget | null } {
+function snap(pos: Pos, radius: number): { pos: Pos; target: RulerSnapTarget | null } {
   let nearest: RulerSnapTarget | null = null
   let nearestDistance = Infinity
   for (const target of props.snapTargets) {
@@ -72,17 +73,17 @@ function snap(pos: Pos): { pos: Pos; target: RulerSnapTarget | null } {
       nearestDistance = targetDistance
     }
   }
-  if (nearest != null && nearestDistance <= snapRadius) return { pos: { x: nearest.x, y: nearest.y }, target: nearest }
+  if (nearest != null && nearestDistance <= radius) return { pos: { x: nearest.x, y: nearest.y }, target: nearest }
   return { pos, target: null }
 }
 
-function getPointerPos(): { pos: Pos; target: RulerSnapTarget | null } | null {
+function getPointerPos(radius: number): { pos: Pos; target: RulerSnapTarget | null } | null {
   const pos = layerRef.value?.getNode().getRelativePointerPosition()
-  return pos == null ? null : snap(pos)
+  return pos == null ? null : snap(pos, radius)
 }
 
 function handleClick() {
-  const snapped = getPointerPos()
+  const snapped = getPointerPos(awaitingEnd ? endpointSnapRadius : originSnapRadius)
   if (snapped == null) return
   if (!awaitingEnd) {
     // TODO: Show a snapped start-point marker before the measurement line becomes visible.
@@ -98,7 +99,7 @@ function handleClick() {
 
 function handleMouseMove() {
   if (!awaitingEnd || start.value == null) return
-  const snapped = getPointerPos()
+  const snapped = getPointerPos(endpointSnapRadius)
   if (snapped == null) return
   measurement.value = { from: start.value.pos, fromHeading: start.value.heading, to: snapped.pos }
 }
