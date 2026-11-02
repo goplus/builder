@@ -37,7 +37,7 @@ import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import ExecutionLocationUI from './execution-location/ExecutionLocationUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
-import ZoomControl from './ZoomControl.vue'
+import CodeEditorSettings from './CodeEditorSettings.vue'
 import { useUserLocalStorage } from '@/utils/user-storage'
 
 const props = withDefaults(
@@ -87,6 +87,7 @@ const uiRef = computed(() => {
 
 const initialFontSize = 12
 const fontSize = props.simpleMode ? ref(16) : useUserLocalStorage('spx-gui-code-font-size', initialFontSize)
+const wordWrap = useUserLocalStorage('builder-code-editor-word-wrap', false)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
@@ -94,6 +95,7 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   tabSize,
   insertSpaces,
   fontSize: fontSize.value,
+  wordWrap: wordWrap.value ? 'on' : 'off',
   contextmenu: false,
   readOnly: props.readOnly ?? false,
   readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
@@ -103,6 +105,7 @@ const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
 
 watchEffect(() => {
   monacoEditorRef.value?.updateOptions({
+    wordWrap: wordWrap.value ? 'on' : 'off',
     readOnly: props.readOnly ?? false,
     readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
   })
@@ -189,6 +192,10 @@ watch(
       const fontSizeId = ui.monaco.editor.EditorOption.fontSize
       if (e.hasChanged(fontSizeId)) {
         fontSize.value = ui.editor.getOptions().get(fontSizeId)
+      }
+      const wordWrapId = ui.monaco.editor.EditorOption.wordWrap
+      if (e.hasChanged(wordWrapId)) {
+        wordWrap.value = ui.editor.getOptions().get(wordWrapId) === 'on'
       }
     })
 
@@ -318,7 +325,7 @@ providePopupContainer(codeEditorEl)
     <ExecutionLocationUI v-if="props.simpleMode" />
     <aside v-if="!simpleMode" class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+      <CodeEditorSettings v-model:word-wrap="wordWrap" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>
