@@ -12,7 +12,7 @@ const { attachUI, detachUI, monaco } = vi.hoisted(() => ({
 }))
 vi.mock('../context', () => ({ useCodeEditor: () => ({ monaco, attachUI, detachUI }) }))
 vi.mock('@/utils/i18n', () => ({ useI18n: () => ({ t: (msg: { en: string }) => msg.en }) }))
-vi.mock('@/utils/user-storage', () => ({ userLocalStorageRef: (_key: string, initial: unknown) => ref(initial) }))
+vi.mock('@/utils/user-storage', () => ({ useUserLocalStorage: (_key: string, initial: unknown) => ref(initial) }))
 vi.mock('@/components/ui', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useModal: () => vi.fn(),

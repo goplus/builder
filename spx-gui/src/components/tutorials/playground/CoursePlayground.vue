@@ -10,7 +10,7 @@ import { useProvideReadiness, useRegisterLoading } from '@/utils/readiness'
 import { useEnsureSignedIn } from '@/utils/user'
 import { useMessageHandle } from '@/utils/exception'
 import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
 import { useCopilot } from '@/components/copilot/context'
@@ -49,7 +49,7 @@ const copilot = useCopilot()
 const radar = useRadar()
 const spotlight = useSpotlight()
 const { isOnline } = useNetwork()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const ensureSignedIn = useEnsureSignedIn()
 const saveProjectAs = useSaveProjectAs()
 
@@ -126,7 +126,7 @@ const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery(
     startProgressReporter.report(0)
     const project = await composeQuery(ctx, props.projectQueryRet)
     ctx.signal.throwIfAborted()
-    const editorState = new EditorState(i18n, project.project, isOnline, signedInStateQuery, cloudHelpers, noLocalCache)
+    const editorState = new EditorState(i18n, project.project, isOnline, signedIn, cloudHelpers, noLocalCache)
     editorState.editing.startEditing()
     editorState.syncWithRouter(props.router)
     const session = new PlaygroundCourseSession({

@@ -21,7 +21,7 @@ import { computed, nextTick, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { useQuery } from '@/utils/query'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import type { SpxProject } from '@/models/spx/project'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
@@ -52,7 +52,7 @@ const emit = defineEmits<{
 
 const i18n = useI18n()
 const { isOnline } = useNetwork()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 
 // Written only through `setState`, so the parent always sees the state the editor UI renders.
 const state = shallowRef<EditorState | null>(null)
@@ -115,7 +115,7 @@ async function initialize() {
     i18n,
     props.project,
     isOnline,
-    signedInStateQuery,
+    signedIn,
     cloudHelpers,
     noopLocalCache,
     props.history

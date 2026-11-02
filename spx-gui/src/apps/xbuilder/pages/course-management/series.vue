@@ -11,7 +11,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useDeleteCourse } from '@/stores/course'
 import { useDeleteCourseSeries, useSeries, useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import {
   UIButton,
   UIEmpty,
@@ -54,7 +54,7 @@ const i18n = useI18n()
 const m = useMessage()
 const confirm = useConfirmDialog()
 const router = useRouter()
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 const updateCourseSeries = useUpdateCourseSeries()
 const deleteCourse = useDeleteCourse()
 const deleteCourseSeries = useDeleteCourseSeries()
@@ -69,9 +69,7 @@ const coursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
 
 const courseSeries = computed(() => seriesQueryRet.data.value)
 // Only the author's own series are managed here; another author's could be read but not changed.
-const isOwnSeries = computed(
-  () => courseSeries.value != null && courseSeries.value.owner === signedInUser.value?.username
-)
+const isOwnSeries = computed(() => courseSeries.value != null && courseSeries.value.owner === signedIn.username)
 
 usePageTitle(() => {
   const title = courseSeries.value?.title

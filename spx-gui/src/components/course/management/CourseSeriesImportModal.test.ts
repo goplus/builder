@@ -23,7 +23,7 @@ vi.mock('./course-series-file', async (importOriginal) => ({
 vi.mock('@/utils/i18n', () => ({
   useI18n: () => ({ t: (message: { en: string }) => message.en })
 }))
-vi.mock('@/stores/user', () => ({ useSignedInUser: () => ({ value: { username: 'curator' } }) }))
+vi.mock('@/stores/user', () => ({ useSignedIn: () => ({ username: 'curator' }) }))
 vi.mock('@/stores/course', () => ({ useDeleteCourse: () => vi.fn() }))
 vi.mock('@/stores/course-series', () => ({ useUpdateCourseSeries: () => vi.fn() }))
 

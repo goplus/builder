@@ -1,6 +1,6 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 
 import { createI18n } from '@/utils/i18n'
@@ -12,7 +12,7 @@ vi.mock('@/apis/course', () => ({ getCourse: mocks.getCourse }))
 vi.mock('@/apis/course-series', () => ({ getCourseSeries: mocks.getSeries }))
 vi.mock('@/models/tutorial/project', () => ({ TutorialProject: { load: mocks.load } }))
 vi.mock('@/stores/user', () => ({
-  useSignedInStateQuery: () => ({ data: ref({ isSignedIn: true, user: { capabilities: { canManageCourses: true } } }) })
+  useSignedIn: () => ({ getUser: async () => ({ capabilities: { canManageCourses: true } }) })
 }))
 vi.mock('@/components/course-editor/CourseEditor.vue', () => ({
   default: defineComponent({

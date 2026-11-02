@@ -8,10 +8,7 @@ import EditorPreview from './EditorPreview.vue'
 const { useEditorCtx } = vi.hoisted(() => ({ useEditorCtx: vi.fn() }))
 vi.mock('../EditorContextProvider.vue', () => ({ useEditorCtx }))
 vi.mock('@/utils/i18n', () => ({ useI18n: () => ({ t: (msg: { en: string }) => msg.en }) }))
-vi.mock('@/stores/user', async () => {
-  const { ref } = await import('vue')
-  return { useSignedInUser: () => ref(null) }
-})
+vi.mock('@/stores/user', () => ({ useSignedIn: () => ({ user: null, username: null }) }))
 vi.mock('@/utils/network', async () => {
   const { ref } = await import('vue')
   return { useNetwork: () => ({ isOnline: ref(true) }) }

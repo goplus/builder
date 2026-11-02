@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import { useRouter } from 'vue-router'
 import type { ReadinessScope } from '@/utils/readiness'
+import { useUserSessionStorage } from '@/utils/user-storage'
+import type { GuidedCourse } from '@/apis/course'
+import type { CourseSeries } from '@/apis/course-series'
 
 import { useCopilot } from '@/components/copilot/context'
 
@@ -12,7 +15,9 @@ const props = defineProps<{ routeReadiness: ReadinessScope }>()
 
 const copilot = useCopilot()
 const router = useRouter()
-const guidedTutorial = new GuidedTutorial(copilot, router, props.routeReadiness)
+const course = useUserSessionStorage<GuidedCourse | null>('spx-gui-tutorial-course', null)
+const series = useUserSessionStorage<CourseSeries | null>('spx-gui-tutorial-series', null)
+const guidedTutorial = new GuidedTutorial(copilot, router, props.routeReadiness, course, series)
 const tutorial = new Tutorial(guidedTutorial, router)
 
 provideTutorial(tutorial)

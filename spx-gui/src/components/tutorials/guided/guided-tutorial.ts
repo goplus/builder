@@ -1,9 +1,8 @@
 import { inject, provide, ref } from 'vue'
-import type { InjectionKey } from 'vue'
+import type { InjectionKey, WritableComputedRef } from 'vue'
 import { isNavigationFailure, type Router } from 'vue-router'
 
 import type { ReadinessScope } from '@/utils/readiness'
-import { userSessionStorageRef } from '@/utils/user-storage'
 import type { GuidedCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
@@ -37,13 +36,12 @@ export function isGuidedTutorialTopic(topic: Topic): topic is GuidedTutorialTopi
 }
 
 export class GuidedTutorial {
-  private course = userSessionStorageRef<GuidedCourse | null>('spx-gui-tutorial-course', null)
-  private series = userSessionStorageRef<CourseSeries | null>('spx-gui-tutorial-series', null)
-
   constructor(
     private copilot: Copilot,
     private router: Router,
-    private routeReadiness: ReadinessScope
+    private routeReadiness: ReadinessScope,
+    private course: WritableComputedRef<GuidedCourse | null>,
+    private series: WritableComputedRef<CourseSeries | null>
   ) {}
 
   get currentCourse(): CurrentCourse | null {

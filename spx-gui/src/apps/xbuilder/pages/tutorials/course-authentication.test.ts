@@ -31,14 +31,12 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/stores/user', () => ({
-  isSignedIn: () => mocks.signedIn,
-  useSignedInStateQuery: () => ({
-    data: ref({ isSignedIn: mocks.signedIn, user: null }),
-    error: ref(null),
-    isLoading: ref(false),
-    progress: ref({ percentage: 0 })
-  }),
-  useSignIn: () => mocks.signIn
+  useSignedIn: () => ({
+    get isSignedIn() {
+      return mocks.signedIn
+    },
+    signIn: mocks.signIn
+  })
 }))
 vi.mock('@/stores/course', () => ({
   useCourse: () => {

@@ -32,7 +32,7 @@ vi.mock('@/components/editor/spx-code-editor', () => ({
   CodeEditorProvider: { render: () => null },
   loadMonaco: () => Promise.resolve({})
 }))
-vi.mock('@/stores/user', () => ({ useSignedInStateQuery: () => ({ data: { value: null } }) }))
+vi.mock('@/stores/user', () => ({ useSignedIn: () => ({ user: null, username: null }) }))
 vi.mock('@/utils/network', () => ({ useNetwork: () => ({ isOnline: { value: true } }) }))
 enableAutoUnmount(afterEach)
 
