@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@shikijs/engine-javascript>oniguruma-to-es': 4.3.6
-
 importers:
 
   .:
