@@ -1,4 +1,4 @@
-import { defineComponent, h, ref, type Plugin } from 'vue'
+import { defineComponent, h, type Plugin } from 'vue'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
