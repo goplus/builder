@@ -164,8 +164,8 @@ onUnmounted(() => {
 })
 
 const cursorSnap = computed(() => {
-  if (!props.active || awaitingEnd.value || pointerPos.value == null || cursorImage.value == null) return null
-  return snap(pointerPos.value, originSnapRadius)
+  if (!props.active || pointerPos.value == null || cursorImage.value == null) return null
+  return snap(pointerPos.value, awaitingEnd.value ? endpointSnapRadius : originSnapRadius)
 })
 
 function stopCursorAnimation() {
@@ -175,7 +175,7 @@ function stopCursorAnimation() {
 }
 
 watch([cursorSnap, reducedMotion], ([next, reduce], [previous]) => {
-  if (next == null || reduce) {
+  if (next == null || reduce || awaitingEnd.value) {
     stopCursorAnimation()
     cursorPos.value = next?.pos ?? null
     return
@@ -216,7 +216,8 @@ const cursorConfig = computed<ImageConfig | null>(() => {
 })
 
 const cursorOutlineConfig = computed<PathConfig | null>(() => {
-  if (cursorConfig.value == null || cursorPos.value == null || cursorSnap.value?.target == null) return null
+  if (cursorConfig.value == null || cursorPos.value == null) return null
+  if (!awaitingEnd.value && (measurement.value != null || cursorSnap.value?.target == null)) return null
   const scale = cursorSize / 24 / props.stageScale
   return {
     ...cursorPos.value,

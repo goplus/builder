@@ -108,7 +108,7 @@ async function setup(reducedMotion = false) {
   return { wrapper, capture, move, click, cursor, outline, measurement, loadImage, advance, frames, motionPreference }
 }
 
-describe('Ruler origin preview', () => {
+describe('Ruler cursor preview', () => {
   it('follows the pointer, stays at the reference point inside the origin radius, and releases outside it', async () => {
     const { move, cursor, outline, measurement, loadImage, advance } = await setup()
     await loadImage()
@@ -137,22 +137,53 @@ describe('Ruler origin preview', () => {
     expect(cursor().props('config').x).toBeGreaterThan(100)
     expect(cursor().props('config').x).toBeLessThan(120)
     await click()
-    expect(cursor().exists()).toBe(false)
-    expect(outline().exists()).toBe(false)
+    expect(cursor().props('config')).toMatchObject({ x: 100, y: 100 })
+    expect(outline().props('config')).toMatchObject({ x: 100, y: 100 })
     expect(frames.size).toBe(0)
-    expect(wrapper.emitted('cursorPreviewChange')!.at(-1)).toEqual([false])
+    expect(wrapper.emitted('cursorPreviewChange')!.at(-1)).toEqual([true])
     await move({ x: 324, y: 100 })
     expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(cursor().props('config')).toMatchObject({ x: 300, y: 100 })
+    expect(outline().props('config')).toMatchObject({ x: 300, y: 100 })
     await move({ x: 325, y: 100 })
     expect(measurement()!.props('config').points).toEqual([100, 100, 325, 100])
+    expect(outline().props('config')).toMatchObject({ x: 325, y: 100 })
     await click()
     expect(measurement()!.props('config').points).toEqual([100, 100, 325, 100])
     expect(cursor().props('config')).toMatchObject({ x: 325, y: 100 })
+    expect(outline().exists()).toBe(false)
 
     await move({ x: 200, y: 200 })
     await click()
     await move({ x: 400, y: 200 })
     expect(measurement()!.props('config').points).toEqual([200, 200, 400, 200])
+  })
+
+  it('keeps the outline throughout a measurement and hides it between measurements, even over a target', async () => {
+    const { move, click, cursor, outline, measurement, loadImage, advance } = await setup()
+    await loadImage()
+    await move({ x: 120, y: 100 })
+    await advance(140)
+    expect(outline().exists()).toBe(true)
+    await click()
+    expect(outline().exists()).toBe(true)
+    await move({ x: 200, y: 160 })
+    expect(outline().props('config')).toMatchObject({ x: 200, y: 160 })
+    await move({ x: 320, y: 100 })
+    expect(outline().props('config')).toMatchObject({ x: 300, y: 100 })
+    await click()
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(cursor().exists()).toBe(true)
+    expect(outline().exists()).toBe(false)
+    await move({ x: 310, y: 110 })
+    expect(outline().exists()).toBe(false)
+    await move({ x: 200, y: 160 })
+    await move({ x: 120, y: 100 })
+    await advance(140)
+    expect(outline().exists()).toBe(false)
+    await click()
+    expect(measurement()).toBeUndefined()
+    expect(outline().props('config')).toMatchObject({ x: 100, y: 100 })
   })
 
   it('keeps the cursor size in screen pixels while using map-relative positions', async () => {
