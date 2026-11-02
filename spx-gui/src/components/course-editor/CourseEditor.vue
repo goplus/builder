@@ -582,6 +582,7 @@ onUnmounted(() => {
         </UIError>
         <CoursePlayground
           v-else-if="preview != null"
+          class="flex-1"
           :project-query-ret="previewProjectQueryRet"
           :router="inPreviewRouter"
           @course-completed="handlePreviewCompleted"
