@@ -3,8 +3,19 @@ import { defineComponent, nextTick } from 'vue'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import StageRuler, { type Pos } from './StageRuler.vue'
 
-async function setup() {
+async function setup(reducedMotion = false) {
   let pointer: Pos | null = null
+  let time = 0
+  let nextFrameId = 0
+  const frames = new Map<number, FrameRequestCallback>()
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frames.set(++nextFrameId, callback)
+    return nextFrameId
+  })
+  vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
+  vi.spyOn(performance, 'now').mockImplementation(() => time)
+  const motionPreference = Object.assign(new EventTarget(), { matches: reducedMotion })
+  vi.spyOn(window, 'matchMedia').mockReturnValue(motionPreference as MediaQueryList)
   const images: HTMLImageElement[] = []
   class TestImage extends Image {
     constructor() {
@@ -82,31 +93,43 @@ async function setup() {
     images[0].dispatchEvent(new Event('load'))
     await nextTick()
   }
-  return { wrapper, capture, move, click, cursor, measurement, loadImage }
+  async function advance(ms: number) {
+    time += ms
+    const callbacks = [...frames.values()]
+    frames.clear()
+    callbacks.forEach((callback) => callback(time))
+    await nextTick()
+  }
+  return { wrapper, capture, move, click, cursor, measurement, loadImage, advance, frames, motionPreference }
 }
 
 describe('Ruler origin preview', () => {
   it('follows the pointer, stays at the reference point inside the origin radius, and releases outside it', async () => {
-    const { move, cursor, measurement, loadImage } = await setup()
+    const { move, cursor, measurement, loadImage, advance } = await setup()
     await loadImage()
     await move({ x: 180, y: 100 })
     expect(cursor().props('config')).toMatchObject({ x: 180, y: 100, listening: false })
-    await move({ x: 148, y: 100 })
+    await move({ x: 124, y: 100 })
+    await advance(140)
     expect(cursor().props('config')).toMatchObject({ x: 100, y: 100 })
-    await move({ x: 120, y: 130 })
+    await move({ x: 110, y: 110 })
     expect(cursor().props('config')).toMatchObject({ x: 100, y: 100 })
-    await move({ x: 149, y: 100 })
-    expect(cursor().props('config')).toMatchObject({ x: 149, y: 100 })
+    await move({ x: 125, y: 100 })
+    await advance(80)
+    expect(cursor().props('config')).toMatchObject({ x: 125, y: 100 })
     expect(measurement()).toBeUndefined()
   })
 
-  it('starts at the previewed reference point and preserves the smaller endpoint snap radius', async () => {
-    const { wrapper, move, click, cursor, measurement, loadImage } = await setup()
+  it('uses the exact reference point when clicked during the animation and preserves endpoint snapping', async () => {
+    const { wrapper, move, click, cursor, measurement, loadImage, advance, frames } = await setup()
     await loadImage()
-    await move({ x: 140, y: 100 })
-    expect(cursor().props('config')).toMatchObject({ x: 100, y: 100 })
+    await move({ x: 120, y: 100 })
+    await advance(70)
+    expect(cursor().props('config').x).toBeGreaterThan(100)
+    expect(cursor().props('config').x).toBeLessThan(120)
     await click()
     expect(cursor().exists()).toBe(false)
+    expect(frames.size).toBe(0)
     expect(wrapper.emitted('cursorPreviewChange')!.at(-1)).toEqual([false])
     await move({ x: 324, y: 100 })
     expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
@@ -114,7 +137,7 @@ describe('Ruler origin preview', () => {
     expect(measurement()!.props('config').points).toEqual([100, 100, 325, 100])
     await click()
     expect(measurement()!.props('config').points).toEqual([100, 100, 325, 100])
-    expect(cursor().props('config')).toMatchObject({ x: 300, y: 100 })
+    expect(cursor().props('config')).toMatchObject({ x: 325, y: 100 })
 
     await move({ x: 200, y: 200 })
     await click()
@@ -123,18 +146,19 @@ describe('Ruler origin preview', () => {
   })
 
   it('keeps the cursor size in screen pixels while using map-relative positions', async () => {
-    const { wrapper, move, cursor, loadImage } = await setup()
+    const { wrapper, move, cursor, loadImage, advance } = await setup()
     await loadImage()
     await wrapper.setProps({ stageScale: 0.5 })
-    await move({ x: 140, y: 100 })
+    await move({ x: 120, y: 100 })
+    await advance(140)
     expect(cursor().props('config')).toMatchObject({ x: 100, y: 100, width: 64, height: 64 })
     await wrapper.setProps({ stageScale: 2 })
     expect(cursor().props('config')).toMatchObject({ x: 100, y: 100, width: 16, height: 16 })
   })
 
   it('only replaces the native cursor when the preview is loaded and restores it on leave, disable, and unmount', async () => {
-    const { wrapper, capture, move, cursor, loadImage } = await setup()
-    await move({ x: 140, y: 100 })
+    const { wrapper, capture, move, cursor, loadImage, frames } = await setup()
+    await move({ x: 120, y: 100 })
     expect(cursor().exists()).toBe(false)
     expect(wrapper.emitted('cursorPreviewChange')).toBeUndefined()
     await loadImage()
@@ -143,14 +167,62 @@ describe('Ruler origin preview', () => {
     await nextTick()
     expect(cursor().exists()).toBe(false)
     expect(wrapper.emitted('cursorPreviewChange')!.at(-1)).toEqual([false])
-    await move({ x: 140, y: 100 })
+    expect(frames.size).toBe(0)
+    await move({ x: 120, y: 100 })
     await wrapper.setProps({ active: false })
     expect(cursor().exists()).toBe(false)
     expect(wrapper.emitted('cursorPreviewChange')!.at(-1)).toEqual([false])
+    expect(frames.size).toBe(0)
     await wrapper.setProps({ active: true })
     expect(cursor().exists()).toBe(false)
-    await move({ x: 140, y: 100 })
+    await move({ x: 120, y: 100 })
     wrapper.unmount()
     expect(wrapper.emitted('cursorPreviewChange')!.at(-1)).toEqual([false])
+    expect(frames.size).toBe(0)
+  })
+
+  it('eases into a target without restarting on every pointer move and releases continuously', async () => {
+    const { move, cursor, loadImage, advance, frames } = await setup()
+    await loadImage()
+    await move({ x: 130, y: 100 })
+    await move({ x: 124, y: 100 })
+    expect(cursor().props('config').x).toBe(130)
+    await advance(70)
+    const halfway = cursor().props('config').x
+    expect(halfway).toBeGreaterThan(100)
+    expect(halfway).toBeLessThan(115)
+    await move({ x: 110, y: 110 })
+    await advance(70)
+    expect(cursor().props('config')).toMatchObject({ x: 100, y: 100 })
+    expect(frames.size).toBe(0)
+
+    await move({ x: 140, y: 100 })
+    expect(cursor().props('config').x).toBe(100)
+    await advance(40)
+    const releasing = cursor().props('config').x
+    expect(releasing).toBeGreaterThan(120)
+    expect(releasing).toBeLessThan(140)
+    await move({ x: 160, y: 100 })
+    await advance(40)
+    expect(cursor().props('config').x).toBe(160)
+    await move({ x: 190, y: 100 })
+    expect(cursor().props('config').x).toBe(190)
+    expect(frames.size).toBe(0)
+  })
+
+  it('interrupts a snap immediately when reduced motion is requested', async () => {
+    const { move, cursor, loadImage, advance, frames, motionPreference } = await setup()
+    await loadImage()
+    await move({ x: 124, y: 100 })
+    await advance(35)
+    expect(cursor().props('config').x).toBeGreaterThan(100)
+    motionPreference.matches = true
+    motionPreference.dispatchEvent(new Event('change'))
+    await nextTick()
+    expect(cursor().props('config')).toMatchObject({ x: 100, y: 100 })
+    expect(frames.size).toBe(0)
+    await move({ x: 125, y: 100 })
+    expect(cursor().props('config')).toMatchObject({ x: 125, y: 100 })
+    expect(frames.size).toBe(0)
   })
 })

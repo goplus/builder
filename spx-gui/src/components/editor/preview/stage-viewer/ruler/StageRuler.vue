@@ -19,8 +19,10 @@ const lineColor = rgba(color.grey[1000], 0.5)
 const labelColor = rgba(color.grey[1000], 0.5)
 const angleColor = rgba(color.blue[600], 0.8)
 
-const originSnapRadius = 48
+const originSnapRadius = 24
 const endpointSnapRadius = 24
+const originSnapDuration = 140
+const originReleaseDuration = 80
 const minAngleDistance = 12
 const angleArcRadius = 36
 const headingRayLength = angleArcRadius
@@ -64,10 +66,19 @@ const measurement = ref<{ from: Pos; fromHeading: number | null; to: Pos } | nul
 const start = ref<{ pos: Pos; heading: number | null } | null>(null)
 const awaitingEnd = ref(false)
 const pointerPos = ref<Pos | null>(null)
+const cursorPos = ref<Pos | null>(null)
 const cursorImage = shallowRef<HTMLImageElement | null>(null)
+const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+const reducedMotion = ref(motionPreference.matches)
+let cursorAnimationFrame: number | null = null
 const image = new Image()
 image.onload = () => (cursorImage.value = image)
 image.src = rulerCursorUrl
+
+function updateMotionPreference() {
+  reducedMotion.value = motionPreference.matches
+}
+motionPreference.addEventListener('change', updateMotionPreference)
 
 const distance = computed(() => {
   if (measurement.value == null) return 0
@@ -117,7 +128,9 @@ function handleMouseMove() {
 }
 
 function hideCursorPreview() {
+  stopCursorAnimation()
   pointerPos.value = null
+  cursorPos.value = null
 }
 
 function stopMeasuring() {
@@ -137,14 +150,55 @@ watch(
 
 onUnmounted(() => {
   image.onload = null
+  motionPreference.removeEventListener('change', updateMotionPreference)
   stopMeasuring()
   emit('cursorPreviewChange', false)
 })
 
-const cursorConfig = computed<ImageConfig | null>(() => {
+const cursorSnap = computed(() => {
   if (!props.active || awaitingEnd.value || pointerPos.value == null || cursorImage.value == null) return null
+  return snap(pointerPos.value, originSnapRadius)
+})
+
+function stopCursorAnimation() {
+  if (cursorAnimationFrame == null) return
+  cancelAnimationFrame(cursorAnimationFrame)
+  cursorAnimationFrame = null
+}
+
+watch([cursorSnap, reducedMotion], ([next, reduce], [previous]) => {
+  if (next == null || reduce) {
+    stopCursorAnimation()
+    cursorPos.value = next?.pos ?? null
+    return
+  }
+  if (next.target === previous?.target || (previous == null && next.target == null)) {
+    if (cursorAnimationFrame == null) cursorPos.value = next.pos
+    return
+  }
+
+  stopCursorAnimation()
+  const from = cursorPos.value ?? pointerPos.value ?? next.pos
+  const startedAt = performance.now()
+  const duration = next.target == null ? originReleaseDuration : originSnapDuration
+  cursorPos.value = from
+
+  function animate(time: number) {
+    cursorAnimationFrame = null
+    const to = cursorSnap.value?.pos
+    if (to == null) return
+    const progress = Math.min(Math.max((time - startedAt) / duration, 0), 1)
+    const eased = 1 - (1 - progress) ** 3
+    cursorPos.value = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased }
+    if (progress < 1) cursorAnimationFrame = requestAnimationFrame(animate)
+  }
+  cursorAnimationFrame = requestAnimationFrame(animate)
+})
+
+const cursorConfig = computed<ImageConfig | null>(() => {
+  if (cursorSnap.value == null || cursorPos.value == null || cursorImage.value == null) return null
   return {
-    ...snap(pointerPos.value, originSnapRadius).pos,
+    ...cursorPos.value,
     image: cursorImage.value,
     // Match the native cursor's 32px size and top-left hotspot at any stage scale.
     width: 32 / props.stageScale,
