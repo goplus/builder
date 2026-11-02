@@ -51,7 +51,7 @@ The existing table keeps its metadata and ordered `course_ids` collection, with 
 
 Kind-filtered Course Series lists retain the existing default ordering by `order` and `id`. Add an index on `(kind, order, id)` for this new query path. Existing indexes, including `(owner_id, order, id)`, remain unchanged.
 
-`units` divides a Course Series into units, in order: each element is `{"id": "<UUID>", "title": "...", "courseIDs": [<course ID>, ...]}`. The array is empty for a Series that is not divided. A unit is a titled run of the Series' Courses: when `units` is not empty, the course IDs of the units joined in unit order equal `course_ids`, so every Course of the Series is in exactly one unit, and `course_ids` stays the single order learners follow, across units. Units are not referenced on their own and are always read and written with their Series, so they live in its row rather than in a table of their own.
+`units` divides a Course Series into units, in order: each element is `{"id": "...", "title": "...", "courseIDs": [<course ID>, ...]}`. The array is empty for a Series that is not divided. A unit's ID is unique within its Series; the client that creates the unit chooses it, and it is stored as given. A unit is a titled run of the Series' Courses: when `units` is not empty, the course IDs of the units joined in unit order equal `course_ids`, so every Course of the Series is in exactly one unit, and `course_ids` stays the single order learners follow, across units. Units are not referenced on their own and are always read and written with their Series, so they live in its row rather than in a table of their own.
 
 ## Write transactions and invariants
 
@@ -64,7 +64,7 @@ Creating or updating a Course Series follows the existing course-locking order:
 3. Verify that every Course exists.
 4. Verify that every Course kind equals `course_series.kind`.
 5. Lock the Course Series row when updating it.
-6. Resolve the requested units: one naming an ID must be a current unit of the Series and keeps it; a new one is given a UUID. Requested units and `courseIDs` each replace only themselves. If the Series is divided into units after the write, refuse it unless the Courses of its units, joined in order, are its Courses.
+6. Requested units and `courseIDs` each replace only themselves. If the Series is divided into units after the write, refuse it unless the Courses of its units, joined in order, are its Courses.
 7. Write `course_ids`, `units` and other Series fields.
 
 This prevents a Course deletion or concurrent Series update from invalidating the kind check between validation and write.

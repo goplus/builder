@@ -67,12 +67,16 @@ describe('unit edits', () => {
   it('splits a unit at a course into a new unit right after it', () => {
     const split = splitUnitAt(units, 'b', 'Unit 1b')
     expect(brief(split)).toEqual(['Unit 1: a', 'Unit 1b: b', 'Unit 2: c', 'Unit 3:'])
-    expect(split[1].id).toBeUndefined()
+    expect(split[1].id).not.toBe('')
+    expect(new Set(split.map((unit) => unit.id)).size).toBe(4)
   })
 
   it('puts all courses into the first unit of a series, and adds later units empty', () => {
-    expect(addUnit([], 'Unit 1', ['a', 'b'])).toEqual([{ title: 'Unit 1', courseIDs: ['a', 'b'] }])
-    expect(brief(addUnit(units, 'Unit 4', ['a', 'b', 'c']))).toEqual(['Unit 1: a b', 'Unit 2: c', 'Unit 3:', 'Unit 4:'])
+    expect(brief(addUnit([], 'Unit 1', ['a', 'b']))).toEqual(['Unit 1: a b'])
+    const added = addUnit(units, 'Unit 4', ['a', 'b', 'c'])
+    expect(brief(added)).toEqual(['Unit 1: a b', 'Unit 2: c', 'Unit 3:', 'Unit 4:'])
+    expect(added[3].id).not.toBe('')
+    expect(new Set(added.map((unit) => unit.id)).size).toBe(4)
   })
 
   it('merges the courses of a removed unit into the unit before it, or after it for the first unit', () => {

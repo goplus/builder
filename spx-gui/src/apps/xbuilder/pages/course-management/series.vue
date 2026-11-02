@@ -7,7 +7,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useDragSortable } from '@/utils/drag-and-drop'
 import { isGuidedCourse, type Course } from '@/apis/course'
-import { getCourseSeries, type CourseSeries, type CourseSeriesUnitParams } from '@/apis/course-series'
+import { getCourseSeries, type CourseSeries, type CourseSeriesUnit } from '@/apis/course-series'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useDeleteCourse } from '@/stores/course'
 import { useDeleteCourseSeries, useSeries, useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
@@ -164,7 +164,7 @@ useDragSortable(shownCourses, listRef, {
 })
 
 /** The units as shown, which an edit changes before the server has them. */
-const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnitParams[]>(
+const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnit[]>(
   () => seriesQueryRet.data.value?.units ?? [],
   seriesWrites
 )
@@ -185,8 +185,6 @@ function openAfterEdits<T>(open: () => Promise<T>) {
 }
 
 const isDivided = computed(() => units.value.length > 0)
-/** Whether a unit is being added: it has no ID until the server answers, and a later write would add it again. */
-const isAddingUnit = computed(() => units.value.some((unit) => unit.id == null))
 
 const coursesByID = computed(() => new Map(courses.value.map((course) => [course.id, course])))
 /** The units and their courses as listed: with a search, only the courses that match, under every unit. */
@@ -200,15 +198,12 @@ const shownUnitList = computed(() =>
   )
 )
 // A course moved in a list that leaves some out would take its place among them, so only the whole list is dragged.
-const canDragUnitList = computed(
-  () => !isAddingUnit.value && shownUnitList.value.length === toUnitList(units.value).length
-)
+const canDragUnitList = computed(() => shownUnitList.value.length === toUnitList(units.value).length)
 
 const unitListRef = ref<HTMLElement>()
 
-async function writeUnits(series: CourseSeries, edited: CourseSeriesUnitParams[]) {
+async function writeUnits(series: CourseSeries, edited: CourseSeriesUnit[]) {
   try {
-    // The units the server returns give a new unit its ID.
     await editUnits(edited, async (units) => (await updateCourseSeries(series.id, toUnitsParams(units))).units)
   } catch (e) {
     refetch()
@@ -225,9 +220,9 @@ function unitsChanged() {
 }
 
 /** Where the unit is now, which an edit failing while a dialog was open may have changed. */
-function findUnitIndex(unitID: string | undefined) {
+function findUnitIndex(unitID: string) {
   const unitIndex = units.value.findIndex((unit) => unit.id === unitID)
-  if (unitID == null || unitIndex < 0) throw unitsChanged()
+  if (unitIndex < 0) throw unitsChanged()
   return unitIndex
 }
 
@@ -269,7 +264,7 @@ const handleAddUnit = useMessageHandle(
 ).fn
 
 const handleRenameUnit = useMessageHandle(
-  async (series: CourseSeries, unitID: string | undefined) => {
+  async (series: CourseSeries, unitID: string) => {
     const title = await askUnitTitle({ en: 'Rename unit', zh: '重命名单元' }, units.value[findUnitIndex(unitID)].title)
     await writeUnits(series, renameUnit(units.value, findUnitIndex(unitID), title))
   },
@@ -301,7 +296,7 @@ function describeUnitRemoval(unitIndex: number): { en: string; zh: string } {
 }
 
 const handleRemoveUnit = useMessageHandle(
-  async (series: CourseSeries, unitID: string | undefined) => {
+  async (series: CourseSeries, unitID: string) => {
     const asked = describeUnitRemoval(findUnitIndex(unitID))
     await keepPageFor(
       confirm({
@@ -332,17 +327,16 @@ const handleMoveCourseToUnit = useMessageHandle(
   { en: 'Failed to move course', zh: '移动课程失败' }
 ).fn
 
-/** The other units a course can be moved to, none while a unit is being added. */
+/** The other units a course can be moved to. */
 function getMoveTargets(courseID: string) {
-  if (isAddingUnit.value) return []
   return units.value.flatMap((unit, unitIndex) =>
     unit.courseIDs.includes(courseID) ? [] : [{ unitIndex, label: getUnitLabel(unitIndex) }]
   )
 }
 
-/** Whether a new unit can start at the course: it is not the first of its unit, and no unit is being added. */
+/** Whether a new unit can start at the course: it is not the first of its unit. */
 function canSplitAt(courseID: string) {
-  return !isAddingUnit.value && units.value.some((unit) => unit.courseIDs.indexOf(courseID) > 0)
+  return units.value.some((unit) => unit.courseIDs.indexOf(courseID) > 0)
 }
 
 function handleBack() {
@@ -536,7 +530,6 @@ const handleRemoveSeries = useMessageHandle(
           <UIButton
             v-radar="{ name: 'add-unit-button', desc: 'Click to add a unit to the series' }"
             type="secondary"
-            :disabled="isAddingUnit"
             @click="handleAddUnit(courseSeries)"
           >
             <template #icon><UIIcon type="plus" /></template>
@@ -602,7 +595,7 @@ const handleRemoveSeries = useMessageHandle(
         >
           <template
             v-for="item in shownUnitList"
-            :key="item.type === 'unit' ? `unit:${units[item.unitIndex].id ?? item.unitIndex}` : item.course.id"
+            :key="item.type === 'unit' ? `unit:${units[item.unitIndex].id}` : item.course.id"
           >
             <UnitHeaderItem
               v-if="item.type === 'unit'"
@@ -611,8 +604,7 @@ const handleRemoveSeries = useMessageHandle(
               :course-count="units[item.unitIndex].courseIDs.length"
               :can-move-up="item.unitIndex > 0"
               :can-move-down="item.unitIndex < units.length - 1"
-              :disabled="isAddingUnit"
-              @create-course="handleCreateCourse(courseSeries, units[item.unitIndex].id ?? null)"
+              @create-course="handleCreateCourse(courseSeries, units[item.unitIndex].id)"
               @rename="handleRenameUnit(courseSeries, units[item.unitIndex].id)"
               @move-up="handleMoveUnit(courseSeries, item.unitIndex, -1)"
               @move-down="handleMoveUnit(courseSeries, item.unitIndex, 1)"

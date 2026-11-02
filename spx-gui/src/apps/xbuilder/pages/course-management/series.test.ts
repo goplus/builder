@@ -47,7 +47,6 @@ function serveSeries() {
   vi.mocked(courseApis.listAllSeriesCourses).mockImplementation(async () =>
     series.courseIDs.map((id) => courses.find((course) => course.id === id)!)
   )
-  let unitCount = 0
   const writes: Array<{ params: UpdateCourseSeriesParams; answer: (ok?: boolean) => Promise<void> }> = []
   vi.mocked(courseSeriesApis.updateCourseSeries).mockImplementation(
     (_id, params) =>
@@ -57,10 +56,7 @@ function serveSeries() {
           async answer(ok = true) {
             if (!ok) reject(new Error('write failed'))
             else {
-              const units = (params.units ?? series.units).map((unit) => ({
-                ...unit,
-                id: unit.id ?? `unit-${++unitCount}`
-              }))
+              const units = params.units ?? series.units
               const courseIDs = params.courseIDs ?? series.courseIDs
               if (units.length > 0 && units.flatMap((unit) => unit.courseIDs).join() !== courseIDs.join()) {
                 reject(new Error('units do not match courseIDs'))
@@ -110,13 +106,6 @@ async function openUnitMenu(title: string) {
   await click(buttons[buttons.length - 1])
 }
 
-async function openCourseMenu(title: string) {
-  const item = [...document.body.querySelectorAll('li')].find(
-    (li) => li.textContent?.includes(title) && li.querySelector('h3') == null
-  )!
-  await click(item.querySelector('.corner-menu')!)
-}
-
 async function mountSeriesPage() {
   await signIn({ canManageCourses: true })
   const mounted = await mountPages('/course-management/space')
@@ -142,23 +131,6 @@ describe('course management series page', () => {
     await vi.waitFor(() => expect(document.body.textContent).toContain('The units have changed meanwhile'))
     expect(writes).toHaveLength(1)
     expect(getByText('h3', 'Basics')).toBeDefined()
-  })
-
-  it('takes no unit edits from the course menus until a new unit has its ID', async () => {
-    const { writes } = serveSeries()
-    await mountSeriesPage()
-
-    await click(getByText('button', 'New unit'))
-    await vi.waitFor(() => expect(document.querySelector('input[placeholder="Unit title"]')).not.toBeNull())
-    await enterTitle('input[placeholder="Unit title"]', 'Deep space')
-    await vi.waitFor(() => expect(findByText('h3', 'Deep space')).toBeDefined())
-    await openCourseMenu('First flight')
-    expect(findByText('.ui-menu-item', 'Move to Unit 2')).toBeUndefined()
-    expect(getUnitHeader('Basics').querySelector('button')!.disabled).toBe(true)
-
-    await writes[0].answer()
-    expect(findByText('.ui-menu-item', 'Move to Unit 2')).toBeDefined()
-    expect(getUnitHeader('Deep space').querySelector('button')!.disabled).toBe(false)
   })
 
   it('writes the courses of the series with its units', async () => {

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { nanoid } from 'nanoid'
 import { ProgressReporter } from '@/utils/progress'
 import { zip, unzip, type Zippable } from '@/utils/zip'
 import { extname, filename } from '@/utils/path'
@@ -26,7 +27,7 @@ import {
   listSignedInUserCourseSeries,
   type AddCourseSeriesParams,
   type CourseSeries,
-  type CourseSeriesUnitParams
+  type CourseSeriesUnit
 } from '@/apis/course-series'
 import {
   deleteProject,
@@ -447,12 +448,12 @@ function checkUnits({ units, courses }: CourseSeriesFileManifest) {
 }
 
 /** The units of the file, holding the imported courses: the course at index `i` of the file is `courseIDs[i]`. */
-function importUnits(units: CourseSeriesFileUnit[] | undefined, courseIDs: string[]): CourseSeriesUnitParams[] {
+function importUnits(units: CourseSeriesFileUnit[] | undefined, courseIDs: string[]): CourseSeriesUnit[] {
   let start = 0
   return (units ?? []).map(({ title, courseCount }) => {
     const unitCourseIDs = courseIDs.slice(start, start + courseCount)
     start += courseCount
-    return { title, courseIDs: unitCourseIDs }
+    return { id: nanoid(), title, courseIDs: unitCourseIDs }
   })
 }
 

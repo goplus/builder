@@ -3379,8 +3379,8 @@ paths:
 
         Every course named in `courseIDs` must have the series' `kind`.
 
-        A nonempty `units` divides the series into units, all of them new, so none may have an `id`. `courseIDs` must
-        then be the course IDs of the units joined in order.
+        A nonempty `units` divides the series into units. `courseIDs` must then be the course IDs of the units joined in
+        order.
 
         Permission requirements:
 
@@ -3412,7 +3412,7 @@ paths:
                   description: Units to divide the series into, in order. Omitted or empty, the series is undivided.
                   type: array
                   items:
-                    $ref: "#/components/schemas/CourseSeriesUnitInput"
+                    $ref: "#/components/schemas/CourseSeriesUnit"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
@@ -3479,11 +3479,10 @@ paths:
         The course series kind is immutable: a `kind` field is accepted only when it matches the series' current kind.
         Every course named in `courseIDs` must have that kind.
 
-        `units` replaces the units of the series. A unit with an `id` keeps it, and must be a current unit of the
-        series; one without is new, and is given an ID. `units` and `courseIDs` each change only themselves, and one
-        left out keeps its value: an empty `units` leaves the series undivided, with its courses as they are. While the
-        series is divided into units after the update, the course IDs of its units joined in order must equal its
-        `courseIDs`, whether given or kept; an update that would leave them apart is rejected.
+        `units` replaces the units of the series, each with the `id` it is given. `units` and `courseIDs` each change
+        only themselves, and one left out keeps its value: an empty `units` leaves the series undivided, with its
+        courses as they are. While the series is divided into units after the update, the course IDs of its units joined
+        in order must equal its `courseIDs`, whether given or kept; an update that would leave them apart is rejected.
 
         Permission requirements:
 
@@ -3517,7 +3516,7 @@ paths:
                   description: Units to divide the series into, in order; empty to leave it undivided.
                   type: array
                   items:
-                    $ref: "#/components/schemas/CourseSeriesUnitInput"
+                    $ref: "#/components/schemas/CourseSeriesUnit"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
@@ -8071,11 +8070,14 @@ components:
         - courseIDs
       properties:
         id:
-          description: Identifier of the unit, a UUID the server gives it when it is created.
+          description: |
+            Identifier of the unit within its series, unique there. The client that creates the unit chooses it, and it
+            is stored as given.
           type: string
-          format: uuid
+          minLength: 1
+          maxLength: 64
           examples:
-            - 9b2f3c4e-1d5a-4e8b-9c7d-2a6f0e1b3c5d
+            - V1StGXR8_Z5jdHi6B-myT
         title:
           description: Title of the unit.
           type: string
@@ -8091,20 +8093,6 @@ components:
             $ref: "#/components/schemas/Model/properties/id"
           examples:
             - ["1", "2"]
-
-    CourseSeriesUnitInput:
-      description: A unit of a course series to write. Without `id`, it is a new unit.
-      type: object
-      required:
-        - title
-        - courseIDs
-      properties:
-        id:
-          $ref: "#/components/schemas/CourseSeriesUnit/properties/id"
-        title:
-          $ref: "#/components/schemas/CourseSeriesUnit/properties/title"
-        courseIDs:
-          $ref: "#/components/schemas/CourseSeriesUnit/properties/courseIDs"
 
     FileObject:
       description: A content-addressed file object stored in Kodo.

@@ -9,8 +9,6 @@ defineProps<{
   /** Whether the unit can be moved earlier, or later. */
   canMoveUp: boolean
   canMoveDown: boolean
-  /** Whether the unit is being edited, which then waits. */
-  disabled: boolean
 }>()
 
 const emit = defineEmits<{
@@ -39,7 +37,6 @@ const emit = defineEmits<{
         v-radar="{ name: 'create-course-in-unit-button', desc: 'Click to create a course at the end of the unit' }"
         type="neutral"
         size="small"
-        :disabled="disabled"
         @click="emit('createCourse')"
       >
         <template #icon><UIIcon type="plus" /></template>
@@ -53,7 +50,6 @@ const emit = defineEmits<{
             size="small"
             shape="circle"
             icon="more"
-            :disabled="disabled"
           />
         </template>
         <UIMenu>

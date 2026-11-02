@@ -17,9 +17,7 @@ import {
   getCourseSeries,
   listSignedInUserCourseSeries,
   updateCourseSeries,
-  type CourseSeries,
-  type CourseSeriesUnit,
-  type CourseSeriesUnitParams
+  type CourseSeries
 } from '@/apis/course-series'
 import { deleteProject, getProject, ProjectType, updateProject, Visibility, type ProjectData } from '@/apis/project'
 import { createProjectRelease, type ProjectRelease } from '@/apis/project-release'
@@ -104,11 +102,6 @@ async function importCourseSeriesFileAsNew(file: File, order: number, signedInUs
 async function inspectCourseSeriesFileImport(courseSeries: CourseSeries | null, file: File, signedInUsername: string) {
   const content = await readCourseSeriesFile(file, courseSeries)
   return inspectCourseSeriesFileContent(content, courseSeries, signedInUsername)
-}
-
-/** Units as the server keeps them: a new one is given an ID. */
-function toSavedUnits(units: CourseSeriesUnitParams[]): CourseSeriesUnit[] {
-  return units.map((unit, index) => ({ ...unit, id: unit.id ?? `new-unit-${index}` }))
 }
 
 // The mocked APIs stand in for the store writes, so assertions can inspect them.
@@ -231,7 +224,7 @@ beforeEach(() => {
     id,
     owner: 'alice',
     ...params,
-    units: toSavedUnits(params.units ?? existingSeries.units)
+    units: params.units ?? existingSeries.units
   }))
   vi.mocked(addCourseSeries).mockImplementation(async (params) => ({
     id: 'created-series',
@@ -239,7 +232,7 @@ beforeEach(() => {
     createdAt: existingSeries.createdAt,
     updatedAt: existingSeries.updatedAt,
     ...params,
-    units: toSavedUnits(params.units ?? [])
+    units: params.units ?? []
   }))
   vi.mocked(deleteCourse).mockResolvedValue(undefined)
   // Read back after a failed series write: by default it did not take effect.
@@ -974,8 +967,8 @@ describe('Playground course series files', () => {
       expect.objectContaining({
         courseIDs: ['imported Course 0', 'imported Course 1', 'imported Course 2'],
         units: [
-          { title: 'Moving', courseIDs: ['imported Course 0'] },
-          { title: 'Turning', courseIDs: ['imported Course 1', 'imported Course 2'] }
+          { id: expect.any(String), title: 'Moving', courseIDs: ['imported Course 0'] },
+          { id: expect.any(String), title: 'Turning', courseIDs: ['imported Course 1', 'imported Course 2'] }
         ]
       })
     )

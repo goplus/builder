@@ -7,7 +7,7 @@ export const courseSeriesUnitTitleMaxLength = 100
 
 /** A unit of a course series: a titled run of its courses. */
 export type CourseSeriesUnit = {
-  /** Unique identifier, given by the server when the unit is created */
+  /** Identifier of the unit within its series, chosen by the client that creates the unit */
   id: string
   /** Title of the unit */
   title: string
@@ -46,14 +46,11 @@ export function getCourseSeries(id: string, signal?: AbortSignal) {
   return client.get(`/course-series/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<CourseSeries>
 }
 
-/** A unit to write: one without `id` is a new unit, which the server gives an ID. */
-export type CourseSeriesUnitParams = Pick<CourseSeriesUnit, 'title' | 'courseIDs'> & { id?: string }
-
 export type AddCourseSeriesParams = Pick<
   CourseSeries,
   'kind' | 'title' | 'thumbnail' | 'description' | 'courseIDs' | 'order'
 > & {
-  units?: CourseSeriesUnitParams[]
+  units?: CourseSeriesUnit[]
 }
 /** Fields to update; omitted fields keep their stored values. */
 export type UpdateCourseSeriesParams = Partial<
@@ -62,7 +59,7 @@ export type UpdateCourseSeriesParams = Partial<
      * Replaces the units. While the series is divided into units, their courses joined in unit order must be its
      * courses, whether given in `courseIDs` or kept.
      */
-    units: CourseSeriesUnitParams[]
+    units: CourseSeriesUnit[]
   }
 >
 
