@@ -48,9 +48,11 @@ export interface TutorialFrameworkHost {
     started(): Promise<void>;
   };
   course: {
-    showPrelude(preludeMessage: string): Promise<void>;
-    showMessage(message: string): Promise<void>;
-    showVideo(videoName: string): Promise<void>;
+    /** One dialog with Next between pages; buttonText applies to the last page.
+     * null selects Continue. Actions only resume the Course program. */
+    showPrelude(messages: string[], buttonText: string | null): Promise<void>;
+    showMessage(message: string, buttonText: string | null): Promise<void>;
+    showVideo(videoName: string, buttonText: string | null): Promise<void>;
     complete(): Promise<void>;
     completeWith(message: string): Promise<void>;
   };
@@ -91,7 +93,9 @@ type Framework = { name: string; capabilities: Record<string, Capability> };
 // the Go side serializes (tutorial.go / editor.go / copilot.go /
 // spotlight.go). Changing either side requires changing the other.
 type ContentRequest = { content: string };
-type VideoRequest = { videoName: string };
+type PreludeRequest = { messages: string[]; buttonText: string | null };
+type MessageRequest = { content: string; buttonText: string | null };
+type VideoRequest = { videoName: string; buttonText: string | null };
 type SpriteRequest = { sprite: string };
 type FilterAPIsRequest = { apis: string[] };
 type GenerateJSONRequest = { content: string; schema: JSONSchema };
@@ -120,11 +124,20 @@ export function createTutorialFramework(
       lifecycle_waitForHostReady: () => host.lifecycle.waitForHostReady(),
       lifecycle_started: () => host.lifecycle.started(),
       course_showPrelude: (request) =>
-        host.course.showPrelude((request as ContentRequest).content),
+        host.course.showPrelude(
+          (request as PreludeRequest).messages,
+          (request as PreludeRequest).buttonText,
+        ),
       course_showMessage: (request) =>
-        host.course.showMessage((request as ContentRequest).content),
+        host.course.showMessage(
+          (request as MessageRequest).content,
+          (request as MessageRequest).buttonText,
+        ),
       course_showVideo: (request) =>
-        host.course.showVideo((request as VideoRequest).videoName),
+        host.course.showVideo(
+          (request as VideoRequest).videoName,
+          (request as VideoRequest).buttonText,
+        ),
       course_complete: () => host.course.complete(),
       course_completeWith: (request) =>
         host.course.completeWith((request as ContentRequest).content),

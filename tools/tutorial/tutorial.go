@@ -115,31 +115,72 @@ func (p *Course) NewRunGroup(policy RunPolicy) RunGroup {
 	return &runGroup{courseProgram: &p.courseProgram, policy: policy}
 }
 
-// ShowPrelude presents the opening task guide and returns once the learner
-// finishes reading it.
-func (p *Course) ShowPrelude(preludeMessage string) {
-	p.courseProgram.mustCallCapability("course_showPrelude", contentRequest{Content: preludeMessage}, nil)
+// ShowPrelude__0 presents one opening guide with the default button text.
+func (p *Course) ShowPrelude__0(message string) {
+	p.ShowPrelude__2([]string{message})
 }
 
-// ShowMessage presents the given message and returns once the learner finishes
-// reading it, so Course code can express successive steps sequentially.
-func (p *Course) ShowMessage(message string) {
-	p.courseProgram.mustCallCapability("course_showMessage", contentRequest{Content: message}, nil)
+// ShowPrelude__1 presents one opening guide with custom button text.
+func (p *Course) ShowPrelude__1(message string, buttonText string) {
+	p.ShowPrelude__3([]string{message}, buttonText)
 }
 
-// ShowVideo presents a Course-local explanatory video and returns once the
-// learner finishes watching it. The host determines how viewing completion
-// is established.
-//
-// videoName is a declared video resource name, not a file path: videos are
-// declared as assets/videos/<name>/index.json and the author writes
-// showVideo "step-to". That lets the Course language service check while the
-// Course is being written that the video exists and its name is not
-// misspelled, rather than failing once the Course runs.
-func (p *Course) ShowVideo(videoName string) {
+// ShowPrelude__2 presents opening guides as pages of one dialog.
+func (p *Course) ShowPrelude__2(messages []string) {
+	p.courseProgram.requireRun("showing a prelude")
+	if len(messages) == 0 {
+		panic(fmt.Errorf("showPrelude requires at least one message"))
+	}
+	p.courseProgram.mustCallCapability("course_showPrelude", struct {
+		Messages   []string `json:"messages"`
+		ButtonText *string  `json:"buttonText"`
+	}{Messages: messages}, nil)
+}
+
+// ShowPrelude__3 customizes the final page's button; earlier pages use Next.
+func (p *Course) ShowPrelude__3(messages []string, buttonText string) {
+	p.courseProgram.requireRun("showing a prelude")
+	if len(messages) == 0 {
+		panic(fmt.Errorf("showPrelude requires at least one message"))
+	}
+	p.courseProgram.mustCallCapability("course_showPrelude", struct {
+		Messages   []string `json:"messages"`
+		ButtonText *string  `json:"buttonText"`
+	}{Messages: messages, ButtonText: &buttonText}, nil)
+}
+
+// ShowMessage__0 presents a message with the default Continue button.
+func (p *Course) ShowMessage__0(message string) {
+	p.courseProgram.mustCallCapability("course_showMessage", struct {
+		Content    string  `json:"content"`
+		ButtonText *string `json:"buttonText"`
+	}{Content: message}, nil)
+}
+
+// ShowMessage__1 presents a message with custom button text.
+func (p *Course) ShowMessage__1(message string, buttonText string) {
+	p.courseProgram.mustCallCapability("course_showMessage", struct {
+		Content    string  `json:"content"`
+		ButtonText *string `json:"buttonText"`
+	}{Content: message, ButtonText: &buttonText}, nil)
+}
+
+// ShowVideo__0 presents a Course-local video and waits for learner confirmation.
+// videoName addresses assets/videos/<name>/index.json, not a file path.
+// The button defaults to Continue.
+func (p *Course) ShowVideo__0(videoName string) {
 	p.courseProgram.mustCallCapability("course_showVideo", struct {
-		VideoName string `json:"videoName"`
+		VideoName  string  `json:"videoName"`
+		ButtonText *string `json:"buttonText"`
 	}{VideoName: videoName}, nil)
+}
+
+// ShowVideo__1 presents a video with custom button text; it does not run the learner's project.
+func (p *Course) ShowVideo__1(videoName string, buttonText string) {
+	p.courseProgram.mustCallCapability("course_showVideo", struct {
+		VideoName  string  `json:"videoName"`
+		ButtonText *string `json:"buttonText"`
+	}{VideoName: videoName, ButtonText: &buttonText}, nil)
 }
 
 // Wait pauses the calling callback for the given number of seconds while

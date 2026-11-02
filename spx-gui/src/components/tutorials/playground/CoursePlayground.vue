@@ -82,16 +82,16 @@ const openMessage = useModal(CoursePlaygroundMessageModal)
 const openVideo = useModal(CoursePlaygroundVideoModal)
 
 const presentation = {
-  showPrelude(content: string, signal: AbortSignal) {
-    return openMessage({ content, kind: 'prelude' }, { signal })
+  showPrelude(messages: string[], buttonText: string | null, signal: AbortSignal) {
+    return openMessage({ contents: messages, buttonText, kind: 'prelude' }, { signal })
   },
-  showMessage(content: string, signal: AbortSignal) {
-    return openMessage({ content, kind: 'message' }, { signal })
+  showMessage(content: string, buttonText: string | null, signal: AbortSignal) {
+    return openMessage({ contents: [content], buttonText, kind: 'message' }, { signal })
   },
-  showVideo(videoName: string, signal: AbortSignal) {
+  showVideo(videoName: string, buttonText: string | null, signal: AbortSignal) {
     const video = session.value?.project.videos.find((video) => video.name === videoName)
     if (video == null) throw new Error(`Video ${videoName} not found`)
-    return openVideo({ video }, { signal })
+    return openVideo({ video, buttonText }, { signal })
   },
   async revealSpotlight(target: string, tip: string, options: SpotlightOptions) {
     const node = radar.select(target)

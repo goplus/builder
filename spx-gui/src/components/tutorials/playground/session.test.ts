@@ -554,42 +554,55 @@ describe('PlaygroundCourseSession', () => {
     expect(formatted).toHaveBeenCalledOnce()
   })
 
+  it('forwards presentation pages and explicit action labels', async () => {
+    const harness = makeHarness()
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    await capabilities.course_showPrelude({ messages: ['First', 'Second'], buttonText: 'Next' })
+    await capabilities.course_showMessage({ content: 'Hint', buttonText: 'Continue reading' })
+    await capabilities.course_showVideo({ videoName: 'intro', buttonText: 'Start' })
+    expect(harness.presentation.showPrelude).toHaveBeenCalledWith(['First', 'Second'], 'Next', expect.any(AbortSignal))
+    expect(harness.presentation.showMessage).toHaveBeenCalledWith('Hint', 'Continue reading', expect.any(AbortSignal))
+    expect(harness.presentation.showVideo).toHaveBeenCalledWith('intro', 'Start', expect.any(AbortSignal))
+  })
+
   it('opens overlapping presentations directly and cancels them at completion', async () => {
     const harness = makeHarness()
     harness.presentation.showPrelude.mockImplementationOnce(
-      (_content: string, signal: AbortSignal) =>
+      (_content: unknown, _buttonText: string | null, signal: AbortSignal) =>
         new Promise<void>((_resolve, reject) =>
           signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
         )
     )
     harness.presentation.showMessage.mockImplementationOnce(
-      (_content: string, signal: AbortSignal) =>
+      (_content: unknown, _buttonText: string | null, signal: AbortSignal) =>
         new Promise<void>((_resolve, reject) =>
           signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
         )
     )
     const capabilities = harness.getExecutorOptions().framework!.capabilities
-    const prelude = capabilities.course_showPrelude({ content: 'Opening' })
-    const message = capabilities.course_showMessage({ content: 'Hint' })
+    const prelude = capabilities.course_showPrelude({ messages: ['Opening'], buttonText: null })
+    const message = capabilities.course_showMessage({ content: 'Hint', buttonText: null })
     expect(harness.presentation.showPrelude).toHaveBeenCalledOnce()
     expect(harness.presentation.showMessage).toHaveBeenCalledOnce()
     const cancelled = Promise.allSettled([prelude, message])
     await capabilities.course_complete(null)
     expect((await cancelled).map((result) => result.status)).toEqual(['rejected', 'rejected'])
-    await expect(capabilities.course_showVideo({ videoName: 'step-to' })).rejects.toThrow('cancelled')
+    await expect(capabilities.course_showVideo({ videoName: 'step-to', buttonText: null })).rejects.toThrow('cancelled')
     expect(harness.presentation.showVideo).not.toHaveBeenCalled()
   })
 
   it('delegates named videos and settles active presentation when disposed', async () => {
     const harness = makeHarness()
     harness.presentation.showVideo.mockImplementationOnce(
-      (_name: string, signal: AbortSignal) =>
+      (_name: string, _buttonText: string | null, signal: AbortSignal) =>
         new Promise<void>((_resolve, reject) =>
           signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })
         )
     )
-    const call = harness.getExecutorOptions().framework!.capabilities.course_showVideo({ videoName: 'step-to' })
-    expect(harness.presentation.showVideo).toHaveBeenCalledWith('step-to', expect.any(AbortSignal))
+    const call = harness
+      .getExecutorOptions()
+      .framework!.capabilities.course_showVideo({ videoName: 'step-to', buttonText: null })
+    expect(harness.presentation.showVideo).toHaveBeenCalledWith('step-to', null, expect.any(AbortSignal))
     const cancelled = expect(call).rejects.toThrow('cancelled')
     harness.courseSession.dispose()
     await cancelled

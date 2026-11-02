@@ -97,15 +97,23 @@ type CourseAbilities interface {
 	// independently. Opening steps that must happen in order belong in one
 	// callback.
 	onStart(callback func())
-	// showPrelude presents the Course opening guide with the given message and
-	// returns after the learner finishes reading it.
+	// showPrelude presents one opening guide or a non-empty list as pages of one
+	// dialog, and returns after the final page. Additional XGo overloads:
+	// showPrelude(messages []string)
+	// showPrelude(message string, buttonText string)
+	// showPrelude(messages []string, buttonText string)
+	// Intermediate actions use Next; buttonText applies only to the final page.
+	// Omitted text defaults to Continue. Actions resume the course without running
+	// the learner's project. These dialogs disable Escape and backdrop dismissal.
 	showPrelude(preludeMessage string)
-	// showMessage presents the given message and returns after the learner
-	// finishes reading it.
+	// showMessage presents a message and waits for learner confirmation.
+	// Additional overload: showMessage(message string, buttonText string).
+	// Omitted button text defaults to Continue.
 	showMessage(message string)
-	// showVideo presents the Course-local video with the given declared resource
-	// name and returns after the learner finishes watching it. The host determines
-	// how viewing completion is established.
+	// showVideo presents the Course-local video with the given resource name and
+	// waits for learner confirmation. The host determines viewing completion.
+	// Additional overload: showVideo(videoName string, buttonText string).
+	// Omitted button text defaults to Continue.
 	showVideo(videoName string)
 	// wait pauses the calling callback for the given number of seconds; other
 	// runs proceed meanwhile. Zero or negative seconds return at once. Pause

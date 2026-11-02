@@ -9,6 +9,7 @@ import { UIButton, UIError, UIIcon, UILoading, UIModal } from '@/components/ui'
 const props = defineProps<{
   visible: boolean
   video: Video
+  buttonText: string | null
 }>()
 
 const emit = defineEmits<{
@@ -81,6 +82,7 @@ onBeforeUnmount(() => {
     :visible="visible"
     size="large"
     :mask-closable="false"
+    :close-on-esc="false"
     :radar="{ name: 'course-video', desc: 'Course-local instructional video' }"
     @update:visible="dismiss"
   >
@@ -134,7 +136,7 @@ onBeforeUnmount(() => {
         size="large"
         @click="dismiss"
       >
-        {{ $t({ en: 'Continue', zh: '继续' }) }}
+        {{ buttonText ?? $t({ en: 'Continue', zh: '继续' }) }}
       </UIButton>
     </div>
   </UIModal>

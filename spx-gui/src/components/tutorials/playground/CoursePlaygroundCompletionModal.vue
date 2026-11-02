@@ -41,6 +41,7 @@ function dismiss() {
     size="small"
     class="w-111!"
     :mask-closable="false"
+    :close-on-esc="false"
     :radar="{ name: 'course-completion', desc: 'Course completion and next Course actions' }"
     @update:visible="dismiss"
   >

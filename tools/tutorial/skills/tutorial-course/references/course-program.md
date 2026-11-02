@@ -591,3 +591,21 @@ exceptions do not stop the course: a well-formed spotlight selector that current
 Copilot generation, which `generateText` and `generateJSON` return as an error (see
 [When generation fails](#when-generation-fails)). Generation fails for reasons outside the course, so a course that
 stopped on it would lose the learner's progress for nothing they or the author did.
+
+### Presentation pages and button text
+
+`showPrelude` accepts one string or a non-empty list of strings. A list is shown
+as pages inside one dialog. Intermediate pages use Next. All three presentation
+calls accept an optional final button text; omitted text defaults to Continue.
+The text is displayed in the course's language, without translation. Choose Next
+while more introduction remains and Start when independent work begins. Start
+only dismisses the presentation and resumes the course; it does not run the project.
+These blocking dialogs have no close button and cannot be dismissed by Escape or
+a backdrop click. Learners advance using their action buttons.
+
+```go
+onStart => {
+ showPrelude ["Read the task", "Look at the example"], "Next"
+ showVideo "step-to", "Start"
+}
+```

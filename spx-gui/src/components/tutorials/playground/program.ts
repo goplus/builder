@@ -12,9 +12,9 @@ import type { APIWhitelist } from './api-whitelist'
 import type { Ruler } from './ruler'
 
 export type PlaygroundCoursePresentation = {
-  showPrelude(content: string, signal: AbortSignal): Promise<void>
-  showMessage(content: string, signal: AbortSignal): Promise<void>
-  showVideo(videoName: string, signal: AbortSignal): Promise<void>
+  showPrelude(messages: string[], buttonText: string | null, signal: AbortSignal): Promise<void>
+  showMessage(content: string, buttonText: string | null, signal: AbortSignal): Promise<void>
+  showVideo(videoName: string, buttonText: string | null, signal: AbortSignal): Promise<void>
   revealSpotlight(target: string, tip: string, options: SpotlightOptions): Promise<void>
 }
 
@@ -90,17 +90,17 @@ export class PlaygroundCourseProgram extends Disposable {
         }
       },
       course: {
-        showPrelude: async (content) => {
+        showPrelude: async (messages, buttonText) => {
           if (signal.aborted) throw new Cancelled(signal.reason)
-          await presentation.showPrelude(content, signal)
+          await presentation.showPrelude(messages, buttonText, signal)
         },
-        showMessage: async (content) => {
+        showMessage: async (content, buttonText) => {
           if (signal.aborted) throw new Cancelled(signal.reason)
-          await presentation.showMessage(content, signal)
+          await presentation.showMessage(content, buttonText, signal)
         },
-        showVideo: async (videoName) => {
+        showVideo: async (videoName, buttonText) => {
           if (signal.aborted) throw new Cancelled(signal.reason)
-          await presentation.showVideo(videoName, signal)
+          await presentation.showVideo(videoName, buttonText, signal)
         },
         complete: async () => this.acceptCompletion(null),
         completeWith: async (content) => this.acceptCompletion(content)

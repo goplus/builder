@@ -206,6 +206,22 @@ describe('UIModal', () => {
       expect(modal.emitted('update:visible')).toEqual([[false]])
     })
 
+    it('disables Escape and mask dismissal for a blocking modal', async () => {
+      const wrapper = mountWithModalProvider(
+        defineComponent({
+          setup: () => () =>
+            h(ModalTestProvider, null, {
+              default: () => h(UIModal, { visible: true, closeOnEsc: false, maskClosable: false })
+            })
+        })
+      )
+      await flushModal()
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger('click')
+      await flushModal()
+      expect(wrapper.findComponent(UIModal).emitted('update:visible')).toBeUndefined()
+    })
+
     it('closes on Escape when the key event originates from inside the modal', async () => {
       const wrapper = mountWithModalProvider(
         defineComponent({
