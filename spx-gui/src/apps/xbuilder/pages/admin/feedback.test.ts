@@ -37,8 +37,15 @@ describe('admin feedback', () => {
     await router.push('/admin/feedback/1')
     await vi.waitFor(() => expect(wrapper.text()).toContain('After I renamed the sprite'))
     expect(wrapper.text()).toContain('Space (unsaved)')
-    expect(wrapper.text()).toContain('undefined: move')
-    expect(wrapper.text()).toContain('Rocket panicked')
+    const details = wrapper.findAll('details')
+    expect(details.map((d) => d.get('summary').text())).toEqual([
+      'Code errors and warnings (1)',
+      'Runtime output (1)',
+      'View raw data'
+    ])
+    expect(details.every((d) => !(d.element as HTMLDetailsElement).open)).toBe(true)
+    expect(details[0].text()).toContain('undefined: move')
+    expect(details[1].text()).toContain('Rocket panicked')
     await wrapper
       .findAll('button')
       .find((button) => button.text() === 'Mark as handled')!
