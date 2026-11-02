@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
+import { readVideoDimensions } from '@/utils/video'
 import { createI18n } from '@/utils/i18n'
-import { fromConfig, fromText, type Files } from '@/models/common/file'
+import { fromConfig, fromText, toConfig, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -16,6 +17,8 @@ import { useScopedRouterWithPathParam } from '@/utils/route'
 import { CodeChangeKind } from '@/components/xgo-code-editor'
 import { TutorialCodeEditorProject } from './code-editor'
 import CourseEditor from './CourseEditor.vue'
+
+vi.mock('@/utils/video', () => ({ readVideoDimensions: vi.fn().mockResolvedValue(null) }))
 
 const courseEditorRouteName = 'course-editor'
 const courseEditorRoutes = [
@@ -568,6 +571,40 @@ describe('CourseEditor unsaved changes', () => {
 })
 
 describe('CourseEditor saving', () => {
+  beforeEach(() => mocks.updateCourse.mockClear())
+
+  it('refreshes dimensions when an existing video file is replaced', async () => {
+    vi.mocked(readVideoDimensions).mockResolvedValue({ width: 480, height: 640 })
+    const course = makeCourse('2338', 'First')
+    const { project } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+    const { Video } = await import('@/models/tutorial/video')
+    const video = new Video('intro', fromText('intro.mp4', 'video'), { width: 1920, height: 1080 })
+    project.addVideo(video)
+    await flushPromises()
+    video.setFile(fromText('portrait.mp4', 'portrait'))
+    await flushPromises()
+    expect(video.aspectRatio).toBe(3 / 4)
+  })
+  it.each([null, { width: 640, height: 480 }])(
+    'saves legacy videos after best-effort metadata extraction: %j',
+    async (dimensions) => {
+      vi.mocked(readVideoDimensions).mockResolvedValue(dimensions)
+      const course = makeCourse('2338', 'First')
+      const { project } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+      const { Video } = await import('@/models/tutorial/video')
+      project.addVideo(new Video('legacy', fromText('legacy.mp4', 'video')))
+      mocks.saveFiles.mockResolvedValue({ fileCollection: {}, fileCollectionHash: 'hash' })
+      mocks.updateCourse.mockResolvedValue(course)
+      await flushPromises()
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }))
+      await flushPromises()
+      const files = mocks.saveFiles.mock.calls.at(-1)![0]
+      const manifest = await toConfig(files['assets/videos/legacy/index.json'])
+      expect(manifest).toMatchObject(dimensions ?? { path: 'legacy.mp4' })
+      expect(mocks.updateCourse).toHaveBeenCalled()
+    }
+  )
+
   it('takes the title, thumbnail and update time the server answers with', async () => {
     const course = makeCourse('2338', 'First')
     const { project } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })

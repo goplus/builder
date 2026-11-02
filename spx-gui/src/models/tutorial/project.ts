@@ -216,6 +216,7 @@ function keepExisting<T extends Video | Image>(loaded: T[], existing: T[]) {
     const [kept] = left.splice(index, 1)
     kept.setName(item.name)
     kept.setFile(item.file)
+    if (kept instanceof Video && item instanceof Video) kept.setDimensions(item.width, item.height)
     return kept
   })
 }

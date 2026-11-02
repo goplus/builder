@@ -85,7 +85,10 @@ onBeforeUnmount(() => {
     @update:visible="dismiss"
   >
     <div class="flex flex-col items-center gap-5 p-6">
-      <div class="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-grey-300">
+      <div
+        class="relative flex items-center justify-center overflow-hidden rounded-md bg-grey-300"
+        :style="{ aspectRatio: video.aspectRatio, width: `min(100%, calc(65vh * ${video.aspectRatio}))` }"
+      >
         <UIError v-if="failed" class="p-6" :retry="load">
           {{ $t({ en: 'Failed to play the Course video', zh: '课程视频播放失败' }) }}
         </UIError>

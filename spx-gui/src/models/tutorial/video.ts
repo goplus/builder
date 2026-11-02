@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import { computed, reactive, toValue, type ComputedRef } from 'vue'
 
+import { readVideoDimensions } from '@/utils/video'
 import { extname, join, resolve } from '@/utils/path'
 import { fromConfig, listDirs, toConfig, type File, type Files } from '@/models/common/file'
 
@@ -9,6 +10,8 @@ import type { TutorialProject } from './project'
 
 export type VideoInits = {
   id?: string
+  width?: number
+  height?: number
 }
 
 export type RawVideoConfig = Omit<VideoInits, 'id'> & {
@@ -34,9 +37,33 @@ export class Video {
     this.name = name
   }
 
+  width: number | null
+  height: number | null
+
+  get aspectRatio() {
+    return isValidVideoDimensions(this.width, this.height) ? this.width! / this.height! : 16 / 9
+  }
+
+  setDimensions(width: number | null, height: number | null) {
+    const valid = isValidVideoDimensions(width, height)
+    this.width = valid ? width : null
+    this.height = valid ? height : null
+  }
+
+  async ensureDimensions(signal?: AbortSignal) {
+    if (isValidVideoDimensions(this.width, this.height)) return
+    const file = this.file
+    const dimensions = await readVideoDimensions(file, signal)
+    if (this.file === file && !signal?.aborted && dimensions != null) {
+      this.setDimensions(dimensions.width, dimensions.height)
+    }
+  }
+
   file: File
   setFile(file: File) {
+    if (this.file === file) return
     this.file = file
+    this.setDimensions(null, null)
   }
 
   /** The payload is stored under the video's name, keeping its own extension. */
@@ -51,9 +78,16 @@ export class Video {
     this.id = inits?.id ?? nanoid()
     this.name = name
     this.file = file
+    this.width = null
+    this.height = null
+    this.setDimensions(inits?.width ?? null, inits?.height ?? null)
     const reactiveThis = reactive(this) as this
     this.configFile = computed(() => {
       const config: RawVideoConfig = { path: reactiveThis.filename, builder_id: reactiveThis.id }
+      if (isValidVideoDimensions(reactiveThis.width, reactiveThis.height)) {
+        config.width = reactiveThis.width!
+        config.height = reactiveThis.height!
+      }
       return fromConfig(videoConfigFileName, config)
     })
     return reactiveThis
@@ -63,11 +97,11 @@ export class Video {
     const pathPrefix = join(videoAssetPath, name)
     const configFile = files[join(pathPrefix, videoConfigFileName)]
     if (configFile == null) return null
-    const { builder_id: id, path } = (await toConfig(configFile)) as RawVideoConfig
+    const { builder_id: id, path, width, height } = (await toConfig(configFile)) as RawVideoConfig
     if (path == null) throw new Error(`path expected for video ${name}`)
     const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for video ${name} not found`)
-    return new Video(name, file, { id })
+    return new Video(name, file, { id, width, height })
   }
 
   static async loadAll(files: Files) {
@@ -83,4 +117,15 @@ export class Video {
       [join(assetPath, this.filename)]: this.file
     }
   }
+}
+
+function isValidVideoDimensions(width: number | null, height: number | null) {
+  return (
+    typeof width === 'number' &&
+    Number.isInteger(width) &&
+    width > 0 &&
+    typeof height === 'number' &&
+    Number.isInteger(height) &&
+    height > 0
+  )
 }

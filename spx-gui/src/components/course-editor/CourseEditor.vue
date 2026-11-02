@@ -7,6 +7,7 @@ import { isEqual } from 'lodash'
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
+import { getCleanupSignal } from '@/utils/disposable'
 import { createResolvedQueryRet } from '@/utils/query'
 import { makeChildScopedRouter, path2PathSegments, type IScopedRouter, type PathSegments } from '@/utils/route'
 import { useI18n } from '@/utils/i18n'
@@ -88,6 +89,18 @@ const history = new History({
 
 const codeEditorQuery = useCourseCodeEditor(() => props.project, history)
 
+watch(
+  () => props.project.videos.map((video) => ({ video, file: video.file })),
+  (current, previous, onCleanup) => {
+    const signal = getCleanupSignal(onCleanup)
+    for (const { video, file } of current) {
+      if (previous.some((entry) => entry.video === video && entry.file !== file)) {
+        void video.ensureDimensions(signal)
+      }
+    }
+  }
+)
+
 const editPathPrefix = 'edit'
 const previewPathPrefix = 'preview'
 
@@ -147,6 +160,10 @@ const dirtyViews = computed(() => getDirtyViews(changedPaths.value, config.value
 let saveController: AbortController | null = null
 
 async function save(signal: AbortSignal) {
+  await props.project.runExclusive(() =>
+    Promise.all(props.project.videos.map((video) => video.ensureDimensions(signal)))
+  )
+  signal.throwIfAborted()
   // Unlike `exportFiles()`, `export()` waits for in-flight transactions of the course and its embedded project.
   const { files } = await props.project.export()
   const savedRevision = revision.value

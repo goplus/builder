@@ -52,8 +52,11 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
       </div>
       <video
         v-if="isVideo && videoUrl != null"
-        class="w-full rounded bg-black"
-        style="max-height: 70vh"
+        class="mx-auto rounded bg-black object-contain"
+        :style="{
+          aspectRatio: resource instanceof Video ? resource.aspectRatio : 16 / 9,
+          width: `min(100%, calc(65vh * ${resource instanceof Video ? resource.aspectRatio : 16 / 9}))`
+        }"
         crossorigin="anonymous"
         :src="videoUrl"
         controls
