@@ -124,6 +124,26 @@ describe('admin feedback', () => {
     expect(feedbackAdminApis.updateFeedback).toHaveBeenCalledTimes(1)
   })
 
+  it('opens the project snapshot shared with the feedback', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(
+      makeFeedback({
+        context: {
+          source: 'profileMenu',
+          page: { path: '/editor/alice/space', language: 'en' },
+          projectSnapshotUrl: 'kodo://test/files/project-snapshot.json'
+        }
+      })
+    )
+
+    const { wrapper, router } = await mountPages('/admin/feedback/1')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('After I renamed the sprite'))
+    await wrapper.get('[aria-label="Open project snapshot"]').trigger('click')
+
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/project-snapshot'))
+    expect(router.currentRoute.value.query.url).toBe('kodo://test/files/project-snapshot.json')
+  })
+
   it('shows that the user did not share page state', async () => {
     await signIn({ canManageFeedback: true })
     vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(makeFeedback())

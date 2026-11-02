@@ -365,7 +365,8 @@ async function getExistingKodoUrl(file: File, data: ArrayBuffer, signal?: AbortS
 
 const saveToKodoController = new ConcurrencyLimitController(20)
 
-const saveToKodo = (file: File, signal?: AbortSignal) =>
+/** Save file to Kodo and return its universal URL. Unlike `saveFile`, small text files are not inlined. */
+export const saveToKodo = (file: File, signal?: AbortSignal) =>
   saveToKodoController.run<UniversalUrl>(async () => {
     const ab = await file.arrayBuffer(signal)
     if (ab.byteLength >= minFileSizeForExistingCheck) {

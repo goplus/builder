@@ -38,22 +38,17 @@ class LocalCache implements ILocalCache {
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRouter, type LocationQueryValue } from 'vue-router'
 import { useSignedIn } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
-import {
-  getProjectEditorRouteParams,
-  isSameProjectIdentifier,
-  toProjectIdentifier,
-  type ProjectIdentifier
-} from '@/utils/project-route'
+import { getProjectEditorRouteParams, isSameProjectIdentifier, toProjectIdentifier } from '@/utils/project-route'
 import { composeQuery, useQuery } from '@/utils/query'
 import { UIDetailedLoading, UIError, useConfirmDialogWithResult, useMessage } from '@/components/ui'
 import { type LocaleMessage, useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
-import { Exception } from '@/utils/exception'
+import { DefaultException, Exception } from '@/utils/exception'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
@@ -61,24 +56,28 @@ import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-edi
 import { usePublishProject } from '@/components/project'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
+import { loadProjectSnapshot, projectSnapshotUrlSchema } from '@/components/feedback/project-snapshot'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers, type LocalHelpers } from '@/models/common/local'
 import type { ProjectSerialized } from '@/models/project'
 import { SpxProject } from '@/models/spx/project'
 
 const props = defineProps<{
-  ownerNameInput: string
-  projectNameInput: string
+  ownerNameInput?: string
+  projectNameInput?: string
+  /** URL of the Project Snapshot to open when the route does not identify a cloud project. */
+  projectSnapshotUrlInput?: LocationQueryValue | LocationQueryValue[]
 }>()
 const localCache = new LocalCache(localHelpers)
 
 const signedIn = useSignedIn()
 
 const router = useRouter()
-const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
-  owner: props.ownerNameInput,
-  name: props.projectNameInput
-}))
+const routeProjectIdentifier = computed(() => toProjectIdentifier(props.ownerNameInput, props.projectNameInput))
+const projectSnapshotUrl = computed(() => {
+  const result = projectSnapshotUrlSchema.safeParse(props.projectSnapshotUrlInput)
+  return result.success ? result.data : null
+})
 
 const confirm = useConfirmDialogWithResult()
 const i18n = useI18n()
@@ -107,8 +106,8 @@ const stateQueryRet = useQuery(
   async (ctx) => {
     // We need to access route deps synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const ownerInput = routeProjectIdentifier.value.owner
-    const projectNameInput = routeProjectIdentifier.value.name
+    const projectIdentifier = routeProjectIdentifier.value
+    const snapshotUrl = projectSnapshotUrl.value
 
     // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause infinite loop of query fetching.
     // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
@@ -120,16 +119,28 @@ const stateQueryRet = useQuery(
     ctx.signal.throwIfAborted()
     const state = new EditorState(i18n, project, isOnline, signedIn, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
-    await state.editing.loadProject(
-      ownerInput,
-      projectNameInput,
-      {
-        confirmOpenTargetWithAnotherInCache,
-        openProject
-      },
-      ctx.reporter,
-      ctx.signal
-    )
+    if (projectIdentifier != null) {
+      await state.editing.loadProject(
+        projectIdentifier.owner,
+        projectIdentifier.name,
+        {
+          confirmOpenTargetWithAnotherInCache,
+          openProject
+        },
+        ctx.reporter,
+        ctx.signal
+      )
+    } else {
+      // A Project Snapshot has no owner, so its edits stay in EffectFree mode and are never saved or cached.
+      if (snapshotUrl == null)
+        throw new DefaultException({ en: 'The project snapshot link is invalid', zh: '项目快照链接无效' })
+      ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
+      const files = await loadProjectSnapshot(snapshotUrl, ctx.signal)
+      project.setMetadata({ displayName: t({ en: 'Project snapshot', zh: '项目快照' }) })
+      await project.loadFiles(files)
+      ctx.signal.throwIfAborted()
+      ctx.reporter.report(1)
+    }
     state.editing.startEditing()
     state.syncWithRouter(router)
     return state
@@ -144,6 +155,7 @@ const currentProjectIdentifier = computed(() =>
 
 usePageTitle(() => {
   const displayName = state.value?.project.displayName ?? props.projectNameInput
+  if (displayName == null) return null
   return {
     en: `Edit ${displayName}`,
     zh: `编辑 ${displayName}`

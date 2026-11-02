@@ -181,6 +181,11 @@ export async function mountPages(path: string) {
     },
     { path: '/editor/:ownerNameInput/:projectNameInput/:inEditorPath*', component: Editor, props: true },
     { path: '/editor/:projectNameInput', component: OwnProject, props: true },
+    {
+      path: '/project-snapshot/:inEditorPath*',
+      component: Editor,
+      props: (route) => ({ projectSnapshotUrlInput: route.query.url })
+    },
     { path: '/tutorials', component: Tutorials },
     {
       path: '/admin',

@@ -1,16 +1,26 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { toText } from '@/models/common/file'
+import { SpxProject } from '@/models/spx/project'
+import { Sprite } from '@/models/spx/sprite'
 import type { EditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
 import { DiagnosticSeverity, type CodeEditor } from '@/components/editor/spx-code-editor'
 import { captureFeedbackContext } from './context'
+import { saveProjectSnapshot } from './project-snapshot'
 
-function makeEditorCtx(outputs: RuntimeOutput[] = [], { saved = true } = {}) {
+vi.mock('./project-snapshot', { spy: true })
+
+const snapshotUrl = 'kodo://test/files/project-snapshot.json'
+
+function makeProject({ saved = true } = {}) {
+  const project = saved ? new SpxProject('alice', 'space') : new SpxProject()
+  project.setMetadata({ displayName: 'Space' })
+  return project
+}
+
+function makeEditorCtx(outputs: RuntimeOutput[] = [], { saved = true, project = makeProject({ saved }) } = {}) {
   return {
-    project: {
-      owner: saved ? 'alice' : null,
-      name: saved ? 'space' : null,
-      displayName: 'Space'
-    },
+    project,
     state: {
       runtime: { outputs }
     }
@@ -24,6 +34,10 @@ function makeCodeEditor(diagnosticWorkspace: () => Promise<unknown>) {
 }
 
 describe('captureFeedbackContext', () => {
+  beforeEach(() => {
+    vi.mocked(saveProjectSnapshot).mockReset().mockResolvedValue(snapshotUrl)
+  })
+
   it('captures only page information outside of the editor', async () => {
     const context = await captureFeedbackContext({
       source: 'profileMenu',
@@ -84,6 +98,7 @@ describe('captureFeedbackContext', () => {
       identifier: 'alice/space',
       displayName: 'Space'
     })
+    expect(context.projectSnapshotUrl).toBe(snapshotUrl)
     expect(context.diagnostics).toEqual([
       { file: 'Rocket.spx', severity: DiagnosticSeverity.Error, line: 3, message: 'undefined: foo' }
     ])
@@ -154,6 +169,53 @@ describe('captureFeedbackContext', () => {
     expect(context.runtimeOutputs).toBeUndefined()
     expect(context.project).toBeDefined()
     expect(new TextEncoder().encode(JSON.stringify(context)).length).toBeLessThanOrEqual(512)
+  })
+
+  it('captures the project snapshot after in-progress edits finish', async () => {
+    const project = makeProject()
+    const sprite = new Sprite('Rocket')
+    sprite.setCode('v1')
+    project.addSprite(sprite)
+    let uploadedCode: string | null = null
+    vi.mocked(saveProjectSnapshot).mockImplementation(async (files) => {
+      // The user keeps editing while the snapshot uploads.
+      sprite.setCode('v3')
+      const codeFile = Object.entries(files).find(([path]) => path.endsWith('Rocket.spx'))![1]!
+      uploadedCode = await toText(codeFile)
+      return snapshotUrl
+    })
+
+    const unlock = await project.mutex.lock()
+    const contextPromise = captureFeedbackContext({
+      source: 'profileMenu',
+      path: '/editor/alice/space',
+      language: 'en',
+      editorCtx: makeEditorCtx([], { project }),
+      codeEditor: null,
+      maxSize: Infinity
+    })
+    sprite.setCode('v2')
+    unlock()
+    const context = await contextPromise
+
+    expect(context.projectSnapshotUrl).toBe(snapshotUrl)
+    expect(uploadedCode).toBe('v2')
+  })
+
+  it('omits the project snapshot when it cannot be saved', async () => {
+    vi.mocked(saveProjectSnapshot).mockRejectedValue(new Error('upload failed'))
+
+    const context = await captureFeedbackContext({
+      source: 'profileMenu',
+      path: '/editor/alice/space',
+      language: 'en',
+      editorCtx: makeEditorCtx(),
+      codeEditor: null,
+      maxSize: Infinity
+    })
+
+    expect(context.project).toBeDefined()
+    expect(context.projectSnapshotUrl).toBeUndefined()
   })
 
   it('removes NUL characters from captured text', async () => {

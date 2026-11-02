@@ -28,6 +28,7 @@ import { RuntimeOutputKind } from '@/components/editor/runtime'
 import { DiagnosticSeverity } from '@/components/editor/spx-code-editor'
 import { feedbackContextSchema } from '@/components/feedback/context'
 import * as feedbackAdminApis from '@/apis/admin/feedback'
+import { getProjectSnapshotRoute } from '../../router'
 import { feedbackStatusLabels, formatJSON, formatTime } from './common'
 
 const props = defineProps<{
@@ -193,6 +194,20 @@ const handleMarkAsHandled = useMessageHandle(
                       ? '-'
                       : `${context.project.displayName} (${context.project.identifier ?? $t({ en: 'unsaved', zh: '未保存' })})`
                   }}
+                </div>
+              </div>
+              <div>
+                <div class="text-grey-800">{{ $t({ en: 'Project snapshot', zh: '项目快照' }) }}</div>
+                <div class="mt-1 text-grey-1000">
+                  <RouterLink
+                    v-if="context.projectSnapshotUrl != null"
+                    v-radar="{ name: 'Open project snapshot', desc: 'Open the project snapshot in the editor' }"
+                    class="text-primary-main no-underline hover:underline"
+                    :to="getProjectSnapshotRoute(context.projectSnapshotUrl)"
+                  >
+                    {{ $t({ en: 'Open in editor', zh: '在编辑器中打开' }) }}
+                  </RouterLink>
+                  <template v-else>-</template>
                 </div>
               </div>
             </div>

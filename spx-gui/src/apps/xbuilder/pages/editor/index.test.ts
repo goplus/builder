@@ -1,11 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import { setupPageTests, mountPages, signIn, makeAsset } from '@/apps/xbuilder/pages/test'
+import { stringifyDataUrl } from '@/utils/universal-url'
 import { AssetType } from '@/apis/asset'
 import * as assetApis from '@/apis/asset'
 import { Visibility } from '@/apis/project'
+import * as projectApis from '@/apis/project'
+import { localHelpers } from '@/models/common/local'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
+import { getProjectSnapshotRoute } from '../../router'
 
 describe('editor', () => {
   setupPageTests()
@@ -328,5 +332,56 @@ describe('editor', () => {
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Remove"]').exists()).toBe(true))
     await wrapper.get('[aria-label="Remove"]').trigger('click')
     await vi.waitFor(() => expect(project.sounds.map((sound) => sound.name)).toEqual(['Beep']))
+  })
+
+  describe('project snapshot', () => {
+    const snapshotUrl = 'kodo://test/files/project-snapshot.json'
+    const snapshotWebUrl = 'https://assets.test/files/project-snapshot.json'
+    const snapshotCode = 'onStart => {\n\tprintln "from snapshot"\n}\n'
+
+    function mockSnapshotDownload() {
+      const fetchMock = vi.mocked(globalThis.fetch)
+      const fetchOther = fetchMock.getMockImplementation()!
+      fetchMock.mockImplementation(async (input, init) => {
+        if (input === snapshotWebUrl)
+          return new Response(JSON.stringify({ files: { 'main.spx': stringifyDataUrl('text/plain', snapshotCode) } }))
+        return fetchOther(input, init)
+      })
+    }
+
+    it('opens a project snapshot and keeps edits local', async () => {
+      mockSnapshotDownload()
+      const { wrapper, router } = await mountPages(getProjectSnapshotRoute(snapshotUrl))
+      await vi.waitFor(() => expect(wrapper.find('[aria-label="Stage overview"]').exists()).toBe(true), {
+        timeout: 4000
+      })
+
+      const project = wrapper.getComponent(EditorContextProvider).props('project')
+      expect(project.stage.code).toBe(snapshotCode)
+      expect(project.displayName).toBe('Project snapshot')
+
+      project.stage.setCode('onStart => {}\n')
+      const leaving = router.push('/')
+      await vi.waitFor(() =>
+        expect(document.body.textContent).toContain('Project edits will not be saved if you leave now')
+      )
+      Array.from(document.body.querySelectorAll('button'))
+        .find((button) => button.textContent?.trim() === 'Keep editing')!
+        .click()
+      await leaving
+      expect(router.currentRoute.value.path).toMatch(/^\/project-snapshot/)
+      expect(localHelpers.load).not.toHaveBeenCalled()
+      expect(localHelpers.save).not.toHaveBeenCalled()
+      expect(projectApis.addProject).not.toHaveBeenCalled()
+      expect(projectApis.updateProject).not.toHaveBeenCalled()
+    })
+
+    it('does not load a snapshot from a link that is not a Kodo URL', async () => {
+      const url = 'https://example.com/project-snapshot.json'
+      const { wrapper } = await mountPages(`/project-snapshot?url=${encodeURIComponent(url)}`)
+
+      await vi.waitFor(() => expect(wrapper.text()).toContain('The project snapshot link is invalid'))
+      expect(globalThis.fetch).not.toHaveBeenCalledWith(url, expect.anything())
+    })
   })
 })
