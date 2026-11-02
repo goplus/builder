@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 
 import { Cancelled } from '@/utils/exception'
 import { getFileMediaUrl } from '@/utils/media'
@@ -15,6 +15,8 @@ const emit = defineEmits<{
   cancelled: []
   resolved: []
 }>()
+
+const videoAspectRatio = computed(() => props.video.aspectRatio ?? 16 / 9)
 
 const videoElement = ref<HTMLVideoElement | null>(null)
 const src = ref<string | null>(null)
@@ -87,7 +89,7 @@ onBeforeUnmount(() => {
     <div class="flex flex-col items-center gap-5 p-6">
       <div
         class="relative flex items-center justify-center overflow-hidden rounded-md bg-grey-300"
-        :style="{ aspectRatio: video.aspectRatio, width: `min(100%, calc(65vh * ${video.aspectRatio}))` }"
+        :style="{ aspectRatio: videoAspectRatio, width: `min(100%, calc(65vh * ${videoAspectRatio}))` }"
       >
         <UIError v-if="failed" class="p-6" :retry="load">
           {{ $t({ en: 'Failed to play the Course video', zh: '课程视频播放失败' }) }}

@@ -15,6 +15,7 @@ export type Metadata = {
   universalUrl?: string
   hash?: string
   imgSize?: Size
+  videoSize?: Size
 }
 
 export type Options = {

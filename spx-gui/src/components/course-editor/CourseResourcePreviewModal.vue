@@ -21,6 +21,8 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
+const videoAspectRatio = computed(() => (props.resource instanceof Video ? props.resource.aspectRatio : null) ?? 16 / 9)
+
 const isVideo = computed(() => props.resource instanceof Video)
 
 // `JSON.stringify` writes the name as a string literal, so a name holding a quote or a backslash still compiles.
@@ -53,10 +55,7 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
       <video
         v-if="isVideo && videoUrl != null"
         class="mx-auto rounded bg-black object-contain"
-        :style="{
-          aspectRatio: resource instanceof Video ? resource.aspectRatio : 16 / 9,
-          width: `min(100%, calc(65vh * ${resource instanceof Video ? resource.aspectRatio : 16 / 9}))`
-        }"
+        :style="{ aspectRatio: videoAspectRatio, width: `min(100%, calc(65vh * ${videoAspectRatio}))` }"
         crossorigin="anonymous"
         :src="videoUrl"
         controls

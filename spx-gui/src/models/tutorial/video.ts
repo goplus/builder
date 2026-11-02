@@ -10,13 +10,13 @@ import type { TutorialProject } from './project'
 
 export type VideoInits = {
   id?: string
-  width?: number
-  height?: number
 }
 
-export type RawVideoConfig = Omit<VideoInits, 'id'> & {
+export type RawVideoConfig = {
   builder_id?: string
   path?: string
+  width?: number
+  height?: number
 }
 
 export const videoAssetPath = 'assets/videos'
@@ -37,33 +37,38 @@ export class Video {
     this.name = name
   }
 
-  width: number | null
-  height: number | null
+  width: number | null = null
+  height: number | null = null
 
   get aspectRatio() {
-    return isValidVideoDimensions(this.width, this.height) ? this.width! / this.height! : 16 / 9
+    return this.width != null && this.height != null ? this.width / this.height : null
   }
 
   setDimensions(width: number | null, height: number | null) {
     const valid = isValidVideoDimensions(width, height)
     this.width = valid ? width : null
     this.height = valid ? height : null
+    if (valid) this.file.meta.videoSize = { width: width!, height: height! }
   }
 
   async ensureDimensions(signal?: AbortSignal) {
-    if (isValidVideoDimensions(this.width, this.height)) return
+    if (this.width != null && this.height != null) return
     const file = this.file
-    const dimensions = await readVideoDimensions(file, signal)
-    if (this.file === file && !signal?.aborted && dimensions != null) {
-      this.setDimensions(dimensions.width, dimensions.height)
+    try {
+      const dimensions = await readVideoDimensions(file, signal)
+      if (this.file === file && !signal?.aborted) {
+        this.setDimensions(dimensions.width, dimensions.height)
+      }
+    } catch {
+      // Dimensions are optional; failed extraction must not prevent editing or saving.
     }
   }
 
-  file: File
+  file!: File
   setFile(file: File) {
-    if (this.file === file) return
     this.file = file
-    this.setDimensions(null, null)
+    const size = file.meta.videoSize
+    this.setDimensions(size?.width ?? null, size?.height ?? null)
   }
 
   /** The payload is stored under the video's name, keeping its own extension. */
@@ -77,16 +82,13 @@ export class Video {
   constructor(name: string, file: File, inits?: VideoInits) {
     this.id = inits?.id ?? nanoid()
     this.name = name
-    this.file = file
-    this.width = null
-    this.height = null
-    this.setDimensions(inits?.width ?? null, inits?.height ?? null)
+    this.setFile(file)
     const reactiveThis = reactive(this) as this
     this.configFile = computed(() => {
       const config: RawVideoConfig = { path: reactiveThis.filename, builder_id: reactiveThis.id }
-      if (isValidVideoDimensions(reactiveThis.width, reactiveThis.height)) {
-        config.width = reactiveThis.width!
-        config.height = reactiveThis.height!
+      if (reactiveThis.width != null && reactiveThis.height != null) {
+        config.width = reactiveThis.width
+        config.height = reactiveThis.height
       }
       return fromConfig(videoConfigFileName, config)
     })
@@ -101,7 +103,10 @@ export class Video {
     if (path == null) throw new Error(`path expected for video ${name}`)
     const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for video ${name} not found`)
-    return new Video(name, file, { id, width, height })
+    if (file.meta.videoSize == null && isValidVideoDimensions(width, height)) {
+      file.meta.videoSize = { width: width!, height: height! }
+    }
+    return new Video(name, file, { id })
   }
 
   static async loadAll(files: Files) {
@@ -119,7 +124,7 @@ export class Video {
   }
 }
 
-function isValidVideoDimensions(width: number | null, height: number | null) {
+function isValidVideoDimensions(width: number | null | undefined, height: number | null | undefined) {
   return (
     typeof width === 'number' &&
     Number.isInteger(width) &&
