@@ -37,25 +37,37 @@ const nearStraightAngleThreshold = 8
 </script>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import Konva from 'konva'
 import type { LayerConfig } from 'konva/lib/Layer'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { LineConfig } from 'konva/lib/shapes/Line'
 import type { ArcConfig } from 'konva/lib/shapes/Arc'
+import type { ImageConfig } from 'konva/lib/shapes/Image'
+import rulerCursorUrl from './triangle-ruler-cursor.svg?url&no-inline'
 
 const props = defineProps<{
   active: boolean
   mapPos: Pos
   mapSize: { width: number; height: number }
   viewportSize: { width: number; height: number }
+  stageScale: number
   snapTargets: RulerSnapTarget[]
+}>()
+
+const emit = defineEmits<{
+  cursorPreviewChange: [visible: boolean]
 }>()
 
 const layerRef = ref<{ getNode(): Konva.Layer } | null>(null)
 const measurement = ref<{ from: Pos; fromHeading: number | null; to: Pos } | null>(null)
 const start = ref<{ pos: Pos; heading: number | null } | null>(null)
-let awaitingEnd = false
+const awaitingEnd = ref(false)
+const pointerPos = ref<Pos | null>(null)
+const cursorImage = shallowRef<HTMLImageElement | null>(null)
+const image = new Image()
+image.onload = () => (cursorImage.value = image)
+image.src = rulerCursorUrl
 
 const distance = computed(() => {
   if (measurement.value == null) return 0
@@ -83,29 +95,34 @@ function getPointerPos(radius: number): { pos: Pos; target: RulerSnapTarget | nu
 }
 
 function handleClick() {
-  const snapped = getPointerPos(awaitingEnd ? endpointSnapRadius : originSnapRadius)
+  const snapped = getPointerPos(awaitingEnd.value ? endpointSnapRadius : originSnapRadius)
   if (snapped == null) return
-  if (!awaitingEnd) {
-    // TODO: Show a snapped start-point marker before the measurement line becomes visible.
+  if (!awaitingEnd.value) {
     start.value = { pos: snapped.pos, heading: snapped.target?.heading ?? null }
     measurement.value = null
-    awaitingEnd = true
+    awaitingEnd.value = true
     return
   }
   if (start.value == null) return
   measurement.value = { from: start.value.pos, fromHeading: start.value.heading, to: snapped.pos }
-  awaitingEnd = false
+  awaitingEnd.value = false
 }
 
 function handleMouseMove() {
-  if (!awaitingEnd || start.value == null) return
+  pointerPos.value = layerRef.value?.getNode().getRelativePointerPosition() ?? null
+  if (!awaitingEnd.value || start.value == null) return
   const snapped = getPointerPos(endpointSnapRadius)
   if (snapped == null) return
   measurement.value = { from: start.value.pos, fromHeading: start.value.heading, to: snapped.pos }
 }
 
+function hideCursorPreview() {
+  pointerPos.value = null
+}
+
 function stopMeasuring() {
-  awaitingEnd = false
+  hideCursorPreview()
+  awaitingEnd.value = false
   start.value = null
   measurement.value = null
 }
@@ -118,7 +135,28 @@ watch(
   }
 )
 
-onUnmounted(stopMeasuring)
+onUnmounted(() => {
+  image.onload = null
+  stopMeasuring()
+  emit('cursorPreviewChange', false)
+})
+
+const cursorConfig = computed<ImageConfig | null>(() => {
+  if (!props.active || awaitingEnd.value || pointerPos.value == null || cursorImage.value == null) return null
+  return {
+    ...snap(pointerPos.value, originSnapRadius).pos,
+    image: cursorImage.value,
+    // Match the native cursor's 32px size and top-left hotspot at any stage scale.
+    width: 32 / props.stageScale,
+    height: 32 / props.stageScale,
+    listening: false
+  }
+})
+
+watch(
+  () => cursorConfig.value != null,
+  (visible) => emit('cursorPreviewChange', visible)
+)
 
 const layerConfig = computed(
   () =>
@@ -325,7 +363,13 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
 
 <template>
   <v-layer ref="layerRef" :config="layerConfig">
-    <v-rect :config="captureRectConfig" @click="handleClick" @mousemove="handleMouseMove" />
+    <v-rect
+      :config="captureRectConfig"
+      @click="handleClick"
+      @mouseenter="handleMouseMove"
+      @mousemove="handleMouseMove"
+      @mouseleave="hideCursorPreview"
+    />
     <template v-if="measurement != null && lineConfig != null && distanceLabelLayout != null">
       <template v-if="headingRayConfig != null && angleArcConfig != null && angleLabelLayout != null && angle != null">
         <v-line :config="headingRayConfig" />
@@ -381,5 +425,6 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
         />
       </v-group>
     </template>
+    <v-image v-if="cursorConfig != null" :config="cursorConfig" />
   </v-layer>
 </template>

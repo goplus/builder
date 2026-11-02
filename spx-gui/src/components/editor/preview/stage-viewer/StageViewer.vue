@@ -6,7 +6,7 @@
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
     class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"
-    :class="{ 'cursor-ruler': rulerActive }"
+    :class="{ 'cursor-ruler': rulerActive, 'cursor-ruler-preview': rulerActive && rulerCursorPreviewVisible }"
     :style="{ backgroundImage: `url(${stageBgUrl})`, '--ruler-cursor': `url(${rulerCursorUrl}) 0 0, crosshair` }"
     @mousemove="updateMousePos"
   >
@@ -73,7 +73,9 @@
         :map-pos="mapPos"
         :map-size="mapSize"
         :viewport-size="viewportSize"
+        :stage-scale="stageScale ?? 1"
         :snap-targets="rulerSnapTargets"
+        @cursor-preview-change="rulerCursorPreviewVisible = $event"
       />
     </v-stage>
     <div v-if="!simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
@@ -235,6 +237,7 @@ const mapPosLimit = computed(() => {
 
 /** The position to be applied on the map node to achieve camera effect */
 const mapPos = ref<Pos>({ x: 0, y: 0 })
+const rulerCursorPreviewVisible = ref(false)
 const rulerSnapTargets = computed(() =>
   editorCtx.project.sprites.map((sprite) => ({
     x: sprite.x + mapSize.value.width / 2,
@@ -613,5 +616,10 @@ watchEffect((onCleanup) => {
 .cursor-ruler,
 .cursor-ruler :deep(canvas) {
   cursor: var(--ruler-cursor);
+}
+
+.cursor-ruler-preview,
+.cursor-ruler-preview :deep(canvas) {
+  cursor: none;
 }
 </style>
