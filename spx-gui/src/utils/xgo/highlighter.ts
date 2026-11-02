@@ -23,7 +23,8 @@ export function getHighlighter(): Promise<Highlighter> {
         spx: 'xgo'
       },
       themes: [defaultLightTheme as any],
-      // Keep TextMate matching independent of browser RegExp implementations.
+      // Use Oniguruma to avoid Safari RegExp compatibility issues that leave Monaco
+      // syntax colors missing and API Reference snippets blank (goplus/builder#3679).
       engine: createOnigurumaEngine(import('shiki/wasm'))
     })
   }
