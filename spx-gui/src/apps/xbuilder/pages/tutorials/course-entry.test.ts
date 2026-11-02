@@ -34,8 +34,7 @@ vi.mock('@/apis/course', () => ({
 }))
 vi.mock('@/apis/course-series', () => ({ getCourseSeries: apis.series, updateCourseSeries: apis.updateSeries }))
 vi.mock('@/stores/user', () => ({
-  useSignedInStateQuery: () => ({ data: ref({ isSignedIn: true }), error: ref(null), isLoading: ref(false) }),
-  useSignIn: () => vi.fn()
+  useSignedIn: () => ({ isSignedIn: true, signIn: vi.fn() })
 }))
 vi.mock('@/apps/xbuilder/router', () => ({
   getCourseStartRoute: (series: string, course: string) => `/course/${series}/${course}/start`,
