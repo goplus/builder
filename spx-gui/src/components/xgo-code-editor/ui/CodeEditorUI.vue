@@ -16,7 +16,7 @@ import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch
 import { computedShallowReactive, untilNotNull, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { useRegisterLoading } from '@/utils/readiness'
-import { useI18n } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/xgo'
 import { theme, tabSize, insertSpaces } from '@/utils/xgo/highlighter'
 import { providePopupContainer, useModal } from '@/components/ui'
@@ -46,8 +46,12 @@ const props = withDefaults(
     simpleMode?: boolean
     hasApiReference?: boolean
     readOnly?: boolean
+    readOnlyMessage?: LocaleMessage
   }>(),
-  { hasApiReference: true }
+  {
+    hasApiReference: true,
+    readOnlyMessage: () => ({ en: 'Cannot edit in read-only editor', zh: '无法在只读编辑器中编辑' })
+  }
 )
 
 const i18n = useI18n()
@@ -91,13 +95,17 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   insertSpaces,
   fontSize: fontSize.value,
   contextmenu: false,
-  readOnly: props.readOnly ?? false
+  readOnly: props.readOnly ?? false,
+  readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
 
 watchEffect(() => {
-  monacoEditorRef.value?.updateOptions({ readOnly: props.readOnly ?? false })
+  monacoEditorRef.value?.updateOptions({
+    readOnly: props.readOnly ?? false,
+    readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
+  })
 })
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
