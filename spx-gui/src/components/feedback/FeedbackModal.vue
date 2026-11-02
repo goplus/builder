@@ -91,7 +91,7 @@ function handleCancel() {
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Feedback modal', desc: 'Modal for sending feedback about a problem' }"
+    :radar="{ name: 'feedback-modal', desc: 'Modal for sending feedback about a problem' }"
     :title="$t({ en: 'Send feedback', zh: '提交反馈' })"
     :style="{ width: '560px' }"
     :visible="props.visible"
@@ -101,14 +101,14 @@ function handleCancel() {
       <UIFormItem :label="$t({ en: 'Title', zh: '标题' })" path="title">
         <UITextInput
           v-model:value="form.value.title"
-          v-radar="{ name: 'Feedback title input', desc: 'Input field for a short summary of the problem' }"
+          v-radar="{ name: 'feedback-title-input', desc: 'Input field for a short summary of the problem' }"
           :placeholder="$t({ en: 'Briefly describe the problem', zh: '简要描述遇到的问题' })"
         />
       </UIFormItem>
       <UIFormItem :label="$t({ en: 'Description', zh: '描述' })" path="description">
         <UITextInput
           v-model:value="form.value.description"
-          v-radar="{ name: 'Feedback description input', desc: 'Input field for details about the problem' }"
+          v-radar="{ name: 'feedback-description-input', desc: 'Input field for details about the problem' }"
           type="textarea"
           :rows="6"
           :placeholder="$t({ en: 'What happened, and what did you expect?', zh: '发生了什么？你期望的结果是什么？' })"
@@ -119,7 +119,7 @@ function handleCancel() {
           <template #trigger>
             <UICheckbox
               v-model:checked="form.value.shareContext"
-              v-radar="{ name: 'Share page state checkbox', desc: 'Toggle sharing page state' }"
+              v-radar="{ name: 'share-page-state-checkbox', desc: 'Toggle sharing page state' }"
               @focusin="shareContextTooltipVisible = true"
               @focusout="shareContextTooltipVisible = false"
             >
@@ -135,7 +135,7 @@ function handleCancel() {
         </UITooltip>
         <div class="flex-1" />
         <UIButton
-          v-radar="{ name: 'Cancel button', desc: 'Click to cancel sending feedback' }"
+          v-radar="{ name: 'cancel-button', desc: 'Click to cancel sending feedback' }"
           type="neutral"
           :disabled="handleSubmit.isLoading.value"
           @click="handleCancel"
@@ -143,7 +143,7 @@ function handleCancel() {
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Send button', desc: 'Click to send the feedback' }"
+          v-radar="{ name: 'send-button', desc: 'Click to send the feedback' }"
           type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"

@@ -7,7 +7,7 @@ import * as feedbackApis from '@/apis/feedback'
 
 async function fillFeedbackForm(wrapper: VueWrapper) {
   await vi.waitFor(() => expect(wrapper.find('[aria-label="Profile menu"]').exists()).toBe(true))
-  await wrapper.get('[aria-label="Profile menu"]').trigger('mouseenter')
+  await wrapper.get('[aria-label="Profile menu"]').trigger('click')
   await vi.waitFor(() =>
     expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Send feedback...')).toBe(true)
   )

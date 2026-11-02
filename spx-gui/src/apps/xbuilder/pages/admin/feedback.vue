@@ -133,7 +133,7 @@ const handleMarkAsHandled = useMessageHandle(
         <div class="flex shrink-0 items-center gap-2">
           <UIButton
             v-if="feedback.status === FeedbackStatus.New"
-            v-radar="{ name: 'Mark as handled', desc: 'Mark this feedback as handled' }"
+            v-radar="{ name: 'mark-as-handled', desc: 'Mark this feedback as handled' }"
             type="primary"
             :loading="handleMarkAsHandled.isLoading.value"
             @click="handleMarkAsHandled.fn"
@@ -141,7 +141,7 @@ const handleMarkAsHandled = useMessageHandle(
             {{ $t({ en: 'Mark as handled', zh: '标记为已处理' }) }}
           </UIButton>
           <UIButton
-            v-radar="{ name: 'Refresh feedback', desc: 'Reload feedback details' }"
+            v-radar="{ name: 'refresh-feedback', desc: 'Reload feedback details' }"
             icon="reload"
             shape="square"
             type="white"

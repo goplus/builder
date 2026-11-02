@@ -90,7 +90,7 @@ watch(
             </NavbarDropdown>
             <RouterLink
               v-if="canManageFeedback"
-              v-radar="{ name: 'Feedback', desc: 'Open admin feedback list' }"
+              v-radar="{ name: 'feedback', desc: 'Open admin feedback list' }"
               class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
               :class="route.path.startsWith('/admin/feedback') ? 'text-primary-main' : 'text-inherit'"
               to="/admin/feedback"

@@ -17,7 +17,7 @@ describe('community home', () => {
     const { wrapper, router } = await mountPages('/')
     await flushPromises()
     const profile = wrapper.getComponent(NavbarProfile)
-    await profile.get('.h-full').trigger('mouseenter')
+    await profile.get('.h-full').trigger('click')
     await vi.waitFor(() =>
       expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Profile')).toBe(true)
     )
@@ -91,7 +91,7 @@ describe('community home', () => {
       followed: count(ExploreOrder.FollowingCreated)
     }
     now += 65_000
-    await wrapper.get('[aria-label="Project menu"]').trigger('mouseenter')
+    await wrapper.get('[aria-label="Project menu"]').trigger('click')
     await vi.waitFor(() =>
       expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'New project...')).toBe(true)
     )
