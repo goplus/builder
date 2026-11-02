@@ -1,5 +1,8 @@
 packages:
   - .
+overrides:
+  # Include Safari RegExp compatibility fixes without upgrading Shiki (goplus/builder#3679).
+  '@shikijs/engine-javascript>oniguruma-to-es': 4.3.6
 allowBuilds:
   vue-demi: true
 minimumReleaseAgeExclude:

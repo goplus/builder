@@ -1,5 +1,5 @@
 import { createHighlighterCore } from 'shiki/core'
-import { createOnigurumaEngine } from 'shiki/engine/oniguruma'
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 import gopLang from './gop-tm-language.json'
 import defaultLightTheme from './default-light-theme.json'
 
@@ -23,9 +23,7 @@ export function getHighlighter(): Promise<Highlighter> {
         spx: 'xgo'
       },
       themes: [defaultLightTheme as any],
-      // Use Oniguruma to avoid Safari RegExp compatibility issues that leave Monaco
-      // syntax colors missing and API Reference snippets blank (goplus/builder#3679).
-      engine: createOnigurumaEngine(import('shiki/wasm'))
+      engine: createJavaScriptRegexEngine()
     })
   }
   return highlighterPromise
