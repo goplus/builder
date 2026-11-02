@@ -58,7 +58,7 @@ describe('XGo language client', () => {
   it('serializes framework configuration before sending it to the Worker', async () => {
     const { sent } = await startClient(
       createProject(`// Application framework
-project main.spx Game github.com/goplus/spx/v3 math
+project main.spx Game github.com/goplus/spx/v4 math
 class -embed *.spx SpriteImpl
 import ai github.com/goplus/builder/tools/ai
 `)
@@ -66,7 +66,7 @@ import ai github.com/goplus/builder/tools/ai
     expect(sent[0]).toEqual({
       type: 'initialize',
       classFrameworkConfig:
-        'project main.spx Game github.com/goplus/spx/v3 math\nclass -embed *.spx SpriteImpl\nimport ai github.com/goplus/builder/tools/ai\n'
+        'project main.spx Game github.com/goplus/spx/v4 math\nclass -embed *.spx SpriteImpl\nimport ai github.com/goplus/builder/tools/ai\n'
     })
   })
 
@@ -143,7 +143,7 @@ class *.actor Actor
       { target: 'spx://resources/videos/intro', range, data: { kind: ResourceReferenceKind.AutoBinding } },
       { target: 'file:///other.gox', range, data: { kind: ResourceReferenceKind.StringLiteral } },
       { target: 'file:///README.md', range },
-      { target: 'github.com/goplus/spx/v3?Game', range }
+      { target: 'github.com/goplus/spx/v4?Game', range }
     ])
     expect(await client.getResourceReferences({}, { uri: 'file:///main.gox' })).toEqual([
       {

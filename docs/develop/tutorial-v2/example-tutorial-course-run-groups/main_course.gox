@@ -36,7 +36,7 @@ hints := newRunGroup(QueuePolicy)
 attempts := 0
 
 onStart => {
-	Editor.CodeEditor.filterAPIs ["xgo:github.com/goplus/spx/v3?Sprite.stepTo"]
+	Editor.CodeEditor.filterAPIs ["xgo:preset/spx?Sprite.stepTo"]
 	showPrelude "Walk Lita to Mushroom with stepTo, then run the project: Mushroom prints \"reached-target\" when Lita gets there."
 	Spotlight.reveal "api-references", "stepTo is the only block you need."
 }

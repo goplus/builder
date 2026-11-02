@@ -57,7 +57,7 @@ it('handles messages immediately after initialization and reuses the configurati
     expect(call).toEqual([
       expect.any(Function),
       expect.any(Function),
-      { classfileConfig: classFrameworkConfig, pkgDataZip: expect.any(Uint8Array) }
+      { classFrameworkConfig, pkgDataZip: expect.any(Uint8Array) }
     ])
   }
 })
