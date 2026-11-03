@@ -32,6 +32,7 @@ import { useLocalEdits, WriteQueue } from '@/components/course/management/local-
 import UnitTitleModal from '@/components/course/management/UnitTitleModal.vue'
 import {
   addUnit,
+  getRemovalTargetIndex,
   moveCourseInUnitList,
   moveCourseToUnit,
   moveUnit,
@@ -275,7 +276,16 @@ const handleMoveUnit = useMessageHandle(
   { en: 'Failed to move unit', zh: '移动单元失败' }
 ).fn
 
-/** What deleting the unit does, as the author is asked to confirm it. */
+/** What deleting the unit does: how many courses it has, and the unit they join, or none if it is the only one. */
+function getUnitRemoval(unitIndex: number) {
+  const unit = units.value[unitIndex]
+  const intoIndex = getRemovalTargetIndex(units.value, unitIndex)
+  return {
+    courseCount: unit.courseIDs.length,
+    intoUnitID: intoIndex == null ? null : units.value[intoIndex].id
+  }
+}
+
 function describeUnitRemoval(unitIndex: number): { en: string; zh: string } {
   const unit = units.value[unitIndex]
   const count = unit.courseIDs.length
@@ -295,16 +305,18 @@ function describeUnitRemoval(unitIndex: number): { en: string; zh: string } {
 
 const handleRemoveUnit = useMessageHandle(
   async (series: CourseSeries, unitID: string) => {
-    const asked = describeUnitRemoval(findUnitIndex(unitID))
+    const askedIndex = findUnitIndex(unitID)
+    const asked = getUnitRemoval(askedIndex)
     await keepPageFor(
       confirm({
         title: i18n.t({ en: 'Delete unit', zh: '删除单元' }),
-        content: i18n.t(asked),
+        content: i18n.t(describeUnitRemoval(askedIndex)),
         confirmText: i18n.t({ en: 'Delete', zh: '删除' })
       })
     )
     const unitIndex = findUnitIndex(unitID)
-    if (describeUnitRemoval(unitIndex).en !== asked.en) throw unitsChanged()
+    const removal = getUnitRemoval(unitIndex)
+    if (removal.courseCount !== asked.courseCount || removal.intoUnitID !== asked.intoUnitID) throw unitsChanged()
     await writeUnits(series, removeUnit(units.value, unitIndex))
   },
   { en: 'Failed to delete unit', zh: '删除单元失败' }

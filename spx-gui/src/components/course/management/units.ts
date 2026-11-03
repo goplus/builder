@@ -77,13 +77,19 @@ export function addUnit(units: CourseSeriesUnit[], title: string, courseIDs: str
 }
 
 /**
- * Remove the unit at `unitIndex`. Its courses join the unit before it, or the one after it for the first unit, and keep
- * their order; removing the only unit leaves the series undivided.
+ * The index of the unit that the courses of the unit at `unitIndex` join when it is removed: the unit before it, or the
+ * one after it for the first unit. It is `null` for the only unit, whose removal leaves the series undivided.
  */
+export function getRemovalTargetIndex(units: CourseSeriesUnit[], unitIndex: number) {
+  if (units.length <= 1) return null
+  return unitIndex === 0 ? 1 : unitIndex - 1
+}
+
+/** Remove the unit at `unitIndex`. Its courses join the unit `getRemovalTargetIndex` gives, and keep their order. */
 export function removeUnit(units: CourseSeriesUnit[], unitIndex: number) {
-  if (units.length <= 1) return []
+  const intoIndex = getRemovalTargetIndex(units, unitIndex)
+  if (intoIndex == null) return []
   const { courseIDs } = units[unitIndex]
-  const intoIndex = unitIndex === 0 ? 1 : unitIndex - 1
   return units.flatMap((unit, index) => {
     if (index === unitIndex) return []
     if (index !== intoIndex) return [unit]
