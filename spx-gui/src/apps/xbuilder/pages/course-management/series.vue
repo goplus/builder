@@ -289,14 +289,16 @@ function getUnitRemoval(unitIndex: number) {
 function describeUnitRemoval(unitIndex: number): { en: string; zh: string } {
   const unit = units.value[unitIndex]
   const count = unit.courseIDs.length
-  if (units.value.length === 1) {
+  const intoIndex = getRemovalTargetIndex(units.value, unitIndex)
+  if (intoIndex == null) {
     return {
       en: `Delete "${unit.title}"? The series will no longer be divided into units; its courses keep their order.`,
       zh: `确定删除“${unit.title}”吗？删除后系列不再分单元，课程保持原来的顺序。`
     }
   }
   if (count === 0) return { en: `Delete "${unit.title}"?`, zh: `确定删除“${unit.title}”吗？` }
-  const into = unitIndex === 0 ? { en: 'the next unit', zh: '下一个单元' } : { en: 'the unit before', zh: '上一个单元' }
+  const into =
+    intoIndex > unitIndex ? { en: 'the next unit', zh: '下一个单元' } : { en: 'the unit before', zh: '上一个单元' }
   return {
     en: `Delete "${unit.title}"? Its ${count} course${count === 1 ? '' : 's'} will join ${into.en}.`,
     zh: `确定删除“${unit.title}”吗？其中的 ${count} 门课程会并入${into.zh}。`
