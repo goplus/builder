@@ -95,6 +95,7 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   insertSpaces,
   fontSize: fontSize.value,
   contextmenu: false,
+  wordWrap: props.simpleMode ? 'on' : 'off',
   readOnly: props.readOnly ?? false,
   readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
 }))

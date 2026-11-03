@@ -26,6 +26,23 @@ vi.mock('@/utils/utils', async (importOriginal) => ({
 afterEach(() => vi.restoreAllMocks())
 
 describe('Code Editor UI options', () => {
+  it('enables word wrap only in simple mode', () => {
+    const i18n = createI18n({ lang: 'en' })
+    const wrapper = shallowMount(CodeEditorUI, {
+      props: { codeFilePath: 'Cat.spx', simpleMode: true },
+      global: { plugins: [i18n], directives: { radar: {} } }
+    })
+    expect(wrapper.getComponent({ name: 'MonacoEditorComp' }).props('options').wordWrap).toBe('on')
+    wrapper.unmount()
+
+    const normalModeWrapper = shallowMount(CodeEditorUI, {
+      props: { codeFilePath: 'Cat.spx', simpleMode: false },
+      global: { plugins: [i18n], directives: { radar: {} } }
+    })
+    expect(normalModeWrapper.getComponent({ name: 'MonacoEditorComp' }).props('options').wordWrap).toBe('off')
+    normalModeWrapper.unmount()
+  })
+
   it('updates read-only state and localized feedback without replacing the editor or controller', async () => {
     const i18n = createI18n({ lang: 'zh' })
     const editor = {
