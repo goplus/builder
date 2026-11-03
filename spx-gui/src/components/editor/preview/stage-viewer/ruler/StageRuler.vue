@@ -44,6 +44,8 @@ const angleLabelGap = 12
 const smallAngleThreshold = 32
 const smallAngleOuterOffset = 18
 const nearStraightAngleThreshold = 8
+const markerDesignSize = 24
+const markerDisplaySize = 14
 </script>
 
 <script setup lang="ts">
@@ -51,12 +53,12 @@ import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
+import type { GroupConfig } from 'konva/lib/Group'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { LineConfig } from 'konva/lib/shapes/Line'
 import type { ArcConfig } from 'konva/lib/shapes/Arc'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { PathConfig } from 'konva/lib/shapes/Path'
-import type { CircleConfig } from 'konva/lib/shapes/Circle'
 import rulerCursorUrl from './triangle-ruler-cursor.svg?url&no-inline'
 
 const props = defineProps<{
@@ -82,12 +84,20 @@ const pointerPos = ref<Pos | null>(null)
 let pointerUpdateFrame: number | null = null
 const markerPos = ref<Pos | null>(null)
 const cursorImage = shallowRef<HTMLImageElement | null>(null)
+const markerOutlineImage = shallowRef<HTMLImageElement | null>(null)
+const markerCenterImage = shallowRef<HTMLImageElement | null>(null)
 const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
 const reducedMotion = ref(motionPreference.matches)
 let markerAnimationFrame: number | null = null
 const image = new Image()
 image.onload = () => (cursorImage.value = image)
 image.src = rulerCursorUrl
+const outlineImage = new Image()
+outlineImage.onload = () => (markerOutlineImage.value = outlineImage)
+outlineImage.src = new URL('./measurement-point-outline.svg', import.meta.url).href
+const centerImage = new Image()
+centerImage.onload = () => (markerCenterImage.value = centerImage)
+centerImage.src = new URL('./measurement-point-center.svg', import.meta.url).href
 
 function updateMotionPreference() {
   reducedMotion.value = motionPreference.matches
@@ -247,6 +257,8 @@ watch(
 
 onUnmounted(() => {
   image.onload = null
+  outlineImage.onload = null
+  centerImage.onload = null
   motionPreference.removeEventListener('change', updateMotionPreference)
   stopMeasuring()
   emit('cursorPreviewChange', false)
@@ -327,8 +339,8 @@ const cursorOutlineConfig = computed<PathConfig | null>(() => {
   }
 })
 
-const endpointMarkerConfigs = computed<CircleConfig[]>(() => {
-  if (!props.active) return []
+const endpointMarkerConfigs = computed<GroupConfig[]>(() => {
+  if (!props.active || markerOutlineImage.value == null || markerCenterImage.value == null) return []
   const positions: Pos[] = []
   if (measurement.value != null) {
     positions.push(measurement.value.from, measurement.value.to)
@@ -340,10 +352,10 @@ const endpointMarkerConfigs = computed<CircleConfig[]>(() => {
     .filter((pos, index) => positions.findIndex((other) => other.x === pos.x && other.y === pos.y) === index)
     .map((pos) => ({
       ...pos,
-      radius: 6 / props.stageScale,
-      stroke: color.grey[100],
-      strokeWidth: 1.5,
-      strokeScaleEnabled: false,
+      offsetX: markerDesignSize / 2,
+      offsetY: markerDesignSize / 2,
+      scaleX: markerDisplaySize / markerDesignSize / props.stageScale,
+      scaleY: markerDisplaySize / markerDesignSize / props.stageScale,
       listening: false
     }))
 })
@@ -622,11 +634,11 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
         />
       </v-group>
     </template>
-    <v-group v-for="(marker, index) in endpointMarkerConfigs" :key="index" :config="{ listening: false }">
-      <v-circle :config="marker" />
-      <v-circle :config="{ ...marker, radius: 3.5 / props.stageScale, strokeWidth: 1.25 }" />
-    </v-group>
     <v-path v-if="cursorOutlineConfig != null" :config="cursorOutlineConfig" />
     <v-image v-if="cursorConfig != null" :config="cursorConfig" />
+    <v-group v-for="(marker, index) in endpointMarkerConfigs" :key="index" :config="marker">
+      <v-image :config="{ image: markerOutlineImage, width: 24, height: 24, listening: false }" />
+      <v-image :config="{ image: markerCenterImage, x: 4, y: 4, width: 16, height: 16, listening: false }" />
+    </v-group>
   </v-layer>
 </template>

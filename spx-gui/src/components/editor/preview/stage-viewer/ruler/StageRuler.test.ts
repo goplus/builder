@@ -39,7 +39,10 @@ async function setup(reducedMotion = false) {
   const Cursor = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
   const Outline = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
   const Line = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
-  const Circle = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
+  const Group = defineComponent({
+    props: { config: { type: Object, required: true } },
+    template: '<div><slot /></div>'
+  })
   const wrapper = mount(StageRuler, {
     props: {
       active: true,
@@ -59,8 +62,7 @@ async function setup(reducedMotion = false) {
         'v-image': Cursor,
         'v-path': Outline,
         'v-line': Line,
-        'v-circle': Circle,
-        'v-group': true,
+        'v-group': Group,
         'v-arc': true,
         'v-text': true
       },
@@ -116,13 +118,13 @@ async function setup(reducedMotion = false) {
     return wrapper.findAllComponents(Line).find((line) => line.props('config').dash != null)
   }
   function markers() {
-    return wrapper.findAllComponents(Circle).filter((circle) => circle.props('config').strokeWidth === 1.5)
+    return wrapper.findAllComponents(Group).filter((group) => group.props('config').scaleX != null)
   }
   function marker() {
     return markers().at(-1)!
   }
   async function loadImage() {
-    images[0].dispatchEvent(new Event('load'))
+    images.forEach((image) => image.dispatchEvent(new Event('load')))
     await nextTick()
   }
   async function advance(ms: number) {
@@ -398,12 +400,21 @@ describe('Ruler cursor preview', () => {
     await move({ x: 120, y: 100 })
     await advance(140)
     expect(cursor().props('config')).toMatchObject({ x: 120, y: 100, width: 64, height: 64 })
-    expect(marker().props('config')).toMatchObject({ x: 100, y: 100, radius: 12, strokeScaleEnabled: false })
+    expect(marker().props('config')).toMatchObject({ x: 100, y: 100, offsetX: 12, offsetY: 12 })
+    expect(marker().props('config').scaleX * 24 * 0.5).toBeCloseTo(14)
+    expect(marker().props('config').scaleY * 24 * 0.5).toBeCloseTo(14)
     expect(outline().props('config').scaleX * 24).toBe(64)
     expect(outline().props('config').strokeScaleEnabled).toBe(false)
     await wrapper.setProps({ stageScale: 2 })
     expect(cursor().props('config')).toMatchObject({ x: 120, y: 100, width: 16, height: 16 })
-    expect(marker().props('config')).toMatchObject({ x: 100, y: 100, radius: 3, strokeScaleEnabled: false })
+    expect(marker().props('config')).toMatchObject({
+      x: 100,
+      y: 100,
+      offsetX: 12,
+      offsetY: 12
+    })
+    expect(marker().props('config').scaleX * 24 * 2).toBeCloseTo(14)
+    expect(marker().props('config').scaleY * 24 * 2).toBeCloseTo(14)
     expect(outline().props('config').scaleX * 24).toBe(16)
   })
 
