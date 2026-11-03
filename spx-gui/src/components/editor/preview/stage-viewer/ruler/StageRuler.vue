@@ -78,6 +78,7 @@ const awaitingEnd = ref(false)
 let mousePress: { pos: Pos; origin: NonNullable<typeof start.value>; dragging: boolean } | null = null
 let suppressClick = false
 const pointerPos = ref<Pos | null>(null)
+let pointerUpdateFrame: number | null = null
 const cursorPos = ref<Pos | null>(null)
 const cursorImage = shallowRef<HTMLImageElement | null>(null)
 const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -112,11 +113,6 @@ function snap(pos: Pos, radius: number): { pos: Pos; target: RulerSnapTarget | n
   return { pos, target: null }
 }
 
-function getPointerPos(radius: number): { pos: Pos; target: RulerSnapTarget | null } | null {
-  const pos = layerRef.value?.getNode().getRelativePointerPosition()
-  return pos == null ? null : snap(pos, radius)
-}
-
 function beginMeasurement(origin: NonNullable<typeof start.value>) {
   start.value = origin
   measurement.value = null
@@ -130,7 +126,8 @@ function handleClick(event: KonvaEventObject<MouseEvent>) {
     suppressClick = false
     return
   }
-  const snapped = getPointerPos(awaitingEnd.value ? endpointSnapRadius : originSnapRadius)
+  flushPointerUpdate()
+  const snapped = pointerSnap.value
   if (snapped == null) return
   if (!awaitingEnd.value) {
     beginMeasurement({ pos: snapped.pos, heading: snapped.target?.heading ?? null })
@@ -155,7 +152,8 @@ function handleMouseDown(event: KonvaEventObject<MouseEvent>) {
   window.addEventListener('blur', handleWindowBlur)
 }
 
-function handleMouseMove() {
+function updatePointer() {
+  pointerUpdateFrame = null
   pointerPos.value = layerRef.value?.getNode().getRelativePointerPosition() ?? null
   if (mousePress != null && !mousePress.dragging && pointerPos.value != null) {
     const moved = Math.hypot(pointerPos.value.x - mousePress.pos.x, pointerPos.value.y - mousePress.pos.y)
@@ -165,9 +163,25 @@ function handleMouseMove() {
     }
   }
   if (!awaitingEnd.value || start.value == null) return
-  const snapped = getPointerPos(endpointSnapRadius)
+  const snapped = pointerSnap.value
   if (snapped == null) return
   measurement.value = { from: start.value.pos, fromHeading: start.value.heading, to: snapped.pos }
+}
+
+function schedulePointerUpdate() {
+  if (pointerUpdateFrame != null) return
+  pointerUpdateFrame = requestAnimationFrame(updatePointer)
+}
+
+function flushPointerUpdate() {
+  stopPointerUpdate()
+  updatePointer()
+}
+
+function stopPointerUpdate() {
+  if (pointerUpdateFrame == null) return
+  cancelAnimationFrame(pointerUpdateFrame)
+  pointerUpdateFrame = null
 }
 
 function resetMousePress() {
@@ -177,7 +191,10 @@ function resetMousePress() {
 }
 
 function finishDrag() {
+  stopPointerUpdate()
   if (mousePress?.dragging) {
+    stopCursorAnimation()
+    cursorPos.value = pointerSnap.value?.pos ?? null
     awaitingEnd.value = false
     suppressClick = true
   }
@@ -186,7 +203,7 @@ function finishDrag() {
 
 function handleMouseUp(event: KonvaEventObject<MouseEvent>) {
   if (event.evt.button !== 0 || mousePress == null) return
-  handleMouseMove()
+  flushPointerUpdate()
   finishDrag()
 }
 
@@ -202,6 +219,7 @@ function handleWindowBlur() {
 }
 
 function hideCursorPreview() {
+  stopPointerUpdate()
   stopCursorAnimation()
   pointerPos.value = null
   cursorPos.value = null
@@ -231,10 +249,12 @@ onUnmounted(() => {
   emit('cursorPreviewChange', false)
 })
 
-const cursorSnap = computed(() => {
-  if (!props.active || pointerPos.value == null || cursorImage.value == null) return null
+const pointerSnap = computed(() => {
+  if (!props.active || pointerPos.value == null) return null
   return snap(pointerPos.value, awaitingEnd.value ? endpointSnapRadius : originSnapRadius)
 })
+
+const cursorSnap = computed(() => (cursorImage.value == null ? null : pointerSnap.value))
 
 function stopCursorAnimation() {
   if (cursorAnimationFrame == null) return
@@ -255,6 +275,10 @@ watch([cursorSnap, reducedMotion], ([next, reduce], [previous]) => {
 
   stopCursorAnimation()
   const from = cursorPos.value ?? pointerPos.value ?? next.pos
+  if (from.x === next.pos.x && from.y === next.pos.y) {
+    cursorPos.value = next.pos
+    return
+  }
   const startedAt = performance.now()
   const duration = next.target == null ? originReleaseDuration : originSnapDuration
   cursorPos.value = from
@@ -517,8 +541,8 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
       @click="handleClick"
       @mousedown="handleMouseDown"
       @mouseup="handleMouseUp"
-      @mouseenter="handleMouseMove"
-      @mousemove="handleMouseMove"
+      @mouseenter="schedulePointerUpdate"
+      @mousemove="schedulePointerUpdate"
       @mouseleave="hideCursorPreview"
     />
     <template v-if="measurement != null && lineConfig != null && distanceLabelLayout != null">

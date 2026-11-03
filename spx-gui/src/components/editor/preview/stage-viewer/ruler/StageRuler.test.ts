@@ -76,9 +76,15 @@ async function setup(reducedMotion = false) {
   })
 
   const capture = wrapper.getComponent(Rect)
-  async function move(pos: Pos) {
+  function queueMove(pos: Pos) {
     pointer = pos
     capture.vm.$emit('mousemove')
+  }
+  async function move(pos: Pos) {
+    queueMove(pos)
+    const pointerFrame = frames.get(nextFrameId)!
+    frames.delete(nextFrameId)
+    pointerFrame(time)
     await nextTick()
   }
   async function click() {
@@ -121,6 +127,7 @@ async function setup(reducedMotion = false) {
   return {
     wrapper,
     capture,
+    queueMove,
     move,
     click,
     press,
@@ -136,6 +143,66 @@ async function setup(reducedMotion = false) {
 }
 
 describe('Ruler cursor preview', () => {
+  it('coalesces pointer moves into one frame and shares the latest endpoint with the cursor', async () => {
+    const { move, queueMove, click, cursor, measurement, loadImage, advance, frames } = await setup()
+    await loadImage()
+    await move({ x: 100, y: 100 })
+    await click()
+    queueMove({ x: 180, y: 160 })
+    queueMove({ x: 250, y: 160 })
+    queueMove({ x: 320, y: 100 })
+    expect(frames.size).toBe(1)
+    expect(measurement()).toBeUndefined()
+    await advance(16)
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(cursor().props('config')).toMatchObject({ x: 300, y: 100 })
+    expect(frames.size).toBe(0)
+  })
+
+  it('flushes the latest pointer on drag release and cancels the pending frame', async () => {
+    const { press, queueMove, release, move, outline, measurement, advance, loadImage, frames } = await setup()
+    await loadImage()
+    await press({ x: 120, y: 100 })
+    queueMove({ x: 200, y: 160 })
+    await release({ x: 320, y: 100 })
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(outline().exists()).toBe(false)
+    expect(frames.size).toBe(0)
+    await advance(16)
+    await move({ x: 400, y: 200 })
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+  })
+
+  it('confirms the latest queued click position even before the cursor image loads', async () => {
+    const { move, queueMove, click, cursor, measurement, frames } = await setup()
+    await move({ x: 100, y: 100 })
+    await click()
+    queueMove({ x: 320, y: 100 })
+    await click()
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+    expect(cursor().exists()).toBe(false)
+    expect(frames.size).toBe(0)
+    await move({ x: 400, y: 200 })
+    expect(measurement()!.props('config').points).toEqual([100, 100, 300, 100])
+  })
+
+  it('cancels queued pointer work on leave, disable, and unmount', async () => {
+    const { wrapper, capture, queueMove, cursor, loadImage, advance, frames } = await setup()
+    await loadImage()
+    queueMove({ x: 200, y: 160 })
+    capture.vm.$emit('mouseleave')
+    expect(frames.size).toBe(0)
+    await advance(16)
+    expect(cursor().exists()).toBe(false)
+    queueMove({ x: 200, y: 160 })
+    await wrapper.setProps({ active: false })
+    expect(frames.size).toBe(0)
+    await wrapper.setProps({ active: true })
+    queueMove({ x: 200, y: 160 })
+    wrapper.unmount()
+    expect(frames.size).toBe(0)
+  })
+
   it('measures from the pressed origin, snaps the endpoint, and keeps the result after releasing a drag', async () => {
     const { move, press, release, click, cursor, outline, measurement, loadImage } = await setup()
     await loadImage()
