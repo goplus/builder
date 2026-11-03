@@ -22,7 +22,10 @@ const units = computed(() => getSeriesUnits(props.courseSeries))
 const unitParam = useRouteQueryParamInt('unit', 1)
 const unitIndex = computed(() => Math.min(Math.max(unitParam.value - 1, 0), units.value.length - 1))
 const unit = computed(() => units.value[unitIndex.value] ?? null)
-const seriesCoursesQuery = useSeriesCourses(() => props.courseSeries.id)
+const seriesCoursesQuery = useSeriesCourses(
+  () => props.courseSeries.id,
+  () => props.courseSeries.courseIDs
+)
 const unitCourses = computed(() => {
   const courses = seriesCoursesQuery.data.value
   if (unit.value == null || courses == null) return []
