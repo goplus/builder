@@ -82,14 +82,15 @@ onBeforeUnmount(() => {
   <UIModal
     :visible="visible"
     size="large"
+    :style="{ width: 'fit-content', maxWidth: 'min(960px, 100%)' }"
     :mask-closable="false"
     :radar="{ name: 'course-video', desc: 'Course-local instructional video' }"
     @update:visible="dismiss"
   >
     <div class="flex flex-col items-center gap-5 p-6">
       <div
-        class="relative flex items-center justify-center overflow-hidden rounded-md bg-grey-300"
-        :style="{ aspectRatio: videoAspectRatio, width: `min(100%, calc(65vh * ${videoAspectRatio}))` }"
+        class="relative flex max-w-full items-center justify-center overflow-hidden rounded-md bg-grey-300"
+        :style="{ aspectRatio: videoAspectRatio, width: `calc(65vh * ${videoAspectRatio})` }"
       >
         <UIError v-if="failed" class="p-6" :retry="load">
           {{ $t({ en: 'Failed to play the Course video', zh: '课程视频播放失败' }) }}
