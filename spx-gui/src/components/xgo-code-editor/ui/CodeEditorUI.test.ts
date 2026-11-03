@@ -86,4 +86,30 @@ describe('Code Editor UI options', () => {
     expect(attachUI.mock.calls.at(-1)![0]).toBe(ui)
     wrapper.unmount()
   })
+
+  it('wraps code in Simple Mode, and lets Normal mode turn wrapping on from its settings', async () => {
+    const editor = {
+      updateOptions: vi.fn(),
+      onDidChangeConfiguration: vi.fn()
+    }
+    vi.spyOn(CodeEditorUIController.prototype, 'init').mockImplementation(function (this: CodeEditorUIController) {
+      Object.defineProperty(this, 'editor', { get: () => editor })
+    })
+    vi.spyOn(CodeEditorUIController.prototype, 'dispose').mockImplementation(() => {})
+    const global = { plugins: [createI18n({ lang: 'en' })], directives: { radar: {} } }
+
+    const simple = shallowMount(CodeEditorUI, { props: { codeFilePath: 'Cat.spx', simpleMode: true }, global })
+    expect(simple.getComponent({ name: 'MonacoEditorComp' }).props('options').wordWrap).toBe('on')
+    expect(simple.findComponent({ name: 'CodeEditorSettings' }).exists()).toBe(false)
+    simple.unmount()
+
+    const normal = shallowMount(CodeEditorUI, { props: { codeFilePath: 'Cat.spx' }, global })
+    expect(normal.getComponent({ name: 'MonacoEditorComp' }).props('options').wordWrap).toBe('off')
+    normal.getComponent({ name: 'MonacoEditorComp' }).vm.$emit('init', editor as unknown as MonacoEditor)
+    await flushPromises()
+    normal.getComponent({ name: 'CodeEditorSettings' }).vm.$emit('update:wordWrap', true)
+    await nextTick()
+    expect(editor.updateOptions).toHaveBeenLastCalledWith(expect.objectContaining({ wordWrap: 'on' }))
+    normal.unmount()
+  })
 })

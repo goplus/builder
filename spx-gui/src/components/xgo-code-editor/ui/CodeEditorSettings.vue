@@ -19,7 +19,7 @@ const itemClass =
   <UIDropdown v-model:visible="visible" trigger="manual" placement="top-end">
     <template #trigger>
       <UIButton
-        v-radar="{ name: 'Code editor settings', desc: 'Open code editor settings' }"
+        v-radar="{ name: 'code-editor-settings', desc: 'Open code editor settings' }"
         type="white"
         icon="setting"
         shape="square"
@@ -31,7 +31,7 @@ const itemClass =
     </template>
     <div class="flex w-44 flex-col gap-1 p-2 text-text">
       <button
-        v-radar="{ name: 'Zoom in', desc: 'Zoom in the code editor' }"
+        v-radar="{ name: 'zoom-in', desc: 'Zoom in the code editor' }"
         type="button"
         class="bg-transparent"
         :class="itemClass"
@@ -41,7 +41,7 @@ const itemClass =
         {{ $t({ en: 'Zoom in', zh: '放大' }) }}
       </button>
       <button
-        v-radar="{ name: 'Zoom out', desc: 'Zoom out the code editor' }"
+        v-radar="{ name: 'zoom-out', desc: 'Zoom out the code editor' }"
         type="button"
         class="bg-transparent"
         :class="itemClass"
@@ -51,7 +51,7 @@ const itemClass =
         {{ $t({ en: 'Zoom out', zh: '缩小' }) }}
       </button>
       <button
-        v-radar="{ name: 'Reset zoom', desc: 'Reset code editor zoom to default' }"
+        v-radar="{ name: 'reset-zoom', desc: 'Reset code editor zoom to default' }"
         type="button"
         class="bg-transparent"
         :class="itemClass"
@@ -62,7 +62,7 @@ const itemClass =
       </button>
       <div class="my-1 border-t border-dividing-line-2"></div>
       <button
-        v-radar="{ name: 'Word wrap', desc: 'Toggle code word wrap' }"
+        v-radar="{ name: 'word-wrap', desc: 'Toggle code word wrap' }"
         type="button"
         :class="[itemClass, wordWrap ? 'bg-primary-100 text-primary-main hover:bg-primary-200' : 'bg-transparent']"
         :aria-pressed="wordWrap"

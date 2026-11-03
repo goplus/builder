@@ -87,7 +87,7 @@ const uiRef = computed(() => {
 
 const initialFontSize = 12
 const fontSize = props.simpleMode ? ref(16) : useUserLocalStorage('spx-gui-code-font-size', initialFontSize)
-const wordWrap = useUserLocalStorage('builder-code-editor-word-wrap', false)
+const wordWrap = props.simpleMode ? ref(true) : useUserLocalStorage('builder-code-editor-word-wrap', false)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
