@@ -37,6 +37,8 @@ import Search from './community/search.vue'
 import Tutorials from './tutorials/index.vue'
 import CourseSeries from './tutorials/course-series.vue'
 import CourseStart from './tutorials/course-start.vue'
+import CourseManagement from './course-management/index.vue'
+import CourseManagementSeries from './course-management/series.vue'
 import User from './community/user/index.vue'
 import UserOverview from './community/user/overview.vue'
 import UserProjects from './community/user/projects.vue'
@@ -196,6 +198,11 @@ export async function mountPages(path: string) {
         { path: 'feedback/:feedbackID', component: AdminFeedback, props: true }
       ]
     },
+    {
+      path: '/course-management',
+      component: CourseManagement,
+      children: [{ path: ':courseSeriesIdInput', component: CourseManagementSeries, props: true }]
+    },
     { path: '/course-series/:courseSeriesIdInput', component: CourseSeries, props: true },
     { path: '/course/:courseSeriesIdInput/:courseIdInput/start', component: CourseStart, props: true },
     { path: '/:pathMatch(.*)*', component: { template: '<div>Destination</div>' } }
@@ -343,6 +350,7 @@ export function setupPageTests() {
       description: 'Build your first space game',
       thumbnail: '',
       courseIDs: ['first-flight', 'landing'],
+      units: [],
       order: 1,
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z'
