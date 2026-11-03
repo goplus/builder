@@ -56,6 +56,7 @@ import type { LineConfig } from 'konva/lib/shapes/Line'
 import type { ArcConfig } from 'konva/lib/shapes/Arc'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { PathConfig } from 'konva/lib/shapes/Path'
+import type { CircleConfig } from 'konva/lib/shapes/Circle'
 import rulerCursorUrl from './triangle-ruler-cursor.svg?url&no-inline'
 
 const props = defineProps<{
@@ -79,11 +80,11 @@ let mousePress: { pos: Pos; origin: NonNullable<typeof start.value>; dragging: b
 let suppressClick = false
 const pointerPos = ref<Pos | null>(null)
 let pointerUpdateFrame: number | null = null
-const cursorPos = ref<Pos | null>(null)
+const markerPos = ref<Pos | null>(null)
 const cursorImage = shallowRef<HTMLImageElement | null>(null)
 const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
 const reducedMotion = ref(motionPreference.matches)
-let cursorAnimationFrame: number | null = null
+let markerAnimationFrame: number | null = null
 const image = new Image()
 image.onload = () => (cursorImage.value = image)
 image.src = rulerCursorUrl
@@ -135,6 +136,8 @@ function handleClick(event: KonvaEventObject<MouseEvent>) {
   }
   if (start.value == null) return
   measurement.value = { from: start.value.pos, fromHeading: start.value.heading, to: snapped.pos }
+  stopMarkerAnimation()
+  markerPos.value = snapped.pos
   awaitingEnd.value = false
 }
 
@@ -193,8 +196,8 @@ function resetMousePress() {
 function finishDrag() {
   stopPointerUpdate()
   if (mousePress?.dragging) {
-    stopCursorAnimation()
-    cursorPos.value = pointerSnap.value?.pos ?? null
+    stopMarkerAnimation()
+    markerPos.value = pointerSnap.value?.pos ?? null
     awaitingEnd.value = false
     suppressClick = true
   }
@@ -220,9 +223,9 @@ function handleWindowBlur() {
 
 function hideCursorPreview() {
   stopPointerUpdate()
-  stopCursorAnimation()
+  stopMarkerAnimation()
   pointerPos.value = null
-  cursorPos.value = null
+  markerPos.value = null
 }
 
 function stopMeasuring() {
@@ -254,51 +257,49 @@ const pointerSnap = computed(() => {
   return snap(pointerPos.value, awaitingEnd.value ? endpointSnapRadius : originSnapRadius)
 })
 
-const cursorSnap = computed(() => (cursorImage.value == null ? null : pointerSnap.value))
-
-function stopCursorAnimation() {
-  if (cursorAnimationFrame == null) return
-  cancelAnimationFrame(cursorAnimationFrame)
-  cursorAnimationFrame = null
+function stopMarkerAnimation() {
+  if (markerAnimationFrame == null) return
+  cancelAnimationFrame(markerAnimationFrame)
+  markerAnimationFrame = null
 }
 
-watch([cursorSnap, reducedMotion], ([next, reduce], [previous]) => {
+watch([pointerSnap, reducedMotion], ([next, reduce], [previous]) => {
   if (next == null || reduce || awaitingEnd.value) {
-    stopCursorAnimation()
-    cursorPos.value = next?.pos ?? null
+    stopMarkerAnimation()
+    markerPos.value = next?.pos ?? null
     return
   }
   if (next.target === previous?.target || (previous == null && next.target == null)) {
-    if (cursorAnimationFrame == null) cursorPos.value = next.pos
+    if (markerAnimationFrame == null) markerPos.value = next.pos
     return
   }
 
-  stopCursorAnimation()
-  const from = cursorPos.value ?? pointerPos.value ?? next.pos
+  stopMarkerAnimation()
+  const from = markerPos.value ?? pointerPos.value ?? next.pos
   if (from.x === next.pos.x && from.y === next.pos.y) {
-    cursorPos.value = next.pos
+    markerPos.value = next.pos
     return
   }
   const startedAt = performance.now()
   const duration = next.target == null ? originReleaseDuration : originSnapDuration
-  cursorPos.value = from
+  markerPos.value = from
 
   function animate(time: number) {
-    cursorAnimationFrame = null
-    const to = cursorSnap.value?.pos
+    markerAnimationFrame = null
+    const to = pointerSnap.value?.pos
     if (to == null) return
     const progress = Math.min(Math.max((time - startedAt) / duration, 0), 1)
     const eased = 1 - (1 - progress) ** 3
-    cursorPos.value = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased }
-    if (progress < 1) cursorAnimationFrame = requestAnimationFrame(animate)
+    markerPos.value = { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased }
+    if (progress < 1) markerAnimationFrame = requestAnimationFrame(animate)
   }
-  cursorAnimationFrame = requestAnimationFrame(animate)
+  markerAnimationFrame = requestAnimationFrame(animate)
 })
 
 const cursorConfig = computed<ImageConfig | null>(() => {
-  if (cursorSnap.value == null || cursorPos.value == null || cursorImage.value == null) return null
+  if (!props.active || pointerPos.value == null || cursorImage.value == null) return null
   return {
-    ...cursorPos.value,
+    ...pointerPos.value,
     image: cursorImage.value,
     // Match the native cursor's 32px size and top-left hotspot at any stage scale.
     width: cursorSize / props.stageScale,
@@ -308,11 +309,11 @@ const cursorConfig = computed<ImageConfig | null>(() => {
 })
 
 const cursorOutlineConfig = computed<PathConfig | null>(() => {
-  if (cursorConfig.value == null || cursorPos.value == null) return null
-  if (!awaitingEnd.value && (measurement.value != null || cursorSnap.value?.target == null)) return null
+  if (cursorConfig.value == null || pointerPos.value == null) return null
+  if (!awaitingEnd.value && (measurement.value != null || pointerSnap.value?.target == null)) return null
   const scale = cursorSize / 24 / props.stageScale
   return {
-    ...cursorPos.value,
+    ...pointerPos.value,
     data: cursorOutlinePath,
     scaleX: scale,
     scaleY: scale,
@@ -324,6 +325,27 @@ const cursorOutlineConfig = computed<PathConfig | null>(() => {
     fillEnabled: false,
     listening: false
   }
+})
+
+const endpointMarkerConfigs = computed<CircleConfig[]>(() => {
+  if (!props.active) return []
+  const positions: Pos[] = []
+  if (measurement.value != null) {
+    positions.push(measurement.value.from, measurement.value.to)
+  } else if (awaitingEnd.value && start.value != null) {
+    positions.push(start.value.pos)
+  }
+  if (markerPos.value != null) positions.push(markerPos.value)
+  return positions
+    .filter((pos, index) => positions.findIndex((other) => other.x === pos.x && other.y === pos.y) === index)
+    .map((pos) => ({
+      ...pos,
+      radius: 6 / props.stageScale,
+      stroke: color.grey[100],
+      strokeWidth: 1.5,
+      strokeScaleEnabled: false,
+      listening: false
+    }))
 })
 
 watch(
@@ -600,6 +622,10 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
         />
       </v-group>
     </template>
+    <v-group v-for="(marker, index) in endpointMarkerConfigs" :key="index" :config="{ listening: false }">
+      <v-circle :config="marker" />
+      <v-circle :config="{ ...marker, radius: 3.5 / props.stageScale, strokeWidth: 1.25 }" />
+    </v-group>
     <v-path v-if="cursorOutlineConfig != null" :config="cursorOutlineConfig" />
     <v-image v-if="cursorConfig != null" :config="cursorConfig" />
   </v-layer>
