@@ -21,8 +21,8 @@ function makeCourse(id: string, title: string) {
   return { id, owner: 'curator', kind: 'playground', title, thumbnail: '', content: {} } as Course
 }
 
-function makeSeries(id: string, courseIDs: string[]) {
-  return { id, owner: 'curator', kind: 'playground', title: `Series ${id}`, courseIDs } as CourseSeries
+function makeSeries(id: string, courseIDs: string[], units: CourseSeries['units'] = []) {
+  return { id, owner: 'curator', kind: 'playground', title: `Series ${id}`, courseIDs, units } as CourseSeries
 }
 
 describe('course writes', () => {
@@ -41,6 +41,7 @@ describe('course writes', () => {
     const [before, other] = [makeCourse('2338', 'First'), makeCourse('2339', 'Second')]
     const after = makeCourse('2338', 'First, rewritten')
     queryClient.setQueryData(['course', '2338'], before)
+    queryClient.setQueryData(['course-series-courses', '40'], [before, other])
     queryClient.setQueryData(
       ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([before, other])
@@ -53,6 +54,7 @@ describe('course writes', () => {
     await updateCourse('2338', { title: 'First, rewritten' })
 
     expect(queryClient.getQueryData(['course', '2338'])).toEqual(after)
+    expect(queryClient.getQueryData(['course-series-courses', '40'])).toEqual([after, other])
     expect(queryClient.getQueryData(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])).toEqual(
       page([after, other])
     )
@@ -67,6 +69,18 @@ describe('course writes', () => {
   it('invalidates a deleted course and its course pages, and updates series membership', async () => {
     const [deleted, kept] = [makeCourse('2338', 'First'), makeCourse('2339', 'Second')]
     queryClient.setQueryData(['course', '2338'], deleted)
+    queryClient.setQueryData(['course-series-courses', '40'], [deleted, kept])
+    queryClient.setQueryData(
+      ['course-series', '42'],
+      makeSeries(
+        '42',
+        ['2338', '2339'],
+        [
+          { id: 'unit-1', title: 'Unit 1', courseIDs: ['2338'] },
+          { id: 'unit-2', title: 'Unit 2', courseIDs: ['2339'] }
+        ]
+      )
+    )
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338', '2339']))
     queryClient.setQueryData(['course-series', '41'], makeSeries('41', ['2339']))
     queryClient.setQueryData(
@@ -79,6 +93,11 @@ describe('course writes', () => {
     await deleteCourse('2338')
 
     expect(queryClient.getQueryState(['course', '2338'])?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryData(['course-series-courses', '40'])).toEqual([kept])
+    expect(queryClient.getQueryData<CourseSeries>(['course-series', '42'])?.units).toEqual([
+      { id: 'unit-1', title: 'Unit 1', courseIDs: [] },
+      { id: 'unit-2', title: 'Unit 2', courseIDs: ['2339'] }
+    ])
     expect(queryClient.getQueryData<CourseSeries>(['course-series', '40'])?.courseIDs).toEqual(['2339'])
     expect(queryClient.getQueryData<CourseSeries>(['course-series', '41'])?.courseIDs).toEqual(['2339'])
     expect(

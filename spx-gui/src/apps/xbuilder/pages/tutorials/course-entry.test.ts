@@ -5,6 +5,7 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createI18n } from '@/utils/i18n'
+import { client as apiClient } from '@/apis/common'
 import type { PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
@@ -25,7 +26,8 @@ const apis = vi.hoisted(() => ({
   load: vi.fn(),
   dispose: vi.fn()
 }))
-vi.mock('@/apis/course', () => ({
+vi.mock('@/apis/course', async (original) => ({
+  ...(await original<typeof import('@/apis/course')>()),
   listCourses: apis.list,
   getCourse: apis.get,
   addCourse: apis.add,
@@ -76,8 +78,9 @@ const pending: Array<() => void> = []
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.spyOn(apiClient, 'get').mockImplementation((_path, params, options) => apis.list(params, options?.signal))
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
-  series = { id: 'series', courseIDs: ['first'] } as CourseSeries
+  series = { id: 'series', courseIDs: ['first'], units: [] as CourseSeries['units'] } as CourseSeries
   courses = ['first', 'new'].map((id) => ({ id, title: id, kind: 'playground', content: {} }) as PlaygroundCourse)
   apis.series.mockImplementation(async () => ({ ...series, courseIDs: [...series.courseIDs] }))
   apis.get.mockImplementation(async (id) => courses.find((course) => course.id === id))
@@ -104,6 +107,7 @@ beforeEach(() => {
 afterEach(() => {
   pending.splice(0).forEach((finish) => finish())
   client.clear()
+  vi.restoreAllMocks()
 })
 
 function globals() {
@@ -162,48 +166,75 @@ describe('Course entry with shared cached queries', () => {
     expect(enter).toHaveBeenCalledWith(courses[1], series)
   })
 
-  it('creates and saves a course, then waits for a valid list after leaving management during refresh', async () => {
-    let creation!: CourseCreation
-    let save!: ReturnType<typeof useUpdateCourse>
-    const management = mount(
-      defineComponent({
-        setup() {
-          useSeriesCourses(() => 'series')
-          creation = new CourseCreation('series', useUpdateCourseSeries())
-          save = useUpdateCourse()
-          return () => null
-        }
-      }),
-      { global: globals() }
+  it.each([false, true])(
+    'creates and saves a course in a series (units: %s), then waits for a valid list after leaving management during refresh',
+    async (withUnits) => {
+      if (withUnits) series.units = [{ id: 'unit-1', title: 'Basics', courseIDs: ['first'] }]
+      let creation!: CourseCreation
+      let save!: ReturnType<typeof useUpdateCourse>
+      const management = mount(
+        defineComponent({
+          setup() {
+            useSeriesCourses(() => 'series')
+            creation = new CourseCreation('series', useUpdateCourseSeries())
+            save = useUpdateCourse()
+            return () => null
+          }
+        }),
+        { global: globals() }
+      )
+      await flushPromises()
+      // The management refresh is abandoned on navigation, just as in the reported flow.
+      apis.list.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() => resolve({ data: [courses[0]], total: 1 }))
+          })
+      )
+      await creation.run(async () => courses[1])
+      await vi.waitFor(() => expect(apis.list).toHaveBeenCalledTimes(2))
+      management.unmount()
+      await save('new', { title: 'Saved lesson' })
+      let finish!: () => void
+      apis.list.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = () => resolve({ data: [...courses], total: 2 })
+          })
+      )
+      const { wrapper, enter } = await openEntry('/course/series/new/start')
+      expect(enter).toHaveBeenCalledOnce()
+      expect(apis.load).not.toHaveBeenCalled()
+      expect(wrapper.text()).toContain('loading')
+      await vi.waitFor(() => expect(finish).toBeTypeOf('function'))
+      finish()
+      await flushPromises()
+      expect(wrapper.text()).toBe('Saved lesson')
+      expect(apis.load).toHaveBeenCalledWith(courses[1])
+    }
+  )
+
+  it('starts a course after the first API page in a series divided into units', async () => {
+    courses = Array.from(
+      { length: 101 },
+      (_, i) =>
+        ({
+          id: `course-${i}`,
+          title: `Lesson ${i}`,
+          kind: 'playground',
+          content: {}
+        }) as PlaygroundCourse
     )
-    await flushPromises()
-    // The management refresh is abandoned on navigation, just as in the reported flow.
-    apis.list.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          pending.push(() => resolve({ data: [courses[0]], total: 1 }))
-        })
-    )
-    await creation.run(async () => courses[1])
-    await vi.waitFor(() => expect(apis.list).toHaveBeenCalledTimes(2))
-    management.unmount()
-    await save('new', { title: 'Saved lesson' })
-    let finish!: () => void
-    apis.list.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finish = () => resolve({ data: [...courses], total: 2 })
-        })
-    )
-    const { wrapper, enter } = await openEntry('/course/series/new/start')
-    expect(enter).toHaveBeenCalledOnce()
-    expect(apis.load).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('loading')
-    await vi.waitFor(() => expect(finish).toBeTypeOf('function'))
-    finish()
-    await flushPromises()
-    expect(wrapper.text()).toBe('Saved lesson')
-    expect(apis.load).toHaveBeenCalledWith(courses[1])
+    series.courseIDs = courses.map((course) => course.id)
+    series.units = [{ id: 'unit-1', title: 'Basics', courseIDs: series.courseIDs }]
+    apis.list.mockImplementation(async ({ pageIndex, pageSize }) => ({
+      data: courses.slice((pageIndex - 1) * pageSize, pageIndex * pageSize),
+      total: courses.length
+    }))
+    const { wrapper } = await openEntry('/course/series/course-100/playground')
+    await vi.waitFor(() => expect(wrapper.text()).toBe('Lesson 100'))
+    expect(apis.load).toHaveBeenCalledWith(courses[100])
+    expect(apis.list).toHaveBeenCalledTimes(2)
   })
 
   it('preserves edits during background updates and reads the updated list when switching courses in the same series', async () => {
@@ -223,7 +254,7 @@ describe('Course entry with shared cached queries', () => {
           pending.push(finish)
         })
     )
-    const refresh = client.invalidateQueries({ queryKey: ['course-series-courses-by-page', 'series'] })
+    const refresh = client.invalidateQueries({ queryKey: ['course-series-courses', 'series'] })
     await vi.waitFor(() => expect(finishes).toHaveLength(1))
     expect(apis.load).toHaveBeenCalledOnce()
     expect(query.data.value).toBe(project)

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { withQueryClient } from '@/utils/test'
 import type { Course } from '@/apis/course'
+import { client } from '@/apis/common'
 import type { CourseSeries } from '@/apis/course-series'
 import {
   useCourseChangesInSeries,
@@ -34,7 +35,14 @@ function makeCourse(id: string) {
 }
 
 function makeSeries(id: string, courseIDs: string[]) {
-  return { id, owner: 'curator', kind: 'playground', title: `Series ${id}`, courseIDs } as CourseSeries
+  return {
+    id,
+    owner: 'curator',
+    kind: 'playground',
+    title: `Series ${id}`,
+    courseIDs,
+    units: [] as CourseSeries['units']
+  } as CourseSeries
 }
 
 describe('course series writes', () => {
@@ -43,15 +51,20 @@ describe('course series writes', () => {
   beforeEach(() => {
     queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } })
     apis.listCourses.mockReset()
+    vi.spyOn(client, 'get').mockImplementation((_path, params, options) => apis.listCourses(params, options?.signal))
     apis.updateCourseSeries.mockReset()
     apis.deleteCourseSeries.mockReset()
   })
 
   // A refetch `vue-query` has scheduled for later must not reach into the next test, with its mocks.
-  afterEach(() => queryClient.clear())
+  afterEach(() => {
+    queryClient.clear()
+    vi.restoreAllMocks()
+  })
 
   it('publishes the saved series and makes a snapshot reader wait for the invalidated list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
+    queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
     queryClient.setQueryData(
       ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
@@ -67,6 +80,7 @@ describe('course series writes', () => {
     await updateCourseSeries('40', { courseIDs: ['2338', '2340'] })
 
     expect(queryClient.getQueryData(['course-series', '40'])).toEqual(after)
+    expect(queryClient.getQueryState(['course-series-courses', '40'])?.isInvalidated).toBe(true)
     expect(
       queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)
@@ -103,6 +117,7 @@ describe('course series writes', () => {
 
   it('invalidates a series and list after an uncertain write failure', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
+    queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
     queryClient.setQueryData(
       ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
@@ -117,6 +132,7 @@ describe('course series writes', () => {
     await expect(updateCourseSeries('40', { courseIDs: ['2340'] })).rejects.toThrow()
 
     expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(['course-series-courses', '40'])?.isInvalidated).toBe(true)
     expect(
       queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)
@@ -127,6 +143,7 @@ describe('course series writes', () => {
 
   it('invalidates a deleted series and its course list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
+    queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
     queryClient.setQueryData(
       ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
@@ -137,6 +154,7 @@ describe('course series writes', () => {
     await deleteCourseSeries('40')
 
     expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(['course-series-courses', '40'])?.isInvalidated).toBe(true)
     expect(
       queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)
