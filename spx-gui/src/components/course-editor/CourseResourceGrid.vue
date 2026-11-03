@@ -64,12 +64,21 @@ const handleAdd = useMessageHandle(
     const action = {
       name: props.view === 'videos' ? { en: 'Add videos', zh: '添加视频' } : { en: 'Add images', zh: '添加图片' }
     }
-    await props.history.doAction(action, () => {
-      for (const nativeFile of files) {
+    const added = await Promise.all(
+      files.map(async (nativeFile) => {
         const file = fromNativeFile(nativeFile)
+        if (props.view !== 'videos') return new Image(stripExt(file.name), file)
+        const video = new Video(stripExt(file.name), file)
+        await video.ensureDimensions()
+        return video
+      })
+    )
+    if (disposed) return
+    await props.history.doAction(action, () => {
+      for (const resource of added) {
         // The project renames a resource whose name is taken or cannot be used.
-        if (props.view === 'videos') props.project.addVideo(new Video(stripExt(file.name), file))
-        else props.project.addImage(new Image(stripExt(file.name), file))
+        if (resource instanceof Video) props.project.addVideo(resource)
+        else props.project.addImage(resource)
       }
     })
   },

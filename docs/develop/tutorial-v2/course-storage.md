@@ -86,3 +86,20 @@ All existing courses are Guided Courses, so migration can be deterministic:
 9. Remove the temporary defaults if Course creation must always provide kind explicitly.
 
 No Course IDs or Course Series ordering changes during migration.
+
+## Optional video dimensions
+
+A video manifest at `assets/videos/<name>/index.json` may include `width` and `height`,
+in pixels, alongside `path` and the optional `builder_id`:
+
+```json
+{ "path": "intro.mp4", "width": 1920, "height": 1080 }
+```
+
+Dimensions are valid only when both are positive integers. Missing, partial or invalid
+values mean unknown dimensions and do not prevent loading the resource. Tutorial
+projects are not required to include these fields. Valid dimensions survive load/save
+and project import/export.
+
+These fields remain part of the opaque Tutorial project content; they do not require
+Course API changes or database migrations.
