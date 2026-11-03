@@ -4,33 +4,30 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { useMessageHandle } from '@/utils/exception'
-import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { SortOrder } from '@/apis/common'
 import { useSignedIn } from '@/stores/user'
 import {
   UIButton,
+  UIDialog,
   UIError,
   UILoading,
   UIPagination,
   UISelect,
   UISelectOption,
-  UITextInput,
-  useConfirmDialog
+  UITextInput
 } from '@/components/ui'
 import CopyButton from '@/components/common/CopyButton.vue'
 import UIIcon from '@/components/ui/icons/UIIcon.vue'
 import * as accountAdminApis from '@/apis/admin/account'
-import { accountAppClientTypeLabels, accountAppStatusLabels, accountAppTokenTypeLabels, formatTime } from './common'
+import { accountAppStatusLabels, accountAppTokenTypeLabels, formatTime } from './common'
 
 const props = defineProps<{
   userID: string
   grantID: string
 }>()
 
-const i18n = useI18n()
-const confirm = useConfirmDialog()
 const signedIn = useSignedIn()
 const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
@@ -65,6 +62,37 @@ usePageTitle(() =>
       ]
 )
 
+const oauthClientID = ref('')
+const clientsQuery = useQuery(
+  async ({ signal }) => {
+    if (!canManageAccount.value || app.value == null) return []
+    const appID = app.value.id
+    const clients: accountAdminApis.AccountOAuthClient[] = []
+    for (let pageIndex = 1; ; pageIndex++) {
+      const page = await accountAdminApis.listAccountOAuthClients(appID, { pageIndex, pageSize: 100 })
+      signal.throwIfAborted()
+      clients.push(
+        ...page.data.filter((client) => client.status === 'active' && client.grantTypes.includes('authorization_code'))
+      )
+      if (page.data.length < 100) return clients
+    }
+  },
+  { en: 'Failed to load authorization clients', zh: '加载授权客户端失败' }
+)
+
+const revoked = ref(false)
+const showRevokeGrant = ref(false)
+const handleRevokeGrant = useMessageHandle(
+  async () => {
+    await accountAdminApis.revokeAccountAppGrant(props.grantID)
+    createdToken.value = null
+    showRevokeGrant.value = false
+    revoked.value = true
+  },
+  { en: 'Failed to revoke app authorization', zh: '撤销应用授权失败' },
+  { en: 'App authorization revoked', zh: '应用授权已撤销' }
+)
+
 const tokensPageSize = 20
 const maxTokenLifetimeDays = 365
 const tokensPage = ref(1)
@@ -94,7 +122,15 @@ const createdToken = ref<accountAdminApis.CreatedAccountAppToken | null>(null)
 const minExpiresAtInput = ref(formatDateTimeLocal(dayjs()))
 const maxExpiresAtInput = ref(formatDateTimeLocal(dayjs().add(maxTokenLifetimeDays, 'day')))
 const expiresAtInput = ref(formatDateTimeLocal(defaultTokenExpiresAt()))
-const isCreateTokenValid = computed(() => trimmedTokenName.value !== '' && expiresAtInput.value !== '')
+const isCreateTokenValid = computed(
+  () =>
+    app.value?.status === 'active' &&
+    !clientsQuery.isLoading.value &&
+    clientsQuery.error.value == null &&
+    trimmedTokenName.value !== '' &&
+    expiresAtInput.value !== '' &&
+    clientsQuery.data.value?.some((client) => client.id === oauthClientID.value) === true
+)
 
 function formatDateTimeLocal(value: dayjs.Dayjs) {
   return value.format('YYYY-MM-DDTHH:mm')
@@ -142,6 +178,7 @@ function toggleCreateTokenForm() {
 const handleCreateToken = useMessageHandle(
   async () => {
     const token = await accountAdminApis.createAccountAppGrantToken(props.grantID, {
+      oauthClientID: oauthClientID.value,
       tokenType: 'accessToken',
       name: trimmedTokenName.value,
       expiresAt: dayjs(expiresAtInput.value).toISOString()
@@ -159,21 +196,19 @@ const handleCopyCreatedToken = useMessageHandle(
   { en: 'Access token copied', zh: 'Access token 已复制' }
 )
 
+const revokeTokenID = ref<string | null>(null)
 const handleRevokeToken = useMessageHandle(
-  async (tokenID: string) => {
-    await confirm({
-      type: 'warning',
-      title: i18n.t({ en: 'Revoke token', zh: '撤销 token' }),
-      content: i18n.t({ en: 'Are you sure to revoke this token?', zh: '确定要撤销此 token 吗？' }),
-      confirmText: i18n.t({ en: 'Revoke', zh: '撤销' })
-    })
+  async () => {
+    const tokenID = revokeTokenID.value
+    if (tokenID == null) throw new Error('No token selected')
     await accountAdminApis.revokeAccountAppGrantToken(props.grantID, tokenID)
     if (createdToken.value?.id === tokenID) createdToken.value = null
+    revokeTokenID.value = null
     tokensQuery.refetch()
   },
   { en: 'Failed to revoke token', zh: '撤销 token 失败' },
   { en: 'Token revoked', zh: '已撤销 token' }
-).fn
+)
 
 function dismissCreatedToken() {
   createdToken.value = null
@@ -203,6 +238,14 @@ function dismissCreatedToken() {
       </template>
     </UIError>
 
+    <div v-else-if="revoked" class="rounded-lg bg-white p-6 text-grey-900">
+      {{
+        $t({
+          en: 'This app authorization has been revoked. Its outstanding codes and user tokens are no longer valid.',
+          zh: '此应用授权已撤销，关联的未兑换授权码和用户令牌均已失效。'
+        })
+      }}
+    </div>
     <UILoading v-else-if="grantQuery.isLoading.value || userQuery.isLoading.value" class="my-16" />
     <UIError v-else-if="grantQuery.error.value != null || userQuery.error.value != null" class="py-12">
       {{ $t((grantQuery.error.value ?? userQuery.error.value)!.userMessage) }}
@@ -242,8 +285,8 @@ function dismissCreatedToken() {
                 <CopyButton :value="app.name" :label="{ en: 'Copy app name', zh: '复制应用名称' }" />
               </span>
               <span class="flex items-center gap-1">
-                <span>{{ $t({ en: 'Client ID', zh: '客户端 ID' }) }}: {{ app.id }}</span>
-                <CopyButton :value="app.id" :label="{ en: 'Copy client ID', zh: '复制客户端 ID' }" />
+                <span>{{ $t({ en: 'App ID', zh: '应用 ID' }) }}: {{ app.id }}</span>
+                <CopyButton :value="app.id" :label="{ en: 'Copy app ID', zh: '复制应用 ID' }" />
               </span>
             </div>
             <div class="mt-1 flex items-center gap-1 text-xs text-grey-700">
@@ -274,8 +317,8 @@ function dismissCreatedToken() {
               <p class="m-0 mt-1 text-sm text-grey-800">
                 {{
                   $t({
-                    en: 'The active authorization this user granted to the OAuth app.',
-                    zh: '此用户授予该 OAuth 应用的当前生效授权。'
+                    en: 'The active authorization this user granted to the app, shared across its OAuth clients.',
+                    zh: '此用户授予该应用的当前生效授权，由其 OAuth 客户端共享。'
                   })
                 }}
               </p>
@@ -313,10 +356,6 @@ function dismissCreatedToken() {
                 <div class="text-grey-800">{{ $t({ en: 'Last updated', zh: '最后更新' }) }}</div>
                 <div class="mt-1 text-grey-1000">{{ formatTime(grant.updatedAt) }}</div>
               </div>
-              <div>
-                <div class="text-grey-800">{{ $t({ en: 'Client type', zh: '客户端类型' }) }}</div>
-                <div class="mt-1 text-grey-1000">{{ $t(accountAppClientTypeLabels[app.clientType]) }}</div>
-              </div>
             </div>
           </section>
         </div>
@@ -353,6 +392,30 @@ function dismissCreatedToken() {
               class="flex flex-col gap-4"
               @submit.prevent="handleCreateToken.fn"
             >
+              <label class="mb-4 flex flex-col gap-1 text-sm text-grey-900">
+                {{ $t({ en: 'OAuth client', zh: 'OAuth 客户端' }) }}
+                <UISelect v-model:value="oauthClientID" :disabled="clientsQuery.isLoading.value">
+                  <UISelectOption value="">{{ $t({ en: 'Select a client', zh: '请选择客户端' }) }}</UISelectOption>
+                  <UISelectOption v-for="client in clientsQuery.data.value ?? []" :key="client.id" :value="client.id">
+                    {{ client.name }} ({{ client.clientID }})
+                  </UISelectOption>
+                </UISelect>
+                <span v-if="app.status !== 'active'" class="text-xs text-grey-700">
+                  {{ $t({ en: 'Enable this app before creating a token.', zh: '请先启用此应用，再创建令牌。' }) }}
+                </span>
+                <span v-else-if="clientsQuery.error.value != null" class="text-red-600">
+                  {{ $t(clientsQuery.error.value.userMessage) }}
+                </span>
+                <span v-else-if="clientsQuery.data.value?.length === 0" class="text-xs text-grey-700">
+                  {{
+                    $t({
+                      en: 'Register an active user-authorization client for this app before creating a token.',
+                      zh: '请先为此应用登记有效的用户授权客户端，再创建令牌。'
+                    })
+                  }}
+                </span>
+              </label>
+
               <label class="flex flex-col gap-1 text-sm text-grey-900">
                 {{ $t({ en: 'Name', zh: '名称' }) }}
                 <UITextInput v-model:value="tokenName" :maxlength="accountAdminApis.accountAppTokenNameMaxLength" />
@@ -474,6 +537,7 @@ function dismissCreatedToken() {
               <tr>
                 <th class="px-4 py-3 font-medium">ID</th>
                 <th class="px-4 py-3 font-medium">{{ $t({ en: 'Type', zh: '类型' }) }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t({ en: 'OAuth client', zh: 'OAuth 客户端' }) }}</th>
                 <th class="px-4 py-3 font-medium">{{ $t({ en: 'Name', zh: '名称' }) }}</th>
                 <th class="px-4 py-3 font-medium">{{ $t({ en: 'Created', zh: '创建时间' }) }}</th>
                 <th class="px-4 py-3 font-medium">{{ $t({ en: 'Expires', zh: '过期时间' }) }}</th>
@@ -496,6 +560,16 @@ function dismissCreatedToken() {
                 <td class="whitespace-nowrap px-4 py-3 text-grey-900">
                   {{ $t(accountAppTokenTypeLabels[token.tokenType]) }}
                 </td>
+                <td class="whitespace-nowrap px-4 py-3 text-primary-main">
+                  <RouterLink
+                    :to="`/admin/apps/${encodeURIComponent(app.id)}/oauth-clients/${encodeURIComponent(token.oauthClientID)}`"
+                  >
+                    {{
+                      clientsQuery.data.value?.find((client) => client.id === token.oauthClientID)?.name ??
+                      token.oauthClientID
+                    }}
+                  </RouterLink>
+                </td>
                 <td class="max-w-64 px-4 py-3 text-grey-900">
                   <span class="line-clamp-2">{{ token.name }}</span>
                 </td>
@@ -505,7 +579,7 @@ function dismissCreatedToken() {
                   {{ token.lastUsedAt == null ? '-' : formatTime(token.lastUsedAt) }}
                 </td>
                 <td class="whitespace-nowrap px-4 py-3 text-right">
-                  <UIButton class="w-16" type="red" size="small" @click="handleRevokeToken(token.id)">
+                  <UIButton class="w-16" type="red" size="small" @click="revokeTokenID = token.id">
                     {{ $t({ en: 'Revoke', zh: '撤销' }) }}
                   </UIButton>
                 </td>
@@ -524,5 +598,52 @@ function dismissCreatedToken() {
         </div>
       </section>
     </div>
+
+    <div v-if="canManageAccount && grant != null && !revoked" class="mt-5 flex justify-end">
+      <UIButton type="red" @click="showRevokeGrant = true">{{
+        $t({ en: 'Revoke app authorization...', zh: '撤销应用授权...' })
+      }}</UIButton>
+    </div>
+    <UIDialog
+      :visible="showRevokeGrant"
+      :mask-closable="!handleRevokeGrant.isLoading.value"
+      type="warning"
+      :title="$t({ en: 'Revoke app authorization', zh: '撤销应用授权' })"
+      @update:visible="!handleRevokeGrant.isLoading.value && (showRevokeGrant = false)"
+    >
+      <p>
+        {{
+          $t({
+            en: "Revoke this user's authorization for the app across all clients? Associated authorization codes and user tokens will stop working. App-only permissions are unaffected.",
+            zh: '撤销此用户在该应用所有客户端下的授权吗？关联的授权码和用户令牌将失效，不影响应用自主访问权限。'
+          })
+        }}
+      </p>
+      <div class="mt-4 flex justify-end gap-2">
+        <UIButton type="white" :disabled="handleRevokeGrant.isLoading.value" @click="showRevokeGrant = false">
+          {{ $t({ en: 'Cancel', zh: '取消' }) }}
+        </UIButton>
+        <UIButton type="red" :loading="handleRevokeGrant.isLoading.value" @click="handleRevokeGrant.fn">
+          {{ $t({ en: 'Revoke', zh: '撤销' }) }}
+        </UIButton>
+      </div>
+    </UIDialog>
+    <UIDialog
+      :visible="revokeTokenID != null"
+      :mask-closable="!handleRevokeToken.isLoading.value"
+      type="warning"
+      :title="$t({ en: 'Revoke token', zh: '撤销 token' })"
+      @update:visible="!handleRevokeToken.isLoading.value && (revokeTokenID = null)"
+    >
+      <p>{{ $t({ en: 'Are you sure you want to revoke this token?', zh: '确定要撤销此 token 吗？' }) }}</p>
+      <div class="mt-4 flex justify-end gap-2">
+        <UIButton type="white" :disabled="handleRevokeToken.isLoading.value" @click="revokeTokenID = null">
+          {{ $t({ en: 'Cancel', zh: '取消' }) }}
+        </UIButton>
+        <UIButton type="red" :loading="handleRevokeToken.isLoading.value" @click="handleRevokeToken.fn">
+          {{ $t({ en: 'Revoke', zh: '撤销' }) }}
+        </UIButton>
+      </div>
+    </UIDialog>
   </section>
 </template>

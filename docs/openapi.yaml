@@ -273,8 +273,8 @@ paths:
 
         Account Web may authenticate with an account session cookie.
 
-        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:read`
-        Account API scope.
+        App backends may authenticate with a delegated user access token with the `account:user:read` Account API scope.
+        App-only access tokens cannot identify the current user.
       security:
         - accountSessionCookie: []
         - bearerAuth: []
@@ -299,8 +299,8 @@ paths:
 
         Account Web may authenticate with an account session cookie.
 
-        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:write`
-        Account API scope.
+        App backends may authenticate with a delegated user access token with the `account:user:write` Account API
+        scope. App-only access tokens cannot identify the current user.
 
         Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
@@ -341,8 +341,8 @@ paths:
 
         Account Web may authenticate with an account session cookie.
 
-        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:write`
-        Account API scope.
+        App backends may authenticate with a delegated user access token with the `account:user:write` Account API
+        scope. App-only access tokens cannot identify the current user.
 
         Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
@@ -419,6 +419,47 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /account/users/{userID}:
+    get:
+      operationId: getAccountUserByID
+      tags:
+        - Account
+      summary: Get an account user by ID
+      description: |
+        Retrieve user fields exposed by XBuilder Account for the specified user. The response uses the same
+        `AccountUser` representation as `GET /account/user`.
+
+        Requires an app-only access token with the `account:user:read` Account API scope. User access tokens and account
+        session cookies are not accepted.
+
+        App directory queries and user queries by ID share a rate limit per OAuth client.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userID
+          description: ID of the user to retrieve.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
 
   /account/session:
     post:
@@ -596,6 +637,102 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /account/apps:
+    get:
+      operationId: listAccountApps
+      tags:
+        - Account
+      summary: List account apps
+      description: |
+        Retrieve a list of registered account apps, including disabled apps.
+
+        Requires an app-only access token with the `account:app:read` Account API scope. User access tokens and account
+        session cookies are not accepted.
+
+        App directory queries and user queries by ID share a rate limit per OAuth client.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountApp"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /account/apps/{appID}:
+    get:
+      operationId: getAccountApp
+      tags:
+        - Account
+      summary: Get an account app
+      description: |
+        Retrieve the registration details of an account app, including a disabled app.
+
+        Requires an app-only access token with the `account:app:read` Account API scope. User access tokens and account
+        session cookies are not accepted.
+
+        App directory queries and user queries by ID share a rate limit per OAuth client.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountApp"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
   /account/oauth/par:
     post:
       operationId: createAccountOAuthPushedAuthorizationRequest
@@ -770,12 +907,16 @@ paths:
         - Account OAuth
       summary: Create an OAuth token
       description: |
-        Create or refresh Account-issued app-scoped OAuth tokens.
+        Exchange an authorization code, rotate a refresh token, or create an app-only access token.
 
-        Authorization code exchange validates the redirect URI and PKCE verifier.
+        Authorization codes must be exchanged by the original OAuth client, with the original redirect URI and a
+        matching PKCE verifier.
 
-        Refresh token exchange rotates the refresh token. Reuse of a rotated refresh token is treated as a replay signal
-        and revokes the corresponding token family or grant.
+        Refresh requests cannot expand the original refresh token scope. The replacement refresh token retains that
+        scope. Reuse of a consumed refresh token revokes its token family.
+
+        App-only access uses `client_credentials` with a confidential client and explicitly requested, approved scopes.
+        It does not issue a refresh token.
       security:
         - oauthClientSecretBasic: []
         - {}
@@ -788,6 +929,19 @@ paths:
       responses:
         "200":
           description: Successful response.
+          headers:
+            Cache-Control:
+              description: OAuth token responses are not cacheable.
+              schema:
+                type: string
+                examples:
+                  - no-store
+            Pragma:
+              description: OAuth token responses are not cacheable by HTTP/1.0 caches.
+              schema:
+                type: string
+                examples:
+                  - no-cache
           content:
             application/json:
               schema:
@@ -805,7 +959,13 @@ paths:
       tags:
         - Account OAuth
       summary: Introspect an OAuth token
-      description: Introspect an Account-issued OAuth token using OAuth 2.0 Token Introspection.
+      description: |
+        Introspect an Account-issued OAuth token using OAuth 2.0 Token Introspection.
+
+        A confidential OAuth client may introspect tokens belonging to the same app. Unknown tokens, inactive tokens,
+        and tokens belonging to another app return `{ "active": false }`.
+
+        Only active access tokens include `token_type`, with the value `Bearer`.
       security:
         - oauthClientSecretBasic: []
       requestBody:
@@ -833,6 +993,19 @@ paths:
       responses:
         "200":
           description: Successful response.
+          headers:
+            Cache-Control:
+              description: OAuth token responses are not cacheable.
+              schema:
+                type: string
+                examples:
+                  - no-store
+            Pragma:
+              description: OAuth token responses are not cacheable by HTTP/1.0 caches.
+              schema:
+                type: string
+                examples:
+                  - no-cache
           content:
             application/json:
               schema:
@@ -851,10 +1024,13 @@ paths:
         - Account OAuth
       summary: Revoke an OAuth token
       description: |
-        Revoke an Account-issued OAuth token using OAuth 2.0 Token Revocation.
+        Revoke a token issued to the requesting OAuth client. Revoking an access token affects that token. Revoking a
+        refresh token affects its token family, including when the submitted refresh token has already been consumed.
 
         Confidential clients authenticate with `client_secret_basic` and must not send `client_id` in the request body.
         Public clients must send `client_id`.
+
+        Requests for unknown tokens or tokens issued to another client succeed without revoking any tokens.
       security:
         - oauthClientSecretBasic: []
         - {}
@@ -5434,7 +5610,7 @@ paths:
         - Account Admin
       summary: List account apps as admin
       description: |
-        Retrieve a list of account apps registered for first-party app SSO.
+        Retrieve a list of registered account apps.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5468,7 +5644,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AccountApp"
+                      $ref: "#/components/schemas/AdminAccountApp"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5481,7 +5657,7 @@ paths:
         - Account Admin
       summary: Create an account app as admin
       description: |
-        Register an account app for first-party app SSO.
+        Register an account app without creating an OAuth client.
 
         Requires the `accountAdmin` role.
       requestBody:
@@ -5490,27 +5666,33 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required:
                 - name
-                - displayName
-                - clientType
-                - redirectURIs
               properties:
                 name:
                   $ref: "#/components/schemas/AccountApp/properties/name"
                 displayName:
+                  description: Defaults to `name` if not provided.
                   $ref: "#/components/schemas/AccountApp/properties/displayName"
-                clientType:
-                  $ref: "#/components/schemas/AccountApp/properties/clientType"
-                redirectURIs:
-                  $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
+                description:
+                  $ref: "#/components/schemas/AccountApp/properties/description"
+                clientCredentialsScopes:
+                  description: Defaults to an empty array if not provided.
+                  $ref: "#/components/schemas/AdminAccountApp/allOf/1/properties/clientCredentialsScopes"
+                reason:
+                  description: Reason for the change, recorded in the audit log.
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  pattern: "\\P{White_Space}"
       responses:
         "201":
           description: Account app created.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountApp"
+                $ref: "#/components/schemas/AdminAccountApp"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5527,7 +5709,7 @@ paths:
         - Account Admin
       summary: Get an account app as admin
       description: |
-        Retrieve an account app registered for first-party app SSO.
+        Retrieve the registration details of an account app.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5543,7 +5725,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountApp"
+                $ref: "#/components/schemas/AdminAccountApp"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5558,7 +5740,14 @@ paths:
         - Account Admin
       summary: Update an account app as admin
       description: |
-        Update an account app registered for first-party app SSO.
+        Update the display details, status, or approved app-only scopes of an account app.
+
+        Disabling an app revokes its outstanding authorization flows and all tokens. Re-enabling the app does not
+        reactivate those flows or tokens.
+
+        Removing scopes revokes affected app-only tokens across all clients of the app. Clearing
+        `clientCredentialsScopes` removes app-only access. Restoring scopes does not reactivate revoked tokens.
+        User grants and user tokens are unaffected by app-only permission changes.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5574,21 +5763,39 @@ paths:
           application/json:
             schema:
               type: object
-              minProperties: 1
+              additionalProperties: false
+              anyOf:
+                - required:
+                    - displayName
+                - required:
+                    - description
+                - required:
+                    - status
+                - required:
+                    - clientCredentialsScopes
               properties:
                 displayName:
                   $ref: "#/components/schemas/AccountApp/properties/displayName"
+                description:
+                  description: Set to `null` to clear the app description.
+                  $ref: "#/components/schemas/AccountApp/properties/description"
                 status:
                   $ref: "#/components/schemas/AccountApp/properties/status"
-                redirectURIs:
-                  $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
+                clientCredentialsScopes:
+                  $ref: "#/components/schemas/AdminAccountApp/allOf/1/properties/clientCredentialsScopes"
+                reason:
+                  description: Reason for the change, recorded in the audit log.
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  pattern: "\\P{White_Space}"
       responses:
         "200":
           description: Account app updated.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountApp"
+                $ref: "#/components/schemas/AdminAccountApp"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5598,19 +5805,303 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /admin/account/apps/{appID}/secrets:
-    get:
-      operationId: listAdminAccountAppSecrets
+  /admin/account/apps/{appID}/avatar:
+    put:
+      operationId: updateAdminAccountAppAvatar
       tags:
         - Account Admin
-      summary: List account app secrets as admin
+      summary: Update an account app avatar as admin
       description: |
-        Retrieve a list of secrets configured for a confidential account app.
+        Upload and replace an account app's avatar image.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: appID
-          description: ID of the app whose secrets are listed.
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: |
+                    Avatar image file.
+
+                    Avatar requirements:
+
+                    - The image format must be PNG (`image/png`) or JPEG (`image/jpeg`).
+                    - The maximum file size is 5 MiB.
+
+                    Uploaded avatars are normalized to a 512x512 PNG. Upload a square image for best visual quality.
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: image/png, image/jpeg
+      responses:
+        "204":
+          description: Account app avatar updated.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+
+  /admin/account/apps/{appID}/oauth-clients:
+    get:
+      operationId: listAdminAccountOAuthClients
+      tags:
+        - Account Admin
+      summary: List account OAuth clients as admin
+      description: |
+        Retrieve a list of OAuth clients registered under an account app.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountOAuthClient"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createAdminAccountOAuthClient
+      tags:
+        - Account Admin
+      summary: Create an account OAuth client as admin
+      description: |
+        Register an OAuth client for an account app.
+
+        User authorization requires `authorization_code`, optionally `refresh_token`, and at least one exact redirect
+        URI. App-only access requires a confidential client with only `client_credentials` and no redirect URIs.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - clientType
+                - grantTypes
+              properties:
+                name:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/name"
+                clientType:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/clientType"
+                grantTypes:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/grantTypes"
+                redirectURIs:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/redirectURIs"
+                reason:
+                  description: Reason for the change, recorded in the audit log.
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  pattern: "\\P{White_Space}"
+      responses:
+        "201":
+          description: Account OAuth client created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountOAuthClient"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /admin/account/apps/{appID}/oauth-clients/{oauthClientID}:
+    get:
+      operationId: getAdminAccountOAuthClient
+      tags:
+        - Account Admin
+      summary: Get an account OAuth client as admin
+      description: |
+        Retrieve the configuration of an OAuth client registered under an account app.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountOAuthClient"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAdminAccountOAuthClient
+      tags:
+        - Account Admin
+      summary: Update an account OAuth client as admin
+      description: |
+        Update the status or exact redirect URIs of an OAuth client.
+
+        Disabling a client revokes its outstanding authorization flows and tokens. Re-enabling the client does not
+        reactivate previously revoked authorization flows or tokens.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              anyOf:
+                - required:
+                    - status
+                - required:
+                    - redirectURIs
+              properties:
+                status:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/status"
+                redirectURIs:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/redirectURIs"
+                reason:
+                  description: Reason for the change, recorded in the audit log.
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  pattern: "\\P{White_Space}"
+      responses:
+        "200":
+          description: Account OAuth client updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountOAuthClient"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/account/apps/{appID}/oauth-clients/{oauthClientID}/secrets:
+    get:
+      operationId: listAdminAccountOAuthClientSecrets
+      tags:
+        - Account Admin
+      summary: List account OAuth client secrets as admin
+      description: |
+        Retrieve a list of active secrets for a confidential OAuth client.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
           in: path
           required: true
           schema:
@@ -5633,7 +6124,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AccountAppSecret"
+                      $ref: "#/components/schemas/AccountOAuthClientSecret"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5643,17 +6134,24 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
     post:
-      operationId: createAdminAccountAppSecret
+      operationId: createAdminAccountOAuthClientSecret
       tags:
         - Account Admin
-      summary: Create an account app secret as admin
+      summary: Create an account OAuth client secret as admin
       description: |
-        Create a secret for a confidential account app. The secret value is only returned once.
+        Create a secret for a confidential OAuth client. The secret value is returned only once in the creation
+        response.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: appID
-          description: ID of the app whose secret is created.
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
           in: path
           required: true
           schema:
@@ -5668,14 +6166,14 @@ paths:
                 - name
               properties:
                 name:
-                  $ref: "#/components/schemas/AccountAppSecret/properties/name"
+                  $ref: "#/components/schemas/AccountOAuthClientSecret/properties/name"
       responses:
         "201":
-          description: Account app secret created.
+          description: Account OAuth client secret created.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreatedAccountAppSecret"
+                $ref: "#/components/schemas/CreatedAccountOAuthClientSecret"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5687,22 +6185,26 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /admin/account/apps/{appID}/secrets/{secretID}:
+  /admin/account/apps/{appID}/oauth-clients/{oauthClientID}/secrets/{secretID}:
     delete:
-      operationId: revokeAdminAccountAppSecret
+      operationId: revokeAdminAccountOAuthClientSecret
       tags:
         - Account Admin
-      summary: Revoke an account app secret as admin
+      summary: Revoke an account OAuth client secret as admin
       description: |
-        Permanently revoke a secret from a confidential account app. The secret can no longer authenticate the client
-        and cannot be restored.
-
-        Existing grants and tokens issued before revocation remain valid. This operation does not revoke them.
+        Revoke a secret of a confidential OAuth client. Previously issued tokens remain valid until they expire or are
+        separately revoked.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: appID
-          description: ID of the app whose secret is revoked.
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
           in: path
           required: true
           schema:
@@ -5715,7 +6217,7 @@ paths:
             $ref: "#/components/schemas/Model/properties/id"
       responses:
         "204":
-          description: Account app secret revoked.
+          description: Account OAuth client secret revoked.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5807,6 +6309,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountAppGrant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: revokeAdminAccountAppGrant
+      tags:
+        - Account Admin
+      summary: Revoke an account app grant as admin
+      description: |
+        Revoke a user's authorization for an account app across all of its OAuth clients.
+
+        Outstanding authorization codes and user tokens for this grant are revoked. App-only permissions are unchanged.
+        Repeating the revocation succeeds.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant to revoke.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account app grant revoked.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6266,8 +6798,8 @@ components:
       description: |
         Opaque access token, in the format `Bearer {token}`.
 
-        For XBuilder Account OAuth flows, app-scoped access tokens are issued by `/account/oauth/token` and can be
-        validated with `/account/oauth/introspect`.
+        XBuilder Account access tokens are issued by `/account/oauth/token` and can be validated with
+        `/account/oauth/introspect`.
     accountSessionCookie:
       type: apiKey
       in: cookie
@@ -6529,13 +7061,14 @@ components:
           schema:
             $ref: "#/components/schemas/OAuthError"
     OAuthInsufficientScope:
-      description: OAuth bearer token does not have the required scope.
+      description: The OAuth bearer token's subject or scope does not permit this operation.
       headers:
         WWW-Authenticate:
           description: Bearer token insufficient scope challenge.
           schema:
             type: string
             examples:
+              - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:app:read"
               - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:read"
               - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:write"
       content:
@@ -7044,17 +7577,16 @@ components:
 
     AccountApp:
       type: object
-      description: Registered app for first-party app SSO.
+      description: First-party app registered with XBuilder Account.
       required:
         - id
         - createdAt
         - updatedAt
         - name
         - displayName
-        - clientType
+        - avatar
+        - description
         - status
-        - redirectURIs
-        - redirectURIPatterns
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -7075,16 +7607,22 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+          pattern: "^\\P{White_Space}(?:[^\\r\\n]*\\P{White_Space})?$(?![\\s\\S])"
           examples:
             - XBuilder
-        clientType:
-          description: OAuth client type of the app.
-          type: string
-          enum:
-            - public
-            - confidential
-          examples:
-            - public
+        avatar:
+          description: Public HTTP URL of the Account-managed app avatar, or `null` when unset.
+          type:
+            - string
+            - "null"
+          format: uri
+          pattern: "^https?://"
+        description:
+          description: Optional plain-text app description.
+          type:
+            - string
+            - "null"
+          maxLength: 200
         status:
           description: App status.
           type: string
@@ -7093,6 +7631,89 @@ components:
             - disabled
           examples:
             - active
+
+    AdminAccountApp:
+      description: Account app registration and app-only permissions for administration.
+      allOf:
+        - $ref: "#/components/schemas/AccountApp"
+        - type: object
+          required:
+            - clientCredentialsScopes
+          properties:
+            clientCredentialsScopes:
+              description: Approved scopes for app-only access.
+              type: array
+              uniqueItems: true
+              items:
+                type: string
+                enum:
+                  - account:app:read
+                  - account:user:read
+
+    AccountOAuthClient:
+      type: object
+      description: OAuth client configuration owned by an account app.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - appID
+        - clientID
+        - name
+        - clientType
+        - status
+        - grantTypes
+        - redirectURIs
+        - redirectURIPatterns
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        appID:
+          $ref: "#/components/schemas/Model/properties/id"
+        clientID:
+          $ref: "#/components/schemas/OAuthClientID"
+        name:
+          description: Management name unique within the owning app.
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: "^[A-Za-z0-9_-]{1,100}$"
+          examples:
+            - web
+        clientType:
+          description: OAuth client authentication type.
+          type: string
+          enum:
+            - public
+            - confidential
+          examples:
+            - public
+        status:
+          description: Client status.
+          type: string
+          enum:
+            - active
+            - disabled
+          examples:
+            - active
+        grantTypes:
+          description: Allowed OAuth grant types.
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - authorization_code
+              - refresh_token
+              - client_credentials
+          examples:
+            - - authorization_code
+              - refresh_token
         redirectURIs:
           description: |
             Allowed redirect URIs.
@@ -7101,29 +7722,19 @@ components:
 
             Native app and loopback exceptions must be explicitly registered and validated by client type.
           type: array
-          minItems: 1
           items:
             type: string
             format: uri
+          uniqueItems: true
+          examples:
+            - - https://app.example.com/oauth/callback
         redirectURIPatterns:
           description: |
-            Allowed redirect URI patterns.
+            Read-only redirect URI patterns for HTTPS preview environments.
 
-            **Exact redirect URIs remain the primary allowlist.**
-
-            Wildcard patterns should be reserved for controlled preview or non-production callback hosts because broad
-            redirect matching can increase open redirect risk.
-
-            Pattern rules:
-
-            - The pattern must be an absolute `http` or `https` URL.
-            - The pattern must contain at most one `*`.
-            - The wildcard must be located in a subdomain within the hostname.
-            - The wildcard must be located in the subdomain furthest from the root domain.
-            - The wildcard may be prefixed or suffixed with valid hostname characters.
-            - The wildcard matches only one hostname label and does not match `.`.
-            - All non-host components, including path and query, are matched exactly.
-            - Fragments are not allowed.
+            At most one wildcard in the leftmost subdomain label matches a nonempty fragment within that label.
+            Hostnames are case-insensitive. Scheme, port, encoded path, and query must match exactly. Userinfo,
+            fragments, and wildcards outside the hostname are rejected.
           readOnly: true
           type: array
           items:
@@ -7131,9 +7742,9 @@ components:
           examples:
             - - https://app-*.example.com/oauth/callback
 
-    AccountAppSecret:
+    AccountOAuthClientSecret:
       type: object
-      description: OAuth client secret metadata for a confidential app.
+      description: OAuth client secret metadata for a confidential client.
       required:
         - id
         - createdAt
@@ -7144,25 +7755,28 @@ components:
         createdAt:
           $ref: "#/components/schemas/Model/properties/createdAt"
         name:
-          description: App secret name.
+          description: Client secret name. Must be unique among the client's active secrets.
           type: string
           minLength: 1
           maxLength: 100
+          pattern: "^\\P{White_Space}(?:[^\\r\\n]*\\P{White_Space})?$(?![\\s\\S])"
           examples:
             - production
 
-    CreatedAccountAppSecret:
+    CreatedAccountOAuthClientSecret:
       description: Response returned after creating an OAuth client secret, including the one-time secret value.
       allOf:
-        - $ref: "#/components/schemas/AccountAppSecret"
+        - $ref: "#/components/schemas/AccountOAuthClientSecret"
         - type: object
           required:
             - value
           properties:
             value:
-              description: One-time app secret value.
+              description: One-time client secret value.
               type: string
-              minLength: 1
+              minLength: 43
+              maxLength: 43
+              pattern: "^[A-Za-z0-9_-]{43}$"
 
     AccountAppGrant:
       type: object
@@ -7218,6 +7832,7 @@ components:
         - id
         - createdAt
         - updatedAt
+        - oauthClientID
         - grantID
         - tokenType
         - scope
@@ -7230,15 +7845,12 @@ components:
           $ref: "#/components/schemas/Model/properties/createdAt"
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
+        oauthClientID:
+          description: ID of the OAuth client associated with the token.
+          $ref: "#/components/schemas/Model/properties/id"
         grantID:
           description: ID of the app grant associated with the token.
           $ref: "#/components/schemas/Model/properties/id"
-        name:
-          description: Human-readable token name.
-          type: string
-          maxLength: 100
-          examples:
-            - SPX API testing
         tokenType:
           description: OAuth token type.
           type: string
@@ -7250,6 +7862,12 @@ components:
         scope:
           description: Account OAuth scope associated with the token.
           $ref: "#/components/schemas/OAuthScope"
+        name:
+          description: Human-readable token name.
+          type: string
+          maxLength: 100
+          examples:
+            - SPX API testing
         expiresAt:
           description: Expiration timestamp.
           type: string
@@ -7288,17 +7906,14 @@ components:
 
         The token scope is inherited from the associated app grant and cannot be overridden.
       required:
+        - oauthClientID
         - tokenType
         - name
         - expiresAt
       properties:
-        name:
-          description: Human-readable token name.
-          type: string
-          minLength: 1
-          maxLength: 100
-          examples:
-            - SPX API testing
+        oauthClientID:
+          description: ID of an active OAuth client for user authorization belonging to the grant's app.
+          $ref: "#/components/schemas/Model/properties/id"
         tokenType:
           description: |
             OAuth token type to create.
@@ -7309,18 +7924,23 @@ components:
             - accessToken
           examples:
             - accessToken
+        name:
+          description: Human-readable token name.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - SPX API testing
         expiresAt:
           description: |
-            Expiration timestamp of the created token.
-
-            The server must reject expiration timestamps later than 365 days from creation.
+            Expiration timestamp of the created token. Must be in the future and no later than 365 days from creation.
           type: string
           format: date-time
           examples:
             - 2027-01-15T00:00:00Z
 
     CreatedAccountAppToken:
-      description: Response returned after creating an Account app token, including the one-time token value.
+      description: Response returned after creating an account app token, including the one-time token value.
       allOf:
         - $ref: "#/components/schemas/AccountAppToken"
         - type: object
@@ -7335,23 +7955,31 @@ components:
                 - xb_at_2L5f8xQy...
 
     OAuthClientID:
-      description: OAuth client ID of the app.
+      description: |
+        OAuth client ID used in OAuth requests.
+
+        New clients receive 22 unpadded Base64url characters. Existing clients may use a decimal identifier. Values are
+        case-sensitive.
       type: string
       minLength: 1
-      maxLength: 19
-      pattern: "^[1-9][0-9]{0,18}$"
       examples:
+        - K7mR2qV9sT4wX6yZ8aB0Cg
         - "1"
 
     OAuthScope:
-      description: Space-delimited Account API OAuth scopes supported by XBuilder Account.
+      description: |
+        Space-delimited Account API scopes without duplicates.
+
+        Delegated user access supports `account:user:read` and `account:user:write`. App-only access supports
+        `account:app:read` and `account:user:read` when approved for the app.
       type: string
       minLength: 1
-      pattern: "^(account:user:read|account:user:write|account:user:read account:user:write|account:user:write account:user:read)$"
+      pattern: "^account:(app:read|user:read|user:write)( account:(app:read|user:read|user:write))*$"
       examples:
         - account:user:read
         - account:user:write
         - account:user:read account:user:write
+        - account:app:read account:user:read
 
     OAuthPKCECodeChallenge:
       description: PKCE code challenge.
@@ -7393,15 +8021,17 @@ components:
             - 600
 
     CreateOAuthTokenRequest:
-      description: Request to create or refresh Account-issued app-scoped OAuth tokens.
+      description: Request to create or refresh Account-issued OAuth tokens.
       oneOf:
         - $ref: "#/components/schemas/CreateAuthorizationCodeOAuthTokenRequest"
         - $ref: "#/components/schemas/CreateRefreshTokenOAuthTokenRequest"
+        - $ref: "#/components/schemas/CreateClientCredentialsOAuthTokenRequest"
       discriminator:
         propertyName: grant_type
         mapping:
           authorization_code: "#/components/schemas/CreateAuthorizationCodeOAuthTokenRequest"
           refresh_token: "#/components/schemas/CreateRefreshTokenOAuthTokenRequest"
+          client_credentials: "#/components/schemas/CreateClientCredentialsOAuthTokenRequest"
 
     CreateAuthorizationCodeOAuthTokenRequest:
       type: object
@@ -7465,6 +8095,28 @@ components:
           allOf:
             - $ref: "#/components/schemas/OAuthClientID"
 
+    CreateClientCredentialsOAuthTokenRequest:
+      type: object
+      description: |
+        Request to create an app-only access token using `client_secret_basic` authentication.
+
+        Scopes must be explicitly requested and approved for the app. This grant requires a confidential OAuth client and
+        does not issue a refresh token.
+      required:
+        - grant_type
+        - scope
+      not:
+        required:
+          - client_id
+      properties:
+        grant_type:
+          description: OAuth grant type.
+          type: string
+          enum:
+            - client_credentials
+        scope:
+          $ref: "#/components/schemas/OAuthScope"
+
     OAuthToken:
       type: object
       description: OAuth token response.
@@ -7475,7 +8127,7 @@ components:
         - scope
       properties:
         access_token:
-          description: Account-issued app-scoped OAuth access token.
+          description: Account-issued OAuth access token.
           type: string
           minLength: 1
         token_type:
@@ -7491,7 +8143,9 @@ components:
           examples:
             - 300
         refresh_token:
-          description: Refresh token issued by XBuilder Account.
+          description: |
+            Refresh token issued by XBuilder Account for user authorization when the OAuth client enables
+            `refresh_token`. Omitted for `client_credentials`.
           type: string
           minLength: 1
         scope:
@@ -7510,11 +8164,17 @@ components:
           type: boolean
           examples:
             - true
+        token_type:
+          description: "`Bearer` for an active access token. Omitted for refresh tokens and inactive tokens."
+          type: string
+          enum:
+            - Bearer
         sub:
-          description: Stable XBuilder user ID used as the OAuth subject.
-          $ref: "#/components/schemas/Model/properties/id"
+          description: Stable user ID for delegated access, or `app:{appID}` for an app principal.
+          type: string
+          pattern: "^(app:)?[1-9][0-9]{0,18}$"
         client_id:
-          description: OAuth client ID of the app the token was issued to.
+          description: OAuth client ID associated with the token.
           $ref: "#/components/schemas/OAuthClientID"
         scope:
           description: OAuth scope associated with the token.
