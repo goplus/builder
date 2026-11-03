@@ -1,11 +1,17 @@
 <script lang="ts">
-import { headingToScreenDeg, segmentScreenDeg, turnAngle, type Pos } from './ruler-math'
+import {
+  headingToScreenDeg,
+  segmentScreenDeg,
+  snapToNearestTarget,
+  turnAngle,
+  type Pos,
+  type RulerSnapTarget
+} from './ruler-math'
 import { clampLabelToRect, getVisibleMapRect, type LabelLayout } from './ruler-layout'
 import { color } from '@/components/ui/tokens'
 
 export type { Pos }
-
-export type RulerSnapTarget = Pos & { heading: number | null }
+export type { RulerSnapTarget }
 
 function rgba(hex: string, alpha: number) {
   const value = hex.replace('#', '')
@@ -18,8 +24,15 @@ function rgba(hex: string, alpha: number) {
 const lineColor = rgba(color.grey[1000], 0.5)
 const labelColor = rgba(color.grey[1000], 0.5)
 const angleColor = rgba(color.blue[600], 0.8)
+const originMarkerColor = rgba(color.grey[700], 0.8)
+const originSnapColor = color.blue[600]
 
 const snapRadius = 24
+const originMarkerRadius = 5
+const originSnapMarkerRadius = 7
+const originSnapMarkerHaloRadius = 9
+const originSnapCrosshairStart = 10
+const originSnapCrosshairEnd = 15
 const minAngleDistance = 12
 const angleArcRadius = 36
 const headingRayLength = angleArcRadius
@@ -53,7 +66,7 @@ const props = defineProps<{
 
 const layerRef = ref<{ getNode(): Konva.Layer } | null>(null)
 const measurement = ref<{ from: Pos; fromHeading: number | null; to: Pos } | null>(null)
-const start = ref<{ pos: Pos; heading: number | null } | null>(null)
+const start = ref<{ pos: Pos; heading: number | null; snapped: boolean } | null>(null)
 let awaitingEnd = false
 
 const distance = computed(() => {
@@ -62,18 +75,8 @@ const distance = computed(() => {
   return Math.round(Math.hypot(to.x - from.x, to.y - from.y))
 })
 
-function snap(pos: Pos): { pos: Pos; target: RulerSnapTarget | null } {
-  let nearest: RulerSnapTarget | null = null
-  let nearestDistance = Infinity
-  for (const target of props.snapTargets) {
-    const targetDistance = Math.hypot(target.x - pos.x, target.y - pos.y)
-    if (targetDistance < nearestDistance) {
-      nearest = target
-      nearestDistance = targetDistance
-    }
-  }
-  if (nearest != null && nearestDistance <= snapRadius) return { pos: { x: nearest.x, y: nearest.y }, target: nearest }
-  return { pos, target: null }
+function snap(pos: Pos) {
+  return snapToNearestTarget(pos, props.snapTargets, snapRadius)
 }
 
 function getPointerPos(): { pos: Pos; target: RulerSnapTarget | null } | null {
@@ -85,8 +88,11 @@ function handleClick() {
   const snapped = getPointerPos()
   if (snapped == null) return
   if (!awaitingEnd) {
-    // TODO: Show a snapped start-point marker before the measurement line becomes visible.
-    start.value = { pos: snapped.pos, heading: snapped.target?.heading ?? null }
+    start.value = {
+      pos: snapped.pos,
+      heading: snapped.target?.heading ?? null,
+      snapped: snapped.target != null
+    }
     measurement.value = null
     awaitingEnd = true
     return
@@ -148,6 +154,34 @@ const lineConfig = computed<LineConfig | null>(() => {
     lineJoin: 'round',
     listening: false
   }
+})
+
+const originMarker = computed(() => {
+  if (start.value == null) return null
+  const { pos, snapped } = start.value
+  return {
+    ...pos,
+    snapped,
+    radius: snapped ? originSnapMarkerRadius : originMarkerRadius,
+    color: snapped ? originSnapColor : originMarkerColor
+  }
+})
+
+const originSnapCrosshairConfigs = computed<LineConfig[]>(() => {
+  if (originMarker.value == null || !originMarker.value.snapped) return []
+  const { color: stroke } = originMarker.value
+  return [
+    { points: [-originSnapCrosshairEnd, 0, -originSnapCrosshairStart, 0] },
+    { points: [originSnapCrosshairStart, 0, originSnapCrosshairEnd, 0] },
+    { points: [0, -originSnapCrosshairEnd, 0, -originSnapCrosshairStart] },
+    { points: [0, originSnapCrosshairStart, 0, originSnapCrosshairEnd] }
+  ].map((line) => ({
+    ...line,
+    stroke,
+    strokeWidth: 2,
+    lineCap: 'round',
+    listening: false
+  }))
 })
 
 function screenDegToVector(deg: number): Pos {
@@ -380,5 +414,21 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
         />
       </v-group>
     </template>
+    <v-group v-if="originMarker != null" :config="{ x: originMarker.x, y: originMarker.y, listening: false }">
+      <v-circle
+        v-if="originMarker.snapped"
+        :config="{ radius: originSnapMarkerHaloRadius, fill: '#fff', opacity: 0.9 }"
+      />
+      <v-circle
+        :config="{
+          radius: originMarker.radius,
+          fill: '#fff',
+          stroke: originMarker.color,
+          strokeWidth: 2
+        }"
+      />
+      <v-circle v-if="originMarker.snapped" :config="{ radius: 2, fill: originMarker.color }" />
+      <v-line v-for="(config, index) in originSnapCrosshairConfigs" :key="index" :config="config" />
+    </v-group>
   </v-layer>
 </template>
