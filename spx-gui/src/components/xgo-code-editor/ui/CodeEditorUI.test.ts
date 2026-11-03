@@ -87,7 +87,7 @@ describe('Code Editor UI options', () => {
     wrapper.unmount()
   })
 
-  it('wraps code in Simple Mode, and lets Normal mode turn wrapping on from its settings', async () => {
+  it('wraps code in Simple Mode, and applies the Normal mode word wrap setting to the editor', async () => {
     const editor = {
       updateOptions: vi.fn(),
       onDidChangeConfiguration: vi.fn()
