@@ -68,6 +68,39 @@ describe('useLocalEdits', () => {
     expect(value.value).toEqual(['One'])
   })
 
+  it('keeps a later edit shown when an earlier write fails, and writes it as shown', async () => {
+    const source = shallowRef(['One', 'Two'])
+    const { value, edit } = useLocalEdits(source)
+    const server = makeServer(source)
+
+    const failed = expect(edit(['A', 'Two'], server.write)).rejects.toThrow('write failed')
+    const later = edit([value.value[0], 'B'], server.write)
+    await server.answer(false)
+    await failed
+    expect(value.value).toEqual(['A', 'B'])
+    await server.answer()
+    await later
+
+    // The later write carries the whole value as shown, the failed edit it was made on included.
+    expect(source.value).toEqual(['A', 'B'])
+    expect(value.value).toEqual(['A', 'B'])
+  })
+
+  it('shows what the earlier writes made when a later one fails', async () => {
+    const source = shallowRef(['One', 'Two'])
+    const { value, edit } = useLocalEdits(source)
+    const server = makeServer(source)
+
+    const written = edit(['A', 'Two'], server.write)
+    const failed = expect(edit([value.value[0], 'B'], server.write)).rejects.toThrow('write failed')
+    await server.answer()
+    await written
+    await server.answer(false)
+    await failed
+
+    expect(value.value).toEqual(['A', 'Two'])
+  })
+
   it('writes values sharing a queue in the order they were edited', async () => {
     const writes = new WriteQueue()
     const order = useLocalEdits(shallowRef(['One', 'Two']), writes)
