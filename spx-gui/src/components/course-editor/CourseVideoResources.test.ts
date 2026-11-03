@@ -51,7 +51,7 @@ describe('Course video resources', () => {
       await flushPromises()
       const ratio = dimensions == null ? 16 / 9 : dimensions.width / dimensions.height
       expect(parseFloat(preview.get('video').element.parentElement!.style.aspectRatio)).toBe(ratio)
-      expect(player.get('video').element.parentElement!.style.aspectRatio).toContain(String(ratio))
+      expect(parseFloat(player.get('video').element.parentElement!.style.aspectRatio)).toBe(ratio)
       expect(preview.getComponent({ name: 'UIModal' }).vm.$attrs.style).toEqual({
         width: 'fit-content',
         maxWidth: 'min(960px, 100%)'
