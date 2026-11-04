@@ -393,7 +393,7 @@ describe('Ruler cursor preview', () => {
     expect(outline().props('config')).toMatchObject({ x: 120, y: 100 })
   })
 
-  it('keeps the cursor and endpoint markers the same screen size at different stage scales', async () => {
+  it('keeps full editor cursor and marker sizes fixed and scales them with the map in simple mode', async () => {
     const { wrapper, move, cursor, marker, outline, loadImage, advance } = await setup()
     await loadImage()
     await wrapper.setProps({ stageScale: 0.5 })
@@ -416,6 +416,19 @@ describe('Ruler cursor preview', () => {
     expect(marker().props('config').scaleX * 24 * 2).toBeCloseTo(14)
     expect(marker().props('config').scaleY * 24 * 2).toBeCloseTo(14)
     expect(outline().props('config').scaleX * 24).toBe(16)
+    await wrapper.setProps({ simpleMode: true, stageScale: 1.5 })
+    expect(cursor().props('config')).toMatchObject({ x: 120, y: 100, width: 32, height: 32 })
+    expect(cursor().props('config').width * 1.5).toBe(48)
+    expect(marker().props('config')).toMatchObject({ x: 100, y: 100, offsetX: 12, offsetY: 12 })
+    expect(marker().props('config').scaleX * 24 * 1.5).toBeCloseTo(21)
+    expect(marker().props('config').scaleY * 24 * 1.5).toBeCloseTo(21)
+    expect(outline().props('config').scaleX * 24 * 1.5).toBe(48)
+    expect(outline().props('config').strokeWidth).toBe(6)
+    await wrapper.setProps({ stageScale: 0.75 })
+    expect(cursor().props('config').width * 0.75).toBe(24)
+    expect(marker().props('config').scaleX * 24 * 0.75).toBeCloseTo(10.5)
+    expect(outline().props('config').scaleX * 24 * 0.75).toBe(24)
+    expect(outline().props('config').strokeWidth).toBe(3)
   })
 
   it('only replaces the native cursor when the preview is loaded and restores it on leave, disable, and unmount', async () => {

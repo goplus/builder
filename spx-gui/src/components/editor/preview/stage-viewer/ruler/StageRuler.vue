@@ -60,14 +60,18 @@ import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { PathConfig } from 'konva/lib/shapes/Path'
 import rulerCursorUrl from './triangle-ruler-cursor.svg?url&no-inline'
 
-const props = defineProps<{
-  active: boolean
-  mapPos: Pos
-  mapSize: { width: number; height: number }
-  viewportSize: { width: number; height: number }
-  stageScale: number
-  snapTargets: RulerSnapTarget[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    active: boolean
+    mapPos: Pos
+    mapSize: { width: number; height: number }
+    viewportSize: { width: number; height: number }
+    stageScale: number
+    simpleMode?: boolean
+    snapTargets: RulerSnapTarget[]
+  }>(),
+  { simpleMode: false }
+)
 
 const emit = defineEmits<{
   cursorPreviewChange: [visible: boolean]
@@ -307,14 +311,16 @@ watch([pointerSnap, reducedMotion], ([next, reduce], [previous]) => {
   markerAnimationFrame = requestAnimationFrame(animate)
 })
 
+// Follow the map scale in simple mode; keep a fixed screen size in the full editor.
+const rulerDisplayScale = computed(() => (props.simpleMode ? props.stageScale : 1))
+
 const cursorConfig = computed<ImageConfig | null>(() => {
   if (!props.active || pointerPos.value == null || cursorImage.value == null) return null
   return {
     ...pointerPos.value,
     image: cursorImage.value,
-    // Match the native cursor's 32px size and top-left hotspot at any stage scale.
-    width: cursorSize / props.stageScale,
-    height: cursorSize / props.stageScale,
+    width: (cursorSize * rulerDisplayScale.value) / props.stageScale,
+    height: (cursorSize * rulerDisplayScale.value) / props.stageScale,
     listening: false
   }
 })
@@ -322,14 +328,14 @@ const cursorConfig = computed<ImageConfig | null>(() => {
 const cursorOutlineConfig = computed<PathConfig | null>(() => {
   if (cursorConfig.value == null || pointerPos.value == null) return null
   if (!awaitingEnd.value && (measurement.value != null || pointerSnap.value?.target == null)) return null
-  const scale = cursorSize / 24 / props.stageScale
+  const scale = ((cursorSize / 24) * rulerDisplayScale.value) / props.stageScale
   return {
     ...pointerPos.value,
     data: cursorOutlinePath,
     scaleX: scale,
     scaleY: scale,
     stroke: cursorOutlineColor,
-    strokeWidth: 4,
+    strokeWidth: 4 * rulerDisplayScale.value,
     strokeScaleEnabled: false,
     lineJoin: 'round',
     lineCap: 'round',
@@ -353,8 +359,8 @@ const endpointMarkerConfigs = computed<GroupConfig[]>(() => {
       ...pos,
       offsetX: markerDesignSize / 2,
       offsetY: markerDesignSize / 2,
-      scaleX: markerDisplaySize / markerDesignSize / props.stageScale,
-      scaleY: markerDisplaySize / markerDesignSize / props.stageScale,
+      scaleX: ((markerDisplaySize / markerDesignSize) * rulerDisplayScale.value) / props.stageScale,
+      scaleY: ((markerDisplaySize / markerDesignSize) * rulerDisplayScale.value) / props.stageScale,
       listening: false
     }))
 })

@@ -74,6 +74,7 @@
         :map-size="mapSize"
         :viewport-size="viewportSize"
         :stage-scale="stageScale ?? 1"
+        :simple-mode="simpleMode"
         :snap-targets="rulerSnapTargets"
         @cursor-preview-change="rulerCursorPreviewVisible = $event"
       />
