@@ -43,7 +43,6 @@ async function advance() {
       name: kind === 'prelude' ? 'course-prelude' : 'course-message',
       desc: kind === 'prelude' ? 'Course opening task guide' : 'Message from the Course author'
     }"
-    @update:visible="emit('resolved')"
   >
     <div ref="scrollContainer" class="max-h-[calc(100vh-32px)] overflow-y-auto p-6">
       <div class="aspect-[2/1] w-full overflow-hidden">

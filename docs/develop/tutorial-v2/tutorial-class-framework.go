@@ -103,8 +103,8 @@ type CourseAbilities interface {
 	// Actions resume the course without running the learner's project.
 	// These dialogs disable Escape and backdrop dismissal.
 	showPrelude(message string)
-	showPrelude(messages []string)
 	showPrelude(message string, buttonText string)
+	showPrelude(messages []string)
 	showPrelude(messages []string, buttonText string)
 	// showMessage presents a message and waits for learner confirmation.
 	// Omitted button text uses the Host's default.

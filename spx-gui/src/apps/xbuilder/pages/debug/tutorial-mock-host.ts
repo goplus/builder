@@ -22,14 +22,14 @@ export function createMockTutorialHost(log: (message: string) => void): Tutorial
       async started() {}
     },
     course: {
-      async showPrelude(preludeMessage) {
-        log(`[host] course.showPrelude: ${preludeMessage}`)
+      async showPrelude(messages, buttonText) {
+        log(`[host] course.showPrelude: ${JSON.stringify({ messages, buttonText })}`)
       },
-      async showMessage(message) {
-        log(`[host] course.showMessage: ${message}`)
+      async showMessage(message, buttonText) {
+        log(`[host] course.showMessage: ${JSON.stringify({ message, buttonText })}`)
       },
-      async showVideo(videoName) {
-        log(`[host] course.showVideo: ${videoName}`)
+      async showVideo(videoName, buttonText) {
+        log(`[host] course.showVideo: ${JSON.stringify({ videoName, buttonText })}`)
       },
       async complete() {
         log('[host] course.complete')

@@ -84,7 +84,6 @@ onBeforeUnmount(() => {
     :mask-closable="false"
     :close-on-esc="false"
     :radar="{ name: 'course-video', desc: 'Course-local instructional video' }"
-    @update:visible="dismiss"
   >
     <div class="flex flex-col items-center gap-5 p-6">
       <div class="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-grey-300">

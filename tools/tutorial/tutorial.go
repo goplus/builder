@@ -127,6 +127,7 @@ func (p *Course) ShowPrelude__1(message string, buttonText string) {
 
 // ShowPrelude__2 presents opening guides as pages of one dialog.
 func (p *Course) ShowPrelude__2(messages []string) {
+	// Reject unscheduled goroutines before validation can panic outside a Course run.
 	p.courseProgram.requireRun("showing a prelude")
 	if len(messages) == 0 {
 		panic(fmt.Errorf("showPrelude requires at least one message"))
@@ -139,6 +140,7 @@ func (p *Course) ShowPrelude__2(messages []string) {
 
 // ShowPrelude__3 customizes the final page's button; earlier pages use Next.
 func (p *Course) ShowPrelude__3(messages []string, buttonText string) {
+	// Reject unscheduled goroutines before validation can panic outside a Course run.
 	p.courseProgram.requireRun("showing a prelude")
 	if len(messages) == 0 {
 		panic(fmt.Errorf("showPrelude requires at least one message"))
@@ -175,7 +177,7 @@ func (p *Course) ShowVideo__0(videoName string) {
 	}{VideoName: videoName}, nil)
 }
 
-// ShowVideo__1 presents a video with custom button text; it does not run the learner's project.
+// ShowVideo__1 is ShowVideo__0 with custom button text.
 func (p *Course) ShowVideo__1(videoName string, buttonText string) {
 	p.courseProgram.mustCallCapability("course_showVideo", struct {
 		VideoName  string  `json:"videoName"`
