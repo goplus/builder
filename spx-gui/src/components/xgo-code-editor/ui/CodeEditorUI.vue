@@ -341,11 +341,11 @@ providePopupContainer(codeEditorEl)
   box-sizing: border-box;
   max-width: 320px;
   padding: 6px var(--ui-spacing-lg);
-  border: 0;
+  border: 1px solid var(--ui-color-turquoise-500);
   border-radius: 6px;
-  background: var(--ui-color-primary-300);
+  background: var(--ui-color-grey-100);
   box-shadow: var(--ui-box-shadow-sm);
-  color: var(--ui-color-title);
+  color: var(--ui-color-grey-1000);
   font-family: var(--ui-font-family-main);
   font-size: var(--ui-font-size-base);
   line-height: 1.5;
@@ -359,7 +359,7 @@ providePopupContainer(codeEditorEl)
   height: 8px !important;
   left: 12px;
   border: 0;
-  background: var(--ui-color-primary-300);
+  background: var(--ui-color-turquoise-500);
   clip-path: path(
     'M 0 8 A 4 4 0 0 0 2.828 6.828 L 6.586 3.071 A 2 2 0 0 1 9.414 3.071 L 13.172 6.828 A 4 4 0 0 0 16 8 Z'
   );
