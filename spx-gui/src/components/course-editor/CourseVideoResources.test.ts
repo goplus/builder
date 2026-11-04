@@ -13,7 +13,7 @@ const global = {
   mocks: { $t: (message: { en: string }) => message.en },
   directives: { radar: () => {} },
   stubs: {
-    UIModal: { props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
+    UIModal: { name: 'UIModal', props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
     UIModalClose: true,
     UIIcon: true,
     UIDropdown: true,
@@ -50,8 +50,16 @@ describe('Course video resources', () => {
       const player = mount(CoursePlaygroundVideoModal, { props: { visible: true, video: resource }, global })
       await flushPromises()
       const ratio = dimensions == null ? 16 / 9 : dimensions.width / dimensions.height
-      expect(parseFloat((preview.get('video').element as HTMLElement).style.aspectRatio)).toBe(ratio)
-      expect(player.find('[style]').attributes('style')).toContain(`aspect-ratio: ${ratio}`)
+      expect(parseFloat(preview.get('video').element.parentElement!.style.aspectRatio)).toBe(ratio)
+      expect(parseFloat(player.get('video').element.parentElement!.style.aspectRatio)).toBe(ratio)
+      expect(preview.getComponent({ name: 'UIModal' }).vm.$attrs.style).toEqual({
+        width: 'fit-content',
+        maxWidth: 'min(960px, 100%)'
+      })
+      expect(player.getComponent({ name: 'UIModal' }).vm.$attrs.style).toEqual({
+        width: 'fit-content',
+        maxWidth: 'min(960px, 100%)'
+      })
     }
   )
 
