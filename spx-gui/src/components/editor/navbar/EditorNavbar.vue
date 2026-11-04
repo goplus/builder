@@ -51,7 +51,7 @@
               <template #icon><img :src="unpublishSvg" /></template>
               {{ $t({ en: 'Unpublish project', zh: '取消发布' }) }}
             </UIMenuItem>
-            <UIMenuItem @click="handleOpenProjectPage">
+            <UIMenuItem v-if="project?.owner != null && project.name != null" @click="handleOpenProjectPage">
               <template #icon><img :src="projectPageSvg" /></template>
               {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
             </UIMenuItem>

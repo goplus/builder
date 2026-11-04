@@ -4,10 +4,12 @@ import { withTimeout } from '@/utils/disposable'
 import { capture } from '@/utils/exception'
 import type { Lang } from '@/utils/i18n'
 import { unicodeSafeSlice } from '@/utils/utils'
+import type { UniversalUrl } from '@/apis/common'
 import { fullName, type SpxProject } from '@/models/spx/project'
 import type { EditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
 import { DiagnosticSeverity, getCodeFilePath, type CodeEditor } from '@/components/editor/spx-code-editor'
+import { projectSnapshotUrlSchema, saveProjectSnapshot } from './project-snapshot'
 
 const feedbackSourceSchema = z.enum(['profileMenu'])
 
@@ -50,7 +52,8 @@ export const feedbackContextSchema = z.object({
   }),
   project: projectContextSchema.optional(),
   diagnostics: z.array(diagnosticContextSchema).optional(),
-  runtimeOutputs: z.array(runtimeOutputContextSchema).optional()
+  runtimeOutputs: z.array(runtimeOutputContextSchema).optional(),
+  projectSnapshotUrl: projectSnapshotUrlSchema.optional()
 })
 
 type FeedbackContext = z.infer<typeof feedbackContextSchema>
@@ -60,7 +63,8 @@ const maxRuntimeOutputs = 50
 // Keep a few long messages from using up the size budget.
 const maxTextLength = 500
 const diagnosticsTimeout = 3_000 // ms
-const optionalContextKeys = ['project', 'diagnostics', 'runtimeOutputs'] as const
+const projectSnapshotTimeout = 30_000 // ms
+const optionalContextKeys = ['project', 'diagnostics', 'runtimeOutputs', 'projectSnapshotUrl'] as const
 
 // U+0000 is removed because the server cannot store it in JSON text.
 function toContextText(text: string) {
@@ -106,6 +110,18 @@ async function getDiagnosticsContext(codeEditor: CodeEditor): Promise<Diagnostic
     .slice(0, maxDiagnostics)
 }
 
+async function captureProjectSnapshot(project: SpxProject): Promise<UniversalUrl | null> {
+  try {
+    // Export without waiting for in-progress edits (`project.mutex`), so the snapshot matches what the user sees when submitting.
+    const files = project.exportFiles()
+    return await withTimeout(projectSnapshotTimeout, (signal) => saveProjectSnapshot(files, signal))
+  } catch (e) {
+    // Project Snapshot is optional, Feedback can still be submitted without it.
+    capture(e, 'failed to capture project snapshot for feedback')
+    return null
+  }
+}
+
 function getRuntimeOutputsContext(outputs: readonly RuntimeOutput[]): RuntimeOutputContext[] {
   return outputs.slice(-maxRuntimeOutputs).map((output) => ({
     time: new Date(output.time).toISOString(),
@@ -138,6 +154,8 @@ export async function captureFeedbackContext({
     source,
     page: { path, language }
   }
+  // Start saving the snapshot first, so it runs in parallel with collecting diagnostics.
+  const projectSnapshotUrlPromise = editorCtx != null ? captureProjectSnapshot(editorCtx.project) : null
   if (editorCtx != null) {
     context.project = getProjectContext(editorCtx.project)
     const runtimeOutputs = getRuntimeOutputsContext(editorCtx.state.runtime.outputs)
@@ -152,6 +170,8 @@ export async function captureFeedbackContext({
       capture(e, 'failed to capture diagnostics for feedback')
     }
   }
+  const projectSnapshotUrl = await projectSnapshotUrlPromise
+  if (projectSnapshotUrl != null) context.projectSnapshotUrl = projectSnapshotUrl
   fitContextSize(context, maxSize)
   return context
 }

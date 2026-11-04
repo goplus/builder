@@ -37,8 +37,15 @@ describe('admin feedback', () => {
     await router.push('/admin/feedback/1')
     await vi.waitFor(() => expect(wrapper.text()).toContain('After I renamed the sprite'))
     expect(wrapper.text()).toContain('Space (unsaved)')
-    expect(wrapper.text()).toContain('undefined: move')
-    expect(wrapper.text()).toContain('Rocket panicked')
+    const details = wrapper.findAll('details')
+    expect(details.map((d) => d.get('summary').text())).toEqual([
+      'Code errors and warnings (1)',
+      'Runtime output (1)',
+      'View raw data'
+    ])
+    expect(details.every((d) => !(d.element as HTMLDetailsElement).open)).toBe(true)
+    expect(details[0].text()).toContain('undefined: move')
+    expect(details[1].text()).toContain('Rocket panicked')
     await wrapper
       .findAll('button')
       .find((button) => button.text() === 'Mark as handled')!
@@ -122,6 +129,25 @@ describe('admin feedback', () => {
     await vi.waitFor(() => expect(wrapper.text()).toContain('Handled'))
     expect(findMarkButton()).toBeUndefined()
     expect(feedbackAdminApis.updateFeedback).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens the project snapshot shared with the feedback', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(
+      makeFeedback({
+        context: {
+          source: 'profileMenu',
+          page: { path: '/editor/alice/space', language: 'en' },
+          projectSnapshotUrl: 'kodo://test/files/project-snapshot.json'
+        }
+      })
+    )
+
+    const { wrapper, router } = await mountPages('/admin/feedback/1')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('After I renamed the sprite'))
+    await wrapper.get('[aria-label="Open project snapshot"]').trigger('click')
+
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toMatch(/^\/admin\/feedback\/1\/project-snapshot/))
   })
 
   it('shows that the user did not share page state', async () => {

@@ -197,6 +197,12 @@ const routes: Array<RouteRecordRaw> = [
     ]
   },
   {
+    // Not a child of `/admin`, whose layout does not fit the editor.
+    path: '/admin/feedback/:feedbackID/project-snapshot/:inEditorPath*',
+    component: () => import('./pages/admin/feedback-project-snapshot.vue'),
+    props: true
+  },
+  {
     path: '/:pathMatch(.*)*',
     component: () => import('./pages/404/index.vue')
   }
