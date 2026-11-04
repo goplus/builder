@@ -332,15 +332,33 @@ learner's code and falls back to a fixed line when generation fails.
 | Call | Returns | Notes |
 | --- | --- | --- |
 | `onStart => { ... }` | | Registers a course-start callback. |
-| `showPrelude message` | After the learner dismisses it | Shows the opening task guide. It differs from `showMessage` only in how the host presents it. |
-| `showMessage message` | After the learner dismisses it | Shows a dialog. |
-| `showVideo name` | After the learner finishes watching | Plays the declared video `name`, not a file path. The host decides what counts as finished. |
+| `showPrelude message` / `showPrelude messages` | After the learner confirms the final page | Shows one opening guide or a non-empty list of pages in one dialog. Accepts optional `buttonText` for the final page; intermediate pages use Next. |
+| `showMessage message` | After the learner confirms it | Shows a dialog. Accepts optional `buttonText`. |
+| `showVideo name` | After the learner finishes watching | Plays the declared video `name`, not a file path. Accepts optional `buttonText`. The host decides what counts as finished. |
 | `wait seconds` | After that many seconds | Pauses this callback while other callbacks keep running. Zero or a negative number returns at once. |
 | `complete` | Immediately | Ends the course without feedback. See [Completion](#completion). |
 | `completeWith message` | Immediately | Ends the course and shows `message` as feedback. |
 | `newRunGroup(policy)` | A run group | `policy` is `CancelPreviousPolicy`, `QueuePolicy` or `SkipPolicy`. See [Run groups](#run-groups). |
 
 Presentations never advance on their own.
+
+#### Presentation pages and button text
+
+`showPrelude` accepts one string or a non-empty list of strings. A list is shown
+as pages inside one dialog. Intermediate pages use Next. All three presentation
+calls accept an optional final button text; omitted text defaults to Continue.
+The text is displayed in the course's language, without translation. Choose Next
+while more introduction remains and Start when independent work begins. Start
+only dismisses the presentation and resumes the course; it does not run the project.
+These blocking dialogs have no close button and cannot be dismissed by Escape or
+a backdrop click. Learners advance using their action buttons.
+
+```go
+onStart => {
+ showPrelude ["Read the task", "Look at the example"], "Next"
+ showVideo "step-to", "Start"
+}
+```
 
 ### RunGroup
 

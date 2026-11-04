@@ -62,6 +62,7 @@ const props = withDefaults(
     /** Whether to focus the first focusable element inside modal. */
     autoFocus?: boolean
     maskClosable?: boolean
+    closeOnEsc?: boolean
     class?: ClassValue
     /**
      * Metadata for radar, equivalent to applying `v-radar` on the dialog surface.
@@ -73,6 +74,7 @@ const props = withDefaults(
     visible: false,
     autoFocus: true,
     maskClosable: true,
+    closeOnEsc: true,
     class: undefined,
     radar: undefined
   }
@@ -118,7 +120,9 @@ const surfaceClass = computed(() =>
 )
 
 useDialogAutoFocus(containerRef, () => props.visible && props.autoFocus)
-useDialogEscape(containerRef, modalRegistration.isTopmost, () => emit('update:visible', false))
+useDialogEscape(containerRef, modalRegistration.isTopmost, () => {
+  if (props.closeOnEsc) emit('update:visible', false)
+})
 
 const transformOrigin = ref<ModalTransformOrigin | null>(null)
 

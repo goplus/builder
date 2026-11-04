@@ -209,7 +209,7 @@ func TestCompletionEndsTheProgram(t *testing.T) {
 
 	runCourse(t, host, func(course *testCourse) {
 		course.OnStart(func() {
-			course.ShowPrelude("Move Lita to Mushroom.")
+			course.ShowPrelude__0("Move Lita to Mushroom.")
 			course.CompleteWith("Nicely done.")
 		})
 	})
@@ -366,7 +366,7 @@ func TestCapabilityFailureStopsTheCourse(t *testing.T) {
 	go func() {
 		defer func() { done <- recover() }()
 		XGot_Course_Main(newTestCourse(host, func(course *testCourse) {
-			course.OnStart(func() { course.ShowMessage("hi") })
+			course.OnStart(func() { course.ShowMessage__0("hi") })
 		}))
 	}()
 
@@ -388,10 +388,10 @@ func TestCoursesDoNotShareState(t *testing.T) {
 	firstHost, secondHost := newFakeHost(), newFakeHost()
 
 	first := newTestCourse(firstHost, func(course *testCourse) {
-		course.OnStart(func() { course.ShowMessage("first") })
+		course.OnStart(func() { course.ShowMessage__0("first") })
 	})
 	second := newTestCourse(secondHost, func(course *testCourse) {
-		course.OnStart(func() { course.ShowMessage("second") })
+		course.OnStart(func() { course.ShowMessage__0("second") })
 	})
 
 	// Initialize without running: neither has completed yet, and each one's
@@ -470,7 +470,7 @@ func TestCourseStartHandlersRunIndependently(t *testing.T) {
 
 	done := startCourse(host, func(course *testCourse) {
 		course.OnStart(func() {
-			course.ShowPrelude("welcome")
+			course.ShowPrelude__0("welcome")
 			course.Complete()
 		})
 		course.OnStart(func() { otherRan <- struct{}{} })
@@ -558,7 +558,7 @@ func TestWaitingCapabilityYieldsToOtherEvents(t *testing.T) {
 			logSeen <- struct{}{}
 		})
 		course.Copilot.OnRoundComplete(func(CopilotRound) {
-			course.ShowMessage("look at this")
+			course.ShowMessage__0("look at this")
 			observed = logNum
 			course.Complete()
 		})
@@ -1124,7 +1124,7 @@ func TestCallbacksStartInRegistrationOrder(t *testing.T) {
 	done := startCourse(host, func(course *testCourse) {
 		course.Editor.Runtime.OnLog(func(string) {
 			trace = append(trace, "first")
-			course.ShowMessage("look")
+			course.ShowMessage__0("look")
 		})
 		course.Editor.Runtime.OnLog(func(string) {
 			trace = append(trace, "second")
@@ -1157,10 +1157,10 @@ func TestPresentationCallsMayOverlap(t *testing.T) {
 	ready := make(chan struct{})
 	done := startCourse(host, func(course *testCourse) {
 		course.Editor.Runtime.OnStart(func() {
-			course.ShowMessage("first")
+			course.ShowMessage__0("first")
 		})
 		course.Editor.Runtime.OnExit(func(int) {
-			course.ShowMessage("second")
+			course.ShowMessage__0("second")
 			course.Complete()
 		})
 		course.OnStart(func() { close(ready) })
@@ -1304,7 +1304,7 @@ func TestFrameworkFromCourseGoroutineFailsTheCourse(t *testing.T) {
 	// Each ability receives a run group the holding run created, for the
 	// abilities that act on one.
 	abilities := map[string]func(*testCourse, RunGroup){
-		"showMessage":  func(course *testCourse, _ RunGroup) { course.ShowMessage("from a goroutine") },
+		"showMessage":  func(course *testCourse, _ RunGroup) { course.ShowMessage__0("from a goroutine") },
 		"wait":         func(course *testCourse, _ RunGroup) { course.Wait(0.01) },
 		"onLog":        func(course *testCourse, _ RunGroup) { course.Editor.Runtime.OnLog(func(string) {}) },
 		"complete":     func(course *testCourse, _ RunGroup) { course.Complete() },
@@ -1484,7 +1484,7 @@ func TestCompletionSettlesPendingWait(t *testing.T) {
 
 	done := startCourse(host, func(course *testCourse) {
 		course.Editor.Runtime.OnStart(func() {
-			course.ShowMessage("still open")
+			course.ShowMessage__0("still open")
 			resumed <- struct{}{}
 		})
 		course.Editor.Runtime.OnExit(func(int) {
@@ -1586,7 +1586,7 @@ func TestStartWaitsForHostAndEveryCallbackInitialSegment(t *testing.T) {
 		course.OnStart(func() {
 			callbackStarted <- struct{}{}
 			course.Editor.CodeEditor.FilterAPIs([]string{"stepTo"})
-			course.ShowMessage("Try this")
+			course.ShowMessage__0("Try this")
 		})
 		course.OnStart(func() {
 			course.Editor.Ruler.Enable()

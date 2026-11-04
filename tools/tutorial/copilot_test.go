@@ -108,7 +108,7 @@ func TestUnhandledGenerationErrors(t *testing.T) {
 			course.OnStart(func() {
 				course.Copilot.GenerateJSON("judge this", &result)
 				if !result.Passed {
-					course.ShowMessage("Not yet, keep trying.")
+					course.ShowMessage__0("Not yet, keep trying.")
 				}
 				course.Complete()
 			})

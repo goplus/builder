@@ -9,6 +9,8 @@ describe('Tutorial language server Worker', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   it('analyzes and edits the current Tutorial program with the author SDK', async () => {
+    const overloads =
+      'onStart => {\nshowPrelude ["A", "B"], "Next"\nshowPrelude "A", "Start"\nshowMessage "Hint", "Next"\nshowVideo "intro", "Start"\n}\n'
     const source = 'var title = "hello"\nonStart => { showMessage title }\n'
     const textDocument = { uri: 'file:///main_course.gox' }
     const { request, setFiles } = await startWorker({ 'main_course.gox': source }, tutorialClassFramework)
@@ -33,6 +35,8 @@ describe('Tutorial language server Worker', () => {
       options: { tabSize: 4, insertSpaces: false }
     })
     expect(format.length).toBeGreaterThan(0)
+    setFiles({ 'main_course.gox': overloads })
+    expect((await diagnostics()).items).toContainEqual(expect.objectContaining({ ...textDocument, items: [] }))
     setFiles({ 'main_course.gox': 'onStart => { unknownCall }\n' })
     expect(JSON.stringify(await diagnostics())).toContain('unknownCall')
     setFiles({ 'main_course.gox': source })

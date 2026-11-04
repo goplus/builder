@@ -97,16 +97,24 @@ type CourseAbilities interface {
 	// independently. Opening steps that must happen in order belong in one
 	// callback.
 	onStart(callback func())
-	// showPrelude presents the Course opening guide with the given message and
-	// returns after the learner finishes reading it.
-	showPrelude(preludeMessage string)
-	// showMessage presents the given message and returns after the learner
-	// finishes reading it.
+	// showPrelude presents one opening guide or a non-empty list as pages of one
+	// dialog, and returns after the final page. Intermediate actions use Next;
+	// buttonText applies only to the final page. Omitted text uses the Host's default.
+	// Actions resume the course without running the learner's project.
+	// These dialogs disable Escape and backdrop dismissal.
+	showPrelude(message string)
+	showPrelude(message string, buttonText string)
+	showPrelude(messages []string)
+	showPrelude(messages []string, buttonText string)
+	// showMessage presents a message and waits for learner confirmation.
+	// Omitted button text uses the Host's default.
 	showMessage(message string)
-	// showVideo presents the Course-local video with the given declared resource
-	// name and returns after the learner finishes watching it. The host determines
-	// how viewing completion is established.
+	showMessage(message string, buttonText string)
+	// showVideo presents the Course-local video with the given resource name and
+	// waits for learner confirmation. The host determines viewing completion
+	// and supplies the default button text when omitted.
 	showVideo(videoName string)
+	showVideo(videoName string, buttonText string)
 	// wait pauses the calling callback for the given number of seconds; other
 	// runs proceed meanwhile. Zero or negative seconds return at once. Pause
 	// with wait rather than time.Sleep, which holds up every other run.

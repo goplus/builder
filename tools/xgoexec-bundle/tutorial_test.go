@@ -34,6 +34,12 @@ onStart => {
 	Editor.CodeEditor.filterAPIs ["xgo:preset/spx?Sprite.stepTo"]
 	Editor.Ruler.enable
 	showPrelude "Move Lita to Mushroom."
+ showPrelude "One page", "Start"
+ showPrelude ["First", "Second"]
+ showPrelude ["First", "Second"], "Next"
+ showMessage "Hint"
+ showMessage "Hint", "Next"
+ showVideo "step-to", "Start"
 	showVideo "step-to"
 	Spotlight.reveal "code-text-editor", "Write your code here"
 	Spotlight.revealWith "stage-overview", "Watch Lita", SpotlightOptions{Mask: false, Duration: 3}

@@ -30,9 +30,6 @@ const emit = defineEmits<{
   cancelled: []
   resolved: [action: CompletionAction]
 }>()
-function dismiss() {
-  emit('resolved', 'continueEditing')
-}
 </script>
 
 <template>
@@ -41,8 +38,8 @@ function dismiss() {
     size="small"
     class="w-111!"
     :mask-closable="false"
+    :close-on-esc="false"
     :radar="{ name: 'course-completion', desc: 'Course completion and next Course actions' }"
-    @update:visible="dismiss"
   >
     <div class="max-h-[calc(100vh-32px)] overflow-y-auto p-6">
       <div class="flex flex-col items-center text-center">

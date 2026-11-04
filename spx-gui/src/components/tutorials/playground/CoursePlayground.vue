@@ -27,7 +27,7 @@ import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-edi
 import { UIDetailedLoading, UIError, UIMenuGroup, UIMenuItem, useModal } from '@/components/ui'
 import { useSaveProjectAs } from '@/components/project'
 
-import type { PlaygroundCourseCompletion } from './program'
+import type { PlaygroundCourseCompletion, PlaygroundCoursePresentationOptions } from './program'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 import CoursePlaygroundVideoModal from './CoursePlaygroundVideoModal.vue'
 import { PlaygroundCourseSession } from './session'
@@ -82,16 +82,16 @@ const openMessage = useModal(CoursePlaygroundMessageModal)
 const openVideo = useModal(CoursePlaygroundVideoModal)
 
 const presentation = {
-  showPrelude(content: string, signal: AbortSignal) {
-    return openMessage({ content, kind: 'prelude' }, { signal })
+  showPrelude(messages: string[], { buttonText, signal }: PlaygroundCoursePresentationOptions) {
+    return openMessage({ contents: messages, buttonText, kind: 'prelude' }, { signal })
   },
-  showMessage(content: string, signal: AbortSignal) {
-    return openMessage({ content, kind: 'message' }, { signal })
+  showMessage(content: string, { buttonText, signal }: PlaygroundCoursePresentationOptions) {
+    return openMessage({ contents: [content], buttonText, kind: 'message' }, { signal })
   },
-  showVideo(videoName: string, signal: AbortSignal) {
+  showVideo(videoName: string, { buttonText, signal }: PlaygroundCoursePresentationOptions) {
     const video = session.value?.project.videos.find((video) => video.name === videoName)
     if (video == null) throw new Error(`Video ${videoName} not found`)
-    return openVideo({ video }, { signal })
+    return openVideo({ video, buttonText }, { signal })
   },
   async revealSpotlight(target: string, tip: string, options: SpotlightOptions) {
     const node = radar.select(target)

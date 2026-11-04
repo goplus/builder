@@ -12,7 +12,11 @@ const globalOptions = {
   mocks: { $t: (message: { en: string }) => message.en },
   directives: { radar: () => {} },
   stubs: {
-    UIModal: { props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
+    UIModal: {
+      name: 'UIModal',
+      props: ['visible', 'maskClosable', 'closeOnEsc'],
+      template: '<div v-if="visible"><slot /></div>'
+    },
     UIButton: { template: '<button><slot /></button>' },
     UIError: { props: ['retry'], template: '<div><slot /><button @click="retry">Retry</button></div>' },
     UILoading: true,
@@ -35,7 +39,7 @@ function mountVideo(visible = true) {
   const file = new File('lesson.mp4', async () => new ArrayBuffer(0), { type: 'video/mp4' })
   vi.spyOn(cloudHelpers, 'getFileWebUrl').mockResolvedValue('https://example.com/lesson.mp4')
   const wrapper = mount(CoursePlaygroundVideoModal, {
-    props: { visible, video: new Video('lesson', file) },
+    props: { visible, buttonText: null, video: new Video('lesson', file) },
     global: globalOptions
   })
   wrappers.push(wrapper)
@@ -45,14 +49,50 @@ function mountVideo(visible = true) {
 describe('Course presentation', () => {
   it.each(['prelude', 'message'] as const)('renders %s Markdown and waits for confirmation', async (kind) => {
     const wrapper = mount(CoursePlaygroundMessageModal, {
-      props: { visible: true, kind, content: '**Goal**: use `stepTo`' },
+      props: { visible: true, kind, buttonText: null, contents: ['**Goal**: use `stepTo`'] },
       global: globalOptions
     })
     wrappers.push(wrapper)
+    expect(wrapper.find('button').text()).toBe('Continue')
     expect(wrapper.find('strong').text()).toBe('Goal')
     expect(wrapper.find('code').text()).toBe('stepTo')
     expect(wrapper.emitted('resolved')).toBeUndefined()
     await wrapper.find('button').trigger('click')
+    expect(wrapper.emitted('resolved')).toHaveLength(1)
+  })
+
+  it('keeps prelude pages in one modal and customizes only the last action', async () => {
+    const wrapper = mount(CoursePlaygroundMessageModal, {
+      props: { visible: true, kind: 'prelude', contents: ['First', 'Second'], buttonText: 'Start' },
+      global: globalOptions
+    })
+    wrappers.push(wrapper)
+    const modal = wrapper.findComponent({ name: 'UIModal' })
+    const surface = wrapper.element
+    expect(modal.props()).toMatchObject({ closeOnEsc: false, maskClosable: false })
+    expect(wrapper.find('button').text()).toBe('Next')
+    expect(wrapper.text()).toContain('First')
+    const scroll = wrapper.find('.overflow-y-auto').element
+    scroll.scrollTop = 100
+    await wrapper.find('button').trigger('click')
+    expect(wrapper.element).toBe(surface)
+    expect(wrapper.emitted('resolved')).toBeUndefined()
+    expect(wrapper.text()).toContain('Second')
+    expect(scroll.scrollTop).toBe(0)
+    expect(wrapper.find('button').text()).toBe('Start')
+    await wrapper.find('button').trigger('click')
+    expect(wrapper.emitted('resolved')).toHaveLength(1)
+  })
+
+  it('supports a video handoff label without ending on video completion', async () => {
+    const { wrapper } = mountVideo()
+    await wrapper.setProps({ buttonText: 'Start' })
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'UIModal' }).props()).toMatchObject({ closeOnEsc: false, maskClosable: false })
+    await wrapper.find('video').trigger('ended')
+    expect(wrapper.emitted('resolved')).toBeUndefined()
+    expect(wrapper.findAll('button').at(-1)!.text()).toBe('Start')
+    await wrapper.findAll('button').at(-1)!.trigger('click')
     expect(wrapper.emitted('resolved')).toHaveLength(1)
   })
 
@@ -173,7 +213,7 @@ describe('Course presentation', () => {
       .mockResolvedValueOnce('https://example.com/retried.mp4')
     const file = new File('lesson.mp4', async () => new ArrayBuffer(0))
     const wrapper = mount(CoursePlaygroundVideoModal, {
-      props: { visible: true, video: new Video('lesson', file) },
+      props: { visible: true, buttonText: null, video: new Video('lesson', file) },
       global: globalOptions
     })
     wrappers.push(wrapper)
