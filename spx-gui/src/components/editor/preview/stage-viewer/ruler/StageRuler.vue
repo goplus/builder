@@ -44,6 +44,8 @@ const smallAngleThreshold = 32
 const smallAngleOuterOffset = 18
 const nearStraightAngleThreshold = 8
 const markerDesignSize = 24
+const markerCenterDesignSize = 16
+const markerCenterInset = (markerDesignSize - markerCenterDesignSize) / 2
 const markerDisplaySize = 14
 </script>
 
@@ -263,6 +265,7 @@ onUnmounted(() => {
   outlineImage.onload = null
   centerImage.onload = null
   motionPreference.removeEventListener('change', updateMotionPreference)
+  labelMeasureNode?.destroy()
   stopMeasuring()
   emit('cursorPreviewChange', false)
 })
@@ -413,9 +416,14 @@ function clampLabelToViewport(layout: LabelLayout): LabelLayout {
   return clampLabelToRect(layout, visibleMapRect.value, labelBoundaryPadding)
 }
 
+let labelMeasureNode: Konva.Text | null = null
+
 function getLabelSize(text: string) {
-  const textNode = new Konva.Text({ text, fontFamily: 'Inter', fontSize: labelFontSize, fontStyle: '500' })
-  return { width: Math.ceil(textNode.width()) + labelHorizontalPadding * 2, height: labelLineHeight }
+  labelMeasureNode ??= new Konva.Text({ fontFamily: 'Inter', fontSize: labelFontSize, fontStyle: '500' })
+  return {
+    width: Math.ceil(labelMeasureNode.measureSize(text).width) + labelHorizontalPadding * 2,
+    height: labelLineHeight
+  }
 }
 
 function getLineLabelLayout(from: Pos, to: Pos, text: string): LabelLayout {
@@ -642,8 +650,19 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
     <v-path v-if="cursorOutlineConfig != null" :config="cursorOutlineConfig" />
     <v-image v-if="cursorConfig != null" :config="cursorConfig" />
     <v-group v-for="(marker, index) in endpointMarkerConfigs" :key="index" :config="marker">
-      <v-image :config="{ image: markerOutlineImage, width: 24, height: 24, listening: false }" />
-      <v-image :config="{ image: markerCenterImage, x: 4, y: 4, width: 16, height: 16, listening: false }" />
+      <v-image
+        :config="{ image: markerOutlineImage, width: markerDesignSize, height: markerDesignSize, listening: false }"
+      />
+      <v-image
+        :config="{
+          image: markerCenterImage,
+          x: markerCenterInset,
+          y: markerCenterInset,
+          width: markerCenterDesignSize,
+          height: markerCenterDesignSize,
+          listening: false
+        }"
+      />
     </v-group>
   </v-layer>
 </template>

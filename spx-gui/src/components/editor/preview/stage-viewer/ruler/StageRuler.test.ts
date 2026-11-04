@@ -39,6 +39,7 @@ async function setup(reducedMotion = false) {
   const Cursor = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
   const Outline = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
   const Line = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
+  const Text = defineComponent({ props: { config: { type: Object, required: true } }, template: '<div />' })
   const Group = defineComponent({
     props: { config: { type: Object, required: true } },
     template: '<div><slot /></div>'
@@ -64,7 +65,7 @@ async function setup(reducedMotion = false) {
         'v-line': Line,
         'v-group': Group,
         'v-arc': true,
-        'v-text': true
+        'v-text': Text
       },
       renderStubDefaultSlot: true
     }
@@ -73,8 +74,10 @@ async function setup(reducedMotion = false) {
 
   // Happy DOM does not load image resources or measure canvas text.
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    save: vi.fn(),
+    restore: vi.fn(),
     measureText: (text: string) => ({ width: text.length * 8 })
-  } as CanvasRenderingContext2D)
+  } as unknown as CanvasRenderingContext2D)
   onTestFinished(() => {
     vi.restoreAllMocks()
   })
@@ -117,6 +120,9 @@ async function setup(reducedMotion = false) {
   function measurement() {
     return wrapper.findAllComponents(Line).find((line) => line.props('config').dash != null)
   }
+  function labels() {
+    return wrapper.findAllComponents(Text).map((label) => label.props('config'))
+  }
   function markers() {
     return wrapper.findAllComponents(Group).filter((group) => group.props('config').scaleX != null)
   }
@@ -145,6 +151,7 @@ async function setup(reducedMotion = false) {
     cursor,
     outline,
     measurement,
+    labels,
     markers,
     marker,
     loadImage,
@@ -155,6 +162,27 @@ async function setup(reducedMotion = false) {
 }
 
 describe('Ruler cursor preview', () => {
+  it('updates distance and angle label widths independently as their text changes', async () => {
+    const { move, click, labels } = await setup()
+    await move({ x: 100, y: 100 })
+    await click()
+    await move({ x: 100, y: 60 })
+    expect(labels()).toMatchObject([
+      { text: '0°', width: 28, height: 22 },
+      { text: '40', width: 28, height: 22 }
+    ])
+    await move({ x: 0, y: 0 })
+    expect(labels()).toMatchObject([
+      { text: '-45°', width: 44, height: 22 },
+      { text: '141', width: 36, height: 22 }
+    ])
+    await move({ x: 100, y: 60 })
+    expect(labels()).toMatchObject([
+      { text: '0°', width: 28, height: 22 },
+      { text: '40', width: 28, height: 22 }
+    ])
+  })
+
   it('coalesces pointer moves and snaps the marker without displacing the cursor', async () => {
     const { move, queueMove, click, cursor, marker, measurement, loadImage, advance, frames } = await setup()
     await loadImage()
