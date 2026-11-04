@@ -47,7 +47,11 @@ describe('series units as learners see them', () => {
       '九十九'
     ])
     expect(getUnitLabel(9)).toEqual({ en: 'Unit 10', zh: '单元十' })
-    expect(getUnitHeading(0, 'Moving')).toEqual({ en: '1. Moving', zh: '一、Moving' })
+    expect(getUnitHeading(0, 'Moving')).toEqual({ en: 'Unit 1: Moving', zh: '单元一、Moving' })
+    expect(getUnitHeading(5, '变量、测量与计数')).toEqual({
+      en: 'Unit 6: 变量、测量与计数',
+      zh: '单元六、变量、测量与计数'
+    })
   })
 
   it('numbers units past 99 in Arabic digits', () => {
