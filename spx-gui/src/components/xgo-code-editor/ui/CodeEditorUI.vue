@@ -337,17 +337,13 @@ providePopupContainer(codeEditorEl)
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ui-spacing-md);
   box-sizing: border-box;
   max-width: 320px;
-  padding: 10px var(--ui-spacing-lg);
-  border: 1px solid var(--ui-color-dividing-line-2);
-  border-radius: var(--ui-border-radius-md);
-  background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-sm);
-  color: var(--ui-color-text);
+  padding: 6px var(--ui-spacing-md);
+  border: 1px solid var(--ui-color-grey-1000);
+  border-radius: var(--ui-border-radius-sm);
+  background: var(--ui-color-grey-1000);
+  color: var(--ui-color-grey-100);
   font-family: var(--ui-font-family-main);
   font-size: var(--ui-font-size-base);
   line-height: 1.5;
@@ -355,20 +351,15 @@ providePopupContainer(codeEditorEl)
   text-wrap: pretty;
 }
 
-.code-editor-read-only :deep(.monaco-editor-overlaymessage .message::before) {
-  content: '';
-  flex: none;
-  width: 20px;
-  height: 20px;
-  background: var(--ui-color-primary-main);
-  mask: url('../../ui/icons/info.svg') center / contain no-repeat;
-}
-
-.code-editor-read-only :deep(.monaco-editor-overlaymessage .message > p) {
-  min-width: 0;
-}
-
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor) {
-  display: none !important;
+  left: -2px;
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor.top) {
+  border-bottom-color: var(--ui-color-grey-1000);
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor.below) {
+  border-top-color: var(--ui-color-grey-1000);
 }
 </style>
