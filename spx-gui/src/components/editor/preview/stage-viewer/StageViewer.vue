@@ -7,7 +7,7 @@
     }"
     class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"
     :class="{ 'cursor-ruler': rulerActive }"
-    :style="{ backgroundImage: `url(${stageBgUrl})`, '--ruler-cursor': `url(${rulerCursorUrl}) 0 0, crosshair` }"
+    :style="{ backgroundImage: `url(${stageBgUrl})`, '--ruler-cursor': rulerCursor }"
     @mousemove="updateMousePos"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
@@ -73,7 +73,9 @@
         :map-pos="mapPos"
         :map-size="mapSize"
         :viewport-size="viewportSize"
+        :stage-scale="stageScale ?? 1"
         :snap-targets="rulerSnapTargets"
+        @cursor-outline-change="rulerCursorOutlined = $event"
       />
     </v-stage>
     <div v-if="!simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
@@ -115,7 +117,6 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
-import rulerCursorUrl from './ruler/triangle-ruler-cursor.svg?url&no-inline'
 import { UILoading } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useContentSize } from '@/utils/dom'
@@ -140,8 +141,9 @@ import QuickConfigWrapper, {
 import { SpriteLocalConfig, WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
 import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
 import StageRuler from './ruler/StageRuler.vue'
+import { rulerCursors } from './ruler/ruler-cursor'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     simpleMode?: boolean
     rulerActive?: boolean
@@ -235,6 +237,11 @@ const mapPosLimit = computed(() => {
 
 /** The position to be applied on the map node to achieve camera effect */
 const mapPos = ref<Pos>({ x: 0, y: 0 })
+const rulerCursorOutlined = ref(false)
+const rulerCursor = computed(() => {
+  if (props.simpleMode) return rulerCursorOutlined.value ? rulerCursors.simpleOutlined : rulerCursors.simple
+  return rulerCursorOutlined.value ? rulerCursors.normalOutlined : rulerCursors.normal
+})
 const rulerSnapTargets = computed(() =>
   editorCtx.project.sprites.map((sprite) => ({
     x: sprite.x + mapSize.value.width / 2,

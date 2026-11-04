@@ -85,7 +85,7 @@ Editor customizations a course can enable on demand — independent of each othe
 
 * **Simple mode**: a focused form for single-sprite programming — hides the sprite list and disables sprite settings; sprite names appear on the stage (hovering a sprite reveals its name label, clicking inserts the name into the code, so learners never have to spell sprite names); larger code font; centered run button and Copilot entry; a bigger API Reference. The running state does not exit automatically — learners switch back themselves, encouraging rapid "change a little, run again" iteration. Code editing is disabled in the running state
 * **API allowlist**: filters the API Reference to show only the APIs relevant to the course and hides unrelated categories, reducing cognitive load
-* **Ruler**: a measuring aid on the stage that helps learners build intuition for coordinates and distances
+* **Ruler**: a measuring aid on the stage that helps learners build intuition for coordinates and distances. The native ruler cursor has a fixed screen size (larger in Simple Mode). Separate point markers make snapping visible; markers, labels, line widths, dash spacing, and angle arcs keep fixed screen sizes as the stage scales. Learners can click the origin and endpoint or drag between them; the completed measurement and endpoint markers remain until the next measurement begins. Measurements and the existing 24-unit snapping radius use stage coordinates
 
 ### Guided Course
 
