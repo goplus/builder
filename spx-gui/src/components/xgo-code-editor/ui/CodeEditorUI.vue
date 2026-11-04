@@ -339,11 +339,11 @@ providePopupContainer(codeEditorEl)
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
   box-sizing: border-box;
   max-width: 320px;
-  padding: 6px var(--ui-spacing-md);
-  border: 1px solid var(--ui-color-grey-1000);
+  padding: 6px var(--ui-spacing-lg);
+  border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-border-radius-sm);
-  background: var(--ui-color-grey-1000);
-  color: var(--ui-color-grey-100);
+  background: var(--ui-color-grey-300);
+  color: var(--ui-color-text);
   font-family: var(--ui-font-family-main);
   font-size: var(--ui-font-size-base);
   line-height: 1.5;
@@ -351,15 +351,25 @@ providePopupContainer(codeEditorEl)
   text-wrap: pretty;
 }
 
+/* Override Monaco's zero-size border triangles with a smaller outlined pointer. */
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor) {
-  left: -2px;
+  width: 8px !important;
+  height: 8px !important;
+  left: 2px;
+  border: 0;
+  background: var(--ui-color-grey-300);
+  transform: rotate(45deg);
 }
 
-.code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor.top) {
-  border-bottom-color: var(--ui-color-grey-1000);
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below .anchor.top) {
+  top: 4px;
+  border-top: 1px solid var(--ui-color-border);
+  border-left: 1px solid var(--ui-color-border);
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor.below) {
-  border-top-color: var(--ui-color-grey-1000);
+  bottom: 4px;
+  border-right: 1px solid var(--ui-color-border);
+  border-bottom: 1px solid var(--ui-color-border);
 }
 </style>
