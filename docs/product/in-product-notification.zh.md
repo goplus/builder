@@ -39,7 +39,7 @@ Notification List 是当前用户收到的 Notification 集合，按 Category �
 
 ### 列出通知
 
-每个类别有自己的未读数量，导航入口展示两者之和。Notification 按 CreatedAt 从新到旧排列，时间相同时保持稳定顺序。阅读 Notification 不改变它的位置，加载更多时也不应因已读状态变化出现遗漏或重复。
+每个类别有自己的未读数量，导航入口提示是否有未读 Notification。Notification 按 CreatedAt 从新到旧排列，时间相同时保持稳定顺序。阅读 Notification 不改变它的位置，加载更多时也不应因已读状态变化出现遗漏或重复。
 
 ### 阅读 Notification
 
