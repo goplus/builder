@@ -86,7 +86,7 @@ describe('tutorial course dropdown', () => {
   it('shows all units and courses in order, retaining active state and restart', async () => {
     const wrapper = mountPanel()
     await flushPromises()
-    expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual(['1. Basics', '2. Advanced'])
+    expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual(['Unit 1: Basics', 'Unit 2: Advanced'])
     expect(wrapper.findAll('ul').map((list) => list.findAll('li').length)).toEqual([2, 1])
     expect(
       wrapper.findAllComponents(TutorialStatusCourseRow).map((row) => [row.props('course').id, row.props('sequence')])

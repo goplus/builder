@@ -45,5 +45,6 @@ export function getUnitLabel(index: number): LocaleMessage {
 
 /** The heading of the unit at `index`: its title, numbered. */
 export function getUnitHeading(index: number, title: string): LocaleMessage {
-  return { en: `${index + 1}. ${title}`, zh: `${toChineseNumeral(index + 1)}、${title}` }
+  const label = getUnitLabel(index)
+  return { en: `${label.en}: ${title}`, zh: `${label.zh}、${title}` }
 }

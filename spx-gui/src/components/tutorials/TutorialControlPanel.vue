@@ -145,13 +145,13 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
-    <div class="min-h-0 flex-1 overflow-y-auto p-1">
+    <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1">
       <UILoading v-if="coursesQueryRet.isLoading.value" class="h-24" />
       <template v-for="(group, index) in courseGroups" v-else :key="index">
-        <h3 v-if="group.title != null" class="m-0 px-1 pb-1 pt-2 text-base font-semibold text-title">
+        <h3 v-if="group.title != null" class="m-0 flex-none truncate px-1 py-2 text-base font-medium text-text">
           {{ $t(getUnitHeading(index, group.title)) }}
         </h3>
-        <ul class="flex flex-col gap-2">
+        <ul class="flex flex-none flex-col gap-2">
           <TutorialStatusCourseRow
             v-for="{ course, sequence } in group.courses"
             :key="course.id"
