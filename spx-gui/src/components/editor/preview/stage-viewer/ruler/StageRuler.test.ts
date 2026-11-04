@@ -4,7 +4,7 @@ import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import StageRuler, { type Pos } from './StageRuler.vue'
 import { rulerCursors } from './ruler-cursor'
 
-async function setup(scale = 1, reduce = true) {
+async function setup(scale = 1, reduce = true, simpleMode = false) {
   let pointer: Pos | null = null
   let time = 0
   let frameId = 0
@@ -46,6 +46,7 @@ async function setup(scale = 1, reduce = true) {
       mapSize: { width: 600, height: 400 },
       viewportSize: { width: 480, height: 360 },
       stageScale: scale,
+      simpleMode,
       snapTargets: [
         { x: 100, y: 100, heading: 0 },
         { x: 300, y: 100, heading: null }
@@ -70,7 +71,10 @@ async function setup(scale = 1, reduce = true) {
   })
   const capture = wrapper.getComponent(Rect)
   function point(pos: Pos) {
-    pointer = { x: pos.x * wrapper.props('stageScale'), y: pos.y * wrapper.props('stageScale') }
+    pointer = {
+      x: (pos.x * wrapper.props('stageScale')) / (wrapper.props('simpleMode') ? 1.3 : 1),
+      y: (pos.y * wrapper.props('stageScale')) / (wrapper.props('simpleMode') ? 1.3 : 1)
+    }
   }
   async function advance(ms = 16) {
     time += ms
@@ -169,6 +173,31 @@ describe('Ruler', () => {
     ])
     await wrapper.setProps({ stageScale: scale * 1.5 })
     expect(line()!.points).toEqual([150 * scale, 150 * scale, 450 * scale, 150 * scale])
+    expect(labels().map((label) => label.text)).toEqual(['90°', '200'])
+  })
+  it.each([0.5, 1, 2])('enlarges Simple Mode decorations by a fixed factor at stage scale %s', async (scale) => {
+    const { layer, move, click, line, labels, markers, configs, wrapper } = await setup(scale, true, true)
+    await move({ x: 120, y: 100 })
+    await click()
+    await move({ x: 320, y: 100 })
+    await click()
+    const screenScale = scale * layer.props('config').scaleX
+    expect(screenScale).toBeCloseTo(1.3)
+    expect(line()!.points.map((value: number) => value * screenScale)).toEqual([
+      100 * scale,
+      100 * scale,
+      300 * scale,
+      100 * scale
+    ])
+    expect(labels().map((label) => label.text)).toEqual(['90°', '200'])
+    expect(labels()[0].fontSize * screenScale).toBeCloseTo(16.9)
+    expect(labels()[0].height * screenScale).toBeCloseTo(28.6)
+    expect(configs().find((config) => config.radius === 7)!.radius * 2 * screenScale).toBeCloseTo(18.2)
+    expect(configs().find((config) => config.outerRadius != null)!.outerRadius * screenScale).toBeCloseTo(47.84)
+    expect(line()!.strokeWidth * screenScale).toBeCloseTo(2.08)
+    expect(markers()[0]!.x * screenScale).toBeCloseTo(100 * scale)
+    await wrapper.setProps({ stageScale: scale * 1.5 })
+    expect(scale * 1.5 * layer.props('config').scaleX).toBeCloseTo(1.3)
     expect(labels().map((label) => label.text)).toEqual(['90°', '200'])
   })
   it('animates origin snap and release, honors reduced motion and confirms exact coordinates', async () => {

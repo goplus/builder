@@ -47,14 +47,21 @@ import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { LineConfig } from 'konva/lib/shapes/Line'
 import type { ArcConfig } from 'konva/lib/shapes/Arc'
 
-const props = defineProps<{
-  active: boolean
-  mapPos: Pos
-  mapSize: { width: number; height: number }
-  viewportSize: { width: number; height: number }
-  stageScale: number
-  snapTargets: RulerSnapTarget[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    active: boolean
+    mapPos: Pos
+    mapSize: { width: number; height: number }
+    viewportSize: { width: number; height: number }
+    stageScale: number
+    simpleMode?: boolean
+    snapTargets: RulerSnapTarget[]
+  }>(),
+  { simpleMode: false }
+)
+
+// Decoration units have a fixed screen size, enlarged in Simple Mode.
+const displayScale = computed(() => props.stageScale / (props.simpleMode ? 1.3 : 1))
 
 const emit = defineEmits<{ cursorOutlineChange: [outlined: boolean] }>()
 
@@ -296,15 +303,15 @@ const markerPositions = computed(() => {
 })
 
 function toDisplayPos(pos: Pos): Pos {
-  return { x: pos.x * props.stageScale, y: pos.y * props.stageScale }
+  return { x: pos.x * displayScale.value, y: pos.y * displayScale.value }
 }
 
 function getPointerPos(): Pos | null {
   const pos = layerRef.value?.getNode().getRelativePointerPosition()
-  return pos == null ? null : { x: pos.x / props.stageScale, y: pos.y / props.stageScale }
+  return pos == null ? null : { x: pos.x / displayScale.value, y: pos.y / displayScale.value }
 }
 
-// This layer cancels the stage scale; decoration geometry and layout use screen pixels.
+// Convert map coordinates into the fixed-size decoration coordinate system.
 const displayMeasurement = computed(() => {
   if (measurement.value == null) return null
   return { ...measurement.value, from: toDisplayPos(measurement.value.from), to: toDisplayPos(measurement.value.to) }
@@ -314,8 +321,8 @@ const layerConfig = computed(
   () =>
     ({
       ...props.mapPos,
-      scaleX: 1 / props.stageScale,
-      scaleY: 1 / props.stageScale,
+      scaleX: 1 / displayScale.value,
+      scaleY: 1 / displayScale.value,
       listening: props.active
     }) satisfies LayerConfig
 )
@@ -323,8 +330,8 @@ const layerConfig = computed(
 const captureRectConfig = computed(
   () =>
     ({
-      width: props.mapSize.width * props.stageScale,
-      height: props.mapSize.height * props.stageScale,
+      width: props.mapSize.width * displayScale.value,
+      height: props.mapSize.height * displayScale.value,
       fill: 'transparent'
     }) satisfies RectConfig
 )
@@ -350,8 +357,8 @@ function screenDegToVector(deg: number): Pos {
 const visibleMapRect = computed(() => ({
   ...getVisibleMapRect(
     toDisplayPos(props.mapPos),
-    { width: props.mapSize.width * props.stageScale, height: props.mapSize.height * props.stageScale },
-    { width: props.viewportSize.width * props.stageScale, height: props.viewportSize.height * props.stageScale }
+    { width: props.mapSize.width * displayScale.value, height: props.mapSize.height * displayScale.value },
+    { width: props.viewportSize.width * displayScale.value, height: props.viewportSize.height * displayScale.value }
   )
 }))
 
@@ -423,7 +430,7 @@ const distanceLabelLayout = computed<LabelLayout | null>(() => {
 const angle = computed(() => {
   const m = measurement.value
   if (m == null || m.fromHeading == null) return null
-  if (Math.hypot(m.to.x - m.from.x, m.to.y - m.from.y) * props.stageScale < minAngleDistance) return null
+  if (Math.hypot(m.to.x - m.from.x, m.to.y - m.from.y) * displayScale.value < minAngleDistance) return null
   return {
     headingDeg: headingToScreenDeg(m.fromHeading),
     lineDeg: segmentScreenDeg(m.from, m.to),
