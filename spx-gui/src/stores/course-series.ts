@@ -12,8 +12,10 @@ function getSeriesQueryKey(seriesID: string) {
   return [seriesQueryKeyPrefix, seriesID]
 }
 
-function getSeriesCoursesQueryKey(seriesID: string | null) {
-  return [seriesCoursesQueryKeyPrefix, seriesID]
+function getSeriesCoursesQueryKey(seriesID: string | null, courseIDs?: string[]) {
+  return courseIDs == null
+    ? [seriesCoursesQueryKeyPrefix, seriesID]
+    : [seriesCoursesQueryKeyPrefix, seriesID, courseIDs]
 }
 
 const staleTime = 5 * 60 * 1000
@@ -28,9 +30,17 @@ export function useSeries(seriesID: WatchSource<string>) {
   })
 }
 
-export function useSeriesCourses(seriesID: WatchSource<string | null>) {
+export function useSeriesCourses(
+  seriesID: WatchSource<string | null>,
+  /**
+   * The courses of the series as it is shown, such as by its units. The list is fetched again whenever they change,
+   * so it lacks none of them but those deleted since.
+   */
+  courseIDs?: WatchSource<string[]>
+) {
   const seriesIDRef = toRef(seriesID)
-  const queryKey = computed(() => getSeriesCoursesQueryKey(seriesIDRef.value))
+  const courseIDsRef = courseIDs == null ? null : toRef(courseIDs)
+  const queryKey = computed(() => getSeriesCoursesQueryKey(seriesIDRef.value, courseIDsRef?.value))
 
   return useQueryWithCache({
     queryKey,

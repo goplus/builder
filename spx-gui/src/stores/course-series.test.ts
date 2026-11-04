@@ -1,5 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { QueryClient } from '@tanstack/vue-query'
+import { ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { withQueryClient } from '@/utils/test'
@@ -54,6 +55,7 @@ describe('course series writes', () => {
   it('puts an updated series in the cache, and drops its course list for the next reader to fetch', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
     queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
+    queryClient.setQueryData(['course-series-courses', '40', ['2338']], [makeCourse('2338')])
     queryClient.setQueryData(['course-series-courses', '41'], [makeCourse('2339')])
     const after = makeSeries('40', ['2338', '2340'])
     apis.updateCourseSeries.mockResolvedValue(after)
@@ -63,6 +65,7 @@ describe('course series writes', () => {
 
     expect(queryClient.getQueryData(['course-series', '40'])).toEqual(after)
     expect(queryClient.getQueryData(['course-series-courses', '40'])).toBeUndefined()
+    expect(queryClient.getQueryData(['course-series-courses', '40', ['2338']])).toBeUndefined()
     expect(queryClient.getQueryData(['course-series-courses', '41'])).toEqual([makeCourse('2339')])
     // Starting a lesson of the series now waits for its list as it is, instead of taking the old one.
     apis.listAllSeriesCourses.mockResolvedValue([makeCourse('2338'), makeCourse('2340')])
@@ -90,6 +93,21 @@ describe('course series writes', () => {
     expect(courses.data.value).toEqual([makeCourse('2338')])
     resolveFresh([makeCourse('2338'), makeCourse('2340')])
     await vi.waitFor(() => expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')]))
+  })
+
+  it('lists the courses of a series again once it is shown holding others', async () => {
+    apis.listAllSeriesCourses
+      .mockResolvedValueOnce([makeCourse('2338')])
+      .mockResolvedValueOnce([makeCourse('2338'), makeCourse('2340')])
+    const courseIDs = ref(['2338'])
+    const courses = withQueryClient(queryClient, () => useSeriesCourses(() => '40', courseIDs))
+    await flushPromises()
+    expect(courses.data.value).toEqual([makeCourse('2338')])
+
+    courseIDs.value = ['2338', '2340']
+
+    await vi.waitFor(() => expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')]))
+    expect(apis.listAllSeriesCourses).toHaveBeenCalledTimes(2)
   })
 
   it('drops a series whose update failed, and its course list, as the update may still have taken effect', async () => {

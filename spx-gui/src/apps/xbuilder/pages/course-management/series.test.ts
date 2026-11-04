@@ -23,12 +23,13 @@ function makeCourse(id: string, title: string): courseApis.Course {
   }
 }
 
-/** A series in two units, whose writes are answered when the test says. */
-function serveSeries() {
-  const units: CourseSeriesUnit[] = [
+/** A series in `units`, two by default, whose writes are answered when the test says. */
+function serveSeries(
+  units: CourseSeriesUnit[] = [
     { id: 'basics', title: 'Basics', courseIDs: ['first-flight'] },
     { id: 'arrival', title: 'Arrival', courseIDs: ['landing'] }
   ]
+) {
   let series: CourseSeries = {
     id: 'space',
     owner: 'alice',
@@ -42,7 +43,11 @@ function serveSeries() {
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z'
   }
-  const courses = [makeCourse('first-flight', 'First flight'), makeCourse('landing', 'Landing')]
+  const courses = [
+    makeCourse('first-flight', 'First flight'),
+    makeCourse('landing', 'Landing'),
+    makeCourse('splashdown', 'Splashdown')
+  ]
   vi.mocked(courseSeriesApis.getCourseSeries).mockImplementation(async () => series)
   vi.mocked(courseApis.listAllSeriesCourses).mockImplementation(async () =>
     series.courseIDs.map((id) => courses.find((course) => course.id === id)!)
@@ -116,7 +121,7 @@ async function mountSeriesPage() {
 describe('course management series page', () => {
   setupPageTests()
 
-  it('does not delete another unit when an edit fails while deleting one is being confirmed', async () => {
+  it('deletes the unit asked about when an edit fails while deleting it is being confirmed', async () => {
     const { writes } = serveSeries()
     await mountSeriesPage()
 
@@ -125,12 +130,34 @@ describe('course management series page', () => {
     await openUnitMenu('Arrival')
     await click(getByText('.ui-menu-item', 'Delete unit'))
     await vi.waitFor(() => expect(document.body.textContent).toContain('will join the next unit'))
+    // "Arrival" is back after "Basics", whose place it took; its course still joins "Basics", now the unit before it.
+    await writes[0].answer(false)
+    await click(getByText('button', 'Delete'))
+
+    await vi.waitFor(() => expect(writes).toHaveLength(2))
+    expect(writes[1].params.units).toEqual([{ id: 'basics', title: 'Basics', courseIDs: ['first-flight', 'landing'] }])
+  })
+
+  it('does not merge a deleted unit into another unit than the one asked about, as an edit failing may make it', async () => {
+    const { writes } = serveSeries([
+      { id: 'basics', title: 'Basics', courseIDs: ['first-flight'] },
+      { id: 'arrival', title: 'Arrival', courseIDs: ['landing'] },
+      { id: 'homecoming', title: 'Homecoming', courseIDs: ['splashdown'] }
+    ])
+    await mountSeriesPage()
+
+    await openUnitMenu('Homecoming')
+    await click(getByText('.ui-menu-item', 'Move up'))
+    await openUnitMenu('Arrival')
+    await click(getByText('.ui-menu-item', 'Delete unit'))
+    await vi.waitFor(() => expect(document.body.textContent).toContain('will join the unit before'))
+    // The units are back in their order, and the unit before "Arrival" is now "Basics", not "Homecoming".
     await writes[0].answer(false)
     await click(getByText('button', 'Delete'))
 
     await vi.waitFor(() => expect(document.body.textContent).toContain('The units have changed meanwhile'))
     expect(writes).toHaveLength(1)
-    expect(getByText('h3', 'Basics')).toBeDefined()
+    expect(getByText('h3', 'Arrival')).toBeDefined()
   })
 
   it('writes the courses of the series with its units', async () => {
