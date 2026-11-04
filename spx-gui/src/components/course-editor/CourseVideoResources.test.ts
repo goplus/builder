@@ -47,7 +47,10 @@ describe('Course video resources', () => {
       const resource = remoteVideo()
       if (dimensions != null) resource.setDimensions(dimensions.width, dimensions.height)
       const preview = mount(CourseResourcePreviewModal, { props: { visible: true, resource }, global })
-      const player = mount(CoursePlaygroundVideoModal, { props: { visible: true, video: resource }, global })
+      const player = mount(CoursePlaygroundVideoModal, {
+        props: { visible: true, video: resource, buttonText: null },
+        global
+      })
       await flushPromises()
       const ratio = dimensions == null ? 16 / 9 : dimensions.width / dimensions.height
       expect(parseFloat(preview.get('video').element.parentElement!.style.aspectRatio)).toBe(ratio)
