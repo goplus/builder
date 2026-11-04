@@ -1,6 +1,6 @@
 import { computed, toRef, type WatchSource } from 'vue'
 
-import { listCourses, type Course } from '@/apis/course'
+import { listAllSeriesCourses, type Course } from '@/apis/course'
 import * as apis from '@/apis/course-series'
 import { useAction } from '@/utils/exception'
 import { useQueryCache, useQueryWithCache } from '@/utils/query'
@@ -12,8 +12,10 @@ function getSeriesQueryKey(seriesID: string) {
   return [seriesQueryKeyPrefix, seriesID]
 }
 
-function getSeriesCoursesQueryKey(seriesID: string | null) {
-  return [seriesCoursesQueryKeyPrefix, seriesID]
+function getSeriesCoursesQueryKey(seriesID: string | null, courseIDs?: string[]) {
+  return courseIDs == null
+    ? [seriesCoursesQueryKeyPrefix, seriesID]
+    : [seriesCoursesQueryKeyPrefix, seriesID, courseIDs]
 }
 
 const staleTime = 5 * 60 * 1000
@@ -28,27 +30,24 @@ export function useSeries(seriesID: WatchSource<string>) {
   })
 }
 
-export function useSeriesCourses(seriesID: WatchSource<string | null>) {
+export function useSeriesCourses(
+  seriesID: WatchSource<string | null>,
+  /**
+   * The courses of the series as it is shown, such as by its units. The list is fetched again whenever they change,
+   * so it lacks none of them but those deleted since.
+   */
+  courseIDs?: WatchSource<string[]>
+) {
   const seriesIDRef = toRef(seriesID)
-  const queryKey = computed(() => getSeriesCoursesQueryKey(seriesIDRef.value))
+  const courseIDsRef = courseIDs == null ? null : toRef(courseIDs)
+  const queryKey = computed(() => getSeriesCoursesQueryKey(seriesIDRef.value, courseIDsRef?.value))
 
   return useQueryWithCache({
     queryKey,
     async queryFn(signal) {
       const id = seriesIDRef.value
       if (id == null) return []
-      // Assume a series fits in one API page (at most 100 courses).
-      // TODO: Load subsequent pages when a series can exceed this limit.
-      const result = await listCourses(
-        {
-          courseSeriesID: id,
-          pageIndex: 1,
-          pageSize: 100,
-          orderBy: 'sequenceInCourseSeries'
-        },
-        signal
-      )
-      return result.data
+      return listAllSeriesCourses(id, signal)
     },
     staleTime
   })
@@ -111,7 +110,8 @@ export function useCourseChangesInSeries() {
       // The server takes a deleted course out of every series that held it.
       seriesCache.update([seriesQueryKeyPrefix], (series) => ({
         ...series,
-        courseIDs: series.courseIDs.filter((id) => id !== courseID)
+        courseIDs: series.courseIDs.filter((id) => id !== courseID),
+        units: series.units.map((unit) => ({ ...unit, courseIDs: unit.courseIDs.filter((id) => id !== courseID) }))
       }))
       coursesCache.update([seriesCoursesQueryKeyPrefix], (courses) => courses.filter((c) => c.id !== courseID))
     }

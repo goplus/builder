@@ -56,3 +56,17 @@ Saving writes exactly the records described here, so any other record a course c
 Saving uploads the changed files and writes the course's content. It does not publish, and it does not touch the
 title or the thumbnail. Preview does not save: it runs a snapshot of the working copy, so the course can be
 tried before anything is written.
+
+## Optional video dimensions
+
+A video manifest at `assets/videos/<name>/index.json` may include `width` and `height`,
+in pixels, alongside `path` and the optional `builder_id`:
+
+```json
+{ "path": "intro.mp4", "width": 1920, "height": 1080 }
+```
+
+Dimensions are valid only when both are positive integers. Missing, partial or invalid
+values mean unknown dimensions and do not prevent loading the resource. Tutorial
+projects are not required to include these fields. Valid dimensions survive load/save
+and project import/export.

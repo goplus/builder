@@ -23,6 +23,8 @@ const props = defineProps<{
   course: PlaygroundCourse | null
   /** The series the course is in, or is created in. */
   courseSeriesID: string
+  /** The unit a new course is created in, in a series divided into units; the last one if not given. */
+  unitID?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -62,7 +64,7 @@ const form = useForm({
 const { confirmDiscard } = useDrawerFormChanges(() => form.value)
 
 // Outlives a failed submit, so submitting again finishes what is left instead of creating a second course.
-const creation = new CourseCreation(props.courseSeriesID, useUpdateCourseSeries())
+const creation = new CourseCreation(props.courseSeriesID, useUpdateCourseSeries(), props.unitID ?? null)
 // A course created but not added to the series would be in no series, so it does not outlive the drawer.
 onUnmounted(() => creation.abandon())
 
@@ -159,15 +161,6 @@ async function submit() {
         <ThumbnailUploader v-model:thumbnail="form.value.thumbnail" class="h-50 w-full" />
       </UIFormItem>
     </UIForm>
-
-    <p v-if="!isEditMode" class="m-0 text-sm text-grey-700">
-      {{
-        $t({
-          en: 'The course starts with a default project and a short program, and opens in the Course Editor.',
-          zh: '新课程会带上一个默认工程和一段起始程序，创建后在课程编辑器中打开。'
-        })
-      }}
-    </p>
 
     <template #footer>
       <UIButton type="neutral" :disabled="handleSubmit.isLoading.value" @click="handleClose">

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { File, fromBlob } from '@/models/common/file'
 import { Video } from '@/models/tutorial/video'
 import { cloudHelpers } from '@/models/common/cloud'
+import CoursePlaygroundVideoModal from '@/components/tutorials/playground/CoursePlaygroundVideoModal.vue'
 import CourseResourceCard from './CourseResourceCard.vue'
 import CourseResourcePreviewModal from './CourseResourcePreviewModal.vue'
 
@@ -12,7 +13,7 @@ const global = {
   mocks: { $t: (message: { en: string }) => message.en },
   directives: { radar: () => {} },
   stubs: {
-    UIModal: { props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
+    UIModal: { name: 'UIModal', props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
     UIModalClose: true,
     UIIcon: true,
     UIDropdown: true,
@@ -40,6 +41,28 @@ function remoteVideo() {
 }
 
 describe('Course video resources', () => {
+  it.each([null, { width: 1080, height: 1920 }, { width: 640, height: 480 }])(
+    'uses optional dimensions in both previews: %j',
+    async (dimensions) => {
+      const resource = remoteVideo()
+      if (dimensions != null) resource.setDimensions(dimensions.width, dimensions.height)
+      const preview = mount(CourseResourcePreviewModal, { props: { visible: true, resource }, global })
+      const player = mount(CoursePlaygroundVideoModal, { props: { visible: true, video: resource }, global })
+      await flushPromises()
+      const ratio = dimensions == null ? 16 / 9 : dimensions.width / dimensions.height
+      expect(parseFloat(preview.get('video').element.parentElement!.style.aspectRatio)).toBe(ratio)
+      expect(parseFloat(player.get('video').element.parentElement!.style.aspectRatio)).toBe(ratio)
+      expect(preview.getComponent({ name: 'UIModal' }).vm.$attrs.style).toEqual({
+        width: 'fit-content',
+        maxWidth: 'min(960px, 100%)'
+      })
+      expect(player.getComponent({ name: 'UIModal' }).vm.$attrs.style).toEqual({
+        width: 'fit-content',
+        maxWidth: 'min(960px, 100%)'
+      })
+    }
+  )
+
   it('loads card thumbnails progressively with CORS and metadata preload', async () => {
     const wrapper = mount(CourseResourceCard, { props: { resource: remoteVideo() }, global })
     await flushPromises()

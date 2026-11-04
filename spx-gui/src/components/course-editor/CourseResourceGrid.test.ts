@@ -2,6 +2,7 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 
+import { readVideoDimensions } from '@/utils/video'
 import { createI18n } from '@/utils/i18n'
 import { fromConfig, fromText, type Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
@@ -48,6 +49,8 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
     isLoading: { value: false }
   })
 }))
+
+vi.mock('@/utils/video', () => ({ readVideoDimensions: vi.fn().mockResolvedValue({ width: 640, height: 480 }) }))
 
 enableAutoUnmount(afterEach)
 
@@ -141,11 +144,15 @@ describe('CourseResourceGrid', () => {
     // A name the course already uses is made unique rather than replacing the video that has it.
     expect(project.videos.map((v) => v.name).sort()).toEqual(['intro', 'step-to', 'step-to2'])
     expect(cardNames()).toEqual(['intro', 'step-to', 'step-to2'])
+    expect(project.videos.find((v) => v.name === 'intro')?.aspectRatio).toBe(4 / 3)
+    expect(readVideoDimensions).toHaveBeenCalled()
     expect(mocks.selectFiles).toHaveBeenCalledWith({ accept: ['mp4', 'webm', 'mov'] })
     expect(history.getUndoAction()?.name.en).toBe('Add videos')
 
     await history.undo()
     expect(project.videos.map((v) => v.name)).toEqual(['step-to'])
+    await history.redo()
+    expect(project.videos.find((v) => v.name === 'intro')?.aspectRatio).toBe(4 / 3)
   })
 
   it('adds pictures on the pictures page, where names only clash with other pictures', async () => {

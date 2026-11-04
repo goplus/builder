@@ -147,6 +147,10 @@ const dirtyViews = computed(() => getDirtyViews(changedPaths.value, config.value
 let saveController: AbortController | null = null
 
 async function save(signal: AbortSignal) {
+  await props.project.runExclusive(() =>
+    Promise.all(props.project.videos.map((video) => video.ensureDimensions(signal)))
+  )
+  signal.throwIfAborted()
   // Unlike `exportFiles()`, `export()` waits for in-flight transactions of the course and its embedded project.
   const { files } = await props.project.export()
   const savedRevision = revision.value

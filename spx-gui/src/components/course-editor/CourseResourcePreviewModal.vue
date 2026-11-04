@@ -21,6 +21,8 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
+const videoAspectRatio = computed(() => (props.resource instanceof Video ? props.resource.aspectRatio : null) ?? 16 / 9)
+
 const isVideo = computed(() => props.resource instanceof Video)
 
 // `JSON.stringify` writes the name as a string literal, so a name holding a quote or a backslash still compiles.
@@ -35,6 +37,7 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
   <UIModal
     :radar="{ name: 'resource-preview-modal', desc: 'Modal showing a video or a picture of the course at full size' }"
     size="large"
+    :style="isVideo ? { width: 'fit-content', maxWidth: 'min(960px, 100%)' } : null"
     :visible="visible"
     @update:visible="emit('cancelled')"
   >
@@ -50,15 +53,20 @@ const [imageUrl] = useRenderableImageUrl(() => (isVideo.value ? null : props.res
           <CopyButton :value="playCall" :label="{ en: 'Copy code', zh: '复制代码' }" />
         </span>
       </div>
-      <video
-        v-if="isVideo && videoUrl != null"
-        class="w-full rounded bg-black"
-        style="max-height: 70vh"
-        crossorigin="anonymous"
-        :src="videoUrl"
-        controls
-        autoplay
-      ></video>
+      <div
+        v-if="isVideo"
+        class="max-w-full overflow-hidden rounded bg-black"
+        :style="{ aspectRatio: videoAspectRatio, width: `calc(65vh * ${videoAspectRatio})` }"
+      >
+        <video
+          v-if="videoUrl != null"
+          class="block h-full w-full object-contain"
+          crossorigin="anonymous"
+          :src="videoUrl"
+          controls
+          autoplay
+        ></video>
+      </div>
       <img
         v-else-if="!isVideo && imageUrl != null"
         class="mx-auto block max-w-full rounded"

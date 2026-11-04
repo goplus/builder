@@ -83,6 +83,7 @@ import camera from './camera.svg?raw'
 import zoomIn from './zoom-in.svg?raw'
 import zoomOut from './zoom-out.svg?raw'
 import zoomReset from './zoom-reset.svg?raw'
+import wordWrap from './word-wrap.svg?raw'
 import graduationCap from './graduation-cap.svg?raw'
 import gamepad from './gamepad.svg?raw'
 import video from './video.svg?raw'
@@ -169,6 +170,7 @@ const typeIconMap = {
   zoomIn,
   zoomOut,
   zoomReset,
+  wordWrap,
   backdropTile,
   backdropScale,
   backdropOriginal,

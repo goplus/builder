@@ -39,4 +39,4 @@ After upload, `PlaygroundCourse.content` does not contain these file bodies dire
 
 The files are intentionally small and focus on format and ownership boundaries rather than forming a production-ready lesson.
 
-The example MP4 is an empty format placeholder; replace it with a playable video before previewing.
+The example MP4 is an empty format placeholder; replace it with a playable video before previewing. Its manifest illustrates optional pixel dimensions (`width: 1280`, `height: 720`); remove or update them to match the replacement media. Both fields may be omitted.
