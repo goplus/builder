@@ -171,7 +171,7 @@ describe('captureFeedbackContext', () => {
     expect(new TextEncoder().encode(JSON.stringify(context)).length).toBeLessThanOrEqual(512)
   })
 
-  it('captures the project snapshot after in-progress edits finish', async () => {
+  it('captures the project as it is on submitting, without waiting for in-progress edits', async () => {
     const project = makeProject()
     const sprite = new Sprite('Rocket')
     sprite.setCode('v1')
@@ -179,14 +179,14 @@ describe('captureFeedbackContext', () => {
     let uploadedCode: string | null = null
     vi.mocked(saveProjectSnapshot).mockImplementation(async (files) => {
       // The user keeps editing while the snapshot uploads.
-      sprite.setCode('v3')
+      sprite.setCode('v2')
       const codeFile = Object.entries(files).find(([path]) => path.endsWith('Rocket.spx'))![1]!
       uploadedCode = await toText(codeFile)
       return snapshotUrl
     })
 
     const unlock = await project.mutex.lock()
-    const contextPromise = captureFeedbackContext({
+    const context = await captureFeedbackContext({
       source: 'profileMenu',
       path: '/editor/alice/space',
       language: 'en',
@@ -194,12 +194,10 @@ describe('captureFeedbackContext', () => {
       codeEditor: null,
       maxSize: Infinity
     })
-    sprite.setCode('v2')
     unlock()
-    const context = await contextPromise
 
     expect(context.projectSnapshotUrl).toBe(snapshotUrl)
-    expect(uploadedCode).toBe('v2')
+    expect(uploadedCode).toBe('v1')
   })
 
   it('omits the project snapshot when it cannot be saved', async () => {

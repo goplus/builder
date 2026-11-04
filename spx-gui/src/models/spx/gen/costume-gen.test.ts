@@ -406,7 +406,7 @@ describe('CostumeGen', () => {
 
       if (action !== 'dispose') await gen.cancel()
       if (action !== 'cancel') gen.dispose()
-      expect(saveFile.mock.calls[0][1]?.aborted).toBe(true)
+      expect(saveFile.mock.calls[0][1]?.signal?.aborted).toBe(true)
       resolveUpload('kodo://mock-bucket/reference.png')
       expect(await pending).toBeInstanceOf(Error)
       expect(aigcMock.tasks.size).toBe(0)

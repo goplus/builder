@@ -1,6 +1,5 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import type { UniversalUrl } from '@/apis/common'
 import type { ExploreOrder } from '@/apis/project'
 import { searchKeywordQueryParamName } from './pages/community/search.vue'
 
@@ -29,12 +28,6 @@ export function getUserPageRoute(name: string, tab: UserTab = 'overview') {
 
 export function getProjectShareRoute(owner: string, name: string) {
   return getProjectPageRoute(owner, name)
-}
-
-const projectSnapshotUrlQueryParamName = 'url'
-
-export function getProjectSnapshotRoute(url: UniversalUrl) {
-  return `/project-snapshot?${projectSnapshotUrlQueryParamName}=${encodeURIComponent(url)}`
 }
 
 export function getSearchRoute(keyword: string = '') {
@@ -122,11 +115,6 @@ const routes: Array<RouteRecordRaw> = [
     props: true
   },
   {
-    path: '/project-snapshot/:inEditorPath*',
-    component: () => import('./pages/editor/index.vue'),
-    props: (route) => ({ projectSnapshotUrlInput: route.query[projectSnapshotUrlQueryParamName] })
-  },
-  {
     path: '/tutorials',
     component: () => import('./pages/tutorials/index.vue')
   },
@@ -207,6 +195,12 @@ const routes: Array<RouteRecordRaw> = [
         props: true
       }
     ]
+  },
+  {
+    // Not a child of `/admin`, whose layout does not fit the editor.
+    path: '/admin/feedback/:feedbackID/project-snapshot/:inEditorPath*',
+    component: () => import('./pages/admin/feedback-project-snapshot.vue'),
+    props: true
   },
   {
     path: '/:pathMatch(.*)*',

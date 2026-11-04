@@ -112,12 +112,9 @@ async function getDiagnosticsContext(codeEditor: CodeEditor): Promise<Diagnostic
 
 async function captureProjectSnapshot(project: SpxProject): Promise<UniversalUrl | null> {
   try {
-    return await withTimeout(projectSnapshotTimeout, async (signal) => {
-      // Wait for in-progress transactional edits, so the snapshot never contains an intermediate state.
-      const files = await project.mutex.runExclusive(() => project.exportFiles())
-      signal.throwIfAborted()
-      return saveProjectSnapshot(files, signal)
-    })
+    // Export without waiting for in-progress edits (`project.mutex`), so the snapshot matches what the user sees when submitting.
+    const files = project.exportFiles()
+    return await withTimeout(projectSnapshotTimeout, (signal) => saveProjectSnapshot(files, signal))
   } catch (e) {
     // Project Snapshot is optional, Feedback can still be submitted without it.
     capture(e, 'failed to capture project snapshot for feedback')

@@ -147,8 +147,7 @@ describe('admin feedback', () => {
     await vi.waitFor(() => expect(wrapper.text()).toContain('After I renamed the sprite'))
     await wrapper.get('[aria-label="Open project snapshot"]').trigger('click')
 
-    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/project-snapshot'))
-    expect(router.currentRoute.value.query.url).toBe('kodo://test/files/project-snapshot.json')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toMatch(/^\/admin\/feedback\/1\/project-snapshot/))
   })
 
   it('shows that the user did not share page state', async () => {

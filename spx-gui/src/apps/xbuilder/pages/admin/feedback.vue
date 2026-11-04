@@ -28,7 +28,6 @@ import { RuntimeOutputKind } from '@/components/editor/runtime'
 import { DiagnosticSeverity } from '@/components/editor/spx-code-editor'
 import { feedbackContextSchema } from '@/components/feedback/context'
 import * as feedbackAdminApis from '@/apis/admin/feedback'
-import { getProjectSnapshotRoute } from '../../router'
 import { feedbackStatusLabels, formatJSON, formatTime } from './common'
 
 const props = defineProps<{
@@ -203,7 +202,7 @@ const handleMarkAsHandled = useMessageHandle(
                     v-if="context.projectSnapshotUrl != null"
                     v-radar="{ name: 'Open project snapshot', desc: 'Open the project snapshot in the editor' }"
                     class="text-primary-main no-underline hover:underline"
-                    :to="getProjectSnapshotRoute(context.projectSnapshotUrl)"
+                    :to="`/admin/feedback/${encodeURIComponent(feedback.id)}/project-snapshot`"
                   >
                     {{ $t({ en: 'Open in editor', zh: '在编辑器中打开' }) }}
                   </RouterLink>

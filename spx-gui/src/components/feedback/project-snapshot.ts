@@ -2,12 +2,12 @@ import { z } from 'zod'
 
 import { UniversalUrlScheme } from '@/utils/universal-url'
 import type { FileCollection, UniversalUrl } from '@/apis/common'
-import { createFileWithUniversalUrl, getFiles, saveFiles, saveToKodo } from '@/models/common/cloud'
+import { createFileWithUniversalUrl, getFiles, saveFile, saveFiles } from '@/models/common/cloud'
 import { fromConfig, toText, type Files } from '@/models/common/file'
 
 /**
  * Schema of the universal URL of a Project Snapshot.
- * Only Kodo URLs are accepted, so a snapshot link always refers to an object in Builder's storage, like the files of a cloud project.
+ * Only Kodo URLs are accepted, so Feedback always refers to a Project Snapshot saved in Builder's storage.
  */
 export const projectSnapshotUrlSchema = z.string().startsWith(`${UniversalUrlScheme.Kodo}://`)
 
@@ -22,7 +22,7 @@ const projectSnapshotFileName = 'project-snapshot.json'
 export async function saveProjectSnapshot(files: Files, signal?: AbortSignal): Promise<UniversalUrl> {
   const { fileCollection } = await saveFiles(files, signal)
   const snapshot: ProjectSnapshot = { files: fileCollection }
-  return saveToKodo(fromConfig(projectSnapshotFileName, snapshot), signal)
+  return saveFile(fromConfig(projectSnapshotFileName, snapshot), { signal, inlineable: false })
 }
 
 /** Loads the project files saved in a Project Snapshot. */
