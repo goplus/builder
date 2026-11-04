@@ -334,16 +334,18 @@ providePopupContainer(codeEditorEl)
 <style scoped>
 .code-editor-read-only :deep(.monaco-editor-overlaymessage) {
   width: max-content;
+  transform: translateX(-14px);
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
   box-sizing: border-box;
   max-width: 320px;
   padding: 6px var(--ui-spacing-lg);
-  border: 1px solid var(--ui-color-border);
-  border-radius: var(--ui-border-radius-sm);
-  background: var(--ui-color-grey-300);
-  color: var(--ui-color-text);
+  border: 0;
+  border-radius: 6px;
+  background: var(--ui-color-primary-300);
+  box-shadow: var(--ui-box-shadow-sm);
+  color: var(--ui-color-title);
   font-family: var(--ui-font-family-main);
   font-size: var(--ui-font-size-base);
   line-height: 1.5;
@@ -351,25 +353,24 @@ providePopupContainer(codeEditorEl)
   text-wrap: pretty;
 }
 
-/* Override Monaco's zero-size border triangles with a smaller outlined pointer. */
+/* Keep Monaco's caret anchor while placing the pointer inside the tooltip corner. */
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor) {
-  width: 8px !important;
+  width: 16px !important;
   height: 8px !important;
-  left: 2px;
+  left: 12px;
   border: 0;
-  background: var(--ui-color-grey-300);
-  transform: rotate(45deg);
+  background: var(--ui-color-primary-300);
+  clip-path: path(
+    'M 0 8 A 4 4 0 0 0 2.828 6.828 L 6.586 3.071 A 2 2 0 0 1 9.414 3.071 L 13.172 6.828 A 4 4 0 0 0 16 8 Z'
+  );
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage.below .anchor.top) {
-  top: 4px;
-  border-top: 1px solid var(--ui-color-border);
-  border-left: 1px solid var(--ui-color-border);
+  top: 0;
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor.below) {
-  bottom: 4px;
-  border-right: 1px solid var(--ui-color-border);
-  border-bottom: 1px solid var(--ui-color-border);
+  bottom: 0;
+  transform: rotate(180deg);
 }
 </style>
