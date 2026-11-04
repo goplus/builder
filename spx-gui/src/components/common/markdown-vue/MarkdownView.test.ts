@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { renderToString } from '@vue/test-utils'
 import { useSlotText } from '@/utils/vnode'
 import MarkdowView, {
+  getMarkdownText,
   preprocessCustomRawComponents,
   preprocessIncompleteTags,
   preprocessSelfClosingComponents
@@ -215,6 +216,17 @@ describe('preprocessIncompleteTags', () => {
   })
 })
 
+describe('getMarkdownText', () => {
+  it('should get text of blocks and inline elements in one line', () => {
+    const value =
+      '# Title\n\nFirst *line*\\\nsecond [link](https://example.com)\n\n> ![Screenshot](a.png) `code`\n\n- a\n- b'
+    expect(getMarkdownText(value)).toBe('Title First line second link Screenshot code a b')
+  })
+  it('should keep escaped characters and drop unsafe HTML', () => {
+    expect(getMarkdownText('1\\. Fixed \\*now\\* <script>alert(1)</script>')).toBe('1. Fixed *now*')
+  })
+})
+
 describe('MarkdownView', () => {
   it('should render correctly', async () => {
     const result = await renderToString(MarkdowView, {
@@ -234,6 +246,29 @@ describe('MarkdownView', () => {
     })
     expect(result).toContain(
       '<table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody><tr><td>Foo</td><td>Bar</td></tr></tbody></table>'
+    )
+  })
+  it('should drop links to Kodo files and unsafe links', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: '[image](kodo://bucket/image.png) [unsafe](javascript:alert) [safe](https://example.com)'
+      }
+    })
+    expect(result).toBe('<div><p><a>image</a> <a>unsafe</a> <a href="https://example.com">safe</a></p></div>')
+  })
+  it('should keep links to Kodo files for a custom `a` component', async () => {
+    const link = {
+      template: '<a class="custom-link" :href="href"><slot /></a>',
+      props: ['href']
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: '[image](kodo://bucket/image.png) [unsafe](javascript:alert)',
+        components: markRaw({ custom: { a: link } })
+      }
+    })
+    expect(result).toBe(
+      '<div><p><a class="custom-link" href="kodo://bucket/image.png"><!--[-->image<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a></p></div>'
     )
   })
   it('should handle custom components', async () => {

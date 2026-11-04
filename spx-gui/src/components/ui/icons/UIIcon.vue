@@ -86,6 +86,8 @@ import zoomReset from './zoom-reset.svg?raw'
 import backdropTile from './backdrop-tile.svg?raw'
 import backdropScale from './backdrop-scale.svg?raw'
 import backdropOriginal from './backdrop-original.svg?raw'
+import angleLeft from './angle-left.svg?raw'
+import notification from './notification.svg?raw'
 
 const typeIconMap = {
   file,
@@ -166,7 +168,9 @@ const typeIconMap = {
   zoomReset,
   backdropTile,
   backdropScale,
-  backdropOriginal
+  backdropOriginal,
+  angleLeft,
+  notification
 }
 
 export type Type = keyof typeof typeIconMap
