@@ -65,7 +65,7 @@ Every Playground Course is associated with exactly one project, and entering the
 * **Course project**: a game project built by the creator in advance — stage, sprites, and scene code. The project is part of the course data; it is not saved or published independently. The scene code serves two purposes: forming an interesting, explorable world (where the learner's changes produce visible feedback), and printing completion signals (specific log lines) at key events for the course code to judge.
 * **Course assets**: assets referenced by the course, such as explainer videos, also part of the course data. (A shared asset library, allowing multiple courses to reuse the same asset, may be provided in the future.)
 
-A learner's modifications to the course project exist only within the current learning session; they affect neither the course itself nor other learners. While the course is in progress, learners can use "Save as my project..." to save their current work as a project of their own.
+A learner's modifications to the course project exist only within the current learning session; they affect neither the course itself nor other learners.
 
 #### Atomic Capabilities
 
