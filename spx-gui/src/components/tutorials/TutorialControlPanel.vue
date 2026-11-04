@@ -13,7 +13,7 @@ import { UIButton, UILoading, useConfirmDialogWithResult } from '@/components/ui
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
-import { findUnitIndexOfCourse, getCourseSeriesPageRouteOfCourse, getSeriesUnits, getUnitHeading } from './units'
+import { getCourseSeriesPageRouteOfCourse, getSeriesUnits, getUnitHeading } from './units'
 
 const router = useRouter()
 const tutorial = useTutorial()
@@ -27,16 +27,14 @@ const coursesQueryRet = useSeriesCourses(
 )
 
 const units = computed(() => (tutorial.currentCourse == null ? [] : getSeriesUnits(tutorial.currentCourse.series)))
-const unitIndex = computed(() =>
-  tutorial.currentCourse == null ? -1 : findUnitIndexOfCourse(units.value, tutorial.currentCourse.id)
-)
-const unit = computed(() => units.value[unitIndex.value] ?? null)
-/** The courses of the current course's unit, each with its sequence in the whole series. */
-const shownCourses = computed(() => {
-  const courses = (coursesQueryRet.data.value ?? []).map((course, index) => ({ course, sequence: index + 1 }))
-  if (unit.value == null) return courses
-  const unitCourseIDs = new Set(unit.value.courseIDs)
-  return courses.filter(({ course }) => unitCourseIDs.has(course.id))
+const courseGroups = computed(() => {
+  const coursesByID = new Map(
+    (coursesQueryRet.data.value ?? []).map((course, index) => [course.id, { course, sequence: index + 1 }])
+  )
+  return units.value.map((unit) => ({
+    title: unit.title,
+    courses: unit.courseIDs.flatMap((id) => coursesByID.get(id) ?? [])
+  }))
 })
 const courseRows = useTemplateRef<InstanceType<typeof TutorialStatusCourseRow>[]>('courseRows')
 const signal = getCleanupSignal(onBeforeUnmount)
@@ -147,25 +145,26 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
-    <h3 v-if="unit?.title != null" class="m-0 flex-none px-2 pb-1 pt-2 text-base font-semibold text-title">
-      {{ $t(getUnitHeading(unitIndex, unit.title)) }}
-    </h3>
-
     <div class="min-h-0 flex-1 overflow-y-auto p-1">
       <UILoading v-if="coursesQueryRet.isLoading.value" class="h-24" />
-      <ul v-else class="flex flex-col gap-2">
-        <TutorialStatusCourseRow
-          v-for="{ course, sequence } in shownCourses"
-          :key="course.id"
-          ref="courseRows"
-          :course="course"
-          :sequence="sequence"
-          :active="course.id === tutorial.currentCourse?.id"
-          :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
-          @select="handleSelectCourse(course.id, course.title)"
-          @restart="handleRestartCourse"
-        />
-      </ul>
+      <template v-for="(group, index) in courseGroups" v-else :key="index">
+        <h3 v-if="group.title != null" class="m-0 px-1 pb-1 pt-2 text-base font-semibold text-title">
+          {{ $t(getUnitHeading(index, group.title)) }}
+        </h3>
+        <ul class="flex flex-col gap-2">
+          <TutorialStatusCourseRow
+            v-for="{ course, sequence } in group.courses"
+            :key="course.id"
+            ref="courseRows"
+            :course="course"
+            :sequence="sequence"
+            :active="course.id === tutorial.currentCourse?.id"
+            :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
+            @select="handleSelectCourse(course.id, course.title)"
+            @restart="handleRestartCourse"
+          />
+        </ul>
+      </template>
     </div>
 
     <footer class="flex-none p-2">
