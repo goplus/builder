@@ -121,6 +121,26 @@ function findCustomComponentUsagesInNode(node: hast.Node, components: Components
   }
 }
 
+/** Get the text content of the markdown string with whitespace collapsed, for example, to preview it in one line */
+export function getMarkdownText(value: string) {
+  return getHastText(parseMarkdown({ value })).replace(/\s+/g, ' ').trim()
+}
+
+function getHastText(node: hast.Nodes): string {
+  switch (node.type) {
+    case 'root':
+      return node.children.map(getHastText).join('')
+    case 'element':
+      if (node.tagName === 'img') return typeof node.properties.alt === 'string' ? ` ${node.properties.alt} ` : ' '
+      if (node.tagName === 'br') return ' '
+      return node.children.map(getHastText).join('')
+    case 'text':
+      return node.value
+    default:
+      return ''
+  }
+}
+
 /**
  * Process custom raw components in the markdown string.
  * By transforming `<custom-raw-component>...</custom-raw-component>` to `<pre is="custom-raw-component"></pre>`,
@@ -316,5 +336,7 @@ function getSanitizeSchema(customComponents: Record<string, Component>): Sanitiz
     attributes[tagName] = propNames
   })
   attributes.pre = [...(defaultSchema.attributes?.pre ?? []), 'is', ...allCustomPropNames]
-  return { tagNames, attributes }
+  // Keep links to files stored in Kodo, which custom `a` components can resolve to web URLs
+  const protocols = { ...defaultSchema.protocols, href: [...(defaultSchema.protocols?.href ?? []), 'kodo'] }
+  return { tagNames, attributes, protocols }
 }
