@@ -16,8 +16,7 @@ function rgba(hex: string, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`
 }
 
-const lineColor = rgba(color.grey[1000], 0.5)
-const labelColor = rgba(color.grey[1000], 0.5)
+const measurementColor = 'rgba(0, 0, 0, 0.3)'
 const angleColor = rgba(color.blue[600], 0.8)
 const cursorOutlineColor = rgba(color.grey[100], 0.65)
 const cursorSize = 32
@@ -387,7 +386,7 @@ const lineConfig = computed<LineConfig | null>(() => {
   const { from, to } = measurement.value
   return {
     points: [from.x, from.y, to.x, to.y],
-    stroke: lineColor,
+    stroke: measurementColor,
     strokeWidth: 1.6,
     dash: [12, 12],
     lineCap: 'round',
@@ -614,7 +613,7 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
           :config="{
             width: distanceLabelLayout.width,
             height: distanceLabelLayout.height,
-            fill: labelColor,
+            fill: measurementColor,
             cornerRadius: labelCornerRadius
           }"
         />
