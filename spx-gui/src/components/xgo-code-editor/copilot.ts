@@ -24,6 +24,8 @@ export type CopilotTopic = {
  */
 export interface ICopilot {
   addUserTextMessage(content: string, topic: CopilotTopic): void
+  /** Open the input with a draft, without sending or replacing existing text. */
+  prefillInput?(content: string): void
 }
 
 export enum CopilotExplainKind {

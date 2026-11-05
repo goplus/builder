@@ -1,6 +1,20 @@
 import type { IDocumentBase } from './document-base'
 import { DefinitionKind, type Property } from './common'
 
+/** Keep named functions outside the implicit main function, after any imports. */
+export function getTopLevelDeclarationOffset(code: string): number {
+  const trivia = String.raw`(?:\s|//[^\r\n]*|/\*[\s\S]*?\*/)*`
+  const identifier = String.raw`[_\p{L}][_\p{L}\p{N}]*`
+  const stringLiteral = String.raw`(?:"(?:\\[\s\S]|[^"\\])*"|\x60[^\x60]*\x60)`
+  const importSpec = `(?:(?:${identifier}|\\.)${trivia})?${stringLiteral}`
+  const importGroup = `\\(${trivia}(?:${importSpec}${trivia};?${trivia})*\\)`
+  const keywordEnd = String.raw`(?![_\p{L}\p{N}])`
+  const importDecl = `import${keywordEnd}${trivia}(?:${importSpec}|${importGroup})${trivia};?${trivia}`
+  const packageDecl = `package${keywordEnd}${trivia}${identifier}${trivia};?${trivia}`
+  const header = new RegExp(`^${trivia}(?:${packageDecl})?(?:${importDecl})*`, 'u')
+  return code.match(header)![0].length
+}
+
 /**
  * Filters properties that should be visible in editor-provided property lists.
  */

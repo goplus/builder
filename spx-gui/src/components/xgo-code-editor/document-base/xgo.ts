@@ -10,6 +10,7 @@ export const forIterate: DefinitionDocumentationItem = {
   definition: { name: 'for_iterate' },
   insertSnippet: 'for ${1:v} in ${2:[]} {\n\t$0\n}',
   overview: 'for v in arr {}',
+  searchKeywords: ['array', 'iterate array', 'loop array', '数组', '遍历数组'],
   detail: makeBasicMarkdownString({
     en: 'Iterate within given list',
     zh: '遍历指定列表'
@@ -22,6 +23,7 @@ export const forIterateWithIndex: DefinitionDocumentationItem = {
   definition: { name: 'for_iterate_with_index' },
   insertSnippet: 'for ${1:i}, ${2:v} in ${3:[]} {\n\t$0\n}',
   overview: 'for i, v in arr {}',
+  searchKeywords: ['array', 'iterate array', 'loop array', '数组', '遍历数组'],
   detail: makeBasicMarkdownString({
     en: 'Iterate with index within given list',
     zh: '遍历指定列表（带序号）'
@@ -80,7 +82,7 @@ export const varDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
   definition: { name: 'var_declaration' },
-  insertSnippet: 'var ${1:name} ${2:type}',
+  insertSnippet: 'var ${1:count} ${2:int}',
   overview: 'var name type',
   detail: makeBasicMarkdownString({
     en: 'Variable declaration, e.g., `var count int`',
@@ -104,7 +106,8 @@ export const functionDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
   definition: { name: 'func_declaration' },
-  insertSnippet: 'func ${1:name}(${2:params}) ${3:returnType} {\n\t${4}\n}',
+  insertSnippet: 'func ${1:doSomething}() {\n\t$0\n}',
+  insertAtTopLevel: true,
   overview: 'func name(params) {}',
   detail: makeBasicMarkdownString({
     en: 'Function declaration, e.g., `func add(a int, b int) int {}`',
