@@ -24,6 +24,7 @@ import { initUserState } from '@/stores/user'
 import { provideProjectConfig } from '@/components/project/config'
 import { provideCommunityConfig } from '@/components/community/config'
 import { loadMonaco } from '@/components/xgo-code-editor/monaco'
+import { homePageName } from '../router'
 import App from '../App.vue'
 import Editor from './editor/index.vue'
 import OwnProject from './editor/own-project.vue'
@@ -143,7 +144,7 @@ export async function mountPages(path: string) {
       path: '/',
       component: Community,
       children: [
-        { path: '', component: Home },
+        { path: '', name: homePageName, component: Home },
         { path: 'explore', component: Explore },
         { path: 'project/:ownerInput/:nameInput', component: Project, props: true },
         { path: 'search', component: Search, meta: { isSearch: true } },

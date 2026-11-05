@@ -24,14 +24,14 @@ const triggerSnapThreshold = 20
 </script>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
+import { computed, onBeforeUnmount, ref, watch, type WatchSource } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { untilLoaded } from '@/utils/query'
 import { useMessageHandle } from '@/utils/exception'
-import { isSignedIn, useSignedInStateQuery } from '@/stores/user'
+import { getUnresolvedSignedInUsername, isSignedIn, useSignedInStateQuery } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
 import { providePopupContainer, UIButton, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
@@ -98,6 +98,7 @@ watch(
   () => copilot.active,
   async (newActive, oldActive) => {
     await untilNotNull(panelSize)
+    if (newActive !== copilot.active) return
 
     // On initialization, update triggerVisibility and panelStatePosition based on the copilot's active state
     if (oldActive == null) {
@@ -246,8 +247,10 @@ async function openPanel() {
   // trigger animation
   const triggerAnimation = createCSSAnimation('animated', panelRef.value)
   await triggerAnimation.begin(!!triggerVisibility.value)
+  if (!copilot.active) return
   triggerVisibility.value = TriggerVisibility.None
   await triggerAnimation.endAndWait()
+  if (!copilot.active) return
 
   // panel animation
   const panelAnimation = createCSSAnimation('animated', panelRef.value)
@@ -257,8 +260,6 @@ async function openPanel() {
   triggerState.value = newPosition.state
   isPanelOutOfBounds.value = false
   await panelAnimation.endAndWait()
-
-  copilot.open()
 }
 
 async function closePanel() {
@@ -266,13 +267,13 @@ async function closePanel() {
   const newPosition = getClosedPanelClampedPosition()
   // When the `transition-property` doesn't change, the `transitionend` event can't be triggered.
   await begin(!isSamePosition(newPosition, panelStatePosition.value))
+  if (copilot.active) return
   panelStatePosition.value = newPosition
   triggerState.value = newPosition.state
   isPanelOutOfBounds.value = true
   await endAndWait()
-
+  if (copilot.active) return
   triggerVisibility.value = TriggerVisibility.Visible
-  copilot.close()
 }
 
 const onDragStart = () => {
@@ -297,10 +298,13 @@ const onDragMove = (offset: Offset) => {
   updatePanelOutOfBoundsStatus(position)
 }
 const onDragEnd = () => {
-  if (!isPanelOutOfBounds.value) {
-    openPanel()
-  } else {
-    closePanel()
+  const shouldOpen = !isPanelOutOfBounds.value
+  const wasOpen = copilot.active
+  if (shouldOpen) copilot.open('user')
+  else copilot.close('user')
+  if (wasOpen === shouldOpen) {
+    if (shouldOpen) openPanel()
+    else closePanel()
   }
 }
 useDraggable(triggerRef, {
@@ -356,6 +360,7 @@ const quickInputs = computed(() => copilot.getQuickInputs())
 
 const handleQuickInputClick = useMessageHandle(
   ({ message }: QuickInput) => {
+    copilot.open('user')
     switch (message.type) {
       case 'text':
         return copilot.addUserTextMessage(message.content)
@@ -400,13 +405,18 @@ onBeforeUnmount(
 // Copilot open handling, implemented here due to high business logic coupling
 const signedInStateQuery = useSignedInStateQuery()
 const usedCopilotUsersRef = localStorageRef<string[]>('spx-gui-used-copilot-users', [])
+// Pause saves until all fields in the current auth-state update have settled.
+watch([() => isSignedIn(), () => getUnresolvedSignedInUsername()], () => copilot.suspendPanelContext(), {
+  flush: 'sync'
+})
 watch(
-  router.currentRoute,
-  (route) => {
-    // Open copilot when not signed in and entering the homepage
-    if (route.name === homePageName && !isSignedIn()) {
-      copilot.open()
+  [() => isSignedIn(), () => getUnresolvedSignedInUsername(), () => router.currentRoute.value],
+  ([signedIn, username, route]) => {
+    if (signedIn && username == null) {
+      copilot.suspendPanelContext()
+      return
     }
+    copilot.setPanelContext(username, route.name === homePageName)
   },
   {
     immediate: true
@@ -438,13 +448,6 @@ watch(
   () => copilot.active,
   (active) => recordCopilotUsage(() => !active)
 )
-/** Open copilot for signed-in users on their first copilot use */
-onMounted(async () => {
-  const signedInState = await untilLoaded(signedInStateQuery)
-  if (!signedInState.isSignedIn) return
-  if (usedCopilotUsersRef.value.includes(signedInState.user.username)) return
-  copilot.open()
-})
 </script>
 
 <template>
@@ -456,7 +459,11 @@ onMounted(async () => {
     <div class="body" :class="[triggerState]">
       <UITooltip placement="right" :disabled="triggerTooltipDisabled">
         <template #trigger>
-          <div ref="triggerRef" :class="['copilot-trigger', triggerState, triggerVisibility]" @click="openPanel()">
+          <div
+            ref="triggerRef"
+            :class="['copilot-trigger', triggerState, triggerVisibility]"
+            @click="copilot.open('user')"
+          >
             <div class="copilot-trigger-content">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="40" height="40" rx="12" fill="url(#paint0_linear_931_4390)" />
@@ -541,7 +548,7 @@ onMounted(async () => {
         </template>
         <UITooltip>
           <template #trigger>
-            <div class="fold" :class="[triggerState]" @click="copilot.close()">
+            <div class="fold" :class="[triggerState]" @click="copilot.close('user')">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
                 <path
