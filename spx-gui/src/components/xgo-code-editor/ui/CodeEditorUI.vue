@@ -26,6 +26,7 @@ import { getDdiDragData, getTextDocumentId, type Position, type Range, type Text
 import { type MonacoEditor, type monaco } from '../monaco'
 import { fromMonacoPosition } from './common'
 import { CodeEditorUIController } from './code-editor-ui'
+import { useReadOnlyMessageBubble } from './read-only-message-bubble'
 import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
 import HoverUI from './hover/HoverUI.vue'
@@ -102,6 +103,8 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
+
+useReadOnlyMessageBubble(monacoEditorRef, () => props.readOnly)
 
 watchEffect(() => {
   monacoEditorRef.value?.updateOptions({
@@ -333,18 +336,24 @@ providePopupContainer(codeEditorEl)
 
 <style scoped>
 .code-editor-read-only :deep(.monaco-editor-overlaymessage) {
+  isolation: isolate;
   width: max-content;
-  transform: translateX(-14px);
+  padding-bottom: 12px;
+  /* Monaco adds a -6px margin; this leaves an 8px gap to the caret. */
+  transform: translateX(14px);
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below) {
+  padding-top: 12px;
+  padding-bottom: 0;
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
   box-sizing: border-box;
   max-width: 320px;
-  padding: 6px var(--ui-spacing-lg);
-  border: 1px solid var(--ui-color-turquoise-500);
-  border-radius: 6px;
-  background: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-sm);
+  padding: 7px calc(var(--ui-spacing-lg) + 1px);
+  border: 0;
+  background: transparent;
   color: var(--ui-color-grey-1000);
   font-family: var(--ui-font-family-main);
   font-size: var(--ui-font-size-base);
@@ -353,24 +362,26 @@ providePopupContainer(codeEditorEl)
   text-wrap: pretty;
 }
 
-/* Keep Monaco's caret anchor while placing the pointer inside the tooltip corner. */
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor) {
-  width: 16px !important;
-  height: 8px !important;
-  left: 12px;
-  border: 0;
-  background: var(--ui-color-turquoise-500);
-  clip-path: path(
-    'M 0 8 A 4 4 0 0 0 2.828 6.828 L 6.586 3.071 A 2 2 0 0 1 9.414 3.071 L 13.172 6.828 A 4 4 0 0 0 16 8 Z'
-  );
+  display: none !important;
 }
 
-.code-editor-read-only :deep(.monaco-editor-overlaymessage.below .anchor.top) {
-  top: 0;
+.code-editor-read-only :deep(.code-editor-read-only-bubble) {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: var(--ui-color-grey-100);
+  stroke: var(--ui-color-turquoise-500);
+  stroke-width: 1px;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 8%));
+  pointer-events: none;
 }
 
-.code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor.below) {
-  bottom: 0;
-  transform: rotate(180deg);
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below .code-editor-read-only-bubble) {
+  transform: scaleY(-1);
 }
 </style>
