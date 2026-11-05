@@ -47,11 +47,10 @@
     font-family: inherit;
   }
 
-  /**
-   * Make focus visible for keyboard users, but not for mouse users. TODO:
-   * - Consider using :focus-visible instead
-   * - Include other interactive elements such as links, form controls and [tabindex] elements
-   */
+  :focus-visible {
+    outline-color: var(--ui-color-primary-600);
+  }
+
   button:focus-visible {
     outline: 2px solid var(--ui-color-primary-600);
   }
