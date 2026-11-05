@@ -99,7 +99,7 @@ type CourseAbilities interface {
 	onStart(callback func())
 	// showPrelude presents one opening guide or a non-empty list as pages of one
 	// dialog, and returns after the final page. Intermediate actions use Next;
-	// buttonText applies only to the final page. Omitted text uses the Host's default.
+	// buttonText applies only to the final page. Omitted text defaults to Start.
 	// Actions resume the course without running the learner's project.
 	// These dialogs disable Escape and backdrop dismissal.
 	showPrelude(message string)

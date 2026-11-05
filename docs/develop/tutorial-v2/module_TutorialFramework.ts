@@ -102,7 +102,7 @@ export interface TutorialFrameworkHost {
     /**
      * Presents non-empty opening guides in one dialog with Next between pages.
      * Resolves after the last page. buttonText applies only to the last page.
-     * A null buttonText uses the Host's default button text.
+     * A null buttonText defaults to Start on the last page.
      * Actions resume the Course, without running the project.
      * Presentation dialogs disable Escape and backdrop dismissal.
      */

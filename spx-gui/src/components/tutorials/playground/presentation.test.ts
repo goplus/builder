@@ -47,13 +47,18 @@ function mountVideo(visible = true) {
 }
 
 describe('Course presentation', () => {
-  it.each(['prelude', 'message'] as const)('renders %s Markdown and waits for confirmation', async (kind) => {
+  it.each([
+    { kind: 'prelude', lang: 'en', label: 'Start' },
+    { kind: 'prelude', lang: 'zh', label: '开始' },
+    { kind: 'message', lang: 'en', label: 'Continue' },
+    { kind: 'message', lang: 'zh', label: '继续' }
+  ] as const)('renders $kind Markdown and waits for $label confirmation', async ({ kind, lang, label }) => {
     const wrapper = mount(CoursePlaygroundMessageModal, {
       props: { visible: true, kind, buttonText: null, contents: ['**Goal**: use `stepTo`'] },
-      global: globalOptions
+      global: { ...globalOptions, mocks: { $t: (message: { en: string; zh: string }) => message[lang] } }
     })
     wrappers.push(wrapper)
-    expect(wrapper.find('button').text()).toBe('Continue')
+    expect(wrapper.find('button').text()).toBe(label)
     expect(wrapper.find('strong').text()).toBe('Goal')
     expect(wrapper.find('code').text()).toBe('stepTo')
     expect(wrapper.emitted('resolved')).toBeUndefined()
@@ -61,9 +66,12 @@ describe('Course presentation', () => {
     expect(wrapper.emitted('resolved')).toHaveLength(1)
   })
 
-  it('keeps prelude pages in one modal and customizes only the last action', async () => {
+  it.each([
+    { buttonText: null, label: 'Start' },
+    { buttonText: 'Begin lesson', label: 'Begin lesson' }
+  ])('keeps prelude pages in one modal with $label on the last page', async ({ buttonText, label }) => {
     const wrapper = mount(CoursePlaygroundMessageModal, {
-      props: { visible: true, kind: 'prelude', contents: ['First', 'Second'], buttonText: 'Start' },
+      props: { visible: true, kind: 'prelude', contents: ['First', 'Second'], buttonText },
       global: globalOptions
     })
     wrappers.push(wrapper)
@@ -79,7 +87,7 @@ describe('Course presentation', () => {
     expect(wrapper.emitted('resolved')).toBeUndefined()
     expect(wrapper.text()).toContain('Second')
     expect(scroll.scrollTop).toBe(0)
-    expect(wrapper.find('button').text()).toBe('Start')
+    expect(wrapper.find('button').text()).toBe(label)
     await wrapper.find('button').trigger('click')
     expect(wrapper.emitted('resolved')).toHaveLength(1)
   })
@@ -99,6 +107,7 @@ describe('Course presentation', () => {
   it('keeps an ended video open for replay and resolves only on Continue', async () => {
     const { wrapper } = mountVideo()
     await flushPromises()
+    expect(wrapper.findAll('button').at(-1)!.text()).toBe('Continue')
     await wrapper.find('video').trigger('playing')
     await wrapper.find('video').trigger('ended')
     expect(wrapper.emitted('resolved')).toBeUndefined()
