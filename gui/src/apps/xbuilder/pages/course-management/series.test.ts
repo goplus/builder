@@ -79,7 +79,12 @@ function serveSeries(
         })
       })
   )
-  return { writes }
+  return {
+    writes,
+    setSeries: (changes: Partial<CourseSeries>) => {
+      series = { ...series, ...changes }
+    }
+  }
 }
 
 function findByText<E extends Element = HTMLElement>(selector: string, text: string) {
@@ -126,7 +131,7 @@ describe('course management series page', () => {
   setupPageTests()
 
   it('keeps local edits independent of shared cache updates', async () => {
-    const { writes } = serveSeries()
+    const { writes, setSeries } = serveSeries()
     const { wrapper } = await mountSeriesPage()
     const queryClient = wrapper.vm.$.appContext.provides.VUE_QUERY_CLIENT as QueryClient
     const series = await courseSeriesApis.getCourseSeries('space')
@@ -150,6 +155,7 @@ describe('course management series page', () => {
 
     await click(getByText('button', 'Edit series'))
     await vi.waitFor(() => expect(wrapper.findComponent(CourseSeriesDrawer).exists()).toBe(true))
+    setSeries({ title: 'Local title' })
     wrapper
       .findComponent(CourseSeriesDrawer)
       .vm.$emit('resolved', { ...series, title: 'Local title', ...writes[0].params })
@@ -157,8 +163,8 @@ describe('course management series page', () => {
     expect(getByText('h1', 'Local title')).toBeDefined()
   })
 
-  it('adds a created course to local state before the next reorder without refetching', async () => {
-    const { writes } = serveSeries([])
+  it('reloads the created course before allowing the next reorder', async () => {
+    const { writes, setSeries } = serveSeries([])
     await signIn({ canManageCourses: true })
     const { wrapper } = await mountPages('/course-management/space')
     await vi.waitFor(() => expect(document.body.textContent).toContain('Courses (2)'))
@@ -166,13 +172,21 @@ describe('course management series page', () => {
     await vi.waitFor(() => expect(wrapper.findComponent(GuidedCourseDrawer).exists()).toBe(true))
     const series = await courseSeriesApis.getCourseSeries('space')
     const course = makeCourse('splashdown', 'Splashdown')
-    wrapper.findComponent(GuidedCourseDrawer).vm.$emit('resolved', {
-      course,
-      courseSeries: { ...series, courseIDs: [...series.courseIDs, course.id] }
-    })
+    setSeries({ courseIDs: [...series.courseIDs, course.id] })
+    let finish!: (courses: courseApis.Course[]) => void
+    vi.mocked(courseApis.listAllSeriesCourses).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        })
+    )
+    wrapper.findComponent(GuidedCourseDrawer).vm.$emit('resolved', course)
+    await flushPromises()
+    expect(document.querySelector('ul[aria-label="Course list"]')).toBeNull()
+    finish([makeCourse('first-flight', 'First flight'), makeCourse('landing', 'Landing'), course])
     await flushPromises()
     expect(document.body.textContent).toContain('Courses (3)')
-    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(1)
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(2)
 
     const list = document.querySelector<HTMLElement>('ul[aria-label="Course list"]')!
     const sortable = Sortable.get(list)!
@@ -182,16 +196,19 @@ describe('course management series page', () => {
     await writes[0].answer()
   })
 
-  it('keeps course edits and deletions in local state without reloading the list', async () => {
-    serveSeries()
-    vi.mocked(courseApis.deleteCourse).mockResolvedValue(undefined)
+  it('reloads course edits and deletions as one management result', async () => {
+    const { setSeries } = serveSeries()
+    vi.mocked(courseApis.deleteCourse).mockImplementation(async () => {
+      setSeries({ courseIDs: ['landing'], units: [{ id: 'arrival', title: 'Arrival', courseIDs: ['landing'] }] })
+    })
     const { wrapper } = await mountSeriesPage()
     await click(document.querySelector('[aria-label^="Course item"]')!)
     await vi.waitFor(() => expect(wrapper.findComponent(GuidedCourseDrawer).exists()).toBe(true))
-    wrapper.findComponent(GuidedCourseDrawer).vm.$emit('resolved', {
-      course: makeCourse('first-flight', 'First flight revised'),
-      courseSeries: null
-    })
+    vi.mocked(courseApis.listAllSeriesCourses).mockResolvedValueOnce([
+      makeCourse('first-flight', 'First flight revised'),
+      makeCourse('landing', 'Landing')
+    ])
+    wrapper.findComponent(GuidedCourseDrawer).vm.$emit('resolved', makeCourse('first-flight', 'First flight revised'))
     await flushPromises()
     expect(document.body.textContent).toContain('First flight revised')
     const item = document.querySelector('[aria-label^="Course item"]')!
@@ -200,7 +217,7 @@ describe('course management series page', () => {
     await click(getByText('button', 'Delete'))
     await vi.waitFor(() => expect(document.body.textContent).toContain('Courses (1)'))
     expect(document.body.textContent).not.toContain('First flight revised')
-    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(1)
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(3)
   })
 
   it('deletes the unit asked about when an edit fails while deleting it is being confirmed', async () => {
@@ -253,6 +270,41 @@ describe('course management series page', () => {
     expect(writes[0].params.courseIDs).toEqual(['landing', 'first-flight'])
     const headings = [...document.querySelectorAll('h3')].map((h3) => h3.textContent?.trim())
     expect(headings.filter((title) => title === 'Arrival' || title === 'Basics')).toEqual(['Arrival', 'Basics'])
+  })
+
+  it('waits for queued unit writes before reloading after a course edit', async () => {
+    const { writes } = serveSeries()
+    const { wrapper } = await mountSeriesPage()
+    await openUnitMenu('Arrival')
+    await click(getByText('.ui-menu-item', 'Move up'))
+    await click(document.querySelector('[aria-label^="Course item"]')!)
+    await vi.waitFor(() => expect(wrapper.findComponent(GuidedCourseDrawer).exists()).toBe(true))
+    wrapper.findComponent(GuidedCourseDrawer).vm.$emit('resolved', makeCourse('landing', 'Landing'))
+    await flushPromises()
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(1)
+    await writes[0].answer()
+    await vi.waitFor(() => expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(2))
+    expect([...document.querySelectorAll('h3')].map((h) => h.textContent?.trim())).toEqual(['Arrival', 'Basics'])
+  })
+
+  it('keeps the saved unit order when removing the final unit', async () => {
+    const { writes } = serveSeries([{ id: 'only', title: 'Only unit', courseIDs: ['first-flight', 'landing'] }])
+    await signIn({ canManageCourses: true })
+    await mountPages('/course-management/space')
+    await vi.waitFor(() => expect(findByText('h3', 'Only unit')).toBeDefined())
+    const unitList = document.querySelector<HTMLElement>('ul[aria-label="Unit list"]')!
+    const sortable = Sortable.get(unitList)!
+    sortable.option('onEnd')!.call(sortable, { oldDraggableIndex: 2, newDraggableIndex: 1 } as Sortable.SortableEvent)
+    await flushPromises()
+    await writes[0].answer()
+    expect(writes[0].params.courseIDs).toEqual(['landing', 'first-flight'])
+    await openUnitMenu('Only unit')
+    await click(getByText('.ui-menu-item', 'Delete unit'))
+    await click(getByText('button', 'Delete'))
+    await writes[1].answer()
+    expect(writes[1].params.units).toEqual([])
+    const list = document.querySelector('ul[aria-label="Course list"]')!
+    expect([...list.children].map((item) => item.textContent?.trim())).toEqual(['Landing', 'First flight'])
   })
 
   it('leaves the page without waiting for the edits being written', async () => {

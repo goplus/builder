@@ -2,11 +2,11 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import type { Course } from '@/apis/course'
-import type { CourseSeries } from '@/apis/course-series'
+import { useCourse } from '@/stores/course'
+import { useSeries } from '@/stores/course-series'
 import { useI18n } from '@/utils/i18n'
 
-import { UIButton, UIImg, UIModal, UIModalClose } from '@/components/ui'
+import { UIButton, UIError, UIImg, UILoading, UIModal, UIModalClose } from '@/components/ui'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 
 import { useTutorial } from '../tutorial'
@@ -14,8 +14,8 @@ import successImg from '../success.png'
 
 const props = defineProps<{
   visible: boolean
-  course: Course
-  series: CourseSeries
+  courseID: string
+  seriesID: string
 }>()
 
 const emit = defineEmits<{
@@ -26,11 +26,13 @@ const emit = defineEmits<{
 const i18n = useI18n()
 const router = useRouter()
 const tutorial = useTutorial()
+const courseQueryRet = useCourse(() => props.courseID)
+const seriesQueryRet = useSeries(() => props.seriesID)
 
 const courseCompleteMessage = computed(() => {
   return i18n.t({
-    zh: `${props.course?.title}课程已完成`,
-    en: `${props.course?.title} course completed`
+    zh: `${courseQueryRet.data.value?.title}课程已完成`,
+    en: `${courseQueryRet.data.value?.title} course completed`
   })
 })
 
@@ -44,17 +46,17 @@ function handleBrowseTutorials() {
 }
 
 const hasNextCourse = computed(() => {
-  const currentCourse = props.course
-  const currentSeries = props.series
-  const index = currentSeries.courseIDs.indexOf(currentCourse.id)
+  const currentSeries = seriesQueryRet.data.value
+  if (currentSeries == null) return false
+  const index = currentSeries.courseIDs.indexOf(props.courseID)
   return index !== -1 && index + 1 < currentSeries.courseIDs.length
 })
 
 const { fn: handleStartNextCourse } = useMessageHandle(
   async () => {
-    const currentCourse = props.course
-    const currentSeries = props.series
-    const findIndex = currentSeries.courseIDs.indexOf(currentCourse.id)
+    const currentSeries = seriesQueryRet.data.value
+    if (currentSeries == null) return
+    const findIndex = currentSeries.courseIDs.indexOf(props.courseID)
     if (findIndex === -1 || findIndex + 1 >= currentSeries.courseIDs.length) {
       throw new DefaultException({
         en: 'The course series is complete',
@@ -89,7 +91,14 @@ const { fn: handleStartNextCourse } = useMessageHandle(
         <UIModalClose class="close" @click="handleCancel" />
       </div>
 
-      <div class="flex flex-col items-center text-center">
+      <UILoading v-if="courseQueryRet.isLoading.value || seriesQueryRet.isLoading.value" class="h-40" />
+      <UIError v-else-if="courseQueryRet.error.value != null" :retry="courseQueryRet.refetch">
+        {{ $t(courseQueryRet.error.value.userMessage) }}
+      </UIError>
+      <UIError v-else-if="seriesQueryRet.error.value != null" :retry="seriesQueryRet.refetch">
+        {{ $t(seriesQueryRet.error.value.userMessage) }}
+      </UIError>
+      <div v-else class="flex flex-col items-center text-center">
         <UIImg :src="successImg" class="h-47.5 w-67.5" />
 
         <div class="mt-5 text-2xl">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>

@@ -46,10 +46,20 @@ describe('course series', () => {
     const { wrapper } = await mountPages('/course-series/space')
 
     await vi.waitFor(() => expect(wrapper.text()).toContain('First flight'))
-    expect(courseApis.listCourses).toHaveBeenCalledWith(
-      expect.objectContaining({ courseSeriesID: 'space', pageIndex: 1, orderBy: 'sequenceInCourseSeries' }),
-      expect.any(AbortSignal)
-    )
-    expect(courseApis.listAllSeriesCourses).not.toHaveBeenCalled()
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledWith('space', expect.any(AbortSignal))
+  })
+
+  it('paginates the complete list locally and reuses it when switching pages', async () => {
+    const courses = Array.from({ length: 21 }, (_, i) => makeCourse(String(i), 'Lesson ' + i))
+    vi.mocked(courseApis.listAllSeriesCourses).mockResolvedValue(courses)
+    const { wrapper, router } = await mountPages('/course-series/space')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Lesson 0'))
+    expect(wrapper.find('a[href="/course/space/20/start"]').exists()).toBe(false)
+    await router.push('/course-series/space?p=2')
+    await vi.waitFor(() => expect(wrapper.find('a[href="/course/space/0/start"]').exists()).toBe(false))
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledOnce()
+    await router.push('/course-series/space?p=3')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Lesson 20'))
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledOnce()
   })
 })

@@ -15,8 +15,8 @@ const props = defineProps<{ routeReadiness: ReadinessScope }>()
 
 const copilot = useCopilot()
 const router = useRouter()
-const course = useUserSessionStorage<GuidedCourse | null>('spx-gui-tutorial-course', null)
-const series = useUserSessionStorage<CourseSeries | null>('spx-gui-tutorial-series', null)
+const course = useUserSessionStorage<Pick<GuidedCourse, 'id'> | null>('spx-gui-tutorial-course', null)
+const series = useUserSessionStorage<Pick<CourseSeries, 'id'> | null>('spx-gui-tutorial-series', null)
 const guidedTutorial = new GuidedTutorial(copilot, router, props.routeReadiness, course, series)
 const tutorial = new Tutorial(guidedTutorial, router)
 

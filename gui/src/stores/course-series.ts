@@ -1,69 +1,44 @@
-import { computed, toRef, toValue, type WatchSource } from 'vue'
+import { computed, toRef, type WatchSource } from 'vue'
 
-import type { ByPage, PaginationParams } from '@/apis/common'
-import { listAllSeriesCourses, listCourses, type Course } from '@/apis/course'
+import { listAllSeriesCourses, type Course } from '@/apis/course'
 import * as apis from '@/apis/course-series'
 import { useAction } from '@/utils/exception'
-import { useQueryCache, useQueryWithCache, type QueryMode } from '@/utils/query'
+import { useQueryCache, useQueryWithCache, type QueryMode, type QueryRet } from '@/utils/query'
 
 const seriesQueryKeyPrefix = 'course-series'
 const seriesCoursesQueryKeyPrefix = 'course-series-courses'
-const seriesCoursesByPageQueryKeyPrefix = 'course-series-courses-by-page'
 
-function getSeriesQueryKey(seriesID: string) {
+function getSeriesQueryKey(seriesID: string | null) {
   return [seriesQueryKeyPrefix, seriesID]
 }
 
-function getSeriesCoursesQueryKey(seriesID: string | null, courseIDs?: string[]) {
-  return courseIDs == null
-    ? [seriesCoursesQueryKeyPrefix, seriesID]
-    : [seriesCoursesQueryKeyPrefix, seriesID, courseIDs]
+function getSeriesCoursesQueryKey(seriesID: string | null) {
+  return [seriesCoursesQueryKeyPrefix, seriesID]
 }
 
 const staleTime = 5 * 60 * 1000
 
-export function useSeries(seriesID: WatchSource<string>, options: { mode?: QueryMode } = {}) {
+export function useSeries(seriesID: WatchSource<string>, options?: { mode?: QueryMode }): QueryRet<apis.CourseSeries>
+export function useSeries(
+  seriesID: WatchSource<string | null>,
+  options?: { mode?: QueryMode }
+): QueryRet<apis.CourseSeries | null>
+export function useSeries(seriesID: WatchSource<string | null>, options: { mode?: QueryMode } = {}) {
   const seriesIDRef = toRef(seriesID)
   return useQueryWithCache({
     mode: options.mode,
     queryKey: computed(() => getSeriesQueryKey(seriesIDRef.value)),
-    queryFn: (signal) => apis.getCourseSeries(seriesIDRef.value, signal),
+    queryFn: (signal) =>
+      seriesIDRef.value == null ? Promise.resolve(null) : apis.getCourseSeries(seriesIDRef.value, signal),
     staleTime,
     failureSummaryMessage: { en: 'Failed to load course series', zh: '加载课程系列失败' }
   })
 }
 
-export function useSeriesCoursesByPage(
-  seriesID: WatchSource<string | null>,
-  pagination: WatchSource<PaginationParams>,
-  options: { mode?: QueryMode } = {}
-) {
-  const seriesIDRef = toRef(seriesID)
-  const queryKey = computed(() => [seriesCoursesByPageQueryKeyPrefix, seriesIDRef.value, toValue(pagination)])
-  return useQueryWithCache({
-    queryKey,
-    mode: options.mode,
-    async queryFn(signal) {
-      const id = seriesIDRef.value
-      if (id == null) return { data: [], total: 0 }
-      return listCourses({ ...toValue(pagination), courseSeriesID: id, orderBy: 'sequenceInCourseSeries' }, signal)
-    },
-    staleTime,
-    failureSummaryMessage: { en: 'Failed to load course list', zh: '加载课程列表失败' }
-  })
-}
-
-export function useSeriesCourses(
-  seriesID: WatchSource<string | null>,
-  options: {
-    mode?: QueryMode
-    /** Refetch when the displayed series membership changes, so its units do not use an older course list. */
-    courseIDs?: WatchSource<string[]>
-  } = {}
-) {
+export function useSeriesCourses(seriesID: WatchSource<string | null>, options: { mode?: QueryMode } = {}) {
   const seriesIDRef = toRef(seriesID)
   return useQueryWithCache({
-    queryKey: computed(() => getSeriesCoursesQueryKey(seriesIDRef.value, toValue(options.courseIDs))),
+    queryKey: computed(() => getSeriesCoursesQueryKey(seriesIDRef.value)),
     mode: options.mode,
     async queryFn(signal) {
       const id = seriesIDRef.value
@@ -77,10 +52,6 @@ export function useSeriesCourses(
 
 export function useUpdateCourseSeries() {
   const queryCache = useQueryCache()
-  function invalidateCourses(seriesID: string) {
-    queryCache.invalidate(getSeriesCoursesQueryKey(seriesID))
-    queryCache.invalidate([seriesCoursesByPageQueryKeyPrefix, seriesID])
-  }
   return useAction(
     async function updateCourseSeries(
       courseSeriesID: string,
@@ -93,12 +64,13 @@ export function useUpdateCourseSeries() {
       } catch (e) {
         // A failed update may still have taken effect, its answer lost, so what is cached is no longer known.
         queryCache.invalidate(getSeriesQueryKey(courseSeriesID))
-        if (params.courseIDs != null || params.units != null) invalidateCourses(courseSeriesID)
+        if (params.courseIDs != null || params.units != null)
+          queryCache.invalidate(getSeriesCoursesQueryKey(courseSeriesID))
         throw e
       }
       queryCache.invalidateWithOptimisticValue(getSeriesQueryKey(series.id), series)
       // Which courses the series holds, and in what order, may have changed; the new list is not known here.
-      if (params.courseIDs != null || params.units != null) invalidateCourses(series.id)
+      if (params.courseIDs != null || params.units != null) queryCache.invalidate(getSeriesCoursesQueryKey(series.id))
       return series
     },
     { en: 'Failed to update course series', zh: '更新课程系列失败' }
@@ -114,7 +86,6 @@ export function useDeleteCourseSeries() {
       await apis.deleteCourseSeries(courseSeriesID)
       queryCache.invalidate(getSeriesQueryKey(courseSeriesID))
       queryCache.invalidate(getSeriesCoursesQueryKey(courseSeriesID))
-      queryCache.invalidate([seriesCoursesByPageQueryKeyPrefix, courseSeriesID])
     },
     { en: 'Failed to delete course series', zh: '删除课程系列失败' }
   )
@@ -130,13 +101,6 @@ export function useCourseChangesInSeries() {
       queryCache.invalidateMatchingWithOptimisticUpdater<Course[]>([seriesCoursesQueryKeyPrefix], (courses) =>
         courses.map((c) => (c.id === course.id ? course : c))
       )
-      queryCache.invalidateMatchingWithOptimisticUpdater<ByPage<Course>>(
-        [seriesCoursesByPageQueryKeyPrefix],
-        (page) => ({
-          ...page,
-          data: page.data.map((c) => (c.id === course.id ? course : c))
-        })
-      )
     },
     deleted(courseID: string) {
       // The server takes a deleted course out of every series that held it.
@@ -148,8 +112,6 @@ export function useCourseChangesInSeries() {
       queryCache.invalidateMatchingWithOptimisticUpdater<Course[]>([seriesCoursesQueryKeyPrefix], (courses) =>
         courses.filter((course) => course.id !== courseID)
       )
-      // Deletion shifts page boundaries; let the server refill pages and recalculate totals.
-      queryCache.invalidate([seriesCoursesByPageQueryKeyPrefix])
     }
   }
 }
