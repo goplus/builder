@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Cancelled } from '@/utils/exception'
-import { composeQuery, useQuery } from '@/utils/query'
+import { composeQuery, useQuery, QueryMode } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { useCourse } from '@/stores/course'
 import { useSeries } from '@/stores/course-series'
@@ -16,8 +16,8 @@ const props = defineProps<{
 
 const tutorial = useTutorial()
 const signedIn = useSignedIn()
-const courseQueryRet = useCourse(() => props.courseIdInput, { mode: 'snapshot' })
-const seriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: 'snapshot' })
+const courseQueryRet = useCourse(() => props.courseIdInput, { mode: QueryMode.Snapshot })
+const seriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
 
 usePageTitle(() => {
   const title = courseQueryRet.data.value?.title

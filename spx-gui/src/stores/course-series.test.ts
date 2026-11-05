@@ -1,7 +1,9 @@
 import { flushPromises } from '@vue/test-utils'
 import { QueryClient } from '@tanstack/vue-query'
+import { ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { QueryMode } from '@/utils/query'
 import { withQueryClient } from '@/utils/test'
 import type { Course } from '@/apis/course'
 import { client } from '@/apis/common'
@@ -65,6 +67,7 @@ describe('course series writes', () => {
   it('publishes the saved series and makes a snapshot reader wait for the invalidated list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
     queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
+    queryClient.setQueryData(['course-series-courses', '40', ['2338']], [makeCourse('2338')])
     queryClient.setQueryData(
       ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
@@ -81,6 +84,7 @@ describe('course series writes', () => {
 
     expect(queryClient.getQueryData(['course-series', '40'])).toEqual(after)
     expect(queryClient.getQueryState(['course-series-courses', '40'])?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(['course-series-courses', '40', ['2338']])?.isInvalidated).toBe(true)
     expect(
       queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)
@@ -89,7 +93,7 @@ describe('course series writes', () => {
     )
     // Starting a lesson of the series now waits for its list as it is, instead of taking the old one.
     apis.listCourses.mockResolvedValue({ total: 2, data: [makeCourse('2338'), makeCourse('2340')] })
-    const courses = withQueryClient(queryClient, () => useSeriesCourses(() => '40', { mode: 'snapshot' }))
+    const courses = withQueryClient(queryClient, () => useSeriesCourses(() => '40', { mode: QueryMode.Snapshot }))
     expect(courses.isLoading.value).toBe(true)
     await flushPromises()
     expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')])
@@ -115,9 +119,28 @@ describe('course series writes', () => {
     await vi.waitFor(() => expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')]))
   })
 
+  it.each([QueryMode.BackgroundRefresh, QueryMode.Snapshot] as const)(
+    'reads the updated membership in %s mode',
+    async (mode) => {
+      apis.listCourses
+        .mockResolvedValueOnce(page([makeCourse('2338')]))
+        .mockResolvedValueOnce(page([makeCourse('2338'), makeCourse('2340')]))
+      const courseIDs = ref(['2338'])
+      const courses = withQueryClient(queryClient, () => useSeriesCourses(() => '40', { courseIDs, mode }))
+      await flushPromises()
+      expect(courses.data.value).toEqual([makeCourse('2338')])
+
+      courseIDs.value = ['2338', '2340']
+
+      await vi.waitFor(() => expect(courses.data.value).toEqual([makeCourse('2338'), makeCourse('2340')]))
+      expect(apis.listCourses).toHaveBeenCalledTimes(2)
+    }
+  )
+
   it('invalidates a series and list after an uncertain write failure', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
     queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
+    queryClient.setQueryData(['course-series-courses', '40', ['2338']], [makeCourse('2338')])
     queryClient.setQueryData(
       ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
@@ -133,6 +156,7 @@ describe('course series writes', () => {
 
     expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
     expect(queryClient.getQueryState(['course-series-courses', '40'])?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(['course-series-courses', '40', ['2338']])?.isInvalidated).toBe(true)
     expect(
       queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)
@@ -144,6 +168,7 @@ describe('course series writes', () => {
   it('invalidates a deleted series and its course list', async () => {
     queryClient.setQueryData(['course-series', '40'], makeSeries('40', ['2338']))
     queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('2338')])
+    queryClient.setQueryData(['course-series-courses', '40', ['2338']], [makeCourse('2338')])
     queryClient.setQueryData(
       ['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }],
       page([makeCourse('2338')])
@@ -155,6 +180,7 @@ describe('course series writes', () => {
 
     expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
     expect(queryClient.getQueryState(['course-series-courses', '40'])?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(['course-series-courses', '40', ['2338']])?.isInvalidated).toBe(true)
     expect(
       queryClient.getQueryState(['course-series-courses-by-page', '40', { pageIndex: 1, pageSize: 100 }])?.isInvalidated
     ).toBe(true)

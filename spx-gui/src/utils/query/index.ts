@@ -140,20 +140,24 @@ export function useQuery<T>(
   return { isLoading, data, error, progress, refetch }
 }
 
-export type QueryMode = 'live' | 'snapshot'
+export const enum QueryMode {
+  /**
+   * Return cached data even when stale, and refresh in the background.
+   * Publish new data on success; retain data and expose the error on failure.
+   */
+  BackgroundRefresh = 'backgroundRefresh',
+  /**
+   * Capture the first valid result, revalidating stale cache data before accepting it.
+   * Ignore later shared-cache changes; a key change or explicit refetch starts a new read.
+   */
+  Snapshot = 'snapshot'
+}
 
 export type QueryWithCacheOptions<T> = {
   queryKey: unknown[] | WatchSource<unknown[]>
   queryFn: (signal: AbortSignal) => Promise<T>
   staleTime?: number
-  /**
-   * Consumer-local result policy; defaults to `live`.
-   * - `live`: retain data and loading state during refresh; publish new data or the refresh error.
-   * - `snapshot`: retain the first valid success for the current key, ignoring subsequent shared-cache changes.
-   *   Invalidated/expired results needing revalidation cannot satisfy the initial read; successful null/falsy values can.
-   *   Initial reads and explicit refetch expose null data/error and loading while awaiting a valid result, including offline pauses.
-   *   Failures expose an error with null data and end loading. Key changes start a new read; refetch replaces the snapshot.
-   */
+  /** Consumer-local result policy; defaults to `QueryMode.BackgroundRefresh`. */
   mode?: QueryMode
   failureSummaryMessage?: LocaleMessage
 }
@@ -173,8 +177,8 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
   })
 
   const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
-  const mode = options.mode ?? 'live'
-  if (mode === 'live') {
+  const mode = options.mode ?? QueryMode.BackgroundRefresh
+  if (mode === QueryMode.BackgroundRefresh) {
     return {
       isLoading: ret.isLoading,
       data: computed(() => ret.data.value ?? null),

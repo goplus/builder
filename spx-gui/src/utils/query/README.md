@@ -25,11 +25,13 @@ Each request sets loading to true while retaining the previous data/error. Succe
 ## Cached queries
 
 ```ts
+import { QueryMode, useQueryWithCache } from '@/utils/query'
+
 const query = useQueryWithCache({
   queryKey: () => ['project', owner.value, name.value],
   queryFn: (signal) => loadProject(owner.value, name.value, signal),
   staleTime: 60_000,
-  mode: 'snapshot'
+  mode: QueryMode.Snapshot
 })
 ```
 
@@ -37,22 +39,24 @@ const query = useQueryWithCache({
 
 `mode` is local to each consumer and does not clear or freeze the shared cache:
 
-| Mode             | Refresh behavior                                                                                                                                                                                             |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `live` (default) | Follow shared-cache results. Retain data and loading state during refresh. Success publishes new data; failure retains data and exposes the error. A cold request uses the underlying query's loading state. |
-| `snapshot`       | Wait for the first valid success for the current key, then retain the result and observable state despite shared-cache refreshes, writes, failures or invalidations.                                         |
+| Mode                                    | Refresh behavior                                                                                                                                                                                             |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `QueryMode.BackgroundRefresh` (default) | Follow shared-cache results. Retain data and loading state during refresh. Success publishes new data; failure retains data and exposes the error. A cold request uses the underlying query's loading state. |
+| `QueryMode.Snapshot`                    | Wait for the first valid success for the current key, then retain the result and observable state despite shared-cache refreshes, writes, failures or invalidations.                                         |
 
 Snapshot reads may immediately accept fresh successful cache hits. They wait for revalidation of expired or invalidated results, exposing null data/error and loading, including offline pauses. Failure exposes an error with null data and ends loading. Successful null/falsy values and empty collections count as results. Even with `staleTime: 0`, a successful fetch satisfies the current read; expiry alone does not hide a published result.
 
+`blockingRefresh` is reserved for a future mode that clears the consumer's result while waiting for a refreshed result; it is not currently supported.
+
 Changing the key starts a new read. Explicit `refetch()` in snapshot mode immediately clears the consumer's data/error and enters loading. A snapshot refetch captures a new result on success; failure exposes an error with null data and can be retried. A canceled pending read starts or joins a replacement request instead of accepting restored old cache data. Key changes and unmounting stop the previous read from publishing results.
 
-Use live for continuous displays and mutation-driven state, and snapshot for initialization that must remain stable until the key changes or the consumer explicitly rereads. Live means following the shared cache; it does not imply server push or polling. Both modes return reactive query state.
+Use `backgroundRefresh` for continuous displays and mutation-driven state, and snapshot for initialization that must remain stable until the key changes or the consumer explicitly rereads. Background refresh keeps the current result available while a new result is fetched. Both modes return reactive query state.
 
-Business store hooks accept an options object, for example `useSeries(seriesID, { mode: 'snapshot' })`. Omitting the options or mode uses live behavior.
+Business store hooks accept an options object, for example `useSeries(seriesID, { mode: QueryMode.Snapshot })`. Omitting the options or mode uses `backgroundRefresh` behavior.
 
 ## Reading and composing
 
-`untilLoaded(query, signal?)` waits for the query's observable loading state to end, then returns its data or throws its error. It follows the selected mode: a live query can return its retained result during refresh. It does not independently require fresh cache data.
+`untilLoaded(query, signal?)` waits for the query's observable loading state to end, then returns its data or throws its error. It follows the selected mode: a `backgroundRefresh` query can return its retained result during refresh. It does not independently require fresh cache data.
 
 `composeQuery(ctx, query, subReportParams?)` reads another query inside `useQuery`, observes its data/error/loading updates, and aggregates progress. Explicit refetch of the composed query also refetches its dependency.
 
@@ -75,4 +79,4 @@ Both optimistic methods cancel older matching in-flight requests before writing 
 
 The methods are generic per call, so one cache instance can handle different data types. Values infer their type; updater calls can specify it explicitly, for example `cache.invalidateMatchingWithOptimisticUpdater<ByPage<Course>>(prefix, updater)`.
 
-Write cache data after mutations so live consumers reflect the change. A snapshot consumer keeps its accepted result until its key changes or it explicitly refetches.
+Write cache data after mutations so `backgroundRefresh` consumers reflect the change. A snapshot consumer keeps its accepted result until its key changes or it explicitly refetches.

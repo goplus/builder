@@ -14,8 +14,10 @@ function getSeriesQueryKey(seriesID: string) {
   return [seriesQueryKeyPrefix, seriesID]
 }
 
-function getSeriesCoursesQueryKey(seriesID: string | null) {
-  return [seriesCoursesQueryKeyPrefix, seriesID]
+function getSeriesCoursesQueryKey(seriesID: string | null, courseIDs?: string[]) {
+  return courseIDs == null
+    ? [seriesCoursesQueryKeyPrefix, seriesID]
+    : [seriesCoursesQueryKeyPrefix, seriesID, courseIDs]
 }
 
 const staleTime = 5 * 60 * 1000
@@ -51,10 +53,17 @@ export function useSeriesCoursesByPage(
   })
 }
 
-export function useSeriesCourses(seriesID: WatchSource<string | null>, options: { mode?: QueryMode } = {}) {
+export function useSeriesCourses(
+  seriesID: WatchSource<string | null>,
+  options: {
+    mode?: QueryMode
+    /** Refetch when the displayed series membership changes, so its units do not use an older course list. */
+    courseIDs?: WatchSource<string[]>
+  } = {}
+) {
   const seriesIDRef = toRef(seriesID)
   return useQueryWithCache({
-    queryKey: computed(() => getSeriesCoursesQueryKey(seriesIDRef.value)),
+    queryKey: computed(() => getSeriesCoursesQueryKey(seriesIDRef.value, toValue(options.courseIDs))),
     mode: options.mode,
     async queryFn(signal) {
       const id = seriesIDRef.value

@@ -13,7 +13,7 @@ import {
   useQueryWithCache,
   useQueryCache,
   type QueryContext,
-  type QueryMode
+  QueryMode
 } from './index'
 import { withSetup } from '../test'
 import { timeout } from '../utils'
@@ -545,7 +545,7 @@ describe('query error contract', () => {
     })
   }
 
-  it.each(['ordinary', 'live', 'snapshot'] as const)(
+  it.each(['ordinary', QueryMode.BackgroundRefresh, QueryMode.Snapshot] as const)(
     'provides translatable errors without a summary in %s',
     async (kind) => {
       const existing = new ActionException(new Error('original'), { en: 'Existing message', zh: '已有提示' })
@@ -569,15 +569,18 @@ describe('query error contract', () => {
     }
   )
 
-  it.each(['ordinary', 'live', 'snapshot'] as const)('preserves the configured failure summary in %s', async (kind) => {
-    const cause = new Error('network failed')
-    const summary = { en: 'Failed to load courses', zh: '加载课程失败' }
-    const query = failingQuery(kind, cause, summary)
-    await flushPromises()
-    expect(query.error.value).toBeInstanceOf(ActionException)
-    expect(query.error.value?.userMessage).toEqual(summary)
-    expect(query.error.value?.cause).toBe(cause)
-  })
+  it.each(['ordinary', QueryMode.BackgroundRefresh, QueryMode.Snapshot] as const)(
+    'preserves the configured failure summary in %s',
+    async (kind) => {
+      const cause = new Error('network failed')
+      const summary = { en: 'Failed to load courses', zh: '加载课程失败' }
+      const query = failingQuery(kind, cause, summary)
+      await flushPromises()
+      expect(query.error.value).toBeInstanceOf(ActionException)
+      expect(query.error.value?.userMessage).toEqual(summary)
+      expect(query.error.value?.cause).toBe(cause)
+    }
+  )
 
   it('does not publish ordinary query cancellation as a failure', async () => {
     const query = failingQuery('ordinary', new Cancelled('left page'))
@@ -592,22 +595,22 @@ describe('cached query refreshing modes', () => {
     queryClient.setQueryData(['fresh-refresh'], 'cached')
     const pending = deferred<string>()
     const queryFn = vi.fn(() => pending.promise)
-    const live = setup(queryClient, () =>
+    const backgroundRefresh = setup(queryClient, () =>
       useQueryWithCache({ queryKey: ['fresh-refresh'], queryFn, staleTime: Infinity })
     )
-    live.refetch()
+    backgroundRefresh.refetch()
     const snapshot = setup(queryClient, () =>
-      useQueryWithCache({ queryKey: ['fresh-refresh'], queryFn, staleTime: Infinity, mode: 'snapshot' })
+      useQueryWithCache({ queryKey: ['fresh-refresh'], queryFn, staleTime: Infinity, mode: QueryMode.Snapshot })
     )
     expect(state(snapshot)).toEqual({ data: 'cached', error: null, loading: false })
     pending.resolve('updated')
     await flushPromises()
-    expect(live.data.value).toBe('updated')
+    expect(backgroundRefresh.data.value).toBe('updated')
     expect(snapshot.data.value).toBe('cached')
     expect(queryFn).toHaveBeenCalledOnce()
   })
 
-  it('defaults to live while revalidating expired data, including on failure', async () => {
+  it('defaults to backgroundRefresh while revalidating expired data, including on failure', async () => {
     const queryClient = client()
     queryClient.setQueryData(['default'], 'old')
     const pending = deferred<string>()
@@ -621,35 +624,35 @@ describe('cached query refreshing modes', () => {
     expect(state(query)).toMatchObject({ data: 'old', error: { cause: error }, loading: false })
   })
 
-  it('blocks an explicit snapshot refetch while offline without affecting live data', async () => {
+  it('blocks an explicit snapshot refetch while offline without affecting backgroundRefresh data', async () => {
     const queryClient = client()
     queryClient.setQueryData(['offline-refetch'], 'old')
-    const [snapshot, live] = setup(queryClient, () =>
-      (['snapshot', 'live'] as const).map((mode) =>
+    const [snapshot, backgroundRefresh] = setup(queryClient, () =>
+      ([QueryMode.Snapshot, QueryMode.BackgroundRefresh] as const).map((mode) =>
         useQueryWithCache({ queryKey: ['offline-refetch'], queryFn: async () => 'new', staleTime: Infinity, mode })
       )
     )
     onlineManager.setOnline(false)
     snapshot.refetch()
     expect(state(snapshot)).toEqual({ data: null, error: null, loading: true })
-    expect(state(live)).toEqual({ data: 'old', error: null, loading: false })
+    expect(state(backgroundRefresh)).toEqual({ data: 'old', error: null, loading: false })
     onlineManager.setOnline(true)
     await flushPromises()
     expect(state(snapshot)).toEqual({ data: 'new', error: null, loading: false })
-    expect(live.data.value).toBe('new')
+    expect(backgroundRefresh.data.value).toBe('new')
     queryClient.removeQueries({ queryKey: ['offline-refetch'] })
     queryClient.setQueryData(['offline-refetch'], 'replacement')
     expect(snapshot.data.value).toBe('new')
   })
 
-  it('keeps live compatible and isolates snapshots on the same key', async () => {
+  it('keeps backgroundRefresh compatible and isolates snapshots on the same key', async () => {
     const queryClient = client()
     queryClient.setQueryData(['shared'], 'cached')
     let pending = deferred<string>()
     const queryFn = () => pending.promise
     const queries = setup(queryClient, () =>
       Object.fromEntries(
-        (['live', 'snapshot'] as const).map((mode) => [
+        ([QueryMode.BackgroundRefresh, QueryMode.Snapshot] as const).map((mode) => [
           mode,
           useQueryWithCache({ staleTime: Infinity, queryKey: ['shared'], queryFn, mode })
         ])
@@ -658,11 +661,11 @@ describe('cached query refreshing modes', () => {
     expect(state(queries.snapshot)).toEqual({ data: 'cached', error: null, loading: false })
     const refresh = queryClient.invalidateQueries({ queryKey: ['shared'] })
     await vi.waitFor(() => expect(queryClient.isFetching({ queryKey: ['shared'] })).toBe(1))
-    expect(state(queries.live)).toEqual({ data: 'cached', error: null, loading: false })
+    expect(state(queries.backgroundRefresh)).toEqual({ data: 'cached', error: null, loading: false })
     expect(state(queries.snapshot)).toEqual({ data: 'cached', error: null, loading: false })
     pending.resolve('new')
     await refresh
-    expect(queries.live.data.value).toBe('new')
+    expect(queries.backgroundRefresh.data.value).toBe('new')
     expect(queries.snapshot.data.value).toBe('cached')
 
     pending = deferred<string>()
@@ -671,10 +674,10 @@ describe('cached query refreshing modes', () => {
     const error = new Error('offline')
     pending.reject(error)
     await failedRefresh
-    expect(state(queries.live)).toMatchObject({ data: 'new', error: { cause: error }, loading: false })
+    expect(state(queries.backgroundRefresh)).toMatchObject({ data: 'new', error: { cause: error }, loading: false })
     expect(state(queries.snapshot)).toEqual({ data: 'cached', error: null, loading: false })
     queryClient.setQueryData(['shared'], 'direct update')
-    expect(queries.live.data.value).toBe('direct update')
+    expect(queries.backgroundRefresh.data.value).toBe('direct update')
     expect(queries.snapshot.data.value).toBe('cached')
     await queryClient.invalidateQueries({ queryKey: ['shared'], refetchType: 'none' })
     expect(queries.snapshot.data.value).toBe('cached')
@@ -690,7 +693,7 @@ describe('cached query refreshing modes', () => {
       const pending = deferred<string>()
       const queryFn = vi.fn(() => pending.promise)
       const query = setup(queryClient, () =>
-        useQueryWithCache({ queryKey, queryFn, mode: 'snapshot', staleTime: 10000 })
+        useQueryWithCache({ queryKey, queryFn, mode: QueryMode.Snapshot, staleTime: 10000 })
       )
       if (cacheState === 'fresh') {
         expect(state(query)).toEqual({ data: 'old', error: null, loading: false })
@@ -707,7 +710,7 @@ describe('cached query refreshing modes', () => {
   it.each([null, false, [], 0, ''])('captures successful %j even with staleTime zero', async (value) => {
     const queryClient = client()
     const query = setup(queryClient, () =>
-      useQueryWithCache({ queryKey: ['empty'], queryFn: async () => value, mode: 'snapshot', staleTime: 0 })
+      useQueryWithCache({ queryKey: ['empty'], queryFn: async () => value, mode: QueryMode.Snapshot, staleTime: 0 })
     )
     await flushPromises()
     expect(state(query)).toEqual({ data: value, error: null, loading: false })
@@ -720,7 +723,12 @@ describe('cached query refreshing modes', () => {
     queryClient.setQueryData(['retry'], 'old')
     let pending = deferred<string>()
     const query = setup(queryClient, () =>
-      useQueryWithCache({ staleTime: Infinity, queryKey: ['retry'], queryFn: () => pending.promise, mode: 'snapshot' })
+      useQueryWithCache({
+        staleTime: Infinity,
+        queryKey: ['retry'],
+        queryFn: () => pending.promise,
+        mode: QueryMode.Snapshot
+      })
     )
     query.refetch()
     expect(state(query)).toEqual({ data: null, error: null, loading: true })
@@ -749,7 +757,7 @@ describe('cached query refreshing modes', () => {
         staleTime: Infinity,
         queryKey: () => [key.value],
         queryFn: () => (key.value === 'a' ? a.promise : b.promise),
-        mode: 'snapshot'
+        mode: QueryMode.Snapshot
       })
     )
     key.value = 'b'
@@ -773,7 +781,7 @@ describe('cached query refreshing modes', () => {
     onlineManager.setOnline(false)
     const queryFn = vi.fn(async () => 'online')
     const query = setup(queryClient, () =>
-      useQueryWithCache({ staleTime: Infinity, queryKey: ['paused'], queryFn, mode: 'snapshot' })
+      useQueryWithCache({ staleTime: Infinity, queryKey: ['paused'], queryFn, mode: QueryMode.Snapshot })
     )
     expect(state(query)).toEqual({ data: null, error: null, loading: true })
     expect(queryFn).not.toHaveBeenCalled()
@@ -787,7 +795,12 @@ describe('cached query refreshing modes', () => {
     queryClient.setQueryData(['cancel'], 'old')
     const pending = deferred<string>()
     const query = setup(queryClient, () =>
-      useQueryWithCache({ queryKey: ['cancel'], queryFn: () => pending.promise, mode: 'snapshot', staleTime: 0 })
+      useQueryWithCache({
+        queryKey: ['cancel'],
+        queryFn: () => pending.promise,
+        mode: QueryMode.Snapshot,
+        staleTime: 0
+      })
     )
     await queryClient.cancelQueries({ queryKey: ['cancel'] })
     expect(state(query)).toEqual({ data: null, error: null, loading: true })
@@ -804,7 +817,7 @@ describe('cached query refreshing modes', () => {
     const replacement = deferred<string>()
     const queryFn = vi.fn().mockReturnValueOnce(previous.promise).mockReturnValue(replacement.promise)
     const { query, cache } = setup(queryClient, () => ({
-      query: useQueryWithCache({ queryKey: ['replacement'], queryFn, mode: 'snapshot', staleTime: 0 }),
+      query: useQueryWithCache({ queryKey: ['replacement'], queryFn, mode: QueryMode.Snapshot, staleTime: 0 }),
       cache: useQueryCache()
     }))
     const refreshing = cache.invalidate(['replacement'])
@@ -825,15 +838,15 @@ describe('cached query refreshing modes', () => {
       signal = s
       return pending.promise
     })
-    const live = setup(queryClient, () => useQueryWithCache({ queryKey: ['shared-unmount'], queryFn }))
+    const backgroundRefresh = setup(queryClient, () => useQueryWithCache({ queryKey: ['shared-unmount'], queryFn }))
     const snapshot = setup(queryClient, () =>
-      useQueryWithCache({ queryKey: ['shared-unmount'], queryFn, mode: 'snapshot' })
+      useQueryWithCache({ queryKey: ['shared-unmount'], queryFn, mode: QueryMode.Snapshot })
     )
     apps.pop()!.unmount()
     expect(signal.aborted).toBe(false)
     pending.resolve('shared result')
     await flushPromises()
-    expect(live.data.value).toBe('shared result')
+    expect(backgroundRefresh.data.value).toBe('shared result')
     expect(snapshot.isLoading.value).toBe(true)
     expect(queryFn).toHaveBeenCalledOnce()
   })
@@ -847,7 +860,7 @@ describe('cached query refreshing modes', () => {
         staleTime: Infinity,
         queryKey: ['race'],
         queryFn: () => pending.promise,
-        mode: 'snapshot'
+        mode: QueryMode.Snapshot
       })
     )
     let completed = false
@@ -874,7 +887,7 @@ describe('cached query refreshing modes', () => {
           signal = s
           return pending.promise
         },
-        mode: 'snapshot'
+        mode: QueryMode.Snapshot
       })
     )
     const ctrl = new AbortController()
@@ -888,28 +901,31 @@ describe('cached query refreshing modes', () => {
     expect(query.isLoading.value).toBe(true)
   })
 
-  it.each(['live', 'snapshot'] as QueryMode[])('composes observable %s results', async (mode) => {
-    const queryClient = client()
-    queryClient.setQueryData(['composed'], 'old')
-    const [query, composed] = setup(queryClient, () => {
-      const query = useQueryWithCache({
-        staleTime: Infinity,
-        queryKey: ['composed'],
-        queryFn: async () => 'fetched',
-        mode
+  it.each([QueryMode.BackgroundRefresh, QueryMode.Snapshot] as const)(
+    'composes observable %s results',
+    async (mode) => {
+      const queryClient = client()
+      queryClient.setQueryData(['composed'], 'old')
+      const [query, composed] = setup(queryClient, () => {
+        const query = useQueryWithCache({
+          staleTime: Infinity,
+          queryKey: ['composed'],
+          queryFn: async () => 'fetched',
+          mode
+        })
+        const composed = useQuery((ctx) => composeQuery(ctx, query))
+        return [query, composed] as const
       })
-      const composed = useQuery((ctx) => composeQuery(ctx, query))
-      return [query, composed] as const
-    })
-    await flushPromises()
-    queryClient.setQueryData(['composed'], 'updated')
-    await flushPromises()
-    expect(composed.data.value).toBe(mode === 'snapshot' ? 'old' : 'updated')
-    composed.refetch()
-    await flushPromises()
-    expect(query.data.value).toBe('fetched')
-    expect(composed.data.value).toBe('fetched')
-  })
+      await flushPromises()
+      queryClient.setQueryData(['composed'], 'updated')
+      await flushPromises()
+      expect(composed.data.value).toBe(mode === QueryMode.Snapshot ? 'old' : 'updated')
+      composed.refetch()
+      await flushPromises()
+      expect(query.data.value).toBe('fetched')
+      expect(composed.data.value).toBe('fetched')
+    }
+  )
 })
 
 describe('cache writes', () => {
@@ -978,21 +994,21 @@ describe('cache writes', () => {
     queryClient.setQueryData(['list'], 'old')
     const pending = deferred<string>()
     const queryFn = vi.fn(() => pending.promise)
-    const { live, cache } = setup(queryClient, () => ({
-      live: useQueryWithCache({ queryKey: ['list'], queryFn, staleTime: Infinity }),
+    const { backgroundRefresh, cache } = setup(queryClient, () => ({
+      backgroundRefresh: useQueryWithCache({ queryKey: ['list'], queryFn, staleTime: Infinity }),
       cache: useQueryCache()
     }))
     const refresh = cache.invalidate(['list'])
     const snapshot = setup(queryClient, () =>
-      useQueryWithCache({ queryKey: ['list'], queryFn, staleTime: Infinity, mode: 'snapshot' })
+      useQueryWithCache({ queryKey: ['list'], queryFn, staleTime: Infinity, mode: QueryMode.Snapshot })
     )
-    expect(live.data.value).toBe('old')
+    expect(backgroundRefresh.data.value).toBe('old')
     expect(snapshot.isLoading.value).toBe(true)
     expect(snapshot.data.value).toBeNull()
     pending.resolve('new')
     await refresh
     await expect(untilLoaded(snapshot)).resolves.toBe('new')
-    expect(live.data.value).toBe('new')
+    expect(backgroundRefresh.data.value).toBe('new')
     expect(queryFn).toHaveBeenCalledOnce()
   })
 })
