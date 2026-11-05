@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { getCourseSeries } from '@/apis/course-series'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
-import { untilLoaded, useQuery, type QueryRet } from '@/utils/query'
+import { composeQuery, useQuery, QueryMode, type QueryRet } from '@/utils/query'
 import { path2PathSegments, useScopedRouterWithPathParam } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -29,7 +29,7 @@ const tutorial = useTutorial()
 const router = useRouter()
 const signedIn = useSignedIn()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
-const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
+const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
 const inPlaygroundRouter = useScopedRouterWithPathParam('inPlaygroundPath', () => props.inPlaygroundPath)
 
 const sessionQueryRet = useQuery(
@@ -39,8 +39,7 @@ const sessionQueryRet = useQuery(
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
     const [series, courses] = await Promise.all([
       getCourseSeries(courseSeriesID, ctx.signal),
-      // Only route inputs restart preparation; list loading must not become a query dependency.
-      untilLoaded(seriesCoursesQueryRet, ctx.signal)
+      composeQuery(ctx, seriesCoursesQueryRet)
     ])
     ctx.signal.throwIfAborted()
     if (!signedIn.isSignedIn) {

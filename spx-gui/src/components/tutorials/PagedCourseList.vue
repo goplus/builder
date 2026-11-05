@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { listCourses, type Course } from '@/apis/course'
+import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
 import { UIEmpty, UIPagination } from '@/components/ui'
-import { useQuery } from '@/utils/query'
+import { useSeriesCoursesByPage } from '@/stores/course-series'
 import { useRouteQueryParamInt } from '@/utils/route'
 
 const coursePadding = 20
@@ -27,19 +27,9 @@ const page = useRouteQueryParamInt('p', 1)
 const pageSize = computed(() => props.numInRow * numInColumn)
 const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
 
-const courseQuery = useQuery(
-  async (ctx) => {
-    return listCourses(
-      {
-        courseSeriesID: props.courseSeries.id,
-        pageIndex: page.value,
-        pageSize: pageSize.value,
-        orderBy: 'sequenceInCourseSeries'
-      },
-      ctx.signal
-    )
-  },
-  { en: 'Failed to load course list', zh: '加载课程列表失败' }
+const courseQuery = useSeriesCoursesByPage(
+  () => props.courseSeries.id,
+  () => ({ pageIndex: page.value, pageSize: pageSize.value })
 )
 </script>
 

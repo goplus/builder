@@ -21,10 +21,9 @@ const dropdown = useDropdown()
 const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
-const coursesQueryRet = useSeriesCourses(
-  () => tutorial.currentCourse?.series.id ?? null,
-  () => tutorial.currentCourse?.series.courseIDs ?? []
-)
+const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.series.id ?? null, {
+  courseIDs: () => tutorial.currentCourse?.series.courseIDs ?? []
+})
 
 const units = computed(() => (tutorial.currentCourse == null ? [] : getSeriesUnits(tutorial.currentCourse.series)))
 const courseGroups = computed(() => {
