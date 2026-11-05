@@ -42,6 +42,24 @@ describe('Opening guide actions', () => {
     expect(guide.take('video')).toBe('start')
   })
 
+  it.each([
+    'Spotlight.revealWith "stage-overview", "Watch", SpotlightOptions{Mask: false, Duration: 3}',
+    'options := []SpotlightOptions{{Mask: false}, {Mask: true}}',
+    'options := map[string]SpotlightOptions{"stage": {Mask: false}}',
+    'options := Options{showPrelude: "not a call", showVideo: "not a call"}'
+  ])('keeps data literals in a straight-line opening: %s', (configuration) => {
+    const guide = new OpeningGuide(`
+      onStart => {
+        ${configuration}
+        showPrelude "Task"
+        Spotlight.revealWith "stage-overview", "Watch", SpotlightOptions{Mask: false}
+        showVideo "intro"
+      }
+    `)
+    expect(guide.take('prelude')).toBe('next')
+    expect(guide.take('video')).toBe('start')
+  })
+
   it('allows independent configuration callbacks alongside one guide sequence', () => {
     const guide = new OpeningGuide(`
       onStart => { Editor.Ruler.enable }
@@ -54,10 +72,18 @@ describe('Opening guide actions', () => {
   it.each([
     'onStart => { if enabled { showVideo "intro" }; showPrelude "Task" }',
     'onStart => { for i <- 3 { showVideo "intro" } }',
+    'onStart => { for ready { showPrelude "Task" }; showVideo "intro" }',
+    'onStart => { switch mode { case "intro": showPrelude "Task" }; showVideo "intro" }',
+    'onStart => { select { default: showPrelude "Task" }; showVideo "intro" }',
     'onStart => { if !enabled { return }; showPrelude "Task"; showVideo "intro" }',
+    'onStart => { { showPrelude "Task" }; showVideo "intro" }',
+    'onStart => { options := Options{Done: func() { showVideo "later" }}; showPrelude "Task"; showVideo "intro" }',
+    'onStart => { Editor.Runtime.onStart => { showVideo "later" }; showPrelude "Task"; showVideo "intro" }',
     'onStart => { showPrelude "Task" }\nonStart => { showVideo "intro" }',
+    'onStart => { if enabled { showPrelude "Task" } }\nonStart => { showVideo "intro" }',
     'func intro() { showPrelude "Task"; showVideo "intro" }; onStart => { intro() }',
     'func intro() { showPrelude "Task" }; onStart => { intro(); showPrelude "Then"; showVideo "intro" }',
+    'func intro() { showPrelude "Task" }; onStart => { intro() }; onStart => { showVideo "intro" }',
     'intro := func() { showPrelude "Task" }; onStart => { intro(); showPrelude "Then"; showVideo "intro" }'
   ])('leaves dynamic or overlapping openings to explicit author labels: %s', (source) => {
     const guide = new OpeningGuide(source)

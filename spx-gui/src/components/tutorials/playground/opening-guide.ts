@@ -34,8 +34,13 @@ function getOpeningSteps(source: string): OpeningGuideKind[] {
   tokens.forEach((token, i) => {
     if (token !== 'func') return
     if (tokens[i + 2] === '(') helpers.add(tokens[i + 1])
-    if (tokens[i - 1] === '=') helpers.add(tokens[i - 2] === ':' ? tokens[i - 3] : tokens[i - 2])
+    if (tokens[i - 1] === '=') {
+      // Assignments tokenize as name = func or name : = func.
+      const nameIndex = tokens[i - 2] === ':' ? i - 3 : i - 2
+      helpers.add(tokens[nameIndex])
+    }
   })
+  const functionCallbackPrefix = ['(', 'func', '(', ')']
   const openings: OpeningGuideKind[][] = []
   let depth = 0
   for (let i = 0; i < tokens.length; i++) {
@@ -45,32 +50,41 @@ function getOpeningSteps(source: string): OpeningGuideKind[] {
     if (depth !== 0 || token !== 'onStart' || tokens[i - 1] === '.') continue
     let bodyStart = i + 1
     if (tokens[bodyStart] === '=>') bodyStart++
-    else if (tokens.slice(bodyStart, bodyStart + 5).join('') === '(func(){') bodyStart += 4
-    else continue
+    else if (functionCallbackPrefix.every((token, offset) => tokens[bodyStart + offset] === token)) {
+      bodyStart += functionCallbackPrefix.length
+    } else continue
     if (tokens[bodyStart] !== '{') continue
 
     const steps: OpeningGuideKind[] = []
     let bodyDepth = 1
+    let literalDepth = 0
     let dynamic = false
     let j = bodyStart + 1
     for (; j < tokens.length && bodyDepth > 0; j++) {
       const current = tokens[j]
-      if (current === '{') {
-        bodyDepth++
+      // A condition can end in an identifier too, so detect control flow
+      // separately from composite literals such as SpotlightOptions{...}.
+      if (['if', 'else', 'for', 'switch', 'select', 'func', '=>', 'return', 'goto', 'defer'].includes(current)) {
         dynamic = true
       }
-      if (current === '}') bodyDepth--
-      if (['return', 'goto', 'defer'].includes(current)) dynamic = true
+      if (current === '{') {
+        bodyDepth++
+        const previous = tokens[j - 1]
+        if (literalDepth > 0 || /^[\p{L}_][\p{L}\p{N}_]*$/u.test(previous) || previous === ']') literalDepth++
+        else dynamic = true
+      }
+      if (current === '}') {
+        bodyDepth--
+        if (literalDepth > 0) literalDepth--
+      }
       if (helpers.has(current) && tokens[j - 1] !== '.') dynamic = true
       const kind = current === 'showPrelude' ? 'prelude' : current === 'showVideo' ? 'video' : null
-      if (kind != null && tokens[j - 1] !== '.') steps.push(kind)
+      if (kind != null && bodyDepth === 1 && tokens[j - 1] !== '.') steps.push(kind)
     }
-    if (steps.length > 0) {
-      // Branches, loops, helper callbacks and parallel openings need explicit
-      // author labels: their future calls cannot be predicted from source order.
-      if (dynamic || bodyDepth !== 0) return []
-      openings.push(steps)
-    }
+    // Branches, loops, helper callbacks and parallel openings need explicit
+    // author labels: their future calls cannot be predicted from source order.
+    if (dynamic || bodyDepth !== 0) return []
+    if (steps.length > 0) openings.push(steps)
     i = j - 1
   }
   return openings.length === 1 ? openings[0] : []

@@ -109,7 +109,8 @@ type CourseAbilities interface {
 	showPrelude(messages []string)
 	showPrelude(messages []string, buttonText string)
 	// showMessage presents a message and waits for learner confirmation.
-	// Omitted button text uses the Host's default.
+	// Omitted button text uses Continue, even between opening guides, without
+	// consuming or ending the opening-guide sequence.
 	showMessage(message string)
 	showMessage(message string, buttonText string)
 	// showVideo presents the Course-local video with the given resource name and

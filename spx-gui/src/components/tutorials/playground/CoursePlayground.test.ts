@@ -468,4 +468,18 @@ describe('Opening guide buttons', () => {
     await presentation.showVideo('intro', { buttonText: null, signal })
     expect(mocks.openModal.mock.calls.map(([props]) => props.buttonText)).toEqual(['Watch', 'Learn', null])
   })
+
+  it('keeps interleaved messages at Continue without consuming an opening guide', async () => {
+    const project = makeProject()
+    project.mainCourse.code = 'onStart => { showPrelude "Task"; showMessage "Tip"; showVideo "intro" }'
+    project.videos = [{ name: 'intro' }] as TutorialProject['videos']
+    mountPlayground(createProjectQueryRet(project))
+    await flushPromises()
+    const presentation = mocks.sessions[0].program.options.presentation
+    const options = { buttonText: null, signal: new AbortController().signal }
+    await presentation.showPrelude(['Task'], options)
+    await presentation.showMessage('Tip', options)
+    await presentation.showVideo('intro', options)
+    expect(mocks.openModal.mock.calls.map(([props]) => props.buttonText)).toEqual(['Next', null, 'Start'])
+  })
 })

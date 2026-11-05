@@ -133,6 +133,7 @@ const startProgressReporter = progressCollector.getSubReporter({ en: 'Starting c
 
 const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery(
   async (ctx) => {
+    openingGuide = null
     startProgressReporter.report(0)
     const project = await composeQuery(ctx, props.projectQueryRet)
     ctx.signal.throwIfAborted()

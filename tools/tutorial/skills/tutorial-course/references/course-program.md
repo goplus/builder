@@ -353,7 +353,8 @@ A lone text guide or video uses Start. This also applies to video followed by
 text. For a paged prelude, this sequence rule controls its last page's action.
 `showMessage` defaults to Continue (`继续`) and is not part of this sequence;
 videos shown during the course also default to Continue. The host localizes
-these default labels.
+these default labels. A `showMessage` between opening text and video does not
+consume or end the guide sequence: the actions are Next, Continue, then Start.
 
 All three presentation calls accept optional button text, which takes priority
 over the automatic action; for a paged prelude, it applies only to the final page.

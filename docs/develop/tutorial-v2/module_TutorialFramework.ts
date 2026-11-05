@@ -111,7 +111,8 @@ export interface TutorialFrameworkHost {
     showPrelude(messages: string[], buttonText: string | null): Promise<void>;
     /**
      * Presents the given message. Resolves after the learner finishes reading
-     * it. A null buttonText uses the Host's default button text.
+     * it. A null buttonText defaults to Continue, including between opening guides.
+     * Does not consume or end the opening-guide sequence.
      */
     showMessage(message: string, buttonText: string | null): Promise<void>;
     /**
