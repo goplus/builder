@@ -2,7 +2,6 @@ import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import { debounce, throttle, uniq } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
-import { localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { Disposable, type Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
@@ -14,6 +13,7 @@ import { accumulateToolCallDelta, finalizeToolCalls, type ToolCallDraft } from '
 import { ToolExecutor, type ToolExecution } from './tool-executor'
 import dayjs from 'dayjs'
 import { ApiException } from '@/apis/common/exception'
+import { CopilotPanelState, type PanelOpenSource } from './panel-state'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -576,10 +576,20 @@ export class Copilot extends Disposable {
     this.registerTool(createLoadSkillResourceTool(this.skillRegistry))
   }
 
+  readonly panel = new CopilotPanelState()
+
   /** If copilot is active (the panel is visible) */
-  private activeRef = localStorageRef('spx-gui-copilot-active', false)
   get active() {
-    return this.activeRef.value
+    return this.panel.active
+  }
+
+  setPanelContext(username: string | null, isHome: boolean): void {
+    this.checkIdleTimeout()
+    if (this.panel.setContext(username, isHome)) this.endCurrentSession()
+  }
+
+  suspendPanelContext(): void {
+    this.panel.suspendContext()
   }
 
   private currentSessionRef = shallowRef<Session | null>(null)
@@ -713,7 +723,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    */
   private checkIdleTimeout() {
     const session = this.currentSession
-    if (session == null || this.activeRef.value) return
+    if (session == null || this.active) return
 
     const lastRoundUpdatedTime = session.currentRound?.updatedAt
     if (lastRoundUpdatedTime == null) return
@@ -735,15 +745,16 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       capture(e, 'Failed to load session from storage')
     }
 
-    this.addDisposer(
-      watch(
-        () => this.currentSession?.export() ?? null,
-        // inProgressCopilotMessageContent may change quite often when streaming, so we throttle the save operation
-        throttle((exported: SessionExported | null) => {
-          storage.set(exported)
-        }, 300)
-      )
-    )
+    // Read the current session when saving so a delayed write cannot restore a previous identity's session.
+    const saveSession = throttle(() => {
+      if (!this.panel.isSuspended) storage.set(this.currentSession?.export() ?? null)
+    }, 300)
+    const stop = watch([() => this.currentSession?.export() ?? null, () => this.panel.isSuspended], saveSession)
+    this.addDisposer(() => {
+      stop()
+      saveSession.flush()
+      saveSession.cancel()
+    })
   }
 
   /** End the current session. */
@@ -753,14 +764,14 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   }
 
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */
-  open() {
+  open(source: PanelOpenSource = 'session') {
     this.checkIdleTimeout()
-    this.activeRef.value = true
+    this.panel.open(source)
   }
 
-  close() {
+  close(source: PanelOpenSource = 'session') {
     this.currentSession?.abortCurrentRound()
-    this.activeRef.value = false
+    this.panel.close(source)
   }
 
   /**
@@ -768,7 +779,8 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * If no session is running, a new session will be started with given message and topic.
    */
   addUserTextMessage(content: string, topic: Topic = defaultTopic): void {
-    this.open()
+    this.checkIdleTimeout()
+    this.panel.recordUserMessage()
     const userMessage: UserTextMessage = {
       type: 'text',
       role: 'user',
