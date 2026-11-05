@@ -39,7 +39,7 @@ const nearStraightAngleThreshold = 8
 </script>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { LayerConfig } from 'konva/lib/Layer'
@@ -80,8 +80,10 @@ let markerAnimationFrame: number | null = null
 function updateMotionPreference() {
   reducedMotion.value = motionPreference.matches
 }
-motionPreference.addEventListener('change', updateMotionPreference)
-window.addEventListener('blur', handleWindowBlur)
+onMounted(() => {
+  motionPreference.addEventListener('change', updateMotionPreference)
+  window.addEventListener('blur', handleWindowBlur)
+})
 
 const distance = computed(() => {
   if (measurement.value == null) return 0
