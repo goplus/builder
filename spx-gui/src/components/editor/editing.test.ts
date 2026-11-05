@@ -4,14 +4,12 @@ import { flushPromises } from '@vue/test-utils'
 import { timeout } from '@/utils/utils'
 import { Cancelled } from '@/utils/exception'
 import { ProgressReporter } from '@/utils/progress'
-import type { QueryRet } from '@/utils/query'
 import { ProjectType, Visibility, type ProjectData } from '@/apis/project'
 import { type Files } from '@/models/common/file'
 import type { PreferPublishedContent } from '@/models/common/cloud'
 import { mockFile, MockProject } from '@/models/common/test'
 import type { IProject, Metadata, ProjectSerialized } from '@/models/project'
-import { makeSignedInState, makeSignedInStateQuery } from '@/stores/user/test'
-import type { SignedInState } from '@/stores/user'
+import { makeSignedInMock, makeSignedInUser, makeSignedInUserQuery } from '@/stores/user/test'
 import {
   Editing,
   SavingState,
@@ -114,15 +112,15 @@ function makeEditing({
   isOnline = () => true,
   cloudHelpers = makeCloudHelpers(),
   localCacheHelper = makeLocalCache(),
-  signedInStateQuery = makeSignedInStateQuery(makeSignedInState(project.owner ?? null))
+  userQuery = makeSignedInUserQuery(makeSignedInUser(project.owner ?? null))
 }: Partial<{
   project: IProject
   isOnline: WatchSource<boolean>
   cloudHelpers: CloudHelpers
   localCacheHelper: ILocalCache
-  signedInStateQuery: QueryRet<SignedInState>
+  userQuery: ReturnType<typeof makeSignedInUserQuery>
 }>) {
-  return new Editing(project, cloudHelpers, localCacheHelper, isOnline, signedInStateQuery)
+  return new Editing(project, cloudHelpers, localCacheHelper, isOnline, makeSignedInMock(userQuery))
 }
 
 // Extract the latest preferPublishedContent argument passed to cloudHelpers.load.
@@ -330,7 +328,7 @@ describe('Editing', () => {
       project,
       localCacheHelper,
       cloudHelpers,
-      signedInStateQuery: makeSignedInStateQuery(makeSignedInState('different-user')) // Not the owner
+      userQuery: makeSignedInUserQuery(makeSignedInUser('different-user')) // Not the owner
     })
     editing.startEditing()
 
@@ -359,12 +357,12 @@ describe('Editing', () => {
     const project = makeProject({ owner: 'project-owner' })
     const cloudHelpers = makeCloudHelpers()
     const localCacheHelper = makeLocalCache()
-    const signedInStateQuery = makeSignedInStateQuery(makeSignedInState('different-user'))
+    const userQuery = makeSignedInUserQuery(makeSignedInUser('different-user'))
     const editing = makeEditing({
       project,
       localCacheHelper,
       cloudHelpers,
-      signedInStateQuery
+      userQuery
     })
     editing.startEditing()
 
@@ -376,7 +374,7 @@ describe('Editing', () => {
     await flushPromises()
     expect(cloudHelpers.save).toHaveBeenCalledTimes(0)
 
-    signedInStateQuery.data.value = makeSignedInState('project-owner')
+    userQuery.data.value = makeSignedInUser('project-owner')
     await flushPromises()
     expect(editing.mode).toBe(EditingMode.AutoSave)
 
@@ -393,18 +391,18 @@ describe('Editing', () => {
     const project = makeProject({ owner: 'project-owner' })
     const cloudHelpers = makeCloudHelpers()
     const localCacheHelper = makeLocalCache()
-    const signedInStateQuery = makeSignedInStateQuery(makeSignedInState('different-user'))
+    const userQuery = makeSignedInUserQuery(makeSignedInUser('different-user'))
     const editing = makeEditing({
       project,
       localCacheHelper,
       cloudHelpers,
-      signedInStateQuery
+      userQuery
     })
     editing.startEditing()
 
     expect(editing.mode).toBe(EditingMode.EffectFree)
 
-    signedInStateQuery.data.value = makeSignedInState('project-owner')
+    userQuery.data.value = makeSignedInUser('project-owner')
     await flushPromises()
 
     expect(editing.mode).toBe(EditingMode.AutoSave)
@@ -628,7 +626,7 @@ describe('Editing.loadProject', () => {
     const editing = makeEditing({
       project,
       cloudHelpers,
-      signedInStateQuery: makeSignedInStateQuery(makeSignedInState('alice'))
+      userQuery: makeSignedInUserQuery(makeSignedInUser('alice'))
     })
 
     await editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), new AbortController().signal)
@@ -649,7 +647,7 @@ describe('Editing.loadProject', () => {
       cloudHelpers,
       localCacheHelper,
       () => true,
-      makeSignedInStateQuery(makeSignedInState('alice'))
+      makeSignedInMock(makeSignedInUserQuery(makeSignedInUser('alice')))
     )
 
     const ac = new AbortController()
@@ -672,7 +670,7 @@ describe('Editing.loadProject', () => {
       cloudHelpers,
       localCacheHelper,
       () => true,
-      makeSignedInStateQuery(makeSignedInState('bob'))
+      makeSignedInMock(makeSignedInUserQuery(makeSignedInUser('bob')))
     )
 
     const ac = new AbortController()
@@ -683,7 +681,7 @@ describe('Editing.loadProject', () => {
     await expect(preferPublishedContent({ owner: 'alice' } as ProjectData)).resolves.toBe(true)
   })
 
-  it('should start loading from cloud before signed-in state resolves', async () => {
+  it('loads the owner project using local identity before user information resolves', async () => {
     const cloudData = makeCloudSerialized('alice', 'my-project', 1)
     const cloudHelpers = makeCloudHelpers()
     vi.mocked(cloudHelpers.load).mockImplementation(async (_owner, _name, preferPublishedContent) => {
@@ -692,21 +690,24 @@ describe('Editing.loadProject', () => {
       return cloudData
     })
     const localCacheHelper = makeLocalCache()
-    const signedInStateQuery = makeSignedInStateQuery(null)
+    const userQuery = makeSignedInUserQuery(null, true)
     const project = makeProject({ owner: 'alice', name: 'my-project' })
-    const editing = new Editing(project, cloudHelpers, localCacheHelper, () => true, signedInStateQuery)
+    const editing = new Editing(
+      project,
+      cloudHelpers,
+      localCacheHelper,
+      () => true,
+      makeSignedInMock(userQuery, ref('alice'))
+    )
 
     const ac = new AbortController()
     const loadPromise = editing.loadProject('alice', 'my-project', makeUIHelpers(), makeReporter(), ac.signal)
     await flushPromises()
 
     expect(cloudHelpers.load).toHaveBeenCalledWith('alice', 'my-project', expect.any(Function), ac.signal)
-    expect(project.load).not.toHaveBeenCalled()
-
-    signedInStateQuery.data.value = makeSignedInState('alice')
-    signedInStateQuery.isLoading.value = false
-
     await loadPromise
+    expect(userQuery.data.value).toBeNull()
+    expect(project.load).toHaveBeenCalled()
 
     const preferPublishedContent = getLatestPreferPublishedContent(cloudHelpers.load)
     await expect(preferPublishedContent({ owner: 'alice' } as ProjectData)).resolves.toBe(false)
@@ -724,7 +725,7 @@ describe('Editing.loadProject', () => {
       project,
       cloudHelpers,
       localCacheHelper,
-      signedInStateQuery: makeSignedInStateQuery(makeSignedInState('alice'))
+      userQuery: makeSignedInUserQuery(makeSignedInUser('alice'))
     })
 
     const ac = new AbortController()

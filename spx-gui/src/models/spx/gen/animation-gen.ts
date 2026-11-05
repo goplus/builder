@@ -224,7 +224,7 @@ export class AnimationGen extends Disposable {
       if (image == null) throw new Error('reference image or costume expected')
       await validateAnimationReferenceImage(image)
       signal.throwIfAborted()
-      const referenceFrameUrl = await saveFile(image, signal)
+      const referenceFrameUrl = await saveFile(image, { signal })
       signal.throwIfAborted()
       await task.start({ settings: { ...this.settings, referenceFrameUrl } })
       const { videoUrl } = await task.untilCompleted(reporter)

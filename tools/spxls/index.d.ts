@@ -15,14 +15,14 @@ export interface XGoLanguageServer {
  */
 export interface XGoLanguageServerOptions {
   /**
-   * Classfile registrations in `gox.mod` syntax, including `project`, `class`, `import`, and `autolambda` directives.
-   * An omitted or empty string selects only XGo's builtin classfiles.
+   * Class framework registrations in `gox.mod` syntax, including `project`, `class`, `import`, and `autolambda` directives.
+   * An omitted or empty string selects only XGo's builtin class frameworks.
    * Framework packages and their dependencies must be available in package data.
    *
    * @example
    * "project main.actor App example.com/framework\nclass -embed *.actor Item\nimport helper example.com/helper\n"
    */
-  classfileConfig?: string
+  classFrameworkConfig?: string
 
   /**
    * Custom package data for this server, with priority over the embedded archive.
@@ -43,7 +43,7 @@ declare global {
    * @param messageReplier - Function called when the language server needs to reply to the client. The client should
    *                        handle these messages according to the LSP specification.
    *
-   * @param options - Instance configuration. Omitted fields use builtin classfiles and embedded package data.
+   * @param options - Instance configuration. Omitted fields use builtin class frameworks and embedded package data.
    */
   function NewXGoLanguageServer(
     filesProvider: () => Files,

@@ -3,10 +3,12 @@ import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { useIsRouteLoaded } from '@/utils/route-loading'
+import { useUserSessionStorage } from '@/utils/user-storage'
+import type { Course } from '@/apis/course'
+import type { CourseSeries } from '@/apis/course-series'
+import { useCopilot } from '@/components/copilot/context'
 
 import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
-
-import { useCopilot } from '@/components/copilot/context'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
@@ -17,7 +19,9 @@ const copilot = useCopilot()
 const router = useRouter()
 const isRouteLoaded = useIsRouteLoaded()
 
-const tutorial = new Tutorial(copilot, router, isRouteLoaded)
+const course = useUserSessionStorage<Course | null>('spx-gui-tutorial-course', null)
+const series = useUserSessionStorage<CourseSeries | null>('spx-gui-tutorial-series', null)
+const tutorial = new Tutorial(copilot, router, isRouteLoaded, course, series)
 
 // TODO: ensure `RegExp.escape` available & use `RegExp.escape` instead
 const tutorialCourseSuccessPattern = new RegExp(`<${tutorialCourseSuccess.tagName.replace('-', '\\-')}\\b`)
