@@ -6,10 +6,10 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { untilNotNull } from '@/utils/utils'
-import { useSeriesCourses } from '@/stores/course-series'
+import { useSeries, useSeriesCourses } from '@/stores/course-series'
 import { EditingMode } from '@/components/editor/editing'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
-import { UIButton, UILoading, useConfirmDialogWithResult } from '@/components/ui'
+import { UIButton, UIError, UILoading, useConfirmDialogWithResult } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
@@ -21,18 +21,23 @@ const dropdown = useDropdown()
 const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
-const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.series.id ?? null, {
-  courseIDs: () => tutorial.currentCourse?.series.courseIDs ?? []
+const seriesID = tutorial.currentCourse!.series.id
+const seriesQueryRet = useSeries(() => seriesID)
+const courseSeries = seriesQueryRet.data
+const coursesQueryRet = useSeriesCourses(() => courseSeries.value?.id ?? null, {
+  courseIDs: () => courseSeries.value?.courseIDs ?? []
 })
 
-const units = computed(() => (tutorial.currentCourse == null ? [] : getSeriesUnits(tutorial.currentCourse.series)))
+const units = computed(() => (courseSeries.value == null ? [] : getSeriesUnits(courseSeries.value)))
 const courseGroups = computed(() => {
-  const coursesByID = new Map(
-    (coursesQueryRet.data.value ?? []).map((course, index) => [course.id, { course, sequence: index + 1 }])
-  )
+  const coursesByID = new Map((coursesQueryRet.data.value ?? []).map((course) => [course.id, course]))
+  const sequences = new Map(courseSeries.value?.courseIDs.map((id, index) => [id, index + 1]) ?? [])
   return units.value.map((unit) => ({
     title: unit.title,
-    courses: unit.courseIDs.flatMap((id) => coursesByID.get(id) ?? [])
+    courses: unit.courseIDs.flatMap((id) => {
+      const course = coursesByID.get(id)
+      return course == null ? [] : [{ course, sequence: sequences.get(id)! }]
+    })
   }))
 })
 const courseRows = useTemplateRef<InstanceType<typeof TutorialStatusCourseRow>[]>('courseRows')
@@ -90,7 +95,7 @@ const { fn: handleReturnSeries } = useMessageHandle(
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
     await tutorial.endCurrentCourse()
-    const seriesRoute = getCourseSeriesPageRouteOfCourse(currentCourse.series, currentCourse.id)
+    const seriesRoute = getCourseSeriesPageRouteOfCourse(courseSeries.value ?? currentCourse.series, currentCourse.id)
     if (router.currentRoute.value.fullPath !== seriesRoute) await router.push(seriesRoute)
   },
   { en: 'Failed to return to series courses', zh: '返回系列课程失败' }
@@ -145,7 +150,13 @@ const { fn: handleRestartCourse } = useMessageHandle(
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
     <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1">
-      <UILoading v-if="coursesQueryRet.isLoading.value" class="h-24" />
+      <UILoading v-if="seriesQueryRet.isLoading.value || coursesQueryRet.isLoading.value" class="h-24" />
+      <UIError v-else-if="seriesQueryRet.error.value != null" :retry="seriesQueryRet.refetch">
+        {{ $t(seriesQueryRet.error.value.userMessage) }}
+      </UIError>
+      <UIError v-else-if="coursesQueryRet.error.value != null" :retry="coursesQueryRet.refetch">
+        {{ $t(coursesQueryRet.error.value.userMessage) }}
+      </UIError>
       <template v-for="(group, index) in courseGroups" v-else :key="index">
         <h3 v-if="group.title != null" class="m-0 flex-none truncate px-1 py-2 text-base font-medium text-text">
           {{ $t(getUnitHeading(index, group.title)) }}

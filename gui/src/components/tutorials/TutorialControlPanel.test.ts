@@ -10,13 +10,14 @@ import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
 const mocks = vi.hoisted(() => ({
   tutorial: {} as any,
   courses: {} as any,
+  series: {} as any,
   confirm: vi.fn(),
   setVisible: vi.fn(),
   scrollIntoView: vi.fn()
 }))
 vi.mock('vue-router', () => ({ useRouter: () => ({}) }))
 vi.mock('@/apps/xbuilder/router', () => ({ getCourseSeriesPageRoute: vi.fn() }))
-vi.mock('@/stores/course-series', () => ({ useSeriesCourses: () => mocks.courses }))
+vi.mock('@/stores/course-series', () => ({ useSeries: () => mocks.series, useSeriesCourses: () => mocks.courses }))
 vi.mock('./tutorial', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./tutorial')>()),
   useTutorial: () => mocks.tutorial
@@ -31,6 +32,7 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
 vi.mock('@/components/ui', () => ({
   UIButton: { template: '<button><slot /></button>' },
   UILoading: { template: '<div>Loading</div>' },
+  UIError: { template: '<div><slot /></div>' },
   UIImg: { template: '<img />' },
   useConfirmDialogWithResult: () => mocks.confirm
 }))
@@ -64,7 +66,7 @@ describe('tutorial course dropdown', () => {
     vi.clearAllMocks()
     vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(mocks.scrollIntoView)
     const courses = ['a', 'b', 'c'].map(makeCourse)
-    mocks.courses = { data: ref(courses), isLoading: ref(false) }
+    mocks.courses = { data: ref(courses), isLoading: ref(false), error: ref(null) }
     mocks.tutorial = reactive({
       currentCourse: {
         ...courses[1],
@@ -80,6 +82,7 @@ describe('tutorial course dropdown', () => {
       },
       startCourse: vi.fn()
     })
+    mocks.series = { data: ref({ ...mocks.tutorial.currentCourse.series }), isLoading: ref(false), error: ref(null) }
     mocks.confirm.mockResolvedValue(true)
   })
 
@@ -125,8 +128,43 @@ describe('tutorial course dropdown', () => {
     expect(mocks.tutorial.startCourse).toHaveBeenCalledWith('series', 'a')
   })
 
+  it('follows the latest units and series order without changing the active session', async () => {
+    const wrapper = mountPanel()
+    await flushPromises()
+    const session = mocks.tutorial.currentCourse
+    const originalSeries = session.series
+    // The course response still has its previous order while the series publishes a new one.
+    mocks.series.data.value = {
+      ...mocks.series.data.value,
+      courseIDs: ['c', 'a', 'b'],
+      units: [
+        { id: 'u2', title: 'Advanced revised', courseIDs: ['c', 'a'] },
+        { id: 'u1', title: 'Basics revised', courseIDs: ['b'] }
+      ]
+    }
+    await flushPromises()
+    expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual([
+      'Unit 1: Advanced revised',
+      'Unit 2: Basics revised'
+    ])
+    expect(
+      wrapper.findAllComponents(TutorialStatusCourseRow).map((row) => [row.props('course').id, row.props('sequence')])
+    ).toEqual([
+      ['c', 1],
+      ['a', 2],
+      ['b', 3]
+    ])
+    mocks.courses.data.value = ['c', 'a', 'b'].map(makeCourse)
+    await flushPromises()
+    expect(mocks.tutorial.currentCourse).toBe(session)
+    expect(mocks.tutorial.currentCourse.series).toBe(originalSeries)
+    expect(originalSeries.courseIDs).toEqual(['a', 'b', 'c'])
+    expect(wrapper.get('[aria-current="step"]').text()).toContain('Course b')
+    expect(mocks.tutorial.startCourse).not.toHaveBeenCalled()
+  })
+
   it('keeps a series without units as one course list', () => {
-    mocks.tutorial.currentCourse.series.units = []
+    mocks.series.data.value = { ...mocks.series.data.value, units: [] }
     const wrapper = mountPanel()
     expect(wrapper.findAll('ul')).toHaveLength(1)
     expect(wrapper.findAllComponents(TutorialStatusCourseRow).map((row) => row.props('course').id)).toEqual([
