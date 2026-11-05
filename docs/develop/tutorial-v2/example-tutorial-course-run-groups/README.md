@@ -24,4 +24,4 @@ Every callback is a plain registration; the group only enters where the work tha
 
 ## Trying it
 
-The Tutorial courses debug page runs this program against a mock host as the case "Run groups example course"; `tools/xgoexec-bundle`'s build test compiles it through the real classfile pipeline. The mock host answers at once, so it cannot show a cancellation, which needs a judgement to be slow; `tools/tutorial`'s unit tests cover that.
+`TestExampleCoursesBuild` in `tools/xgoexec-bundle` compiles this program through the real classfile pipeline. The unit tests in `tools/tutorial` cover cancellation while a judgement is still pending.
