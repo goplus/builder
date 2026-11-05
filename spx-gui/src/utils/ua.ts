@@ -16,3 +16,7 @@ export interface Browser {
 export function getBrowser(): Browser {
   return parser.getBrowser()
 }
+
+export function isWindows(): boolean {
+  return parser.getOSName() === 'Windows'
+}

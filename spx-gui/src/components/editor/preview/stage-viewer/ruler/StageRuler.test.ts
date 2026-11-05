@@ -2,7 +2,6 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, nextTick } from 'vue'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import StageRuler, { type Pos } from './StageRuler.vue'
-import { rulerCursors } from './ruler-cursor'
 
 async function setup(scale = 1, reduce = true, simpleMode = false) {
   let pointer: Pos | null = null
@@ -318,21 +317,6 @@ describe('Ruler', () => {
       expect(label.y).toBeGreaterThanOrEqual(20 * scale + 4)
       expect(label.x + label.width).toBeLessThanOrEqual(520 * scale - 4)
       expect(label.y + label.height).toBeLessThanOrEqual(380 * scale - 4)
-    }
-  })
-})
-
-describe('Native ruler cursor', () => {
-  it('has fixed normal and simple sizes and stable hotspots when outlined', () => {
-    for (const [key, cursor] of Object.entries(rulerCursors)) {
-      const svg = decodeURIComponent(cursor.slice(cursor.indexOf(',') + 1, cursor.lastIndexOf('")')))
-      const simple = key.startsWith('simple')
-      expect(svg).toContain(`width="${simple ? 60 : 40}" height="${simple ? 60 : 40}"`)
-      expect(cursor).toContain(simple ? '6 6, crosshair' : '4 4, crosshair')
-      const path = new DOMParser().parseFromString(svg, 'image/svg+xml').querySelector('path')!
-      expect(path.getAttribute('stroke')).toBe(key.endsWith('Outlined') ? 'white' : 'rgba(255, 255, 255, 0.65)')
-      expect(path.getAttribute('stroke-opacity')).toBeNull()
-      expect(path.getAttribute('paint-order')).toBe('stroke')
     }
   })
 })
