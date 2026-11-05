@@ -54,6 +54,8 @@ the course's mistake; see goplus/builder#3419.
   spells out where its file sits.
 - **Keep messages short.** Every `showPrelude`, `showMessage` and `showVideo` blocks the learner until they
   dismiss it, so each one has to earn the interruption.
+- **Prelude actions.** Intermediate pages use Next; the final page defaults to Start. An explicit
+  `buttonText` overrides the final-page label. Messages and videos still default to Continue.
 - **Say it in the learner's language.** The course's messages are written by the author, so they carry whatever
   language the course is written in; keep one language throughout a course.
 - **One callback, one job.** Opening steps that must happen in order belong in a single `onStart`; independent

@@ -345,9 +345,11 @@ Presentations never advance on their own.
 #### Presentation pages and button text
 
 `showPrelude` accepts one string or a non-empty list of strings. A list is shown
-as pages inside one dialog. Intermediate pages use Next. All three presentation
-calls accept an optional final button text; omitted text defaults to Continue.
-The text is displayed in the course's language, without translation. Choose Next
+as pages inside one dialog. Intermediate pages use Next; the final page defaults
+to Start. All three presentation calls accept optional button text, which takes
+priority over the default; for a prelude, it applies only to the final page.
+`showMessage` and `showVideo` still default to Continue. Custom text is displayed
+in the course's language, without translation. Choose Next
 while more introduction remains and Start when independent work begins. Start
 only dismisses the presentation and resumes the course; it does not run the project.
 These blocking dialogs have no close button and cannot be dismissed by Escape or
