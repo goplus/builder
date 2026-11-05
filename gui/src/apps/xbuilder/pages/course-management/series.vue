@@ -73,7 +73,7 @@ const m = useMessage()
 const confirm = useConfirmDialog()
 const router = useRouter()
 const signedIn = useSignedIn()
-const saveCourseSeries = useUpdateCourseSeries()
+const updateCourseSeries = useUpdateCourseSeries()
 const deleteCourse = useDeleteCourse()
 const deleteCourseSeries = useDeleteCourseSeries()
 const fileActions = useCourseSeriesFileActions()
@@ -92,26 +92,6 @@ const queryRet = useQuery(
   { clearResultOnFetch: true }
 )
 const courseSeries = computed(() => queryRet.data.value?.series ?? null)
-
-function applySeries(series: CourseSeries, course?: Course) {
-  const current = queryRet.data.value
-  if (current == null || current.series.id !== series.id) return
-  const byID = new Map(current.courses.map((course) => [course.id, course]))
-  if (course != null) byID.set(course.id, course)
-  queryRet.data.value = { series, courses: series.courseIDs.flatMap((id) => byID.get(id) ?? []) }
-}
-
-function applyCourse(course: Course, series: CourseSeries | null = null) {
-  const current = courseSeries.value
-  if (current != null) applySeries(series ?? current, course)
-}
-
-async function updateCourseSeries(...args: Parameters<typeof saveCourseSeries>) {
-  const series = await saveCourseSeries(...args)
-  applySeries(series)
-  return series
-}
-
 // Only the author's own series are managed here; another author's could be read but not changed.
 const isOwnSeries = computed(() => courseSeries.value != null && courseSeries.value.owner === signedIn.username)
 
@@ -144,7 +124,10 @@ const sections = computed(() => {
 // A series of a few courses is seen at a glance, without an index.
 const indexMinCourseCount = 20
 
-const refetch = queryRet.refetch
+async function refetch() {
+  await seriesWrites.settled()
+  if (!pageSignal.aborted) queryRet.refetch()
+}
 
 const listRef = ref<HTMLElement>()
 
@@ -214,7 +197,13 @@ const unitListRef = ref<HTMLElement>()
 
 async function writeUnits(series: CourseSeries, edited: CourseSeriesUnit[]) {
   try {
-    await editUnits(edited, async (units) => (await updateCourseSeries(series.id, toUnitsParams(units))).units)
+    await editUnits(edited, async (units) => {
+      const saved = await updateCourseSeries(series.id, toUnitsParams(units))
+      // Removing the last unit exposes the flat list in the order the author just saved.
+      const byID = new Map(courses.value.map((course) => [course.id, course]))
+      courses.value = saved.courseIDs.flatMap((id) => byID.get(id) ?? [])
+      return saved.units
+    })
   } catch (e) {
     refetch()
     throw e
@@ -370,10 +359,8 @@ function openInCourseEditor(series: CourseSeries, course: Course) {
 const handleCreateCourse = useMessageHandle(async (series: CourseSeries, unitID: string | null = null) => {
   // The course is added to the series as the server has it then, which edits still being written would overwrite.
   if (series.kind === 'guided') {
-    const result = await openAfterEdits(() =>
-      invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id, unitID })
-    )
-    applyCourse(result.course, result.courseSeries)
+    await openAfterEdits(() => invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id, unitID }))
+    refetch()
     return
   }
   const { course } = await openAfterEdits(() =>
@@ -384,13 +371,13 @@ const handleCreateCourse = useMessageHandle(async (series: CourseSeries, unitID:
 
 const handleOpenCourse = useMessageHandle(async (series: CourseSeries, course: Course) => {
   if (isGuidedCourse(course)) {
-    const result = await keepPageFor(invokeGuidedCourseDrawer({ course, courseSeriesID: series.id }))
-    applyCourse(result.course)
+    await keepPageFor(invokeGuidedCourseDrawer({ course, courseSeriesID: series.id }))
+    refetch()
     return
   }
-  const result = await keepPageFor(invokePlaygroundCourseDrawer({ course, courseSeriesID: series.id }))
-  applyCourse(result.course)
-  if (result.openEditor) await openInCourseEditor(series, course)
+  const { openEditor } = await keepPageFor(invokePlaygroundCourseDrawer({ course, courseSeriesID: series.id }))
+  if (openEditor) await openInCourseEditor(series, course)
+  else refetch()
 }).fn
 
 const handleRemoveCourse = useMessageHandle(
@@ -406,31 +393,22 @@ const handleRemoveCourse = useMessageHandle(
         confirmText: i18n.t({ en: 'Delete', zh: '删除' })
       })
     )
-    await seriesWrites.run(async () => {
-      await m.withLoading(deleteCourse(course.id), i18n.t({ en: 'Deleting course', zh: '删除课程中' }))
-      const series = courseSeries.value
-      if (series == null) return
-      applySeries({
-        ...series,
-        courseIDs: series.courseIDs.filter((id) => id !== course.id),
-        units: series.units.map((unit) => ({ ...unit, courseIDs: unit.courseIDs.filter((id) => id !== course.id) }))
-      })
-    })
+    await m.withLoading(deleteCourse(course.id), i18n.t({ en: 'Deleting course', zh: '删除课程中' }))
+    refetch()
   },
   { en: 'Failed to delete course', zh: '删除课程失败' }
 ).fn
 
 const handleEditSeries = useMessageHandle(async (series: CourseSeries) => {
-  const updated = await openAfterEdits(() =>
-    invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order })
-  )
-  applySeries(updated)
+  await openAfterEdits(() => invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order }))
+  refetch()
 }).fn
 
-const handleExport = useMessageHandle(() => openAfterEdits(() => fileActions.exportSeries(courseSeries.value!)), {
-  en: 'Failed to export course series file',
-  zh: '导出课程系列文件失败'
-}).fn
+const handleExport = useMessageHandle(
+  // The series is read again once the edits are written, as the one shown may be from before them.
+  (series: CourseSeries) => openAfterEdits(async () => fileActions.exportSeries(await getCourseSeries(series.id))),
+  { en: 'Failed to export course series file', zh: '导出课程系列文件失败' }
+).fn
 
 const handleImport = useMessageHandle(
   async (series: CourseSeries) => {
@@ -520,7 +498,7 @@ const handleRemoveSeries = useMessageHandle(
             <UIButton
               v-radar="{ name: 'export-button', desc: 'Click to export the series to a course series file' }"
               type="neutral"
-              @click="handleExport()"
+              @click="handleExport(courseSeries)"
             >
               {{ $t({ en: 'Export to file', zh: '导出到文件' }) }}
             </UIButton>

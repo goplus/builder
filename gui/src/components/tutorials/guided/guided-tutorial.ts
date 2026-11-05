@@ -27,8 +27,9 @@ export type GuidedTutorialTopic = Topic & {
   isTutorialTopic: true
 }
 
-export type CurrentCourse = GuidedCourse & {
-  series: CourseSeries
+export type CurrentCourse = {
+  courseID: string
+  seriesID: string
 }
 
 export function isGuidedTutorialTopic(topic: Topic): topic is GuidedTutorialTopic {
@@ -40,15 +41,15 @@ export class GuidedTutorial {
     private copilot: Copilot,
     private router: Router,
     private routeReadiness: ReadinessScope,
-    private course: WritableComputedRef<GuidedCourse | null>,
-    private series: WritableComputedRef<CourseSeries | null>
+    private course: WritableComputedRef<Pick<GuidedCourse, 'id'> | null>,
+    private series: WritableComputedRef<Pick<CourseSeries, 'id'> | null>
   ) {}
 
   get currentCourse(): CurrentCourse | null {
     const course = this.course.value
     const series = this.series.value
     if (course == null || series == null) return null
-    return { ...course, series }
+    return { courseID: course.id, seriesID: series.id }
   }
 
   private abandonPredictionCountRef = ref(0)
@@ -62,8 +63,8 @@ export class GuidedTutorial {
   async enterCourse(course: GuidedCourse, series: CourseSeries): Promise<void> {
     try {
       this.copilot.endCurrentSession()
-      this.course.value = course
-      this.series.value = series
+      this.course.value = { id: course.id }
+      this.series.value = { id: series.id }
       this.abandonPredictionCountRef.value = 0
 
       const { entrypoint } = course.content

@@ -363,6 +363,7 @@ export function setupPageTests() {
     }
     vi.mocked(courseSeriesApis.listCourseSeries).mockResolvedValue({ total: 1, data: [series] })
     vi.mocked(courseSeriesApis.getCourseSeries).mockResolvedValue(series)
+    vi.mocked(courseApis.listAllSeriesCourses).mockImplementation(async () => (await courseApis.listCourses()).data)
     vi.mocked(courseApis.listCourses).mockResolvedValue({
       total: 1,
       data: [

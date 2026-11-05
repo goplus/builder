@@ -35,7 +35,7 @@ onMounted(async () => {
   const currentCourse = tutorial.currentCourse
   if (currentCourse == null) throw new Error('No course in progress')
   await timeout(500)
-  open({ course: currentCourse, series: currentCourse.series })
+  open({ courseID: currentCourse.courseID, seriesID: currentCourse.seriesID })
   copilot.close()
   tutorial.endCurrentCourse()
 })
