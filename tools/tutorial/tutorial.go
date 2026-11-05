@@ -169,8 +169,7 @@ func (p *Course) ShowMessage__1(message string, buttonText string) {
 
 // ShowVideo__0 presents a Course-local video and waits for learner confirmation.
 // videoName addresses assets/videos/<name>/index.json, not a file path.
-// The host supplies Next or Start in a recognized opening-guide sequence,
-// and Continue outside it.
+// The button defaults to Continue.
 func (p *Course) ShowVideo__0(videoName string) {
 	p.courseProgram.mustCallCapability("course_showVideo", struct {
 		VideoName  string  `json:"videoName"`

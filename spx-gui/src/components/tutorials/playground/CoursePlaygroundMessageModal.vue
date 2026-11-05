@@ -60,7 +60,7 @@ async function advance() {
         {{
           pageIndex < contents.length - 1
             ? $t({ en: 'Next', zh: '下一步' })
-            : buttonText ?? $t(kind === 'prelude' ? { en: 'Start', zh: '开始' } : { en: 'Continue', zh: '继续' })
+            : buttonText ?? $t({ en: 'Continue', zh: '继续' })
         }}
       </UIButton>
     </div>
