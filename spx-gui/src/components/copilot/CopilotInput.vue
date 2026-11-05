@@ -10,7 +10,12 @@ const props = defineProps<{
   copilot: Copilot
 }>()
 
-const inputStr = ref('')
+const inputStr = computed({
+  get: () => props.copilot.panel.draft,
+  set: (value: string) => {
+    props.copilot.panel.draft = value
+  }
+})
 const textareaRef = ref<HTMLTextAreaElement>()
 const i18n = useI18n()
 const message = useMessage()
@@ -66,7 +71,7 @@ defineExpose({ focus })
           v-model="inputStr"
           class="absolute h-full w-full resize-none border-none bg-transparent p-0 text-title outline-none placeholder:text-hint-2"
           :rows="1"
-          :disabled="loading"
+          :disabled="loading || copilot.panel.isSuspended"
           :placeholder="$t(placeholder)"
           @keypress.enter.prevent="handleSubmit"
         ></textarea>

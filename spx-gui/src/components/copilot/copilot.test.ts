@@ -15,6 +15,7 @@ import type { Message } from '@/apis/copilot'
 import * as apis from '@/apis/copilot'
 import { timeout } from '@/utils/utils'
 import { InMemorySkillRegistry } from './skills/registry'
+import { copilotPanelStorageKey } from './panel-state'
 
 // Test constants
 const THROTTLE_WAIT_TIME = 400
@@ -450,6 +451,44 @@ describe('Copilot', () => {
     }
     expect(newCopilot.currentSession?.rounds[0].resultMessages.length).toBe(1)
     expect(newCopilot.currentSession?.rounds[0].state).toBe(RoundState.Completed)
+  })
+
+  it('expires an idle restored session before the homepage introduction opens the panel', () => {
+    const previousPanelState = sessionStorage.getItem(copilotPanelStorageKey)
+    sessionStorage.removeItem(copilotPanelStorageKey)
+    const storage = new MockStorage()
+    storage.set({
+      topic: createBasicTopic('Earlier conversation'),
+      rounds: [
+        {
+          userMessage: { type: 'text', role: 'user', content: 'An old question' },
+          resultMessages: [{ role: 'copilot', content: 'An old answer' }],
+          inProgressCopilotMessageContent: null,
+          error: null,
+          state: RoundState.Completed,
+          updatedAt: Date.now() - 3 * 60 * 60 * 1000
+        }
+      ]
+    })
+    const copilot = new Copilot(createTestSkillRegistry(), new MockMessageEventGenerator())
+    try {
+      copilot.syncSessionWith(storage)
+      expect(copilot.currentSession?.rounds.length).toBe(1)
+      expect(copilot.active).toBe(false)
+
+      copilot.setPanelContext(null, true)
+      expect(copilot.active).toBe(true)
+      expect(copilot.currentSession).toBe(null)
+
+      copilot.addUserTextMessage('A new question')
+      expect(copilot.currentSession?.rounds.length).toBe(1)
+      expect(copilot.currentSession?.currentRound?.userMessage).toMatchObject({ content: 'A new question' })
+    } finally {
+      copilot.endCurrentSession()
+      copilot.dispose()
+      if (previousPanelState == null) sessionStorage.removeItem(copilotPanelStorageKey)
+      else sessionStorage.setItem(copilotPanelStorageKey, previousPanelState)
+    }
   })
 
   it('should handle user events correctly', async () => {
