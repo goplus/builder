@@ -128,8 +128,8 @@ function handleCancel() {
           </template>
           {{
             $t({
-              en: 'Includes the current page, project, code errors, and runtime output to help us find the problem faster.',
-              zh: '附带当前页面、项目、代码报错和运行输出，帮助我们更快定位问题。'
+              en: 'Includes the current page, a snapshot of the project, code errors, and runtime output to help us find the problem faster.',
+              zh: '附带当前页面、项目快照、代码报错和运行输出，帮助我们更快定位问题。'
             })
           }}
         </UITooltip>

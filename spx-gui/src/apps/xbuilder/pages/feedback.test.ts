@@ -4,6 +4,9 @@ import { setupPageTests, mountPages, makeFeedback, signIn } from '@/apps/xbuilde
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { feedbackDescriptionMaxLength, feedbackTitleMaxLength } from '@/apis/feedback'
 import * as feedbackApis from '@/apis/feedback'
+import { saveProjectSnapshot } from '@/components/feedback/project-snapshot'
+
+vi.mock('@/components/feedback/project-snapshot', { spy: true })
 
 async function fillFeedbackForm(wrapper: VueWrapper) {
   await vi.waitFor(() => expect(wrapper.find('[aria-label="Profile menu"]').exists()).toBe(true))
@@ -65,9 +68,10 @@ describe('feedback', () => {
     expect(params.context).toBeUndefined()
   })
 
-  it('includes the editing project in the context', async () => {
+  it('includes the editing project and its snapshot in the context', async () => {
     await signIn()
     mockCreateFeedback()
+    vi.mocked(saveProjectSnapshot).mockResolvedValue('kodo://test/files/project-snapshot.json')
     const { wrapper } = await mountPages('/editor/alice/First%20flight')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Stage overview"]').exists()).toBe(true), { timeout: 4000 })
 
@@ -75,7 +79,8 @@ describe('feedback', () => {
 
     expect(params.context).toMatchObject({
       page: { path: expect.stringMatching(/^\/editor\/alice\/First%20flight/) },
-      project: { identifier: 'alice/First flight', displayName: 'First flight' }
+      project: { identifier: 'alice/First flight', displayName: 'First flight' },
+      projectSnapshotUrl: 'kodo://test/files/project-snapshot.json'
     })
   })
 
@@ -85,7 +90,7 @@ describe('feedback', () => {
 
     const modal = await fillFeedbackForm(wrapper)
     const checkbox = modal.get<HTMLInputElement>('input[type="checkbox"]').element
-    const explanation = 'Includes the current page, project, code errors, and runtime output'
+    const explanation = 'Includes the current page, a snapshot of the project, code errors, and runtime output'
     checkbox.focus()
     await vi.waitFor(() => expect(document.body.textContent).toContain(explanation))
     checkbox.blur()

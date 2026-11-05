@@ -6,7 +6,7 @@ import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { createFileURLSignatures, createUploadSession, getFileObject } from '@/apis/file'
 import { capture } from '@/utils/exception'
 import { cloudHelpers, createFileWithUniversalUrl, createFileWithWebUrl, saveFile, saveFiles } from './cloud'
-import { File, fromBlob } from './file'
+import { File, fromBlob, fromConfig } from './file'
 
 vi.mock('qiniu-js', () => ({
   createDirectUploadTask: vi.fn()
@@ -320,6 +320,20 @@ describe('saveFile', () => {
 
     await expect(saveFile(file)).resolves.toBe('kodo://bucket/files/uploaded.png')
     expect(getFileObject).not.toHaveBeenCalled()
+    expect(createDirectUploadTask).toHaveBeenCalledOnce()
+  })
+
+  it('uploads a small text file to Kodo when inlining is disabled, even if it was inlined before', async () => {
+    vi.mocked(createDirectUploadTask).mockReturnValue({
+      start: vi.fn(),
+      cancel: vi.fn(),
+      onError: vi.fn(),
+      onComplete: vi.fn((callback) => callback('{"key":"files/config.json","hash":"hash"}'))
+    } as unknown as ReturnType<typeof createDirectUploadTask>)
+    const file = fromConfig('config.json', { name: 'Rocket' })
+
+    await expect(saveFile(file)).resolves.toMatch(/^data:/)
+    await expect(saveFile(file, { inlineable: false })).resolves.toBe('kodo://bucket/files/config.json')
     expect(createDirectUploadTask).toHaveBeenCalledOnce()
   })
 })
