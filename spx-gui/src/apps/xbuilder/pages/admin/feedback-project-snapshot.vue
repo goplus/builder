@@ -11,13 +11,14 @@ const noLocalCache: ILocalCache = {
 
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { onBeforeRouteLeave } from 'vue-router'
 
 import { DefaultException } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { composeQuery, useQuery } from '@/utils/query'
-import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import { useRegisterLoading } from '@/utils/readiness'
+import { useScopedRouterWithPathParam } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import * as feedbackAdminApis from '@/apis/admin/feedback'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -33,9 +34,9 @@ import { loadProjectSnapshot, projectSnapshotUrlSchema } from '@/components/feed
 
 const props = defineProps<{
   feedbackID: string
+  inEditorPath: string | string[]
 }>()
 
-const router = useRouter()
 const signedIn = useSignedIn()
 const i18n = useI18n()
 const { t } = i18n
@@ -43,6 +44,8 @@ const { isOnline } = useNetwork()
 const confirm = useConfirmDialogWithResult()
 
 usePageTitle({ en: 'Project snapshot', zh: '项目快照' })
+
+const inEditorRouter = useScopedRouterWithPathParam('inEditorPath', () => props.inEditorPath)
 
 const stateQueryRet = useQuery(
   async (ctx) => {
@@ -69,7 +72,7 @@ const stateQueryRet = useQuery(
     const state = new EditorState(i18n, project, isOnline, signedIn, cloudHelpers, noLocalCache)
     state.disposeOnSignal(ctx.signal)
     state.editing.startEditing()
-    state.syncWithRouter(router)
+    state.syncWithRouter(inEditorRouter)
     ctx.reporter.report(1)
     return state
   },
@@ -97,7 +100,7 @@ const allQueryRet = useQuery(
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
 
-useRegisterUpdateRouteLoaded(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
+useRegisterLoading(() => allQueryRet.isLoading.value || allQueryRet.error.value != null)
 
 onBeforeRouteLeave(() => {
   if (state.value?.editing.dirty !== true) return true
