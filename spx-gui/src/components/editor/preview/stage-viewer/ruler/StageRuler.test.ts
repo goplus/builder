@@ -329,7 +329,10 @@ describe('Native ruler cursor', () => {
       const simple = key.startsWith('simple')
       expect(svg).toContain(`width="${simple ? 60 : 40}" height="${simple ? 60 : 40}"`)
       expect(cursor).toContain(simple ? '6 6, crosshair' : '4 4, crosshair')
-      if (key.endsWith('Outlined')) expect(svg).toContain('paint-order="stroke"')
+      const path = new DOMParser().parseFromString(svg, 'image/svg+xml').querySelector('path')!
+      expect(path.getAttribute('stroke')).toBe(key.endsWith('Outlined') ? 'white' : 'rgba(255, 255, 255, 0.65)')
+      expect(path.getAttribute('stroke-opacity')).toBeNull()
+      expect(path.getAttribute('paint-order')).toBe('stroke')
     }
   })
 })
