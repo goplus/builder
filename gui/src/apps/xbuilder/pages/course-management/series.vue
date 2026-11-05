@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuery } from '@/utils/query'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useDragSortable } from '@/utils/drag-and-drop'
-import { isGuidedCourse, type Course } from '@/apis/course'
+import { isGuidedCourse, listAllSeriesCourses, type Course } from '@/apis/course'
 import { getCourseSeries, type CourseSeries, type CourseSeriesUnit } from '@/apis/course-series'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useDeleteCourse } from '@/stores/course'
-import { useDeleteCourseSeries, useSeries, useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
+import { useDeleteCourseSeries, useUpdateCourseSeries } from '@/stores/course-series'
 import { useSignedIn } from '@/stores/user'
 import {
   UIButton,
@@ -53,7 +54,6 @@ import { deleteCourseSeriesWithCourses } from '@/components/course/management/se
 import ListControls from '@/components/course/management/ListControls.vue'
 import ListSections from '@/components/course/management/ListSections.vue'
 import {
-  hasSameIDs,
   matchesQuery,
   placeReordered,
   sectionByTitle,
@@ -73,7 +73,7 @@ const m = useMessage()
 const confirm = useConfirmDialog()
 const router = useRouter()
 const signedIn = useSignedIn()
-const updateCourseSeries = useUpdateCourseSeries()
+const saveCourseSeries = useUpdateCourseSeries()
 const deleteCourse = useDeleteCourse()
 const deleteCourseSeries = useDeleteCourseSeries()
 const fileActions = useCourseSeriesFileActions()
@@ -82,10 +82,36 @@ const invokeGuidedCourseDrawer = useModal(GuidedCourseDrawer)
 const invokePlaygroundCourseDrawer = useModal(PlaygroundCourseDrawer)
 const invokeUnitTitleModal = useModal(UnitTitleModal)
 
-const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
-const coursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
+const queryRet = useQuery(
+  async ({ signal }) => {
+    const id = props.courseSeriesIdInput
+    const [series, courses] = await Promise.all([getCourseSeries(id, signal), listAllSeriesCourses(id, signal)])
+    return { series, courses }
+  },
+  { en: 'Failed to load course series', zh: '加载课程系列失败' },
+  { clearResultOnFetch: true }
+)
+const courseSeries = computed(() => queryRet.data.value?.series ?? null)
 
-const courseSeries = computed(() => seriesQueryRet.data.value)
+function applySeries(series: CourseSeries, course?: Course) {
+  const current = queryRet.data.value
+  if (current == null || current.series.id !== series.id) return
+  const byID = new Map(current.courses.map((course) => [course.id, course]))
+  if (course != null) byID.set(course.id, course)
+  queryRet.data.value = { series, courses: series.courseIDs.flatMap((id) => byID.get(id) ?? []) }
+}
+
+function applyCourse(course: Course, series: CourseSeries | null = null) {
+  const current = courseSeries.value
+  if (current != null) applySeries(series ?? current, course)
+}
+
+async function updateCourseSeries(...args: Parameters<typeof saveCourseSeries>) {
+  const series = await saveCourseSeries(...args)
+  applySeries(series)
+  return series
+}
+
 // Only the author's own series are managed here; another author's could be read but not changed.
 const isOwnSeries = computed(() => courseSeries.value != null && courseSeries.value.owner === signedIn.username)
 
@@ -106,7 +132,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 const seriesWrites = new WriteQueue()
 
 /** The courses as shown, which a drag reorders before the server has the new order. */
-const { value: courses, edit: editCourses } = useLocalEdits(() => coursesQueryRet.data.value ?? [], seriesWrites)
+const { value: courses, edit: editCourses } = useLocalEdits(() => queryRet.data.value?.courses ?? [], seriesWrites)
 
 const { query, sortBy } = useListViewQuery()
 const shownCourses = computed(() => courses.value.filter((course) => matchesQuery([course.title], query.value)))
@@ -118,10 +144,7 @@ const sections = computed(() => {
 // A series of a few courses is seen at a glance, without an index.
 const indexMinCourseCount = 20
 
-function refetch() {
-  seriesQueryRet.refetch()
-  coursesQueryRet.refetch()
-}
+const refetch = queryRet.refetch
 
 const listRef = ref<HTMLElement>()
 
@@ -129,18 +152,6 @@ const handleSorted = useMessageHandle(
   async (oldIndex: number, newIndex: number) => {
     const series = courseSeries.value
     if (series == null) return
-    // A course missing from the list, such as one added since it was loaded, would be dropped by the reorder.
-    if (
-      !hasSameIDs(
-        courses.value.map((course) => course.id),
-        series.courseIDs
-      )
-    ) {
-      throw new DefaultException({
-        en: 'The courses of this series are not all shown, so they cannot be reordered here',
-        zh: '这个系列的课程没有全部显示，无法在这里调整顺序'
-      })
-    }
     const reorderedShown = [...shownCourses.value]
     const [moved] = reorderedShown.splice(oldIndex, 1)
     reorderedShown.splice(newIndex, 0, moved)
@@ -164,7 +175,7 @@ useDragSortable(shownCourses, listRef, {
 
 /** The units as shown, which an edit changes before the server has them. */
 const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnit[]>(
-  () => seriesQueryRet.data.value?.units ?? [],
+  () => courseSeries.value?.units ?? [],
   seriesWrites
 )
 
@@ -251,12 +262,6 @@ const handleAddUnit = useMessageHandle(
     const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' })
     // The courses as shown, in an order a reorder still being written may have given them, go into the first unit.
     const courseIDs = courses.value.map((course) => course.id)
-    if (!isDivided.value && !hasSameIDs(courseIDs, courseSeries.value?.courseIDs ?? [])) {
-      throw new DefaultException({
-        en: 'The courses of this series are not all shown, so they cannot be put into a unit here',
-        zh: '这个系列的课程没有全部显示，无法在这里放进单元'
-      })
-    }
     await writeUnits(series, addUnit(units.value, title, courseIDs))
   },
   { en: 'Failed to add unit', zh: '新建单元失败' }
@@ -365,8 +370,10 @@ function openInCourseEditor(series: CourseSeries, course: Course) {
 const handleCreateCourse = useMessageHandle(async (series: CourseSeries, unitID: string | null = null) => {
   // The course is added to the series as the server has it then, which edits still being written would overwrite.
   if (series.kind === 'guided') {
-    await openAfterEdits(() => invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id, unitID }))
-    refetch()
+    const result = await openAfterEdits(() =>
+      invokeGuidedCourseDrawer({ course: null, courseSeriesID: series.id, unitID })
+    )
+    applyCourse(result.course, result.courseSeries)
     return
   }
   const { course } = await openAfterEdits(() =>
@@ -377,11 +384,13 @@ const handleCreateCourse = useMessageHandle(async (series: CourseSeries, unitID:
 
 const handleOpenCourse = useMessageHandle(async (series: CourseSeries, course: Course) => {
   if (isGuidedCourse(course)) {
-    await keepPageFor(invokeGuidedCourseDrawer({ course, courseSeriesID: series.id }))
+    const result = await keepPageFor(invokeGuidedCourseDrawer({ course, courseSeriesID: series.id }))
+    applyCourse(result.course)
     return
   }
-  const { openEditor } = await keepPageFor(invokePlaygroundCourseDrawer({ course, courseSeriesID: series.id }))
-  if (openEditor) await openInCourseEditor(series, course)
+  const result = await keepPageFor(invokePlaygroundCourseDrawer({ course, courseSeriesID: series.id }))
+  applyCourse(result.course)
+  if (result.openEditor) await openInCourseEditor(series, course)
 }).fn
 
 const handleRemoveCourse = useMessageHandle(
@@ -397,21 +406,31 @@ const handleRemoveCourse = useMessageHandle(
         confirmText: i18n.t({ en: 'Delete', zh: '删除' })
       })
     )
-    await m.withLoading(deleteCourse(course.id), i18n.t({ en: 'Deleting course', zh: '删除课程中' }))
-    refetch()
+    await seriesWrites.run(async () => {
+      await m.withLoading(deleteCourse(course.id), i18n.t({ en: 'Deleting course', zh: '删除课程中' }))
+      const series = courseSeries.value
+      if (series == null) return
+      applySeries({
+        ...series,
+        courseIDs: series.courseIDs.filter((id) => id !== course.id),
+        units: series.units.map((unit) => ({ ...unit, courseIDs: unit.courseIDs.filter((id) => id !== course.id) }))
+      })
+    })
   },
   { en: 'Failed to delete course', zh: '删除课程失败' }
 ).fn
 
 const handleEditSeries = useMessageHandle(async (series: CourseSeries) => {
-  await keepPageFor(invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order }))
+  const updated = await openAfterEdits(() =>
+    invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order })
+  )
+  applySeries(updated)
 }).fn
 
-const handleExport = useMessageHandle(
-  // The series is read again once the edits are written, as the one shown may be from before them.
-  (series: CourseSeries) => openAfterEdits(async () => fileActions.exportSeries(await getCourseSeries(series.id))),
-  { en: 'Failed to export course series file', zh: '导出课程系列文件失败' }
-).fn
+const handleExport = useMessageHandle(() => openAfterEdits(() => fileActions.exportSeries(courseSeries.value!)), {
+  en: 'Failed to export course series file',
+  zh: '导出课程系列文件失败'
+}).fn
 
 const handleImport = useMessageHandle(
   async (series: CourseSeries) => {
@@ -472,9 +491,9 @@ const handleRemoveSeries = useMessageHandle(
       </template>
     </header>
 
-    <UILoading v-if="seriesQueryRet.isLoading.value" class="h-80" :mask="false" />
-    <UIError v-else-if="seriesQueryRet.error.value != null" class="h-80" :retry="seriesQueryRet.refetch">
-      {{ $t(seriesQueryRet.error.value.userMessage) }}
+    <UILoading v-if="queryRet.isLoading.value" class="h-80" :mask="false" />
+    <UIError v-else-if="queryRet.error.value != null" class="h-80" :retry="queryRet.refetch">
+      {{ $t(queryRet.error.value.userMessage) }}
     </UIError>
     <UIError v-else-if="courseSeries != null && !isOwnSeries" class="h-80">
       {{ $t({ en: 'This course series is not yours', zh: '这个课程系列不属于你' }) }}
@@ -501,7 +520,7 @@ const handleRemoveSeries = useMessageHandle(
             <UIButton
               v-radar="{ name: 'export-button', desc: 'Click to export the series to a course series file' }"
               type="neutral"
-              @click="handleExport(courseSeries)"
+              @click="handleExport()"
             >
               {{ $t({ en: 'Export to file', zh: '导出到文件' }) }}
             </UIButton>
@@ -557,11 +576,7 @@ const handleRemoveSeries = useMessageHandle(
           </UIButton>
         </header>
 
-        <UILoading v-if="coursesQueryRet.isLoading.value && courses.length === 0" class="h-60" :mask="false" />
-        <UIError v-else-if="coursesQueryRet.error.value != null" class="h-60" :retry="coursesQueryRet.refetch">
-          {{ $t(coursesQueryRet.error.value.userMessage) }}
-        </UIError>
-        <UIEmpty v-else-if="courses.length === 0 && !isDivided" size="large">
+        <UIEmpty v-if="courses.length === 0 && !isDivided" size="large">
           {{ $t({ en: 'No courses in this series yet', zh: '这个系列还没有课程' }) }}
         </UIEmpty>
         <UIEmpty v-else-if="shownCourses.length === 0 && (!isDivided || query !== '')" size="large">

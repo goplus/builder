@@ -6,6 +6,7 @@ import { computed, onUnmounted } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { coursePromptMaxLength, courseTitleMaxLength, type Course, type GuidedCourse } from '@/apis/course'
+import type { CourseSeries } from '@/apis/course-series'
 import { useUpdateCourse } from '@/stores/course'
 import { useUpdateCourseSeries } from '@/stores/course-series'
 import { UIButton, UIDrawer, UIForm, UIFormItem, UITextInput, useForm, useMessage } from '@/components/ui'
@@ -25,7 +26,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [course: Course]
+  resolved: [result: { course: Course; courseSeries: CourseSeries | null }]
 }>()
 
 const i18n = useI18n()
@@ -100,15 +101,15 @@ const handleSubmit = useMessageHandle(
         i18n.t({ en: 'Updating course', zh: '更新课程中' })
       )
       m.success(i18n.t({ en: 'Course updated', zh: '课程已更新' }))
-      emit('resolved', updated)
+      emit('resolved', { course: updated, courseSeries: null })
       return
     }
-    const { course } = await m.withLoading(
+    const { course, courseSeries } = await m.withLoading(
       creation.run(async () => ({ kind: 'guided', title, thumbnail, content })),
       i18n.t({ en: 'Creating course', zh: '创建课程中' })
     )
     m.success(i18n.t({ en: 'Course created', zh: '课程已创建' }))
-    emit('resolved', course)
+    emit('resolved', { course, courseSeries })
   },
   {
     en: isEditMode.value ? 'Failed to update course' : 'Failed to create course',
