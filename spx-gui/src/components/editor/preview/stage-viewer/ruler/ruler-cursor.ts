@@ -4,6 +4,8 @@ function cursorUrl(size: number, outlined: boolean) {
   // Leave room for the outline without moving the original cursor hotspot.
   const padding = size / 8
   const imageSize = size + padding * 2
+  // Semitransparent white cursor outlines appear gray on Windows; use opaque white there.
+  // https://github.com/goplus/builder/issues/3717
   const opacity = isWindows() ? '' : 'stroke-opacity="0.65"'
   const outline = outlined ? `stroke="white" ${opacity} stroke-width="3" paint-order="stroke"` : ''
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${imageSize}" height="${imageSize}" viewBox="-3 -3 30 30" fill="none">
