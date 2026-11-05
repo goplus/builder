@@ -104,7 +104,7 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
 
-useReadOnlyMessageBubble(monacoEditorRef, () => props.readOnly)
+useReadOnlyMessageBubble(monacoEditorRef, () => props.readOnly ?? false)
 
 watchEffect(() => {
   monacoEditorRef.value?.updateOptions({
@@ -363,6 +363,7 @@ providePopupContainer(codeEditorEl)
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor) {
+  /* Override Monaco's more specific .below .anchor.top rule to use the unified SVG pointer. */
   display: none !important;
 }
 
