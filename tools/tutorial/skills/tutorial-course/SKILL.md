@@ -54,6 +54,11 @@ the course's mistake; see goplus/builder#3419.
   spells out where its file sits.
 - **Keep messages short.** Every `showPrelude`, `showMessage` and `showVideo` blocks the learner until they
   dismiss it, so each one has to earn the interruption.
+- **Treat opening text and videos as one guide.** In a single straight-line `onStart`, the host labels
+  `showPrelude` and `showVideo` Next until the final guide, then Start; a lone guide uses Start. Prelude
+  pages before the last also use Next. For branches, loops, helper functions or parallel `onStart`
+  callbacks, supply explicit button text in the learner's language because the host cannot infer the
+  remaining guide. See Presentation pages and button text in `references/course-program.md`.
 - **Say it in the learner's language.** The course's messages are written by the author, so they carry whatever
   language the course is written in; keep one language throughout a course.
 - **One callback, one job.** Opening steps that must happen in order belong in a single `onStart`; independent

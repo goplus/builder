@@ -31,6 +31,7 @@ import type { PlaygroundCourseCompletion, PlaygroundCoursePresentationOptions } 
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
 import CoursePlaygroundVideoModal from './CoursePlaygroundVideoModal.vue'
 import { PlaygroundCourseSession } from './session'
+import { OpeningGuide, type OpeningGuideKind } from './opening-guide'
 
 const props = defineProps<{
   projectQueryRet: QueryRet<TutorialProject>
@@ -80,9 +81,17 @@ const monacoQueryRet = useQuery(
 
 const openMessage = useModal(CoursePlaygroundMessageModal)
 const openVideo = useModal(CoursePlaygroundVideoModal)
+let openingGuide: OpeningGuide | null = null
+
+function getGuideButtonText(kind: OpeningGuideKind, buttonText: string | null) {
+  const action = openingGuide?.take(kind)
+  if (buttonText != null || action == null) return buttonText
+  return i18n.t(action === 'next' ? { en: 'Next', zh: '下一步' } : { en: 'Start', zh: '开始' })
+}
 
 const presentation = {
   showPrelude(messages: string[], { buttonText, signal }: PlaygroundCoursePresentationOptions) {
+    buttonText = getGuideButtonText('prelude', buttonText)
     return openMessage({ contents: messages, buttonText, kind: 'prelude' }, { signal })
   },
   showMessage(content: string, { buttonText, signal }: PlaygroundCoursePresentationOptions) {
@@ -91,6 +100,7 @@ const presentation = {
   showVideo(videoName: string, { buttonText, signal }: PlaygroundCoursePresentationOptions) {
     const video = session.value?.project.videos.find((video) => video.name === videoName)
     if (video == null) throw new Error(`Video ${videoName} not found`)
+    buttonText = getGuideButtonText('video', buttonText)
     return openVideo({ video, buttonText }, { signal })
   },
   async revealSpotlight(target: string, tip: string, options: SpotlightOptions) {
@@ -126,6 +136,7 @@ const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery(
     startProgressReporter.report(0)
     const project = await composeQuery(ctx, props.projectQueryRet)
     ctx.signal.throwIfAborted()
+    openingGuide = new OpeningGuide(project.mainCourse.code)
     const editorState = new EditorState(i18n, project.project, isOnline, signedIn, cloudHelpers, noLocalCache)
     editorState.editing.startEditing()
     editorState.syncWithRouter(props.router)

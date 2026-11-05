@@ -47,13 +47,16 @@ function mountVideo(visible = true) {
 }
 
 describe('Course presentation', () => {
-  it.each(['prelude', 'message'] as const)('renders %s Markdown and waits for confirmation', async (kind) => {
+  it.each([
+    { kind: 'prelude', label: 'Start' },
+    { kind: 'message', label: 'Continue' }
+  ] as const)('renders $kind Markdown and waits for confirmation with $label', async ({ kind, label }) => {
     const wrapper = mount(CoursePlaygroundMessageModal, {
       props: { visible: true, kind, buttonText: null, contents: ['**Goal**: use `stepTo`'] },
       global: globalOptions
     })
     wrappers.push(wrapper)
-    expect(wrapper.find('button').text()).toBe('Continue')
+    expect(wrapper.find('button').text()).toBe(label)
     expect(wrapper.find('strong').text()).toBe('Goal')
     expect(wrapper.find('code').text()).toBe('stepTo')
     expect(wrapper.emitted('resolved')).toBeUndefined()
@@ -61,28 +64,40 @@ describe('Course presentation', () => {
     expect(wrapper.emitted('resolved')).toHaveLength(1)
   })
 
-  it('keeps prelude pages in one modal and customizes only the last action', async () => {
-    const wrapper = mount(CoursePlaygroundMessageModal, {
-      props: { visible: true, kind: 'prelude', contents: ['First', 'Second'], buttonText: 'Start' },
-      global: globalOptions
-    })
-    wrappers.push(wrapper)
-    const modal = wrapper.findComponent({ name: 'UIModal' })
-    const surface = wrapper.element
-    expect(modal.props()).toMatchObject({ closeOnEsc: false, maskClosable: false })
-    expect(wrapper.find('button').text()).toBe('Next')
-    expect(wrapper.text()).toContain('First')
-    const scroll = wrapper.find('.overflow-y-auto').element
-    scroll.scrollTop = 100
-    await wrapper.find('button').trigger('click')
-    expect(wrapper.element).toBe(surface)
-    expect(wrapper.emitted('resolved')).toBeUndefined()
-    expect(wrapper.text()).toContain('Second')
-    expect(scroll.scrollTop).toBe(0)
-    expect(wrapper.find('button').text()).toBe('Start')
-    await wrapper.find('button').trigger('click')
-    expect(wrapper.emitted('resolved')).toHaveLength(1)
-  })
+  it.each([
+    { lang: 'en', next: 'Next', start: 'Start', buttonText: null },
+    { lang: 'zh', next: '下一步', start: '开始', buttonText: null },
+    { lang: 'en', next: 'Next', start: 'Watch video', buttonText: 'Watch video' }
+  ] as const)(
+    'keeps prelude pages in one modal and ends with $start ($lang)',
+    async ({ lang, next, start, buttonText }) => {
+      const wrapper = mount(CoursePlaygroundMessageModal, {
+        props: { visible: true, kind: 'prelude', contents: ['First', 'Second', 'Third'], buttonText },
+        global: { ...globalOptions, mocks: { $t: (message: { en: string; zh: string }) => message[lang] } }
+      })
+      wrappers.push(wrapper)
+      const modal = wrapper.findComponent({ name: 'UIModal' })
+      const surface = wrapper.element
+      expect(modal.props()).toMatchObject({ closeOnEsc: false, maskClosable: false })
+      expect(wrapper.find('button').text()).toBe(next)
+      expect(wrapper.text()).toContain('First')
+      const scroll = wrapper.find('.overflow-y-auto').element
+      scroll.scrollTop = 100
+      await wrapper.find('button').trigger('click')
+      expect(wrapper.element).toBe(surface)
+      expect(wrapper.emitted('resolved')).toBeUndefined()
+      expect(wrapper.text()).toContain('Second')
+      expect(scroll.scrollTop).toBe(0)
+      expect(wrapper.find('button').text()).toBe(next)
+      await wrapper.find('button').trigger('click')
+      expect(wrapper.element).toBe(surface)
+      expect(wrapper.emitted('resolved')).toBeUndefined()
+      expect(wrapper.text()).toContain('Third')
+      expect(wrapper.find('button').text()).toBe(start)
+      await wrapper.find('button').trigger('click')
+      expect(wrapper.emitted('resolved')).toHaveLength(1)
+    }
+  )
 
   it('supports a video handoff label without ending on video completion', async () => {
     const { wrapper } = mountVideo()

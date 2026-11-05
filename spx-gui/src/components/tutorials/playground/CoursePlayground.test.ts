@@ -16,10 +16,14 @@ import CoursePlayground from './CoursePlayground.vue'
 const mocks = vi.hoisted(() => ({
   sessions: [] as any[],
   editors: [] as any[],
-  loadMonaco: vi.fn().mockResolvedValue({})
+  loadMonaco: vi.fn().mockResolvedValue({}),
+  openModal: vi.fn().mockResolvedValue(undefined),
+  lang: 'en' as 'en' | 'zh'
 }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ currentRoute: ref({ params: {}, query: {} }), push: vi.fn() }) }))
-vi.mock('@/utils/i18n', () => ({ useI18n: () => ({ lang: ref('en') }) }))
+vi.mock('@/utils/i18n', () => ({
+  useI18n: () => ({ lang: ref(mocks.lang), t: (message: { en: string; zh: string }) => message[mocks.lang] })
+}))
 vi.mock('@/utils/network', () => ({ useNetwork: () => ({ isOnline: ref(true) }) }))
 vi.mock('@/utils/user', () => ({ useEnsureSignedIn: () => vi.fn() }))
 vi.mock('@/utils/exception', async (importOriginal) => ({
@@ -73,7 +77,7 @@ vi.mock('@/components/ui', () => ({
   }),
   UIMenuGroup: {},
   UIMenuItem: {},
-  useModal: () => vi.fn()
+  useModal: () => mocks.openModal
 }))
 vi.mock('@/components/editor/spx-code-editor', () => ({
   loadMonaco: mocks.loadMonaco,
@@ -140,11 +144,15 @@ beforeEach(() => {
   mocks.sessions.length = 0
   mocks.editors.length = 0
   mocks.loadMonaco.mockReset().mockResolvedValue({})
+  mocks.openModal.mockClear()
+  mocks.lang = 'en'
 })
 
-function createProjectQueryRet(
-  project: TutorialProject | null = { title: 'Course', project: {} } as TutorialProject
-): QueryRet<TutorialProject> {
+function makeProject(title = 'Course') {
+  return { title, project: {}, mainCourse: { code: '' }, videos: [] } as unknown as TutorialProject
+}
+
+function createProjectQueryRet(project: TutorialProject | null = makeProject()): QueryRet<TutorialProject> {
   return {
     data: shallowRef(project),
     isLoading: ref(project == null),
@@ -174,7 +182,7 @@ describe('Playground startup rendering', () => {
     await nextTick()
     const before = Number(wrapper.find('.detailed-loading').attributes('data-percentage'))
     expect(before).toBeGreaterThan(0)
-    queryRet.data.value = { title: 'Course', project: {} } as TutorialProject
+    queryRet.data.value = makeProject()
     queryRet.progress.value = { percentage: 1, timeLeft: null, desc: null }
     queryRet.isLoading.value = false
     await flushPromises()
@@ -212,7 +220,7 @@ describe('Playground startup rendering', () => {
     })
     await wrapper.find('button').trigger('click')
     expect(queryRet.refetch).toHaveBeenCalledOnce()
-    queryRet.data.value = { title: 'Course', project: {} } as TutorialProject
+    queryRet.data.value = makeProject()
     queryRet.progress.value = { percentage: 1, timeLeft: null, desc: null }
     queryRet.isLoading.value = false
     await flushPromises()
@@ -335,7 +343,7 @@ describe('Playground startup rendering', () => {
     expect(wrapper.emitted('courseRestart')).toEqual([[]])
     wrapper.props('projectQueryRet').isLoading.value = true
     await nextTick()
-    wrapper.props('projectQueryRet').data.value = { title: 'Restarted course', project: {} } as TutorialProject
+    wrapper.props('projectQueryRet').data.value = makeProject('Restarted course')
     wrapper.props('projectQueryRet').isLoading.value = false
     await nextTick()
     await flushPromises()
@@ -395,5 +403,69 @@ describe('Playground startup rendering', () => {
     await nextTick()
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
     expect(wrapper.find('main [inert]').exists()).toBe(false)
+  })
+})
+
+describe('Opening guide buttons', () => {
+  it.each(['en', 'zh'] as const)('groups text pages and video into one opening (%s)', async (lang) => {
+    mocks.lang = lang
+    const project = makeProject()
+    project.mainCourse.code = 'onStart => { showPrelude ["A", "B"]; showVideo "intro" }'
+    project.videos = [{ name: 'intro' }] as TutorialProject['videos']
+    mountPlayground(createProjectQueryRet(project))
+    await flushPromises()
+    const presentation = mocks.sessions[0].program.options.presentation
+    const options = { buttonText: null, signal: new AbortController().signal }
+    await presentation.showPrelude(['A', 'B'], options)
+    expect(mocks.openModal).toHaveBeenLastCalledWith(
+      { contents: ['A', 'B'], kind: 'prelude', buttonText: lang === 'zh' ? '下一步' : 'Next' },
+      { signal: options.signal }
+    )
+    await presentation.showVideo('intro', options)
+    expect(mocks.openModal).toHaveBeenLastCalledWith(
+      { video: project.videos[0], buttonText: lang === 'zh' ? '开始' : 'Start' },
+      { signal: options.signal }
+    )
+  })
+
+  it('labels a video before text as Next, then Start on the text', async () => {
+    const project = makeProject()
+    project.mainCourse.code = 'onStart => { showVideo "intro"; showPrelude "Task" }'
+    project.videos = [{ name: 'intro' }] as TutorialProject['videos']
+    mountPlayground(createProjectQueryRet(project))
+    await flushPromises()
+    const presentation = mocks.sessions[0].program.options.presentation
+    const options = { buttonText: null, signal: new AbortController().signal }
+    await presentation.showVideo('intro', options)
+    await presentation.showPrelude(['Task'], options)
+    expect(mocks.openModal.mock.calls.map(([props]) => props.buttonText)).toEqual(['Next', 'Start'])
+  })
+
+  it('uses Start for a lone opening video and keeps later messages and videos at their regular defaults', async () => {
+    const project = makeProject()
+    project.mainCourse.code = 'onStart => { showVideo "intro" }'
+    project.videos = [{ name: 'intro' }] as TutorialProject['videos']
+    mountPlayground(createProjectQueryRet(project))
+    await flushPromises()
+    const presentation = mocks.sessions[0].program.options.presentation
+    const options = { buttonText: null, signal: new AbortController().signal }
+    await presentation.showVideo('intro', options)
+    await presentation.showMessage('Hint', options)
+    await presentation.showVideo('intro', options)
+    expect(mocks.openModal.mock.calls.map(([props]) => props.buttonText)).toEqual(['Start', null, null])
+  })
+
+  it('preserves custom labels while still advancing the opening sequence', async () => {
+    const project = makeProject()
+    project.mainCourse.code = 'onStart => { showPrelude "Task", "Watch"; showVideo "intro", "Learn" }'
+    project.videos = [{ name: 'intro' }] as TutorialProject['videos']
+    mountPlayground(createProjectQueryRet(project))
+    await flushPromises()
+    const presentation = mocks.sessions[0].program.options.presentation
+    const signal = new AbortController().signal
+    await presentation.showPrelude(['Task'], { buttonText: 'Watch', signal })
+    await presentation.showVideo('intro', { buttonText: 'Learn', signal })
+    await presentation.showVideo('intro', { buttonText: null, signal })
+    expect(mocks.openModal.mock.calls.map(([props]) => props.buttonText)).toEqual(['Watch', 'Learn', null])
   })
 })

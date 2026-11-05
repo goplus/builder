@@ -102,7 +102,9 @@ export interface TutorialFrameworkHost {
     /**
      * Presents non-empty opening guides in one dialog with Next between pages.
      * Resolves after the last page. buttonText applies only to the last page.
-     * A null buttonText uses the Host's default button text.
+     * With null buttonText, a single straight-line onStart's text/video opening
+     * sequence uses Next before the final guide and Start on the final guide.
+     * Dynamic openings require explicit buttonText. A standalone prelude defaults to Start.
      * Actions resume the Course, without running the project.
      * Presentation dialogs disable Escape and backdrop dismissal.
      */
@@ -115,7 +117,10 @@ export interface TutorialFrameworkHost {
     /**
      * Presents a Course-local video. Resolves after the learner finishes
      * watching it. The Host determines how viewing completion is established.
-     * A null buttonText uses the Host's default button text.
+     * With null buttonText, participates in the same opening-guide sequence as
+     * showPrelude: Next before the final guide, Start on the final or only guide.
+     * Outside a recognized opening sequence, defaults to Continue.
+     * Dynamic openings require explicit buttonText.
      */
     showVideo(videoName: string, buttonText: string | null): Promise<void>;
     /**

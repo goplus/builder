@@ -99,7 +99,9 @@ type CourseAbilities interface {
 	onStart(callback func())
 	// showPrelude presents one opening guide or a non-empty list as pages of one
 	// dialog, and returns after the final page. Intermediate actions use Next;
-	// buttonText applies only to the final page. Omitted text uses the Host's default.
+	// buttonText applies only to the final page. In a single straight-line onStart,
+	// omitted text uses Next before the last opening text/video guide, then Start.
+	// Dynamic openings need explicit buttonText; a standalone prelude defaults to Start.
 	// Actions resume the course without running the learner's project.
 	// These dialogs disable Escape and backdrop dismissal.
 	showPrelude(message string)
@@ -112,7 +114,8 @@ type CourseAbilities interface {
 	showMessage(message string, buttonText string)
 	// showVideo presents the Course-local video with the given resource name and
 	// waits for learner confirmation. The host determines viewing completion
-	// and supplies the default button text when omitted.
+	// and applies the same opening-guide action rules as showPrelude. Outside a
+	// recognized opening, omitted text uses Continue; dynamic openings need explicit text.
 	showVideo(videoName string)
 	showVideo(videoName string, buttonText string)
 	// wait pauses the calling callback for the given number of seconds; other

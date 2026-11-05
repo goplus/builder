@@ -124,7 +124,6 @@ after the course has started never runs.
 onStart => {
 	showPrelude "Move Lita to Mushroom."
 	showVideo "step-to"
-	showMessage "Now try it yourself."
 }
 ```
 
@@ -332,9 +331,9 @@ learner's code and falls back to a fixed line when generation fails.
 | Call | Returns | Notes |
 | --- | --- | --- |
 | `onStart => { ... }` | | Registers a course-start callback. |
-| `showPrelude message` / `showPrelude messages` | After the learner confirms the final page | Shows one opening guide or a non-empty list of pages in one dialog. Accepts optional `buttonText` for the final page; intermediate pages use Next. |
-| `showMessage message` | After the learner confirms it | Shows a dialog. Accepts optional `buttonText`. |
-| `showVideo name` | After the learner finishes watching | Plays the declared video `name`, not a file path. Accepts optional `buttonText`. The host decides what counts as finished. |
+| `showPrelude message` / `showPrelude messages` | After the learner confirms the final page | Shows one opening guide or a non-empty list of pages in one dialog. Uses the opening-guide action rules below; intermediate pages use Next. Accepts optional `buttonText` for the final page. |
+| `showMessage message` | After the learner confirms it | Shows a dialog, with Continue by default. Accepts optional `buttonText`. |
+| `showVideo name` | After the learner finishes watching | Plays the declared video `name`, not a file path. Uses the opening-guide action rules below; a video during the lesson defaults to Continue. Accepts optional `buttonText`. The host decides what counts as finished. |
 | `wait seconds` | After that many seconds | Pauses this callback while other callbacks keep running. Zero or a negative number returns at once. |
 | `complete` | Immediately | Ends the course without feedback. See [Completion](#completion). |
 | `completeWith message` | Immediately | Ends the course and shows `message` as feedback. |
@@ -345,18 +344,45 @@ Presentations never advance on their own.
 #### Presentation pages and button text
 
 `showPrelude` accepts one string or a non-empty list of strings. A list is shown
-as pages inside one dialog. Intermediate pages use Next. All three presentation
-calls accept an optional final button text; omitted text defaults to Continue.
-The text is displayed in the course's language, without translation. Choose Next
-while more introduction remains and Start when independent work begins. Start
-only dismisses the presentation and resumes the course; it does not run the project.
+as pages inside one dialog. Pages before the last use Next (`下一步`).
+
+In a single straight-line `onStart` callback, the host treats `showPrelude` and
+`showVideo` as one opening-guide sequence, in their declared order. Every guide
+before the final one defaults to Next; the final guide defaults to Start (`开始`).
+A lone text guide or video uses Start. This also applies to video followed by
+text. For a paged prelude, this sequence rule controls its last page's action.
+`showMessage` defaults to Continue (`继续`) and is not part of this sequence;
+videos shown during the course also default to Continue. The host localizes
+these default labels.
+
+All three presentation calls accept optional button text, which takes priority
+over the automatic action; for a paged prelude, it applies only to the final page.
+Custom text is displayed verbatim, without translation, so write it in the
+learner's language. The host cannot determine the remaining opening guide through
+branches, loops, helper functions or parallel `onStart` callbacks. For such
+dynamic flows, explicitly label each non-final guide Next and the final guide Start.
+Start only dismisses the presentation and resumes the course; it does not run the project.
 These blocking dialogs have no close button and cannot be dismissed by Escape or
 a backdrop click. Learners advance using their action buttons.
 
 ```go
 onStart => {
- showPrelude ["Read the task", "Look at the example"], "Next"
- showVideo "step-to", "Start"
+	showPrelude ["Read the task", "Look at the example"]
+	showVideo "step-to"
+}
+```
+
+This opening uses Next on both text pages, then Start on the video. A conditional
+opening instead supplies its labels explicitly:
+
+```go
+onStart => {
+	if Editor.Project.getCode("Lita") == "" {
+		showPrelude "Read the task, then watch the example.", "Next"
+		showVideo "step-to", "Start"
+	} else {
+		showPrelude "Read the task, then try it yourself.", "Start"
+	}
 }
 ```
 
