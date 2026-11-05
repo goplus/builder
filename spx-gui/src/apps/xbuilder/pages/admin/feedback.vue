@@ -195,11 +195,32 @@ const handleMarkAsHandled = useMessageHandle(
                   }}
                 </div>
               </div>
+              <div>
+                <div class="text-grey-800">{{ $t({ en: 'Project snapshot', zh: '项目快照' }) }}</div>
+                <div class="mt-1 text-grey-1000">
+                  <RouterLink
+                    v-if="context.projectSnapshotUrl != null"
+                    v-radar="{ name: 'Open project snapshot', desc: 'Open the project snapshot in the editor' }"
+                    class="text-primary-main no-underline hover:underline"
+                    :to="`/admin/feedback/${encodeURIComponent(feedback.id)}/project-snapshot`"
+                  >
+                    {{ $t({ en: 'Open in editor', zh: '在编辑器中打开' }) }}
+                  </RouterLink>
+                  <template v-else>-</template>
+                </div>
+              </div>
             </div>
 
-            <div v-if="context.diagnostics != null">
-              <div class="text-grey-800">{{ $t({ en: 'Code errors and warnings', zh: '代码错误与警告' }) }}</div>
-              <ul class="m-0 mt-2 flex list-none flex-col gap-1 p-0 font-mono text-xs">
+            <details v-if="context.diagnostics != null">
+              <summary class="cursor-pointer select-none font-medium text-primary-main">
+                {{
+                  $t({
+                    en: `Code errors and warnings (${context.diagnostics.length})`,
+                    zh: `代码错误与警告（${context.diagnostics.length}）`
+                  })
+                }}
+              </summary>
+              <ul class="m-0 mt-2 flex max-h-96 list-none flex-col gap-1 overflow-auto p-0 font-mono text-xs">
                 <li v-for="(diagnostic, i) in context.diagnostics" :key="i" class="break-words">
                   <span
                     :class="diagnostic.severity === DiagnosticSeverity.Error ? 'text-danger-main' : 'text-yellow-600'"
@@ -208,10 +229,17 @@ const handleMarkAsHandled = useMessageHandle(
                   {{ diagnostic.file }}:{{ diagnostic.line }} {{ diagnostic.message }}
                 </li>
               </ul>
-            </div>
+            </details>
 
-            <div v-if="context.runtimeOutputs != null">
-              <div class="text-grey-800">{{ $t({ en: 'Runtime output', zh: '运行输出' }) }}</div>
+            <details v-if="context.runtimeOutputs != null">
+              <summary class="cursor-pointer select-none font-medium text-primary-main">
+                {{
+                  $t({
+                    en: `Runtime output (${context.runtimeOutputs.length})`,
+                    zh: `运行输出（${context.runtimeOutputs.length}）`
+                  })
+                }}
+              </summary>
               <ul class="m-0 mt-2 flex max-h-96 list-none flex-col gap-1 overflow-auto p-0 font-mono text-xs">
                 <li v-for="(output, i) in context.runtimeOutputs" :key="i" class="break-words">
                   <span class="text-grey-700">{{ formatOutputTime(output.time) }}</span>
@@ -222,7 +250,7 @@ const handleMarkAsHandled = useMessageHandle(
                   {{ output.message }}
                 </li>
               </ul>
-            </div>
+            </details>
           </template>
 
           <details :open="context == null">

@@ -137,7 +137,7 @@ async function save(metadata: PartialMetadata, files: Files, signal?: AbortSigna
 
   const [{ fileCollection }, thumbnailUniversalUrl] = await Promise.all([
     saveFiles(filesToSave, signal),
-    metadata.thumbnail == null ? '' : await saveFile(metadata.thumbnail, signal)
+    metadata.thumbnail == null ? '' : await saveFile(metadata.thumbnail, { signal })
   ])
   signal?.throwIfAborted()
 
@@ -210,7 +210,7 @@ export async function saveFiles(
 
 async function saveFileAtPath(path: string, file: File, signal?: AbortSignal): Promise<[string, UniversalUrl]> {
   try {
-    return [path, await saveFile(file, signal)]
+    return [path, await saveFile(file, { signal })]
   } catch (e) {
     if (e instanceof Cancelled) throw e
     throw new ActionException(e, {
@@ -276,7 +276,7 @@ const fetchFile = (url: WebUrl, signal?: AbortSignal) =>
   })
 
 export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
-  const universalUrl = await saveFile(file, signal)
+  const universalUrl = await saveFile(file, { signal })
   return cloudHelpers.universalUrlToWebUrl(universalUrl)
 }
 
@@ -340,12 +340,22 @@ See details in file \`src/apps/xbuilder/.env\`.
 }
 
 /** Save file to cloud and return its universal URL */
-export async function saveFile(file: File, signal?: AbortSignal) {
+export async function saveFile(
+  file: File,
+  {
+    signal,
+    inlineable = true
+  }: {
+    signal?: AbortSignal
+    /** Whether a small text file may be saved as a data URL instead of a Kodo object. Defaults to `true`. */
+    inlineable?: boolean
+  } = {}
+) {
   const savedUrl = getUniversalUrl(file)
-  if (savedUrl != null) return savedUrl
+  if (savedUrl != null && (inlineable || getUniversalUrlScheme(savedUrl) !== UniversalUrlScheme.Data)) return savedUrl
 
   // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
-  const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
+  const url = await (inlineable && (await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
   setUniversalUrl(file, url)
   return url
 }

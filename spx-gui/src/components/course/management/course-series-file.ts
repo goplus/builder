@@ -903,7 +903,7 @@ async function importThumbnail(
   signal?: AbortSignal
 ) {
   const data = getRequiredEntry(unzipped, thumbnail.path)
-  return saveFile(createLazyFile(thumbnail.path, data), signal)
+  return saveFile(createLazyFile(thumbnail.path, data), { signal })
 }
 
 function collectEntrypointProjects(courses: GuidedCourse[]) {

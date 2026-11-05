@@ -51,6 +51,7 @@ import AdminUsers from './admin/users.vue'
 import AdminAuditLogs from './admin/audit-logs.vue'
 import AdminFeedbackList from './admin/feedback-list.vue'
 import AdminFeedback from './admin/feedback.vue'
+import AdminFeedbackProjectSnapshot from './admin/feedback-project-snapshot.vue'
 import UserFollowers from './community/user/followers.vue'
 import UserFollowing from './community/user/following.vue'
 
@@ -202,6 +203,11 @@ export async function mountPages(path: string) {
       path: '/course-management',
       component: CourseManagement,
       children: [{ path: ':courseSeriesIdInput', component: CourseManagementSeries, props: true }]
+    },
+    {
+      path: '/admin/feedback/:feedbackID/project-snapshot/:inEditorPath*',
+      component: AdminFeedbackProjectSnapshot,
+      props: true
     },
     { path: '/course-series/:courseSeriesIdInput', component: CourseSeries, props: true },
     { path: '/course/:courseSeriesIdInput/:courseIdInput/start', component: CourseStart, props: true },

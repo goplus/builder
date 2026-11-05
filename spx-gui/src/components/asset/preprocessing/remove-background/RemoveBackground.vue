@@ -30,7 +30,7 @@ const imgPreviewRefs = ref<Array<InstanceType<typeof ImgPreview>>>([])
 
 const removeBackground = memoizeAsync(async (inputFile: File, signal?: AbortSignal) => {
   inputFile = await adaptImgForBackgroundRemoval(inputFile)
-  const universalUrl = await saveFile(inputFile, signal)
+  const universalUrl = await saveFile(inputFile, { signal })
   const task = new Task(TaskType.RemoveBackground)
   signal?.addEventListener('abort', () => task.tryCancel(), { once: true })
   try {

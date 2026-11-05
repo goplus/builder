@@ -223,7 +223,7 @@ export class SpriteGen extends Disposable {
     return this.genImagesPhase.run(async (reporter) => {
       const settings = this.getDefaultCostumeSettings()
       if (this.referenceImage != null) {
-        settings.referenceImageUrl = await saveFile(this.referenceImage, signal)
+        settings.referenceImageUrl = await saveFile(this.referenceImage, { signal })
       }
       signal.throwIfAborted()
       await task.start({ settings, n: 4 })
