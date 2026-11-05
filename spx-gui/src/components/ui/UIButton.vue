@@ -66,7 +66,7 @@ function defineButtonPalette(
     active: activeState,
     loading: options.loading ?? defaultState,
     disabled: options.disabled,
-    focusBorderColor: options.focusBorderColor ?? 'var(--ui-color-primary-700)'
+    focusBorderColor: options.focusBorderColor ?? 'var(--ui-color-primary-600)'
   }
 }
 
