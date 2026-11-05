@@ -139,7 +139,7 @@ export class BackdropGen extends Disposable {
     this.addDisposable(task)
     const signal = task.getSignal()
     return this.generatePhase.run(async (reporter) => {
-      const referenceImageUrl = this.referenceImage == null ? null : await saveFile(this.referenceImage, signal)
+      const referenceImageUrl = this.referenceImage == null ? null : await saveFile(this.referenceImage, { signal })
       signal.throwIfAborted()
       await task.start({ settings: { ...this.settings, referenceImageUrl }, n: 4 })
       const { imageUrls } = await task.untilCompleted(reporter)

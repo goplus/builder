@@ -13,7 +13,7 @@ import {
   type AddUpdateCourseSeriesParams
 } from '@/apis/course-series'
 import { listSignedInUserCourses, type Course } from '@/apis/course'
-import { useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import {
   exportCourseSeriesFile,
   inspectCourseSeriesFileImport,
@@ -48,7 +48,7 @@ const emit = defineEmits<{
 const i18n = useI18n()
 const m = useMessage()
 const confirm = useConfirmDialog()
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 
 const isEditMode = computed(() => props.courseSeries !== null)
 const modalTitle = computed(() =>
@@ -179,7 +179,7 @@ const handleSubmit = useMessageHandle(
 
 const handleImport = useMessageHandle(
   async () => {
-    const username = signedInUser.value?.username
+    const username = signedIn.username
     if (username == null) {
       throw new DefaultException({ en: 'Please sign in first', zh: '请先登录' })
     }

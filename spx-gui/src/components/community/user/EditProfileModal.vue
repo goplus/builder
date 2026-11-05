@@ -4,7 +4,6 @@ import { userDescriptionMaxLength, userDisplayNameMaxLength, type User } from '@
 import { selectFile } from '@/utils/file'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import { useExternalUrl } from '@/utils/utils'
 import {
   UIButton,
   UIForm,
@@ -17,7 +16,7 @@ import {
   useModal
 } from '@/components/ui'
 import { getCoverImgUrl } from './cover'
-import { useUpdateSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import EditAvatarModal from './EditAvatarModal.vue'
 import UserUsernameInline from './UserUsernameInline.vue'
 
@@ -38,7 +37,6 @@ const acceptedAvatarFileExts = ['png', 'jpg', 'jpeg', 'webp']
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 const pendingAvatarRef = ref<string | null>(null)
 const currentAvatar = computed(() => pendingAvatarRef.value ?? props.user.avatar)
-const avatarUrl = useExternalUrl(() => currentAvatar.value)
 
 const form = useForm({
   displayName: [props.user.displayName, validateDisplayName],
@@ -86,7 +84,7 @@ function validateAvatarInputFile(file: globalThis.File) {
   }
 }
 
-const updateProfile = useUpdateSignedInUser()
+const signedIn = useSignedIn()
 const invokeEditAvatarModal = useModal(EditAvatarModal)
 
 const handleChooseAvatar = useMessageHandle(
@@ -108,7 +106,7 @@ function handleUsernameModified(newUsername: string) {
 }
 
 const handleSubmit = useMessageHandle(async () => {
-  const updated = await updateProfile({
+  const updated = await signedIn.updateProfile({
     displayName: form.value.displayName.trim(),
     description: form.value.description.trim()
   })
@@ -135,7 +133,11 @@ const handleSubmit = useMessageHandle(async () => {
         type="button"
         @click="handleChooseAvatar.fn"
       >
-        <UIImg class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100" :src="avatarUrl" size="cover" />
+        <UIImg
+          class="h-full w-full rounded-full border-2 border-grey-100 bg-grey-100"
+          :src="currentAvatar"
+          size="cover"
+        />
         <UIIcon
           class="absolute right-0 bottom-0 h-8 w-8 text-turquoise-200 transition-[color,transform] duration-200 group-hover:text-turquoise-300 group-focus-visible:text-turquoise-300 group-active:scale-[0.96]"
           type="camera"

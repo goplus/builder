@@ -1,12 +1,12 @@
 <template>
   <CenteredWrapper class="mt-5">
-    <GuestBanner v-if="!isSignedIn()" class="my-3 mb-8" />
+    <GuestBanner v-if="!signedIn.isSignedIn" class="my-3 mb-8" />
     <ProjectsSection
       v-else
       v-radar="{ name: 'Your projects', desc: 'Section showing user\'s own projects' }"
       context="home"
       :num-in-row="numInRow"
-      :link-to="isSignedIn() ? myProjectsRoute : null"
+      :link-to="myProjectsRoute"
       :query-ret="myProjects"
     >
       <template #title>
@@ -87,7 +87,7 @@
       <ProjectItem v-for="project in communityRemixingProjects.data.value" :key="project.id" :project="project" />
     </ProjectsSection>
     <ProjectsSection
-      v-if="isSignedIn()"
+      v-if="signedIn.isSignedIn"
       v-radar="{ name: 'Following created', desc: 'Section showing projects created by users you follow' }"
       context="home"
       :num-in-row="numInRow"
@@ -121,7 +121,7 @@ import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { ExploreOrder, ProjectType, exploreProjects, listSignedInUserProjects } from '@/apis/project'
 import { getExploreRoute, getUserPageRoute } from '../../router'
-import { isSignedIn, useSignedInUser } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { useResponsive } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
@@ -133,16 +133,16 @@ usePageTitle([])
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 
 const myProjectsRoute = computed(() => {
-  if (signedInUser.value == null) return ''
-  return getUserPageRoute(signedInUser.value.username, 'projects')
+  if (signedIn.username == null) return ''
+  return getUserPageRoute(signedIn.username, 'projects')
 })
 
 const myProjects = useQuery(
   async () => {
-    if (!isSignedIn()) return []
+    if (signedIn.username == null) return []
     const { data: projects } = await listSignedInUserProjects({
       type: ProjectType.Game,
       pageIndex: 1,
@@ -173,7 +173,7 @@ const followingCreatedRoute = computed(() => getExploreRoute(ExploreOrder.Follow
 
 const followingCreatedProjects = useQuery(
   async () => {
-    if (!isSignedIn()) return []
+    if (signedIn.username == null) return []
     return exploreProjects({ type: ProjectType.Game, order: ExploreOrder.FollowingCreated, count: numInRow.value })
   },
   { en: 'Failed to load projects', zh: '加载失败' }

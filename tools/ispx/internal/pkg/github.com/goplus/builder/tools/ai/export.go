@@ -23,7 +23,7 @@ func init() {
 			"encoding/json":                    "json",
 			"errors":                           "errors",
 			"fmt":                              "fmt",
-			"github.com/goplus/spx/v3/pkg/spx": "spx",
+			"github.com/goplus/spx/v4/pkg/spx": "spx",
 			"iter":                             "iter",
 			"log":                              "log",
 			"math":                             "math",

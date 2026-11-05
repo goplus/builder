@@ -10,7 +10,7 @@ import {
   listUserPublicProjects,
   type ListUserPublicProjectsParams
 } from '@/apis/project'
-import { useSignedInUser, useUser } from '@/stores/user'
+import { useSignedIn, useUser } from '@/stores/user'
 import { UICard, useResponsive } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
@@ -23,8 +23,8 @@ const props = defineProps<{
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const { data: user } = useUser(() => props.nameInput)
-const signedInUser = useSignedInUser()
-const isSignedInUser = computed(() => user.value != null && user.value.username === signedInUser.value?.username)
+const signedIn = useSignedIn()
+const isSignedInUser = computed(() => user.value != null && user.value.username === signedIn.username)
 
 usePageTitle(() => {
   if (user.value == null) return null

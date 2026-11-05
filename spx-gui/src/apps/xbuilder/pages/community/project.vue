@@ -12,7 +12,7 @@ import { usePageTitle } from '@/utils/utils'
 import { ProjectType, listProjects, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProjectReleases } from '@/apis/project-release'
 import { SpxProject, type CloudProject } from '@/models/spx/project'
-import { useSignedInUser, useUser, isSignedIn, useSignIn } from '@/stores/user'
+import { useSignedIn, useUser } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getProjectPageRoute, getUserPageRoute } from '../../router'
 import {
   UIIcon,
@@ -83,7 +83,7 @@ watch(currentProjectIdentifier, (currentIdentifier) => {
 })
 
 const { data: ownerInfo } = useUser(() => routeProjectIdentifier.value.owner)
-const signedInUser = useSignedInUser()
+const signedIn = useSignedIn()
 
 usePageTitle(() => {
   if (ownerInfo.value == null || project.value == null) return null
@@ -102,7 +102,7 @@ usePageTitle(() => {
 watch(
   currentProjectIdentifier,
   (currentIdentifier) => {
-    if (!isSignedIn() || currentIdentifier == null) return
+    if (!signedIn.isSignedIn || currentIdentifier == null) return
     recordProjectView(currentIdentifier.owner, currentIdentifier.name)
   },
   { immediate: true }
@@ -114,7 +114,7 @@ watch(routeProjectIdentifier, () => {
 })
 
 const isOwner = computed(() => {
-  const signedInUsername = signedInUser.value?.username
+  const signedInUsername = signedIn.username
   const projectOwner = project.value?.owner
   if (signedInUsername == null || projectOwner == null) return false
   return projectOwner === signedInUsername
@@ -161,14 +161,13 @@ const remixCount = computed(() => {
 })
 
 const ensureSignedIn = useEnsureSignedIn()
-const signIn = useSignIn()
 
 const needsSignInToRun = computed(
-  () => !isSignedIn() && project.value != null && isSignInRequiredForProject(project.value)
+  () => !signedIn.isSignedIn && project.value != null && isSignInRequiredForProject(project.value)
 )
 
 function handleSignIn() {
-  signIn()
+  signedIn.signIn()
 }
 
 const handleRun = useMessageHandle(
@@ -323,8 +322,8 @@ const handleRemove = useMessageHandle(
       routeProjectIdentifier.value.name,
       project.value!.displayName
     )
-    const { username } = await untilNotNull(signedInUser)
-    await router.push(getUserPageRoute(username, 'projects'))
+    const username = signedIn.username
+    if (username != null) await router.push(getUserPageRoute(username, 'projects'))
   },
   { en: 'Failed to remove project', zh: '删除项目失败' },
   { en: 'Project removed', zh: '项目已删除' }

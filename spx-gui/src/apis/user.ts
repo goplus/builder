@@ -38,6 +38,8 @@ export type UserCapabilities = {
   canManageAssets: boolean
   /** Whether user can manage courses and course series */
   canManageCourses: boolean
+  /** Whether user can manage feedback */
+  canManageFeedback: boolean
   /** Whether user can access premium LLM models */
   canUsePremiumLLM: boolean
 }

@@ -138,10 +138,6 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/sign-in/callback.vue')
   },
   {
-    path: '/sign-in/token',
-    component: () => import('./pages/sign-in/token.vue')
-  },
-  {
     path: '/share/:owner/:name',
     redirect: (to) => getProjectPageRoute(to.params.owner as string, to.params.name as string)
   },
@@ -188,8 +184,23 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'audit-logs',
         component: () => import('./pages/admin/audit-logs.vue')
+      },
+      {
+        path: 'feedback',
+        component: () => import('./pages/admin/feedback-list.vue')
+      },
+      {
+        path: 'feedback/:feedbackID',
+        component: () => import('./pages/admin/feedback.vue'),
+        props: true
       }
     ]
+  },
+  {
+    // Not a child of `/admin`, whose layout does not fit the editor.
+    path: '/admin/feedback/:feedbackID/project-snapshot/:inEditorPath*',
+    component: () => import('./pages/admin/feedback-project-snapshot.vue'),
+    props: true
   },
   {
     path: '/:pathMatch(.*)*',

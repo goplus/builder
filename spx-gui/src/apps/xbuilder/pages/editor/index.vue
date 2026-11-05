@@ -39,7 +39,7 @@ class LocalCache implements ILocalCache {
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
 import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 import {
@@ -72,7 +72,7 @@ const props = defineProps<{
 }>()
 const localCache = new LocalCache(localHelpers)
 
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 
 const router = useRouter()
 const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
@@ -118,7 +118,7 @@ const stateQueryRet = useQuery(
     project.disposeOnSignal(ctx.signal)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     ctx.signal.throwIfAborted()
-    const state = new EditorState(i18n, project, isOnline, signedInStateQuery, cloudHelpers, localCache)
+    const state = new EditorState(i18n, project, isOnline, signedIn, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
     await state.editing.loadProject(
       ownerInput,

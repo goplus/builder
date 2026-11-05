@@ -77,7 +77,7 @@ describe('spxls Worker integration', () => {
 
   it('analyzes stage and sprite code with the SDK, engine, math, and AI packages', async () => {
     const { request, command } = await startWorker({
-      'main.spx': `import engine "github.com/goplus/spx/v3/pkg/spx/pkg/engine"
+      'main.spx': `import engine "github.com/goplus/spx/v4/pkg/spx/pkg/engine"
 var (
     score int
     list List
@@ -108,7 +108,7 @@ bot.setRole "helper"
     expect(sprite).toContainEqual(
       expect.objectContaining({
         name: 'xpos',
-        definition: { package: 'github.com/goplus/spx/v3', name: 'Sprite.xpos' }
+        definition: { package: 'github.com/goplus/spx/v4', name: 'Sprite.xpos' }
       })
     )
     const completion = await request<lsp.CompletionList | lsp.CompletionItem[]>('textDocument/completion', {

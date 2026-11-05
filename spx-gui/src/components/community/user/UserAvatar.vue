@@ -1,14 +1,14 @@
 <template>
   <UserLink
-    class="block overflow-hidden rounded-full border-grey-100 bg-grey-100 bg-center bg-contain transition-[border-color] duration-100 hover:border-primary-400 active:border-primary-600"
+    class="block overflow-hidden rounded-full border-grey-100 bg-grey-100 transition-[border-color] duration-100 hover:border-primary-400 active:border-primary-600"
     :class="size === 'small' ? 'h-7.5 w-7.5 border-2' : 'h-12 w-12 border-3'"
-    :style="avatarUrl != null ? { backgroundImage: `url(${avatarUrl})` } : null"
     :user="userInfo?.username ?? null"
-  ></UserLink>
+  >
+    <img class="block h-full w-full object-contain" crossorigin="anonymous" :src="userInfo?.avatar" alt="" />
+  </UserLink>
 </template>
 
 <script setup lang="ts">
-import { useExternalUrl } from '@/utils/utils'
 import { useUser } from '@/stores/user'
 import UserLink from './UserLink.vue'
 
@@ -25,5 +25,4 @@ const props = withDefaults(
 )
 
 const { data: userInfo } = useUser(() => props.user)
-const avatarUrl = useExternalUrl(() => userInfo.value?.avatar)
 </script>

@@ -29,8 +29,9 @@
           class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-turquoise-200 text-3xl font-semibold text-turquoise-600"
         >
           <img
-            v-if="avatarUrl != null"
-            :src="avatarUrl"
+            v-if="session.user.avatar != null"
+            crossorigin="anonymous"
+            :src="session.user.avatar"
             :alt="session.user.displayName"
             class="h-full w-full object-cover"
           />
@@ -52,7 +53,7 @@ import { computed } from 'vue'
 import { getSession } from '@/apis/account'
 import { UIError, UILoading } from '@/components/ui'
 import { useQuery } from '@/utils/query'
-import { useExternalUrl, usePageTitle } from '@/utils/utils'
+import { usePageTitle } from '@/utils/utils'
 
 const {
   isLoading,
@@ -64,7 +65,6 @@ const {
   zh: '无法加载登录状态'
 })
 
-const avatarUrl = useExternalUrl(() => session.value?.user.avatar ?? null)
 const initial = computed(() =>
   session.value == null ? '?' : session.value.user.displayName.trim().charAt(0).toUpperCase() || '?'
 )
