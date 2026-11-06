@@ -2,13 +2,13 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { getCourseSeries } from '@/apis/course-series'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
-import { composeQuery, useQuery, QueryMode, type QueryRet } from '@/utils/query'
+import { composeQuery, untilLoaded, useQuery, QueryMode, type QueryRet } from '@/utils/query'
 import { path2PathSegments, useScopedRouterWithPathParam } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { TutorialProject } from '@/models/tutorial/project'
-import { useSeriesCourses } from '@/stores/course-series'
+import { useCourse } from '@/stores/course'
+import { useSeries } from '@/stores/course-series'
 import { useSignedIn } from '@/stores/user'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal, {
@@ -29,7 +29,10 @@ const tutorial = useTutorial()
 const router = useRouter()
 const signedIn = useSignedIn()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
-const seriesCoursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
+const sessionCourseQueryRet = useCourse(() => props.courseIdInput, { mode: QueryMode.Snapshot })
+const sessionSeriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
+const courseQueryRet = useCourse(() => props.courseIdInput)
+const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
 const inPlaygroundRouter = useScopedRouterWithPathParam('inPlaygroundPath', () => props.inPlaygroundPath)
 
 const sessionQueryRet = useQuery(
@@ -37,17 +40,18 @@ const sessionQueryRet = useQuery(
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
-    const [series, courses] = await Promise.all([
-      getCourseSeries(courseSeriesID, ctx.signal),
-      composeQuery(ctx, seriesCoursesQueryRet)
+    const [series, course] = await Promise.all([
+      composeQuery(ctx, sessionSeriesQueryRet),
+      composeQuery(ctx, sessionCourseQueryRet)
     ])
     ctx.signal.throwIfAborted()
     if (!signedIn.isSignedIn) {
       await signedIn.signIn()
       throw new Cancelled('redirected to sign in')
     }
-    const course = courses.find(({ id }) => id === courseID)
-    if (course == null) throw new Error(`course ${courseID} not found in series ${series.id}`)
+    if (!series.courseIDs.includes(courseID)) {
+      throw new Error(`course ${courseID} not found in series ${courseSeriesID}`)
+    }
     if (course.kind !== 'playground') throw new Error(`course ${course.id} is not a Playground Course`)
 
     const project = await TutorialProject.load(course)
@@ -62,10 +66,10 @@ const sessionQueryRet = useQuery(
     ctx.signal.addEventListener('abort', () => tutorial.notifyPlaygroundCourseEnded(course.id), {
       once: true
     })
-    tutorial.notifyPlaygroundCourseStarted(course, series)
+    tutorial.notifyPlaygroundCourseStarted(course.id, series.id)
 
     ctx.reporter.report(1)
-    return { course, series, project }
+    return { courseID: course.id, seriesID: series.id, project }
   },
   {
     en: 'Failed to start course',
@@ -76,7 +80,7 @@ const sessionQueryRet = useQuery(
 
 const session = sessionQueryRet.data
 usePageTitle(() => {
-  const title = session.value?.course.title
+  const title = courseQueryRet.data.value?.title
   const page = { en: 'Course', zh: '课程' }
   return title == null ? page : [{ en: title, zh: title }, page]
 })
@@ -90,7 +94,7 @@ const { fn: handleRestart } = useMessageHandle(
   async () => {
     const currentSession = session.value
     if (currentSession == null) return
-    await tutorial.startCourse(currentSession.series.id, currentSession.course.id)
+    await tutorial.startCourse(currentSession.seriesID, currentSession.courseID)
   },
   { en: 'Failed to restart course', zh: '重新开始课程失败' }
 )
@@ -99,25 +103,37 @@ const { fn: handleCompleted } = useMessageHandle(
   async (completion: PlaygroundCourseCompletion) => {
     const completedSession = session.value
     if (completedSession == null) return
-    tutorial.notifyPlaygroundCourseCompleted(completedSession.course.id)
+    tutorial.notifyPlaygroundCourseCompleted(completedSession.courseID)
 
-    const action: CompletionAction = await openCompletion(
-      { course: completedSession.course, series: completedSession.series, feedback: completion.feedback },
-      { signal: completedSession.project.getSignal() }
-    )
+    const signal = completedSession.project.getSignal()
+    const [course, series] = await Promise.all([
+      untilLoaded(courseQueryRet, signal),
+      untilLoaded(seriesQueryRet, signal)
+    ])
+    const completionProps = {
+      get course() {
+        return courseQueryRet.data.value ?? course
+      },
+      get series() {
+        return seriesQueryRet.data.value ?? series
+      },
+      feedback: completion.feedback
+    }
+    const action: CompletionAction = await openCompletion(completionProps, { signal })
     if (completedSession.project.isDisposed || action === 'continueEditing') return
 
     if (action === 'retry') {
-      await tutorial.startCourse(completedSession.series.id, completedSession.course.id)
+      await tutorial.startCourse(completedSession.seriesID, completedSession.courseID)
       return
     }
 
-    const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
-    const nextCourseID = completedSession.series.courseIDs[courseIndex + 1] ?? null
+    const currentSeries = completionProps.series
+    const courseIndex = currentSeries.courseIDs.indexOf(completedSession.courseID)
+    const nextCourseID = courseIndex < 0 ? null : currentSeries.courseIDs[courseIndex + 1] ?? null
     if (action === 'next' && nextCourseID != null) {
-      await tutorial.startCourse(completedSession.series.id, nextCourseID)
+      await tutorial.startCourse(currentSeries.id, nextCourseID)
     } else {
-      await router.push(getCourseSeriesPageRouteOfCourse(completedSession.series, completedSession.course.id))
+      await router.push(getCourseSeriesPageRouteOfCourse(currentSeries, completedSession.courseID))
     }
   },
   { en: 'Failed to handle course completion', zh: '处理课程完成失败' }

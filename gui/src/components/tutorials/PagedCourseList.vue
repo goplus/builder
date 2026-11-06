@@ -6,7 +6,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
 import { UIEmpty, UIPagination } from '@/components/ui'
-import { useSeriesCoursesByPage } from '@/stores/course-series'
+import { useSeriesCourses } from '@/stores/course-series'
 import { useRouteQueryParamInt } from '@/utils/route'
 
 const coursePadding = 20
@@ -25,11 +25,11 @@ defineSlots<{
 
 const page = useRouteQueryParamInt('p', 1)
 const pageSize = computed(() => props.numInRow * numInColumn)
-const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
+const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.length ?? 0) / pageSize.value))
 
-const courseQuery = useSeriesCoursesByPage(
-  () => props.courseSeries.id,
-  () => ({ pageIndex: page.value, pageSize: pageSize.value })
+const courseQuery = useSeriesCourses(() => props.courseSeries.id)
+const shownCourses = computed(() =>
+  (courseQuery.data.value ?? []).slice((page.value - 1) * pageSize.value, page.value * pageSize.value)
 )
 </script>
 
@@ -47,9 +47,9 @@ const courseQuery = useSeriesCoursesByPage(
             }}
           </UIEmpty>
         </template>
-        <template #default="{ data }">
+        <template #default>
           <ul class="grid grid-cols-[repeat(var(--num-in-row),minmax(0,1fr))] gap-5">
-            <template v-for="course in data.data" :key="course.id">
+            <template v-for="course in shownCourses" :key="course.id">
               <slot name="course" :course="course" />
             </template>
           </ul>

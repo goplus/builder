@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuery } from '@/utils/query'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useDragSortable } from '@/utils/drag-and-drop'
-import { isGuidedCourse, type Course } from '@/apis/course'
+import { isGuidedCourse, listAllSeriesCourses, type Course } from '@/apis/course'
 import { getCourseSeries, type CourseSeries, type CourseSeriesUnit } from '@/apis/course-series'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useDeleteCourse } from '@/stores/course'
-import { useDeleteCourseSeries, useSeries, useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
+import { useDeleteCourseSeries, useUpdateCourseSeries } from '@/stores/course-series'
 import { useSignedIn } from '@/stores/user'
 import {
   UIButton,
@@ -53,7 +54,6 @@ import { deleteCourseSeriesWithCourses } from '@/components/course/management/se
 import ListControls from '@/components/course/management/ListControls.vue'
 import ListSections from '@/components/course/management/ListSections.vue'
 import {
-  hasSameIDs,
   matchesQuery,
   placeReordered,
   sectionByTitle,
@@ -82,10 +82,16 @@ const invokeGuidedCourseDrawer = useModal(GuidedCourseDrawer)
 const invokePlaygroundCourseDrawer = useModal(PlaygroundCourseDrawer)
 const invokeUnitTitleModal = useModal(UnitTitleModal)
 
-const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
-const coursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput)
-
-const courseSeries = computed(() => seriesQueryRet.data.value)
+const queryRet = useQuery(
+  async ({ signal }) => {
+    const id = props.courseSeriesIdInput
+    const [series, courses] = await Promise.all([getCourseSeries(id, signal), listAllSeriesCourses(id, signal)])
+    return { series, courses }
+  },
+  { en: 'Failed to load course series', zh: '加载课程系列失败' },
+  { clearResultOnFetch: true }
+)
+const courseSeries = computed(() => queryRet.data.value?.series ?? null)
 // Only the author's own series are managed here; another author's could be read but not changed.
 const isOwnSeries = computed(() => courseSeries.value != null && courseSeries.value.owner === signedIn.username)
 
@@ -106,7 +112,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 const seriesWrites = new WriteQueue()
 
 /** The courses as shown, which a drag reorders before the server has the new order. */
-const { value: courses, edit: editCourses } = useLocalEdits(() => coursesQueryRet.data.value ?? [], seriesWrites)
+const { value: courses, edit: editCourses } = useLocalEdits(() => queryRet.data.value?.courses ?? [], seriesWrites)
 
 const { query, sortBy } = useListViewQuery()
 const shownCourses = computed(() => courses.value.filter((course) => matchesQuery([course.title], query.value)))
@@ -118,9 +124,9 @@ const sections = computed(() => {
 // A series of a few courses is seen at a glance, without an index.
 const indexMinCourseCount = 20
 
-function refetch() {
-  seriesQueryRet.refetch()
-  coursesQueryRet.refetch()
+async function refetch() {
+  await seriesWrites.settled()
+  if (!pageSignal.aborted) queryRet.refetch()
 }
 
 const listRef = ref<HTMLElement>()
@@ -129,18 +135,6 @@ const handleSorted = useMessageHandle(
   async (oldIndex: number, newIndex: number) => {
     const series = courseSeries.value
     if (series == null) return
-    // A course missing from the list, such as one added since it was loaded, would be dropped by the reorder.
-    if (
-      !hasSameIDs(
-        courses.value.map((course) => course.id),
-        series.courseIDs
-      )
-    ) {
-      throw new DefaultException({
-        en: 'The courses of this series are not all shown, so they cannot be reordered here',
-        zh: '这个系列的课程没有全部显示，无法在这里调整顺序'
-      })
-    }
     const reorderedShown = [...shownCourses.value]
     const [moved] = reorderedShown.splice(oldIndex, 1)
     reorderedShown.splice(newIndex, 0, moved)
@@ -164,7 +158,7 @@ useDragSortable(shownCourses, listRef, {
 
 /** The units as shown, which an edit changes before the server has them. */
 const { value: units, edit: editUnits } = useLocalEdits<CourseSeriesUnit[]>(
-  () => seriesQueryRet.data.value?.units ?? [],
+  () => courseSeries.value?.units ?? [],
   seriesWrites
 )
 
@@ -203,7 +197,13 @@ const unitListRef = ref<HTMLElement>()
 
 async function writeUnits(series: CourseSeries, edited: CourseSeriesUnit[]) {
   try {
-    await editUnits(edited, async (units) => (await updateCourseSeries(series.id, toUnitsParams(units))).units)
+    await editUnits(edited, async (units) => {
+      const saved = await updateCourseSeries(series.id, toUnitsParams(units))
+      // Removing the last unit exposes the flat list in the order the author just saved.
+      const byID = new Map(courses.value.map((course) => [course.id, course]))
+      courses.value = saved.courseIDs.flatMap((id) => byID.get(id) ?? [])
+      return saved.units
+    })
   } catch (e) {
     refetch()
     throw e
@@ -251,12 +251,6 @@ const handleAddUnit = useMessageHandle(
     const title = await askUnitTitle({ en: 'New unit', zh: '新建单元' })
     // The courses as shown, in an order a reorder still being written may have given them, go into the first unit.
     const courseIDs = courses.value.map((course) => course.id)
-    if (!isDivided.value && !hasSameIDs(courseIDs, courseSeries.value?.courseIDs ?? [])) {
-      throw new DefaultException({
-        en: 'The courses of this series are not all shown, so they cannot be put into a unit here',
-        zh: '这个系列的课程没有全部显示，无法在这里放进单元'
-      })
-    }
     await writeUnits(series, addUnit(units.value, title, courseIDs))
   },
   { en: 'Failed to add unit', zh: '新建单元失败' }
@@ -378,10 +372,12 @@ const handleCreateCourse = useMessageHandle(async (series: CourseSeries, unitID:
 const handleOpenCourse = useMessageHandle(async (series: CourseSeries, course: Course) => {
   if (isGuidedCourse(course)) {
     await keepPageFor(invokeGuidedCourseDrawer({ course, courseSeriesID: series.id }))
+    refetch()
     return
   }
   const { openEditor } = await keepPageFor(invokePlaygroundCourseDrawer({ course, courseSeriesID: series.id }))
   if (openEditor) await openInCourseEditor(series, course)
+  else refetch()
 }).fn
 
 const handleRemoveCourse = useMessageHandle(
@@ -404,7 +400,8 @@ const handleRemoveCourse = useMessageHandle(
 ).fn
 
 const handleEditSeries = useMessageHandle(async (series: CourseSeries) => {
-  await keepPageFor(invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order }))
+  await openAfterEdits(() => invokeSeriesDrawer({ courseSeries: series, kind: series.kind, order: series.order }))
+  refetch()
 }).fn
 
 const handleExport = useMessageHandle(
@@ -472,9 +469,9 @@ const handleRemoveSeries = useMessageHandle(
       </template>
     </header>
 
-    <UILoading v-if="seriesQueryRet.isLoading.value" class="h-80" :mask="false" />
-    <UIError v-else-if="seriesQueryRet.error.value != null" class="h-80" :retry="seriesQueryRet.refetch">
-      {{ $t(seriesQueryRet.error.value.userMessage) }}
+    <UILoading v-if="queryRet.isLoading.value" class="h-80" :mask="false" />
+    <UIError v-else-if="queryRet.error.value != null" class="h-80" :retry="queryRet.refetch">
+      {{ $t(queryRet.error.value.userMessage) }}
     </UIError>
     <UIError v-else-if="courseSeries != null && !isOwnSeries" class="h-80">
       {{ $t({ en: 'This course series is not yours', zh: '这个课程系列不属于你' }) }}
@@ -557,11 +554,7 @@ const handleRemoveSeries = useMessageHandle(
           </UIButton>
         </header>
 
-        <UILoading v-if="coursesQueryRet.isLoading.value && courses.length === 0" class="h-60" :mask="false" />
-        <UIError v-else-if="coursesQueryRet.error.value != null" class="h-60" :retry="coursesQueryRet.refetch">
-          {{ $t(coursesQueryRet.error.value.userMessage) }}
-        </UIError>
-        <UIEmpty v-else-if="courses.length === 0 && !isDivided" size="large">
+        <UIEmpty v-if="courses.length === 0 && !isDivided" size="large">
           {{ $t({ en: 'No courses in this series yet', zh: '这个系列还没有课程' }) }}
         </UIEmpty>
         <UIEmpty v-else-if="shownCourses.length === 0 && (!isDivided || query !== '')" size="large">

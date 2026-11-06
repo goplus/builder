@@ -80,20 +80,20 @@ describe('Tutorial', () => {
     const series = makeSeries()
     const { guided, router } = makeControllers()
     const tutorial = new Tutorial(guided, router)
-    tutorial.notifyPlaygroundCourseStarted(course, series)
+    tutorial.notifyPlaygroundCourseStarted(course.id, series.id)
 
     await tutorial.startCourse(series.id, course.id)
 
     expect(router.replace).toHaveBeenCalledWith('/course/series-1/course-1/start')
     expect(router.push).not.toHaveBeenCalled()
-    expect(tutorial.currentCourse?.id).toBe(course.id)
+    expect(tutorial.currentCourse?.courseID).toBe(course.id)
   })
 
   it('replaces the Start route when restarting a Guided Course', async () => {
     const course = makeGuidedCourse()
     const series = makeSeries()
     const { guided, router } = makeControllers()
-    guided.currentCourse = { ...course, series }
+    guided.currentCourse = { courseID: course.id, seriesID: series.id }
     const tutorial = new Tutorial(guided, router)
 
     await tutorial.startCourse(series.id, course.id)
@@ -150,7 +150,7 @@ describe('Tutorial', () => {
     const series = makeSeries()
     const { guided, router } = makeControllers()
     const tutorial = new Tutorial(guided, router)
-    tutorial.notifyPlaygroundCourseStarted(makePlaygroundCourse(), series)
+    tutorial.notifyPlaygroundCourseStarted(makePlaygroundCourse().id, series.id)
 
     await tutorial.endCurrentCourse()
 
