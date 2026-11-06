@@ -1,11 +1,9 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, ref, reactive } from 'vue'
+import { nextTick, ref } from 'vue'
 import { createI18n } from '@/utils/i18n'
 import type { MonacoEditor } from '../monaco'
 import { CodeEditorUIController } from './code-editor-ui'
-import type { APIReferenceItem } from './api-reference'
-import { APIReferenceController } from './api-reference'
 import CodeEditorUI from './CodeEditorUI.vue'
 
 const { attachUI, detachUI, monaco } = vi.hoisted(() => ({
@@ -113,42 +111,5 @@ describe('Code Editor UI options', () => {
     await nextTick()
     expect(editor.updateOptions).toHaveBeenLastCalledWith(expect.objectContaining({ wordWrap: 'on' }))
     normal.unmount()
-  })
-})
-
-describe('API Reference visibility', () => {
-  it('hides the complete empty sidebar, restores APIs, and keeps loading and errors visible', async () => {
-    const state = reactive<{ items: APIReferenceItem[] | null; error: unknown; loading: boolean }>({
-      items: null,
-      error: null,
-      loading: true
-    })
-    const controller = APIReferenceController.prototype
-    vi.spyOn(controller, 'items', 'get').mockImplementation(() => state.items)
-    vi.spyOn(controller, 'error', 'get').mockImplementation(() => state.error)
-    vi.spyOn(controller, 'loading', 'get').mockImplementation(() => state.loading)
-    const wrapper = shallowMount(CodeEditorUI, {
-      props: { codeFilePath: 'Cat.spx', simpleMode: true },
-      global: { plugins: [createI18n({ lang: 'en' })], directives: { radar: {} } }
-    })
-    expect((wrapper.find('aside').element as HTMLElement).style.display).not.toBe('none')
-    state.items = []
-    state.loading = false
-    await nextTick()
-    expect((wrapper.find('aside').element as HTMLElement).style.display).toBe('none')
-    expect(wrapper.find('.cursor-col-resize').exists()).toBe(false)
-    state.loading = true
-    await nextTick()
-    expect((wrapper.find('aside').element as HTMLElement).style.display).not.toBe('none')
-    state.loading = false
-    state.items = [{} as APIReferenceItem]
-    await nextTick()
-    expect((wrapper.find('aside').element as HTMLElement).style.display).not.toBe('none')
-    expect(wrapper.find('.cursor-col-resize').exists()).toBe(true)
-    state.items = []
-    state.error = new Error('API load failed')
-    await nextTick()
-    expect((wrapper.find('aside').element as HTMLElement).style.display).not.toBe('none')
-    wrapper.unmount()
   })
 })

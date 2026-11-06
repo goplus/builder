@@ -213,11 +213,6 @@ const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
 }))
 provide(codeEditorUICtxInjectionKey, codeEditorUICtx)
 
-const showApiReference = computed(() => {
-  const controller = uiRef.value.apiReferenceController
-  return props.hasApiReference && (controller.loading || controller.error != null || controller.items?.length !== 0)
-})
-
 // TOOD: use percentage instead of px as default width
 const defaultSidebarWidth = 280 // px
 const minSidebarWidth = 160 // px
@@ -292,7 +287,6 @@ providePopupContainer(codeEditorEl)
   >
     <aside
       v-if="hasApiReference"
-      v-show="showApiReference"
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
@@ -304,7 +298,7 @@ providePopupContainer(codeEditorEl)
       />
     </aside>
     <div
-      v-if="showApiReference"
+      v-if="hasApiReference"
       ref="resizeHandleEl"
       v-radar="{ name: 'resize-handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"

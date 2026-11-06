@@ -48,9 +48,7 @@ const needsCategorization = computed(() => (itemsForDisplay.value?.length ?? 0) 
 const loading = ref(true)
 // APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial).
 // Report loading until the deferred rendering finishes so those modules can wait for the UI.
-useRegisterLoading(
-  () => props.controller.loading || (err.value == null && props.controller.items?.length !== 0 && loading.value)
-)
+useRegisterLoading(loading)
 
 const err = computed(() => {
   const err = props.controller.error

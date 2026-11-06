@@ -603,10 +603,19 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
       imageSmoothingEnabled: false
     }) as Promise<Blob>
   // Omit editor-only controls when taking screenshot.
-  const takeWithoutPivot = () =>
-    selectedSpriteNode.value == null ? takeBlob() : selectedSpriteNode.value.withPivotMarkerHidden(takeBlob)
+  const takeWithoutPivot = () => {
+    const selectedSprite = selectedSpriteNode.value
+    if (selectedSprite == null) return takeBlob()
+    return selectedSprite.withPivotMarkerHidden(takeBlob)
+  }
   const nodeTransformer = nodeTransformerRef.value
-  const blob = await (nodeTransformer == null ? takeWithoutPivot() : nodeTransformer.withHidden(takeWithoutPivot))
+  let blob: Blob
+  // Simple Mode does not mount a NodeTransformer.
+  if (nodeTransformer == null) {
+    blob = await takeWithoutPivot()
+  } else {
+    blob = await nodeTransformer.withHidden(takeWithoutPivot)
+  }
   return fromBlob(`${name}.jpg`, blob)
 }
 
