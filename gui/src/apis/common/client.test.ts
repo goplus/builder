@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiException, ApiExceptionCode, OAuthException, isQuotaExceededMeta, isTooManyRequestsMeta } from './exception'
+import {
+  ApiException,
+  ApiExceptionCode,
+  OAuthException,
+  isAccountFlowConflictMeta,
+  isAccountFlowExpiredMeta,
+  isQuotaExceededMeta,
+  isTooManyRequestsMeta
+} from './exception'
 import { Client } from './client'
 
 function makeJsonResponse(body: unknown, status: number, headers: Record<string, string> = {}) {
@@ -169,6 +177,63 @@ describe('Client', () => {
       expect(e.meta).toMatchObject({
         retryAfter: null
       })
+    })
+  })
+
+  describe('Account flow error metadata', () => {
+    it('should preserve conflict reasons for the owning flow', async () => {
+      fetchMock.mockResolvedValueOnce(
+        makeJsonResponse({ code: ApiExceptionCode.errorConflict, msg: 'Conflict', reason: 'account_changed' }, 409)
+      )
+
+      const e = await expectApiException(
+        client.post('/account/authorization-requests/decision'),
+        ApiExceptionCode.errorConflict
+      )
+      expect(isAccountFlowExpiredMeta(e.code, e.meta)).toBe(false)
+      if (!isAccountFlowConflictMeta(e.code, e.meta)) throw new Error('Expected Account flow conflict metadata')
+      expect(e.meta.reason).toBe('account_changed')
+    })
+
+    it('should distinguish proof expiration from request expiration', async () => {
+      fetchMock.mockResolvedValueOnce(
+        makeJsonResponse({ code: ApiExceptionCode.errorExpired, msg: 'Gone', reason: 'proof_expired' }, 410)
+      )
+
+      const e = await expectApiException(
+        client.get('/account/authentication-requests/request'),
+        ApiExceptionCode.errorExpired
+      )
+      expect(isAccountFlowConflictMeta(e.code, e.meta)).toBe(false)
+      if (!isAccountFlowExpiredMeta(e.code, e.meta)) throw new Error('Expected Account flow expiration metadata')
+      expect(e.meta.reason).toBe('proof_expired')
+    })
+
+    it.each([
+      { code: ApiExceptionCode.errorConflict, status: 409, reason: 'request_expired' },
+      { code: ApiExceptionCode.errorExpired, status: 410, reason: 'account_changed' },
+      { code: ApiExceptionCode.errorExpired, status: 410, reason: 'unknown_reason' },
+      { code: ApiExceptionCode.errorConflict, status: 409, reason: { value: 'account_changed' } }
+    ])('should ignore invalid flow metadata for $code with reason $reason', async ({ code, status, reason }) => {
+      fetchMock.mockResolvedValueOnce(makeJsonResponse({ code, msg: 'Request failed', reason }, status))
+
+      const e = await expectApiException(client.post('/account/authorization-requests/decision'), code)
+      expect(e.meta).toBeNull()
+      expect(isAccountFlowConflictMeta(e.code, e.meta)).toBe(false)
+      expect(isAccountFlowExpiredMeta(e.code, e.meta)).toBe(false)
+    })
+
+    it('should not infer flow reasons from diagnostic messages', async () => {
+      fetchMock.mockResolvedValueOnce(
+        makeJsonResponse({ code: ApiExceptionCode.errorConflict, msg: 'account_changed' }, 409)
+      )
+
+      const e = await expectApiException(
+        client.post('/account/authorization-requests/decision'),
+        ApiExceptionCode.errorConflict
+      )
+      expect(e.meta).toBeNull()
+      expect(isAccountFlowConflictMeta(e.code, e.meta)).toBe(false)
     })
   })
 
