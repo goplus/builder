@@ -568,7 +568,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
           :decorator="decorator"
           :map-size="mapSize"
         />
-        <!-- Refer to: spx-gui/src/components/editor/preview/stage-viewer/StageViewer.vue -->
+        <!-- Refer to: gui/src/components/editor/preview/stage-viewer/StageViewer.vue -->
         <v-group>
           <SpriteNode
             v-for="localConfig in visibleSpriteLocalConfigs"

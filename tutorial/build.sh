@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Default output base (can be overridden by environment variable or argument)
-OUTPUT_BASE="${TUTORIAL_BOOKS_OUTPUT_DIR:-$SCRIPT_DIR/../spx-gui/public/tutorial-books}"
+OUTPUT_BASE="${TUTORIAL_BOOKS_OUTPUT_DIR:-$SCRIPT_DIR/../gui/public/tutorial-books}"
 # Convert to absolute path
 OUTPUT_BASE="$(cd "$(dirname "$OUTPUT_BASE")" && pwd)/$(basename "$OUTPUT_BASE")"
 

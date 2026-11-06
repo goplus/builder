@@ -14,7 +14,7 @@ flag_management:
   individual_flags:
     - name: spx-gui
       paths:
-        - spx-gui/src/
+        - gui/src/
     - name: tools-ai
       paths:
         - tools/ai/

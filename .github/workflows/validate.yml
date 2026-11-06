@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: spx-gui
+        working-directory: gui
     steps:
       - uses: actions/checkout@v7
 
@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 24.11.1
           cache: pnpm
-          cache-dependency-path: spx-gui/pnpm-lock.yaml
+          cache-dependency-path: gui/pnpm-lock.yaml
 
       - name: Install Node modules
         run: pnpm install --frozen-lockfile
@@ -65,7 +65,7 @@ jobs:
         with:
           # Fork pull requests use Codecov's tokenless upload support.
           use_oidc: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
-          files: spx-gui/coverage/lcov.info
+          files: gui/coverage/lcov.info
           flags: spx-gui
           disable_search: true
           fail_ci_if_error: true

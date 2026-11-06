@@ -1,4 +1,4 @@
-# spx-gui
+# gui
 
 ## Environment Requirements
 

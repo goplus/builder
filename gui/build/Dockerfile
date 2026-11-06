@@ -12,33 +12,33 @@ ARG GOPROXY
 
 WORKDIR /app
 COPY tools ./tools
-COPY spx-gui ./spx-gui
+COPY gui ./gui
 
 # Build WASM
-WORKDIR /app/spx-gui
+WORKDIR /app/gui
 RUN ./build-wasm.sh
 
 ################################################################################
 
 FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
-WORKDIR /app/spx-gui
+WORKDIR /app/gui
 
-COPY spx-gui/package.json spx-gui/pnpm-lock.yaml spx-gui/pnpm-workspace.yaml .
-COPY spx-gui/public ./public
-COPY spx-gui/link-spx.sh .
-COPY spx-gui/build-tutorial-books.sh .
+COPY gui/package.json gui/pnpm-lock.yaml gui/pnpm-workspace.yaml .
+COPY gui/public ./public
+COPY gui/link-spx.sh .
+COPY gui/build-tutorial-books.sh .
 ARG NPM_CONFIG_REGISTRY
 # pnpm reads npm config from lowercase npm_config_* environment variables.
 ENV npm_config_registry=${NPM_CONFIG_REGISTRY}
 RUN corepack enable && pnpm install --frozen-lockfile
 
-COPY spx-gui .
+COPY gui .
 COPY docs ../docs
 COPY tools ../tools
 COPY tutorial ../tutorial
 # Copy assets (with wasm)
-COPY --from=go-builder /app/spx-gui/src/assets /app/spx-gui/src/assets
+COPY --from=go-builder /app/gui/src/assets /app/gui/src/assets
 
 ARG VITE_MODE
 
@@ -49,8 +49,8 @@ RUN pnpm run build
 
 FROM ${NGINX_BASE_IMAGE}
 
-COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
-COPY spx-gui/build/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=frontend-builder /app/gui/dist /usr/share/nginx/html
+COPY gui/build/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Validate Nginx configuration
 RUN nginx -t

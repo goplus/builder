@@ -16,7 +16,7 @@ import (
 // the other way round.
 //
 // Both lists are extracted from the sources rather than hand-written. The
-// earlier vitest version in spx-gui relied on a hand-written array of names
+// earlier vitest version in gui relied on a hand-written array of names
 // and stayed green whenever both sides were forgotten together; here, changing
 // a wire name on either side turns the test red at once.
 func TestClientCoversAllWireNames(t *testing.T) {

@@ -27,10 +27,10 @@ are embedded in xgolsw. The frontend Worker supplies the additional archive and 
 server instance. Keep SPX registration aligned with `../ispx/main.go` and Tutorial registration aligned with
 `../tutorial/gox.mod` when changing the SDKs or auto-imported packages.
 
-Rebuild the WASM assets and run the Worker integration tests from `spx-gui`:
+Rebuild the WASM assets and run the Worker integration tests from `gui`:
 
 ```bash
-cd ../../spx-gui
+cd ../../gui
 ./build-wasm.sh
 pnpm exec vitest --run src/components/xgo-code-editor/lsp/worker.test.ts \
   src/components/editor/spx-code-editor/lsp/worker.test.ts src/components/course-editor/lsp.test.ts
