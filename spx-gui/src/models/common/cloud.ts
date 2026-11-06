@@ -1,5 +1,6 @@
 import { createDirectUploadTask } from 'qiniu-js'
 import { filename } from '@/utils/path'
+import type { ProgressReporter } from '@/utils/progress'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
 import { mergeSignals } from '@/utils/disposable'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
@@ -69,6 +70,16 @@ export class CloudHelpers {
 
   universalUrlToWebUrl(universalUrl: UniversalUrl) {
     return universalUrlToWebUrlImpl(universalUrl, this.ensureConfig())
+  }
+
+  /** Resolve an existing saved file URL without loading or uploading its contents. */
+  async getFileWebUrl(file: File, signal?: AbortSignal): Promise<WebUrl | null> {
+    signal?.throwIfAborted()
+    const universalUrl = getUniversalUrl(file)
+    if (universalUrl == null) return null
+    const webUrl = await this.universalUrlToWebUrl(universalUrl)
+    signal?.throwIfAborted()
+    return webUrl
   }
 
   clearUniversalUrlCache() {
@@ -178,12 +189,22 @@ async function parseProjectData({ files: fileCollection, thumbnail: thumbnailUni
 
 export async function saveFiles(
   files: Files,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  reporter?: ProgressReporter
 ): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
+  const paths = Object.keys(files)
+  let completed = 0
   const fileCollection = Object.fromEntries(
-    await Promise.all(Object.keys(files).map((path) => saveFileAtPath(path, files[path]!, signal)))
+    await Promise.all(
+      paths.map(async (path) => {
+        const entry = await saveFileAtPath(path, files[path]!, signal)
+        reporter?.report(++completed / paths.length)
+        return entry
+      })
+    )
   )
   const fileCollectionHash = await hashFileCollection(fileCollection)
+  reporter?.report(1)
   return { fileCollection, fileCollectionHash }
 }
 

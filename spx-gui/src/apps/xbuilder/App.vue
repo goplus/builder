@@ -5,9 +5,11 @@
       <UIModalProvider v-else>
         <BrowserVersionReminder />
         <UpdateNotificationWrapper>
-          <CopilotRoot>
-            <TutorialRoot>
-              <RouterView />
+          <CopilotRoot :route-readiness="routeReadiness">
+            <TutorialRoot :route-readiness="routeReadiness">
+              <ReadinessProvider :scope="routeReadiness">
+                <RouterView />
+              </ReadinessProvider>
               <SpotlightUI />
               <CopilotUI />
             </TutorialRoot>
@@ -28,7 +30,7 @@ import CopilotUI from '@/components/copilot/CopilotUI.vue'
 import TutorialRoot from '@/components/tutorials/TutorialRoot.vue'
 import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from '@/utils/i18n'
-import { useInstallRouteLoading } from '@/utils/route-loading'
+import { createReadinessScope, ReadinessProvider } from '@/utils/readiness'
 import { isMobile } from '@/utils/ua'
 import { getUIConfig } from '@/setup'
 
@@ -39,5 +41,5 @@ const showMobileReminder = isMobile()
 const i18n = useI18n()
 const config = computed<Config>(() => getUIConfig(i18n))
 
-useInstallRouteLoading()
+const routeReadiness = createReadinessScope()
 </script>

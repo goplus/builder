@@ -22,7 +22,7 @@ function makeEditorCtx(outputs: RuntimeOutput[] = [], { saved = true, project = 
   return {
     project,
     state: {
-      runtime: { outputs }
+      runtime: { outputSnapshot: outputs }
     }
   } as unknown as EditorCtx
 }

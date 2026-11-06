@@ -17,7 +17,7 @@ describe('community home', () => {
     const { wrapper, router } = await mountPages('/')
     await flushPromises()
     const profile = wrapper.getComponent(NavbarProfile)
-    await profile.get('.h-full').trigger('mouseenter')
+    await profile.get('.h-full').trigger('click')
     await vi.waitFor(() =>
       expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Profile')).toBe(true)
     )
@@ -91,7 +91,7 @@ describe('community home', () => {
       followed: count(ExploreOrder.FollowingCreated)
     }
     now += 65_000
-    await wrapper.get('[aria-label="Project menu"]').trigger('mouseenter')
+    await wrapper.get('[aria-label="Project menu"]').trigger('click')
     await vi.waitFor(() =>
       expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'New project...')).toBe(true)
     )
@@ -148,7 +148,7 @@ describe('community home', () => {
       ...params
     }))
     const { wrapper, router } = await mountPages('/')
-    await wrapper.get('[aria-label="Project menu"]').trigger('mouseenter')
+    await wrapper.get('[aria-label="Project menu"]').trigger('click')
     await vi.waitFor(() =>
       expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Open project...')).toBe(true)
     )
@@ -162,7 +162,7 @@ describe('community home', () => {
     await open.get('a[href="/editor/alice/My%20spaceship"]').trigger('click')
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/editor/alice/My%20spaceship/sprites'))
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Stage overview"]').exists()).toBe(true), { timeout: 4000 })
-    await wrapper.get('[aria-label="Project menu"]').trigger('mouseenter')
+    await wrapper.get('[aria-label="Project menu"]').trigger('click')
     await vi.waitFor(() =>
       expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Modify project name')).toBe(true)
     )

@@ -4,31 +4,12 @@
  * consumed by the generic CodeEditor core.
  */
 
-import { packageSpx } from '@/utils/spx'
 import type { Files } from '@/models/common/file'
 import type { SpxProject } from '@/models/spx/project'
 import type { History } from '@/components/editor/history'
-import type { ClassFramework, IXGoProject, ICodeOwner } from '@/components/xgo-code-editor'
+import type { IXGoProject, ICodeOwner } from '@/components/xgo-code-editor'
 import { CodeOwnerStage, CodeOwnerSprite } from './text-document'
-
-/**
- * The spx class framework descriptor.
- * Maps to `modfile.Project` fields for the spx game engine.
- */
-export const spxClassFramework: ClassFramework = {
-  projectClass: {
-    ext: '.spx',
-    className: 'Game'
-  },
-  workClasses: [
-    {
-      ext: '.spx',
-      className: 'Sprite'
-    }
-  ],
-  pkgPaths: [packageSpx],
-  autoImports: [{ path: packageSpx }]
-}
+import { spxClassFramework } from './lsp/class-framework'
 
 /**
  * Adapts a SpxProject to the IXGoProject interface consumed by the generic CodeEditor.

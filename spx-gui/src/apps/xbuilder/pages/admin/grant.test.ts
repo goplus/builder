@@ -70,15 +70,15 @@ describe('admin app grant', () => {
         expiresAt: new Date(expiresAt).toISOString()
       })
     )
-    await vi.waitFor(() => expect(wrapper.find('[aria-label="Copy Access token"]').exists()).toBe(true))
-    await wrapper.get('[aria-label="Copy Access token"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Copy access token"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Copy access token"]').trigger('click')
     await vi.waitFor(async () => expect(await navigator.clipboard.readText()).toBe('test-only-access-token'))
     await vi.waitFor(() => expect(wrapper.find('tbody').text()).toContain('Test automation'))
     await wrapper
       .findAll('button')
       .find((button) => button.text() === 'I have saved it')!
       .trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[aria-label="Copy Access token"]').exists()).toBe(false))
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Copy access token"]').exists()).toBe(false))
     await wrapper.get('select').setValue('refreshToken')
     await vi.waitFor(() =>
       expect(accountAdminApis.listAccountAppGrantTokens).toHaveBeenLastCalledWith(

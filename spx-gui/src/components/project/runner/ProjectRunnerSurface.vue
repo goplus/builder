@@ -5,12 +5,14 @@ import { useMessageHandle } from '@/utils/exception'
 import { SpxProject } from '@/models/spx/project'
 import { UIButton, UITooltip } from '@/components/ui'
 import ProjectRunner from './ProjectRunner.vue'
+import type { SpxExecutionLocation, SpxLog } from './spx-log'
 
 type RunnerState = 'initial' | 'loading' | 'running'
 
 const props = withDefaults(
   defineProps<{
     project: SpxProject
+    trackExecutionLocation?: boolean
     fullscreen?: boolean
     inlineAnchor?: () => HTMLElement | null
     onRun?: () => void | Promise<void>
@@ -37,7 +39,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:fullscreen': [value: boolean]
   exit: [code: number]
-  console: [type: 'log' | 'warn', args: unknown[]]
+  log: [log: SpxLog]
+  executionLocations: [locations: readonly SpxExecutionLocation[]]
 }>()
 
 const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
@@ -401,7 +404,7 @@ defineExpose({
     <div v-if="overlayActive" class="h-full w-full"></div>
     <div
       ref="wrapperRef"
-      v-radar="{ name: 'Project runner surface', desc: 'Container hosting project runner' }"
+      v-radar="{ name: 'project-runner-surface', desc: 'Container hosting project runner' }"
       class="runner-wrapper"
       :class="{
         fullscreen: overlayActive,
@@ -426,7 +429,7 @@ defineExpose({
         <div class="flex-[1_1_30%] grid grid-flow-col items-center justify-end justify-items-end gap-3">
           <UIButton
             v-if="runnerState === 'initial'"
-            v-radar="{ name: 'Run button', desc: 'Click to run the project in overlay' }"
+            v-radar="{ name: 'run-button', desc: 'Click to run the project in overlay' }"
             type="primary"
             icon="playHollow"
             :loading="runButtonLoading"
@@ -436,7 +439,7 @@ defineExpose({
           </UIButton>
           <UIButton
             v-else
-            v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in overlay' }"
+            v-radar="{ name: 'rerun-button', desc: 'Click to rerun the project in overlay' }"
             icon="rotate"
             :disabled="runnerState !== 'running' || stopButtonLoading"
             :loading="rerunButtonLoading && !stopButtonLoading"
@@ -446,7 +449,7 @@ defineExpose({
           </UIButton>
           <UIButton
             v-if="runnerState !== 'initial'"
-            v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
+            v-radar="{ name: 'stop-button', desc: 'Click to stop the project' }"
             type="neutral"
             icon="end"
             :loading="stopButtonLoading"
@@ -458,7 +461,7 @@ defineExpose({
             <template #trigger>
               <UIButton
                 v-radar="{
-                  name: 'Exit full screen button',
+                  name: 'exit-full-screen-button',
                   desc: 'Click to exit full screen for the running project'
                 }"
                 type="neutral"
@@ -474,10 +477,12 @@ defineExpose({
       <div class="runner-area">
         <ProjectRunner
           ref="runnerRef"
+          :track-execution-location="props.trackExecutionLocation"
           class="runner"
           :project="project"
-          @console="(type, args) => emit('console', type, args)"
-          @exit="(code) => emit('exit', code)"
+          @log="emit('log', $event)"
+          @execution-locations="emit('executionLocations', $event)"
+          @exit="emit('exit', $event)"
         />
         <slot v-if="!overlayActive" name="inline-overlay" />
         <div v-if="overlayActive && initialLoading && !overlayOpening" class="overlay-loading"></div>

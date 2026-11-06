@@ -15,7 +15,8 @@ import { throttle } from 'lodash'
 import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
 import { computedShallowReactive, untilNotNull, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
-import { useI18n } from '@/utils/i18n'
+import { useRegisterLoading } from '@/utils/readiness'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/xgo'
 import { theme, tabSize, insertSpaces } from '@/utils/xgo/highlighter'
 import { providePopupContainer, useModal } from '@/components/ui'
@@ -34,13 +35,24 @@ import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
 import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
+import ExecutionLocationUI from './execution-location/ExecutionLocationUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
-import ZoomControl from './ZoomControl.vue'
+import CodeEditorSettings from './CodeEditorSettings.vue'
 import { useUserLocalStorage } from '@/utils/user-storage'
 
-const props = defineProps<{
-  codeFilePath: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    codeFilePath: string
+    simpleMode?: boolean
+    hasApiReference?: boolean
+    readOnly?: boolean
+    readOnlyMessage?: LocaleMessage
+  }>(),
+  {
+    hasApiReference: true,
+    readOnlyMessage: () => ({ en: 'Cannot edit in read-only editor', zh: '无法在只读编辑器中编辑' })
+  }
+)
 
 const i18n = useI18n()
 const codeEditor = useCodeEditor()
@@ -66,11 +78,16 @@ async function rename(textDocumentId: TextDocumentIdentifier, position: Position
 
 const uiRef = computed(() => {
   const mainTextDocumentId = getTextDocumentId(props.codeFilePath)
-  return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, rename)
+  return new CodeEditorUIController(mainTextDocumentId, codeEditor, i18n, {
+    renameHandler: rename,
+    simpleMode: props.simpleMode,
+    isReadOnly: () => props.readOnly ?? false
+  })
 })
 
 const initialFontSize = 12
-const fontSize = useUserLocalStorage('spx-gui-code-font-size', initialFontSize)
+const fontSize = props.simpleMode ? ref(16) : useUserLocalStorage('spx-gui-code-font-size', initialFontSize)
+const wordWrap = props.simpleMode ? ref(true) : useUserLocalStorage('builder-code-editor-word-wrap', false)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'xgo',
@@ -78,10 +95,21 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   tabSize,
   insertSpaces,
   fontSize: fontSize.value,
-  contextmenu: false
+  wordWrap: wordWrap.value ? 'on' : 'off',
+  contextmenu: false,
+  readOnly: props.readOnly ?? false,
+  readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
+
+watchEffect(() => {
+  monacoEditorRef.value?.updateOptions({
+    wordWrap: wordWrap.value ? 'on' : 'off',
+    readOnly: props.readOnly ?? false,
+    readOnlyMessage: { value: i18n.t(props.readOnlyMessage) }
+  })
+})
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacoEditorRef.value = editor
@@ -89,6 +117,7 @@ async function handleMonacoEditorInit(editor: MonacoEditor) {
 
 const handleMonacoEditorDrag = throttle((clientPoint: { x: number; y: number } | null) => {
   const ui = uiRef.value
+  if (props.readOnly) return
   if (clientPoint == null) {
     ui.dropIndicatorController.setDropPosition(null)
     return
@@ -121,7 +150,7 @@ async function handleMonacoEditorDrop(e: DragEvent) {
   const ui = uiRef.value
   ui.dropIndicatorController.setDropPosition(null)
   handleMonacoEditorDrag.cancel()
-  if (e.dataTransfer == null) return
+  if (props.readOnly || e.dataTransfer == null) return
 
   const target = ui.editor.getTargetAtClientPoint(e.clientX, e.clientY)
   if (target == null || target.position == null) return
@@ -143,9 +172,13 @@ async function handleMonacoEditorDrop(e: DragEvent) {
   }
 }
 
+const loading = ref(true)
+useRegisterLoading(loading)
+
 watch(
   uiRef,
   async (ui, _, onCleanUp) => {
+    loading.value = true
     const signal = getCleanupSignal(onCleanUp)
     signal.addEventListener('abort', () => ui.dispose())
 
@@ -160,9 +193,14 @@ watch(
       if (e.hasChanged(fontSizeId)) {
         fontSize.value = ui.editor.getOptions().get(fontSizeId)
       }
+      const wordWrapId = ui.monaco.editor.EditorOption.wordWrap
+      if (e.hasChanged(wordWrapId)) {
+        wordWrap.value = ui.editor.getOptions().get(wordWrapId) === 'on'
+      }
     })
 
     codeEditor.attachUI(ui)
+    loading.value = false
     signal.addEventListener('abort', () => {
       codeEditor.detachUI(ui)
     })
@@ -181,7 +219,10 @@ const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
-const sidebarWidth = useUserLocalStorage('spx-code-editor-sidebar-width', defaultSidebarWidth)
+const sidebarWidth = useUserLocalStorage(
+  props.simpleMode ? 'builder-simple-code-editor-sidebar-width' : 'spx-code-editor-sidebar-width',
+  defaultSidebarWidth
+)
 const isResizing = ref(false)
 
 watchEffect((onCleanup) => {
@@ -241,23 +282,31 @@ providePopupContainer(codeEditorEl)
   <div
     ref="codeEditorEl"
     class="relative flex min-h-0 flex-[1_1_0] justify-stretch"
+    :class="{ 'pr-3': simpleMode }"
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
     <aside
+      v-if="hasApiReference"
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
-      <APIReferenceUI class="flex-[1_1_0]" :controller="uiRef.apiReferenceController" />
+      <APIReferenceUI
+        class="flex-[1_1_0]"
+        :controller="uiRef.apiReferenceController"
+        :simple-mode="simpleMode"
+        :disabled="readOnly"
+      />
     </aside>
     <div
+      v-if="hasApiReference"
       ref="resizeHandleEl"
-      v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
+      v-radar="{ name: 'resize-handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
       :class="{ 'bg-black/10': isResizing }"
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
     <MonacoEditorComp
-      v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
+      v-radar="{ name: 'code-text-editor', desc: 'Text editor for code' }"
       class="my-3 min-w-0 flex-[1_1_0]"
       :monaco="codeEditor.monaco"
       :options="monacoEditorOptions"
@@ -267,15 +316,16 @@ providePopupContainer(codeEditorEl)
       @drop="handleMonacoEditorDrop"
     />
     <HoverUI :controller="uiRef.hoverController" />
-    <CompletionUI :controller="uiRef.completionController" />
+    <CompletionUI v-if="!readOnly" :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
-    <ContextMenuUI :controller="uiRef.contextMenuController" />
-    <InputHelperUI :controller="uiRef.inputHelperController" />
+    <ContextMenuUI v-if="!readOnly" :controller="uiRef.contextMenuController" />
+    <InputHelperUI v-if="!readOnly" :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
     <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
-    <aside class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
+    <ExecutionLocationUI v-if="props.simpleMode" />
+    <aside v-if="!simpleMode" class="flex min-h-0 min-w-0 flex-none flex-col justify-between gap-10 px-2 py-3">
       <DocumentTabs class="min-h-0 flex-[0_1_auto]" />
-      <ZoomControl class="flex-none" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+      <CodeEditorSettings v-model:word-wrap="wordWrap" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
     </aside>
   </div>
 </template>

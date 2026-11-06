@@ -24,7 +24,7 @@ const [thumbnailUrl] = useRenderableImageUrl(() => props.textDocument.thumbnailF
     {{ $t(name) }}
     <template #trigger>
       <div
-        v-radar="{ name: 'Code document tab', desc: `Click to open code of ${textDocument.id.uri}` }"
+        v-radar="{ name: 'code-document-tab', desc: `Click to open code of ${textDocument.id.uri}` }"
         class="document-tab h-10 w-10 flex-none flex items-center rounded-md border-2 transition-all"
         :class="isActive ? 'border-primary-500 bg-primary-200' : 'border-transparent bg-grey-300 cursor-pointer'"
         @click="emit('click')"

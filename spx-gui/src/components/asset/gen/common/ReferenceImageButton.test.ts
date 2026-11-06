@@ -1,6 +1,7 @@
 import { shallowMount } from '@vue/test-utils'
 import { defineComponent, h, reactive, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createRadar } from '@/utils/radar'
 import type { File } from '@/models/common/file'
 import ReferenceImageButton from './ReferenceImageButton.vue'
 import { settingsInputCtxKey } from './SettingsInput.vue'
@@ -52,13 +53,7 @@ const global = {
   stubs,
   renderStubDefaultSlot: true,
   mocks: { $t: (message: string | { zh: string }) => (typeof message === 'string' ? message : message.zh) },
-  directives: {
-    radar: {
-      mounted: (element: HTMLElement, binding: { value: { name: string } }) => {
-        element.setAttribute('aria-label', binding.value.name)
-      }
-    }
-  }
+  plugins: [createRadar()]
 }
 
 describe('ReferenceImageButton', () => {

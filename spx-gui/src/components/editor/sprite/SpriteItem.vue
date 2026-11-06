@@ -45,9 +45,8 @@ const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 const animation = computed(() => props.sprite.getDefaultAnimation())
 
 const radarNodeMeta = computed(() => {
-  const name = `Sprite item "${props.sprite.name}"`
   const desc = props.selectable ? 'Click to select the sprite and view more options' : ''
-  return { name, desc }
+  return { name: 'sprite-item', desc, attrs: { name: props.sprite.name } }
 })
 
 function toggleSpriteVisible() {
@@ -170,18 +169,18 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <UIMenuItem
-        v-radar="{ name: 'Visibility', desc: 'Click to toggle visibility the sprite' }"
+        v-radar="{ name: 'visibility', desc: 'Click to toggle visibility the sprite' }"
         @click="toggleSpriteVisible"
       >
         {{ $t({ en: `${sprite.visible ? 'Hide' : 'Show'}`, zh: `${sprite.visible ? '隐藏' : '显示'}` }) }}
       </UIMenuItem>
       <DuplicateMenuItem
-        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sprite' }"
+        v-radar="{ name: 'duplicate', desc: 'Click to duplicate the sprite' }"
         @click="handleDuplicate"
       />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sprite' }" @click="handleRename" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the sprite' }" @click="handleRename" />
       <SaveAssetToLibraryMenuItem :item="sprite" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
+      <RemoveMenuItem v-radar="{ name: 'remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorSpriteItem>
 </template>

@@ -41,7 +41,7 @@ import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useSignedIn } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
-import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import { useRegisterLoading } from '@/utils/readiness'
 import {
   getProjectEditorRouteParams,
   isSameProjectIdentifier,
@@ -54,6 +54,7 @@ import { type LocaleMessage, useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
 import { Exception } from '@/utils/exception'
+import { useScopedRouterWithPathParam } from '@/utils/route'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
@@ -69,6 +70,7 @@ import { SpxProject } from '@/models/spx/project'
 const props = defineProps<{
   ownerNameInput: string
   projectNameInput: string
+  inEditorPath: string | string[]
 }>()
 const localCache = new LocalCache(localHelpers)
 
@@ -103,6 +105,8 @@ const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: str
   })
 }
 
+const inEditorRouter = useScopedRouterWithPathParam('inEditorPath', () => props.inEditorPath)
+
 const stateQueryRet = useQuery(
   async (ctx) => {
     // We need to access route deps synchronously,
@@ -131,7 +135,7 @@ const stateQueryRet = useQuery(
       ctx.signal
     )
     state.editing.startEditing()
-    state.syncWithRouter(router)
+    state.syncWithRouter(inEditorRouter)
     return state
   },
   { en: 'Failed to load project', zh: '加载项目失败' }
@@ -184,7 +188,8 @@ const allQueryRet = useQuery(
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
 
-useRegisterUpdateRouteLoaded(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
+// TODO: Evaluate dropping the error check: it currently keeps consumers waiting until editor context is available.
+useRegisterLoading(() => allQueryRet.isLoading.value || allQueryRet.error.value != null)
 
 const publishProject = usePublishProject()
 

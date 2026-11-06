@@ -3,7 +3,7 @@
     {{ $t({ en: 'No widgets', zh: '没有控件' }) }}
     <template #op>
       <UIButton
-        v-radar="{ name: 'Add monitor button', desc: 'Click to add a monitor widget' }"
+        v-radar="{ name: 'add-monitor-button', desc: 'Click to add a monitor widget' }"
         type="neutral"
         size="large"
         @click="handleAddMonitor"
@@ -17,7 +17,7 @@
   </UIEmpty>
   <EditorList
     v-else
-    v-radar="{ name: 'Widgets management', desc: 'Managing widgets' }"
+    v-radar="{ name: 'widgets-management', desc: 'Managing widgets' }"
     resource-type="widget"
     :sortable="{ list: stage.widgets }"
     @sorted="handleSorted"
@@ -33,7 +33,7 @@
     <template #add-options>
       <UIMenu>
         <UIMenuItem
-          v-radar="{ name: 'Add monitor', desc: 'Click to add a monitor widget' }"
+          v-radar="{ name: 'add-monitor', desc: 'Click to add a monitor widget' }"
           @click="handleAddMonitor"
           >{{ $t({ en: 'Monitor', zh: '监视器' }) }}</UIMenuItem
         >

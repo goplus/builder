@@ -1,0 +1,722 @@
+import { VueQueryPlugin } from '@tanstack/vue-query'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { computed, defineComponent, h, ref } from 'vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
+
+import { readVideoDimensions } from '@/utils/video'
+import { createI18n } from '@/utils/i18n'
+import { fromConfig, fromText, toConfig, type Files } from '@/models/common/file'
+import { mainCourseFilePath } from '@/models/tutorial/course'
+import { Sprite } from '@/models/spx/sprite'
+import { TutorialProject } from '@/models/tutorial/project'
+import type { History } from '@/components/editor/history'
+import type { PlaygroundCourse } from '@/apis/course'
+import type { CourseSeries } from '@/apis/course-series'
+import { useScopedRouterWithPathParam } from '@/utils/route'
+import { CodeChangeKind } from '@/components/xgo-code-editor'
+import { TutorialCodeEditorProject } from './code-editor'
+import CourseEditor from './CourseEditor.vue'
+
+vi.mock('@/utils/video', () => ({ readVideoDimensions: vi.fn().mockRejectedValue(new Error('Metadata unavailable')) }))
+
+const courseEditorRouteName = 'course-editor'
+const courseEditorRoutes = [
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*',
+    name: courseEditorRouteName,
+    component: { render: () => null }
+  }
+]
+
+// The preview and the tracking of unsaved changes are what these tests drive, so everything the editing pane is made
+// of is stood in for: the course documents (one of them carries Monaco), the embedded Project Editor, and the
+// Copilot the author writes with.
+const { mocks } = vi.hoisted(() => ({
+  mocks: {
+    getCourse: vi.fn(),
+    updateCourse: vi.fn(),
+    saveFiles: vi.fn(),
+    /** What the completion modal resolves with, i.e. which button the learner is taken to have pressed. */
+    completionAction: 'exit' as 'continueEditing' | 'retry' | 'next' | 'exit',
+    /** The props the completion modal was opened with, one entry per completed course. */
+    completionProps: [] as Array<{ course: PlaygroundCourse }>,
+    /** When set, the modal is answered only when the test settles this promise, not right away. */
+    completionAnswer: null as Promise<'continueEditing' | 'retry' | 'next' | 'exit'> | null
+  }
+}))
+
+vi.mock('@/apis/course', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/apis/course')>()),
+  getCourse: mocks.getCourse,
+  updateCourse: mocks.updateCourse
+}))
+
+vi.mock('@/models/common/cloud', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/models/common/cloud')>()),
+  saveFiles: mocks.saveFiles
+}))
+
+vi.mock('@/components/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/ui')>()),
+  useMessage: () => ({
+    info: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+    withLoading: (promise: Promise<unknown>) => promise
+  }),
+  useConfirmDialogWithResult: () => async () => true,
+  useModal: (component: { __name?: string }) => async (props: { course: PlaygroundCourse }) => {
+    if (component.__name !== 'CoursePlaygroundCompletionModal') {
+      throw new Error(`unexpected modal in this test: ${component.__name}`)
+    }
+    mocks.completionProps.push(props)
+    return mocks.completionAnswer ?? mocks.completionAction
+  }
+}))
+
+vi.mock('@/utils/exception', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/exception')>()),
+  useMessageHandle: (fn: (...args: unknown[]) => unknown) => ({
+    fn: async (...args: unknown[]) => {
+      await fn(...args)
+    },
+    isLoading: { value: false }
+  })
+}))
+
+vi.mock('@/components/copilot/context', () => ({
+  useCopilot: () => ({
+    active: false,
+    exportCurrentSession: () => null,
+    restoreSession: vi.fn(),
+    endCurrentSession: vi.fn(),
+    open: vi.fn(),
+    close: vi.fn()
+  })
+}))
+vi.mock('./copilot', () => ({ useCourseEditorCopilot: () => {} }))
+vi.mock('./project', () => ({ getProjectEditorHost: () => ({ name: 'ProjectEditorHost', render: () => null }) }))
+vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
+  default: {
+    name: 'CoursePlayground',
+    props: ['projectQueryRet', 'router'],
+    emits: ['courseCompleted', 'courseRestart'],
+    render: () => null
+  }
+}))
+vi.mock('./code-editor', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./code-editor')>()),
+  useCourseCodeEditor: () => ({
+    data: ref(null),
+    isLoading: ref(false),
+    error: ref(null),
+    progress: ref({ percentage: 0 }),
+    refetch: vi.fn()
+  })
+}))
+vi.mock('./CourseTextDoc.vue', () => ({ default: { name: 'CourseTextDoc', render: () => null } }))
+vi.mock('./CourseConfigDoc.vue', () => ({ default: { name: 'CourseConfigDoc', render: () => null } }))
+vi.mock('./CourseResourceGrid.vue', () => ({ default: { name: 'CourseResourceGrid', render: () => null } }))
+
+// An editor listens on `window` while mounted; unmounting each one keeps a test from hearing the ones before it.
+enableAutoUnmount(afterEach)
+
+const seriesID = '40'
+
+function makeCourse(id: string, title: string): PlaygroundCourse {
+  return {
+    id,
+    owner: 'curator',
+    kind: 'playground',
+    title,
+    thumbnail: 'kodo://bucket/thumbnail',
+    content: {},
+    createdAt: '2026-09-22T00:00:00Z',
+    updatedAt: '2026-09-22T00:00:00Z'
+  } as unknown as PlaygroundCourse
+}
+
+function makeSeries(courseIDs: string[]): CourseSeries {
+  return {
+    id: seriesID,
+    owner: 'curator',
+    kind: 'playground',
+    title: 'A series',
+    thumbnail: 'kodo://bucket/thumbnail',
+    description: '',
+    courseIDs,
+    order: 1,
+    createdAt: '2026-09-22T00:00:00Z',
+    updatedAt: '2026-09-22T00:00:00Z'
+  } as unknown as CourseSeries
+}
+
+/** A course's records; `inEditorPath` is where a learner starting it lands in the project. */
+function makeFiles(inEditorPath = ''): Files {
+  return {
+    'index.json': fromConfig('index.json', {
+      project: { type: 'spx', root: 'project' },
+      inEditorPath,
+      copilotContext: ''
+    }),
+    [mainCourseFilePath]: fromText(mainCourseFilePath, 'onStart => {}'),
+    'project/assets/index.json': fromConfig('index.json', {})
+  }
+}
+
+async function loadProject(course: PlaygroundCourse, inEditorPath = '') {
+  const project = new TutorialProject()
+  await project.load({ metadata: course, files: makeFiles(inEditorPath) })
+  return project
+}
+
+type TestRouter = ReturnType<typeof createRouter>
+
+/** Go to the preview of `course`, the way the Preview button or browser history does. */
+async function enterPreview(router: TestRouter, course: PlaygroundCourse) {
+  await router.push({
+    name: courseEditorRouteName,
+    params: { courseSeriesIdInput: seriesID, courseIdInput: course.id, inEditorPath: ['preview'] }
+  })
+  await flushPromises()
+}
+
+/** Go back to editing `course`, the way "Back to editor" or the browser's Back button does. */
+async function leavePreview(router: TestRouter, course: PlaygroundCourse) {
+  await router.push({
+    name: courseEditorRouteName,
+    params: { courseSeriesIdInput: seriesID, courseIdInput: course.id, inEditorPath: ['edit'] }
+  })
+  await flushPromises()
+}
+
+/** A promise the test settles when it chooses, to make a request finish late. */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+/**
+ * Mount the editor for `course` of `series`, already showing the preview of the course being edited. Like the page,
+ * it is mounted under a `v-if`, so `closeEditor` takes it away the way ending the editing session does.
+ */
+async function mountPreviewing(
+  course: PlaygroundCourse,
+  series: CourseSeries,
+  options?: { editing?: boolean; inEditorPath?: string }
+) {
+  const router = createRouter({ history: createMemoryHistory(), routes: courseEditorRoutes })
+  if (options?.editing) {
+    await router.push({
+      name: courseEditorRouteName,
+      params: { courseSeriesIdInput: series.id, courseIdInput: course.id, inEditorPath: ['edit'] }
+    })
+  } else {
+    await router.push({
+      name: courseEditorRouteName,
+      params: { courseSeriesIdInput: series.id, courseIdInput: course.id, inEditorPath: ['preview'] }
+    })
+  }
+  await router.isReady()
+  const project = await loadProject(course, options?.inEditorPath)
+  const shown = ref(true)
+  const Page = defineComponent(() => {
+    const inEditorRouter = useScopedRouterWithPathParam('inEditorPath')
+    return () => (shown.value ? h(CourseEditor, { course, series, project, router: inEditorRouter }) : null)
+  })
+  const wrapper = mount(Page, {
+    global: {
+      plugins: [createI18n({ lang: 'en' }), router, VueQueryPlugin],
+      directives: { radar: {} },
+      stubs: {
+        CourseActivityBar: true,
+        NavbarWrapper: true,
+        EditorHistoryButtons: true,
+        EditorModeSwitch: true,
+        UIError: true,
+        UIDetailedLoading: true,
+        UILoading: true
+      }
+    }
+  })
+  await flushPromises()
+  async function closeEditor() {
+    shown.value = false
+    await flushPromises()
+  }
+  return { wrapper, router, project, closeEditor }
+}
+
+/** Report that the previewed course ran to its end, the way the playground's runner does. */
+async function completePreviewedCourse(wrapper: Awaited<ReturnType<typeof mountPreviewing>>['wrapper']) {
+  wrapper.findComponent({ name: 'CoursePlayground' }).vm.$emit('courseCompleted', { feedback: null })
+  await flushPromises()
+}
+
+describe('CourseEditor preview', () => {
+  beforeEach(() => {
+    mocks.getCourse.mockReset()
+    mocks.completionProps.length = 0
+    mocks.completionAction = 'exit'
+    mocks.completionAnswer = null
+  })
+
+  it('runs the course being edited, from the author unsaved work', async () => {
+    const course = makeCourse('2338', 'First')
+    const { wrapper, project } = await mountPreviewing(course, makeSeries(['2338', '2339']))
+
+    const playground = wrapper.findComponent({ name: 'CoursePlayground' })
+    expect(playground.exists()).toBe(true)
+    // A snapshot of the author's work, not the project itself: the course must not edit what is being authored.
+    expect(playground.props('projectQueryRet').data.value).not.toBe(project)
+    expect(mocks.getCourse).not.toHaveBeenCalled()
+  })
+
+  it('walks on to the next course of the series, as it was saved', async () => {
+    const next = makeCourse('2339', 'Second')
+    mocks.getCourse.mockResolvedValue(next)
+    const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
+    mocks.completionAction = 'next'
+    const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
+    const first = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value
+
+    await completePreviewedCourse(wrapper)
+
+    expect(mocks.getCourse).toHaveBeenCalledWith('2339')
+    expect(loadSaved).toHaveBeenCalledWith(next)
+    const playground = wrapper.findComponent({ name: 'CoursePlayground' })
+    expect(playground.props('projectQueryRet').data.value).not.toBe(first)
+    expect((playground.props('projectQueryRet').data.value as TutorialProject).title).toBe('Second')
+    // Still the preview of the same editing session: the author has not left the course they are writing.
+    expect(router.currentRoute.value.params.inEditorPath[0]).toBe('preview')
+    expect(router.currentRoute.value.params.courseIdInput).toBe('2338')
+    loadSaved.mockRestore()
+  })
+
+  it('tells the completion modal which course was completed', async () => {
+    mocks.getCourse.mockResolvedValue(makeCourse('2339', 'Second'))
+    const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
+    mocks.completionAction = 'next'
+    const { wrapper } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
+
+    await completePreviewedCourse(wrapper)
+    mocks.completionAction = 'exit'
+    await completePreviewedCourse(wrapper)
+
+    expect(mocks.completionProps.map((props) => props.course.id)).toEqual(['2338', '2339'])
+    loadSaved.mockRestore()
+  })
+
+  it('leaves the preview at the end of the series', async () => {
+    mocks.completionAction = 'next'
+    // The course being edited is the last one, so the modal offers no next course -- and a late click cannot
+    // walk past the end either.
+    const { wrapper, router } = await mountPreviewing(makeCourse('2339', 'Second'), makeSeries(['2338', '2339']))
+
+    await completePreviewedCourse(wrapper)
+
+    expect(mocks.getCourse).not.toHaveBeenCalled()
+    expect(router.currentRoute.value.params.inEditorPath[0]).toBe('edit')
+  })
+
+  it('stays where it is when the author chooses to keep looking around', async () => {
+    mocks.completionAction = 'continueEditing'
+    const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
+    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value
+
+    await completePreviewedCourse(wrapper)
+
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value).toBe(running)
+    expect(router.currentRoute.value.params.inEditorPath[0]).toBe('preview')
+  })
+
+  it('reports a course of the series it cannot load, instead of leaving the preview', async () => {
+    mocks.getCourse.mockRejectedValue(new Error('Not found'))
+    mocks.completionAction = 'next'
+    const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
+
+    await completePreviewedCourse(wrapper)
+
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'UIError' }).exists()).toBe(true)
+    expect(router.currentRoute.value.params.inEditorPath[0]).toBe('preview')
+  })
+
+  it('opens the project where a learner starting the course lands', async () => {
+    const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338']), {
+      inEditorPath: 'sprites/Lita/code'
+    })
+
+    expect(router.currentRoute.value.params.inEditorPath).toEqual(['preview', 'sprites', 'Lita', 'code'])
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('router').currentPath.value).toEqual([
+      'sprites',
+      'Lita',
+      'code'
+    ])
+  })
+
+  it('opens the next course of the series where a learner starting that course lands', async () => {
+    mocks.getCourse.mockResolvedValue(makeCourse('2339', 'Second'))
+    const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course, 'stage'))
+    mocks.completionAction = 'next'
+    const { wrapper, router } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']), {
+      inEditorPath: 'sprites/Lita/code'
+    })
+
+    await completePreviewedCourse(wrapper)
+
+    // Not where the course before it was left: that path belongs to another project.
+    expect(router.currentRoute.value.params.inEditorPath).toEqual(['preview', 'stage'])
+    loadSaved.mockRestore()
+  })
+
+  it('starts the course being edited over from the working copy when the learner retries', async () => {
+    mocks.completionAction = 'retry'
+    const { wrapper, router, project } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338']), {
+      inEditorPath: 'sprites/Lita/code'
+    })
+    const finished = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+      .value as TutorialProject
+    project.mainCourse.setCode('onStart => { completeWith "Again" }')
+    // The learner wandered off before finishing.
+    await router.replace({
+      name: courseEditorRouteName,
+      params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inEditorPath: ['preview', 'stage'] }
+    })
+
+    await completePreviewedCourse(wrapper)
+
+    const restarted = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+      .value as TutorialProject
+    expect(restarted).not.toBe(finished)
+    expect(finished.isDisposed).toBe(true)
+    expect(restarted.mainCourse.code).toBe('onStart => { completeWith "Again" }')
+    expect(router.currentRoute.value.params.inEditorPath).toEqual(['preview', 'sprites', 'Lita', 'code'])
+    expect(mocks.getCourse).not.toHaveBeenCalled()
+  })
+
+  it('starts a saved course of the series over as it was saved when the playground asks to', async () => {
+    mocks.getCourse.mockResolvedValue(makeCourse('2339', 'Second'))
+    const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
+    mocks.completionAction = 'next'
+    const { wrapper } = await mountPreviewing(makeCourse('2338', 'First'), makeSeries(['2338', '2339']))
+    await completePreviewedCourse(wrapper)
+    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+      .value as TutorialProject
+
+    wrapper.findComponent({ name: 'CoursePlayground' }).vm.$emit('courseRestart')
+    await flushPromises()
+
+    const restarted = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+      .value as TutorialProject
+    expect(restarted).not.toBe(running)
+    expect(restarted.title).toBe('Second')
+    expect(mocks.getCourse).toHaveBeenCalledTimes(2)
+    expect(mocks.getCourse).toHaveBeenLastCalledWith('2339')
+    loadSaved.mockRestore()
+  })
+
+  it('disposes a snapshot once the playground running it is gone', async () => {
+    mocks.getCourse.mockResolvedValue(makeCourse('2339', 'Second'))
+    const loadSaved = vi.spyOn(TutorialProject, 'load').mockImplementation((course) => loadProject(course))
+    mocks.completionAction = 'next'
+    const first = makeCourse('2338', 'First')
+    const { wrapper, router, closeEditor } = await mountPreviewing(first, makeSeries(['2338', '2339']))
+    /** For each snapshot disposed, whether a playground was still running it at that moment. */
+    const stillRunning: boolean[] = []
+    function watchDisposal() {
+      const snapshot = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data
+        .value as TutorialProject
+      const running = () =>
+        wrapper
+          .findAllComponents({ name: 'CoursePlayground' })
+          .some((p) => p.props('projectQueryRet').data.value === snapshot)
+      vi.spyOn(snapshot, 'dispose').mockImplementation(() => void stillRunning.push(running()))
+    }
+
+    // The walk moves on to the next course...
+    watchDisposal()
+    await completePreviewedCourse(wrapper)
+    expect(stillRunning).toEqual([false])
+    // ...the author goes back to the editor...
+    watchDisposal()
+    await leavePreview(router, first)
+    expect(stillRunning).toEqual([false, false])
+    // ...and the editor closes while previewing.
+    await enterPreview(router, first)
+    watchDisposal()
+    await closeEditor()
+    expect(stillRunning).toEqual([false, false, false])
+    loadSaved.mockRestore()
+  })
+})
+
+// A preview is left and entered again freely (Back to editor, browser history), and what it started can still be
+// in flight when it is. What belongs to a preview the author has left must not reach the one they are in.
+describe('CourseEditor preview, entered again', () => {
+  beforeEach(() => {
+    mocks.getCourse.mockReset()
+    mocks.completionProps.length = 0
+    mocks.completionAction = 'exit'
+    mocks.completionAnswer = null
+  })
+
+  it('keeps the running preview when a course it walked away from fails to load later', async () => {
+    const first = makeCourse('2338', 'First')
+    const abandoned = deferred<PlaygroundCourse>()
+    mocks.getCourse.mockReturnValue(abandoned.promise)
+    mocks.completionAction = 'next'
+    const { wrapper, router } = await mountPreviewing(first, makeSeries(['2338', '2339']))
+
+    // Walking on to the next course starts loading it; the author goes back to the editor meanwhile, and in again.
+    await completePreviewedCourse(wrapper)
+    await leavePreview(router, first)
+    await enterPreview(router, first)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(true)
+
+    abandoned.reject(new Error('Network error'))
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'UIError' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(true)
+  })
+
+  it('keeps the running preview when a snapshot it walked away from fails later', async () => {
+    const first = makeCourse('2338', 'First')
+    const { wrapper, router, project } = await mountPreviewing(first, makeSeries(['2338']), { editing: true })
+    const abandoned = deferred<Awaited<ReturnType<TutorialProject['export']>>>()
+    // The first preview's snapshot hangs; the one after it is taken as usual.
+    vi.spyOn(project, 'export').mockReturnValueOnce(abandoned.promise)
+
+    await enterPreview(router, first)
+    await leavePreview(router, first)
+    await enterPreview(router, first)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(true)
+
+    abandoned.reject(new Error('Export failed'))
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'UIError' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).exists()).toBe(true)
+  })
+
+  it('does not let a completion modal answered after the author came back walk the new preview on', async () => {
+    const first = makeCourse('2338', 'First')
+    const answer = deferred<'continueEditing' | 'retry' | 'next' | 'exit'>()
+    mocks.completionAnswer = answer.promise
+    const { wrapper, router } = await mountPreviewing(first, makeSeries(['2338', '2339']))
+
+    // The modal is still open when the author steps Back out of the preview, and Forward into it again.
+    await completePreviewedCourse(wrapper)
+    await leavePreview(router, first)
+    await enterPreview(router, first)
+    const running = wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value
+
+    answer.resolve('next')
+    await flushPromises()
+
+    expect(mocks.getCourse).not.toHaveBeenCalled()
+    expect(wrapper.findComponent({ name: 'CoursePlayground' }).props('projectQueryRet').data.value).toBe(running)
+  })
+
+  it('does not let a completion modal answered after the author came back end the new preview', async () => {
+    const first = makeCourse('2338', 'First')
+    const answer = deferred<'continueEditing' | 'retry' | 'next' | 'exit'>()
+    mocks.completionAnswer = answer.promise
+    const { wrapper, router } = await mountPreviewing(first, makeSeries(['2338', '2339']))
+
+    await completePreviewedCourse(wrapper)
+    await leavePreview(router, first)
+    await enterPreview(router, first)
+
+    answer.resolve('exit')
+    await flushPromises()
+
+    expect(router.currentRoute.value.params.inEditorPath[0]).toBe('preview')
+  })
+})
+
+// What is unsaved is told from everything the course exports, in two places: the navbar's flag, which also holds up
+// closing the page, and the activity bar's mark on each view with changes.
+describe('CourseEditor unsaved changes', () => {
+  /** Whether closing the page now would first ask about unsaved changes. */
+  function holdsPageClose() {
+    const event = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(event)
+    return event.defaultPrevented
+  }
+
+  it('exports the course once per edit, for the unsaved flag and the per-view marks alike', async () => {
+    const course = makeCourse('2338', 'First')
+    const { wrapper, project } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+    const activityBar = wrapper.findComponent({ name: 'CourseActivityBar' })
+    expect(holdsPageClose()).toBe(false)
+    expect(activityBar.props('dirtyViews')).toEqual(new Set())
+    const exportFiles = vi.spyOn(project, 'exportFiles')
+
+    project.mainCourse.setCode('onStart => { completeWith "Well done" }')
+    await flushPromises()
+
+    expect(holdsPageClose()).toBe(true)
+    expect(activityBar.props('dirtyViews')).toEqual(new Set(['program']))
+    expect(exportFiles).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CourseEditor saving', () => {
+  beforeEach(() => mocks.updateCourse.mockClear())
+
+  it.each([null, { width: 640, height: 480 }])(
+    'saves legacy videos after best-effort metadata extraction: %j',
+    async (dimensions) => {
+      if (dimensions == null) vi.mocked(readVideoDimensions).mockRejectedValue(new Error('Metadata unavailable'))
+      else vi.mocked(readVideoDimensions).mockResolvedValue(dimensions)
+      const course = makeCourse('2338', 'First')
+      const { project } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+      const { Video } = await import('@/models/tutorial/video')
+      project.addVideo(new Video('legacy', fromText('legacy.mp4', 'video')))
+      mocks.saveFiles.mockResolvedValue({ fileCollection: {}, fileCollectionHash: 'hash' })
+      mocks.updateCourse.mockResolvedValue(course)
+      await flushPromises()
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }))
+      await flushPromises()
+      const files = mocks.saveFiles.mock.calls.at(-1)![0]
+      const manifest = await toConfig(files['assets/videos/legacy/index.json'])
+      expect(manifest).toMatchObject(dimensions ?? { path: 'legacy.mp4' })
+      expect(mocks.updateCourse).toHaveBeenCalled()
+    }
+  )
+
+  it('takes the title, thumbnail and update time the server answers with', async () => {
+    const course = makeCourse('2338', 'First')
+    const { project } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+    const saved = { ...course, title: 'Renamed', thumbnail: 'kodo://bucket/new', updatedAt: '2026-10-22T08:00:00Z' }
+    mocks.saveFiles.mockResolvedValue({ fileCollection: {}, fileCollectionHash: 'hash' })
+    mocks.updateCourse.mockResolvedValue(saved)
+
+    project.mainCourse.setCode('onStart => { completeWith "Well done" }')
+    await flushPromises()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }))
+    await flushPromises()
+
+    expect(mocks.updateCourse).toHaveBeenCalledTimes(1)
+    expect({ title: project.title, thumbnail: project.thumbnail, updatedAt: project.updatedAt }).toEqual({
+      title: 'Renamed',
+      thumbnail: 'kodo://bucket/new',
+      updatedAt: '2026-10-22T08:00:00Z'
+    })
+  })
+})
+
+describe('CourseEditor history', () => {
+  /** Mount the editor for a course, showing the view at `inCourseEditorPath`, with its navbar rendered. */
+  async function mountEditing(inCourseEditorPath: string[]) {
+    const course = makeCourse('2338', 'First')
+    const series = makeSeries(['2338'])
+    const router = createRouter({ history: createMemoryHistory(), routes: courseEditorRoutes })
+    await router.push({
+      name: courseEditorRouteName,
+      params: {
+        courseSeriesIdInput: series.id,
+        courseIdInput: course.id,
+        inEditorPath: ['edit', ...inCourseEditorPath]
+      }
+    })
+    await router.isReady()
+    const project = await loadProject(course)
+    const wrapper = mount(CourseEditor, {
+      props: {
+        course,
+        series,
+        project,
+        router: {
+          currentPath: computed(() => router.currentRoute.value.params.inEditorPath as string[]),
+          push: (path, options) => router.push({ params: { inEditorPath: path }, replace: options?.replace })
+        }
+      },
+      global: {
+        plugins: [createI18n({ lang: 'en' }), router, VueQueryPlugin],
+        directives: { radar: {} },
+        stubs: {
+          CourseActivityBar: true,
+          NavbarWrapper: defineComponent(
+            (_, { slots }) =>
+              () =>
+                h('div', [slots.left?.(), slots.right?.()])
+          ),
+          EditorHistoryButtons: defineComponent({
+            name: 'EditorHistoryButtons',
+            props: { history: { type: Object, default: null } },
+            render: () => null
+          }),
+          EditorModeSwitch: true
+        }
+      }
+    })
+    await flushPromises()
+    /** The history the undo and redo buttons in the navbar work on. */
+    const buttonsHistory = () => wrapper.findComponent({ name: 'EditorHistoryButtons' }).props('history') as History
+    /** Type into the program editor, the way Monaco reports an edit. */
+    const adapter = new TutorialCodeEditorProject(project, buttonsHistory())
+    async function typeProgram(code: string) {
+      adapter.getCodeOwner('main_course.gox')!.setCode(code, CodeChangeKind.User)
+      await flushPromises()
+    }
+    return { wrapper, router, project, buttonsHistory, typeProgram }
+  }
+
+  it('undoes and redoes edits of the course and of its project in the order they were made', async () => {
+    const { project, buttonsHistory, typeProgram } = await mountEditing(['program'])
+    const history = buttonsHistory()
+
+    await typeProgram('onStart => { completeWith "Well done" }')
+    // What the project's editor does on an edit, with the history it was given.
+    await history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () =>
+      project.project.addSprite(new Sprite('Lita'))
+    )
+
+    await history.undo()
+    expect(project.project.sprites).toEqual([])
+    expect(project.mainCourse.code).toBe('onStart => { completeWith "Well done" }')
+    await history.undo()
+    expect(project.mainCourse.code).toBe('onStart => {}')
+
+    await history.redo()
+    await history.redo()
+    expect(project.mainCourse.code).toBe('onStart => { completeWith "Well done" }')
+    expect(project.project.sprites.map((sprite) => sprite.name)).toEqual(['Lita'])
+  })
+
+  it('takes typing in the program back as one step', async () => {
+    const { project, buttonsHistory, typeProgram } = await mountEditing(['program'])
+
+    await typeProgram('onStart => { c }')
+    await typeProgram('onStart => { co }')
+    await typeProgram('onStart => { com }')
+
+    expect(buttonsHistory().getUndoAction()?.name.en).toBe('Update program')
+    await buttonsHistory().undo()
+    expect(project.mainCourse.code).toBe('onStart => {}')
+    expect(buttonsHistory().getUndoAction()).toBeNull()
+  })
+
+  it("records the project's edits in the history the navbar works on, whichever view is open", async () => {
+    const { wrapper, router, buttonsHistory } = await mountEditing(['program'])
+    const history = buttonsHistory()
+    expect(wrapper.findComponent({ name: 'ProjectEditorHost' }).vm.$attrs.history).toBe(history)
+
+    await router.push({
+      name: courseEditorRouteName,
+      params: { courseSeriesIdInput: seriesID, courseIdInput: '2338', inEditorPath: ['edit', 'project'] }
+    })
+    await flushPromises()
+    expect(buttonsHistory()).toBe(history)
+  })
+})

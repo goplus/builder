@@ -30,11 +30,13 @@ export function useDragSortable(
 ) {
   watchEffect(async (onCleanup) => {
     const list = toValue<unknown[] | null>(listSource)
-    if (list == null || list.length === 0) return
-    await nextTick() // Ensure DOM updated for list change
-
+    // Read before awaiting so that the effect follows the wrapper too: it may be rendered, or rendered again, while the
+    // list stays the same, as by a `v-if`.
     const wrapper = toValue<HTMLElement | undefined | null>(wrapperSource)
-    if (wrapper == null) return
+    if (list == null || list.length === 0 || wrapper == null) return
+    const signal = getCleanupSignal(onCleanup)
+    await nextTick() // Ensure DOM updated for list change
+    if (signal.aborted) return
 
     const sortable = Sortable.create(wrapper, {
       scroll: true,

@@ -1,8 +1,7 @@
-import { computed, ref, watch, type Ref, type WatchSource } from 'vue'
-import type { RouteLocationAsRelativeGeneric, RouteLocationNormalizedGeneric } from 'vue-router'
-import { shiftPath, type PathSegments } from '@/utils/route'
+import { computed, ref, watch, type WatchSource } from 'vue'
+import { shiftPath, type IScopedRouter, type PathSegments } from '@/utils/route'
 import { Disposable } from '@/utils/disposable'
-import type { I18n } from '@/utils/i18n'
+import type { I18n, LocaleMessage } from '@/utils/i18n'
 import type { Files } from '@/models/common/file'
 import type { ResourceModel } from '@/models/spx/common/resource'
 import type { SpxProject } from '@/models/spx/project'
@@ -35,14 +34,10 @@ export type Selected =
       spriteSelected: SpriteEditorSelected | null
     }
 
-export interface IRouter {
-  currentRoute: Ref<Pick<RouteLocationNormalizedGeneric, 'fullPath' | 'params' | 'query' | 'hash'>>
-  push(to: RouteLocationAsRelativeGeneric): Promise<unknown>
-}
-
 export enum EditMode {
   Default = 'default',
-  Map = 'map'
+  Map = 'map',
+  Simple = 'simple'
 }
 
 class SpxProjectWithGens implements IProject {
@@ -96,11 +91,16 @@ export class EditorState extends Disposable {
     isOnline: WatchSource<boolean>,
     signedIn: Pick<SignedIn, 'username'>,
     cloudHelpers: editing.CloudHelpers,
-    localCache: editing.ILocalCache
+    localCache: editing.ILocalCache,
+    /**
+     * Where edits are recorded for undo and redo; a history of `project` alone by default. Pass one when the project
+     * is part of something larger, so that its edits and those of the rest are undone in one order.
+     */
+    history?: History
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
-    this.history = new History(project)
+    this.history = history ?? new History(project)
     this.addDisposable((this.genState = new GenState(i18n, project)))
     const projectWithGens = new SpxProjectWithGens(project, this.genState)
     this.addDisposable(
@@ -129,6 +129,13 @@ export class EditorState extends Disposable {
   }
 
   runtime: Runtime
+  /**
+   * NOTE: This is a history of `project` alone, with one exception: the Course Editor passes the course's history,
+   * so that edits of the embedded project and of the rest of the course are undone in one order. There it records
+   * and restores the whole course, not just `project`.
+   * TODO: Make the history (or the editor state) independent of spx, see
+   * https://github.com/goplus/builder/pull/3494#discussion_r4237184023
+   */
   history: History
   genState: GenState
   editing: editing.Editing
@@ -141,6 +148,17 @@ export class EditorState extends Disposable {
 
   get selectedEditMode() {
     return this.selectedEditModeRef.value
+  }
+
+  get codeReadOnly() {
+    return this.selectedEditMode === EditMode.Simple && this.runtime.running.mode === 'debug'
+  }
+
+  get codeReadOnlyReason(): LocaleMessage {
+    return {
+      en: 'Stop the run before editing code',
+      zh: '请先停止运行，再修改代码'
+    }
   }
 
   get selectedSprite() {
@@ -276,7 +294,8 @@ export class EditorState extends Disposable {
     }
   }
 
-  private selectByRoute(path: PathSegments) {
+  /** Select a target by route path. Throws if the path is not recognized. */
+  selectByRoute(path: PathSegments) {
     let [segment, extra] = shiftPath(path)
 
     switch (segment) {
@@ -288,6 +307,9 @@ export class EditorState extends Disposable {
       case EditMode.Map:
         this.selectEditMode(EditMode.Map)
         break
+      case EditMode.Simple:
+        this.selectEditMode(EditMode.Simple)
+        break
       default:
         this.selectEditMode(EditMode.Default)
         break
@@ -295,6 +317,12 @@ export class EditorState extends Disposable {
 
     if (this.selectedEditMode !== EditMode.Default) {
       ;[segment, extra] = shiftPath(extra)
+    }
+
+    if (this.selectedEditMode === EditMode.Simple && segment !== 'sprites') {
+      this.selectByName({ type: 'sprite' })
+      this.spriteState?.select('code')
+      return
     }
 
     switch (segment) {
@@ -343,61 +371,22 @@ export class EditorState extends Disposable {
     return pathSegments
   }
 
-  private updateRouter(router: IRouter, replace: boolean) {
-    const routePath = this.getRoute()
-    const currentRoute = router.currentRoute.value
-
-    // Vue Router currently calculates the scroll position on every router.push navigation,
-    // which triggers layout recalculations that can negatively impact performance.
-    // See details in https://github.com/vuejs/router/issues/2393.
-    // TODO: We need to monitor the issue and update Vue Router when it is fixed.
-
-    // Vue Router checks if we are already on the same route, and prevents redundant navigation.
-    // So we do not need to check it manually to avoid infinite loops.
-    router.push({
-      params: {
-        ...currentRoute.params,
-        inEditorPath: routePath
-      },
-      query: currentRoute.query,
-      replace
-    })
-  }
-
-  syncWithRouter(router: IRouter) {
+  syncWithRouter(router: IScopedRouter) {
     // Sync from router to selected state
-    this.addDisposer(
-      watch(
-        router.currentRoute,
-        (currentRoute, prevRoute) => {
-          const { inEditorPath, projectNameInput } = currentRoute.params
-          // if project changed, skip selecting. A new `EditorState` instance will be constructed later.
-          // Selecting on the old instance with new route may cause unexpected behavior.
-          if (prevRoute != null && projectNameInput !== prevRoute.params.projectNameInput) return
-          const inEditorSections = typeof inEditorPath === 'string' ? [inEditorPath] : inEditorPath ?? []
-          this.selectByRoute(inEditorSections)
-        },
-        { immediate: true }
-      )
-    )
+    this.addDisposer(watch(router.currentPath, (currentPath) => this.selectByRoute(currentPath), { immediate: true }))
 
     // Sync from selected state to router
     this.addDisposer(
       watch(
-        // Why watch?
-        // We can switch to map without watching, but we need the map route in the history stack.
-        // This requires responding to changes in `selectedEditMode`.
-        // Scenario: Sprite -> Stage -> Map -> Click Back.
-        // With watch: Back to Stage. Without watch: Back to Sprite.
         () => [this.selected, this.selectedEditMode],
         (_, __, onCleanup) => {
-          // If `selected` changes, push new route
-          this.updateRouter(router, false)
+          // If `selected` or `selectedEditMode` changes, push new route
+          router.push(this.getRoute())
           onCleanup(
             watch(
               () => this.getRoute(),
               // If route changes without `selected` changing, replace current route
-              () => this.updateRouter(router, true)
+              () => router.push(this.getRoute(), { replace: true })
             )
           )
         },

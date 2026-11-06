@@ -18,7 +18,7 @@ const emit = defineEmits<{
 <template>
   <UIFormModal
     :radar="{
-      name: `Sprite pivot${collisionEditingEnabled ? ' and collision ' : ' '}modal`,
+      name: collisionEditingEnabled ? 'sprite-pivot-collision-modal' : 'sprite-pivot-modal',
       desc: `Modal for editing sprite pivot${collisionEditingEnabled ? ' and collision ' : ' '}settings.`
     }"
     style="width: 712px"

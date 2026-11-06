@@ -1,6 +1,6 @@
 <template>
   <UIFormModal
-    :radar="{ name: 'Animation remove modal', desc: 'Modal for removing animations' }"
+    :radar="{ name: 'animation-remove-modal', desc: 'Modal for removing animations' }"
     style="width: 560px"
     :title="$t({ en: 'Remove animation', zh: '删除动画' })"
     :visible="visible"
@@ -26,14 +26,14 @@
     </div>
     <div class="mt-10 flex justify-end gap-xl">
       <UIButton
-        v-radar="{ name: 'Cancel button', desc: 'Click to cancel removing animation' }"
+        v-radar="{ name: 'cancel-button', desc: 'Click to cancel removing animation' }"
         type="neutral"
         @click="emit('cancelled')"
       >
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton
-        v-radar="{ name: 'Confirm button', desc: 'Click to confirm removing animation' }"
+        v-radar="{ name: 'confirm-button', desc: 'Click to confirm removing animation' }"
         type="primary"
         @click="handleConfirm"
       >

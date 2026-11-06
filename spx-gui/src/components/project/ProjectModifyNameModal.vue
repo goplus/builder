@@ -84,7 +84,7 @@ async function validateName(name: string): Promise<FormValidationResult> {
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Project name modal', desc: 'Modal for updating project name' }"
+    :radar="{ name: 'project-name-modal', desc: 'Modal for updating project name' }"
     :title="$t({ en: 'Modify project name', zh: '修改项目名' })"
     :visible="props.visible"
     :mask-closable="false"
@@ -94,20 +94,20 @@ async function validateName(name: string): Promise<FormValidationResult> {
       <UIFormItem path="name">
         <UITextInput
           v-model:value="form.value.name"
-          v-radar="{ name: 'Project name input', desc: 'Input field for project name' }"
+          v-radar="{ name: 'project-name-input', desc: 'Input field for project name' }"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
       <footer class="mt-6 flex justify-end gap-xl pb-1">
         <UIButton
-          v-radar="{ name: 'Cancel button', desc: 'Click to cancel updating project name' }"
+          v-radar="{ name: 'cancel-button', desc: 'Click to cancel updating project name' }"
           type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Confirm button', desc: 'Click to confirm updating project name' }"
+          v-radar="{ name: 'confirm-button', desc: 'Click to confirm updating project name' }"
           type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"

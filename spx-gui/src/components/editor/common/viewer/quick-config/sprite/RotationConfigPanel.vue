@@ -82,13 +82,13 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
 <template>
   <ConfigPanel
     v-radar="{
-      name: 'Sprite Rotation Config Panel',
+      name: 'sprite-rotation-config-panel',
       desc: 'Quick config for sprite rotation style and values'
     }"
   >
     <div class="flex items-center gap-1">
       <UIButtonGroup
-        v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }"
+        v-radar="{ name: 'rotation-style-control', desc: 'Control to set sprite rotation style' }"
         :value="localConfig.rotationStyle"
         @update:value="(value) => handleRotationStyleUpdate(value as RotationStyle)"
       >
@@ -110,7 +110,7 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
       >
         <template #trigger>
           <UINumberInput
-            v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
+            v-radar="{ name: 'heading-input', desc: 'Input to set sprite heading angle' }"
             class="w-30"
             :min="-180"
             :max="180"
@@ -130,7 +130,7 @@ onBeforeUnmount(() => handleUpdateHeadingDebounced.cancel())
       </UIDropdown>
       <UIButtonGroup
         v-else-if="localConfig.rotationStyle === RotationStyle.LeftRight"
-        v-radar="{ name: 'Direction control', desc: 'Control to set sprite left or right direction' }"
+        v-radar="{ name: 'direction-control', desc: 'Control to set sprite left or right direction' }"
         type="text"
         :value="headingToLeftRight(localConfig.heading)"
         @update:value="(v) => handleUpdateHeading(leftRightToHeading(v as LeftRight))"

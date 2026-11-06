@@ -6,7 +6,7 @@
     <UIDropdown trigger="click" placement="bottom-end" :offset="{ x: 0, y: 16 }">
       <template #trigger>
         <div
-          v-radar="{ name: 'Add', desc: 'Button to add a new item for current panel, click to view more options' }"
+          v-radar="{ name: 'add', desc: 'Button to add a new item for current panel, click to view more options' }"
           class="h-7 w-7 cursor-pointer flex items-center justify-center rounded-full text-grey-800 transition-colors hover:bg-grey-400 active:bg-grey-500"
         >
           <UIIcon type="plus" />

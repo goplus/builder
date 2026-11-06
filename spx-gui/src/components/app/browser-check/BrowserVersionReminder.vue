@@ -11,7 +11,7 @@
     <footer class="mt-6 flex justify-end gap-3">
       <UIButton
         v-radar="{
-          name: 'Do not show again button',
+          name: 'do-not-show-again-button',
           desc: 'Click to close browser version reminder modal and suppress it show again.'
         }"
         type="neutral"
@@ -20,7 +20,7 @@
         {{ $t({ en: 'Do not show again', zh: '不再提示' }) }}
       </UIButton>
       <UIButton
-        v-radar="{ name: 'Confirm button', desc: 'Click to close browser version reminder modal' }"
+        v-radar="{ name: 'confirm-button', desc: 'Click to close browser version reminder modal' }"
         type="primary"
         @click="handleConfirm"
       >

@@ -56,7 +56,7 @@ const resourceTypeName = computed(() => humanizeResourceType(props.resourceType)
 const listRadarInfo = computed<RadarNodeMeta>(() => {
   const draggable = props.sortable && props.sortable.list.length > 0
   return {
-    name: `List of ${resourceTypeName.value.en}`,
+    name: `${props.resourceType}-list`,
     desc: draggable ? 'Drag to reorder' : ''
   }
 })
@@ -67,7 +67,7 @@ const addText = computed(() => ({
 }))
 
 const addButtonRadarInfo = computed<RadarNodeMeta>(() => ({
-  name: `Add ${resourceTypeName.value.en}`,
+  name: `add-${props.resourceType}`,
   desc: `Button for adding new ${resourceTypeName.value.en} to the list`
 }))
 

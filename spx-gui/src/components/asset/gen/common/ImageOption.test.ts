@@ -1,5 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { createRadar } from '@/utils/radar'
 import ImageOption from './ImageOption.vue'
 
 function mountOption(removable = true, interactive = true) {
@@ -9,13 +10,7 @@ function mountOption(removable = true, interactive = true) {
       stubs: { UIBlockItem: false, UICornerIcon: false },
       renderStubDefaultSlot: true,
       mocks: { $t: (message: { zh: string }) => message.zh },
-      directives: {
-        radar: {
-          mounted: (element: HTMLElement, binding: { value: { name: string } }) => {
-            element.setAttribute('aria-label', binding.value.name)
-          }
-        }
-      }
+      plugins: [createRadar()]
     }
   })
 }

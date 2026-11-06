@@ -1,0 +1,103 @@
+# Tech design for [User Tutorial v2](../../product/tutorial-v2.md)
+
+Implementation issue: [#3403](https://github.com/goplus/builder/issues/3403).
+
+## Scope
+
+XBuilder supports two Course kinds with separate runtime behavior:
+
+- A **Guided Course** is driven by Copilot and may guide the learner across Builder routes.
+- A **Playground Course** embeds an SPX project and an XGo Tutorial program. The learner edits a session-local project model while the Tutorial program controls the course flow and completion.
+
+This design introduces neither Course draft/published revisions nor persisted runtime sessions or unfinished-course progress. Saving a Course makes it available for learning. Course Preview runs directly from the Course Editor's unsaved in-memory state. Course package import/export and linting remain internal Course Editor concerns for now.
+
+## Modules
+
+### Course APIs
+
+Course APIs own the persistent Course and Course Series contracts. They distinguish Guided and Playground Courses, while keeping Playground-specific content opaque outside the modules that interpret it. They also provide the Course-authoring operations needed by Course Editor.
+
+See [Course APIs](./module_CourseApis.ts) and [Course storage](./course-storage.md).
+
+### Tutorial
+
+Tutorial provides the application entry and exit for learning a Course. It selects the appropriate Guided or Playground learning flow, coordinates their lifecycle, and connects the active Course with the shared editor, Copilot, and execution capabilities. The public module boundary stays independent of the different internal implementations of those flows.
+
+Learning a Guided or Playground Course requires sign-in.
+
+See [Tutorial](./module_Tutorial.ts).
+
+### XGo Executor
+
+XGo Executor runs an XGo program and bridges its asynchronous capabilities and events with the host application. It is generic infrastructure: callers provide a framework and source files, while the executor has no Tutorial, Editor, or Copilot knowledge.
+
+See [XGo Executor](./module_XGoExecutor.ts).
+
+### Tutorial Class Framework
+
+The Tutorial Class Framework defines the Tutorial-project format and the XGo API used by Course authors. It gives Course programs the capabilities and events needed to present, guide, and complete a learning experience, without coupling Course content to the host application's implementation.
+
+See [Tutorial Class Framework](./module_TutorialFramework.ts), its [Go contract](./tutorial-class-framework.go) and an [example Tutorial Course project](./example-tutorial-course/) and a [second example](./example-tutorial-course-run-groups/) built around run groups. A guide for Course authors lives next to the implementation in [`tools/tutorial`](../../../tools/tutorial/README.md).
+
+### Radar
+
+Radar records the semantic UI tree used by Spotlight targets. Its node names
+are stable kebab-case UI roles; dynamic instance identity belongs in
+attributes. Courses address current visible nodes with the small Radar selector
+syntax rather than session-local Radar IDs.
+
+See [Radar](./module_Radar.ts).
+
+### SPX Project Editor
+
+SPX Project Editor provides the learner-facing project editing experience and its editor capabilities. Tutorial learning and Course Preview compose this existing editor around an embedded project model; the editor remains responsible for editing behavior and for turning a learner's work into a regular saved project.
+
+See [SPX Project Editor](./module_SpxProjectEditor.ts).
+
+### Copilot
+
+Copilot supplies generic assistant sessions, context, generation, and conversation events. Tutorial and Course Editor configure those generic capabilities for their respective learning and authoring experiences; Copilot itself has no Course-specific behavior.
+
+See [Copilot](./module_Copilot.ts).
+
+### Course Editor
+
+Course Editor owns authoring and validating Course content, then saving it through Course APIs. It also provides Preview by using the same learning capabilities with an isolated representation of the author's current work.
+
+The Course program uses the generic XGo Code Editor with a Tutorial project adapter and a session-local language
+server Worker. Its classfile registration matches `tools/tutorial/gox.mod`; `tools/spxls` packages the Tutorial SDK's
+type data alongside the SPX SDK. The embedded SPX editor retains its own workspace and language server.
+
+Unsaved program edits update `TutorialProject.mainCourse` through the Course History. As in the SPX editor, the
+language client watches model file exports and waits for file synchronization before issuing requests. The Tutorial
+workspace contains the Course program, without the embedded SPX sources or binary media. No parallel LSP document
+overlay is maintained. The adapter keeps the exported file map stable while the program is unchanged.
+
+The Course Editor session owns its Tutorial Code Editor, language client, documents, and Worker, making language
+services available throughout the authoring UI. Switching authoring views or entering Preview only detaches the
+program editing UI; the authoring workspace continues to track the working copy and is reused on return. Preview
+uses its isolated snapshot and SPX editor without replacing the author's Tutorial workspace. Switching Courses or
+leaving the Course Editor disposes the authoring session. The Tutorial editor is provided
+locally to the Course Editor component tree; embedded and preview SPX editors provide their own editor contexts.
+
+See [Course Editor](./module_CourseEditor.ts).
+
+## Module relationships
+
+```mermaid
+flowchart LR
+    Tutorial["Tutorial"] --> CourseApis["Course APIs"]
+    Tutorial --> CoursePlayground["Course playground"]
+    CoursePlayground --> ProjectEditor["SPX Project Editor"]
+
+    CourseEditor["Course Editor"] --> CourseApis
+    CourseEditor --> ProjectEditor
+    CourseEditor --> CoursePlayground
+
+    CoursePlayground --> Copilot
+    CoursePlayground --> Framework["Tutorial Class Framework"]
+    CoursePlayground --> Executor["XGo Executor"]
+
+    Framework --> Executor
+    Executor --> Framework
+```

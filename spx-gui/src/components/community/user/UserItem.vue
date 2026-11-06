@@ -20,7 +20,7 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
     <UserAvatar class="absolute top-3 left-0" :user="user.username" />
     <!-- TODO: should no-underline be one type of `UILink` / `RouterUILink`? -->
     <RouterUILink
-      v-radar="{ name: 'User link', desc: 'Click to view user profile' }"
+      v-radar="{ name: 'user-link', desc: 'Click to view user profile' }"
       class="w-fit text-lg/6 text-title no-underline"
       type="boring"
       :to="userRoute"

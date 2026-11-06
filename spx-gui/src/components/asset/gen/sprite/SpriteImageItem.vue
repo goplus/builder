@@ -28,7 +28,7 @@ const loading = computed(() => props.loading || fileLoading.value)
 <template>
   <UIBlockItem
     v-radar="{
-      name: 'Sprite image item',
+      name: 'sprite-image-item',
       desc: 'Click to select this image as the default costume for the sprite'
     }"
     class="justify-center"

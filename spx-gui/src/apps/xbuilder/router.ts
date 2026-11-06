@@ -38,6 +38,32 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+export function getCoursePlaygroundRoute(courseSeriesID: string, courseID: string) {
+  return `/course/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/playground`
+}
+
+export function getCourseStartRoute(courseSeriesID: string, courseID: string) {
+  return `/course/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/start`
+}
+
+/** `unitIndex` selects a unit of a series divided into units; the first is shown by default. */
+export function getCourseSeriesPageRoute(courseSeriesID: string, unitIndex = 0) {
+  const route = `/course-series/${encodeURIComponent(courseSeriesID)}`
+  return unitIndex === 0 ? route : `${route}?unit=${unitIndex + 1}`
+}
+
+export function getCourseEditorRoute(courseSeriesID: string, courseID: string, inCourseEditorPath: string[] = []) {
+  const base = `/course-editor/${encodeURIComponent(courseSeriesID)}/${encodeURIComponent(courseID)}/edit`
+  if (inCourseEditorPath.length === 0) return base
+  return `${base}/${inCourseEditorPath.map(encodeURIComponent).join('/')}`
+}
+
+/** Course management, at the series of `courseSeriesID` or at the list of series when it is omitted. */
+export function getCourseManagementRoute(courseSeriesID?: string) {
+  if (courseSeriesID == null) return '/course-management'
+  return `/course-management/${encodeURIComponent(courseSeriesID)}`
+}
+
 export const homePageName = 'home'
 
 declare module 'vue-router' {
@@ -119,13 +145,38 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./pages/tutorials/index.vue')
   },
   {
+    path: '/course-management',
+    component: () => import('./pages/course-management/index.vue'),
+    children: [
+      {
+        path: '',
+        component: () => import('./pages/course-management/series-list.vue')
+      },
+      {
+        path: ':courseSeriesIdInput',
+        component: () => import('./pages/course-management/series.vue'),
+        props: true
+      }
+    ]
+  },
+  {
     path: '/course/:courseSeriesIdInput/:courseIdInput/start',
     component: () => import('./pages/tutorials/course-start.vue'),
     props: true
   },
   {
+    path: '/course/:courseSeriesIdInput/:courseIdInput/playground/:inPlaygroundPath*',
+    component: () => import('./pages/tutorials/course-playground.vue'),
+    props: true
+  },
+  {
     path: '/course-series/:courseSeriesIdInput',
     component: () => import('./pages/tutorials/course-series.vue'),
+    props: true
+  },
+  {
+    path: '/course-editor/:courseSeriesIdInput/:courseIdInput/:inEditorPath*',
+    component: () => import('./pages/course-editor/index.vue'),
     props: true
   },
   {
@@ -151,6 +202,10 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'ui-design',
         component: () => import('./pages/docs/ui-design/index.vue')
+      },
+      {
+        path: 'ui-design/spotlight',
+        component: () => import('./pages/docs/ui-design/spotlight.vue')
       }
     ]
   },

@@ -217,7 +217,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
         <div class="flex shrink-0 items-center gap-2">
           <UIButton
             v-if="feedback.status === FeedbackStatus.New"
-            v-radar="{ name: 'Mark as no reply needed', desc: 'Close this feedback without notifying the user' }"
+            v-radar="{ name: 'mark-as-no-reply-needed', desc: 'Close this feedback without notifying the user' }"
             type="primary"
             :disabled="handleSendReply.isLoading.value"
             :loading="handleMarkAsNoReplyNeeded.isLoading.value"
@@ -226,7 +226,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
             {{ $t({ en: 'Mark as no reply needed', zh: '标记为无需回复' }) }}
           </UIButton>
           <UIButton
-            v-radar="{ name: 'Refresh feedback', desc: 'Reload feedback details' }"
+            v-radar="{ name: 'refresh-feedback', desc: 'Reload feedback details' }"
             icon="reload"
             shape="square"
             type="white"
@@ -285,7 +285,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
                 <div class="mt-1 text-grey-1000">
                   <RouterLink
                     v-if="context.projectSnapshotUrl != null"
-                    v-radar="{ name: 'Open project snapshot', desc: 'Open the project snapshot in the editor' }"
+                    v-radar="{ name: 'open-project-snapshot', desc: 'Open the project snapshot in the editor' }"
                     class="text-primary-main no-underline hover:underline"
                     :to="`/admin/feedback/${encodeURIComponent(feedback.id)}/project-snapshot`"
                   >

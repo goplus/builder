@@ -58,7 +58,7 @@ const handleModifyUsername = useMessageHandle(
         {{ $t({ en: 'Copy username', zh: '复制用户名' }) }}
         <template #trigger>
           <button
-            v-radar="{ name: 'Copy username button', desc: 'Click to copy username to clipboard' }"
+            v-radar="{ name: 'copy-username-button', desc: 'Click to copy username to clipboard' }"
             class="inline-flex h-3.5 w-3.5 flex-none cursor-pointer items-center justify-center border-none bg-transparent p-0 text-inherit transition-colors duration-200 hover:text-primary-main"
             type="button"
             @click="handleCopyUsername"
@@ -74,7 +74,7 @@ const handleModifyUsername = useMessageHandle(
         {{ $t({ en: 'Modify username', zh: '修改用户名' }) }}
         <template #trigger>
           <button
-            v-radar="{ name: 'Modify username button', desc: 'Click to modify username' }"
+            v-radar="{ name: 'modify-username-button', desc: 'Click to modify username' }"
             class="inline-flex h-3.5 w-3.5 flex-none cursor-pointer items-center justify-center border-none bg-transparent p-0 text-inherit transition-colors duration-200 hover:text-primary-main"
             type="button"
             @click="handleModifyUsername"

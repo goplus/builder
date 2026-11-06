@@ -25,17 +25,12 @@ import {
   type TextDocumentIdentifier,
   getCodeFilePath,
   type Property,
-  parseDefinitionName
+  parseDefinitionName,
+  resourceURIPrefix,
+  isResourceUri
 } from '@/components/xgo-code-editor'
 
 export type { ResourceModel }
-
-const resourceURIPrefix = 'spx://resources/'
-
-/** Check if given URI is a resource URI or a resource context URI */
-export function isResourceUri(uri: string): boolean {
-  return uri.startsWith(resourceURIPrefix)
-}
 
 /** Map from `ResourceURI` part to `ResourceType` */
 const resourceTypeMap: Record<string, ResourceType | undefined> = {

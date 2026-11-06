@@ -83,7 +83,7 @@ const handleUseAsset = useMessageHandle(
 
 <template>
   <main
-    v-radar="{ name: 'Backdrop generation', desc: 'Interface for generating and selecting backdrops' }"
+    v-radar="{ name: 'backdrop-generation', desc: 'Interface for generating and selecting backdrops' }"
     class="backdrop-gen h-full flex flex-col items-stretch"
   >
     <LayoutWithPreview :has-preview="hasPreview">
@@ -145,7 +145,7 @@ const handleUseAsset = useMessageHandle(
       <UIButton
         v-if="selectedAsset != null"
         v-radar="{
-          name: 'Use',
+          name: 'use',
           desc: 'Click to use the selected library asset'
         }"
         type="primary"
@@ -157,7 +157,7 @@ const handleUseAsset = useMessageHandle(
       <UIButton
         v-else
         v-radar="{
-          name: 'Use',
+          name: 'use',
           desc: 'Finish and use the generated backdrop in the project'
         }"
         type="primary"

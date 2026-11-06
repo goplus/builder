@@ -15,7 +15,7 @@ defineEmits<{
     <div class="w-94 flex flex-row flex-wrap gap-2">
       <slot></slot>
       <UIBlockItem
-        v-radar="{ name: 'Add', desc: 'Click to add a new item' }"
+        v-radar="{ name: 'add', desc: 'Click to add a new item' }"
         class="justify-center text-primary-main"
         @click="$emit('add')"
       >

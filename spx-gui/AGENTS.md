@@ -50,6 +50,10 @@ Keep import statements in order:
 2. Internal libraries: from base to specific, e.g., from `utils` to `models` to `components`
 3. Local files: relative paths starting with `./` or `../`
 
+### Progress Reporting
+
+* Use `src/utils/progress.ts` to construct, pass, and consume progress.
+
 ### String Length Validation
 
 * Use native `string.length`, browser input constraints, and `z.string().max()` for ordinary frontend input validation,
@@ -138,6 +142,7 @@ When working with backend unique string identifiers such as `username`, project 
 ## Vue Component Development
 
 * Generate accessibility info for interactive elements using `v-radar` directive. It sets `aria-label` from `name`, so do not add a separate `aria-label` to the same element.
+* Before adding Radar metadata, read `src/utils/radar/README.md` for its naming and accessibility conventions.
 * Keep Vue SFC sections in this logical order when applicable: optional `<script>`, `<script setup>`, `<template>`, then optional `<style>`.
 * Use the optional `<script>` section for definitions that belong to the same component but can be reused across multiple component instances, such as constants or helper functions.
 

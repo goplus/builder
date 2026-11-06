@@ -94,7 +94,7 @@ function getCheckedPhysicsFlags(physicsMode: PhysicsMode): PhysicsFlag[] {
     <UITooltip>
       <template #trigger>
         <UICheckbox
-          v-radar="{ name: 'collision check', desc: 'Check to set sprite physics collision' }"
+          v-radar="{ name: 'collision-check', desc: 'Check to set sprite physics collision' }"
           :value="PhysicsFlag.Collision"
           :disabled="disabledPhysicsOptions.collision"
         >
@@ -111,7 +111,7 @@ function getCheckedPhysicsFlags(physicsMode: PhysicsMode): PhysicsFlag[] {
     <UITooltip>
       <template #trigger>
         <UICheckbox
-          v-radar="{ name: 'gravity check', desc: 'Check to set sprite physics gravity' }"
+          v-radar="{ name: 'gravity-check', desc: 'Check to set sprite physics gravity' }"
           :value="PhysicsFlag.Gravity"
           :disabled="disabledPhysicsOptions.gravity"
         >
@@ -123,7 +123,7 @@ function getCheckedPhysicsFlags(physicsMode: PhysicsMode): PhysicsFlag[] {
     <UITooltip>
       <template #trigger>
         <UICheckbox
-          v-radar="{ name: 'immovable check', desc: 'Check to set sprite physics immovable' }"
+          v-radar="{ name: 'immovable-check', desc: 'Check to set sprite physics immovable' }"
           :value="PhysicsFlag.Immovable"
           :disabled="disabledPhysicsOptions.immovable"
         >

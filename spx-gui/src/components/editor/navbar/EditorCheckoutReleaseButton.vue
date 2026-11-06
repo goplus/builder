@@ -201,10 +201,10 @@ const selectorTitle = computed(() => t({ en: 'Checkout release...', zh: '检出�
 <template>
   <button
     v-radar="{
-      name: 'Checkout release button',
+      name: 'checkout-release-button',
+      label: $t({ en: 'Checkout release...', zh: '检出版本...' }),
       desc: 'Click to open release selector and checkout a historical release'
     }"
-    :aria-label="$t({ en: 'Checkout release...', zh: '检出版本...' })"
     :title="$t({ en: 'Checkout release...', zh: '检出版本...' })"
     class="flex h-full items-center justify-center border-none bg-transparent px-3 text-grey-900 outline-none hover:bg-grey-400 cursor-pointer"
     @click="handleOpen"

@@ -28,7 +28,7 @@ const loading = computed(() => props.loading || fileLoading.value)
 <template>
   <UIBlockItem
     v-radar="{
-      name: 'Backdrop image item',
+      name: 'backdrop-image-item',
       desc: 'Click to select this image as the backdrop'
     }"
     class="justify-center"

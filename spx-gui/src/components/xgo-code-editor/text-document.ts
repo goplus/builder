@@ -103,6 +103,8 @@ export class TextDocument
     super()
 
     this.monacoTextModel = monaco.editor.createModel(codeOwner.getCode() ?? '', 'xgo')
+    this.addDisposable(this.monacoTextModel)
+    this.addDisposer(() => this.handleCodeOwnerCodeChange.cancel())
 
     this.addDisposer(watch(() => codeOwner.getCode(), this.handleCodeOwnerCodeChange))
 

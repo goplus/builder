@@ -1,94 +1,30 @@
 <script lang="ts" setup>
-import { watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from '@/utils/i18n'
-import { useIsRouteLoaded } from '@/utils/route-loading'
+import type { ReadinessScope } from '@/utils/readiness'
 import { useUserSessionStorage } from '@/utils/user-storage'
-import type { Course } from '@/apis/course'
+import type { GuidedCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
+
 import { useCopilot } from '@/components/copilot/context'
 
-import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
-import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
-import * as tutorialCourseExitLink from './TutorialCourseExitLink'
-import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
-import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
+import { GuidedTutorial } from './guided/guided-tutorial'
+import GuidedTutorialRoot from './guided/GuidedTutorialRoot.vue'
+import { provideTutorial, Tutorial } from './tutorial'
 
-const i18n = useI18n()
+const props = defineProps<{ routeReadiness: ReadinessScope }>()
+
 const copilot = useCopilot()
 const router = useRouter()
-const isRouteLoaded = useIsRouteLoaded()
-
-const course = useUserSessionStorage<Course | null>('spx-gui-tutorial-course', null)
+const course = useUserSessionStorage<GuidedCourse | null>('spx-gui-tutorial-course', null)
 const series = useUserSessionStorage<CourseSeries | null>('spx-gui-tutorial-series', null)
-const tutorial = new Tutorial(copilot, router, isRouteLoaded, course, series)
-
-// TODO: ensure `RegExp.escape` available & use `RegExp.escape` instead
-const tutorialCourseSuccessPattern = new RegExp(`<${tutorialCourseSuccess.tagName.replace('-', '\\-')}\\b`)
-
-watch(
-  () => tutorial.currentCourse,
-  (currentCourse, _, onCleanup) => {
-    if (currentCourse == null) return
-
-    const disposers = [
-      copilot.registerCustomElement({
-        tagName: tutorialCourseSuccess.tagName,
-        description: tutorialCourseSuccess.detailedDescription,
-        attributes: tutorialCourseSuccess.attributes,
-        isRaw: tutorialCourseSuccess.isRaw,
-        component: tutorialCourseSuccess.default
-      }),
-      copilot.registerCustomElement({
-        tagName: tutorialCourseExitLink.tagName,
-        description: tutorialCourseExitLink.description,
-        attributes: tutorialCourseExitLink.attributes,
-        isRaw: tutorialCourseExitLink.isRaw,
-        component: tutorialCourseExitLink.default
-      }),
-      copilot.registerCustomElement(tutorialCourseAbandonPrediction),
-      copilot.registerCustomElement(tutorialCourseAbandonDismissal),
-      copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default),
-      copilot.registerQuickInputProvider({
-        provideQuickInput(lastCopilotMessage, topic) {
-          if (topic == null || !isTutorialTopic(topic)) return []
-          if (lastCopilotMessage?.content != null && tutorialCourseSuccessPattern.test(lastCopilotMessage.content)) {
-            return []
-          }
-          return [
-            {
-              text: {
-                en: 'Next step',
-                zh: '下一步'
-              },
-              message: {
-                role: 'user',
-                type: 'text',
-                content: i18n.t({
-                  en: 'I did what you asked. Tell me what to do next.',
-                  zh: '我按你说的操作了，接下来该做什么？'
-                })
-              }
-            }
-          ]
-        }
-      })
-    ]
-
-    onCleanup(() => {
-      for (const dispose of disposers) {
-        dispose()
-      }
-    })
-  },
-  {
-    immediate: true
-  }
-)
+const guidedTutorial = new GuidedTutorial(copilot, router, props.routeReadiness, course, series)
+const tutorial = new Tutorial(guidedTutorial, router)
 
 provideTutorial(tutorial)
 </script>
 
 <template>
-  <slot />
+  <GuidedTutorialRoot :guided-tutorial="guidedTutorial">
+    <slot />
+  </GuidedTutorialRoot>
 </template>

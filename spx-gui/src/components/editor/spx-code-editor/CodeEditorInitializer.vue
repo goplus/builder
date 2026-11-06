@@ -4,9 +4,12 @@
 
 <script setup lang="ts">
 import { watch } from 'vue'
-import type { CodeEditor } from '@/components/xgo-code-editor'
+import { parseDefinitionId, type CodeEditor } from '@/components/xgo-code-editor'
+import { FilteredCompletionProvider } from './api-filter'
 import { SpxAPIReferenceProvider } from './api-reference'
+import { SpxCompletionProvider } from './completion'
 import { SpxDiagnosticsProvider } from './diagnostics'
+import { SpxExecutionLocationProvider } from './execution-location'
 import { SpxResourceAdapter, useResourceRenameHelpers, useResourceSelectorHelpers } from './resource'
 import { SpxInputHelperProvider } from './input-helper'
 import { SpxSnippetVariablesProvider } from './snippet-variables'
@@ -14,7 +17,10 @@ import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   codeEditor: CodeEditor
+  apiWhitelist: string[] | null
 }>()
+
+const emit = defineEmits<{ ready: [editor: CodeEditor] }>()
 
 const editorCtx = useEditorCtx()
 const resourceSelectorHelpers = useResourceSelectorHelpers()
@@ -25,8 +31,8 @@ watch(
   (codeEditor, _, onCleanup) => {
     const { project: spxProject, runtime } = editorCtx.state
     const { documentBase, project, lspClient } = codeEditor
-    const apiReferenceProvider = new SpxAPIReferenceProvider(documentBase)
     const diagnosticsProvider = new SpxDiagnosticsProvider(runtime, lspClient, project)
+    const executionLocationProvider = new SpxExecutionLocationProvider(runtime)
     const resourceAdapter = new SpxResourceAdapter(
       lspClient,
       editorCtx.state,
@@ -41,15 +47,37 @@ watch(
       project.classFramework.pkgPaths[0]
     )
 
-    codeEditor.registerAPIReferenceProvider(apiReferenceProvider)
     codeEditor.registerDiagnosticsProvider(diagnosticsProvider)
+    codeEditor.registerExecutionLocationProvider(executionLocationProvider)
     codeEditor.registerResourceAdapter(resourceAdapter)
     codeEditor.registerInputHelperProvider(inputHelperProvider)
     codeEditor.registerSnippetVariablesProvider(snippetVariablesProvider)
 
+    const completionProvider = new SpxCompletionProvider(codeEditor.completionProvider, documentBase)
+    const stopAPIWatch = watch(
+      () => props.apiWhitelist,
+      (apiWhitelist) => {
+        const whitelist =
+          apiWhitelist == null
+            ? null
+            : apiWhitelist
+                .map(parseDefinitionId)
+                .map((definition) => codeEditor.resolveDefinitionId(definition))
+                .filter((definition) => definition != null)
+        codeEditor.registerAPIReferenceProvider(new SpxAPIReferenceProvider(documentBase, whitelist))
+        codeEditor.registerCompletionProvider(
+          whitelist == null ? completionProvider : new FilteredCompletionProvider(completionProvider, whitelist)
+        )
+      },
+      { immediate: true }
+    )
+
     onCleanup(() => {
+      stopAPIWatch()
       diagnosticsProvider.dispose()
+      executionLocationProvider.dispose()
     })
+    emit('ready', codeEditor)
   },
   { immediate: true }
 )

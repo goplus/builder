@@ -3,12 +3,11 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
-import { getUserPageRoute } from '@/apps/xbuilder/router'
+import { getCourseManagementRoute, getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { useSignedIn } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
-import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { useSendFeedback } from '@/components/feedback'
 import { useI18n } from '@/utils/i18n'
 import enSvg from './icons/en.svg?raw'
@@ -42,11 +41,9 @@ function handleAdminConsole() {
 const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
 
-const manageCoursesFn = useCourseManagement()
-const manageCourses = useMessageHandle(manageCoursesFn).fn
-
-const manageCourseSeriesFn = useCourseSeriesManagement()
-const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
+function handleCourseManagement() {
+  router.push(getCourseManagementRoute())
+}
 
 const sendFeedback = useMessageHandle(useSendFeedback()).fn
 
@@ -60,18 +57,18 @@ async function handleSignOut() {
 <template>
   <div v-if="!signedIn.isSignedIn" class="h-full flex items-center px-3 whitespace-nowrap">
     <UIButton
-      v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
+      v-radar="{ name: 'sign-in-button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
       @click="signedIn.signIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
-  <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
+  <UIDropdown v-else trigger="click" placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
       <div
         v-radar="{
-          name: 'Profile menu',
+          name: 'profile-menu',
           desc: 'Hover to see profile options (profile page, language, assets, courses, feedback, sign out, etc.)'
         }"
         class="h-full flex items-center justify-center px-3 hover:bg-grey-400"
@@ -94,7 +91,7 @@ async function handleSignOut() {
         <UITooltip placement="left">
           <template #trigger>
             <UIMenuItem
-              v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
+              v-radar="{ name: 'language-switcher', desc: 'Click to switch between English and Chinese' }"
               class="justify-between p-2"
               @click="toggleLang"
             >
@@ -125,11 +122,8 @@ async function handleSignOut() {
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="signedIn.user?.capabilities.canManageCourses">
-        <UIMenuItem @click="manageCourses()">
-          {{ $t({ en: 'Manage courses', zh: '管理课程' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="manageCourseSeries()">
-          {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
+        <UIMenuItem @click="handleCourseManagement">
+          {{ $t({ en: 'Course management', zh: '课程管理' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="canUseAdminConsole">

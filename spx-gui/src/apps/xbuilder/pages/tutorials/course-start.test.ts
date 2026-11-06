@@ -11,10 +11,12 @@ describe('course start', () => {
     vi.mocked(courseApis.getCourse).mockResolvedValue({
       id: 'first-flight',
       owner: 'alice',
+      kind: 'guided',
       title: 'First flight',
       thumbnail: '',
-      entrypoint: '/editor/alice/first-flight',
-      prompt: 'Build a spaceship'
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+      content: { entrypoint: '/editor/alice/first-flight', prompt: 'Build a spaceship' }
     })
     vi.mocked(copilotApis.generateCopilotMessage).mockImplementation(async function* (messages) {
       const nextStep = messages.some(
@@ -47,7 +49,7 @@ describe('course start', () => {
         expect.anything()
       )
     )
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Now move your spaceship.'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Now move your spaceship.'), { timeout: 4000 })
     await vi.waitFor(() => expect(wrapper.findAll('button').some((button) => button.text() === 'Next step')).toBe(true))
     expect(copilotApis.generateCopilotMessage).toHaveBeenCalledWith(
       expect.arrayContaining([

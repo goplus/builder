@@ -48,7 +48,7 @@ describe('buttonRecipe', () => {
       '--ui-button-hover-border-color': 'transparent',
       '--ui-button-active-bg-color': 'var(--ui-color-primary-600)',
       '--ui-button-active-border-color': 'transparent',
-      '--ui-button-focus-border-color': 'var(--ui-color-primary-700)'
+      '--ui-button-focus-border-color': 'var(--ui-color-primary-600)'
     })
 
     expect(resolveButtonCssVars({ type: 'neutral', disabled: true, loading: false })).toEqual({

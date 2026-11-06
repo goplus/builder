@@ -256,7 +256,7 @@ function dismissCreatedToken() {
         </div>
         <UIButton
           v-radar="{
-            name: $t({ en: 'Refresh grant details', zh: '刷新授权详情' }),
+            name: 'refresh-grant-details',
             desc: 'Reload app grant and token data'
           }"
           icon="reload"
@@ -419,7 +419,7 @@ function dismissCreatedToken() {
               }}</pre>
               <div class="mt-3 flex flex-wrap justify-end gap-2">
                 <UIButton
-                  v-radar="{ name: 'Copy Access token', desc: 'Copy the newly created Access token to clipboard' }"
+                  v-radar="{ name: 'copy-access-token', desc: 'Copy the newly created Access token to clipboard' }"
                   icon="copy"
                   type="white"
                   size="small"

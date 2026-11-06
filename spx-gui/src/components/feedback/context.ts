@@ -158,7 +158,7 @@ export async function captureFeedbackContext({
   const projectSnapshotUrlPromise = editorCtx != null ? captureProjectSnapshot(editorCtx.project) : null
   if (editorCtx != null) {
     context.project = getProjectContext(editorCtx.project)
-    const runtimeOutputs = getRuntimeOutputsContext(editorCtx.state.runtime.outputs)
+    const runtimeOutputs = getRuntimeOutputsContext(editorCtx.state.runtime.outputSnapshot)
     if (runtimeOutputs.length > 0) context.runtimeOutputs = runtimeOutputs
   }
   if (codeEditor != null) {
