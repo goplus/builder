@@ -32,18 +32,31 @@ describe('API Reference insertion', () => {
       global: {
         directives: { radar: {} },
         stubs: {
-          UIDropdown: { name: 'UIDropdown', props: ['disabled'], template: '<div><slot name="trigger" /></div>' }
+          UIDropdown: {
+            name: 'UIDropdown',
+            props: ['disabled'],
+            methods: { setVisible: vi.fn() },
+            template: '<div><slot name="trigger" /></div>'
+          }
         }
       }
     })
     const trigger = wrapper.get('li')
     expect(trigger.attributes('draggable')).toBe('false')
     expect(trigger.attributes('aria-disabled')).toBe('true')
+    const disabledClasses = trigger.classes()
+    await trigger.trigger('mousedown')
+    expect(trigger.classes()).toEqual(disabledClasses)
+    await trigger.trigger('mouseup')
     await trigger.trigger('click')
     expect(doAction).not.toHaveBeenCalled()
     expect(insertDefinition).not.toHaveBeenCalled()
     await wrapper.setProps({ disabled: false })
     expect(trigger.attributes('draggable')).toBe('true')
+    await trigger.trigger('mousedown')
+    expect(trigger.classes()).toContain('before-dragging')
+    await trigger.trigger('mouseup')
+    expect(trigger.classes()).not.toContain('before-dragging')
     await trigger.trigger('click')
     expect(doAction).toHaveBeenCalledTimes(1)
     expect(insertDefinition).toHaveBeenCalledWith(item)
