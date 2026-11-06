@@ -1,4 +1,4 @@
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { TaskManager } from '@/utils/task'
 import type {
@@ -16,11 +16,22 @@ export class APIReferenceController extends Disposable {
     super()
   }
 
+  private loadingRef = ref(true)
+
+  get loading() {
+    return this.loadingRef.value
+  }
+
   private itemsMgr = new TaskManager(async (signal) => {
     const provider = this.ui.codeEditor.apiReferenceProvider
     const { activeTextDocument: textDocument } = this.ui
     if (textDocument == null) return null
-    return provider.provideAPIReference({ textDocument, signal })
+    this.loadingRef.value = true
+    try {
+      return await provider.provideAPIReference({ textDocument, signal })
+    } finally {
+      if (!signal.aborted) this.loadingRef.value = false
+    }
   }, true)
 
   get items() {
