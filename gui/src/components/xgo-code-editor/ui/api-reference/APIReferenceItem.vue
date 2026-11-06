@@ -128,7 +128,7 @@ function handleMouseUp(e: MouseEvent) {
             'overload-id': item.definition.overloadId
           }
         }"
-        class="api-reference-item max-w-full self-start translate-x-0 bg-grey-100 px-1.5 transition-all duration-200 [scroll-margin-bottom:16px] [scroll-margin-top:42px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
+        class="api-reference-item max-w-full self-start translate-x-0 bg-grey-100 px-1.5 select-none transition-all duration-200 [scroll-margin-bottom:16px] [scroll-margin-top:42px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
         :aria-disabled="disabled"
         :class="{
           'rounded-sm': !blockStyle,
