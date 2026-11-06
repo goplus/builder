@@ -200,7 +200,7 @@ const handleMarkAsHandled = useMessageHandle(
                 <div class="mt-1 text-grey-1000">
                   <RouterLink
                     v-if="context.projectSnapshotUrl != null"
-                    v-radar="{ name: 'Open project snapshot', desc: 'Open the project snapshot in the editor' }"
+                    v-radar="{ name: 'open-project-snapshot', desc: 'Open the project snapshot in the editor' }"
                     class="text-primary-main no-underline hover:underline"
                     :to="`/admin/feedback/${encodeURIComponent(feedback.id)}/project-snapshot`"
                   >

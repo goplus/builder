@@ -7,13 +7,14 @@ import type { LocaleMessage } from '@/utils/i18n'
  * for which no tab or heading is shown.
  */
 export type SeriesUnit = {
+  id: string | null
   title: string | null
   courseIDs: string[]
 }
 
 /** The units learners see, in order: those without courses are left out. */
 export function getSeriesUnits(series: CourseSeries): SeriesUnit[] {
-  if (series.units.length === 0) return [{ title: null, courseIDs: series.courseIDs }]
+  if (series.units.length === 0) return [{ id: null, title: null, courseIDs: series.courseIDs }]
   return series.units.filter((unit) => unit.courseIDs.length > 0)
 }
 

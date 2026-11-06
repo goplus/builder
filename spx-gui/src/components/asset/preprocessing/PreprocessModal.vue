@@ -33,7 +33,9 @@
           v-for="method in supportedMethods"
           :key="method.value"
           v-radar="{
-            name: method.name.en,
+            name: 'preprocessing-method-entry',
+            label: $t(method.name),
+            attrs: { method: method.value },
             desc: `Click to configure preprocessing method: ${method.name.en}`
           }"
           :img-src="method.thumbnail"
@@ -62,7 +64,9 @@
           v-for="method in supportedMethods"
           :key="method.value"
           v-radar="{
-            name: method.name.en,
+            name: 'preprocessing-method-panel',
+            label: $t(method.name),
+            attrs: { method: method.value },
             desc: `Configure panel for preprocessing method: ${method.name.en}`
           }"
           :active="activeMethod === method.value"
