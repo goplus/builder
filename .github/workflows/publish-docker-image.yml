@@ -10,10 +10,10 @@ jobs:
       matrix:
         include:
           - name: Builder
-            dockerfile: ./spx-gui/build/Dockerfile
+            dockerfile: ./gui/build/Dockerfile
             tag: ghcr.io/${{ github.repository }}:dev
           - name: Account
-            dockerfile: ./spx-gui/build/Dockerfile.account
+            dockerfile: ./gui/build/Dockerfile.account
             tag: ghcr.io/${{ github.repository }}/account:dev
     steps:
       - name: Check out code

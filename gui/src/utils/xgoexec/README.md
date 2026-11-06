@@ -23,4 +23,4 @@ and `stop` to terminate the Worker. `dispatchEvent` delivers a framework event
 to an already running program.
 
 `worker.ts` loads `xgoexec.wasm`. The WASM asset is built by
-`tools/xgoexec-bundle` and copied by `spx-gui/build-wasm.sh`.
+`tools/xgoexec-bundle` and copied by `gui/build-wasm.sh`.

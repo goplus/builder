@@ -5,8 +5,8 @@ strictly limits allowed browser origins. This document explains the local
 debugging setup and why it works without asking the Account backend to trust
 arbitrary localhost origins.
 
-For the broader reason why Account is a separate app under `spx-gui/src/apps`,
-see [spx-gui Apps](./spx-gui-apps.md).
+For the broader reason why Account is a separate app under `gui/src/apps`,
+see [GUI Apps](./gui-apps.md).
 
 ## Two Separate Problems
 

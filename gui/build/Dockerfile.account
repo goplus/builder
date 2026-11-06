@@ -3,16 +3,16 @@ ARG NGINX_BASE_IMAGE=nginx:1.27
 
 FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
-WORKDIR /app/spx-gui
+WORKDIR /app/gui
 
-COPY spx-gui/package.json spx-gui/pnpm-lock.yaml spx-gui/pnpm-workspace.yaml .
+COPY gui/package.json gui/pnpm-lock.yaml gui/pnpm-workspace.yaml .
 
 ARG NPM_CONFIG_REGISTRY
 # pnpm reads npm config from lowercase npm_config_* environment variables.
 ENV npm_config_registry=${NPM_CONFIG_REGISTRY}
 RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts
 
-COPY spx-gui .
+COPY gui .
 
 ARG VITE_MODE
 
@@ -21,8 +21,8 @@ RUN pnpm run build:account
 
 FROM ${NGINX_BASE_IMAGE}
 
-COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
-COPY spx-gui/build/nginx.account.conf /etc/nginx/conf.d/default.conf
+COPY --from=frontend-builder /app/gui/dist /usr/share/nginx/html
+COPY gui/build/nginx.account.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

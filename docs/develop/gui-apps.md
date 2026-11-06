@@ -1,6 +1,6 @@
-# spx-gui Apps
+# GUI Apps
 
-`spx-gui` maintains multiple browser apps in the same package. It currently has:
+`gui` maintains multiple browser apps in the same package. It currently has:
 
 - `xbuilder`: the main XBuilder product app.
 - `account`: the Account Web facade, including hosted sign-in pages.
@@ -32,10 +32,10 @@ Keeping both apps in one codebase gives us two useful properties:
 
 ## App Layout
 
-App-specific code lives under `spx-gui/src/apps`:
+App-specific code lives under `gui/src/apps`:
 
 ```text
-spx-gui/src/apps/
+gui/src/apps/
 ├── account/
 │   ├── index.html
 │   ├── main.ts
@@ -50,7 +50,7 @@ spx-gui/src/apps/
     └── pages/
 ```
 
-The root `spx-gui/index.html` is only a thin Vite entry placeholder. The real
+The root `gui/index.html` is only a thin Vite entry placeholder. The real
 HTML documents are maintained beside each app. `createAppHtmlEntryPlugin`
 replaces the placeholder with the selected app HTML during Vite dev/build:
 
@@ -62,7 +62,7 @@ its document metadata and script entry.
 
 ## Shared Code
 
-The apps share normal `spx-gui/src` modules:
+The apps share normal `gui/src` modules:
 
 - `components/ui/*` for reusable UI primitives.
 - `apis/account/*` for Account-facing API and OAuth helpers.
@@ -88,8 +88,8 @@ npm run dev:account
 npm run build:account
 ```
 
-For the test Account facade, `spx-gui/build/Dockerfile.account` builds the
-Account bundle and serves it through Nginx. `spx-gui/build/nginx.account.conf`
+For the test Account facade, `gui/build/Dockerfile.account` builds the
+Account bundle and serves it through Nginx. `gui/build/nginx.account.conf`
 serves the static frontend and proxies `/api/*` to the test Builder backend's
 `/account/*` API paths.
 
