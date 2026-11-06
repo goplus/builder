@@ -95,6 +95,7 @@ function handleDragStart(e: DragEvent) {
 }
 
 function handleMouseDown(e: MouseEvent) {
+  if (props.disabled) return
   const itemEl = e.currentTarget as HTMLElement
   itemEl.classList.add(beforeDraggingClz)
   hideDropdown()
