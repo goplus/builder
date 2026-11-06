@@ -127,14 +127,16 @@ function handleMouseUp(e: MouseEvent) {
             'overload-id': item.definition.overloadId
           }
         }"
-        class="api-reference-item max-w-full self-start translate-x-0 bg-grey-100 px-1.5 transition-all duration-200 hover:bg-grey-300 [scroll-margin-bottom:16px] [scroll-margin-top:42px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
+        class="api-reference-item max-w-full self-start translate-x-0 bg-grey-100 px-1.5 transition-all duration-200 [scroll-margin-bottom:16px] [scroll-margin-top:42px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
         :aria-disabled="disabled"
         :class="{
           'rounded-sm': !blockStyle,
           'cursor-not-allowed opacity-50': disabled,
-          'cursor-pointer': !disabled,
-          'block-style relative flex min-h-9 w-fit max-w-none items-center rounded-md border border-grey-500 py-1.5 pr-2.5 pl-6.5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] hover:border-primary-main hover:bg-grey-100 hover:shadow-[0_4px_12px_rgba(15,23,42,0.12)]':
+          'cursor-pointer hover:bg-grey-300': !disabled,
+          'block-style relative flex min-h-9 w-fit max-w-none items-center rounded-md border border-grey-500 py-1.5 pr-2.5 pl-6.5 shadow-[0_2px_8px_rgba(15,23,42,0.08)]':
             blockStyle,
+          'hover:border-primary-main hover:bg-grey-100 hover:shadow-[0_4px_12px_rgba(15,23,42,0.12)]':
+            blockStyle && !disabled,
           'cursor-grab [&.before-dragging]:cursor-grabbing': blockStyle && !disabled,
           '[&_.overview]:break-normal': blockStyle
         }"
