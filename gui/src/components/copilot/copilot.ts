@@ -589,19 +589,12 @@ export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
 
   private globalActiveRef = localStorageRef('spx-gui-copilot-active', false)
   private dockedActiveRef = ref(false)
-  private get activeRef() {
-    return this.globalUIEnabled ? this.globalActiveRef : this.dockedActiveRef
-  }
   get active() {
-    return this.activeRef.value
+    return this.globalUIEnabled ? this.globalActiveRef.value : this.dockedActiveRef.value
   }
-
-  /** Global panel state, independent of the currently displayed UI. */
-  get globalUIActive() {
-    return this.globalActiveRef.value
-  }
-  set globalUIActive(active: boolean) {
-    this.globalActiveRef.value = active
+  private setActive(active: boolean) {
+    if (this.globalUIEnabled) this.globalActiveRef.value = active
+    else this.dockedActiveRef.value = active
   }
 
   private globalUIEnabledRef = ref(true)
@@ -612,7 +605,6 @@ export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
     this.globalUIEnabledRef.value = true
   }
   disableGlobalUI() {
-    this.dockedActiveRef.value = false
     this.globalUIEnabledRef.value = false
   }
 
@@ -811,7 +803,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    */
   private checkIdleTimeout() {
     const session = this.currentSession
-    if (session == null || this.activeRef.value) return
+    if (session == null || this.active) return
 
     const lastRoundUpdatedTime = session.currentRound?.updatedAt
     if (lastRoundUpdatedTime == null) return
@@ -867,12 +859,12 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */
   open() {
     this.checkIdleTimeout()
-    this.activeRef.value = true
+    this.setActive(true)
   }
 
   close() {
     this.currentSession?.abortCurrentRound()
-    this.activeRef.value = false
+    this.setActive(false)
   }
 
   /**

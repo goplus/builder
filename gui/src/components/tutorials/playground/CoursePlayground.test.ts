@@ -183,7 +183,8 @@ describe('Playground Copilot on course exit', () => {
     async ({ expanded, completed, globalActive }) => {
       const copilot = new Copilot(new InMemorySkillRegistry())
       mocks.copilot = copilot
-      copilot.globalUIActive = globalActive
+      if (globalActive) copilot.open()
+      else copilot.close()
       const wrapper = mountPlayground()
       await flushPromises()
       mocks.editors[0].value = true

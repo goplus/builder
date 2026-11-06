@@ -378,20 +378,18 @@ let authorCopilot: { session: SessionExported | null; active: boolean } | null =
 
 function stashAuthorCopilot() {
   if (authorCopilot != null) return
-  authorCopilot = { session: copilot.exportCurrentSession(), active: copilot.globalUIActive }
+  authorCopilot = { session: copilot.exportCurrentSession(), active: copilot.active }
 }
 
-/**
- * Give the author their copilot back. The runner ends its own session on dispose only if it is still current, so
- * restoring first is safe.
- */
+/** Restore the author after the preview UI has unmounted. */
 function restoreAuthorCopilot() {
   const stashed = authorCopilot
   if (stashed == null) return
   authorCopilot = null
   if (stashed.session != null) copilot.restoreSession(stashed.session)
   else copilot.endCurrentSession()
-  copilot.globalUIActive = stashed.active
+  if (stashed.active) copilot.open()
+  else copilot.close()
 }
 
 // `immediate` covers landing directly on the preview URL.
@@ -400,10 +398,13 @@ watch(
   (isPreview) => {
     if (!isPreview) {
       // Any load still in flight belongs to a preview that is over: let it discard its snapshot.
-      previewGeneration++
+      const generation = ++previewGeneration
       preview.value = null
       previewError.value = null
-      restoreAuthorCopilot()
+      // Wait for DockedCopilotUI's onUnmounted to re-enable global UI so open/close restore the global panel.
+      void nextTick(() => {
+        if (isCurrentPreview(generation) && !isPreviewRoute.value) restoreAuthorCopilot()
+      })
       return
     }
     // This runs before the playground mounts and its runner replaces the copilot session.

@@ -111,19 +111,19 @@ async function waitForCompletion() {
 describe('Copilot panel state', () => {
   it.each([false, true])('preserves global expansion (%s) while using docked UI', (globalActive) => {
     const copilot = new Copilot(createTestSkillRegistry())
-    copilot.globalUIActive = globalActive
+    if (globalActive) copilot.open()
+    else copilot.close()
     copilot.disableGlobalUI()
     expect(copilot.active).toBe(false)
     copilot.open()
     expect(copilot.active).toBe(true)
-    expect(copilot.globalUIActive).toBe(globalActive)
     copilot.close()
     expect(copilot.active).toBe(false)
     copilot.open()
     copilot.enableGlobalUI()
     expect(copilot.active).toBe(globalActive)
     copilot.disableGlobalUI()
-    expect(copilot.active).toBe(false)
+    expect(copilot.active).toBe(true)
     copilot.enableGlobalUI()
     copilot.close()
     copilot.dispose()
