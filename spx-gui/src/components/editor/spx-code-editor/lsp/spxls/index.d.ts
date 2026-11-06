@@ -1,1 +1,0 @@
-../../../../../../../tools/spxls/index.d.ts

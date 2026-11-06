@@ -14,3 +14,8 @@ cp ../tools/spxls/spxls-pkgdata.zip src/assets/wasm/spxls-pkgdata.zip
 # Build and copy ispx.wasm
 ( cd ../tools/ispx && ./build.sh )
 cp ../tools/ispx/ispx.wasm src/assets/wasm/ispx.wasm
+
+# Build the default executor bundle. It composes xgoexec with the Tutorial
+# framework; other framework bundles can be added without changing xgoexec.
+( cd ../tools/xgoexec-bundle && ./build.sh )
+cp ../tools/xgoexec-bundle/xgoexec.wasm src/assets/wasm/xgoexec.wasm

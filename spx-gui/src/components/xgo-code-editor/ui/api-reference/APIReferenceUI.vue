@@ -25,13 +25,16 @@ import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilTaskScheduled } from '@/utils/utils'
 import { UIError } from '@/components/ui'
-import { stringifyDefinitionId, type DefinitionDocumentationItem } from '../../common'
+import { type DefinitionDocumentationItem } from '../../common'
+import { stringifyDefinitionId } from '../../definition-id'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
-import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
+import { useRegisterLoading } from '@/utils/readiness'
 
 const props = defineProps<{
   controller: APIReferenceController
+  simpleMode?: boolean
+  disabled?: boolean
 }>()
 
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
@@ -39,10 +42,13 @@ const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue
   return props.controller.items ?? oldValue ?? null
 })
 
-const loaded = ref(false)
-// APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial)
-// Register a provider with PageLoaded to notify dependent modules that APIReferenceUI has finished loading
-useRegisterUpdateRouteLoaded(loaded)
+const categorizationThreshold = 20
+const needsCategorization = computed(() => (itemsForDisplay.value?.length ?? 0) >= categorizationThreshold)
+
+const loading = ref(true)
+// APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial).
+// Report loading until the deferred rendering finishes so those modules can wait for the UI.
+useRegisterLoading(loading)
 
 const err = computed(() => {
   const err = props.controller.error
@@ -82,7 +88,7 @@ watch(categoriesComputed, async (categories, oldValue, onCleanUp) => {
   categoriesForItems.value = categories.slice(0, 1)
   await untilTaskScheduled('background', getCleanupSignal(onCleanUp))
   categoriesForItems.value = categories
-  loaded.value = true
+  loading.value = false
 })
 
 const activeCategoryIdRef = ref<string | null>(null)
@@ -147,7 +153,8 @@ function handleCategoryClick(id: string) {
 <template>
   <section
     v-radar="{
-      name: 'API References',
+      name: 'api-references',
+      label: 'API References',
       desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
     }"
     class="flex min-h-0"
@@ -156,7 +163,7 @@ function handleCategoryClick(id: string) {
       {{ $t(err.userMessage) }}
     </UIError>
     <template v-else>
-      <ul class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
+      <ul v-if="needsCategorization" class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
         <li
           v-for="c in categoriesComputed"
           :key="c.id"
@@ -169,25 +176,43 @@ function handleCategoryClick(id: string) {
           <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
         </li>
       </ul>
-      <ul ref="itemsWrapperRef" class="flex-[1_1_0] min-w-0 overflow-y-auto px-4 pb-3 [scrollbar-width:thin]">
-        <li
-          v-for="c in categoriesForItems"
-          :key="c.id"
-          :data-category-id="c.id"
-          class="[&:last-child>section:last-child]:border-b-0"
-        >
-          <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
-            <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
-            <ul class="flex flex-col gap-md pb-5">
-              <APIReferenceItemComp
-                v-for="item in sc.items"
-                :key="stringifyDefinitionId(item.definition)"
-                :item="item"
-                :interaction-disabled="scrolling"
-              />
-            </ul>
-          </section>
-        </li>
+      <ul
+        ref="itemsWrapperRef"
+        class="flex flex-[1_1_0] min-w-0 flex-col overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
+        :class="{ 'gap-md pt-3': !needsCategorization }"
+      >
+        <template v-if="needsCategorization">
+          <li
+            v-for="c in categoriesForItems"
+            :key="c.id"
+            :data-category-id="c.id"
+            class="[&:last-child>section:last-child]:border-b-0"
+          >
+            <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
+              <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+              <ul class="flex flex-col gap-md pb-5">
+                <APIReferenceItemComp
+                  v-for="item in sc.items"
+                  :key="stringifyDefinitionId(item.definition)"
+                  :item="item"
+                  :block-style="simpleMode"
+                  :interaction-disabled="scrolling"
+                  :disabled="disabled"
+                />
+              </ul>
+            </section>
+          </li>
+        </template>
+        <template v-else>
+          <APIReferenceItemComp
+            v-for="item in itemsForDisplay"
+            :key="stringifyDefinitionId(item.definition)"
+            :item="item"
+            :block-style="simpleMode"
+            :interaction-disabled="false"
+            :disabled="disabled"
+          />
+        </template>
       </ul>
     </template>
   </section>

@@ -1,6 +1,6 @@
 <template>
   <EditorList
-    v-radar="{ name: 'Costumes management', desc: 'Managing costumes of current sprite' }"
+    v-radar="{ name: 'costumes-management', desc: 'Managing costumes of current sprite' }"
     resource-type="costume"
     :sortable="{ list: sprite.costumes }"
     @sorted="handleSorted"
@@ -16,7 +16,7 @@
     <template #add-options>
       <UIMenu>
         <UIMenuItem
-          v-radar="{ name: 'Add from local file', desc: 'Click to add costume from local file' }"
+          v-radar="{ name: 'add-from-local-file', desc: 'Click to add costume from local file' }"
           @click="handleAddFromLocalFile"
           >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
         >

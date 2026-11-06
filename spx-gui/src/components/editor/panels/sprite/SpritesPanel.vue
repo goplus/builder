@@ -1,7 +1,7 @@
 <template>
   <div class="h-full w-full overflow-hidden">
     <section
-      v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }"
+      v-radar="{ name: 'sprites-panel', desc: 'Panel for managing project sprites' }"
       class="h-full flex flex-col overflow-hidden"
     >
       <PanelHeader class="flex-none" :active="selectedSprite != null">
@@ -9,19 +9,19 @@
         <template #add-options>
           <UIMenu>
             <UIMenuItem
-              v-radar="{ name: 'Add from local file', desc: 'Click to add sprite from local file' }"
+              v-radar="{ name: 'add-from-local-file', desc: 'Click to add sprite from local file' }"
               @click="handleAddFromLocalFile"
             >
               {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
             </UIMenuItem>
             <UIMenuItem
-              v-radar="{ name: 'Add from asset library', desc: 'Click to add sprite from asset library' }"
+              v-radar="{ name: 'add-from-asset-library', desc: 'Click to add sprite from asset library' }"
               @click="handleAddFromAssetLibrary"
             >
               {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
             </UIMenuItem>
             <UIMenuItem
-              v-radar="{ name: 'Generate sprite', desc: 'Click to generate sprite with AI' }"
+              v-radar="{ name: 'generate-sprite', desc: 'Click to generate sprite with AI' }"
               @click="handleGenerate"
             >
               {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}

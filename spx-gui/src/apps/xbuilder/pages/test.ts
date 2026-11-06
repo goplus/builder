@@ -19,6 +19,7 @@ import * as userApis from '@/apis/user'
 import type { UserCapabilities } from '@/apis/user'
 import * as courseApis from '@/apis/course'
 import * as courseSeriesApis from '@/apis/course-series'
+import type { CourseSeries as CourseSeriesData } from '@/apis/course-series'
 import { cloudHelpers } from '@/models/common/cloud'
 import { localHelpers } from '@/models/common/local'
 import { initSignedIn } from '@/stores/user'
@@ -36,6 +37,8 @@ import Search from './community/search.vue'
 import Tutorials from './tutorials/index.vue'
 import CourseSeries from './tutorials/course-series.vue'
 import CourseStart from './tutorials/course-start.vue'
+import CourseManagement from './course-management/index.vue'
+import CourseManagementSeries from './course-management/series.vue'
 import User from './community/user/index.vue'
 import UserOverview from './community/user/overview.vue'
 import UserProjects from './community/user/projects.vue'
@@ -197,6 +200,11 @@ export async function mountPages(path: string) {
       ]
     },
     {
+      path: '/course-management',
+      component: CourseManagement,
+      children: [{ path: ':courseSeriesIdInput', component: CourseManagementSeries, props: true }]
+    },
+    {
       path: '/admin/feedback/:feedbackID/project-snapshot/:inEditorPath*',
       component: AdminFeedbackProjectSnapshot,
       props: true
@@ -340,13 +348,15 @@ export function setupPageTests() {
     vi.mocked(projectApis.listUserPublicProjects).mockResolvedValue({ data: [makeProject('First flight')], total: 1 })
     vi.mocked(projectApis.listUserLikedProjects).mockResolvedValue({ data: [makeProject('Moon landing')], total: 1 })
     vi.mocked(projectApis.listProjects).mockResolvedValue({ data: [makeProject('Space game')], total: 1 })
-    const series = {
+    const series: CourseSeriesData = {
       id: 'space',
       owner: 'alice',
+      kind: 'guided',
       title: 'Space adventures',
       description: 'Build your first space game',
       thumbnail: '',
       courseIDs: ['first-flight', 'landing'],
+      units: [],
       order: 1,
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z'
@@ -359,10 +369,12 @@ export function setupPageTests() {
         {
           id: 'first-flight',
           owner: 'alice',
+          kind: 'guided',
           title: 'First flight',
           thumbnail: '',
-          entrypoint: '/editor/alice/first-flight',
-          prompt: 'Build a spaceship'
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+          content: { entrypoint: '/editor/alice/first-flight', prompt: 'Build a spaceship' }
         }
       ]
     })

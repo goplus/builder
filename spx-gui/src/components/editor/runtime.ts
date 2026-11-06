@@ -2,7 +2,7 @@ import { effectScope, ref, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { until } from '@/utils/utils'
 import type { SpxProject } from '@/models/spx/project'
-import type { TextDocumentRange } from '@/components/xgo-code-editor'
+import type { TextDocumentIdentifier, TextDocumentRange } from '@/components/xgo-code-editor'
 
 export type RunningState =
   | {
@@ -34,15 +34,30 @@ export interface RuntimeOutput {
 
 export type RuntimeOutputDraft = Omit<RuntimeOutput, 'id'>
 
+export interface RuntimeLocation {
+  textDocument: TextDocumentIdentifier
+  /** Line number, starting from 1. */
+  line: number
+}
+
 export class Runtime extends Emitter<{
-  didChangeOutput: void
+  /** Every appended entry, emitted synchronously before any UI snapshot flush. */
+  didAppendOutput: RuntimeOutput
+  /** The bounded UI snapshot changed, batched per frame except when cleared. */
+  didChangeOutputSnapshot: void
+  /** Emitted once after a run or rerun succeeds. */
+  didStart: void
+  /** Emitted synchronously after the active source locations are updated or cleared. */
+  didChangeLocations: void
+  /** Emitted when the runner reports an exit, including manual stops; payload is the exit code. */
   didExit: number
 }> {
   static readonly defaultMaxOutputs = 500
 
   private runningRef = shallowRef<RunningState>({ mode: 'none' })
   private filesHashRef = ref<string | null>(null)
-  private outputsRef = shallowRef<RuntimeOutput[]>([])
+  private outputSnapshotRef = shallowRef<RuntimeOutput[]>([])
+  private locationsRef = shallowRef<readonly RuntimeLocation[]>([])
 
   get running() {
     return this.runningRef.value
@@ -56,12 +71,25 @@ export class Runtime extends Emitter<{
     return Runtime.defaultMaxOutputs
   }
 
-  /** Public output snapshot, updated together with `didChangeOutput` for batched UI consumption. */
-  get outputs(): readonly RuntimeOutput[] {
-    return this.outputsRef.value
+  /** Public output snapshot, updated together with `didChangeOutputSnapshot` for batched UI consumption. */
+  get outputSnapshot(): readonly RuntimeOutput[] {
+    return this.outputSnapshotRef.value
+  }
+
+  /** Active SPX source lines across concurrent executions; empty when no locations are tracked. */
+  get locations(): readonly RuntimeLocation[] {
+    return this.locationsRef.value
+  }
+
+  setLocations(locations: readonly RuntimeLocation[]) {
+    if (this.running.mode !== 'debug' && locations.length > 0) return
+    this.locationsRef.value = locations
+    this.emit('didChangeLocations')
   }
 
   setRunning(running: RunningState, filesHash?: string) {
+    if (running.mode === 'none') this.setLocations([])
+    else if (running.initializing) this.setLocations([])
     this.runningRef.value = running
     if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
       const nextHash = filesHash ?? this.filesHash
@@ -76,40 +104,40 @@ export class Runtime extends Emitter<{
   private outputCount = 0
   private scheduledOutputFlush: number | null = null
 
-  private syncOutputs() {
+  private syncOutputSnapshot() {
     const outputs: RuntimeOutput[] = []
     for (let i = 0; i < this.outputCount; i++) {
       const idx = (this.outputHead + i) % this.maxOutputs
       const output = this.outputRing[idx]
       if (output != null) outputs.push(output)
     }
-    this.outputsRef.value = outputs
+    this.outputSnapshotRef.value = outputs
   }
 
-  private flushDidChangeOutput() {
+  private flushDidChangeOutputSnapshot() {
     this.scheduledOutputFlush = null
-    this.syncOutputs()
-    this.emit('didChangeOutput')
+    this.syncOutputSnapshot()
+    this.emit('didChangeOutputSnapshot')
   }
 
-  private scheduleDidChangeOutput() {
-    this.scheduledOutputFlush = requestAnimationFrame(() => this.flushDidChangeOutput())
+  private scheduleDidChangeOutputSnapshot() {
+    this.scheduledOutputFlush = requestAnimationFrame(() => this.flushDidChangeOutputSnapshot())
   }
 
-  private cancelScheduledDidChangeOutput() {
+  private cancelScheduledDidChangeOutputSnapshot() {
     if (this.scheduledOutputFlush == null) return
     cancelAnimationFrame(this.scheduledOutputFlush)
     this.scheduledOutputFlush = null
   }
 
-  private emitDidChangeOutput({ immediate = false }: { immediate?: boolean } = {}) {
+  private emitDidChangeOutputSnapshot({ immediate = false }: { immediate?: boolean } = {}) {
     if (immediate) {
-      this.cancelScheduledDidChangeOutput()
-      this.flushDidChangeOutput()
+      this.cancelScheduledDidChangeOutputSnapshot()
+      this.flushDidChangeOutputSnapshot()
       return
     }
     if (this.scheduledOutputFlush != null) return
-    this.scheduleDidChangeOutput()
+    this.scheduleDidChangeOutputSnapshot()
   }
 
   addOutput(output: RuntimeOutputDraft) {
@@ -122,14 +150,15 @@ export class Runtime extends Emitter<{
       this.outputRing[this.outputHead] = nextOutput
       this.outputHead = (this.outputHead + 1) % this.maxOutputs
     }
-    this.emitDidChangeOutput()
+    this.emit('didAppendOutput', nextOutput)
+    this.emitDidChangeOutputSnapshot()
   }
 
   clearOutputs() {
     this.outputRing.length = 0
     this.outputHead = 0
     this.outputCount = 0
-    this.emitDidChangeOutput({ immediate: true })
+    this.emitDidChangeOutputSnapshot({ immediate: true })
   }
 
   constructor(private project: SpxProject) {
@@ -148,9 +177,7 @@ export class Runtime extends Emitter<{
         }
       )
     })
-    this.addDisposer(() => {
-      this.cancelScheduledDidChangeOutput()
-    })
+    this.addDisposer(() => this.cancelScheduledDidChangeOutputSnapshot())
     this.addDisposer(() => scope.stop())
   }
 }

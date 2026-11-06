@@ -40,12 +40,14 @@ export { default as UIButtonGroup } from './UIButtonGroup.vue'
 export { default as UIButtonGroupItem } from './UIButtonGroupItem.vue'
 export { default as UIDropdownWithTooltip } from './UIDropdownWithTooltip.vue'
 export {
+  cn,
   isInPopupOrModal,
   provideRootContainer,
   providePopupContainer,
   provideModalContainer,
   useRootContainer,
-  useLastClickEvent
+  useLastClickEvent,
+  type ClassValue
 } from './utils'
 export { default as UISpriteItem } from './block-items/UISpriteItem.vue'
 export { default as UIEditorSpriteItem } from './block-items/UIEditorSpriteItem.vue'

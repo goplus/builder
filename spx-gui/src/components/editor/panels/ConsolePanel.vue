@@ -11,7 +11,7 @@ import { CodeLink, textDocumentId2CodeFileName } from '../spx-code-editor'
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const runtime = computed(() => editorCtx.state.runtime)
-const outputs = computed(() => runtime.value.outputs)
+const outputs = computed(() => runtime.value.outputSnapshot)
 
 const outputContainerRef = ref<HTMLElement | null>(null)
 useBottomSticky(outputContainerRef)

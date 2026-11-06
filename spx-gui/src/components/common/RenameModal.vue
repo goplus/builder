@@ -55,7 +55,7 @@ function validateName(name: string) {
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Rename modal', desc: 'Modal for renaming items' }"
+    :radar="{ name: 'rename-modal', desc: 'Modal for renaming items' }"
     class="rename-modal"
     style="width: 512px"
     :title="$t({ en: 'Rename', zh: '重命名' })"
@@ -66,7 +66,7 @@ function validateName(name: string) {
       <UIFormItem path="name">
         <UITextInput
           v-model:value="form.value.name"
-          v-radar="{ name: 'Name input', desc: 'Input field for new name' }"
+          v-radar="{ name: 'name-input', desc: 'Input field for new name' }"
         />
         <template #tip>{{ $t(target.inputTip) }}</template>
       </UIFormItem>
@@ -76,14 +76,14 @@ function validateName(name: string) {
       </p>
       <footer class="mt-10 flex justify-end gap-xl">
         <UIButton
-          v-radar="{ name: 'Cancel button', desc: 'Click to cancel renaming' }"
+          v-radar="{ name: 'cancel-button', desc: 'Click to cancel renaming' }"
           type="neutral"
           @click="emit('cancelled')"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Confirm button', desc: 'Click to confirm renaming' }"
+          v-radar="{ name: 'confirm-button', desc: 'Click to confirm renaming' }"
           type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"

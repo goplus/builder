@@ -16,7 +16,7 @@
         }}
       </div>
       <UIButton
-        v-radar="{ name: 'Reload now', desc: 'Reload the page to use the latest version' }"
+        v-radar="{ name: 'reload-now', desc: 'Reload the page to use the latest version' }"
         type="yellow"
         size="small"
         @click="handleReload"

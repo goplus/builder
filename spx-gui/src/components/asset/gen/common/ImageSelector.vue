@@ -66,7 +66,7 @@ function handleSelect(index: number) {
   <div
     v-if="state.status !== 'initial'"
     ref="wrapperRef"
-    v-radar="{ name: 'Image selector', desc: 'Selector for choosing from generated images' }"
+    v-radar="{ name: 'image-selector', desc: 'Selector for choosing from generated images' }"
     class="flex flex-col items-center gap-3"
   >
     <ul class="m-0 list-none flex flex-nowrap items-center content-center justify-center gap-2 p-0">

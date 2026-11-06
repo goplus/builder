@@ -17,11 +17,13 @@ const props = withDefaults(
   defineProps<{
     interactive?: boolean
     disabled?: boolean
+    closeOnClick?: boolean
     class?: ClassValue
   }>(),
   {
     interactive: true,
     disabled: false,
+    closeOnClick: true,
     class: undefined
   }
 )
@@ -49,9 +51,7 @@ const rootClass = computed(() => {
 
 function handleClick(e: MouseEvent) {
   if (disabled.value) return
-  // It is common to put a menu in a dropdown. For most of the cases, it is ideal to hide the
-  // dropdown when menu-item clicked. We may make this behavior configurable if required.
-  dropdownCtrl?.setVisible(false)
+  if (props.closeOnClick) dropdownCtrl?.setVisible(false)
   emit('click', e)
 }
 </script>

@@ -1,6 +1,6 @@
 <template>
   <UIFormModal
-    :radar="{ name: 'Create project modal', desc: 'Modal for creating a new project' }"
+    :radar="{ name: 'create-project-modal', desc: 'Modal for creating a new project' }"
     class="project-create-modal"
     :title="$t(title)"
     :visible="props.visible"
@@ -18,13 +18,13 @@
       <UIFormItem path="name">
         <UITextInput
           v-model:value="form.value.name"
-          v-radar="{ name: 'Project name input', desc: 'Input field for project name' }"
+          v-radar="{ name: 'project-name-input', desc: 'Input field for project name' }"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
       <footer class="mt-10 flex justify-center">
         <UIButton
-          v-radar="{ name: 'Create button', desc: 'Click to create the project' }"
+          v-radar="{ name: 'create-button', desc: 'Click to create the project' }"
           class="create-button"
           type="primary"
           html-type="submit"
@@ -62,9 +62,13 @@ import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import { useProjectConfig } from './config'
 import { createDefaultProject } from './default-project'
+import type { ProjectSerialized } from '@/models/project'
 
 const props = defineProps<{
+  /** Existing cloud project reference used by the server-side remix flow. */
   remixSource?: string
+  /** Serialized local project copied into a new private project owned by the current user. */
+  sourceProject?: ProjectSerialized
   visible: boolean
 }>()
 
@@ -77,6 +81,7 @@ const { t } = useI18n()
 const { defaultFontPreferences } = useProjectConfig()
 const signedIn = useSignedIn()
 const title = computed(() => {
+  if (props.sourceProject != null) return { en: 'Save as my project', zh: '另存为我的项目' }
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
   return { en: `Remix ${props.remixSource}`, zh: `改编 ${props.remixSource}` }
 })
@@ -94,7 +99,22 @@ function handleCancel() {
 const handleSubmit = useMessageHandle(
   async () => {
     const projectName = form.value.name.trim()
-    if (props.remixSource != null) {
+    const username = signedIn.username
+    if (username == null) throw new Error('login required')
+    if (props.sourceProject != null) {
+      const { files, metadata } = props.sourceProject
+      await cloudHelpers.save({
+        files,
+        metadata: {
+          owner: username,
+          name: projectName,
+          displayName: projectName,
+          type: metadata.type ?? ProjectType.Game,
+          visibility: Visibility.Private,
+          thumbnail: metadata.thumbnail
+        }
+      })
+    } else if (props.remixSource != null) {
       await addProject({
         name: projectName,
         displayName: projectName,
@@ -104,8 +124,6 @@ const handleSubmit = useMessageHandle(
         remixSource: props.remixSource
       })
     } else {
-      const username = signedIn.username
-      if (username == null) throw new Error('login required')
       const project = await createDefaultProject(username, projectName, defaultFontPreferences)
       project.setDisplayName(projectName)
       project.setVisibility(Visibility.Private)

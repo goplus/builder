@@ -385,7 +385,7 @@ async function handleImageLoad() {
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Edit avatar modal', desc: 'Modal for editing user avatar' }"
+    :radar="{ name: 'edit-avatar-modal', desc: 'Modal for editing user avatar' }"
     :title="$t({ en: 'Edit avatar', zh: '编辑头像' })"
     :style="{ width: '560px' }"
     :mask-closable="!handleConfirm.isLoading.value"
@@ -415,7 +415,7 @@ async function handleImageLoad() {
     <footer class="mt-10 flex justify-end">
       <div class="flex items-center gap-5">
         <UIButton
-          v-radar="{ name: 'Cancel edit avatar button', desc: 'Click to cancel editing avatar' }"
+          v-radar="{ name: 'cancel-edit-avatar-button', desc: 'Click to cancel editing avatar' }"
           type="neutral"
           :disabled="handleConfirm.isLoading.value"
           @click="handleCancel"
@@ -423,7 +423,7 @@ async function handleImageLoad() {
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Confirm edit avatar button', desc: 'Click to save avatar changes' }"
+          v-radar="{ name: 'confirm-edit-avatar-button', desc: 'Click to save avatar changes' }"
           type="primary"
           :disabled="!isReady"
           :loading="handleConfirm.isLoading.value"

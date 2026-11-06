@@ -1,11 +1,12 @@
 import { createDirectUploadTask } from 'qiniu-js'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
+import { ProgressReporter, type Progress } from '@/utils/progress'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { createFileURLSignatures, createUploadSession, getFileObject } from '@/apis/file'
 import { capture } from '@/utils/exception'
-import { cloudHelpers, saveFile } from './cloud'
-import { fromBlob, fromConfig } from './file'
+import { cloudHelpers, createFileWithUniversalUrl, createFileWithWebUrl, saveFile, saveFiles } from './cloud'
+import { File, fromBlob, fromConfig } from './file'
 
 vi.mock('qiniu-js', () => ({
   createDirectUploadTask: vi.fn()
@@ -22,6 +23,56 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/exception')>()),
   capture: vi.fn()
 }))
+
+describe('CloudHelpers.getFileWebUrl', () => {
+  beforeEach(() => cloudHelpers.setConfig({ baseUrl: 'https://example.com', bucket: 'bucket' }))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('uses saved media without loading bytes or changing its saved identity', async () => {
+    const url = 'https://example.com/lesson.mp4'
+    const loader = vi.fn(async () => new ArrayBuffer(0))
+    const file = new File('lesson.mp4', loader, { meta: { universalUrl: url } })
+    await expect(cloudHelpers.getFileWebUrl(file)).resolves.toBe(url)
+    expect(loader).not.toHaveBeenCalled()
+    expect(file.meta.universalUrl).toBe(url)
+  })
+
+  it.each([null, 'data:video/mp4;base64,dmlkZW8='])(
+    'returns saved WebUrl %s without loading content',
+    async (universalUrl) => {
+      const loader = vi.fn(async () => new ArrayBuffer(0))
+      const file = new File('lesson.mp4', loader, {
+        meta: universalUrl == null ? {} : { universalUrl }
+      })
+      await expect(cloudHelpers.getFileWebUrl(file, new AbortController().signal)).resolves.toBe(universalUrl)
+      expect(loader).not.toHaveBeenCalled()
+    }
+  )
+
+  it('returns null for an unsaved Web URL file without marking it as saved', async () => {
+    const file = createFileWithWebUrl('https://example.com/video.mp4')
+    await expect(cloudHelpers.getFileWebUrl(file, new AbortController().signal)).resolves.toBeNull()
+    expect(file.meta.universalUrl).toBeUndefined()
+  })
+
+  it('rejects a URL resolved after cancellation', async () => {
+    let resolve!: (url: string) => void
+    vi.spyOn(cloudHelpers, 'universalUrlToWebUrl').mockImplementation(() => new Promise((done) => (resolve = done)))
+    const controller = new AbortController()
+    const result = cloudHelpers.getFileWebUrl(createFileWithUniversalUrl('kodo://bucket/lesson.mp4'), controller.signal)
+    controller.abort(new Error('closed'))
+    resolve('https://example.com/lesson.mp4')
+    await expect(result).rejects.toThrow('closed')
+  })
+
+  it('reports resolution errors without falling back to a full download', async () => {
+    vi.spyOn(cloudHelpers, 'universalUrlToWebUrl').mockRejectedValue(new Error('offline'))
+    const loader = vi.fn(async () => new ArrayBuffer(0))
+    const file = new File('lesson.mp4', loader, { meta: { universalUrl: 'kodo://bucket/lesson.mp4' } })
+    await expect(cloudHelpers.getFileWebUrl(file, new AbortController().signal)).rejects.toThrow('offline')
+    expect(loader).not.toHaveBeenCalled()
+  })
+})
 
 describe('universalUrlToWebUrl', () => {
   const batchDelay = 15 + 1 // 15ms + 1ms
@@ -86,24 +137,19 @@ describe('universalUrlToWebUrl', () => {
     expect(webUrl1).toBe(webUrl2)
   })
 
-  it('should invalidate cache after TTL', async () => {
-    const mockObjectUrls = {
-      'kodo://bucket/key1': 'https://bucket.example.com/key1'
-    }
-    vi.mocked(createFileURLSignatures).mockResolvedValue(mockObjectUrls)
-
-    const universalUrl = 'kodo://bucket/key1'
-
-    const promise1 = cloudHelpers.universalUrlToWebUrl(universalUrl)
-    vi.advanceTimersByTime(batchDelay)
-    await promise1
-
-    vi.advanceTimersByTime(cacheTtl)
-
-    const promise2 = cloudHelpers.universalUrlToWebUrl(universalUrl)
-    vi.advanceTimersByTime(batchDelay)
-    await promise2
-
+  it('refreshes a saved file URL after TTL', async () => {
+    const universalUrl = 'kodo://bucket/lesson.mp4'
+    vi.mocked(createFileURLSignatures)
+      .mockResolvedValueOnce({ [universalUrl]: 'https://bucket.example.com/lesson.mp4?version=1' })
+      .mockResolvedValueOnce({ [universalUrl]: 'https://bucket.example.com/lesson.mp4?version=2' })
+    const file = createFileWithUniversalUrl(universalUrl)
+    const first = cloudHelpers.getFileWebUrl(file)
+    await vi.advanceTimersByTimeAsync(batchDelay)
+    await expect(first).resolves.toBe('https://bucket.example.com/lesson.mp4?version=1')
+    await vi.advanceTimersByTimeAsync(cacheTtl)
+    const second = cloudHelpers.getFileWebUrl(file)
+    await vi.advanceTimersByTimeAsync(batchDelay)
+    await expect(second).resolves.toBe('https://bucket.example.com/lesson.mp4?version=2')
     expect(createFileURLSignatures).toHaveBeenCalledTimes(2)
   })
 
@@ -182,6 +228,7 @@ describe('saveFile', () => {
     vi.mocked(createDirectUploadTask).mockReturnValue({
       start: vi.fn(),
       cancel: vi.fn(),
+      onProgress: vi.fn(),
       onError: vi.fn(),
       onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
     } as unknown as ReturnType<typeof createDirectUploadTask>)
@@ -202,6 +249,7 @@ describe('saveFile', () => {
     vi.mocked(createDirectUploadTask).mockReturnValue({
       start: vi.fn(),
       cancel: vi.fn(),
+      onProgress: vi.fn(),
       onError: vi.fn(),
       onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
     } as unknown as ReturnType<typeof createDirectUploadTask>)
@@ -211,10 +259,60 @@ describe('saveFile', () => {
     expect(capture).not.toHaveBeenCalled()
   })
 
+  it('reports progress by the number of saved files', async () => {
+    let completeUpload!: (respBody: string) => void
+    vi.mocked(createDirectUploadTask).mockReturnValue({
+      start: vi.fn(),
+      cancel: vi.fn(),
+      onError: vi.fn(),
+      onComplete: vi.fn((callback) => (completeUpload = callback))
+    } as unknown as ReturnType<typeof createDirectUploadTask>)
+    const progress: Progress[] = []
+    const saving = saveFiles(
+      {
+        // Inlined, as a small text file
+        'index.json': fromBlob('index.json', new Blob(['{}'], { type: 'application/json' })),
+        'assets/step.mp4': fromBlob('step.mp4', new Blob([new Uint8Array(1000)], { type: 'video/mp4' }))
+      },
+      undefined,
+      new ProgressReporter((p) => progress.push(p))
+    )
+
+    await vi.waitFor(() => {
+      expect(completeUpload).toBeDefined()
+      expect(progress.map(({ percentage }) => percentage)).toEqual([0.5])
+    })
+    completeUpload('{"key":"files/step.mp4","hash":"hash"}')
+    await saving
+
+    expect(progress.at(-1)).toEqual({ percentage: 1, desc: null, timeLeft: null })
+  })
+
+  it.each([0, 1, 2])('saves %i remote files without loading their contents', async (count) => {
+    const load = vi.fn(async () => new ArrayBuffer(0))
+    const files = Object.fromEntries(
+      Array.from({ length: count }, (_, index) => {
+        const name = `remote-${index}.png`
+        return [name, new File(name, load, { meta: { universalUrl: `kodo://bucket/${name}` } })]
+      })
+    )
+    const progress: Progress[] = []
+
+    const saved = await saveFiles(files, undefined, new ProgressReporter((p) => progress.push(p)))
+
+    expect(saved.fileCollection).toEqual(
+      Object.fromEntries(Object.keys(files).map((name) => [name, `kodo://bucket/${name}`]))
+    )
+    expect(load).not.toHaveBeenCalled()
+    expect(progress.at(-1)?.percentage).toBe(1)
+    if (count === 2) expect(progress[0].percentage).toBe(0.5)
+  })
+
   it('uploads a small file without checking for reuse', async () => {
     vi.mocked(createDirectUploadTask).mockReturnValue({
       start: vi.fn(),
       cancel: vi.fn(),
+      onProgress: vi.fn(),
       onError: vi.fn(),
       onComplete: vi.fn((callback) => callback('{"key":"files/uploaded.png","hash":"hash"}'))
     } as unknown as ReturnType<typeof createDirectUploadTask>)

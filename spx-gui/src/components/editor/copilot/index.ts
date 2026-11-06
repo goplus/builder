@@ -251,7 +251,7 @@ class RuntimeContextProvider implements ICopilotContextProvider {
 
   provideContext(): string {
     const runtime = this.editorCtx.state.runtime
-    const outputs = runtime.outputs
+    const outputs = runtime.outputSnapshot
     if (outputs.length === 0) return ''
     const recentOutputs = outputs.slice(-50)
     const outputsStr = recentOutputs

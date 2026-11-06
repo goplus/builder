@@ -122,7 +122,7 @@ const handleUpload = useReferenceImageUpload(async (file) => {
     <template v-if="localImage == null" #additional-options="{ disabled }">
       <button
         v-radar="{
-          name: 'Upload local reference image',
+          name: 'upload-local-reference-image',
           desc: 'Click to upload a local reference image'
         }"
         type="button"

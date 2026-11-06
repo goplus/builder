@@ -2,11 +2,12 @@
   <div
     ref="container"
     v-radar="{
-      name: 'Stage viewer',
+      name: 'stage-viewer',
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
     class="stage-viewer relative w-full flex items-center justify-center bg-center bg-repeat bg-contain aspect-4/3"
-    :style="{ backgroundImage: `url(${stageBgUrl})` }"
+    :class="{ 'cursor-ruler': rulerActive }"
+    :style="{ backgroundImage: `url(${stageBgUrl})`, '--ruler-cursor': rulerCursor }"
     @mousemove="updateMousePos"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
@@ -38,15 +39,18 @@
             :selected="editorCtx.state.selectedSprite?.id === localConfig.id"
             :project="editorCtx.project"
             :map-size="mapSize"
+            :map-scale="stageScale ?? 1"
             :node-ready-map="nodeReadyMap"
+            :simple-mode="simpleMode"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(localConfig)"
+            @name-click="handleSpriteNameClick"
             @update-transform-op="handleSpriteUpdateTransformOp"
           />
         </v-group>
       </v-layer>
-      <v-layer>
+      <v-layer :config="{ listening: !simpleMode }">
         <WidgetNode
           v-for="localConfig in visibleWidgetLocalConfigs"
           :key="localConfig.id"
@@ -56,15 +60,26 @@
           @update-transform-op="handleSpriteUpdateTransformOp"
         />
       </v-layer>
-      <v-layer>
+      <v-layer v-if="!simpleMode">
         <NodeTransformer
           ref="nodeTransformerRef"
           :node-ready-map="nodeReadyMap"
           :target="editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget"
         />
       </v-layer>
+      <StageRuler
+        v-if="rulerActive"
+        :active="rulerActive"
+        :map-pos="mapPos"
+        :map-size="mapSize"
+        :viewport-size="viewportSize"
+        :stage-scale="stageScale ?? 1"
+        :simple-mode="simpleMode"
+        :snap-targets="rulerSnapTargets"
+        @cursor-outline-change="rulerCursorOutlined = $event"
+      />
     </v-stage>
-    <div v-if="localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
+    <div v-if="!simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
       <QuickConfigWrapper ref="quickConfigRef">
         <SpriteQuickConfig
           v-if="localConfigRef instanceof SpriteLocalConfig"
@@ -79,7 +94,7 @@
       </QuickConfigWrapper>
     </div>
 
-    <PositionIndicator :position="mousePos" />
+    <PositionIndicator v-if="!simpleMode" :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
 </template>
@@ -104,6 +119,7 @@ import type { RectConfig } from 'konva/lib/shapes/Rect'
 
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { UILoading } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import { useContentSize } from '@/utils/dom'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
@@ -111,6 +127,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import { MapMode } from '@/models/spx/stage'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { useCodeEditor } from '@/components/editor/spx-code-editor'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
@@ -124,8 +141,22 @@ import QuickConfigWrapper, {
 } from '@/components/editor/common/viewer/quick-config/QuickConfigWrapper.vue'
 import { SpriteLocalConfig, WidgetLocalConfig } from '@/components/editor/common/viewer/quick-config/utils'
 import type { TransformOp } from '@/components/editor/common/viewer/custom-transformer'
+import StageRuler from './ruler/StageRuler.vue'
+import { rulerCursors } from './ruler/ruler-cursor'
+
+const props = withDefaults(
+  defineProps<{
+    simpleMode?: boolean
+    rulerActive?: boolean
+  }>(),
+  {
+    simpleMode: false,
+    rulerActive: false
+  }
+)
 
 const editorCtx = useEditorCtx()
+const codeEditor = useCodeEditor()
 const container = ref<HTMLDivElement | null>(null)
 const containerSizeRef = useContentSize(container)
 // Konva canvas cannot have a width or height of zero
@@ -207,6 +238,18 @@ const mapPosLimit = computed(() => {
 
 /** The position to be applied on the map node to achieve camera effect */
 const mapPos = ref<Pos>({ x: 0, y: 0 })
+const rulerCursorOutlined = ref(false)
+const rulerCursor = computed(() => {
+  if (props.simpleMode) return rulerCursorOutlined.value ? rulerCursors.simpleOutlined : rulerCursors.simple
+  return rulerCursorOutlined.value ? rulerCursors.normalOutlined : rulerCursors.normal
+})
+const rulerSnapTargets = computed(() =>
+  editorCtx.project.sprites.map((sprite) => ({
+    x: sprite.x + mapSize.value.width / 2,
+    y: mapSize.value.height / 2 - sprite.y,
+    heading: sprite.heading
+  }))
+)
 
 function getValidMapPos(pos: Pos) {
   return {
@@ -412,6 +455,17 @@ const visibleSpriteLocalConfigs = computed(() => {
     .map((sprite) => new SpriteLocalConfig(sprite!, editorCtx.state.history)) as SpriteLocalConfig[]
 })
 
+const handleSpriteNameClick = useMessageHandle(
+  (spriteName: string) => {
+    const ui = codeEditor.getAttachedUI()
+    if (ui == null) return
+    return editorCtx.state.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
+      ui.insertInlineText(spriteName)
+    )
+  },
+  { en: 'Failed to insert sprite name', zh: '插入精灵名称失败' }
+).fn
+
 const visibleWidgetLocalConfigs = computed(() => {
   const { widgetsZorder, widgets } = editorCtx.project.stage
   return widgetsZorder
@@ -562,3 +616,10 @@ watchEffect((onCleanup) => {
   onCleanup(unbind)
 })
 </script>
+
+<style scoped>
+.cursor-ruler,
+.cursor-ruler :deep(canvas) {
+  cursor: var(--ruler-cursor);
+}
+</style>

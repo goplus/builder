@@ -1,15 +1,16 @@
 <template>
   <UICard
-    v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
+    v-radar="{ name: 'editor-preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview relative flex flex-col overflow-hidden"
+    :class="{ 'flex-[1_1_0] min-h-0': simpleMode }"
   >
-    <UICardHeader class="gap-3">
+    <UICardHeader v-if="!simpleMode" class="gap-3">
       <div class="flex-1 text-title">
         {{ $t(headerTitle) }}
       </div>
       <template v-if="runnerState === 'initial'">
         <UIButton
-          v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+          v-radar="{ name: 'run-button', desc: 'Click to run the project in debug mode' }"
           type="primary"
           icon="playHollow"
           :loading="handleRun.isLoading.value"
@@ -20,7 +21,7 @@
 
         <UIButton
           v-show="canManageProject"
-          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+          v-radar="{ name: 'publish-button', desc: 'Click to publish the project' }"
           type="secondary"
           icon="publish"
           :disabled="!isOnline"
@@ -31,7 +32,7 @@
       </template>
       <template v-else>
         <UIButton
-          v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
+          v-radar="{ name: 'rerun-button', desc: 'Click to rerun the project' }"
           type="primary"
           icon="rotate"
           :disabled="runnerState !== 'running' || handleStop.isLoading.value"
@@ -41,7 +42,7 @@
           {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+          v-radar="{ name: 'stop-button', desc: 'Click to stop the running project' }"
           type="neutral"
           icon="end"
           :loading="handleStop.isLoading.value"
@@ -52,7 +53,7 @@
         <UITooltip placement="top-end">
           <template #trigger>
             <UIButton
-              v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
+              v-radar="{ name: 'enter-full-screen-button', desc: 'Click to enter full screen for the running project' }"
               type="neutral"
               shape="square"
               icon="enterFullScreen"
@@ -65,13 +66,35 @@
       </template>
     </UICardHeader>
 
-    <div class="flex grow justify-center overflow-hidden p-3">
+    <div v-if="rulerEnabled" class="flex flex-none items-start bg-grey-100 pt-3 pr-3 pl-3">
+      <UITooltip placement="bottom-start">
+        <template #trigger>
+          <RulerToggle
+            v-radar="{ name: 'ruler', desc: 'Toggle the ruler, which measures distance and angle on the stage' }"
+            :active="rulerActive"
+            :disabled="runnerState !== 'initial'"
+            @click="rulerActive = !rulerActive"
+          />
+        </template>
+        {{ $t(rulerTip) }}
+      </UITooltip>
+    </div>
+
+    <div class="flex grow justify-center overflow-hidden p-3" :class="{ 'items-center': simpleMode }">
       <div
         ref="stageContainerRef"
         class="stage-viewer-container relative w-full overflow-hidden rounded-sm bg-grey-200"
-        :class="{ 'stage-viewer-container-running': runnerState !== 'initial' }"
+        :class="{
+          'stage-viewer-container-running': runnerState !== 'initial',
+          'h-full': simpleMode
+        }"
       >
-        <StageViewer class="stage-viewer" />
+        <StageViewer
+          class="stage-viewer"
+          :class="{ 'h-full aspect-auto': simpleMode }"
+          :simple-mode="simpleMode"
+          :ruler-active="rulerActive"
+        />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
           class="runner-host absolute inset-0 flex items-center justify-center bg-grey-300"
@@ -79,6 +102,7 @@
           <ProjectRunnerSurface
             ref="projectRunnerSurfaceRef"
             v-model:fullscreen="fullscreen"
+            :track-execution-location="simpleMode"
             :project="editorCtx.project"
             :runner-state="runnerState"
             :on-run="handleRun.fn"
@@ -88,7 +112,8 @@
             :on-stop="handleStop.fn"
             :stop-loading="handleStop.isLoading.value"
             :inline-anchor="getStageInlineAnchor"
-            @console="handleConsole"
+            @log="handleLog"
+            @execution-locations="handleExecutionLocations"
             @update:fullscreen="handleFullscreenChange"
             @exit="handleExit"
           />
@@ -96,69 +121,39 @@
       </div>
     </div>
   </UICard>
+  <Teleport v-if="simpleMode && controlsAnchor != null" :to="controlsAnchor">
+    <button
+      v-if="runnerState === 'initial'"
+      v-radar="{ name: 'run-button', desc: 'Click to run the project in debug mode' }"
+      class="cursor-pointer rounded-[16px] border-0 bg-grey-100 p-1.5 shadow-sm transition-[filter] duration-150 hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-75"
+      :disabled="handleRun.isLoading.value"
+      type="button"
+      @click="handleRun.fn"
+    >
+      <span
+        class="flex h-10 items-center justify-center gap-2 rounded-[12px] bg-turquoise-500 px-6 text-[15px] text-grey-100 font-medium leading-6"
+      >
+        <UIIcon class="h-5 w-5" :type="handleRun.isLoading.value ? 'loading' : 'playHollow'" />
+        {{ $t({ en: 'Run', zh: '运行' }) }}
+      </span>
+    </button>
+    <button
+      v-else
+      v-radar="{ name: 'stop-button', desc: 'Click to stop the running project' }"
+      class="cursor-pointer rounded-[16px] border-0 bg-grey-100 p-1.5 shadow-sm transition-[filter] duration-150 hover:brightness-[1.04] disabled:cursor-not-allowed disabled:opacity-75"
+      :disabled="handleStop.isLoading.value"
+      type="button"
+      @click="handleStop.fn"
+    >
+      <span
+        class="flex h-10 items-center justify-center gap-2 rounded-[12px] bg-red-500 px-6 text-[15px] text-grey-100 font-medium leading-6"
+      >
+        <UIIcon class="h-5 w-5" :type="handleStop.isLoading.value ? 'loading' : 'end'" />
+        {{ $t({ en: 'Stop', zh: '停止' }) }}
+      </span>
+    </button>
+  </Teleport>
 </template>
-
-<script lang="ts">
-// Check tools/ispx/log.go for log source
-// TODO: Move these types & functions to ProjectRunner, and emit `log` instead of `console` event
-type SpxLog = {
-  level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
-  /** RFC 3339 date time string, e.g., `2025-12-04T14:17:36.24+08:00` */
-  time: string
-  msg: string
-  [key: string]: unknown
-}
-
-function isSpxLog(obj: any): obj is SpxLog {
-  return (
-    obj != null &&
-    typeof obj === 'object' &&
-    typeof obj.level === 'string' &&
-    typeof obj.time === 'string' &&
-    typeof obj.msg === 'string'
-  )
-}
-
-function parseSpxLog(jsonStr: string): SpxLog | null {
-  try {
-    const obj = JSON.parse(jsonStr)
-    if (isSpxLog(obj)) return obj
-  } catch {
-    // ignore
-  }
-  return null
-}
-
-type SpxInfoLog = SpxLog & {
-  level: 'INFO'
-  function: string
-  /** Source file name, e.g., `NiuXiaoQi.spx` */
-  file: string
-  /** Source code line number, starting from 1 */
-  line: number
-}
-
-function isSpxInfoLog(obj: SpxLog): obj is SpxInfoLog {
-  return obj.level === 'INFO'
-}
-
-type SpxPanicLog = SpxLog & {
-  level: 'ERROR'
-  msg: 'panic'
-  /** Panic error message */
-  error: string
-  /** Source file name, e.g., `NiuXiaoQi.spx` */
-  file: string
-  /** Source code line number, starting from 1 */
-  line: number
-  /** Source code column number, starting from 1 */
-  column: number
-}
-
-function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
-  return obj.level === 'ERROR' && typeof obj.error === 'string' && obj.msg === 'panic'
-}
-</script>
 
 <script lang="ts" setup>
 import dayjs from 'dayjs'
@@ -166,10 +161,13 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { withTimeout } from '@/utils/disposable'
 import { Cancelled, capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { useNetwork } from '@/utils/network'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { useSignedIn } from '@/stores/user'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, UIIcon, useConfirmDialog, UITooltip } from '@/components/ui'
+import { usePublishProject } from '@/components/project'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
+import type { SpxExecutionLocation, SpxLog } from '@/components/project/runner/spx-log'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import {
   useCodeEditor,
@@ -177,10 +175,25 @@ import {
   textDocumentId2CodeFileName,
   getInvalidMonitors
 } from '@/components/editor/spx-code-editor'
-import { RuntimeOutputKind, type RuntimeOutput, type RuntimeOutputDraft } from '@/components/editor/runtime'
+import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
 import StageViewer from './stage-viewer/StageViewer.vue'
-import { useNetwork } from '@/utils/network'
-import { usePublishProject } from '@/components/project'
+import RulerToggle from './stage-viewer/ruler/RulerToggle.vue'
+
+const props = withDefaults(
+  defineProps<{
+    simpleMode?: boolean
+    /** Where simple-mode Run/Stop controls are rendered beside the docked Copilot UI. */
+    controlsAnchor?: HTMLElement | null
+    rulerEnabled?: boolean
+  }>(),
+  {
+    simpleMode: false,
+    controlsAnchor: null,
+    rulerEnabled: false
+  }
+)
+
+const simpleMode = computed(() => props.simpleMode)
 
 // Code Editor operations may take a long time for some projects and block project execution.
 const CODE_EDITOR_OPERATION_TIMEOUT = 3_000 // ms
@@ -192,6 +205,17 @@ const signedIn = useSignedIn()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
+const rulerActive = ref(false)
+const rulerTip = computed(() => {
+  if (runnerState.value !== 'initial') return { en: 'Stop the run to measure', zh: '停止运行后才能测量' }
+  return rulerActive.value
+    ? { en: 'Put the ruler away', zh: '收起尺子' }
+    : { en: 'Measure distance and angle', zh: '测量距离和角度' }
+})
+
+watch([() => props.rulerEnabled, runnerState], ([enabled, state]) => {
+  if (!enabled || state !== 'initial') rulerActive.value = false
+})
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
@@ -225,10 +249,6 @@ const confirm = useConfirmDialog()
 
 const lastPanicOutput = ref<RuntimeOutput | null>(null)
 
-function appendRuntimeOutput(output: RuntimeOutputDraft) {
-  runtime.value.addOutput(output)
-}
-
 function keepRunnerHostVisibleForOverlay() {
   runnerHostSticky.value = true
   if (runnerHostReleaseTimer != null) window.clearTimeout(runnerHostReleaseTimer)
@@ -238,47 +258,29 @@ function keepRunnerHostVisibleForOverlay() {
   }, 450)
 }
 
-function handleConsole(type: 'log' | 'warn', args: unknown[]) {
-  // Only handle spx logs, which are carried by `console.log`
-  if (type !== 'log' || typeof args[0] !== 'string') return
-  const spxLog = parseSpxLog(args[0])
-  if (spxLog == null) return
-  if (isSpxInfoLog(spxLog)) {
-    appendRuntimeOutput({
-      kind: RuntimeOutputKind.Log,
-      time: dayjs(spxLog.time).valueOf(),
-      message: spxLog.msg,
-      source: {
-        textDocument: {
-          uri: `file:///${spxLog.file}`
-        },
-        range: {
-          start: { line: spxLog.line, column: 1 },
-          end: { line: spxLog.line, column: 1 }
-        }
+function handleLog(log: SpxLog) {
+  const { file, line } = log
+  const column = log.level === 'ERROR' ? log.column : 1
+  runtime.value.addOutput({
+    kind: log.level === 'ERROR' ? RuntimeOutputKind.Error : RuntimeOutputKind.Log,
+    time: dayjs(log.time).valueOf(),
+    message: log.level === 'ERROR' ? log.error : log.msg,
+    source: {
+      textDocument: { uri: `file:///${file}` },
+      range: {
+        start: { line, column },
+        end: { line, column }
       }
-    })
-  } else if (isSpxPanicLog(spxLog)) {
-    appendRuntimeOutput({
-      kind: RuntimeOutputKind.Error,
-      time: dayjs(spxLog.time).valueOf(),
-      message: spxLog.error,
-      source: {
-        textDocument: {
-          uri: `file:///${spxLog.file}`
-        },
-        range: {
-          start: { line: spxLog.line, column: spxLog.column },
-          end: { line: spxLog.line, column: spxLog.column }
-        }
-      }
-    })
-  } else {
-    capture(new Error(`Unknown spx runtime log: ${args[0]}`))
-  }
+    }
+  })
+}
+
+function handleExecutionLocations(locations: readonly SpxExecutionLocation[]) {
+  runtime.value.setLocations(locations.map(({ file, line }) => ({ textDocument: { uri: `file:///${file}` }, line })))
 }
 
 function handleExit(code: number) {
+  runtime.value.setLocations([])
   runtime.value.emit('didExit', code)
   if (exitGuard.value === 'manualStopPending') {
     exitGuard.value = 'idle'
@@ -338,15 +340,16 @@ async function executeRun(action: 'run' | 'rerun') {
   await nextTick()
   const surface = await untilNotNull(projectRunnerSurfaceRef)
   runtime.value.clearOutputs()
-  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
+  runtime.value.setRunning({ mode: 'debug', initializing: true })
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
     runnerState.value = 'running'
     lastFilesHash.value = filesHash
-    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
+    runtime.value.setRunning({ mode: 'debug', initializing: false }, filesHash)
+    runtime.value.emit('didStart')
   } catch (error) {
     runnerState.value = 'running'
-    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false, initializingError: error })
+    runtime.value.setRunning({ mode: 'debug', initializing: false, initializingError: error })
     throw error
   }
 }
@@ -392,7 +395,7 @@ const handleStop = useMessageHandle(
       await surface.stop()
       lastPanicOutput.value = null
       runnerState.value = 'initial'
-      editorCtx.state.runtime.setRunning({ mode: 'none' })
+      runtime.value.setRunning({ mode: 'none' })
     } catch (error) {
       exitGuard.value = 'idle'
       throw error
@@ -404,13 +407,13 @@ const handleStop = useMessageHandle(
 function restoreDebugRuntime() {
   const filesHash = lastFilesHash.value ?? runtime.value.filesHash
   if (runnerState.value === 'loading' || filesHash == null) {
-    editorCtx.state.runtime.setRunning({
+    runtime.value.setRunning({
       mode: 'debug',
       initializing: true
     })
     return false
   }
-  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
+  runtime.value.setRunning({ mode: 'debug', initializing: false }, filesHash)
   return true
 }
 
@@ -418,7 +421,7 @@ function handleFullscreenChange(value: boolean) {
   fullscreen.value = value
   if (value) {
     if (runnerState.value !== 'initial') {
-      editorCtx.state.runtime.setRunning({
+      runtime.value.setRunning({
         mode: 'debug',
         initializing: runnerState.value !== 'running'
       })
@@ -427,7 +430,7 @@ function handleFullscreenChange(value: boolean) {
   }
   if (runnerState.value === 'initial') {
     keepRunnerHostVisibleForOverlay()
-    editorCtx.state.runtime.setRunning({ mode: 'none' })
+    runtime.value.setRunning({ mode: 'none' })
   } else {
     restoreDebugRuntime()
   }
@@ -464,6 +467,12 @@ function getStageInlineAnchor() {
 }
 
 .runner-host :deep(.project-runner-surface:not(.fullscreen)) {
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-host :deep(.project-runner-surface:not(.fullscreen) .runner-area) {
+  display: flex;
   align-items: center;
   justify-content: center;
 }

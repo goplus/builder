@@ -34,7 +34,7 @@ async function removeReferenceImage() {
       <UIButton
         ref="buttonRef"
         v-radar="{
-          name: 'Manage reference image',
+          name: 'manage-reference-image',
           desc: 'Click to manage the local reference image'
         }"
         type="white"
@@ -64,7 +64,7 @@ async function removeReferenceImage() {
       <UIButton
         ref="buttonRef"
         v-radar="{
-          name: 'Upload reference image',
+          name: 'upload-reference-image',
           desc: 'Click to upload a local reference image'
         }"
         type="white"

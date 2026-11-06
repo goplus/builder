@@ -29,6 +29,7 @@ export const attributes = z.object({
 import { computed } from 'vue'
 import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle, ActionException } from '@/utils/exception'
+import { useCopilot } from '@/components/copilot/context'
 import CodeView from '@/components/common/CodeView.vue'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { CodeLink, getTextDocumentId, type Range, useCodeEditorRef } from '@/components/editor/spx-code-editor'
@@ -47,6 +48,8 @@ const props = defineProps<{
 
 const editorCtxRef = useEditorCtxRef()
 const codeEditorRef = useCodeEditorRef()
+const copilot = useCopilot()
+const codeHelperEnabled = computed(() => copilot.currentSession?.topic.codeHelperEnabled !== false)
 
 const childrenText = useSlotText()
 const codeToAdd = computed(() => {
@@ -114,7 +117,7 @@ const handleApply = useMessageHandle(
         </div>
       </div>
       <BlockFooter>
-        <BlockActionBtn icon="apply" @click="handleApply">
+        <BlockActionBtn v-if="codeHelperEnabled" icon="apply" @click="handleApply">
           {{ $t({ en: 'Apply', zh: '应用' }) }}
         </BlockActionBtn>
       </BlockFooter>

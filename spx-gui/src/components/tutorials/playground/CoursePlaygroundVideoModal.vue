@@ -1,0 +1,154 @@
+<script setup lang="ts">
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+
+import { Cancelled } from '@/utils/exception'
+import { getFileMediaUrl } from '@/utils/media'
+import type { Video } from '@/models/tutorial/video'
+import { UIButton, UIError, UIIcon, UILoading, UIModal } from '@/components/ui'
+
+const props = defineProps<{
+  visible: boolean
+  video: Video
+  buttonText: string | null
+}>()
+
+const emit = defineEmits<{
+  cancelled: []
+  resolved: []
+}>()
+
+const videoAspectRatio = computed(() => props.video.aspectRatio ?? 16 / 9)
+
+const videoElement = ref<HTMLVideoElement | null>(null)
+const src = ref<string | null>(null)
+const failed = ref(false)
+const loading = ref(true)
+const needsPlay = ref(true)
+const muted = ref(false)
+const controller = new AbortController()
+
+function dismiss() {
+  videoElement.value?.pause()
+  controller.abort(new Cancelled('Video dismissed'))
+  emit('resolved')
+}
+
+async function play() {
+  const video = videoElement.value
+  if (video == null) return
+  if (video.ended) video.currentTime = 0
+  needsPlay.value = false
+  loading.value = true
+  try {
+    await video.play()
+  } catch {
+    needsPlay.value = true
+    loading.value = false
+  }
+  if (controller.signal.aborted) video.pause()
+}
+
+async function load() {
+  failed.value = false
+  loading.value = true
+  src.value = null
+  try {
+    src.value = await getFileMediaUrl(props.video.file, controller.signal)
+  } catch {
+    if (!controller.signal.aborted) failed.value = true
+  }
+}
+
+function onPlaying() {
+  const video = videoElement.value
+  if (video == null) return
+  if (typeof video.requestVideoFrameCallback !== 'function') {
+    loading.value = false
+    return
+  }
+  // The playing event can precede the first frame reaching the compositor.
+  video.requestVideoFrameCallback(() => {
+    if (video === videoElement.value && !controller.signal.aborted) loading.value = false
+  })
+}
+
+onMounted(() => void load())
+onBeforeUnmount(() => {
+  videoElement.value?.pause()
+  controller.abort(new Cancelled('Video unmounted'))
+})
+</script>
+
+<template>
+  <UIModal
+    :visible="visible"
+    size="large"
+    :style="{ width: 'fit-content', maxWidth: 'min(960px, 100%)' }"
+    :mask-closable="false"
+    :close-on-esc="false"
+    :radar="{ name: 'course-video', desc: 'Course-local instructional video' }"
+  >
+    <div class="flex flex-col items-center gap-5 p-6">
+      <div
+        class="relative flex max-w-full items-center justify-center overflow-hidden rounded-md bg-grey-300"
+        :style="{ aspectRatio: videoAspectRatio, width: `calc(65vh * ${videoAspectRatio})` }"
+      >
+        <UIError v-if="failed" class="p-6" :retry="load">
+          {{ $t({ en: 'Failed to play the Course video', zh: '课程视频播放失败' }) }}
+        </UIError>
+        <UILoading
+          v-else-if="loading"
+          class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6"
+        />
+        <video
+          v-if="src != null && !failed"
+          ref="videoElement"
+          class="block h-full w-full object-contain"
+          crossorigin="anonymous"
+          :src="src"
+          :muted="muted"
+          playsinline
+          @loadeddata="play"
+          @playing="onPlaying"
+          @pause="needsPlay = true"
+          @ended="needsPlay = true"
+          @error="failed = true"
+        ></video>
+        <button
+          v-if="src != null && !failed"
+          v-radar="{
+            name: 'course-video-sound',
+            label: $t(muted ? { en: 'Turn sound on', zh: '打开声音' } : { en: 'Turn sound off', zh: '关闭声音' }),
+            desc: 'Turn the Course video sound on or off'
+          }"
+          type="button"
+          class="absolute right-3 top-3 flex size-8 appearance-none items-center justify-center rounded-full border border-solid border-grey-500 bg-grey-100 p-0 text-grey-800 hover:bg-grey-300"
+          :aria-pressed="!muted"
+          @click="muted = !muted"
+        >
+          <UIIcon :type="muted ? 'volumeOff' : 'volumeUp'" class="size-5" />
+        </button>
+        <button
+          v-if="src != null && needsPlay && !failed && !loading"
+          v-radar="{
+            name: 'course-video-play',
+            label: $t({ en: 'Play video', zh: '播放视频' }),
+            desc: 'Play or replay the Course video'
+          }"
+          type="button"
+          class="absolute left-1/2 top-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 appearance-none items-center justify-center rounded-full border-0 bg-[rgba(36,41,47,0.25)] p-3.5 text-white outline-none transition-colors hover:bg-[rgba(36,41,47,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          @click="play"
+        >
+          <UIIcon type="play" class="size-7" />
+        </button>
+      </div>
+      <UIButton
+        v-radar="{ name: 'course-continue', desc: 'Close the video and continue the Course' }"
+        size="large"
+        @click="dismiss"
+      >
+        {{ buttonText ?? $t({ en: 'Continue', zh: '继续' }) }}
+      </UIButton>
+    </div>
+  </UIModal>
+</template>

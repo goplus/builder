@@ -2,7 +2,8 @@
 import type { CourseSeries } from '@/apis/course-series'
 import { useAsyncComputed } from '@/utils/utils'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
-import { UIImg } from '@/components/ui'
+import { UIImg, UITag } from '@/components/ui'
+import { courseKindNames } from './kind'
 
 const props = defineProps<{
   courseSeries: CourseSeries
@@ -27,12 +28,12 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
       class="relative h-full flex flex-col items-center justify-center p-5 text-center"
       :class="{ 'has-thumbnail': thumbnailUrl != null }"
     >
-      <div
-        class="absolute top-3 left-3 h-7 w-7 [text-shadow:0_1px_3px_rgba(0,0,0,0.3)]"
-        :class="thumbnailUrl != null ? 'text-grey-100' : 'text-grey-900'"
+      <UITag
+        class="absolute top-3 left-3 bg-grey-100"
+        :color="courseSeries.kind === 'playground' ? 'primary' : 'default'"
       >
-        {{ courseSeries.order }}
-      </div>
+        {{ $t(courseKindNames[courseSeries.kind]) }}
+      </UITag>
       <h3
         class="m-0 w-full overflow-hidden text-xl/[1.4] text-ellipsis wrap-break-word line-clamp-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.3)]"
         :class="thumbnailUrl != null ? 'text-grey-100' : 'text-grey-900'"

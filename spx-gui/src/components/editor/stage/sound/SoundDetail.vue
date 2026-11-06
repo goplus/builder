@@ -4,7 +4,7 @@
       <div class="flex items-center gap-2 text-title">
         <AssetName>{{ sound.name }}</AssetName>
         <UIIcon
-          v-radar="{ name: 'Rename sound', desc: 'Click to rename the sound' }"
+          v-radar="{ name: 'rename-sound', desc: 'Click to rename the sound' }"
           class="cursor-pointer text-grey-900 hover:text-grey-800 active:text-grey-1000"
           :title="$t({ en: 'Rename', zh: '重命名' })"
           type="edit"
@@ -38,7 +38,7 @@
       <div v-if="isDeveloperMode || editing" class="flex-none flex items-center gap-2">
         <UIButton
           v-if="isDeveloperMode"
-          v-radar="{ name: 'Adapt audio button', desc: 'Click to adapt the current sound file' }"
+          v-radar="{ name: 'adapt-audio-button', desc: 'Click to adapt the current sound file' }"
           type="neutral"
           :loading="handleAdaptAudio.isLoading.value"
           @click="handleAdaptAudio.fn"
@@ -47,14 +47,14 @@
         </UIButton>
         <template v-if="editing">
           <UIButton
-            v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
+            v-radar="{ name: 'cancel-button', desc: 'Click to cancel sound editing' }"
             type="neutral"
             @click="handleResetEdit"
           >
             {{ $t({ en: 'Cancel', zh: '取消' }) }}
           </UIButton>
           <UIButton
-            v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
+            v-radar="{ name: 'save-button', desc: 'Click to save sound edits' }"
             type="green"
             :loading="handleSave.isLoading.value"
             @click="handleSave.fn"

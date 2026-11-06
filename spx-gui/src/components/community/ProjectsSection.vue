@@ -8,7 +8,7 @@
       </h2>
       <RouterUILink
         v-if="linkTo != null"
-        v-radar="{ name: 'Link to more', desc: 'Link to more similar projects' }"
+        v-radar="{ name: 'link-to-more', desc: 'Link to more similar projects' }"
         class="flex items-center text-lg"
         :to="linkTo"
       >

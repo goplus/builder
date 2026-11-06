@@ -44,7 +44,7 @@ const handleModalClose = useMessageHandle(
 
 <template>
   <UIModal
-    :radar="{ name: 'Backdrop generation modal', desc: 'Modal for backdrop generation' }"
+    :radar="{ name: 'backdrop-generation-modal', desc: 'Modal for backdrop generation' }"
     style="width: 1076px; height: 800px"
     :visible="visible"
     mask-closable

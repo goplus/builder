@@ -2,25 +2,25 @@
   <EditorHeader>
     <UITabs
       v-radar="{
-        name: 'Stage editor tabs',
+        name: 'stage-editor-tabs',
         desc: 'Navigation tabs for switching between different stage editing views'
       }"
       :value="state.selected.type"
       @update:value="(type) => state.select(type as SelectedType)"
     >
-      <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">
+      <UITab v-radar="{ name: 'code-tab', desc: 'Click to switch to code editing view' }" value="code">
         {{ $t({ en: 'Code', zh: '代码' }) }}
       </UITab>
       <UITab
-        v-radar="{ name: 'Backdrops tab', desc: 'Click to switch to backdrops management view' }"
+        v-radar="{ name: 'backdrops-tab', desc: 'Click to switch to backdrops management view' }"
         value="backdrops"
       >
         {{ $t({ en: 'Backdrops', zh: '背景' }) }}
       </UITab>
-      <UITab v-radar="{ name: 'Sounds tab', desc: 'Click to switch to sounds management view' }" value="sounds">
+      <UITab v-radar="{ name: 'sounds-tab', desc: 'Click to switch to sounds management view' }" value="sounds">
         {{ $t({ en: 'Sounds', zh: '声音' }) }}
       </UITab>
-      <UITab v-radar="{ name: 'Widgets tab', desc: 'Click to switch to widgets management view' }" value="widgets">
+      <UITab v-radar="{ name: 'widgets-tab', desc: 'Click to switch to widgets management view' }" value="widgets">
         {{ $t({ en: 'Widgets', zh: '控件' }) }}
       </UITab>
     </UITabs>
@@ -33,7 +33,7 @@
     v-show="state.selected.type === 'code'"
     ref="codeEditor"
     v-radar="{
-      name: 'Code editor',
+      name: 'code-editor',
       desc: 'Code editor for editing stage code',
       visible: state.selected.type === 'code'
     }"

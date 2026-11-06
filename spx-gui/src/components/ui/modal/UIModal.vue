@@ -9,7 +9,7 @@
             <div
               v-bind="surfaceAttrs"
               ref="containerRef"
-              v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
+              v-radar="radar ?? { name: 'modal', desc: 'A modal dialog for specific purpose' }"
               role="dialog"
               aria-modal="true"
               tabindex="-1"
@@ -39,8 +39,6 @@ export type ModalTransformOrigin = {
 <script setup lang="ts">
 import { computed, mergeProps, ref, useAttrs, watch } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { getCleanupSignal } from '@/utils/disposable'
-import { untilNotNull } from '@/utils/utils'
 import {
   cn,
   type ClassValue,
@@ -49,6 +47,7 @@ import {
   useLayerRegistration,
   useModalContainer
 } from '../utils'
+import { useDialogAutoFocus, useDialogEscape } from './dialog'
 
 defineOptions({
   // The teleported backdrop is an implementation detail. Keep fallthrough attrs on the
@@ -63,6 +62,7 @@ const props = withDefaults(
     /** Whether to focus the first focusable element inside modal. */
     autoFocus?: boolean
     maskClosable?: boolean
+    closeOnEsc?: boolean
     class?: ClassValue
     /**
      * Metadata for radar, equivalent to applying `v-radar` on the dialog surface.
@@ -74,6 +74,7 @@ const props = withDefaults(
     visible: false,
     autoFocus: true,
     maskClosable: true,
+    closeOnEsc: true,
     class: undefined,
     radar: undefined
   }
@@ -118,62 +119,10 @@ const surfaceClass = computed(() =>
   )
 )
 
-watch(
-  () => props.visible,
-  async (visible, _, onCleanup) => {
-    if (!visible || !props.autoFocus) return
-
-    const signal = getCleanupSignal(onCleanup)
-    const container = await untilNotNull(containerRef, signal)
-    const focusTarget = getFirstFocusableElement(container)
-    if (focusTarget != null) focusTarget.focus()
-  },
-  { immediate: true }
-)
-
-const focusableSelector = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[contenteditable="true"]',
-  '[tabindex]:not([tabindex="-1"])'
-].join(',')
-
-function getFirstFocusableElement(container: HTMLElement) {
-  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).find((element) => {
-    if (element.hidden || element.getAttribute('aria-hidden') === 'true') return false
-    return element.tabIndex >= 0
-  })
-}
-
-watch(
-  modalRegistration.isTopmost,
-  async (isTopmost, _, onCleanup) => {
-    if (!isTopmost) return
-
-    const signal = getCleanupSignal(onCleanup)
-    const container = await untilNotNull(containerRef, signal)
-
-    const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if (!isEscTargetWithinModalScope(container, e.target)) return
-      emit('update:visible', false)
-    }
-
-    document.addEventListener('keydown', handleKeydown, { signal })
-  },
-  { immediate: true }
-)
-
-function isEscTargetWithinModalScope(modalContainer: HTMLElement, target: EventTarget | null) {
-  // Non-focusable DOM elements cannot trigger keydown events, so the target is either the
-  // body or a focusable DOM element. If the target is the body, the modal should close.
-  if (target === document.body) return true
-  if (!(target instanceof Element)) return true
-  return modalContainer.contains(target)
-}
+useDialogAutoFocus(containerRef, () => props.visible && props.autoFocus)
+useDialogEscape(containerRef, modalRegistration.isTopmost, () => {
+  if (props.closeOnEsc) emit('update:visible', false)
+})
 
 const transformOrigin = ref<ModalTransformOrigin | null>(null)
 

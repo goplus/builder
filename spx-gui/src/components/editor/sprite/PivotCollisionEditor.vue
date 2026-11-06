@@ -352,7 +352,7 @@ const { fn: savePivot } = useMessageHandle(
     <UIButton
       v-if="collisionEditingEnabled"
       v-radar="{
-        name: 'Save button',
+        name: 'save-button',
         desc: 'Click to save sprite pivot and collision'
       }"
       type="green"
@@ -364,7 +364,7 @@ const { fn: savePivot } = useMessageHandle(
     <UIButton
       v-else
       v-radar="{
-        name: 'Save button',
+        name: 'save-button',
         desc: 'Click to save sprite pivot'
       }"
       type="green"

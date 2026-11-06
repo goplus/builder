@@ -34,7 +34,7 @@ const submitText = computed(() => {
 <template>
   <SettingsInput
     v-radar="{
-      name: 'Animation generation settings',
+      name: 'animation-generation-settings',
       desc: 'Enter an animation description, or enrich details to generate an animation'
     }"
     :description="gen.settings.description"
@@ -60,7 +60,7 @@ const submitText = computed(() => {
     </template>
     <template #submit>
       <UIButton
-        v-radar="{ name: 'Submit', desc: 'Click to generate an animation' }"
+        v-radar="{ name: 'submit', desc: 'Click to generate an animation' }"
         :disabled="submitDisabled"
         :loading="isGenerating"
         @click="gen.generateVideo()"

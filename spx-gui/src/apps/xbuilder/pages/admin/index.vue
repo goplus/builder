@@ -64,7 +64,7 @@ watch(
             <NavbarDropdown
               v-if="canManageAccount"
               :trigger-radar="{
-                name: $t({ en: 'Account admin menu', zh: '账号管理菜单' }),
+                name: 'account-admin-menu',
                 desc: 'Open Account admin navigation'
               }"
             >
@@ -90,7 +90,7 @@ watch(
             </NavbarDropdown>
             <RouterLink
               v-if="canManageFeedback"
-              v-radar="{ name: 'Feedback', desc: 'Open admin feedback list' }"
+              v-radar="{ name: 'feedback', desc: 'Open admin feedback list' }"
               class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
               :class="route.path.startsWith('/admin/feedback') ? 'text-primary-main' : 'text-inherit'"
               to="/admin/feedback"
@@ -99,7 +99,11 @@ watch(
             </RouterLink>
             <RouterLink
               v-if="canUseAdminConsole"
-              v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
+              v-radar="{
+                name: 'audit-logs-link',
+                label: $t({ en: 'Audit logs', zh: '审计日志' }),
+                desc: 'Open admin audit logs'
+              }"
               class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
               :class="route.path.startsWith('/admin/audit-logs') ? 'text-primary-main' : 'text-inherit'"
               to="/admin/audit-logs"

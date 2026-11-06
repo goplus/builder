@@ -96,7 +96,7 @@ const handleSubmit = useMessageHandle(
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Project publish modal', desc: 'Modal for publishing projects' }"
+    :radar="{ name: 'project-publish-modal', desc: 'Modal for publishing projects' }"
     :title="$t({ en: `Publish ${project.displayName}`, zh: `发布 ${project.displayName}` })"
     :style="{ width: '560px' }"
     :visible="props.visible"
@@ -120,7 +120,7 @@ const handleSubmit = useMessageHandle(
       <UIFormItem :label="$t({ en: 'Release description', zh: '发布内容' })" path="releaseDescription">
         <UITextInput
           v-model:value="form.value.releaseDescription"
-          v-radar="{ name: 'Release description input', desc: 'Input field for release description' }"
+          v-radar="{ name: 'release-description-input', desc: 'Input field for release description' }"
           type="textarea"
           :placeholder="$t({ en: 'What is new in this release?', zh: '这次发布有什么新内容？' })"
         />
@@ -129,7 +129,7 @@ const handleSubmit = useMessageHandle(
         <UITextInput
           ref="aboutProjectInput"
           v-model:value="form.value.projectDescription"
-          v-radar="{ name: 'Project description input', desc: 'Input field for project description' }"
+          v-radar="{ name: 'project-description-input', desc: 'Input field for project description' }"
           type="textarea"
           :placeholder="
             $t({
@@ -142,7 +142,7 @@ const handleSubmit = useMessageHandle(
       <UIFormItem :label="$t({ en: 'Play instructions', zh: '操作说明' })" path="projectInstructions">
         <UITextInput
           v-model:value="form.value.projectInstructions"
-          v-radar="{ name: 'Play instructions input', desc: 'Input field for project play instructions' }"
+          v-radar="{ name: 'play-instructions-input', desc: 'Input field for project play instructions' }"
           type="textarea"
           :placeholder="
             $t({
@@ -154,14 +154,14 @@ const handleSubmit = useMessageHandle(
       </UIFormItem>
       <footer class="mt-5 flex justify-end gap-3">
         <UIButton
-          v-radar="{ name: 'Cancel button', desc: 'Click to cancel project publishing' }"
+          v-radar="{ name: 'cancel-button', desc: 'Click to cancel project publishing' }"
           type="neutral"
           @click="handleCancel"
         >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Publish button', desc: 'Click to publish project' }"
+          v-radar="{ name: 'publish-button', desc: 'Click to publish project' }"
           type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"

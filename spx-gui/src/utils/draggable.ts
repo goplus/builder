@@ -2,7 +2,7 @@
  * @desc Drag to move.
  */
 
-import { watchEffect, type Ref } from 'vue'
+import { toValue, watchEffect, type WatchSource } from 'vue'
 
 export type Offset = {
   x: number
@@ -16,13 +16,13 @@ export type DraggableOptions = {
 }
 
 export function useDraggable(
-  handlerRef: Ref<HTMLElement | null | undefined>,
+  handlerSource: WatchSource<HTMLElement | null | undefined>,
   { onDragStart, onDragMove, onDragEnd }: DraggableOptions = {}
 ) {
   const threshold = 5
 
   watchEffect((onCleanup) => {
-    const handler = handlerRef.value
+    const handler = toValue(handlerSource)
     if (handler == null) return
 
     let lastPos = { x: 0, y: 0 }

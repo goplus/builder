@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <UIDropdown placement="bottom-start">
+  <UIDropdown trigger="click" placement="bottom-start">
     <template #trigger>
       <div v-radar="triggerRadar" class="h-full flex items-center px-3 hover:bg-grey-400">
         <slot name="trigger"></slot>

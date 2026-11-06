@@ -51,9 +51,9 @@ The essential difference between the two types: **a Guided Course teaches "opera
 
 One boundary that is easy to confuse: the distinction lies in "who drives the flow", not "whether an LLM is used". A Playground Course may well invoke LLM capabilities (judging expression-type goals, generating personalized feedback) and still be a Playground Course — its flow (opening, running, completion) is driven entirely by course code.
 
-A Course Series organizes a set of Courses into an ordered series, carrying course order and "next course" progression. Courses within one series share the same type; mixing types within a series is not supported for now.
+A Course Series organizes a set of Courses into an ordered series, carrying course order and "next course" progression. Courses within one series share the same type; mixing types within a series is not supported for now. A Course belongs to exactly one Course Series: it is created in its series, and leaves it only by being deleted.
 
-Course Gallery and Course Admin remain as designed.
+Course Gallery remains as designed. Course management is a page of the author's Course Series, each opening onto its Courses, where Courses are created, ordered, edited and deleted.
 
 ### Playground Course
 
@@ -65,13 +65,13 @@ Every Playground Course is associated with exactly one project, and entering the
 * **Course project**: a game project built by the creator in advance — stage, sprites, and scene code. The project is part of the course data; it is not saved or published independently. The scene code serves two purposes: forming an interesting, explorable world (where the learner's changes produce visible feedback), and printing completion signals (specific log lines) at key events for the course code to judge.
 * **Course assets**: assets referenced by the course, such as explainer videos, also part of the course data. (A shared asset library, allowing multiple courses to reuse the same asset, may be provided in the future.)
 
-A learner's modifications to the course project exist only within the current learning session; they affect neither the course itself nor other learners. Learners can save their results as a project of their own.
+A learner's modifications to the course project exist only within the current learning session; they affect neither the course itself nor other learners.
 
 #### Atomic Capabilities
 
 The framework provides course code with the following atomic capabilities, to be invoked and combined as needed:
 
-* **Messaging**: show text to the learner in a dialog (Markdown supported), play a video, or spotlight a UI element with a hint; each step can wait for the learner's confirmation or advance automatically
+* **Messaging**: show text to the learner in a dialog (Markdown supported), play a video, or spotlight a UI element with a hint; text and video presentations wait for the learner to finish reading or watching before the course continues, while spotlight highlights never block the course flow and are dismissed by the learner's next click
 * **Runtime signals**: listen to the game's run logs. This is the main judging channel: as long as a program is running, it can always `println` to the console — the scene code prints specific logs at key events, and the course code waits for these signals to learn *what the learner accomplished*
 * **Code check**: deterministically check whether specified constructs appear in the learner's code, to learn *how the learner accomplished it*
 * **LLM completion**: make a single generation request to the LLM and get the result back, automatically carrying context such as course information and XGo/spx knowledge (these requests do not appear in the learner's conversation with the Copilot). Useful for judging "expression-type" goals (e.g., have the character say a greeting — anything counts) or for generating personalized feedback based on the learner's actual code
@@ -83,7 +83,7 @@ The judging principle: **judge structured results with code**. A course scene's 
 
 Editor customizations a course can enable on demand — independent of each other and freely combinable:
 
-* **Simple mode**: a focused form for single-sprite programming — hides the sprite list and disables sprite settings; sprite names appear on the stage (hovering a sprite reveals its name label, clicking inserts the name into the code, so learners never have to spell sprite names); larger code font; centered run button and Copilot entry; a bigger API Reference. The running state does not exit automatically — learners switch back themselves, encouraging rapid "change a little, run again" iteration
+* **Simple mode**: a focused form for single-sprite programming — hides the sprite list and disables sprite settings; sprite names appear on the stage (hovering a sprite reveals its name label, clicking inserts the name into the code, so learners never have to spell sprite names); larger code font; centered run button and Copilot entry; a bigger API Reference. The running state does not exit automatically — learners switch back themselves, encouraging rapid "change a little, run again" iteration. Code editing is disabled in the running state
 * **API allowlist**: filters the API Reference to show only the APIs relevant to the course and hides unrelated categories, reducing cognitive load
 * **Ruler**: a measuring aid on the stage that helps learners build intuition for coordinates and distances
 
@@ -134,7 +134,7 @@ Throughout, the learner can summon the Copilot with questions at any time; it an
 
 	- Enable editor capabilities: simple mode; an API allowlist showing only `stepTo` and previously learned APIs
 * Preview in the Course Editor, running through the whole flow from the learner's perspective
-* Once tests pass, publish and add the course to its Course Series
+* Once tests pass, publish the course in its Course Series
 
 ### Learner: completing the Guided Course "Create a Project"
 
@@ -142,6 +142,6 @@ Same as the [User Stories in the existing document](./tutorial.md#user-stories):
 
 ## Course Authoring
 
-* **Course Editor**: the editing entry for courses and course series. For Playground Courses it edits the course data (course project, course code, course assets); for Guided Courses it edits the Prompt; at the series level it manages course order and metadata
+* **Course Editor**: the editing entry for Playground Courses, where the course data (course project, course code, course assets) is edited. Guided Courses, and the metadata and order of courses and course series, are edited in course management
 * **Course Preview**: runs the real course flow from a learner's perspective (rather than a separate simulation), supporting single-course preview and whole-series walkthroughs; changes made during preview are not written back into the course data
 * Course data can be exported and imported, fitting different authoring workflows such as local editing

@@ -44,7 +44,7 @@
       </div>
     </div>
     <UIButton
-      v-radar="{ name: 'Import button', desc: 'Click to import selected assets from Scratch' }"
+      v-radar="{ name: 'import-button', desc: 'Click to import selected assets from Scratch' }"
       size="large"
       class="self-end"
       :loading="importSelected.isLoading.value"

@@ -1,9 +1,5 @@
-import {
-  type DefinitionIdentifier,
-  type DefinitionDocumentationItem,
-  stringifyDefinitionId,
-  type DefinitionIdString
-} from '../common'
+import { type DefinitionDocumentationItem } from '../common'
+import { type DefinitionIdentifier, stringifyDefinitionId, type DefinitionIdString } from '../definition-id'
 import * as xgoDefinitionsByName from './xgo'
 
 export interface IDocumentBase {

@@ -11,7 +11,7 @@ const router = useRouter()
 
 <template>
   <div
-    v-radar="{ name: '404 page', desc: 'Displayed when a page is not found' }"
+    v-radar="{ name: 'not-found-page', desc: 'Displayed when a page is not found' }"
     class="bg-grey-200 h-full flex flex-col"
   >
     <CommunityNavbar />
@@ -21,7 +21,7 @@ const router = useRouter()
         {{ $t({ en: 'Page not found', zh: '页面未找到' }) }}
       </p>
       <UIButton
-        v-radar="{ name: '404 go home button', desc: 'Button to go back to home page' }"
+        v-radar="{ name: 'not-found-go-home-button', desc: 'Button to go back to home page' }"
         class="mt-4 h-9 text-lg"
         @click="router.push('/')"
         >{{ $t({ en: 'Return to home page', zh: '回到首页' }) }}</UIButton

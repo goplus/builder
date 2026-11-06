@@ -4,7 +4,7 @@
     <template #op>
       <UIDropdown trigger="click">
         <template #trigger>
-          <UIButton v-radar="{ name: 'Add sound button', desc: 'Click to add a sound' }" type="neutral" size="large">
+          <UIButton v-radar="{ name: 'add-sound-button', desc: 'Click to add a sound' }" type="neutral" size="large">
             <template #icon>
               <UIIcon type="plus" />
             </template>
@@ -17,7 +17,7 @@
   </UIEmpty>
   <EditorList
     v-else
-    v-radar="{ name: 'Sounds management', desc: 'Managing sounds' }"
+    v-radar="{ name: 'sounds-management', desc: 'Managing sounds' }"
     resource-type="sound"
     :sortable="{ list: sounds }"
     @sorted="handleSorted"

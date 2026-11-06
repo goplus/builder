@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect, type CSSProperties } from 'vue'
+import { onUnmounted, ref, watchEffect, type CSSProperties } from 'vue'
 import type { Position } from '../../common'
 import { toAbsolutePosition } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -12,6 +12,7 @@ const props = defineProps<{
 }>()
 
 const codeEditorUICtx = useCodeEditorUICtx()
+onUnmounted(() => props.controller.hideMenu())
 
 const triggerPos = ref<CSSProperties | null>(null)
 

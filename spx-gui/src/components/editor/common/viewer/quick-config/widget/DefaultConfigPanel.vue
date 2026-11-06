@@ -38,7 +38,7 @@ async function moveZorder(direction: MoveAction) {
 
 <template>
   <ConfigPanel
-    v-radar="{ name: 'Widget Quick Config Panel', desc: 'Quick config for widget position, size and layer order' }"
+    v-radar="{ name: 'widget-quick-config-panel', desc: 'Quick config for widget position, size and layer order' }"
   >
     <div class="flex items-center gap-1">
       <UITooltip>

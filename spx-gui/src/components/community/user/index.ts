@@ -13,7 +13,7 @@ export function useModifyUsername() {
 
   return async function modifyUsername(username: string) {
     await warningModal({
-      radar: { name: 'Username warning modal', desc: 'Warning modal shown before modifying username' },
+      radar: { name: 'username-warning-modal', desc: 'Warning modal shown before modifying username' },
       title: { en: 'Modify username', zh: '修改用户名' },
       tip: { en: 'Modifying the username may have the following impacts.', zh: '修改用户名可能造成以下影响。' },
       items: [
@@ -35,7 +35,7 @@ export function useModifyUsername() {
         }
       ],
       confirmText: { en: 'I understand, let me modify the username', zh: '我已知晓，让我修改用户名' },
-      confirmRadar: { name: 'Continue button', desc: 'Click to continue modifying username' },
+      confirmRadar: { name: 'continue-button', desc: 'Click to continue modifying username' },
       modalStyle: { width: '560px' }
     })
     return modifyUsernameModal({ username })

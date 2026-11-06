@@ -2,8 +2,8 @@
  * @desc Zip-related utilities based on fflate
  */
 
-import { unzip as fflateUnzip, zip as fflateZip } from '@nighca/fflate'
-import type * as fflate from '@nighca/fflate'
+import { unzip as fflateUnzip, zip as fflateZip } from '@ethanlita/fflate'
+import type * as fflate from '@ethanlita/fflate'
 
 export type Zippable = fflate.AsyncZippable
 export type ZipOptions = fflate.AsyncZipOptions & {

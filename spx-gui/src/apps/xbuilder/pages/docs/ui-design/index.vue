@@ -600,6 +600,26 @@
         </div>
       </section>
 
+      <section id="spotlight" :class="sectionClass">
+        <div :class="sectionHeaderClass">
+          <h2 :class="sectionTitleClass">Spotlight</h2>
+          <p :class="sectionDescriptionClass">
+            {{
+              $t({
+                en: 'Highlight an interface element with a cutout, an arrow, and a tip.',
+                zh: '通过挖孔、箭头和提示突出界面元素。'
+              })
+            }}
+          </p>
+        </div>
+
+        <div :class="demoPanelClass">
+          <RouterLink to="/docs/ui-design/spotlight" class="text-primary-main underline">
+            {{ $t({ en: 'Open interactive Spotlight examples', zh: '打开 Spotlight 交互示例' }) }}
+          </RouterLink>
+        </div>
+      </section>
+
       <section id="ui-dropdown" :class="sectionClass">
         <div :class="sectionHeaderClass">
           <h2 :class="sectionTitleClass">UIDropdown</h2>
@@ -1169,6 +1189,7 @@ const directoryItems = [
   { id: 'ui-tabs', label: 'UITabs' },
   { id: 'ui-card', label: 'UICard' },
   { id: 'ui-tooltip', label: 'UITooltip' },
+  { id: 'spotlight', label: 'Spotlight' },
   { id: 'ui-dropdown', label: 'UIDropdown' },
   { id: 'ui-block-items', label: 'UIBlockItem Wrappers' },
   { id: 'gen-item', label: 'GenItem' },

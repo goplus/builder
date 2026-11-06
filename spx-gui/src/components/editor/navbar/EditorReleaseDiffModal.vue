@@ -287,7 +287,7 @@ const DiffResourceItem = defineComponent({
 <template>
   <UIFormModal
     :radar="{
-      name: 'Release diff modal',
+      name: 'release-diff-modal',
       desc: 'Modal for previewing code differences between a release and the current project'
     }"
     :title="title"
