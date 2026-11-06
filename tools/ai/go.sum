@@ -1,7 +1,7 @@
 github.com/goplus/spbase v0.1.1 h1:dpA9BF3y5zgbbhsTcY/RKYqFbTDcal7VSD8jrZaGJyk=
 github.com/goplus/spbase v0.1.1/go.mod h1:brnD3OJnHtipqob2IsJ3/QzGBf+eOnqXNnHGKpv1irQ=
-github.com/goplus/spx/v4 v4.0.0 h1:lYv9YZSBSL7Vc3yIm7d/8q1BwMGytv+G+ARITceqRHE=
-github.com/goplus/spx/v4 v4.0.0/go.mod h1:/4GX9pL89rJyhfbNkjlnUeG1FCtGxeCe4X+SgDHO044=
+github.com/goplus/spx/v4 v4.0.1 h1:DFAIXoyZs2AfTsfSbsbviHjJpe4JMmlFDCUHZ40zfKA=
+github.com/goplus/spx/v4 v4.0.1/go.mod h1:/4GX9pL89rJyhfbNkjlnUeG1FCtGxeCe4X+SgDHO044=
 github.com/visualfc/gid v0.3.6 h1:3oJneErqSoaCoW+EhPlzRA4BXcmQKqMXolX0u+5K5IY=
 github.com/visualfc/gid v0.3.6/go.mod h1:N0s4EB3rVkkKeAJTKCNYTyYJ9Z4ntg7AQ+FNBc2zBHw=
 golang.org/x/image v0.23.0 h1:HseQ7c2OpPKTPVzNjG5fwJsOTCiiwS4QdsYi5XU6H68=
