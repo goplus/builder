@@ -336,13 +336,13 @@ providePopupContainer(codeEditorEl)
 .code-editor-read-only :deep(.monaco-editor-overlaymessage) {
   isolation: isolate;
   width: max-content;
-  padding-bottom: 12px;
-  /* Cancel Monaco's -6px margin to align the tail with the caret. */
-  transform: translateX(6px);
+  padding-bottom: 9px;
+  /* Compensate for Monaco's -6px margin, then offset by 4px in each direction. */
+  transform: translate(10px, 4px);
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage.below) {
-  padding-top: 12px;
+  padding-top: 9px;
   padding-bottom: 0;
 }
 
@@ -354,8 +354,8 @@ providePopupContainer(codeEditorEl)
   pointer-events: none;
   /* Nine-slicing keeps the corners and tail fixed as the message wraps. */
   border: solid transparent;
-  border-width: 8px 8px 24px 28px;
-  border-image: url('./read-only-message-bubble.svg') 8 8 24 28 fill / 8px 8px 24px 28px;
+  border-width: 8px 8px 21px 16px;
+  border-image: url('./read-only-message-bubble.svg') 8 8 21 16 fill / 8px 8px 21px 16px;
   filter: drop-shadow(0 2px 6px rgb(0 0 0 / 8%));
 }
 
@@ -366,7 +366,7 @@ providePopupContainer(codeEditorEl)
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
   box-sizing: border-box;
   max-width: 320px;
-  padding: 7px 13px;
+  padding: 7px var(--ui-spacing-md);
   border: 0;
   background: transparent;
   color: var(--ui-color-grey-1000);
