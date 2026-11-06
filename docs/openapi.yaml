@@ -9385,7 +9385,8 @@ components:
                 description: |
                   Universal URL of the image.
 
-                  Must not contain control characters.
+                  Must refer to a file in the upload bucket (see `UpInfo.bucket`), and must not contain control
+                  characters.
                 allOf:
                   - $ref: "#/components/schemas/FileObject/properties/url"
                 maxLength: 150
