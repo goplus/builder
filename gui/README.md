@@ -1,4 +1,4 @@
-# gui
+# XBuilder GUI
 
 ## Environment Requirements
 

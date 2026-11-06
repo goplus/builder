@@ -6,7 +6,7 @@ debugging setup and why it works without asking the Account backend to trust
 arbitrary localhost origins.
 
 For the broader reason why Account is a separate app under `gui/src/apps`,
-see [gui Apps](./gui-apps.md).
+see [GUI Apps](./gui-apps.md).
 
 ## Two Separate Problems
 

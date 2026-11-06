@@ -12,7 +12,7 @@ fixes:
 
 flag_management:
   individual_flags:
-    - name: spx-gui
+    - name: gui
       paths:
         - gui/src/
     - name: tools-ai

@@ -1,6 +1,6 @@
-# Development Guidelines for gui
+# Development Guidelines for GUI
 
-This document provides development guidelines and coding standards for AI agents working on the gui project.
+This document provides development guidelines and coding standards for AI agents working on the GUI project.
 
 ## Comments and JSDoc
 
@@ -218,7 +218,7 @@ Refs: [MS UX](https://learn.microsoft.com/en-us/windows/win32/uxguide/cmd-menus#
 
 ## Browser Compatibility
 
-This section describes how we handle browser compatibility in the gui project.
+This section describes how we handle browser compatibility in the GUI project.
 
 ### Target Browsers
 

@@ -1,4 +1,4 @@
-# All-in-one Dockerfile for building the SPX GUI
+# All-in-one Dockerfile for building the GUI
 
 ARG GO_BASE_IMAGE=golang:1.26.10
 ARG NODE_BASE_IMAGE=node:24.11.1

@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  spx-gui-lint:
+  gui-lint:
     permissions:
       contents: read
       id-token: write
@@ -66,7 +66,7 @@ jobs:
           # Fork pull requests use Codecov's tokenless upload support.
           use_oidc: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
           files: gui/coverage/lcov.info
-          flags: spx-gui
+          flags: gui
           disable_search: true
           fail_ci_if_error: true
 

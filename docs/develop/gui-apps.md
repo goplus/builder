@@ -1,4 +1,4 @@
-# gui Apps
+# GUI Apps
 
 `gui` maintains multiple browser apps in the same package. It currently has:
 

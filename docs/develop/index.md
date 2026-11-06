@@ -18,6 +18,6 @@ See `package.json` or `go.mod` files in subdirectories for details.
 
 ### Frontend Development
 
-- [gui Apps](./gui-apps.md)
+- [GUI Apps](./gui-apps.md)
 - [Account Local Debugging](./account-local-debugging.md)
 - [Maintaining the Default Project](../../skills/xbuilder-default-project/SKILL.md)
