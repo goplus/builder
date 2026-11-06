@@ -29,6 +29,7 @@ describe('Code Editor UI options', () => {
   it('updates read-only state and localized feedback without replacing the editor or controller', async () => {
     const i18n = createI18n({ lang: 'zh' })
     const editor = {
+      getDomNode: () => null,
       updateOptions: vi.fn(),
       onDidChangeConfiguration: vi.fn()
     }

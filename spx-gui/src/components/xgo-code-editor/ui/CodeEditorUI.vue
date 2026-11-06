@@ -26,6 +26,7 @@ import { getDdiDragData, getTextDocumentId, type Position, type Range, type Text
 import { type MonacoEditor, type monaco } from '../monaco'
 import { fromMonacoPosition } from './common'
 import { CodeEditorUIController } from './code-editor-ui'
+import { useReadOnlyMessageBubble } from './read-only-message-bubble'
 import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
 import HoverUI from './hover/HoverUI.vue'
@@ -102,6 +103,8 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
 }))
 
 const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
+
+useReadOnlyMessageBubble(monacoEditorRef, () => props.readOnly ?? false)
 
 watchEffect(() => {
   monacoEditorRef.value?.updateOptions({
@@ -308,6 +311,7 @@ providePopupContainer(codeEditorEl)
     <MonacoEditorComp
       v-radar="{ name: 'code-text-editor', desc: 'Text editor for code' }"
       class="my-3 min-w-0 flex-[1_1_0]"
+      :class="{ 'code-editor-read-only': readOnly }"
       :monaco="codeEditor.monaco"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
@@ -329,3 +333,56 @@ providePopupContainer(codeEditorEl)
     </aside>
   </div>
 </template>
+
+<style scoped>
+.code-editor-read-only :deep(.monaco-editor-overlaymessage) {
+  isolation: isolate;
+  width: max-content;
+  padding-bottom: 9px;
+  /* Compensate for Monaco's -6px margin, leaving a 4px horizontal gap to the caret. */
+  transform: translate(10px, 4px);
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below) {
+  padding-top: 9px;
+  padding-bottom: 0;
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
+  box-sizing: border-box;
+  max-width: 320px;
+  padding: 7px var(--ui-spacing-md);
+  border: 0;
+  background: transparent;
+  color: var(--ui-color-grey-1000);
+  font-family: var(--ui-font-family-main);
+  font-size: var(--ui-font-size-base);
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor) {
+  /* Override Monaco's more specific .below .anchor.top rule to use the unified SVG pointer. */
+  display: none !important;
+}
+
+.code-editor-read-only :deep(.code-editor-read-only-bubble) {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: var(--ui-color-grey-100);
+  stroke: var(--ui-color-turquoise-500);
+  stroke-width: 1px;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 8%));
+  pointer-events: none;
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below .code-editor-read-only-bubble) {
+  transform: scaleY(-1);
+}
+</style>
