@@ -99,7 +99,11 @@ watch(
             </RouterLink>
             <RouterLink
               v-if="canUseAdminConsole"
-              v-radar="{ name: $t({ en: 'Audit logs', zh: '审计日志' }), desc: 'Open admin audit logs' }"
+              v-radar="{
+                name: 'audit-logs-link',
+                label: $t({ en: 'Audit logs', zh: '审计日志' }),
+                desc: 'Open admin audit logs'
+              }"
               class="h-full flex items-center whitespace-nowrap px-3 text-sm font-medium no-underline hover:bg-grey-400"
               :class="route.path.startsWith('/admin/audit-logs') ? 'text-primary-main' : 'text-inherit'"
               to="/admin/audit-logs"
