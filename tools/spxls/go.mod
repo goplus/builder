@@ -7,7 +7,7 @@ tool github.com/goplus/xgolsw/cmd/pkgdatagen
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
 	github.com/goplus/builder/tools/tutorial v0.0.0
-	github.com/goplus/xgolsw v0.22.2-0.20261028032946-f278de2132cb
+	github.com/goplus/xgolsw v0.22.2-0.20261106063038-968b9a448b52
 )
 
 require (
@@ -34,5 +34,3 @@ replace github.com/goplus/builder/tools/ai => ../ai
 replace github.com/goplus/builder/tools/tutorial => ../tutorial
 
 replace github.com/goplus/builder/tools/xgoexec => ../xgoexec
-
-replace github.com/goplus/xgolsw => github.com/nighca/goxlsw v0.0.0-20261106062058-558144c30285
