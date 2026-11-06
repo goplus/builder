@@ -1,30 +1,38 @@
 import { client, SortOrder, type ByPage, type PaginationParams } from '@/apis/common'
 import type {
-  AccountApp,
-  AccountAppClientType,
   AccountAppGrant,
-  AccountAppSecret,
+  AccountAppOnlyScope,
   AccountAppStatus,
   AccountAppToken,
   AccountAppTokenType,
+  AccountOAuthClient,
+  AccountOAuthClientSecret,
+  AccountOAuthClientType,
+  AccountOAuthGrantType,
   AccountSession,
   AccountUser,
   AccountUserIdentity,
-  CreatedAccountAppSecret,
-  CreatedAccountAppToken
+  AdminAccountApp,
+  CreatedAccountAppToken,
+  CreatedAccountOAuthClientSecret
 } from '@/apis/account/common'
 
 export type {
   AccountApp,
   AccountAppGrant,
-  AccountAppSecret,
+  AccountAppOnlyScope,
   AccountAppToken,
   AccountAppTokenType,
+  AccountOAuthClient,
+  AccountOAuthClientSecret,
+  AccountOAuthClientType,
+  AccountOAuthGrantType,
   AccountSession,
   AccountUser,
   AccountUserIdentity,
-  CreatedAccountAppSecret,
-  CreatedAccountAppToken
+  AdminAccountApp,
+  CreatedAccountAppToken,
+  CreatedAccountOAuthClientSecret
 } from '@/apis/account/common'
 
 export const accountUsersKeywordMaxLength = 100
@@ -33,7 +41,7 @@ export const accountUserDisplayNameMaxLength = 100
 export const accountUserPasswordMinLength = 8
 export const accountUserPasswordMaxLength = 128
 export const accountAppDisplayNameMaxLength = 100
-export const accountAppSecretNameMaxLength = 100
+export const accountOAuthClientSecretNameMaxLength = 100
 export const accountAppTokenNameMaxLength = 100
 
 export type ListAccountUsersParams = PaginationParams & {
@@ -137,6 +145,10 @@ export function getAccountAppGrant(appGrantID: string) {
   return client.get(`/admin/account/app-grants/${encodeURIComponent(appGrantID)}`) as Promise<AccountAppGrant>
 }
 
+export async function revokeAccountAppGrant(appGrantID: string) {
+  await client.delete(`/admin/account/app-grants/${encodeURIComponent(appGrantID)}`)
+}
+
 export type ListAccountAppGrantTokensParams = PaginationParams & {
   /** Filter tokens by OAuth token type */
   tokenType?: AccountAppTokenType
@@ -153,6 +165,8 @@ export function listAccountAppGrantTokens(appGrantID: string, params?: ListAccou
 }
 
 export type CreateAccountAppGrantTokenParams = {
+  /** Management ID of an active user-authorization client in the grant app */
+  oauthClientID: string
   /** OAuth token type to create */
   tokenType: 'accessToken'
   /** Human-readable token name */
@@ -182,61 +196,121 @@ export type ListAccountAppsParams = PaginationParams & {
 }
 
 export function listAccountApps(params?: ListAccountAppsParams) {
-  return client.get('/admin/account/apps', params) as Promise<ByPage<AccountApp>>
+  return client.get('/admin/account/apps', params) as Promise<ByPage<AdminAccountApp>>
 }
 
 export type CreateAccountAppParams = {
-  /** Unique app name */
+  /** Unique management name of the app */
   name: string
-  /** Display name of the app */
-  displayName: string
-  /** OAuth client type of the app */
-  clientType: AccountAppClientType
-  /** Allowed redirect URIs */
-  redirectURIs: string[]
+  /** Defaults to the app name when omitted */
+  displayName?: string
+  /** Optional plain-text app description */
+  description?: string | null
+  /** Approved scopes for app-only access */
+  clientCredentialsScopes?: AccountAppOnlyScope[]
+  /** Administrator-provided reason retained in the audit log */
+  reason?: string
 }
 
 export function createAccountApp(params: CreateAccountAppParams) {
-  return client.post('/admin/account/apps', params) as Promise<AccountApp>
+  return client.post('/admin/account/apps', params) as Promise<AdminAccountApp>
 }
 
 export function getAccountApp(appID: string) {
-  return client.get(`/admin/account/apps/${encodeURIComponent(appID)}`) as Promise<AccountApp>
+  return client.get(`/admin/account/apps/${encodeURIComponent(appID)}`) as Promise<AdminAccountApp>
 }
 
 export type UpdateAccountAppParams = {
   /** Display name of the app */
   displayName?: string
-  /** App status */
+  /** Set to null to clear the description */
+  description?: string | null
+  /** Target app status */
   status?: AccountAppStatus
-  /** Allowed redirect URIs */
-  redirectURIs?: string[]
+  /** Target app-only scopes, with an empty array removing app-only access */
+  clientCredentialsScopes?: AccountAppOnlyScope[]
+  /** Administrator-provided reason retained in the audit log */
+  reason?: string
 }
 
 export function updateAccountApp(appID: string, params: UpdateAccountAppParams) {
-  return client.patch(`/admin/account/apps/${encodeURIComponent(appID)}`, params) as Promise<AccountApp>
+  return client.patch(`/admin/account/apps/${encodeURIComponent(appID)}`, params) as Promise<AdminAccountApp>
 }
 
-export function listAccountAppSecrets(appID: string, params?: PaginationParams) {
-  return client.get(`/admin/account/apps/${encodeURIComponent(appID)}/secrets`, params) as Promise<
-    ByPage<AccountAppSecret>
+export async function updateAccountAppAvatar(appID: string, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  await client.putBinary(`/admin/account/apps/${encodeURIComponent(appID)}/avatar`, form)
+}
+
+function oauthClientsPath(appID: string) {
+  return `/admin/account/apps/${encodeURIComponent(appID)}/oauth-clients`
+}
+
+function oauthClientPath(appID: string, oauthClientID: string) {
+  return `${oauthClientsPath(appID)}/${encodeURIComponent(oauthClientID)}`
+}
+
+export function listAccountOAuthClients(appID: string, params?: ListAccountAppsParams) {
+  return client.get(oauthClientsPath(appID), params) as Promise<ByPage<AccountOAuthClient>>
+}
+
+export type CreateAccountOAuthClientParams = {
+  /** Management name unique within the app */
+  name: string
+  /** Immutable OAuth client authentication type */
+  clientType: AccountOAuthClientType
+  /** Grant types for user authorization or app-only access */
+  grantTypes: AccountOAuthGrantType[]
+  /** Exact redirect URI allowlist for user authorization */
+  redirectURIs?: string[]
+  /** Administrator-provided reason retained in the audit log */
+  reason?: string
+}
+
+export function createAccountOAuthClient(appID: string, params: CreateAccountOAuthClientParams) {
+  return client.post(oauthClientsPath(appID), params) as Promise<AccountOAuthClient>
+}
+
+export function getAccountOAuthClient(appID: string, oauthClientID: string) {
+  return client.get(oauthClientPath(appID, oauthClientID)) as Promise<AccountOAuthClient>
+}
+
+export type UpdateAccountOAuthClientParams = {
+  /** Target client status */
+  status?: AccountAppStatus
+  /** Target exact redirect URI allowlist */
+  redirectURIs?: string[]
+  /** Administrator-provided reason retained in the audit log */
+  reason?: string
+}
+
+export function updateAccountOAuthClient(appID: string, oauthClientID: string, params: UpdateAccountOAuthClientParams) {
+  return client.patch(oauthClientPath(appID, oauthClientID), params) as Promise<AccountOAuthClient>
+}
+
+export function listAccountOAuthClientSecrets(appID: string, oauthClientID: string, params?: PaginationParams) {
+  return client.get(`${oauthClientPath(appID, oauthClientID)}/secrets`, params) as Promise<
+    ByPage<AccountOAuthClientSecret>
   >
 }
 
-export type CreateAccountAppSecretParams = {
-  /** App secret name */
+export type CreateAccountOAuthClientSecretParams = {
+  /** Management name unique among the client's active secrets */
   name: string
 }
 
-export function createAccountAppSecret(appID: string, params: CreateAccountAppSecretParams) {
+export function createAccountOAuthClientSecret(
+  appID: string,
+  oauthClientID: string,
+  params: CreateAccountOAuthClientSecretParams
+) {
   return client.post(
-    `/admin/account/apps/${encodeURIComponent(appID)}/secrets`,
+    `${oauthClientPath(appID, oauthClientID)}/secrets`,
     params
-  ) as Promise<CreatedAccountAppSecret>
+  ) as Promise<CreatedAccountOAuthClientSecret>
 }
 
-export function revokeAccountAppSecret(appID: string, secretID: string) {
-  return client.delete(
-    `/admin/account/apps/${encodeURIComponent(appID)}/secrets/${encodeURIComponent(secretID)}`
-  ) as Promise<void>
+export async function revokeAccountOAuthClientSecret(appID: string, oauthClientID: string, secretID: string) {
+  await client.delete(`${oauthClientPath(appID, oauthClientID)}/secrets/${encodeURIComponent(secretID)}`)
 }

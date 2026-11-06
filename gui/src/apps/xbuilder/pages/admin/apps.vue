@@ -1,25 +1,30 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onUnmounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
-import { useMessageHandle } from '@/utils/exception'
+import { useAction, useMessageHandle } from '@/utils/exception'
+import { getCleanupSignal } from '@/utils/disposable'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { SortOrder } from '@/apis/common'
 import { useSignedIn } from '@/stores/user'
-import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption, UITextInput } from '@/components/ui'
-import * as accountAdminApis from '@/apis/admin/account'
 import {
-  accountAppClientTypeLabels,
-  accountAppRedirectURIsTip,
-  accountAppStatusLabels,
-  formatTime,
-  parseLines
-} from './common'
+  UIButton,
+  UIError,
+  UILoading,
+  UIPagination,
+  UISelect,
+  UISelectOption,
+  UISwitch,
+  UITextInput
+} from '@/components/ui'
+import * as accountAdminApis from '@/apis/admin/account'
+import { accountAppOnlyScopesTip, accountAppStatusLabels, formatTime } from './common'
 
 const signedIn = useSignedIn()
 const router = useRouter()
+const signal = getCleanupSignal(onUnmounted)
 const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
 const pageSize = 20
@@ -31,9 +36,15 @@ const showCreateForm = ref(false)
 const createForm = reactive({
   name: '',
   displayName: '',
-  clientType: 'public' as accountAdminApis.AccountApp['clientType'],
-  redirectURIs: ''
+  description: '',
+  readApps: false,
+  readUsers: false,
+  reason: ''
 })
+const canCreate = computed(
+  () =>
+    createForm.name.trim() !== '' && (!(createForm.readApps || createForm.readUsers) || createForm.reason.trim() !== '')
+)
 
 const appsQuery = useQuery(
   async () => {
@@ -50,19 +61,30 @@ const appsQuery = useQuery(
 
 const pageTotal = computed(() => Math.ceil((appsQuery.data.value?.total ?? 0) / pageSize))
 
-usePageTitle({ en: 'OAuth apps', zh: 'OAuth 应用' })
+usePageTitle({ en: 'Account apps', zh: '账号应用' })
 
+const createApp = useAction(
+  () => {
+    const scopes: accountAdminApis.AccountAppOnlyScope[] = []
+    if (createForm.readApps) scopes.push('account:app:read')
+    if (createForm.readUsers) scopes.push('account:user:read')
+    return accountAdminApis.createAccountApp({
+      name: createForm.name.trim(),
+      ...(createForm.displayName.trim() === '' ? {} : { displayName: createForm.displayName.trim() }),
+      ...(createForm.description === '' ? {} : { description: createForm.description }),
+      clientCredentialsScopes: scopes,
+      ...(createForm.reason.trim() === '' ? {} : { reason: createForm.reason.trim() })
+    })
+  },
+  { en: 'Failed to create Account app', zh: '创建账号应用失败' }
+)
 const handleCreateApp = useMessageHandle(
   async () => {
-    const app = await accountAdminApis.createAccountApp({
-      name: createForm.name.trim(),
-      displayName: createForm.displayName.trim(),
-      clientType: createForm.clientType,
-      redirectURIs: parseLines(createForm.redirectURIs)
-    })
+    const app = await createApp()
+    signal.throwIfAborted()
     await router.push(`/admin/apps/${encodeURIComponent(app.id)}`)
   },
-  { en: 'Failed to create Account app', zh: '创建账号应用失败' },
+  undefined,
   { en: 'Account app created', zh: '账号应用已创建' }
 )
 </script>
@@ -71,9 +93,9 @@ const handleCreateApp = useMessageHandle(
   <section class="min-w-0">
     <div class="mb-5 flex items-end justify-between gap-4">
       <div>
-        <h2 class="m-0 text-xl font-semibold text-title">{{ $t({ en: 'OAuth apps', zh: 'OAuth 应用' }) }}</h2>
+        <h2 class="m-0 text-xl font-semibold text-title">{{ $t({ en: 'Account apps', zh: '账号应用' }) }}</h2>
         <p class="m-0 mt-1 text-sm text-grey-800">
-          {{ $t({ en: 'Manage registered OAuth apps.', zh: '管理已注册的 OAuth 应用。' }) }}
+          {{ $t({ en: 'Manage registered Account apps.', zh: '管理已登记的账号应用。' }) }}
         </p>
       </div>
       <UIButton
@@ -98,23 +120,43 @@ const handleCreateApp = useMessageHandle(
         </label>
         <label class="flex flex-col gap-1 text-sm text-grey-900">
           {{ $t({ en: 'Display name', zh: '显示名称' }) }}
-          <UITextInput v-model:value="createForm.displayName" required />
+          <UITextInput
+            v-model:value="createForm.displayName"
+            :maxlength="accountAdminApis.accountAppDisplayNameMaxLength"
+          />
+          <span class="text-xs text-grey-700">{{
+            $t({ en: 'Defaults to the app name when left blank.', zh: '留空时使用应用名称。' })
+          }}</span>
         </label>
-        <label class="flex flex-col gap-1 text-sm text-grey-900">
-          {{ $t({ en: 'Client type', zh: '客户端类型' }) }}
-          <UISelect v-model:value="createForm.clientType">
-            <UISelectOption value="public">{{ $t(accountAppClientTypeLabels.public) }}</UISelectOption>
-            <UISelectOption value="confidential">{{ $t(accountAppClientTypeLabels.confidential) }}</UISelectOption>
-          </UISelect>
+        <label class="flex flex-col gap-1 text-sm text-grey-900 tablet:col-span-2">
+          {{ $t({ en: 'Description', zh: '说明' }) }}
+          <UITextInput v-model:value="createForm.description" type="textarea" :rows="3" :maxlength="200" />
         </label>
-        <label class="flex flex-col gap-1 text-sm text-grey-900">
-          {{ $t({ en: 'Redirect URIs', zh: '回调 URI' }) }}
-          <UITextInput v-model:value="createForm.redirectURIs" type="textarea" :rows="4" />
-          <span class="text-xs text-grey-700">{{ $t(accountAppRedirectURIsTip) }}</span>
-        </label>
+        <div class="flex flex-col gap-3 tablet:col-span-2">
+          <h3 class="m-0 text-base font-semibold text-title">
+            {{ $t({ en: 'App-only access', zh: '应用自主访问' }) }}
+          </h3>
+          <label class="flex items-center gap-2 text-sm text-grey-900">
+            <UISwitch v-model:value="createForm.readApps" />
+            account:app:read
+          </label>
+          <label class="flex items-center gap-2 text-sm text-grey-900">
+            <UISwitch v-model:value="createForm.readUsers" />
+            account:user:read
+          </label>
+          <p class="m-0 text-xs text-grey-700">{{ $t(accountAppOnlyScopesTip) }}</p>
+          <label class="flex flex-col gap-1 text-sm text-grey-900">
+            {{ $t({ en: 'Reason for permission change', zh: '权限变更说明' }) }}
+            <UITextInput
+              v-model:value="createForm.reason"
+              :maxlength="500"
+              :required="createForm.readApps || createForm.readUsers"
+            />
+          </label>
+        </div>
       </div>
       <div class="mt-4 flex justify-end">
-        <UIButton html-type="submit" type="primary" :loading="handleCreateApp.isLoading.value">
+        <UIButton html-type="submit" type="primary" :disabled="!canCreate" :loading="handleCreateApp.isLoading.value">
           {{ $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
       </div>
@@ -125,8 +167,8 @@ const handleCreateApp = useMessageHandle(
       <template #sub-message>
         {{
           $t({
-            en: 'Managing OAuth apps requires Account admin permission.',
-            zh: '管理 OAuth 应用需要账号管理员权限。'
+            en: 'Managing Account apps requires Account admin permission.',
+            zh: '管理账号应用需要账号管理员权限。'
           })
         }}
       </template>
@@ -158,9 +200,6 @@ const handleCreateApp = useMessageHandle(
           <thead class="bg-grey-200 text-grey-800">
             <tr class="border-b border-grey-300">
               <th class="px-5 py-3 font-medium">{{ $t({ en: 'App', zh: '应用' }) }}</th>
-              <th class="hidden px-5 py-3 font-medium tablet:table-cell">
-                {{ $t({ en: 'Client type', zh: '客户端类型' }) }}
-              </th>
               <th class="px-5 py-3 font-medium">{{ $t({ en: 'Availability', zh: '可用状态' }) }}</th>
               <th class="hidden px-5 py-3 font-medium tablet:table-cell">
                 {{ $t({ en: 'Created', zh: '创建时间' }) }}
@@ -168,6 +207,11 @@ const handleCreateApp = useMessageHandle(
             </tr>
           </thead>
           <tbody>
+            <tr v-if="appsQuery.data.value?.total === 0">
+              <td colspan="3" class="px-5 py-8 text-center text-grey-800">
+                {{ $t({ en: 'No apps registered', zh: '暂无已登记应用' }) }}
+              </td>
+            </tr>
             <tr
               v-for="app in appsQuery.data.value?.data ?? []"
               :key="app.id"
@@ -181,11 +225,6 @@ const handleCreateApp = useMessageHandle(
                   {{ app.displayName }}
                 </RouterLink>
                 <div class="font-mono text-xs text-grey-800">{{ app.name }}</div>
-              </td>
-              <td class="hidden px-5 py-3 tablet:table-cell">
-                <span class="rounded bg-grey-300 px-2 py-1 text-xs text-grey-900">
-                  {{ $t(accountAppClientTypeLabels[app.clientType]) }}
-                </span>
               </td>
               <td class="px-5 py-3">
                 <span

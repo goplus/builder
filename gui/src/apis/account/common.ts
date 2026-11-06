@@ -53,36 +53,62 @@ export type AccountSession = AccountModel & {
   ipAddress?: string | null
 }
 
-export type AccountAppClientType = 'public' | 'confidential'
-
 export type AccountAppStatus = 'active' | 'disabled'
+
+export type AccountAppOnlyScope = 'account:app:read' | 'account:user:read'
 
 export type AccountApp = AccountModel & {
   /** Unique app name */
   name: string
   /** Display name of the app */
   displayName: string
-  /** OAuth client type of the app */
-  clientType: AccountAppClientType
+  /** Public HTTP URL of the Account-managed app avatar, or null when unset */
+  avatar: string | null
+  /** Optional plain-text app description */
+  description: string | null
   /** App status */
   status: AccountAppStatus
+}
+
+export type AdminAccountApp = AccountApp & {
+  /** Approved scopes for app-only access */
+  clientCredentialsScopes: AccountAppOnlyScope[]
+}
+
+export type AccountOAuthClientType = 'public' | 'confidential'
+
+export type AccountOAuthGrantType = 'authorization_code' | 'refresh_token' | 'client_credentials'
+
+export type AccountOAuthClient = AccountModel & {
+  /** Stable ID of the owning app */
+  appID: string
+  /** OAuth client ID used in OAuth requests */
+  clientID: string
+  /** Management name unique within the owning app */
+  name: string
+  /** OAuth client authentication type */
+  clientType: AccountOAuthClientType
+  /** Client status */
+  status: AccountAppStatus
+  /** Allowed OAuth grant types */
+  grantTypes: AccountOAuthGrantType[]
   /** Allowed redirect URIs */
   redirectURIs: string[]
-  /** Read-only allowed redirect URI patterns */
+  /** Read-only redirect URI patterns for HTTPS preview environments */
   redirectURIPatterns: string[]
 }
 
-export type AccountAppSecret = {
+export type AccountOAuthClientSecret = {
   /** Unique identifier */
   id: string
   /** Creation timestamp */
   createdAt: string
-  /** App secret name */
+  /** Client secret name */
   name: string
 }
 
-export type CreatedAccountAppSecret = AccountAppSecret & {
-  /** One-time app secret value */
+export type CreatedAccountOAuthClientSecret = AccountOAuthClientSecret & {
+  /** One-time client secret value */
   value: string
 }
 
@@ -104,6 +130,8 @@ export type AccountAppGrant = AccountModel & {
 export type AccountAppTokenType = 'accessToken' | 'refreshToken'
 
 export type AccountAppToken = AccountModel & {
+  /** Management ID of the issuing OAuth client */
+  oauthClientID: string
   /** ID of the app grant associated with the token */
   grantID: string
   /** OAuth token type */

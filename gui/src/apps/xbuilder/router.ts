@@ -237,6 +237,11 @@ const routes: Array<RouteRecordRaw> = [
         props: true
       },
       {
+        path: 'apps/:appID/oauth-clients/:oauthClientID',
+        component: () => import('./pages/admin/oauth-client.vue'),
+        props: true
+      },
+      {
         path: 'audit-logs',
         component: () => import('./pages/admin/audit-logs.vue')
       },
