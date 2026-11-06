@@ -11,6 +11,7 @@ import {
   useQuery,
   composeQuery,
   useQueryWithCache,
+  useInfiniteQueryWithCache,
   useQueryCache,
   type QueryContext,
   QueryMode
@@ -1010,5 +1011,89 @@ describe('cache writes', () => {
     await expect(untilLoaded(snapshot)).resolves.toBe('new')
     expect(backgroundRefresh.data.value).toBe('new')
     expect(queryFn).toHaveBeenCalledOnce()
+  })
+})
+
+describe('useInfiniteQueryWithCache', () => {
+  type Page = { token: string | null; version: number; nextPageToken: string | null }
+
+  it('loads pages by token and ignores next-page requests while fetching', async () => {
+    const pending = deferred<Page>()
+    const signals: AbortSignal[] = []
+    const queryFn = vi.fn(async (pageToken: string | null, signal: AbortSignal) => {
+      signals.push(signal)
+      if (pageToken == null) return { token: null, version: 1, nextPageToken: 'p2' }
+      return pending.promise
+    })
+    const query = setup(client(), () =>
+      useInfiniteQueryWithCache({
+        queryKey: ['pages'],
+        queryFn,
+        getNextPageToken: (page: Page) => page.nextPageToken
+      })
+    )
+    await flushPromises()
+    expect(query.data.value).toEqual([{ token: null, version: 1, nextPageToken: 'p2' }])
+    expect(query.hasNextPage.value).toBe(true)
+
+    query.fetchNextPage()
+    await vi.waitFor(() => expect(query.isFetchingNextPage.value).toBe(true))
+    query.fetchNextPage()
+    pending.resolve({ token: 'p2', version: 1, nextPageToken: null })
+    await flushPromises()
+    expect(query.data.value?.map((page) => page.token)).toEqual([null, 'p2'])
+    expect(query.hasNextPage.value).toBe(false)
+    expect(query.isFetchingNextPage.value).toBe(false)
+
+    query.fetchNextPage()
+    await flushPromises()
+    expect(queryFn.mock.calls.map(([pageToken]) => pageToken)).toEqual([null, 'p2'])
+    expect(signals.some((signal) => signal.aborted)).toBe(false)
+  })
+
+  it('refetches all loaded pages and retains them on failure', async () => {
+    let version = 1
+    let failure: Error | null = null
+    const queryFn = vi.fn(async (pageToken: string | null) => {
+      if (failure != null) throw failure
+      return { token: pageToken, version, nextPageToken: pageToken == null ? 'p2' : null }
+    })
+    const summary = { en: 'Failed to load pages', zh: '加载分页失败' }
+    const query = setup(client(), () =>
+      useInfiniteQueryWithCache({
+        queryKey: ['refetched-pages'],
+        queryFn,
+        getNextPageToken: (page: Page) => page.nextPageToken,
+        failureSummaryMessage: summary
+      })
+    )
+    await flushPromises()
+    query.fetchNextPage()
+    await flushPromises()
+    const versions = () => query.data.value?.map((page) => [page.token, page.version])
+    expect(versions()).toEqual([
+      [null, 1],
+      ['p2', 1]
+    ])
+
+    version = 2
+    query.refetch()
+    await flushPromises()
+    expect(versions()).toEqual([
+      [null, 2],
+      ['p2', 2]
+    ])
+    expect(query.error.value).toBeNull()
+
+    failure = new Error('refresh failed')
+    query.refetch()
+    await flushPromises()
+    expect(versions()).toEqual([
+      [null, 2],
+      ['p2', 2]
+    ])
+    expect(query.error.value).toBeInstanceOf(ActionException)
+    expect(query.error.value?.userMessage).toEqual(summary)
+    expect(query.error.value?.cause).toBe(failure)
   })
 })

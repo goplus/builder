@@ -259,6 +259,7 @@ export type InfiniteQueryWithCacheOptions<T> = {
 /**
  * `useInfiniteQueryWithCache` is similar to `useQueryWithCache`, while it queries data page by page.
  * The data is the list of loaded pages. Refetching or invalidating it refetches all loaded pages.
+ * It always behaves like `QueryMode.BackgroundRefresh`.
  */
 export function useInfiniteQueryWithCache<T>(options: InfiniteQueryWithCacheOptions<T>): InfiniteQueryRet<T> {
   let queryFn = options.queryFn
