@@ -1,6 +1,7 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createRadar } from '@/utils/radar'
 import { File } from '@/models/common/file'
 import { cloudHelpers } from '@/models/common/cloud'
 import { Video } from '@/models/tutorial/video'
@@ -35,12 +36,17 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function mountVideo(visible = true) {
+function mountVideo(visible = true, lang: 'en' | 'zh' = 'en') {
   const file = new File('lesson.mp4', async () => new ArrayBuffer(0), { type: 'video/mp4' })
   vi.spyOn(cloudHelpers, 'getFileWebUrl').mockResolvedValue('https://example.com/lesson.mp4')
   const wrapper = mount(CoursePlaygroundVideoModal, {
     props: { visible, buttonText: null, video: new Video('lesson', file) },
-    global: globalOptions
+    global: {
+      ...globalOptions,
+      directives: {},
+      plugins: [createRadar()],
+      mocks: { $t: (message: { en: string; zh: string }) => message[lang] }
+    }
   })
   wrappers.push(wrapper)
   return { wrapper }
@@ -174,19 +180,24 @@ describe('Course presentation', () => {
     expect(wrapper.emitted('resolved')).toBeUndefined()
   })
 
-  it('toggles sound without restarting playback and preserves it for replay', async () => {
-    const { wrapper } = mountVideo()
+  it.each([
+    { lang: 'en', soundOn: 'Turn sound on', soundOff: 'Turn sound off', play: 'Play video' },
+    { lang: 'zh', soundOn: '打开声音', soundOff: '关闭声音', play: '播放视频' }
+  ] as const)('keeps $lang video labels in sync with sound state and preserves it for replay', async (labels) => {
+    const { wrapper } = mountVideo(true, labels.lang)
     await flushPromises()
     const video = wrapper.find('video')
-    await wrapper.find('button[aria-label="Turn sound off"]').trigger('click')
+    await wrapper.get(`button[aria-label="${labels.soundOff}"]`).trigger('click')
     expect(video.element.muted).toBe(true)
+    expect(wrapper.get(`button[aria-label="${labels.soundOn}"]`).attributes('aria-pressed')).toBe('false')
     await video.trigger('playing')
     await video.trigger('ended')
-    await wrapper.find('button[aria-label="Play video"]').trigger('click')
+    await wrapper.get(`button[aria-label="${labels.play}"]`).trigger('click')
     expect(video.element.muted).toBe(true)
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
-    await wrapper.find('button[aria-label="Turn sound on"]').trigger('click')
+    await wrapper.get(`button[aria-label="${labels.soundOn}"]`).trigger('click')
     expect(video.element.muted).toBe(false)
+    expect(wrapper.get(`button[aria-label="${labels.soundOff}"]`).attributes('aria-pressed')).toBe('true')
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalledOnce()
     expect(wrapper.emitted('resolved')).toBeUndefined()
   })
