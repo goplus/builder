@@ -43,6 +43,7 @@ import {
 import { RuntimeOutputKind } from '@/components/editor/runtime'
 import { DiagnosticSeverity } from '@/components/editor/spx-code-editor'
 import { feedbackContextSchema } from '@/components/feedback/context'
+import FeedbackReplyImage from '@/components/feedback/FeedbackReplyImage.vue'
 import * as feedbackAdminApis from '@/apis/admin/feedback'
 import { feedbackStatusLabels, formatJSON, formatTime } from './common'
 
@@ -116,9 +117,6 @@ function validateReplyContent(value: string) {
 }
 
 const replyImages = shallowRef<File[]>([])
-const replyImageUrls = useAsyncComputed((onCleanup) =>
-  Promise.all(replyImages.value.map((image) => image.url(onCleanup)))
-)
 
 const handleAddReplyImages = useMessageHandle(
   async () => {
@@ -364,12 +362,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
           </UIFormItem>
           <div class="mt-3 flex flex-wrap items-center gap-3">
             <div v-for="(image, i) in replyImages" :key="i" class="relative">
-              <UIImg
-                class="size-16 rounded-md border border-grey-400 bg-white"
-                size="cover"
-                :src="replyImageUrls?.[i] ?? null"
-                :alt="image.name"
-              />
+              <FeedbackReplyImage :file="image" />
               <UICornerIcon
                 v-if="!handleSendReply.isLoading.value"
                 v-radar="{
