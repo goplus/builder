@@ -37,7 +37,7 @@ Feedback has three statuses:
 | - | - |
 | `new` | Awaiting administrator processing |
 | `replied` | Completed with an administrator Reply |
-| `handled` | Completed without a Reply through the administrator's "Mark as no reply needed" action |
+| `handled` | Completed through the administrator's "Mark as no reply needed" action |
 
 A Feedback item is created in `new`. It can move from `new` to `replied` or `handled`; both are terminal states.
 

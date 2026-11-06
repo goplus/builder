@@ -37,7 +37,7 @@ Feedback 有三种状态：
 | - | - |
 | `new` | 等待管理员处理 |
 | `replied` | 管理员已完成回复 |
-| `handled` | 管理员通过“标记为无需回复”完成处理，不发送 Reply |
+| `handled` | 管理员通过“标记为无需回复”完成处理 |
 
 Feedback 创建时为 `new`，可以从 `new` 进入 `replied` 或 `handled`；两者均为终态。
 
