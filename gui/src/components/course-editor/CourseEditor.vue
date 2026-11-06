@@ -378,7 +378,7 @@ let authorCopilot: { session: SessionExported | null; active: boolean } | null =
 
 function stashAuthorCopilot() {
   if (authorCopilot != null) return
-  authorCopilot = { session: copilot.exportCurrentSession(), active: copilot.active }
+  authorCopilot = { session: copilot.exportCurrentSession(), active: copilot.globalUIActive }
 }
 
 /**
@@ -391,8 +391,7 @@ function restoreAuthorCopilot() {
   authorCopilot = null
   if (stashed.session != null) copilot.restoreSession(stashed.session)
   else copilot.endCurrentSession()
-  if (stashed.active) copilot.open()
-  else copilot.close()
+  copilot.globalUIActive = stashed.active
 }
 
 // `immediate` covers landing directly on the preview URL.

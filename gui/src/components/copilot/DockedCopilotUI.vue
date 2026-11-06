@@ -30,10 +30,7 @@ const panelOutline = computed(() => {
   }
 })
 
-onMounted(() => {
-  copilot.disableGlobalUI()
-  if (copilot.active) copilot.close()
-})
+onMounted(() => copilot.disableGlobalUI())
 
 onUnmounted(() => copilot.enableGlobalUI())
 

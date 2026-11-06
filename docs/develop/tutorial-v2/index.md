@@ -58,6 +58,11 @@ See [SPX Project Editor](./module_SpxProjectEditor.ts).
 
 Copilot supplies generic assistant sessions, context, generation, and conversation events. Tutorial and Course Editor configure those generic capabilities for their respective learning and authoring experiences; Copilot itself has no Course-specific behavior.
 
+The global and docked panels share a conversation but keep independent expansion state. `active`, `open()` and
+`close()` operate on the currently displayed UI. Global expansion is persisted; docked expansion starts collapsed
+on each mount and does not change global expansion. Course Preview restores the author's global expansion through
+`globalUIActive`, independently of the docked panel's unmount timing, along with the author's conversation.
+
 See [Copilot](./module_Copilot.ts).
 
 ### Course Editor

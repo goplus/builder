@@ -587,9 +587,21 @@ export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
     this.registerTool(createLoadSkillResourceTool(this.skillRegistry))
   }
 
-  private activeRef = localStorageRef('spx-gui-copilot-active', false)
+  private globalActiveRef = localStorageRef('spx-gui-copilot-active', false)
+  private dockedActiveRef = ref(false)
+  private get activeRef() {
+    return this.globalUIEnabled ? this.globalActiveRef : this.dockedActiveRef
+  }
   get active() {
     return this.activeRef.value
+  }
+
+  /** Global panel state, independent of the currently displayed UI. */
+  get globalUIActive() {
+    return this.globalActiveRef.value
+  }
+  set globalUIActive(active: boolean) {
+    this.globalActiveRef.value = active
   }
 
   private globalUIEnabledRef = ref(true)
@@ -600,6 +612,7 @@ export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
     this.globalUIEnabledRef.value = true
   }
   disableGlobalUI() {
+    this.dockedActiveRef.value = false
     this.globalUIEnabledRef.value = false
   }
 
