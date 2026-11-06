@@ -338,20 +338,20 @@ providePopupContainer(codeEditorEl)
 .code-editor-read-only :deep(.monaco-editor-overlaymessage) {
   isolation: isolate;
   width: max-content;
-  padding-bottom: 12px;
-  /* Monaco adds a -6px margin; this leaves an 8px gap to the caret. */
-  transform: translateX(14px);
+  padding-bottom: 9px;
+  /* Compensate for Monaco's -6px margin, leaving a 4px horizontal gap to the caret. */
+  transform: translate(10px, 4px);
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage.below) {
-  padding-top: 12px;
+  padding-top: 9px;
   padding-bottom: 0;
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
   box-sizing: border-box;
   max-width: 320px;
-  padding: 7px calc(var(--ui-spacing-lg) + 1px);
+  padding: 7px var(--ui-spacing-md);
   border: 0;
   background: transparent;
   color: var(--ui-color-grey-1000);

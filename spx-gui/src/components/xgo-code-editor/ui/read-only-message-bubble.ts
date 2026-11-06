@@ -1,9 +1,9 @@
 import { watch, type WatchSource } from 'vue'
 import type { MonacoEditor } from '../monaco'
 
-// Match CodeEditorUI.vue's 1px stroke and 12px tail padding.
+// Match CodeEditorUI.vue's 1px stroke and 9px tail padding.
 const strokeInset = 0.5
-const tailHeight = 12
+const tailHeight = 9
 const cornerRadius = 6
 
 export function useReadOnlyMessageBubble(
@@ -35,8 +35,8 @@ export function useReadOnlyMessageBubble(
           `M ${cornerEnd} ${strokeInset} H ${right - cornerRadius}
            Q ${right} ${strokeInset} ${right} ${cornerEnd}
            V ${bottom - cornerRadius} Q ${right} ${bottom} ${right - cornerRadius} ${bottom}
-           H 22.5 C 18 ${bottom} 17 ${bottom} 14 ${bottom + 2.6}
-           L 4.4 ${bottom + 10.4} Q ${strokeInset} ${bottom + 14} ${strokeInset} ${bottom + 9}
+           H 12 C 9.5 ${bottom} 9 ${bottom} 7.5 ${bottom + 2}
+           L 2.8 ${bottom + 7.8} Q ${strokeInset} ${bottom + 10.5} ${strokeInset} ${bottom + 6.75}
            V ${cornerEnd} Q ${strokeInset} ${strokeInset} ${cornerEnd} ${strokeInset} Z`
         )
       })
