@@ -25,7 +25,7 @@ const panelVisible = ref(false)
         <template #trigger>
           <button
             v-radar="{
-              name: 'Notifications',
+              name: 'notifications-button',
               desc: unreadCount === 0 ? 'Open notifications' : `Open notifications, ${unreadCount} unread`
             }"
             type="button"

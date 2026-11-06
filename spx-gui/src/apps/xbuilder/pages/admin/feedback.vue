@@ -355,7 +355,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
           <UIFormItem class="mt-3" path="content">
             <UITextInput
               v-model:value="replyForm.value.content"
-              v-radar="{ name: 'Reply content', desc: 'Write the reply delivered to the user as a notification' }"
+              v-radar="{ name: 'reply-content-input', desc: 'Write the reply delivered to the user as a notification' }"
               type="textarea"
               :rows="4"
               :disabled="handleSendReply.isLoading.value"
@@ -372,7 +372,11 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
               />
               <UICornerIcon
                 v-if="!handleSendReply.isLoading.value"
-                v-radar="{ name: 'Remove image', desc: `Remove '${image.name}' from the reply` }"
+                v-radar="{
+                  name: 'remove-reply-image-button',
+                  desc: 'Remove this image from the reply',
+                  attrs: { name: image.name }
+                }"
                 type="trash"
                 button
                 @click="removeReplyImage(i)"
@@ -380,7 +384,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
             </div>
             <UIButton
               v-if="replyImages.length < feedbackAdminApis.feedbackReplyAttachmentsMaxCount"
-              v-radar="{ name: 'Add images', desc: 'Attach images to the reply' }"
+              v-radar="{ name: 'add-reply-images-button', desc: 'Attach images to the reply' }"
               type="white"
               size="small"
               icon="plus"
@@ -403,7 +407,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
               {{ $t({ en: 'The user will receive a notification.', zh: '用户会收到通知。' }) }}
             </span>
             <UIButton
-              v-radar="{ name: 'Send reply', desc: 'Send this reply to the user as a notification' }"
+              v-radar="{ name: 'send-reply-button', desc: 'Send this reply to the user as a notification' }"
               html-type="submit"
               :disabled="handleMarkAsNoReplyNeeded.isLoading.value"
               :loading="handleSendReply.isLoading.value"

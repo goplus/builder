@@ -29,7 +29,7 @@ const reply: Notification = {
 }
 
 function getUnreadState(wrapper: VueWrapper) {
-  return wrapper.get('[aria-label="Notifications"]').attributes('aria-description')
+  return wrapper.get('[aria-label="Notifications button"]').attributes('aria-description')
 }
 
 describe('notifications', () => {
@@ -44,7 +44,7 @@ describe('notifications', () => {
     const { wrapper } = await mountPages('/explore')
 
     await vi.waitFor(() => expect(getUnreadState(wrapper)).toBe('Open notifications, 1 unread'))
-    await wrapper.get('[aria-label="Notifications"]').trigger('click')
+    await wrapper.get('[aria-label="Notifications button"]').trigger('click')
     const item = await vi.waitFor(() => wrapper.get('[aria-label="Re: Sprite stops moving"]'))
     expect(item.text()).toContain('Fixed in the next release. fix.png Unsafe link')
     // A button may only contain phrasing content
@@ -83,10 +83,10 @@ describe('notifications', () => {
     const { wrapper } = await mountPages('/explore')
 
     await vi.waitFor(() => expect(getUnreadState(wrapper)).toBe('Open notifications, 2 unread'))
-    await wrapper.get('[aria-label="Notifications"]').trigger('click')
-    await (await vi.waitFor(() => wrapper.get('[aria-label="Announcements tab"]'))).trigger('click')
+    await wrapper.get('[aria-label="Notifications button"]').trigger('click')
+    await (await vi.waitFor(() => wrapper.get('[aria-label="Announcements"]'))).trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="New tutorials"]').exists()).toBe(true))
-    const markAll = await vi.waitFor(() => wrapper.get('[aria-label="Mark all notifications as read"]'))
+    const markAll = await vi.waitFor(() => wrapper.get('[aria-label="Mark all as read button"]'))
     await vi.waitFor(() => expect(markAll.attributes('disabled')).toBeUndefined())
 
     let finishRefresh!: () => void

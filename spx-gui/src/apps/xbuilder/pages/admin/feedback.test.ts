@@ -62,7 +62,7 @@ describe('admin feedback', () => {
     )
     await vi.waitFor(() => expect(wrapper.text()).toContain('No reply needed'))
     expect(wrapper.findAll('button').some((b) => b.text() === 'Mark as no reply needed')).toBe(false)
-    expect(wrapper.find('[aria-label="Reply content"] textarea').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="Reply content input"] textarea').exists()).toBe(false)
     expect(feedbackAdminApis.createFeedbackReply).not.toHaveBeenCalled()
   })
 
@@ -89,7 +89,7 @@ describe('admin feedback', () => {
 
     await findButton('Add images')!.trigger('click')
     await vi.waitFor(() => expect(wrapper.find('img[alt="fix.png"]').exists()).toBe(true))
-    await wrapper.get('[aria-label="Reply content"] textarea').setValue('  Fixed in the next release.  ')
+    await wrapper.get('[aria-label="Reply content input"] textarea').setValue('  Fixed in the next release.  ')
     await findButton('Send reply')!.trigger('click')
 
     await vi.waitFor(() =>
@@ -108,12 +108,12 @@ describe('admin feedback', () => {
     vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(makeFeedback())
 
     const { wrapper } = await mountPages('/admin/feedback/1')
-    const sendReply = await vi.waitFor(() => wrapper.get('[aria-label="Send reply"]'))
+    const sendReply = await vi.waitFor(() => wrapper.get('[aria-label="Send reply button"]'))
     await sendReply.trigger('click')
     await vi.waitFor(() => expect(wrapper.text()).toContain('The reply must not be blank'))
 
     const maxLength = feedbackAdminApis.feedbackReplyContentMaxLength
-    await wrapper.get('[aria-label="Reply content"] textarea').setValue('a'.repeat(maxLength + 1))
+    await wrapper.get('[aria-label="Reply content input"] textarea').setValue('a'.repeat(maxLength + 1))
     await sendReply.trigger('click')
     await vi.waitFor(() => expect(wrapper.text()).toContain(`The reply must be ${maxLength} characters or fewer`))
     expect(feedbackAdminApis.createFeedbackReply).not.toHaveBeenCalled()
@@ -127,7 +127,7 @@ describe('admin feedback', () => {
     ])
 
     const { wrapper } = await mountPages('/admin/feedback/1')
-    const addImages = await vi.waitFor(() => wrapper.get('[aria-label="Add images"]'))
+    const addImages = await vi.waitFor(() => wrapper.get('[aria-label="Add reply images button"]'))
     await addImages.trigger('click')
 
     await vi.waitFor(() => expect(document.body.textContent).toContain('Only images can be attached'))

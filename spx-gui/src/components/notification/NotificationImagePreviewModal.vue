@@ -20,7 +20,7 @@ const emit = defineEmits<{
     :visible="visible"
     size="large"
     class="w-[min(1040px,calc(100vw-2rem))]"
-    :radar="{ name: 'Notification image preview', desc: 'Previewing an image attached to a notification' }"
+    :radar="{ name: 'notification-image-preview-modal', desc: 'Previewing an image attached to a notification' }"
     @update:visible="emit('cancelled')"
   >
     <div class="flex max-h-[calc(100vh-2rem)] min-h-[360px] flex-col">

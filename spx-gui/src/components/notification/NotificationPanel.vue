@@ -70,7 +70,7 @@ function openNotification(notification: Notification) {
 
 <template>
   <div
-    v-radar="{ name: 'Notification panel', desc: 'Notifications of the signed-in user, grouped by category' }"
+    v-radar="{ name: 'notification-panel', desc: 'Notifications of the signed-in user, grouped by category' }"
     class="flex h-[484px] w-[408px] flex-col"
     role="dialog"
   >
@@ -80,10 +80,7 @@ function openNotification(notification: Notification) {
           {{ $t({ en: 'Notifications', zh: '通知' }) }}
         </h2>
         <button
-          v-radar="{
-            name: 'Mark all notifications as read',
-            desc: 'Mark unread notifications in all categories as read'
-          }"
+          v-radar="{ name: 'mark-all-as-read-button', desc: 'Mark unread notifications in all categories as read' }"
           type="button"
           class="cursor-pointer border-0 bg-transparent text-sm text-primary-main transition-colors enabled:hover:text-primary-600 disabled:cursor-default disabled:text-grey-600 focus-visible:outline-2 focus-visible:outline-primary-main"
           :disabled="totalUnreadCount === 0 || markAllNotificationsRead.isLoading.value"
@@ -94,7 +91,7 @@ function openNotification(notification: Notification) {
       </div>
 
       <UITabs
-        v-radar="{ name: 'Notification categories', desc: 'Tabs for switching between notification categories' }"
+        v-radar="{ name: 'notification-category-tabs', desc: 'Tabs for switching between notification categories' }"
         class="shrink-0 border-b border-grey-300 px-6"
         :value="activeCategory"
         @update:value="(category) => (activeCategory = category as NotificationCategory)"
@@ -102,7 +99,12 @@ function openNotification(notification: Notification) {
         <UITab
           v-for="tab in tabs"
           :key="tab.category"
-          v-radar="{ name: `${tab.label.en} tab`, desc: `Show ${tab.label.en.toLowerCase()}` }"
+          v-radar="{
+            name: 'notification-category-tab',
+            label: $t(tab.label),
+            desc: 'Click to show notifications in this category',
+            attrs: { category: tab.category }
+          }"
           class="border-b-0 px-0! pb-3 pt-2! text-sm"
           :class="activeCategory === tab.category ? 'text-primary-main' : null"
           :value="tab.category"
@@ -141,8 +143,10 @@ function openNotification(notification: Notification) {
           v-for="(notification, i) in notifications"
           :key="notification.id"
           v-radar="{
-            name: notification.title,
-            desc: notification.readAt == null ? 'Unread notification' : 'Read notification'
+            name: 'notification-item',
+            label: notification.title,
+            desc: notification.readAt == null ? 'Unread notification' : 'Read notification',
+            attrs: { id: notification.id }
           }"
           type="button"
           class="relative block w-full cursor-pointer rounded-lg border-0 bg-white p-3 text-left transition-colors hover:bg-grey-300 focus-visible:z-1 focus-visible:outline-2 focus-visible:outline-primary-main"
@@ -171,7 +175,7 @@ function openNotification(notification: Notification) {
         <UILoading v-if="notificationsQuery.isFetchingNextPage.value" class="py-3" />
         <button
           v-else-if="notificationsQuery.error.value != null && notificationsQuery.hasNextPage.value"
-          v-radar="{ name: 'Retry loading notifications', desc: 'Load more notifications again' }"
+          v-radar="{ name: 'retry-button', desc: 'Load more notifications again' }"
           type="button"
           class="block w-full cursor-pointer border-0 bg-transparent py-3 text-sm text-primary-main hover:text-primary-600"
           @click="notificationsQuery.fetchNextPage"
@@ -190,7 +194,7 @@ function openNotification(notification: Notification) {
     <div v-if="selectedNotification != null" class="flex min-h-0 flex-1 flex-col">
       <div class="flex shrink-0 items-center gap-2 border-b border-grey-300 px-4 py-3">
         <UIButton
-          v-radar="{ name: 'Back to notifications', desc: 'Return to the notification list' }"
+          v-radar="{ name: 'back-button', desc: 'Return to the notification list' }"
           type="white"
           shape="square"
           size="medium"
