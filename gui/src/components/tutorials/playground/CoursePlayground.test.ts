@@ -9,11 +9,15 @@ import { useRegisterLoading } from '@/utils/readiness'
 import type { Progress } from '@/utils/progress'
 import type { QueryRet } from '@/utils/query'
 import type { TutorialProject } from '@/models/tutorial/project'
+import { Copilot } from '@/components/copilot/copilot'
+import DockedCopilotUI from '@/components/copilot/DockedCopilotUI.vue'
+import { InMemorySkillRegistry } from '@/components/copilot/skills/registry'
 import type { PlaygroundCourseProgramOptions } from './program'
 import type { PlaygroundCourseSessionOptions } from './session'
 import CoursePlayground from './CoursePlayground.vue'
 
 const mocks = vi.hoisted(() => ({
+  copilot: null as Copilot | null,
   sessions: [] as any[],
   editors: [] as any[],
   loadMonaco: vi.fn().mockResolvedValue({})
@@ -30,8 +34,10 @@ vi.mock('@/apps/xbuilder/router', () => ({ getOwnProjectEditorRoute: vi.fn() }))
 vi.mock('@/stores/user', () => ({ useSignedIn: () => ({}) }))
 vi.mock('@/models/common/cloud', () => ({ cloudHelpers: {} }))
 vi.mock('@/components/copilot/context', () => ({
-  useCopilot: () => ({ startSession: vi.fn().mockResolvedValue(undefined), endCurrentSession: vi.fn() })
+  useCopilot: () => mocks.copilot ?? { startSession: vi.fn().mockResolvedValue(undefined), endCurrentSession: vi.fn() }
 }))
+vi.mock('@/components/copilot/CopilotChat.vue', () => ({ default: { template: '<div class="chat" />' } }))
+vi.mock('@/components/copilot/CopilotTrigger.vue', () => ({ default: { template: '<button>Copilot</button>' } }))
 vi.mock('@/utils/radar', () => ({ useRadar: () => ({ select: vi.fn() }) }))
 vi.mock('@/utils/spotlight', () => ({ useSpotlight: () => ({ reveal: vi.fn() }) }))
 vi.mock('@/components/project', () => ({ useSaveProjectAs: () => vi.fn() }))
@@ -92,7 +98,8 @@ vi.mock('@/components/editor/spx-code-editor', () => ({
 vi.mock('@/components/editor/ProjectEditor.vue', () => ({
   default: defineComponent({
     props: { rulerEnabled: Boolean },
-    setup: (props) => () => h('div', { class: 'editor' }, `Ruler: ${props.rulerEnabled}`)
+    setup: (props) => () =>
+      h('div', { class: 'editor' }, mocks.copilot == null ? `Ruler: ${props.rulerEnabled}` : h(DockedCopilotUI))
   })
 }))
 vi.mock('./program', () => ({
@@ -134,6 +141,8 @@ vi.mock('./session', async (importOriginal) => {
 const wrappers: ReturnType<typeof mount>[] = []
 afterEach(() => {
   wrappers.splice(0).forEach((wrapper) => wrapper.unmount())
+  mocks.copilot?.dispose()
+  mocks.copilot = null
   vi.useRealTimers()
 })
 beforeEach(() => {
@@ -157,11 +166,47 @@ function createProjectQueryRet(
 function mountPlayground(queryRet = createProjectQueryRet()) {
   const wrapper = mount(CoursePlayground, {
     props: { projectQueryRet: queryRet, router: { currentPath: ref([]), push: vi.fn() } },
-    global: { mocks: { $t: (message: { en: string }) => message.en } }
+    global: { mocks: { $t: (message: { en: string }) => message.en }, directives: { radar: {} } }
   })
   wrappers.push(wrapper)
   return wrapper
 }
+
+describe('Playground Copilot on course exit', () => {
+  it.each([
+    { expanded: false, completed: false, globalActive: false },
+    { expanded: true, completed: false, globalActive: false },
+    { expanded: true, completed: true, globalActive: false },
+    { expanded: true, completed: true, globalActive: true }
+  ])(
+    'restores global UI after leaving $expanded / $completed / $globalActive',
+    async ({ expanded, completed, globalActive }) => {
+      const copilot = new Copilot(new InMemorySkillRegistry())
+      mocks.copilot = copilot
+      if (globalActive) copilot.open()
+      else copilot.close()
+      const wrapper = mountPlayground()
+      await flushPromises()
+      mocks.editors[0].value = true
+      await flushPromises()
+      expect(copilot.globalUIEnabled).toBe(false)
+      expect(copilot.active).toBe(false)
+      if (expanded) await wrapper.findComponent(DockedCopilotUI).find('button').trigger('click')
+      expect(wrapper.find('.chat').exists()).toBe(expanded)
+      if (completed) {
+        mocks.sessions[0].program.complete()
+        await flushPromises()
+        expect(wrapper.emitted('courseCompleted')).toHaveLength(1)
+        expect(copilot.active).toBe(expanded)
+      }
+      wrapper.unmount()
+      expect(copilot.currentSession).toBe(null)
+      expect(copilot.globalUIEnabled).toBe(true)
+      expect(copilot.active).toBe(globalActive)
+      copilot.close()
+    }
+  )
+})
 
 describe('Playground startup rendering', () => {
   it('keeps the same loading UI from project loading through startup with continuous progress', async () => {
