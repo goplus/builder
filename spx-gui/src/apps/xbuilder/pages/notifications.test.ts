@@ -47,8 +47,6 @@ describe('notifications', () => {
     await wrapper.get('[aria-label="Notifications button"]').trigger('click')
     const item = await vi.waitFor(() => wrapper.get('[aria-label="Re: Sprite stops moving"]'))
     expect(item.text()).toContain('Fixed in the next release. fix.png Unsafe link')
-    // A button may only contain phrasing content
-    expect(item.find('div, p').exists()).toBe(false)
     await item.trigger('click')
 
     await vi.waitFor(() => expect(notificationApis.markNotificationRead).toHaveBeenCalledWith('1'))

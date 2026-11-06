@@ -48,7 +48,6 @@ const activeCategory = ref(
 
 const notificationsQuery = useNotifications(activeCategory)
 const notifications = computed(() => notificationsQuery.data.value?.flatMap((page) => page.data) ?? null)
-// Parse bodies when notifications are loaded, instead of each time the panel renders
 const notificationPreviews = computed(() => notifications.value?.map((n) => getMarkdownText(n.body)) ?? [])
 
 function handleListScroll(event: Event) {
@@ -105,17 +104,11 @@ function openNotification(notification: Notification) {
             desc: 'Click to show notifications in this category',
             attrs: { category: tab.category }
           }"
-          class="border-b-0 px-0! pb-3 pt-2! text-sm"
-          :class="activeCategory === tab.category ? 'text-primary-main' : null"
+          class="-mb-px px-0! pb-3 pt-2! text-base"
+          :class="activeCategory === tab.category ? 'border-primary-main text-primary-main' : null"
           :value="tab.category"
         >
-          <span class="relative inline-block text-base">
-            {{ $t(tab.label) }}
-            <span
-              v-if="activeCategory === tab.category"
-              class="absolute inset-x-0 -bottom-[13px] h-0.5 bg-primary-main"
-            ></span>
-          </span>
+          {{ $t(tab.label) }}
           <span
             v-if="getUnreadCount(tab.category) > 0"
             class="ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-100 px-1 text-sm font-normal leading-[18px] text-red-main tabular-nums"

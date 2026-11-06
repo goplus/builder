@@ -49,6 +49,7 @@ withDefaults(
   margin-top: 16px;
 }
 
+/* List image links (rendered by `NotificationLink`) closer together */
 .notification-markdown :deep(> p:has(> .notification-image-link)) {
   margin-top: 4px;
 }
@@ -134,16 +135,6 @@ withDefaults(
   color: var(--ui-color-turquoise-600);
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.notification-markdown :deep(.notification-image-link) {
-  display: block;
-  width: fit-content;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: zoom-in;
 }
 
 .notification-markdown :deep(code) {

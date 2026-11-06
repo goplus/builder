@@ -50,7 +50,7 @@ function handleImageClick(event: MouseEvent) {
   <span v-if="href == null"><slot></slot></span>
   <a
     v-else-if="isImage"
-    class="notification-image-link"
+    class="notification-image-link block w-fit max-w-full cursor-zoom-in truncate"
     :href="webUrl ?? undefined"
     :title="title ?? undefined"
     @click="handleImageClick"
