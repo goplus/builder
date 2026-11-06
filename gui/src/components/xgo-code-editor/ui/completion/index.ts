@@ -65,8 +65,7 @@ export class CompletionController extends Emitter<{
     return items
   }
 
-  startCompletion() {
-    if (this.ui.readOnly) return
+  private startCompletion() {
     this.completionMgr.start()
   }
 
@@ -153,16 +152,6 @@ export class CompletionController extends Emitter<{
   init() {
     const { editor, monaco } = this.ui
 
-    this.addDisposer(
-      watch(
-        () => this.ui.readOnly,
-        (readOnly) => {
-          if (readOnly) this.stopCompletion()
-        },
-        { flush: 'sync' }
-      )
-    )
-
     // Forward keydown event (for `CompletionCard`)
     this.addDisposable(
       editor.onKeyDown((e) => {
@@ -192,10 +181,14 @@ export class CompletionController extends Emitter<{
 
     this.addDisposer(
       watch(
-        () => [this.ui.activeTextDocument, this.ui.cursorPosition] as const,
-        ([textDocument, position]) => {
-          if (this.completion == null) return
-          if (this.completion.textDocument !== textDocument || !positionEq(this.completion.position, position)) {
+        () => [this.ui.activeTextDocument, this.ui.cursorPosition, this.ui.readOnly] as const,
+        ([textDocument, position, readOnly]) => {
+          const completion = this.completion
+          if (
+            readOnly ||
+            (completion != null &&
+              (completion.textDocument !== textDocument || !positionEq(completion.position, position)))
+          ) {
             this.stopCompletion()
           }
         }

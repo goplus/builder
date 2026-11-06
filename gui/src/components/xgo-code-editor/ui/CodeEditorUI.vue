@@ -337,8 +337,8 @@ providePopupContainer(codeEditorEl)
   isolation: isolate;
   width: max-content;
   padding-bottom: 12px;
-  /* Offset Monaco's -6px margin to leave an 8px gap beside the caret. */
-  transform: translateX(14px);
+  /* Cancel Monaco's -6px margin to align the tail with the caret. */
+  transform: translateX(6px);
 }
 
 .code-editor-read-only :deep(.monaco-editor-overlaymessage.below) {

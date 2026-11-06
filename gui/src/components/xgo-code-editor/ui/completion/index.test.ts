@@ -1,5 +1,5 @@
 import { flushPromises } from '@vue/test-utils'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import type { CodeEditorUIController } from '../code-editor-ui'
 import { CompletionController, CompletionItemKind, InsertTextFormat, type CompletionList } from '.'
@@ -62,7 +62,6 @@ describe('read-only completion', () => {
         handlers.onDidType('a')
         handlers.onDidCompositionStart()
         handlers.onDidCompositionEnd()
-        controller.startCompletion()
         await flushPromises()
         expect(provideCompletion).not.toHaveBeenCalled()
         readOnly.value = false
@@ -74,6 +73,7 @@ describe('read-only completion', () => {
       expect(provideCompletion).toHaveBeenCalledOnce()
       expect(controller.nonEmptyItems?.map((item) => item.label)).toEqual([word])
       readOnly.value = true
+      await nextTick()
       expect(controller.completion).toBeNull()
     } finally {
       controller.dispose()
@@ -81,7 +81,7 @@ describe('read-only completion', () => {
   })
 
   it('cancels an in-flight completion when a run starts, even if it resolves after stopping', async () => {
-    const { readOnly, provideCompletion, controller } = setup('turn')
+    const { readOnly, handlers, provideCompletion, controller } = setup('turn')
     let resolve!: (list: CompletionList) => void
     provideCompletion.mockImplementationOnce(
       () =>
@@ -90,13 +90,14 @@ describe('read-only completion', () => {
         })
     )
     try {
-      controller.startCompletion()
+      handlers.onDidType('t')
       readOnly.value = true
+      await nextTick()
       readOnly.value = false
       resolve({ items: [], isIncomplete: false })
       await flushPromises()
       expect(controller.completion).toBeNull()
-      controller.startCompletion()
+      handlers.onDidType('t')
       await flushPromises()
       expect(controller.completion).not.toBeNull()
     } finally {
