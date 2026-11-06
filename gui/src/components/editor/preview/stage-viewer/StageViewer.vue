@@ -594,7 +594,6 @@ const selectedSpriteNode = computed(() => {
 async function takeScreenshot(name: string, signal?: AbortSignal) {
   ensureCanTakeScreenshot()
   const stage = await untilNotNull(stageRef, signal)
-  const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
   await until(() => !loading.value, signal)
   ensureCanTakeScreenshot()
   const takeBlob = () =>
@@ -604,9 +603,10 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
       imageSmoothingEnabled: false
     }) as Promise<Blob>
   // Omit editor-only controls when taking screenshot.
-  const blob = await nodeTransformer.withHidden(() =>
+  const takeWithoutPivot = () =>
     selectedSpriteNode.value == null ? takeBlob() : selectedSpriteNode.value.withPivotMarkerHidden(takeBlob)
-  )
+  const nodeTransformer = nodeTransformerRef.value
+  const blob = await (nodeTransformer == null ? takeWithoutPivot() : nodeTransformer.withHidden(takeWithoutPivot))
   return fromBlob(`${name}.jpg`, blob)
 }
 
