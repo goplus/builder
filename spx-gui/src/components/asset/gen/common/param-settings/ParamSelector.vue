@@ -75,8 +75,9 @@ async function removeOption(value: T) {
         ref="triggerRef"
         v-radar="{
           name: 'param-selector',
+          label: `Param selector &quot;${$t(name)}&quot;`,
           desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`,
-          attrs: { name: $t(name) }
+          attrs: { name: name.en }
         }"
         class="h-8 flex items-center justify-center gap-1 rounded-md border border-grey-400 bg-grey-100 pr-2 pl-1 text-sm text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
         :class="{ 'aspect-square px-0!': iconOnly }"
@@ -106,8 +107,9 @@ async function removeOption(value: T) {
             :key="index"
             v-radar="{
               name: 'param-option',
+              label: `Param option &quot;${$t(item.label)}&quot;`,
               desc: `Select '${$t(item.label)}' as the '${$t(name)}'`,
-              attrs: { name: $t(item.label) }
+              attrs: { name: item.label.en }
             }"
             :active="value === item.value"
             :label="$t(item.label)"

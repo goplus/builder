@@ -16,7 +16,7 @@ function makeSeries(courseIDs: string[], units: CourseSeries['units'] = []) {
 
 describe('series units as learners see them', () => {
   it('sees a series not divided into units as one untitled unit', () => {
-    expect(getSeriesUnits(makeSeries(['a', 'b']))).toEqual([{ title: null, courseIDs: ['a', 'b'] }])
+    expect(getSeriesUnits(makeSeries(['a', 'b']))).toEqual([{ id: null, title: null, courseIDs: ['a', 'b'] }])
   })
 
   it('leaves out units without courses', () => {
@@ -29,6 +29,7 @@ describe('series units as learners see them', () => {
       ]
     )
     const units = getSeriesUnits(series)
+    expect(units.map((unit) => unit.id)).toEqual(['u1', 'u3'])
     expect(units.map((unit) => unit.title)).toEqual(['Unit 1', 'Unit 3'])
     expect(findUnitIndexOfCourse(units, 'b')).toBe(1)
     expect(findUnitIndexOfCourse(units, 'x')).toBe(-1)

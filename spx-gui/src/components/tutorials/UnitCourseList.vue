@@ -51,12 +51,13 @@ const unitCourses = computed(() => {
         @update:value="(value) => (unitParam = Number(value) + 1)"
       >
         <UITab
-          v-for="(_, index) in units"
-          :key="index"
+          v-for="(tabUnit, index) in units"
+          :key="tabUnit.id ?? index"
           v-radar="{
             name: 'unit-tab',
+            label: `Unit tab &quot;${$t(getUnitLabel(index))}&quot;`,
             desc: 'Click to show the courses of this unit',
-            attrs: { name: $t(getUnitLabel(index)) }
+            attrs: { id: tabUnit.id }
           }"
           :value="String(index)"
         >
