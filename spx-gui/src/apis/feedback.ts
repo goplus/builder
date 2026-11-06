@@ -1,4 +1,4 @@
-import { client } from './common'
+import { client, type UniversalUrl } from './common'
 
 export const feedbackTitleMaxLength = 100
 export const feedbackDescriptionMaxLength = 2000
@@ -8,8 +8,26 @@ export const feedbackRequestBodyMaxSize = 256 * 1024
 export enum FeedbackStatus {
   /** Awaiting administrator processing */
   New = 'new',
-  /** Marked as handled by an administrator */
-  Handled = 'handled'
+  /** Marked by an administrator as needing no reply */
+  Handled = 'handled',
+  /** Replied to by an administrator */
+  Replied = 'replied'
+}
+
+export type FeedbackReplyAttachment = {
+  /** File name of the image */
+  name: string
+  /** Universal URL of the image */
+  url: UniversalUrl
+}
+
+export type FeedbackReply = {
+  /** Text of the reply in plain text */
+  content: string
+  /** Images attached to the reply */
+  attachments: FeedbackReplyAttachment[]
+  /** Time when the reply was sent */
+  createdAt: string
 }
 
 export type Feedback = {
@@ -29,6 +47,8 @@ export type Feedback = {
   context?: Record<string, unknown>
   /** Processing status */
   status: FeedbackStatus
+  /** Administrator reply, omitted unless the status is `replied`, and in feedback lists */
+  reply?: FeedbackReply
 }
 
 export type CreateFeedbackParams = Pick<Feedback, 'title' | 'description' | 'context'>

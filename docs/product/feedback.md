@@ -37,7 +37,7 @@ Feedback has three statuses:
 | - | - |
 | `new` | Awaiting administrator processing |
 | `replied` | Completed with an administrator Reply |
-| `handled` | Completed through the administrator's "Mark as handled" action |
+| `handled` | Completed through the administrator's "Mark as no reply needed" action |
 
 A Feedback item is created in `new`. It can move from `new` to `replied` or `handled`; both are terminal states.
 
@@ -116,4 +116,4 @@ A user opens the Feedback form from the profile menu, after asking Copilot to pr
 
 ### Processing Feedback
 
-A `feedbackAdmin` opens a Feedback item in `new` and uses its Title, Description, and available Context to investigate the problem. The administrator can open the Project Snapshot in a local editor session, then send a Reply or mark the Feedback as `handled`. A successful Reply moves the Feedback to `replied` and creates an In-Product Notification for the submitting user. If sending the Reply fails, the draft remains available for another attempt. If another administrator completes the Feedback first, the interface shows the resulting terminal state.
+A `feedbackAdmin` opens a Feedback item in `new` and uses its Title, Description, and available Context to investigate the problem. The administrator can open the Project Snapshot in a local editor session, then send a Reply, or use "Mark as no reply needed" to move the Feedback to `handled` without notifying the user. A successful Reply moves the Feedback to `replied` and creates an In-Product Notification for the submitting user. If sending the Reply fails, the draft remains available for another attempt. If another administrator completes the Feedback first, the interface shows the resulting terminal state.

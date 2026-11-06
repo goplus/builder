@@ -1,0 +1,41 @@
+<script setup lang="ts">
+import { UICardHeader, UIModal, UIModalClose } from '@/components/ui'
+
+defineProps<{
+  visible: boolean
+  /** File name of the image */
+  name: string
+  /** Web URL of the image */
+  url: string
+}>()
+
+const emit = defineEmits<{
+  cancelled: []
+  resolved: []
+}>()
+</script>
+
+<template>
+  <UIModal
+    :visible="visible"
+    size="large"
+    class="w-[min(1040px,calc(100vw-2rem))]"
+    :radar="{ name: 'notification-image-preview-modal', desc: 'Previewing an image attached to a notification' }"
+    @update:visible="emit('cancelled')"
+  >
+    <div class="flex max-h-[calc(100vh-2rem)] min-h-[360px] flex-col">
+      <UICardHeader class="h-auto min-h-10 justify-between gap-3 px-6 py-2 text-sm">
+        <h2 class="min-w-0 truncate text-sm font-normal leading-[22px] text-title" :title="name">{{ name }}</h2>
+        <UIModalClose class="h-8 w-8 shrink-0" @click="emit('cancelled')" />
+      </UICardHeader>
+      <div class="min-h-0 flex flex-1 items-center justify-center overflow-y-auto bg-grey-100 p-6">
+        <img
+          class="block max-h-[calc(100vh-10rem)] max-w-full rounded-lg object-contain"
+          crossorigin="anonymous"
+          :src="url"
+          :alt="name"
+        />
+      </div>
+    </div>
+  </UIModal>
+</template>

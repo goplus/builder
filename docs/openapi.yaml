@@ -6105,7 +6105,7 @@ paths:
       description: |
         Retrieve a list of feedback submitted by users.
 
-        Items do not include `context`. Get the feedback to read it.
+        Items do not include `context` or `reply`. Get the feedback to read them.
 
         Requires the `feedbackAdmin` role.
       parameters:
@@ -6246,6 +6246,58 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Feedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /admin/feedback/{feedbackID}/reply:
+    post:
+      operationId: createAdminFeedbackReply
+      tags:
+        - Feedback Admin
+      summary: Reply to feedback as admin
+      description: |
+        Reply to feedback submitted by a user. The feedback moves to the `replied` status, and the user who submitted it
+        receives a notification containing the reply.
+
+        Only feedback in the `new` status can be replied to. Replying to feedback in any other status fails with `409`.
+
+        Requires the `feedbackAdmin` role.
+      parameters:
+        - name: feedbackID
+          description: ID of the feedback to reply to.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+                - attachments
+              properties:
+                content:
+                  $ref: "#/components/schemas/FeedbackReply/properties/content"
+                attachments:
+                  $ref: "#/components/schemas/FeedbackReply/properties/attachments"
+      responses:
+        "201":
+          description: Reply sent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackReply"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9276,13 +9328,71 @@ components:
             Processing status of the feedback.
 
             - `new`: Awaiting administrator processing.
-            - `handled`: Marked as handled by an administrator.
+            - `handled`: Marked by an administrator as needing no reply.
+            - `replied`: Replied by an administrator.
           type: string
           enum:
             - new
             - handled
+            - replied
           examples:
             - new
+        reply:
+          description: |
+            Administrator reply to the feedback.
+
+            Omitted unless the status is `replied`.
+          $ref: "#/components/schemas/FeedbackReply"
+
+    FeedbackReply:
+      description: Administrator reply to feedback.
+      type: object
+      required:
+        - content
+        - attachments
+        - createdAt
+      properties:
+        content:
+          description: Text of the reply in plain text.
+          type: string
+          minLength: 1
+          maxLength: 1000
+          pattern: "\\S"
+          examples:
+            - Thanks for reporting. Renaming a sprite no longer stops it from moving.
+        attachments:
+          description: Images attached to the reply.
+          type: array
+          maxItems: 5
+          items:
+            type: object
+            required:
+              - name
+              - url
+            properties:
+              name:
+                description: |
+                  File name of the image.
+
+                  Must not contain control characters.
+                type: string
+                minLength: 1
+                maxLength: 100
+                pattern: "\\S"
+                examples:
+                  - screenshot.png
+              url:
+                description: |
+                  Universal URL of the image.
+
+                  Must refer to a file in the upload bucket (see `UpInfo.bucket`), and must not contain control
+                  characters.
+                allOf:
+                  - $ref: "#/components/schemas/FileObject/properties/url"
+                maxLength: 150
+        createdAt:
+          description: Time when the reply was sent.
+          $ref: "#/components/schemas/Model/properties/createdAt"
 
     UserAuthorization:
       type: object

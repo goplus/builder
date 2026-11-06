@@ -30,8 +30,9 @@ export const accountAppRedirectURIPatternsTip: LocaleMessage = {
 }
 
 export const feedbackStatusLabels: Record<FeedbackStatus, LocaleMessage> = {
-  [FeedbackStatus.New]: { en: 'New', zh: '待处理' },
-  [FeedbackStatus.Handled]: { en: 'Handled', zh: '已处理' }
+  [FeedbackStatus.New]: { en: 'Pending', zh: '待处理' },
+  [FeedbackStatus.Handled]: { en: 'No reply needed', zh: '无需回复' },
+  [FeedbackStatus.Replied]: { en: 'Replied', zh: '已回复' }
 }
 
 export function formatTime(value: string) {

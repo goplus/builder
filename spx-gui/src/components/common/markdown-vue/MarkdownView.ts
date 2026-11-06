@@ -7,6 +7,7 @@ import type * as hast from 'hast'
 import { toHast } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
 import { defaultSchema, sanitize, type Schema as SanitizeSchema } from 'hast-util-sanitize'
+import { UniversalUrlScheme } from '@/utils/universal-url'
 
 const markdownExtensions = [gfmTable()]
 const mdastExtensions = [gfmTableFromMarkdown()]
@@ -38,6 +39,7 @@ export type Components = {
    *  Content
    * </pre>
    * ```
+   * A custom `a` component also receives links to files stored in Kodo (`kodo://...`), and is expected to resolve them to web URLs.
    */
   custom?: Record<string, Component>
   /**
@@ -118,6 +120,26 @@ function findCustomComponentUsagesInNode(node: hast.Node, components: Components
     return [{ name: is, props: hastProps2VueProps(properties) }]
   } else {
     return element.children.flatMap((child) => findCustomComponentUsagesInNode(child, components))
+  }
+}
+
+/** Get the text content of the markdown string with whitespace collapsed, for example, to preview it in one line */
+export function getMarkdownText(value: string) {
+  return getHastText(parseMarkdown({ value })).replace(/\s+/g, ' ').trim()
+}
+
+function getHastText(node: hast.Nodes): string {
+  switch (node.type) {
+    case 'root':
+      return node.children.map(getHastText).join('')
+    case 'element':
+      if (node.tagName === 'img') return typeof node.properties.alt === 'string' ? ` ${node.properties.alt} ` : ' '
+      if (node.tagName === 'br') return ' '
+      return node.children.map(getHastText).join('')
+    case 'text':
+      return node.value
+    default:
+      return ''
   }
 }
 
@@ -316,5 +338,10 @@ function getSanitizeSchema(customComponents: Record<string, Component>): Sanitiz
     attributes[tagName] = propNames
   })
   attributes.pre = [...(defaultSchema.attributes?.pre ?? []), 'is', ...allCustomPropNames]
-  return { tagNames, attributes }
+  const hrefProtocols = [...(defaultSchema.protocols?.href ?? [])]
+  // Native links cannot open Kodo URLs, so keep them only for a custom `a` component to resolve
+  if (Object.prototype.hasOwnProperty.call(customComponents, 'a')) hrefProtocols.push(UniversalUrlScheme.Kodo)
+  // Without `protocols`, `hast-util-sanitize` would keep URLs of any protocol, such as `javascript:`
+  const protocols = { ...defaultSchema.protocols, href: hrefProtocols }
+  return { tagNames, attributes, protocols }
 }

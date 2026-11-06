@@ -12,7 +12,12 @@ import { UIButton, UIError, UILoading, UIPagination, UISelect, UISelectOption } 
 import * as feedbackAdminApis from '@/apis/admin/feedback'
 import { feedbackStatusLabels, formatTime } from './common'
 
-const statusFilters = { New: FeedbackStatus.New, Handled: FeedbackStatus.Handled, All: 'all' } as const
+const statusFilters = {
+  New: FeedbackStatus.New,
+  Replied: FeedbackStatus.Replied,
+  Handled: FeedbackStatus.Handled,
+  All: 'all'
+} as const
 
 const pageSize = 20
 const page = useRouteQueryParamInt('p', 1)
@@ -74,6 +79,9 @@ usePageTitle({ en: 'Feedback', zh: '用户反馈' })
           <UISelect v-model:value="statusFilter" class="w-32">
             <UISelectOption :value="statusFilters.New">
               {{ $t(feedbackStatusLabels[FeedbackStatus.New]) }}
+            </UISelectOption>
+            <UISelectOption :value="statusFilters.Replied">
+              {{ $t(feedbackStatusLabels[FeedbackStatus.Replied]) }}
             </UISelectOption>
             <UISelectOption :value="statusFilters.Handled">
               {{ $t(feedbackStatusLabels[FeedbackStatus.Handled]) }}
