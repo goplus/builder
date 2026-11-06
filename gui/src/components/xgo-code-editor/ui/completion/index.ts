@@ -66,6 +66,7 @@ export class CompletionController extends Emitter<{
   }
 
   startCompletion() {
+    if (this.ui.readOnly) return
     this.completionMgr.start()
   }
 
@@ -80,6 +81,7 @@ export class CompletionController extends Emitter<{
 
   /** Check if completion should be triggered, and trigger if needed */
   private async checkAndTrigger(char?: string) {
+    if (this.ui.readOnly) return
     const { activeTextDocument: textDocument, cursorPosition: position } = this.ui
     if (textDocument == null || position == null) return
 
@@ -150,6 +152,16 @@ export class CompletionController extends Emitter<{
 
   init() {
     const { editor, monaco } = this.ui
+
+    this.addDisposer(
+      watch(
+        () => this.ui.readOnly,
+        (readOnly) => {
+          if (readOnly) this.stopCompletion()
+        },
+        { flush: 'sync' }
+      )
+    )
 
     // Forward keydown event (for `CompletionCard`)
     this.addDisposable(

@@ -308,6 +308,7 @@ providePopupContainer(codeEditorEl)
     <MonacoEditorComp
       v-radar="{ name: 'code-text-editor', desc: 'Text editor for code' }"
       class="my-3 min-w-0 flex-[1_1_0]"
+      :class="{ 'code-editor-read-only': readOnly }"
       :monaco="codeEditor.monaco"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
@@ -329,3 +330,55 @@ providePopupContainer(codeEditorEl)
     </aside>
   </div>
 </template>
+
+<style scoped>
+/* Monaco 0.52's internal message DOM: recheck these selectors on upgrades. */
+.code-editor-read-only :deep(.monaco-editor-overlaymessage) {
+  isolation: isolate;
+  width: max-content;
+  padding-bottom: 12px;
+  /* Offset Monaco's -6px margin to leave an 8px gap beside the caret. */
+  transform: translateX(14px);
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below) {
+  padding-top: 12px;
+  padding-bottom: 0;
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage::before) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Nine-slicing keeps the corners and tail fixed as the message wraps. */
+  border: solid transparent;
+  border-width: 8px 8px 24px 28px;
+  border-image: url('./read-only-message-bubble.svg') 8 8 24 28 fill / 8px 8px 24px 28px;
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 8%));
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below::before) {
+  transform: scaleY(-1);
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
+  box-sizing: border-box;
+  max-width: 320px;
+  padding: 7px 13px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-color-grey-1000);
+  font-family: var(--ui-font-family-main);
+  font-size: var(--ui-font-size-base);
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+/* Hide Monaco's triangular anchors, including its more specific .below rule. */
+.code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor) {
+  display: none !important;
+}
+</style>
