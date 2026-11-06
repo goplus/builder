@@ -34,3 +34,5 @@ replace github.com/goplus/builder/tools/ai => ../ai
 replace github.com/goplus/builder/tools/tutorial => ../tutorial
 
 replace github.com/goplus/builder/tools/xgoexec => ../xgoexec
+
+replace github.com/goplus/xgolsw => github.com/nighca/goxlsw v0.0.0-20261106060206-d196550e1d12
