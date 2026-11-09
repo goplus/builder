@@ -1,7 +1,14 @@
 <template>
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-modal">
-      <div v-if="visible" class="fixed inset-0 z-1100 bg-overlay-modal" @click="handleMaskClick">
+      <div
+        v-if="visible"
+        class="fixed inset-0 z-1100 bg-overlay-modal"
+        @pointerdown.capture="mask.onPointerDown"
+        @pointerup.capture="mask.onPointerUp"
+        @pointercancel.capture="mask.onPointerCancel"
+        @click="mask.onClick"
+      >
         <div
           class="h-full w-full overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
@@ -47,7 +54,7 @@ import {
   useLayerRegistration,
   useModalContainer
 } from '../utils'
-import { useDialogAutoFocus, useDialogEscape } from './dialog'
+import { useDialogAutoFocus, useDialogEscape, useDialogMask } from './dialog'
 
 defineOptions({
   // The teleported backdrop is an implementation detail. Keep fallthrough attrs on the
@@ -98,6 +105,7 @@ function handleMaskClick() {
 const attachTo = useModalContainer()
 const containerRef = ref<HTMLElement | undefined>(undefined)
 providePopupContainer(containerRef)
+const mask = useDialogMask(containerRef, handleMaskClick)
 
 const modalRegistration = useLayerRegistration(computed(() => props.visible))
 

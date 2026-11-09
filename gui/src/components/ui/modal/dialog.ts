@@ -67,3 +67,32 @@ function isEscTargetWithinDialogScope(surface: HTMLElement, target: EventTarget 
   if (!(target instanceof Element)) return true
   return surface.contains(target)
 }
+
+/** Dismiss only when both ends of a pointer gesture are outside the dialog surface. */
+export function useDialogMask(surfaceRef: Ref<HTMLElement | undefined>, close: () => void) {
+  let maskClick = false
+
+  function isOutsideSurface(event: PointerEvent) {
+    return event.target instanceof Node && surfaceRef.value != null && !surfaceRef.value.contains(event.target)
+  }
+
+  function onPointerDown(event: PointerEvent) {
+    maskClick = isOutsideSurface(event)
+  }
+
+  function onPointerUp(event: PointerEvent) {
+    maskClick = maskClick && isOutsideSurface(event)
+  }
+
+  function onPointerCancel() {
+    maskClick = false
+  }
+
+  function onClick() {
+    const shouldClose = maskClick
+    maskClick = false
+    if (shouldClose) close()
+  }
+
+  return { onPointerDown, onPointerUp, onPointerCancel, onClick }
+}

@@ -1,7 +1,14 @@
 <template>
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-drawer">
-      <div v-if="visible" class="fixed inset-0 z-1100 bg-overlay-modal" @click="handleMaskClick">
+      <div
+        v-if="visible"
+        class="fixed inset-0 z-1100 bg-overlay-modal"
+        @pointerdown.capture="mask.onPointerDown"
+        @pointerup.capture="mask.onPointerUp"
+        @pointercancel.capture="mask.onPointerCancel"
+        @click="mask.onClick"
+      >
         <div
           v-bind="surfaceAttrs"
           ref="containerRef"
@@ -43,7 +50,7 @@ import type { RadarNodeMeta } from '@/utils/radar'
 import { cn, type ClassValue, providePopupContainer, useLayerRegistration, useModalContainer } from '../utils'
 import UIDivider from '../UIDivider.vue'
 import UIModalClose from './UIModalClose.vue'
-import { useDialogAutoFocus, useDialogEscape } from './dialog'
+import { useDialogAutoFocus, useDialogEscape, useDialogMask } from './dialog'
 
 defineOptions({
   // As with `UIModal`, fallthrough attrs belong on the drawer surface rather than the teleported backdrop.
@@ -93,6 +100,7 @@ function handleMaskClick() {
 const attachTo = useModalContainer()
 const containerRef = ref<HTMLElement | undefined>(undefined)
 providePopupContainer(containerRef)
+const mask = useDialogMask(containerRef, handleMaskClick)
 
 const drawerRegistration = useLayerRegistration(computed(() => props.visible))
 

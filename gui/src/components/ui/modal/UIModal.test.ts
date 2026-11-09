@@ -201,7 +201,9 @@ describe('UIModal', () => {
         [UI_LAYER_ROOT_ATTR]: '',
         class: expect.stringContaining('ui-modal-surface')
       })
-      await new DOMWrapper(backdrop!).trigger('click')
+      for (const type of ['pointerdown', 'pointerup', 'click']) {
+        await new DOMWrapper(backdrop!).trigger(type)
+      }
       await flushModal()
       expect(modal.emitted('update:visible')).toEqual([[false]])
     })
@@ -217,7 +219,9 @@ describe('UIModal', () => {
       )
       await flushModal()
       document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-      await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger('click')
+      for (const type of ['pointerdown', 'pointerup', 'click']) {
+        await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger(type)
+      }
       await flushModal()
       expect(wrapper.findComponent(UIModal).emitted('update:visible')).toBeUndefined()
     })
