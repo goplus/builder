@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="64" viewBox="0 0 80 64">
+  <!-- grey-100 fill and turquoise-500 outline, matching the UI palette. -->
+  <path fill="#fff" stroke="#36c2cf" stroke-linejoin="round" d="M6.5.5H73.5Q79.5.5 79.5 6.5V48.5Q79.5 54.5 73.5 54.5H12C9.5 54.5 9 54.5 7.5 56.5L2.8 62.3Q.5 65 .5 61.25V6.5Q.5.5 6.5.5Z"/>
+</svg>
