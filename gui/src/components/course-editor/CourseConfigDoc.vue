@@ -125,12 +125,14 @@ onUnmounted(() => {
         @update:value="(v) => history.doAction(editInEditorPathAction, () => project.setConfig({ inEditorPath: v }))"
       />
     </label>
-    <label class="flex flex-col gap-1">
+    <!-- Fills the remaining height; `rows` sets the minimum, below which the document scrolls instead. -->
+    <label class="flex flex-1 flex-col gap-1">
       <span class="text-grey-700">{{ $t({ en: 'Copilot context', zh: 'Copilot 上下文' }) }}</span>
       <UITextInput
         v-radar="{ name: 'copilot-context-input', desc: 'Input for the course-author-provided Copilot instructions' }"
+        class="flex-1"
         type="textarea"
-        :rows="10"
+        :rows="6"
         :value="config.copilotContext"
         :disabled="generating"
         @update:value="
