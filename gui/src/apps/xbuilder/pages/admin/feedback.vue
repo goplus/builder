@@ -148,7 +148,7 @@ const handleSendReply = useMessageHandle(
   async () => {
     const content = replyForm.value.content.trim()
     const attachments = await Promise.all(
-      replyImages.value.map(async (image) => ({ name: image.name, url: await saveFile(image) }))
+      replyImages.value.map(async (image) => ({ name: image.name, url: await saveFile(image, { inlineable: false }) }))
     )
     await processFeedback(() => feedbackAdminApis.createFeedbackReply(props.feedbackID, { content, attachments }))
   },

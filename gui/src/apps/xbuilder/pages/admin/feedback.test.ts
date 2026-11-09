@@ -99,6 +99,8 @@ describe('admin feedback', () => {
         attachments: [{ name: 'fix.png', url: 'kodo://test/fix.png' }]
       })
     )
+    // The backend accepts only Kodo URLs for reply attachments.
+    expect(saveFile).toHaveBeenCalledWith(expect.objectContaining({ name: 'fix.png' }), { inlineable: false })
     await vi.waitFor(() => expect(wrapper.find('a[href="https://assets.test/fix.png"]').exists()).toBe(true))
     expect(wrapper.text()).toContain('Fixed in the next release.')
     expect(findButton('Send reply')).toBeUndefined()
