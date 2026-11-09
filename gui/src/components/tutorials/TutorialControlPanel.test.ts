@@ -15,10 +15,15 @@ const mocks = vi.hoisted(() => ({
   seriesSource: null as (() => string | null) | null,
   confirm: vi.fn(),
   setVisible: vi.fn(),
-  scrollIntoView: vi.fn()
+  scrollIntoView: vi.fn(),
+  push: vi.fn()
 }))
-vi.mock('vue-router', () => ({ useRouter: () => ({}) }))
-vi.mock('@/apps/xbuilder/router', () => ({ getCourseSeriesPageRoute: vi.fn() }))
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ currentRoute: ref({ fullPath: '/editor/test' }), push: mocks.push })
+}))
+vi.mock('@/apps/xbuilder/router', () => ({
+  getCourseSeriesPageRoute: (id: string, courseID: string) => `/course-series/${id}#course-${courseID}`
+}))
 vi.mock('@/stores/course-series', () => ({
   useSeries: (source: () => string | null) => {
     mocks.seriesSource = source
@@ -88,8 +93,9 @@ describe('tutorial course dropdown', () => {
       error: ref(null)
     }
     mocks.tutorial = reactive({
-      currentCourse: { courseID: 'b', seriesID: 'series', kind: 'guided', state: CourseState.InProgress },
-      startCourse: vi.fn()
+      currentCourse: { id: 'b', seriesID: 'series', kind: 'guided', state: CourseState.InProgress },
+      startCourse: vi.fn(),
+      endCurrentCourse: vi.fn()
     })
     mocks.confirm.mockResolvedValue(true)
   })
@@ -135,7 +141,7 @@ describe('tutorial course dropdown', () => {
     await flushPromises()
     expect(mocks.tutorial.startCourse).toHaveBeenCalledWith('series', 'c')
     expect(mocks.setVisible).toHaveBeenCalledWith(false)
-    mocks.tutorial.currentCourse = { ...mocks.tutorial.currentCourse, courseID: 'c', state: CourseState.Completed }
+    mocks.tutorial.currentCourse = { ...mocks.tutorial.currentCourse, id: 'c', state: CourseState.Completed }
     wrapper.unmount()
     wrapper = mountPanel()
     await flushPromises()
@@ -182,6 +188,22 @@ describe('tutorial course dropdown', () => {
     expect(wrapper.get('[aria-current="step"]').text()).toContain('Course b')
     expect(mocks.tutorial.startCourse).not.toHaveBeenCalled()
   })
+
+  it.each(['Exit course', 'Back to series courses'])(
+    '%s does not need series metadata to end the course',
+    async (action) => {
+      mocks.series.data.value = null
+      mocks.series.isLoading.value = true
+      const wrapper = mountPanel()
+      const button = wrapper.findAll('button').find((button) => button.text() === action)!
+      await button.trigger('click')
+      await flushPromises()
+      expect(mocks.tutorial.endCurrentCourse).toHaveBeenCalledExactlyOnceWith()
+      if (action === 'Back to series courses') {
+        expect(mocks.push).toHaveBeenCalledWith('/course-series/series#course-b')
+      }
+    }
+  )
 
   it('keeps a series without units as one course list', () => {
     mocks.series.data.value = { ...mocks.series.data.value, units: [] }

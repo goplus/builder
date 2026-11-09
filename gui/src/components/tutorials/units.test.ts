@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { CourseSeries } from '@/apis/course-series'
-import {
-  findUnitIndexOfCourse,
-  getCourseSeriesPageRouteOfCourse,
-  getSeriesUnits,
-  getUnitHeading,
-  getUnitLabel,
-  toChineseNumeral
-} from './units'
+import { findUnitIndexOfCourse, getSeriesUnits, getUnitHeading, getUnitLabel, toChineseNumeral } from './units'
 
 function makeSeries(courseIDs: string[], units: CourseSeries['units'] = []) {
   return { id: '39', courseIDs, units } as CourseSeries
@@ -33,8 +26,6 @@ describe('series units as learners see them', () => {
     expect(units.map((unit) => unit.title)).toEqual(['Unit 1', 'Unit 3'])
     expect(findUnitIndexOfCourse(units, 'b')).toBe(1)
     expect(findUnitIndexOfCourse(units, 'x')).toBe(-1)
-    expect(getCourseSeriesPageRouteOfCourse(series, 'b')).toBe('/course-series/39?unit=2')
-    expect(getCourseSeriesPageRouteOfCourse(series, 'a')).toBe('/course-series/39')
   })
 
   it('numbers units in Chinese', () => {

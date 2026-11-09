@@ -20,7 +20,7 @@ export enum CourseState {
 }
 
 export type CurrentCourse = {
-  courseID: string
+  id: string
   seriesID: string
   kind: CourseKind
   state: CourseState
@@ -51,7 +51,7 @@ export class Tutorial {
     return currentGuidedCourse == null
       ? null
       : {
-          courseID: currentGuidedCourse.courseID,
+          id: currentGuidedCourse.id,
           seriesID: currentGuidedCourse.seriesID,
           kind: 'guided',
           state: CourseState.InProgress
@@ -70,7 +70,7 @@ export class Tutorial {
    */
   async startCourse(courseSeriesID: string, courseID: string): Promise<void> {
     const currentCourse = this.currentCourse
-    const restart = currentCourse?.courseID === courseID && currentCourse.seriesID === courseSeriesID
+    const restart = currentCourse?.id === courseID && currentCourse.seriesID === courseSeriesID
     const route = this.getCourseStartRoute(courseSeriesID, courseID)
     const failure = await (restart ? this.router.replace(route) : this.router.push(route))
     if (isNavigationFailure(failure)) throw new Cancelled(failure)
@@ -93,29 +93,34 @@ export class Tutorial {
     }
   }
 
-  async endCurrentCourse(returnTo: string | null = null): Promise<void> {
+  async endCurrentCourse(): Promise<void> {
     const currentCourse = this.currentCourse
     if (currentCourse == null) return
     if (currentCourse.kind === 'guided') {
       this.guidedTutorial.endCurrentCourse()
     } else if (currentCourse.kind === 'playground') {
-      await this.router.push(returnTo ?? getCourseSeriesPageRoute(currentCourse.seriesID))
+      await this.router.push(getCourseSeriesPageRoute(currentCourse.seriesID, currentCourse.id))
     }
   }
 
   notifyPlaygroundCourseStarted(courseID: string, seriesID: string) {
-    this.currentPlaygroundCourseRef.value = { courseID, seriesID, kind: 'playground', state: CourseState.InProgress }
+    this.currentPlaygroundCourseRef.value = {
+      id: courseID,
+      seriesID,
+      kind: 'playground',
+      state: CourseState.InProgress
+    }
   }
 
   notifyPlaygroundCourseCompleted(courseID: string) {
     const currentPlaygroundCourse = this.currentPlaygroundCourseRef.value
-    if (currentPlaygroundCourse == null || currentPlaygroundCourse.courseID !== courseID) return
+    if (currentPlaygroundCourse == null || currentPlaygroundCourse.id !== courseID) return
     this.currentPlaygroundCourseRef.value = { ...currentPlaygroundCourse, state: CourseState.Completed }
   }
 
   notifyPlaygroundCourseEnded(courseID: string) {
     const currentPlaygroundCourse = this.currentPlaygroundCourseRef.value
-    if (currentPlaygroundCourse == null || currentPlaygroundCourse.courseID !== courseID) return
+    if (currentPlaygroundCourse == null || currentPlaygroundCourse.id !== courseID) return
     this.currentPlaygroundCourseRef.value = null
   }
 }

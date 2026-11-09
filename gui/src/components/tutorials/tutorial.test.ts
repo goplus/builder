@@ -86,14 +86,14 @@ describe('Tutorial', () => {
 
     expect(router.replace).toHaveBeenCalledWith('/course/series-1/course-1/start')
     expect(router.push).not.toHaveBeenCalled()
-    expect(tutorial.currentCourse?.courseID).toBe(course.id)
+    expect(tutorial.currentCourse?.id).toBe(course.id)
   })
 
   it('replaces the Start route when restarting a Guided Course', async () => {
     const course = makeGuidedCourse()
     const series = makeSeries()
     const { guided, router } = makeControllers()
-    guided.currentCourse = { courseID: course.id, seriesID: series.id }
+    guided.currentCourse = { id: course.id, seriesID: series.id }
     const tutorial = new Tutorial(guided, router)
 
     await tutorial.startCourse(series.id, course.id)
@@ -155,7 +155,7 @@ describe('Tutorial', () => {
     await tutorial.endCurrentCourse()
 
     expect(guided.endCurrentCourse).not.toHaveBeenCalled()
-    expect(router.push).toHaveBeenCalledWith('/course-series/series-1')
+    expect(router.push).toHaveBeenCalledWith('/course-series/series-1#course-course-1')
   })
 
   it('rejects a Course outside the requested Series', async () => {

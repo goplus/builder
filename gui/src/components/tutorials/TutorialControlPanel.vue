@@ -14,7 +14,7 @@ import { UIButton, UIError, UILoading, useConfirmDialogWithResult } from '@/comp
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
-import { getCourseSeriesPageRouteOfCourse, getSeriesUnits, getUnitHeading } from './units'
+import { getSeriesUnits, getUnitHeading } from './units'
 
 const router = useRouter()
 const tutorial = useTutorial()
@@ -28,14 +28,17 @@ const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.seriesID 
 
 const units = computed(() => (courseSeries.value == null ? [] : getSeriesUnits(courseSeries.value)))
 const courseGroups = computed(() => {
-  const coursesByID = new Map((coursesQueryRet.data.value ?? []).map((course) => [course.id, course]))
-  const sequences = new Map(courseSeries.value?.courseIDs.map((id, index) => [id, index + 1]) ?? [])
+  const series = courseSeries.value
+  if (series == null) return []
+  const coursesByID = new Map(
+    (coursesQueryRet.data.value ?? []).map((course) => [
+      course.id,
+      { course, sequence: series.courseIDs.indexOf(course.id) + 1 }
+    ])
+  )
   return units.value.map((unit) => ({
     title: unit.title,
-    courses: unit.courseIDs.flatMap((id) => {
-      const course = coursesByID.get(id)
-      return course == null ? [] : [{ course, sequence: sequences.get(id)! }]
-    })
+    courses: unit.courseIDs.flatMap((id) => coursesByID.get(id) ?? [])
   }))
 })
 const courseRows = useTemplateRef<InstanceType<typeof TutorialStatusCourseRow>[]>('courseRows')
@@ -44,7 +47,7 @@ const signal = getCleanupSignal(onBeforeUnmount)
 // The dropdown remounts the panel on each opening; wait for the course rows to render.
 onMounted(async () => {
   try {
-    const currentCourseID = tutorial.currentCourse?.courseID
+    const currentCourseID = tutorial.currentCourse?.id
     if (currentCourseID == null) return
     const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === currentCourseID), signal)
     if (!signal.aborted) row.scrollIntoView()
@@ -81,9 +84,7 @@ const { fn: handleExitCourse } = useMessageHandle(
     if (currentCourse == null) return
     if (!(await confirmCourseAction({ en: 'Exit course', zh: '退出课程' }))) return
     dropdown?.setVisible(false)
-    await tutorial.endCurrentCourse(
-      courseSeries.value == null ? null : getCourseSeriesPageRouteOfCourse(courseSeries.value, currentCourse.courseID)
-    )
+    await tutorial.endCurrentCourse()
   },
   { en: 'Failed to exit course', zh: '退出课程失败' }
 )
@@ -93,13 +94,10 @@ const { fn: handleReturnSeries } = useMessageHandle(
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null) return
     if (!(await confirmCourseAction({ en: 'Back to series courses', zh: '返回系列课程' }))) return
+    const seriesRoute = getCourseSeriesPageRoute(currentCourse.seriesID, currentCourse.id)
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
-    const seriesRoute =
-      courseSeries.value == null
-        ? getCourseSeriesPageRoute(currentCourse.seriesID)
-        : getCourseSeriesPageRouteOfCourse(courseSeries.value, currentCourse.courseID)
-    await tutorial.endCurrentCourse(seriesRoute)
+    await tutorial.endCurrentCourse()
     if (router.currentRoute.value.fullPath !== seriesRoute) await router.push(seriesRoute)
   },
   { en: 'Failed to return to series courses', zh: '返回系列课程失败' }
@@ -108,7 +106,7 @@ const { fn: handleReturnSeries } = useMessageHandle(
 const { fn: handleSelectCourse } = useMessageHandle(
   async (courseID: string, courseTitle: string) => {
     const currentCourse = tutorial.currentCourse
-    if (currentCourse == null || courseID === currentCourse.courseID) return
+    if (currentCourse == null || courseID === currentCourse.id) return
     if (!(await confirmCourseAction({ en: `Start course ${courseTitle}`, zh: `开始课程 ${courseTitle}` }))) return
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
@@ -131,7 +129,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
     if (!confirmed) return
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
-    await tutorial.startCourse(currentCourse.seriesID, currentCourse.courseID)
+    await tutorial.startCourse(currentCourse.seriesID, currentCourse.id)
   },
   { en: 'Failed to restart course', zh: '重新开始课程失败' }
 )
@@ -172,8 +170,8 @@ const { fn: handleRestartCourse } = useMessageHandle(
             ref="courseRows"
             :course="course"
             :sequence="sequence"
-            :active="course.id === tutorial.currentCourse?.courseID"
-            :state="course.id === tutorial.currentCourse?.courseID ? tutorial.currentCourse?.state ?? null : null"
+            :active="course.id === tutorial.currentCourse?.id"
+            :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
             @select="handleSelectCourse(course.id, course.title)"
             @restart="handleRestartCourse"
           />

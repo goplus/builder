@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useQuery } from '@/utils/query'
+import { composeQuery, QueryMode, useQuery } from '@/utils/query'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useDragSortable } from '@/utils/drag-and-drop'
-import { isGuidedCourse, listAllSeriesCourses, type Course } from '@/apis/course'
+import { isGuidedCourse, type Course } from '@/apis/course'
 import { getCourseSeries, type CourseSeries, type CourseSeriesUnit } from '@/apis/course-series'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useDeleteCourse } from '@/stores/course'
-import { useDeleteCourseSeries, useUpdateCourseSeries } from '@/stores/course-series'
+import { useDeleteCourseSeries, useSeries, useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
 import { useSignedIn } from '@/stores/user'
 import {
   UIButton,
@@ -82,10 +82,12 @@ const invokeGuidedCourseDrawer = useModal(GuidedCourseDrawer)
 const invokePlaygroundCourseDrawer = useModal(PlaygroundCourseDrawer)
 const invokeUnitTitleModal = useModal(UnitTitleModal)
 
+const seriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
+const coursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
+// Publish series and courses together so local edits adopt both results at the same time.
 const queryRet = useQuery(
-  async ({ signal }) => {
-    const id = props.courseSeriesIdInput
-    const [series, courses] = await Promise.all([getCourseSeries(id, signal), listAllSeriesCourses(id, signal)])
+  async (ctx) => {
+    const [series, courses] = await Promise.all([composeQuery(ctx, seriesQueryRet), composeQuery(ctx, coursesQueryRet)])
     return { series, courses }
   },
   { en: 'Failed to load course series', zh: '加载课程系列失败' },
@@ -199,9 +201,6 @@ async function writeUnits(series: CourseSeries, edited: CourseSeriesUnit[]) {
   try {
     await editUnits(edited, async (units) => {
       const saved = await updateCourseSeries(series.id, toUnitsParams(units))
-      // Removing the last unit exposes the flat list in the order the author just saved.
-      const byID = new Map(courses.value.map((course) => [course.id, course]))
-      courses.value = saved.courseIDs.flatMap((id) => byID.get(id) ?? [])
       return saved.units
     })
   } catch (e) {
@@ -313,6 +312,9 @@ const handleRemoveUnit = useMessageHandle(
     const unitIndex = findUnitIndex(unitID)
     const removal = getUnitRemoval(unitIndex)
     if (removal.courseCount !== asked.courseCount || removal.intoUnitID !== asked.intoUnitID) throw unitsChanged()
+    if (units.value.length === 1) {
+      courses.value = units.value[0].courseIDs.flatMap((id) => coursesByID.value.get(id) ?? [])
+    }
     await writeUnits(series, removeUnit(units.value, unitIndex))
   },
   { en: 'Failed to delete unit', zh: '删除单元失败' }

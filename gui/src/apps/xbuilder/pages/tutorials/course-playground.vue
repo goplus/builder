@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { Cancelled, useMessageHandle } from '@/utils/exception'
-import { composeQuery, untilLoaded, useQuery, QueryMode, type QueryRet } from '@/utils/query'
+import { composeQuery, useQuery, QueryMode, type QueryRet } from '@/utils/query'
 import { path2PathSegments, useScopedRouterWithPathParam } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { TutorialProject } from '@/models/tutorial/project'
@@ -16,7 +16,7 @@ import CoursePlaygroundCompletionModal, {
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
 import { useTutorial } from '@/components/tutorials/tutorial'
-import { getCourseSeriesPageRouteOfCourse } from '@/components/tutorials/units'
+import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { useModal } from '@/components/ui'
 
 const props = defineProps<{
@@ -29,10 +29,8 @@ const tutorial = useTutorial()
 const router = useRouter()
 const signedIn = useSignedIn()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
-const sessionCourseQueryRet = useCourse(() => props.courseIdInput, { mode: QueryMode.Snapshot })
-const sessionSeriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
-const courseQueryRet = useCourse(() => props.courseIdInput)
-const seriesQueryRet = useSeries(() => props.courseSeriesIdInput)
+const courseQueryRet = useCourse(() => props.courseIdInput, { mode: QueryMode.Snapshot })
+const seriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
 const inPlaygroundRouter = useScopedRouterWithPathParam('inPlaygroundPath', () => props.inPlaygroundPath)
 
 const sessionQueryRet = useQuery(
@@ -40,10 +38,7 @@ const sessionQueryRet = useQuery(
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
-    const [series, course] = await Promise.all([
-      composeQuery(ctx, sessionSeriesQueryRet),
-      composeQuery(ctx, sessionCourseQueryRet)
-    ])
+    const [series, course] = await Promise.all([composeQuery(ctx, seriesQueryRet), composeQuery(ctx, courseQueryRet)])
     ctx.signal.throwIfAborted()
     if (!signedIn.isSignedIn) {
       await signedIn.signIn()
@@ -69,7 +64,7 @@ const sessionQueryRet = useQuery(
     tutorial.notifyPlaygroundCourseStarted(course.id, series.id)
 
     ctx.reporter.report(1)
-    return { courseID: course.id, seriesID: series.id, project }
+    return { course, series, project }
   },
   {
     en: 'Failed to start course',
@@ -80,7 +75,7 @@ const sessionQueryRet = useQuery(
 
 const session = sessionQueryRet.data
 usePageTitle(() => {
-  const title = courseQueryRet.data.value?.title
+  const title = session.value?.course.title
   const page = { en: 'Course', zh: '课程' }
   return title == null ? page : [{ en: title, zh: title }, page]
 })
@@ -94,7 +89,7 @@ const { fn: handleRestart } = useMessageHandle(
   async () => {
     const currentSession = session.value
     if (currentSession == null) return
-    await tutorial.startCourse(currentSession.seriesID, currentSession.courseID)
+    await tutorial.startCourse(currentSession.series.id, currentSession.course.id)
   },
   { en: 'Failed to restart course', zh: '重新开始课程失败' }
 )
@@ -103,37 +98,25 @@ const { fn: handleCompleted } = useMessageHandle(
   async (completion: PlaygroundCourseCompletion) => {
     const completedSession = session.value
     if (completedSession == null) return
-    tutorial.notifyPlaygroundCourseCompleted(completedSession.courseID)
+    tutorial.notifyPlaygroundCourseCompleted(completedSession.course.id)
 
-    const signal = completedSession.project.getSignal()
-    const [course, series] = await Promise.all([
-      untilLoaded(courseQueryRet, signal),
-      untilLoaded(seriesQueryRet, signal)
-    ])
-    const completionProps = {
-      get course() {
-        return courseQueryRet.data.value ?? course
-      },
-      get series() {
-        return seriesQueryRet.data.value ?? series
-      },
-      feedback: completion.feedback
-    }
-    const action: CompletionAction = await openCompletion(completionProps, { signal })
+    const action: CompletionAction = await openCompletion(
+      { course: completedSession.course, series: completedSession.series, feedback: completion.feedback },
+      { signal: completedSession.project.getSignal() }
+    )
     if (completedSession.project.isDisposed || action === 'continueEditing') return
 
     if (action === 'retry') {
-      await tutorial.startCourse(completedSession.seriesID, completedSession.courseID)
+      await tutorial.startCourse(completedSession.series.id, completedSession.course.id)
       return
     }
 
-    const currentSeries = completionProps.series
-    const courseIndex = currentSeries.courseIDs.indexOf(completedSession.courseID)
-    const nextCourseID = courseIndex < 0 ? null : currentSeries.courseIDs[courseIndex + 1] ?? null
+    const courseIndex = completedSession.series.courseIDs.indexOf(completedSession.course.id)
+    const nextCourseID = courseIndex < 0 ? null : completedSession.series.courseIDs[courseIndex + 1] ?? null
     if (action === 'next' && nextCourseID != null) {
-      await tutorial.startCourse(currentSeries.id, nextCourseID)
+      await tutorial.startCourse(completedSession.series.id, nextCourseID)
     } else {
-      await router.push(getCourseSeriesPageRouteOfCourse(currentSeries, completedSession.courseID))
+      await router.push(getCourseSeriesPageRoute(completedSession.series.id, completedSession.course.id))
     }
   },
   { en: 'Failed to handle course completion', zh: '处理课程完成失败' }

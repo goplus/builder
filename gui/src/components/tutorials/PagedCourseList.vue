@@ -23,7 +23,11 @@ defineSlots<{
   course(props: { course: Course }): unknown
 }>()
 
-const page = useRouteQueryParamInt('p', 1)
+const requestedPage = useRouteQueryParamInt('p', 1)
+const page = computed({
+  get: () => Math.max(1, Math.min(requestedPage.value, pageTotal.value)),
+  set: (value) => (requestedPage.value = value)
+})
 const pageSize = computed(() => props.numInRow * numInColumn)
 const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.length ?? 0) / pageSize.value))
 

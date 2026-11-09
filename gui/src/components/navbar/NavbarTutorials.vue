@@ -57,5 +57,5 @@ import TutorialControlPanel from '@/components/tutorials/TutorialControlPanel.vu
 
 const tutorial = useTutorial()
 const currentCourse = computed(() => tutorial.currentCourse)
-const { data: course } = useCourse(() => currentCourse.value?.courseID ?? null)
+const { data: course } = useCourse(() => currentCourse.value?.id ?? null)
 </script>

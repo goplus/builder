@@ -130,6 +130,19 @@ async function mountSeriesPage() {
 describe('course management series page', () => {
   setupPageTests()
 
+  it('reuses fresh learner caches when entering management', async () => {
+    serveSeries()
+    await signIn({ canManageCourses: true })
+    const { router } = await mountPages('/course-series/space')
+    await vi.waitFor(() => expect(findByText('h3', 'Basics')).toBeDefined())
+    expect(courseSeriesApis.getCourseSeries).toHaveBeenCalledOnce()
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledOnce()
+    await router.push('/course-management/space')
+    await vi.waitFor(() => expect(findByText('h3', 'Arrival')).toBeDefined())
+    expect(courseSeriesApis.getCourseSeries).toHaveBeenCalledOnce()
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledOnce()
+  })
+
   it('keeps local edits independent of shared cache updates', async () => {
     const { writes, setSeries } = serveSeries()
     const { wrapper } = await mountSeriesPage()
@@ -151,7 +164,7 @@ describe('course management series page', () => {
     await click(getByText('.ui-menu-item', 'Move up'))
     await writes[0].answer()
     expect(writes[0].params.courseIDs).toEqual(['landing', 'first-flight'])
-    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(1)
+    expect(getByText('h3', 'Arrival')).toBeDefined()
 
     await click(getByText('button', 'Edit series'))
     await vi.waitFor(() => expect(wrapper.findComponent(CourseSeriesDrawer).exists()).toBe(true))
@@ -217,7 +230,7 @@ describe('course management series page', () => {
     await click(getByText('button', 'Delete'))
     await vi.waitFor(() => expect(document.body.textContent).toContain('Courses (1)'))
     expect(document.body.textContent).not.toContain('First flight revised')
-    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(3)
+    expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(4)
   })
 
   it('deletes the unit asked about when an edit fails while deleting it is being confirmed', async () => {
@@ -283,11 +296,11 @@ describe('course management series page', () => {
     await flushPromises()
     expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(1)
     await writes[0].answer()
-    await vi.waitFor(() => expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(courseApis.listAllSeriesCourses).toHaveBeenCalledTimes(3))
     expect([...document.querySelectorAll('h3')].map((h) => h.textContent?.trim())).toEqual(['Arrival', 'Basics'])
   })
 
-  it('keeps the saved unit order when removing the final unit', async () => {
+  it('preserves a new flat reorder while removing the final unit is still being saved', async () => {
     const { writes } = serveSeries([{ id: 'only', title: 'Only unit', courseIDs: ['first-flight', 'landing'] }])
     await signIn({ canManageCourses: true })
     await mountPages('/course-management/space')
@@ -301,10 +314,22 @@ describe('course management series page', () => {
     await openUnitMenu('Only unit')
     await click(getByText('.ui-menu-item', 'Delete unit'))
     await click(getByText('button', 'Delete'))
-    await writes[1].answer()
     expect(writes[1].params.units).toEqual([])
-    const list = document.querySelector('ul[aria-label="Course list"]')!
-    expect([...list.children].map((item) => item.textContent?.trim())).toEqual(['Landing', 'First flight'])
+    const list = document.querySelector<HTMLElement>('ul[aria-label="Course list"]')!
+    const titles = () => [...list.children].map((item) => item.textContent?.trim())
+    expect(titles()).toEqual(['Landing', 'First flight'])
+    const flatSortable = Sortable.get(list)!
+    flatSortable.option('onEnd')!.call(flatSortable, {
+      oldDraggableIndex: 0,
+      newDraggableIndex: 1
+    } as Sortable.SortableEvent)
+    await flushPromises()
+    expect(titles()).toEqual(['First flight', 'Landing'])
+    await writes[1].answer()
+    expect(titles()).toEqual(['First flight', 'Landing'])
+    expect(writes[2].params.courseIDs).toEqual(['first-flight', 'landing'])
+    await writes[2].answer()
+    expect(titles()).toEqual(['First flight', 'Landing'])
   })
 
   it('leaves the page without waiting for the edits being written', async () => {

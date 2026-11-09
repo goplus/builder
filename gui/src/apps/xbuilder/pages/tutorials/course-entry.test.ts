@@ -24,7 +24,8 @@ const apis = vi.hoisted(() => ({
   series: vi.fn(),
   updateSeries: vi.fn(),
   load: vi.fn(),
-  dispose: vi.fn()
+  dispose: vi.fn(),
+  openCompletion: vi.fn()
 }))
 vi.mock('@/apis/course', async (original) => ({
   ...(await original<typeof import('@/apis/course')>()),
@@ -65,7 +66,7 @@ vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
 }))
 vi.mock('@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue', () => ({ default: {} }))
 vi.mock('@/components/ui', () => ({
-  useModal: () => vi.fn(),
+  useModal: () => apis.openCompletion,
   UIDetailedLoading: { template: '<div>loading</div>' },
   UIError: { template: '<div><slot /></div>' }
 }))
@@ -100,6 +101,8 @@ beforeEach(() => {
   apis.load.mockImplementation(async (course) => ({
     title: course.title,
     code: 'initial',
+    getSignal: () => new AbortController().signal,
+    isDisposed: false,
     config: { inEditorPath: 'sprites/Lita/code' },
     disposeOnSignal: (signal: AbortSignal) => signal.addEventListener('abort', apis.dispose)
   }))
@@ -254,6 +257,35 @@ describe('Course entry with shared cached queries', () => {
     finish()
     await refresh
     expect(apis.load).toHaveBeenCalledTimes(2)
+  })
+
+  it('uses the session snapshot for title, completion and next course after shared-cache changes', async () => {
+    series.courseIDs = ['first', 'new']
+    const { wrapper, tutorial } = await openEntry('/course/series/first/playground')
+    const playground = wrapper.findComponent(PlaygroundComponent)
+    const project = playground.props('projectQueryRet').data.value
+    const start = vi.spyOn(tutorial, 'startCourse').mockResolvedValue()
+    apis.openCompletion.mockResolvedValue('next')
+    client.setQueryData(['course', 'first'], { ...courses[0], title: 'Revised title' })
+    client.setQueryData(['course-series', 'series'], { ...series, courseIDs: ['new', 'first'] })
+    apis.get.mockRejectedValueOnce(new Error('Background course refresh failed'))
+    apis.series.mockRejectedValueOnce(new Error('Background series refresh failed'))
+    await Promise.all([
+      client.invalidateQueries({ queryKey: ['course', 'first'] }),
+      client.invalidateQueries({ queryKey: ['course-series', 'series'] })
+    ])
+    expect(document.title).toBe('first - Course - XBuilder')
+    playground.vm.$emit('course-completed', { feedback: 'Well done' })
+    await flushPromises()
+    expect(apis.openCompletion).toHaveBeenCalledOnce()
+    expect(apis.openCompletion.mock.calls[0][0]).toMatchObject({
+      course: { id: 'first', title: 'first' },
+      series: { id: 'series', courseIDs: ['first', 'new'] },
+      feedback: 'Well done'
+    })
+    expect(start).toHaveBeenCalledWith('series', 'new')
+    expect(playground.props('projectQueryRet').data.value).toBe(project)
+    expect(apis.load).toHaveBeenCalledOnce()
   })
 
   it('retries a failed initial course read', async () => {

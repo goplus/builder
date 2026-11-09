@@ -4,14 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createI18n } from '@/utils/i18n'
 import type { Progress } from '@/utils/progress'
-import { QueryMode, type QueryRet } from '@/utils/query'
+import type { QueryRet } from '@/utils/query'
 import type { TutorialProject } from '@/models/tutorial/project'
 import PlaygroundComponent from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundPage from './course-playground.vue'
 
 const mocks = vi.hoisted(() => ({
   seriesQueryRet: null as any,
-  liveSeriesQueryRet: null as any,
   courses: {} as Record<string, object>,
   openCompletion: vi.fn(),
   startCourse: vi.fn(),
@@ -28,11 +27,7 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
   useMessageHandle: (fn: unknown) => ({ fn })
 }))
 vi.mock('@/stores/course-series', () => ({
-  useSeries: (_id: unknown, options?: { mode?: QueryMode }) => {
-    if (options?.mode === QueryMode.Snapshot) return mocks.seriesQueryRet
-    mocks.liveSeriesQueryRet = { ...mocks.seriesQueryRet, data: shallowRef(mocks.seriesQueryRet.data.value) }
-    return mocks.liveSeriesQueryRet
-  }
+  useSeries: () => mocks.seriesQueryRet
 }))
 vi.mock('@/stores/course', () => ({
   useCourse: (id: () => string) => ({
@@ -94,7 +89,7 @@ beforeEach(() => {
 })
 
 describe('Course page startup', () => {
-  it('uses the latest series order for completion without rebuilding the running project', async () => {
+  it('uses the Playground snapshot for completion and next-course navigation', async () => {
     mocks.seriesQueryRet.data.value = { id: 'series', courseIDs: ['course', 'next'] }
     mocks.seriesQueryRet.isLoading.value = false
     let complete!: (action: string) => void
@@ -108,14 +103,13 @@ describe('Course page startup', () => {
     const project = playground.props('projectQueryRet').data.value
     playground.vm.$emit('course-completed', { feedback: null })
     await flushPromises()
-    mocks.liveSeriesQueryRet.data.value = { id: 'series', courseIDs: ['next', 'course', 'added'] }
-    await flushPromises()
-    expect(mocks.openCompletion.mock.calls[0][0].series.courseIDs).toEqual(['next', 'course', 'added'])
+    expect(mocks.openCompletion.mock.calls[0][0].series).toBe(mocks.seriesQueryRet.data.value)
+    expect(mocks.openCompletion.mock.calls[0][0].course).toBe(mocks.courses.course)
     expect(playground.props('projectQueryRet').data.value).toBe(project)
     expect(mocks.loadProject).toHaveBeenCalledOnce()
     complete('next')
     await flushPromises()
-    expect(mocks.startCourse).toHaveBeenCalledWith('series', 'added')
+    expect(mocks.startCourse).toHaveBeenCalledWith('series', 'next')
   })
 
   it('rejects a course that is not a member of the series', async () => {
