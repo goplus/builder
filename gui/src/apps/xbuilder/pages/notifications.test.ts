@@ -66,7 +66,6 @@ describe('notifications', () => {
 
     await vi.waitFor(() => expect(notificationApis.markNotificationRead).toHaveBeenCalledWith('1'))
     const imageLink = await vi.waitFor(() => wrapper.get('a[href="https://assets.test/fix.png"]'))
-    expect(imageLink.attributes('aria-label')).toBe('Notification image link "fix.png"')
     expect(imageLink.get('img').attributes('src')).toBe('https://assets.test/fix.png')
     expect(imageLink.get('img').attributes('crossorigin')).toBe('anonymous')
     expect(wrapper.findAll('a').some((a) => a.text() === 'Unsafe link')).toBe(false)
@@ -79,11 +78,8 @@ describe('notifications', () => {
     expect(await isNativeClick(guideLink)).toBe(true)
     await vi.waitFor(() => expect(getUnreadState(wrapper)).toBe('Open notifications'))
     // Only images in Kodo are previewed
-    expect(wrapper.get('a[href="https://example.com/photo.png"]').attributes('aria-label')).toBe(
-      'Notification link "https://example.com/photo.png"'
-    )
     expect(await isNativeClick(wrapper.get('a[href="https://example.com/photo.png"]'))).toBe(true)
-    for (const options of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { altKey: true }, { button: 1 }]) {
+    for (const options of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { button: 1 }]) {
       expect(await isNativeClick(imageLink, options)).toBe(true)
     }
 

@@ -43,7 +43,7 @@ const previewImage = useModal(NotificationImagePreviewModal)
 
 function handleImageClick(event: MouseEvent) {
   // Keep native behaviors such as opening the image in a new tab
-  if (event.button !== 0 || [event.ctrlKey, event.metaKey, event.shiftKey, event.altKey].some(Boolean)) return
+  if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return
   event.preventDefault()
   if (webUrl.value == null) return
   const name = props.title ?? (event.currentTarget as HTMLElement).textContent ?? ''
@@ -58,22 +58,11 @@ function handleImageClick(event: MouseEvent) {
   <span v-if="href == null || insideLink"><slot :url="href == null ? null : webUrl"></slot></span>
   <a
     v-else-if="isImage"
-    v-radar="{
-      name: 'notification-image-link',
-      desc: 'Preview this image',
-      attrs: { url: href, name: title }
-    }"
     class="notification-image-link block w-fit max-w-full cursor-zoom-in truncate"
     :href="webUrl ?? undefined"
     :title="title ?? undefined"
     @click="handleImageClick"
     ><slot :url="webUrl"></slot
   ></a>
-  <a
-    v-else
-    v-radar="{ name: 'notification-link', desc: 'Open this link', attrs: { url: href, name: title ?? href } }"
-    :href="webUrl ?? undefined"
-    :title="title ?? undefined"
-    ><slot :url="webUrl"></slot
-  ></a>
+  <a v-else :href="webUrl ?? undefined" :title="title ?? undefined"><slot :url="webUrl"></slot></a>
 </template>
