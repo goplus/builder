@@ -46,6 +46,7 @@ const emit = defineEmits<{
 const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
 const rootRef = ref<HTMLDivElement>()
 const wrapperRef = ref<HTMLDivElement>()
+const toolbarRef = ref<HTMLDivElement | null>(null)
 const overlayActive = ref(false)
 const overlayVisible = ref(false)
 const initialLoading = ref(false)
@@ -104,6 +105,14 @@ const overlayTransform = computed<OverlayTransform>(() => {
 })
 
 let overlayTransitionToken = 0
+let fullscreenOpener: HTMLElement | null = null
+let focusToolbarOnOpen = false
+
+function focusToolbar(edge: 'first' | 'last') {
+  const buttons = toolbarRef.value?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')
+  const target = buttons?.[edge === 'first' ? 0 : buttons.length - 1] ?? wrapperRef.value
+  target?.focus({ preventScroll: true })
+}
 
 function waitForAnimationFrame() {
   return new Promise<void>((resolve) => {
@@ -255,6 +264,8 @@ function updateOverlayTransformTargets() {
 
 async function openOverlay() {
   const token = ++overlayTransitionToken
+  const shouldFocusToolbar = focusToolbarOnOpen
+  focusToolbarOnOpen = false
 
   overlayClosing.value = false
   overlayOpening.value = true
@@ -267,6 +278,7 @@ async function openOverlay() {
   await nextTick()
   if (token !== overlayTransitionToken) return
 
+  wrapperRef.value?.focus({ preventScroll: true })
   updateOverlayTransformTargets()
   void wrapperRef.value?.getBoundingClientRect()
   overlayTransitionSuspended.value = false
@@ -282,6 +294,13 @@ async function openOverlay() {
 
   overlayOpening.value = false
   initialLoading.value = false
+  await nextTick()
+  if (token !== overlayTransitionToken) return
+
+  const wrapper = wrapperRef.value
+  if (shouldFocusToolbar && wrapper != null && wrapper.ownerDocument.activeElement === wrapper) {
+    focusToolbar('first')
+  }
 }
 
 async function closeOverlay() {
@@ -296,6 +315,8 @@ async function closeOverlay() {
   }
 
   const token = ++overlayTransitionToken
+  const wrapper = wrapperRef.value
+  const hadFocus = wrapper?.contains(wrapper.ownerDocument.activeElement)
 
   overlayClosing.value = true
   overlayOpening.value = false
@@ -311,8 +332,23 @@ async function closeOverlay() {
   overlayOpening.value = false
   initialLoading.value = false
   await nextTick()
+  if (token !== overlayTransitionToken) return
+
+  if (wrapper != null && hadFocus) {
+    const { activeElement, body } = wrapper.ownerDocument
+    if (activeElement === body || wrapper.contains(activeElement)) {
+      const opener = fullscreenOpener
+      const target =
+        opener?.isConnected && !opener.matches(':disabled')
+          ? opener
+          : wrapper.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? wrapper
+      target.focus({ preventScroll: true })
+    }
+  }
+  fullscreenOpener = null
   captureInlineMetrics()
   await waitForAnimationFrame()
+  if (token !== overlayTransitionToken) return
   overlayTransitionSuspended.value = false
 }
 
@@ -381,11 +417,18 @@ function handleStopClick() {
   return fn()
 }
 
+function enterFullscreen(event: MouseEvent) {
+  fullscreenOpener = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
+  focusToolbarOnOpen = event.detail === 0
+  emit('update:fullscreen', true)
+}
+
 function closeFullscreen() {
   emit('update:fullscreen', false)
 }
 
 defineExpose({
+  enterFullscreen,
   async run() {
     const runner = await untilNotNull(runnerRef)
     return runner.run()
@@ -406,10 +449,14 @@ defineExpose({
 <template>
   <div ref="rootRef" class="project-runner-surface" :class="{ fullscreen: overlayActive }">
     <div v-if="overlayActive" class="h-full w-full"></div>
+    <!-- Keep Tab navigation inside fullscreen while letting the game handle its own keys. -->
+    <span v-if="overlayActive && !overlayClosing" class="sr-only" tabindex="0" @focus="focusToolbar('last')"></span>
     <div
       ref="wrapperRef"
       v-radar="{ name: 'project-runner-surface', desc: 'Container hosting project runner' }"
       class="runner-wrapper"
+      tabindex="-1"
+      :role="overlayActive ? 'dialog' : undefined"
       :class="{
         fullscreen: overlayActive,
         visible: overlayVisible,
@@ -426,10 +473,10 @@ defineExpose({
         '--runner-aspect-ratio': runnerAspectRatio
       }"
     >
-      <div v-if="overlayVisible && !overlayOpening" class="toolbar-zone">
+      <div v-if="overlayVisible && !overlayOpening" ref="toolbarRef" class="toolbar-zone">
         <div class="header">
           <div class="flex-[1_1_30%]"></div>
-          <div class="flex-[1_1_40%] truncate text-center">
+          <div class="toolbar-on-reveal flex-[1_1_40%] truncate text-center">
             {{ project.displayName }}
           </div>
           <div
@@ -440,6 +487,7 @@ defineExpose({
               v-radar="{ name: 'run-button', desc: 'Click to run the project in overlay' }"
               type="primary"
               icon="playHollow"
+              class="toolbar-on-reveal"
               :loading="runButtonLoading"
               @click="handleRunClick"
             >
@@ -449,6 +497,7 @@ defineExpose({
               v-else
               v-radar="{ name: 'rerun-button', desc: 'Click to rerun the project in overlay' }"
               icon="rotate"
+              class="toolbar-on-reveal"
               :disabled="runnerState !== 'running' || stopButtonLoading"
               :loading="rerunButtonLoading && !stopButtonLoading"
               @click="handleRerunClick"
@@ -460,6 +509,7 @@ defineExpose({
               v-radar="{ name: 'stop-button', desc: 'Click to stop the project' }"
               type="neutral"
               icon="end"
+              class="toolbar-on-reveal"
               :loading="stopButtonLoading"
               @click="handleStopClick"
             >
@@ -475,6 +525,7 @@ defineExpose({
                   type="neutral"
                   shape="square"
                   icon="exitFullScreen"
+                  class="fullscreen-exit"
                   @click="closeFullscreen"
                 ></UIButton>
               </template>
@@ -496,6 +547,7 @@ defineExpose({
         <slot v-if="!overlayActive" name="inline-overlay" />
         <div v-if="overlayActive && initialLoading && !overlayOpening" class="overlay-loading"></div>
       </div>
+      <span v-if="overlayActive && !overlayClosing" class="sr-only" tabindex="0" @focus="focusToolbar('first')"></span>
     </div>
   </div>
 </template>
@@ -580,7 +632,7 @@ defineExpose({
   background-color: transparent;
 }
 
-/* Keep the trigger above the game, inside the existing fullscreen padding. */
+/* Pin the hover target to the top edge of the fullscreen surface, above the game. */
 .toolbar-zone {
   position: absolute;
   z-index: 1;
@@ -611,6 +663,22 @@ defineExpose({
   background-color: #fff;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+@media (hover: none) {
+  .toolbar-zone:not(:hover, :has(:focus-visible)) .header {
+    opacity: 1;
+    background-color: transparent;
+    border-bottom-color: transparent;
+  }
+
+  .toolbar-zone:not(:hover, :has(:focus-visible)) .toolbar-on-reveal {
+    opacity: 0;
+  }
+
+  .fullscreen-exit {
+    pointer-events: auto;
+  }
 }
 
 .runner-area {

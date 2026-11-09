@@ -436,9 +436,9 @@ function handleFullscreenChange(value: boolean) {
   }
 }
 
-function handleEnterFullscreen() {
+function handleEnterFullscreen(event: MouseEvent) {
   if (runnerState.value === 'initial') return
-  handleFullscreenChange(true)
+  projectRunnerSurfaceRef.value?.enterFullscreen(event)
 }
 
 onBeforeUnmount(() => {
