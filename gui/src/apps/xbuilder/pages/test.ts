@@ -46,6 +46,7 @@ import UserLikes from './community/user/likes.vue'
 import Admin from './admin/index.vue'
 import AdminApps from './admin/apps.vue'
 import AdminApp from './admin/app.vue'
+import AdminOAuthClient from './admin/oauth-client.vue'
 import AdminGrant from './admin/grant.vue'
 import AdminUsers from './admin/users.vue'
 import AdminAuditLogs from './admin/audit-logs.vue'
@@ -193,6 +194,7 @@ export async function mountPages(path: string) {
         { path: 'users', component: AdminUsers },
         { path: 'apps', component: AdminApps },
         { path: 'apps/:appID', component: AdminApp, props: true },
+        { path: 'apps/:appID/oauth-clients/:oauthClientID', component: AdminOAuthClient, props: true },
         { path: 'users/:userID/app-grants/:grantID', component: AdminGrant, props: true },
         { path: 'audit-logs', component: AdminAuditLogs },
         { path: 'feedback', component: AdminFeedbackList },

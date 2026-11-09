@@ -37,7 +37,7 @@ watch(
 )
 
 const request = computed<OAuthRequest | null>(() => {
-  const clientId = typeof route.query.clientID === 'string' ? route.query.clientID.trim() : ''
+  const clientId = typeof route.query.clientID === 'string' ? route.query.clientID : ''
   const requestUri = typeof route.query.requestURI === 'string' ? route.query.requestURI.trim() : ''
   if (clientId === '' || requestUri === '') return null
   return { clientId, requestUri }
