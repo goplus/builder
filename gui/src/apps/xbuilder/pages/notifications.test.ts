@@ -24,7 +24,7 @@ const reply: Notification = {
   id: '1',
   category: NotificationCategory.Message,
   title: 'Re: Sprite stops moving',
-  body: 'Fixed \\<audio\\> in the next release\\.\n\n![fix.png](<kodo://test/fix.png>)\n\n[photo.png](https://example.com/photo.png)\n\n[Unsafe link](javascript:alert)\n\n![unsafe.png](javascript:alert)\n\n[download.png](kodo://test/download.png)\n\n[![guide.png](kodo://test/guide.png)](https://example.com/guide)',
+  body: 'Fixed \\<audio\\> in the next release\\.\n\n![fix.png](<kodo://test/fix.png>)\n\n[photo.png](https://example.com/photo.png "Photo")\n\n[Unsafe link](javascript:alert)\n\n![unsafe.png](javascript:alert)\n\n[download.png](kodo://test/download.png)\n\n[![guide.png](kodo://test/guide.png)](https://example.com/guide)\n\n![web.png](https://example.com/web.png "Web screenshot")\n\n[Mail us](mailto:help@example.com) ![logo.png](/logo.png)',
   createdAt: '2026-01-03T00:00:00Z',
   readAt: null
 }
@@ -53,8 +53,9 @@ describe('notifications', () => {
   it('shows a feedback reply and previews its image', async () => {
     await signIn()
     mockNotifications([reply])
+    const universalUrlToWebUrl = cloudHelpers.universalUrlToWebUrl.bind(cloudHelpers)
     vi.spyOn(cloudHelpers, 'universalUrlToWebUrl').mockImplementation(async (url) =>
-      url.replace('kodo://test/', 'https://assets.test/')
+      url.startsWith('kodo://test/') ? url.replace('kodo://test/', 'https://assets.test/') : universalUrlToWebUrl(url)
     )
     const { wrapper } = await mountPages('/explore')
 
@@ -69,23 +70,33 @@ describe('notifications', () => {
     expect(imageLink.get('img').attributes('src')).toBe('https://assets.test/fix.png')
     expect(imageLink.get('img').attributes('crossorigin')).toBe('anonymous')
     expect(wrapper.findAll('a').some((a) => a.text() === 'Unsafe link')).toBe(false)
-    expect(wrapper.text()).toContain('Unsafe link')
-    expect(wrapper.text()).toContain('unsafe.png')
+    const body = wrapper.get('[aria-label="Notification panel"] article')
+    expect(body.text()).toContain('Unsafe link')
+    expect(body.text()).toContain('unsafe.png')
     expect(wrapper.find('img[alt="unsafe.png"]').exists()).toBe(false)
     const guideLink = wrapper.get('a[href="https://example.com/guide"]')
     await vi.waitFor(() => expect(guideLink.get('img').attributes('src')).toBe('https://assets.test/guide.png'))
     expect(guideLink.find('a').exists()).toBe(false)
     expect(await isNativeClick(guideLink)).toBe(true)
     await vi.waitFor(() => expect(getUnreadState(wrapper)).toBe('Open notifications'))
-    // Only images in Kodo are previewed
-    expect(await isNativeClick(wrapper.get('a[href="https://example.com/photo.png"]'))).toBe(true)
+    // URLs other than Kodo URLs are kept as they are
+    expect(wrapper.find('a[href="mailto:help@example.com"]').exists()).toBe(true)
+    expect(wrapper.find('img[src="/logo.png"]').exists()).toBe(true)
+    // Text links open their targets, even if the targets are images
+    const photoLink = wrapper.get('a[href="https://example.com/photo.png"]')
+    expect(photoLink.attributes('title')).toBe('Photo')
+    expect(await isNativeClick(photoLink)).toBe(true)
+    const fileLink = await vi.waitFor(() => wrapper.get('a[href="https://assets.test/download.png"]'))
+    expect(await isNativeClick(fileLink)).toBe(true)
     for (const options of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { button: 1 }]) {
       expect(await isNativeClick(imageLink, options)).toBe(true)
     }
 
-    await imageLink.trigger('click')
+    expect(await isNativeClick(imageLink)).toBe(false)
     const previewImage = await vi.waitFor(() => {
-      const img = document.querySelector('img[alt="fix.png"]')
+      const modal = document.querySelector('[aria-label="Notification image preview modal"]')
+      expect(modal?.querySelector('h2')?.textContent).toBe('fix.png')
+      const img = modal?.querySelector('img')
       expect(img?.getAttribute('src')).toBe('https://assets.test/fix.png')
       return img!
     })
@@ -95,12 +106,12 @@ describe('notifications', () => {
     await flushPromises()
     await vi.waitFor(() => expect(document.querySelector('[aria-label="Notification image preview modal"]')).toBeNull())
 
-    // Existing image links still preview the image, with their label as the name
-    await wrapper.get('a[href="https://assets.test/download.png"]').trigger('click')
+    // Images are previewed wherever they are stored, named by their titles if any
+    await wrapper.get('a[href="https://example.com/web.png"]').trigger('click')
     await vi.waitFor(() => {
       const modal = document.querySelector('[aria-label="Notification image preview modal"]')
-      expect(modal?.querySelector('h2')?.textContent).toBe('download.png')
-      expect(modal?.querySelector('img')?.getAttribute('src')).toBe('https://assets.test/download.png')
+      expect(modal?.querySelector('h2')?.textContent).toBe('Web screenshot')
+      expect(modal?.querySelector('img')?.getAttribute('src')).toBe('https://example.com/web.png')
     })
   })
 

@@ -259,41 +259,47 @@ describe('MarkdownView', () => {
     })
     expect(result).toBe('<div><p><a>image</a> <a>unsafe</a> <a href="https://example.com">safe</a></p></div>')
   })
-  it('should keep links to Kodo files for a custom `a` component', async () => {
+  it('should render links and images with `link` and `image` components', async () => {
     const link = {
-      template: '<a class="custom-link" :href="href"><slot /></a>',
-      props: ['href']
+      template: '<a class="custom-link" :href="href" :title="title"><slot /></a>',
+      props: ['href', 'title']
+    }
+    const image = {
+      template: '<img class="custom-image" :src="src" :alt="alt" :title="title">',
+      props: ['src', 'alt', 'title']
     }
     const result = await renderToString(MarkdowView, {
       props: {
-        value: '[image](kodo://bucket/image.png) [unsafe](javascript:alert)',
-        components: markRaw({ custom: { a: link } })
+        value: '[*Docs*](https://example.com "Read") ![Shot](https://example.com/a.png "Screen")',
+        components: markRaw({ link, image })
       }
     })
     expect(result).toBe(
-      '<div><p><a class="custom-link" href="kodo://bucket/image.png"><!--[-->image<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a></p></div>'
+      '<div><p><a class="custom-link" href="https://example.com" title="Read"><!--[--><em>Docs</em><!--]--></a> <img class="custom-image" src="https://example.com/a.png" alt="Shot" title="Screen"></p></div>'
     )
   })
-  it('keeps Kodo image sources only for a custom image component and still drops unsafe sources', async () => {
+  it('should keep Kodo URLs only for `link` and `image` components and still drop unsafe URLs', async () => {
     const value =
-      '![image](kodo://bucket/image.png) ![unsafe](javascript:alert) ![inline](data:image/png;base64,AAAA) ![web](https://example.com/image.png)'
-    const image = { template: '<img :src="src" :alt="alt">', props: ['src', 'alt'] }
+      '[file](kodo://bucket/file.png) [unsafe](javascript:alert) ![image](kodo://bucket/image.png) ![unsafe](javascript:alert) ![inline](data:image/png;base64,AAAA)'
+    const link = { template: '<a class="custom-link" :href="href"><slot /></a>', props: ['href'] }
+    const image = { template: '<img class="custom-image" :src="src" :alt="alt">', props: ['src', 'alt'] }
     const plain = await renderToString(MarkdowView, { props: { value } })
-    expect(plain).not.toContain('src="kodo:')
-    const custom = await renderToString(MarkdowView, {
-      props: { value, components: markRaw({ custom: { img: image } }) }
-    })
-    expect(custom).toContain('src="kodo://bucket/image.png"')
-    expect(custom).toContain('src="https://example.com/image.png"')
-    expect(custom).not.toContain('src="javascript:')
-    expect(custom).not.toContain('src="data:')
-    expect(custom).toContain('alt="unsafe"')
+    expect(plain).toBe(
+      '<div><p><a>file</a> <a>unsafe</a> <img alt="image"> <img alt="unsafe"> <img alt="inline"></p></div>'
+    )
+    const withLink = await renderToString(MarkdowView, { props: { value, components: markRaw({ link }) } })
+    expect(withLink).toBe(
+      '<div><p><a class="custom-link" href="kodo://bucket/file.png"><!--[-->file<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a> <img alt="image"> <img alt="unsafe"> <img alt="inline"></p></div>'
+    )
+    const withImage = await renderToString(MarkdowView, { props: { value, components: markRaw({ image }) } })
+    expect(withImage).toBe(
+      '<div><p><a>file</a> <a>unsafe</a> <img class="custom-image" src="kodo://bucket/image.png" alt="image"> <img class="custom-image" alt="unsafe"> <img class="custom-image" alt="inline"></p></div>'
+    )
   })
   it('should keep the content after `<` if complete', async () => {
     const result = await renderToString(MarkdowView, {
       props: {
         value: 'Use \\<audio\\>\n\n> If x \\< 10',
-        components: markRaw({ custom: { a: { template: '<a><slot /></a>' } } }),
         complete: true
       }
     })

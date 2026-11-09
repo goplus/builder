@@ -6,7 +6,7 @@ import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
 import NotificationLink from './NotificationLink.vue'
 import NotificationImage from './NotificationImage.vue'
 
-const components = markRaw({ custom: { a: NotificationLink, img: NotificationImage } })
+const components = markRaw({ link: NotificationLink, image: NotificationImage })
 </script>
 
 <script setup lang="ts">
@@ -47,7 +47,7 @@ defineProps<{
   margin-top: 16px;
 }
 
-/* List image links (rendered by `NotificationLink`) closer together */
+/* List images (rendered by `NotificationImage`) closer together */
 .notification-markdown :deep(> p:has(> .notification-image-link)) {
   margin-top: 4px;
 }

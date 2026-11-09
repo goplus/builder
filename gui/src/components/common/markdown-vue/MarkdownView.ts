@@ -16,6 +16,16 @@ export type Components = {
   /** Component for rendering code blocks */
   codeBlock?: Component
   /**
+   * Component for rendering links, with props `href` (missing if unsafe) and `title`.
+   * Links to Kodo files (`kodo://...`) are kept for it to resolve.
+   */
+  link?: Component
+  /**
+   * Component for rendering images, with props `src` (missing if unsafe), `alt` and `title`.
+   * Images in Kodo (`kodo://...`) are kept for it to resolve.
+   */
+  image?: Component
+  /**
    * Custom components (key as component name expected to be in kebab-case).
    * Example:
    * ```js
@@ -39,7 +49,6 @@ export type Components = {
    *  Content
    * </pre>
    * ```
-   * Custom `a` and `img` components also receive Kodo URLs (`kodo://...`), and are expected to resolve them to web URLs.
    */
   custom?: Record<string, Component>
   /**
@@ -226,7 +235,7 @@ function parseMarkdown({ value, components, complete }: Props): hast.Nodes {
   })
   const hast = toHast(mdast, { allowDangerousHtml: true })
   const rawProcessed = raw(hast, { tagfilter: false })
-  const sanitizeSchema = getSanitizeSchema(customComponents)
+  const sanitizeSchema = getSanitizeSchema(components ?? {})
   return sanitize(rawProcessed, sanitizeSchema)
 }
 
@@ -291,6 +300,16 @@ function renderHastElement(element: hast.Element, components: Components, key?: 
     }
     props = { language }
     children = renderComponentChildren(codeEl.children, components)
+  } else if (components.link != null && element.tagName === 'a') {
+    type = components.link
+    const { href, title } = element.properties
+    props = hastProps2VueProps({ href, title })
+    children = renderComponentChildren(element.children, components)
+  } else if (components.image != null && element.tagName === 'img') {
+    type = components.image
+    const { src, alt, title } = element.properties
+    props = hastProps2VueProps({ src, alt, title })
+    children = renderComponentChildren(element.children, components)
   } else {
     type = element.tagName
     props = hastProps2VueProps(element.properties)
@@ -336,7 +355,8 @@ function getComponentPropNames(compDef: Component): string[] {
 }
 
 /** Get sanitize schema for `hast-util-sanitize` to prevent XSS */
-function getSanitizeSchema(customComponents: Record<string, Component>): SanitizeSchema {
+function getSanitizeSchema(components: Components): SanitizeSchema {
+  const customComponents = { ...components.custom, ...components.customRaw }
   const allCustomPropNames: string[] = []
   const tagNames = [...(defaultSchema.tagNames ?? [])]
   const attributes = { ...defaultSchema.attributes }
@@ -349,14 +369,8 @@ function getSanitizeSchema(customComponents: Record<string, Component>): Sanitiz
   attributes.pre = [...(defaultSchema.attributes?.pre ?? []), 'is', ...allCustomPropNames]
   // Without `protocols`, `hast-util-sanitize` would keep URLs of any protocol, such as `javascript:`
   const protocols = { ...defaultSchema.protocols }
-  // Native elements cannot use Kodo URLs; only a matching custom component can resolve them
-  for (const [tagName, attribute] of [
-    ['a', 'href'],
-    ['img', 'src']
-  ] as const) {
-    if (Object.prototype.hasOwnProperty.call(customComponents, tagName)) {
-      protocols[attribute] = [...(protocols[attribute] ?? []), UniversalUrlScheme.Kodo]
-    }
-  }
+  // Native elements cannot use Kodo URLs; only `link` and `image` components can resolve them
+  if (components.link != null) protocols.href = [...(protocols.href ?? []), UniversalUrlScheme.Kodo]
+  if (components.image != null) protocols.src = [...(protocols.src ?? []), UniversalUrlScheme.Kodo]
   return { tagNames, attributes, protocols }
 }
