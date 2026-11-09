@@ -14,7 +14,7 @@ function formatOutputTime(value: string) {
 </script>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, nextTick, useTemplateRef } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { DefaultException, useMessageHandle } from '@/utils/exception'
@@ -22,28 +22,17 @@ import { imgExts } from '@/utils/file'
 import { useI18n } from '@/utils/i18n'
 import { extname } from '@/utils/path'
 import { useQuery } from '@/utils/query'
-import { useAsyncComputed, usePageTitle } from '@/utils/utils'
-import { cloudHelpers, saveFile, selectFilesWithUploadLimit } from '@/models/common/cloud'
-import { fromNativeFile, type File } from '@/models/common/file'
+import { usePageTitle } from '@/utils/utils'
+import { saveFile, selectFilesWithUploadLimit } from '@/models/common/cloud'
+import { fromNativeFile } from '@/models/common/file'
 import { useSignedIn } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { FeedbackStatus } from '@/apis/feedback'
-import {
-  UIButton,
-  UICornerIcon,
-  UIError,
-  UIForm,
-  UIFormItem,
-  UIIcon,
-  UIImg,
-  UILoading,
-  UITextInput,
-  useForm
-} from '@/components/ui'
+import { UIButton, UIError, UIForm, UIFormItem, UIIcon, UILoading, UITextInput, useForm } from '@/components/ui'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
 import { DiagnosticSeverity } from '@/components/editor/spx-code-editor'
 import { feedbackContextSchema } from '@/components/feedback/context'
-import FeedbackReplyImage from '@/components/feedback/FeedbackReplyImage.vue'
+import NotificationMarkdown from '@/components/notification/NotificationMarkdown.vue'
 import * as feedbackAdminApis from '@/apis/admin/feedback'
 import { feedbackStatusLabels, formatJSON, formatTime } from './common'
 
@@ -79,11 +68,6 @@ usePageTitle(() =>
       ]
 )
 
-const replyAttachmentUrls = useAsyncComputed(async () => {
-  const attachments = feedback.value?.reply?.attachments ?? []
-  return Promise.all(attachments.map((attachment) => cloudHelpers.universalUrlToWebUrl(attachment.url)))
-})
-
 /** Process feedback in the `new` status, then reload it to show the latest status */
 async function processFeedback(process: () => Promise<unknown>) {
   try {
@@ -116,41 +100,39 @@ function validateReplyContent(value: string) {
   return null
 }
 
-const replyImages = shallowRef<File[]>([])
+const replyContentInput = useTemplateRef('replyContentInput')
 
-const handleAddReplyImages = useMessageHandle(
-  async () => {
-    const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
-    if (nativeFiles.some((file) => !imgExts.includes(extname(file.name).slice(1).toLowerCase())))
-      throw new DefaultException({
-        en: `Only images can be attached (${imgExts.join(', ')})`,
-        zh: `只能添加图片（${imgExts.join('、')}）`
-      })
-    const maxCount = feedbackAdminApis.feedbackReplyAttachmentsMaxCount
-    if (replyImages.value.length + nativeFiles.length > maxCount)
-      throw new DefaultException({ en: `Attach up to ${maxCount} images`, zh: `最多添加 ${maxCount} 张图片` })
-    const maxNameLength = feedbackAdminApis.feedbackReplyAttachmentNameMaxLength
-    if (nativeFiles.some((file) => file.name.length > maxNameLength))
-      throw new DefaultException({
-        en: `Image file names must be ${maxNameLength} characters or fewer`,
-        zh: `图片文件名不能超过 ${maxNameLength} 个字符`
-      })
-    replyImages.value = [...replyImages.value, ...nativeFiles.map(fromNativeFile)]
-  },
-  { en: 'Failed to add images', zh: '添加图片失败' }
-)
-
-function removeReplyImage(index: number) {
-  replyImages.value = replyImages.value.filter((_, i) => i !== index)
+async function addReplyImages() {
+  const input = replyContentInput.value?.getInputElement()
+  if (input == null) return
+  let start = input.selectionStart ?? replyForm.value.content.length
+  let end = input.selectionEnd ?? start
+  const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
+  if (nativeFiles.some((file) => !imgExts.includes(extname(file.name).slice(1).toLowerCase())))
+    throw new DefaultException({
+      en: `Only images can be attached (${imgExts.join(', ')})`,
+      zh: `只能添加图片（${imgExts.join('、')}）`
+    })
+  for (const file of nativeFiles) {
+    const url = await saveFile(fromNativeFile(file), { inlineable: false })
+    const name = file.name.replace(/[\r\n]/g, ' ').replace(/[\\[\]]/g, '\\$&')
+    const image = `\n\n![${name}](<${url}>)\n\n`
+    const content = replyForm.value.content
+    replyForm.value.content = content.slice(0, start) + image + content.slice(end)
+    start += image.length
+    end = start
+  }
+  await nextTick()
+  input.focus()
+  input.setSelectionRange(start, start)
 }
+
+const handleAddReplyImages = useMessageHandle(addReplyImages, { en: 'Failed to add images', zh: '添加图片失败' })
 
 const handleSendReply = useMessageHandle(
   async () => {
     const content = replyForm.value.content.trim()
-    const attachments = await Promise.all(
-      replyImages.value.map(async (image) => ({ name: image.name, url: await saveFile(image, { inlineable: false }) }))
-    )
-    await processFeedback(() => feedbackAdminApis.createFeedbackReply(props.feedbackID, { content, attachments }))
+    await processFeedback(() => feedbackAdminApis.createFeedbackReply(props.feedbackID, { content }))
   },
   { en: 'Failed to send reply', zh: '发送回复失败' },
   { en: 'Reply sent', zh: '回复已发送' }
@@ -217,7 +199,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
             v-if="feedback.status === FeedbackStatus.New"
             v-radar="{ name: 'no-reply-needed-button', desc: 'Close this feedback without notifying the user' }"
             type="primary"
-            :disabled="handleSendReply.isLoading.value"
+            :disabled="handleSendReply.isLoading.value || handleAddReplyImages.isLoading.value"
             :loading="handleMarkAsNoReplyNeeded.isLoading.value"
             @click="handleMarkAsNoReplyNeeded.fn"
           >
@@ -352,36 +334,24 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
         <UIForm :form="replyForm" @submit="handleSendReply.fn">
           <UIFormItem class="mt-3" path="content">
             <UITextInput
+              ref="replyContentInput"
               v-model:value="replyForm.value.content"
               v-radar="{ name: 'reply-content-input', desc: 'Write the reply delivered to the user as a notification' }"
               type="textarea"
               :rows="4"
               :disabled="handleSendReply.isLoading.value"
+              :readonly="handleAddReplyImages.isLoading.value"
               :placeholder="$t({ en: 'Write a clear reply for the user', zh: '填写一条清晰的用户回复' })"
             />
           </UIFormItem>
           <div class="mt-3 flex flex-wrap items-center gap-3">
-            <div v-for="(image, i) in replyImages" :key="i" class="relative">
-              <FeedbackReplyImage :file="image" />
-              <UICornerIcon
-                v-if="!handleSendReply.isLoading.value"
-                v-radar="{
-                  name: 'remove-reply-image-button',
-                  desc: 'Remove this image from the reply',
-                  attrs: { name: image.name }
-                }"
-                type="trash"
-                button
-                @click="removeReplyImage(i)"
-              />
-            </div>
             <UIButton
-              v-if="replyImages.length < feedbackAdminApis.feedbackReplyAttachmentsMaxCount"
               v-radar="{ name: 'add-reply-images-button', desc: 'Attach images to the reply' }"
               type="white"
               size="small"
               icon="plus"
               :disabled="handleSendReply.isLoading.value"
+              :loading="handleAddReplyImages.isLoading.value"
               @click="handleAddReplyImages.fn"
             >
               {{ $t({ en: 'Add images', zh: '添加图片' }) }}
@@ -389,8 +359,8 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
             <span class="text-xs text-grey-700">
               {{
                 $t({
-                  en: `Up to ${feedbackAdminApis.feedbackReplyAttachmentsMaxCount} images`,
-                  zh: `最多 ${feedbackAdminApis.feedbackReplyAttachmentsMaxCount} 张图片`
+                  en: 'Supports Markdown. Images count toward the reply length.',
+                  zh: '支持 Markdown，图片代码计入回复字数。'
                 })
               }}
             </span>
@@ -402,7 +372,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
             <UIButton
               v-radar="{ name: 'send-reply-button', desc: 'Send this reply to the user as a notification' }"
               html-type="submit"
-              :disabled="handleMarkAsNoReplyNeeded.isLoading.value"
+              :disabled="handleMarkAsNoReplyNeeded.isLoading.value || handleAddReplyImages.isLoading.value"
               :loading="handleSendReply.isLoading.value"
             >
               {{ $t({ en: 'Send reply', zh: '发送回复' }) }}
@@ -412,35 +382,8 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
       </section>
 
       <section v-else-if="feedback.reply != null" class="rounded-lg border border-grey-400 bg-white p-5">
-        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h3 class="m-0 text-lg font-semibold text-title">{{ $t({ en: 'Reply', zh: '回复' }) }}</h3>
-          <time class="text-sm text-grey-800" :datetime="feedback.reply.createdAt">
-            {{
-              $t({
-                en: `Replied at ${formatTime(feedback.reply.createdAt)}`,
-                zh: `回复于 ${formatTime(feedback.reply.createdAt)}`
-              })
-            }}
-          </time>
-        </div>
-        <p class="m-0 mt-3 whitespace-pre-wrap break-words text-sm text-grey-1000">{{ feedback.reply.content }}</p>
-        <div v-if="feedback.reply.attachments.length > 0" class="mt-3 flex flex-wrap gap-3">
-          <a
-            v-for="(attachment, i) in feedback.reply.attachments"
-            :key="i"
-            class="block rounded-md focus-visible:outline-2 focus-visible:outline-primary-main"
-            :href="replyAttachmentUrls?.[i]"
-            :title="attachment.name"
-            target="_blank"
-          >
-            <UIImg
-              class="size-16 rounded-md border border-grey-400 bg-white"
-              size="cover"
-              :src="replyAttachmentUrls?.[i] ?? null"
-              :alt="attachment.name"
-            />
-          </a>
-        </div>
+        <h3 class="m-0 text-lg font-semibold text-title">{{ $t({ en: 'Reply', zh: '回复' }) }}</h3>
+        <NotificationMarkdown class="mt-3" :value="feedback.reply.content" :time="feedback.reply.createdAt" />
       </section>
     </div>
   </section>

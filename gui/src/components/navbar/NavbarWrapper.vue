@@ -13,7 +13,7 @@
       </div>
       <div class="basis-[30%] flex items-center justify-end" :class="!centered && 'mr-2'">
         <slot name="right"></slot>
-        <NavbarNotifications v-if="signedIn.isSignedIn" />
+        <NavbarNotifications v-if="signedIn.isSignedIn" :key="signedIn.username ?? undefined" />
         <NavbarProfile />
       </div>
     </div>

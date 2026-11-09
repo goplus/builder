@@ -41,6 +41,10 @@ Feedback has three statuses:
 
 A Feedback item is created in `new`. It can move from `new` to `replied` or `handled`; both are terminal states.
 
+### Reply
+
+A Reply contains Content in Markdown and its CreatedAt time. Content is limited to 1000 characters, including Markdown syntax and URLs. Images and links are part of Content.
+
 ### Context
 
 Context is the diagnostic information shared with a Feedback item. It includes available information from the following categories:
@@ -105,6 +109,8 @@ From Feedback details, an administrator can open the Project Snapshot through th
 When administrators process the same Feedback in the `new` state concurrently, the first successful action determines its terminal state, and the other administrators see the resulting state.
 
 ### Reply and Notification
+
+Administrators write replies in a text box that supports Markdown. Uploading an image inserts it at the cursor in Content, using the existing upload size limit.
 
 After an administrator successfully sends a Reply, Feedback enters the `replied` state and creates an [In-Product Notification](./in-product-notification.md) for the submitting user. If sending the Reply fails, the draft remains available and the administrator can try again.
 

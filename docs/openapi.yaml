@@ -6285,12 +6285,9 @@ paths:
               type: object
               required:
                 - content
-                - attachments
               properties:
                 content:
                   $ref: "#/components/schemas/FeedbackReply/properties/content"
-                attachments:
-                  $ref: "#/components/schemas/FeedbackReply/properties/attachments"
       responses:
         "201":
           description: Reply sent.
@@ -9349,47 +9346,22 @@ components:
       type: object
       required:
         - content
-        - attachments
         - createdAt
       properties:
         content:
-          description: Text of the reply in plain text.
+          description: |
+            Reply in Markdown, including links and inline images.
+
+            The length limit includes Markdown syntax and URLs.
           type: string
           minLength: 1
           maxLength: 1000
           pattern: "\\S"
           examples:
-            - Thanks for reporting. Renaming a sprite no longer stops it from moving.
-        attachments:
-          description: Images attached to the reply.
-          type: array
-          maxItems: 5
-          items:
-            type: object
-            required:
-              - name
-              - url
-            properties:
-              name:
-                description: |
-                  File name of the image.
+            - |
+              Thanks for reporting. Renaming a sprite no longer stops it from moving.
 
-                  Must not contain control characters.
-                type: string
-                minLength: 1
-                maxLength: 100
-                pattern: "\\S"
-                examples:
-                  - screenshot.png
-              url:
-                description: |
-                  Universal URL of the image.
-
-                  Must refer to a file in the upload bucket (see `UpInfo.bucket`), and must not contain control
-                  characters.
-                allOf:
-                  - $ref: "#/components/schemas/FileObject/properties/url"
-                maxLength: 150
+              ![screenshot.png](kodo://bucket/screenshot.png)
         createdAt:
           description: Time when the reply was sent.
           $ref: "#/components/schemas/Model/properties/createdAt"

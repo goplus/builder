@@ -2,8 +2,6 @@ import { client, SortOrder, type ByPage, type PaginationParams } from '@/apis/co
 import type { Feedback, FeedbackReply, FeedbackStatus } from '@/apis/feedback'
 
 export const feedbackReplyContentMaxLength = 1000
-export const feedbackReplyAttachmentsMaxCount = 5
-export const feedbackReplyAttachmentNameMaxLength = 100
 
 export type ListFeedbackParams = PaginationParams & {
   /** Filter feedback by status */
@@ -30,7 +28,7 @@ export function updateFeedback(id: string, params: UpdateFeedbackParams) {
   return client.patch(`/admin/feedback/${encodeURIComponent(id)}`, params) as Promise<Feedback>
 }
 
-export type CreateFeedbackReplyParams = Pick<FeedbackReply, 'content' | 'attachments'>
+export type CreateFeedbackReplyParams = Pick<FeedbackReply, 'content'>
 
 /** Reply to feedback in the `new` status, which notifies the user who submitted it */
 export function createFeedbackReply(id: string, params: CreateFeedbackReplyParams) {

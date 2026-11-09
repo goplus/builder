@@ -1,4 +1,4 @@
-import { client, type UniversalUrl } from './common'
+import { client } from './common'
 
 export const feedbackTitleMaxLength = 100
 export const feedbackDescriptionMaxLength = 2000
@@ -14,18 +14,9 @@ export enum FeedbackStatus {
   Replied = 'replied'
 }
 
-export type FeedbackReplyAttachment = {
-  /** File name of the image */
-  name: string
-  /** Universal URL of the image */
-  url: UniversalUrl
-}
-
 export type FeedbackReply = {
-  /** Text of the reply in plain text */
+  /** Reply in Markdown, including inline images */
   content: string
-  /** Images attached to the reply */
-  attachments: FeedbackReplyAttachment[]
   /** Time when the reply was sent */
   createdAt: string
 }

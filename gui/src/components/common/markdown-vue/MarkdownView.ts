@@ -39,7 +39,7 @@ export type Components = {
    *  Content
    * </pre>
    * ```
-   * A custom `a` component also receives links to files stored in Kodo (`kodo://...`), and is expected to resolve them to web URLs.
+   * Custom `a` and `img` components also receive Kodo URLs (`kodo://...`), and are expected to resolve them to web URLs.
    */
   custom?: Record<string, Component>
   /**
@@ -347,10 +347,16 @@ function getSanitizeSchema(customComponents: Record<string, Component>): Sanitiz
     attributes[tagName] = propNames
   })
   attributes.pre = [...(defaultSchema.attributes?.pre ?? []), 'is', ...allCustomPropNames]
-  const hrefProtocols = [...(defaultSchema.protocols?.href ?? [])]
-  // Native links cannot open Kodo URLs, so keep them only for a custom `a` component to resolve
-  if (Object.prototype.hasOwnProperty.call(customComponents, 'a')) hrefProtocols.push(UniversalUrlScheme.Kodo)
   // Without `protocols`, `hast-util-sanitize` would keep URLs of any protocol, such as `javascript:`
-  const protocols = { ...defaultSchema.protocols, href: hrefProtocols }
+  const protocols = { ...defaultSchema.protocols }
+  // Native elements cannot use Kodo URLs; only a matching custom component can resolve them
+  for (const [tagName, attribute] of [
+    ['a', 'href'],
+    ['img', 'src']
+  ] as const) {
+    if (Object.prototype.hasOwnProperty.call(customComponents, tagName)) {
+      protocols[attribute] = [...(protocols[attribute] ?? []), UniversalUrlScheme.Kodo]
+    }
+  }
   return { tagNames, attributes, protocols }
 }

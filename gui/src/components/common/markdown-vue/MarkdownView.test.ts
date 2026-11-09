@@ -274,6 +274,21 @@ describe('MarkdownView', () => {
       '<div><p><a class="custom-link" href="kodo://bucket/image.png"><!--[-->image<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a></p></div>'
     )
   })
+  it('keeps Kodo image sources only for a custom image component and still drops unsafe sources', async () => {
+    const value =
+      '![image](kodo://bucket/image.png) ![unsafe](javascript:alert) ![inline](data:image/png;base64,AAAA) ![web](https://example.com/image.png)'
+    const image = { template: '<img :src="src" :alt="alt">', props: ['src', 'alt'] }
+    const plain = await renderToString(MarkdowView, { props: { value } })
+    expect(plain).not.toContain('src="kodo:')
+    const custom = await renderToString(MarkdowView, {
+      props: { value, components: markRaw({ custom: { img: image } }) }
+    })
+    expect(custom).toContain('src="kodo://bucket/image.png"')
+    expect(custom).toContain('src="https://example.com/image.png"')
+    expect(custom).not.toContain('src="javascript:')
+    expect(custom).not.toContain('src="data:')
+    expect(custom).toContain('alt="unsafe"')
+  })
   it('should keep the content after `<` if complete', async () => {
     const result = await renderToString(MarkdowView, {
       props: {

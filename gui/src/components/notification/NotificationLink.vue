@@ -3,6 +3,8 @@ import { imgExts } from '@/utils/file'
 import { extname } from '@/utils/path'
 import { UniversalUrlScheme } from '@/utils/universal-url'
 
+const insideLinkKey = Symbol('notification-link')
+
 /** Only images in Kodo are previewed, as other hosts may not allow the cross-origin isolated app to load images */
 function isKodoImageUrl(url: string) {
   return url.startsWith(`${UniversalUrlScheme.Kodo}:`) && imgExts.includes(extname(url).slice(1).toLowerCase())
@@ -10,7 +12,7 @@ function isKodoImageUrl(url: string) {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject, provide } from 'vue'
 
 import { Cancelled } from '@/utils/exception'
 import { useAsyncComputed } from '@/utils/utils'
@@ -27,6 +29,10 @@ const props = withDefaults(
   { href: null, title: null }
 )
 
+// A Markdown image may already be inside a link; do not nest another anchor
+const insideLink = inject<boolean>(insideLinkKey, false)
+provide(insideLinkKey, true)
+
 const webUrl = useAsyncComputed(async () => {
   if (props.href == null) return null
   if (!props.href.startsWith(`${UniversalUrlScheme.Kodo}:`)) return props.href
@@ -37,7 +43,7 @@ const previewImage = useModal(NotificationImagePreviewModal)
 
 function handleImageClick(event: MouseEvent) {
   // Keep native behaviors such as opening the image in a new tab
-  if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return
+  if (event.button !== 0 || [event.ctrlKey, event.metaKey, event.shiftKey, event.altKey].some(Boolean)) return
   event.preventDefault()
   if (webUrl.value == null) return
   const name = props.title ?? (event.currentTarget as HTMLElement).textContent ?? ''
@@ -49,14 +55,25 @@ function handleImageClick(event: MouseEvent) {
 </script>
 
 <template>
-  <span v-if="href == null"><slot></slot></span>
+  <span v-if="href == null || insideLink"><slot :url="href == null ? null : webUrl"></slot></span>
   <a
     v-else-if="isImage"
+    v-radar="{
+      name: 'notification-image-link',
+      desc: 'Preview this image',
+      attrs: { url: href, name: title }
+    }"
     class="notification-image-link block w-fit max-w-full cursor-zoom-in truncate"
     :href="webUrl ?? undefined"
     :title="title ?? undefined"
     @click="handleImageClick"
-    ><slot></slot
+    ><slot :url="webUrl"></slot
   ></a>
-  <a v-else :href="webUrl ?? undefined" :title="title ?? undefined"><slot></slot></a>
+  <a
+    v-else
+    v-radar="{ name: 'notification-link', desc: 'Open this link', attrs: { url: href, name: title ?? href } }"
+    :href="webUrl ?? undefined"
+    :title="title ?? undefined"
+    ><slot :url="webUrl"></slot
+  ></a>
 </template>

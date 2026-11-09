@@ -4,8 +4,9 @@ import { markRaw } from 'vue'
 import { humanizeExactTime, humanizeTime } from '@/utils/utils'
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
 import NotificationLink from './NotificationLink.vue'
+import NotificationImage from './NotificationImage.vue'
 
-const components = markRaw({ custom: { a: NotificationLink } })
+const components = markRaw({ custom: { a: NotificationLink, img: NotificationImage } })
 </script>
 
 <script setup lang="ts">

@@ -41,6 +41,10 @@ Feedback 有三种状态：
 
 Feedback 创建时为 `new`，可以从 `new` 进入 `replied` 或 `handled`；两者均为终态。
 
+### 回复 Reply
+
+一条 Reply 包含 Markdown 格式的 Content 和发送时间 CreatedAt。Content 最多 1000 个字符，包含 Markdown 语法和 URL。图片和链接都是 Content 的一部分。
+
 ### 上下文 Context
 
 Context 是随 Feedback 分享的诊断信息，包括以下类别中的可用信息：
@@ -105,6 +109,8 @@ Copilot、Costume 生成和 Animation 生成分别展示对应的功能与额度
 多名管理员并发处理同一条 `new` 状态的 Feedback 时，第一个成功的操作决定其终态，其他管理员看到最终生效的状态。
 
 ### 回复与通知
+
+管理员在支持 Markdown 的普通文本框中填写回复。上传图片后，图片会插入 Content 的光标位置，上传大小沿用现有限制。
 
 管理员成功发送 Reply 后，Feedback 进入 `replied` 状态，并为提交用户创建 [In-Product Notification](./in-product-notification.zh.md)。发送 Reply 失败时，表单保留草稿，管理员可以重试。
 

@@ -67,11 +67,10 @@ describe('admin feedback', () => {
     expect(feedbackAdminApis.createFeedbackReply).not.toHaveBeenCalled()
   })
 
-  it('replies to feedback with images', async () => {
+  it('inserts uploaded images at the cursor and sends a Markdown-only reply', async () => {
     await signIn({ canManageFeedback: true })
     const reply = {
-      content: 'Fixed in the next release.',
-      attachments: [{ name: 'fix.png', url: 'kodo://test/fix.png' }],
+      content: '**Before.**\n\n![fix.png](<kodo://test/fix.png>)\n\nAfter.',
       createdAt: '2026-01-03T00:00:00Z'
     }
     vi.mocked(feedbackAdminApis.getFeedback)
@@ -88,21 +87,26 @@ describe('admin feedback', () => {
     const findButton = (text: string) => wrapper.findAll('button').find((button) => button.text() === text)
     await vi.waitFor(() => expect(findButton('Send reply')).toBeDefined())
 
+    const input = wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    await input.setValue('Before.After.')
+    input.element.setSelectionRange(7, 7)
     await findButton('Add images')!.trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('img[alt="fix.png"]').exists()).toBe(true))
-    await wrapper.get('[aria-label="Reply content input"] textarea').setValue('  Fixed in the next release.  ')
+    await vi.waitFor(() => expect(input.element.value).toBe('Before.\n\n![fix.png](<kodo://test/fix.png>)\n\nAfter.'))
+    await vi.waitFor(() => expect(input.element.readOnly).toBe(false))
+    await input.setValue(`  ${reply.content}  `)
     await findButton('Send reply')!.trigger('click')
 
     await vi.waitFor(() =>
       expect(feedbackAdminApis.createFeedbackReply).toHaveBeenCalledWith('1', {
-        content: 'Fixed in the next release.',
-        attachments: [{ name: 'fix.png', url: 'kodo://test/fix.png' }]
+        content: reply.content
       })
     )
-    // The backend accepts only Kodo URLs for reply attachments.
+    // Markdown refers to the uploaded image, never an inline data URL.
     expect(saveFile).toHaveBeenCalledWith(expect.objectContaining({ name: 'fix.png' }), { inlineable: false })
     await vi.waitFor(() => expect(wrapper.find('a[href="https://assets.test/fix.png"]').exists()).toBe(true))
-    expect(wrapper.text()).toContain('Fixed in the next release.')
+    expect(wrapper.get('strong').text()).toBe('Before.')
+    expect(wrapper.get('img[alt="fix.png"]').attributes('src')).toBe('https://assets.test/fix.png')
+    expect(wrapper.text()).toContain('After.')
     expect(findButton('Send reply')).toBeUndefined()
   })
 
@@ -124,6 +128,58 @@ describe('admin feedback', () => {
     expect(feedbackAdminApis.getFeedback).toHaveBeenCalledTimes(1)
   })
 
+  it('locks editing and feedback actions while an image uploads', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(makeFeedback())
+    vi.mocked(selectFilesWithUploadLimit).mockResolvedValueOnce([new File(['image'], 'fix.png')])
+    let finishUpload!: (url: string) => void
+    vi.mocked(saveFile).mockImplementationOnce(() => new Promise((resolve) => (finishUpload = resolve)))
+    const { wrapper } = await mountPages('/admin/feedback/1')
+    const input = await vi.waitFor(() =>
+      wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    )
+    await input.setValue('Before. Replace this. After.')
+    input.element.setSelectionRange(8, 21)
+    await wrapper.get('[aria-label="Add reply images button"]').trigger('click')
+    await vi.waitFor(() => expect(saveFile).toHaveBeenCalledTimes(1))
+    expect(input.element.readOnly).toBe(true)
+    expect(wrapper.get('[aria-label="Send reply button"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[aria-label="No reply needed button"]').attributes('disabled')).toBeDefined()
+    finishUpload('kodo://test/fix.png')
+    await vi.waitFor(() => expect(input.element.readOnly).toBe(false))
+    expect(input.element.value).toBe('Before. \n\n![fix.png](<kodo://test/fix.png>)\n\n After.')
+    expect(feedbackAdminApis.createFeedbackReply).not.toHaveBeenCalled()
+    expect(feedbackAdminApis.updateFeedback).not.toHaveBeenCalled()
+  })
+
+  it('keeps uploaded image Markdown when a later upload or sending fails', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(makeFeedback())
+    vi.mocked(selectFilesWithUploadLimit).mockResolvedValueOnce([
+      new File(['image'], 'fix[1].png'),
+      new File(['image'], 'second.png')
+    ])
+    vi.mocked(saveFile).mockResolvedValueOnce('kodo://test/fix.png').mockRejectedValueOnce(new Error('offline'))
+    vi.mocked(feedbackAdminApis.createFeedbackReply).mockRejectedValue(new Error('offline'))
+    const { wrapper } = await mountPages('/admin/feedback/1')
+    const input = await vi.waitFor(() =>
+      wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    )
+    await input.setValue('A fix.')
+    input.element.setSelectionRange(6, 6)
+    await wrapper.get('[aria-label="Add reply images button"]').trigger('click')
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Failed to add images'))
+    await vi.waitFor(() => expect(input.element.readOnly).toBe(false))
+    const content = 'A fix.\n\n![fix\\[1\\].png](<kodo://test/fix.png>)'
+    expect(input.element.value.trim()).toBe(content)
+    await wrapper.get('[aria-label="Send reply button"]').trigger('click')
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Failed to send reply'))
+    expect(feedbackAdminApis.createFeedbackReply).toHaveBeenCalledWith('1', { content })
+    expect(input.element.value.trim()).toBe(content)
+    expect(saveFile).toHaveBeenCalledTimes(2)
+    expect(feedbackAdminApis.getFeedback).toHaveBeenCalledTimes(1)
+  })
+
   it('validates reply content before sending', async () => {
     await signIn({ canManageFeedback: true })
     vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(makeFeedback())
@@ -138,6 +194,97 @@ describe('admin feedback', () => {
     await sendReply.trigger('click')
     await vi.waitFor(() => expect(wrapper.text()).toContain(`The reply must be ${maxLength} characters or fewer`))
     expect(feedbackAdminApis.createFeedbackReply).not.toHaveBeenCalled()
+  })
+
+  it('counts uploaded image Markdown toward the reply length', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(makeFeedback())
+    vi.mocked(selectFilesWithUploadLimit).mockResolvedValueOnce([new File(['image'], 'fix.png')])
+    vi.mocked(saveFile).mockResolvedValueOnce('kodo://test/fix.png')
+    const { wrapper } = await mountPages('/admin/feedback/1')
+    const input = await vi.waitFor(() =>
+      wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    )
+    const maxLength = feedbackAdminApis.feedbackReplyContentMaxLength
+    await input.setValue('a'.repeat(maxLength))
+    input.element.setSelectionRange(maxLength, maxLength)
+    await wrapper.get('[aria-label="Add reply images button"]').trigger('click')
+    await vi.waitFor(() => expect(input.element.value).toContain('![fix.png]'))
+    await vi.waitFor(() => expect(input.element.readOnly).toBe(false))
+    await wrapper.get('[aria-label="Send reply button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.text()).toContain(`The reply must be ${maxLength} characters or fewer`))
+    expect(feedbackAdminApis.createFeedbackReply).not.toHaveBeenCalled()
+    expect(input.element.value).toContain('kodo://test/fix.png')
+  })
+
+  it('inserts multiple images in order without replacing surrounding text', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(makeFeedback())
+    vi.mocked(selectFilesWithUploadLimit).mockResolvedValueOnce([
+      new File(['image'], 'first.png'),
+      new File(['image'], 'second.png')
+    ])
+    vi.mocked(saveFile).mockResolvedValueOnce('kodo://test/first.png').mockResolvedValueOnce('kodo://test/second.png')
+    const { wrapper } = await mountPages('/admin/feedback/1')
+    const input = await vi.waitFor(() =>
+      wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    )
+    await input.setValue('Before.After.')
+    input.element.setSelectionRange(7, 7)
+    await wrapper.get('[aria-label="Add reply images button"]').trigger('click')
+    await vi.waitFor(() => expect(input.element.value).toContain('second.png'))
+    expect(input.element.value).toBe(
+      'Before.\n\n![first.png](<kodo://test/first.png>)\n\n\n\n![second.png](<kodo://test/second.png>)\n\nAfter.'
+    )
+  })
+
+  it('inserts an image at the beginning without replacing the draft', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(makeFeedback())
+    vi.mocked(selectFilesWithUploadLimit).mockResolvedValueOnce([new File(['image'], 'fix.png')])
+    vi.mocked(saveFile).mockResolvedValueOnce('kodo://test/fix.png')
+    const { wrapper } = await mountPages('/admin/feedback/1')
+    const input = await vi.waitFor(() =>
+      wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    )
+    await input.setValue('After.')
+    input.element.setSelectionRange(0, 0)
+    await wrapper.get('[aria-label="Add reply images button"]').trigger('click')
+    await vi.waitFor(() => expect(input.element.value).toBe('\n\n![fix.png](<kodo://test/fix.png>)\n\nAfter.'))
+  })
+
+  it('keeps drafts and pending uploads with their feedback when navigating directly', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback).mockImplementation(async (id) =>
+      makeFeedback({ id, title: `Report ${id}` })
+    )
+    vi.mocked(selectFilesWithUploadLimit).mockResolvedValueOnce([new File(['image'], 'fix.png')])
+    let finishUpload!: (url: Awaited<ReturnType<typeof saveFile>>) => void
+    vi.mocked(saveFile).mockImplementationOnce(() => new Promise((resolve) => (finishUpload = resolve)))
+    vi.mocked(feedbackAdminApis.createFeedbackReply).mockResolvedValue({
+      content: 'Reply for B',
+      createdAt: '2026-01-03T00:00:00Z'
+    })
+    const { wrapper, router } = await mountPages('/admin/feedback/1')
+    const input = await vi.waitFor(() =>
+      wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    )
+    await input.setValue('Draft for A')
+    await wrapper.get('[aria-label="Add reply images button"]').trigger('click')
+    await vi.waitFor(() => expect(saveFile).toHaveBeenCalledOnce())
+    await router.push('/admin/feedback/2')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Report 2'))
+    const nextInput = wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    expect(nextInput.element.value).toBe('')
+    finishUpload('kodo://test/fix.png')
+    await flushPromises()
+    expect(nextInput.element.value).toBe('')
+    await nextInput.setValue('Reply for B')
+    await wrapper.get('[aria-label="Send reply button"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(feedbackAdminApis.createFeedbackReply).toHaveBeenCalledWith('2', { content: 'Reply for B' })
+    )
+    expect(feedbackAdminApis.createFeedbackReply).toHaveBeenCalledOnce()
   })
 
   it('only attaches images to replies', async () => {

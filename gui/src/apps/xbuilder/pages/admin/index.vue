@@ -137,7 +137,7 @@ watch(
         </template>
       </UIError>
       <CenteredWrapper v-else class="py-6 tablet:py-8" size="large">
-        <RouterView />
+        <RouterView :key="route.path" />
       </CenteredWrapper>
     </main>
   </div>
