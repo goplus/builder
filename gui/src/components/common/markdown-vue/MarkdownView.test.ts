@@ -296,6 +296,15 @@ describe('MarkdownView', () => {
       '<div><p><a>file</a> <a>unsafe</a> <img class="custom-image" src="kodo://bucket/image.png" alt="image"> <img class="custom-image" alt="unsafe"> <img class="custom-image" alt="inline"></p></div>'
     )
   })
+  it('should render code blocks with `codeBlock` component', async () => {
+    const codeBlock = { template: '<div class="code-block">{{ language }}: <slot /></div>', props: ['language'] }
+    const result = await renderToString(MarkdowView, {
+      props: { value: '```js\nconst a = 1\n```\n\n```\nplain\n```', components: markRaw({ codeBlock }) }
+    })
+    expect(result).toBe(
+      '<div><div class="code-block">js: <!--[-->const a = 1\n<!--]--></div>\n<div class="code-block">: <!--[-->plain\n<!--]--></div></div>'
+    )
+  })
   it('should keep the content after `<` if complete', async () => {
     const result = await renderToString(MarkdowView, {
       props: {
