@@ -8,10 +8,10 @@
  * are the framework's internal contract, both ends evolve inside this
  * directory, and the host never touches JSON.
  *
- * Deliberately dependency-free: nothing is imported from spx-gui, since the
+ * Deliberately dependency-free: nothing is imported from gui, since the
  * XGoFramework shape the executor wants can be declared locally as a
  * structural type, which keeps the whole tools/tutorial directory movable into
- * a repository of its own. spx-gui reaches this file through the symlink
+ * a repository of its own. gui reaches this file through the symlink
  * src/utils/tutorial-framework.ts, the same way it consumes tools/spxls's
  * index.d.ts.
  */
@@ -85,7 +85,7 @@ export interface TutorialFrameworkHost {
 }
 
 // Structurally the same as XGoFramework/XGoCapability in
-// spx-gui/src/utils/xgoexec, declared locally to stay dependency-free;
+// gui/src/utils/xgoexec, declared locally to stay dependency-free;
 // TypeScript's structural typing keeps the two compatible.
 type Capability = (request: unknown) => unknown | Promise<unknown>;
 type Framework = { name: string; capabilities: Record<string, Capability> };

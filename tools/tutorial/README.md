@@ -3,13 +3,13 @@
 `tools/tutorial` is the class framework for Playground Courses. A Playground Course is an XGo program, `main_course.gox`,
 that runs next to an embedded SPX project. It tells the learner what to do, watches what they do in the editor, and
 decides when the goal is reached. The framework turns these calls into capabilities of the host, the Tutorial module in
-spx-gui, and delivers host events back to the course's callbacks. It runs on the framework-neutral
+gui, and delivers host events back to the course's callbacks. It runs on the framework-neutral
 [XGo Executor](../xgoexec/).
 
 ## For course authors
 
 The guide for course authors is kept as a skill in [`skills/tutorial-course`](./skills/tutorial-course/), so that
-people and the Course Editor's assistant read the same text: spx-gui links the directory in as a built-in skill.
+people and the Course Editor's assistant read the same text: gui links the directory in as a built-in skill.
 
 - [`SKILL.md`](./skills/tutorial-course/SKILL.md): what a course is made of, how its program drives the learner's
   session, and how to work on a course in the Course Editor.

@@ -12,7 +12,7 @@ The first step was to introduce a general `IProject` interface and reorganize th
 
 ### 1. Introduced `IProject` interface
 
-`spx-gui/src/models/project.ts` defines the minimal, file-based project interface that any project type must satisfy:
+`gui/src/models/project.ts` defines the minimal, file-based project interface that any project type must satisfy:
 
 ```ts
 export interface IProject {

@@ -53,7 +53,7 @@ These are the rules of change.
   together. `client_contract_test.go` extracts and compares them automatically
 - The contracts in `docs/develop/tutorial-v2` are the source of truth. Align parameter names and shapes to the
   contract, never to a downstream prototype
-- `skills/tutorial-course/` is the course-author guide, kept as a skill: people read it, and spx-gui links the
+- `skills/tutorial-course/` is the course-author guide, kept as a skill: people read it, and gui links the
   directory in as the Course Editor's authoring skill. Any change to the author-facing surface of this package
   (exported methods, events and their payload fields, exported constants and types, `index.json` fields, course asset
   conventions) updates it in the same commit and passes the guide compile test in `tools/xgoexec-bundle`
@@ -78,5 +78,5 @@ These are the rules of change.
 
 - After changing this package's exported surface, rerun `go generate` in `tools/xgoexec-bundle` (qexp); CI's
   `tools-tutorial-test` job fails on a stale export file
-- `client.ts` is a self-contained unit consumed by spx-gui through a symlink: it must not import anything from
-  spx-gui (structural typing keeps it compatible with `XGoFramework`)
+- `client.ts` is a self-contained unit consumed by gui through a symlink: it must not import anything from
+  gui (structural typing keeps it compatible with `XGoFramework`)

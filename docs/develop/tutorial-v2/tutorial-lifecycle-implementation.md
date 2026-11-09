@@ -377,5 +377,5 @@ CopilotRoot. CoursePlayground passes a nested Host Scope to Session, which owns
 startup state, the borrowed CodeEditor reference and runtime errors. The loading
 cover gates the parent page Scope while Host readiness remains independent,
 avoiding a startup dependency cycle. Preview uses the same
-coordination. See the [readiness module README](../../../spx-gui/src/utils/readiness/README.md)
+coordination. See the [readiness module README](../../../gui/src/utils/readiness/README.md)
 for its API and behavior.

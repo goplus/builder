@@ -8,7 +8,7 @@
 
 	NOTE: Use "Merge pull request" instead of "Squash and merge" or "Rebase and merge".
 
-3. Now deployment to the production environment for both frontend (spx-gui) and backend (spx-backend) will be triggered automatically.
+3. Now deployment to the production environment for both frontend (gui) and backend (spx-backend) will be triggered automatically.
 
 	For more details about
 	* Backend CD, see https://github.com/goplus/builder/pull/533
