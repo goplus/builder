@@ -24,8 +24,8 @@ export type ListNotificationsParams = {
   category: NotificationCategory
   /** Filter notifications by read state, omit to list both read and unread ones */
   read?: boolean
-  /** The `nextPageToken` of the previous page, omit to get the first page */
-  pageToken?: string
+  /** The `nextPageToken` of the previous page, `null` or omitted to get the first page */
+  pageToken?: string | null
   pageSize?: number
 }
 

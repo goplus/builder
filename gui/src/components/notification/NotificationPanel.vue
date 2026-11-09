@@ -22,26 +22,17 @@ import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
-  useUnreadNotificationCount
+  useUnreadNotificationCounts
 } from '@/stores/notification'
 import { UIButton, UIEmpty, UIError, UILoading, UITab, UITabs } from '@/components/ui'
 import { getMarkdownText } from '@/components/common/markdown-vue/MarkdownView'
 import NotificationMarkdown from './NotificationMarkdown.vue'
 
-const unreadCountQueries = {
-  [NotificationCategory.Message]: useUnreadNotificationCount(NotificationCategory.Message),
-  [NotificationCategory.Announcement]: useUnreadNotificationCount(NotificationCategory.Announcement)
-}
-
-function getUnreadCount(category: NotificationCategory) {
-  return unreadCountQueries[category].data.value ?? 0
-}
-
-const totalUnreadCount = computed(() => tabs.reduce((sum, tab) => sum + getUnreadCount(tab.category), 0))
+const { byCategory: unreadCounts, total: totalUnreadCount } = useUnreadNotificationCounts()
 
 // Show announcements first only when all unread notifications are announcements
 const activeCategory = ref(
-  getUnreadCount(NotificationCategory.Message) === 0 && getUnreadCount(NotificationCategory.Announcement) > 0
+  unreadCounts.value[NotificationCategory.Message] === 0 && totalUnreadCount.value > 0
     ? NotificationCategory.Announcement
     : NotificationCategory.Message
 )
@@ -110,10 +101,10 @@ function openNotification(notification: Notification) {
         >
           {{ $t(tab.label) }}
           <span
-            v-if="getUnreadCount(tab.category) > 0"
+            v-if="unreadCounts[tab.category] > 0"
             class="ml-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-100 px-1 text-sm font-normal leading-[18px] text-red-main tabular-nums"
           >
-            {{ formatUnreadCount(getUnreadCount(tab.category)) }}
+            {{ formatUnreadCount(unreadCounts[tab.category]) }}
           </span>
         </UITab>
       </UITabs>

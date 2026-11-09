@@ -2,15 +2,14 @@ import { computed, toValue, type WatchSource } from 'vue'
 import { useAction } from '@/utils/exception'
 import { useInfiniteQueryWithCache, useQueryCache, useQueryWithCache } from '@/utils/query'
 import * as apis from '@/apis/notification'
-import type { NotificationCategory } from '@/apis/notification'
+import { NotificationCategory } from '@/apis/notification'
 import { useSignedIn } from './user'
 
 function getNotificationsQueryKey(signedInUsernameInput: string | null) {
   return ['notifications', signedInUsernameInput]
 }
 
-/** Count of unread notifications of the signed-in user in the given category */
-export function useUnreadNotificationCount(category: NotificationCategory) {
+function useUnreadNotificationCount(category: NotificationCategory) {
   const signedIn = useSignedIn()
   return useQueryWithCache({
     queryKey: computed(() => [...getNotificationsQueryKey(signedIn.username), 'unread-count', category]),
@@ -22,6 +21,18 @@ export function useUnreadNotificationCount(category: NotificationCategory) {
   })
 }
 
+/** Counts of unread notifications of the signed-in user, by category and in total */
+export function useUnreadNotificationCounts() {
+  const messageCount = useUnreadNotificationCount(NotificationCategory.Message)
+  const announcementCount = useUnreadNotificationCount(NotificationCategory.Announcement)
+  const byCategory = computed<Record<NotificationCategory, number>>(() => ({
+    [NotificationCategory.Message]: messageCount.data.value ?? 0,
+    [NotificationCategory.Announcement]: announcementCount.data.value ?? 0
+  }))
+  const total = computed(() => Object.values(byCategory.value).reduce((sum, count) => sum + count, 0))
+  return { byCategory, total }
+}
+
 const notificationsPageSize = 20
 
 /** Notifications of the signed-in user in the given category, loaded page by page */
@@ -30,10 +41,7 @@ export function useNotifications(category: WatchSource<NotificationCategory>) {
   return useInfiniteQueryWithCache({
     queryKey: computed(() => [...getNotificationsQueryKey(signedIn.username), 'list', toValue(category)]),
     queryFn: (pageToken, signal) =>
-      apis.listNotifications(
-        { category: toValue(category), pageToken: pageToken ?? undefined, pageSize: notificationsPageSize },
-        signal
-      ),
+      apis.listNotifications({ category: toValue(category), pageToken, pageSize: notificationsPageSize }, signal),
     getNextPageToken: (page) => page.nextPageToken,
     failureSummaryMessage: { en: 'Failed to load notifications', zh: '加载通知失败' }
   })

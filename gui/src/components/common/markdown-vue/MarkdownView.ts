@@ -69,6 +69,8 @@ export type Props = {
   /** Markdown string */
   value: string
   components?: Components
+  /** Whether `value` is complete. If not (e.g., while streaming), its last incomplete tag is dropped */
+  complete?: boolean
 }
 
 export default defineComponent<Props>(
@@ -89,6 +91,11 @@ export default defineComponent<Props>(
         type: Object,
         required: false,
         default: () => ({})
+      },
+      complete: {
+        type: Boolean,
+        required: false,
+        default: false
       }
     }
   }
@@ -123,9 +130,11 @@ function findCustomComponentUsagesInNode(node: hast.Node, components: Components
   }
 }
 
-/** Get the text content of the markdown string with whitespace collapsed, for example, to preview it in one line */
+/** Get the text content of the complete markdown string with whitespace collapsed, for example, to preview it in one line */
 export function getMarkdownText(value: string) {
-  return getHastText(parseMarkdown({ value })).replace(/\s+/g, ' ').trim()
+  return getHastText(parseMarkdown({ value, complete: true }))
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function getHastText(node: hast.Nodes): string {
@@ -205,12 +214,12 @@ export function preprocessIncompleteTags(value: string, tagNames: string[]) {
   return value
 }
 
-function parseMarkdown({ value, components }: Props): hast.Nodes {
+function parseMarkdown({ value, components, complete }: Props): hast.Nodes {
   const customComponents = { ...components?.custom, ...components?.customRaw }
   const customTagNames = Object.keys(customComponents)
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
   value = preprocessSelfClosingComponents(value, customTagNames)
-  value = preprocessIncompleteTags(value, customTagNames)
+  if (!complete) value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value, {
     extensions: markdownExtensions,
     mdastExtensions

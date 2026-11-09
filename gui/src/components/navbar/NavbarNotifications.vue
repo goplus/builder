@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
-import { NotificationCategory } from '@/apis/notification'
-import { useUnreadNotificationCount } from '@/stores/notification'
+import { useUnreadNotificationCounts } from '@/stores/notification'
 import { UIDropdown, UIIcon, UITooltip } from '@/components/ui'
 import NotificationPanel from '@/components/notification/NotificationPanel.vue'
 
-const messageUnreadCount = useUnreadNotificationCount(NotificationCategory.Message)
-const announcementUnreadCount = useUnreadNotificationCount(NotificationCategory.Announcement)
-const unreadCount = computed(() => (messageUnreadCount.data.value ?? 0) + (announcementUnreadCount.data.value ?? 0))
+const { total: unreadCount } = useUnreadNotificationCounts()
 
 const panelVisible = ref(false)
 </script>

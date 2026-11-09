@@ -225,6 +225,9 @@ describe('getMarkdownText', () => {
   it('should keep escaped characters and drop unsafe HTML', () => {
     expect(getMarkdownText('1\\. Fixed \\*now\\* <script>alert(1)</script>')).toBe('1. Fixed *now*')
   })
+  it('should keep the text after a trailing `<`', () => {
+    expect(getMarkdownText('Use \\<audio\\> if x \\< 10')).toBe('Use <audio> if x < 10')
+  })
 })
 
 describe('MarkdownView', () => {
@@ -270,6 +273,16 @@ describe('MarkdownView', () => {
     expect(result).toBe(
       '<div><p><a class="custom-link" href="kodo://bucket/image.png"><!--[-->image<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a></p></div>'
     )
+  })
+  it('should keep the content after `<` if complete', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: 'Use \\<audio\\>\n\n> If x \\< 10',
+        components: markRaw({ custom: { a: { template: '<a><slot /></a>' } } }),
+        complete: true
+      }
+    })
+    expect(result).toBe('<div><p>Use &lt;audio&gt;</p>\n<blockquote>\n<p>If x &lt; 10</p>\n</blockquote></div>')
   })
   it('should handle custom components', async () => {
     const testComp1 = {

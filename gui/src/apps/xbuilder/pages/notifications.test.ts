@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { flushPromises, type VueWrapper } from '@vue/test-utils'
+import { flushPromises, type DOMWrapper, type VueWrapper } from '@vue/test-utils'
 import { setupPageTests, mountPages, signIn } from '@/apps/xbuilder/pages/test'
 import { cloudHelpers } from '@/models/common/cloud'
 import { NotificationCategory, type Notification } from '@/apis/notification'
@@ -23,13 +23,27 @@ const reply: Notification = {
   id: '1',
   category: NotificationCategory.Message,
   title: 'Re: Sprite stops moving',
-  body: 'Fixed in the next release\\.\n\n[fix.png](<kodo://test/fix.png>)\n\n[Unsafe link](javascript:alert)',
+  body: 'Fixed \\<audio\\> in the next release\\.\n\n[fix.png](<kodo://test/fix.png>)\n\n[photo.png](https://example.com/photo.png)\n\n[Unsafe link](javascript:alert)',
   createdAt: '2026-01-03T00:00:00Z',
   readAt: null
 }
 
 function getUnreadState(wrapper: VueWrapper) {
   return wrapper.get('[aria-label="Notifications button"]').attributes('aria-description')
+}
+
+/** Whether clicking the link keeps its native behavior, such as opening it in a new tab */
+async function isNativeClick(link: Pick<DOMWrapper<Element>, 'trigger'>, options: MouseEventInit = {}) {
+  let defaultPrevented = true
+  // Record whether the link prevented the navigation, then prevent it to stay on the page
+  const listener = (event: Event) => {
+    defaultPrevented = event.defaultPrevented
+    event.preventDefault()
+  }
+  window.addEventListener('click', listener)
+  await link.trigger('click', options)
+  window.removeEventListener('click', listener)
+  return !defaultPrevented
 }
 
 describe('notifications', () => {
@@ -46,7 +60,7 @@ describe('notifications', () => {
     await vi.waitFor(() => expect(getUnreadState(wrapper)).toBe('Open notifications, 1 unread'))
     await wrapper.get('[aria-label="Notifications button"]').trigger('click')
     const item = await vi.waitFor(() => wrapper.get('[aria-label="Re: Sprite stops moving"]'))
-    expect(item.text()).toContain('Fixed in the next release. fix.png Unsafe link')
+    expect(item.text()).toContain('Fixed <audio> in the next release. fix.png photo.png Unsafe link')
     await item.trigger('click')
 
     await vi.waitFor(() => expect(notificationApis.markNotificationRead).toHaveBeenCalledWith('1'))
@@ -54,6 +68,9 @@ describe('notifications', () => {
     expect(wrapper.findAll('a').some((a) => a.text() === 'Unsafe link')).toBe(false)
     expect(wrapper.text()).toContain('Unsafe link')
     await vi.waitFor(() => expect(getUnreadState(wrapper)).toBe('Open notifications'))
+    // Only images in Kodo are previewed
+    expect(await isNativeClick(wrapper.get('a[href="https://example.com/photo.png"]'))).toBe(true)
+    expect(await isNativeClick(imageLink, { ctrlKey: true })).toBe(true)
 
     await imageLink.trigger('click')
     const previewImage = await vi.waitFor(() => {

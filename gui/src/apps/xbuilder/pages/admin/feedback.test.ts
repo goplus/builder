@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { setupPageTests, mountPages, makeFeedback, signIn } from '@/apps/xbuilder/pages/test'
 import { cloudHelpers, saveFile, selectFilesWithUploadLimit } from '@/models/common/cloud'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
@@ -101,6 +102,24 @@ describe('admin feedback', () => {
     await vi.waitFor(() => expect(wrapper.find('a[href="https://assets.test/fix.png"]').exists()).toBe(true))
     expect(wrapper.text()).toContain('Fixed in the next release.')
     expect(findButton('Send reply')).toBeUndefined()
+  })
+
+  it('keeps the reply draft when sending fails', async () => {
+    await signIn({ canManageFeedback: true })
+    vi.mocked(feedbackAdminApis.getFeedback)
+      .mockResolvedValueOnce(makeFeedback())
+      .mockRejectedValue(new Error('offline'))
+    vi.mocked(feedbackAdminApis.createFeedbackReply).mockRejectedValue(new Error('offline'))
+
+    const { wrapper } = await mountPages('/admin/feedback/1')
+    const getContentInput = () => wrapper.get<HTMLTextAreaElement>('[aria-label="Reply content input"] textarea')
+    await (await vi.waitFor(getContentInput)).setValue('Fixed in the next release.')
+    await wrapper.get('[aria-label="Send reply button"]').trigger('click')
+
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Failed to send reply'))
+    await flushPromises()
+    expect(getContentInput().element.value).toBe('Fixed in the next release.')
+    expect(feedbackAdminApis.getFeedback).toHaveBeenCalledTimes(1)
   })
 
   it('validates reply content before sending', async () => {

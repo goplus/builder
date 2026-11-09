@@ -9,21 +9,18 @@ const components = markRaw({ custom: { a: NotificationLink } })
 </script>
 
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    /** Notification body in Markdown */
-    value: string
-    /** Time of the notification, shown after the body */
-    time?: string | null
-  }>(),
-  { time: null }
-)
+defineProps<{
+  /** Notification body in Markdown */
+  value: string
+  /** Time of the notification, shown after the body */
+  time: string
+}>()
 </script>
 
 <template>
   <div class="notification-content">
-    <MarkdownView class="notification-markdown" :value="value" :components="components" />
-    <time v-if="time != null" class="notification-time" :datetime="time" :title="$t(humanizeExactTime(time))">
+    <MarkdownView class="notification-markdown" :value="value" :components="components" complete />
+    <time class="notification-time" :datetime="time" :title="$t(humanizeExactTime(time))">
       {{ $t(humanizeTime(time)) }}
     </time>
   </div>

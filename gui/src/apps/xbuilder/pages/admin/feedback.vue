@@ -89,15 +89,15 @@ async function processFeedback(process: () => Promise<unknown>) {
   try {
     await process()
   } catch (e) {
-    if (e instanceof ApiException && e.code === ApiExceptionCode.errorConflict)
-      throw new DefaultException({
-        en: 'This feedback has already been processed',
-        zh: '该反馈已被处理'
-      })
-    throw e
-  } finally {
+    // Reload only on conflicts, as a failed reload would replace the page and the reply draft with an error
+    if (!(e instanceof ApiException) || e.code !== ApiExceptionCode.errorConflict) throw e
     feedbackQuery.refetch()
+    throw new DefaultException({
+      en: 'This feedback has already been processed',
+      zh: '该反馈已被处理'
+    })
   }
+  feedbackQuery.refetch()
 }
 
 const replyForm = useForm({
@@ -215,7 +215,7 @@ const handleMarkAsNoReplyNeeded = useMessageHandle(
         <div class="flex shrink-0 items-center gap-2">
           <UIButton
             v-if="feedback.status === FeedbackStatus.New"
-            v-radar="{ name: 'mark-as-no-reply-needed', desc: 'Close this feedback without notifying the user' }"
+            v-radar="{ name: 'no-reply-needed-button', desc: 'Close this feedback without notifying the user' }"
             type="primary"
             :disabled="handleSendReply.isLoading.value"
             :loading="handleMarkAsNoReplyNeeded.isLoading.value"
