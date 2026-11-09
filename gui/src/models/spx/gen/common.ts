@@ -1,5 +1,6 @@
 import { ActionException, Cancelled, capture, Exception } from '@/utils/exception'
 import { Disposable, mergeSignals, promiseForSignal } from '@/utils/disposable'
+import { timeout } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { ProgressReporter } from '@/utils/progress'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
@@ -261,7 +262,9 @@ export class Task<T extends TaskType> extends Disposable {
       // startAutoReport reports percentage: 0 synchronously, so Phase.run sets state.timeLeft immediately
       reporter.startAutoReport(timeLeft, { signal })
     }
-    if (!isTerminalTaskStatus(data.status)) {
+    let reconnects = 0
+    while (!isTerminalTaskStatus(data.status)) {
+      signal.throwIfAborted()
       for await (const event of this.apis.subscribeTaskEvents(data.id, signal)) {
         switch (event.type) {
           case TaskEventType.Snapshot:
@@ -284,6 +287,14 @@ export class Task<T extends TaskType> extends Disposable {
         }
         if (isTerminalTaskStatus(data.status)) break
       }
+      if (isTerminalTaskStatus(data.status)) break
+      signal.throwIfAborted()
+      if (reconnects === 3) {
+        throw new Error(`task event stream ended before task completed (status: ${data.status})`)
+      }
+      reconnects++
+      // A closed stream does not imply the task failed; resubscribe for a fresh snapshot.
+      await timeout(1000, signal)
     }
     reporter?.report(1)
     if (data.status === TaskStatus.Completed) return data.result!
