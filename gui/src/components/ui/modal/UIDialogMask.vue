@@ -4,9 +4,11 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  /** Emitted only when both the pointer press and release are outside the content. */
   click: []
 }>()
 
+// A selection drag can produce a backdrop click when it starts inside the content and ends outside.
 let maskClick = false
 
 function isOutsideContent(event: PointerEvent) {
