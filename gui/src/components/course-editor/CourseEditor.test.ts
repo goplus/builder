@@ -10,6 +10,9 @@ import { fromConfig, fromText, toConfig, type Files } from '@/models/common/file
 import { mainCourseFilePath } from '@/models/tutorial/course'
 import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
+import { Copilot } from '@/components/copilot/copilot'
+import DockedCopilotUI from '@/components/copilot/DockedCopilotUI.vue'
+import { InMemorySkillRegistry } from '@/components/copilot/skills/registry'
 import type { History } from '@/components/editor/history'
 import type { PlaygroundCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
@@ -34,6 +37,8 @@ const courseEditorRoutes = [
 // Copilot the author writes with.
 const { mocks } = vi.hoisted(() => ({
   mocks: {
+    copilot: null as Copilot | null,
+    dockedPreview: false,
     getCourse: vi.fn(),
     updateCourse: vi.fn(),
     saveFiles: vi.fn(),
@@ -87,15 +92,18 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
 }))
 
 vi.mock('@/components/copilot/context', () => ({
-  useCopilot: () => ({
-    active: false,
-    exportCurrentSession: () => null,
-    restoreSession: vi.fn(),
-    endCurrentSession: vi.fn(),
-    open: vi.fn(),
-    close: vi.fn()
-  })
+  useCopilot: () =>
+    mocks.copilot ?? {
+      active: false,
+      exportCurrentSession: () => null,
+      restoreSession: vi.fn(),
+      endCurrentSession: vi.fn(),
+      open: vi.fn(),
+      close: vi.fn()
+    }
 }))
+vi.mock('@/components/copilot/CopilotChat.vue', () => ({ default: { template: '<div class="chat" />' } }))
+vi.mock('@/components/copilot/CopilotTrigger.vue', () => ({ default: { template: '<button>Copilot</button>' } }))
 vi.mock('./copilot', () => ({ useCourseEditorCopilot: () => {} }))
 vi.mock('./project', () => ({ getProjectEditorHost: () => ({ name: 'ProjectEditorHost', render: () => null }) }))
 vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
@@ -103,7 +111,7 @@ vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
     name: 'CoursePlayground',
     props: ['projectQueryRet', 'router'],
     emits: ['courseCompleted', 'courseRestart'],
-    render: () => null
+    render: () => (mocks.dockedPreview ? h(DockedCopilotUI) : null)
   }
 }))
 vi.mock('./code-editor', async (importOriginal) => ({
@@ -259,6 +267,99 @@ async function completePreviewedCourse(wrapper: Awaited<ReturnType<typeof mountP
   wrapper.findComponent({ name: 'CoursePlayground' }).vm.$emit('courseCompleted', { feedback: null })
   await flushPromises()
 }
+
+describe('CourseEditor Copilot restoration', () => {
+  afterEach(() => {
+    mocks.copilot?.dispose()
+    mocks.copilot = null
+    mocks.dockedPreview = false
+  })
+
+  it('keeps the learner session when preview is re-entered before the queued author restoration', async () => {
+    const copilot = new Copilot(new InMemorySkillRegistry())
+    mocks.copilot = copilot
+    mocks.dockedPreview = true
+    copilot.open()
+    const authorTopic = { title: { en: 'Author', zh: '作者' }, description: 'Author session', reactToEvents: false }
+    await copilot.startSession(authorTopic)
+    const course = makeCourse('2338', 'First')
+    const { router } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+    const editingRoute = router.currentRoute.value
+    await enterPreview(router, course)
+    const previewRoute = router.currentRoute.value
+    await copilot.startSession({ ...authorTopic, description: 'First learner session' })
+    copilot.open()
+
+    // Re-enter between the render flush that unmounts the preview and its nextTick restoration.
+    router.currentRoute.value = editingRoute
+    queueMicrotask(() => {
+      router.currentRoute.value = previewRoute
+      void copilot.startSession({ ...authorTopic, description: 'Second learner session' })
+    })
+    await flushPromises()
+
+    expect(copilot.currentSession?.topic.description).toBe('Second learner session')
+    expect(copilot.globalUIEnabled).toBe(false)
+    expect(copilot.active).toBe(false)
+    await leavePreview(router, course)
+    expect(copilot.currentSession?.topic).toEqual(authorTopic)
+    expect(copilot.active).toBe(true)
+    copilot.close()
+  })
+
+  it.each([
+    { active: false, docked: true, exit: 'back' },
+    { active: true, docked: true, exit: 'back' },
+    { active: false, docked: true, exit: 'completion' },
+    { active: true, docked: true, exit: 'completion' },
+    { active: false, docked: true, exit: 'closeEditor' },
+    { active: true, docked: true, exit: 'closeEditor' },
+    { active: false, docked: false, exit: 'back' },
+    { active: true, docked: false, exit: 'back' }
+  ])('restores author state ($active) after $exit with docked=$docked', async ({ active, docked, exit }) => {
+    const copilot = new Copilot(new InMemorySkillRegistry())
+    mocks.copilot = copilot
+    mocks.dockedPreview = docked
+    const restoredWithGlobalUI: boolean[] = []
+    const restoreSession = copilot.restoreSession.bind(copilot)
+    vi.spyOn(copilot, 'restoreSession').mockImplementation((session) => {
+      restoredWithGlobalUI.push(copilot.globalUIEnabled)
+      restoreSession(session)
+    })
+    if (active) copilot.open()
+    else copilot.close()
+    const authorTopic = { title: { en: 'Author', zh: '作者' }, description: 'Author session', reactToEvents: false }
+    await copilot.startSession(authorTopic)
+    const course = makeCourse('2338', 'First')
+    const { wrapper, router, closeEditor } = await mountPreviewing(course, makeSeries(['2338']), { editing: true })
+    await enterPreview(router, course)
+    await copilot.startSession({ ...authorTopic, description: 'Learner session' })
+    if (docked) {
+      await wrapper.findComponent(DockedCopilotUI).find('button').trigger('click')
+      expect(wrapper.find('.chat').exists()).toBe(true)
+    } else if (active) copilot.close()
+    else copilot.open()
+
+    if (exit === 'completion') {
+      mocks.completionAction = 'exit'
+      mocks.completionAnswer = null
+      await completePreviewedCourse(wrapper)
+    } else if (exit === 'closeEditor') await closeEditor()
+    else await leavePreview(router, course)
+
+    expect(copilot.currentSession?.topic).toEqual(authorTopic)
+    expect(restoredWithGlobalUI).toEqual([true])
+    expect(copilot.globalUIEnabled).toBe(true)
+    expect(copilot.active).toBe(active)
+    if (docked && exit === 'back') {
+      await enterPreview(router, course)
+      expect(wrapper.find('.chat').exists()).toBe(false)
+      await leavePreview(router, course)
+      expect(copilot.active).toBe(active)
+    }
+    copilot.close()
+  })
+})
 
 describe('CourseEditor preview', () => {
   beforeEach(() => {
