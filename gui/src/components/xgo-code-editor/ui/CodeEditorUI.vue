@@ -85,6 +85,11 @@ const uiRef = computed(() => {
   })
 })
 
+const showAPIReference = computed(() => {
+  const controller = uiRef.value.apiReferenceController
+  return props.hasApiReference && controller.items?.length !== 0
+})
+
 const initialFontSize = 12
 const fontSize = props.simpleMode ? ref(16) : useUserLocalStorage('spx-gui-code-font-size', initialFontSize)
 const wordWrap = props.simpleMode ? ref(true) : useUserLocalStorage('builder-code-editor-word-wrap', false)
@@ -286,7 +291,7 @@ providePopupContainer(codeEditorEl)
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
     <aside
-      v-if="hasApiReference"
+      v-if="showAPIReference"
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
@@ -298,7 +303,7 @@ providePopupContainer(codeEditorEl)
       />
     </aside>
     <div
-      v-if="hasApiReference"
+      v-if="showAPIReference"
       ref="resizeHandleEl"
       v-radar="{ name: 'resize-handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"

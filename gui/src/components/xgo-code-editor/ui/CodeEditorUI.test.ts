@@ -1,6 +1,8 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, shallowRef } from 'vue'
+import type { APIReferenceItem } from '../api-reference'
+import { APIReferenceController } from './api-reference'
 import { createI18n } from '@/utils/i18n'
 import type { MonacoEditor } from '../monaco'
 import { CodeEditorUIController } from './code-editor-ui'
@@ -112,4 +114,58 @@ describe('Code Editor UI options', () => {
     expect(editor.updateOptions).toHaveBeenLastCalledWith(expect.objectContaining({ wordWrap: 'on' }))
     normal.unmount()
   })
+})
+
+describe('API Reference layout', () => {
+  it.each([false, true])(
+    'hides only completed empty results and restores the sidebar (simpleMode=%s)',
+    async (simpleMode) => {
+      const items = shallowRef<APIReferenceItem[] | null>(null)
+      const error = shallowRef<unknown>(null)
+      vi.spyOn(APIReferenceController.prototype, 'items', 'get').mockImplementation(() => items.value)
+      vi.spyOn(APIReferenceController.prototype, 'error', 'get').mockImplementation(() => error.value)
+      const wrapper = shallowMount(CodeEditorUI, {
+        props: { codeFilePath: 'Cat.spx', simpleMode },
+        global: { plugins: [createI18n({ lang: 'en' })], directives: { radar: {} } }
+      })
+      const sidebar = () => wrapper.find('aside[style]')
+      const handle = () => wrapper.find('.cursor-col-resize')
+      expect(sidebar().exists()).toBe(true)
+      expect(handle().exists()).toBe(true)
+      const width = sidebar().attributes('style')
+
+      items.value = []
+      await nextTick()
+      expect(sidebar().exists()).toBe(false)
+      expect(handle().exists()).toBe(false)
+      expect(wrapper.findComponent({ name: 'APIReferenceUI' }).exists()).toBe(false)
+      expect(wrapper.findComponent({ name: 'MonacoEditorComp' }).exists()).toBe(true)
+      expect(wrapper.findComponent({ name: 'CodeEditorSettings' }).exists()).toBe(!simpleMode)
+
+      items.value = [{ definition: { package: 'spx', name: 'say' } } as APIReferenceItem]
+      await nextTick()
+      expect(sidebar().attributes('style')).toBe(width)
+      expect(handle().exists()).toBe(true)
+      expect(wrapper.findComponent({ name: 'APIReferenceUI' }).exists()).toBe(true)
+
+      items.value = null
+      await nextTick()
+      expect(sidebar().exists()).toBe(true)
+      error.value = new Error('API loading failed')
+      await nextTick()
+      expect(sidebar().exists()).toBe(true)
+
+      error.value = null
+      items.value = []
+      await nextTick()
+      expect(sidebar().exists()).toBe(false)
+
+      await wrapper.setProps({ hasApiReference: false })
+      items.value = [{ definition: { package: 'spx', name: 'say' } } as APIReferenceItem]
+      await nextTick()
+      expect(sidebar().exists()).toBe(false)
+      expect(handle().exists()).toBe(false)
+      wrapper.unmount()
+    }
+  )
 })
