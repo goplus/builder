@@ -54,6 +54,22 @@ Use `backgroundRefresh` for continuous displays and mutation-driven state, and s
 
 Business store hooks accept an options object, for example `useSeries(seriesID, { mode: QueryMode.Snapshot })`. Omitting the options or mode uses `backgroundRefresh` behavior.
 
+## Paged queries
+
+```ts
+const query = useInfiniteQueryWithCache({
+  queryKey: () => ['notifications', category.value],
+  queryFn: (pageToken, signal) => listNotifications({ category: category.value, pageToken }, signal),
+  getNextPageToken: (page) => page.nextPageToken
+})
+```
+
+`useInfiniteQueryWithCache` loads a cached list page by page. `queryFn` receives `null` as the token of the first page, and `getNextPageToken` returns `null` when there are no more pages. Data is the list of loaded pages.
+
+It always behaves like `QueryMode.BackgroundRefresh` and has no `mode` option. `refetch()` and cache invalidation refetch all loaded pages, retaining them until the refetch succeeds; failure retains them and exposes the error.
+
+`fetchNextPage()` loads the next page if `hasNextPage` is true. It does nothing while the query is fetching, so it can be called on every scroll event without restarting a pending request. `isFetchingNextPage` is true only while the next page loads.
+
 ## Reading and composing
 
 `untilLoaded(query, signal?)` waits for the query's observable loading state to end, then returns its data or throws its error. It follows the selected mode: a `backgroundRefresh` query can return its retained result during refresh. It does not independently require fresh cache data.

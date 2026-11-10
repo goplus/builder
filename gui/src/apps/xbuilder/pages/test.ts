@@ -12,6 +12,7 @@ import { initDayjs } from '@/setup/dayjs'
 import { client } from '@/apis/common'
 import { AssetType, type AssetData } from '@/apis/asset'
 import { FeedbackStatus, type Feedback } from '@/apis/feedback'
+import * as notificationApis from '@/apis/notification'
 import { ProjectType, Visibility, type ProjectData } from '@/apis/project'
 import * as projectApis from '@/apis/project'
 import * as releaseApis from '@/apis/project-release'
@@ -75,6 +76,7 @@ vi.mock('@/apis/admin/account', { spy: true })
 vi.mock('@/apis/admin/audit', { spy: true })
 vi.mock('@/apis/admin/feedback', { spy: true })
 vi.mock('@/apis/feedback', { spy: true })
+vi.mock('@/apis/notification', { spy: true })
 
 enableAutoUnmount(afterEach)
 initDayjs()
@@ -347,6 +349,7 @@ export function setupPageTests() {
     vi.mocked(projectApis.exploreProjects).mockImplementation(async ({ order }) => [makeProject(order)])
     vi.mocked(projectApis.getProject).mockImplementation(async (owner, name) => ({ ...makeProject(name), owner }))
     vi.mocked(releaseApis.listProjectReleases).mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(notificationApis.listNotifications).mockResolvedValue({ data: [], total: 0, nextPageToken: null })
     vi.mocked(projectApis.listUserPublicProjects).mockResolvedValue({ data: [makeProject('First flight')], total: 1 })
     vi.mocked(projectApis.listUserLikedProjects).mockResolvedValue({ data: [makeProject('Moon landing')], total: 1 })
     vi.mocked(projectApis.listProjects).mockResolvedValue({ data: [makeProject('Space game')], total: 1 })

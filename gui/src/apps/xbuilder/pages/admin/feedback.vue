@@ -14,19 +14,25 @@ function formatOutputTime(value: string) {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, useTemplateRef } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { imgExts } from '@/utils/file'
+import { useI18n } from '@/utils/i18n'
+import { extname } from '@/utils/path'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
+import { saveFile, selectFilesWithUploadLimit } from '@/models/common/cloud'
+import { fromNativeFile } from '@/models/common/file'
 import { useSignedIn } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { FeedbackStatus } from '@/apis/feedback'
-import { UIButton, UIError, UIIcon, UILoading } from '@/components/ui'
+import { UIButton, UIError, UIForm, UIFormItem, UIIcon, UILoading, UITextInput, useForm } from '@/components/ui'
 import { RuntimeOutputKind } from '@/components/editor/runtime'
 import { DiagnosticSeverity } from '@/components/editor/spx-code-editor'
 import { feedbackContextSchema } from '@/components/feedback/context'
+import NotificationMarkdown from '@/components/notification/NotificationMarkdown.vue'
 import * as feedbackAdminApis from '@/apis/admin/feedback'
 import { feedbackStatusLabels, formatJSON, formatTime } from './common'
 
@@ -34,6 +40,7 @@ const props = defineProps<{
   feedbackID: string
 }>()
 
+const i18n = useI18n()
 const signedIn = useSignedIn()
 const canManageFeedback = computed(() => signedIn.user?.capabilities.canManageFeedback === true)
 
@@ -61,23 +68,80 @@ usePageTitle(() =>
       ]
 )
 
-const handleMarkAsHandled = useMessageHandle(
+/** Process feedback in the `new` status, then reload it to show the latest status */
+async function processFeedback(process: () => Promise<unknown>) {
+  try {
+    await process()
+  } catch (e) {
+    // Reload only on conflicts, as a failed reload would replace the page and the reply draft with an error
+    if (!(e instanceof ApiException) || e.code !== ApiExceptionCode.errorConflict) throw e
+    feedbackQuery.refetch()
+    throw new DefaultException({
+      en: 'This feedback has already been processed',
+      zh: '该反馈已被处理'
+    })
+  }
+  feedbackQuery.refetch()
+}
+
+const replyForm = useForm({
+  content: ['', validateReplyContent]
+})
+
+function validateReplyContent(value: string) {
+  const trimmed = value.trim()
+  if (trimmed === '') return i18n.t({ en: 'The reply must not be blank', zh: '回复不可为空' })
+  const maxLength = feedbackAdminApis.feedbackReplyContentMaxLength
+  if (trimmed.length > maxLength)
+    return i18n.t({
+      en: `The reply must be ${maxLength} characters or fewer`,
+      zh: `回复不能超过 ${maxLength} 字`
+    })
+  return null
+}
+
+const replyContentInput = useTemplateRef('replyContentInput')
+
+async function addReplyImages() {
+  const input = replyContentInput.value?.getInputElement()
+  if (input == null) return
+  let start = input.selectionStart ?? replyForm.value.content.length
+  let end = input.selectionEnd ?? start
+  const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
+  if (nativeFiles.some((file) => !imgExts.includes(extname(file.name).slice(1).toLowerCase())))
+    throw new DefaultException({
+      en: `Only images can be attached (${imgExts.join(', ')})`,
+      zh: `只能添加图片（${imgExts.join('、')}）`
+    })
+  for (const file of nativeFiles) {
+    const url = await saveFile(fromNativeFile(file), { inlineable: false })
+    const name = file.name.replace(/[\r\n]/g, ' ').replace(/[\\[\]]/g, '\\$&')
+    const image = `\n\n![${name}](<${url}>)\n\n`
+    const content = replyForm.value.content
+    replyForm.value.content = content.slice(0, start) + image + content.slice(end)
+    start += image.length
+    end = start
+  }
+  await nextTick()
+  input.focus()
+  input.setSelectionRange(start, start)
+}
+
+const handleAddReplyImages = useMessageHandle(addReplyImages, { en: 'Failed to add images', zh: '添加图片失败' })
+
+const handleSendReply = useMessageHandle(
   async () => {
-    try {
-      await feedbackAdminApis.updateFeedback(props.feedbackID, { status: FeedbackStatus.Handled })
-    } catch (e) {
-      if (e instanceof ApiException && e.code === ApiExceptionCode.errorConflict)
-        throw new DefaultException({
-          en: 'This feedback has already been handled',
-          zh: '该反馈已被处理'
-        })
-      throw e
-    } finally {
-      feedbackQuery.refetch()
-    }
+    const content = replyForm.value.content.trim()
+    await processFeedback(() => feedbackAdminApis.createFeedbackReply(props.feedbackID, { content }))
   },
+  { en: 'Failed to send reply', zh: '发送回复失败' },
+  { en: 'Reply sent', zh: '回复已发送' }
+)
+
+const handleMarkAsNoReplyNeeded = useMessageHandle(
+  () => processFeedback(() => feedbackAdminApis.updateFeedback(props.feedbackID, { status: FeedbackStatus.Handled })),
   { en: 'Failed to update feedback status', zh: '更新反馈状态失败' },
-  { en: 'Feedback marked as handled', zh: '反馈已标记为已处理' }
+  { en: 'Marked as no reply needed', zh: '已标记为无需回复' }
 )
 </script>
 
@@ -133,12 +197,13 @@ const handleMarkAsHandled = useMessageHandle(
         <div class="flex shrink-0 items-center gap-2">
           <UIButton
             v-if="feedback.status === FeedbackStatus.New"
-            v-radar="{ name: 'mark-as-handled', desc: 'Mark this feedback as handled' }"
+            v-radar="{ name: 'no-reply-needed-button', desc: 'Close this feedback without notifying the user' }"
             type="primary"
-            :loading="handleMarkAsHandled.isLoading.value"
-            @click="handleMarkAsHandled.fn"
+            :disabled="handleSendReply.isLoading.value || handleAddReplyImages.isLoading.value"
+            :loading="handleMarkAsNoReplyNeeded.isLoading.value"
+            @click="handleMarkAsNoReplyNeeded.fn"
           >
-            {{ $t({ en: 'Mark as handled', zh: '标记为已处理' }) }}
+            {{ $t({ en: 'Mark as no reply needed', zh: '标记为无需回复' }) }}
           </UIButton>
           <UIButton
             v-radar="{ name: 'refresh-feedback', desc: 'Reload feedback details' }"
@@ -262,6 +327,63 @@ const handleMarkAsHandled = useMessageHandle(
             }}</pre>
           </details>
         </div>
+      </section>
+
+      <section v-if="feedback.status === FeedbackStatus.New" class="rounded-lg border border-grey-400 bg-white p-5">
+        <h3 class="m-0 text-lg font-semibold text-title">{{ $t({ en: 'Reply to user', zh: '回复用户' }) }}</h3>
+        <UIForm :form="replyForm" @submit="handleSendReply.fn">
+          <UIFormItem class="mt-3" path="content">
+            <UITextInput
+              ref="replyContentInput"
+              v-model:value="replyForm.value.content"
+              v-radar="{ name: 'reply-content-input', desc: 'Write the reply delivered to the user as a notification' }"
+              type="textarea"
+              :rows="4"
+              :disabled="handleSendReply.isLoading.value"
+              :readonly="handleAddReplyImages.isLoading.value"
+              :placeholder="$t({ en: 'Write a clear reply for the user', zh: '填写一条清晰的用户回复' })"
+            />
+          </UIFormItem>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <UIButton
+              v-radar="{ name: 'add-reply-images-button', desc: 'Attach images to the reply' }"
+              type="white"
+              size="small"
+              icon="plus"
+              :disabled="handleSendReply.isLoading.value"
+              :loading="handleAddReplyImages.isLoading.value"
+              @click="handleAddReplyImages.fn"
+            >
+              {{ $t({ en: 'Add images', zh: '添加图片' }) }}
+            </UIButton>
+            <span class="text-xs text-grey-700">
+              {{
+                $t({
+                  en: 'Supports Markdown. Images count toward the reply length.',
+                  zh: '支持 Markdown，图片代码计入回复字数。'
+                })
+              }}
+            </span>
+          </div>
+          <div class="mt-4 flex flex-wrap items-center justify-end gap-3">
+            <span class="text-xs text-grey-800">
+              {{ $t({ en: 'The user will receive a notification.', zh: '用户会收到通知。' }) }}
+            </span>
+            <UIButton
+              v-radar="{ name: 'send-reply-button', desc: 'Send this reply to the user as a notification' }"
+              html-type="submit"
+              :disabled="handleMarkAsNoReplyNeeded.isLoading.value || handleAddReplyImages.isLoading.value"
+              :loading="handleSendReply.isLoading.value"
+            >
+              {{ $t({ en: 'Send reply', zh: '发送回复' }) }}
+            </UIButton>
+          </div>
+        </UIForm>
+      </section>
+
+      <section v-else-if="feedback.reply != null" class="rounded-lg border border-grey-400 bg-white p-5">
+        <h3 class="m-0 text-lg font-semibold text-title">{{ $t({ en: 'Reply', zh: '回复' }) }}</h3>
+        <NotificationMarkdown class="mt-3" :value="feedback.reply.content" :time="feedback.reply.createdAt" />
       </section>
     </div>
   </section>

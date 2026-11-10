@@ -8,8 +8,17 @@ export const feedbackRequestBodyMaxSize = 256 * 1024
 export enum FeedbackStatus {
   /** Awaiting administrator processing */
   New = 'new',
-  /** Marked as handled by an administrator */
-  Handled = 'handled'
+  /** Marked by an administrator as needing no reply */
+  Handled = 'handled',
+  /** Replied to by an administrator */
+  Replied = 'replied'
+}
+
+export type FeedbackReply = {
+  /** Reply in Markdown, including inline images */
+  content: string
+  /** Time when the reply was sent */
+  createdAt: string
 }
 
 export type Feedback = {
@@ -29,6 +38,8 @@ export type Feedback = {
   context?: Record<string, unknown>
   /** Processing status */
   status: FeedbackStatus
+  /** Administrator reply, omitted unless the status is `replied`, and in feedback lists */
+  reply?: FeedbackReply
 }
 
 export type CreateFeedbackParams = Pick<Feedback, 'title' | 'description' | 'context'>

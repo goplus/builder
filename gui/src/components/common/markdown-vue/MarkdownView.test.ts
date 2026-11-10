@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { renderToString } from '@vue/test-utils'
 import { useSlotText } from '@/utils/vnode'
 import MarkdowView, {
+  getMarkdownText,
   preprocessCustomRawComponents,
   preprocessIncompleteTags,
   preprocessSelfClosingComponents
@@ -215,6 +216,20 @@ describe('preprocessIncompleteTags', () => {
   })
 })
 
+describe('getMarkdownText', () => {
+  it('should get text of blocks and inline elements in one line', () => {
+    const value =
+      '# Title\n\nFirst *line*\\\nsecond [link](https://example.com)\n\n> ![Screenshot](a.png) `code`\n\n- a\n- b'
+    expect(getMarkdownText(value)).toBe('Title First line second link Screenshot code a b')
+  })
+  it('should keep escaped characters and drop unsafe HTML', () => {
+    expect(getMarkdownText('1\\. Fixed \\*now\\* <script>alert(1)</script>')).toBe('1. Fixed *now*')
+  })
+  it('should keep the text after a trailing `<`', () => {
+    expect(getMarkdownText('Use \\<audio\\> if x \\< 10')).toBe('Use <audio> if x < 10')
+  })
+})
+
 describe('MarkdownView', () => {
   it('should render correctly', async () => {
     const result = await renderToString(MarkdowView, {
@@ -235,6 +250,71 @@ describe('MarkdownView', () => {
     expect(result).toContain(
       '<table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody><tr><td>Foo</td><td>Bar</td></tr></tbody></table>'
     )
+  })
+  it('should drop URLs of unsafe or custom protocols by default', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value:
+          '[file](custom://bucket/file.png) [unsafe](javascript:alert) [safe](https://example.com) ![image](custom://bucket/image.png) ![inline](data:image/png;base64,AAAA) ![safe](https://example.com/a.png)'
+      }
+    })
+    expect(result).toBe(
+      '<div><p><a>file</a> <a>unsafe</a> <a href="https://example.com">safe</a> <img alt="image"> <img alt="inline"> <img src="https://example.com/a.png" alt="safe"></p></div>'
+    )
+  })
+  it('should render links and images with `link` and `image` components', async () => {
+    const link = {
+      template: '<a class="custom-link" :href="href" :title="title"><slot /></a>',
+      props: ['href', 'title']
+    }
+    const image = {
+      template: '<img class="custom-image" :src="src" :alt="alt" :title="title">',
+      props: ['src', 'alt', 'title']
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: '[*Docs*](https://example.com "Read") ![Shot](https://example.com/a.png "Screen")',
+        components: markRaw({ link, image })
+      }
+    })
+    expect(result).toBe(
+      '<div><p><a class="custom-link" href="https://example.com" title="Read"><!--[--><em>Docs</em><!--]--></a> <img class="custom-image" src="https://example.com/a.png" alt="Shot" title="Screen"></p></div>'
+    )
+  })
+  it('should keep URLs of `customProtocols` and still drop unsafe URLs', async () => {
+    const value =
+      '[file](custom://bucket/file.png) [unsafe](javascript:alert) ![image](custom://bucket/image.png) ![inline](data:image/png;base64,AAAA)'
+    const link = { template: '<a class="custom-link" :href="href"><slot /></a>', props: ['href'] }
+    const image = { template: '<img class="custom-image" :src="src" :alt="alt">', props: ['src', 'alt'] }
+    const components = markRaw({ link, image })
+    const withoutProtocols = await renderToString(MarkdowView, { props: { value, components } })
+    expect(withoutProtocols).toBe(
+      '<div><p><a class="custom-link"><!--[-->file<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a> <img class="custom-image" alt="image"> <img class="custom-image" alt="inline"></p></div>'
+    )
+    const withProtocols = await renderToString(MarkdowView, {
+      props: { value, components, customProtocols: ['custom'] }
+    })
+    expect(withProtocols).toBe(
+      '<div><p><a class="custom-link" href="custom://bucket/file.png"><!--[-->file<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a> <img class="custom-image" src="custom://bucket/image.png" alt="image"> <img class="custom-image" alt="inline"></p></div>'
+    )
+  })
+  it('should render code blocks with `codeBlock` component', async () => {
+    const codeBlock = { template: '<div class="code-block">{{ language }}: <slot /></div>', props: ['language'] }
+    const result = await renderToString(MarkdowView, {
+      props: { value: '```js\nconst a = 1\n```\n\n```\nplain\n```', components: markRaw({ codeBlock }) }
+    })
+    expect(result).toBe(
+      '<div><div class="code-block">js: <!--[-->const a = 1\n<!--]--></div>\n<div class="code-block">: <!--[-->plain\n<!--]--></div></div>'
+    )
+  })
+  it('should keep the content after `<` if complete', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: 'Use \\<audio\\>\n\n> If x \\< 10',
+        complete: true
+      }
+    })
+    expect(result).toBe('<div><p>Use &lt;audio&gt;</p>\n<blockquote>\n<p>If x &lt; 10</p>\n</blockquote></div>')
   })
   it('should handle custom components', async () => {
     const testComp1 = {

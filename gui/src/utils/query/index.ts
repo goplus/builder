@@ -12,7 +12,12 @@ import {
   onScopeDispose,
   nextTick
 } from 'vue'
-import { useQuery as useVueQuery, useQueryClient as useVueQueryClient, isCancelledError } from '@tanstack/vue-query'
+import {
+  useInfiniteQuery as useVueInfiniteQuery,
+  useQuery as useVueQuery,
+  useQueryClient as useVueQueryClient,
+  isCancelledError
+} from '@tanstack/vue-query'
 import { type LocaleMessage } from '../i18n'
 import { useAction, ActionException, Cancelled, capture } from '../exception'
 import { until } from '../utils'
@@ -232,6 +237,59 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
     error: computed(() => result.value?.error ?? null),
     progress,
     refetch: () => read(true)
+  }
+}
+
+export type InfiniteQueryRet<T> = QueryRet<T[]> & {
+  hasNextPage: Ref<boolean>
+  isFetchingNextPage: Ref<boolean>
+  /** Fetch the next page, if there is one and no fetching is in progress */
+  fetchNextPage: () => void
+}
+
+export type InfiniteQueryWithCacheOptions<T> = {
+  queryKey: unknown[] | WatchSource<unknown[]>
+  /** Query one page, with `pageToken` `null` for the first page */
+  queryFn: (pageToken: string | null, signal: AbortSignal) => Promise<T>
+  /** Get the token of the page after `lastPage`, `null` if there are no more pages */
+  getNextPageToken: (lastPage: T) => string | null
+  failureSummaryMessage?: LocaleMessage
+}
+
+/**
+ * `useInfiniteQueryWithCache` is similar to `useQueryWithCache`, while it queries data page by page.
+ * The data is the list of loaded pages. Refetching or invalidating it refetches all loaded pages.
+ * It always behaves like `QueryMode.BackgroundRefresh`.
+ */
+export function useInfiniteQueryWithCache<T>(options: InfiniteQueryWithCacheOptions<T>): InfiniteQueryRet<T> {
+  let queryFn = options.queryFn
+  if (options.failureSummaryMessage != null) {
+    queryFn = useAction(queryFn, options.failureSummaryMessage)
+  }
+
+  const ret = useVueInfiniteQuery({
+    queryKey: computed(() => toValue(options.queryKey)),
+    queryFn: (ctx) => queryFn(ctx.pageParam, ctx.signal),
+    initialPageParam: null as string | null,
+    getNextPageParam: options.getNextPageToken
+  })
+
+  const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
+  function fetchNextPage() {
+    // Calling `fetchNextPage` of vue-query while fetching cancels and restarts the fetching,
+    // so frequent calls (for example, on scrolling) may keep the next page from loading.
+    if (!ret.hasNextPage.value || ret.isFetching.value) return
+    ret.fetchNextPage()
+  }
+  return {
+    isLoading: ret.isLoading,
+    data: computed(() => ret.data.value?.pages ?? null),
+    error: computed(() => (ret.error.value == null ? null : normalizeQueryError(ret.error.value))),
+    progress,
+    refetch: () => ret.refetch(),
+    hasNextPage: ret.hasNextPage,
+    isFetchingNextPage: ret.isFetchingNextPage,
+    fetchNextPage
   }
 }
 

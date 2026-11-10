@@ -14,6 +14,10 @@ const mdastExtensions = [gfmTableFromMarkdown()]
 export type Components = {
   /** Component for rendering code blocks */
   codeBlock?: Component
+  /** Component for rendering links, with props `href` (missing if unsafe) and `title` */
+  link?: Component
+  /** Component for rendering images, with props `src` (missing if unsafe), `alt` and `title` */
+  image?: Component
   /**
    * Custom components (key as component name expected to be in kebab-case).
    * Example:
@@ -67,6 +71,10 @@ export type Props = {
   /** Markdown string */
   value: string
   components?: Components
+  /** Whether `value` is complete. If not (e.g., while streaming), its last incomplete tag is dropped */
+  complete?: boolean
+  /** Custom URL protocols allowed in links and images, in addition to built-in ones such as `https` */
+  customProtocols?: string[]
 }
 
 export default defineComponent<Props>(
@@ -87,6 +95,16 @@ export default defineComponent<Props>(
         type: Object,
         required: false,
         default: () => ({})
+      },
+      complete: {
+        type: Boolean,
+        required: false,
+        default: false
+      },
+      customProtocols: {
+        type: Array,
+        required: false,
+        default: () => []
       }
     }
   }
@@ -118,6 +136,28 @@ function findCustomComponentUsagesInNode(node: hast.Node, components: Components
     return [{ name: is, props: hastProps2VueProps(properties) }]
   } else {
     return element.children.flatMap((child) => findCustomComponentUsagesInNode(child, components))
+  }
+}
+
+/** Get the text content of the complete markdown string with whitespace collapsed, for example, to preview it in one line */
+export function getMarkdownText(value: string) {
+  return getHastText(parseMarkdown({ value, complete: true }))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function getHastText(node: hast.Nodes): string {
+  switch (node.type) {
+    case 'root':
+      return node.children.map(getHastText).join('')
+    case 'element':
+      if (node.tagName === 'img') return typeof node.properties.alt === 'string' ? ` ${node.properties.alt} ` : ' '
+      if (node.tagName === 'br') return ' '
+      return node.children.map(getHastText).join('')
+    case 'text':
+      return node.value
+    default:
+      return ''
   }
 }
 
@@ -183,19 +223,19 @@ export function preprocessIncompleteTags(value: string, tagNames: string[]) {
   return value
 }
 
-function parseMarkdown({ value, components }: Props): hast.Nodes {
+function parseMarkdown({ value, components, complete, customProtocols }: Props): hast.Nodes {
   const customComponents = { ...components?.custom, ...components?.customRaw }
   const customTagNames = Object.keys(customComponents)
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
   value = preprocessSelfClosingComponents(value, customTagNames)
-  value = preprocessIncompleteTags(value, customTagNames)
+  if (!complete) value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value, {
     extensions: markdownExtensions,
     mdastExtensions
   })
   const hast = toHast(mdast, { allowDangerousHtml: true })
   const rawProcessed = raw(hast, { tagfilter: false })
-  const sanitizeSchema = getSanitizeSchema(customComponents)
+  const sanitizeSchema = getSanitizeSchema(customComponents, customProtocols ?? [])
   return sanitize(rawProcessed, sanitizeSchema)
 }
 
@@ -260,6 +300,16 @@ function renderHastElement(element: hast.Element, components: Components, key?: 
     }
     props = { language }
     children = renderComponentChildren(codeEl.children, components)
+  } else if (components.link != null && element.tagName === 'a') {
+    type = components.link
+    const { href, title } = element.properties
+    props = hastProps2VueProps({ href, title })
+    children = renderComponentChildren(element.children, components)
+  } else if (components.image != null && element.tagName === 'img') {
+    type = components.image
+    const { src, alt, title } = element.properties
+    props = hastProps2VueProps({ src, alt, title })
+    children = renderComponentChildren(element.children, components)
   } else {
     type = element.tagName
     props = hastProps2VueProps(element.properties)
@@ -305,7 +355,7 @@ function getComponentPropNames(compDef: Component): string[] {
 }
 
 /** Get sanitize schema for `hast-util-sanitize` to prevent XSS */
-function getSanitizeSchema(customComponents: Record<string, Component>): SanitizeSchema {
+function getSanitizeSchema(customComponents: Record<string, Component>, customProtocols: string[]): SanitizeSchema {
   const allCustomPropNames: string[] = []
   const tagNames = [...(defaultSchema.tagNames ?? [])]
   const attributes = { ...defaultSchema.attributes }
@@ -316,5 +366,11 @@ function getSanitizeSchema(customComponents: Record<string, Component>): Sanitiz
     attributes[tagName] = propNames
   })
   attributes.pre = [...(defaultSchema.attributes?.pre ?? []), 'is', ...allCustomPropNames]
-  return { tagNames, attributes }
+  // Without `protocols`, `hast-util-sanitize` would keep URLs of any protocol, such as `javascript:`
+  const protocols = {
+    ...defaultSchema.protocols,
+    href: [...(defaultSchema.protocols?.href ?? []), ...customProtocols],
+    src: [...(defaultSchema.protocols?.src ?? []), ...customProtocols]
+  }
+  return { tagNames, attributes, protocols }
 }
