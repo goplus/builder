@@ -30,12 +30,6 @@ import {
   type TaskSerialized
 } from './common'
 import type { SpriteContent } from '../common/sprite-content'
-import { simulateSpriteEdit, spriteEditDemoEnabled } from './edit-demo'
-import {
-  createAnimationReferenceVideo,
-  getAnimationReferenceLayout,
-  prepareAnimationReferenceVideo
-} from './animation-reference-video'
 import {
   loadReferenceImageSelection,
   resolveInitialReferenceImageSelection,
@@ -62,8 +56,6 @@ export type AnimationGenInits = {
   finishPhase?: Phase<Animation>
   hasPendingVideo?: boolean
   savedTaskIds?: string[]
-  editSource?: Animation
-  lastEdit?: { instruction: string; referenceVideoUrl: string }
 }
 
 export type RawAnimationGenConfig = Prettify<
@@ -75,15 +67,10 @@ export type RawAnimationGenConfig = Prettify<
     | 'extractFramesTask'
     | 'finishPhase'
     | 'video'
-    | 'editSource'
     | 'referenceCostumeId'
     | 'referenceImageSelection'
   > & {
     videoPath?: string
-    editSourceConfig?: {
-      animationConfig: RawAnimationConfig
-      costumeConfigs: RawCostumeConfig[]
-    }
     reference?: StoredReferenceImageSelection
     /** Read only for migration; new saves use reference. */
     referenceCostumeId?: string
@@ -127,8 +114,6 @@ export class AnimationGen extends Disposable {
   private savedResult: Animation | null
   private savedTaskIds: string[]
   private videoPending: boolean
-  private editSource: Animation | null
-  private lastEdit: AnimationGenInits['lastEdit'] | null
 
   constructor(i18n: I18n, parent: Sprite | SpriteContent, project: SpxProject, inits: AnimationGenInits = {}) {
     super()
@@ -160,8 +145,6 @@ export class AnimationGen extends Disposable {
     this.finishPhase =
       inits.finishPhase ?? new Phase({ en: 'extract frames and save animation', zh: '提取帧并保存动画' })
     this.savedResult = this.finishPhase.state.result ?? null
-    this.editSource = inits.editSource ?? null
-    this.lastEdit = inits.lastEdit ?? null
     this.savedTaskIds = inits.savedTaskIds ?? []
     this.videoPending = inits.hasPendingVideo ?? (this.video != null && this.savedResult == null)
     if (this.extractFramesTask != null) this.addDisposable(this.extractFramesTask)
@@ -238,70 +221,31 @@ export class AnimationGen extends Disposable {
   resetGenerateVideoState() {
     this.generateVideoPhase.reset()
   }
-  get editInstruction() {
-    return this.lastEdit?.instruction ?? null
-  }
-  acceptEdit() {
-    this.editSource = null
-    this.lastEdit = null
-  }
   async generateVideo() {
-    this.editSource = null
     this.setVideo(null)
     this.setFramesConfig(null)
-    return this.runVideoGeneration()
-  }
-  async editVideo(instruction: string) {
-    if (instruction.trim() === '') throw new Error('Edit instruction expected')
-    const source = this.video ?? this.result?.clone(true)
-    if (source == null) throw new Error('Video or saved animation expected')
-    if (this.result != null) this.editSource ??= this.result.clone(true)
-    return this.runVideoGeneration({
-      source,
-      framesConfig: this.framesConfig == null ? null : { ...this.framesConfig },
-      instruction: instruction.trim()
-    })
-  }
-  private async runVideoGeneration(
-    edit: { source: Animation | File; framesConfig: FramesConfig | null; instruction: string } | null = null
-  ) {
     this.resetGenerateVideoTasks()
     this.generateVideoTask = new Task(TaskType.GenerateAnimationVideo)
     const task = this.generateVideoTask
     this.addDisposable(task)
     const signal = task.getSignal()
-    const video = await this.generateVideoPhase.run(async (reporter) => {
-      if (edit != null) {
-        const referenceVideo =
-          edit.source instanceof Animation
-            ? await createAnimationReferenceVideo(edit.source, signal)
-            : await prepareAnimationReferenceVideo(edit.source, edit.framesConfig, signal)
-        const referenceVideoUrl = await saveFile(referenceVideo, signal)
-        this.lastEdit = { instruction: edit.instruction, referenceVideoUrl }
-        signal.throwIfAborted()
-        if (spriteEditDemoEnabled) return simulateSpriteEdit(referenceVideo, signal)
-        await task.start({
-          settings: { ...this.settings, referenceFrameUrl: null, referenceVideoUrl },
-          editInstruction: edit.instruction
-        })
-      } else {
-        this.lastEdit = null
-        const image =
-          this.referenceImageSelection?.type === 'local-image'
-            ? this.referenceImageSelection.file
-            : this.referenceCostume?.img
-        if (image == null) throw new Error('reference image or costume expected')
-        await validateAnimationReferenceImage(image)
-        signal.throwIfAborted()
-        const referenceFrameUrl = await saveFile(image, signal)
-        signal.throwIfAborted()
-        await task.start({ settings: { ...this.settings, referenceFrameUrl } })
-      }
+    await this.generateVideoPhase.run(async (reporter) => {
+      const image =
+        this.referenceImageSelection?.type === 'local-image'
+          ? this.referenceImageSelection.file
+          : this.referenceCostume?.img
+      if (image == null) throw new Error('reference image or costume expected')
+      await validateAnimationReferenceImage(image)
+      signal.throwIfAborted()
+      const referenceFrameUrl = await saveFile(image, signal)
+      signal.throwIfAborted()
+      await task.start({ settings: { ...this.settings, referenceFrameUrl } })
       const { videoUrl } = await task.untilCompleted(reporter)
-      return createFileWithUniversalUrl(videoUrl)
+      const video = createFileWithUniversalUrl(videoUrl)
+      this.setFramesConfig(null)
+      this.setVideo(video)
+      return video
     })
-    this.setFramesConfig(null)
-    this.setVideo(video)
   }
   private resetGenerateVideoTasks() {
     this.generateVideoTask?.tryCancel()
@@ -355,21 +299,13 @@ export class AnimationGen extends Disposable {
     return this.finishPhase.state.result ?? this.savedResult ?? undefined
   }
   private async createAnimationFromFrames(frameUrls: string[], durationInMs: number) {
-    const source = this.editSource ?? this.result
-    const layout = source == null ? null : await getAnimationReferenceLayout(source)
+    const source = this.result
     const frameImgs = frameUrls.map((url) => createFileWithUniversalUrl(url))
     const costumes = await Promise.all(
       frameImgs.map(async (img, i) => {
         const costumeName = `${this.settings.name}_frame_${i + 1}`
         const costume = await Costume.create(costumeName, img)
-        if (layout == null) {
-          await costume.autoFit()
-        } else {
-          const { width } = await costume.getRawSize()
-          costume.setBitmapResolution((width / layout.size) * layout.scale)
-          costume.setPivot({ x: layout.origin.x / layout.scale, y: layout.origin.y / layout.scale })
-          costume.setFaceRight(source!.costumes[0].faceRight)
-        }
+        await costume.autoFit()
         return costume
       })
     )
@@ -441,7 +377,6 @@ export class AnimationGen extends Disposable {
       id: this.id,
       hasPendingVideo: this.hasPendingVideo,
       savedTaskIds: this.savedTaskIds,
-      lastEdit: this.lastEdit ?? undefined,
       settings: this.settings,
       reference:
         selection?.type === 'local-image'
@@ -470,14 +405,6 @@ export class AnimationGen extends Disposable {
       const videoPath = `${assetsPath}/video${extname(this.video.name)}`
       files[videoPath] = this.video
       config.videoPath = videoPath
-    }
-    if (this.editSource != null) {
-      const [animationConfig, costumeConfigs, sourceFiles] = this.editSource.export(`${assetsPath}/source`, {
-        sounds: this.project.sounds,
-        includeId: true
-      })
-      config.editSourceConfig = { animationConfig, costumeConfigs }
-      Object.assign(files, sourceFiles)
     }
 
     return [config, files]
@@ -514,21 +441,9 @@ export class AnimationGen extends Disposable {
     const inits: AnimationGenInits = {
       id: genId,
       hasPendingVideo: config.hasPendingVideo,
-      savedTaskIds: config.savedTaskIds,
-      lastEdit: config.lastEdit
+      savedTaskIds: config.savedTaskIds
     }
     inits.settings = settings
-    if (config.editSourceConfig != null) {
-      const { animationConfig, costumeConfigs } = config.editSourceConfig
-      const costumes = costumeConfigs.map((costumeConfig) =>
-        Costume.load(costumeConfig, files, { basePath: `${assetsPath}/source`, includeId: true })
-      )
-      const [source] = Animation.load(settingsName, animationConfig, costumes, {
-        sounds: project.sounds,
-        includeId: true
-      })
-      inits.editSource = source
-    }
     inits.referenceImageSelection = loadReferenceImageSelection(reference, referenceCostumeId, files)
     if (framesConfig != null) inits.framesConfig = framesConfig
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)

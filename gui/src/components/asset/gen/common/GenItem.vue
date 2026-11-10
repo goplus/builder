@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { UIBlockItem } from '@/components/ui'
+import { UIBlockItem, UITag } from '@/components/ui'
+import GenerationIndicator from './GenerationIndicator.vue'
 
 withDefaults(
   defineProps<{
@@ -8,6 +9,7 @@ withDefaults(
     loading?: boolean
     /** highlight will highlight the placeholder. */
     highlight?: boolean
+    suggested?: boolean
     placeholder: string
   }>(),
   {
@@ -20,6 +22,17 @@ withDefaults(
 
 <template>
   <UIBlockItem class="gen-item" :class="{ loading, highlight, active }" :active="active" size="medium">
+    <GenerationIndicator v-if="loading" />
+    <UITag
+      v-if="suggested"
+      variant="none"
+      class="pointer-events-none absolute top-1.5 left-1.5 z-1 h-4 min-w-5 justify-center bg-grey-400 px-1 text-2xs font-medium text-grey-900"
+      role="note"
+      :aria-label="$t({ en: 'AI suggested', zh: 'AI 推荐' })"
+      :tabindex="-1"
+    >
+      {{ $t({ en: 'Suggested', zh: '推荐' }) }}
+    </UITag>
     <div class="preview-wrapper">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>
@@ -30,42 +43,8 @@ withDefaults(
 </template>
 
 <style scoped>
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes rotate-gradient {
-  to {
-    --angle: 360deg;
-  }
-}
-
 .gen-item.loading::before {
-  /* Force override UIBlockItem's border */
   border: none;
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 2px;
-  border-radius: inherit;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-  background: conic-gradient(
-    from var(--angle) at 50% 50%,
-    #dcf7fa 100deg,
-    #0bc0cf 288deg,
-    rgba(243, 252, 253, 0.8) 324deg,
-    #dcf7fa 360deg
-  );
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 150% 150%;
-  animation: rotate-gradient 3s linear infinite;
 }
 
 .gen-item.highlight .placeholder {

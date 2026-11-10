@@ -6,11 +6,12 @@
     <template v-if="$slots.ops != null" #ops>
       <slot name="ops"></slot>
     </template>
-    <div class="relative flex-1 overflow-hidden rounded-sm w-full">
-      <CheckerboardBackground class="absolute inset-0" />
+    <ResourceCanvas :resource-key="costume.id" :image="costume.img">
       <UIImg class="h-full w-full" :src="imgSrc" :loading="imgLoading" />
-      <slot v-if="!imgLoading" name="overlay"></slot>
-    </div>
+      <template #overlay="{ area }">
+        <slot v-if="!imgLoading" name="overlay" :area="area"></slot>
+      </template>
+    </ResourceCanvas>
   </EditorItemDetail>
 </template>
 
@@ -19,7 +20,7 @@ import { UIImg } from '@/components/ui'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import type { Costume } from '@/models/spx/costume'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
-import CheckerboardBackground from './CheckerboardBackground.vue'
+import ResourceCanvas from './ResourceCanvas.vue'
 
 const props = defineProps<{
   costume: Costume

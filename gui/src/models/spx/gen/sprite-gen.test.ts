@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
-import { TaskStatus } from '@/apis/aigc'
+import { TaskStatus, TaskType } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as imgHelpers from '@/utils/img'
 import * as fileHelpers from '@/models/common/file'
@@ -16,13 +16,6 @@ import type { AnimationGen } from './animation-gen'
 import { SpriteGen } from './sprite-gen'
 import { mockSaveFile } from './test-helpers'
 import { mockFile } from '../../common/test'
-import { createAnimationReferenceVideo, prepareAnimationReferenceVideo } from './animation-reference-video'
-
-vi.mock('./animation-reference-video', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./animation-reference-video')>()),
-  createAnimationReferenceVideo: vi.fn(),
-  prepareAnimationReferenceVideo: vi.fn(async (video) => video)
-}))
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
@@ -56,8 +49,6 @@ describe('SpriteGen', () => {
   beforeEach(() => {
     aigcMock.reset()
     mockSaveFile()
-    vi.mocked(prepareAnimationReferenceVideo).mockClear()
-    vi.mocked(createAnimationReferenceVideo).mockResolvedValue(mockFile('reference.mp4'))
   })
 
   it('saves the default costume and plans additional resources without generating them', async () => {
@@ -70,6 +61,9 @@ describe('SpriteGen', () => {
     })
     await gen.genImages()
     gen.setImageIndex(0)
+    expect([...aigcMock.tasks.values()].map(({ task }) => task.type)).toEqual([TaskType.GenerateCostume])
+    expect([...aigcMock.tasks.values()][0].params).toMatchObject({ n: 4, removeBackground: true })
+    const preview = gen.image!
     const { sprite, contentSettings } = await gen.finishDefaultCostume()
     expect(sprite.costumes).toHaveLength(1)
     expect(sprite.animations).toHaveLength(0)
@@ -87,6 +81,7 @@ describe('SpriteGen', () => {
       ]
     })
     expect(aigcMock.tasks.size).toBe(1)
+    expect(sprite.defaultCostume?.img).toBe(preview)
   })
 
   it('edits generated costumes and keeps instructions and retry references after reopening', async () => {
@@ -128,43 +123,6 @@ describe('SpriteGen', () => {
     expect(restored.costumes[0].result).toBe(saved)
     expect(restored.costumes[0].image).toBe(preview)
     expect(project.sprites[0].costumes.map((costume) => costume.img)).toEqual(originalImages)
-  })
-
-  it('edits generated animations without changing their identity, order or state bindings', async () => {
-    const project = makeSpxProject()
-    const gen = new SpriteGen(i18n, project, { settings: { name: 'Hero', description: 'A knight' } })
-    onTestFinished(() => {
-      gen.dispose()
-      project.dispose()
-    })
-    await gen.genImages()
-    gen.setImageIndex(0)
-    await gen.prepareContent()
-    await finishAnimationGen('walk', gen.animations[0])
-    await finishAnimationGen('jump', gen.animations[1])
-    await flushPromises()
-    const animation = gen.animations[0]
-    const original = animation.result!
-    const ids = gen.previewSprite.animations.map((animation) => animation.id)
-    gen.previewSprite.setAnimationBoundStates(original.id, [State.Die])
-    gen.setAnimationInstruction(animation.id, 'Blue helmet')
-    await gen.editAnimation(animation.id, gen.getAnimationInstruction(animation.id))
-    expect(animation.result).toBe(original)
-    expect(gen.previewSprite.animations[0]).toBe(original)
-    animation.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
-    await animation.finish()
-    await flushPromises()
-    expect(gen.previewSprite.animations.map((animation) => animation.id)).toEqual(ids)
-    expect(gen.previewSprite.animations[0]).toBe(animation.result)
-    expect(gen.previewSprite.getAnimationBoundStates(original.id)).toEqual([State.Die])
-    expect(animation.name).toBe(original.name)
-
-    const restored = await SpriteGen.load(gen.name, i18n, project, sndFiles(gen.export()))
-    onTestFinished(() => restored.dispose())
-    expect(restored.getAnimationInstruction(animation.id)).toBe('Blue helmet')
-    expect(restored.previewSprite.getAnimationBoundStates(original.id)).toEqual([State.Die])
-    await restored.editAnimation(animation.id, 'Blue helmet')
-    expect(prepareAnimationReferenceVideo).toHaveBeenCalledTimes(2)
   })
 
   it('excludes unapplied edits when adopting a generated sprite', async () => {
@@ -892,7 +850,8 @@ describe('SpriteGen', () => {
     await gen.genImages()
     const [taskRecord] = [...aigcMock.tasks.values()]
     expect(taskRecord.params).toMatchObject({
-      settings: { referenceImageUrl: 'kodo://mock-bucket/reference.png' }
+      settings: { referenceImageUrl: 'kodo://mock-bucket/reference.png' },
+      removeBackground: true
     })
 
     const rawConfig = gen.export()

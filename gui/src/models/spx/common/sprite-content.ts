@@ -19,10 +19,7 @@ export interface SpriteContent {
   getAnimationById(id: string): AnimationGen | null
   getCostumeInstruction(id: string): string
   setCostumeInstruction(id: string, instruction: string): void
-  getAnimationInstruction(id: string): string
-  setAnimationInstruction(id: string, instruction: string): void
   editCostume(id: string, instruction: string): Promise<void>
-  editAnimation(id: string, instruction: string): Promise<void>
   addCostume(): CostumeGen
   removeCostume(id: string): void
   addAnimation(): AnimationGen

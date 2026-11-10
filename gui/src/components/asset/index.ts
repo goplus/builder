@@ -84,11 +84,9 @@ export function useEditSprite() {
   }
 }
 
-export function useGenerateSpriteResource() {
+export function useAddSpriteResource() {
   const editorCtx = useEditorCtx()
-  const ensureSignedIn = useEnsureSignedIn()
   return async (sprite: Sprite, type: 'costume' | 'animation') => {
-    await ensureSignedIn()
     const edit = editorCtx.state.spriteEditState.start(sprite)
     const gen = type === 'costume' ? edit.addCostume() : edit.addAnimation()
     edit.setSelectedItem({ type, id: gen.id })

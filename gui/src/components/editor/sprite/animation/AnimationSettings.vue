@@ -1,63 +1,69 @@
 <template>
-  <section class="flex justify-center">
-    <UIDropdown
-      class="rounded-lg"
-      trigger="manual"
-      :visible="activeSetting != null"
-      placement="top"
-      @click-outside="handleClickOutside"
-      @update:visible="handleDropdownVisibleUpdate"
-    >
-      <template #trigger>
-        <ul class="flex items-center gap-1 rounded-md bg-grey-100 p-1 shadow-sm">
-          <li
-            v-radar="{ name: 'edit-duration', desc: 'Click to edit animation duraion' }"
-            :class="getSummaryItemClass('duration')"
-            @click="handleSummaryClick('duration')"
-          >
-            <UIIcon type="timer" />
-            {{ $t({ en: 'Duration', zh: '时长' }) }}
-            <span
-              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+  <Teleport
+    v-if="workspace == null || workspace.panel.value != null"
+    :to="workspace?.panel.value ?? 'body'"
+    :disabled="workspace == null"
+  >
+    <section class="flex justify-center">
+      <UIDropdown
+        class="rounded-lg"
+        trigger="manual"
+        :visible="activeSetting != null"
+        placement="top"
+        @click-outside="handleClickOutside"
+        @update:visible="handleDropdownVisibleUpdate"
+      >
+        <template #trigger>
+          <ul class="flex items-center gap-1 rounded-md bg-grey-100 p-1 shadow-sm">
+            <li
+              v-radar="{ name: 'Edit duration', desc: 'Click to edit animation duraion' }"
+              :class="getSummaryItemClass('duration')"
+              @click="handleSummaryClick('duration')"
             >
-              {{ formatDuration(animation.duration, 2) }}
-            </span>
-          </li>
-          <li
-            v-radar="{ name: 'edit-bound-state', desc: 'Click to edit animation bound state' }"
-            :class="getSummaryItemClass('bound-state')"
-            @click="handleSummaryClick('bound-state')"
-          >
-            <UIIcon type="status" />
-            {{ $t({ en: 'Binding', zh: '绑定' }) }}
-            <span
-              v-if="boundStateNum > 0"
-              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+              <UIIcon type="timer" />
+              {{ $t({ en: 'Duration', zh: '时长' }) }}
+              <span
+                class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+              >
+                {{ formatDuration(animation.duration, 2) }}
+              </span>
+            </li>
+            <li
+              v-radar="{ name: 'Edit bound state', desc: 'Click to edit animation bound state' }"
+              :class="getSummaryItemClass('bound-state')"
+              @click="handleSummaryClick('bound-state')"
             >
-              {{ boundStateNum }}
-            </span>
-          </li>
-          <li
-            v-if="soundEditable"
-            v-radar="{ name: 'edit-sound', desc: 'Click to edit animation sound' }"
-            :class="getSummaryItemClass('sound')"
-            @click="handleSummaryClick('sound')"
-          >
-            <UIIcon type="sound" />
-            {{ $t({ en: 'Sound', zh: '声音' }) }}
-            <span
-              class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+              <UIIcon type="status" />
+              {{ $t({ en: 'Binding', zh: '绑定' }) }}
+              <span
+                v-if="boundStateNum > 0"
+                class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+              >
+                {{ boundStateNum }}
+              </span>
+            </li>
+            <li
+              v-if="soundEditable"
+              v-radar="{ name: 'Edit sound', desc: 'Click to edit animation sound' }"
+              :class="getSummaryItemClass('sound')"
+              @click="handleSummaryClick('sound')"
             >
-              {{ soundName }}
-            </span>
-          </li>
-        </ul>
-      </template>
-      <DurationEditor v-if="activeSetting === 'duration'" :animation="animation" @close="handleEditorClose" />
-      <BoundStateEditor v-if="activeSetting === 'bound-state'" :animation="animation" @close="handleEditorClose" />
-      <SoundEditor v-if="activeSetting === 'sound'" :animation="animation" @close="handleEditorClose" />
-    </UIDropdown>
-  </section>
+              <UIIcon type="sound" />
+              {{ $t({ en: 'Sound', zh: '声音' }) }}
+              <span
+                class="max-w-[5em] overflow-x-hidden rounded-full bg-grey-400 px-1.25 text-2xs whitespace-nowrap text-ellipsis text-grey-800"
+              >
+                {{ soundName }}
+              </span>
+            </li>
+          </ul>
+        </template>
+        <DurationEditor v-if="activeSetting === 'duration'" :animation="animation" @close="handleEditorClose" />
+        <BoundStateEditor v-if="activeSetting === 'bound-state'" :animation="animation" @close="handleEditorClose" />
+        <SoundEditor v-if="activeSetting === 'sound'" :animation="animation" @close="handleEditorClose" />
+      </UIDropdown>
+    </section>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -67,6 +73,7 @@ import type { Animation } from '@/models/spx/animation'
 import { UIDropdown, UIIcon, isInPopupOrModal } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import DurationEditor from './DurationEditor.vue'
+import { useResourceWorkspace } from '../resource-workspace'
 import BoundStateEditor from './state/BoundStateEditor.vue'
 import SoundEditor from './SoundEditor.vue'
 
@@ -76,6 +83,7 @@ const props = defineProps<{
   soundEditable: boolean
 }>()
 
+const workspace = useResourceWorkspace()
 const editorCtx = useEditorCtx()
 const soundName = computed(() => editorCtx.project.sounds.find((s) => s.id === props.animation.sound)?.name)
 

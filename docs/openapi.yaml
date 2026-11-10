@@ -4347,7 +4347,10 @@ paths:
                       enum:
                         - generateCostume
                     parameters:
-                      description: Parameters for costume generation.
+                      description: |
+                        Parameters for costume generation. Backgrounds are retained by default;
+                        call removeBackground when adopting a preview. Initial sprite generation can
+                        request removeBackground here to show transparent candidates.
                       type: object
                       required:
                         - settings
@@ -4360,12 +4363,14 @@ paths:
                             details not explicitly changed. Requires a nonempty referenceImageUrl and a nonblank
                             instruction after trimming whitespace. Replaces the generation prompt derived from
                             name, description, artStyle, perspective, and facing. Omit for normal generation.
-                            Returns previews with their background intact.
-                            Call removeBackground only when adopting a preview.
                           type: string
                           minLength: 1
                           examples:
                             - Change the shirt to red, keeping everything else unchanged.
+                        removeBackground:
+                          description: Remove backgrounds from generated images before returning them.
+                          type: boolean
+                          default: false
                         n:
                           description: Number of costume images to generate.
                           type: integer
@@ -4392,16 +4397,6 @@ paths:
                       properties:
                         settings:
                           $ref: "#/components/schemas/AIGCAnimationSettings"
-                        editInstruction:
-                          description: |
-                            Edit the video at settings.referenceVideoUrl using this instruction, preserving
-                            details not explicitly changed. Requires a nonempty referenceVideoUrl and a nonblank
-                            instruction after trimming whitespace. Replaces the generation prompt derived from
-                            name, description, artStyle, perspective, and loopMode. Omit for normal generation.
-                          type: string
-                          minLength: 1
-                          examples:
-                            - Change the shirt to red while keeping the running motion.
                 - title: extractVideoFrames
                   type: object
                   required:
@@ -9685,11 +9680,17 @@ components:
                 - imageUrls
               properties:
                 imageUrls:
-                  description: Universal URLs of the generated costume images (e.g. kodo://bucket/key).
+                  description: |
+                    Universal URLs of the generated images (e.g. kodo://bucket/key).
+                    Backgrounds may be transparent natively or after background removal.
                   type: array
                   items:
                     type: string
                     format: uri
+                transparentBackground:
+                  description: Whether all returned images already have transparent backgrounds and can be adopted without background removal.
+                  type: boolean
+                  default: false
             - title: generateAnimationVideo
               type: object
               required:
@@ -9918,14 +9919,6 @@ components:
           properties:
             referenceFrameUrl:
               description: Universal URL of the animation reference frame image (e.g. kodo://bucket/key).
-              type:
-                - string
-                - "null"
-              format: uri
-            referenceVideoUrl:
-              description: |
-                Universal URL of the animation reference video (e.g. kodo://bucket/animation.mp4).
-                May be used together with referenceFrameUrl. The configured video model must support video references.
               type:
                 - string
                 - "null"

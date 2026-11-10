@@ -1,31 +1,6 @@
 <template>
-  <UIEmpty v-if="sprite.animations.length === 0" size="extra-large">
-    {{ $t({ en: 'No animations', zh: '没有动画' }) }}
-    <template #op>
-      <UIButton
-        v-radar="{ name: 'Generate animation', desc: 'Generate a new animation with AI' }"
-        type="primary"
-        size="large"
-        @click="handleGenerate"
-      >
-        {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
-      </UIButton>
-      <UIButton
-        v-radar="{ name: 'Group costumes button', desc: 'Click to group costumes as animation' }"
-        type="neutral"
-        size="large"
-        @click="handleGroupCostumes"
-      >
-        <template #icon>
-          <img :src="galleryIcon" />
-        </template>
-        {{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}
-      </UIButton>
-    </template>
-  </UIEmpty>
   <EditorList
-    v-else
-    v-radar="{ name: 'animations-management', desc: 'Managing animations of current sprite' }"
+    v-radar="{ name: 'Animations management', desc: 'Managing animations of current sprite' }"
     resource-type="animation"
     :sortable="{ list: sprite.animations }"
     @sorted="handleSorted"
@@ -42,25 +17,30 @@
     <template #add-options>
       <UIMenu>
         <UIMenuItem
-          v-radar="{ name: 'Generate resource', desc: 'Generate a new resource with AI' }"
-          @click="handleGenerate"
+          v-radar="{ name: 'Group costumes', desc: 'Click to group costumes as animation' }"
+          @click="handleImport"
+        >
+          {{ $t({ en: 'Group costumes as animation', zh: '合并造型为动画' }) }}
+        </UIMenuItem>
+        <UIMenuItem
+          v-radar="{ name: 'Generate resource', desc: 'Click to generate an animation with AI' }"
+          @click="handleAdd"
         >
           {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
         </UIMenuItem>
-        <UIMenuItem
-          v-radar="{ name: 'Group costumes option', desc: 'Click to group costumes as animation' }"
-          @click="handleGroupCostumes"
-          >{{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}</UIMenuItem
-        >
       </UIMenu>
     </template>
     <template #detail>
-      <div v-if="state.selected != null" class="min-h-0 min-w-0 flex-1 flex flex-col bg-grey-200">
+      <ResourceWorkspace
+        v-if="state.selected != null"
+        :key="state.selected.id"
+        :resource-key="state.selected.id"
+        resource-type="animation"
+        :ai-enabled="false"
+      >
         <AnimationDetail :animation="state.selected" @rename="handleRename(state.selected)" />
-        <div class="flex-none px-5 pb-5">
-          <SpriteResourcePrompt :key="state.selected.id" :sprite="sprite" :resource="state.selected" />
-        </div>
-      </div>
+      </ResourceWorkspace>
+      <UIEmpty v-else size="large">{{ $t({ en: 'Click + to add an animation', zh: '点击 + 添加动画' }) }}</UIEmpty>
     </template>
   </EditorList>
 </template>
@@ -126,14 +106,13 @@ import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/spx/sprite'
 import EditorList from '../common/EditorList.vue'
-import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
+import { UIEmpty, UIMenu, UIMenuItem } from '@/components/ui'
 import { capture, useMessageHandle } from '@/utils/exception'
-import { useGenerateSpriteResource, useAddAnimationByGroupingCostumes, useRenameAnimation } from '@/components/asset'
+import { useAddSpriteResource, useAddAnimationByGroupingCostumes, useRenameAnimation } from '@/components/asset'
 import AnimationDetail from './AnimationDetail.vue'
-import SpriteResourcePrompt from './SpriteResourcePrompt.vue'
+import ResourceWorkspace from './ResourceWorkspace.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationItem from './AnimationItem.vue'
-import galleryIcon from './gallery.svg'
 
 const props = defineProps<{
   sprite: Sprite
@@ -141,21 +120,13 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
-const generateResource = useGenerateSpriteResource()
-const handleGenerate = useMessageHandle(() => generateResource(props.sprite, 'animation')).fn
-
-const addAnimationByGroupingCostumes = useAddAnimationByGroupingCostumes()
-
-const handleGroupCostumes = useMessageHandle(
-  async () => {
-    const animation = await addAnimationByGroupingCostumes(editorCtx.project, props.sprite)
-    props.state.select(animation.id)
-  },
-  {
-    en: 'Failed to group costumes as animation',
-    zh: '将造型合并为动画失败'
-  }
-).fn
+const addResource = useAddSpriteResource()
+const handleAdd = useMessageHandle(() => addResource(props.sprite, 'animation')).fn
+const groupCostumes = useAddAnimationByGroupingCostumes()
+const handleImport = useMessageHandle(async () => {
+  const animation = await groupCostumes(editorCtx.project, props.sprite)
+  props.state.select(animation.id)
+}).fn
 
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {

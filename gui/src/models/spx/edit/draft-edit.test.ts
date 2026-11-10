@@ -7,14 +7,8 @@ import * as fileHelpers from '@/models/common/file'
 import { mockFile, sndFiles } from '@/models/common/test'
 import { makeSpxProject } from '../common/test'
 import { mockSaveFile } from '../gen/test-helpers'
-import { createAnimationReferenceVideo } from '../gen/animation-reference-video'
 import { SpriteEdit } from './sprite-edit'
 
-vi.mock('../gen/animation-reference-video', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../gen/animation-reference-video')>()),
-  createAnimationReferenceVideo: vi.fn(),
-  prepareAnimationReferenceVideo: vi.fn(async (video) => video)
-}))
 const aigc = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
 vi.spyOn(fileHelpers, 'getImageSize').mockResolvedValue({ width: 512, height: 512 })
@@ -33,7 +27,6 @@ function setup() {
 beforeEach(() => {
   aigc.reset()
   mockSaveFile()
-  vi.mocked(createAnimationReferenceVideo).mockReset().mockResolvedValue(mockFile('reference.mp4'))
 })
 
 describe('Resource edit drafts', () => {
@@ -91,18 +84,20 @@ describe('Resource edit drafts', () => {
     const originalCostume = source.costumes[0]
     const originalAnimation = source.animations[0]
     const costume = edit.costumes[0]
-    const animation = edit.animations[0]
+    const animation = edit.addAnimation()
     await edit.editCostume(costume.id, 'Blue hat')
-    await edit.editAnimation(animation.id, 'White hair')
+    edit.editHistory.record(animation)
+    await animation.generateVideo()
     animation.setFramesConfig({ startTime: 0, duration: 800, interval: 100 })
     await animation.finish()
     await nextTick()
 
     edit.applyToSprite(source, { type: 'animation', id: animation.id })
     expect(source.costumes[0]).toBe(originalCostume)
-    expect(source.animations[0]).not.toBe(originalAnimation)
-    expect(source.animations[0].duration).toBe(0.8)
-    expect(source.animations[0].costumes[0].img).toBe(animation.result!.costumes[0].img)
+    expect(source.animations[0]).toBe(originalAnimation)
+    expect(source.animations).toHaveLength(2)
+    expect(source.animations[1].duration).toBe(0.8)
+    expect(source.animations[1].costumes[0].img).toBe(animation.result!.costumes[0].img)
     expect(edit.editHistory.canUndo(animation.id)).toBe(false)
     expect(edit.editHistory.canRedo(animation.id)).toBe(false)
     expect(edit.editHistory.canUndo(costume.id)).toBe(true)
@@ -112,37 +107,6 @@ describe('Resource edit drafts', () => {
     expect(source.costumes[0].img).toBe(costume.result!.img)
     expect(edit.editHistory.export()).toEqual([{}, {}])
     expect(Object.keys(edit.export()).some((path) => path.includes('/history/'))).toBe(false)
-  })
-
-  it('uses the current animation preview as the next reference and restores its trim on undo', async () => {
-    const { source, edit } = setup()
-    const gen = edit.animations[0]
-    const original = source.animations[0]
-    await edit.editAnimation(gen.id, 'Red hair')
-    gen.setFramesConfig({ startTime: 100, duration: 400, interval: 100 })
-    const firstVideo = gen.video
-    await edit.editAnimation(gen.id, 'Blue coat')
-    expect(createAnimationReferenceVideo).toHaveBeenCalledTimes(1)
-    expect([...aigc.tasks.values()].at(-1)!.params).toMatchObject({
-      settings: { referenceVideoUrl: `kodo://mock-bucket/${firstVideo!.name}` },
-      editInstruction: 'Blue coat'
-    })
-    expect([...aigc.tasks.values()].map(({ task }) => task.type)).toEqual([
-      TaskType.GenerateAnimationVideo,
-      TaskType.GenerateAnimationVideo
-    ])
-    expect(gen.result?.costumes[0].img).toBe(original.costumes[0].img)
-    const secondVideo = gen.video
-    const taskCount = aigc.tasks.size
-
-    edit.editHistory.undo(gen)
-    expect(edit.animations[0].video).toBe(firstVideo)
-    expect(edit.animations[0].framesConfig).toEqual({ startTime: 100, duration: 400, interval: 100 })
-    expect(edit.animations[0].hasPendingVideo).toBe(true)
-    edit.editHistory.redo(edit.animations[0])
-    expect(edit.animations[0].video).toBe(secondVideo)
-    expect(aigc.tasks.size).toBe(taskCount)
-    expect(source.animations[0]).toBe(original)
   })
 
   it('can undo a failed edit to the last successful preview', async () => {

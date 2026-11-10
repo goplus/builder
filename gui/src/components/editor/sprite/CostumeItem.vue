@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg, UIEditorSpriteItem } from '@/components/ui'
+import { UIImg, UIEditorSpriteItem, UIMenuItem } from '@/components/ui'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import type { Costume } from '@/models/spx/costume'
 import { useEditorCtx } from '../EditorContextProvider.vue'
@@ -23,6 +23,7 @@ const props = withDefaults(
   }
 )
 
+const emit = defineEmits<{ 'ai-edit': [] }>()
 const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.costume.img)
 
@@ -93,6 +94,9 @@ const { fn: handleRename } = useMessageHandle(() => renameCostume(props.costume)
       <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
+      <UIMenuItem v-radar="{ name: 'AI edit', desc: 'Edit this costume with AI' }" @click="emit('ai-edit')">
+        {{ $t({ en: 'AI edit...', zh: 'AI 编辑...' }) }}
+      </UIMenuItem>
       <DuplicateMenuItem
         v-radar="{ name: 'duplicate', desc: 'Click to duplicate the costume' }"
         @click="handleDuplicate"
@@ -104,5 +108,6 @@ const { fn: handleRename } = useMessageHandle(() => renameCostume(props.costume)
         @click="handleRemove"
       />
     </CornerMenu>
+    <slot></slot>
   </UIEditorSpriteItem>
 </template>

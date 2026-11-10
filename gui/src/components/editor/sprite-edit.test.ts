@@ -62,14 +62,15 @@ describe('SpriteEditState', () => {
     const costume = edit.costumes[0]
     edit.editHistory.record(costume)
     costume.setName('renamed')
-    edit.setAnimationInstruction(edit.animations[0].id, 'Blue coat')
+    const animation = edit.addAnimation()
+    animation.setSettings({ description: 'A running character' })
     await nextTick()
     edit.applyToSprite(source, { type: 'costume', id: costume.id })
 
     expect(source.costumes[0].name).toBe('renamed')
     expect(state.start(source)).toBe(edit)
     expect(edit.editHistory.canUndo(costume.id)).toBe(false)
-    expect(edit.getAnimationInstruction(edit.animations[0].id)).toBe('Blue coat')
+    expect(edit.getAnimationById(animation.id)?.settings.description).toBe('A running character')
     expect(edit.isDisposed).toBe(false)
   })
 

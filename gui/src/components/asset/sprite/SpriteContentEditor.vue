@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, watch } from 'vue'
-import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { computedShallowReactive, humanizeListWithLimit, useComputedDisposable } from '@/utils/utils'
+import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
 import { useNetwork } from '@/utils/network'
 import { useSignedInStateQuery } from '@/stores/user'
+import type { Animation } from '@/models/spx/animation'
+import type { Costume } from '@/models/spx/costume'
 import type { SpriteContent, SpriteContentSelected } from '@/models/spx/common/sprite-content'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import type { AnimationGen } from '@/models/spx/gen/animation-gen'
@@ -22,19 +24,34 @@ import CostumeGenPreview from '../gen/costume/CostumeGenPreview.vue'
 import AnimationGenPreview from '../gen/animation/AnimationGenPreview.vue'
 import CostumeComments from './CostumeComments.vue'
 import SpriteResourceInput from './SpriteResourceInput.vue'
+import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
+import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
+import ResourceEditActions from '@/components/editor/sprite/ResourceEditActions.vue'
+import ResourceWorkspace from '@/components/editor/sprite/ResourceWorkspace.vue'
 
 const props = defineProps<{
   content: SpriteContent
   embedded?: boolean
-  submit?: () => Promise<void>
+  savedAnimation?: Animation | null
+  savedCostume?: Costume | null
   applyResource?: (item: SpriteContentSelected) => Promise<void>
-  beforeSubmit?: () => Promise<void>
 }>()
 
 const emit = defineEmits<{
   collapse: []
 }>()
 const commenting = defineModel<boolean>('commenting', { default: false })
+const activeTool = ref<string | null>('ai')
+const comments = ref<InstanceType<typeof CostumeComments> | null>(null)
+const workspace = ref<InstanceType<typeof ResourceWorkspace> | null>(null)
+
+function openAIEditor() {
+  workspace.value?.openAIEditor()
+}
+defineExpose({ openAIEditor })
+watch([commenting, workspace], ([active]) => {
+  if (props.embedded && active) openAIEditor()
+})
 
 const selected = computed(() => {
   const selectedItem = props.content.selectedItem
@@ -77,28 +94,46 @@ watch(
   { immediate: true }
 )
 
+const aiEnabled = computed(() => {
+  if (selectedCostume.value != null) return true
+  const gen = selectedAnimation.value
+  if (gen == null) return false
+  return props.content instanceof SpriteEdit
+    ? props.content.isNewResource({ type: 'animation', id: gen.id })
+    : gen.result == null
+})
 const selectedGen = computed(() => selectedCostume.value ?? selectedAnimation.value)
 const selectedPreview = computed(() => {
   const costume = selectedCostume.value
   if (costume != null) {
+    if (props.embedded && activeTool.value !== 'ai' && props.savedCostume != null) {
+      return { component: CostumeDetail, props: { costume: props.savedCostume } }
+    }
     return {
       component: CostumeGenPreview,
       props: {
         gen: costume,
+        resourceActions: !props.embedded,
         pendingMessage: costume.result != null ? { en: 'Editing costume...', zh: '正在修改造型...' } : undefined
       }
     }
   }
   const animation = selectedAnimation.value
   if (animation != null) {
+    if (props.embedded && (!aiEnabled.value || activeTool.value !== 'ai') && props.savedAnimation != null) {
+      return { component: AnimationDetail, props: { animation: props.savedAnimation, settingsEditable: false } }
+    }
     return {
       component: AnimationGenPreview,
       props: {
         gen: animation,
-        pendingMessage:
-          animation.video != null || animation.result != null
-            ? { en: 'Editing animation...', zh: '正在修改动画...' }
-            : undefined
+        savedAnimation:
+          props.content instanceof SpriteEdit &&
+          props.content.hasResourceChanges({ type: 'animation', id: animation.id })
+            ? null
+            : props.savedAnimation,
+        resourceActions: !props.embedded,
+        settingsEditable: !props.embedded
       }
     }
   }
@@ -108,15 +143,19 @@ const canDiscard = computed(() => {
   const gen = selectedGen.value
   return gen != null && (props.content.editHistory.canUndo(gen.id) || props.content.editHistory.canRedo(gen.id))
 })
-const applyingResource = computed(() => props.submit == null || canDiscard.value)
-const showResourceActions = computed(() => {
-  if (!props.embedded || canDiscard.value) return true
+const hasDraft = computed(() => {
   const item = props.content.selectedItem
-  if (!(props.content instanceof SpriteEdit) || item == null || !props.content.hasResourceChanges(item)) return false
+  if (item == null) return false
+  const instruction = item.type === 'costume' ? props.content.getCostumeInstruction(item.id) : ''
   return (
-    selectedCostume.value?.image != null ||
-    selectedAnimation.value?.video != null ||
-    selectedAnimation.value?.result != null
+    canDiscard.value ||
+    instruction.trim() !== '' ||
+    (selectedCostume.value?.editComments.length ?? 0) > 0 ||
+    (props.content instanceof SpriteEdit &&
+      props.content.hasResourceChanges(item) &&
+      (selectedCostume.value?.image != null ||
+        selectedAnimation.value?.video != null ||
+        selectedAnimation.value?.result != null))
   )
 })
 const selectedBusy = computed(() => {
@@ -124,8 +163,22 @@ const selectedBusy = computed(() => {
   const status = selectedCostume.value?.generateState.status ?? selectedAnimation.value?.generateVideoState.status
   return status === 'running' || gen?.finishState.status === 'running' || handleApply.isLoading.value
 })
+const canReview = computed(() => {
+  const item = props.content.selectedItem
+  if (item == null) return false
+  if (props.content.editHistory.canRedo(item.id)) return true
+  if (props.content instanceof SpriteEdit) {
+    if (!props.content.hasResourceChanges(item)) return false
+    if (!props.content.isNewResource(item) && !props.content.editHistory.canUndo(item.id)) return false
+  }
+  return (
+    selectedCostume.value?.image != null ||
+    selectedAnimation.value?.video != null ||
+    selectedAnimation.value?.result != null
+  )
+})
 const canApply = computed(() => {
-  if (selectedBusy.value) return false
+  if (selectedBusy.value || (props.embedded && !canReview.value)) return false
   if (
     props.content instanceof SpriteEdit &&
     props.content.selectedItem != null &&
@@ -159,11 +212,11 @@ const handleApply = useMessageHandle(
     if (props.applyResource != null) {
       await props.applyResource(item)
     } else {
-      gen.acceptEdit()
+      selectedCostume.value?.acceptEdit()
       props.content.editHistory.clear(item.id)
       if (item.type === 'costume') props.content.setCostumeInstruction(item.id, '')
-      else props.content.setAnimationInstruction(item.id, '')
     }
+    if (props.embedded && props.content.selectedItem?.id === item.id) activeTool.value = null
     message.success(
       i18n.t(
         item.type === 'costume'
@@ -186,6 +239,7 @@ const handleDiscard = useMessageHandle(
     const item = props.content.selectedItem
     const gen = selectedGen.value
     if (item == null || gen == null) return
+    if (props.embedded && !hasDraft.value) return
     await confirm({
       type: 'warning',
       title: i18n.t({ en: 'Discard changes?', zh: '放弃修改？' }),
@@ -199,7 +253,7 @@ const handleDiscard = useMessageHandle(
     props.content.editHistory.discard(gen)
     if (item.type === 'costume') props.content.getCostumeById(item.id)?.setEditComments([])
     if (item.type === 'costume') props.content.setCostumeInstruction(item.id, '')
-    else props.content.setAnimationInstruction(item.id, '')
+    if (props.embedded && selectedCostume.value?.result != null) activeTool.value = null
   },
   { en: 'Failed to discard changes', zh: '放弃修改失败' }
 ).fn
@@ -257,67 +311,6 @@ const previewState = useComputedDisposable(
 provideLocalEditorCtx(
   computedShallowReactive(() => ({ project: props.content.previewProject, state: previewState.value }))
 )
-
-function isCostumeGenProcessing(costumeGen: CostumeGen) {
-  const { generateState, image, result } = costumeGen
-  return generateState.status !== 'initial' && (generateState.status !== 'finished' || image !== result?.img)
-}
-function isAnimationGenProcessing(animationGen: AnimationGen) {
-  const { hasPendingVideo, generateVideoState } = animationGen
-  return hasPendingVideo || generateVideoState.status === 'running' || generateVideoState.status === 'failed'
-}
-function toCapitalize(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1)
-}
-async function confirmBeforeSubmit() {
-  const unfinishedCostumes = props.content.costumes.filter(
-    (gen) => isCostumeGenProcessing(gen) || props.content.editHistory.hasChanges(gen.id) || gen.editComments.length > 0
-  )
-  const unfinishedAnimations = props.content.animations.filter(
-    (gen) => isAnimationGenProcessing(gen) || props.content.editHistory.hasChanges(gen.id)
-  )
-  if (unfinishedCostumes.length === 0 && unfinishedAnimations.length === 0) {
-    return props.beforeSubmit?.()
-  }
-
-  const toLocaleMessage = (gen: CostumeGen | AnimationGen) => ({ en: gen.name, zh: gen.name })
-  const content: LocaleMessage[] = []
-  if (unfinishedCostumes.length > 0) {
-    const unfinishedNames = humanizeListWithLimit(unfinishedCostumes.map(toLocaleMessage), 3)
-    content.push({
-      zh: `造型（${unfinishedNames.zh}）`,
-      en: `costume (${unfinishedNames.en})`
-    })
-  }
-  if (unfinishedAnimations.length > 0) {
-    const unfinishedNames = humanizeListWithLimit(unfinishedAnimations.map(toLocaleMessage), 3)
-    content.push({
-      zh: `动画（${unfinishedNames.zh}）`,
-      en: `animation (${unfinishedNames.en})`
-    })
-  }
-  await confirm({
-    type: 'info',
-    title: i18n.t({ zh: '采用精灵', en: 'Use sprite' }),
-    content: i18n.t({
-      zh: `${content.map((c) => c.zh).join('和')}还有未采用的修改，确定要放弃它们并采用已保存的内容吗？`,
-      en: `${toCapitalize(content.map((c) => c.en).join(' and '))} have unapplied changes. Discard them and use the saved content?`
-    }),
-    cancelText: i18n.t({ zh: '返回', en: 'Back' }),
-    confirmText: i18n.t({ zh: '仍要采用', en: 'Use anyway' })
-  })
-}
-
-const handleSubmit = useMessageHandle(
-  async () => {
-    await confirmBeforeSubmit()
-    await props.submit?.()
-  },
-  {
-    en: 'Failed to apply sprite changes',
-    zh: '采用精灵失败'
-  }
-)
 </script>
 
 <template>
@@ -336,12 +329,9 @@ const handleSubmit = useMessageHandle(
               :key="c.id"
               :active="selectedCostume?.id === c.id"
               :gen="c"
+              :costume="c.result ?? null"
               :is-default="c.id === content.defaultCostume?.id"
-              :operable="
-                submit != null || isNewResource('costume', c.id)
-                  ? { removable: c.id !== content.defaultCostume?.id }
-                  : false
-              "
+              :operable="isNewResource('costume', c.id) ? { removable: c.id !== content.defaultCostume?.id } : false"
               @click="select('costume', c.id)"
               @rename="handleRenameCostume(c)"
               @remove="handleRemoveCostume(c)"
@@ -355,7 +345,8 @@ const handleSubmit = useMessageHandle(
               :key="a.id"
               :active="selectedAnimation?.id === a.id"
               :gen="a"
-              :operable="submit != null || isNewResource('animation', a.id)"
+              :animation="a.result ?? null"
+              :operable="isNewResource('animation', a.id)"
               @click="select('animation', a.id)"
               @rename="handleRenameAnimation(a)"
               @remove="handleRemoveAnimation(a)"
@@ -368,14 +359,27 @@ const handleSubmit = useMessageHandle(
             :content="content"
             :costume="selectedCostume"
             :animation="selectedAnimation"
+            @select-comment="comments?.open($event)"
           />
         </div>
       </aside>
-      <div class="relative min-w-0 min-h-0 flex-1 overflow-hidden flex">
+      <ResourceWorkspace
+        ref="workspace"
+        v-model:active-tool="activeTool"
+        :can-review="canReview"
+        :busy="selectedBusy"
+        :selection-locked="canDiscard || canReview"
+        :ai-enabled="aiEnabled"
+        :enabled="embedded"
+        :resource-key="selectedGen?.id"
+        :resource-type="content.selectedItem?.type"
+        :pending="selectedCostume != null ? selectedCostume.result == null : true"
+      >
+        <slot v-if="embedded" name="settings"></slot>
         <component :is="selectedPreview.component" v-if="selectedPreview != null" v-bind="selectedPreview.props">
-          <template v-if="applyingResource && selectedGen != null" #leading>
+          <template v-if="!embedded" #leading>
             <div
-              v-if="!embedded || canDiscard"
+              v-if="selectedGen != null"
               v-radar="{ name: 'Resource edit history', desc: 'Undo or redo changes to the current resource' }"
               role="group"
               class="flex items-center gap-1"
@@ -410,50 +414,70 @@ const handleSubmit = useMessageHandle(
               </UITooltip>
             </div>
           </template>
-          <template v-if="commenting && selectedCostume != null && !selectedBusy" #overlay>
-            <CostumeComments :key="selectedCostume.id" :gen="selectedCostume" />
+          <template
+            v-if="commenting && selectedCostume != null && !selectedBusy && (!embedded || activeTool === 'ai')"
+            #overlay="{ area }"
+          >
+            <CostumeComments ref="comments" :key="selectedCostume.id" :gen="selectedCostume" :canvas-area="area" />
           </template>
-          <template v-if="applyingResource && selectedGen != null" #ops>
-            <div v-if="showResourceActions" class="flex items-center gap-2">
-              <UIButton
-                v-if="canDiscard"
-                v-radar="{
-                  name: 'Discard changes',
-                  desc: 'Discard unapplied changes to the selected costume or animation'
-                }"
-                type="white"
-                :disabled="selectedBusy"
-                @click="handleDiscard"
-              >
-                {{ $t({ en: 'Discard', zh: '放弃' }) }}
-              </UIButton>
-              <UIButton
-                v-radar="{
-                  name: 'Save resource',
-                  desc: 'Save only this costume or animation and clear its draft history'
-                }"
-                type="green"
-                :disabled="!canApply"
-                :loading="handleApply.isLoading.value"
-                @click="handleApply.fn"
-              >
-                {{ $t({ en: 'Save', zh: '保存' }) }}
-              </UIButton>
-            </div>
+          <template #ops>
+            <template v-if="!embedded">
+              <div class="flex items-center gap-2">
+                <UIButton
+                  v-if="canDiscard"
+                  v-radar="{
+                    name: 'Discard changes',
+                    desc: 'Discard unapplied changes to the selected costume or animation'
+                  }"
+                  type="white"
+                  :disabled="selectedBusy || !hasDraft"
+                  @click="handleDiscard"
+                >
+                  {{ $t({ en: 'Discard', zh: '放弃' }) }}
+                </UIButton>
+                <UIButton
+                  v-radar="{
+                    name: 'Save resource',
+                    desc: 'Save only this costume or animation and clear its draft history'
+                  }"
+                  type="green"
+                  :disabled="!canApply"
+                  :loading="handleApply.isLoading.value"
+                  @click="handleApply.fn"
+                >
+                  {{ $t({ en: 'Save', zh: '保存' }) }}
+                </UIButton>
+              </div>
+            </template>
           </template>
         </component>
-      </div>
+        <template v-if="embedded" #prompt>
+          <SpriteResourceInput
+            v-model:commenting="commenting"
+            :content="content"
+            :costume="selectedCostume"
+            :animation="selectedAnimation"
+            compact
+            @select-comment="comments?.open($event)"
+          />
+        </template>
+        <template v-if="embedded" #actions="{ section }">
+          <ResourceEditActions
+            :section="section"
+            :busy="selectedBusy"
+            :can-undo="selectedGen != null && content.editHistory.canUndo(selectedGen.id)"
+            :can-redo="selectedGen != null && content.editHistory.canRedo(selectedGen.id)"
+            :can-save="canApply"
+            :saving="handleApply.isLoading.value"
+            @undo="handleUndo"
+            @redo="handleRedo"
+            @discard="handleDiscard"
+            @save="handleApply.fn"
+          />
+        </template>
+      </ResourceWorkspace>
     </div>
-    <div v-if="embedded" class="flex-none px-5 pb-5">
-      <SpriteResourceInput
-        v-model:commenting="commenting"
-        :content="content"
-        :costume="selectedCostume"
-        :animation="selectedAnimation"
-        compact
-      />
-    </div>
-    <footer v-else class="flex-none px-6 py-5 flex flex-wrap items-center justify-end gap-4">
+    <footer v-if="!embedded" class="flex-none px-6 py-5 flex flex-wrap items-center justify-end gap-4">
       <UITooltip>
         {{
           $t({
@@ -475,16 +499,6 @@ const handleSubmit = useMessageHandle(
           </UIButton>
         </template>
       </UITooltip>
-      <UIButton
-        v-if="submit != null"
-        v-radar="{ name: 'Use', desc: 'Click to finish and use the generated sprite in the project' }"
-        type="primary"
-        size="large"
-        :loading="handleSubmit.isLoading.value"
-        @click="handleSubmit.fn"
-      >
-        {{ $t({ en: 'Use sprite', zh: '采用精灵' }) }}
-      </UIButton>
     </footer>
   </main>
 </template>

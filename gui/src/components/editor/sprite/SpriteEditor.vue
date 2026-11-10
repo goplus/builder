@@ -36,6 +36,7 @@
   />
   <SpriteResourceEditor
     v-if="(state.aiEditorOpen || hasDrafts) && state.selected.type !== 'code'"
+    v-model:commenting="state.aiCommenting"
     :sprite="sprite"
     :type="state.selected.type === 'costumes' ? 'costume' : 'animation'"
   />
@@ -183,6 +184,7 @@ import { useEditorCtx } from '../EditorContextProvider.vue'
 import SpriteResourceEditor from './SpriteResourceEditor.vue'
 import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
+import { provideResourceCanvas } from './resource-canvas'
 
 const props = defineProps<{
   sprite: Sprite
@@ -190,6 +192,7 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+provideResourceCanvas()
 const hasDrafts = computed(() =>
   editorCtx.state.spriteEditState.edits.some(
     (edit) => edit.sourceSpriteId === props.sprite.id && edit.hasPendingChanges

@@ -146,7 +146,7 @@ describe('canvas resource workflows', () => {
     let edit = state.spriteEditState.edits[0]
     const costumeGen = edit.getCostumeById(edit.selectedItem!.id)!
     const costume = new Costume('Cape', image('blue'))
-    costumeGen.setImage(costume.img)
+    costumeGen.setImage(costume.img, true)
     costumeGen.setName('Cape')
     await costumeGen.finish()
     await nextTick()
@@ -157,7 +157,9 @@ describe('canvas resource workflows', () => {
     await vi.waitFor(() => expect(state.selectedCostume!.id).toBe(costumeGen.result!.id))
 
     await wrapper.get('[aria-label="Animations tab"]').trigger('click')
-    await wrapper.get('[aria-label="Generate animation"]').trigger('click')
+    await wrapper.get('[aria-label="Add animation"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Generate resource"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Generate resource"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Animation generation settings"]').exists()).toBe(true))
     edit = state.spriteEditState.edits[0]
     const animationGen = edit.getAnimationById(edit.selectedItem!.id)!
@@ -182,7 +184,8 @@ describe('canvas resource workflows', () => {
     await wrapper.get('[aria-label="List of animation"] [aria-label="Options button"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Remove"]').exists()).toBe(true))
     await wrapper.get('[aria-label="Remove"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[aria-label="Animation edit instructions"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Animation generation settings"]').exists()).toBe(false))
+    expect(wrapper.find('[aria-label="Resource tool panel ai"]').exists()).toBe(false)
     expect(sprite.animations).toHaveLength(1)
   })
 
@@ -190,12 +193,15 @@ describe('canvas resource workflows', () => {
     const { wrapper, state, sprite } = await setupCanvas()
     const original = sprite.costumes[0]
     const instruction = 'Make the costume blue'
+    await wrapper.get('[aria-label="Costumes management"] [aria-label="Options button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="AI edit"]').isVisible()).toBe(true))
+    await wrapper.get('[aria-label="AI edit"]').trigger('click')
     await wrapper.get('[aria-label="AI edit prompt"] textarea').trigger('focus')
     await wrapper.get('[aria-label="AI edit prompt"] textarea').setValue(instruction)
     await wrapper.get('[aria-label="Local edit tool"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Costume edit instructions"]').exists()).toBe(true))
-    expect(wrapper.find('[aria-label="Save resource"]').exists()).toBe(false)
-    expect(wrapper.find('[aria-label="Undo edit"]').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="Save resource"]').isVisible()).toBe(false)
+    expect(wrapper.find('[aria-label="Undo edit"]').isVisible()).toBe(false)
     expect(state.spriteState!.aiCommenting).toBe(true)
     const edit = state.spriteEditState.edits[0]
     const gen = edit.costumes[0]
@@ -212,7 +218,7 @@ describe('canvas resource workflows', () => {
     edit.editHistory.record(gen)
     const changed = original.clone(true)
     changed.setImg(image('blue'))
-    gen.setImage(changed.img)
+    gen.setImage(changed.img, true)
     await gen.finish()
     await nextTick()
     expect(sprite.costumes[0]).toBe(original)
@@ -228,20 +234,16 @@ describe('canvas resource workflows', () => {
     await wrapper.get('[aria-label="Save resource"]').trigger('click')
     await vi.waitFor(() => expect(edit.editHistory.canUndo(gen.id)).toBe(false))
     expect(sprite.costumes.some((costume) => costume.img.name === 'blue.svg')).toBe(true)
-    await vi.waitFor(() => expect(wrapper.get('[aria-label="Edit resource"]').isVisible()).toBe(true))
+    await vi.waitFor(() => expect(wrapper.get('[aria-label="Edit resource"]').isVisible()).toBe(false))
   })
 
-  it.each(['costume', 'animation'] as const)('edits a %s in place without losing the instruction', async (type) => {
+  it.each(['costume'] as const)('edits a %s in place without losing the instruction', async (type) => {
     const { wrapper, state, sprite } = await setupCanvas()
-    if (type === 'animation') {
-      const animation = Animation.create('Walk', [new Costume('frame', image('orange'))])
-      sprite.addAnimation(animation)
-      state.spriteState!.selectAnimation(animation.id)
-      await nextTick()
-    }
-    const generate = vi
-      .spyOn(SpriteEdit.prototype, type === 'costume' ? 'editCostume' : 'editAnimation')
-      .mockResolvedValue()
+    const generate = vi.spyOn(SpriteEdit.prototype, 'editCostume').mockResolvedValue()
+    expect(wrapper.get('[aria-label="AI edit prompt"]').isVisible()).toBe(false)
+    await wrapper.get('[aria-label="Costumes management"] [aria-label="Options button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="AI edit"]').isVisible()).toBe(true))
+    await wrapper.get('[aria-label="AI edit"]').trigger('click')
     const input = wrapper.get('[aria-label="AI edit prompt"] textarea')
     expect(wrapper.get('[aria-label="Edit resource"]').isVisible()).toBe(true)
     expect(input.attributes('placeholder')).toBe(`Describe changes to this ${type}`)
