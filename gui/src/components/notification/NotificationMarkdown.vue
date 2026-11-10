@@ -2,11 +2,14 @@
 import { markRaw } from 'vue'
 
 import { humanizeExactTime, humanizeTime } from '@/utils/utils'
+import { UniversalUrlScheme } from '@/utils/universal-url'
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
 import NotificationLink from './NotificationLink.vue'
 import NotificationImage from './NotificationImage.vue'
 
 const components = markRaw({ link: NotificationLink, image: NotificationImage })
+// `NotificationLink` and `NotificationImage` resolve Kodo URLs
+const customProtocols = [UniversalUrlScheme.Kodo]
 </script>
 
 <script setup lang="ts">
@@ -20,7 +23,13 @@ defineProps<{
 
 <template>
   <div class="notification-content">
-    <MarkdownView class="notification-markdown" :value="value" :components="components" complete />
+    <MarkdownView
+      class="notification-markdown"
+      :value="value"
+      :components="components"
+      :custom-protocols="customProtocols"
+      complete
+    />
     <time class="notification-time" :datetime="time" :title="$t(humanizeExactTime(time))">
       {{ $t(humanizeTime(time)) }}
     </time>

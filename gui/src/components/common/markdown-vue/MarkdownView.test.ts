@@ -251,13 +251,16 @@ describe('MarkdownView', () => {
       '<table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody><tr><td>Foo</td><td>Bar</td></tr></tbody></table>'
     )
   })
-  it('should drop links to Kodo files and unsafe links', async () => {
+  it('should drop URLs of unsafe or custom protocols by default', async () => {
     const result = await renderToString(MarkdowView, {
       props: {
-        value: '[image](kodo://bucket/image.png) [unsafe](javascript:alert) [safe](https://example.com)'
+        value:
+          '[file](custom://bucket/file.png) [unsafe](javascript:alert) [safe](https://example.com) ![image](custom://bucket/image.png) ![inline](data:image/png;base64,AAAA) ![safe](https://example.com/a.png)'
       }
     })
-    expect(result).toBe('<div><p><a>image</a> <a>unsafe</a> <a href="https://example.com">safe</a></p></div>')
+    expect(result).toBe(
+      '<div><p><a>file</a> <a>unsafe</a> <a href="https://example.com">safe</a> <img alt="image"> <img alt="inline"> <img src="https://example.com/a.png" alt="safe"></p></div>'
+    )
   })
   it('should render links and images with `link` and `image` components', async () => {
     const link = {
@@ -278,22 +281,21 @@ describe('MarkdownView', () => {
       '<div><p><a class="custom-link" href="https://example.com" title="Read"><!--[--><em>Docs</em><!--]--></a> <img class="custom-image" src="https://example.com/a.png" alt="Shot" title="Screen"></p></div>'
     )
   })
-  it('should keep Kodo URLs only for `link` and `image` components and still drop unsafe URLs', async () => {
+  it('should keep URLs of `customProtocols` and still drop unsafe URLs', async () => {
     const value =
-      '[file](kodo://bucket/file.png) [unsafe](javascript:alert) ![image](kodo://bucket/image.png) ![unsafe](javascript:alert) ![inline](data:image/png;base64,AAAA)'
+      '[file](custom://bucket/file.png) [unsafe](javascript:alert) ![image](custom://bucket/image.png) ![inline](data:image/png;base64,AAAA)'
     const link = { template: '<a class="custom-link" :href="href"><slot /></a>', props: ['href'] }
     const image = { template: '<img class="custom-image" :src="src" :alt="alt">', props: ['src', 'alt'] }
-    const plain = await renderToString(MarkdowView, { props: { value } })
-    expect(plain).toBe(
-      '<div><p><a>file</a> <a>unsafe</a> <img alt="image"> <img alt="unsafe"> <img alt="inline"></p></div>'
+    const components = markRaw({ link, image })
+    const withoutProtocols = await renderToString(MarkdowView, { props: { value, components } })
+    expect(withoutProtocols).toBe(
+      '<div><p><a class="custom-link"><!--[-->file<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a> <img class="custom-image" alt="image"> <img class="custom-image" alt="inline"></p></div>'
     )
-    const withLink = await renderToString(MarkdowView, { props: { value, components: markRaw({ link }) } })
-    expect(withLink).toBe(
-      '<div><p><a class="custom-link" href="kodo://bucket/file.png"><!--[-->file<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a> <img alt="image"> <img alt="unsafe"> <img alt="inline"></p></div>'
-    )
-    const withImage = await renderToString(MarkdowView, { props: { value, components: markRaw({ image }) } })
-    expect(withImage).toBe(
-      '<div><p><a>file</a> <a>unsafe</a> <img class="custom-image" src="kodo://bucket/image.png" alt="image"> <img class="custom-image" alt="unsafe"> <img class="custom-image" alt="inline"></p></div>'
+    const withProtocols = await renderToString(MarkdowView, {
+      props: { value, components, customProtocols: ['custom'] }
+    })
+    expect(withProtocols).toBe(
+      '<div><p><a class="custom-link" href="custom://bucket/file.png"><!--[-->file<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a> <img class="custom-image" src="custom://bucket/image.png" alt="image"> <img class="custom-image" alt="inline"></p></div>'
     )
   })
   it('should render code blocks with `codeBlock` component', async () => {

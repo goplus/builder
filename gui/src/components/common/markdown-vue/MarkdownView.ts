@@ -7,7 +7,6 @@ import type * as hast from 'hast'
 import { toHast } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
 import { defaultSchema, sanitize, type Schema as SanitizeSchema } from 'hast-util-sanitize'
-import { UniversalUrlScheme } from '@/utils/universal-url'
 
 const markdownExtensions = [gfmTable()]
 const mdastExtensions = [gfmTableFromMarkdown()]
@@ -15,15 +14,9 @@ const mdastExtensions = [gfmTableFromMarkdown()]
 export type Components = {
   /** Component for rendering code blocks */
   codeBlock?: Component
-  /**
-   * Component for rendering links, with props `href` (missing if unsafe) and `title`.
-   * Links to Kodo files (`kodo://...`) are kept for it to resolve.
-   */
+  /** Component for rendering links, with props `href` (missing if unsafe) and `title` */
   link?: Component
-  /**
-   * Component for rendering images, with props `src` (missing if unsafe), `alt` and `title`.
-   * Images in Kodo (`kodo://...`) are kept for it to resolve.
-   */
+  /** Component for rendering images, with props `src` (missing if unsafe), `alt` and `title` */
   image?: Component
   /**
    * Custom components (key as component name expected to be in kebab-case).
@@ -80,6 +73,8 @@ export type Props = {
   components?: Components
   /** Whether `value` is complete. If not (e.g., while streaming), its last incomplete tag is dropped */
   complete?: boolean
+  /** Custom URL protocols allowed in links and images, in addition to built-in ones such as `https` */
+  customProtocols?: string[]
 }
 
 export default defineComponent<Props>(
@@ -105,6 +100,11 @@ export default defineComponent<Props>(
         type: Boolean,
         required: false,
         default: false
+      },
+      customProtocols: {
+        type: Array,
+        required: false,
+        default: () => []
       }
     }
   }
@@ -223,7 +223,7 @@ export function preprocessIncompleteTags(value: string, tagNames: string[]) {
   return value
 }
 
-function parseMarkdown({ value, components, complete }: Props): hast.Nodes {
+function parseMarkdown({ value, components, complete, customProtocols }: Props): hast.Nodes {
   const customComponents = { ...components?.custom, ...components?.customRaw }
   const customTagNames = Object.keys(customComponents)
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
@@ -235,7 +235,7 @@ function parseMarkdown({ value, components, complete }: Props): hast.Nodes {
   })
   const hast = toHast(mdast, { allowDangerousHtml: true })
   const rawProcessed = raw(hast, { tagfilter: false })
-  const sanitizeSchema = getSanitizeSchema(components ?? {})
+  const sanitizeSchema = getSanitizeSchema(customComponents, customProtocols ?? [])
   return sanitize(rawProcessed, sanitizeSchema)
 }
 
@@ -355,8 +355,7 @@ function getComponentPropNames(compDef: Component): string[] {
 }
 
 /** Get sanitize schema for `hast-util-sanitize` to prevent XSS */
-function getSanitizeSchema(components: Components): SanitizeSchema {
-  const customComponents = { ...components.custom, ...components.customRaw }
+function getSanitizeSchema(customComponents: Record<string, Component>, customProtocols: string[]): SanitizeSchema {
   const allCustomPropNames: string[] = []
   const tagNames = [...(defaultSchema.tagNames ?? [])]
   const attributes = { ...defaultSchema.attributes }
@@ -368,9 +367,10 @@ function getSanitizeSchema(components: Components): SanitizeSchema {
   })
   attributes.pre = [...(defaultSchema.attributes?.pre ?? []), 'is', ...allCustomPropNames]
   // Without `protocols`, `hast-util-sanitize` would keep URLs of any protocol, such as `javascript:`
-  const protocols = { ...defaultSchema.protocols }
-  // Native elements cannot use Kodo URLs; only `link` and `image` components can resolve them
-  if (components.link != null) protocols.href = [...(protocols.href ?? []), UniversalUrlScheme.Kodo]
-  if (components.image != null) protocols.src = [...(protocols.src ?? []), UniversalUrlScheme.Kodo]
+  const protocols = {
+    ...defaultSchema.protocols,
+    href: [...(defaultSchema.protocols?.href ?? []), ...customProtocols],
+    src: [...(defaultSchema.protocols?.src ?? []), ...customProtocols]
+  }
   return { tagNames, attributes, protocols }
 }
