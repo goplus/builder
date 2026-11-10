@@ -3,7 +3,7 @@ import { QueryClient } from '@tanstack/vue-query'
 import { ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { QueryMode } from '@/utils/query'
+import { QueryMode, useQueryCache } from '@/utils/query'
 import { withQueryClient } from '@/utils/test'
 import type { Course } from '@/apis/course'
 import { client } from '@/apis/common'
@@ -13,6 +13,7 @@ import {
   useDeleteCourseSeries,
   useSeries,
   useSeriesCourses,
+  useSeriesWithCourses,
   useUpdateCourseSeries
 } from './course-series'
 
@@ -162,6 +163,171 @@ describe('course series writes', () => {
     expect(queryClient.getQueryState(['course-series', '40'])?.isInvalidated).toBe(true)
     expect(queryClient.getQueryState(['course-series-courses', '40'])?.isInvalidated).toBe(true)
   })
+
+  it.each([QueryMode.BackgroundRefresh, QueryMode.BlockingRefresh, QueryMode.Snapshot])(
+    'publishes series and courses as a pair in %s mode',
+    async (mode) => {
+      const original = makeSeries('40', ['1'])
+      const originalCourses = [makeCourse('1')]
+      const updated = makeSeries('40', ['2', '1'])
+      const updatedCourses = [makeCourse('2'), makeCourse('1')]
+      queryClient.setQueryData(['course-series', '40'], original)
+      queryClient.setQueryData(['course-series-courses', '40'], originalCourses)
+      let finishSeries!: (series: CourseSeries) => void
+      let finishCourses!: (courses: ReturnType<typeof page>) => void
+      apis.getCourseSeries.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finishSeries = resolve
+          })
+      )
+      apis.listCourses.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finishCourses = resolve
+          })
+      )
+      const query = withQueryClient(queryClient, () => useSeriesWithCourses(() => '40', { mode }))
+      await flushPromises()
+      expect(query.data.value).toEqual({ series: original, courses: originalCourses })
+      apis.updateCourseSeries.mockResolvedValue(updated)
+      const update = withQueryClient(queryClient, () => useUpdateCourseSeries())
+      await update('40', { courseIDs: updated.courseIDs })
+      await flushPromises()
+      if (mode === QueryMode.BlockingRefresh) {
+        expect(query.data.value).toBeNull()
+        expect(query.isLoading.value).toBe(true)
+      } else {
+        expect(query.data.value).toEqual({ series: original, courses: originalCourses })
+        expect(query.isLoading.value).toBe(false)
+      }
+      finishSeries(updated)
+      await flushPromises()
+      expect(query.data.value).toEqual(
+        mode === QueryMode.BlockingRefresh ? null : { series: original, courses: originalCourses }
+      )
+      finishCourses(page(updatedCourses))
+      await flushPromises()
+      expect(query.data.value).toEqual(
+        mode === QueryMode.Snapshot
+          ? { series: original, courses: originalCourses }
+          : { series: updated, courses: updatedCourses }
+      )
+      if (mode === QueryMode.Snapshot) {
+        apis.getCourseSeries.mockResolvedValue(updated)
+        apis.listCourses.mockResolvedValue(page(updatedCourses))
+        query.refetch()
+        expect(query.data.value).toBeNull()
+        expect(query.isLoading.value).toBe(true)
+        await flushPromises()
+        expect(query.data.value).toEqual({ series: updated, courses: updatedCourses })
+      }
+    }
+  )
+
+  it.each([QueryMode.BackgroundRefresh, QueryMode.BlockingRefresh])(
+    'exposes a pair refresh failure and recovers through one refetch in %s mode',
+    async (mode) => {
+      queryClient.setDefaultOptions({ queries: { retry: false, gcTime: Infinity } })
+      const series = makeSeries('40', ['1'])
+      const courses = [makeCourse('1')]
+      queryClient.setQueryData(['course-series', '40'], series)
+      queryClient.setQueryData(['course-series-courses', '40'], courses)
+      const query = withQueryClient(queryClient, () => useSeriesWithCourses(() => '40', { mode }))
+      await flushPromises()
+      apis.getCourseSeries.mockRejectedValueOnce(new Error('offline'))
+      apis.listCourses.mockResolvedValue(page(courses))
+      const cache = withQueryClient(queryClient, useQueryCache)
+      await Promise.all([cache.invalidate(['course-series', '40']), cache.invalidate(['course-series-courses', '40'])])
+      await flushPromises()
+      expect(query.isLoading.value).toBe(false)
+      expect(query.error.value).not.toBeNull()
+      expect(query.data.value).toEqual(mode === QueryMode.BackgroundRefresh ? { series, courses } : null)
+      apis.getCourseSeries.mockResolvedValue(series)
+      query.refetch()
+      await flushPromises()
+      expect(query.error.value).toBeNull()
+      expect(query.data.value).toEqual({ series, courses })
+      const changed = { ...series, title: 'Another update' }
+      apis.getCourseSeries.mockResolvedValue(changed)
+      await cache.invalidate(['course-series', '40'])
+      await flushPromises()
+      expect(query.data.value?.series.title).toBe('Another update')
+    }
+  )
+
+  it('restarts an explicit snapshot read when a partially loaded pair is invalidated again', async () => {
+    queryClient.setDefaultOptions({ queries: { retry: false, gcTime: Infinity } })
+    const initial = makeSeries('40', ['a'])
+    queryClient.setQueryData(['course-series', '40'], initial)
+    queryClient.setQueryData(['course-series-courses', '40'], [makeCourse('a')])
+    const query = withQueryClient(queryClient, () => useSeriesWithCourses(() => '40', { mode: QueryMode.Snapshot }))
+    const cache = withQueryClient(queryClient, useQueryCache)
+    await flushPromises()
+    apis.getCourseSeries.mockResolvedValue(initial)
+    apis.listCourses.mockResolvedValue(page([makeCourse('a')]))
+    await Promise.all([cache.invalidate(['course-series', '40']), cache.invalidate(['course-series-courses', '40'])])
+    await flushPromises()
+
+    let finishFirstSeries!: (series: CourseSeries) => void
+    let finishFirstCourses!: (courses: ReturnType<typeof page>) => void
+    apis.getCourseSeries.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFirstSeries = resolve
+        })
+    )
+    apis.listCourses.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFirstCourses = resolve
+        })
+    )
+    query.refetch()
+    await flushPromises()
+    finishFirstSeries(makeSeries('40', ['b']))
+    await flushPromises()
+    apis.getCourseSeries.mockResolvedValue(makeSeries('40', ['c']))
+    apis.listCourses.mockResolvedValue(page([makeCourse('c')]))
+    await Promise.all([cache.invalidate(['course-series', '40']), cache.invalidate(['course-series-courses', '40'])])
+    await flushPromises()
+    expect(query.data.value).toEqual({ series: makeSeries('40', ['c']), courses: [makeCourse('c')] })
+    expect(apis.getCourseSeries).toHaveBeenCalledTimes(3)
+    expect(apis.listCourses).toHaveBeenCalledTimes(3)
+    // A cancelled request whose implementation ignores its signal must not overwrite the new pair.
+    finishFirstCourses(page([makeCourse('b')]))
+    await flushPromises()
+    expect(query.data.value?.courses.map((course) => course.id)).toEqual(['c'])
+  })
+
+  it.each([QueryMode.BackgroundRefresh, QueryMode.Snapshot])(
+    'clears the old pair when series identity changes in %s mode',
+    async (mode) => {
+      queryClient.setDefaultOptions({ queries: { retry: false, gcTime: Infinity } })
+      const id = ref('A')
+      queryClient.setQueryData(['course-series', 'A'], makeSeries('A', ['a']))
+      queryClient.setQueryData(['course-series-courses', 'A'], [makeCourse('a')])
+      const query = withQueryClient(queryClient, () => useSeriesWithCourses(id, { mode }))
+      await flushPromises()
+      let fail!: (reason: Error) => void
+      apis.getCourseSeries.mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            fail = reject
+          })
+      )
+      apis.listCourses.mockResolvedValue(page([makeCourse('b')]))
+      id.value = 'B'
+      await flushPromises()
+      expect(query.isLoading.value).toBe(true)
+      expect(query.data.value).toBeNull()
+      fail(new Error('B unavailable'))
+      await flushPromises()
+      expect(query.isLoading.value).toBe(false)
+      expect(query.data.value).toBeNull()
+      expect(query.error.value).not.toBeNull()
+    }
+  )
 
   it('refreshes the shared complete list after a course is deleted', async () => {
     let courses = ['1', '2', '3', '4'].map(makeCourse)

@@ -56,8 +56,8 @@ const {
   isLoading,
   error,
   refetch: reloadProject
-} = useQuery(
-  async (ctx) => {
+} = useQuery({
+  queryFn: async (ctx) => {
     const { owner, name } = routeProjectIdentifier.value
     const p = new SpxProject()
     ;(window as any).project = p // for debug purpose, TODO: remove me
@@ -65,11 +65,11 @@ const {
     await p.load(serialized)
     return p as CloudProject
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to load project',
     zh: '加载项目失败'
   }
-)
+})
 
 const currentProjectIdentifier = computed(() => toProjectIdentifier(project.value?.owner, project.value?.name))
 
@@ -277,8 +277,8 @@ const handleRemix = useMessageHandle(
   { en: 'Failed to remix project', zh: '改编项目失败' }
 )
 
-const releasesRet = useQuery(
-  async () => {
+const releasesRet = useQuery({
+  queryFn: async () => {
     const { owner, name } = routeProjectIdentifier.value
     const { data } = await listProjectReleases(owner, name, {
       orderBy: 'createdAt',
@@ -288,8 +288,8 @@ const releasesRet = useQuery(
     })
     return data
   },
-  { en: 'Load release history failed', zh: '加载发布历史失败' }
-)
+  failureSummaryMessage: { en: 'Load release history failed', zh: '加载发布历史失败' }
+})
 
 const hasRelease = computed(() => releasesRet.data.value != null && releasesRet.data.value?.length > 0)
 
@@ -332,8 +332,8 @@ const handleRemove = useMessageHandle(
 const isDesktopLarge = useResponsive('desktop-large')
 const remixNumInRow = computed(() => (isDesktopLarge.value ? 6 : 5))
 
-const remixesRet = useQuery(
-  async () => {
+const remixesRet = useQuery({
+  queryFn: async () => {
     const { data: projects } = await listProjects({
       type: ProjectType.Game,
       visibility: Visibility.Public,
@@ -345,8 +345,8 @@ const remixesRet = useQuery(
     })
     return projects
   },
-  { en: 'Failed to load projects', zh: '加载失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load projects', zh: '加载失败' }
+})
 </script>
 
 <template>

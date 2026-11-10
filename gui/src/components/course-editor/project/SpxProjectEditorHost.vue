@@ -136,9 +136,12 @@ watch(
   { immediate: true }
 )
 
-const monacoQueryRet = useQuery(() => loadMonaco(i18n.lang.value), {
-  en: 'Failed to load code editor',
-  zh: '加载代码编辑器失败'
+const monacoQueryRet = useQuery({
+  queryFn: () => loadMonaco(i18n.lang.value),
+  failureSummaryMessage: {
+    en: 'Failed to load code editor',
+    zh: '加载代码编辑器失败'
+  }
 })
 
 onUnmounted(() => {

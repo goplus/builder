@@ -101,6 +101,38 @@ describe('course series', () => {
     expect(router.currentRoute.value.fullPath).toBe('/course-series/space')
   })
 
+  it('clears the previous series title and links while a reused page loads a different series', async () => {
+    const original = await courseSeriesApis.getCourseSeries('space')
+    vi.mocked(courseSeriesApis.getCourseSeries).mockResolvedValue({ ...original, title: 'Series A' })
+    vi.mocked(courseApis.listAllSeriesCourses).mockResolvedValue([makeCourse('a', 'Lesson A')])
+    const { wrapper, router } = await mountPages('/course-series/space')
+    await vi.waitFor(() => expect(wrapper.find('a[href="/course/space/a/start"]').exists()).toBe(true))
+    let fail!: (error: Error) => void
+    vi.mocked(courseSeriesApis.getCourseSeries).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = reject
+        })
+    )
+    vi.mocked(courseApis.listAllSeriesCourses).mockResolvedValue([makeCourse('b', 'Lesson B')])
+    await router.push('/course-series/B')
+    await vi.waitFor(() => expect(fail).toBeTypeOf('function'))
+    expect(document.title).toBe('Course Series - XBuilder')
+    expect(wrapper.text()).not.toContain('Series A')
+    expect(wrapper.find('a[href="/course/space/a/start"]').exists()).toBe(false)
+    fail(new Error('B unavailable'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Failed to load course series'))
+    expect(wrapper.text()).not.toContain('Series A')
+    expect(wrapper.find('a[href="/course/space/a/start"]').exists()).toBe(false)
+    vi.mocked(courseSeriesApis.getCourseSeries).mockResolvedValue({ ...original, id: 'B', title: 'Series B' })
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Retry')!
+      .trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('a[href="/course/B/b/start"]').exists()).toBe(true))
+    expect(document.title).toBe('Series B - Course Series - XBuilder')
+  })
+
   it('lists a series not divided a page at a time', async () => {
     const { wrapper } = await mountPages('/course-series/space')
 

@@ -33,8 +33,8 @@ const courseQueryRet = useCourse(() => props.courseIdInput, { mode: QueryMode.Sn
 const seriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
 const inPlaygroundRouter = useScopedRouterWithPathParam('inPlaygroundPath', () => props.inPlaygroundPath)
 
-const sessionQueryRet = useQuery(
-  async (ctx) => {
+const sessionQueryRet = useQuery({
+  queryFn: async (ctx) => {
     const courseSeriesID = props.courseSeriesIdInput
     const courseID = props.courseIdInput
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
@@ -66,12 +66,12 @@ const sessionQueryRet = useQuery(
     ctx.reporter.report(1)
     return { course, series, project }
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to start course',
     zh: '启动课程失败'
   },
-  { clearResultOnFetch: true }
-)
+  mode: QueryMode.BlockingRefresh
+})
 
 const session = sessionQueryRet.data
 usePageTitle(() => {

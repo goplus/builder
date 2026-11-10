@@ -13,7 +13,9 @@ import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 
 const route = useRoute()
 const signedIn = useSignedIn()
-const signedInUserQuery = useQuery(({ signal }) => signedIn.getUser({ signal }))
+const signedInUserQuery = useQuery({
+  queryFn: ({ signal }) => signedIn.getUser({ signal })
+})
 
 const canManageCourses = computed(() => signedIn.user?.capabilities.canManageCourses === true)
 

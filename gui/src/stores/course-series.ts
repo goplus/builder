@@ -1,9 +1,9 @@
-import { computed, toRef, type WatchSource } from 'vue'
+import { computed, toRef, toValue, type WatchSource } from 'vue'
 
 import { listAllSeriesCourses, type Course } from '@/apis/course'
 import * as apis from '@/apis/course-series'
 import { useAction } from '@/utils/exception'
-import { useQueryCache, useQueryWithCache, type QueryMode, type QueryRet } from '@/utils/query'
+import { composeQuery, useQuery, useQueryCache, useQueryWithCache, QueryMode, type QueryRet } from '@/utils/query'
 
 const seriesQueryKeyPrefix = 'course-series'
 const seriesCoursesQueryKeyPrefix = 'course-series-courses'
@@ -47,6 +47,30 @@ export function useSeriesCourses(seriesID: WatchSource<string | null>, options: 
     },
     staleTime,
     failureSummaryMessage: { en: 'Failed to load course list', zh: '加载课程列表失败' }
+  })
+}
+
+/** Publish a series and its complete course list together, retaining the previous pair during background refresh. */
+export function useSeriesWithCourses(
+  seriesID: WatchSource<string>,
+  options?: { mode?: QueryMode }
+): QueryRet<{ series: apis.CourseSeries; courses: Course[] }>
+export function useSeriesWithCourses(
+  seriesID: WatchSource<string | null>,
+  options?: { mode?: QueryMode }
+): QueryRet<{ series: apis.CourseSeries | null; courses: Course[] }>
+export function useSeriesWithCourses(seriesID: WatchSource<string | null>, options: { mode?: QueryMode } = {}) {
+  // Wait for invalidated children before replacing the pair, even when the parent refreshes in the background.
+  const series = useSeries(seriesID, { mode: QueryMode.BlockingRefresh })
+  const courses = useSeriesCourses(seriesID, { mode: QueryMode.BlockingRefresh })
+  return useQuery({
+    queryFn: async (ctx) => {
+      const [seriesValue, coursesValue] = await Promise.all([composeQuery(ctx, series), composeQuery(ctx, courses)])
+      return { series: seriesValue, courses: coursesValue }
+    },
+    failureSummaryMessage: { en: 'Failed to load course series', zh: '加载课程系列失败' },
+    queryKey: () => [toValue(seriesID)],
+    mode: options.mode ?? QueryMode.BackgroundRefresh
   })
 }
 

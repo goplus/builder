@@ -28,8 +28,8 @@ const sortOrder = useRouteQueryParamStrEnum('order', SortOrder, SortOrder.Desc, 
 const signedIn = useSignedIn()
 const canManageFeedback = computed(() => signedIn.user?.capabilities.canManageFeedback === true)
 
-const feedbackQuery = useQuery(
-  async () => {
+const feedbackQuery = useQuery({
+  queryFn: async () => {
     if (!canManageFeedback.value) return { total: 0, data: [] }
     return feedbackAdminApis.listFeedback({
       status: statusFilter.value === statusFilters.All ? undefined : statusFilter.value,
@@ -39,8 +39,8 @@ const feedbackQuery = useQuery(
       sortOrder: sortOrder.value
     })
   },
-  { en: 'Failed to load feedback', zh: '加载反馈失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load feedback', zh: '加载反馈失败' }
+})
 
 const pageTotal = computed(() => Math.ceil((feedbackQuery.data.value?.total ?? 0) / pageSize))
 

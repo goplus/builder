@@ -1,5 +1,5 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CourseSeries } from '@/apis/course-series'
@@ -25,11 +25,15 @@ vi.mock('@/apps/xbuilder/router', () => ({
   getCourseSeriesPageRoute: (id: string, courseID: string) => `/course-series/${id}#course-${courseID}`
 }))
 vi.mock('@/stores/course-series', () => ({
-  useSeries: (source: () => string | null) => {
+  useSeriesWithCourses: (source: () => string | null) => {
     mocks.seriesSource = source
-    return mocks.series
-  },
-  useSeriesCourses: () => mocks.courses
+    return {
+      data: computed(() => ({ series: mocks.series.data.value, courses: mocks.courses.data.value ?? [] })),
+      isLoading: computed(() => mocks.series.isLoading.value || mocks.courses.isLoading.value),
+      error: computed(() => mocks.series.error.value ?? mocks.courses.error.value),
+      refetch: vi.fn()
+    }
+  }
 }))
 vi.mock('./tutorial', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./tutorial')>()),
@@ -161,7 +165,6 @@ describe('tutorial course dropdown', () => {
     const wrapper = mountPanel()
     await flushPromises()
     const session = mocks.tutorial.currentCourse
-    // The course response still has its previous order while the series publishes a new one.
     mocks.series.data.value = {
       ...mocks.series.data.value,
       courseIDs: ['c', 'a', 'b'],
@@ -170,6 +173,7 @@ describe('tutorial course dropdown', () => {
         { id: 'u1', title: 'Basics revised', courseIDs: ['b'] }
       ]
     }
+    mocks.courses.data.value = ['c', 'a', 'b'].map(makeCourse)
     await flushPromises()
     expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual([
       'Unit 1: Advanced revised',
@@ -182,8 +186,6 @@ describe('tutorial course dropdown', () => {
       ['a', 2],
       ['b', 3]
     ])
-    mocks.courses.data.value = ['c', 'a', 'b'].map(makeCourse)
-    await flushPromises()
     expect(mocks.tutorial.currentCourse).toBe(session)
     expect(wrapper.get('[aria-current="step"]').text()).toContain('Course b')
     expect(mocks.tutorial.startCourse).not.toHaveBeenCalled()

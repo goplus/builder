@@ -140,8 +140,8 @@ const myProjectsRoute = computed(() => {
   return getUserPageRoute(signedIn.username, 'projects')
 })
 
-const myProjects = useQuery(
-  async () => {
+const myProjects = useQuery({
+  queryFn: async () => {
     if (signedIn.username == null) return []
     const { data: projects } = await listSignedInUserProjects({
       type: ProjectType.Game,
@@ -152,30 +152,30 @@ const myProjects = useQuery(
     })
     return projects
   },
-  { en: 'Failed to load projects', zh: '加载失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load projects', zh: '加载失败' }
+})
 
 const communityLikingRoute = getExploreRoute(ExploreOrder.MostLikes)
 
-const communityLikingProjects = useQuery(
-  () => exploreProjects({ type: ProjectType.Game, order: ExploreOrder.MostLikes, count: numInRow.value }),
-  { en: 'Failed to load projects', zh: '加载失败' }
-)
+const communityLikingProjects = useQuery({
+  queryFn: () => exploreProjects({ type: ProjectType.Game, order: ExploreOrder.MostLikes, count: numInRow.value }),
+  failureSummaryMessage: { en: 'Failed to load projects', zh: '加载失败' }
+})
 
 const communityRemixingRoute = getExploreRoute(ExploreOrder.MostRemixes)
 
-const communityRemixingProjects = useQuery(
-  () => exploreProjects({ type: ProjectType.Game, order: ExploreOrder.MostRemixes, count: numInRow.value }),
-  { en: 'Failed to load projects', zh: '加载失败' }
-)
+const communityRemixingProjects = useQuery({
+  queryFn: () => exploreProjects({ type: ProjectType.Game, order: ExploreOrder.MostRemixes, count: numInRow.value }),
+  failureSummaryMessage: { en: 'Failed to load projects', zh: '加载失败' }
+})
 
 const followingCreatedRoute = computed(() => getExploreRoute(ExploreOrder.FollowingCreated))
 
-const followingCreatedProjects = useQuery(
-  async () => {
+const followingCreatedProjects = useQuery({
+  queryFn: async () => {
     if (signedIn.username == null) return []
     return exploreProjects({ type: ProjectType.Game, order: ExploreOrder.FollowingCreated, count: numInRow.value })
   },
-  { en: 'Failed to load projects', zh: '加载失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load projects', zh: '加载失败' }
+})
 </script>

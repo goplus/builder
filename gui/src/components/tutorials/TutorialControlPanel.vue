@@ -7,7 +7,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { untilNotNull } from '@/utils/utils'
-import { useSeries, useSeriesCourses } from '@/stores/course-series'
+import { useSeriesWithCourses } from '@/stores/course-series'
 import { EditingMode } from '@/components/editor/editing'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { UIButton, UIError, UILoading, useConfirmDialogWithResult } from '@/components/ui'
@@ -22,18 +22,15 @@ const dropdown = useDropdown()
 const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
-const seriesQueryRet = useSeries(() => tutorial.currentCourse?.seriesID ?? null)
-const courseSeries = seriesQueryRet.data
-const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.seriesID ?? null)
+const seriesWithCoursesQuery = useSeriesWithCourses(() => tutorial.currentCourse?.seriesID ?? null)
+const courseSeries = computed(() => seriesWithCoursesQuery.data.value?.series ?? null)
 
 const units = computed(() => (courseSeries.value == null ? [] : getSeriesUnits(courseSeries.value)))
 const courseGroups = computed(() => {
-  const series = courseSeries.value
-  if (series == null) return []
   const coursesByID = new Map(
-    (coursesQueryRet.data.value ?? []).map((course) => [
+    (seriesWithCoursesQuery.data.value?.courses ?? []).map((course, index) => [
       course.id,
-      { course, sequence: series.courseIDs.indexOf(course.id) + 1 }
+      { course, sequence: index + 1 }
     ])
   )
   return units.value.map((unit) => ({
@@ -152,12 +149,9 @@ const { fn: handleRestartCourse } = useMessageHandle(
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
     <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1">
-      <UILoading v-if="seriesQueryRet.isLoading.value || coursesQueryRet.isLoading.value" class="h-24" />
-      <UIError v-else-if="seriesQueryRet.error.value != null" :retry="seriesQueryRet.refetch">
-        {{ $t(seriesQueryRet.error.value.userMessage) }}
-      </UIError>
-      <UIError v-else-if="coursesQueryRet.error.value != null" :retry="coursesQueryRet.refetch">
-        {{ $t(coursesQueryRet.error.value.userMessage) }}
+      <UILoading v-if="seriesWithCoursesQuery.isLoading.value" class="h-24" />
+      <UIError v-else-if="seriesWithCoursesQuery.error.value != null" :retry="seriesWithCoursesQuery.refetch">
+        {{ $t(seriesWithCoursesQuery.error.value.userMessage) }}
       </UIError>
       <template v-for="(group, index) in courseGroups" v-else :key="index">
         <h3 v-if="group.title != null" class="m-0 flex-none truncate px-1 py-2 text-base font-medium text-text">

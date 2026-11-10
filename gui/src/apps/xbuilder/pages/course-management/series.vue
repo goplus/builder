@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { composeQuery, QueryMode, useQuery } from '@/utils/query'
+import { QueryMode } from '@/utils/query'
 import { useI18n } from '@/utils/i18n'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
@@ -11,7 +11,7 @@ import { isGuidedCourse, type Course } from '@/apis/course'
 import { getCourseSeries, type CourseSeries, type CourseSeriesUnit } from '@/apis/course-series'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useDeleteCourse } from '@/stores/course'
-import { useDeleteCourseSeries, useSeries, useSeriesCourses, useUpdateCourseSeries } from '@/stores/course-series'
+import { useDeleteCourseSeries, useSeriesWithCourses, useUpdateCourseSeries } from '@/stores/course-series'
 import { useSignedIn } from '@/stores/user'
 import {
   UIButton,
@@ -82,18 +82,8 @@ const invokeGuidedCourseDrawer = useModal(GuidedCourseDrawer)
 const invokePlaygroundCourseDrawer = useModal(PlaygroundCourseDrawer)
 const invokeUnitTitleModal = useModal(UnitTitleModal)
 
-const seriesQueryRet = useSeries(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
-const coursesQueryRet = useSeriesCourses(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
-// Publish series and courses together so local edits adopt both results at the same time.
-const queryRet = useQuery(
-  async (ctx) => {
-    const [series, courses] = await Promise.all([composeQuery(ctx, seriesQueryRet), composeQuery(ctx, coursesQueryRet)])
-    return { series, courses }
-  },
-  { en: 'Failed to load course series', zh: '加载课程系列失败' },
-  { clearResultOnFetch: true }
-)
-const courseSeries = computed(() => queryRet.data.value?.series ?? null)
+const seriesWithCoursesQuery = useSeriesWithCourses(() => props.courseSeriesIdInput, { mode: QueryMode.Snapshot })
+const courseSeries = computed(() => seriesWithCoursesQuery.data.value?.series ?? null)
 // Only the author's own series are managed here; another author's could be read but not changed.
 const isOwnSeries = computed(() => courseSeries.value != null && courseSeries.value.owner === signedIn.username)
 
@@ -114,7 +104,10 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 const seriesWrites = new WriteQueue()
 
 /** The courses as shown, which a drag reorders before the server has the new order. */
-const { value: courses, edit: editCourses } = useLocalEdits(() => queryRet.data.value?.courses ?? [], seriesWrites)
+const { value: courses, edit: editCourses } = useLocalEdits(
+  () => seriesWithCoursesQuery.data.value?.courses ?? [],
+  seriesWrites
+)
 
 const { query, sortBy } = useListViewQuery()
 const shownCourses = computed(() => courses.value.filter((course) => matchesQuery([course.title], query.value)))
@@ -128,7 +121,7 @@ const indexMinCourseCount = 20
 
 async function refetch() {
   await seriesWrites.settled()
-  if (!pageSignal.aborted) queryRet.refetch()
+  if (!pageSignal.aborted) seriesWithCoursesQuery.refetch()
 }
 
 const listRef = ref<HTMLElement>()
@@ -471,9 +464,13 @@ const handleRemoveSeries = useMessageHandle(
       </template>
     </header>
 
-    <UILoading v-if="queryRet.isLoading.value" class="h-80" :mask="false" />
-    <UIError v-else-if="queryRet.error.value != null" class="h-80" :retry="queryRet.refetch">
-      {{ $t(queryRet.error.value.userMessage) }}
+    <UILoading v-if="seriesWithCoursesQuery.isLoading.value" class="h-80" :mask="false" />
+    <UIError
+      v-else-if="seriesWithCoursesQuery.error.value != null"
+      class="h-80"
+      :retry="seriesWithCoursesQuery.refetch"
+    >
+      {{ $t(seriesWithCoursesQuery.error.value.userMessage) }}
     </UIError>
     <UIError v-else-if="courseSeries != null && !isOwnSeries" class="h-80">
       {{ $t({ en: 'This course series is not yours', zh: '这个课程系列不属于你' }) }}

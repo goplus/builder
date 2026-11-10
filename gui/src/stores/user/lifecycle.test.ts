@@ -45,7 +45,9 @@ function install(setup: (signedIn: SignedIn) => void = () => {}) {
       setup() {
         userQueries.set(
           signedIn,
-          useQuery(({ signal }) => signedIn.getUser({ signal }))
+          useQuery({
+            queryFn: ({ signal }) => signedIn.getUser({ signal })
+          })
         )
         setup(signedIn)
         return () => null
@@ -274,10 +276,12 @@ describe('app-owned signed-in lifecycle', () => {
     const { signedIn } = install((signedIn) => {
       const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
       watch(canManageAccount, (value) => permissionChanges.push(value), { flush: 'sync' })
-      draftQuery = useQuery(async ({ signal }) => {
-        if (canManageAccount.value !== true) return null
-        draftSignals.push(signal)
-        return { name: 'Initial draft' }
+      draftQuery = useQuery({
+        queryFn: async ({ signal }) => {
+          if (canManageAccount.value !== true) return null
+          draftSignals.push(signal)
+          return { name: 'Initial draft' }
+        }
       })
     })
     await flushPromises()

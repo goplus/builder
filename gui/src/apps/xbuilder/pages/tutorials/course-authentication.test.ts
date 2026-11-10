@@ -1,5 +1,5 @@
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
-import { defineComponent, ref, watch, type Ref } from 'vue'
+import { computed, defineComponent, ref, watch, type Ref } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -49,6 +49,16 @@ vi.mock('@/stores/course', () => ({
   }
 }))
 vi.mock('@/stores/course-series', () => ({
+  useSeriesWithCourses: () => {
+    const data = ref<typeof mocks.series | null>(mocks.series)
+    mocks.seriesData = data
+    return {
+      data: computed(() => (data.value == null ? null : { series: data.value, courses: [mocks.course] })),
+      error: ref(null),
+      isLoading: ref(false),
+      progress: ref({ percentage: 0 })
+    }
+  },
   useSeries: () => {
     const data = ref(mocks.series)
     mocks.seriesData = data
