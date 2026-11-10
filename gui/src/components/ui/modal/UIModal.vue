@@ -1,7 +1,7 @@
 <template>
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-modal">
-      <div v-if="visible" class="fixed inset-0 z-1100 bg-overlay-modal" @click="handleMaskClick">
+      <UIDialogMask v-if="visible" :content-element="containerRef" @click="handleMaskClick">
         <div
           class="h-full w-full overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
@@ -22,7 +22,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </UIDialogMask>
     </Transition>
   </Teleport>
 </template>
@@ -47,6 +47,7 @@ import {
   useLayerRegistration,
   useModalContainer
 } from '../utils'
+import UIDialogMask from './UIDialogMask.vue'
 import { useDialogAutoFocus, useDialogEscape } from './dialog'
 
 defineOptions({

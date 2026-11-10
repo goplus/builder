@@ -123,7 +123,9 @@ describe('UIDrawer', () => {
     await new DOMWrapper(getLatestElement('.ui-drawer-surface')!).trigger('click')
     expect(drawer.emitted('update:visible')).toBeUndefined()
 
-    await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger('click')
+    for (const type of ['pointerdown', 'pointerup', 'click']) {
+      await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger(type)
+    }
     await drawer.findComponent(UIModalClose).trigger('click')
     expect(drawer.emitted('update:visible')).toEqual([[false], [false]])
   })
@@ -134,7 +136,9 @@ describe('UIDrawer', () => {
     )
     await flushDrawer()
 
-    await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger('click')
+    for (const type of ['pointerdown', 'pointerup', 'click']) {
+      await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger(type)
+    }
     expect(wrapper.findComponent(UIDrawer).emitted('update:visible')).toBeUndefined()
   })
 

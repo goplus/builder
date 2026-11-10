@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UIDropdown from './UIDropdown.vue'
@@ -38,6 +38,95 @@ const PopupProvider = defineComponent({
 })
 
 describe('UIDropdown', () => {
+  describe('cross-boundary pointer gestures', () => {
+    const wrappers: VueWrapper[] = []
+
+    afterEach(() => {
+      for (const wrapper of wrappers.splice(0)) wrapper.unmount()
+    })
+
+    async function mountGestureDropdown() {
+      const wrapper = mount(
+        defineComponent({
+          setup() {
+            const visible = ref(true)
+            return () =>
+              h(PopupProvider, null, {
+                default: () =>
+                  h(
+                    UIDropdown,
+                    {
+                      trigger: 'click',
+                      visible: visible.value,
+                      'onUpdate:visible': (value: boolean) => (visible.value = value)
+                    },
+                    {
+                      trigger: () => h('input', { 'data-test-id': 'trigger', value: 'Trigger text' }),
+                      default: () => h('textarea', { 'data-test-id': 'content' }, 'Select dropdown text')
+                    }
+                  )
+              })
+          }
+        }),
+        { attachTo: document.body }
+      )
+      wrappers.push(wrapper)
+      await flushDropdown()
+      return {
+        dropdown: wrapper.getComponent(UIDropdown),
+        trigger: new DOMWrapper(document.querySelector('[data-test-id="trigger"]')!),
+        content: new DOMWrapper(document.querySelector('[data-test-id="content"]')!),
+        outside: new DOMWrapper(document.body)
+      }
+    }
+
+    it.each([
+      ['content', 'outside'],
+      ['outside', 'content'],
+      ['trigger', 'outside'],
+      ['outside', 'trigger'],
+      ['content', 'trigger']
+    ] as const)('stays open for a drag from %s to %s, then accepts a fresh outside click', async (start, end) => {
+      const elements = await mountGestureDropdown()
+      await elements[start].trigger('pointerdown')
+      await elements[end].trigger('pointerup')
+      // The browser targets the common ancestor when press and release targets differ.
+      await elements.outside.trigger('click')
+      await flushDropdown()
+
+      expect(elements.dropdown.emitted('clickOutside')).toBeUndefined()
+      expect(elements.dropdown.emitted('update:visible')).toBeUndefined()
+      expect(document.querySelector('[data-test-id="content"]')).not.toBeNull()
+
+      for (const type of ['pointerdown', 'pointerup', 'click']) await elements.outside.trigger(type)
+      await flushDropdown()
+      expect(elements.dropdown.emitted('clickOutside')).toHaveLength(1)
+      expect(elements.dropdown.emitted('update:visible')).toEqual([[false]])
+      expect(document.querySelector('[data-test-id="content"]')).toBeNull()
+    })
+
+    it('keeps selection inside open and preserves trigger click toggling', async () => {
+      const { dropdown, content, trigger } = await mountGestureDropdown()
+      for (const type of ['pointerdown', 'pointerup', 'click']) await content.trigger(type)
+      expect(dropdown.emitted('update:visible')).toBeUndefined()
+      expect(dropdown.emitted('clickOutside')).toBeUndefined()
+
+      for (const type of ['pointerdown', 'pointerup', 'click']) await trigger.trigger(type)
+      expect(dropdown.emitted('update:visible')).toEqual([[false]])
+      expect(dropdown.emitted('clickOutside')).toBeUndefined()
+    })
+
+    it('ignores a cancelled gesture without preventing the next outside click', async () => {
+      const { dropdown, outside } = await mountGestureDropdown()
+      for (const type of ['pointerdown', 'pointercancel', 'click']) await outside.trigger(type)
+      expect(dropdown.emitted('clickOutside')).toBeUndefined()
+
+      for (const type of ['pointerdown', 'pointerup', 'click']) await outside.trigger(type)
+      expect(dropdown.emitted('clickOutside')).toHaveLength(1)
+      expect(dropdown.emitted('update:visible')).toEqual([[false]])
+    })
+  })
+
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
@@ -391,7 +480,9 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).toContain('Parent content')
     expect(popupContainer.text()).toContain('Child content')
 
-    await wrapper.get('[data-test-id="parent-content"]').trigger('click')
+    for (const type of ['pointerdown', 'pointerup', 'click']) {
+      await wrapper.get('[data-test-id="parent-content"]').trigger(type)
+    }
     await flushDropdown()
 
     expect(childDropdown.emitted('update:visible')).toEqual([[false]])
@@ -452,7 +543,9 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).toContain('Parent content')
     expect(popupContainer.text()).toContain('Child content')
 
-    await popupContainer.get('[data-test-id="child-content"]').trigger('click')
+    for (const type of ['pointerdown', 'pointerup', 'click']) {
+      await popupContainer.get('[data-test-id="child-content"]').trigger(type)
+    }
     await flushDropdown()
 
     expect(childDropdown.emitted('update:visible')).toBeUndefined()

@@ -206,8 +206,26 @@ watch(
 watchEffect(async (onCleanup) => {
   if (!visibleComputed.value || !popup.isTopmost.value) return
 
+  let ignoreClick = false
+
+  function handlePointerDown(e: PointerEvent) {
+    ignoreClick = isEventInsideCurrentDropdown(e, triggerRef.value, contentRef.value)
+  }
+
+  function handlePointerUp(e: PointerEvent) {
+    ignoreClick ||= isEventInsideCurrentDropdown(e, triggerRef.value, contentRef.value)
+  }
+
+  function handlePointerCancel() {
+    ignoreClick = true
+  }
+
   // Close the dropdown when user clicks outside of it.
   function handleDocumentClick(e: MouseEvent) {
+    // A drag across the content boundary can target an outside ancestor with its click.
+    const ignoreGesture = ignoreClick
+    ignoreClick = false
+    if (ignoreGesture) return
     // Ignore clicks that belong to the current trigger/content pair. Nested
     // dropdowns register separately, so their own stack entry handles itself.
     if (isEventInsideCurrentDropdown(e, triggerRef.value, contentRef.value)) return
@@ -231,7 +249,12 @@ watchEffect(async (onCleanup) => {
   // event `mouseup`, and the document `click` event from the same click interaction would
   // trigger `handleDocumentClick` here and immediately close the dropdown again.
   await timeout(0)
-  if (!signal.aborted) document.addEventListener('click', handleDocumentClick, { capture: true, signal })
+  if (signal.aborted) return
+  const options = { capture: true, signal }
+  document.addEventListener('pointerdown', handlePointerDown, options)
+  document.addEventListener('pointerup', handlePointerUp, options)
+  document.addEventListener('pointercancel', handlePointerCancel, options)
+  document.addEventListener('click', handleDocumentClick, options)
 })
 
 const exposed: PopupTriggerHandle & { setVisible(visible: boolean): void } = {
