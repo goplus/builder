@@ -335,6 +335,52 @@ describe('useQuery', () => {
 })
 
 describe('composeQuery', () => {
+  it('propagates changes, errors and refetch through three levels', async () => {
+    const input = ref(1)
+    const leafFn = vi.fn(async () => {
+      if (input.value === 3) throw new Error('leaf failed')
+      return input.value
+    })
+    const [middle, root] = withSetup(() => {
+      const leaf = useQuery({ queryFn: leafFn })
+      const middle = useQuery({
+        queryKey: ['middle'],
+        mode: QueryMode.BlockingRefresh,
+        queryFn: async (ctx) => (await composeQuery(ctx, leaf)) * 2
+      })
+      const root = useQuery({
+        queryKey: ['root'],
+        mode: QueryMode.BlockingRefresh,
+        queryFn: async (ctx) => (await composeQuery(ctx, middle)) + 1
+      })
+      return [middle, root] as const
+    })
+
+    await flushPromises()
+    expect(root.data.value).toBe(3)
+
+    input.value = 2
+    await flushPromises()
+    expect(middle.data.value).toBe(4)
+    expect(root.data.value).toBe(5)
+
+    root.refetch()
+    expect(state(root)).toEqual({ data: null, error: null, loading: true })
+    await flushPromises()
+    expect(leafFn).toHaveBeenCalledTimes(3)
+    expect(root.data.value).toBe(5)
+
+    input.value = 3
+    await flushPromises()
+    expect(root.data.value).toBeNull()
+    expect(root.error.value?.cause).toEqual(new Error('leaf failed'))
+
+    input.value = 4
+    await flushPromises()
+    expect(middle.data.value).toBe(8)
+    expect(state(root)).toEqual({ data: 9, error: null, loading: false })
+  })
+
   it('should work well', async () => {
     const valueRef = ref(0)
     const [queryFn1, ret1, queryFn2, ret2] = withSetup(() => {

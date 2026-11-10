@@ -306,6 +306,7 @@ const handleRemoveUnit = useMessageHandle(
     const removal = getUnitRemoval(unitIndex)
     if (removal.courseCount !== asked.courseCount || removal.intoUnitID !== asked.intoUnitID) throw unitsChanged()
     if (units.value.length === 1) {
+      // The undivided list must keep the order shown in the last unit.
       courses.value = units.value[0].courseIDs.flatMap((id) => coursesByID.value.get(id) ?? [])
     }
     await writeUnits(series, removeUnit(units.value, unitIndex))
