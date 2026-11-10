@@ -1,6 +1,6 @@
 <template>
   <div class="flex-[1_1_0] flex">
-    <div class="flex-none flex flex-col border-r border-dividing-line-2">
+    <div class="min-w-[121px] flex-none flex flex-col border-r border-dividing-line-2">
       <div v-radar="listRadarInfo" class="items mx-1.5 flex-[1_1_0] flex flex-col gap-2 overflow-y-auto">
         <div v-if="$slots.default != null" ref="itemsWrapper" class="flex flex-col gap-2">
           <slot></slot>
