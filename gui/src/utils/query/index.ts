@@ -401,11 +401,13 @@ export type InfiniteQueryRet<T> = QueryRet<T[]> & {
 }
 
 export type InfiniteQueryWithCacheOptions<T> = {
+  /** Shared cache identity, compared by value. Include every input that identifies the page sequence. */
   queryKey: unknown[] | WatchSource<unknown[]>
-  /** Query one page, with `pageToken` `null` for the first page */
+  /** Fetch one page; `pageToken` is `null` for the first page, and `signal` cancels the request. */
   queryFn: (pageToken: string | null, signal: AbortSignal) => Promise<T>
-  /** Get the token of the page after `lastPage`, `null` if there are no more pages */
+  /** Return the next page token, or `null` when no pages remain. */
   getNextPageToken: (lastPage: T) => string | null
+  /** Localized summary for failures; omitted summaries preserve action errors or use a generic message. */
   failureSummaryMessage?: LocaleMessage
 }
 
