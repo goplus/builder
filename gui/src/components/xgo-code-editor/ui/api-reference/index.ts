@@ -21,8 +21,13 @@ export class APIReferenceController extends Disposable {
     const { activeTextDocument: textDocument } = this.ui
     if (textDocument == null) return null
     return provider.provideAPIReference({ textDocument, signal })
-  }, true)
+  })
 
+  /**
+   * Null without an active document, before or during loading, or after a failure.
+   * Check `error` to distinguish failure.
+   * An empty array is a completed empty result.
+   */
   get items() {
     return this.itemsMgr.result.data
   }

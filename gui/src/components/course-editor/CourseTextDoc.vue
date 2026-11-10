@@ -26,5 +26,5 @@ const handleFormat = useMessageHandle(
       {{ $t({ en: 'Format', zh: '格式化' }) }}
     </UIButton>
   </div>
-  <CodeEditorUI :code-file-path="mainCourseFilePath" :has-api-reference="false" />
+  <CodeEditorUI :code-file-path="mainCourseFilePath" :api-reference-enabled="false" />
 </template>
