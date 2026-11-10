@@ -21,7 +21,7 @@
               {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
             </UIMenuItem>
             <UIMenuItem
-              v-radar="{ name: 'Generate sprite', desc: 'Click to generate sprite with AI' }"
+              v-radar="{ name: 'generate-sprite', desc: 'Click to generate sprite with AI' }"
               @click="handleGenerate()"
             >
               {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}

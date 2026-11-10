@@ -73,8 +73,8 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
     </template>
     <UIBlockItemTitle size="medium" :title="gen.name">{{ gen.name }}</UIBlockItemTitle>
     <CornerMenu v-if="active && operable !== false">
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="emit('rename')" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="emit('remove')" />
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the animation' }" @click="emit('rename')" />
+      <RemoveMenuItem v-radar="{ name: 'remove', desc: 'Click to remove the animation' }" @click="emit('remove')" />
     </CornerMenu>
   </GenItem>
 </template>

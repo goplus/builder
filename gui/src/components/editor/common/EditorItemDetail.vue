@@ -20,7 +20,7 @@
       <h4 class="flex items-center justify-center gap-1 min-w-0">
         <AssetName>{{ name }}</AssetName>
         <UIIcon
-          v-radar="{ name: 'Rename button', desc: 'Click to rename the selected item' }"
+          v-radar="{ name: 'rename-button', desc: 'Click to rename the selected item' }"
           class="cursor-pointer text-grey-900 transition-colors hover:text-grey-800 active:text-grey-1000"
           :title="$t({ en: 'Rename', zh: '重命名' })"
           type="edit"
