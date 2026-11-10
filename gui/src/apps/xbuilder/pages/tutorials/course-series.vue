@@ -5,6 +5,7 @@ import type { CourseSeries } from '@/apis/course-series'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilNotNull } from '@/utils/utils'
 import { findUnitIndexOfCourse, getSeriesUnits } from '@/components/tutorials/units'
+import { courseListRowsPerPage } from '@/components/tutorials/PagedCourseList.vue'
 
 /** On entry, locate the course from the hash in its unit or page, then clear the navigation hint. */
 function useCourseHashNavigation(courseSeries: WatchSource<CourseSeries | null>, numInRow: WatchSource<number>) {
@@ -23,7 +24,7 @@ function useCourseHashNavigation(courseSeries: WatchSource<CourseSeries | null>,
         const index = findUnitIndexOfCourse(getSeriesUnits(series), courseID)
         if (index > 0) query.unit = String(index + 1)
       } else {
-        const page = Math.floor(series.courseIDs.indexOf(courseID) / (toValue(numInRow) * 2)) + 1
+        const page = Math.floor(series.courseIDs.indexOf(courseID) / (toValue(numInRow) * courseListRowsPerPage)) + 1
         if (page > 1) query.p = String(page)
       }
     }

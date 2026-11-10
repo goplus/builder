@@ -6,7 +6,11 @@ function useStoredID(key: string) {
   const stored = useUserSessionStorage<string | { id: string } | null>(key, null)
   return computed({
     // Older sessions stored the full record or an object containing its ID.
-    get: () => (typeof stored.value === 'string' ? stored.value : stored.value?.id ?? null),
+    get: () => {
+      const value = stored.value
+      if (typeof value === 'string') return value
+      return typeof value?.id === 'string' ? value.id : null
+    },
     set: (id: string | null) => (stored.value = id)
   })
 }

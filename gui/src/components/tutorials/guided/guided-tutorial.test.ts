@@ -101,6 +101,18 @@ describe('Guided Tutorial persistence and identity', () => {
     })
   })
 
+  it.each(['course', 'series'])('ignores a stored legacy %s record with a non-string ID', (invalidRecord) => {
+    sessionStorage.setItem(
+      'spx-gui-tutorial-course',
+      JSON.stringify({ __user__: 'alice', __value__: { id: invalidRecord === 'course' ? 123 : course.id } })
+    )
+    sessionStorage.setItem(
+      'spx-gui-tutorial-series',
+      JSON.stringify({ __user__: 'alice', __value__: { id: invalidRecord === 'series' ? 456 : series.id } })
+    )
+    expect(tutorial.currentCourse).toBeNull()
+  })
+
   it('clears persisted identities when the course ends', async () => {
     await tutorial.enterCourse(course, series)
     tutorial.endCurrentCourse()

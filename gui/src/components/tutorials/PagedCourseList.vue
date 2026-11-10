@@ -1,3 +1,7 @@
+<script lang="ts">
+export const courseListRowsPerPage = 2
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 
@@ -8,8 +12,7 @@ import { UIEmpty, UIPagination } from '@/components/ui'
 import { useRouteQueryParamInt } from '@/utils/route'
 
 const coursePadding = 20
-const numInColumn = 2
-const height = numInColumn * (courseItemHeight + coursePadding) - coursePadding
+const height = courseListRowsPerPage * (courseItemHeight + coursePadding) - coursePadding
 
 const props = defineProps<{
   /** A series not divided into units, whose courses are shown a page at a time. */
@@ -27,7 +30,7 @@ const page = computed({
   get: () => Math.max(1, Math.min(requestedPage.value, pageTotal.value)),
   set: (value) => (requestedPage.value = value)
 })
-const pageSize = computed(() => props.numInRow * numInColumn)
+const pageSize = computed(() => props.numInRow * courseListRowsPerPage)
 const pageTotal = computed(() => Math.ceil(props.courses.length / pageSize.value))
 
 const shownCourses = computed(() => props.courses.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
