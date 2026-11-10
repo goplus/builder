@@ -44,12 +44,12 @@ const props = withDefaults(
   defineProps<{
     codeFilePath: string
     simpleMode?: boolean
-    hasApiReference?: boolean
+    apiReferenceEnabled?: boolean
     readOnly?: boolean
     readOnlyMessage?: LocaleMessage
   }>(),
   {
-    hasApiReference: true,
+    apiReferenceEnabled: true,
     readOnlyMessage: () => ({ en: 'Cannot edit in read-only editor', zh: '无法在只读编辑器中编辑' })
   }
 )
@@ -85,9 +85,9 @@ const uiRef = computed(() => {
   })
 })
 
-const showAPIReference = computed(() => {
+const apiReferenceVisible = computed(() => {
   const controller = uiRef.value.apiReferenceController
-  return props.hasApiReference && controller.items?.length !== 0
+  return props.apiReferenceEnabled && controller.items?.length !== 0
 })
 
 const initialFontSize = 12
@@ -291,7 +291,7 @@ providePopupContainer(codeEditorEl)
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
     <aside
-      v-if="showAPIReference"
+      v-if="apiReferenceVisible"
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
@@ -303,7 +303,7 @@ providePopupContainer(codeEditorEl)
       />
     </aside>
     <div
-      v-if="showAPIReference"
+      v-if="apiReferenceVisible"
       ref="resizeHandleEl"
       v-radar="{ name: 'resize-handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"

@@ -160,7 +160,7 @@ describe('API Reference layout', () => {
       await nextTick()
       expect(sidebar().exists()).toBe(false)
 
-      await wrapper.setProps({ hasApiReference: false })
+      await wrapper.setProps({ apiReferenceEnabled: false })
       items.value = [{ definition: { package: 'spx', name: 'say' } } as APIReferenceItem]
       await nextTick()
       expect(sidebar().exists()).toBe(false)
