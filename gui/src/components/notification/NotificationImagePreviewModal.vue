@@ -30,7 +30,7 @@ const emit = defineEmits<{
       </UICardHeader>
       <div class="min-h-0 flex flex-1 items-center justify-center overflow-y-auto bg-grey-100 p-6">
         <img
-          class="block max-h-[calc(100vh-10rem)] max-w-full rounded-lg object-contain"
+          class="block max-h-[calc(100vh-10rem)] max-w-full rounded-md object-contain"
           crossorigin="anonymous"
           :src="url"
           :alt="name"
