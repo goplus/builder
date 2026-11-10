@@ -38,7 +38,7 @@ const props = defineProps<{
 }>()
 
 const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
-  // Ignore intermediate empty data to keep UI stable
+  // Preserve displayed items across null results, but apply completed empty arrays.
   return props.controller.items ?? oldValue ?? null
 })
 
@@ -62,7 +62,7 @@ const err = computed(() => {
 const categoriesComputed = computed<MainCategory[] | null>((oldValue) => {
   const items = itemsForDisplay.value
   const categoryViewInfos = props.controller.categoryViewInfos
-  // Ignore intermediate empty data to keep UI stable
+  // Preserve categories when items or category metadata are unavailable.
   if (items == null || categoryViewInfos == null) return oldValue ?? null
   const result: MainCategory[] = []
   for (const mcvi of categoryViewInfos) {
@@ -78,8 +78,8 @@ const categoriesComputed = computed<MainCategory[] | null>((oldValue) => {
   return result
 })
 
-// Initially display only items of the first category to improve rendering performance. After a delay, display all items.
-// Delay is applied only for the first update (from empty to non-empty).
+// When categorization is needed and no categories are displayed, render the first category before yielding.
+// Subsequent updates with displayed categories render all categories immediately.
 const categoriesForItems = shallowRef<MainCategory[]>([])
 watch(
   categoriesComputed,
@@ -197,7 +197,7 @@ function handleCategoryClick(id: string) {
             class="[&:last-child>section:last-child]:border-b-0"
           >
             <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
-              <h5 class="sticky top-0 z-10 bg-grey-100 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+              <h5 class="sticky top-0 z-10 -mx-4 bg-grey-100 px-4 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
               <ul class="flex flex-col gap-md pb-5">
                 <APIReferenceItemComp
                   v-for="item in sc.items"

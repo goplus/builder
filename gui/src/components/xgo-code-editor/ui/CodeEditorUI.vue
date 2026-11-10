@@ -87,6 +87,7 @@ const uiRef = computed(() => {
 
 const apiReferenceVisible = computed(() => {
   const controller = uiRef.value.apiReferenceController
+  // Keep the panel mounted while loading or showing an error; hide only completed empty results.
   return props.apiReferenceEnabled && controller.items?.length !== 0
 })
 
