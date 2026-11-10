@@ -10,10 +10,23 @@ vi.mock('@/utils/file', async (importOriginal) => ({
   useFileUrl: () => [ref('blob:animation')]
 }))
 
+vi.mock('@/components/ui/message/UIMessageProvider.vue', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/ui/message/UIMessageProvider.vue')>()),
+  useMessage: () => ({ error: vi.fn(), success: vi.fn() })
+}))
+
 async function setup() {
   const wrapper = shallowMount(AnimationVideoPreview, {
-    props: { video: mockFile('animation.mp4'), framesConfig: null },
-    global: { plugins: [createI18n({ lang: 'en' })], directives: { radar: () => {} } }
+    props: { video: mockFile('animation.mp4'), framesConfig: null, showControls: true },
+    global: {
+      plugins: [createI18n({ lang: 'en' })],
+      directives: { radar: () => {} },
+      stubs: {
+        ResourceCanvas: false,
+        Teleport: false,
+        UITooltip: { template: '<div><slot /><slot name="trigger" /></div>' }
+      }
+    }
   })
   onTestFinished(() => wrapper.unmount())
   await nextTick()
@@ -22,7 +35,7 @@ async function setup() {
   await video.trigger('loadedmetadata')
   vi.spyOn(wrapper.get('.track-inner').element, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 0, 500, 20))
   for (const marker of wrapper.findAll('.segment-marker')) marker.element.setPointerCapture = vi.fn()
-  wrapper.get('.segment').element.setPointerCapture = vi.fn()
+  wrapper.get('.seek-surface').element.setPointerCapture = vi.fn()
 
   async function move(clientX: number, type = 'pointermove') {
     window.dispatchEvent(new PointerEvent(type, { pointerId: 1, clientX }))
@@ -65,7 +78,7 @@ describe('Animation trim dragging', () => {
     const { wrapper, move } = await setup()
     const initialStyle = wrapper.get('.segment').attributes('style')
     const updates = wrapper.emitted('update:framesConfig')!.length
-    await wrapper.get('.segment').trigger('pointerdown', { pointerId: 1, clientX: 350 })
+    await wrapper.get('.seek-surface').trigger('pointerdown', { pointerId: 1, clientX: 350 })
     expect(wrapper.get('video').element.currentTime).toBe(2.5)
     await move(400)
     expect(wrapper.get('video').element.currentTime).toBe(3)

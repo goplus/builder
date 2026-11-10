@@ -4,7 +4,7 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
 import { useNetwork } from '@/utils/network'
-import { useSignedInStateQuery } from '@/stores/user'
+import { useSignedIn } from '@/stores/user'
 import type { Animation } from '@/models/spx/animation'
 import type { Costume } from '@/models/spx/costume'
 import type { SpriteContent, SpriteContentSelected } from '@/models/spx/common/sprite-content'
@@ -297,7 +297,7 @@ function handleAddAnimation() {
 
 const i18n = useI18n()
 const confirm = useConfirmDialog()
-const signedInStateQuery = useSignedInStateQuery()
+const signedIn = useSignedIn()
 const { isOnline } = useNetwork()
 const localCache: ILocalCache = {
   load: () => Promise.reject(new Error('Not implemented')),
@@ -306,7 +306,7 @@ const localCache: ILocalCache = {
 }
 // Preview controls must write to the draft's local history, not the source project.
 const previewState = useComputedDisposable(
-  () => new EditorState(i18n, props.content.previewProject, isOnline, signedInStateQuery, cloudHelpers, localCache)
+  () => new EditorState(i18n, props.content.previewProject, isOnline, signedIn, cloudHelpers, localCache)
 )
 provideLocalEditorCtx(
   computedShallowReactive(() => ({ project: props.content.previewProject, state: previewState.value }))
@@ -322,7 +322,7 @@ provideLocalEditorCtx(
     <div class="flex-1 min-h-0 flex">
       <aside v-if="!embedded" class="w-102 flex-none min-h-0 border-e border-grey-400 bg-grey-100 pt-4 flex flex-col">
         <div class="min-h-0 flex-[1_1_0] overflow-y-auto px-4 flex flex-col gap-6">
-          <ListItemWrapper v-radar="{ name: 'Costume list', desc: 'List of costumes' }" @add="handleAddCostume">
+          <ListItemWrapper v-radar="{ name: 'costume-list', desc: 'List of costumes' }" @add="handleAddCostume">
             <template #title>{{ $t({ zh: '造型', en: 'Costume' }) }}</template>
             <CostumeGenItem
               v-for="c in content.costumes"
@@ -338,7 +338,7 @@ provideLocalEditorCtx(
             />
           </ListItemWrapper>
 
-          <ListItemWrapper v-radar="{ name: 'Animation list', desc: 'List of animations' }" @add="handleAddAnimation">
+          <ListItemWrapper v-radar="{ name: 'animation-list', desc: 'List of animations' }" @add="handleAddAnimation">
             <template #title>{{ $t({ zh: '动画', en: 'Animation' }) }}</template>
             <AnimationGenItem
               v-for="a in content.animations"
@@ -488,7 +488,7 @@ provideLocalEditorCtx(
         <template #trigger>
           <UIButton
             v-radar="{
-              name: 'Minimize',
+              name: 'minimize',
               desc: 'Click to minimize the sprite generation modal'
             }"
             type="secondary"

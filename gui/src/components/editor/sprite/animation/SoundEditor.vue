@@ -67,7 +67,7 @@
               <template #trigger>
                 <UIButton
                   v-radar="{
-                    name: 'Animation sound playback selector',
+                    name: 'animation-sound-playback-selector',
                     desc: 'Select how the selected sound plays with the animation'
                   }"
                   type="white"

@@ -54,13 +54,18 @@ function setup(initialConfig: FramesConfig | null) {
     const element = wrapper.get('video').element
     Object.defineProperty(element, 'duration', { configurable: true, value: duration })
     await wrapper.get('video').trigger('loadedmetadata')
+    for (const control of wrapper.findAll<HTMLButtonElement>('.segment-marker, .seek-surface'))
+      control.element.setPointerCapture = vi.fn()
     vi.spyOn(wrapper.get('.track-inner').element, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 500, 20))
     return wrapper
   }
 
   async function dragMarker(side: 'left' | 'right', clientX: number) {
     const marker = host.get(`.segment-marker.${side}`)
-    await marker.trigger('pointerdown', { pointerId: 1, clientX })
+    const config = framesConfig.value!
+    const time = (config.startTime ?? 0) + (side === 'right' ? config.duration : 0)
+    const duration = host.get('video').element.duration * 1000
+    await marker.trigger('pointerdown', { pointerId: 1, clientX: (time / duration) * 500 })
     window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX }))
     window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX }))
     await nextTick()
@@ -176,7 +181,7 @@ describe('AnimationVideoPreview', () => {
       const { framesConfig, loadVideo, dragMarker } = setup({ startTime: 1000, duration: 2000, interval: 125 })
       const wrapper = await loadVideo(duration)
       const marker = wrapper.get('.segment-marker.right')
-      await marker.trigger('pointerdown', { pointerId: 1, clientX: 300 })
+      await marker.trigger('pointerdown', { pointerId: 1, clientX: (3 / duration) * 500 })
       window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: 500 }))
       await nextTick()
       expect(marker.attributes('aria-valuenow')).toBe(String(duration))

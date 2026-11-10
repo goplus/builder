@@ -181,7 +181,7 @@ describe('canvas resource workflows', () => {
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Generate resource"]').exists()).toBe(true))
     await wrapper.get('[aria-label="Generate resource"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Animation generation settings"]').exists()).toBe(true))
-    await wrapper.get('[aria-label="List of animation"] [aria-label="Options button"]').trigger('click')
+    await wrapper.get('[aria-label="Animation list"] [aria-label="Options button"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Remove"]').exists()).toBe(true))
     await wrapper.get('[aria-label="Remove"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Animation generation settings"]').exists()).toBe(false))

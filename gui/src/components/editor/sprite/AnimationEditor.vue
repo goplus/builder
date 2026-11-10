@@ -1,6 +1,6 @@
 <template>
   <EditorList
-    v-radar="{ name: 'Animations management', desc: 'Managing animations of current sprite' }"
+    v-radar="{ name: 'animations-management', desc: 'Managing animations of current sprite' }"
     resource-type="animation"
     :sortable="{ list: sprite.animations }"
     @sorted="handleSorted"
@@ -17,7 +17,7 @@
     <template #add-options>
       <UIMenu>
         <UIMenuItem
-          v-radar="{ name: 'Group costumes', desc: 'Click to group costumes as animation' }"
+          v-radar="{ name: 'group-costumes-option', desc: 'Click to group costumes as animation' }"
           @click="handleImport"
         >
           {{ $t({ en: 'Group costumes as animation', zh: '合并造型为动画' }) }}

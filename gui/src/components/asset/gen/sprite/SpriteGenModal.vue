@@ -73,7 +73,7 @@ const handleModalClose = useMessageHandle(
 <template>
   <UIModal
     ref="modalRef"
-    :radar="{ name: 'Sprite generation modal', desc: 'Modal for sprite generation' }"
+    :radar="{ name: 'sprite-generation-modal', desc: 'Modal for sprite generation' }"
     style="width: 1076px; max-width: calc(100vw - 32px); height: 800px"
     :style="{ maxHeight: gen?.isPreparePhase === false ? 'calc(100dvh - 32px)' : null }"
     :visible="visible"

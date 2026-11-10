@@ -176,8 +176,8 @@ describe('editor', () => {
 
     await wrapper.get('[aria-label="Animations tab"]').trigger('click')
     await wrapper.get('[aria-label="Add animation"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[aria-label="Group costumes"]').exists()).toBe(true))
-    await wrapper.get('[aria-label="Group costumes"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Group costumes option"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Group costumes option"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Group costumes modal"]').exists()).toBe(true))
     const grouping = wrapper.get('[aria-label="Group costumes modal"]')
     await grouping.get('[title="Idle"]').trigger('click')

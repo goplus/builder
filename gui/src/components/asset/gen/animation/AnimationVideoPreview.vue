@@ -469,7 +469,7 @@ function formatTime(timeInMs: number) {
             {{ $t(isPlaying ? { en: 'Pause', zh: '暂停' } : { en: 'Play selection', zh: '播放选中片段' }) }}
             <template #trigger>
               <PlayControl
-                v-radar="{ name: 'Play button', desc: 'Toggle playback of animation video preview' }"
+                v-radar="{ name: 'play-button', desc: 'Toggle playback of animation video preview' }"
                 :playing="isPlaying ? { progress: (currentTime - cutStartRef) / (cutEndRef - cutStartRef || 1) } : null"
                 :progress-interval="0"
                 :play-handler="startPlayback"
@@ -507,7 +507,7 @@ function formatTime(timeInMs: number) {
                 ></button>
                 <div class="segment" :style="segmentStyle">
                   <button
-                    v-radar="{ name: 'Start marker', desc: 'Drag to adjust start time of extracted segment' }"
+                    v-radar="{ name: 'start-marker', desc: 'Drag to adjust start time of extracted segment' }"
                     class="segment-marker left"
                     :class="{ dragging: dragTarget === 'start' }"
                     type="button"
@@ -523,7 +523,7 @@ function formatTime(timeInMs: number) {
                     <i v-if="shouldNudge" class="marker-arrow"></i>
                   </button>
                   <button
-                    v-radar="{ name: 'End marker', desc: 'Drag to adjust end time of extracted segment' }"
+                    v-radar="{ name: 'end-marker', desc: 'Drag to adjust end time of extracted segment' }"
                     class="segment-marker right"
                     :class="{ dragging: dragTarget === 'end' }"
                     type="button"

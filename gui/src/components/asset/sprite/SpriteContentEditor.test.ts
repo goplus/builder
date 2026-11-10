@@ -44,7 +44,7 @@ vi.mock('@/components/editor/editor-state', () => ({
   }
 }))
 
-vi.mock('@/stores/user', () => ({ useSignedInStateQuery: () => ({}) }))
+vi.mock('@/stores/user', () => ({ useSignedIn: () => ({}) }))
 vi.mock('@/utils/user', () => ({ useEnsureSignedIn: () => async () => {} }))
 
 type Mode = 'generate' | 'edit'
@@ -188,7 +188,7 @@ describe('Legacy sprite generation adoption', () => {
     const generate = vi.spyOn(costume, 'generate').mockResolvedValue()
     await wrapper.vm.$nextTick()
     await wrapper.get('textarea').setValue('A blue cat')
-    await wrapper.get('button[aria-label="Submit"]').trigger('click')
+    await wrapper.get('button[aria-label="submit"]').trigger('click')
     await flushPromises()
     expect(costume.settings.description).toBe('A blue cat')
     expect(generate).toHaveBeenCalledOnce()
@@ -199,7 +199,7 @@ describe('Legacy sprite generation adoption', () => {
   it('adopts saved content using the existing result contract', async () => {
     const { wrapper, parent, edit } = setup('generate')
     const finish = vi.spyOn(edit, 'finish')
-    await wrapper.get('button[aria-label="Use"]').trigger('click')
+    await wrapper.get('button[aria-label="use"]').trigger('click')
     await flushPromises()
 
     expect(openModal).not.toHaveBeenCalled()
@@ -223,7 +223,7 @@ describe('Legacy sprite generation adoption', () => {
     await wrapper.get('textarea').setValue('Run to the right')
     const finish = vi.spyOn(edit, 'finish')
     openModal.mockRejectedValueOnce(new Cancelled())
-    await wrapper.get('button[aria-label="Use"]').trigger('click')
+    await wrapper.get('button[aria-label="use"]').trigger('click')
     await flushPromises()
 
     expect(openModal).toHaveBeenCalledWith(expect.objectContaining({ confirmText: '仍要采用' }))
@@ -233,7 +233,7 @@ describe('Legacy sprite generation adoption', () => {
     expect(animation.settings.description).toBe('Run to the right')
     expect(messageError).not.toHaveBeenCalled()
 
-    await wrapper.get('button[aria-label="Use"]').trigger('click')
+    await wrapper.get('button[aria-label="use"]').trigger('click')
     await flushPromises()
     const { sprite } = parent.emitted<[SpriteGenResult]>('resolved')![0][0]
     onTestFinished(() => sprite.dispose())
@@ -252,7 +252,7 @@ describe('Legacy sprite generation adoption', () => {
     const finish = vi.spyOn(edit, 'finish')
     openModal.mockRejectedValueOnce(new Cancelled())
     await wrapper.vm.$nextTick()
-    await wrapper.get('button[aria-label="Use"]').trigger('click')
+    await wrapper.get('button[aria-label="use"]').trigger('click')
     await flushPromises()
 
     expect(openModal).toHaveBeenCalledOnce()
@@ -445,7 +445,7 @@ describe('Sprite content editing', () => {
     expect(wrapper.findComponent(CostumeSettingsInput).exists()).toBe(true)
     expect(wrapper.findComponent(CostumeEditInput).exists()).toBe(false)
     await wrapper.get('textarea').setValue('一只戴帽子的猫')
-    await wrapper.get('button[aria-label="Submit"]').trigger('click')
+    await wrapper.get('button[aria-label="submit"]').trigger('click')
     expect(generate).toHaveBeenCalledTimes(1)
     expect(editCostume).not.toHaveBeenCalled()
   })
@@ -458,7 +458,7 @@ describe('Sprite content editing', () => {
     await flushPromises()
     expect(wrapper.findComponent(AnimationSettingsInput).exists()).toBe(true)
     await wrapper.get('textarea').setValue('向前奔跑')
-    await wrapper.get('button[aria-label="Submit"]').trigger('click')
+    await wrapper.get('button[aria-label="submit"]').trigger('click')
     await flushPromises()
     expect(generateVideo).toHaveBeenCalledTimes(1)
 
@@ -468,7 +468,7 @@ describe('Sprite content editing', () => {
     expect(wrapper.findComponent(AnimationSettingsInput).exists()).toBe(true)
     expect(wrapper.find('[aria-label="Edit animation"]').exists()).toBe(false)
     await wrapper.get('textarea').setValue('向前跳跃')
-    await wrapper.get('button[aria-label="Submit"]').trigger('click')
+    await wrapper.get('button[aria-label="submit"]').trigger('click')
     await flushPromises()
     expect(generateVideo).toHaveBeenCalledTimes(2)
     expect(gen.settings.description).toBe('向前跳跃')
@@ -496,7 +496,7 @@ describe('Sprite content editing', () => {
     expect(messageError).toHaveBeenCalledWith(expect.stringContaining('修改造型失败'))
     expect(edit.getCostumeInstruction(gen.id)).toBe('保留轮廓，改成红色')
 
-    await wrapper.get('button[aria-label="Minimize"]').trigger('click')
+    await wrapper.get('button[aria-label="minimize"]').trigger('click')
     expect(parent.emitted('cancelled')).toEqual([[]])
   })
 })
@@ -511,7 +511,7 @@ describe('Existing sprite draft', () => {
     await wrapper.vm.$nextTick()
     const submit = wrapper.get('button[aria-label="Save resource"]')
     expect(submit.text()).toBe('保存')
-    expect(wrapper.find('button[aria-label="Use"]').exists()).toBe(false)
+    expect(wrapper.find('button[aria-label="use"]').exists()).toBe(false)
     await submit.trigger('click')
     await flushPromises()
 
@@ -767,7 +767,7 @@ describe('Embedded AI workspace', () => {
     })
     await flushPromises()
     expect(wrapper.getComponent(ResourceWorkspace).props('selectionLocked')).toBe(false)
-    await wrapper.get('button[aria-label="Submit"]').trigger('click')
+    await wrapper.get('button[aria-label="submit"]').trigger('click')
     await flushPromises()
     expect(edit.editHistory.canUndo(gen.id)).toBe(true)
     expect(source.animations).toHaveLength(1)

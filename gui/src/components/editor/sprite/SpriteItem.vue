@@ -176,7 +176,7 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected">
       <UIMenuItem
-        v-radar="{ name: 'Visibility', desc: 'Click to toggle visibility the sprite' }"
+        v-radar="{ name: 'visibility', desc: 'Click to toggle visibility the sprite' }"
         @click="toggleSpriteVisible"
       >
         {{ $t({ en: `${sprite.visible ? 'Hide' : 'Show'}`, zh: `${sprite.visible ? '隐藏' : '显示'}` }) }}

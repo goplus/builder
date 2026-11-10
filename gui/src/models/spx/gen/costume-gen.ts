@@ -274,14 +274,14 @@ export class CostumeGen extends Disposable {
     await this.generatePhase.run(async (reporter) => {
       let referenceImageUrl: string | null = null
       if (edit != null) {
-        referenceImageUrl = await saveFile(edit.image, signal)
+        referenceImageUrl = await saveFile(edit.image, { signal })
         this.lastEdit = { instruction: edit.instruction, referenceImageUrl }
       } else if (this.referenceImageSelection?.type === 'local-image') {
-        referenceImageUrl = await saveFile(this.referenceImageSelection.file, signal)
+        referenceImageUrl = await saveFile(this.referenceImageSelection.file, { signal })
       } else if (this.referenceCostume != null) {
-        referenceImageUrl = await saveFile(this.referenceCostume.img, signal)
+        referenceImageUrl = await saveFile(this.referenceCostume.img, { signal })
       } else if (this.result != null) {
-        referenceImageUrl = await saveFile(this.result.img, signal)
+        referenceImageUrl = await saveFile(this.result.img, { signal })
       }
       signal.throwIfAborted()
       if (edit == null) this.lastEdit = null
@@ -335,7 +335,7 @@ export class CostumeGen extends Disposable {
         const task = new Task(TaskType.RemoveBackground)
         this.addDisposable(task)
         try {
-          const imageUrl = await saveFile(image, task.getSignal())
+          const imageUrl = await saveFile(image, { signal: task.getSignal() })
           await task.start({ imageUrl })
           const removed = await task.untilCompleted(reporter)
           image = createFileWithUniversalUrl(removed.imageUrl)

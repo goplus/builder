@@ -183,7 +183,7 @@ describe('EditorState', () => {
     const state = makeEditorState(
       project,
       ref(true),
-      makeSignedInMock({ user: makeSignedInUser({ username: 'user' }) }),
+      makeSignedInUserQuery(makeSignedInUser('user')),
       cloudHelpers,
       localCache
     )
@@ -211,7 +211,7 @@ describe('EditorState', () => {
       const restored = makeEditorState(
         makeEmptyProject(),
         ref(true),
-        makeSignedInMock({ user: makeSignedInUser({ username: 'user' }) }),
+        makeSignedInUserQuery(makeSignedInUser('user')),
         cloudHelpers,
         localCache
       )

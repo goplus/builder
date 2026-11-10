@@ -78,7 +78,7 @@ const handleGenerate = useMessageHandle(
     </template>
     <template #submit>
       <UIButton
-        v-radar="{ name: 'Submit', desc: 'Click to generate an animation' }"
+        v-radar="{ name: 'submit', desc: 'Click to generate an animation' }"
         :type="workspace?.canReview.value ? 'secondary' : 'primary'"
         :disabled="submitDisabled"
         :loading="isGenerating"

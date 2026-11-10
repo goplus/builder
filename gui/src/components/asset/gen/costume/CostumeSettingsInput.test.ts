@@ -78,7 +78,7 @@ describe('CostumeSettingsInput', () => {
     wrapper.getComponent(FacingInput).vm.$emit('update:value', Facing.Left)
     expect(gen.settings.description).toBe('Make the clothes red')
     expect(gen.settings.facing).toBe(Facing.Left)
-    const submit = wrapper.get('button[aria-label="Submit"]')
+    const submit = wrapper.get('button[aria-label="submit"]')
     expect(submit.text()).toBe('重新生成')
 
     await submit.trigger('click')
@@ -90,13 +90,13 @@ describe('CostumeSettingsInput', () => {
   it('keeps saved costumes readonly in the legacy generation modal', () => {
     const { wrapper } = setupCostume(true)
     expect(wrapper.get('textarea').attributes('readonly')).toBeDefined()
-    expect(wrapper.find('button[aria-label="Submit"]').exists()).toBe(false)
+    expect(wrapper.find('button[aria-label="submit"]').exists()).toBe(false)
   })
 
   it('keeps the description and generate action editable for an unfinished costume', async () => {
     const { wrapper, gen, generate } = setupCostume(false)
     expect(wrapper.get('textarea').attributes('readonly')).toBeUndefined()
-    const submit = wrapper.get('button[aria-label="Submit"]')
+    const submit = wrapper.get('button[aria-label="submit"]')
     await wrapper.get('textarea').setValue('')
     expect(submit.attributes('disabled')).toBeDefined()
     await wrapper.get('textarea').setValue('Make the clothes red')
@@ -112,13 +112,13 @@ describe('CostumeSettingsInput', () => {
     generatePhase.state = { status: 'running', timeLeft: null }
     await nextTick()
     expect(wrapper.get('textarea').attributes('disabled')).toBeDefined()
-    expect(wrapper.get('button[aria-label="Submit"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('button[aria-label="submit"]').attributes('disabled')).toBeDefined()
 
     generatePhase.state = { status: 'finished', result: source.img }
     await nextTick()
     expect(wrapper.get('textarea').attributes('disabled')).toBeUndefined()
     expect(wrapper.get('textarea').attributes('readonly')).toBeUndefined()
-    const submit = wrapper.get('button[aria-label="Submit"]')
+    const submit = wrapper.get('button[aria-label="submit"]')
     expect(submit.attributes('disabled')).toBeUndefined()
     expect(submit.text()).toBe('重新生成')
   })
@@ -126,7 +126,7 @@ describe('CostumeSettingsInput', () => {
   it('reports generation failures through the standard message handler', async () => {
     const { wrapper, generate } = setupCostume(false)
     generate.mockRejectedValueOnce(new Error('Service unavailable'))
-    await wrapper.get('button[aria-label="Submit"]').trigger('click')
+    await wrapper.get('button[aria-label="submit"]').trigger('click')
     await flushPromises()
 
     expect(messageError).toHaveBeenCalledTimes(1)
