@@ -1,26 +1,43 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
+import { useEnsureSignedIn } from '@/utils/user'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { UIButton } from '@/components/ui'
+import { useResourceWorkspace } from '@/components/editor/sprite/resource-workspace'
 import SettingsInput from '../common/SettingsInput.vue'
 import ReferenceImageInput from '../common/ReferenceImageInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import FacingInput from './FacingInput.vue'
 
+const workspace = useResourceWorkspace()
 const props = defineProps<{
   gen: CostumeGen
 }>()
 
-const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
-  en: 'Failed to enrich costume details',
-  zh: '丰富造型细节失败'
-}).fn
-const handleGenerate = useMessageHandle(() => props.gen.generate(), {
-  en: 'Failed to generate costume',
-  zh: '生成造型失败'
-}).fn
+const ensureSignedIn = useEnsureSignedIn()
+const handleEnrich = useMessageHandle(
+  async () => {
+    await ensureSignedIn()
+    return props.gen.enrich()
+  },
+  {
+    en: 'Failed to enrich costume details',
+    zh: '丰富造型细节失败'
+  }
+).fn
+const handleGenerate = useMessageHandle(
+  async () => {
+    await ensureSignedIn()
+    if (workspace != null && 'editHistory' in props.gen.parent) props.gen.parent.editHistory.record(props.gen)
+    return props.gen.generate()
+  },
+  {
+    en: 'Failed to generate costume',
+    zh: '生成造型失败'
+  }
+).fn
 const buttonDisabled = computed(
   () => props.gen.enrichState.status === 'running' || props.gen.settings.description === ''
 )
@@ -38,6 +55,7 @@ const submitText = computed(() => {
       desc: 'Enter a costume description, or enrich details to generate a costume'
     }"
     :description="gen.settings.description"
+    :readonly="workspace == null && gen.result != null"
     :enriching="gen.enrichState.status === 'running'"
     :disabled="submitting"
     @update:description="gen.setSettings({ description: $event })"
@@ -61,6 +79,7 @@ const submitText = computed(() => {
           name: 'submit',
           desc: 'Click to generate a costume'
         }"
+        :type="workspace?.canReview.value ? 'secondary' : 'primary'"
         :disabled="buttonDisabled"
         :loading="submitting"
         @click="handleGenerate"

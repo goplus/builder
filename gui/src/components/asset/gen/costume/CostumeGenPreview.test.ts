@@ -1,15 +1,16 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
-import { nextTick, ref, shallowReactive } from 'vue'
+import { computed, nextTick, ref, shallowReactive } from 'vue'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
 import { DefaultException } from '@/utils/exception'
+import { useRenderableImage } from '@/utils/img-rendering'
 import { mockFile } from '@/models/common/test'
 import { Costume } from '@/models/spx/costume'
 import { Phase } from '@/models/spx/gen/common'
 import { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
-import { UIError } from '@/components/ui'
+import { UIError, UIImg } from '@/components/ui'
 import CostumeDetail from '@/components/editor/sprite/CostumeDetail.vue'
 import GenLoading from '../common/GenLoading.vue'
 import GenStateFailed from '../common/GenStateFailed.vue'
@@ -18,7 +19,7 @@ import CostumeGenPreview from './CostumeGenPreview.vue'
 vi.mock('../..', () => ({ useRenameCostumeGen: () => vi.fn() }))
 
 vi.mock('@/utils/img-rendering', () => ({
-  useRenderableImageUrl: () => [ref('blob:costume'), ref(false)]
+  useRenderableImage: vi.fn()
 }))
 
 vi.mock('@/components/ui/message/UIMessageProvider.vue', async (importOriginal) => ({
@@ -27,6 +28,8 @@ vi.mock('@/components/ui/message/UIMessageProvider.vue', async (importOriginal) 
 }))
 
 function setup() {
+  const imgLoading = ref(false)
+  vi.mocked(useRenderableImage).mockImplementation(() => [ref(null), computed(() => imgLoading.value)])
   const i18n = createI18n({ lang: 'zh' })
   const project = new SpxProject()
   const sprite = new Sprite('Cat')
@@ -55,7 +58,7 @@ function setup() {
     global: {
       plugins: [i18n],
       renderStubDefaultSlot: true,
-      stubs: { GenPreview: false, UIButton: false, PreviewWithCheckerboardBg: false, GenStateFailed: false },
+      stubs: { GenPreview: false, UIButton: false, ResourceCanvas: false, GenStateFailed: false },
       directives: { radar: () => {} }
     }
   })
@@ -64,10 +67,34 @@ function setup() {
     gen.dispose()
     project.dispose()
   })
-  return { wrapper, gen, source, result, generatePhase, finish }
+  return { wrapper, gen, source, result, generatePhase, finishPhase, finish, imgLoading }
 }
 
 describe('CostumeGenPreview', () => {
+  it('does not show generation progress when loading existing image previews', async () => {
+    const { wrapper, gen, imgLoading } = setup()
+    for (const name of ['previous.png', 'current.png']) {
+      imgLoading.value = true
+      gen.setImage(mockFile(name))
+      await nextTick()
+      expect(wrapper.getComponent(GenLoading).props('visible')).toBe(false)
+
+      imgLoading.value = false
+      await nextTick()
+      expect(wrapper.getComponent(GenLoading).props('visible')).toBe(false)
+    }
+  })
+
+  it('shows a white preview without a saving overlay for transparent edits', async () => {
+    const { wrapper, gen, finishPhase } = setup()
+    gen.setImage(mockFile('transparent.png'), true)
+    finishPhase.state = { status: 'running', timeLeft: null }
+    await nextTick()
+
+    expect(wrapper.getComponent(UIImg).classes()).toContain('bg-white')
+    expect(wrapper.getComponent(GenLoading).props('visible')).toBe(false)
+  })
+
   it('uses the editing progress message when provided', async () => {
     const { wrapper, generatePhase } = setup()
     await wrapper.setProps({ pendingMessage: { en: 'Editing costume...', zh: '正在修改造型...' } })
@@ -76,10 +103,11 @@ describe('CostumeGenPreview', () => {
 
     expect(wrapper.getComponent(GenLoading).text()).toContain('正在修改造型')
     expect(wrapper.getComponent(GenLoading).text()).not.toContain('正在生成造型')
+    expect(wrapper.getComponent(GenLoading).props('playable')).toBe(false)
   })
 
   it('shows regeneration progress and saves a new preview before returning to costume detail', async () => {
-    const { wrapper, gen, source, result, generatePhase, finish } = setup()
+    const { wrapper, gen, source, result, generatePhase, finish, imgLoading } = setup()
     const originalImage = source.img
     expect(wrapper.getComponent(CostumeDetail).props('costume')).toBe(result)
 
@@ -87,16 +115,22 @@ describe('CostumeGenPreview', () => {
     await nextTick()
     expect(wrapper.findComponent(CostumeDetail).exists()).toBe(false)
     expect(wrapper.getComponent(GenLoading).text()).toContain('正在生成造型')
+    expect(wrapper.getComponent(GenLoading).props('playable')).toBe(false)
     expect(wrapper.find('button').exists()).toBe(false)
     expect(gen.result).toBe(result)
     expect(gen.image).toBe(originalImage)
 
     const image = mockFile('regenerated.png')
+    imgLoading.value = true
     gen.setImage(image)
     generatePhase.state = { status: 'finished', result: image }
     await nextTick()
+    expect(wrapper.getComponent(GenLoading).props('visible')).toBe(true)
+    expect(wrapper.find('button').exists()).toBe(false)
+    imgLoading.value = false
+    await nextTick()
     expect(wrapper.findComponent(CostumeDetail).exists()).toBe(false)
-    expect(wrapper.findComponent(GenLoading).exists()).toBe(false)
+    expect(wrapper.getComponent(GenLoading).props('visible')).toBe(false)
     expect(gen.result).toBe(result)
     expect(result.img).toBe(originalImage)
     const save = wrapper.get('button')

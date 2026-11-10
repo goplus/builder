@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import type { CostumeGen } from '@/models/spx/gen/costume-gen'
+import type { CostumeGen, CostumeEditComment } from '@/models/spx/gen/costume-gen'
 import { UIButton, UIDropdown, UIIcon } from '@/components/ui'
+import { useResourceWorkspace } from '@/components/editor/sprite/resource-workspace'
 import SettingsInput from '../gen/common/SettingsInput.vue'
 
+const workspace = useResourceWorkspace()
 const props = defineProps<{
   gen: CostumeGen
   instruction: string
   commenting: boolean
   submit?: () => Promise<void>
+  compact?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:instruction': [string]
   'update:commenting': [boolean]
+  selectComment: [CostumeEditComment]
 }>()
 
 const submitting = computed(() => props.gen.generateState.status === 'running')
@@ -40,6 +44,11 @@ function toggleCommenting() {
     emit('update:commenting', !props.commenting)
     commentsVisible.value = false
   }
+}
+
+function selectComment(comment: CostumeEditComment) {
+  commentsVisible.value = false
+  emit('selectComment', comment)
 }
 
 function removeComment(id: string) {
@@ -75,7 +84,7 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
           <UIButton
             ref="commentButton"
             v-radar="{ name: 'Local edit tool', desc: 'Select locations and describe changes to them' }"
-            type="white"
+            :type="compact && commenting ? 'secondary' : 'white'"
             icon="position"
             class="gap-1.5 px-2 text-sm"
             :class="{ 'text-primary-main': commenting && !disabled }"
@@ -103,7 +112,17 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
             :key="comment.id"
             class="flex items-center gap-2 rounded-sm px-2 py-1 text-sm text-grey-900 hover:bg-grey-300 focus-within:bg-grey-300"
           >
-            <span class="min-w-0 flex-1 break-words">{{ comment.content }}</span>
+            <button
+              v-radar="{
+                name: `Edit local instruction ${index + 1}`,
+                desc: 'Edit this instruction at its point in the image'
+              }"
+              type="button"
+              class="min-w-0 flex-1 cursor-pointer break-words border-none bg-transparent p-0 text-start text-sm text-text focus-visible:outline-2 focus-visible:outline-primary-main"
+              @click="selectComment(comment)"
+            >
+              {{ comment.content }}
+            </button>
             <button
               v-radar="{ name: `Remove local edit ${index + 1}`, desc: 'Remove the edit instruction at this point' }"
               type="button"
@@ -120,12 +139,15 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
     <template #submit>
       <UIButton
         v-radar="{ name: 'Edit costume', desc: 'Apply the instructions to the selected costume with AI' }"
-        type="primary"
+        :type="workspace?.canReview.value ? 'secondary' : 'primary'"
+        :shape="compact ? 'square' : 'default'"
+        :icon="compact ? 'publish' : undefined"
+        :title="$t({ en: 'Generate changes', zh: '生成修改' })"
         :disabled="disabled || (instruction.trim() === '' && gen.editComments.length === 0)"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ $t({ en: 'Edit costume', zh: '修改造型' }) }}
+        <template v-if="!compact">{{ $t({ en: 'Edit costume', zh: '修改造型' }) }}</template>
       </UIButton>
     </template>
   </SettingsInput>

@@ -7,13 +7,18 @@
       <slot name="ops"></slot>
     </template>
     <AnimationPlayer
+      :resource-key="animation.id"
       :costumes="animation.costumes"
       :sound="sound"
       :sound-playback="animation.soundPlayback"
       :duration="animation.duration"
       class="w-full flex-[1_1_0]"
-    />
-    <AnimationSettings :animation="animation" :sound-editable="soundEditable" />
+    >
+      <template v-if="canvas && settingsEditable" #controls>
+        <AnimationSettings :animation="animation" :sound-editable="soundEditable" />
+      </template>
+    </AnimationPlayer>
+    <AnimationSettings v-if="!canvas && settingsEditable" :animation="animation" :sound-editable="soundEditable" />
   </EditorItemDetail>
 </template>
 
@@ -24,15 +29,20 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import AnimationPlayer from './animation/AnimationPlayer.vue'
 import AnimationSettings from './animation/AnimationSettings.vue'
+import { useResourceCanvas } from './resource-canvas'
+
+const canvas = useResourceCanvas()
 
 const props = withDefaults(
   defineProps<{
     animation: Animation
     /** If it is supported to edit sound of the animation */
     soundEditable?: boolean
+    settingsEditable?: boolean
   }>(),
   {
-    soundEditable: true
+    soundEditable: true,
+    settingsEditable: true
   }
 )
 

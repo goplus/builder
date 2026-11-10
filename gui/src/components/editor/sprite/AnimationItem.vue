@@ -97,5 +97,6 @@ const { fn: handleRename } = useMessageHandle(() => renameAnimation(props.animat
       <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the animation' }" @click="handleRename" />
       <RemoveMenuItem v-radar="{ name: 'remove', desc: 'Click to remove the animation' }" @click="handleRemove" />
     </CornerMenu>
+    <slot></slot>
   </UIEditorSpriteItem>
 </template>

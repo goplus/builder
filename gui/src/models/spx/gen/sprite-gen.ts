@@ -56,7 +56,6 @@ export type SpriteGenInits = {
   imageIndex?: number | null
   selectedItem?: SpriteContentSelected | null
   costumeInstructions?: Record<string, string>
-  animationInstructions?: Record<string, string>
   animationGenIdBindings?: Partial<Record<State, string>>
   enrichPhase?: Phase<SpriteSettings>
   genImagesTask?: Task<TaskType.GenerateCostume>
@@ -104,7 +103,6 @@ export class SpriteGen extends Disposable implements SpriteContent {
   private prepareContentPhase: Phase<void>
   private animationGenIdBindings: Partial<Record<State, string>> = {}
   private costumeInstructions: Record<string, string>
-  private animationInstructions: Record<string, string>
 
   constructor(i18n: I18n, project: SpxProject, inits: SpriteGenInits | string = {}) {
     super()
@@ -136,7 +134,6 @@ export class SpriteGen extends Disposable implements SpriteContent {
     this.imageIndex = inits.imageIndex ?? null
     this.selectedItem = inits.selectedItem ?? null
     this.costumeInstructions = inits.costumeInstructions ?? {}
-    this.animationInstructions = inits.animationInstructions ?? {}
     this.previewProject = new SpxProject()
     this.previewSprite = this.createSprite()
     this.previewProject.addSprite(this.previewSprite)
@@ -238,7 +235,7 @@ export class SpriteGen extends Disposable implements SpriteContent {
         settings.referenceImageUrl = await saveFile(this.referenceImage, { signal })
       }
       signal.throwIfAborted()
-      await task.start({ settings, n: 4 })
+      await task.start({ settings, n: 4, removeBackground: true })
       const { imageUrls } = await task.untilCompleted(reporter)
       return imageUrls.map((url) => createFileWithUniversalUrl(url))
     })
@@ -384,7 +381,6 @@ export class SpriteGen extends Disposable implements SpriteContent {
     this.costumes.splice(0).forEach((c) => c.dispose())
     this.animations.splice(0).forEach((a) => a.dispose())
     this.costumeInstructions = {}
-    this.animationInstructions = {}
 
     // Prepare preview sprite
     this.preparePreviewSprite()
@@ -394,7 +390,7 @@ export class SpriteGen extends Disposable implements SpriteContent {
       settings: this.getDefaultCostumeSettings()
     })
     defaultCostumeGen.setImage(image)
-    const defaultCostume = await defaultCostumeGen.finish()
+    const defaultCostume = await defaultCostumeGen.finish({ removeBackground: false })
     this.costumes.push(defaultCostumeGen)
 
     return defaultCostume
@@ -471,7 +467,6 @@ export class SpriteGen extends Disposable implements SpriteContent {
     a.cancel()
     a.dispose()
     this.editHistory.clear(id)
-    delete this.animationInstructions[id]
     if (this.selectedItem?.type === 'animation' && this.selectedItem.id === id) {
       this.selectedItem = null
     }
@@ -495,23 +490,11 @@ export class SpriteGen extends Disposable implements SpriteContent {
   setCostumeInstruction(id: string, instruction: string) {
     this.costumeInstructions[id] = instruction
   }
-  getAnimationInstruction(id: string) {
-    return this.animationInstructions[id] ?? ''
-  }
-  setAnimationInstruction(id: string, instruction: string) {
-    this.animationInstructions[id] = instruction
-  }
   async editCostume(id: string, instruction: string) {
     const gen = this.getCostumeById(id)
     if (gen == null) throw new Error('Costume not found')
     this.editHistory.record(gen)
     await gen.edit(instruction)
-  }
-  async editAnimation(id: string, instruction: string) {
-    const gen = this.getAnimationById(id)
-    if (gen == null) throw new Error('Animation not found')
-    this.editHistory.record(gen)
-    await gen.editVideo(instruction)
   }
 
   async finish() {
@@ -613,7 +596,6 @@ export class SpriteGen extends Disposable implements SpriteContent {
       imageIndex,
       selectedItem,
       costumeInstructions,
-      animationInstructions,
       animationGenIdBindings,
       referenceImagePath,
       enrichPhaseSerialized,
@@ -636,7 +618,6 @@ export class SpriteGen extends Disposable implements SpriteContent {
     if (imageIndex != null) inits.imageIndex = imageIndex
     if (selectedItem != null) inits.selectedItem = selectedItem
     inits.costumeInstructions = costumeInstructions
-    inits.animationInstructions = animationInstructions
     if (animationGenIdBindings != null) inits.animationGenIdBindings = animationGenIdBindings
     if (enrichPhaseSerialized != null) inits.enrichPhase = Phase.load(enrichPhaseSerialized)
     if (genImagesTaskSerialized != null) inits.genImagesTask = Task.load(genImagesTaskSerialized)
@@ -692,7 +673,6 @@ export class SpriteGen extends Disposable implements SpriteContent {
       editHistory,
       settings: this.settings,
       costumeInstructions: this.costumeInstructions,
-      animationInstructions: this.animationInstructions,
       referenceImagePath: referenceImagePath ?? undefined,
       animationGenIdBindings: Object.fromEntries([
         ...Object.entries(this.animationGenIdBindings).filter(([, id]) => this.getAnimationById(id)?.result == null),

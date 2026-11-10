@@ -1,7 +1,7 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref, shallowReactive } from 'vue'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
-import { createI18n, type LocaleMessage } from '@/utils/i18n'
+import { createI18n } from '@/utils/i18n'
 import { DefaultException } from '@/utils/exception'
 import { mockFile } from '@/models/common/test'
 import { Animation } from '@/models/spx/animation'
@@ -24,7 +24,7 @@ vi.mock('@/components/ui/message/UIMessageProvider.vue', async (importOriginal) 
   useMessage: () => ({ error: vi.fn(), success: vi.fn() })
 }))
 
-function setup(pendingMessage?: LocaleMessage) {
+function setup() {
   const i18n = createI18n({ lang: 'zh' })
   const project = new SpxProject()
   const sprite = new Sprite('Cat')
@@ -49,7 +49,7 @@ function setup(pendingMessage?: LocaleMessage) {
     return saved
   })
   const host = shallowMount(
-    defineComponent(() => () => h(AnimationGenPreview, { gen, pendingMessage })),
+    defineComponent(() => () => h(AnimationGenPreview, { gen })),
     {
       global: {
         plugins: [i18n],
@@ -75,17 +75,32 @@ function setup(pendingMessage?: LocaleMessage) {
 }
 
 describe('AnimationGenPreview', () => {
-  it('shows editing progress with an existing result, then trims and saves the edited video', async () => {
-    const { wrapper, gen, result, generatePhase, pending, finish } = setup({
-      en: 'Editing animation...',
-      zh: '正在修改动画...'
-    })
+  it('does not show generation progress when loading existing video previews', async () => {
+    const { wrapper, gen, generatePhase, pending } = setup()
+    pending.value = true
+    for (const name of ['previous.mp4', 'current.mp4']) {
+      const video = mockFile(name)
+      gen.setVideo(video)
+      generatePhase.state = { status: 'finished', result: video }
+      await nextTick()
+      expect(wrapper.findComponent(GenLoading).exists()).toBe(false)
+
+      wrapper.getComponent(AnimationVideoPreview).vm.$emit('ready')
+      await nextTick()
+      expect(wrapper.findComponent(GenLoading).exists()).toBe(false)
+    }
+  })
+
+  it('shows regeneration progress with an existing draft, then trims and saves the new video', async () => {
+    const { wrapper, gen, result, generatePhase, pending, finish } = setup()
     result.setCostumes(Array.from({ length: 4 }, (_, i) => new Costume(`walk-frame-${i}`, mockFile('walk.png'))))
     result.setDuration(0.8)
     expect(wrapper.getComponent(AnimationDetail).props('animation')).toBe(result)
     generatePhase.state = { status: 'running', timeLeft: null }
     await nextTick()
-    expect(wrapper.getComponent(GenLoading).text()).toContain('正在修改动画')
+    expect(wrapper.getComponent(GenLoading).text()).toContain('正在生成动画')
+    expect(wrapper.getComponent(GenLoading).props('playable')).toBe(true)
+    expect(wrapper.getComponent(GenLoading).props('completed')).toBe(false)
     expect(wrapper.findComponent(AnimationDetail).exists()).toBe(false)
     expect(wrapper.find('button').exists()).toBe(false)
     expect(gen.result).toBe(result)
@@ -98,6 +113,20 @@ describe('AnimationGenPreview', () => {
     const preview = wrapper.getComponent(AnimationVideoPreview)
     expect(preview.props('video')).toBe(video)
     expect(preview.props('framesConfig')).toBeNull()
+    expect(preview.props('showControls')).toBe(false)
+    const loading = wrapper.getComponent(GenLoading)
+    expect(loading.props('visible')).toBe(true)
+    expect(loading.props('playable')).toBe(false)
+    expect(loading.props('completed')).toBe(true)
+    preview.vm.$emit('ready')
+    await nextTick()
+    expect(loading.props('visible')).toBe(false)
+    expect(preview.props('showControls')).toBe(false)
+    expect(wrapper.findComponent(GenLoading).exists()).toBe(true)
+    loading.vm.$emit('hidden')
+    await nextTick()
+    expect(wrapper.findComponent(GenLoading).exists()).toBe(false)
+    expect(preview.props('showControls')).toBe(true)
     expect(wrapper.find('button').exists()).toBe(false)
     preview.vm.$emit('update:framesConfig', { startTime: 100, duration: 900, interval: 100 })
     await nextTick()

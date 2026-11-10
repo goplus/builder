@@ -50,7 +50,7 @@ export class SpriteContentHistory {
         type: 'animation',
         basePath,
         config: cloneDeep(config),
-        instruction: this.content.getAnimationInstruction(gen.id)
+        instruction: gen.settings.description
       },
       files
     }
@@ -111,7 +111,7 @@ export class SpriteContentHistory {
     } else {
       const index = this.content.animations.findIndex((item) => item.id === gen.id)
       this.content.animations.splice(index, 1, restored)
-      this.content.setAnimationInstruction(gen.id, instruction)
+      restored.setSettings({ description: instruction })
     }
     gen.dispose()
   }

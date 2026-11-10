@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import { watch } from 'vue'
 import { ArtStyle, Perspective } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
-import { Facing, TaskStatus, TaskType } from '@/apis/aigc'
+import { Facing, TaskEventType, TaskStatus, TaskType } from '@/apis/aigc'
 import * as fileHelpers from '@/models/common/file'
 import { mockFile, sndConfig, sndFiles } from '@/models/common/test'
 import { makeSpxProject } from '../common/test'
@@ -22,6 +23,33 @@ describe('CostumeGen', () => {
   beforeEach(() => {
     aigcMock.reset()
     mockSaveFile()
+  })
+
+  it('publishes the edited image before generation finishes', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.costumes[0]
+    const gen = new CostumeGen(i18n, sprite, project, {
+      image: source.img,
+      finishPhase: new Phase({ en: 'save costume', zh: '保存造型' }, { status: 'finished', result: source })
+    })
+    const completed = vi.fn()
+    const stop = watch(
+      () => gen.generateState.status,
+      (status) => {
+        if (status === 'finished') completed(gen.image)
+      }
+    )
+    onTestFinished(() => {
+      stop()
+      gen.dispose()
+      project.dispose()
+    })
+
+    await gen.edit('Make the hat blue')
+
+    expect(completed).toHaveBeenCalledExactlyOnceWith(gen.image)
+    expect(gen.image).not.toBe(source.img)
   })
 
   it('edits the saved costume with a separate instruction and retains it on failure', async () => {
@@ -77,10 +105,49 @@ describe('CostumeGen', () => {
     await expect(gen.edit('Make it blue')).rejects.toThrow('Saved costume expected')
     gen.setImage(mockFile('saved.png'))
     await gen.finish()
+    const taskCount = aigcMock.tasks.size
     await expect(gen.edit('   ')).rejects.toThrow('Edit instruction expected')
-    expect(aigcMock.tasks.size).toBe(0)
+    expect(aigcMock.tasks.size).toBe(taskCount)
     gen.dispose()
     project.dispose()
+  })
+
+  it('adopts transparent edits without background removal after reloading the draft', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.costumes[0]
+    const originalImage = source.img
+    const gen = new CostumeGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      image: originalImage,
+      finishPhase: new Phase({ en: 'save costume', zh: '保存造型' }, { status: 'finished', result: source })
+    })
+    aigcMock.registerTaskHandler(TaskType.GenerateCostume, async function* () {
+      yield {
+        type: TaskEventType.Completed,
+        data: { result: { imageUrls: ['kodo://mock-bucket/transparent.png'], transparentBackground: true } }
+      }
+    })
+    onTestFinished(() => {
+      gen.dispose()
+      project.dispose()
+    })
+
+    await gen.edit('Make the hat blue')
+    expect(gen.transparentBackground).toBe(true)
+    expect(source.img).toBe(originalImage)
+    const [config, files] = gen.export()
+    const restored = CostumeGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    onTestFinished(() => restored.dispose())
+    const preview = restored.image
+    expect(restored.transparentBackground).toBe(true)
+
+    const result = await restored.finish()
+
+    expect(result.img).toBe(preview)
+    expect(result.id).toBe(source.id)
+    expect(source.img).toBe(originalImage)
+    expect([...aigcMock.tasks.values()].map(({ task }) => task.type)).toEqual([TaskType.GenerateCostume])
   })
 
   it('persists point comments, submits them without a global instruction, and retains them on failure', async () => {
@@ -120,9 +187,12 @@ describe('CostumeGen', () => {
     const sprite = project.sprites[0]
     const gen = new CostumeGen(i18n, sprite, project, { settings: { name: 'new-costume' } })
     const getImageSize = vi.mocked(fileHelpers.getImageSize)
-    let editedSize = { width: 400, height: 200 }
-    getImageSize.mockImplementation(async (file) =>
-      file.meta.universalUrl?.includes('/bg-removed-') ? editedSize : file.meta.imgSize ?? { width: 100, height: 100 }
+    let editedSize = { width: 100, height: 100 }
+    getImageSize.mockImplementation(
+      async (file) =>
+        (file.meta.imgSize ??= file.meta.universalUrl?.includes('/bg-removed-')
+          ? editedSize
+          : { width: 100, height: 100 })
     )
     onTestFinished(() => {
       gen.dispose()
@@ -132,6 +202,7 @@ describe('CostumeGen', () => {
     await gen.generate()
     const original = await gen.finish()
     await gen.edit('A blue hat')
+    editedSize = { width: 400, height: 200 }
     gen.image!.meta.imgSize = { width: 400, height: 200 }
     const candidate = await gen.finish()
     expect(await candidate.getSize()).toEqual({ width: 50, height: 25 })
@@ -214,7 +285,8 @@ describe('CostumeGen', () => {
     const candidate = gen.image
     const result = await gen.finish()
     expect(result.id).toBe(source.id)
-    expect(result.img).toBe(candidate)
+    expect(result.img).not.toBe(candidate)
+    expect(result.img).toBe(gen.image)
     expect(gen.settings.description).toBe('Make the hat blue')
     gen.dispose()
     project.dispose()
@@ -544,7 +616,7 @@ describe('CostumeGen', () => {
     expect(loadedGen.finishState.status).toBe('initial')
   })
 
-  it('should export and load correctly after generate finished but before finish', async () => {
+  it('keeps generated previews intact across reload and removes the background only when saved', async () => {
     const project = makeSpxProject()
     const sprite = Sprite.create('TestSprite', '')
     project.addSprite(sprite)
@@ -560,6 +632,11 @@ describe('CostumeGen', () => {
     const [rawConfig, rawFiles] = gen.export()
     const [config, files] = [sndConfig(rawConfig), sndFiles(rawFiles)]
     const loadedGen = CostumeGen.load(i18n, sprite, project, config, files)
+    onTestFinished(() => {
+      loadedGen.dispose()
+      gen.dispose()
+      project.dispose()
+    })
 
     expect(loadedGen.enrichState.status).toBe('finished')
     expect(loadedGen.generateState.status).toBe('finished')
@@ -567,6 +644,24 @@ describe('CostumeGen', () => {
     expect(loadedGen.image?.meta.universalUrl).toBe(gen.image?.meta.universalUrl)
     expect(loadedGen.finishState.status).toBe('initial')
     expect(loadedGen.result).toBeUndefined()
+    expect([...aigcMock.tasks.values()].map(({ task }) => task.type)).toEqual([TaskType.GenerateCostume])
+
+    const preview = loadedGen.image!
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Background removal unavailable'))
+    await expect(loadedGen.finish()).rejects.toThrow('Background removal unavailable')
+    expect(loadedGen.image).toBe(preview)
+    expect(loadedGen.result).toBeUndefined()
+
+    const result = await loadedGen.finish()
+    expect([...aigcMock.tasks.values()].at(-1)).toMatchObject({
+      task: { type: TaskType.RemoveBackground },
+      params: { imageUrl: `kodo://mock-bucket/${preview.name}` }
+    })
+    expect(result.img).not.toBe(preview)
+    expect(loadedGen.image).toBe(result.img)
+    const taskCount = aigcMock.tasks.size
+    await loadedGen.finish()
+    expect(aigcMock.tasks.size).toBe(taskCount)
   })
 
   it('should export and load correctly', async () => {

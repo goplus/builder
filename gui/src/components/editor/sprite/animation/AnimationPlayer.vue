@@ -3,10 +3,17 @@
     v-radar="{ name: 'animation-player', desc: 'Provides preview for animation' }"
     class="relative overflow-hidden rounded-sm"
   >
-    <CheckerboardBackground class="absolute inset-0" />
-    <CostumesPlayer ref="costumesPlayerRef" class="absolute h-full w-full" />
+    <ResourceCanvas v-if="resourceKey != null" :resource-key="resourceKey" :image="costumes[0]?.img">
+      <CostumesPlayer ref="costumesPlayerRef" class="absolute h-full w-full" />
+      <template #media-overlay><UILoading :visible="loading" cover /></template>
+      <template #controls><slot name="controls"></slot></template>
+    </ResourceCanvas>
+    <template v-else>
+      <CheckerboardBackground class="absolute inset-0" />
+      <CostumesPlayer ref="costumesPlayerRef" class="absolute h-full w-full" />
+      <UILoading :visible="loading" cover />
+    </template>
     <MuteSwitch v-if="sound != null" class="absolute top-3 right-3" :muted="mutedRef" @click="setMuted(!mutedRef)" />
-    <UILoading :visible="loading" cover />
   </div>
 </template>
 <script setup lang="ts">
@@ -21,6 +28,7 @@ import { UILoading } from '@/components/ui'
 import CostumesPlayer from '@/components/common/CostumesPlayer.vue'
 import CheckerboardBackground from '../CheckerboardBackground.vue'
 import MuteSwitch from './MuteSwitch.vue'
+import ResourceCanvas from '../ResourceCanvas.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -28,9 +36,11 @@ const props = withDefaults(
     sound: Sound | null
     soundPlayback?: AnimationSoundPlayback
     duration: number
+    resourceKey?: string | null
   }>(),
   {
-    soundPlayback: AnimationSoundPlayback.Once
+    soundPlayback: AnimationSoundPlayback.Once,
+    resourceKey: null
   }
 )
 

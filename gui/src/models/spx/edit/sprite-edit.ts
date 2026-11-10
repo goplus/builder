@@ -61,9 +61,9 @@ type RawSpriteEditConfig = {
   sourceSpriteId: string
   defaultCostumeId: string | null
   selectedItem: SpriteContentSelected | null
+  suggestedResourceIds?: string[]
   costumeInstructions: Record<string, string>
   editHistory?: RawSpriteContentHistory
-  animationInstructions?: Record<string, string>
   animationGenIdBindings: Partial<Record<State, string>>
   costumeConfigs: RawCostumeGenConfig[]
   animationConfigs: RawAnimationGenConfig[]
@@ -83,9 +83,9 @@ export class SpriteEdit extends Disposable implements SpriteContent {
   costumes: CostumeGen[] = []
   animations: AnimationGen[] = []
   selectedItem: SpriteContentSelected | null = null
+  private suggestedResourceIds: string[] = []
   private defaultCostumeId: string | null
   private costumeInstructions: Record<string, string> = {}
-  private animationInstructions: Record<string, string> = {}
   private animationGenIdBindings: Partial<Record<State, string>> = {}
   private appliedResources = new Map<string, ReturnType<typeof resourceState>>()
 
@@ -120,45 +120,93 @@ export class SpriteEdit extends Disposable implements SpriteContent {
 
   static fromSprite(i18n: I18n, project: SpxProject, source: Sprite) {
     const edit = new SpriteEdit(i18n, project, source)
-    const sprite = edit.previewSprite
-    const { artStyle, perspective } = getSpriteSettings(sprite)
-    edit.costumes = sprite.costumes.map(
-      (result) =>
-        new CostumeGen(i18n, edit, project, {
+    edit.syncResources(source)
+    if (edit.defaultCostume != null) edit.selectedItem = { type: 'costume', id: edit.defaultCostume.id }
+    edit.syncPreview()
+    return edit
+  }
+
+  /** Sync adopted resources without replacing their unsaved AI edits. */
+  syncResources(source: Sprite) {
+    this.defaultCostumeId = source.defaultCostume?.id ?? null
+    const { artStyle, perspective } = getSpriteSettings(source)
+    for (const costume of source.costumes) {
+      const existing = this.costumes.find((gen) => gen.result?.id === costume.id)
+      if (existing != null) {
+        const applied = this.appliedResources.get(costume.id)
+        if (applied != null && applied.name !== costume.name) {
+          existing.setName(costume.name)
+          applied.name = costume.name
+        }
+        continue
+      }
+      const result = costume.clone(true)
+      this.costumes.push(
+        new CostumeGen(this.i18n, this, this.project, {
           settings: { name: result.name, artStyle, perspective },
           image: result.img,
           referenceCostumeId: result.id,
           editSource: result.clone(true),
           finishPhase: new Phase({ en: 'save costume', zh: '保存造型' }, { status: 'finished', result })
         })
-    )
-    edit.animations = sprite.animations.map((result) => {
-      const gen = new AnimationGen(i18n, edit, project, {
+      )
+      this.appliedResources.set(result.id, resourceState(costume, source))
+    }
+    for (const animation of source.animations) {
+      const existing = this.animations.find((gen) => gen.result?.id === animation.id)
+      if (existing != null) {
+        const applied = this.appliedResources.get(animation.id)
+        if (applied != null && applied.name !== animation.name) {
+          existing.setName(animation.name)
+          applied.name = animation.name
+        }
+        continue
+      }
+      const result = animation.clone(true)
+      const gen = new AnimationGen(this.i18n, this, this.project, {
         settings: { name: result.name, artStyle, perspective },
-        referenceCostumeId: edit.defaultCostumeId,
-        editSource: result.clone(true),
+        referenceCostumeId: this.defaultCostumeId,
         finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result })
       })
-      for (const state of sprite.getAnimationBoundStates(result.id)) edit.animationGenIdBindings[state] = gen.id
-      return gen
-    })
-    if (edit.defaultCostume != null) edit.selectedItem = { type: 'costume', id: edit.defaultCostume.id }
-    edit.syncPreview()
-    return edit
+      this.animations.push(gen)
+      for (const state of source.getAnimationBoundStates(result.id)) this.animationGenIdBindings[state] = gen.id
+      this.appliedResources.set(result.id, resourceState(animation, source))
+    }
+    // Removed resources can still have unsaved AI work. Keep that work as a new draft.
+    for (const type of ['costume', 'animation'] as const) {
+      const gens = type === 'costume' ? this.costumes : this.animations
+      const resources = type === 'costume' ? source.costumes : source.animations
+      for (const gen of gens.slice()) {
+        const id = gen.result?.id
+        if (id == null || !this.appliedResources.has(id) || resources.some((resource) => resource.id === id)) continue
+        const instruction = type === 'costume' ? this.getCostumeInstruction(gen.id) : ''
+        const hasDraft =
+          this.hasResourceChanges({ type, id: gen.id }) ||
+          this.editHistory.canUndo(gen.id) ||
+          this.editHistory.canRedo(gen.id) ||
+          (gen instanceof CostumeGen && gen.editComments.length > 0) ||
+          instruction.trim() !== ''
+        if (!hasDraft) {
+          if (type === 'costume') this.removeCostume(gen.id)
+          else this.removeAnimation(gen.id)
+        }
+        this.appliedResources.delete(id)
+      }
+    }
   }
 
   prefill(settings: SpriteContentSettings) {
     const referenceCostumeId = this.defaultCostumeId
     if (referenceCostumeId == null) throw new Error('Default costume expected')
-    this.costumes.push(
-      ...settings.costumes.map(
-        (settings) => new CostumeGen(this.i18n, this, this.project, { settings, referenceCostumeId })
-      )
+    const costumes = settings.costumes.map(
+      (settings) => new CostumeGen(this.i18n, this, this.project, { settings, referenceCostumeId })
     )
+    this.costumes.push(...costumes)
     const animations = settings.animations.map(
       (settings) => new AnimationGen(this.i18n, this, this.project, { settings, referenceCostumeId })
     )
     this.animations.push(...animations)
+    this.suggestedResourceIds.push(...costumes.map((gen) => gen.id), ...animations.map((gen) => gen.id))
     for (const state of [State.Default, State.Step, State.Die]) {
       const animation = animations.find((gen) => gen.name === settings.animationBindings?.[state])
       if (animation != null) this.animationGenIdBindings[state] = animation.id
@@ -167,6 +215,9 @@ export class SpriteEdit extends Disposable implements SpriteContent {
 
   get name() {
     return this.previewSprite.name
+  }
+  isSuggestedResource(id: string) {
+    return this.suggestedResourceIds.includes(id)
   }
   get defaultCostume() {
     return this.costumes.find((costume) => costume.result?.id === this.defaultCostumeId) ?? null
@@ -185,12 +236,6 @@ export class SpriteEdit extends Disposable implements SpriteContent {
   }
   setCostumeInstruction(id: string, instruction: string) {
     this.costumeInstructions[id] = instruction
-  }
-  getAnimationInstruction(id: string) {
-    return this.animationInstructions[id] ?? ''
-  }
-  setAnimationInstruction(id: string, instruction: string) {
-    this.animationInstructions[id] = instruction
   }
 
   get isBusy() {
@@ -228,10 +273,7 @@ export class SpriteEdit extends Disposable implements SpriteContent {
         this.hasResourceChanges(item) ||
         this.editHistory.canUndo(item.id) ||
         this.editHistory.canRedo(item.id) ||
-        (item.type === 'costume'
-          ? this.getCostumeInstruction(item.id)
-          : this.getAnimationInstruction(item.id)
-        ).trim() !== ''
+        (item.type === 'costume' && this.getCostumeInstruction(item.id).trim() !== '')
     )
   }
 
@@ -240,13 +282,6 @@ export class SpriteEdit extends Disposable implements SpriteContent {
     if (gen == null) throw new Error('Costume not found')
     this.editHistory.record(gen)
     await gen.edit(instruction)
-  }
-
-  async editAnimation(id: string, instruction: string) {
-    const gen = this.getAnimationById(id)
-    if (gen == null) throw new Error('Animation not found')
-    this.editHistory.record(gen)
-    await gen.editVideo(instruction)
   }
 
   addCostume() {
@@ -263,6 +298,7 @@ export class SpriteEdit extends Disposable implements SpriteContent {
     if (index === -1) throw new Error(`Costume with id ${id} not found`)
     if (id === this.defaultCostume?.id) throw new Error('Cannot remove default costume')
     const [costume] = this.costumes.splice(index, 1)
+    this.suggestedResourceIds = this.suggestedResourceIds.filter((suggestion) => suggestion !== id)
     costume.cancel()
     costume.dispose()
     this.editHistory.clear(id)
@@ -282,10 +318,10 @@ export class SpriteEdit extends Disposable implements SpriteContent {
     const index = this.animations.findIndex((animation) => animation.id === id)
     if (index === -1) throw new Error(`Animation with id ${id} not found`)
     const [animation] = this.animations.splice(index, 1)
+    this.suggestedResourceIds = this.suggestedResourceIds.filter((suggestion) => suggestion !== id)
     animation.cancel()
     animation.dispose()
     this.editHistory.clear(id)
-    delete this.animationInstructions[id]
     if (this.selectedItem?.type === 'animation' && this.selectedItem.id === id) this.selectedItem = null
   }
 
@@ -366,9 +402,8 @@ export class SpriteEdit extends Disposable implements SpriteContent {
       if (index >= 0) source.moveAnimation(source.animations.length - 1, index)
       source.setAnimationBoundStates(result.id, states)
       this.appliedResources.set(result.id, resourceState(result, source))
-      gen.acceptEdit()
-      this.setAnimationInstruction(item.id, '')
     }
+    this.suggestedResourceIds = this.suggestedResourceIds.filter((id) => id !== item.id)
     this.editHistory.clear(item.id)
   }
 
@@ -388,8 +423,8 @@ export class SpriteEdit extends Disposable implements SpriteContent {
       sourceSpriteId: this.sourceSpriteId,
       defaultCostumeId: this.defaultCostumeId,
       selectedItem: this.selectedItem,
+      suggestedResourceIds: this.suggestedResourceIds,
       costumeInstructions: this.costumeInstructions,
-      animationInstructions: this.animationInstructions,
       animationGenIdBindings: {
         ...Object.fromEntries(
           Object.entries(this.animationGenIdBindings).filter(([, id]) =>
@@ -463,8 +498,8 @@ export class SpriteEdit extends Disposable implements SpriteContent {
         edit.sourceSpriteId = config.sourceSpriteId
         edit.defaultCostumeId = config.defaultCostumeId
         edit.selectedItem = config.selectedItem
+        edit.suggestedResourceIds = config.suggestedResourceIds ?? []
         edit.costumeInstructions = config.costumeInstructions
-        edit.animationInstructions = config.animationInstructions ?? {}
         edit.animationGenIdBindings = config.animationGenIdBindings
         edit.editHistory.load(config.editHistory ?? {}, files)
         return SpriteEdit.loadContent(edit, config, files, basePath)

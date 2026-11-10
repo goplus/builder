@@ -201,7 +201,6 @@ describe('EditorState', () => {
       Array.from({ length: 8 }, (_, i) => new Costume(`edited-frame-${i}`, mockFile('edited.png')))
     )
     animation.result!.setDuration(0.8)
-    draft.setAnimationInstruction(animation.id, 'White hair')
     draft.addAnimation()
     await vi.advanceTimersByTimeAsync(1500)
     expect(cached).not.toBeNull()
@@ -233,7 +232,6 @@ describe('EditorState', () => {
     const restored = await reload()
     expect(restored.spriteEditState.edits).toHaveLength(1)
     const restoredDraft = restored.spriteEditState.edits[0]
-    expect(restoredDraft.getAnimationInstruction(animation.id)).toBe('White hair')
     expect(restoredDraft.animations[0].result!.costumes[0].img.name).toBe('edited.png')
     expect(restored.project.sprites[0].animations[0].costumes[0].img.name).not.toBe('edited.png')
     restoredDraft.applyToSprite(restored.project.sprites[0], { type: 'animation', id: restoredDraft.animations[0].id })

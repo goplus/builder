@@ -1,5 +1,5 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
-import { h, nextTick, shallowReactive } from 'vue'
+import { h, nextTick, ref, shallowReactive } from 'vue'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
 import { Facing } from '@/apis/aigc'
@@ -12,6 +12,7 @@ import { Sprite } from '@/models/spx/sprite'
 import SettingsInput from '../common/SettingsInput.vue'
 import FacingInput from './FacingInput.vue'
 import CostumeSettingsInput from './CostumeSettingsInput.vue'
+import { resourceWorkspaceKey } from '@/components/editor/sprite/resource-workspace'
 
 const { messageError } = vi.hoisted(() => ({ messageError: vi.fn() }))
 
@@ -19,6 +20,8 @@ vi.mock('@/components/ui/message/UIMessageProvider.vue', async (importOriginal) 
   ...(await importOriginal<typeof import('@/components/ui/message/UIMessageProvider.vue')>()),
   useMessage: () => ({ error: messageError, success: vi.fn() })
 }))
+
+vi.mock('@/utils/user', () => ({ useEnsureSignedIn: () => async () => {} }))
 
 function globalOptions(i18n = createI18n({ lang: 'zh' })) {
   return {
@@ -32,7 +35,7 @@ function globalOptions(i18n = createI18n({ lang: 'zh' })) {
   }
 }
 
-function setupCostume(completed: boolean) {
+function setupCostume(completed: boolean, embedded = false) {
   const i18n = createI18n({ lang: 'zh' })
   const project = new SpxProject()
   const sprite = new Sprite('Cat')
@@ -51,7 +54,10 @@ function setupCostume(completed: boolean) {
   const generate = vi.spyOn(gen, 'generate').mockResolvedValue()
   const wrapper = shallowMount(CostumeSettingsInput, {
     props: { gen },
-    global: globalOptions(i18n)
+    global: {
+      ...globalOptions(i18n),
+      provide: embedded ? { [resourceWorkspaceKey as symbol]: { canReview: ref(false) } } : {}
+    }
   })
   onTestFinished(() => {
     wrapper.unmount()
@@ -65,7 +71,7 @@ describe('CostumeSettingsInput', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('keeps saved costume settings editable and regenerates with the same submit button', async () => {
-    const { wrapper, gen, generate, sprite, source } = setupCostume(true)
+    const { wrapper, gen, generate, sprite, source } = setupCostume(true, true)
     expect(wrapper.get('textarea').attributes('readonly')).toBeUndefined()
     expect(wrapper.getComponent(SettingsInput).props('readonly')).toBe(false)
     await wrapper.get('textarea').setValue('Make the clothes red')
@@ -79,6 +85,12 @@ describe('CostumeSettingsInput', () => {
     expect(generate).toHaveBeenCalledTimes(1)
     expect(gen.result).toBe(source)
     expect(sprite.costumes).toEqual([source])
+  })
+
+  it('keeps saved costumes readonly in the legacy generation modal', () => {
+    const { wrapper } = setupCostume(true)
+    expect(wrapper.get('textarea').attributes('readonly')).toBeDefined()
+    expect(wrapper.find('button[aria-label="Submit"]').exists()).toBe(false)
   })
 
   it('keeps the description and generate action editable for an unfinished costume', async () => {

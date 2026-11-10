@@ -1,14 +1,18 @@
 <template>
   <main
-    v-radar="{ name: 'item-detail', desc: `Detail view of the selected item \u0022${name}\u0022`, attrs: { name } }"
-    class="min-w-0 flex-[1_1_0] flex flex-col gap-5 rounded-br-lg bg-grey-200 px-5 py-6"
+    v-radar="{ name: `Detail for \u0022${name}\u0022`, desc: `Detail view of the selected item \u0022${name}\u0022` }"
+    class="relative min-w-0 flex-[1_1_0] flex flex-col rounded-br-lg bg-grey-200"
+    :class="canvas ? 'overflow-hidden' : 'gap-5 px-5 py-6'"
   >
     <header
-      :class="
+      v-show="!workspace?.aiActive.value"
+      class="min-h-8"
+      :class="[
+        canvas != null ? 'absolute inset-x-5 top-3 z-20' : null,
         $slots.leading != null || $slots.ops != null
           ? 'flex-none grid grid-cols-[1fr_auto_1fr] items-center gap-3'
           : null
-      "
+      ]"
     >
       <div v-if="$slots.leading != null || $slots.ops != null" class="flex items-center">
         <slot name="leading"></slot>
@@ -34,6 +38,11 @@
 <script setup lang="ts">
 import { UIIcon } from '@/components/ui'
 import AssetName from '@/components/asset/AssetName.vue'
+import { useResourceCanvas } from '../sprite/resource-canvas'
+import { useResourceWorkspace } from '../sprite/resource-workspace'
+
+const canvas = useResourceCanvas()
+const workspace = useResourceWorkspace()
 
 defineProps<{
   name: string

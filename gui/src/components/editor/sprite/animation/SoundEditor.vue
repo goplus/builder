@@ -2,6 +2,7 @@
   <UIDropdownForm
     v-radar="{ name: 'sound-editor-dropdown-form', desc: 'Dropdown form for selecting animation sound' }"
     :title="$t(actionName)"
+    class="max-w-full"
     style="width: 408px; max-height: 400px"
     @cancel="emit('close')"
     @confirm="handleConfirm"
@@ -42,8 +43,8 @@
         </UIMenu>
       </UIDropdown>
     </ul>
-    <template #footer-left>
-      <div v-if="selected != null" class="flex h-8 items-center gap-2">
+    <template v-if="selected != null" #footer-left>
+      <div class="flex h-8 items-center gap-2">
         <span class="text-base text-grey-900">
           {{ $t({ en: 'Playback', zh: '播放' }) }}
         </span>
@@ -62,22 +63,57 @@
             )
           }}
           <template #trigger>
-            <UISelect
-              v-radar="{
-                name: 'animation-sound-playback-selector',
-                desc: 'Select how the selected sound plays with the animation'
-              }"
-              :value="selectedPlayback"
-              class="min-w-[80px]"
-              @update:value="handlePlaybackUpdate"
-            >
-              <UISelectOption :value="AnimationSoundPlayback.Once">
-                {{ $t({ en: 'Once', zh: '一次' }) }}
-              </UISelectOption>
-              <UISelectOption :value="AnimationSoundPlayback.Loop">
-                {{ $t({ en: 'Loop', zh: '循环' }) }}
-              </UISelectOption>
-            </UISelect>
+            <UIDropdown v-model:visible="playbackMenuVisible" trigger="click" placement="top-end">
+              <template #trigger>
+                <UIButton
+                  v-radar="{
+                    name: 'Animation sound playback selector',
+                    desc: 'Select how the selected sound plays with the animation'
+                  }"
+                  type="white"
+                  class="gap-1 border-transparent! bg-transparent! px-1.5 text-sm"
+                  aria-haspopup="menu"
+                  :aria-expanded="playbackMenuVisible"
+                >
+                  {{
+                    $t(
+                      selectedPlayback === AnimationSoundPlayback.Loop
+                        ? { en: 'Loop', zh: '循环' }
+                        : { en: 'Once', zh: '一次' }
+                    )
+                  }}
+                  <UIIcon type="arrowDown" class="size-3" />
+                </UIButton>
+              </template>
+              <UIMenu role="menu">
+                <UIMenuGroup>
+                  <UIMenuItem
+                    v-for="playback in [AnimationSoundPlayback.Once, AnimationSoundPlayback.Loop]"
+                    :key="playback"
+                    role="menuitemradio"
+                    :aria-checked="selectedPlayback === playback"
+                    tabindex="0"
+                    class="min-w-24 justify-between pr-2 text-sm"
+                    @click="handlePlaybackUpdate(playback)"
+                    @keydown.enter.prevent="handlePlaybackUpdate(playback)"
+                    @keydown.space.prevent="handlePlaybackUpdate(playback)"
+                  >
+                    {{
+                      $t(
+                        playback === AnimationSoundPlayback.Loop
+                          ? { en: 'Loop', zh: '循环' }
+                          : { en: 'Once', zh: '一次' }
+                      )
+                    }}
+                    <UIIcon
+                      type="check"
+                      class="size-4 text-primary-main"
+                      :class="{ invisible: selectedPlayback !== playback }"
+                    />
+                  </UIMenuItem>
+                </UIMenuGroup>
+              </UIMenu>
+            </UIDropdown>
           </template>
         </UITooltip>
       </div>
@@ -86,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { AnimationSoundPlayback, type Animation } from '@/models/spx/animation'
 import {
   UIDropdownForm,
@@ -95,8 +131,8 @@ import {
   UIMenuItem,
   UIBlockItem,
   UIIcon,
-  UISelect,
-  UISelectOption,
+  UIButton,
+  UIMenuGroup,
   UITooltip
 } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -118,13 +154,22 @@ const editorCtx = useEditorCtx()
 const actionName = { en: 'Select sound', zh: '选择声音' }
 const selected = ref(props.animation.sound)
 const selectedPlayback = ref(props.animation.soundPlayback)
+const playbackMenuVisible = ref(false)
+watch(
+  () => props.animation.sound,
+  (sound) => (selected.value = sound)
+)
+watch(
+  () => props.animation.soundPlayback,
+  (playback) => (selectedPlayback.value = playback)
+)
 
-function handlePlaybackUpdate(playback: string | null) {
-  if (playback !== AnimationSoundPlayback.Once && playback !== AnimationSoundPlayback.Loop) return
+function handlePlaybackUpdate(playback: AnimationSoundPlayback) {
   selectedPlayback.value = playback
+  playbackMenuVisible.value = false
 }
 
-async function handleSoundClick(sound: string) {
+function handleSoundClick(sound: string) {
   if (selected.value === sound) selected.value = null
   else selected.value = sound
 }
@@ -160,9 +205,11 @@ const handleRecord = useMessageHandle(
 ).fn
 
 async function handleConfirm() {
+  const sound = selected.value
+  const playback = selectedPlayback.value
   await editorCtx.state.history.doAction({ name: actionName }, () => {
-    props.animation.setSound(selected.value)
-    props.animation.setSoundPlayback(selectedPlayback.value)
+    props.animation.setSound(sound)
+    props.animation.setSoundPlayback(playback)
   })
   emit('close')
 }

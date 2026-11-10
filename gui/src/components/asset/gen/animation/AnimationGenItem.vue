@@ -12,6 +12,7 @@ export function isAnimationsLoading(gens: AnimationGen[]) {
 import { computed, ref } from 'vue'
 
 import { UIBlockItemTitle, UIImg } from '@/components/ui'
+import type { Animation } from '@/models/spx/animation'
 import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import CornerMenu from '@/components/editor/common/CornerMenu.vue'
 import RenameMenuItem from '@/components/editor/common/corner-menu-item/RenameMenuItem.vue'
@@ -24,7 +25,9 @@ import animationSVG from '../common/animation.svg?raw'
 
 const props = defineProps<{
   gen: AnimationGen
+  animation: Animation | null
   active: boolean
+  suggested?: boolean
   operable?: boolean
 }>()
 
@@ -36,7 +39,7 @@ const emit = defineEmits<{
 
 const wrapperRef = ref<InstanceType<typeof GenItem>>()
 
-const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.gen.result?.costumes[0].img)
+const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.animation?.costumes[0].img)
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 
 const isLoading = computed(() => isAnimationLoading(props.gen) || imgLoading.value)
@@ -55,14 +58,15 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
     :loading="isLoading"
     :highlight="highlight"
     :active="active"
+    :suggested="suggested"
     @click="emit('click')"
   >
-    <template v-if="gen.result != null" #preview>
+    <template v-if="animation != null" #preview>
       <CostumesAutoPlayer
         v-if="hovered"
         class="h-full w-full"
-        :costumes="gen.result.costumes"
-        :duration="gen.result.duration"
+        :costumes="animation.costumes"
+        :duration="animation.duration"
         :placeholder-img="imgSrc"
       />
       <UIImg v-else class="h-full w-full" :src="imgSrc" :loading="imgLoading" />

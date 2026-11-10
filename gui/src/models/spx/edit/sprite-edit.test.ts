@@ -2,23 +2,18 @@ import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { SpriteCategory, Perspective } from '@/apis/common'
 import { setupAigcMock } from '../gen/aigc-mock'
+import { TaskType } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as fileHelpers from '@/models/common/file'
 import { mockFile, sndFiles } from '@/models/common/test'
 import { History } from '@/components/editor/history'
 import { PhysicsMode, RotationStyle, State, type RawSpriteConfig } from '../sprite'
 import { Costume } from '../costume'
-import { AnimationSoundPlayback } from '../animation'
+import { Animation, AnimationSoundPlayback } from '../animation'
 import { makeSpxProject } from '../common/test'
 import { mockSaveFile } from '../gen/test-helpers'
 import { SpriteGen, spriteGenAssetPath } from '../gen/sprite-gen'
 import { SpriteEdit } from './sprite-edit'
-import { createAnimationReferenceVideo } from '../gen/animation-reference-video'
-
-vi.mock('../gen/animation-reference-video', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../gen/animation-reference-video')>()),
-  createAnimationReferenceVideo: vi.fn()
-}))
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
@@ -28,7 +23,108 @@ describe('SpriteEdit', () => {
   beforeEach(() => {
     aigcMock.reset()
     mockSaveFile()
-    vi.mocked(createAnimationReferenceVideo).mockResolvedValue(mockFile('reference.mp4'))
+  })
+
+  it('syncs local imports while preserving other AI drafts', async () => {
+    const project = makeSpxProject()
+    const source = project.sprites[0]
+    const edit = SpriteEdit.fromSprite(i18n, project, source)
+    onTestFinished(() => {
+      edit.dispose()
+      project.dispose()
+    })
+    const draft = edit.addCostume()
+    draft.setSettings({ description: 'Keep this generation prompt' })
+    const costume = new Costume('uploaded', mockFile('uploaded.png'))
+    source.addCostume(costume)
+    const animation = Animation.create('grouped', [costume.clone()])
+    source.addAnimation(animation)
+    source.setAnimationBoundStates(animation.id, [State.Step])
+
+    edit.syncResources(source)
+    edit.syncResources(source)
+    await flushPromises()
+
+    expect(edit.costumes.filter((gen) => gen.result?.id === costume.id)).toHaveLength(1)
+    expect(edit.animations.filter((gen) => gen.result?.id === animation.id)).toHaveLength(1)
+    expect(edit.getCostumeById(draft.id)?.settings.description).toBe('Keep this generation prompt')
+    const imported = edit.costumes.find((gen) => gen.result?.id === costume.id)!
+    expect(edit.isNewResource({ type: 'costume', id: imported.id })).toBe(false)
+    expect(edit.hasResourceChanges({ type: 'costume', id: imported.id })).toBe(false)
+    expect(imported.result).not.toBe(costume)
+    expect(edit.previewSprite.getAnimationBoundStates(animation.id)).toEqual([State.Step])
+  })
+
+  it('removes grouped source costumes from the edit list but retains their unsaved drafts', async () => {
+    const project = makeSpxProject()
+    const source = project.sprites[0]
+    const clean = new Costume('clean', mockFile('clean.png'))
+    const changed = new Costume('changed', mockFile('changed.png'))
+    source.addCostume(clean)
+    source.addCostume(changed)
+    const edit = SpriteEdit.fromSprite(i18n, project, source)
+    onTestFinished(() => {
+      edit.dispose()
+      project.dispose()
+    })
+    const draft = edit.costumes.find((gen) => gen.result?.id === changed.id)!
+    edit.setCostumeInstruction(draft.id, 'Keep this edit instruction')
+    source.removeCostume(clean.id)
+    source.removeCostume(changed.id)
+
+    edit.syncResources(source)
+    await flushPromises()
+
+    expect(edit.costumes.some((gen) => gen.result?.id === clean.id)).toBe(false)
+    expect(edit.getCostumeInstruction(draft.id)).toBe('Keep this edit instruction')
+    expect(edit.isNewResource({ type: 'costume', id: draft.id })).toBe(true)
+    expect(edit.defaultCostume?.result?.id).toBe(source.defaultCostume?.id)
+  })
+
+  it.each(['costume', 'animation'] as const)('keeps a recommended %s as a draft until adoption', async (type) => {
+    const project = makeSpxProject()
+    const edit = SpriteEdit.fromSprite(i18n, project, project.sprites[0])
+    onTestFinished(() => {
+      edit.dispose()
+      project.dispose()
+    })
+    const manualCostume = edit.addCostume()
+    const manualAnimation = edit.addAnimation()
+    edit.prefill({
+      costumes: [{ ...manualCostume.settings, name: 'cape', description: 'Wearing a cape', referenceImageUrl: null }],
+      animations: [{ ...manualAnimation.settings, name: 'run', description: 'Running', referenceFrameUrl: null }],
+      animationBindings: {}
+    })
+    const gen = type === 'costume' ? edit.costumes.at(-1)! : edit.animations.at(-1)!
+    edit.setSelectedItem({ type, id: gen.id })
+    expect(edit.isSuggestedResource(gen.id)).toBe(true)
+    expect(edit.isSuggestedResource(manualCostume.id)).toBe(false)
+    expect(edit.isSuggestedResource(manualAnimation.id)).toBe(false)
+
+    edit.editHistory.record(gen)
+    const generating = type === 'costume' ? edit.costumes.at(-1)!.generate() : edit.animations.at(-1)!.generateVideo()
+    expect(edit.isSuggestedResource(gen.id)).toBe(true)
+    await generating
+    expect(edit.isNewResource({ type, id: gen.id })).toBe(true)
+    edit.editHistory.undo(gen)
+    expect(edit.isSuggestedResource(gen.id)).toBe(true)
+
+    const [restored] = await SpriteEdit.loadAll(i18n, project, sndFiles(edit.export()))
+    onTestFinished(() => restored.dispose())
+    expect(restored.isSuggestedResource(gen.id)).toBe(true)
+    const untouched = type === 'costume' ? edit.animations.at(-1)! : edit.costumes.at(-1)!
+    expect(restored.isSuggestedResource(untouched.id)).toBe(true)
+    restored.editHistory.redo(
+      type === 'costume' ? restored.getCostumeById(gen.id)! : restored.getAnimationById(gen.id)!
+    )
+    const restoredGen = type === 'costume' ? restored.getCostumeById(gen.id)! : restored.getAnimationById(gen.id)!
+    if (type === 'animation')
+      restored.getAnimationById(gen.id)!.setFramesConfig({ startTime: 0, duration: 1000, interval: 100 })
+    await restoredGen.finish()
+    expect(restored.isNewResource({ type, id: gen.id })).toBe(true)
+    restored.applyToSprite(project.sprites[0], { type, id: gen.id })
+    expect(restored.isNewResource({ type, id: gen.id })).toBe(false)
+    expect(restored.isSuggestedResource(gen.id)).toBe(false)
   })
 
   it('restores planned resources and applies their recommended animation bindings when generated', async () => {
@@ -48,7 +144,9 @@ describe('SpriteEdit', () => {
     expect(sprite.costumes).toHaveLength(1)
     expect(sprite.animations).toHaveLength(0)
     expect(edit.hasPendingChanges).toBe(true)
-    expect(aigcMock.tasks.size).toBe(1)
+    expect([...aigcMock.tasks.values()].map(({ task, params }) => ({ type: task.type, params }))).toEqual([
+      { type: TaskType.GenerateCostume, params: expect.objectContaining({ removeBackground: true }) }
+    ])
 
     const [restored] = await SpriteEdit.loadAll(i18n, project, sndFiles(edit.export()))
     onTestFinished(() => restored.dispose())
@@ -67,54 +165,6 @@ describe('SpriteEdit', () => {
     expect(sprite.animations).toHaveLength(0)
     restored.applyToSprite(sprite, { type: 'animation', id: animation.id })
     expect(sprite.getAnimationBoundStates(animation.result!.id)).toEqual([State.Default])
-  })
-
-  it('restores a running animation edit and applies its result without changing sound or bindings', async () => {
-    const project = makeSpxProject()
-    const source = project.sprites[0]
-    const animation = source.animations[0]
-    animation.setSound(project.sounds[0].id)
-    animation.setSoundPlayback(AnimationSoundPlayback.Loop)
-    source.setAnimationBoundStates(animation.id, [State.Default, State.Step])
-    const originalFrames = animation.costumes.map((costume) => costume.img)
-    const edit = SpriteEdit.fromSprite(i18n, project, source)
-    const gen = edit.animations[0]
-    edit.setAnimationInstruction(gen.id, 'Make the hat blue')
-    const pending = gen.editVideo(edit.getAnimationInstruction(gen.id))
-    await aigcMock.waitForTaskCount(1)
-    const [restored] = await SpriteEdit.loadAll(i18n, project, sndFiles(edit.export()))
-    expect(restored.getAnimationInstruction(gen.id)).toBe('Make the hat blue')
-    expect(restored.animations[0].result?.id).toBe(animation.id)
-    await pending
-    await flushPromises()
-    const restoredGen = restored.animations[0]
-    expect(restoredGen.hasPendingVideo).toBe(true)
-    expect(restoredGen.framesConfig).toBeNull()
-    restoredGen.setFramesConfig({
-      startTime: 0,
-      duration: 5000,
-      interval: 100
-    })
-    await restoredGen.finish()
-    const result = { type: 'animation' as const, id: restoredGen.id }
-    expect(source.animations[0].costumes.map((costume) => costume.img)).toEqual(originalFrames)
-
-    const history = new History(project)
-    await history.doAction({ name: { en: 'Edit sprite', zh: '编辑精灵' } }, () =>
-      restored.applyToSprite(source, result)
-    )
-    expect(source.animations[0].id).toBe(animation.id)
-    expect(source.animations[0].sound).toBe(animation.sound)
-    expect(source.animations[0].soundPlayback).toBe(AnimationSoundPlayback.Loop)
-    expect(source.animations[0].duration).toBe(5)
-    expect(source.animations[0].costumes).toHaveLength(50)
-    expect(source.getAnimationBoundStates(animation.id)).toEqual([State.Default, State.Step])
-    expect(source.animations[0].costumes[0].img).not.toBe(originalFrames[0])
-    await history.undo()
-    expect(project.sprites[0].animations[0].costumes.map((costume) => costume.img)).toEqual(originalFrames)
-    edit.dispose()
-    restored.dispose()
-    project.dispose()
   })
 
   it('restores a running edit task without losing its saved costume or instruction', async () => {

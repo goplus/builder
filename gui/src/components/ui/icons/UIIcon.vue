@@ -22,6 +22,9 @@ import stop from './stop.svg?raw'
 import plus from './plus.svg?raw'
 import trash from './trash.svg?raw'
 import edit from './edit.svg?raw'
+import wandSparkles from './wand-sparkles.svg?raw'
+import shirt from './shirt.svg?raw'
+import run from './run.svg?raw'
 import publish from './publish.svg?raw'
 import eye from './eye.svg?raw'
 import eyeSlash from './eye-slash.svg?raw'
@@ -111,6 +114,9 @@ const typeIconMap = {
   plus,
   trash,
   edit,
+  wandSparkles,
+  shirt,
+  run,
   publish,
   eye,
   eyeSlash,

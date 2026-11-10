@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
 import { Sound } from '@/models/spx/sound'
-import { UIEditorSoundItem } from '@/components/ui'
+import { UIEditorSoundItem, UIRadio } from '@/components/ui'
 import CornerMenu from '../../common/CornerMenu.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import SoundPlayer from './SoundPlayer.vue'
@@ -19,14 +19,17 @@ const props = withDefaults(
   defineProps<{
     sound: Sound
     selectable?: false | { selected: boolean }
+    compact?: boolean
     /** `operable: true` means the backdrop can be published & removed */
     operable?: boolean
   }>(),
   {
     selectable: false,
+    compact: false,
     operable: false
   }
 )
+const emit = defineEmits<{ click: [] }>()
 
 const [audioSrc] = useFileUrl(() => props.sound.file)
 
@@ -73,7 +76,27 @@ const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
 </script>
 
 <template>
-  <UIEditorSoundItem v-radar="radarNodeMeta" :audio-src="audioSrc" :name="sound.name" :selectable="selectable">
+  <div
+    v-if="compact"
+    class="flex min-w-0 items-center gap-2 rounded-sm pl-2"
+    :class="selectable && selectable.selected ? 'bg-primary-100' : 'hover:bg-grey-300'"
+  >
+    <UIRadio v-radar="radarNodeMeta" :value="sound.id" class="sound-radio h-8 min-w-0 flex-1">
+      <span class="block truncate" :title="sound.name">{{ sound.name }}</span>
+    </UIRadio>
+    <div class="flex shrink-0 items-center gap-0.5 pr-1">
+      <slot name="actions"></slot>
+      <SoundPlayer :src="audioSrc" compact />
+    </div>
+  </div>
+  <UIEditorSoundItem
+    v-else
+    v-radar="radarNodeMeta"
+    :audio-src="audioSrc"
+    :name="sound.name"
+    :selectable="selectable"
+    @click="emit('click')"
+  >
     <template #player>
       <SoundPlayer :src="audioSrc" />
     </template>
@@ -88,3 +111,9 @@ const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
     </CornerMenu>
   </UIEditorSoundItem>
 </template>
+
+<style scoped>
+.sound-radio :deep(.label) {
+  min-width: 0;
+}
+</style>

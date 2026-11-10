@@ -54,6 +54,7 @@ export type CostumeGenInits = {
   referenceCostumeId?: string
   referenceImageSelection?: ReferenceImageSelection
   image?: File
+  transparentBackground?: boolean
   enrichPhase?: Phase<CostumeSettings>
   generateTask?: Task<TaskType.GenerateCostume>
   generatePhase?: Phase<File>
@@ -147,6 +148,7 @@ export class CostumeGen extends Disposable {
       inits.referenceCostumeId
     )
     this.image = inits.image ?? null
+    this.transparentBackground = inits.transparentBackground ?? false
     return reactive(this) as this
   }
 
@@ -211,9 +213,11 @@ export class CostumeGen extends Disposable {
   }
 
   image: File | null = null
-  setImage(file: File | null) {
+  transparentBackground = false
+  setImage(file: File | null, transparentBackground = false) {
     if (file !== this.image) this.setEditComments([])
     this.image = file
+    this.transparentBackground = transparentBackground
   }
 
   get generateState() {
@@ -267,7 +271,7 @@ export class CostumeGen extends Disposable {
     const task = this.generateTask
     this.addDisposable(task)
     const signal = task.getSignal()
-    const image = await this.generatePhase.run(async (reporter) => {
+    await this.generatePhase.run(async (reporter) => {
       let referenceImageUrl: string | null = null
       if (edit != null) {
         referenceImageUrl = await saveFile(edit.image, signal)
@@ -281,38 +285,34 @@ export class CostumeGen extends Disposable {
       }
       signal.throwIfAborted()
       if (edit == null) this.lastEdit = null
-      if (edit != null && spriteEditDemoEnabled && this.editComments.length > 0) {
-        return simulateSpriteEdit(edit.image, signal)
+      if (edit != null && spriteEditDemoEnabled) {
+        const image = await simulateSpriteEdit(edit.image, signal)
+        this.setImage(image)
+        return image
       }
       const settings = { ...this.settings, referenceImageUrl }
-      if (edit != null && spriteEditDemoEnabled) {
-        // The deployed API supports image editing through a reference image and description.
-        settings.description = [
-          'Edit the provided game sprite image according to the instruction below.',
-          "Preserve the subject's identity, pose, art style, proportions, framing, and all other details unless the instruction explicitly asks to change them.",
-          `Edit instruction: ${edit.instruction}`
-        ].join('\n')
-      }
       await task.start({
         settings,
         n: 1,
-        ...(edit == null || spriteEditDemoEnabled ? {} : { editInstruction: edit.instruction })
+        ...(edit == null ? {} : { editInstruction: edit.instruction })
       })
-      const { imageUrls } = await task.untilCompleted(reporter)
+      const { imageUrls, transparentBackground } = await task.untilCompleted(reporter)
       if (imageUrls.length < 1) throw new Error('no costume image generated')
-      return createFileWithUniversalUrl(imageUrls[0])
+      const image = createFileWithUniversalUrl(imageUrls[0])
+      this.setImage(image, transparentBackground)
+      return image
     })
-    this.setImage(image)
   }
   async restoreGenerateTask() {
     const task = this.generateTask
     if (task?.data == null || isTerminalTaskStatus(task.data?.status)) return
-    const image = await this.generatePhase.run(async (reporter) => {
-      const { imageUrls } = await task.untilCompleted(reporter)
+    await this.generatePhase.run(async (reporter) => {
+      const { imageUrls, transparentBackground } = await task.untilCompleted(reporter)
       if (imageUrls.length < 1) throw new Error('no costume image generated')
-      return createFileWithUniversalUrl(imageUrls[0])
+      const image = createFileWithUniversalUrl(imageUrls[0])
+      this.setImage(image, transparentBackground)
+      return image
     })
-    this.setImage(image)
   }
 
   get finishState() {
@@ -325,13 +325,13 @@ export class CostumeGen extends Disposable {
     this.finishPhase.reset()
   }
 
-  async finish() {
+  async finish({ removeBackground = true } = {}) {
     const preview = this.image
     if (preview == null) throw new Error('Costume not generated yet')
     const source = this.editSource ?? this.result
     const result = await this.finishPhase.run(async (reporter) => {
       let image = preview
-      if (this.editInstruction != null && preview !== this.result?.img && !spriteEditDemoEnabled) {
+      if (removeBackground && !this.transparentBackground && preview !== this.result?.img && !spriteEditDemoEnabled) {
         const task = new Task(TaskType.RemoveBackground)
         this.addDisposable(task)
         try {
@@ -361,7 +361,7 @@ export class CostumeGen extends Disposable {
       return costume
     })
     this.savedResult = result
-    this.setImage(result.img)
+    this.setImage(result.img, this.transparentBackground || removeBackground)
     if (this.generateTask?.data?.status === TaskStatus.Completed) this.savedTaskId = this.generateTask.data.id
     return result
   }
@@ -403,6 +403,7 @@ export class CostumeGen extends Disposable {
       savedTaskId: this.savedTaskId ?? undefined,
       lastEdit: this.lastEdit ?? undefined,
       editComments: this.editComments,
+      transparentBackground: this.transparentBackground,
       settings: this.settings,
       reference:
         selection?.type === 'local-image'
@@ -453,6 +454,7 @@ export class CostumeGen extends Disposable {
     inits.savedTaskId = config.savedTaskId
     inits.lastEdit = config.lastEdit
     inits.editComments = config.editComments
+    inits.transparentBackground = config.transparentBackground
     if (config.editSourceConfig != null) {
       inits.editSource = Costume.load(config.editSourceConfig, files, {
         basePath: `${assetsPath}/source`,

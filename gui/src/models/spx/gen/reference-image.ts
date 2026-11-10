@@ -39,8 +39,8 @@ export async function validateAnimationReferenceImage(file: File) {
   const maxDimension = 5760
   if (width < minDimension || height < minDimension || width > maxDimension || height > maxDimension) {
     throw new DefaultException({
-      en: `Video reference image width and height must each be between ${minDimension} and ${maxDimension} pixels. Selected image: ${width}×${height}.`,
-      zh: `视频参考图的宽、高均须在 ${minDimension}～${maxDimension} 像素之间，当前图片为 ${width}×${height} 像素。`
+      en: `Use an image with each side between ${minDimension} and ${maxDimension} px.`,
+      zh: `请选择宽高均为 ${minDimension}～${maxDimension} 像素的图片。`
     })
   }
 }

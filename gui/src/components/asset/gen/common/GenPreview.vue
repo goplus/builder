@@ -3,6 +3,11 @@
 <script setup lang="ts">
 import { UIIcon } from '@/components/ui'
 import AssetName from '@/components/asset/AssetName.vue'
+import { useResourceCanvas } from '@/components/editor/sprite/resource-canvas'
+import { useResourceWorkspace } from '@/components/editor/sprite/resource-workspace'
+
+const canvas = useResourceCanvas()
+const workspace = useResourceWorkspace()
 
 defineProps<{
   name: string
@@ -20,9 +25,14 @@ const emit = defineEmits<{
       desc: `Preview for the generation item '${name}'`,
       attrs: { name }
     }"
-    class="flex-[1_1_0] flex flex-col gap-5 px-5 py-6"
+    class="relative flex-[1_1_0] flex flex-col"
+    :class="canvas ? 'overflow-hidden' : 'gap-5 px-5 py-6'"
   >
-    <header class="flex-none grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+    <header
+      v-show="!workspace?.aiActive.value"
+      class="flex-none min-h-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3"
+      :class="canvas != null ? 'absolute inset-x-5 top-3 z-20' : null"
+    >
       <div class="flex items-center">
         <slot name="leading"></slot>
       </div>
