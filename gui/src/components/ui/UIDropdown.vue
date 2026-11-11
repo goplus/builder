@@ -100,7 +100,8 @@ const {
   virtualAnchor: computed(() => props.pos ?? null)
 })
 const entering = ref(false)
-// Positioning initially hides the content; the enter animation can still move it after positioning.
+// Positioning initially hides the content; enter transforms can still move the input afterward.
+// Wait for its final position to avoid native suggestion misalignment, accepting the short autofocus delay.
 const popupReady = computed(() => visible.value && floatingStyle.value != null && !entering.value)
 
 const rootClass = computed(() => cn('fixed z-1000 overflow-hidden rounded-md bg-grey-100 shadow-sm', props.class))
