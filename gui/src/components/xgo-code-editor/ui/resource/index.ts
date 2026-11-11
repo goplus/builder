@@ -1,8 +1,16 @@
-import { watch } from 'vue'
+import { shallowRef, watch } from 'vue'
 import { debounce } from 'lodash'
 import { TaskManager } from '@/utils/task'
 import Emitter from '@/utils/emitter'
-import { type ResourceReference } from '../../common'
+import {
+  containsPosition,
+  InputKind,
+  isResourceUri,
+  type Position,
+  type ResourceIdentifier,
+  type ResourceReference
+} from '../../common'
+import { fromMonacoPosition } from '../common'
 import type { CodeEditorUIController } from '../code-editor-ui'
 
 export type { IResourceAdapter } from '../../resource'
@@ -30,8 +38,31 @@ export class ResourceReferenceController extends Emitter<{
     return this.itemsMgr.result.data
   }
 
-  init() {
+  private hoveredPosition = shallowRef<Position | null>(null)
+  private previewResourceRef = shallowRef<ResourceIdentifier | null>(null)
+  private previewEnabled = shallowRef(false)
+
+  get hoveredResource(): ResourceIdentifier | null {
+    if (!this.previewEnabled.value) return null
+    if (this.previewResourceRef.value != null) return this.previewResourceRef.value
+    const position = this.hoveredPosition.value
+    if (position == null) return null
+    const reference = this.items?.find((item) => containsPosition(item.range, position))
+    if (reference != null) return reference.resource
+    const slot = this.ui.inputHelperController.slots?.find((item) => containsPosition(item.range, position))
+    const input = slot?.input
+    if (input?.kind !== InputKind.InPlace || typeof input.value !== 'string' || !isResourceUri(input.value)) return null
+    return { uri: input.value }
+  }
+
+  previewResource(resource: ResourceIdentifier | null) {
+    this.previewResourceRef.value = resource
+  }
+
+  init(previewEnabled = false) {
+    this.previewEnabled.value = previewEnabled
     const refreshItems = debounce(() => this.itemsMgr.start(), 100)
+    this.addDisposer(() => refreshItems.cancel())
 
     this.addDisposer(
       watch(
@@ -42,5 +73,43 @@ export class ResourceReferenceController extends Emitter<{
         { immediate: true }
       )
     )
+
+    if (!previewEnabled) return
+    const { editor, monaco } = this.ui
+    const clear = () => {
+      this.hoveredPosition.value = null
+    }
+    const clearLater = debounce(clear, 120)
+    this.addDisposer(() => clearLater.cancel())
+    this.addDisposable(
+      editor.onMouseMove(({ target }) => {
+        clearLater.cancel()
+        if (
+          target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT ||
+          target.detail.mightBeForeignElement ||
+          this.ui.inputHelperController.inputingSlot != null
+        ) {
+          clear()
+          return
+        }
+        this.hoveredPosition.value = fromMonacoPosition({
+          lineNumber: target.range.startLineNumber,
+          column: target.range.startColumn
+        })
+      })
+    )
+    editor.getDomNode()?.addEventListener('mouseleave', () => clearLater(), { signal: this.getSignal() })
+    this.addDisposer(this.ui.hoverController.on('cardMouseEnter', () => clearLater.cancel()))
+    this.addDisposer(this.ui.hoverController.on('cardMouseLeave', () => clearLater()))
+    this.addDisposable(editor.onKeyDown(clear))
+    this.addDisposable(editor.onMouseDown(clear))
+    this.addDisposable(editor.onDidChangeModelContent(clear))
+    const clearPreview = () => {
+      clear()
+      this.previewResourceRef.value = null
+    }
+    this.addDisposer(watch(() => this.ui.activeTextDocument, clearPreview))
+    window.addEventListener('blur', clearPreview, { signal: this.getSignal() })
+    this.addDisposer(clearPreview)
   }
 }

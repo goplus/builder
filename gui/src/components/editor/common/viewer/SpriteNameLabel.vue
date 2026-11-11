@@ -9,19 +9,21 @@ const props = defineProps<{
   name: string | null
   anchor: { x: number; y: number } | null
   selected: boolean
+  highlighted?: boolean
   mapScale: number
 }>()
 
 const emit = defineEmits<{
   click: [name: string]
+  hoverChange: [hovered: boolean]
 }>()
 
 const visible = ref(false)
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 
 const layout = computed(() => {
-  const { name, anchor, selected, mapScale } = props
-  if (name == null || anchor == null || (!selected && !visible.value)) return null
+  const { name, anchor, selected, highlighted, mapScale } = props
+  if (name == null || anchor == null || (!selected && !highlighted && !visible.value)) return null
   const fontSize = 12 / mapScale
   const textNode = new Konva.Text({ text: name, fontFamily: 'Inter', fontSize })
   const width = textNode.width() + 12 / mapScale
@@ -48,6 +50,12 @@ function handleClick(e: KonvaEventObject<MouseEvent>) {
   if (props.name != null) emit('click', props.name)
 }
 
+function handleHover(hovered: boolean) {
+  if (hovered) show()
+  else hide()
+  emit('hoverChange', hovered)
+}
+
 onUnmounted(() => {
   if (hideTimer != null) clearTimeout(hideTimer)
 })
@@ -59,8 +67,8 @@ defineExpose({ show, hide })
   <v-group
     v-if="layout != null"
     :config="{ x: layout.x, y: layout.y, offsetX: layout.width / 2 }"
-    @mouseenter="show"
-    @mouseleave="hide"
+    @mouseenter="handleHover(true)"
+    @mouseleave="handleHover(false)"
     @click="handleClick"
   >
     <v-rect

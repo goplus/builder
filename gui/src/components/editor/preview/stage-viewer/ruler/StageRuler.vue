@@ -5,7 +5,7 @@ import { color } from '@/components/ui/tokens'
 
 export type { Pos }
 
-export type RulerSnapTarget = Pos & { heading: number | null }
+export type RulerSnapTarget = Pos & { spriteId: string; heading: number | null }
 
 function rgba(hex: string, alpha: number) {
   const value = hex.replace('#', '')
@@ -63,7 +63,10 @@ const props = withDefaults(
 // Decoration units have a fixed screen size, enlarged in Simple Mode.
 const displayScale = computed(() => props.stageScale / (props.simpleMode ? 1.3 : 1))
 
-const emit = defineEmits<{ cursorOutlineChange: [outlined: boolean] }>()
+const emit = defineEmits<{
+  cursorOutlineChange: [outlined: boolean]
+  snapTargetChange: [spriteId: string | null]
+}>()
 
 const layerRef = ref<{ getNode(): Konva.Layer } | null>(null)
 const measurement = ref<{ from: Pos; fromHeading: number | null; to: Pos } | null>(null)
@@ -242,12 +245,19 @@ onUnmounted(() => {
   labelMeasureNode?.destroy()
   stopMeasuring()
   emit('cursorOutlineChange', false)
+  emit('snapTargetChange', null)
 })
 
 const pointerSnap = computed(() => {
   if (!props.active || pointerPos.value == null) return null
   return snap(pointerPos.value)
 })
+
+watch(
+  () => pointerSnap.value?.target?.spriteId ?? null,
+  (spriteId) => emit('snapTargetChange', spriteId),
+  { immediate: true }
+)
 
 function stopMarkerAnimation() {
   if (markerAnimationFrame == null) return
@@ -603,7 +613,7 @@ const angleLabelLayout = computed<LabelLayout | null>(() => {
     </template>
     <v-group v-for="(pos, index) in markerPositions" :key="index" :config="{ ...pos, listening: false }">
       <v-circle :config="{ radius: 7, stroke: 'rgba(255, 255, 255, 0.5)', strokeWidth: 1.2 }" />
-      <v-circle :config="{ radius: 4.1, fill: '#FEC71C', stroke: '#fff', strokeWidth: 1.2 }" />
+      <v-circle :config="{ radius: 4.1, fill: 'rgba(255, 255, 255, 0.7)', stroke: '#fff', strokeWidth: 1.2 }" />
     </v-group>
   </v-layer>
 </template>

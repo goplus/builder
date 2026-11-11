@@ -724,7 +724,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     this.completionController.init()
     this.contextMenuController.init()
     this.diagnosticsController.init()
-    this.resourceReferenceController.init()
+    this.resourceReferenceController.init(this.options.simpleMode)
     this.inputHelperController.init()
     this.inlayHintController.init()
     this.dropIndicatorController.init()
