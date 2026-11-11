@@ -193,7 +193,6 @@ describe('canvas resource workflows', () => {
     const { wrapper, state, sprite } = await setupCanvas()
     const original = sprite.costumes[0]
     const instruction = 'Make the costume blue'
-    await wrapper.get('[aria-label="Costumes management"] [aria-label="Options button"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="AI edit"]').isVisible()).toBe(true))
     await wrapper.get('[aria-label="AI edit"]').trigger('click')
     await wrapper.get('[aria-label="AI edit prompt"] textarea').trigger('focus')
@@ -241,7 +240,6 @@ describe('canvas resource workflows', () => {
     const { wrapper, state, sprite } = await setupCanvas()
     const generate = vi.spyOn(SpriteEdit.prototype, 'editCostume').mockResolvedValue()
     expect(wrapper.get('[aria-label="AI edit prompt"]').isVisible()).toBe(false)
-    await wrapper.get('[aria-label="Costumes management"] [aria-label="Options button"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="AI edit"]').isVisible()).toBe(true))
     await wrapper.get('[aria-label="AI edit"]').trigger('click')
     const input = wrapper.get('[aria-label="AI edit prompt"] textarea')
