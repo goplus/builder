@@ -12,7 +12,6 @@
       operable
       :selectable="{ selected: state.selected?.id === costume.id }"
       @click="handleSelect(costume)"
-      @ai-edit="workspace?.openAIEditor()"
     />
     <template #add-options>
       <UIMenu>
@@ -31,12 +30,7 @@
       </UIMenu>
     </template>
     <template #detail>
-      <ResourceWorkspace
-        v-if="state.selected != null"
-        :key="state.selected.id"
-        ref="workspace"
-        :resource-key="state.selected.id"
-      >
+      <ResourceWorkspace v-if="state.selected != null" :key="state.selected.id" :resource-key="state.selected.id">
         <CostumeDetail :sprite="sprite" :costume="state.selected" @rename="handleRename(state.selected)" />
         <template #prompt>
           <SpriteResourcePrompt :key="state.selected.id" :sprite="sprite" :resource="state.selected" />
@@ -105,7 +99,6 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
-const workspace = ref<InstanceType<typeof ResourceWorkspace> | null>(null)
 const addResource = useAddSpriteResource()
 const handleAdd = useMessageHandle(() => addResource(props.sprite, 'costume')).fn
 const addFromLocalFile = useAddCostumeFromLocalFile()

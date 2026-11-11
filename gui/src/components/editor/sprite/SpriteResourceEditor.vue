@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, shallowRef, watch, onBeforeUnmount } from 'vue'
+import { computed, shallowRef, watch, onBeforeUnmount } from 'vue'
 import { Animation } from '@/models/spx/animation'
 import { Costume } from '@/models/spx/costume'
 import type { Sprite } from '@/models/spx/sprite'
@@ -28,7 +28,6 @@ const props = defineProps<{ sprite: Sprite; type: 'costume' | 'animation' }>()
 const commenting = defineModel<boolean>('commenting', { default: false })
 const editorCtx = useEditorCtx()
 const edit = shallowRef<SpriteEdit | null>(null)
-const contentEditor = shallowRef<InstanceType<typeof SpriteContentEditor> | null>(null)
 watch(
   () => [props.sprite, props.type] as const,
   ([sprite, type]) => {
@@ -83,11 +82,6 @@ function selectResource(id: string) {
   const items = props.type === 'costume' ? edit.value?.costumes : edit.value?.animations
   const gen = items?.find((gen) => gen.result?.id === id)
   if (gen != null) edit.value?.setSelectedItem({ type: props.type, id: gen.id })
-}
-async function openAIEditor(id: string) {
-  selectResource(id)
-  await nextTick()
-  contentEditor.value?.openAIEditor()
 }
 const costumeItems = computed(() =>
   props.sprite.costumes.map((costume) => ({
@@ -176,7 +170,6 @@ const renameAnimation = useMessageHandle(useRenameAnimationGen()).fn
           :selectable="{ selected: edit.selectedItem?.id === item.gen?.id }"
           operable
           @click="selectResource(item.costume.id)"
-          @ai-edit="openAIEditor(item.costume.id)"
         >
           <GenerationIndicator v-if="item.gen != null && isCostumeLoading(item.gen)" />
         </CostumeItem>
@@ -251,7 +244,6 @@ const renameAnimation = useMessageHandle(useRenameAnimationGen()).fn
       <SpriteContentEditor
         v-if="edit.selectedItem?.type === type"
         :key="edit.id"
-        ref="contentEditor"
         v-model:commenting="commenting"
         :content="edit"
         :saved-animation="savedResource instanceof Animation ? savedResource : null"

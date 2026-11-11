@@ -24,7 +24,7 @@ const DraftInput = defineComponent(() => {
 
 describe('ResourceWorkspace', () => {
   it.each(['costume', 'animation'] as const)(
-    'keeps the %s prompt aligned beneath the preview across state changes',
+    'keeps the %s prompt docked at the bottom across preview state changes',
     async (resourceType) => {
       const dimensions = ref<{ width: number; height: number } | null>(null)
       const size = vi.spyOn(dom, 'useContentSize').mockReturnValue(dimensions)
@@ -83,28 +83,23 @@ describe('ResourceWorkspace', () => {
       const tools = host.get('[aria-label="Resource tool area"]')
       const input = host.get('input').element
       const initialFrame = host.get('.select-none').attributes('style')
-      const initialPosition = tools.attributes('style')
-      const frameStyleBefore = (host.get('.select-none').element as HTMLElement).style
-      const promptStyle = (tools.element as HTMLElement).style
-      expect(promptStyle.width).toBe(frameStyleBefore.width)
-      expect(parseFloat(promptStyle.top) - parseFloat(frameStyleBefore.top) - parseFloat(frameStyleBefore.height)).toBe(
-        resourceType === 'animation' ? 88 : 24
-      )
+      expect(tools.classes()).toContain('bottom-4')
+      expect(tools.attributes('style')).toBeUndefined()
+      expect(host.find('[aria-label="ai-edit"]').exists()).toBe(false)
       phase.value = 'loading'
       await nextTick()
-      expect(tools.attributes('style')).toBe(initialPosition)
+      expect(tools.attributes('style')).toBeUndefined()
       expect(host.get('.select-none').attributes('style')).toBe(initialFrame)
       dimensions.value = { width: 700, height: 1000 }
       height.mockReturnValue(1000)
       await nextTick()
-      const resizedPosition = tools.attributes('style')
       const resizedFrame = host.get('.select-none').attributes('style')
-      expect(resizedPosition).not.toBe(initialPosition)
+      expect(resizedFrame).not.toBe(initialFrame)
       expect(tools.classes()).toContain('bottom-4')
       for (const state of ['decoding', 'ready'] as const) {
         phase.value = state
         await nextTick()
-        expect(tools.attributes('style')).toBe(resizedPosition)
+        expect(tools.attributes('style')).toBeUndefined()
         expect(host.get('.select-none').attributes('style')).toBe(resizedFrame)
         expect(host.get('input').element).toBe(input)
       }
@@ -361,6 +356,37 @@ describe('ResourceWorkspace', () => {
     expect(input.value).toBe('Keep the pose')
   })
 
+  it('opens from the bottom entry and restores it when closing, without losing the draft', async () => {
+    const host = mount(ResourceWorkspace, {
+      attachTo: document.body,
+      props: { resourceKey: 'saved-costume' },
+      slots: { actions: () => h('span'), prompt: () => h(DraftInput) },
+      global: {
+        plugins: [createI18n({ lang: 'en' })],
+        directives: {
+          radar: (el: HTMLElement, binding: { value: { name: string } }) =>
+            el.setAttribute('aria-label', binding.value.name)
+        }
+      }
+    })
+    onTestFinished(() => host.unmount())
+    await nextTick()
+    const panel = host.get('[aria-label="Resource tool panel ai"]')
+    expect(panel.isVisible()).toBe(false)
+    await host.get('[aria-label="ai-edit"]').trigger('click')
+    expect(panel.isVisible()).toBe(true)
+    expect(host.find('[aria-label="ai-edit"]').exists()).toBe(false)
+    const input = panel.get('input')
+    expect(document.activeElement).toBe(input.element)
+    await input.setValue('Keep the pose')
+    await host.get('[aria-label="Close resource workspace"]').trigger('click')
+    expect(panel.isVisible()).toBe(false)
+    await host.get('[aria-label="ai-edit"]').trigger('click')
+    expect(panel.get('input').element).toBe(input.element)
+    expect(input.element.value).toBe('Keep the pose')
+    expect(document.activeElement).toBe(input.element)
+  })
+
   it('keeps adopted animation properties available without an AI editor', async () => {
     const host = mount(ResourceWorkspace, {
       attachTo: document.body,
@@ -382,6 +408,7 @@ describe('ResourceWorkspace', () => {
     })
     onTestFinished(() => host.unmount())
     await nextTick()
+    expect(host.find('[aria-label="ai-edit"]').exists()).toBe(false)
     expect(host.find('[data-resource-tool="ai"]').exists()).toBe(false)
     expect(host.find('[aria-label="Resource tool panel ai"]').exists()).toBe(false)
     const duration = host.get('[data-resource-tool="duration"]')
