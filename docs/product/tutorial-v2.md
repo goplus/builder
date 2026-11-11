@@ -55,6 +55,10 @@ A Course Series organizes a set of Courses into an ordered series, carrying cour
 
 Course Gallery remains as designed. Course management is a page of the author's Course Series, each opening onto its Courses, where Courses are created, ordered, edited and deleted.
 
+#### Course Navigation
+
+The navigation panel opened from the navbar uses the active Course's Course Series title as its heading, giving learners context for the units and Courses listed below without adding another navigation level ([#3753](https://github.com/goplus/builder/issues/3753)). The heading follows the active Course's Series data and keeps its existing typography. Long titles are truncated, with the full title available on hover, so the Exit Course action stays visible. The Series title is shown as authored in every UI language; surrounding controls remain localized.
+
 ### Playground Course
 
 Every Playground Course is associated with exactly one project, and entering the course means entering the project editor. All behavior of the course is expressed and driven by **course code**; there is no separate declarative configuration layer.
