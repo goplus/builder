@@ -24,7 +24,7 @@ const DraftInput = defineComponent(() => {
 
 describe('ResourceWorkspace', () => {
   it.each(['costume', 'animation'] as const)(
-    'keeps the %s prompt docked at the bottom across preview state changes',
+    'keeps the %s prompt beside the preview across state changes and resizing',
     async (resourceType) => {
       const dimensions = ref<{ width: number; height: number } | null>(null)
       const size = vi.spyOn(dom, 'useContentSize').mockReturnValue(dimensions)
@@ -83,23 +83,33 @@ describe('ResourceWorkspace', () => {
       const tools = host.get('[aria-label="Resource tool area"]')
       const input = host.get('input').element
       const initialFrame = host.get('.select-none').attributes('style')
-      expect(tools.classes()).toContain('bottom-4')
-      expect(tools.attributes('style')).toBeUndefined()
+      const initialPosition = tools.attributes('style')
+      function expectPromptBelowPreview() {
+        const frame = (host.get('.select-none').element as HTMLElement).style
+        const prompt = (tools.element as HTMLElement).style
+        expect(prompt.width).toBe(frame.width)
+        expect(parseFloat(prompt.top) - parseFloat(frame.top) - parseFloat(frame.height)).toBe(
+          resourceType === 'animation' ? 88 : 24
+        )
+      }
+      expectPromptBelowPreview()
       expect(host.find('[aria-label="ai-edit"]').exists()).toBe(false)
       phase.value = 'loading'
       await nextTick()
-      expect(tools.attributes('style')).toBeUndefined()
+      expect(tools.attributes('style')).toBe(initialPosition)
       expect(host.get('.select-none').attributes('style')).toBe(initialFrame)
       dimensions.value = { width: 700, height: 1000 }
       height.mockReturnValue(1000)
       await nextTick()
       const resizedFrame = host.get('.select-none').attributes('style')
+      const resizedPosition = tools.attributes('style')
       expect(resizedFrame).not.toBe(initialFrame)
-      expect(tools.classes()).toContain('bottom-4')
+      expect(resizedPosition).not.toBe(initialPosition)
+      expectPromptBelowPreview()
       for (const state of ['decoding', 'ready'] as const) {
         phase.value = state
         await nextTick()
-        expect(tools.attributes('style')).toBeUndefined()
+        expect(tools.attributes('style')).toBe(resizedPosition)
         expect(host.get('.select-none').attributes('style')).toBe(resizedFrame)
         expect(host.get('input').element).toBe(input)
       }
