@@ -293,7 +293,15 @@ function handleExit(code: number) {
 }
 
 async function checkAndNotifyCodeError() {
-  const r = await withTimeout(CODE_EDITOR_OPERATION_TIMEOUT, (signal) => codeEditor.diagnosticWorkspace(signal))
+  if (props.simpleMode) codeEditor.getAttachedUI()?.revealDiagnostics()
+  const r = await withTimeout(CODE_EDITOR_OPERATION_TIMEOUT, async (signal) => {
+    if (props.simpleMode) {
+      await editorCtx.project.mutex.runExclusive(async () => {})
+      await nextTick()
+      signal.throwIfAborted()
+    }
+    return codeEditor.diagnosticWorkspace(signal)
+  })
   const codeFilesWithError: LocaleMessage[] = []
   for (const item of r.items) {
     if (!item.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
@@ -329,8 +337,14 @@ async function checkAndNotifyMonitorError() {
 }
 
 async function checkAndNotifyPreRunErrors() {
-  await checkAndNotifyCodeError()
-  await checkAndNotifyMonitorError()
+  try {
+    await checkAndNotifyCodeError()
+    await checkAndNotifyMonitorError()
+  } catch (error) {
+    // Cancellation means the user declined to run; other check failures should not block project execution.
+    if (error instanceof Cancelled) throw error
+    capture(error, 'Failed to check project before running')
+  }
 }
 
 async function executeRun(action: 'run' | 'rerun') {
@@ -369,11 +383,7 @@ const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.pro
 
 const handleRun = useMessageHandle(
   async () => {
-    await checkAndNotifyPreRunErrors().catch((error) => {
-      // Cancellation means the user declined to run; other check failures should not block project execution.
-      if (error instanceof Cancelled) throw error
-      capture(error, 'Failed to check project before running')
-    })
+    await checkAndNotifyPreRunErrors()
     await executeRun('run')
   },
   { en: 'Failed to run project', zh: '运行项目失败' }
@@ -381,6 +391,7 @@ const handleRun = useMessageHandle(
 
 const handleRerun = useMessageHandle(
   async () => {
+    if (props.simpleMode) await checkAndNotifyPreRunErrors()
     await executeRun('rerun')
   },
   { en: 'Failed to rerun project', zh: '重新运行项目失败' }

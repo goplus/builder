@@ -87,6 +87,12 @@ Editor customizations a course can enable on demand — independent of each othe
 * **API allowlist**: filters the API Reference to show only the APIs relevant to the course and hides unrelated categories, reducing cognitive load
 * **Ruler**: a measuring aid on the stage that helps learners build intuition for coordinates and distances
 
+In Simple mode, background code checks continue while the learner types. For a simple single-line command that was checked and had no diagnostics before editing, newly introduced static errors confined to that line are deferred until the learner leaves the line, leaves the editor, or runs the project. Existing diagnostics, warnings, diagnostics elsewhere, and runtime errors keep their usual feedback. The visual styling is unchanged; Normal mode keeps its existing timing and behavior.
+
+This first version deliberately falls back to immediate feedback when a statement boundary or a clean baseline cannot be established, including multiline or multiple simultaneous edits, complex expressions, paste, undo/redo, and IME composition. Running checks the current synchronized project code, including on rerun.
+
+Gray parameter-name hints remain available. If deleting a previously checked single numeric argument leaves a simple command empty (for example, `step 10` → `step `), Simple mode can retain its confirmed parameter name while that line is being edited. It does not infer labels for an unfamiliar command or ambiguous argument positions, and it never inserts an argument value. This fallback does not cover strings, multiple arguments, multiline commands, paste, or IME composition.
+
 ### Guided Course
 
 Follows the [existing design](./tutorial.md): a course is a Prompt; the Copilot drives step-by-step guidance, actively perceiving user operations and Builder events (with a "Continue" button as an aid for the few events that are hard to perceive), assisted by the game-exit signal for judging. Revisions:

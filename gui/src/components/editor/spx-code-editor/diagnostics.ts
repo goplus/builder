@@ -58,7 +58,8 @@ export class SpxDiagnosticsProvider extends DiagnosticsProvider {
       diagnostics.push({
         message: output.message,
         range,
-        severity: DiagnosticSeverity.Error
+        severity: DiagnosticSeverity.Error,
+        origin: 'runtime'
       })
     }
     return diagnostics

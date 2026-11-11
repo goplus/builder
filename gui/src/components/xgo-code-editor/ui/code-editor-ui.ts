@@ -79,6 +79,9 @@ export interface ICodeEditorUIController {
   insertBlockText(text: string, range?: Range): Promise<void>
   insertInlineText(text: string, range?: Range): Promise<void>
 
+  /** Reveal deferred Simple Mode diagnostics before checking or running code. */
+  revealDiagnostics(): void
+
   dispose(): void
 }
 
@@ -167,6 +170,14 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
 
   get readOnly() {
     return this.options.isReadOnly?.() ?? false
+  }
+
+  get simpleMode() {
+    return this.options.simpleMode ?? false
+  }
+
+  revealDiagnostics() {
+    this.diagnosticsController.reveal()
   }
 
   get project() {

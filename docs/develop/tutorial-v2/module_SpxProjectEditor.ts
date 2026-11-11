@@ -52,6 +52,8 @@ export interface CodeEditor {
   getAttachedUI(): {
     activeTextDocument: { getValue(): string } | null;
     insertInlineText(text: string): Promise<void>;
+    /** Reveal deferred Simple Mode diagnostics before checking or running code. */
+    revealDiagnostics(): void;
   } | null;
 }
 

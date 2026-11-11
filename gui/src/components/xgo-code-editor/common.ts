@@ -142,6 +142,8 @@ export type Diagnostic = {
   range: Range
   severity: DiagnosticSeverity
   message: string
+  /** Only known static diagnostics may be deferred during Simple Mode editing. */
+  origin?: 'static' | 'runtime'
 }
 
 export type TextDocumentDiagnostics = {
