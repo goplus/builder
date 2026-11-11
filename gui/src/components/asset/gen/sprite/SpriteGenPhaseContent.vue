@@ -8,20 +8,25 @@
 import { computed, watch } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { capture, useMessageHandle } from '@/utils/exception'
-import type { Sprite } from '@/models/spx/sprite'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { SpriteGen, SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { UIButton, UITooltip, useConfirmDialog, type ConfirmOptions } from '@/components/ui'
 import { useRenameAnimationGen, useRenameCostumeGen } from '../..'
-import CostumeSettingInput from '../costume/CostumeSettingsInput.vue'
-import AnimationSettingInput from '../animation/AnimationSettingsInput.vue'
+import CostumeSettingsInput from '../costume/CostumeSettingsInput.vue'
+import AnimationSettingsInput from '../animation/AnimationSettingsInput.vue'
 import ListItemWrapper from '../common/ListItemWrapper.vue'
 import CostumeGenItem from '../costume/CostumeGenItem.vue'
 import AnimationGenItem from '../animation/AnimationGenItem.vue'
-import CostumeGenPreview from '../costume/CostumeGenPreview.vue'
-import AnimationGenPreview from '../animation/AnimationGenPreview.vue'
-import { humanizeListWithLimit } from '@/utils/utils'
+import CostumeGenPreview from './legacy/CostumeGenPreview.vue'
+import AnimationGenPreview from './legacy/AnimationGenPreview.vue'
+import { computedShallowReactive, humanizeListWithLimit, useComputedDisposable } from '@/utils/utils'
+import { useNetwork } from '@/utils/network'
+import { useSignedIn } from '@/stores/user'
+import { cloudHelpers } from '@/models/common/cloud'
+import { provideLocalEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { EditorState } from '@/components/editor/editor-state'
+import type { ILocalCache } from '@/components/editor/editing'
 
 const props = defineProps<{
   gen: SpriteGen
@@ -29,7 +34,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   collapse: []
-  resolved: [Sprite]
+  resolved: [SpriteGenResult]
 }>()
 
 const selected = computed(() => {
@@ -104,6 +109,17 @@ function handleAddAnimation() {
 
 const i18n = useI18n()
 const confirm = useConfirmDialog()
+const signedIn = useSignedIn()
+const { isOnline } = useNetwork()
+const localCache: ILocalCache = {
+  load: () => Promise.reject(new Error('Not implemented')),
+  save: () => Promise.reject(new Error('Not implemented')),
+  clear: () => Promise.reject(new Error('Not implemented'))
+}
+const previewState = useComputedDisposable(
+  () => new EditorState(i18n, props.gen.previewProject, isOnline, signedIn, cloudHelpers, localCache)
+)
+provideLocalEditorCtx(computedShallowReactive(() => ({ project: props.gen.previewProject, state: previewState.value })))
 
 function isCostumeGenProcessing(costumeGen: CostumeGen) {
   return costumeGen.generateState.status !== 'initial' && costumeGen.result == null
@@ -179,7 +195,7 @@ const handleSubmit = useMessageHandle(
     props.gen.recordAdoption().catch((err) => {
       capture(err, 'failed to record sprite asset adoption')
     })
-    emit('resolved', sprite)
+    emit('resolved', { sprite, contentSettings: null })
   },
   {
     en: 'Failed to create sprite',
@@ -203,6 +219,7 @@ const handleSubmit = useMessageHandle(
               :key="c.id"
               :active="selectedCostume?.id === c.id"
               :gen="c"
+              :costume="c.result ?? null"
               :is-default="c.id === gen.defaultCostume?.id"
               :operable="{ removable: c.id !== gen.defaultCostume?.id }"
               @click="select('costume', c.id)"
@@ -218,6 +235,7 @@ const handleSubmit = useMessageHandle(
               :key="a.id"
               :active="selectedAnimation?.id === a.id"
               :gen="a"
+              :animation="a.result ?? null"
               @click="select('animation', a.id)"
               @rename="handleRenameAnimation(a)"
               @remove="handleRemoveAnimation(a)"
@@ -226,8 +244,8 @@ const handleSubmit = useMessageHandle(
         </div>
 
         <div class="px-4 py-5 mt-0">
-          <CostumeSettingInput v-if="selectedCostume != null" :gen="selectedCostume" />
-          <AnimationSettingInput v-if="selectedAnimation != null" :gen="selectedAnimation" />
+          <CostumeSettingsInput v-if="selectedCostume != null" :gen="selectedCostume" />
+          <AnimationSettingsInput v-if="selectedAnimation != null" :gen="selectedAnimation" />
         </div>
       </aside>
       <div class="relative flex-[1_1_0] overflow-hidden flex">

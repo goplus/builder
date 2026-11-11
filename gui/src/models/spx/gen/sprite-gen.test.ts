@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
-import { TaskStatus } from '@/apis/aigc'
+import { TaskStatus, TaskType } from '@/apis/aigc'
 import { createI18n } from '@/utils/i18n'
 import * as imgHelpers from '@/utils/img'
 import * as fileHelpers from '@/models/common/file'
@@ -49,6 +49,124 @@ describe('SpriteGen', () => {
   beforeEach(() => {
     aigcMock.reset()
     mockSaveFile()
+  })
+
+  it('saves the default costume and plans additional resources without generating them', async () => {
+    const project = makeSpxProject()
+    const originalCount = project.sprites.length
+    const gen = new SpriteGen(i18n, project, { settings: { name: 'Kitten', description: 'A pixel kitten' } })
+    onTestFinished(() => {
+      gen.dispose()
+      project.dispose()
+    })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    expect([...aigcMock.tasks.values()].map(({ task }) => task.type)).toEqual([TaskType.GenerateCostume])
+    expect([...aigcMock.tasks.values()][0].params).toMatchObject({ n: 4, removeBackground: true })
+    const preview = gen.image!
+    const { sprite, contentSettings } = await gen.finishDefaultCostume()
+    expect(sprite.costumes).toHaveLength(1)
+    expect(sprite.animations).toHaveLength(0)
+    expect(sprite.defaultCostume?.name).toBe('default')
+    expect(project.sprites).toHaveLength(originalCount)
+    expect(aigcMock.generateSpriteContentSettings).toHaveBeenCalledOnce()
+    expect(contentSettings).toMatchObject({
+      costumes: [
+        { name: 'costume-1', description: 'A costume for Kitten' },
+        { name: 'costume-2', description: 'Another costume for Kitten' }
+      ],
+      animations: [
+        { name: 'walk', description: 'A walking animation for Kitten' },
+        { name: 'jump', description: 'A jumping animation for Kitten' }
+      ]
+    })
+    expect(aigcMock.tasks.size).toBe(1)
+    expect(sprite.defaultCostume?.img).toBe(preview)
+  })
+
+  it('edits generated costumes and keeps instructions and retry references after reopening', async () => {
+    const project = makeSpxProject()
+    const originalImages = project.sprites[0].costumes.map((costume) => costume.img)
+    const gen = new SpriteGen(i18n, project, { settings: { name: 'Hero', description: 'A knight' } })
+    onTestFinished(() => {
+      gen.dispose()
+      project.dispose()
+    })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    await gen.prepareContent()
+    const costume = gen.costumes[0]
+    const originalId = costume.result!.id
+    gen.setCostumeInstruction(costume.id, 'Blue helmet')
+    await gen.editCostume(costume.id, gen.getCostumeInstruction(costume.id))
+    await flushPromises()
+    expect(gen.previewSprite.defaultCostume).toBe(costume.result)
+    expect(costume.result!.id).toBe(originalId)
+    expect(costume.image).not.toBe(costume.result!.img)
+    expect(costume.settings.description).toBe('A knight')
+
+    gen.setCostumeInstruction(costume.id, 'Red helmet')
+    const restored = await SpriteGen.load(gen.name, i18n, project, sndFiles(gen.export()))
+    onTestFinished(() => restored.dispose())
+    expect(restored.getCostumeInstruction(costume.id)).toBe('Red helmet')
+    expect(restored.costumes[0].editInstruction).toBe('Blue helmet')
+    await restored.editCostume(costume.id, 'Blue helmet')
+    expect([...aigcMock.tasks.values()].at(-1)!.params).toMatchObject({
+      settings: { referenceImageUrl: `kodo://mock-bucket/${costume.image!.name}` },
+      editInstruction: 'Blue helmet'
+    })
+
+    const saved = restored.costumes[0].result
+    const preview = restored.costumes[0].image
+    aigcMock.injectErrorOnce('subscribeTaskEvents', new Error('Unavailable'))
+    await expect(restored.editCostume(costume.id, 'Red helmet')).rejects.toThrow('Unavailable')
+    expect(restored.costumes[0].result).toBe(saved)
+    expect(restored.costumes[0].image).toBe(preview)
+    expect(project.sprites[0].costumes.map((costume) => costume.img)).toEqual(originalImages)
+  })
+
+  it('excludes unapplied edits when adopting a generated sprite', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(i18n, project, { settings: { name: 'Hero' } })
+    onTestFinished(() => {
+      gen.dispose()
+      project.dispose()
+    })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    await gen.prepareContent()
+    const costume = gen.costumes[0]
+    const original = costume.result!.img
+    await gen.editCostume(costume.id, 'Blue helmet')
+    costume.setImage(mockFile('edited-costume.png'))
+    await costume.finish()
+    await flushPromises()
+    const result = await gen.finish()
+    expect(result.costumes[0].img).toBe(original)
+    expect(costume.result!.img).not.toBe(original)
+  })
+
+  it('regenerates a completed costume during new sprite generation without changing its identity or order', async () => {
+    const project = makeSpxProject()
+    const gen = new SpriteGen(i18n, project, { settings: { name: 'Hero', description: 'A knight' } })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    await gen.prepareContent()
+    await finishCostumeGen('second', gen.costumes[1])
+    const ids = gen.costumes.flatMap((c) => (c.result == null ? [] : [c.result.id]))
+    const first = gen.costumes[0]
+    const name = first.name
+    first.setSettings({ description: 'Give the knight a blue helmet' })
+    await first.generate()
+    await first.finish()
+    await flushPromises()
+
+    expect(gen.previewSprite.costumes.map((c) => c.id)).toEqual(ids)
+    expect(gen.previewSprite.costumes[0].name).toBe(name)
+    expect(gen.previewSprite.defaultCostume?.id).toBe(ids[0])
+    expect(first.settings.description).toBe('Give the knight a blue helmet')
+    gen.dispose()
+    project.dispose()
   })
 
   it('should work well', async () => {
@@ -732,7 +850,8 @@ describe('SpriteGen', () => {
     await gen.genImages()
     const [taskRecord] = [...aigcMock.tasks.values()]
     expect(taskRecord.params).toMatchObject({
-      settings: { referenceImageUrl: 'kodo://mock-bucket/reference.png' }
+      settings: { referenceImageUrl: 'kodo://mock-bucket/reference.png' },
+      removeBackground: true
     })
 
     const rawConfig = gen.export()

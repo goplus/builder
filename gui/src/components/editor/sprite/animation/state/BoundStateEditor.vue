@@ -4,6 +4,7 @@
   <UIDropdownForm
     v-radar="{ name: 'bound-state-editor-dropdown-form', desc: 'Dropdown form for editing animation bound state' }"
     :title="$t(actionName)"
+    class="max-w-full"
     style="width: 320px"
     @cancel="emit('close')"
     @confirm="handleConfirm"
@@ -53,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { Animation } from '@/models/spx/animation'
 import { State } from '@/models/spx/sprite'
 import { UIDropdownForm, UICornerIcon, UIBlockItem } from '@/components/ui'
@@ -74,6 +75,11 @@ const editorCtx = useEditorCtx()
 const actionName = { en: 'Bind state', zh: '绑定状态' }
 const boundStates = ref(props.animation.sprite?.getAnimationBoundStates(props.animation.id) ?? [])
 
+watch(
+  () => props.animation.sprite?.getAnimationBoundStates(props.animation.id),
+  (states) => (boundStates.value = states ?? [])
+)
+
 function isBound(state: State) {
   return boundStates.value.includes(state)
 }
@@ -85,10 +91,11 @@ function handleStateItemClick(state: State) {
 }
 
 async function handleConfirm() {
+  const states = boundStates.value
   await editorCtx.state.history.doAction({ name: actionName }, () => {
     const sprite = props.animation.sprite
     if (sprite == null) throw new Error('Animation has no associated sprite')
-    sprite.setAnimationBoundStates(props.animation.id, boundStates.value)
+    sprite.setAnimationBoundStates(props.animation.id, states)
   })
   emit('close')
 }

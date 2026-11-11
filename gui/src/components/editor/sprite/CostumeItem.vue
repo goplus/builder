@@ -104,5 +104,6 @@ const { fn: handleRename } = useMessageHandle(() => renameCostume(props.costume)
         @click="handleRemove"
       />
     </CornerMenu>
+    <slot></slot>
   </UIEditorSpriteItem>
 </template>

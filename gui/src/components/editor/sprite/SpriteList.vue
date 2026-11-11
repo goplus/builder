@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { type ComponentPublicInstance, computed, onBeforeUnmount, ref, shallowReactive } from 'vue'
 import { Sprite } from '@/models/spx/sprite'
-import { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
 import { type DragSortableOptions, useDragSortable } from '@/utils/drag-and-drop'
 
-import { useSpriteGenModal } from '@/components/asset'
+import { useGenerateSprite } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
@@ -22,6 +22,8 @@ function isSelected(sprite: Sprite) {
 
 function handleSpriteClick(sprite: Sprite) {
   editorCtx.state.selectSprite(sprite.id)
+  const edit = editorCtx.state.spriteEditState.edits.find((edit) => edit.sourceSpriteId === sprite.id)
+  if (edit?.hasPendingChanges) editorCtx.state.spriteState?.openAIEditor(edit.selectedItem?.type ?? 'costume')
 }
 
 const spriteGenItemRefs = shallowReactive(new Map<string, HTMLElement>())
@@ -47,22 +49,22 @@ const listWrapper = ref<HTMLElement | null>(null)
 
 const sortableOptions: Pick<DragSortableOptions, 'filterItem' | 'filterMove'> = {
   filterItem: (item: unknown) => {
-    return item instanceof SpriteGen
+    return !(item instanceof Sprite)
   },
   filterMove: (oldIndex: number, newIndex: number) => {
     const totalList = list.value
-    // spriteGens cannot be moved
+    // Drafts cannot be moved.
     const fromItem = totalList[oldIndex]
-    if (fromItem instanceof SpriteGen) return true
-    // sprites can only be moved to positions before spriteGens, i.e., cannot be moved to positions of spriteGens or after
+    if (!(fromItem instanceof Sprite)) return true
+    // Keep sprites before all drafts.
     const toItem = totalList[newIndex]
-    if (toItem instanceof SpriteGen) return true
+    if (!(toItem instanceof Sprite)) return true
     return false
   }
 }
 
 const handleSorted = useMessageHandle(
-  // sprites are always before spriteGens, so the index is correct theoretically
+  // Sprites appear before drafts, so these indices match the project order.
   async (oldIdx: number, newIdx: number) => {
     const action = { name: { en: 'Update sprite order', zh: '更新精灵顺序' } }
     await editorCtx.state.history.doAction(action, () => editorCtx.project.moveSprite(oldIdx, newIdx))
@@ -81,23 +83,10 @@ useDragSortable(list, listWrapper, {
   ...sortableOptions
 })
 
-const invokeSpriteGenModal = useSpriteGenModal()
-
-const handleSpriteGenClick = useMessageHandle(
-  async (gen: SpriteGen) => {
-    const result = await invokeSpriteGenModal(editorCtx.project, gen)
-
-    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-      editorCtx.project.addSprite(result)
-      await result.autoFit()
-    })
-    editorCtx.state.selectSprite(result.id)
-  },
-  {
-    en: 'Failed to add generated sprite',
-    zh: '添加生成的精灵失败'
-  }
-).fn
+const handleSpriteGenClick = useMessageHandle(useGenerateSprite(), {
+  en: 'Failed to add generated sprite',
+  zh: '添加生成的精灵失败'
+}).fn
 </script>
 
 <template>

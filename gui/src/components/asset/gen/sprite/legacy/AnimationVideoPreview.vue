@@ -1,0 +1,620 @@
+<script lang="ts">
+type PlayRange = {
+  /** Timepoint in ms to start playing */
+  start: number
+  /** Timepoint in ms to end playing */
+  end: number
+}
+
+function useVideoPlayer(videoRef: Ref<HTMLVideoElement | null>, rangeRef: WatchSource<PlayRange | null>) {
+  const isPlaying = ref(false)
+  /** Duration of the video in ms */
+  const duration = ref<number | null>(null)
+  /** Current playback time in ms */
+  const currentTime = ref(0)
+  /** Version async play requests so pause/stop can invalidate stale play() continuations after await. */
+  let playRequestVersion = 0
+  /** Latest requested preview seek time in ms while a browser seek may still be in flight. */
+  let pendingSeekTime: number | null = null
+
+  function flushPendingSeek(video: HTMLVideoElement) {
+    if (pendingSeekTime == null) return
+    const nextTime = pendingSeekTime
+    pendingSeekTime = null
+    video.currentTime = nextTime / 1000
+  }
+
+  function seek(timeInMs: number) {
+    const nextTime = Math.max(0, timeInMs)
+    currentTime.value = nextTime
+    pendingSeekTime = nextTime
+    const video = videoRef.value
+    if (video == null || video.seeking) return
+    flushPendingSeek(video)
+  }
+
+  function pausePlayback() {
+    playRequestVersion += 1
+    stopTick()
+    const video = videoRef.value
+    if (video == null) return
+    video.pause()
+  }
+
+  const [startTick, stopTick] = useTick(() => {
+    const video = videoRef.value
+    if (video == null) return
+    // Enforce range
+    const range = toValue(rangeRef)
+    if (range != null) {
+      const rangeStartInSecond = range.start / 1000
+      const rangeEndInSecond = range.end / 1000
+      if (video.currentTime < rangeStartInSecond || video.currentTime >= rangeEndInSecond) {
+        video.currentTime = rangeStartInSecond
+      }
+    }
+    // Sync current time
+    currentTime.value = video.currentTime * 1000
+  })
+
+  // Keep preview time inside the current play range when the range changes.
+  watch(
+    rangeRef,
+    (newRange) => {
+      if (newRange == null || videoRef.value == null) return
+      if (currentTime.value >= newRange.start && currentTime.value < newRange.end) return
+      seek(newRange.start)
+    },
+    { immediate: true }
+  )
+
+  watch(
+    videoRef,
+    (video, _, onCleanup) => {
+      if (video == null) return
+      const handleLoadedMetadata = () => {
+        duration.value = Number.isFinite(video.duration) ? Math.round(video.duration * 1000) : 0
+      }
+      video.addEventListener('loadedmetadata', handleLoadedMetadata)
+      const handleSeeked = () => flushPendingSeek(video)
+      video.addEventListener('seeked', handleSeeked)
+      onCleanup(() => {
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata)
+        video.removeEventListener('seeked', handleSeeked)
+      })
+    },
+    { immediate: true }
+  )
+
+  async function play() {
+    if (isPlaying.value) return
+    isPlaying.value = true
+    const requestVersion = ++playRequestVersion
+    startTick()
+    const video = await untilNotNull(videoRef)
+    if (!isPlaying.value || requestVersion !== playRequestVersion) return
+    return video.play()
+  }
+
+  function stop() {
+    if (!isPlaying.value) return
+    isPlaying.value = false
+    pausePlayback()
+  }
+
+  return {
+    isPlaying,
+    duration,
+    currentTime,
+    seek,
+    play,
+    stop
+  }
+}
+
+function useTick(fn: () => void) {
+  let ticking = false
+  function stop() {
+    if (!ticking) return
+    ticking = false
+  }
+  function start() {
+    if (ticking) return
+    ticking = true
+    tick()
+  }
+  function tick() {
+    if (!ticking) return
+    fn()
+    requestAnimationFrame(tick)
+  }
+  onScopeDispose(stop)
+  return [start, stop] as const
+}
+</script>
+
+<script setup lang="ts">
+import { computed, onScopeDispose, ref, toValue, watch, type Ref, type WatchSource } from 'vue'
+import { useFileUrl } from '@/utils/file'
+import { untilNotNull } from '@/utils/utils'
+import type { File } from '@/models/common/file'
+import type { FramesConfig } from '@/models/spx/gen/animation-gen'
+import PlayControl from '@/components/editor/common/PlayControl.vue'
+import GenLoading from './GenLoading.vue'
+
+const props = defineProps<{
+  video: File
+  framesConfig: FramesConfig | null
+}>()
+
+const emit = defineEmits<{
+  'update:framesConfig': [FramesConfig]
+}>()
+
+const [videoSrc] = useFileUrl(() => props.video)
+const videoRef = ref<HTMLVideoElement | null>(null)
+
+/** Timepoint in ms to cut start */
+const cutStartRef = ref(0)
+/** Timepoint in ms to cut end */
+const cutEndRef = ref(0)
+
+/** Interval in ms between extracted animation frames */
+const frameInterval = 100
+
+function notifyFramesConfigChanged() {
+  emit('update:framesConfig', {
+    startTime: cutStartRef.value,
+    duration: cutEndRef.value - cutStartRef.value,
+    interval: frameInterval
+  })
+}
+
+const playingRange = computed<PlayRange | null>(() => {
+  if (props.framesConfig == null) return null
+  const { startTime = 0, duration } = props.framesConfig
+  return {
+    start: startTime,
+    end: startTime + duration
+  }
+})
+
+const { isPlaying, duration: videoDurationRef, currentTime, seek, play, stop } = useVideoPlayer(videoRef, playingRange)
+
+/** Playback progress in range [0, 1] */
+const progress = computed(() => {
+  const range = playingRange.value
+  if (range == null) return 0
+  const played = currentTime.value - range.start
+  const total = range.end - range.start
+  if (total <= 0) return 0
+  return played / total
+})
+
+watch(
+  videoDurationRef,
+  (newDuration) => {
+    if (newDuration == null) return
+    // Initialize cut range when video duration is known
+    // This causes cut range to reset when selected animation / costume changes, it'll be better
+    // to persist the cut range across animation / costume selections. TODO: Improve this later
+    if (newDuration > 0 && cutEndRef.value === 0) {
+      cutStartRef.value = 0
+      cutEndRef.value = snapDown(newDuration)
+      notifyFramesConfigChanged()
+    }
+  },
+  { immediate: true }
+)
+
+const trackInnerRef = ref<HTMLDivElement | null>(null)
+// Shows nudge animation on mount, hides after first user hover
+const shouldNudge = ref(true)
+
+const segmentStyle = computed(() => {
+  const duration = videoDurationRef.value
+  if (duration == null) return null
+  const [start, end] = [cutStartRef.value, cutEndRef.value].map((ms) => Math.min(1, Math.max(0, ms / duration)))
+  return {
+    left: start * 100 + '%',
+    right: (1 - end) * 100 + '%'
+  }
+})
+
+const currentTimeStyle = computed(() => {
+  const duration = videoDurationRef.value
+  if (duration == null) return null
+  const left = Math.min(1, Math.max(0, currentTime.value / duration)) * 100 + '%'
+  return { left }
+})
+
+type DragTarget = 'start' | 'end' | 'preview'
+type Dragging = {
+  target: DragTarget
+  pointerId: number
+  rect: DOMRect
+  wasPlaying: boolean
+}
+
+// TODO: Check if we can reuse `useDraggable` from utils
+
+let dragging: Dragging | null = null
+
+function stopDragging() {
+  dragging = null
+  window.removeEventListener('pointermove', handleDragMove)
+  window.removeEventListener('pointerup', handleDragEnd)
+  window.removeEventListener('pointercancel', handleDragEnd)
+}
+
+onScopeDispose(stopDragging)
+
+function getTimeFromPointer(clientX: number, rect: DOMRect, duration: number) {
+  if (rect.width <= 0) return 0
+  const ratio = (clientX - rect.left) / rect.width
+  return clamp(ratio * duration, 0, duration)
+}
+
+function getPreviewTimeForDragTarget(target: Exclude<DragTarget, 'preview'>) {
+  if (target === 'start') return cutStartRef.value
+  // end - 1ms: keep the right-handle preview just inside the play range so it doesn't immediately wrap to start.
+  return Math.max(cutStartRef.value, cutEndRef.value - 1)
+}
+
+function handleDragStart(target: DragTarget, e: PointerEvent) {
+  // Ignore extra pointerdowns (for example from multi-touch) until the current drag finishes.
+  if (dragging != null) return
+  const rect = trackInnerRef.value?.getBoundingClientRect() ?? null
+  if (rect == null) return
+  const videoDuration = videoDurationRef.value
+  if (videoDuration == null) return
+  shouldNudge.value = false
+  const wasPlaying = isPlaying.value
+  stop()
+  dragging = {
+    target,
+    pointerId: e.pointerId,
+    rect,
+    wasPlaying
+  }
+  if (target === 'preview') {
+    const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
+    seek(clamp(time, cutStartRef.value, cutEndRef.value))
+  } else {
+    seek(getPreviewTimeForDragTarget(target))
+  }
+  e.preventDefault()
+  window.addEventListener('pointermove', handleDragMove)
+  window.addEventListener('pointerup', handleDragEnd)
+  window.addEventListener('pointercancel', handleDragEnd)
+}
+
+function handleSegmentPointerDown(e: PointerEvent) {
+  // Ignore pointerdown events from child handles (segment markers).
+  if (e.target !== e.currentTarget) return
+  handleDragStart('preview', e)
+}
+
+function handleDragMove(e: PointerEvent) {
+  if (dragging == null || e.pointerId !== dragging.pointerId) return
+  const videoDuration = videoDurationRef.value
+  if (videoDuration == null) return
+  const time = getTimeFromPointer(e.clientX, dragging.rect, videoDuration)
+  if (dragging.target === 'preview') {
+    seek(clamp(time, cutStartRef.value, cutEndRef.value))
+    return
+  }
+  if (dragging.target === 'start') {
+    cutStartRef.value = adjustStartTime(time)
+  } else {
+    cutEndRef.value = adjustEndTime(time, videoDuration)
+  }
+  seek(getPreviewTimeForDragTarget(dragging.target))
+}
+
+function handleDragEnd(e: PointerEvent) {
+  if (dragging == null || e.pointerId !== dragging.pointerId) return
+  const { target, wasPlaying } = dragging
+  stopDragging()
+  if (target !== 'preview') {
+    if (target === 'start') {
+      cutStartRef.value = adjustStartTime(cutStartRef.value, true)
+    } else {
+      cutEndRef.value = adjustEndTime(cutEndRef.value, videoDurationRef.value!, true)
+    }
+    seek(getPreviewTimeForDragTarget(target))
+    notifyFramesConfigChanged()
+  }
+  if (wasPlaying) play()
+}
+
+function adjustStartTime(newTime: number, withSnap = false) {
+  const time = withSnap ? snap(newTime) : newTime
+  return clamp(time, 0, cutEndRef.value - minDuration)
+}
+
+function adjustEndTime(newTime: number, videoDuration: number, withSnap = false) {
+  const time = withSnap ? snap(newTime) : newTime
+  const maxTime = withSnap ? snapDown(videoDuration) : videoDuration
+  return clamp(time, cutStartRef.value + minDuration, maxTime)
+}
+
+/** Minimum allowed segment duration in ms */
+const minDuration = frameInterval
+
+function snap(timeInMs: number) {
+  return Math.round(timeInMs / frameInterval) * frameInterval
+}
+
+function snapDown(timeInMs: number) {
+  return Math.floor(timeInMs / frameInterval) * frameInterval
+}
+
+function clamp(timeInMs: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, timeInMs))
+}
+
+/** format time (ms) in `ss.ss`, e.g. `03.50` for 3.5 seconds */
+function formatTime(timeInMs: number) {
+  return ('00' + (timeInMs / 1000).toFixed(2)).slice(-5)
+}
+</script>
+
+<template>
+  <div
+    v-radar="{ name: 'animation-video-preview', desc: 'Preview of the animation video' }"
+    class="animation-video-preview"
+  >
+    <div class="preview-area">
+      <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" muted loop />
+    </div>
+    <GenLoading :visible="videoDurationRef == null" cover>
+      {{ $t({ en: 'Loading video...', zh: '正在加载视频...' }) }}
+    </GenLoading>
+    <div v-if="videoDurationRef != null" class="controls">
+      <PlayControl
+        v-radar="{ name: 'play-button', desc: 'Toggle playback of animation video preview' }"
+        :playing="isPlaying ? { progress } : null"
+        :progress-interval="0"
+        :play-handler="play"
+        @stop="stop"
+      />
+      <div class="timeline">
+        <div class="track">
+          <div
+            ref="trackInnerRef"
+            class="track-inner"
+            :class="{ nudge: shouldNudge }"
+            @mouseenter.once="shouldNudge = false"
+          >
+            <div class="segment" :style="segmentStyle" @pointerdown="handleSegmentPointerDown">
+              <button
+                v-radar="{ name: 'start-marker', desc: 'Drag to adjust start time of extracted segment' }"
+                class="segment-marker left"
+                type="button"
+                @pointerdown="handleDragStart('start', $event)"
+              ></button>
+              <button
+                v-radar="{ name: 'end-marker', desc: 'Drag to adjust end time of extracted segment' }"
+                class="segment-marker right"
+                type="button"
+                @pointerdown="handleDragStart('end', $event)"
+              ></button>
+            </div>
+            <i class="current-time" :style="currentTimeStyle"></i>
+            <div class="track-tips">
+              {{ $t({ zh: '拖动滑块截取动画片段', en: 'Drag markers to cut animation segment' }) }}
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center text-xs">
+          <span class="w-9 text-grey-700">{{ formatTime(currentTime) }}</span>
+          <span class="mr-1 text-grey-600">/</span>
+          <span class="w-9 text-grey-600">{{ formatTime(videoDurationRef) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+@keyframes leftMarker {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(15px);
+  }
+}
+@keyframes rightMarker {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-15px);
+  }
+}
+@keyframes markerArrow {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animation-video-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-area {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.controls {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--ui-color-primary-300);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.timeline {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.track {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background: var(--ui-color-grey-400);
+  border-radius: 2px;
+  --segment-marker-width: 10px;
+  --playhead-width: 2px;
+  --track-padding: calc(var(--segment-marker-width) + var(--playhead-width) / 2);
+  padding: 0 var(--track-padding);
+}
+
+.track-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+}
+
+.track-inner.nudge .segment-marker::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  background-color: var(--ui-color-turquoise-300);
+  mask-image: url('@/components/asset/gen/animation/marker-arrow.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+
+.track-inner.nudge .segment-marker.left {
+  animation: leftMarker 1.8s infinite ease-in-out;
+}
+
+.track-inner.nudge .segment-marker.left::after {
+  right: -24px;
+  animation: markerArrow 1.8s infinite ease-in-out;
+}
+
+.track-inner.nudge .segment-marker.right {
+  animation: rightMarker 1.8s infinite ease-in-out;
+}
+
+.track-inner.nudge .segment-marker.right::after {
+  left: -24px;
+  transform: rotateY(180deg);
+  animation: markerArrow 1.8s infinite ease-in-out;
+}
+
+.track-inner.nudge .track-tips {
+  display: block;
+}
+
+.track-inner.nudge .current-time {
+  display: none;
+}
+
+.segment {
+  position: absolute;
+  margin: 0 calc(-1 * var(--track-padding));
+  top: 0;
+  bottom: 0;
+  background: var(--ui-color-primary-200);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.segment-marker {
+  width: var(--segment-marker-width);
+  height: 20px;
+  background: var(--ui-color-primary-500);
+  border-radius: 2px;
+  border: none;
+  padding: 0;
+  cursor: ew-resize;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Ensure it stays above .current-time to prioritize .segment-marker as it is interactive. */
+  z-index: 1;
+}
+
+.segment-marker::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 12px;
+  background: var(--ui-color-grey-100);
+}
+
+.track-tips {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--ui-color-grey-700);
+  display: none;
+}
+
+.current-time {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  pointer-events: none;
+}
+
+.current-time::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--playhead-width) / 2);
+  width: var(--playhead-width);
+  border-radius: 1px;
+  background: var(--ui-color-yellow-500);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+</style>

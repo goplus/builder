@@ -1,0 +1,76 @@
+<script lang="ts" setup>
+import { computed } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { humanizeTimeLeft } from '../../common/time-left'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
+import { UIImg, UIButton, UIError } from '@/components/ui'
+import CostumeDetail from './CostumeDetail.vue'
+import { useRenameCostumeGen } from '@/components/asset'
+import GenLoading from './GenLoading.vue'
+import GenPreview from '../../common/GenPreview.vue'
+import PreviewWithCheckerboardBg from '../../common/PreviewWithCheckerboardBg.vue'
+import GenStateFailed from '../../common/GenStateFailed.vue'
+
+const props = defineProps<{
+  gen: CostumeGen
+}>()
+
+const renameCostume = useRenameCostumeGen()
+const handleRenameCostume = useMessageHandle(() => renameCostume(props.gen), {
+  en: 'Failed to rename costume',
+  zh: '重命名造型失败'
+}).fn
+
+const canSaveCostume = computed(() => {
+  const { image, result } = props.gen
+  if (image == null || result != null) return false
+  if (imgLoading.value) return false
+  return true
+})
+
+const savingCostume = computed(() => props.gen.finishState.status === 'running')
+
+async function handleSaveCostume() {
+  await props.gen.finish()
+}
+
+function handleSaveErrorBack() {
+  props.gen.resetFinishState()
+}
+
+const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.gen.image)
+</script>
+
+<template>
+  <GenPreview v-if="gen.result == null" class="absolute inset-0" :name="gen.name" @rename="handleRenameCostume">
+    <template v-if="canSaveCostume" #ops>
+      <UIButton type="green" :loading="savingCostume" @click="handleSaveCostume">{{
+        $t({ en: 'Save costume', zh: '保存造型' })
+      }}</UIButton>
+    </template>
+    <GenLoading v-if="gen.generateState.status === 'running'">
+      {{ $t({ en: 'Generating costume...', zh: '正在生成造型...' }) }}
+      {{ gen.generateState.timeLeft != null ? $t(humanizeTimeLeft(gen.generateState.timeLeft)) : '' }}
+    </GenLoading>
+    <GenStateFailed v-else-if="gen.generateState.status === 'failed'" :state-failed="gen.generateState" />
+    <GenLoading v-else-if="imgLoading">
+      {{ $t({ en: 'Loading image...', zh: '正在加载图片...' }) }}
+    </GenLoading>
+    <PreviewWithCheckerboardBg v-else>
+      <UIImg v-if="gen.image != null" class="h-full w-full" :src="imgSrc" :loading="imgLoading" />
+      <GenLoading v-if="gen.finishState.status === 'running'" cover>
+        {{ $t({ en: 'Saving costume...', zh: '正在保存造型...' }) }}
+      </GenLoading>
+      <UIError
+        v-else-if="gen.finishState.status === 'failed'"
+        cover
+        :retry="handleSaveCostume"
+        :back="handleSaveErrorBack"
+      >
+        {{ $t(gen.finishState.error.userMessage) }}
+      </UIError>
+    </PreviewWithCheckerboardBg>
+  </GenPreview>
+  <CostumeDetail v-else :style="{ background: 'transparent' }" :costume="gen.result" @rename="handleRenameCostume" />
+</template>

@@ -13,10 +13,7 @@ export function useDropdown() {
   return inject(dropdownCtrlKey)
 }
 
-export type Placement = Extract<
-  PopupPlacement,
-  'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end'
->
+export type Placement = PopupPlacement
 export type TriggerType = 'click' | 'hover' | 'manual'
 export type Pos = {
   x: number

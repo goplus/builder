@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
 import { setupAigcMock } from './aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
@@ -11,6 +11,7 @@ import { createI18n } from '@/utils/i18n'
 import { AnimationGen } from './animation-gen'
 import { Costume } from '../costume'
 import { mockSaveFile } from './test-helpers'
+import { Phase } from './common'
 
 const aigcMock = setupAigcMock()
 const i18n = createI18n({ lang: 'en' })
@@ -294,7 +295,107 @@ describe('AnimationGen', () => {
     // Reset finish state
     gen.resetFinishState()
     expect(gen.finishState.status).toBe('initial')
-    expect(gen.result).toBeUndefined()
+    expect(gen.result).toBe(animation)
+  })
+
+  it('restores a completed generation without applying a trim', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.animations[0]
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    gen.setReferenceCostume(sprite.costumes[0].id)
+    await gen.generateVideo()
+    const [config, files] = gen.export()
+    config.generateVideoPhaseSerialized!.state = { status: 'initial' }
+    delete config.videoPath
+    delete config.framesConfig
+    const restored = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    await flushPromises()
+    expect(restored.generateVideoState.status).toBe('finished')
+    expect(restored.hasPendingVideo).toBe(true)
+    expect(restored.framesConfig).toBeNull()
+    expect(aigcMock.tasks.size).toBe(1)
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
+  })
+
+  it('restores completed extraction while the frames are still being created', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.animations[0]
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      video: mockFile('edited.mp4'),
+      hasPendingVideo: true,
+      framesConfig: { duration: 1000, interval: 200 },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    let resolveFit!: () => void
+    const pendingFit = new Promise<void>((resolve) => {
+      resolveFit = resolve
+    })
+    const autoFit = vi.spyOn(Costume.prototype, 'autoFit').mockReturnValueOnce(pendingFit)
+    onTestFinished(() => autoFit.mockRestore())
+
+    const finishing = gen.finish()
+    await flushPromises()
+    expect(gen.finishState.status).toBe('running')
+    expect(gen.result).toBe(source)
+    expect(aigcMock.tasks.size).toBe(1)
+    const [config, files] = gen.export()
+    expect(config.extractFramesTaskSerialized?.data?.status).toBe(TaskStatus.Completed)
+
+    const restored = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    await flushPromises()
+
+    expect(restored.finishState.status).toBe('finished')
+    expect(restored.hasPendingVideo).toBe(false)
+    expect(restored.result?.id).toBe(source.id)
+    expect(restored.result?.costumes).toHaveLength(5)
+    expect(restored.result?.costumes[0].img.meta.universalUrl).toBe('kodo://mock-bucket/frame-1.webp')
+    expect(aigcMock.tasks.size).toBe(1)
+    expect(aigcMock.createTask).toHaveBeenCalledTimes(1)
+
+    resolveFit()
+    await finishing
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
+  })
+
+  it('does not restore extraction from the previous video after regenerating', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const source = sprite.animations[0]
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: source.name },
+      video: mockFile('first-edit.mp4'),
+      hasPendingVideo: true,
+      framesConfig: { duration: 1000, interval: 200 },
+      finishPhase: new Phase({ en: 'save animation', zh: '保存动画' }, { status: 'finished', result: source })
+    })
+    const saved = await gen.finish()
+    gen.setReferenceCostume(sprite.costumes[0].id)
+    await gen.generateVideo()
+    gen.setFramesConfig({ duration: 2000, interval: 200 })
+    const [config, files] = gen.export()
+
+    const restored = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    await flushPromises()
+
+    expect(restored.hasPendingVideo).toBe(true)
+    expect(restored.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
+    expect(restored.result?.id).toBe(saved.id)
+    expect(restored.result?.duration).toBe(saved.duration)
+    expect(restored.framesConfig?.duration).toBe(2000)
+    expect(aigcMock.tasks.size).toBe(2)
+    gen.dispose()
+    restored.dispose()
+    project.dispose()
   })
 
   it('should cancel running animation tasks', async () => {

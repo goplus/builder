@@ -29,7 +29,7 @@ import {
   type PhaseSerialized,
   type TaskSerialized
 } from './common'
-import type { SpriteGen } from './sprite-gen'
+import type { SpriteContent } from '../common/sprite-content'
 import {
   loadReferenceImageSelection,
   resolveInitialReferenceImageSelection,
@@ -54,6 +54,8 @@ export type AnimationGenInits = {
   generateVideoPhase?: Phase<File>
   extractFramesTask?: Task<TaskType.ExtractVideoFrames>
   finishPhase?: Phase<Animation>
+  hasPendingVideo?: boolean
+  savedTaskIds?: string[]
 }
 
 export type RawAnimationGenConfig = Prettify<
@@ -96,7 +98,7 @@ function sameReferenceSelection(left: ReferenceImageSelection, right: ReferenceI
 
 export class AnimationGen extends Disposable {
   id: string
-  parent: Sprite | SpriteGen
+  parent: Sprite | SpriteContent
   get sprite(): Sprite {
     if (this.parent instanceof Sprite) return this.parent
     return this.parent.previewSprite
@@ -109,8 +111,11 @@ export class AnimationGen extends Disposable {
   private generateVideoPhase: Phase<File>
   private extractFramesTask: Task<TaskType.ExtractVideoFrames> | null
   private finishPhase: Phase<Animation>
+  private savedResult: Animation | null
+  private savedTaskIds: string[]
+  private videoPending: boolean
 
-  constructor(i18n: I18n, parent: Sprite | SpriteGen, project: SpxProject, inits: AnimationGenInits = {}) {
+  constructor(i18n: I18n, parent: Sprite | SpriteContent, project: SpxProject, inits: AnimationGenInits = {}) {
     super()
     this.id = inits.id ?? nanoid()
     this.i18n = i18n
@@ -139,15 +144,20 @@ export class AnimationGen extends Disposable {
     this.extractFramesTask = inits.extractFramesTask ?? null
     this.finishPhase =
       inits.finishPhase ?? new Phase({ en: 'extract frames and save animation', zh: '提取帧并保存动画' })
+    this.savedResult = this.finishPhase.state.result ?? null
+    this.savedTaskIds = inits.savedTaskIds ?? []
+    this.videoPending = inits.hasPendingVideo ?? (this.video != null && this.savedResult == null)
+    if (this.extractFramesTask != null) this.addDisposable(this.extractFramesTask)
     return reactive(this) as this
   }
 
   /** Get IDs for (completed) tasks. */
   getTaskIds() {
-    return [this.generateVideoTask, this.extractFramesTask]
+    const taskIds = [this.generateVideoTask, this.extractFramesTask]
       .filter((t): t is Task<TaskType.GenerateAnimationVideo> | Task<TaskType.ExtractVideoFrames> => t != null)
       .filter((t) => t.data?.status === TaskStatus.Completed)
       .map((t) => t.data!.id)
+    return [...new Set([...this.savedTaskIds, ...taskIds])]
   }
 
   get name() {
@@ -208,6 +218,9 @@ export class AnimationGen extends Disposable {
   get generateVideoState() {
     return this.generateVideoPhase.state
   }
+  resetGenerateVideoState() {
+    this.generateVideoPhase.reset()
+  }
   async generateVideo() {
     this.setVideo(null)
     this.setFramesConfig(null)
@@ -216,7 +229,7 @@ export class AnimationGen extends Disposable {
     const task = this.generateVideoTask
     this.addDisposable(task)
     const signal = task.getSignal()
-    const video = await this.generateVideoPhase.run(async (reporter) => {
+    await this.generateVideoPhase.run(async (reporter) => {
       const image =
         this.referenceImageSelection?.type === 'local-image'
           ? this.referenceImageSelection.file
@@ -228,9 +241,11 @@ export class AnimationGen extends Disposable {
       signal.throwIfAborted()
       await task.start({ settings: { ...this.settings, referenceFrameUrl } })
       const { videoUrl } = await task.untilCompleted(reporter)
-      return createFileWithUniversalUrl(videoUrl)
+      const video = createFileWithUniversalUrl(videoUrl)
+      this.setFramesConfig(null)
+      this.setVideo(video)
+      return video
     })
-    this.setVideo(video)
   }
   private resetGenerateVideoTasks() {
     this.generateVideoTask?.tryCancel()
@@ -239,10 +254,17 @@ export class AnimationGen extends Disposable {
   }
   restoreGenerateVideoTask() {
     const task = this.generateVideoTask
-    if (task?.data == null || isTerminalTaskStatus(task.data.status)) return
+    if (task?.data == null) return
+    if (
+      isTerminalTaskStatus(task.data.status) &&
+      (task.data.status !== TaskStatus.Completed || this.generateVideoPhase.state.status === 'finished')
+    ) {
+      return
+    }
     this.generateVideoPhase.run(async (reporter) => {
       const { videoUrl } = await task.untilCompleted(reporter)
       const video = createFileWithUniversalUrl(videoUrl)
+      this.setFramesConfig(null)
       this.setVideo(video)
       return video
     })
@@ -250,7 +272,16 @@ export class AnimationGen extends Disposable {
 
   video: File | null
   setVideo(video: File | null) {
+    if (this.video !== video) {
+      this.extractFramesTask?.tryCancel()
+      this.extractFramesTask?.dispose()
+      this.extractFramesTask = null
+    }
     this.video = video
+    this.videoPending = video != null
+  }
+  get hasPendingVideo() {
+    return this.video != null && this.videoPending
   }
 
   framesConfig: FramesConfig | null
@@ -265,9 +296,10 @@ export class AnimationGen extends Disposable {
     this.finishPhase.reset()
   }
   get result() {
-    return this.finishPhase.state.result
+    return this.finishPhase.state.result ?? this.savedResult ?? undefined
   }
   private async createAnimationFromFrames(frameUrls: string[], durationInMs: number) {
+    const source = this.result
     const frameImgs = frameUrls.map((url) => createFileWithUniversalUrl(url))
     const costumes = await Promise.all(
       frameImgs.map(async (img, i) => {
@@ -278,29 +310,43 @@ export class AnimationGen extends Disposable {
       })
     )
     return Animation.create(this.settings.name, costumes, {
-      duration: durationInMs / 1000
+      duration: durationInMs / 1000,
+      id: source?.id,
+      sound: source?.sound ?? undefined,
+      soundPlayback: source?.soundPlayback
     })
   }
   async finish() {
     const { video, framesConfig } = this
     if (video == null) throw new Error('video not ready yet')
     if (framesConfig == null) throw new Error('frames config not set')
-    return this.finishPhase.run(async (reporter) => {
+    const result = await this.finishPhase.run(async (reporter) => {
       const videoUrl = await saveFile(video)
       this.extractFramesTask?.tryCancel()
+      this.extractFramesTask?.dispose()
       this.extractFramesTask = new Task(TaskType.ExtractVideoFrames)
+      this.addDisposable(this.extractFramesTask)
       await this.extractFramesTask.start({ videoUrl, ...framesConfig })
       const { frameUrls } = await this.extractFramesTask.untilCompleted(reporter)
       return this.createAnimationFromFrames(frameUrls, framesConfig.duration)
     })
+    this.savedResult = result
+    this.savedTaskIds = this.getTaskIds()
+    this.videoPending = false
+    return result
   }
   restoreExtractFramesTask() {
     const task = this.extractFramesTask
     const framesConfig = this.framesConfig
-    if (task?.data == null || isTerminalTaskStatus(task.data.status) || framesConfig == null) return
+    if (task?.data == null || framesConfig == null || !this.hasPendingVideo) return
+    if (isTerminalTaskStatus(task.data.status) && task.data.status !== TaskStatus.Completed) return
     this.finishPhase.run(async (reporter) => {
       const { frameUrls } = await task.untilCompleted(reporter)
-      return this.createAnimationFromFrames(frameUrls, framesConfig.duration)
+      const result = await this.createAnimationFromFrames(frameUrls, framesConfig.duration)
+      this.savedResult = result
+      this.savedTaskIds = this.getTaskIds()
+      this.videoPending = false
+      return result
     })
   }
 
@@ -323,8 +369,14 @@ export class AnimationGen extends Disposable {
     const assetsPath = assetsPathFor(basePath, this.name)
 
     const selection = this.referenceImageSelection
+    const savedPhase = this.finishPhase.export()
+    if (savedPhase.state.status !== 'finished' && this.savedResult != null) {
+      savedPhase.state = { status: 'finished', result: this.savedResult }
+    }
     const config: RawAnimationGenConfig = {
       id: this.id,
+      hasPendingVideo: this.hasPendingVideo,
+      savedTaskIds: this.savedTaskIds,
       settings: this.settings,
       reference:
         selection?.type === 'local-image'
@@ -339,9 +391,9 @@ export class AnimationGen extends Disposable {
         return filePath
       }),
       extractFramesTaskSerialized: this.extractFramesTask?.export(),
-      finishPhaseSerialized: mapPhaseResult(this.finishPhase.export(), (result) => {
+      finishPhaseSerialized: mapPhaseResult(savedPhase, (result) => {
         const [animationConfig, costumeConfigs, animationFiles] = result.export(`${assetsPath}/result`, {
-          sounds: [],
+          sounds: this.project.sounds,
           includeId: true
         })
         Object.assign(files, animationFiles)
@@ -360,11 +412,12 @@ export class AnimationGen extends Disposable {
 
   static load(
     i18n: I18n,
-    parent: Sprite | SpriteGen,
+    parent: Sprite | SpriteContent,
     project: SpxProject,
     config: RawAnimationGenConfig,
     files: Files,
-    basePath = 'gen/assets'
+    basePath = 'gen/assets',
+    restoreTasks = true
   ) {
     const {
       id,
@@ -385,7 +438,11 @@ export class AnimationGen extends Disposable {
     const settingsName = settings.name
     const assetsPath = assetsPathFor(basePath, settingsName)
 
-    const inits: AnimationGenInits = { id: genId }
+    const inits: AnimationGenInits = {
+      id: genId,
+      hasPendingVideo: config.hasPendingVideo,
+      savedTaskIds: config.savedTaskIds
+    }
     inits.settings = settings
     inits.referenceImageSelection = loadReferenceImageSelection(reference, referenceCostumeId, files)
     if (framesConfig != null) inits.framesConfig = framesConfig
@@ -407,7 +464,10 @@ export class AnimationGen extends Disposable {
           const costumes = costumeConfigs.map((costumeConfig) =>
             Costume.load(costumeConfig, files, { basePath: `${assetsPath}/result`, includeId: true })
           )
-          const [animation] = Animation.load(settingsName, animationConfig, costumes, { sounds: [], includeId: true })
+          const [animation] = Animation.load(settingsName, animationConfig, costumes, {
+            sounds: project.sounds,
+            includeId: true
+          })
           return animation
         })
       )
@@ -419,8 +479,10 @@ export class AnimationGen extends Disposable {
     }
 
     const gen = new AnimationGen(i18n, parent, project, inits)
-    gen.restoreGenerateVideoTask()
-    gen.restoreExtractFramesTask()
+    if (restoreTasks) {
+      gen.restoreGenerateVideoTask()
+      gen.restoreExtractFramesTask()
+    }
     return gen
   }
 }
