@@ -153,7 +153,6 @@ describe('SpriteResourceEditor thumbnails', () => {
           }
         }
       } as unknown as ReturnType<typeof useEditorCtx>)
-      const openAIEditor = vi.fn()
       const wrapper = shallowMount(
         defineComponent(() => () => h(SpriteResourceEditor, { sprite, type })),
         {
@@ -166,12 +165,7 @@ describe('SpriteResourceEditor thumbnails', () => {
                 template:
                   '<div><section data-adopted><slot /></section><section data-drafts><slot name="drafts" /></section><slot name="detail" /></div>'
               },
-              SpriteContentEditor: defineComponent({
-                setup(_, { expose }) {
-                  expose({ openAIEditor })
-                  return () => h('div')
-                }
-              }),
+              SpriteContentEditor: { template: '<div />' },
               CostumeItem: false,
               AnimationItem: false,
               UIEditorSpriteItem: false,
@@ -195,16 +189,7 @@ describe('SpriteResourceEditor thumbnails', () => {
       expect(menu.findComponent(RenameMenuItem).exists()).toBe(true)
       expect(menu.findComponent(RemoveMenuItem).exists()).toBe(true)
       if (type === 'costume') expect(menu.getComponent(RemoveMenuItem).attributes('disabled')).toBeDefined()
-      if (type === 'costume') {
-        const aiEdit = menu.getComponent(UIMenuItem)
-        expect(aiEdit.text()).toBe('AI edit...')
-        aiEdit.vm.$emit('click')
-        await flushPromises()
-        expect(openAIEditor).toHaveBeenCalledOnce()
-        expect(edit.selectedItem).toEqual({ type: 'costume', id: edit.costumes[0].id })
-      } else {
-        expect(menu.findComponent(UIMenuItem).exists()).toBe(false)
-      }
+      expect(menu.findComponent(UIMenuItem).exists()).toBe(false)
       const originalImage = type === 'costume' ? costume.img : animation.costumes[0].img
       expect(item.getComponent(UIImg).props('src')).toBe(originalImage.name)
 

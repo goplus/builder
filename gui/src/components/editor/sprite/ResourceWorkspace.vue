@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, provide, ref, shallowReactive, toRef, watch } from 'vue'
+import { computed, nextTick, provide, ref, shallowReactive, toRef, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { UIButtonGroup, UIButtonGroupItem, UIIcon, UIModalClose, useConfirmDialog } from '@/components/ui'
+import { UIButton, UIButtonGroup, UIButtonGroupItem, UIIcon, UIModalClose, useConfirmDialog } from '@/components/ui'
 import { resourceWorkspaceKey, type ResourceTool as Tool } from './resource-workspace'
 import ResourceEditActions from './ResourceEditActions.vue'
 import ResourceTool from './ResourceTool.vue'
@@ -32,6 +32,7 @@ const props = withDefaults(
 const activeTool = defineModel<string | null>('activeTool', { default: 'ai' })
 const selected = ref(true)
 const aiActive = computed(() => props.aiEnabled && selected.value && activeTool.value === 'ai')
+const canOpenAIEditor = computed(() => props.aiEnabled && !props.pending && props.resourceType === 'costume')
 const showEditActions = computed(() => selected.value && activeTool.value === 'ai' && props.canReview)
 const tools = shallowReactive(new Map<string, Tool>())
 const toolItems = computed(() => {
@@ -51,19 +52,6 @@ const instruction = ref('')
 const selectionLocked = computed(() => (props.aiEnabled && props.pending) || props.busy || props.selectionLocked)
 const previewArea = ref<{ left: number; top: number; width: number; height: number } | null>(null)
 const previewBottomSpace = computed(() => (props.resourceType === 'animation' ? 244 : 180))
-const promptPosition = computed(() => {
-  if (!aiActive.value || previewArea.value == null) return undefined
-  const area = previewArea.value
-  return {
-    top: `${area.top + area.height + (props.resourceType === 'animation' ? 88 : 24)}px`,
-    bottom: 'auto',
-    left: '50%',
-    right: 'auto',
-    transform: 'translateX(-50%)',
-    width: `${Math.max(320, area.width)}px`,
-    maxWidth: 'calc(100% - 48px)'
-  }
-})
 const previewTopSpace = computed(() => 64)
 const canCloseEditor = computed(() => !props.pending && !props.busy && !props.canReview)
 const { t } = useI18n()
@@ -113,9 +101,11 @@ watch(
   { immediate: true }
 )
 
-function openAIEditor() {
+async function openAIEditor() {
   selected.value = true
   activeTool.value = 'ai'
+  await nextTick()
+  panel.value?.querySelector<HTMLElement>('textarea, input, [contenteditable="true"]')?.focus({ preventScroll: true })
 }
 defineExpose({ openAIEditor })
 
@@ -166,14 +156,27 @@ function handleToolKeydown(event: KeyboardEvent) {
         <ResourceEditActions section="commit" @discard="discardInstruction" />
       </slot>
     </div>
+    <div v-if="canOpenAIEditor && !aiActive" class="absolute inset-x-6 bottom-4 z-30 flex justify-center">
+      <UIButton
+        v-radar="{
+          name: 'ai-edit',
+          label: $t({ en: 'AI edit', zh: 'AI 编辑' }),
+          desc: 'Edit the current costume with AI'
+        }"
+        type="white"
+        :disabled="busy"
+        @click="openAIEditor"
+      >
+        <UIIcon type="wandSparkles" />
+        {{ $t({ en: 'AI edit...', zh: 'AI 编辑…' }) }}
+      </UIButton>
+    </div>
     <div
       v-show="!aiEnabled || selected"
       v-radar="{ name: 'Resource tool area', desc: 'Tools for the selected media' }"
-      class="absolute z-30 flex flex-col items-center gap-2 pointer-events-none"
-      :style="promptPosition"
-      :class="aiActive ? 'inset-x-6 bottom-4' : 'bottom-4 left-1/2 -translate-x-1/2 w-[440px] max-w-[calc(100%-32px)]'"
+      class="absolute inset-x-6 bottom-4 z-30 flex flex-col items-center gap-2 pointer-events-none"
     >
-      <div ref="panel" class="w-full pointer-events-auto" :class="{ 'max-w-[640px]': aiActive }"></div>
+      <div ref="panel" class="w-full pointer-events-auto" :class="aiActive ? 'max-w-[640px]' : 'max-w-[440px]'"></div>
       <ResourceTool
         v-if="aiEnabled"
         tool="ai"
