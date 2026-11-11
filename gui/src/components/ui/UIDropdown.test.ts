@@ -2,7 +2,7 @@ import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UIDropdown from './UIDropdown.vue'
-import { provideLayerStack, providePopupContainer } from './utils'
+import { provideLayerStack, providePopupContainer, usePopupVisible } from './utils'
 
 const floatingMocks = vi.hoisted(() => {
   return {
@@ -153,9 +153,15 @@ describe('UIDropdown', () => {
     document.body.innerHTML = ''
   })
 
-  it('exposes positioned only after the popup becomes visible, including reopening', async () => {
+  it('provides actual visibility only to content, including reopening', async () => {
     let resolvePosition!: (value: any) => void
     floatingMocks.computePosition.mockImplementation(() => new Promise((resolve) => (resolvePosition = resolve)))
+    const VisibleProbe = defineComponent({
+      setup() {
+        const visible = usePopupVisible()
+        return () => h('div', { 'data-test-id': 'positioned' }, String(visible.value))
+      }
+    })
     const visible = ref(true)
     const wrapper = mount(
       defineComponent({
@@ -170,8 +176,8 @@ describe('UIDropdown', () => {
                   pos: { x: 20, y: 20 }
                 },
                 {
-                  default: ({ positioned }: { positioned: boolean }) =>
-                    h('div', { 'data-test-id': 'positioned' }, String(positioned))
+                  trigger: () => h(VisibleProbe, { 'data-test-id': 'trigger-visible' }),
+                  default: () => h(VisibleProbe)
                 }
               )
           })
@@ -182,6 +188,7 @@ describe('UIDropdown', () => {
     for (let opening = 0; opening < 2; opening++) {
       await flushDropdown()
       expect(content().textContent).toBe('false')
+      expect(document.querySelector('[data-test-id="trigger-visible"]')?.textContent).toBe('true')
       expect((content().parentElement as HTMLElement).style.visibility).toBe('hidden')
       resolvePosition({ x: 20, y: 20, strategy: 'fixed', placement: 'bottom', middlewareData: {} })
       await flushDropdown()

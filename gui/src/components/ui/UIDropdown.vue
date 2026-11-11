@@ -49,6 +49,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { cn, useLayerRegistration } from './utils'
 import {
   PopupRenderTrigger,
+  PopupVisibilityProvider,
   type PopupTriggerHandle,
   renderPopupTrigger,
   resolveTriggerElement,
@@ -84,20 +85,24 @@ const attachTo = usePopupContainer()
 // Uncontrolled dropdowns keep their own visible state, while controlled callers
 // can still drive visibility through `v-model:visible`.
 const internalVisibleRef = ref(false)
-const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
+const visible = computed(() => props.visible ?? internalVisibleRef.value)
 // Register the dropdown in the shared popup stack so ESC/outside-click logic can
 // reason about the current topmost popup and its live DOM anchors.
-const popup = useLayerRegistration(visibleComputed)
+const popup = useLayerRegistration(visible)
 const {
   referenceRef: triggerRef,
   floatingRef: contentRef,
   floatingStyle
 } = useFloatingPopup({
-  visible: visibleComputed,
+  visible: visible,
   placement: computed(() => props.placement),
   offset: computed(() => props.offset),
   virtualAnchor: computed(() => props.pos ?? null)
 })
+// Opening mounts the content while it is still hidden for asynchronous positioning.
+// Descendants can accept focus once positioning reveals it; closing must disable this during the leave transition.
+const actualVisible = computed(() => visible.value && floatingStyle.value != null)
+
 const rootClass = computed(() => cn('fixed z-1000 overflow-hidden rounded-md bg-grey-100 shadow-sm', props.class))
 const popupStyle = computed(
   () =>
@@ -110,7 +115,7 @@ const popupStyle = computed(
 )
 
 function handleUpdateVisible(show: boolean) {
-  if (show === visibleComputed.value) return
+  if (show === visible.value) return
   emit('update:visible', show)
   internalVisibleRef.value = show
 }
@@ -161,7 +166,7 @@ function scheduleClose() {
 
 function handleTriggerClick() {
   if (props.trigger !== 'click' || props.disabled) return
-  setVisible(!visibleComputed.value)
+  setVisible(!visible.value)
 }
 
 function handleTriggerMouseenter() {
@@ -204,7 +209,7 @@ watch(
 )
 
 watchEffect(async (onCleanup) => {
-  if (!visibleComputed.value || !popup.isTopmost.value) return
+  if (!visible.value || !popup.isTopmost.value) return
 
   let ignoreClick = false
 
@@ -310,7 +315,7 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: Element | nu
   <Teleport v-if="attachTo != null" :to="attachTo">
     <Transition name="ui-popup-scale-fade">
       <div
-        v-if="visibleComputed"
+        v-if="visible"
         v-bind="popup.rootAttrs"
         ref="contentRef"
         :class="rootClass"
@@ -318,7 +323,9 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: Element | nu
         @mouseenter="handleContentMouseenter"
         @mouseleave="handleContentMouseleave"
       >
-        <slot :positioned="floatingStyle != null"></slot>
+        <PopupVisibilityProvider :visible="actualVisible">
+          <slot></slot>
+        </PopupVisibilityProvider>
       </div>
     </Transition>
   </Teleport>

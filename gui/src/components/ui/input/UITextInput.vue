@@ -78,7 +78,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useSlots } from 'vue'
+import { computed, nextTick, ref, useSlots, watch } from 'vue'
+import { usePopupVisible } from '../utils'
 import UIInputFrame, { UI_INPUT_IGNORE_FOCUS_ATTR } from './UIInputFrame.vue'
 import { useFieldControlBindings } from '../form/field-control-bindings'
 
@@ -171,9 +172,14 @@ function handleClear() {
   })
 }
 
-onMounted(() => {
-  if (props.autofocus && controlRef.value != null) controlRef.value.focus()
-})
+const popupVisible = usePopupVisible()
+watch(
+  () => popupVisible.value && controlRef.value != null,
+  (visible) => {
+    if (visible && props.autofocus) controlRef.value?.focus()
+  },
+  { flush: 'post' }
+)
 
 defineExpose({
   focus() {

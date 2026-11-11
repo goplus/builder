@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { UITabRadioGroup, UITabRadio, UISelect, UISelectOption } from '@/components/ui'
 import { InputKind, type Input, BuiltInInputType, InputSlotKind, type InputSlotAccept } from './../../common'
 import type { IInputHelperProvider } from '.'
 
 const props = defineProps<{
-  autofocus: boolean
   slotKind: InputSlotKind
   accept: InputSlotAccept
   input: Input
@@ -40,23 +39,7 @@ const inPlaceValueTitle = computed(() => {
   return handler.value?.getTitle(acceptSnapshot) ?? { en: 'Input a value', zh: '输入值' }
 })
 
-const rootRef = ref<HTMLElement | null>(null)
 const kind = ref(props.input.kind)
-
-watch(
-  () => [props.autofocus, kind.value, rootRef.value],
-  () => {
-    if (!props.autofocus) return
-    // Focus the first text field (H for colors); selection-only helpers keep the current focus.
-    rootRef.value
-      ?.querySelector<
-        HTMLInputElement | HTMLTextAreaElement
-      >('input:not([disabled]):not([readonly]):not([type="hidden"]):not([type="range"]):not([type="radio"]):not([type="checkbox"]), textarea:not([disabled]):not([readonly])')
-      ?.focus({ preventScroll: true })
-  },
-  { immediate: true, flush: 'post' }
-)
-
 const inPlaceValue = shallowRef(
   props.input.kind === InputKind.InPlace ? props.input.value : handler.value?.getDefaultValue() ?? null
 )
@@ -105,7 +88,7 @@ function handlePredefinedNameUpdate(name: string | null) {
 </script>
 
 <template>
-  <div ref="rootRef" class="min-w-86 flex flex-col items-center gap-5 px-4 pt-5 pb-6">
+  <div class="min-w-86 flex flex-col items-center gap-5 px-4 pt-5 pb-6">
     <UITabRadioGroup class="w-78" :value="kind" @update:value="(v) => handleKindUpdate(v as InputKind)">
       <UITabRadio :value="InputKind.InPlace">
         {{ $t(inPlaceValueTitle) }}

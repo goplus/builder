@@ -33,7 +33,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, useSlots, watch } from 'vue'
+import { computed, ref, useSlots, watch } from 'vue'
+import { usePopupVisible } from '../utils'
 import UIInputFrame from './UIInputFrame.vue'
 import { useFieldControlBindings } from '../form/field-control-bindings'
 
@@ -303,9 +304,14 @@ const focusControl = () => {
   controlRef.value?.focus()
 }
 
-onMounted(() => {
-  if (props.autofocus && controlRef.value != null) controlRef.value.focus()
-})
+const popupVisible = usePopupVisible()
+watch(
+  () => popupVisible.value && controlRef.value != null,
+  (visible) => {
+    if (visible && props.autofocus) controlRef.value?.focus()
+  },
+  { flush: 'post' }
+)
 
 defineExpose({
   focus() {

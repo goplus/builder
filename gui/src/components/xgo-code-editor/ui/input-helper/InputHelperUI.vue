@@ -141,20 +141,17 @@ const handleInputUpdate = useMessageHandle(
     :offset="{ x: 0, y: 4 }"
     @update:visible="controller.stopInputing()"
   >
-    <template #default="{ positioned }">
-      <InputHelper
-        v-if="props.controller.inputingSlot != null"
-        :key="props.controller.inputingSlot.id"
-        :autofocus="positioned"
-        :slot-kind="props.controller.inputingSlot.kind"
-        :accept="props.controller.inputingSlot.accept"
-        :input="props.controller.inputingSlot.input"
-        :predefined-names="props.controller.inputingSlot.predefinedNames"
-        :provider="props.controller.provider"
-        @update:input="handleInputUpdate"
-        @submit="controller.stopInputing(true)"
-      />
-    </template>
+    <InputHelper
+      v-if="props.controller.inputingSlot != null"
+      :key="props.controller.inputingSlot.id"
+      :slot-kind="props.controller.inputingSlot.kind"
+      :accept="props.controller.inputingSlot.accept"
+      :input="props.controller.inputingSlot.input"
+      :predefined-names="props.controller.inputingSlot.predefinedNames"
+      :provider="props.controller.provider"
+      @update:input="handleInputUpdate"
+      @submit="controller.stopInputing(true)"
+    />
   </UIDropdown>
 </template>
 

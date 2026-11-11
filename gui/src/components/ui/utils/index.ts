@@ -1,4 +1,4 @@
-import { type InjectionKey, provide, type Ref, inject, ref, watchEffect } from 'vue'
+import { type InjectionKey, provide, type Ref, computed, inject, readonly, ref, watchEffect } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
 import { findLayerRoot } from './layer-stack'
 export { cn, type ClassDictionary, type ClassValue } from './cn'
@@ -49,6 +49,27 @@ export function usePopupContainer() {
   const popupContainer = inject(popupContainerInjectionKey)
   if (popupContainer == null) throw new Error('Popup container not provided')
   return popupContainer
+}
+
+const popupVisibleInjectionKey: InjectionKey<Readonly<Ref<boolean>>> = Symbol('popup-visible')
+const defaultPopupVisible = readonly(ref(true))
+
+/**
+ * Provide actual popup visibility to content descendants only, excluding the trigger.
+ * Unlike an open request, this becomes true once the popup is positioned and no longer
+ * hidden. It does not wait for the enter animation to finish. Ancestor popups must also be visible.
+ */
+export function providePopupVisible(visible: Readonly<Ref<boolean>>) {
+  const parentVisible = usePopupVisible()
+  provide(
+    popupVisibleInjectionKey,
+    computed(() => parentVisible.value && visible.value)
+  )
+}
+
+/** Actual visibility of the enclosing popup content; true outside a popup visibility provider. */
+export function usePopupVisible(): Readonly<Ref<boolean>> {
+  return inject(popupVisibleInjectionKey, defaultPopupVisible)
 }
 
 const modalContainerInjectionKey: InjectionKey<Ref<HTMLElement | undefined>> = Symbol('modal-container')

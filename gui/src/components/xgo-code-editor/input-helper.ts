@@ -27,12 +27,7 @@ import type { IResourceAdapter } from './resource'
 
 export type InputHelperContext = BaseContext
 
-/**
- * Props contract for input helper components.
- * Once the popup is positioned, its first enabled, writable text/number field is focused.
- * Put the primary field first in helpers with multiple fields (for example H in the color helper).
- * Selection-only helpers retain the current focus; keyboard-capture helpers use their text field.
- */
+/** Props contract for input helper components */
 export type InputHelperComponentProps<T> = {
   readonly accept?: InputSlotAccept
   readonly value: T

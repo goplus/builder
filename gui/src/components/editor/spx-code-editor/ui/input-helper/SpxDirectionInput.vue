@@ -36,6 +36,7 @@ function handleSubmit() {
       class="w-17.5 self-stretch text-center"
       :min="-180"
       :max="180"
+      autofocus
       @update:value="handleValueUpdate"
       @keyup.enter="handleSubmit"
     />

@@ -1,13 +1,14 @@
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, markRaw, nextTick } from 'vue'
+import { defineComponent, h, markRaw, nextTick, ref, type PropType } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
+import { providePopupVisible } from '@/components/ui/utils'
 import SpxKeyInput from '@/components/editor/spx-code-editor/ui/input-helper/SpxKeyInput.vue'
 import SpxDirectionInput from '@/components/editor/spx-code-editor/ui/input-helper/SpxDirectionInput.vue'
 import SpxColorInput, {
   getDefaultValue as getColor
 } from '@/components/editor/spx-code-editor/ui/input-helper/spx-color-input/SpxColorInput.vue'
-import { BuiltInInputType, InputKind, InputSlotKind } from '../../common'
+import { BuiltInInputType, InputKind, InputSlotKind, type Input } from '../../common'
 import type { IInputHelperProvider, InputTypeHandler } from '.'
 import InputHelper from './InputHelper.vue'
 import StringInput from './StringInput.vue'
@@ -19,27 +20,36 @@ afterEach(() => {
   for (const wrapper of wrappers.splice(0)) wrapper.unmount()
 })
 
-function mountHelper(component: InputTypeHandler['component'], value: unknown, autofocus = false) {
-  const wrapper = mount(InputHelper, {
-    attachTo: document.body,
-    props: {
-      autofocus,
-      slotKind: InputSlotKind.Value,
-      accept: { type: BuiltInInputType.String },
-      input: { kind: InputKind.InPlace, type: BuiltInInputType.String, value },
-      predefinedNames: ['score'],
-      provider: {
-        provideInputTypeHandler: () => ({
-          component: markRaw(component),
-          getTitle: () => ({ en: 'Value', zh: '值' }),
-          getDefaultValue: () => value
-        })
-      } as unknown as IInputHelperProvider
-    },
-    global: { plugins: [createI18n({ lang: 'en' })] }
-  })
+function mountHelper(component: InputTypeHandler['component'], value: unknown, initiallyVisible = false) {
+  const visible = ref(initiallyVisible)
+  const helperProps = {
+    slotKind: InputSlotKind.Value,
+    accept: { type: BuiltInInputType.String },
+    predefinedNames: ['score'],
+    provider: {
+      provideInputTypeHandler: () => ({
+        component: markRaw(component),
+        getTitle: () => ({ en: 'Value', zh: '值' }),
+        getDefaultValue: () => value
+      })
+    } as unknown as IInputHelperProvider
+  }
+  const wrapper = mount(
+    defineComponent({
+      props: { input: { type: Object as PropType<Input>, required: true } },
+      setup(props) {
+        providePopupVisible(visible)
+        return () => h(InputHelper, { ...helperProps, input: props.input })
+      }
+    }),
+    {
+      attachTo: document.body,
+      props: { input: { kind: InputKind.InPlace, type: BuiltInInputType.String, value } },
+      global: { plugins: [createI18n({ lang: 'en' })] }
+    }
+  )
   wrappers.push(wrapper)
-  return wrapper
+  return { wrapper, visible }
 }
 
 describe('Input helper focus', () => {
@@ -51,12 +61,13 @@ describe('Input helper focus', () => {
     ['key capture', SpxKeyInput, 'KeySpace'],
     ['color hue', SpxColorInput, getColor()]
   ])('focuses %s only after the popup is positioned', async (_, component, value) => {
-    const wrapper = mountHelper(component, value)
+    const { wrapper, visible } = mountHelper(component, value)
     const input = wrapper.get('input')
     const focus = vi.spyOn(input.element, 'focus')
     await nextTick()
     expect(focus).not.toHaveBeenCalled()
-    await wrapper.setProps({ autofocus: true })
+    visible.value = true
+    await nextTick()
     expect(document.activeElement).toBe(input.element)
     expect(focus).toHaveBeenCalledOnce()
     // Value updates must not pull focus away from another field in the helper.
@@ -67,7 +78,7 @@ describe('Input helper focus', () => {
   })
 
   it('focuses on a fresh mount and on returning from the variable tab', async () => {
-    const wrapper = mountHelper(StringInput, 'hello', true)
+    const { wrapper } = mountHelper(StringInput, 'hello', true)
     await nextTick()
     expect(document.activeElement).toBe(wrapper.get('input').element)
     await wrapper.getComponent({ name: 'UITabRadioGroup' }).vm.$emit('update:value', InputKind.Predefined)
@@ -82,8 +93,9 @@ describe('Input helper focus', () => {
     const button = document.createElement('button')
     document.body.append(button)
     button.focus()
-    const wrapper = mountHelper(defineComponent({ render: () => h('button', 'Choose') }), null)
-    await wrapper.setProps({ autofocus: true })
+    const { visible } = mountHelper(defineComponent({ render: () => h('button', 'Choose') }), null)
+    visible.value = true
+    await nextTick()
     expect(document.activeElement).toBe(button)
     button.remove()
   })
