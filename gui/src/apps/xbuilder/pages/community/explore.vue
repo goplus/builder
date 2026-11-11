@@ -50,8 +50,8 @@ const maxCount = 50
 
 const ensureSignedIn = useEnsureSignedIn()
 
-const queryRet = useQuery(
-  async () => {
+const queryRet = useQuery({
+  queryFn: async () => {
     if (order.value === Order.FollowingCreated) await ensureSignedIn()
     return exploreProjects({
       order: order.value,
@@ -59,9 +59,9 @@ const queryRet = useQuery(
       type: ProjectType.Game
     })
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to list projects',
     zh: '获取项目列表失败'
   }
-)
+})
 </script>

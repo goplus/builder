@@ -70,16 +70,16 @@ const listParams = computed<ListUserPublicProjectsParams>(() => {
   return p
 })
 
-const queryRet = useQuery(
-  () => {
+const queryRet = useQuery({
+  queryFn: () => {
     if (isSignedInUser.value) return listSignedInUserProjects(listParams.value)
     return listUserPublicProjects(props.nameInput, listParams.value)
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to load projects',
     zh: '加载失败'
   }
-)
+})
 
 const router = useRouter()
 const ensureSignedIn = useEnsureSignedIn()

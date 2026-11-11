@@ -153,8 +153,8 @@ watch(
   () => (page.value = 1)
 )
 
-const queryRet = useQuery(
-  () => {
+const queryRet = useQuery({
+  queryFn: () => {
     const params = {
       pageSize,
       pageIndex: page.value,
@@ -164,11 +164,11 @@ const queryRet = useQuery(
     if (librarySource.value === 'personal') return listSignedInUserAssets(params)
     return listAssets({ ...params, visibility: Visibility.Public })
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to list',
     zh: '获取列表失败'
   }
-)
+})
 
 const resultTooFew = computed(() => {
   const ret = queryRet.data.value

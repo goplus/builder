@@ -54,14 +54,12 @@ usePageTitle(() => {
   return title == null ? page : [{ en: title, zh: title }, page]
 })
 
-const entryQueryRet = useQuery(
-  async (ctx) => {
-    // Read route params synchronously so that their change re-runs the query.
+const entryQueryRet = useQuery({
+  queryKey: () => [props.courseSeriesIdInput, props.courseIdInput],
+  queryFn: async (ctx) => {
     const courseIdInput = props.courseIdInput
     const courseSeriesIdInput = props.courseSeriesIdInput
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
-    // Keep the reads below from becoming dependencies, which would re-run the query endlessly.
-    await nextTick()
 
     const user = await signedIn.getUser({ signal: ctx.signal })
     if (user?.capabilities.canManageCourses !== true) {
@@ -95,11 +93,11 @@ const entryQueryRet = useQuery(
     ctx.reporter.report(1)
     return { course, series, project }
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to load course',
     zh: '加载课程失败'
   }
-)
+})
 
 async function disposeSession() {
   // Clear synchronously so that a concurrent call cannot dispose the same project twice.

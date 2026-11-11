@@ -19,8 +19,8 @@ const page = shallowRef(1)
 const pageSize = 8
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
-const queryRet = useQuery(
-  () =>
+const queryRet = useQuery({
+  queryFn: () =>
     listSignedInUserProjects({
       // This modal will list projects across types in a later design.
       type: ProjectType.Game,
@@ -29,11 +29,11 @@ const queryRet = useQuery(
       pageIndex: page.value,
       pageSize: pageSize
     }),
-  {
+  failureSummaryMessage: {
     en: 'Failed to load projects',
     zh: '加载失败'
   }
-)
+})
 </script>
 
 <template>

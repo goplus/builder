@@ -2,18 +2,19 @@
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { getCleanupSignal } from '@/utils/disposable'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { untilNotNull } from '@/utils/utils'
-import { useSeriesCourses } from '@/stores/course-series'
+import { useSeriesWithCourses } from '@/stores/course-series'
 import { EditingMode } from '@/components/editor/editing'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
-import { UIButton, UILoading, useConfirmDialogWithResult } from '@/components/ui'
+import { UIButton, UIError, UILoading, useConfirmDialogWithResult } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
-import { getCourseSeriesPageRouteOfCourse, getSeriesUnits, getUnitHeading } from './units'
+import { getSeriesUnits, getUnitHeading } from './units'
 
 const router = useRouter()
 const tutorial = useTutorial()
@@ -21,14 +22,16 @@ const dropdown = useDropdown()
 const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
-const coursesQueryRet = useSeriesCourses(() => tutorial.currentCourse?.series.id ?? null, {
-  courseIDs: () => tutorial.currentCourse?.series.courseIDs ?? []
-})
+const seriesWithCoursesQuery = useSeriesWithCourses(() => tutorial.currentCourse?.seriesID ?? null)
+const courseSeries = computed(() => seriesWithCoursesQuery.data.value?.series ?? null)
 
-const units = computed(() => (tutorial.currentCourse == null ? [] : getSeriesUnits(tutorial.currentCourse.series)))
+const units = computed(() => (courseSeries.value == null ? [] : getSeriesUnits(courseSeries.value)))
 const courseGroups = computed(() => {
   const coursesByID = new Map(
-    (coursesQueryRet.data.value ?? []).map((course, index) => [course.id, { course, sequence: index + 1 }])
+    (seriesWithCoursesQuery.data.value?.courses ?? []).map((course, index) => [
+      course.id,
+      { course, sequence: index + 1 }
+    ])
   )
   return units.value.map((unit) => ({
     title: unit.title,
@@ -74,7 +77,8 @@ function resetEditorDirtyBeforeLeaving() {
 
 const { fn: handleExitCourse } = useMessageHandle(
   async () => {
-    if (tutorial.currentCourse == null) return
+    const currentCourse = tutorial.currentCourse
+    if (currentCourse == null) return
     if (!(await confirmCourseAction({ en: 'Exit course', zh: '退出课程' }))) return
     dropdown?.setVisible(false)
     await tutorial.endCurrentCourse()
@@ -87,10 +91,10 @@ const { fn: handleReturnSeries } = useMessageHandle(
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null) return
     if (!(await confirmCourseAction({ en: 'Back to series courses', zh: '返回系列课程' }))) return
+    const seriesRoute = getCourseSeriesPageRoute(currentCourse.seriesID, currentCourse.id)
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
     await tutorial.endCurrentCourse()
-    const seriesRoute = getCourseSeriesPageRouteOfCourse(currentCourse.series, currentCourse.id)
     if (router.currentRoute.value.fullPath !== seriesRoute) await router.push(seriesRoute)
   },
   { en: 'Failed to return to series courses', zh: '返回系列课程失败' }
@@ -103,7 +107,7 @@ const { fn: handleSelectCourse } = useMessageHandle(
     if (!(await confirmCourseAction({ en: `Start course ${courseTitle}`, zh: `开始课程 ${courseTitle}` }))) return
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
-    await tutorial.startCourse(currentCourse.series.id, courseID)
+    await tutorial.startCourse(currentCourse.seriesID, courseID)
   },
   { en: 'Failed to start course', zh: '开始课程失败' }
 )
@@ -122,7 +126,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
     if (!confirmed) return
     resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
-    await tutorial.startCourse(currentCourse.series.id, currentCourse.id)
+    await tutorial.startCourse(currentCourse.seriesID, currentCourse.id)
   },
   { en: 'Failed to restart course', zh: '重新开始课程失败' }
 )
@@ -145,7 +149,10 @@ const { fn: handleRestartCourse } = useMessageHandle(
     <div class="mx-2 my-1 h-px flex-none bg-dividing-line-2"></div>
 
     <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1">
-      <UILoading v-if="coursesQueryRet.isLoading.value" class="h-24" />
+      <UILoading v-if="seriesWithCoursesQuery.isLoading.value" class="h-24" />
+      <UIError v-else-if="seriesWithCoursesQuery.error.value != null" :retry="seriesWithCoursesQuery.refetch">
+        {{ $t(seriesWithCoursesQuery.error.value.userMessage) }}
+      </UIError>
       <template v-for="(group, index) in courseGroups" v-else :key="index">
         <h3 v-if="group.title != null" class="m-0 flex-none truncate px-1 py-2 text-base font-medium text-text">
           {{ $t(getUnitHeading(index, group.title)) }}

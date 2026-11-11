@@ -3,7 +3,7 @@ import { computed, defineComponent, nextTick, ref, type PropType, type WatchSour
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from '@/utils/i18n'
-import { useQuery, type QueryRet } from '@/utils/query'
+import { QueryMode, useQuery, type QueryRet } from '@/utils/query'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { Sound } from '@/models/spx/sound'
@@ -528,8 +528,8 @@ describe('EditorState', () => {
                 pushes.push({ id: props.id, path })
               }
             }
-            queryRet = useQuery(
-              async (ctx) => {
+            queryRet = useQuery({
+              queryFn: async (ctx) => {
                 const id = props.id
                 await nextTick()
                 const editorState = makeEditorState(projects[id])
@@ -537,9 +537,9 @@ describe('EditorState', () => {
                 editorState.syncWithRouter(inEditorRouter)
                 return editorState
               },
-              { en: 'Failed to load editor', zh: '加载编辑器失败' },
-              { clearResultOnFetch: true }
-            )
+              failureSummaryMessage: { en: 'Failed to load editor', zh: '加载编辑器失败' },
+              mode: QueryMode.BlockingRefresh
+            })
             return () => null
           }
         }),

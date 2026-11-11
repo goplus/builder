@@ -31,22 +31,22 @@ const props = defineProps<{
 const signedIn = useSignedIn()
 const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
-const userQuery = useQuery(
-  async () => {
+const userQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return null
     return accountAdminApis.getAccountUser(props.userID)
   },
-  { en: 'Failed to load Account user', zh: '加载账号用户失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load Account user', zh: '加载账号用户失败' }
+})
 const user = computed(() => userQuery.data.value)
 
-const grantQuery = useQuery(
-  async () => {
+const grantQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return null
     return accountAdminApis.getAccountAppGrant(props.grantID)
   },
-  { en: 'Failed to load Account app grant', zh: '加载账号应用授权失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load Account app grant', zh: '加载账号应用授权失败' }
+})
 const grant = computed(() => grantQuery.data.value)
 const app = computed(() => grant.value?.app ?? null)
 const appFallbackText = computed(() => app.value?.displayName.trim().charAt(0).toUpperCase() || '?')
@@ -63,8 +63,8 @@ usePageTitle(() =>
 )
 
 const oauthClientID = ref('')
-const clientsQuery = useQuery(
-  async ({ signal }) => {
+const clientsQuery = useQuery({
+  queryFn: async ({ signal }) => {
     if (!canManageAccount.value || app.value == null) return []
     const appID = app.value.id
     const clients: accountAdminApis.AccountOAuthClient[] = []
@@ -77,8 +77,8 @@ const clientsQuery = useQuery(
       if (page.data.length < 100) return clients
     }
   },
-  { en: 'Failed to load authorization clients', zh: '加载授权客户端失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load authorization clients', zh: '加载授权客户端失败' }
+})
 
 const revoked = ref(false)
 const showRevokeGrant = ref(false)
@@ -97,8 +97,8 @@ const tokensPageSize = 20
 const maxTokenLifetimeDays = 365
 const tokensPage = ref(1)
 const tokenTypeFilter = ref<'all' | accountAdminApis.AccountAppTokenType>('accessToken')
-const tokensQuery = useQuery(
-  async () => {
+const tokensQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
     return accountAdminApis.listAccountAppGrantTokens(props.grantID, {
       pageIndex: tokensPage.value,
@@ -108,8 +108,8 @@ const tokensQuery = useQuery(
       tokenType: tokenTypeFilter.value === 'all' ? undefined : tokenTypeFilter.value
     })
   },
-  { en: 'Failed to load Account app grant tokens', zh: '加载账号应用授权 token 失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load Account app grant tokens', zh: '加载账号应用授权 token 失败' }
+})
 const tokensPageTotal = computed(() => Math.ceil((tokensQuery.data.value?.total ?? 0) / tokensPageSize))
 watch(tokenTypeFilter, () => {
   tokensPage.value = 1

@@ -80,7 +80,7 @@ describe('Tutorial', () => {
     const series = makeSeries()
     const { guided, router } = makeControllers()
     const tutorial = new Tutorial(guided, router)
-    tutorial.notifyPlaygroundCourseStarted(course, series)
+    tutorial.notifyPlaygroundCourseStarted(course.id, series.id)
 
     await tutorial.startCourse(series.id, course.id)
 
@@ -93,7 +93,7 @@ describe('Tutorial', () => {
     const course = makeGuidedCourse()
     const series = makeSeries()
     const { guided, router } = makeControllers()
-    guided.currentCourse = { ...course, series }
+    guided.currentCourse = { id: course.id, seriesID: series.id }
     const tutorial = new Tutorial(guided, router)
 
     await tutorial.startCourse(series.id, course.id)
@@ -150,12 +150,12 @@ describe('Tutorial', () => {
     const series = makeSeries()
     const { guided, router } = makeControllers()
     const tutorial = new Tutorial(guided, router)
-    tutorial.notifyPlaygroundCourseStarted(makePlaygroundCourse(), series)
+    tutorial.notifyPlaygroundCourseStarted(makePlaygroundCourse().id, series.id)
 
     await tutorial.endCurrentCourse()
 
     expect(guided.endCurrentCourse).not.toHaveBeenCalled()
-    expect(router.push).toHaveBeenCalledWith('/course-series/series-1')
+    expect(router.push).toHaveBeenCalledWith('/course-series/series-1#course-course-1')
   })
 
   it('rejects a Course outside the requested Series', async () => {

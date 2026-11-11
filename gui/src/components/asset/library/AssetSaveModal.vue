@@ -48,8 +48,8 @@ const {
   isLoading,
   error,
   refetch
-} = useQuery(
-  async () => {
+} = useQuery({
+  queryFn: async () => {
     if (!advancedLibraryEnabled.value) return null
     const metadata = props.model.assetMetadata
     if (metadata == null || metadata.id == null || metadata.owner !== signedIn.username) return null
@@ -58,11 +58,11 @@ const {
       return null
     })
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to check existed asset',
     zh: '查找已存在素材失败'
   }
-)
+})
 
 enum Action {
   /** Save by updating existed asset */

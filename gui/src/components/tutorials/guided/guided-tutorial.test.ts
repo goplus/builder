@@ -4,7 +4,7 @@ import type { Router } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ActionException } from '@/utils/exception'
 import { createReadinessScope } from '@/utils/readiness'
-import { useUserSessionStorage } from '@/utils/user-storage'
+import { useGuidedTutorialStorage } from '../TutorialRoot.vue'
 import type { GuidedCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { makeSignedInMock, makeSignedInUser, makeSignedInUserQuery } from '@/stores/user/test'
@@ -48,14 +48,13 @@ beforeEach(() => {
   mount(
     defineComponent({
       setup() {
-        const course = useUserSessionStorage<GuidedCourse | null>('spx-gui-tutorial-course', null)
-        const series = useUserSessionStorage<CourseSeries | null>('spx-gui-tutorial-series', null)
+        const { courseID, seriesID } = useGuidedTutorialStorage()
         tutorial = new GuidedTutorial(
           copilot as unknown as Copilot,
           router as unknown as Router,
           createReadinessScope(),
-          course,
-          series
+          courseID,
+          seriesID
         )
         return () => null
       }
@@ -64,25 +63,67 @@ beforeEach(() => {
 })
 
 describe('Guided Tutorial persistence and identity', () => {
-  it('restores account storage while user information is loading or failed', async () => {
-    const saved = JSON.stringify({ __user__: 'alice', __value__: course })
-    sessionStorage.setItem('spx-gui-tutorial-course', saved)
-    sessionStorage.setItem('spx-gui-tutorial-series', JSON.stringify({ __user__: 'alice', __value__: series }))
-    expect(tutorial.currentCourse?.id).toBe(course.id)
-    auth.error.value = new ActionException(new Error('offline'), { en: 'Failed', zh: '失败' })
-    auth.isLoading.value = false
-    expect(tutorial.currentCourse?.id).toBe(course.id)
-    expect(sessionStorage.getItem('spx-gui-tutorial-course')).toBe(saved)
-    auth.error.value = null
-    auth.data.value = makeSignedInUser('alice')
-    await flushPromises()
-    expect(tutorial.currentCourse?.id).toBe(course.id)
-  })
+  it.each(['full record', 'id object', 'string'])(
+    'restores account storage while user information is loading or failed (format: %s)',
+    async (format) => {
+      const saved = JSON.stringify({
+        __user__: 'alice',
+        __value__: format === 'full record' ? course : format === 'id object' ? { id: course.id } : course.id
+      })
+      sessionStorage.setItem('spx-gui-tutorial-course', saved)
+      sessionStorage.setItem(
+        'spx-gui-tutorial-series',
+        JSON.stringify({ __user__: 'alice', __value__: format === 'string' ? series.id : series })
+      )
+      expect(tutorial.currentCourse?.id).toBe(course.id)
+      auth.error.value = new ActionException(new Error('offline'), { en: 'Failed', zh: '失败' })
+      auth.isLoading.value = false
+      expect(tutorial.currentCourse?.id).toBe(course.id)
+      expect(sessionStorage.getItem('spx-gui-tutorial-course')).toBe(saved)
+      auth.error.value = null
+      auth.data.value = makeSignedInUser('alice')
+      await flushPromises()
+      expect(tutorial.currentCourse?.id).toBe(course.id)
+    }
+  )
 
   it('starts and persists a course before user information loads', async () => {
     await tutorial.enterCourse(course, series)
     expect(auth.data.value).toBeNull()
     expect(copilot.startSession).toHaveBeenCalledOnce()
-    expect(JSON.parse(sessionStorage.getItem('spx-gui-tutorial-course')!).__user__).toBe('alice')
+    expect(JSON.parse(sessionStorage.getItem('spx-gui-tutorial-course')!)).toEqual({
+      __user__: 'alice',
+      __value__: course.id
+    })
+    expect(JSON.parse(sessionStorage.getItem('spx-gui-tutorial-series')!)).toEqual({
+      __user__: 'alice',
+      __value__: series.id
+    })
+  })
+
+  it.each(['course', 'series'])('ignores a stored legacy %s record with a non-string ID', (invalidRecord) => {
+    sessionStorage.setItem(
+      'spx-gui-tutorial-course',
+      JSON.stringify({ __user__: 'alice', __value__: { id: invalidRecord === 'course' ? 123 : course.id } })
+    )
+    sessionStorage.setItem(
+      'spx-gui-tutorial-series',
+      JSON.stringify({ __user__: 'alice', __value__: { id: invalidRecord === 'series' ? 456 : series.id } })
+    )
+    expect(tutorial.currentCourse).toBeNull()
+  })
+
+  it('clears persisted identities when the course ends', async () => {
+    await tutorial.enterCourse(course, series)
+    tutorial.endCurrentCourse()
+    expect(tutorial.currentCourse).toBeNull()
+    expect(sessionStorage.getItem('spx-gui-tutorial-course')).toBeNull()
+    expect(sessionStorage.getItem('spx-gui-tutorial-series')).toBeNull()
+  })
+
+  it('does not restore another account’s course', async () => {
+    await tutorial.enterCourse(course, series)
+    username.value = 'bob'
+    expect(tutorial.currentCourse).toBeNull()
   })
 })
