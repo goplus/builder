@@ -29,8 +29,8 @@ const tutorial = useTutorial()
 
 const courseCompleteMessage = computed(() => {
   return i18n.t({
-    zh: `${props.course?.title}课程已完成`,
-    en: `${props.course?.title} course completed`
+    en: `${props.course?.title} course completed`,
+    zh: `${props.course?.title}课程已完成`
   })
 })
 
@@ -92,15 +92,25 @@ const { fn: handleStartNextCourse } = useMessageHandle(
       <div class="flex flex-col items-center text-center">
         <UIImg :src="successImg" class="h-47.5 w-67.5" />
 
-        <div class="mt-5 text-2xl">{{ $t({ zh: '太棒了!', en: 'Great!' }) }}</div>
+        <div class="mt-5 text-2xl">{{ $t({ en: 'Great!', zh: '太棒了!' }) }}</div>
         <div class="mt-2 text-base">{{ courseCompleteMessage }}</div>
 
         <div class="mt-10 w-full flex flex-col gap-5">
-          <UIButton v-if="hasNextCourse" size="large" @click="handleStartNextCourse">
-            {{ $t({ zh: '学习下一个课程', en: 'Learn next course' }) }}
+          <UIButton
+            v-if="hasNextCourse"
+            v-radar="{ name: 'course-next', desc: 'Start the next Course' }"
+            size="large"
+            @click="handleStartNextCourse"
+          >
+            {{ $t({ en: 'Learn next course', zh: '学习下一个课程' }) }}
           </UIButton>
-          <UIButton type="neutral" size="large" @click="handleBrowseTutorials">
-            {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
+          <UIButton
+            v-radar="{ name: 'browse-courses', desc: 'Browse all courses' }"
+            type="white"
+            size="large"
+            @click="handleBrowseTutorials"
+          >
+            {{ $t({ en: 'Browse all courses', zh: '浏览所有课程' }) }}
           </UIButton>
         </div>
       </div>
