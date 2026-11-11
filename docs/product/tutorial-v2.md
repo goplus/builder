@@ -75,7 +75,7 @@ The framework provides course code with the following atomic capabilities, to be
 * **Runtime signals**: listen to the game's run logs. This is the main judging channel: as long as a program is running, it can always `println` to the console — the scene code prints specific logs at key events, and the course code waits for these signals to learn *what the learner accomplished*
 * **Code check**: deterministically check whether specified constructs appear in the learner's code, to learn *how the learner accomplished it*
 * **LLM completion**: make a single generation request to the LLM and get the result back, automatically carrying context such as course information and XGo/spx knowledge (these requests do not appear in the learner's conversation with the Copilot). Useful for judging "expression-type" goals (e.g., have the character say a greeting — anything counts) or for generating personalized feedback based on the learner's actual code
-* **Completion**: `complete` / `completeWith <one-line feedback>` ends the course and shows the completion dialog; the learner can proceed to the next course or return to the course list. When a next Course is available, “Learn next course” appears first in the action list; otherwise, that action is hidden
+* **Completion**: `complete` / `completeWith <one-line feedback>` ends the course and shows the completion dialog; the learner can proceed to the next course or return to the course list
 
 The judging principle: **judge structured results with code**. A course scene's state transitions should converge to a unique, deterministic final state — "done" corresponds to a definite state that a program can check; LLM completion covers what structured judging cannot: expression-type goals and feedback generation.
 
