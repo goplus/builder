@@ -54,7 +54,6 @@ function handleKeyDown(e: KeyboardEvent) {
       v-radar="{ name: 'key-input', desc: 'Input field for detecting key press' }"
       class="text-center"
       :value="text"
-      autofocus
       @keydown="handleKeyDown"
     />
     <p class="text-center text-hint-1">

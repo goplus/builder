@@ -32,7 +32,6 @@ function handleSubmit() {
   <UITextInput
     v-model:value="modelValue"
     v-radar="{ name: 'string-input', desc: 'Input field for string values' }"
-    autofocus
     @keyup.enter="handleSubmit"
   />
 </template>

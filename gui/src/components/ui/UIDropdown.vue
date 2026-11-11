@@ -318,7 +318,7 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: Element | nu
         @mouseenter="handleContentMouseenter"
         @mouseleave="handleContentMouseleave"
       >
-        <slot></slot>
+        <slot :positioned="floatingStyle != null"></slot>
       </div>
     </Transition>
   </Teleport>

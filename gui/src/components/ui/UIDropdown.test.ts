@@ -153,6 +153,47 @@ describe('UIDropdown', () => {
     document.body.innerHTML = ''
   })
 
+  it('exposes positioned only after the popup becomes visible, including reopening', async () => {
+    let resolvePosition!: (value: any) => void
+    floatingMocks.computePosition.mockImplementation(() => new Promise((resolve) => (resolvePosition = resolve)))
+    const visible = ref(true)
+    const wrapper = mount(
+      defineComponent({
+        setup: () => () =>
+          h(PopupProvider, null, {
+            default: () =>
+              h(
+                UIDropdown,
+                {
+                  trigger: 'manual',
+                  visible: visible.value,
+                  pos: { x: 20, y: 20 }
+                },
+                {
+                  default: ({ positioned }: { positioned: boolean }) =>
+                    h('div', { 'data-test-id': 'positioned' }, String(positioned))
+                }
+              )
+          })
+      }),
+      { attachTo: document.body }
+    )
+    const content = () => document.querySelector('[data-test-id="positioned"]')!
+    for (let opening = 0; opening < 2; opening++) {
+      await flushDropdown()
+      expect(content().textContent).toBe('false')
+      expect((content().parentElement as HTMLElement).style.visibility).toBe('hidden')
+      resolvePosition({ x: 20, y: 20, strategy: 'fixed', placement: 'bottom', middlewareData: {} })
+      await flushDropdown()
+      expect(content().textContent).toBe('true')
+      expect((content().parentElement as HTMLElement).style.visibility).toBe('visible')
+      visible.value = false
+      await flushDropdown()
+      visible.value = true
+    }
+    wrapper.unmount()
+  })
+
   it('opens on hover only after the default hover delay', async () => {
     const wrapper = mount(
       defineComponent({

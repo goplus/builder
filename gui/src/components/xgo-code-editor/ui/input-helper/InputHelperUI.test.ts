@@ -1,6 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import { type InputHelperController, type InternalInputSlot } from '.'
 import InputHelperUI from './InputHelperUI.vue'
 
@@ -36,7 +36,16 @@ describe('Input Helper UI lifecycle', () => {
     } as unknown as InputHelperController
     const wrapper = shallowMount(InputHelperUI, {
       props: { controller },
-      global: { renderStubDefaultSlot: true }
+      global: {
+        stubs: {
+          UIDropdown: defineComponent({
+            setup:
+              (_, { slots }) =>
+              () =>
+                h('div', slots.default?.({ positioned: true }))
+          })
+        }
+      }
     })
     await nextTick()
     wrapper.getComponent({ name: 'InputHelper' }).vm.$emit('submit')
