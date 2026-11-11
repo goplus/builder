@@ -188,9 +188,16 @@ describe('ResourceWorkspace', () => {
       expect(panel.find('[aria-label="Close resource workspace"]').exists()).toBe(false)
       expect(panel.isVisible()).toBe(false)
       expect(host.find('[aria-label="Select resource"]').exists()).toBe(false)
+      const entryPosition =
+        resourceType === 'costume'
+          ? host.get('[aria-label="ai-edit"]').element.parentElement!.getAttribute('style')
+          : null
       host.getComponent(ResourceWorkspace).vm.openAIEditor()
       await nextTick()
       expect(panel.isVisible()).toBe(true)
+      if (resourceType === 'costume') {
+        expect(host.get('[aria-label="Resource tool area"]').attributes('style')).toBe(entryPosition)
+      }
       await input.setValue('Keep this instruction')
       await input.trigger('pointerdown')
       expect(panel.isVisible()).toBe(true)
@@ -365,7 +372,7 @@ describe('ResourceWorkspace', () => {
     expect(input.value).toBe('Keep the pose')
   })
 
-  it('opens from the bottom entry and restores it when closing, without losing the draft', async () => {
+  it('opens from the edit entry and restores it when closing, without losing the draft', async () => {
     const host = mount(ResourceWorkspace, {
       attachTo: document.body,
       props: { resourceKey: 'saved-costume' },

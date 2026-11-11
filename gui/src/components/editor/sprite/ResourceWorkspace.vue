@@ -53,7 +53,7 @@ const selectionLocked = computed(() => (props.aiEnabled && props.pending) || pro
 const previewArea = ref<{ left: number; top: number; width: number; height: number } | null>(null)
 const previewBottomSpace = computed(() => (props.resourceType === 'animation' ? 244 : 180))
 const promptPosition = computed(() => {
-  if (!aiActive.value || previewArea.value == null) return undefined
+  if (previewArea.value == null) return undefined
   const area = previewArea.value
   return {
     top: `${area.top + area.height + (props.resourceType === 'animation' ? 88 : 24)}px`,
@@ -169,7 +169,11 @@ function handleToolKeydown(event: KeyboardEvent) {
         <ResourceEditActions section="commit" @discard="discardInstruction" />
       </slot>
     </div>
-    <div v-if="canOpenAIEditor && !aiActive" class="absolute inset-x-6 bottom-4 z-30 flex justify-center">
+    <div
+      v-if="canOpenAIEditor && !aiActive"
+      class="absolute inset-x-6 bottom-4 z-30 flex justify-center"
+      :style="promptPosition"
+    >
       <UIButton
         v-radar="{
           name: 'ai-edit',
@@ -188,7 +192,7 @@ function handleToolKeydown(event: KeyboardEvent) {
       v-show="!aiEnabled || selected"
       v-radar="{ name: 'Resource tool area', desc: 'Tools for the selected media' }"
       class="absolute inset-x-6 bottom-4 z-30 flex flex-col items-center gap-2 pointer-events-none"
-      :style="promptPosition"
+      :style="aiActive ? promptPosition : undefined"
     >
       <div ref="panel" class="w-full pointer-events-auto" :class="aiActive ? 'max-w-[640px]' : 'max-w-[440px]'"></div>
       <ResourceTool
