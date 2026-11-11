@@ -96,11 +96,11 @@ const { fn: handleStartNextCourse } = useMessageHandle(
         <div class="mt-2 text-base">{{ courseCompleteMessage }}</div>
 
         <div class="mt-10 w-full flex flex-col gap-5">
-          <UIButton type="neutral" size="large" @click="handleBrowseTutorials">
-            {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
-          </UIButton>
           <UIButton v-if="hasNextCourse" size="large" @click="handleStartNextCourse">
             {{ $t({ zh: '学习下一个课程', en: 'Learn next course' }) }}
+          </UIButton>
+          <UIButton type="neutral" size="large" @click="handleBrowseTutorials">
+            {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
           </UIButton>
         </div>
       </div>
