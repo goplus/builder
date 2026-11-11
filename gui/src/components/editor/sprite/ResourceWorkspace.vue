@@ -143,11 +143,7 @@ function handleToolKeydown(event: KeyboardEvent) {
 </script>
 
 <template>
-  <div
-    v-if="enabled"
-    class="relative min-w-0 min-h-0 flex-1 flex bg-grey-200"
-    @pointerdown.self="!selectionLocked && (selected = false)"
-  >
+  <div v-if="enabled" class="relative min-w-0 min-h-0 flex-1 flex bg-grey-200">
     <slot></slot>
     <div
       v-show="aiActive && showEditActions"
