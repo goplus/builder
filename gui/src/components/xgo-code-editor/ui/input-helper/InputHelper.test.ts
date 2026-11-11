@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, markRaw, nextTick, ref, type PropType } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
-import { providePopupVisible } from '@/components/ui/utils'
+import { providePopupReady } from '@/components/ui/utils'
 import SpxKeyInput from '@/components/editor/spx-code-editor/ui/input-helper/SpxKeyInput.vue'
 import SpxDirectionInput from '@/components/editor/spx-code-editor/ui/input-helper/SpxDirectionInput.vue'
 import SpxColorInput, {
@@ -20,8 +20,8 @@ afterEach(() => {
   for (const wrapper of wrappers.splice(0)) wrapper.unmount()
 })
 
-function mountHelper(component: InputTypeHandler['component'], value: unknown, initiallyVisible = false) {
-  const visible = ref(initiallyVisible)
+function mountHelper(component: InputTypeHandler['component'], value: unknown, initiallyReady = false) {
+  const ready = ref(initiallyReady)
   const helperProps = {
     slotKind: InputSlotKind.Value,
     accept: { type: BuiltInInputType.String },
@@ -38,8 +38,12 @@ function mountHelper(component: InputTypeHandler['component'], value: unknown, i
     defineComponent({
       props: { input: { type: Object as PropType<Input>, required: true } },
       setup(props) {
-        providePopupVisible(visible)
-        return () => h(InputHelper, { ...helperProps, input: props.input })
+        providePopupReady(ready)
+        return () =>
+          h('div', [
+            h(InputHelper, { ...helperProps, input: props.input }),
+            h('button', { 'data-test': 'focus-target' }, 'Other control')
+          ])
       }
     }),
     {
@@ -49,7 +53,7 @@ function mountHelper(component: InputTypeHandler['component'], value: unknown, i
     }
   )
   wrappers.push(wrapper)
-  return { wrapper, visible }
+  return { wrapper, ready }
 }
 
 describe('Input helper focus', () => {
@@ -60,20 +64,21 @@ describe('Input helper focus', () => {
     ['direction', SpxDirectionInput, 90],
     ['key capture', SpxKeyInput, 'KeySpace'],
     ['color hue', SpxColorInput, getColor()]
-  ])('focuses %s only after the popup is positioned', async (_, component, value) => {
-    const { wrapper, visible } = mountHelper(component, value)
+  ])('focuses %s only after the popup is ready', async (_, component, value) => {
+    const { wrapper, ready } = mountHelper(component, value)
     const input = wrapper.get('input')
     const focus = vi.spyOn(input.element, 'focus')
     await nextTick()
     expect(focus).not.toHaveBeenCalled()
-    visible.value = true
+    ready.value = true
     await nextTick()
     expect(document.activeElement).toBe(input.element)
     expect(focus).toHaveBeenCalledOnce()
-    // Value updates must not pull focus away from another field in the helper.
-    const otherInput = wrapper.findAll('input')[1]
-    otherInput?.element.focus()
+    const otherControl = wrapper.get<HTMLButtonElement>('[data-test="focus-target"]')
+    otherControl.element.focus()
+    expect(document.activeElement).toBe(otherControl.element)
     await wrapper.setProps({ input: { kind: InputKind.InPlace, type: BuiltInInputType.String, value } })
+    expect(document.activeElement).toBe(otherControl.element)
     expect(focus).toHaveBeenCalledOnce()
   })
 
@@ -93,8 +98,8 @@ describe('Input helper focus', () => {
     const button = document.createElement('button')
     document.body.append(button)
     button.focus()
-    const { visible } = mountHelper(defineComponent({ render: () => h('button', 'Choose') }), null)
-    visible.value = true
+    const { ready } = mountHelper(defineComponent({ render: () => h('button', 'Choose') }), null)
+    ready.value = true
     await nextTick()
     expect(document.activeElement).toBe(button)
     button.remove()

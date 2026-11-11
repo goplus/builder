@@ -51,25 +51,25 @@ export function usePopupContainer() {
   return popupContainer
 }
 
-const popupVisibleInjectionKey: InjectionKey<Readonly<Ref<boolean>>> = Symbol('popup-visible')
-const defaultPopupVisible = readonly(ref(true))
+const popupReadyInjectionKey: InjectionKey<Readonly<Ref<boolean>>> = Symbol('popup-ready')
+const defaultPopupReady = readonly(ref(true))
 
 /**
- * Provide actual popup visibility to content descendants only, excluding the trigger.
- * Unlike an open request, this becomes true once the popup is positioned and no longer
- * hidden. It does not wait for the enter animation to finish. Ancestor popups must also be visible.
+ * Provide readiness for automatic focus to popup content only, excluding its trigger.
+ * A popup is ready once positioning and its enter animation have completed.
+ * Ancestor popups must also be ready. Reset this when closing or starting another enter.
+ * Returns readiness including ancestor constraints.
  */
-export function providePopupVisible(visible: Readonly<Ref<boolean>>) {
-  const parentVisible = usePopupVisible()
-  provide(
-    popupVisibleInjectionKey,
-    computed(() => parentVisible.value && visible.value)
-  )
+export function providePopupReady(ready: Readonly<Ref<boolean>>) {
+  const parentReady = usePopupReady()
+  const popupReady = computed(() => parentReady.value && ready.value)
+  provide(popupReadyInjectionKey, popupReady)
+  return popupReady
 }
 
-/** Actual visibility of the enclosing popup content; true outside a popup visibility provider. */
-export function usePopupVisible(): Readonly<Ref<boolean>> {
-  return inject(popupVisibleInjectionKey, defaultPopupVisible)
+/** Readiness of the enclosing popup content; true outside a popup readiness provider. */
+export function usePopupReady(): Readonly<Ref<boolean>> {
+  return inject(popupReadyInjectionKey, defaultPopupReady)
 }
 
 const modalContainerInjectionKey: InjectionKey<Ref<HTMLElement | undefined>> = Symbol('modal-container')

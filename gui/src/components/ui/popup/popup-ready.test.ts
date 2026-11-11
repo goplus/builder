@@ -3,16 +3,16 @@ import { defineComponent, h, nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import UITextInput from '../input/UITextInput.vue'
 import UINumberInput from '../input/UINumberInput.vue'
-import { providePopupVisible, usePopupVisible } from '../utils'
-import PopupVisibilityProvider from './PopupVisibilityProvider.vue'
+import { providePopupReady, usePopupReady } from '../utils'
+import PopupReadyProvider from './PopupReadyProvider.vue'
 
-describe('Popup visibility and autofocus', () => {
-  it('defaults to visible outside a popup', () => {
+describe('Popup readiness and autofocus', () => {
+  it('defaults to ready outside a popup', () => {
     const wrapper = mount(
       defineComponent({
         setup() {
-          const visible = usePopupVisible()
-          return () => h('span', String(visible.value))
+          const ready = usePopupReady()
+          return () => h('span', String(ready.value))
         }
       })
     )
@@ -20,26 +20,26 @@ describe('Popup visibility and autofocus', () => {
     wrapper.unmount()
   })
 
-  it('requires both the enclosing popup and nested popup to be visible', async () => {
+  it('requires both the enclosing popup and nested popup to be ready', async () => {
     const outer = ref(false)
     const inner = ref(true)
     const Probe = defineComponent({
       setup() {
-        const visible = usePopupVisible()
-        return () => h('span', String(visible.value))
+        const ready = usePopupReady()
+        return () => h('span', String(ready.value))
       }
     })
     const wrapper = mount(
       defineComponent({
         setup: () => () =>
           h(
-            PopupVisibilityProvider,
-            { visible: outer.value },
+            PopupReadyProvider,
+            { ready: outer.value },
             {
               default: () =>
                 h(
-                  PopupVisibilityProvider,
-                  { visible: inner.value },
+                  PopupReadyProvider,
+                  { ready: inner.value },
                   {
                     default: () => h(Probe)
                   }
@@ -74,12 +74,12 @@ describe('Popup visibility and autofocus', () => {
   ] as const)(
     'does not focus %s when autofocus is enabled until the popup is shown again',
     async (_, component, value) => {
-      const visible = ref(true)
+      const ready = ref(true)
       const autofocus = ref(false)
       const wrapper = mount(
         defineComponent({
           setup() {
-            providePopupVisible(visible)
+            providePopupReady(ready)
             return () => h(component as any, { autofocus: autofocus.value, value })
           }
         }),
@@ -91,9 +91,9 @@ describe('Popup visibility and autofocus', () => {
       autofocus.value = true
       await nextTick()
       expect(document.activeElement).not.toBe(input.element)
-      visible.value = false
+      ready.value = false
       await nextTick()
-      visible.value = true
+      ready.value = true
       await nextTick()
       expect(document.activeElement).toBe(input.element)
       wrapper.unmount()
@@ -103,13 +103,13 @@ describe('Popup visibility and autofocus', () => {
   it.each([
     ['text', UITextInput, 'hello'],
     ['number', UINumberInput, 10]
-  ] as const)('waits for visibility before %s autofocus and refocuses on reopening', async (_, component, value) => {
-    const visible = ref(false)
+  ] as const)('waits for readiness before %s autofocus and refocuses on reopening', async (_, component, value) => {
+    const ready = ref(false)
     const autofocus = ref(true)
     const wrapper = mount(
       defineComponent({
         setup() {
-          providePopupVisible(visible)
+          providePopupReady(ready)
           return () => h(component as any, { autofocus: autofocus.value, value })
         }
       }),
@@ -117,20 +117,20 @@ describe('Popup visibility and autofocus', () => {
     )
     await nextTick()
     expect(document.activeElement).not.toBe(wrapper.get('input').element)
-    visible.value = true
+    ready.value = true
     await nextTick()
     expect(document.activeElement).toBe(wrapper.get('input').element)
-    visible.value = false
+    ready.value = false
     ;(document.activeElement as HTMLElement).blur()
     await nextTick()
-    visible.value = true
+    ready.value = true
     await nextTick()
     expect(document.activeElement).toBe(wrapper.get('input').element)
     autofocus.value = false
     ;(document.activeElement as HTMLElement).blur()
-    visible.value = false
+    ready.value = false
     await nextTick()
-    visible.value = true
+    ready.value = true
     await nextTick()
     expect(document.activeElement).not.toBe(wrapper.get('input').element)
     wrapper.unmount()

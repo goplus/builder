@@ -49,7 +49,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { cn, useLayerRegistration } from './utils'
 import {
   PopupRenderTrigger,
-  PopupVisibilityProvider,
+  PopupReadyProvider,
   type PopupTriggerHandle,
   renderPopupTrigger,
   resolveTriggerElement,
@@ -99,9 +99,9 @@ const {
   offset: computed(() => props.offset),
   virtualAnchor: computed(() => props.pos ?? null)
 })
-// Opening mounts the content while it is still hidden for asynchronous positioning.
-// Descendants can accept focus once positioning reveals it; closing must disable this during the leave transition.
-const actualVisible = computed(() => visible.value && floatingStyle.value != null)
+const entering = ref(false)
+// Positioning initially hides the content; the enter animation can still move it after positioning.
+const popupReady = computed(() => visible.value && floatingStyle.value != null && !entering.value)
 
 const rootClass = computed(() => cn('fixed z-1000 overflow-hidden rounded-md bg-grey-100 shadow-sm', props.class))
 const popupStyle = computed(
@@ -313,7 +313,7 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: Element | nu
   <PopupRenderTrigger :render-node="renderTriggerNode" />
 
   <Teleport v-if="attachTo != null" :to="attachTo">
-    <Transition name="ui-popup-scale-fade">
+    <Transition name="ui-popup-scale-fade" @before-enter="entering = true" @after-enter="entering = false">
       <div
         v-if="visible"
         v-bind="popup.rootAttrs"
@@ -323,9 +323,9 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: Element | nu
         @mouseenter="handleContentMouseenter"
         @mouseleave="handleContentMouseleave"
       >
-        <PopupVisibilityProvider :visible="actualVisible">
+        <PopupReadyProvider :ready="popupReady">
           <slot></slot>
-        </PopupVisibilityProvider>
+        </PopupReadyProvider>
       </div>
     </Transition>
   </Teleport>

@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, useSlots, watch } from 'vue'
-import { usePopupVisible } from '../utils'
+import { usePopupReady } from '../utils'
 import UIInputFrame, { UI_INPUT_IGNORE_FOCUS_ATTR } from './UIInputFrame.vue'
 import { useFieldControlBindings } from '../form/field-control-bindings'
 
@@ -172,11 +172,11 @@ function handleClear() {
   })
 }
 
-const popupVisible = usePopupVisible()
+const popupReady = usePopupReady()
 watch(
-  () => popupVisible.value && controlRef.value != null,
-  (visible) => {
-    if (visible && props.autofocus) controlRef.value?.focus()
+  () => popupReady.value && controlRef.value != null,
+  (ready) => {
+    if (ready && props.autofocus) controlRef.value?.focus()
   },
   { flush: 'post' }
 )

@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { computed, ref, useSlots, watch } from 'vue'
-import { usePopupVisible } from '../utils'
+import { usePopupReady } from '../utils'
 import UIInputFrame from './UIInputFrame.vue'
 import { useFieldControlBindings } from '../form/field-control-bindings'
 
@@ -304,11 +304,11 @@ const focusControl = () => {
   controlRef.value?.focus()
 }
 
-const popupVisible = usePopupVisible()
+const popupReady = usePopupReady()
 watch(
-  () => popupVisible.value && controlRef.value != null,
-  (visible) => {
-    if (visible && props.autofocus) controlRef.value?.focus()
+  () => popupReady.value && controlRef.value != null,
+  (ready) => {
+    if (ready && props.autofocus) controlRef.value?.focus()
   },
   { flush: 'post' }
 )
