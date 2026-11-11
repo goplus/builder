@@ -121,7 +121,6 @@ const detailsStyle = computed(() => {
     v-radar="{ name: 'Resource preview', desc: 'Preview of the selected costume or animation' }"
     class="absolute inset-0 overflow-hidden bg-grey-200"
     @dragstart.prevent
-    @pointerdown.self="workspace != null && !workspace.selectionLocked.value && (workspace.selected.value = false)"
   >
     <div v-if="view!.width > 0" class="absolute select-none" :style="frameStyle">
       <div class="relative h-full w-full">
