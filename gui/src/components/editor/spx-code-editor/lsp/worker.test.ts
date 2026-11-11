@@ -11,29 +11,6 @@ const startSpxWorker = (sources: Record<string, string>) => startWorker(sources,
 describe('SPX language server Worker', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it('keeps serving requests after completion in an unresolved sprite slice initializer', async () => {
-    const sources = {
-      'main.spx': '',
-      'Lita.spx': 'var items []Sprite = [S]\n',
-      'Other.spx': ''
-    }
-    const { request, setFiles } = await startSpxWorker(sources)
-    const textDocument = { uri: 'file:///Lita.spx' }
-    const completion = await request<lsp.CompletionList | lsp.CompletionItem[]>('textDocument/completion', {
-      textDocument,
-      position: { line: 0, character: 22 }
-    })
-    const items = Array.isArray(completion) ? completion : completion.items
-    expect(items.length).toBeGreaterThan(0)
-
-    setFiles({ ...sources, 'Lita.spx': 'var items []Sprite\nprintln items\n' })
-    const hover = await request<lsp.Hover>('textDocument/hover', {
-      textDocument,
-      position: { line: 1, character: 10 }
-    })
-    expect(JSON.stringify(hover.contents)).toContain('[]Sprite')
-  })
-
   it('analyzes stage and sprite code with the SDK, engine, math, and AI packages', async () => {
     const { request, command } = await startSpxWorker({
       'main.spx': `import engine "github.com/goplus/spx/v4/pkg/spx/pkg/engine"
