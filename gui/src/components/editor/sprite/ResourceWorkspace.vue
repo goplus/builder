@@ -101,9 +101,13 @@ watch(
   { immediate: true }
 )
 
-async function openAIEditor() {
+function openAIEditor() {
   selected.value = true
   activeTool.value = 'ai'
+}
+
+async function handleOpenAIEditor() {
+  openAIEditor()
   await nextTick()
   panel.value?.querySelector<HTMLElement>('textarea, input, [contenteditable="true"]')?.focus({ preventScroll: true })
 }
@@ -165,7 +169,7 @@ function handleToolKeydown(event: KeyboardEvent) {
         }"
         type="white"
         :disabled="busy"
-        @click="openAIEditor"
+        @click="handleOpenAIEditor"
       >
         <UIIcon type="wandSparkles" />
         {{ $t({ en: 'AI edit...', zh: 'AI 编辑…' }) }}
