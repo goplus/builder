@@ -29,4 +29,4 @@ require (
 replace github.com/goplus/builder/tools/ai => ../ai
 
 // TODO: Use an upstream version after https://github.com/goplus/ixgo/pull/566 merges.
-replace github.com/goplus/ixgo => github.com/nighca/igop v0.0.0-20261111074014-3ac5154eafe2
+replace github.com/goplus/ixgo => github.com/nighca/igop v0.0.0-20261111090635-204dcd99ff4c

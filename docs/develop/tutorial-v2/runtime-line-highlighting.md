@@ -18,9 +18,13 @@ file. Do not switch source files automatically.
 `tools/ispx` enables ixgo's `TrackStack` option and accepts `.spx` positions. On
 each execution event it selects the first position for each file from the
 innermost-first stack, retaining the existing per-goroutine sequence watermarks.
+Frames contribute their own positions after reaching accepted debug metadata;
+inherited-only positions do not add entries to the stack snapshot.
 The runner still sends complete `{file, line}` snapshots; the editor filters them
 by the active document. The protocol does not expose stack frames to the UI.
 
-Positions come from interpreter debug metadata and call instructions. This is a
+Positions come from interpreter debug metadata. In multiline calls, the retained
+caller position may point to an argument expression rather than the call's first
+line; improving call-site positioning is separate from stack tracking. This is a
 live progress indication, not a guarantee that every fast statement will be
 visible after the runner's UI update throttling.
