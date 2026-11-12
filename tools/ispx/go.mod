@@ -6,7 +6,7 @@ tool github.com/goplus/ixgo/cmd/qexp
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/ixgo v1.2.6
+	github.com/goplus/ixgo v1.2.7-0.20261112024403-b12d40fe1431
 	github.com/goplus/mod v0.22.1
 	github.com/goplus/spx/v4 v4.0.1
 )
@@ -27,6 +27,3 @@ require (
 )
 
 replace github.com/goplus/builder/tools/ai => ../ai
-
-// TODO: Use an upstream version after https://github.com/goplus/ixgo/pull/566 merges.
-replace github.com/goplus/ixgo => github.com/nighca/igop v0.0.0-20261111090635-204dcd99ff4c
