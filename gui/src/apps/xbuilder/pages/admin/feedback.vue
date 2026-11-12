@@ -44,13 +44,13 @@ const i18n = useI18n()
 const signedIn = useSignedIn()
 const canManageFeedback = computed(() => signedIn.user?.capabilities.canManageFeedback === true)
 
-const feedbackQuery = useQuery(
-  async () => {
+const feedbackQuery = useQuery({
+  queryFn: async () => {
     if (!canManageFeedback.value) return null
     return feedbackAdminApis.getFeedback(props.feedbackID)
   },
-  { en: 'Failed to load feedback', zh: '加载反馈失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load feedback', zh: '加载反馈失败' }
+})
 const feedback = computed(() => feedbackQuery.data.value)
 const rawContext = computed(() => feedback.value?.context ?? null)
 const context = computed(() => {

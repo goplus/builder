@@ -25,11 +25,11 @@ const props = defineProps<{
 const signedIn = useSignedIn()
 const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
-const clientQuery = useQuery(
-  async () =>
+const clientQuery = useQuery({
+  queryFn: async () =>
     canManageAccount.value ? accountAdminApis.getAccountOAuthClient(props.appID, props.oauthClientID) : null,
-  { en: 'Failed to load OAuth client', zh: '加载 OAuth 客户端失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load OAuth client', zh: '加载 OAuth 客户端失败' }
+})
 const client = computed(() => clientQuery.data.value)
 usePageTitle(() => ({ en: client.value?.name ?? 'OAuth client', zh: client.value?.name ?? 'OAuth 客户端' }))
 
@@ -74,16 +74,16 @@ const handleSave = useMessageHandle(
 )
 
 const secretsPage = ref(1)
-const secretsQuery = useQuery(
-  async () => {
+const secretsQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value || client.value?.clientType !== 'confidential') return { total: 0, data: [] }
     return accountAdminApis.listAccountOAuthClientSecrets(props.appID, props.oauthClientID, {
       pageIndex: secretsPage.value,
       pageSize: 20
     })
   },
-  { en: 'Failed to load client secrets', zh: '加载客户端密钥失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load client secrets', zh: '加载客户端密钥失败' }
+})
 const secretsPageTotal = computed(() => Math.ceil((secretsQuery.data.value?.total ?? 0) / 20))
 
 const secretName = ref('')

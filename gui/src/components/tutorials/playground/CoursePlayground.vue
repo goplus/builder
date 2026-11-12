@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { ProgressCollector, type Progress } from '@/utils/progress'
-import { composeQuery, useQuery, type QueryRet } from '@/utils/query'
+import { QueryMode, composeQuery, useQuery, type QueryRet } from '@/utils/query'
 import { useProvideReadiness, useRegisterLoading } from '@/utils/readiness'
 import { useEnsureSignedIn } from '@/utils/user'
 import { useMessageHandle } from '@/utils/exception'
@@ -67,16 +67,16 @@ const handleSaveAsMyProject = useMessageHandle(
   { en: 'Failed to save project', zh: '保存项目失败' }
 ).fn
 
-const monacoQueryRet = useQuery(
-  async (ctx) => {
+const monacoQueryRet = useQuery({
+  queryFn: async (ctx) => {
     const lang = i18n.lang.value
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
     const monaco = await loadMonaco(lang)
     ctx.reporter.report(1)
     return monaco
   },
-  { en: 'Failed to load code editor', zh: '加载代码编辑器失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load code editor', zh: '加载代码编辑器失败' }
+})
 
 const openMessage = useModal(CoursePlaygroundMessageModal)
 const openVideo = useModal(CoursePlaygroundVideoModal)
@@ -121,8 +121,8 @@ progressCollector.onProgress((value) => {
 const preparationReporter = progressCollector.getSubReporter(null, 0.5)
 const startProgressReporter = progressCollector.getSubReporter({ en: 'Starting course...', zh: '启动课程中...' }, 0.5)
 
-const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery(
-  async (ctx) => {
+const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery({
+  queryFn: async (ctx) => {
     startProgressReporter.report(0)
     const project = await composeQuery(ctx, props.projectQueryRet)
     ctx.signal.throwIfAborted()
@@ -144,22 +144,22 @@ const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery(
     ctx.reporter.report(1)
     return session
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to start course',
     zh: '启动课程失败'
   },
-  { clearResultOnFetch: true }
-)
+  mode: QueryMode.BlockingRefresh
+})
 
-const preparedQueryRet = useQuery(
-  (ctx) =>
+const preparedQueryRet = useQuery({
+  queryFn: (ctx) =>
     Promise.all([
       composeQuery(ctx, sessionQueryRet, [{ en: 'Loading course...', zh: '加载课程中...' }, 4]),
       composeQuery(ctx, monacoQueryRet, [{ en: 'Loading editor...', zh: '加载编辑器中...' }, 1])
     ]),
-  { en: 'Failed to prepare course', zh: '准备课程失败' },
-  { clearResultOnFetch: true }
-)
+  failureSummaryMessage: { en: 'Failed to prepare course', zh: '准备课程失败' },
+  mode: QueryMode.BlockingRefresh
+})
 
 watch(preparedQueryRet.progress, (value) => preparationReporter.report(value), { immediate: true })
 

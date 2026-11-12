@@ -10,7 +10,7 @@ const noLocalCache: ILocalCache = {
 </script>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 
 import { DefaultException } from '@/utils/exception'
@@ -47,11 +47,10 @@ usePageTitle({ en: 'Project snapshot', zh: '项目快照' })
 
 const inEditorRouter = useScopedRouterWithPathParam('inEditorPath', () => props.inEditorPath)
 
-const stateQueryRet = useQuery(
-  async (ctx) => {
-    // Access route deps synchronously, so their change will drive `useQuery` to re-fetch
+const stateQueryRet = useQuery({
+  queryKey: () => [props.feedbackID],
+  queryFn: async (ctx) => {
     const feedbackID = props.feedbackID
-    await nextTick()
 
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
     const feedback = await feedbackAdminApis.getFeedback(feedbackID)
@@ -76,29 +75,29 @@ const stateQueryRet = useQuery(
     ctx.reporter.report(1)
     return state
   },
-  { en: 'Failed to load project snapshot', zh: '加载项目快照失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load project snapshot', zh: '加载项目快照失败' }
+})
 
 const state = stateQueryRet.data
 
-const monacoQueryRet = useQuery(
-  async (ctx) => {
+const monacoQueryRet = useQuery({
+  queryFn: async (ctx) => {
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
     const monaco = await loadMonaco(i18n.lang.value)
     ctx.reporter.report(1)
     return monaco
   },
-  { en: 'Failed to load code editor', zh: '加载代码编辑器失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load code editor', zh: '加载代码编辑器失败' }
+})
 
-const allQueryRet = useQuery(
-  (ctx) =>
+const allQueryRet = useQuery({
+  queryFn: (ctx) =>
     Promise.all([
       composeQuery(ctx, stateQueryRet, [{ en: 'Loading project snapshot...', zh: '加载项目快照中...' }, 2]),
       composeQuery(ctx, monacoQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
     ]),
-  { en: 'Failed to load editor', zh: '加载编辑器失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load editor', zh: '加载编辑器失败' }
+})
 
 useRegisterLoading(() => allQueryRet.isLoading.value || allQueryRet.error.value != null)
 

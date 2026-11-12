@@ -27,19 +27,19 @@ const pageSize = 8
 const page = useRouteQueryParamInt('p', 1)
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
-const queryRet = useQuery(
-  () =>
+const queryRet = useQuery({
+  queryFn: () =>
     listUserFollowers(props.nameInput, {
       orderBy: 'followedAt',
       sortOrder: 'desc',
       pageSize,
       pageIndex: page.value
     }),
-  {
+  failureSummaryMessage: {
     en: 'Failed to load users',
     zh: '加载失败'
   }
-)
+})
 </script>
 
 <template>

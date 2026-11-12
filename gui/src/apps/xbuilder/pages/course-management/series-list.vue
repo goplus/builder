@@ -86,9 +86,12 @@ async function listAllSeries(signal: AbortSignal) {
   }
 }
 
-const seriesQueryRet = useQuery((ctx) => listAllSeries(ctx.signal), {
-  en: 'Failed to load course series',
-  zh: '加载课程系列失败'
+const seriesQueryRet = useQuery({
+  queryFn: (ctx) => listAllSeries(ctx.signal),
+  failureSummaryMessage: {
+    en: 'Failed to load course series',
+    zh: '加载课程系列失败'
+  }
 })
 
 /** The series as shown, which a drag reorders before the server has the new order. */

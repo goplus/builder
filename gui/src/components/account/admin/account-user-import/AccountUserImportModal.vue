@@ -38,14 +38,14 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const rows = ref<ImportRowState[]>([])
 const isCreating = ref(false)
 
-const parseResultQuery = useQuery(
-  async () => {
+const parseResultQuery = useQuery({
+  queryFn: async () => {
     if (selectedFile.value == null) return null
     const text = await selectedFile.value.text()
     return parseAccountUserImportCsv(text)
   },
-  { en: 'Failed to read CSV file', zh: '读取 CSV 文件失败' }
-)
+  failureSummaryMessage: { en: 'Failed to read CSV file', zh: '读取 CSV 文件失败' }
+})
 
 const parseErrors = computed(() => parseResultQuery.data.value?.errors ?? [])
 const validRows = computed(() => rows.value.length > 0 && parseErrors.value.length === 0)

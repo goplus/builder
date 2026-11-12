@@ -2,21 +2,27 @@ import { computed, toRef, type WatchSource } from 'vue'
 
 import * as apis from '@/apis/course'
 import { useAction } from '@/utils/exception'
-import { useQueryCache, useQueryWithCache, type QueryMode } from '@/utils/query'
+import { useQueryCache, useQueryWithCache, type QueryMode, type QueryRet } from '@/utils/query'
 import { useCourseChangesInSeries } from './course-series'
 
-function getCourseQueryKey(courseID: string) {
+function getCourseQueryKey(courseID: string | null) {
   return ['course', courseID]
 }
 
 const staleTime = 5 * 60 * 1000
 
-export function useCourse(courseID: WatchSource<string>, options: { mode?: QueryMode } = {}) {
+export function useCourse(courseID: WatchSource<string>, options?: { mode?: QueryMode }): QueryRet<apis.Course>
+export function useCourse(
+  courseID: WatchSource<string | null>,
+  options?: { mode?: QueryMode }
+): QueryRet<apis.Course | null>
+export function useCourse(courseID: WatchSource<string | null>, options: { mode?: QueryMode } = {}) {
   const courseIDRef = toRef(courseID)
   return useQueryWithCache({
     mode: options.mode,
     queryKey: computed(() => getCourseQueryKey(courseIDRef.value)),
-    queryFn: (signal) => apis.getCourse(courseIDRef.value, signal),
+    queryFn: (signal) =>
+      courseIDRef.value == null ? Promise.resolve(null) : apis.getCourse(courseIDRef.value, signal),
     staleTime,
     failureSummaryMessage: { en: 'Failed to load course', zh: '加载课程失败' }
   })

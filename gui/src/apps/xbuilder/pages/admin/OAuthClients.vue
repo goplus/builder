@@ -25,15 +25,15 @@ const props = defineProps<{
 
 const page = ref(1)
 const pageSize = 20
-const clientsQuery = useQuery(
-  () =>
+const clientsQuery = useQuery({
+  queryFn: () =>
     accountAdminApis.listAccountOAuthClients(props.appID, {
       pageIndex: page.value,
       pageSize,
       sortOrder: SortOrder.Desc
     }),
-  { en: 'Failed to load OAuth clients', zh: '加载 OAuth 客户端失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load OAuth clients', zh: '加载 OAuth 客户端失败' }
+})
 const pageTotal = computed(() => Math.ceil((clientsQuery.data.value?.total ?? 0) / pageSize))
 
 const showCreate = ref(false)

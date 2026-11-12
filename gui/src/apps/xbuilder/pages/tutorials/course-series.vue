@@ -1,8 +1,42 @@
+<script lang="ts">
+import { onBeforeUnmount, onMounted, toValue, type WatchSource } from 'vue'
+import { useRouter } from 'vue-router'
+import type { CourseSeries } from '@/apis/course-series'
+import { getCleanupSignal } from '@/utils/disposable'
+import { untilNotNull } from '@/utils/utils'
+import { findUnitIndexOfCourse, getSeriesUnits } from '@/components/tutorials/units'
+import { courseListRowsPerPage } from '@/components/tutorials/PagedCourseList.vue'
+
+/** On entry, locate the course from the hash in its unit or page, then clear the navigation hint. */
+function useCourseHashNavigation(courseSeries: WatchSource<CourseSeries | null>, numInRow: WatchSource<number>) {
+  const router = useRouter()
+  const signal = getCleanupSignal(onBeforeUnmount)
+  onMounted(async () => {
+    const hash = router.currentRoute.value.hash
+    if (!hash.startsWith('#course-')) return
+    const series = await untilNotNull(courseSeries, signal)
+    const courseID = hash.slice('#course-'.length)
+    const query = { ...router.currentRoute.value.query }
+    if (series.courseIDs.includes(courseID)) {
+      delete query.unit
+      delete query.p
+      if (series.units.length > 0) {
+        const index = findUnitIndexOfCourse(getSeriesUnits(series), courseID)
+        if (index > 0) query.unit = String(index + 1)
+      } else {
+        const page = Math.floor(series.courseIDs.indexOf(courseID) / (toValue(numInRow) * courseListRowsPerPage)) + 1
+        if (page > 1) query.p = String(page)
+      }
+    }
+    await router.replace({ query, hash: '' })
+  })
+}
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 
 import type { Course } from '@/apis/course'
-import type { CourseSeries } from '@/apis/course-series'
 import CenteredWrapper from '@/components/common/CenteredWrapper.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/community/TextView.vue'
@@ -12,7 +46,7 @@ import UnitCourseList from '@/components/tutorials/UnitCourseList.vue'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UICard, UIError, UIImg, UILoading, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
-import { useSeries } from '@/stores/course-series'
+import { useSeriesWithCourses } from '@/stores/course-series'
 import { useEnsureSignedIn } from '@/utils/user'
 import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
@@ -27,14 +61,16 @@ const props = defineProps<{
 const tutorial = useTutorial()
 const ensureSignedIn = useEnsureSignedIn()
 
-const courseSeriesQuery = useSeries(() => props.courseSeriesIdInput)
+const seriesWithCoursesQuery = useSeriesWithCourses(() => props.courseSeriesIdInput)
 
 const {
-  data: courseSeries,
+  data: seriesWithCourses,
   error: courseSeriesError,
   refetch: courseSeriesRefetch,
   isLoading: courseSeriesIsLoading
-} = courseSeriesQuery
+} = seriesWithCoursesQuery
+const courseSeries = computed(() => seriesWithCourses.value?.series ?? null)
+const courses = computed(() => seriesWithCourses.value?.courses ?? [])
 
 usePageTitle(() => {
   const parts = []
@@ -54,6 +90,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
+useCourseHashNavigation(courseSeries, numInRow)
 
 const { fn: handleCourseClick } = useMessageHandle(
   async (event: MouseEvent, course: Course, courseSeries: CourseSeries) => {
@@ -123,6 +160,7 @@ const { fn: handleCourseClick } = useMessageHandle(
           class="mt-7"
           :course-series="courseSeries"
           :num-in-row="numInRow"
+          :courses="courses"
         >
           <template #course="{ course }">
             <!-- a tag are used for: link preview on hover, context menu support, and better accessibility -->

@@ -63,8 +63,8 @@ const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
 const pageTotal = computed(() => Math.ceil((courseSeriesQuery.data.value?.total ?? 0) / pageSize.value))
 
-const courseSeriesQuery = useQuery(
-  (ctx) =>
+const courseSeriesQuery = useQuery({
+  queryFn: (ctx) =>
     listCourseSeries(
       {
         pageIndex: page.value,
@@ -74,9 +74,9 @@ const courseSeriesQuery = useQuery(
       },
       ctx.signal
     ),
-  {
+  failureSummaryMessage: {
     en: 'Failed to load course series',
     zh: '加载课程系列失败'
   }
-)
+})
 </script>

@@ -60,9 +60,12 @@ const {
   data: session,
   error,
   refetch
-} = useQuery(getSession, {
-  en: 'Failed to load session',
-  zh: '无法加载登录状态'
+} = useQuery({
+  queryFn: getSession,
+  failureSummaryMessage: {
+    en: 'Failed to load session',
+    zh: '无法加载登录状态'
+  }
 })
 
 const initial = computed(() =>
