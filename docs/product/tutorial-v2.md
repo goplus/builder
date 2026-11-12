@@ -57,7 +57,7 @@ Course Gallery remains as designed. Course management is a page of the author's 
 
 #### Course Navigation
 
-The navigation panel opened from the navbar uses the active Course's Course Series title as its heading, giving learners context for the units and Courses listed below without adding another navigation level ([#3753](https://github.com/goplus/builder/issues/3753)). The heading follows the active Course's Series data and keeps its existing typography. Long titles are truncated, with the full title available on hover, so the Exit Course action stays visible. The Series title is shown as authored in every UI language; surrounding controls remain localized.
+The navigation panel opened from the navbar uses the active Course's Course Series title as its heading, giving learners context for the units and Courses listed below without adding another navigation level ([#3753](https://github.com/goplus/builder/issues/3753)). The heading follows the active Course's Course Series data and keeps its existing typography. Long titles are truncated, with the full title available on hover, so the Exit Course action stays visible. The Course Series title is shown as authored in every UI language; surrounding controls remain localized.
 
 ### Playground Course
 
