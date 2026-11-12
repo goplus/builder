@@ -303,6 +303,8 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     const contribution = editor.getContribution('snippetController2')
     if (contribution == null) throw new Error('Snippet contribution not found')
     ;(contribution as any).insert(snippet) // About `contribution.insert`: https://github.com/microsoft/vscode/blob/942d11fff1a3a4f0faa918b59803f699ec61b9b6/src/vs/editor/contrib/snippet/browser/snippetController2.ts#L104
+    // Keep the initial parameter selection without retaining Tab-stop interaction in Simple Mode.
+    if (this.options.simpleMode) (contribution as any).cancel(true)
     this.editor.focus()
   }
 
