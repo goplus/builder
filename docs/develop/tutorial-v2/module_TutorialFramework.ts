@@ -38,7 +38,7 @@ export type TutorialProjectFiles = FileCollection;
  * timing.
  */
 export type TutorialEvent =
-  /** The learner's project runtime started. */
+  /** The learner's project is about to run; comes before that run's log and exit events. */
   | { name: "editor.runtime.start"; payload: null }
   /** The learner's project runtime exited with the given code. */
   | { name: "editor.runtime.exit"; payload: { code: number } }

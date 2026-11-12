@@ -2,7 +2,8 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Cancelled } from '@/utils/exception'
 import { SpxProject } from '@/models/spx/project'
-import { Runtime } from '../runtime'
+import type { SpxLog } from '@/components/project/runner/spx-log'
+import { Runtime, type RunningState } from '../runtime'
 import EditorPreview from './EditorPreview.vue'
 
 const { useEditorCtx } = vi.hoisted(() => ({ useEditorCtx: vi.fn() }))
@@ -37,11 +38,20 @@ vi.mock('./stage-viewer/StageViewer.vue', () => ({ default: { template: '<div />
 const disposers: Array<() => void> = []
 afterEach(() => disposers.splice(0).forEach((dispose) => dispose()))
 
+type RunnerStub = { $emit(event: string, ...args: unknown[]): void }
+
+function spxLog(msg: string): SpxLog {
+  return { level: 'INFO', time: '2026-11-12T00:00:00Z', msg, function: 'main', file: 'main.spx', line: 1 }
+}
+
 function mountPreview() {
   const project = new SpxProject()
   const runtime = new Runtime(project)
   useEditorCtx.mockReturnValue({ project, state: { runtime } })
-  const run = vi.fn(async () => 'files-hash')
+  const run = vi.fn(async function (this: RunnerStub) {
+    this.$emit('start')
+    return 'files-hash'
+  })
   const stop = vi.fn(async () => {})
   const wrapper = shallowMount(EditorPreview, {
     global: {
@@ -58,7 +68,7 @@ function mountPreview() {
             stop,
             async rerun() {
               await stop()
-              return run()
+              return run.call(this)
             }
           }
         }
@@ -80,22 +90,24 @@ function mountPreview() {
 }
 
 describe('Editor Preview execution lifecycle', () => {
-  it('emits starts only for successful runs and reruns, after updating runtime state', async () => {
+  it('emits a start for each run and rerun when the runner reports one, while still initializing', async () => {
     const { runtime, surface, run, toggleFullscreen } = mountPreview()
-    const started = vi.fn(() => {
-      expect(runtime.running).toEqual({ mode: 'debug', initializing: false })
-      expect(runtime.filesHash).toBe('files-hash')
-    })
+    const statesAtStart: RunningState[] = []
+    const started = vi.fn(() => statesAtStart.push(runtime.running))
     runtime.on('didStart', started)
     let finishStartup!: (hash: string) => void
-    run.mockImplementationOnce(() => new Promise<string>((resolve) => (finishStartup = resolve)))
+    run.mockImplementationOnce(function (this: RunnerStub) {
+      this.$emit('start')
+      return new Promise<string>((resolve) => (finishStartup = resolve))
+    })
     const starting = surface.props('onRun')()
     await flushPromises()
-    expect(runtime.running).toEqual({ mode: 'debug', initializing: true })
-    expect(started).not.toHaveBeenCalled()
+    expect(started).toHaveBeenCalledTimes(1)
     finishStartup('files-hash')
     await starting
     expect(started).toHaveBeenCalledTimes(1)
+    expect(runtime.running).toEqual({ mode: 'debug', initializing: false })
+    expect(runtime.filesHash).toBe('files-hash')
     await toggleFullscreen()
     surface.vm.$emit('exit', 0)
     expect(started).toHaveBeenCalledTimes(1)
@@ -104,6 +116,38 @@ describe('Editor Preview execution lifecycle', () => {
     await surface.props('onStop')()
     await surface.props('onRun')()
     expect(started).toHaveBeenCalledTimes(3)
+    expect(statesAtStart).toEqual(Array(3).fill({ mode: 'debug', initializing: true }))
+  })
+
+  it("delivers a run's start before its output and exit", async () => {
+    const { runtime, surface, run } = mountPreview()
+    const events: string[] = []
+    runtime.on('didStart', () => events.push('start'))
+    runtime.on('didAppendOutput', (output) => events.push(output.message))
+    runtime.on('didExit', (code) => events.push(`exit ${code}`))
+    run.mockImplementationOnce(async function (this: RunnerStub) {
+      this.$emit('start')
+      this.$emit('log', spxLog('printed while starting'))
+      return 'files-hash'
+    })
+    await surface.props('onRun')()
+    surface.vm.$emit('log', spxLog('printed later'))
+    surface.vm.$emit('exit', 0)
+    expect(events).toEqual(['start', 'printed while starting', 'printed later', 'exit 0'])
+  })
+
+  it('emits the start of a run that fails after the runner reported it', async () => {
+    const { runtime, surface, run } = mountPreview()
+    const started = vi.fn()
+    runtime.on('didStart', started)
+    const error = new Error('startup failed')
+    run.mockImplementationOnce(async function (this: RunnerStub) {
+      this.$emit('start')
+      throw error
+    })
+    await expect(surface.props('onRun')()).rejects.toThrow(error)
+    expect(started).toHaveBeenCalledTimes(1)
+    expect(runtime.running).toEqual({ mode: 'debug', initializing: false, initializingError: error })
   })
 
   it('does not emit a start for cancelled initialization', async () => {

@@ -38,6 +38,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:fullscreen': [value: boolean]
+  start: []
   exit: [code: number]
   log: [log: SpxLog]
   executionLocations: [locations: readonly SpxExecutionLocation[]]
@@ -480,6 +481,7 @@ defineExpose({
           :track-execution-location="props.trackExecutionLocation"
           class="runner"
           :project="project"
+          @start="emit('start')"
           @log="emit('log', $event)"
           @execution-locations="emit('executionLocations', $event)"
           @exit="emit('exit', $event)"

@@ -16,9 +16,11 @@ export interface Runtime {
   /** Latest 500 outputs for UI rendering, updated on snapshot changes. */
   readonly outputSnapshot: readonly RuntimeOutput[];
   /**
-   * Emitted once after a run or rerun succeeds, with runtime state and filesHash
-   * updated. Failed/cancelled initialization and UI state restoration do not
-   * emit a start; subscribing does not replay an already-running state.
+   * Emitted once per run or rerun, right before the project's code starts, so
+   * before any of that run's output or exit; runtime state is still initializing
+   * then. Initialization that fails or is cancelled before that point and UI
+   * state restoration do not emit a start, while a run that fails after it has
+   * already emitted one; subscribing does not replay an already-running state.
    */
   on(event: "didStart", listener: () => void): Disposer;
   /** Every new output, synchronously in append order, including errors. */
