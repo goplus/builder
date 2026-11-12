@@ -92,10 +92,13 @@ export class ResourceReferenceController extends Emitter<{
           clear()
           return
         }
-        this.hoveredPosition.value = fromMonacoPosition({
+        const position = fromMonacoPosition({
           lineNumber: target.range.startLineNumber,
           column: target.range.startColumn
         })
+        const previous = this.hoveredPosition.value
+        if (previous?.line === position.line && previous.column === position.column) return
+        this.hoveredPosition.value = position
       })
     )
     editor.getDomNode()?.addEventListener('mouseleave', () => clearLater(), { signal: this.getSignal() })

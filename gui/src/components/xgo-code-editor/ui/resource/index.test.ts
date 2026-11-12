@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { InputKind, resourceURIPrefix } from '../../common'
 import type { CodeEditorUIController } from '../code-editor-ui'
 import { ResourceReferenceController } from '.'
@@ -86,6 +86,12 @@ describe('Resource hover preview', () => {
       await vi.runAllTimersAsync()
       hover()
       expect(controller.hoveredResource).toEqual(boat)
+      const preview = computed(() => controller.hoveredResource)
+      const firstPreview = preview.value
+      hover()
+      expect(preview.value).toBe(firstPreview)
+      hover(11)
+      expect(preview.value).toEqual(boat)
       slots.value = [{ range, input: { kind: InputKind.Predefined, type: 'spx-sprite-instance', value: boat.uri } }]
       expect(controller.hoveredResource).toBeNull()
       controller.previewResource(boat)

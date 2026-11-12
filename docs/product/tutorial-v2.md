@@ -106,7 +106,8 @@ code-hover behavior to the ordinary editor.
   a short grace period for moving onto a name label or hover card. Typing, changing
   documents, closing the selector, and starting a run clear the relevant preview.
 - Stage hover and code-hover highlighting apply in Simple Mode. Ruler snapping keeps
-  its existing availability in both editor modes. Its current snap target takes
+  its existing availability in both editor modes, but hidden sprites are excluded
+  from snap targets in both modes. Its current snap target takes
   precedence over a code preview, with at most one full sprite outline at a time.
   Fixed measurement endpoints remain visible after the full sprite emphasis ends.
 - Use a static outline at a fixed screen thickness. Do not scale sprites, change their
