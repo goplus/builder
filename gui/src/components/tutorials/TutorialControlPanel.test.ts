@@ -1,5 +1,5 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CourseSeries } from '@/apis/course-series'
@@ -87,12 +87,20 @@ describe('tutorial course dropdown', () => {
     mocks.series = {
       data: ref({
         id: 'series',
+        owner: 'alice',
+        kind: 'guided',
+        title: 'Learning to code',
+        thumbnail: '',
+        description: '',
         courseIDs: ['a', 'b', 'c'],
         units: [
           { id: 'u1', title: 'Basics', courseIDs: ['a', 'b'] },
           { id: 'u2', title: 'Advanced', courseIDs: ['c'] }
-        ]
-      } as CourseSeries),
+        ],
+        order: 0,
+        createdAt: '',
+        updatedAt: ''
+      } satisfies CourseSeries),
       isLoading: ref(false),
       error: ref(null)
     }
@@ -102,6 +110,18 @@ describe('tutorial course dropdown', () => {
       endCurrentCourse: vi.fn()
     })
     mocks.confirm.mockResolvedValue(true)
+  })
+
+  it('shows the course series title in the heading and tooltip and updates both after renaming', async () => {
+    const wrapper = mountPanel()
+    const heading = wrapper.get('header span')
+    expect(heading.text()).toBe('Learning to code')
+    expect(heading.attributes('title')).toBe('Learning to code')
+
+    mocks.series.data.value = { ...mocks.series.data.value, title: 'Renamed series' }
+    await nextTick()
+    expect(heading.text()).toBe('Renamed series')
+    expect(heading.attributes('title')).toBe('Renamed series')
   })
 
   it('shows all units and courses in order, retaining active state and restart', async () => {

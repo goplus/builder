@@ -49,6 +49,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { cn, useLayerRegistration } from './utils'
 import {
   PopupRenderTrigger,
+  PopupReadyProvider,
   type PopupTriggerHandle,
   renderPopupTrigger,
   resolveTriggerElement,
@@ -98,6 +99,11 @@ const {
   offset: computed(() => props.offset),
   virtualAnchor: computed(() => props.pos ?? null)
 })
+const entering = ref(false)
+// Positioning initially hides the content; enter transforms can still move the input afterward.
+// Wait for its final position to avoid native suggestion misalignment, accepting the short autofocus delay.
+const popupReady = computed(() => visibleComputed.value && floatingStyle.value != null && !entering.value)
+
 const rootClass = computed(() => cn('fixed z-1000 overflow-hidden rounded-md bg-grey-100 shadow-sm', props.class))
 const popupStyle = computed(
   () =>
@@ -308,7 +314,7 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: Element | nu
   <PopupRenderTrigger :render-node="renderTriggerNode" />
 
   <Teleport v-if="attachTo != null" :to="attachTo">
-    <Transition name="ui-popup-scale-fade">
+    <Transition name="ui-popup-scale-fade" @before-enter="entering = true" @after-enter="entering = false">
       <div
         v-if="visibleComputed"
         v-bind="popup.rootAttrs"
@@ -318,7 +324,9 @@ function isEventInsideCurrentDropdown(event: MouseEvent, triggerEl: Element | nu
         @mouseenter="handleContentMouseenter"
         @mouseleave="handleContentMouseleave"
       >
-        <slot></slot>
+        <PopupReadyProvider :ready="popupReady">
+          <slot></slot>
+        </PopupReadyProvider>
       </div>
     </Transition>
   </Teleport>

@@ -1,7 +1,7 @@
 /**
  * Behavior shared by dialog surfaces (Modal, Drawer, etc.).
  */
-import { watch, type Ref } from 'vue'
+import { nextTick, toValue, watch, type Ref, type WatchSource } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
 import { untilNotNull } from '@/utils/utils'
 
@@ -22,19 +22,25 @@ function getFirstFocusableElement(container: HTMLElement) {
   })
 }
 
-/** Focus the first focusable element inside the surface whenever `shouldFocus` turns true. */
-export function useDialogAutoFocus(surfaceRef: Ref<HTMLElement | undefined>, shouldFocus: () => boolean) {
+/** Apply the dialog fallback after descendant input autofocus has run. */
+export function useDialogAutoFocus(
+  surfaceRef: Ref<HTMLElement | undefined>,
+  ready: WatchSource<boolean>,
+  shouldFocus: WatchSource<boolean>
+) {
   watch(
-    shouldFocus,
-    async (focus, _, onCleanup) => {
-      if (!focus) return
+    [ready, surfaceRef],
+    async ([isReady, surface], _, onCleanup) => {
+      if (!isReady || surface == null) return
 
       const signal = getCleanupSignal(onCleanup)
-      const surface = await untilNotNull(surfaceRef, signal)
+      // Descendant inputs also focus in post-flush watchers; let them finish before deciding on fallback focus.
+      await nextTick()
+      if (signal.aborted || !toValue(shouldFocus) || surface.contains(document.activeElement)) return
       const focusTarget = getFirstFocusableElement(surface)
       if (focusTarget != null) focusTarget.focus()
     },
-    { immediate: true }
+    { flush: 'post' }
   )
 }
 

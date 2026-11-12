@@ -3,6 +3,7 @@ package main
 import (
 	"go/token"
 	"reflect"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -218,12 +219,13 @@ func TestExecutionLocationsIgnoresDelayedEvents(t *testing.T) {
 	var snapshots [][]executionLocation
 	locations := &executionLocations{
 		lastSequence: make(map[uint64]uint64),
-		locations:    make(map[uint64]executionLocation),
+		locations:    make(map[uint64][]executionLocation),
 		onChange:     func(snapshot []executionLocation) { snapshots = append(snapshots, snapshot) },
 	}
 	report := func(id, sequence uint64, line int) {
+		position := token.Position{Filename: "Sprite.spx", Line: line}
 		locations.report(ixgo.ExecutionPosition{GoroutineID: id, Sequence: sequence, Clear: line == 0,
-			Position: token.Position{Filename: "Sprite.spx", Line: line}})
+			Position: position, Stack: []token.Position{position}})
 	}
 	report(1, 2, 3)
 	report(1, 1, 4)
@@ -237,5 +239,82 @@ func TestExecutionLocationsIgnoresDelayedEvents(t *testing.T) {
 	want := [][]executionLocation{{{File: "Sprite.spx", Line: 3}}, {}, {{File: "Sprite.spx", Line: 3}}, {}}
 	if !reflect.DeepEqual(snapshots, want) {
 		t.Fatalf("snapshots=%v; want %v", snapshots, want)
+	}
+}
+
+func TestExecutionTrackerWaitUntilKeepsCallerVisible(t *testing.T) {
+	const source = `package main
+var mature bool
+//line Lita.spx:1
+func Wait() {
+ Poll(func() bool { return IsMature() })
+}
+func Poll(condition func() bool) {}
+//line Mushroom.spx:8
+func IsMature() bool { return mature }
+`
+	ctx := ixgo.NewContext(ixgo.SupportMultipleInterp | ixgo.EnableCachedReg)
+	var snapshots [][]executionLocation
+	tracker := newExecutionTracker(func(locations []executionLocation) { snapshots = append(snapshots, locations) })
+	t.Cleanup(tracker.Close)
+	ctx.SetExecutionTracker(tracker)
+	ctx.RegisterExternal("main.Poll", func(condition func() bool) {
+		for range 3 {
+			condition()
+		}
+	})
+	i, err := ctx.LoadInterp("wait.go", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(i.UnsafeRelease)
+	if _, err := i.RunFunc("Wait"); err != nil {
+		t.Fatal(err)
+	}
+	seenCondition := false
+	for _, snapshot := range snapshots[:len(snapshots)-1] {
+		if !slices.Contains(snapshot, executionLocation{File: "Lita.spx", Line: 2}) {
+			t.Fatalf("wait lost its call site: %v", snapshot)
+		}
+		seenCondition = seenCondition || slices.Contains(snapshot, executionLocation{File: "Mushroom.spx", Line: 8})
+	}
+	if !seenCondition || len(snapshots[len(snapshots)-1]) != 0 {
+		t.Fatalf("condition not tracked or wait did not clear: %v", snapshots)
+	}
+}
+
+func TestExecutionTrackerInnermostLocationPerFile(t *testing.T) {
+	const source = `package main
+//line Lita.spx:1
+func Root(check func()) {
+ Stage(check)
+}
+//line main.spx:10
+func Stage(check func()) { Inner(check) }
+//line Lita.spx:20
+func Inner(check func()) { check() }
+`
+	ctx := ixgo.NewContext(ixgo.SupportMultipleInterp | ixgo.EnableCachedReg)
+	var latest []executionLocation
+	tracker := newExecutionTracker(func(locations []executionLocation) { latest = locations })
+	t.Cleanup(tracker.Close)
+	ctx.SetExecutionTracker(tracker)
+	i, err := ctx.LoadInterp("calls.go", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(i.UnsafeRelease)
+	checked := false
+	if _, err := i.RunFunc("Root", func() {
+		checked = true
+		if len(latest) != 2 || !slices.Contains(latest, executionLocation{File: "Lita.spx", Line: 20}) ||
+			!slices.Contains(latest, executionLocation{File: "main.spx", Line: 10}) {
+			t.Fatalf("expected innermost Lita and stage call sites: %v", latest)
+		}
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !checked || len(latest) != 0 {
+		t.Fatalf("checked=%v, locations=%v", checked, latest)
 	}
 }

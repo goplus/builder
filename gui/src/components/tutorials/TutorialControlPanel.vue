@@ -135,9 +135,12 @@ const { fn: handleRestartCourse } = useMessageHandle(
 <template>
   <div class="flex max-h-[70vh] w-100 flex-col p-2">
     <header class="flex flex-none items-center justify-between py-1 pl-2 pr-1">
-      <span class="text-base font-medium text-text">{{ $t({ en: 'Tutorial', zh: '教程' }) }}</span>
+      <span class="min-w-0 truncate pr-2 text-base font-medium text-text" :title="courseSeries?.title">
+        {{ courseSeries?.title }}
+      </span>
       <UIButton
         v-radar="{ name: 'exit-course-button', desc: 'Click to exit the current course' }"
+        class="flex-none"
         type="secondary"
         size="small"
         @click="handleExitCourse"
