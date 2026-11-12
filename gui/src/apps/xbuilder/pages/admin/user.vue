@@ -89,16 +89,16 @@ const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAcc
 const canManageAuthorization = computed(() => signedIn.user?.capabilities.canManageAuthorization === true)
 const canEditUserAuthorization = computed(() => canManageAccount.value && canManageAuthorization.value)
 
-const userQuery = useQuery(
-  async () => {
+const userQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return null
     return accountAdminApis.getAccountUser(props.userID)
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to load Account user',
     zh: '加载账号用户失败'
   }
-)
+})
 const user = computed(() => userQuery.data.value)
 const avatarFallbackText = computed(() => user.value?.displayName.trim().charAt(0).toUpperCase() || '?')
 usePageTitle(() =>
@@ -124,26 +124,26 @@ const isProfileChanged = computed(
 
 const password = ref('')
 
-const identitiesQuery = useQuery(
-  async () => {
+const identitiesQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
     return accountAdminApis.listAccountUserIdentities(props.userID, { pageIndex: 1, pageSize: 100 })
   },
-  { en: 'Failed to load Account user identities', zh: '加载账号用户第三方身份失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load Account user identities', zh: '加载账号用户第三方身份失败' }
+})
 
-const sessionsQuery = useQuery(
-  async () => {
+const sessionsQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
     return accountAdminApis.listAccountUserSessions(props.userID, { pageIndex: 1, pageSize: 100 })
   },
-  { en: 'Failed to load Account user sessions', zh: '加载账号用户会话失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load Account user sessions', zh: '加载账号用户会话失败' }
+})
 
 const grantsPageSize = 20
 const grantsPage = ref(1)
-const grantsQuery = useQuery(
-  async () => {
+const grantsQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
     return accountAdminApis.listAccountUserAppGrants(props.userID, {
       pageIndex: grantsPage.value,
@@ -152,17 +152,17 @@ const grantsQuery = useQuery(
       sortOrder: SortOrder.Desc
     })
   },
-  { en: 'Failed to load Account user app grants', zh: '加载账号用户应用授权失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load Account user app grants', zh: '加载账号用户应用授权失败' }
+})
 const grantsPageTotal = computed(() => Math.ceil((grantsQuery.data.value?.total ?? 0) / grantsPageSize))
 
-const authorizationQuery = useQuery(
-  async () => {
+const authorizationQuery = useQuery({
+  queryFn: async () => {
     if (!canEditUserAuthorization.value) return null
     return authorizationAdminApis.getUserAuthorization(props.userID)
   },
-  { en: 'Failed to load user authorization', zh: '加载用户授权失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load user authorization', zh: '加载用户授权失败' }
+})
 
 const roles = ref<ManagedAdminRole[]>([])
 const plan = ref<authorizationAdminApis.UserPlan>('free')

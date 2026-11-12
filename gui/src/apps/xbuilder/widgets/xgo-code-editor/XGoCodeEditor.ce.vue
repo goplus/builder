@@ -59,8 +59,8 @@ const {
   isLoading,
   error,
   refetch
-} = useQuery(
-  async (ctx) => {
+} = useQuery({
+  queryFn: async (ctx) => {
     const [monaco, serialized] = await Promise.all([
       loadMonaco(i18n.lang.value),
       cloudHelpers.load(widgetProjectOwner, widgetProjectName, true)
@@ -87,8 +87,8 @@ const {
     lspClient.disposeOnSignal(ctx.signal)
     return codeEditor
   },
-  { en: 'Load code editor failed', zh: '加载代码编辑器失败' }
-)
+  failureSummaryMessage: { en: 'Load code editor failed', zh: '加载代码编辑器失败' }
+})
 
 useProvideCodeEditor(codeEditorRef)
 

@@ -29,8 +29,8 @@ const pageSize = computed(() => numInRow.value * 2)
 const page = useRouteQueryParamInt('p', 1)
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize.value))
 
-const queryRet = useQuery(
-  () =>
+const queryRet = useQuery({
+  queryFn: () =>
     listUserLikedProjects(props.nameInput, {
       type: ProjectType.Game,
       orderBy: 'likedAt',
@@ -38,11 +38,11 @@ const queryRet = useQuery(
       pageSize: pageSize.value,
       pageIndex: page.value
     }),
-  {
+  failureSummaryMessage: {
     en: 'Failed to load projects',
     zh: '加载失败'
   }
-)
+})
 </script>
 
 <template>

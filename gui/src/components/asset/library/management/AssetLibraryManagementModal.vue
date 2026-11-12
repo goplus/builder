@@ -61,8 +61,8 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 
 watch(keyword, () => (page.value = 1))
 
-const queryRet = useQuery(
-  () =>
+const queryRet = useQuery({
+  queryFn: () =>
     listSignedInUserAssets({
       pageSize,
       pageIndex: page.value,
@@ -70,11 +70,11 @@ const queryRet = useQuery(
       keyword: keyword.value,
       orderBy: 'displayName'
     }),
-  {
+  failureSummaryMessage: {
     en: 'Failed to list',
     zh: '获取列表失败'
   }
-)
+})
 
 function handleSearch() {
   keyword.value = searchInput.value

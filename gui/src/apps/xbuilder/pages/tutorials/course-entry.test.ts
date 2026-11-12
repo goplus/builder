@@ -24,7 +24,8 @@ const apis = vi.hoisted(() => ({
   series: vi.fn(),
   updateSeries: vi.fn(),
   load: vi.fn(),
-  dispose: vi.fn()
+  dispose: vi.fn(),
+  openCompletion: vi.fn()
 }))
 vi.mock('@/apis/course', async (original) => ({
   ...(await original<typeof import('@/apis/course')>()),
@@ -65,7 +66,7 @@ vi.mock('@/components/tutorials/playground/CoursePlayground.vue', () => ({
 }))
 vi.mock('@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue', () => ({ default: {} }))
 vi.mock('@/components/ui', () => ({
-  useModal: () => vi.fn(),
+  useModal: () => apis.openCompletion,
   UIDetailedLoading: { template: '<div>loading</div>' },
   UIError: { template: '<div><slot /></div>' }
 }))
@@ -100,6 +101,8 @@ beforeEach(() => {
   apis.load.mockImplementation(async (course) => ({
     title: course.title,
     code: 'initial',
+    getSignal: () => new AbortController().signal,
+    isDisposed: false,
     config: { inEditorPath: 'sprites/Lita/code' },
     disposeOnSignal: (signal: AbortSignal) => signal.addEventListener('abort', apis.dispose)
   }))
@@ -167,7 +170,7 @@ describe('Course entry with shared cached queries', () => {
   })
 
   it.each([false, true])(
-    'creates and saves a course in a series (units: %s), then waits for a valid list after leaving management during refresh',
+    'starts a saved course after leaving a refreshing course list (units: %s)',
     async (withUnits) => {
       if (withUnits) series.units = [{ id: 'unit-1', title: 'Basics', courseIDs: ['first'] }]
       let creation!: CourseCreation
@@ -175,7 +178,7 @@ describe('Course entry with shared cached queries', () => {
       const management = mount(
         defineComponent({
           setup() {
-            useSeriesCourses(() => 'series')
+            useSeriesCourses(() => series.id)
             creation = new CourseCreation('series', useUpdateCourseSeries())
             save = useUpdateCourse()
             return () => null
@@ -195,19 +198,8 @@ describe('Course entry with shared cached queries', () => {
       await vi.waitFor(() => expect(apis.list).toHaveBeenCalledTimes(2))
       management.unmount()
       await save('new', { title: 'Saved lesson' })
-      let finish!: () => void
-      apis.list.mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            finish = () => resolve({ data: [...courses], total: 2 })
-          })
-      )
       const { wrapper, enter } = await openEntry('/course/series/new/start')
       expect(enter).toHaveBeenCalledOnce()
-      expect(apis.load).not.toHaveBeenCalled()
-      expect(wrapper.text()).toContain('loading')
-      await vi.waitFor(() => expect(finish).toBeTypeOf('function'))
-      finish()
       await flushPromises()
       expect(wrapper.text()).toBe('Saved lesson')
       expect(apis.load).toHaveBeenCalledWith(courses[1])
@@ -234,50 +226,71 @@ describe('Course entry with shared cached queries', () => {
     const { wrapper } = await openEntry('/course/series/course-100/playground')
     await vi.waitFor(() => expect(wrapper.text()).toBe('Lesson 100'))
     expect(apis.load).toHaveBeenCalledWith(courses[100])
-    expect(apis.list).toHaveBeenCalledTimes(2)
+    expect(apis.get).toHaveBeenCalledWith('course-100', expect.any(AbortSignal))
   })
 
-  it('preserves edits during background updates and reads the updated list when switching courses in the same series', async () => {
-    const { wrapper, router, tutorial, enter } = await openEntry('/course/series/first/playground')
+  it('preserves edits during shared-cache refresh and reads the new course when switching', async () => {
+    series.courseIDs = ['first', 'new']
+    const { wrapper, tutorial, enter } = await openEntry('/course/series/first/playground')
     const query = wrapper.findComponent(PlaygroundComponent).props('projectQueryRet')
     await vi.waitFor(() => expect(query.data.value).not.toBeNull())
     const project = query.data.value as NonNullable<typeof query.data.value> & { code: string }
     project.code = 'learner edit'
-    series.courseIDs = ['first', 'new']
-    courses = courses.map((course) => ({ ...course, title: `${course.id} revised` }))
-    const finishes: Array<() => void> = []
-    apis.list.mockImplementation(
+    courses = courses.map((course) => ({ ...course, title: course.id + ' revised' }))
+    let finish!: () => void
+    apis.get.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
-          const finish = () => resolve({ data: [...courses], total: 2 })
-          finishes.push(finish)
+          finish = () => resolve(courses[0])
           pending.push(finish)
         })
     )
-    const refresh = client.invalidateQueries({ queryKey: ['course-series-courses', 'series'] })
-    await vi.waitFor(() => expect(finishes).toHaveLength(1))
-    expect(apis.load).toHaveBeenCalledOnce()
+    const refresh = client.invalidateQueries({ queryKey: ['course', 'first'] })
+    await vi.waitFor(() => expect(finish).toBeTypeOf('function'))
     expect(query.data.value).toBe(project)
     expect(project.code).toBe('learner edit')
-    await router.push('/course/series/first/playground/sprites/Lita/costumes')
-    await flushPromises()
     expect(apis.load).toHaveBeenCalledOnce()
     await tutorial.startCourse('series', 'new')
-    await vi.waitFor(() => expect(finishes).toHaveLength(2))
+    await vi.waitFor(() => expect(wrapper.text()).toBe('new revised'))
     expect(enter).toHaveBeenCalledWith(courses[1], series)
     expect(apis.dispose).toHaveBeenCalledOnce()
-    expect(apis.load).toHaveBeenCalledOnce()
-    expect(wrapper.text()).toBe('loading')
-    finishes.forEach((finish) => finish())
+    finish()
     await refresh
-    await flushPromises()
     expect(apis.load).toHaveBeenCalledTimes(2)
-    expect(wrapper.text()).toBe('new revised')
   })
 
-  it('retries a failed initial list read without re-entering an already completed Start step', async () => {
-    apis.list.mockRejectedValueOnce(new Error('list unavailable'))
-    const { wrapper, enter } = await openEntry('/course/series/first/start')
+  it('uses the session snapshot for title, completion and next course after shared-cache changes', async () => {
+    series.courseIDs = ['first', 'new']
+    const { wrapper, tutorial } = await openEntry('/course/series/first/playground')
+    const playground = wrapper.findComponent(PlaygroundComponent)
+    const project = playground.props('projectQueryRet').data.value
+    const start = vi.spyOn(tutorial, 'startCourse').mockResolvedValue()
+    apis.openCompletion.mockResolvedValue('next')
+    client.setQueryData(['course', 'first'], { ...courses[0], title: 'Revised title' })
+    client.setQueryData(['course-series', 'series'], { ...series, courseIDs: ['new', 'first'] })
+    apis.get.mockRejectedValueOnce(new Error('Background course refresh failed'))
+    apis.series.mockRejectedValueOnce(new Error('Background series refresh failed'))
+    await Promise.all([
+      client.invalidateQueries({ queryKey: ['course', 'first'] }),
+      client.invalidateQueries({ queryKey: ['course-series', 'series'] })
+    ])
+    expect(document.title).toBe('first - Course - XBuilder')
+    playground.vm.$emit('course-completed', { feedback: 'Well done' })
+    await flushPromises()
+    expect(apis.openCompletion).toHaveBeenCalledOnce()
+    expect(apis.openCompletion.mock.calls[0][0]).toMatchObject({
+      course: { id: 'first', title: 'first' },
+      series: { id: 'series', courseIDs: ['first', 'new'] },
+      feedback: 'Well done'
+    })
+    expect(start).toHaveBeenCalledWith('series', 'new')
+    expect(playground.props('projectQueryRet').data.value).toBe(project)
+    expect(apis.load).toHaveBeenCalledOnce()
+  })
+
+  it('retries a failed initial course read', async () => {
+    apis.get.mockRejectedValueOnce(new Error('course unavailable'))
+    const { wrapper } = await openEntry('/course/series/first/playground')
     const query = wrapper.findComponent(PlaygroundComponent).props('projectQueryRet')
     await vi.waitFor(() => expect(query.error.value).not.toBeNull())
     expect(apis.load).not.toHaveBeenCalled()
@@ -285,19 +298,18 @@ describe('Course entry with shared cached queries', () => {
     await flushPromises()
     expect(query.error.value).toBeNull()
     expect(wrapper.text()).toBe('first')
-    expect(enter).toHaveBeenCalledOnce()
   })
 
-  it('refetches the successful list when retrying a failed project load', async () => {
+  it('refetches course metadata when retrying a failed project load', async () => {
     apis.load.mockRejectedValueOnce(new Error('project unavailable'))
     const { wrapper, enter } = await openEntry('/course/series/first/start')
     const query = wrapper.findComponent(PlaygroundComponent).props('projectQueryRet')
     await vi.waitFor(() => expect(query.error.value).not.toBeNull())
-    expect(apis.list).toHaveBeenCalledOnce()
+    expect(apis.get).toHaveBeenCalledOnce()
     query.refetch()
     await flushPromises()
     expect(query.error.value).toBeNull()
-    expect(apis.list).toHaveBeenCalledTimes(2)
+    expect(apis.get).toHaveBeenCalledTimes(2)
     expect(apis.load).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toBe('first')
     expect(enter).toHaveBeenCalledOnce()

@@ -37,7 +37,7 @@ class LocalCache implements ILocalCache {
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useSignedIn } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
@@ -107,16 +107,11 @@ const confirmOpenTargetWithAnotherInCache = (targetName: string, cachedName: str
 
 const inEditorRouter = useScopedRouterWithPathParam('inEditorPath', () => props.inEditorPath)
 
-const stateQueryRet = useQuery(
-  async (ctx) => {
-    // We need to access route deps synchronously,
-    // so their change will drive `useQuery` to re-fetch
+const stateQueryRet = useQuery({
+  queryKey: () => [routeProjectIdentifier.value.owner, routeProjectIdentifier.value.name],
+  queryFn: async (ctx) => {
     const ownerInput = routeProjectIdentifier.value.owner
     const projectNameInput = routeProjectIdentifier.value.name
-
-    // Add `nextTick` to avoid data accessing in following code to be considered as deps, which will cause infinite loop of query fetching.
-    // TODO: Refactor `useQuery` to accept deps fn explicitly to avoid such issue.
-    await nextTick()
 
     const project = new SpxProject()
     project.disposeOnSignal(ctx.signal)
@@ -138,8 +133,8 @@ const stateQueryRet = useQuery(
     state.syncWithRouter(inEditorRouter)
     return state
   },
-  { en: 'Failed to load project', zh: '加载项目失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load project', zh: '加载项目失败' }
+})
 
 const state = stateQueryRet.data
 const currentProjectIdentifier = computed(() =>
@@ -154,18 +149,18 @@ usePageTitle(() => {
   }
 })
 
-const monacoQueryRet = useQuery(
-  async (ctx) => {
+const monacoQueryRet = useQuery({
+  queryFn: async (ctx) => {
     ctx.reporter.startAutoReport(1000, { signal: ctx.signal })
     const monaco = await loadMonaco(i18n.lang.value)
     ctx.reporter.report(1)
     return monaco
   },
-  {
+  failureSummaryMessage: {
     en: 'Failed to load code editor',
     zh: '加载代码编辑器失败'
   }
-)
+})
 
 watch(currentProjectIdentifier, (nextProjectIdentifier) => {
   if (nextProjectIdentifier == null || isSameProjectIdentifier(nextProjectIdentifier, routeProjectIdentifier.value)) {
@@ -179,14 +174,14 @@ watch(currentProjectIdentifier, (nextProjectIdentifier) => {
   })
 })
 
-const allQueryRet = useQuery(
-  (ctx) =>
+const allQueryRet = useQuery({
+  queryFn: (ctx) =>
     Promise.all([
       composeQuery(ctx, stateQueryRet, [{ en: 'Loading project...', zh: '加载项目中...' }, 2]),
       composeQuery(ctx, monacoQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
     ]),
-  { en: 'Failed to load editor', zh: '加载编辑器失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load editor', zh: '加载编辑器失败' }
+})
 
 // TODO: Evaluate dropping the error check: it currently keeps consumers waiting until editor context is available.
 useRegisterLoading(() => allQueryRet.isLoading.value || allQueryRet.error.value != null)

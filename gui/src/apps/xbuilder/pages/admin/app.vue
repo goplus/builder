@@ -19,9 +19,12 @@ const props = defineProps<{
 const signedIn = useSignedIn()
 const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 
-const appQuery = useQuery(async () => (canManageAccount.value ? accountAdminApis.getAccountApp(props.appID) : null), {
-  en: 'Failed to load Account app',
-  zh: '加载账号应用失败'
+const appQuery = useQuery({
+  queryFn: async () => (canManageAccount.value ? accountAdminApis.getAccountApp(props.appID) : null),
+  failureSummaryMessage: {
+    en: 'Failed to load Account app',
+    zh: '加载账号应用失败'
+  }
 })
 const app = computed(() => appQuery.data.value)
 usePageTitle(() => ({ en: app.value?.displayName ?? 'Account app', zh: app.value?.displayName ?? '账号应用' }))

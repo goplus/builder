@@ -26,8 +26,8 @@
     <template #tooltip-content>
       {{
         $t({
-          en: `${currentCourse.title}${currentCourse.state === CourseState.Completed ? ' completed' : ' in progress'}`,
-          zh: `${currentCourse.title}${currentCourse.state === CourseState.Completed ? '已完成' : '学习中'}`
+          en: `${course?.title ?? 'Course'}${currentCourse.state === CourseState.Completed ? ' completed' : ' in progress'}`,
+          zh: `${course?.title ?? '课程'}${currentCourse.state === CourseState.Completed ? '已完成' : '学习中'}`
         })
       }}
     </template>
@@ -50,10 +50,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { useCourse } from '@/stores/course'
 import { UIDropdownWithTooltip, UIIcon, UITooltip } from '@/components/ui'
 import { CourseState, useTutorial } from '@/components/tutorials/tutorial'
 import TutorialControlPanel from '@/components/tutorials/TutorialControlPanel.vue'
 
 const tutorial = useTutorial()
 const currentCourse = computed(() => tutorial.currentCourse)
+const { data: course } = useCourse(() => currentCourse.value?.id ?? null)
 </script>

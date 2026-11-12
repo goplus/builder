@@ -42,18 +42,22 @@ function restoreCredentials(username: string | null = 'alice', refreshToken: str
 function setupQueries() {
   let result!: ReturnType<typeof useQueries>
   function useQueries() {
-    const auth = useQuery(({ signal }) => signedIn.getUser({ signal }))
+    const auth = useQuery({
+      queryFn: ({ signal }) => signedIn.getUser({ signal })
+    })
     const user = computed(() => auth.data.value)
     const observations: unknown[] = []
     watch([auth.data, auth.isLoading, auth.error, user], (values) => observations.push(values), { flush: 'sync' })
     const sessions: { signal: AbortSignal; draft: string }[] = []
     const identity = computed(() => signedIn.username ?? 'guest')
-    const session = useQuery(async (ctx) => {
-      toValue(identity)
-      const state = await untilLoaded(auth, ctx.signal)
-      const value = { signal: ctx.signal, draft: state?.username ?? 'guest' }
-      sessions.push(value)
-      return value
+    const session = useQuery({
+      queryFn: async (ctx) => {
+        toValue(identity)
+        const state = await untilLoaded(auth, ctx.signal)
+        const value = { signal: ctx.signal, draft: state?.username ?? 'guest' }
+        sessions.push(value)
+        return value
+      }
     })
     return {
       auth,
@@ -151,9 +155,11 @@ describe('credential reads in business queries (#3588)', () => {
       mount(
         defineComponent({
           setup() {
-            const app = useQuery(async (ctx) => {
-              signals.push(ctx.signal)
-              return client.get(`/apps/${appID.value}`) as Promise<{ displayName: string }>
+            const app = useQuery({
+              queryFn: async (ctx) => {
+                signals.push(ctx.signal)
+                return client.get(`/apps/${appID.value}`) as Promise<{ displayName: string }>
+              }
             })
             watch(app.data, (value) => {
               if (value != null) draft.value = value.displayName

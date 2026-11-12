@@ -39,10 +39,12 @@ describe('useQuery', () => {
     const input = ref(0)
     const contexts: QueryContext[] = []
     const ret = withSetup(() =>
-      useQuery(async (ctx) => {
-        const value = input.value
-        contexts.push(ctx)
-        return value
+      useQuery({
+        queryFn: async (ctx) => {
+          const value = input.value
+          contexts.push(ctx)
+          return value
+        }
       })
     )
 
@@ -66,9 +68,11 @@ describe('useQuery', () => {
     let resolveNext!: (value: string) => void
     let callCount = 0
     const ret = withSetup(() =>
-      useQuery(async () => {
-        if (++callCount === 1) return 'first'
-        return new Promise<string>((resolve) => (resolveNext = resolve))
+      useQuery({
+        queryFn: async () => {
+          if (++callCount === 1) return 'first'
+          return new Promise<string>((resolve) => (resolveNext = resolve))
+        }
       })
     )
 
@@ -81,18 +85,18 @@ describe('useQuery', () => {
     expect(ret.data.value).toBe('second')
   })
 
-  it('clears previous data when clearResultOnFetch is enabled', async () => {
+  it('clears previous data in blocking refresh mode', async () => {
     let resolveNext!: (value: string) => void
     let callCount = 0
     const ret = withSetup(() =>
-      useQuery(
-        async () => {
+      useQuery({
+        queryFn: async () => {
           if (++callCount === 1) return 'first'
           return new Promise<string>((resolve) => (resolveNext = resolve))
         },
-        { en: 'Failed to load data', zh: '加载数据失败' },
-        { clearResultOnFetch: true }
-      )
+        failureSummaryMessage: { en: 'Failed to load data', zh: '加载数据失败' },
+        mode: QueryMode.BlockingRefresh
+      })
     )
 
     await flushPromises()
@@ -104,23 +108,28 @@ describe('useQuery', () => {
     expect(ret.data.value).toBe('second')
   })
 
-  it.each([true, false])(
-    'resets the previous error on retry only when clearResultOnFetch is %s',
-    async (clearResultOnFetch) => {
+  it.each([QueryMode.BlockingRefresh, 'legacy'] as const)(
+    'handles the previous error on retry in mode %s',
+    async (mode) => {
       const error = new Error('failed')
       let finish!: (value: string) => void
       const query = vi
         .fn()
         .mockRejectedValueOnce(error)
         .mockImplementationOnce(() => new Promise<string>((resolve) => (finish = resolve)))
-      const ret = withSetup(() => useQuery(query, undefined, { clearResultOnFetch }))
+      const ret = withSetup(() =>
+        useQuery({
+          queryFn: query,
+          mode
+        })
+      )
       await flushPromises()
       expect(ret.error.value?.cause).toBe(error)
 
       const failure = ret.error.value
       ret.refetch()
       expect(ret.isLoading.value).toBe(true)
-      expect(ret.error.value).toBe(clearResultOnFetch ? null : failure)
+      expect(ret.error.value).toBe(mode === QueryMode.BlockingRefresh ? null : failure)
       finish('recovered')
       await flushPromises()
       expect(ret.data.value).toBe('recovered')
@@ -137,7 +146,11 @@ describe('useQuery', () => {
       ctx.signal.addEventListener('abort', cleanup, { once: true })
       return input
     })
-    const ret = withSetup(() => useQuery(queryFn))
+    const ret = withSetup(() =>
+      useQuery({
+        queryFn
+      })
+    )
 
     await flushPromises()
     expect(queryFn).toHaveBeenCalledTimes(1)
@@ -159,11 +172,13 @@ describe('useQuery', () => {
     const signals: AbortSignal[] = []
     const cleanup = vi.fn()
     const ret = withSetup(() =>
-      useQuery(async (ctx) => {
-        signals.push(ctx.signal)
-        ctx.signal.addEventListener('abort', cleanup, { once: true })
-        if (signals.length === 1) throw error
-        return 'ok'
+      useQuery({
+        queryFn: async (ctx) => {
+          signals.push(ctx.signal)
+          ctx.signal.addEventListener('abort', cleanup, { once: true })
+          if (signals.length === 1) throw error
+          return 'ok'
+        }
       })
     )
 
@@ -196,7 +211,9 @@ describe('useQuery', () => {
     })
 
     const [ret] = withSetup(() => {
-      const ret = useQuery(queryFn)
+      const ret = useQuery({
+        queryFn
+      })
       return [ret] as const
     })
 
@@ -241,7 +258,9 @@ describe('useQuery', () => {
     })
 
     const [ret] = withSetup(() => {
-      const ret = useQuery(queryFn)
+      const ret = useQuery({
+        queryFn
+      })
       return [ret] as const
     })
 
@@ -282,7 +301,9 @@ describe('useQuery', () => {
     })
 
     const [ret] = withSetup(() => {
-      const ret = useQuery(queryFn)
+      const ret = useQuery({
+        queryFn
+      })
       return [ret] as const
     })
 
@@ -314,13 +335,63 @@ describe('useQuery', () => {
 })
 
 describe('composeQuery', () => {
+  it('propagates changes, errors and refetch through three levels', async () => {
+    const input = ref(1)
+    const leafFn = vi.fn(async () => {
+      if (input.value === 3) throw new Error('leaf failed')
+      return input.value
+    })
+    const [middle, root] = withSetup(() => {
+      const leaf = useQuery({ queryFn: leafFn })
+      const middle = useQuery({
+        queryKey: ['middle'],
+        mode: QueryMode.BlockingRefresh,
+        queryFn: async (ctx) => (await composeQuery(ctx, leaf)) * 2
+      })
+      const root = useQuery({
+        queryKey: ['root'],
+        mode: QueryMode.BlockingRefresh,
+        queryFn: async (ctx) => (await composeQuery(ctx, middle)) + 1
+      })
+      return [middle, root] as const
+    })
+
+    await flushPromises()
+    expect(root.data.value).toBe(3)
+
+    input.value = 2
+    await flushPromises()
+    expect(middle.data.value).toBe(4)
+    expect(root.data.value).toBe(5)
+
+    root.refetch()
+    expect(state(root)).toEqual({ data: null, error: null, loading: true })
+    await flushPromises()
+    expect(leafFn).toHaveBeenCalledTimes(3)
+    expect(root.data.value).toBe(5)
+
+    input.value = 3
+    await flushPromises()
+    expect(root.data.value).toBeNull()
+    expect(root.error.value?.cause).toEqual(new Error('leaf failed'))
+
+    input.value = 4
+    await flushPromises()
+    expect(middle.data.value).toBe(8)
+    expect(state(root)).toEqual({ data: 9, error: null, loading: false })
+  })
+
   it('should work well', async () => {
     const valueRef = ref(0)
     const [queryFn1, ret1, queryFn2, ret2] = withSetup(() => {
       const queryFn1 = vi.fn(async () => valueRef.value)
-      const ret1 = useQuery(queryFn1)
+      const ret1 = useQuery({
+        queryFn: queryFn1
+      })
       const queryFn2 = vi.fn(async (ctx: QueryContext) => composeQuery(ctx, ret1))
-      const ret2 = useQuery(queryFn2)
+      const ret2 = useQuery({
+        queryFn: queryFn2
+      })
       return [queryFn1, ret1, queryFn2, ret2] as const
     })
     expect(ret2.isLoading.value).toBe(true)
@@ -359,7 +430,7 @@ describe('composeQuery', () => {
     expect(ret2.data.value).toBe(1)
     expect(ret2.error.value).toBe(null)
     expect(queryFn1).toHaveBeenCalledTimes(4)
-    expect(queryFn2).toHaveBeenCalledTimes(9)
+    expect(queryFn2).toHaveBeenCalledTimes(8)
   })
 
   function makeErrorFn(times: number, err: unknown) {
@@ -376,8 +447,12 @@ describe('composeQuery', () => {
     const err = new Error('test')
     const errFn = vi.fn(makeErrorFn(3, err))
     const [ret1, ret2] = withSetup(() => {
-      const ret1 = useQuery(errFn)
-      const ret2 = useQuery(async (ctx: QueryContext) => composeQuery(ctx, ret1))
+      const ret1 = useQuery({
+        queryFn: errFn
+      })
+      const ret2 = useQuery({
+        queryFn: async (ctx: QueryContext) => composeQuery(ctx, ret1)
+      })
       return [ret1, ret2] as const
     })
 
@@ -413,11 +488,15 @@ describe('composeQuery', () => {
     const err1 = new Error('test1')
     const err2 = new Error('test2')
     const ret3 = withSetup(() => {
-      const ret1 = useQuery(makeErrorFn(1, err1))
-      const ret2 = useQuery(makeErrorFn(2, err2))
-      const ret3 = useQuery(async (ctx: QueryContext) =>
-        Promise.all([composeQuery(ctx, ret1), composeQuery(ctx, ret2)])
-      )
+      const ret1 = useQuery({
+        queryFn: makeErrorFn(1, err1)
+      })
+      const ret2 = useQuery({
+        queryFn: makeErrorFn(2, err2)
+      })
+      const ret3 = useQuery({
+        queryFn: async (ctx: QueryContext) => Promise.all([composeQuery(ctx, ret1), composeQuery(ctx, ret2)])
+      })
       return ret3
     })
 
@@ -443,19 +522,25 @@ describe('composeQuery', () => {
     let report1!: (p: ProgressReportParams) => void, report2!: (p: ProgressReportParams) => void
     let resolve1!: () => void, resolve2!: () => void
     const [ret1, ret2, ret3] = withSetup(() => {
-      const ret1 = useQuery(async (ctx: QueryContext) => {
-        report1 = (p) => ctx.reporter.report(p)
-        await new Promise<void>((r) => (resolve1 = r))
+      const ret1 = useQuery({
+        queryFn: async (ctx: QueryContext) => {
+          report1 = (p) => ctx.reporter.report(p)
+          await new Promise<void>((r) => (resolve1 = r))
+        }
       })
-      const ret2 = useQuery(async (ctx: QueryContext) => {
-        report2 = (p) => ctx.reporter.report(p)
-        await new Promise<void>((r) => (resolve2 = r))
+      const ret2 = useQuery({
+        queryFn: async (ctx: QueryContext) => {
+          report2 = (p) => ctx.reporter.report(p)
+          await new Promise<void>((r) => (resolve2 = r))
+        }
       })
-      const ret3 = useQuery(async (ctx: QueryContext) => {
-        await Promise.all([
-          composeQuery(ctx, ret1, [{ en: '1', zh: '1' }, 1]),
-          composeQuery(ctx, ret2, [{ en: '2', zh: '2' }, 3])
-        ])
+      const ret3 = useQuery({
+        queryFn: async (ctx: QueryContext) => {
+          await Promise.all([
+            composeQuery(ctx, ret1, [{ en: '1', zh: '1' }, 1]),
+            composeQuery(ctx, ret2, [{ en: '2', zh: '2' }, 3])
+          ])
+        }
       })
       return [ret1, ret2, ret3] as const
     })
@@ -541,7 +626,10 @@ describe('query error contract', () => {
         throw cause
       }
       return kind === 'ordinary'
-        ? useQuery(queryFn, summary)
+        ? useQuery({
+            queryFn,
+            failureSummaryMessage: summary
+          })
         : useQueryWithCache({ queryKey: ['error-contract'], queryFn, mode: kind, failureSummaryMessage: summary })
     })
   }
@@ -590,7 +678,550 @@ describe('query error contract', () => {
   })
 })
 
+describe('ordinary query refreshing modes', () => {
+  it('retains a complete background result and loading state during refresh or failure', async () => {
+    const pending = deferred<string>()
+    const queryFn = vi
+      .fn()
+      .mockResolvedValueOnce('original')
+      .mockImplementationOnce(() => pending.promise)
+    const query = withSetup(() =>
+      useQuery({
+        queryFn,
+        mode: QueryMode.BackgroundRefresh
+      })
+    )
+    await flushPromises()
+    query.refetch()
+    expect(query.data.value).toBe('original')
+    expect(query.isLoading.value).toBe(false)
+    pending.reject(new Error('offline'))
+    await flushPromises()
+    expect(query.data.value).toBe('original')
+    expect(query.isLoading.value).toBe(false)
+    expect(query.error.value?.cause).toEqual(new Error('offline'))
+  })
+
+  it('ignores progress reported directly after a snapshot succeeds', async () => {
+    let reporter!: QueryContext['reporter']
+    const query = setup(client(), () =>
+      useQuery({
+        queryKey: ['snapshot'],
+        mode: QueryMode.Snapshot,
+        queryFn: async (ctx) => {
+          reporter = ctx.reporter
+          reporter.report(1)
+          return 'complete'
+        }
+      })
+    )
+    await flushPromises()
+    expect(query.data.value).toBe('complete')
+    expect(query.progress.value.percentage).toBe(1)
+
+    reporter.report(0.25)
+    expect(query.progress.value.percentage).toBe(1)
+  })
+
+  it.each([null, false, 0, ''])('captures a successful snapshot including %s until explicit refetch', async (value) => {
+    const input = ref(0)
+    const contexts: QueryContext[] = []
+    const queryFn = vi.fn(async (ctx: QueryContext) => {
+      ctx.reporter.report(input.value)
+      contexts.push(ctx)
+      return value
+    })
+    const query = withSetup(() =>
+      useQuery({
+        queryFn,
+        mode: QueryMode.Snapshot
+      })
+    )
+    await flushPromises()
+    input.value++
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledOnce()
+    expect(query.data.value).toBe(value)
+    expect(contexts[0].signal.aborted).toBe(false)
+    query.refetch()
+    expect(query.isLoading.value).toBe(true)
+    expect(query.data.value).toBeNull()
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledTimes(2)
+    expect(query.data.value).toBe(value)
+  })
+})
+
+describe('ordinary query identity and read lifecycle', () => {
+  it.each(['legacy', QueryMode.BackgroundRefresh, QueryMode.BlockingRefresh, QueryMode.Snapshot] as const)(
+    'clears data and errors on key changes without adding a cache in %s mode',
+    async (mode) => {
+      const id = ref('A')
+      const pending = deferred<string>()
+      const queryFn = vi
+        .fn()
+        .mockResolvedValueOnce('A')
+        .mockImplementationOnce(() => pending.promise)
+        .mockResolvedValueOnce('A again')
+      const query = withSetup(() =>
+        useQuery({
+          queryFn,
+          mode,
+          queryKey: () => [id.value]
+        })
+      )
+      await flushPromises()
+      id.value = 'B'
+      expect(query.isLoading.value).toBe(true)
+      expect(query.data.value).toBeNull()
+      expect(query.error.value).toBeNull()
+      pending.reject(new Error('B unavailable'))
+      await flushPromises()
+      expect(query.data.value).toBeNull()
+      expect(query.error.value?.cause).toEqual(new Error('B unavailable'))
+      id.value = 'A'
+      expect(query.error.value).toBeNull()
+      expect(query.isLoading.value).toBe(true)
+      await flushPromises()
+      expect(query.data.value).toBe('A again')
+      expect(queryFn).toHaveBeenCalledTimes(3)
+    }
+  )
+
+  it('compares keys by value and ignores late responses from previous identities', async () => {
+    const key = ref({ id: 'A', page: 1 })
+    const first = deferred<string>()
+    const queryFn = vi
+      .fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockResolvedValueOnce('B')
+    const query = withSetup(() =>
+      useQuery({
+        queryFn,
+        queryKey: () => [key.value]
+      })
+    )
+    key.value = { page: 1, id: 'A' }
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledOnce()
+    key.value = { page: 1, id: 'B' }
+    await flushPromises()
+    expect(query.data.value).toBe('B')
+    first.resolve('late A')
+    await flushPromises()
+    expect(query.data.value).toBe('B')
+  })
+
+  it.each(['legacy', QueryMode.BackgroundRefresh, QueryMode.BlockingRefresh, QueryMode.Snapshot] as const)(
+    'ignores asynchronous refetch after unmount in %s mode',
+    async (mode) => {
+      const input = ref(0)
+      const signals: AbortSignal[] = []
+      const queryFn = vi.fn(async (ctx: QueryContext) => {
+        signals.push(ctx.signal)
+        return input.value
+      })
+      const query = setup(client(), () =>
+        useQuery({
+          queryFn,
+          mode,
+          queryKey: () => [input.value]
+        })
+      )
+      const app = apps.pop()!
+      await flushPromises()
+      query.refetch()
+      await flushPromises()
+      expect(queryFn).toHaveBeenCalledTimes(2)
+      const save = deferred<void>()
+      const afterSave = save.promise.then(() => query.refetch())
+      app.unmount()
+      expect(signals.at(-1)!.aborted).toBe(true)
+      save.resolve()
+      await afterSave
+      await flushPromises()
+      expect(queryFn).toHaveBeenCalledTimes(2)
+      input.value++
+      await flushPromises()
+      expect(queryFn).toHaveBeenCalledTimes(2)
+      expect(query.data.value).toBe(0)
+    }
+  )
+
+  it('ignores refetch after unmount when aborting the query changes its key', async () => {
+    const key = ref('A')
+    const queryFn = vi.fn(async (ctx: QueryContext) => {
+      ctx.signal.addEventListener('abort', () => (key.value = 'B'), { once: true })
+      return key.value
+    })
+    const query = setup(client(), () => useQuery({ queryKey: () => [key.value], queryFn }))
+    await flushPromises()
+    expect(query.data.value).toBe('A')
+
+    apps.pop()!.unmount()
+    expect(key.value).toBe('B')
+    query.refetch()
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledOnce()
+  })
+
+  it('tracks dependency recovery after a failed explicit snapshot read and disposes its watcher', async () => {
+    const input = ref(0)
+    const contexts: QueryContext[] = []
+    const queryFn = vi.fn(async (ctx: QueryContext) => {
+      const value = input.value
+      contexts.push(ctx)
+      if (value === 1) throw new Error('read failed')
+      return value
+    })
+    const query = setup(client(), () =>
+      useQuery({
+        queryFn,
+        mode: QueryMode.Snapshot
+      })
+    )
+    const app = apps.pop()!
+    await flushPromises()
+    input.value = 1
+    await flushPromises()
+    expect(query.data.value).toBe(0)
+    query.refetch()
+    await flushPromises()
+    expect(query.error.value?.cause).toEqual(new Error('read failed'))
+    input.value = 2
+    await flushPromises()
+    expect(query.data.value).toBe(2)
+    expect(query.error.value).toBeNull()
+    expect(contexts.map((ctx) => ctx.source)).toEqual(['auto', 'refetch', 'auto'])
+    const signal = contexts.at(-1)!.signal
+    expect(signal.aborted).toBe(false)
+    query.refetch()
+    await flushPromises()
+    const activeSignal = contexts.at(-1)!.signal
+    const calls = queryFn.mock.calls.length
+    app.unmount()
+    expect(activeSignal.aborted).toBe(true)
+    query.refetch()
+    input.value++
+    await flushPromises()
+    expect(queryFn).toHaveBeenCalledTimes(calls)
+  })
+})
+
+describe('explicit query dependencies', () => {
+  it.each(['legacy', QueryMode.BackgroundRefresh, QueryMode.BlockingRefresh, QueryMode.Snapshot] as const)(
+    'uses only the explicit key for ordinary reactive inputs in %s mode',
+    async (mode) => {
+      const identity = ref('A')
+      const incidental = ref(0)
+      const queryFn = vi.fn(async () => `${identity.value}:${incidental.value}`)
+      const query = setup(client(), () => useQuery({ queryKey: () => [identity.value], queryFn, mode }))
+      await flushPromises()
+      incidental.value = 1
+      await flushPromises()
+      expect(query.data.value).toBe('A:0')
+      expect(queryFn).toHaveBeenCalledTimes(1)
+      identity.value = 'B'
+      expect(state(query)).toEqual({ data: null, error: null, loading: true })
+      await flushPromises()
+      expect(query.data.value).toBe('B:1')
+      expect(queryFn).toHaveBeenCalledTimes(2)
+    }
+  )
+
+  it('registers a composed dependency after await even with an explicit parent key', async () => {
+    const input = ref(0)
+    const incidental = ref('initial')
+    const [child, parent] = setup(client(), () => {
+      const child = useQuery({ queryFn: async () => input.value })
+      const parent = useQuery({
+        queryKey: ['parent'],
+        mode: QueryMode.BackgroundRefresh,
+        queryFn: async (ctx) => {
+          const prefix = incidental.value
+          await Promise.resolve()
+          return `${prefix}:${await composeQuery(ctx, child)}`
+        }
+      })
+      return [child, parent]
+    })
+    await flushPromises()
+    expect(parent.data.value).toBe('initial:0')
+    incidental.value = 'updated'
+    await flushPromises()
+    expect(parent.data.value).toBe('initial:0')
+    input.value = 1
+    await flushPromises()
+    expect(child.data.value).toBe(1)
+    expect(parent.data.value).toBe('updated:1')
+    const app = apps.pop()!
+    app.unmount()
+    input.value = 2
+    await flushPromises()
+    expect(parent.data.value).toBe('updated:1')
+  })
+
+  it('restarts when refreshing a sibling changes an already registered child during composition', async () => {
+    const input = ref(1)
+    const first = createResolvedQueryRet(input)
+    const second = { ...createResolvedQueryRet(() => input.value * 2), refetch: () => input.value++ }
+    const parent = setup(client(), () =>
+      useQuery({
+        queryKey: ['parent'],
+        mode: QueryMode.BlockingRefresh,
+        queryFn: (ctx) => Promise.all([composeQuery(ctx, first), composeQuery(ctx, second)])
+      })
+    )
+    await flushPromises()
+    expect(parent.data.value).toEqual([1, 2])
+    parent.refetch()
+    await flushPromises()
+    expect(state(parent)).toEqual({ data: [2, 4], error: null, loading: false })
+  })
+
+  it('forwards refetch to the composed query instance', async () => {
+    const child = {
+      ...createResolvedQueryRet(() => 1),
+      data: ref(1),
+      refetch() {
+        this.data.value++
+      }
+    }
+    const parent = setup(client(), () => useQuery({ queryFn: (ctx) => composeQuery(ctx, child) }))
+    await flushPromises()
+    parent.refetch()
+    await flushPromises()
+    expect(parent.data.value).toBe(2)
+  })
+
+  it('refetches a repeated composed dependency once per explicit read', async () => {
+    const queryFn = vi.fn(async () => 1)
+    const [child, parent] = setup(client(), () => {
+      const child = useQuery({ queryFn })
+      const parent = useQuery({
+        queryKey: ['parent'],
+        queryFn: async (ctx) => Promise.all([composeQuery(ctx, child), composeQuery(ctx, child)])
+      })
+      return [child, parent]
+    })
+    await flushPromises()
+    expect(parent.data.value).toEqual([1, 1])
+    const refetch = vi.spyOn(child, 'refetch')
+    parent.refetch()
+    await flushPromises()
+    expect(parent.data.value).toEqual([1, 1])
+    expect(refetch).toHaveBeenCalledTimes(1)
+    expect(queryFn).toHaveBeenCalledTimes(2)
+  })
+
+  it('refetches both children of a sequential composition', async () => {
+    let firstReads = 0
+    let secondReads = 0
+    const parent = setup(client(), () => {
+      const first = useQuery({ queryKey: ['first'], queryFn: async () => ++firstReads })
+      const second = useQuery({ queryKey: ['second'], queryFn: async () => ++secondReads })
+      return useQuery({
+        queryKey: ['parent'],
+        queryFn: async (ctx) => [await composeQuery(ctx, first), await composeQuery(ctx, second)]
+      })
+    })
+    await flushPromises()
+    expect(parent.data.value).toEqual([1, 1])
+
+    parent.refetch()
+    await flushPromises()
+    expect(parent.data.value).toEqual([2, 2])
+  })
+
+  it('keeps keyed child reads out of the implicit parent dependencies during refetch', async () => {
+    const incidental = ref(0)
+    const { parent, parentFn } = setup(client(), () => {
+      const child = useQuery({
+        queryKey: ['child'],
+        mode: QueryMode.BackgroundRefresh,
+        queryFn: async () => incidental.value
+      })
+      const parentFn = vi.fn((ctx: QueryContext) => composeQuery(ctx, child))
+      return { parent: useQuery({ queryFn: parentFn }), parentFn }
+    })
+    await flushPromises()
+    parent.refetch()
+    await flushPromises()
+    expect(parent.data.value).toBe(0)
+    const reads = parentFn.mock.calls.length
+
+    incidental.value++
+    await flushPromises()
+    expect(parentFn).toHaveBeenCalledTimes(reads)
+  })
+
+  it('keeps parent cleanup reads out of the child dependencies', async () => {
+    const input = ref(0)
+    const cleanupOnly = ref(0)
+    const childFn = vi.fn(async () => input.value)
+    const cleanup = vi.fn(() => cleanupOnly.value)
+    const parent = setup(client(), () => {
+      const child = useQuery({ queryFn: childFn })
+      return useQuery({
+        queryKey: ['parent'],
+        queryFn: (ctx) => {
+          ctx.signal.addEventListener('abort', cleanup, { once: true })
+          return composeQuery(ctx, child)
+        }
+      })
+    })
+    await flushPromises()
+    input.value++
+    await flushPromises()
+    expect(parent.data.value).toBe(1)
+    expect(childFn).toHaveBeenCalledTimes(2)
+    expect(cleanup).toHaveBeenCalled()
+
+    cleanupOnly.value++
+    await flushPromises()
+    expect(childFn).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps registered dependencies able to recover a failed composition', async () => {
+    const input = ref(0)
+    const parent = setup(client(), () => {
+      const child = useQuery({
+        queryFn: async () => {
+          if (input.value === 0) throw new Error('failed child')
+          return input.value
+        }
+      })
+      return useQuery({ queryKey: ['parent'], queryFn: async (ctx) => composeQuery(ctx, child) })
+    })
+    await flushPromises()
+    expect(parent.error.value).not.toBeNull()
+    input.value = 1
+    await flushPromises()
+    expect(state(parent)).toEqual({ data: 1, error: null, loading: false })
+  })
+
+  it('freezes snapshot composition and its progress until an explicit new read', async () => {
+    const input = ref(0)
+    const contexts: QueryContext[] = []
+    const [child, parent] = setup(client(), () => {
+      const child = useQuery({
+        queryFn: async (ctx) => {
+          contexts.push(ctx)
+          return input.value
+        }
+      })
+      const parent = useQuery({
+        queryKey: ['parent'],
+        mode: QueryMode.Snapshot,
+        queryFn: async (ctx) => composeQuery(ctx, child)
+      })
+      return [child, parent]
+    })
+    await flushPromises()
+    const progress = parent.progress.value
+    contexts.at(-1)!.reporter.report(0.5)
+    input.value = 1
+    await flushPromises()
+    expect(child.data.value).toBe(1)
+    expect(parent.data.value).toBe(0)
+    expect(parent.progress.value).toEqual(progress)
+    parent.refetch()
+    expect(state(parent)).toEqual({ data: null, error: null, loading: true })
+    await flushPromises()
+    expect(parent.data.value).toBe(1)
+  })
+})
+
 describe('cached query refreshing modes', () => {
+  it('blocks invalidated optimistic data until the refresh succeeds and clears failed results', async () => {
+    const queryClient = client()
+    queryClient.setQueryData(['blocking'], 'original')
+    const pending = deferred<string>()
+    const query = setup(queryClient, () =>
+      useQueryWithCache({
+        queryKey: ['blocking'],
+        staleTime: Infinity,
+        mode: QueryMode.BlockingRefresh,
+        queryFn: () => pending.promise
+      })
+    )
+    const cache = setup(queryClient, useQueryCache)
+    cache.invalidateWithOptimisticValue(['blocking'], 'optimistic')
+    expect(query.isLoading.value).toBe(true)
+    expect(query.data.value).toBeNull()
+    await flushPromises()
+    pending.reject(new Error('refresh failed'))
+    await flushPromises()
+    expect(query.isLoading.value).toBe(false)
+    expect(query.data.value).toBeNull()
+    expect(query.error.value?.cause).toEqual(new Error('refresh failed'))
+  })
+
+  it('keeps a cached blocking refresh loading while offline', async () => {
+    const queryClient = client()
+    queryClient.setQueryData(['blocking-offline'], 'original')
+    const pending = deferred<string>()
+    const query = setup(queryClient, () =>
+      useQueryWithCache({
+        queryKey: ['blocking-offline'],
+        staleTime: Infinity,
+        mode: QueryMode.BlockingRefresh,
+        queryFn: () => pending.promise
+      })
+    )
+    onlineManager.setOnline(false)
+    query.refetch()
+    await flushPromises()
+    expect(query.isLoading.value).toBe(true)
+    expect(query.data.value).toBeNull()
+    onlineManager.setOnline(true)
+    pending.resolve('new')
+    await flushPromises()
+    expect(query.data.value).toBe('new')
+  })
+
+  it('keeps a published blocking result visible when its freshness interval expires', async () => {
+    const queryClient = client()
+    const queryFn = vi.fn(async () => 'loaded')
+    const query = setup(queryClient, () =>
+      useQueryWithCache({
+        queryKey: ['blocking-expiry'],
+        mode: QueryMode.BlockingRefresh,
+        staleTime: 10,
+        queryFn
+      })
+    )
+    await flushPromises()
+    expect(query.data.value).toBe('loaded')
+    await timeout(20)
+    expect(query.data.value).toBe('loaded')
+    expect(query.isLoading.value).toBe(false)
+    expect(queryFn).toHaveBeenCalledOnce()
+  })
+
+  it('switches blocking identities without publishing a late old response and unsubscribes on unmount', async () => {
+    const queryClient = client()
+    const id = ref('A')
+    const first = deferred<string>()
+    const query = setup(queryClient, () =>
+      useQueryWithCache({
+        queryKey: () => ['blocking-key', id.value],
+        mode: QueryMode.BlockingRefresh,
+        queryFn: () => (id.value === 'A' ? first.promise : Promise.resolve('B'))
+      })
+    )
+    const app = apps.pop()!
+    id.value = 'B'
+    await flushPromises()
+    expect(query.data.value).toBe('B')
+    first.resolve('late A')
+    await flushPromises()
+    expect(query.data.value).toBe('B')
+    app.unmount()
+    queryClient.setQueryData(['blocking-key', 'B'], 'after unmount')
+    expect(query.data.value).toBe('B')
+  })
+
   it('takes valid cached data while another consumer refreshes it', async () => {
     const queryClient = client()
     queryClient.setQueryData(['fresh-refresh'], 'cached')
@@ -914,7 +1545,9 @@ describe('cached query refreshing modes', () => {
           queryFn: async () => 'fetched',
           mode
         })
-        const composed = useQuery((ctx) => composeQuery(ctx, query))
+        const composed = useQuery({
+          queryFn: (ctx) => composeQuery(ctx, query)
+        })
         return [query, composed] as const
       })
       await flushPromises()

@@ -3,13 +3,12 @@ import type { InjectionKey } from 'vue'
 
 import { isNavigationFailure, type Router } from 'vue-router'
 
-import type { Course, PlaygroundCourse } from '@/apis/course'
+import type { Course, CourseKind } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
-import { getCoursePlaygroundRoute, getCourseStartRoute } from '@/apps/xbuilder/router'
+import { getCoursePlaygroundRoute, getCourseStartRoute, getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { Cancelled } from '@/utils/exception'
 
 import type { GuidedTutorial } from './guided/guided-tutorial'
-import { getCourseSeriesPageRouteOfCourse } from './units'
 type GuidedTutorialController = Pick<GuidedTutorial, 'currentCourse' | 'enterCourse' | 'endCurrentCourse'>
 type TutorialRouter = Pick<Router, 'push' | 'replace'>
 
@@ -20,8 +19,10 @@ export enum CourseState {
   Completed = 'completed'
 }
 
-export type CurrentCourse = Course & {
-  series: CourseSeries
+export type CurrentCourse = {
+  id: string
+  seriesID: string
+  kind: CourseKind
   state: CourseState
 }
 
@@ -47,7 +48,14 @@ export class Tutorial {
     const currentPlaygroundCourse = this.currentPlaygroundCourseRef.value
     if (currentPlaygroundCourse != null) return currentPlaygroundCourse
     const currentGuidedCourse = this.guidedTutorial.currentCourse
-    return currentGuidedCourse == null ? null : { ...currentGuidedCourse, state: CourseState.InProgress }
+    return currentGuidedCourse == null
+      ? null
+      : {
+          id: currentGuidedCourse.id,
+          seriesID: currentGuidedCourse.seriesID,
+          kind: 'guided',
+          state: CourseState.InProgress
+        }
   }
 
   /** URL of the Start page used by course links and startCourse. */
@@ -62,7 +70,7 @@ export class Tutorial {
    */
   async startCourse(courseSeriesID: string, courseID: string): Promise<void> {
     const currentCourse = this.currentCourse
-    const restart = currentCourse?.id === courseID && currentCourse.series.id === courseSeriesID
+    const restart = currentCourse?.id === courseID && currentCourse.seriesID === courseSeriesID
     const route = this.getCourseStartRoute(courseSeriesID, courseID)
     const failure = await (restart ? this.router.replace(route) : this.router.push(route))
     if (isNavigationFailure(failure)) throw new Cancelled(failure)
@@ -91,12 +99,17 @@ export class Tutorial {
     if (currentCourse.kind === 'guided') {
       this.guidedTutorial.endCurrentCourse()
     } else if (currentCourse.kind === 'playground') {
-      await this.router.push(getCourseSeriesPageRouteOfCourse(currentCourse.series, currentCourse.id))
+      await this.router.push(getCourseSeriesPageRoute(currentCourse.seriesID, currentCourse.id))
     }
   }
 
-  notifyPlaygroundCourseStarted(course: PlaygroundCourse, series: CourseSeries) {
-    this.currentPlaygroundCourseRef.value = { ...course, series, state: CourseState.InProgress }
+  notifyPlaygroundCourseStarted(courseID: string, seriesID: string) {
+    this.currentPlaygroundCourseRef.value = {
+      id: courseID,
+      seriesID,
+      kind: 'playground',
+      state: CourseState.InProgress
+    }
   }
 
   notifyPlaygroundCourseCompleted(courseID: string) {

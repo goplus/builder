@@ -46,8 +46,8 @@ const canCreate = computed(
     createForm.name.trim() !== '' && (!(createForm.readApps || createForm.readUsers) || createForm.reason.trim() !== '')
 )
 
-const appsQuery = useQuery(
-  async () => {
+const appsQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
     return accountAdminApis.listAccountApps({
       pageIndex: page.value,
@@ -56,8 +56,8 @@ const appsQuery = useQuery(
       sortOrder: sortOrder.value
     })
   },
-  { en: 'Failed to load Account apps', zh: '加载账号应用失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load Account apps', zh: '加载账号应用失败' }
+})
 
 const pageTotal = computed(() => Math.ceil((appsQuery.data.value?.total ?? 0) / pageSize))
 
