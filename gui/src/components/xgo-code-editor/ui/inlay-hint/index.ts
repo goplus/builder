@@ -8,11 +8,21 @@ import { getCodeFilePath, type ITextDocument } from '../../common'
 import type { InlayHintItem } from '../../inlay-hint'
 import type { CodeEditorUIController } from '../code-editor-ui'
 import { sameFilesOutsideDocument } from '../editing-context'
-import { retainDeletedParameter, type PresentedInlayHintItem } from './retained-parameter'
+import {
+  callHasMissingArguments,
+  createCallParameterBinding,
+  filterIncompleteCallParameterHints,
+  getRetainedParameters,
+  mergeCallParameterHints,
+  updateCallParameterBinding,
+  type CallParameterBinding,
+  type PresentedInlayHintItem
+} from './retained-parameter'
 
 export * from '../../inlay-hint'
 
 type HintSnapshot = { textDocument: ITextDocument; source: string; files: Files; items: InlayHintItem[] }
+type BindingSnapshot = { textDocument: ITextDocument; files: Files; binding: CallParameterBinding }
 
 export class InlayHintController extends Disposable {
   constructor(private ui: CodeEditorUIController) {
@@ -21,7 +31,7 @@ export class InlayHintController extends Disposable {
 
   private responseRef = shallowRef<HintSnapshot | null>(null)
   private confirmedRef = shallowRef<HintSnapshot | null>(null)
-  private retainedRef = shallowRef<PresentedInlayHintItem[]>([])
+  private bindingRef = shallowRef<BindingSnapshot | null>(null)
   private composingRef = shallowRef(false)
 
   private mgr = new TaskManager(async (signal) => {
@@ -47,9 +57,19 @@ export class InlayHintController extends Disposable {
         textDocument.getValue() !== source
       )
         return []
-      const snapshot = { textDocument, source, files, items }
+      const trustedItems = filterIncompleteCallParameterHints(source, items)
+      const snapshot = { textDocument, source, files, items: trustedItems }
       this.responseRef.value = snapshot
-      if (items.length > 0 || this.retainedRef.value.length === 0) this.confirmedRef.value = snapshot
+      const bound = this.bindingRef.value
+      if (bound == null || !callHasMissingArguments(bound.binding)) {
+        this.confirmedRef.value = snapshot
+        if (bound != null && bound.binding.source === source) {
+          const argument = bound.binding.call.arguments[0]
+          const binding =
+            argument == null ? null : createCallParameterBinding(source, trustedItems, argument.start, argument.end)
+          this.bindingRef.value = binding == null ? null : { textDocument, files, binding }
+        }
+      }
     }
     return items
   }, true)
@@ -59,22 +79,24 @@ export class InlayHintController extends Disposable {
     if (this.composingRef.value) return []
     const response = this.responseRef.value
     const textDocument = this.ui.activeTextDocument
+    const source = textDocument?.getValue()
     const files = this.ui.project.exportFiles()
-    const items =
+    const currentResponse =
       response != null &&
       response.textDocument === textDocument &&
       response.files === files &&
-      response.source === textDocument?.getValue()
-        ? response.items
-        : []
-    const confirmed = this.confirmedRef.value
-    const retained =
-      confirmed != null &&
-      confirmed.textDocument === textDocument &&
-      sameFilesOutsideDocument(confirmed.files, files, confirmed.textDocument)
-        ? this.retainedRef.value
-        : []
-    return [...items, ...retained.filter((hint) => !items.some((i) => i.position.line === hint.position.line))]
+      response.source === source
+    const items = currentResponse ? response.items : []
+    const bound = this.bindingRef.value
+    if (
+      bound == null ||
+      bound.textDocument !== textDocument ||
+      bound.binding.source !== source ||
+      !sameFilesOutsideDocument(bound.files, files, bound.textDocument)
+    )
+      return items
+    if (!currentResponse) return getRetainedParameters(bound.binding)
+    return mergeCallParameterHints(bound.binding, items)
   }
 
   init() {
@@ -87,17 +109,17 @@ export class InlayHintController extends Disposable {
     if (this.ui.simpleMode) {
       const { editor } = this.ui
       let previousSource = this.ui.activeTextDocument?.getValue() ?? ''
-      const clearRetained = () => {
+      const clearBinding = () => {
         this.confirmedRef.value = null
-        this.retainedRef.value = []
+        this.bindingRef.value = null
       }
       this.addDisposer(
         watch(
           () => this.ui.project.exportFiles(),
           (files) => {
-            const confirmed = this.confirmedRef.value
-            if (confirmed != null && !sameFilesOutsideDocument(confirmed.files, files, confirmed.textDocument))
-              clearRetained()
+            const snapshot = this.bindingRef.value ?? this.confirmedRef.value
+            if (snapshot != null && !sameFilesOutsideDocument(snapshot.files, files, snapshot.textDocument))
+              clearBinding()
           },
           { flush: 'sync' }
         )
@@ -107,7 +129,7 @@ export class InlayHintController extends Disposable {
           () => this.ui.activeTextDocument,
           () => {
             this.responseRef.value = null
-            clearRetained()
+            clearBinding()
             previousSource = this.ui.activeTextDocument?.getValue() ?? ''
           },
           { flush: 'sync' }
@@ -118,7 +140,7 @@ export class InlayHintController extends Disposable {
           () => this.ui.codeEditor.inlayHintProvider,
           () => {
             this.responseRef.value = null
-            clearRetained()
+            clearBinding()
             refresh()
           },
           { flush: 'sync' }
@@ -128,47 +150,48 @@ export class InlayHintController extends Disposable {
         editor.onDidChangeModelContent((event) => {
           const textDocument = this.ui.activeTextDocument
           const source = textDocument?.getValue() ?? ''
+          const files = this.ui.project.exportFiles()
+          const change = event.changes[0]
           const confirmed = this.confirmedRef.value
-          const position = editor.getPosition()
-          const retained =
+          let bound = this.bindingRef.value
+          if (
+            bound == null &&
             confirmed != null &&
             confirmed.textDocument === textDocument &&
-            sameFilesOutsideDocument(confirmed.files, this.ui.project.exportFiles(), confirmed.textDocument) &&
+            confirmed.source === previousSource &&
+            sameFilesOutsideDocument(confirmed.files, files, confirmed.textDocument) &&
+            event.changes.length === 1
+          ) {
+            const binding = createCallParameterBinding(
+              previousSource,
+              confirmed.items,
+              change.rangeOffset,
+              change.rangeOffset + change.rangeLength
+            )
+            if (binding != null) bound = { textDocument: confirmed.textDocument, files: confirmed.files, binding }
+          }
+          const binding =
+            bound != null &&
+            bound.textDocument === textDocument &&
+            bound.binding.source === previousSource &&
+            sameFilesOutsideDocument(bound.files, files, bound.textDocument) &&
             !this.composingRef.value &&
             !event.isFlush &&
             !event.isUndoing &&
             !event.isRedoing
-              ? retainDeletedParameter(
-                  confirmed.source,
-                  previousSource,
-                  source,
-                  confirmed.items,
-                  event.changes,
-                  position == null ? null : { line: position.lineNumber, column: position.column }
-                )
+              ? updateCallParameterBinding(bound.binding, source, event.changes)
               : null
-          if (retained == null) clearRetained()
-          else this.retainedRef.value = [retained]
+          if (binding == null || bound == null) clearBinding()
+          else this.bindingRef.value = { ...bound, binding }
           previousSource = source
           refresh()
         })
       )
       this.addDisposable(
-        editor.onDidChangeCursorPosition(({ position }) => {
-          const retained = this.retainedRef.value[0]
-          if (
-            retained != null &&
-            (position.lineNumber !== retained.position.line || position.column < retained.position.column)
-          )
-            clearRetained()
-        })
-      )
-      this.addDisposable(editor.onDidBlurEditorText(clearRetained))
-      this.addDisposable(
         editor.onDidCompositionStart(() => {
           this.composingRef.value = true
           this.responseRef.value = null
-          clearRetained()
+          clearBinding()
         })
       )
       this.addDisposable(

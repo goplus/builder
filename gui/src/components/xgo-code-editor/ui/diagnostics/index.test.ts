@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
 import { fromText, type Files } from '@/models/common/file'
-import { DiagnosticSeverity, type Diagnostic } from '../../common'
+import { DiagnosticSeverity, type Diagnostic, type Position } from '../../common'
 import type { CodeEditorUIController } from '../code-editor-ui'
 import { DiagnosticsController } from '.'
 
@@ -21,13 +21,31 @@ function problem(message = 'Missing argument', line = 2, origin: Diagnostic['ori
   }
 }
 
-function setup(simpleMode = true, initialDiagnostics: Diagnostic[] = []) {
-  let source = 'onStart {\n\tstep 10\n}\n'
+function positionAt(source: string, offset: number): Position {
+  const lines = source.slice(0, offset).split('\n')
+  return { line: lines.length, column: lines[lines.length - 1].length + 1 }
+}
+
+function problemAt(source: string, target: string, message: string, options: Partial<Diagnostic> = {}): Diagnostic {
+  const offset = source.indexOf(target)
+  if (offset < 0) throw new Error(`Missing fixture target: ${target}`)
+  const range = { start: positionAt(source, offset), end: positionAt(source, offset + target.length) }
+  return { ...problem(message), range, sourceRange: range, ...options }
+}
+
+function problemAtOffset(source: string, offset: number, message: string, length = 1): Diagnostic {
+  const range = { start: positionAt(source, offset), end: positionAt(source, offset + length) }
+  return { ...problem(message), range, sourceRange: range }
+}
+
+function setup(simpleMode = true, initialDiagnostics: Diagnostic[] = [], initialSource = 'onStart {\n\tstep 10\n}\n') {
+  let source = initialSource
   let ownerSource = source
   let version = 1
   let focused = true
   let selectionCount = 1
-  let cursorLine: number | null = 2
+  let cursor: Position | null = { line: 2, column: 6 }
+  let pinnedCursor = false
   const files = shallowRef<Files>({
     'Lita.spx': fromText('Lita.spx', source),
     'helpers.spx': fromText('helpers.spx', 'var distance = 10')
@@ -60,7 +78,7 @@ function setup(simpleMode = true, initialDiagnostics: Diagnostic[] = []) {
     editor: {
       getValue: () => source,
       getModel: () => model,
-      getPosition: () => (cursorLine == null ? null : { lineNumber: cursorLine, column: 6 }),
+      getPosition: () => (cursor == null ? null : { lineNumber: cursor.line, column: cursor.column }),
       hasTextFocus: () => focused,
       getSelections: () => Array.from({ length: selectionCount }, () => ({})),
       onDidChangeModel: event('model'),
@@ -81,20 +99,48 @@ function setup(simpleMode = true, initialDiagnostics: Diagnostic[] = []) {
     await nextTick()
   }
   function emit(name: string, value?: any) {
-    if (name === 'cursor') cursorLine = value.position.lineNumber
+    if (name === 'cursor') {
+      cursor = { line: value.position.lineNumber, column: value.position.column }
+      pinnedCursor = true
+    }
     listeners.get(name)?.(value)
   }
   function edit(nextSource = 'onStart {\n\tstep\n}\n', overrides: Record<string, unknown> = {}) {
+    const previous = source
+    let start = 0
+    while (start < previous.length && start < nextSource.length && previous[start] === nextSource[start]) start++
+    let end = previous.length
+    let nextEnd = nextSource.length
+    while (end > start && nextEnd > start && previous[end - 1] === nextSource[nextEnd - 1]) {
+      end--
+      nextEnd--
+    }
+    const text = nextSource.slice(start, nextEnd)
     source = nextSource
     ownerSource = nextSource
     version++
     files.value = { ...files.value, 'Lita.spx': fromText('Lita.spx', source) }
+    if (!pinnedCursor) cursor = positionAt(source, start + text.length)
+    const rangeStart = positionAt(previous, start)
+    const rangeEnd = positionAt(previous, end)
     emit('content', {
       versionId: version,
       isFlush: false,
       isUndoing: false,
       isRedoing: false,
-      changes: [{ range: { startLineNumber: 2, startColumn: 6, endLineNumber: 2, endColumn: 9 }, text: '' }],
+      changes: [
+        {
+          range: {
+            startLineNumber: rangeStart.line,
+            startColumn: rangeStart.column,
+            endLineNumber: rangeEnd.line,
+            endColumn: rangeEnd.column
+          },
+          rangeOffset: start,
+          rangeLength: end - start,
+          text
+        }
+      ],
       ...overrides
     })
   }
@@ -124,7 +170,12 @@ function setup(simpleMode = true, initialDiagnostics: Diagnostic[] = []) {
       ownerSource = value
     },
     setCursorLine: (value: number | null) => {
-      cursorLine = value
+      cursor = value == null ? null : { line: value, column: 6 }
+      pinnedCursor = true
+    },
+    setCursor: (value: Position | null) => {
+      cursor = value
+      pinnedCursor = true
     },
     changeOtherFile: () => {
       files.value = { ...files.value, 'helpers.spx': fromText('helpers.spx', 'var distance = "changed"') }
@@ -138,6 +189,234 @@ function setup(simpleMode = true, initialDiagnostics: Diagnostic[] = []) {
 }
 
 describe('Simple Mode diagnostic feedback', () => {
+  it('keeps a newly typed call deferred as its callee grows and required arguments are entered', async () => {
+    const source = 'func four(a, b, c, d float64) {}\nonStart {\n\t\n}\n'
+    const test = setup(true, [], source)
+    await test.settle()
+    let lastDiagnostic!: Diagnostic
+    for (const text of ['f', 'fo', 'fou', 'four', 'four 1', 'four 1,2', 'four 1,2,3']) {
+      const edited = source.replace('\t\n', `\t${text}\n`)
+      const offset = edited.indexOf('\n\t') + 2
+      lastDiagnostic = problemAtOffset(
+        edited,
+        offset,
+        text.length < 4 ? `undefined: ${text}` : 'not enough arguments in call to four',
+        Math.min(text.length, 4)
+      )
+      test.diagnostics.value = [lastDiagnostic]
+      test.edit(edited)
+      await test.settle()
+      expect(test.controller.diagnostics, `typing ${text}`).toEqual([])
+    }
+    test.emit('cursor', { position: { lineNumber: 4, column: 2 } })
+    expect(test.controller.diagnostics).toEqual([lastDiagnostic])
+    test.diagnostics.value = []
+    test.edit(source.replace('\t\n', '\tfour 1,2,3,4\n'))
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+  })
+
+  it('maps an accepted report through a later newline edit before the next check finishes', async () => {
+    const source = 'onStart {\n\tglide 100,50,1\n\tprintln unknownName\n}\n'
+    const longer = source.replace('50', '"a long string"')
+    const multiline = longer.replace('100,', '100,\n\t\t')
+    const baseline = problemAt(source, 'unknownName', 'undefined: unknownName')
+    const local = problemAt(longer, '"a long string"', 'cannot use string as float64')
+    const independent = problemAt(longer, 'unknownName', 'undefined: unknownName')
+    const runtime = problemAt(longer, 'glide', 'previous execution failed', { origin: 'runtime' })
+    const test = setup(true, [baseline], source)
+    await test.settle()
+    test.diagnostics.value = [local, independent, runtime]
+    test.edit(longer)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([independent, runtime])
+
+    let finish!: (value: Diagnostic[]) => void
+    test.provideDiagnostics.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        })
+    )
+    test.edit(multiline)
+    const mappedLocal = problemAt(multiline, '"a long string"', 'cannot use string as float64')
+    const mappedIndependent = problemAt(multiline, 'unknownName', 'undefined: unknownName')
+    expect(test.provideDiagnostics).toHaveBeenCalledTimes(2)
+    expect(test.controller.diagnostics).toEqual([mappedIndependent])
+    expect(test.controller.diagnostics?.[0].range.start.line).toBe(4)
+
+    test.controller.reveal()
+    expect(test.controller.diagnostics).toEqual([mappedLocal, mappedIndependent])
+    expect(test.controller.diagnostics?.map((item) => item.range.start.line)).toEqual([3, 4])
+    finish([mappedLocal, mappedIndependent])
+    await nextTick()
+    await Promise.resolve()
+    await nextTick()
+    expect(test.controller.diagnostics).toEqual([mappedLocal, mappedIndependent])
+  })
+
+  it('defers an empty middle argument of a four-parameter custom call without changing its declaration', async () => {
+    const source = 'func travel(a, b, c, d float64) {}\nonStart {\n\ttravel 100, 1, 90, 2\n}\n'
+    const offset = source.indexOf('90')
+    const edited = source.slice(0, offset) + source.slice(offset + 2)
+    const diagnostic = problemAtOffset(edited, offset, "expected operand, found ','")
+    const test = setup(true, [], source)
+    await test.settle()
+    test.diagnostics.value = [diagnostic]
+    test.edit(edited)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    expect(test.provideDiagnostics).toHaveBeenCalledTimes(2)
+    test.emit('cursor', { position: { lineNumber: 4, column: 2 } })
+    expect(test.controller.diagnostics).toEqual([diagnostic])
+  })
+
+  it('defers a missing last required argument after editing a custom function call', async () => {
+    const source = 'func travel(a, b, c, d float64) {}\nonStart {\n\ttravel 100, 1, 90, 2\n}\n'
+    const edited = source.replace('90, 2', '90')
+    const diagnostic = problemAt(edited, 'travel 100', 'not enough arguments in call to travel')
+    const test = setup(true, [], source)
+    await test.settle()
+    test.diagnostics.value = [diagnostic]
+    test.edit(edited)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    test.controller.reveal()
+    expect(test.controller.diagnostics).toEqual([diagnostic])
+  })
+
+  it.each([
+    ['100', ',50,1'],
+    ['50', '100,,1'],
+    ['1', '100,50,']
+  ])('handles an empty %s argument in a three-argument glide call', async (removed, arguments_) => {
+    const source = 'onStart {\n\tglide 100,50,1\n}\n'
+    const edited = `onStart {\n\tglide ${arguments_}\n}\n`
+    const offset = removed === '1' ? edited.indexOf('\n', edited.indexOf('glide')) : edited.indexOf(',,') + 1
+    const diagnostic = problemAtOffset(
+      edited,
+      removed === '100' ? edited.indexOf(',50') : offset,
+      removed === '1' ? "expected operand, found '}'" : "expected operand, found ','",
+      removed === '1' ? 0 : 1
+    )
+    const test = setup(true, [], source)
+    await test.settle()
+    test.diagnostics.value = [diagnostic]
+    test.edit(edited)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    test.emit('blur')
+    expect(test.controller.diagnostics).toEqual([diagnostic])
+  })
+
+  it.each([
+    ['bare', 'onStart {\n\tglide 100,\n\t\t50,\n\t\t1\n}\n', 2, 4, 5],
+    ['parenthesized', 'onStart {\n\tglide(\n\t\t100,\n\t\t50,\n\t\t1,\n\t)\n}\n', 3, 5, 7]
+  ] as const)(
+    'keeps a %s multiline call deferred while the cursor moves between its argument lines',
+    async (_, source, firstLine, lastLine, outsideLine) => {
+      const offset = source.indexOf('50')
+      const edited = source.slice(0, offset) + source.slice(offset + 2)
+      const diagnostic = problemAtOffset(edited, offset, "expected operand, found ','")
+      const test = setup(true, [], source)
+      await test.settle()
+      test.diagnostics.value = [diagnostic]
+      test.edit(edited)
+      await test.settle()
+      expect(test.controller.diagnostics).toEqual([])
+      test.emit('cursor', { position: { lineNumber: firstLine, column: 4 } })
+      expect(test.controller.diagnostics).toEqual([])
+      test.emit('cursor', { position: { lineNumber: lastLine, column: 4 } })
+      expect(test.controller.diagnostics).toEqual([])
+      test.emit('cursor', { position: { lineNumber: outsideLine, column: 2 } })
+      expect(test.controller.diagnostics).toEqual([diagnostic])
+    }
+  )
+
+  it('tracks a legitimate newline inserted between arguments instead of treating it as leaving the statement', async () => {
+    const source = 'onStart {\n\tglide 100,50,1\n}\n'
+    const multiline = source.replace('100,50', '100,\n\t\t50')
+    const test = setup(true, [], source)
+    await test.settle()
+    test.edit(multiline)
+    await test.settle()
+    const edited = multiline.replace('50', '')
+    const diagnostic = problemAtOffset(edited, multiline.indexOf('50'), "expected operand, found ','")
+    test.diagnostics.value = [diagnostic]
+    test.edit(edited)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    test.emit('cursor', { position: { lineNumber: 2, column: 10 } })
+    expect(test.controller.diagnostics).toEqual([])
+    test.emit('blur')
+    expect(test.controller.diagnostics).toEqual([diagnostic])
+  })
+
+  it('defers bounded parser cascades and preserves an omitted independent error during editing and after leave', async () => {
+    const source = 'onStart {\n\tglide 100,50,1\n\tprintln unknownName\n\tprintln freshName\n}\nprintln afterBlock\n'
+    const offset = source.indexOf('50')
+    const edited = source.slice(0, offset) + source.slice(offset + 2)
+    const baseline = problemAt(source, 'unknownName', 'undefined: unknownName')
+    const anchor = problemAtOffset(edited, offset, "expected operand, found ','")
+    const cascade = problemAt(edited, 'println freshName', "expected ';', found println")
+    const closing = problemAt(edited, '}', "expected operand, found '}'")
+    const semantic = problemAt(edited, 'freshName', 'cannot use freshName as int')
+    const outside = problemAt(edited, 'afterBlock', "expected statement, found 'IDENT'")
+    const independent = problemAt(edited, 'unknownName', 'undefined: unknownName')
+    const test = setup(true, [baseline], source)
+    await test.settle()
+    test.diagnostics.value = [anchor, cascade, closing, semantic, outside]
+    test.edit(edited)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([semantic, outside, independent])
+    test.emit('cursor', { position: { lineNumber: 4, column: 5 } })
+    expect(test.controller.diagnostics).toEqual([anchor, cascade, closing, semantic, outside, independent])
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([anchor, cascade, closing, semantic, outside, independent])
+  })
+
+  it('uses the original source range for a zero-width local error whose rendered range extends to the next statement', async () => {
+    const source = 'onStart {\n\tglide 100,50,1\n\tprintln "done"\n}\n'
+    const edited = source.replace('50', '')
+    const offset = source.indexOf('50')
+    const diagnostic = {
+      ...problemAt(edited, 'println', "expected operand, found ','"),
+      sourceRange: { start: positionAt(edited, offset), end: positionAt(edited, offset) }
+    }
+    const test = setup(true, [], source)
+    await test.settle()
+    test.diagnostics.value = [diagnostic]
+    test.edit(edited)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    test.emit('blur')
+    expect(test.controller.diagnostics).toEqual([diagnostic])
+  })
+
+  it('does not revive an obsolete independent error after a clean report and a later syntax edit', async () => {
+    const source = 'onStart {\n\tglide 100,50,1\n\tprintln unknownName\n}\n'
+    const edited = source.replace('50', '')
+    const offset = source.indexOf('50')
+    const baseline = problemAt(source, 'unknownName', 'undefined: unknownName')
+    const anchor = problemAtOffset(edited, offset, "expected operand, found ','")
+    const test = setup(true, [baseline], source)
+    await test.settle()
+    test.diagnostics.value = [anchor]
+    test.edit(edited)
+    await test.settle()
+    expect(test.controller.diagnostics?.map((item) => item.message)).toEqual(['undefined: unknownName'])
+    test.diagnostics.value = []
+    test.edit(source)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    test.diagnostics.value = [anchor]
+    test.edit(edited)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    test.emit('blur')
+    expect(test.controller.diagnostics).toEqual([anchor])
+  })
+
   it('keeps checking while a newly incomplete command is being edited and reveals it after leaving', async () => {
     const test = setup()
     await test.settle()
@@ -263,8 +542,6 @@ describe('Simple Mode diagnostic feedback', () => {
   })
 
   it.each([
-    ['newline', { changes: [{ range: { startLineNumber: 2, endLineNumber: 2 }, text: '\n' }] }],
-    ['multiline selection', { changes: [{ range: { startLineNumber: 2, endLineNumber: 3 }, text: '' }] }],
     [
       'multiple changes',
       {
@@ -286,17 +563,30 @@ describe('Simple Mode diagnostic feedback', () => {
     expect(test.controller.diagnostics).toEqual([problem()])
   })
 
-  it.each(['composition', 'multiple cursors', 'unfocused'])('does not defer %s input', async (kind) => {
+  it.each(['multiple cursors', 'unfocused'])('does not defer %s input', async (kind) => {
     const test = setup()
     await test.settle()
-    if (kind === 'composition') test.emit('compositionStart')
     if (kind === 'multiple cursors') test.setSelectionCount(2)
     if (kind === 'unfocused') test.setFocused(false)
     test.diagnostics.value = [problem()]
     test.edit()
     await test.settle()
     expect(test.controller.diagnostics).toEqual([problem()])
-    if (kind === 'composition') test.emit('compositionEnd')
+  })
+
+  it('keeps argument editing in the same call deferred through an IME composition', async () => {
+    const test = setup()
+    await test.settle()
+    test.emit('compositionStart')
+    test.diagnostics.value = [problem()]
+    test.edit()
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    test.emit('compositionEnd')
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([])
+    test.emit('blur')
+    expect(test.controller.diagnostics).toEqual([problem()])
   })
 
   it.each([1, null])('does not defer programmatic edits away from the active cursor line (%s)', async (cursorLine) => {
@@ -385,5 +675,37 @@ describe('Simple Mode diagnostic feedback', () => {
     test.edit()
     await test.settle()
     expect(test.controller.diagnostics).toEqual([problem()])
+  })
+
+  it('does not carry deferral across a changed callee', async () => {
+    const test = setup()
+    await test.settle()
+    const source = 'onStart {\n\tturn\n}\n'
+    const diagnostic = problemAt(source, 'turn', 'not enough arguments in call to turn')
+    test.diagnostics.value = [diagnostic]
+    test.edit(source)
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([diagnostic])
+  })
+
+  it('fails closed when the editor event does not reconstruct the current source', async () => {
+    const source = 'onStart {\n\tstep 10\n}\n'
+    const test = setup(true, [], source)
+    await test.settle()
+    const edited = source.replace('10', '')
+    const diagnostic = problemAt(edited, 'step', 'not enough arguments in call to step')
+    test.diagnostics.value = [diagnostic]
+    test.edit(edited, {
+      changes: [
+        {
+          range: { startLineNumber: 2, startColumn: 7, endLineNumber: 2, endColumn: 8 },
+          rangeOffset: source.indexOf('10'),
+          rangeLength: 1,
+          text: ''
+        }
+      ]
+    })
+    await test.settle()
+    expect(test.controller.diagnostics).toEqual([diagnostic])
   })
 })

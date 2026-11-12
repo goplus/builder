@@ -87,7 +87,7 @@ export class DiagnosticsProvider extends Emitter<{ didChangeDiagnostics: void }>
     for (const item of report.items) {
       const diagnostic = fromLSPDiagnostic(item)
       const range = this.adaptLSDiagnosticRange(diagnostic.range, ctx.textDocument)
-      diagnostics.push({ ...diagnostic, range, origin: 'static' })
+      diagnostics.push({ ...diagnostic, range, origin: 'static', sourceRange: diagnostic.range })
     }
     return diagnostics
   }

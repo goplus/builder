@@ -53,7 +53,8 @@ describe('SPX diagnostic origins', () => {
           range: { start: { line: 1, column: 1 }, end: { line: 1, column: 5 } },
           severity: DiagnosticSeverity.Error,
           message: 'missing step argument',
-          origin: 'static'
+          origin: 'static',
+          sourceRange: { start: { line: 1, column: 1 }, end: { line: 1, column: 5 } }
         }
       ])
     } finally {

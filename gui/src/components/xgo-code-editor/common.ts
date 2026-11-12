@@ -144,6 +144,8 @@ export type Diagnostic = {
   message: string
   /** Only known static diagnostics may be deferred during Simple Mode editing. */
   origin?: 'static' | 'runtime'
+  /** Original diagnostic location before expanding empty ranges for decoration. */
+  sourceRange?: Range
 }
 
 export type TextDocumentDiagnostics = {
