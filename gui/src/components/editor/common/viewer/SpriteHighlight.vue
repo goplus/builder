@@ -83,6 +83,10 @@ const outline = computed<SpriteOutline | null>(() => {
   ctx.globalCompositeOperation = 'source-in'
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
+  // Tint the existing stroke without changing its alpha mask or thickness.
+  ctx.globalCompositeOperation = 'source-atop'
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.12)'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.globalCompositeOperation = 'destination-out'
   drawSilhouette(1.5)
   const result = { canvas, scale: scale * pixelRatio, padding: padding * pixelRatio }

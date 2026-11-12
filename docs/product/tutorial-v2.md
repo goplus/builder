@@ -95,8 +95,10 @@ especially when several small sprites are present. This demo decision does not e
 code-hover behavior to the ordinary editor.
 
 - Code references, sprite selector cards, and sprites on the stage share a translucent
-  white silhouette outline and the existing sprite name label. The Ruler uses the same
-  outline for its current snapped sprite; its white endpoint markers identify the exact
+  white silhouette outline with a faint neutral gray overlay within the same stroke
+  for visibility on white backgrounds, and the existing sprite name label with a gap of
+  8 screen pixels below the sprite's bounding box. The Ruler uses the same outline for
+  its current snapped sprite; its white endpoint markers identify the exact
   position used for measurement. Color does not distinguish these interactions.
 - Resolve code targets through existing resource references or in-place resource inputs.
   Do not infer targets from comments, matching text, or variable values at runtime.

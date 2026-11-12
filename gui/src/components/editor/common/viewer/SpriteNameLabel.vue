@@ -27,7 +27,15 @@ const layout = computed(() => {
   const fontSize = 12 / mapScale
   const textNode = new Konva.Text({ text: name, fontFamily: 'Inter', fontSize })
   const width = textNode.width() + 12 / mapScale
-  return { x: anchor.x, y: anchor.y, width, height: 20 / mapScale, fontSize, text: name, scale: mapScale }
+  return {
+    x: anchor.x,
+    y: anchor.y + 8 / mapScale,
+    width,
+    height: 20 / mapScale,
+    fontSize,
+    text: name,
+    scale: mapScale
+  }
 })
 
 function show() {
