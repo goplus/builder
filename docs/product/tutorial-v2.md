@@ -95,9 +95,11 @@ especially when several small sprites are present. This demo decision does not e
 code-hover behavior to the ordinary editor.
 
 - Code references, sprite selector cards, and sprites on the stage share a translucent
-  white silhouette outline with a faint neutral gray overlay within the same stroke
-  for visibility on white backgrounds, and the existing sprite name label with a gap of
-  8 screen pixels below the sprite's bounding box. The Ruler uses the same outline for
+  silhouette outline with a white main band (2 screen pixels) and a light neutral
+  gray band (1 screen pixel), totaling 3 screen pixels, for visibility on both colored
+  and white backgrounds.
+  The existing sprite name label keeps a gap of 8 screen pixels below the sprite's
+  bounding box. The Ruler uses the same outline for
   its current snapped sprite; its white endpoint markers identify the exact
   position used for measurement. Color does not distinguish these interactions.
 - Resolve code targets through existing resource references or in-place resource inputs.
