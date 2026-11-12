@@ -479,7 +479,7 @@ describe('UIModal', () => {
 
       expect(surface.getAttribute('tabindex')).toBe('-1')
       expect(surface.tabIndex).toBe(-1)
-      expect(document.activeElement).toBe(firstFocusable)
+      await vi.waitFor(() => expect(document.activeElement).toBe(firstFocusable))
     })
   })
 })

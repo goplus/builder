@@ -2,7 +2,7 @@ import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UIDropdown from './UIDropdown.vue'
-import { provideLayerStack, providePopupContainer } from './utils'
+import { provideLayerStack, providePopupContainer, usePopupReady } from './utils'
 
 const floatingMocks = vi.hoisted(() => {
   return {
@@ -151,6 +151,68 @@ describe('UIDropdown', () => {
   afterEach(() => {
     vi.useRealTimers()
     document.body.innerHTML = ''
+  })
+
+  it('provides readiness only to content after positioning and entering, including reopening', async () => {
+    let resolvePosition!: (value: any) => void
+    floatingMocks.computePosition.mockImplementation(() => new Promise((resolve) => (resolvePosition = resolve)))
+    const ControlledTransition = defineComponent({
+      name: 'ControlledTransition',
+      inheritAttrs: false,
+      emits: ['before-enter', 'after-enter'],
+      setup:
+        (_, { slots }) =>
+        () =>
+          slots.default?.()
+    })
+    const VisibleProbe = defineComponent({
+      setup() {
+        const visible = usePopupReady()
+        return () => h('div', { 'data-test-id': 'positioned' }, String(visible.value))
+      }
+    })
+    const visible = ref(true)
+    const wrapper = mount(
+      defineComponent({
+        setup: () => () =>
+          h(PopupProvider, null, {
+            default: () =>
+              h(
+                UIDropdown,
+                {
+                  trigger: 'manual',
+                  visible: visible.value,
+                  pos: { x: 20, y: 20 }
+                },
+                {
+                  trigger: () => h(VisibleProbe, { 'data-test-id': 'trigger-visible' }),
+                  default: () => h(VisibleProbe)
+                }
+              )
+          })
+      }),
+      { attachTo: document.body, global: { stubs: { transition: ControlledTransition } } }
+    )
+    const content = () => document.querySelector('[data-test-id="positioned"]')!
+    for (let opening = 0; opening < 2; opening++) {
+      await flushDropdown()
+      expect(content().textContent).toBe('false')
+      expect(document.querySelector('[data-test-id="trigger-visible"]')?.textContent).toBe('true')
+      expect((content().parentElement as HTMLElement).style.visibility).toBe('hidden')
+      wrapper.getComponent(ControlledTransition).vm.$emit('before-enter')
+      await nextTick()
+      resolvePosition({ x: 20, y: 20, strategy: 'fixed', placement: 'bottom', middlewareData: {} })
+      await flushDropdown()
+      expect(content().textContent).toBe('false')
+      wrapper.getComponent(ControlledTransition).vm.$emit('after-enter')
+      await flushDropdown()
+      expect(content().textContent).toBe('true')
+      expect((content().parentElement as HTMLElement).style.visibility).toBe('visible')
+      visible.value = false
+      await flushDropdown()
+      visible.value = true
+    }
+    wrapper.unmount()
   })
 
   it('opens on hover only after the default hover delay', async () => {

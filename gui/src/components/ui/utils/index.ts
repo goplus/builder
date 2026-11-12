@@ -1,4 +1,4 @@
-import { type InjectionKey, provide, type Ref, inject, ref, watchEffect } from 'vue'
+import { type InjectionKey, provide, type Ref, computed, inject, readonly, ref, watchEffect } from 'vue'
 import { getCleanupSignal } from '@/utils/disposable'
 import { findLayerRoot } from './layer-stack'
 export { cn, type ClassDictionary, type ClassValue } from './cn'
@@ -49,6 +49,27 @@ export function usePopupContainer() {
   const popupContainer = inject(popupContainerInjectionKey)
   if (popupContainer == null) throw new Error('Popup container not provided')
   return popupContainer
+}
+
+const popupReadyInjectionKey: InjectionKey<Readonly<Ref<boolean>>> = Symbol('popup-ready')
+const defaultPopupReady = readonly(ref(true))
+
+/**
+ * Provide readiness for automatic focus to popup content only, excluding its trigger.
+ * A popup is ready once positioning and its enter animation have completed.
+ * Ancestor popups must also be ready. Reset this when closing or starting another enter.
+ * Returns readiness including ancestor constraints.
+ */
+export function providePopupReady(ready: Readonly<Ref<boolean>>) {
+  const parentReady = usePopupReady()
+  const popupReady = computed(() => parentReady.value && ready.value)
+  provide(popupReadyInjectionKey, popupReady)
+  return popupReady
+}
+
+/** Readiness of the enclosing popup content; true outside a popup readiness provider. */
+export function usePopupReady(): Readonly<Ref<boolean>> {
+  return inject(popupReadyInjectionKey, defaultPopupReady)
 }
 
 const modalContainerInjectionKey: InjectionKey<Ref<HTMLElement | undefined>> = Symbol('modal-container')
