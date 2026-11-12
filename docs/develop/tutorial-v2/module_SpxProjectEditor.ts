@@ -18,9 +18,10 @@ export interface Runtime {
   /**
    * Emitted once per run or rerun, right before the project's code starts, so
    * before any of that run's output or exit; runtime state is still initializing
-   * then. Initialization that fails or is cancelled before that point and UI
-   * state restoration do not emit a start, while a run that fails after it has
-   * already emitted one; subscribing does not replay an already-running state.
+   * then. A run that fails or is stopped before that point emits no start, and
+   * one that fails or is stopped after it keeps the start it emitted. UI state
+   * restoration does not emit a start, and subscribing does not replay an
+   * already-running state.
    */
   on(event: "didStart", listener: () => void): Disposer;
   /** Every new output, synchronously in append order, including errors. */

@@ -372,7 +372,7 @@ async function runInternal(ctrl: AbortController) {
     // See https://github.com/goplus/builder/issues/3364.
     iframeWindow.xbuilder_set_username(signedIn.username ?? '')
 
-    // Not after `startGame`: the project's code already runs and prints inside it.
+    // Emit start before `startGame`: the project's code, and its output, run inside it.
     emit('start')
     // TODO: get progress for engine-loading, which is now included in `startGame`
     startGameReporter.startAutoReport(10_000)
