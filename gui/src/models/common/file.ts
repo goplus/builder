@@ -136,6 +136,16 @@ export type Files = {
   [path: string]: File | undefined
 }
 
+const generatedText = new WeakMap<File, string>()
+
+/** Compare known content without loading lazy files; unknown content requires the same immutable reference. */
+export function sameFileContent(before: File | null | undefined, after: File | null | undefined) {
+  if (before === after) return true
+  if (before == null || after == null || before.type !== after.type) return false
+  const text = generatedText.get(before)
+  return text != null && text === generatedText.get(after)
+}
+
 function str2Ab(str: string) {
   const encoder = new TextEncoder()
   const view = encoder.encode(str)
@@ -160,7 +170,9 @@ export async function toNativeFile(file: File, signal?: AbortSignal) {
 export function fromText(name: string, text: string, options?: Options) {
   // Default to `text/plain` for text content when MIME type cannot be determined from file extension.
   const type = options?.type ?? getMimeFromExt(extname(name).slice(1)) ?? 'text/plain'
-  return new File(name, async () => str2Ab(text), { ...options, type })
+  const file = new File(name, async () => str2Ab(text), { ...options, type })
+  generatedText.set(file, text)
+  return file
 }
 
 export async function toText(file: File, signal?: AbortSignal) {

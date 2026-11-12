@@ -25,6 +25,7 @@ useDecorations(() => {
         },
         options: {
           isWholeLine: false,
+          ...(item.retained === true ? { showIfCollapsed: true } : {}),
           beforeContentClassName: 'code-editor-inlay-hint-label',
           before: {
             content: `${item.label}:`,

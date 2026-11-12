@@ -87,6 +87,14 @@ Editor customizations a course can enable on demand — independent of each othe
 * **API allowlist**: filters the API Reference to show only the APIs relevant to the course and hides unrelated categories, reducing cognitive load
 * **Ruler**: a measuring aid on the stage that helps learners build intuition for coordinates and distances
 
+In Simple mode, background code checks continue while the learner types. For a recognized call with a checked, diagnostic-free editing baseline, newly introduced local static errors are deferred until the learner leaves the call, leaves the editor, or runs the project. Calls can have multiple arguments and span multiple lines: moving between arguments or lines within the same call does not end editing. Existing independent diagnostics, warnings, runtime errors, and new semantic errors elsewhere remain visible. Visual styling and Normal mode behavior are unchanged.
+
+When an incomplete argument causes parser recovery to mark unchanged following statements or the enclosing closing brace, a narrow set of recognized recovery diagnostics can be deferred with the local error. This requires an in-call syntax diagnostic, an intact source-edit history, and a known enclosing block; it never suppresses all errors in a block. Unchanged baseline errors are retained even if recovery omits them. Uncertain boundaries, stale context, multiple simultaneous edits, paste, and undo/redo use immediate feedback. Composition alone does not end a call-editing session. Run and rerun check the synchronized current project code.
+
+Gray parameter-name hints are bound to previously confirmed call argument slots. Clearing a first, middle, or final argument retains its name and the names of surviving arguments, including in multiline calls. Strings, identifiers, and nested expressions are supported when their boundaries remain recognizable. A partial parser result cannot renumber those labels while a slot is empty. Labels remain available after moving away when their mapping is still valid; changing the callee, separators, document, or external semantic context invalidates an uncertain binding. No value or separator is inserted automatically, and unfamiliar or ambiguous labels are never invented.
+
+For development acceptance, `gui/editing-preview.html` provides a local editor with the real language service and examples for multi-argument calls, multiline calls, parser recovery, and independent errors. It neither reads nor changes hosted courses and its check action does not run a game.
+
 ### Guided Course
 
 Follows the [existing design](./tutorial.md): a course is a Prompt; the Copilot drives step-by-step guidance, actively perceiving user operations and Builder events (with a "Continue" button as an aid for the few events that are hard to perceive), assisted by the game-exit signal for judging. Revisions:
