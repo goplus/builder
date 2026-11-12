@@ -55,26 +55,26 @@ func (t *executionLocations) report(event ixgo.ExecutionPosition) {
 	} else {
 		// Keep the innermost position in each file so switching documents does
 		// not lose a caller that is waiting for another file's function.
-		var locations []executionLocation
+		var chain []executionLocation
 		seen := make(map[string]bool)
 		for _, position := range event.Stack {
 			if seen[position.Filename] {
 				continue
 			}
 			seen[position.Filename] = true
-			locations = append(locations, executionLocation{File: position.Filename, Line: position.Line})
+			chain = append(chain, executionLocation{File: position.Filename, Line: position.Line})
 		}
-		if slices.Equal(t.locations[event.GoroutineID], locations) {
+		if slices.Equal(t.locations[event.GoroutineID], chain) {
 			return
 		}
-		t.locations[event.GoroutineID] = locations
+		t.locations[event.GoroutineID] = chain
 	}
 	// Emit under the lock so snapshots cannot overtake each other.
 	// If profiling shows a bottleneck, consider a single timer publisher that
 	// coalesces snapshots and emits outside mu while preserving their order.
-	locations := make([]executionLocation, 0, len(t.locations))
+	snapshot := make([]executionLocation, 0, len(t.locations))
 	for _, chain := range t.locations {
-		locations = append(locations, chain...)
+		snapshot = append(snapshot, chain...)
 	}
-	t.onChange(locations)
+	t.onChange(snapshot)
 }
