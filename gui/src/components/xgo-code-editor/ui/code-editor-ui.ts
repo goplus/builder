@@ -304,7 +304,8 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     if (contribution == null) throw new Error('Snippet contribution not found')
     ;(contribution as any).insert(snippet) // About `contribution.insert`: https://github.com/microsoft/vscode/blob/942d11fff1a3a4f0faa918b59803f699ec61b9b6/src/vs/editor/contrib/snippet/browser/snippetController2.ts#L104
     // Tab-stop interaction can confuse beginners and requires Escape to exit, so disable it in Simple Mode.
-    // Keep the initial parameter selection for easy replacement. See https://github.com/goplus/builder/issues/3750.
+    // Passing true clears secondary selections while keeping the primary placeholder selected for easy replacement.
+    // See https://github.com/goplus/builder/issues/3750.
     if (this.options.simpleMode) (contribution as any).cancel(true)
     this.editor.focus()
   }
