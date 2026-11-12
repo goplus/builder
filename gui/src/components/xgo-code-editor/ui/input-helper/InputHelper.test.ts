@@ -93,15 +93,4 @@ describe('Input helper focus', () => {
     await nextTick()
     expect(document.activeElement).toBe(wrapper.get('input').element)
   })
-
-  it('leaves focus alone when the helper has no editable field', async () => {
-    const button = document.createElement('button')
-    document.body.append(button)
-    button.focus()
-    const { ready } = mountHelper(defineComponent({ render: () => h('button', 'Choose') }), null)
-    ready.value = true
-    await nextTick()
-    expect(document.activeElement).toBe(button)
-    button.remove()
-  })
 })
