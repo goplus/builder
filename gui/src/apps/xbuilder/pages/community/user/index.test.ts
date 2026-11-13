@@ -138,6 +138,31 @@ describe('user profile', () => {
     )
   })
 
+  it('jumps to the new last page after deleting from a later page', async () => {
+    await signIn()
+    let projectDeleted = false
+    vi.mocked(projectApis.listSignedInUserProjects).mockImplementation(async (params) => {
+      if (params?.pageIndex === 5 && !projectDeleted) {
+        return { total: 33, data: [makeProject('Last page project')] }
+      }
+      if (params?.pageIndex === 5) return { total: 10, data: [] }
+      if (params?.pageIndex === 2) return { total: 10, data: [makeProject('New last page project')] }
+      return { total: 10, data: [] }
+    })
+
+    const { wrapper, router } = await mountPages('/user/alice/projects?p=5')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Last page project'))
+
+    projectDeleted = true
+    wrapper.findComponent(ProjectItem).vm.$emit('removed')
+
+    await vi.waitFor(() => expect(router.currentRoute.value.query.p).toBe('2'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('New last page project'))
+    expect(projectApis.listSignedInUserProjects).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pageIndex: 2, pageSize: 8 })
+    )
+  })
+
   it('keeps the current projects page when it still has projects after deletion', async () => {
     await signIn()
     let projectDeleted = false
