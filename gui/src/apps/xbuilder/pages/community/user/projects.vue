@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
 import { useMessageHandle } from '@/utils/exception'
@@ -79,6 +79,13 @@ const queryRet = useQuery({
     en: 'Failed to load projects',
     zh: '加载失败'
   }
+})
+
+watch([() => queryRet.data.value, pageSize], ([data]) => {
+  if (data == null || page.value <= 1) return
+
+  const lastPage = Math.max(1, Math.ceil(data.total / pageSize.value))
+  if (page.value > lastPage) page.value = lastPage
 })
 
 const router = useRouter()
