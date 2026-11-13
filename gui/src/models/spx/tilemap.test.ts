@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Tilemap, type Coord, type RawTilemapConfig, type RawTileSourceConfig } from './tilemap'
+import { DumbTilemap, Tilemap, type Coord, type RawTilemapConfig, type RawTileSourceConfig } from './tilemap'
 import { File, fromConfig, toConfig, type Files } from '../common/file'
 import { join } from '@/utils/path'
 
@@ -186,5 +186,77 @@ describe('Tile', () => {
     expect(rawTilemapConfig.decorators).toEqual(tilemapConfig.decorators)
 
     expect(rawTilemapConfig.sprites).toEqual(tilemapConfig.sprites)
+  })
+})
+
+describe('DumbTilemap', () => {
+  it('loads legacy decorators relative to the tilemaps asset directory and preserves files', async () => {
+    const files: Files = {
+      'assets/tilemaps/river.json': fromConfig('river.json', {
+        tilemap: { layers: [] },
+        decorators: [{ path: 'tree.png', position: { x: 12, y: 34 } }]
+      }),
+      'assets/tilemaps/tree.png': markTexture('tree.png'),
+      'assets/tilemaps/other/map.json': fromConfig('map.json', {})
+    }
+
+    const tilemap = await DumbTilemap.load('tilemaps/river.json', 'assets', files)
+
+    expect(tilemap?.tilemapPath).toBe('tilemaps/river.json')
+    expect(tilemap?.decorators[0].img).toBe(files['assets/tilemaps/tree.png'])
+    expect(tilemap?.decorators[0].position).toEqual({ x: 12, y: 34 })
+    expect(tilemap?.export('assets')).toEqual(files)
+  })
+
+  it.each(['tilemaps/river', 'worlds/river'])(
+    'loads directory %s with local decorators and preserves opaque map data',
+    async (path) => {
+      const configPath = `assets/${path}/tilemap.json`
+      const files: Files = {
+        [configPath]: fromConfig('tilemap.json', {
+          version: 1,
+          node_offset: [-240, -180],
+          tileset: {
+            tile_size: [480, 360],
+            physics_layers: [{ collision_layer: 8, collision_mask: 4 }]
+          },
+          layers: [{ name: 'banks', tile_map_data: 'AAA=' }]
+        }),
+        [`assets/${path}/decorator.json`]: fromConfig('decorator.json', {
+          version: 1,
+          decorators: [{ path: 'textures/tree.png', position: { x: 12, y: 34 } }]
+        }),
+        [`assets/${path}/textures/tree.png`]: markTexture('tree.png'),
+        [`assets/${path}/atlas.png`]: markTexture('atlas.png'),
+        'assets/tilemaps/other/map.json': fromConfig('map.json', {})
+      }
+
+      const tilemap = await DumbTilemap.load(path, 'assets', files)
+      const exported = tilemap!.export('assets')
+
+      expect(tilemap?.tilemapPath).toBe(path)
+      expect(tilemap?.decorators[0].img).toBe(files[`assets/${path}/textures/tree.png`])
+      expect(tilemap?.decorators[0].position).toEqual({ x: 12, y: 34 })
+      expect(exported).toEqual(files)
+      expect(exported[configPath]).toBe(files[configPath])
+    }
+  )
+
+  it('loads a directory without optional decorators', async () => {
+    const files = {
+      'assets/tilemaps/river/tilemap.json': fromConfig('tilemap.json', { version: 1 })
+    }
+
+    const tilemap = await DumbTilemap.load('tilemaps/river', 'assets', files)
+
+    expect(tilemap?.decorators).toEqual([])
+    expect(tilemap?.export('assets')).toEqual(files)
+  })
+
+  it.each([
+    ['tilemaps/missing.json', 'assets/tilemaps/missing.json'],
+    ['tilemaps/missing', 'assets/tilemaps/missing/tilemap.json']
+  ])('reports a missing map at %s', async (path, configPath) => {
+    await expect(DumbTilemap.load(path, 'assets', {})).rejects.toThrow(`tilemap file not found: ${configPath}`)
   })
 })
