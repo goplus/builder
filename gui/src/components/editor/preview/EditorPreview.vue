@@ -94,6 +94,7 @@
           :class="{ 'h-full aspect-auto': simpleMode }"
           :simple-mode="simpleMode"
           :ruler-active="rulerActive"
+          :highlighted-sprite-id="runnerState === 'initial' ? highlightedSpriteId : null"
         />
         <div
           v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky"
@@ -186,11 +187,13 @@ const props = withDefaults(
     /** Where simple-mode Run/Stop controls are rendered beside the docked Copilot UI. */
     controlsAnchor?: HTMLElement | null
     rulerEnabled?: boolean
+    highlightedSpriteId?: string | null
   }>(),
   {
     simpleMode: false,
     controlsAnchor: null,
-    rulerEnabled: false
+    rulerEnabled: false,
+    highlightedSpriteId: null
   }
 )
 

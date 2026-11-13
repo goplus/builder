@@ -87,6 +87,35 @@ Editor customizations a course can enable on demand — independent of each othe
 * **API allowlist**: filters the API Reference to show only the APIs relevant to the course and hides unrelated categories, reducing cognitive load
 * **Ruler**: a measuring aid on the stage that helps learners build intuition for coordinates and distances
 
+#### Sprite highlighting demo (#3754)
+
+Adopt code-hover highlighting for evaluation in Course Simple Mode. It helps learners
+connect a resolved sprite reference with its appearance and position on the stage,
+especially when several small sprites are present. This demo decision does not extend
+code-hover behavior to the ordinary editor.
+
+- Code references, sprite selector cards, and sprites on the stage share a translucent
+  white silhouette outline with a total width of 2 screen pixels. The existing sprite
+  name label keeps a gap of 8 screen pixels below the sprite's bounding box.
+  The Ruler uses the same outline for
+  its current snapped sprite; its white endpoint markers identify the exact
+  position used for measurement. Color does not distinguish these interactions.
+- Resolve code targets through existing resource references or in-place resource inputs.
+  Do not infer targets from comments, matching text, or variable values at runtime.
+  Unresolved, hidden, or offscreen targets do not move the camera or reveal a sprite.
+- Code and selector previews are temporary and do not change the selected sprite,
+  code file, project data, or undo history. Leaving the target clears the preview with
+  a short grace period for moving onto a name label or hover card. Typing, changing
+  documents, closing the selector, and starting a run clear the relevant preview.
+- Stage hover and code-hover highlighting apply in Simple Mode. Ruler snapping keeps
+  its existing availability in both editor modes, but hidden sprites are excluded
+  from snap targets in both modes. Its current snap target takes
+  precedence over a code preview, with at most one full sprite outline at a time.
+  Fixed measurement endpoints remain visible after the full sprite emphasis ends.
+- Use a static outline at a fixed screen thickness. Do not scale sprites, change their
+  stacking order, dim the stage, or add a repeating animation. Hide the outline from
+  generated project thumbnails and while the runtime surface is displayed.
+
 ### Guided Course
 
 Follows the [existing design](./tutorial.md): a course is a Prompt; the Copilot drives step-by-step guidance, actively perceiving user operations and Builder events (with a "Continue" button as an aid for the few events that are hard to perceive), assisted by the game-exit signal for judging. Revisions:

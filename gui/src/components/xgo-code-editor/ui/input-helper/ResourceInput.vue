@@ -5,7 +5,7 @@ export function getDefaultValue() {
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -22,6 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const { ui } = useCodeEditorUICtx()
+onUnmounted(() => ui.resourceReferenceController.previewResource(null))
 const accept = props.accept as ResourceInputSlotAccept
 const itemRenderer = computed(() => ui.codeEditor.resourceAdapter.provideResourceItemRenderer())
 const selector = computed(() => ui.codeEditor.resourceAdapter.provideResourceSelector(accept.resourceContext))
@@ -56,6 +57,10 @@ onMounted(() => {
       :key="item.uri"
       :resource="item"
       :selectable="{ selected: item.uri === selected }"
+      @mouseenter="ui.resourceReferenceController.previewResource(item)"
+      @mouseleave="ui.resourceReferenceController.previewResource(null)"
+      @focusin="ui.resourceReferenceController.previewResource(item)"
+      @focusout="ui.resourceReferenceController.previewResource(null)"
       @click="select(item)"
     />
     <UIDropdown trigger="click" placement="top">

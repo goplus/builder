@@ -9,6 +9,7 @@
     :class="{ 'cursor-ruler': rulerActive }"
     :style="{ backgroundImage: `url(${stageBgUrl})`, '--ruler-cursor': rulerCursor }"
     @mousemove="updateMousePos"
+    @mouseleave="hoveredSpriteId = null"
   >
     <v-stage v-if="stageConfig != null" ref="stageRef" :config="stageConfig" @wheel="handleWheel">
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
@@ -42,6 +43,8 @@
             :map-scale="stageScale ?? 1"
             :node-ready-map="nodeReadyMap"
             :simple-mode="simpleMode"
+            :highlighted="activeHighlightId === localConfig.id"
+            @hover-change="handleSpriteHover(localConfig.id, $event)"
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(localConfig)"
@@ -58,6 +61,13 @@
           :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
           @update-transform-op="handleSpriteUpdateTransformOp"
+        />
+      </v-layer>
+      <v-layer :config="{ ...mapPos, listening: false }">
+        <SpriteHighlight
+          v-if="highlightedSpriteNode != null"
+          :sprite-config="highlightedSpriteNode.highlightConfig"
+          :map-scale="stageScale ?? 1"
         />
       </v-layer>
       <v-layer v-if="!simpleMode">
@@ -77,6 +87,7 @@
         :simple-mode="simpleMode"
         :snap-targets="rulerSnapTargets"
         @cursor-outline-change="rulerCursorOutlined = $event"
+        @snap-target-change="rulerSpriteId = $event"
       />
     </v-stage>
     <div v-if="!simpleMode && localConfigRef != null" class="absolute bottom-3 left-1/2 -translate-x-1/2">
@@ -103,6 +114,8 @@
 import { throttle } from 'lodash'
 import {
   computed,
+  nextTick,
+  onUnmounted,
   reactive,
   ref,
   shallowReactive,
@@ -131,6 +144,7 @@ import { useCodeEditor } from '@/components/editor/spx-code-editor'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
+import SpriteHighlight from '@/components/editor/common/viewer/SpriteHighlight.vue'
 import SpriteQuickConfig from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
 import WidgetQuickConfig from '@/components/editor/common/viewer/quick-config/WidgetQuickConfig.vue'
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
@@ -148,10 +162,12 @@ const props = withDefaults(
   defineProps<{
     simpleMode?: boolean
     rulerActive?: boolean
+    highlightedSpriteId?: string | null
   }>(),
   {
     simpleMode: false,
-    rulerActive: false
+    rulerActive: false,
+    highlightedSpriteId: null
   }
 )
 
@@ -180,6 +196,40 @@ const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
 const spriteNodeRefs = shallowReactive(new Map<string, InstanceType<typeof SpriteNode>>())
+const hoveredSpriteId = ref<string | null>(null)
+const rulerSpriteId = ref<string | null>(null)
+const screenshotDecorationsHidden = ref(false)
+const activeHighlightId = computed(() => {
+  if (screenshotDecorationsHidden.value) return null
+  return rulerSpriteId.value ?? (props.simpleMode ? hoveredSpriteId.value ?? props.highlightedSpriteId : null)
+})
+const highlightedSpriteNode = computed(() =>
+  activeHighlightId.value == null ? null : spriteNodeRefs.get(activeHighlightId.value) ?? null
+)
+
+let hoverLeaveTimer: ReturnType<typeof setTimeout> | null = null
+function handleSpriteHover(id: string, hovered: boolean) {
+  if (!props.simpleMode || props.rulerActive) return
+  if (hoverLeaveTimer != null) clearTimeout(hoverLeaveTimer)
+  hoverLeaveTimer = null
+  if (hovered) hoveredSpriteId.value = id
+  else {
+    hoverLeaveTimer = setTimeout(() => {
+      if (hoveredSpriteId.value === id) hoveredSpriteId.value = null
+      hoverLeaveTimer = null
+    }, 120)
+  }
+}
+watch(
+  () => props.rulerActive,
+  () => {
+    hoveredSpriteId.value = null
+    rulerSpriteId.value = null
+  }
+)
+onUnmounted(() => {
+  if (hoverLeaveTimer != null) clearTimeout(hoverLeaveTimer)
+})
 
 function setSpriteNodeRef(id: string) {
   return (el: Element | ComponentPublicInstance | null) => {
@@ -244,11 +294,14 @@ const rulerCursor = computed(() => {
   return rulerCursorOutlined.value ? rulerCursors.normalOutlined : rulerCursors.normal
 })
 const rulerSnapTargets = computed(() =>
-  editorCtx.project.sprites.map((sprite) => ({
-    x: sprite.x + mapSize.value.width / 2,
-    y: mapSize.value.height / 2 - sprite.y,
-    heading: sprite.heading
-  }))
+  editorCtx.project.sprites
+    .filter((sprite) => sprite.visible)
+    .map((sprite) => ({
+      spriteId: sprite.id,
+      x: sprite.x + mapSize.value.width / 2,
+      y: mapSize.value.height / 2 - sprite.y,
+      heading: sprite.heading
+    }))
 )
 
 function getValidMapPos(pos: Pos) {
@@ -596,12 +649,19 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
   const stage = await untilNotNull(stageRef, signal)
   await until(() => !loading.value, signal)
   ensureCanTakeScreenshot()
-  const takeBlob = () =>
-    stage.getStage().toBlob({
-      mimeType: 'image/jpeg',
-      // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
-      imageSmoothingEnabled: false
-    }) as Promise<Blob>
+  const takeBlob = async () => {
+    screenshotDecorationsHidden.value = true
+    try {
+      await nextTick()
+      return await (stage.getStage().toBlob({
+        mimeType: 'image/jpeg',
+        // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
+        imageSmoothingEnabled: false
+      }) as Promise<Blob>)
+    } finally {
+      screenshotDecorationsHidden.value = false
+    }
+  }
   // Omit editor-only controls when taking screenshot.
   const takeWithoutPivot = () => {
     const selectedSprite = selectedSpriteNode.value

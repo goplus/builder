@@ -47,8 +47,8 @@ async function setup(scale = 1, reduce = true, simpleMode = false) {
       stageScale: scale,
       simpleMode,
       snapTargets: [
-        { x: 100, y: 100, heading: 0 },
-        { x: 300, y: 100, heading: null }
+        { spriteId: 'lita', x: 100, y: 100, heading: 0 },
+        { spriteId: 'pinecone', x: 300, y: 100, heading: null }
       ]
     },
     global: {
@@ -146,6 +146,21 @@ async function setup(scale = 1, reduce = true, simpleMode = false) {
 }
 
 describe('Ruler', () => {
+  it('reports the exact snapped sprite and clears the highlight on leave and deactivation', async () => {
+    const { wrapper, move, capture } = await setup()
+    const target = () => wrapper.emitted('snapTargetChange')?.at(-1)?.[0]
+    await move({ x: 118, y: 100 })
+    expect(target()).toBe('lita')
+    await move({ x: 300, y: 115 })
+    expect(target()).toBe('pinecone')
+    capture.vm.$emit('mouseleave')
+    await nextTick()
+    expect(target()).toBeNull()
+    await move({ x: 100, y: 100 })
+    await wrapper.setProps({ active: false })
+    expect(target()).toBeNull()
+  })
+
   it.each([0.5, 1, 2])('keeps decorations fixed and measures map units at stage scale %s', async (scale) => {
     const { wrapper, layer, move, click, line, labels, configs, markers } = await setup(scale)
     expect(layer.props('config')).toMatchObject({ x: -40, y: -20, scaleX: 1 / scale, scaleY: 1 / scale })
