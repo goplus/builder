@@ -45,222 +45,214 @@ security:
   - bearerAuth: []
 
 paths:
-  /account/identity-providers:
-    get:
-      operationId: listAccountIdentityProviders
-      tags:
-        - Account
-      summary: List identity providers
-      description: |
-        Retrieve a list of identity providers available for hosted sign-in.
-
-        Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
-      security: []
-      parameters:
-        - name: clientID
-          description: OAuth client ID of the app requesting hosted sign-in.
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/OAuthClientID"
-        - name: requestURI
-          description: Pushed authorization request URI returned by `/account/oauth/par`.
-          in: query
-          required: true
-          schema:
-            type: string
-            format: uri
-            minLength: 1
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/AccountIdentityProvider"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
-  /account/identity-providers/{provider}/authorize:
-    get:
-      operationId: authorizeAccountIdentityProvider
-      tags:
-        - Account
-      summary: Start identity provider authorization
-      description: |
-        Redirect the user to the provider authorization endpoint for the current hosted sign-in flow.
-
-        Account Web calls this endpoint with `clientID` and `requestURI` read from the hosted sign-in URL query.
-      security: []
-      parameters:
-        - name: provider
-          description: Identity provider name.
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
-        - name: clientID
-          description: OAuth client ID of the app requesting hosted sign-in.
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/OAuthClientID"
-        - name: requestURI
-          description: Pushed authorization request URI returned by `/account/oauth/par`.
-          in: query
-          required: true
-          schema:
-            type: string
-            format: uri
-            minLength: 1
-      responses:
-        "302":
-          description: Redirect to the identity provider authorization endpoint.
-          headers:
-            Location:
-              description: Provider authorization URL.
-              schema:
-                type: string
-                format: uri
-                minLength: 1
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
   /account/identity-providers/{provider}/callback:
     get:
       operationId: handleAccountIdentityProviderCallback
       tags:
         - Account
-      summary: Handle identity provider callback
+      summary: Verify an identity provider callback
       description: |
-        Handle the identity provider callback for hosted sign-in.
-
-        Callback state is used to associate the provider response with the hosted sign-in flow and provide CSRF
-        protection.
-
-        The provider callback includes either an authorization code or an OAuth error.
-      security: []
+        Match state to the fixed provider, application, callback, PKCE, nonce, and authentication request. Before
+        consuming state or verifying a code, require the browser flow cookie bound to the initiating PAR for direct
+        authentication or to the helping request for assistance. Forwarding a provider authorization address is
+        insufficient. Supply exactly one of code and error. Persist verified identity or a safe failure state
+        without resolving accounts or changing an Account session. User denial becomes cancelled. Other provider
+        failures become failed. Repeated callbacks in the same bound context return to the same fixed Account page
+        using stored state without verifying the code again or changing terminal results.
+      security:
+        - accountFlowCookie: []
       parameters:
         - name: provider
-          description: Identity provider name.
           in: path
           required: true
+          description: Provider fixed by the authentication request.
           schema:
-            $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
-        - name: code
-          description: Provider authorization code.
+            $ref: "#/components/schemas/AccountProviderName"
+        - name: state
           in: query
+          required: true
+          description: One-time provider callback state.
           schema:
             type: string
             minLength: 1
-        - name: state
-          description: Provider callback state.
+        - name: code
           in: query
-          required: true
+          description: Provider authorization code. Mutually exclusive with error.
           schema:
             type: string
             minLength: 1
         - name: error
-          description: Provider error code.
           in: query
+          description: Provider error. Mutually exclusive with code.
           schema:
             type: string
             minLength: 1
       responses:
         "302":
-          description: Redirect back to hosted sign-in.
+          description: |
+            Verification state saved. Return to the fixed Account page to read status using the original flow context.
+            No Account session cookie is created or repaired.
           headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+            Referrer-Policy:
+              $ref: "#/components/headers/AccountNoReferrer"
             Location:
-              description: Hosted sign-in URL with the original `clientID`, `requestURI`, and optional `uiLocales`.
-              schema:
-                type: string
-                format: uri
-                minLength: 1
-            Set-Cookie:
               description: |
-                Sets the `__Host-xbuilder-account-session` cookie when the provider callback creates an account session.
+                Fixed Account Web /sign-in or /authenticate page with the original public request reference. Never an
+                arbitrary caller-provided URL or a URL containing provider errors or credentials.
               schema:
                 type: string
+                minLength: 1
+                format: uri
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
     post:
       operationId: submitAccountIdentityProviderCallback
       tags:
         - Account
-      summary: Submit identity provider callback
+      summary: Process an Apple form-post callback through a same-origin relay
       description: |
-        Handle identity provider callbacks that use form post response mode.
-
-        These external callbacks use the OAuth state parameter for CSRF protection instead of a same-site web CSRF
-        token.
-
-        The provider callback includes either an authorization code or an OAuth error.
-      security: []
+        The first cross-site Apple `form_post` may omit the Lax flow cookie. It returns an escaped same-origin HTML
+        form without consuming state or verifying credentials. The form preserves code, state, or error and posts to
+        the configured same-origin callback. The second submission requires the trusted Account Web `Origin` and
+        bound flow cookie before consuming state and verifying credentials, then returns 303 to the fixed Account
+        page. Neither phase reads or modifies an Account session. Raw codes remain only in the temporary form and
+        are not persisted. A repeated bound submission returns to the same Account page without replaying
+        verification or overwriting terminal results.
+      security:
+        - accountFlowCookie: []
+        - {}
       parameters:
         - name: provider
-          description: Identity provider name.
           in: path
           required: true
+          description: Provider fixed by the authentication request.
           schema:
-            $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
+            type: string
+            enum:
+              - apple
+        - name: Origin
+          in: header
+          description: Required for the second, same-origin Apple relay submission. Must be the configured Account Web origin.
+          schema:
+            type: string
+            minLength: 1
+            format: uri
       requestBody:
         required: true
         content:
           application/x-www-form-urlencoded:
             schema:
+              type: object
+              required:
+                - state
+              properties:
+                code:
+                  description: Provider authorization code.
+                  type: string
+                  minLength: 1
+                state:
+                  description: One-time provider callback state.
+                  type: string
+                  minLength: 1
+                error:
+                  description: Provider error code, never reflected verbatim in a return URL.
+                  type: string
+                  minLength: 1
+                error_description:
+                  description: Optional provider diagnostics, not a public error contract.
+                  type: string
+                  minLength: 1
               oneOf:
-                - title: Authorization code callback
-                  type: object
-                  required:
+                - required:
                     - code
-                    - state
-                  properties:
-                    code:
-                      description: Provider authorization code.
-                      type: string
-                      minLength: 1
-                    state:
-                      description: Provider callback state.
-                      type: string
-                      minLength: 1
-                - title: OAuth error callback
-                  type: object
-                  required:
-                    - state
+                  not:
+                    anyOf:
+                      - required:
+                          - error
+                - required:
                     - error
-                  properties:
-                    state:
-                      description: Provider callback state.
-                      type: string
-                      minLength: 1
-                    error:
-                      description: Provider error code.
-                      type: string
-                      minLength: 1
+                  not:
+                    anyOf:
+                      - required:
+                          - code
       responses:
-        "302":
-          description: Redirect back to hosted sign-in.
+        "200":
+          description: |
+            Escaped same-origin relay form for the initial external Apple POST. No credentials have been consumed or
+            verified.
           headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+            Referrer-Policy:
+              description: Preserve the `Origin` header on the relay form submission without sending callback path or query data.
+              schema:
+                type: string
+                enum:
+                  - origin
+            Content-Security-Policy:
+              description: Allow only nonce-protected relay scripts and same-origin forms. Forbid framing.
+              schema:
+                type: string
+                examples:
+                  - default-src 'none'; script-src 'nonce-example'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'
+            X-Frame-Options:
+              schema:
+                type: string
+                enum:
+                  - DENY
+          content:
+            text/html:
+              schema:
+                type: string
+        "303":
+          description: |
+            Verification state saved. Return to the fixed Account page to read status using the original flow context.
+            No Account session cookie is created or repaired.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+            Referrer-Policy:
+              $ref: "#/components/headers/AccountNoReferrer"
             Location:
-              description: Hosted sign-in URL with the original `clientID`, `requestURI`, and optional `uiLocales`.
-              schema:
-                type: string
-                format: uri
-                minLength: 1
-            Set-Cookie:
               description: |
-                Sets the `__Host-xbuilder-account-session` cookie when the provider callback creates an account session.
+                Fixed Account Web /sign-in or /authenticate page with the original public request reference. Never an
+                arbitrary caller-provided URL or a URL containing provider errors or credentials.
               schema:
                 type: string
+                minLength: 1
+                format: uri
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
 
   /account/user:
     get:
@@ -462,87 +454,71 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
 
   /account/session:
-    post:
-      operationId: createAccountSession
+    get:
+      operationId: getAccountSession
       tags:
         - Account
-      summary: Create an account session
-      description: Create an account session for hosted sign-in.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateAccountSessionRequest"
-            examples:
-              password:
-                summary: Password sign-in
-                value:
-                  username: john
-                  password: <your-password>
+      summary: Get the current facade Account session
+      description: |
+        Read the current Account session and user. Web uses only its Account session cookie and requires facade=web.
+        WeChat uses only an Account session Bearer and requires facade=wechat. Supplying both session channels
+        returns 400. This endpoint does not accept product OAuth tokens as Account session credentials. The returned
+        session belongs only to its facade.
+      security:
+        - accountSessionCookie: []
+        - accountSessionBearer: []
       responses:
-        "201":
-          description: Account session created.
+        "200":
+          description: Successful response.
           headers:
-            Set-Cookie:
-              description: |
-                Sets the `__Host-xbuilder-account-session` cookie with `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`,
-                and no `Domain`.
-              schema:
-                type: string
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/CurrentAccountSession"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          $ref: "#/components/responses/AccountFlowBadRequest"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/AccountFlowUnauthorized"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/AccountFlowForbidden"
         "429":
-          $ref: "#/components/responses/TooManyRequests"
-    get:
-      operationId: getAccountSession
-      tags:
-        - Account
-      summary: Get the current account session
-      description: Retrieve the current account session.
-      security:
-        - accountSessionCookie: []
-      responses:
-        "200":
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CurrentAccountSession"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
     delete:
       operationId: revokeAccountSession
       tags:
         - Account
-      summary: Revoke the current account session
+      summary: Revoke the current facade Account session
       description: |
-        Revoke the current account session.
-
-        Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
+        Revoke only the current session for its facade. Web clears its session cookie and validates the trusted
+        `Origin`. WeChat uses its Account session Bearer. Both session channels in one request return 400. This
+        operation does not revoke existing product tokens or previously issued authorization codes by default.
       security:
         - accountSessionCookie: []
+        - accountSessionBearer: []
       responses:
         "204":
-          description: Account session revoked.
+          description: Current Account session revoked.
           headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
             Set-Cookie:
-              description: Clears the `__Host-xbuilder-account-session` cookie.
+              description: Clear the Account session cookie for Web. No cookie is changed for WeChat.
               schema:
                 type: string
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/AccountFlowUnauthorized"
         "403":
-          $ref: "#/components/responses/Forbidden"
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
 
   /account/sessions:
     get:
@@ -740,14 +716,13 @@ paths:
         - Account OAuth
       summary: Create a pushed authorization request
       description: |
-        Create a pushed authorization request for an app using OAuth 2.0 PAR.
-
-        The requested redirect URI must exactly match the app allowlist.
-
-        Provider credential handoff codes, when supplied, must be valid, unexpired, unused, and match the requested
-        provider. Invalid provider codes must not produce usable `request_uri` values.
-
-        The returned `request_uri` is an opaque, short-lived, single-use reference and is not a dereferenceable URL.
+        Create a single-authorization PAR for the registered OAuth client. Bind client, validated redirect URI,
+        scope, state, and PKCE S256. Web may use approved HTTPS preview callback rules. WeChat requires an exact
+        registered callback and calling mini program pair. Third-party credentials are not accepted. The backend
+        chooses web by default, or wechat when explicitly requested. The opaque `request_uri` is not a
+        dereferenceable URL and grants no access to results. Return independent backend recovery and one-time entry
+        credentials. The integrating app backend retains the recovery credential and PKCE verifier, forwarding only
+        public correlation and entry information to its frontend.
       security:
         - oauthClientSecretBasic: []
         - {}
@@ -759,17 +734,21 @@ paths:
               type: object
               allOf:
                 - if:
+                    properties:
+                      xbuilder_facade:
+                        type: string
+                        enum:
+                          - wechat
                     required:
-                      - xbuilder_provider_code
+                      - xbuilder_facade
                   then:
                     required:
-                      - xbuilder_provider
-                - if:
-                    required:
-                      - xbuilder_provider
-                  then:
-                    required:
-                      - xbuilder_provider_code
+                      - xbuilder_wechat_mini_program_appid
+                  else:
+                    not:
+                      anyOf:
+                        - required:
+                            - xbuilder_wechat_mini_program_appid
               required:
                 - response_type
                 - client_id
@@ -807,27 +786,46 @@ paths:
                   allOf:
                     - $ref: "#/components/schemas/OAuthScope"
                 ui_locales:
-                  description: |
-                    Preferred UI locales for hosted sign-in, using space-separated BCP 47 language tags.
-
-                    The server uses a supported locale from this list when possible and may fall back to a default
-                    locale.
-                  type: string
-                  minLength: 1
-                  maxLength: 256
-                  pattern: "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*(?: [A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*)*$"
-                  examples:
-                    - zh-CN zh en
-                xbuilder_provider:
-                  description: Identity provider used for provider credential handoff.
-                  $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
-                xbuilder_provider_code:
-                  description: Short-lived provider code obtained by the app frontend.
-                  type: string
-                  minLength: 1
+                  $ref: "#/components/schemas/OAuthUILocales"
+                xbuilder_facade:
+                  $ref: "#/components/schemas/AccountFacade"
+                  default: web
+                xbuilder_wechat_mini_program_appid:
+                  $ref: "#/components/schemas/AccountWechatMiniProgramAppID"
+              additionalProperties: false
+            examples:
+              web:
+                value:
+                  response_type: code
+                  client_id: K7mR2qV9sT4wX6yZ8aB0Cg
+                  redirect_uri: https://xbuilder.com/account/callback
+                  state: state_reference
+                  code_challenge: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+                  code_challenge_method: S256
+                  scope: account:user:read
+              wechat:
+                value:
+                  response_type: code
+                  client_id: K7mR2qV9sT4wX6yZ8aB0Cg
+                  redirect_uri: https://xatom.example.com/account/callback
+                  state: state_reference
+                  code_challenge: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+                  code_challenge_method: S256
+                  scope: account:user:read
+                  xbuilder_facade: wechat
+                  xbuilder_wechat_mini_program_appid: <caller-mini-program-app-id>
       responses:
         "201":
-          description: Pushed authorization request created.
+          description: Pushed authorization request and private credentials created.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+            Pragma:
+              description: Do not cache OAuth responses in HTTP/1.0 caches.
+              schema:
+                type: string
+                enum:
+                  - no-cache
           content:
             application/json:
               schema:
@@ -838,67 +836,69 @@ paths:
           $ref: "#/components/responses/OAuthInvalidClient"
         "415":
           $ref: "#/components/responses/OAuthUnsupportedMediaType"
+        "429":
+          $ref: "#/components/responses/OAuthTooManyRequests"
+        "500":
+          $ref: "#/components/responses/OAuthServerError"
 
   /account/oauth/authorize:
     get:
       operationId: authorizeAccountOAuthApp
       tags:
         - Account OAuth
-      summary: Handle an OAuth authorization request
+      summary: Open browser authorization through Account Web
       description: |
-        Start or complete the OAuth authorization code flow for a registered app.
-
-        This endpoint accepts PAR authorization requests only. The app must push authorization request parameters to
-        `/account/oauth/par` first and then call this endpoint with `client_id` and `request_uri`.
-
-        The `request_uri` value must reference a valid pushed authorization request bound to the `client_id`.
-
-        The account can be resolved from an account session or from provider credential handoff stored in the pushed
-        authorization request.
-
-        If the account cannot be resolved or hosted interaction is required, this endpoint redirects to hosted sign-in.
-        The hosted sign-in URL carries `clientID`, `requestURI`, and optional `uiLocales` query parameters for Account
-        Web.
-
-        After the account is resolved and the OAuth authorization request can be completed, the authorization response
-        redirects to the app callback with an authorization code and the original `state`, or with OAuth error
-        parameters and the original `state`.
+        Browser navigation entry for a pending web PAR only. Validate client, request reference, facade, and
+        one-time entry credential, then return 302 to the fixed Account Web sign-in page. This endpoint does not
+        authenticate an identity, create an Account session, or issue the authorization code. Account Web binds the
+        entry with its saved flow cookie and completes authorization through structured flow operations. WeChat
+        opens the configured main mini program through platform navigation instead. An authorized return opens
+        Account Web directly rather than submitting a consumed or expired PAR here. Validation errors remain local
+        and never redirect to an unverified callback.
       security: []
       parameters:
         - name: client_id
-          description: OAuth client ID of the app.
           in: query
           required: true
+          description: OAuth client bound to the PAR.
           schema:
             $ref: "#/components/schemas/OAuthClientID"
         - name: request_uri
-          description: Opaque pushed authorization request URI returned by `/account/oauth/par`.
           in: query
           required: true
+          description: Opaque pending web PAR reference.
           schema:
-            type: string
-            format: uri
-            minLength: 1
-            examples:
-              - urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
+            $ref: "#/components/schemas/AccountRequestURI"
+        - name: xbuilder_entry_token
+          in: query
+          required: true
+          description: |
+            One-time entry credential. Account Web saves it temporarily in sessionStorage, immediately removes it from
+            the URL, and discards it after binding is confirmed.
+          schema:
+            $ref: "#/components/schemas/AccountOpaqueCredential"
       responses:
         "302":
-          description: |
-            Redirect to hosted sign-in, or to the app callback with an authorization code or OAuth error parameters.
+          description: Redirect only to the configured Account Web /sign-in entry.
           headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+            Referrer-Policy:
+              $ref: "#/components/headers/AccountNoReferrer"
             Location:
               description: |
-                Hosted sign-in URL or app callback URL.
-
-                Hosted sign-in URLs contain `clientID`, `requestURI`, and optional `uiLocales`.
-
-                App callback URLs contain `code` and `state`, or OAuth error parameters and `state`.
+                Account Web URL carrying `clientID`, `requestURI`, the one-time entry credential, and optional UI locales.
+                It never contains a session token, PKCE verifier, or recovery credential.
               schema:
                 type: string
-                format: uri
                 minLength: 1
+                format: uri
         "400":
           $ref: "#/components/responses/OAuthError"
+        "429":
+          $ref: "#/components/responses/OAuthTooManyRequests"
+        "500":
+          $ref: "#/components/responses/OAuthServerError"
 
   /account/oauth/token:
     post:
@@ -1049,6 +1049,1206 @@ paths:
           $ref: "#/components/responses/OAuthInvalidClient"
         "415":
           $ref: "#/components/responses/OAuthUnsupportedMediaType"
+
+  /account/flow-tokens:
+    post:
+      operationId: prepareAccountFlowToken
+      tags:
+        - Account
+      summary: Prepare an Account flow credential
+      description: |
+        Prepare a private flow credential before binding a request. Web validates a same-origin request, reuses or
+        sets its flow cookie, and returns 204. WeChat calls only when no valid local credential exists, receives a
+        token, and stores it before opening a request. Preparation creates no user, Account session, or independent
+        database flow record.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - facade
+              properties:
+                facade:
+                  $ref: "#/components/schemas/AccountFacade"
+      responses:
+        "200":
+          description: WeChat flow credential prepared.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreparedAccountFlowToken"
+        "204":
+          description: Web flow cookie prepared.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+            Set-Cookie:
+              $ref: "#/components/headers/AccountFlowSetCookie"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authorization-requests/entry:
+    post:
+      operationId: prepareAccountAuthorizationEntry
+      tags:
+        - Account
+      summary: Prepare an Account authorization entry
+      description: |
+        The integrating app backend prepares or refreshes a one-time entry using its private recovery credential.
+        Confidential clients also authenticate with `client_secret_basic`. Pending authorization uses authorize. An
+        authorized request with an available code uses return and requires the original facade flow credential when
+        opened. Preparing entry does not expose a code or permit rebinding an authorized request. The returned entry
+        expires within 60 seconds and does not extend the PAR or code lifetime.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthorizationRecoveryRequest"
+            examples:
+              originalRequest:
+                value:
+                  clientID: K7mR2qV9sT4wX6yZ8aB0Cg
+                  requestURI: urn:ietf:params:oauth:request_uri:par_reference
+                  recoveryToken: RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAuthorizationEntry"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authorization-requests/status:
+    post:
+      operationId: getAccountAuthorizationStatus
+      tags:
+        - Account
+      summary: Get Account authorization status
+      description: |
+        The integrating app backend queries the known authorization request with its private recovery credential and
+        client binding. Confidential clients also use `client_secret_basic`. This endpoint reports status and code
+        availability, never the authorization code, verified identity, or Account session. It reads terminal records
+        even after the PAR has been consumed or expired. A code may remain available until its own fixed deadline.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthorizationRecoveryRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationStatus"
+              examples:
+                pending:
+                  value:
+                    requestURI: urn:ietf:params:oauth:request_uri:par_reference
+                    version: 1
+                    status: pending
+                    state: state_reference
+                    expiresAt: 2026-11-05T12:10:00Z
+                authorized:
+                  value:
+                    requestURI: urn:ietf:params:oauth:request_uri:par_reference
+                    version: 4
+                    status: authorized
+                    state: state_reference
+                    codeAvailable: true
+                    codeExpiresAt: 2026-11-05T12:07:00Z
+                consumed:
+                  value:
+                    requestURI: urn:ietf:params:oauth:request_uri:par_reference
+                    version: 4
+                    status: authorized
+                    state: state_reference
+                    codeAvailable: false
+                    codeExpiresAt: 2026-11-05T12:07:00Z
+                    unavailableReason: consumed
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authorization-requests/cancel:
+    post:
+      operationId: cancelAccountAuthorizationRequest
+      tags:
+        - Account
+      summary: Cancel an unfinished Account authorization request
+      description: |
+        The integrating app backend targets cancellation using its private recovery credential. Confidential clients
+        also use `client_secret_basic`. Cancel unfinished authorization and invalidate its in-flight authentication
+        results. Repeating cancellation or cancelling a finished request returns the stored state without changing
+        an issued result or revoking an established Account session.
+      security:
+        - oauthClientSecretBasic: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthorizationRecoveryRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationStatus"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authorization-requests/open:
+    post:
+      operationId: openAccountAuthorizationRequest
+      tags:
+        - Account
+      summary: Open an Account authorization request
+      description: |
+        Use the saved facade flow credential to consume a one-time entry credential and bind the request. A retry
+        with the same flow credential returns the existing context. Reentering pending authorization with a new flow
+        credential first cancels old authentication and clears its results. An authorized return accepts only the
+        original flow credential. Opening a fresh return entry with a new flow credential returns `return_context_lost`.
+        WeChat supplies the actual platform source AppID, or the main mini program AppID for local entry. The backend
+        validates the registered callback and caller association. Opening performs no authentication or session creation.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenAccountAuthorizationRequest"
+            examples:
+              wechat:
+                value:
+                  clientID: K7mR2qV9sT4wX6yZ8aB0Cg
+                  requestURI: urn:ietf:params:oauth:request_uri:par_reference
+                  entryToken: EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+                  facade: wechat
+                  sourceMiniProgramAppID: <caller-mini-program-app-id>
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationContext"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authorization-requests/context:
+    post:
+      operationId: getAccountAuthorizationContext
+      tags:
+        - Account
+      summary: Get the bound Account authorization context
+      description: |
+        Read trusted request data, authentication choices, and the current Account session using the bound facade
+        flow credential. A Web session cookie or WeChat Account session Bearer may additionally supply the current
+        account. The session must belong to the same facade. Supplying both session channels returns 400. An
+        authorized context displays `authorizedUser` from the issued result rather than a newly selected account.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthorizationContextRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationContext"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authorization-requests/decision:
+    post:
+      operationId: decideAccountAuthorizationRequest
+      tags:
+        - Account
+      summary: Decide Account authorization
+      description: |
+        Submit approve, deny, or cancel from the bound facade. Approval requires a valid Account session for the
+        same facade and matching `expectedUserID` and `expectedSessionID`. Validate version, current account, app
+        and client availability, requested scopes, and registered return configuration. Issue one authorization code
+        and consume the PAR atomically. Denial and cancellation do not require a signed-in account. Repeating a
+        finished decision returns its original result without authorizing another account. State-changing Web
+        requests validate `Origin`.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+        - accountFlowCookie: []
+          accountSessionCookie: []
+        - accountFlowToken: []
+          accountSessionBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecideAccountAuthorizationRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationResult"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authorization-requests/return:
+    post:
+      operationId: getAccountAuthorizationReturn
+      tags:
+        - Account
+      summary: Recover the original authorization return
+      description: |
+        Only the original bound facade may read and redeliver the same authorization result through its registered
+        return channel. Validate the code deadline, consumption, and revocation independently of the original PAR
+        deadline. Do not repeat account selection, issue another code, or require the current Account session to
+        match an already issued result. A recovery credential cannot call this endpoint. A lost original flow
+        credential requires new authorization. For mini programs, return only when the current platform navigation
+        relationship still matches the original caller.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthorizationContextRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationResult"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests:
+    post:
+      operationId: createAccountAuthenticationRequest
+      tags:
+        - Account
+      summary: Create an Account authentication request
+      description: |
+        Create authentication only for an option returned by the bound authorization context. The backend fixes
+        provider application, acquisition, and purpose. Replacing primary authentication cancels the old attempt and
+        clears its recoverable results. Creating account proof uses the parent primary authentication version and
+        replaces only its active proof. Proof verifies an existing account and never creates a user or session
+        independently. The request expires within 5 minutes and no later than its PAR. External-browser
+        authentication returns a fixed copy link and a comparison code for both entry points.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountAuthenticationRequest"
+            examples:
+              externalBrowser:
+                value:
+                  requestURI: urn:ietf:params:oauth:request_uri:par_reference
+                  expectedVersion: 2
+                  method: google
+                  acquisition: external_browser
+      responses:
+        "201":
+          description: Authentication request created.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequest"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}:
+    get:
+      operationId: getAccountAuthenticationRequest
+      tags:
+        - Account
+      summary: Get initiating-entry authentication state
+      description: |
+        Only the initiating context bound to the original PAR can read account actions and verified candidate data.
+        An authentication reference alone or a helper flow credential is insufficient. Primary completion can expose
+        the saved completion request content while recoverable, but never a raw session token. Resubmit the same
+        completion to recover the original session. Account proof returns only an existing verified user and state.
+        Terminal state remains readable after proof consumption or expiration. Queries default to every 2 seconds
+        and stop when the page is left or the flow ends.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequest"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}/credentials:
+    post:
+      operationId: submitAccountAuthenticationCredentials
+      tags:
+        - Account
+      summary: Submit direct authentication credentials
+      description: |
+        Accept only password or `wechat_login` acquisition, using the initiating flow credential and current
+        version. Passwords verify existing administrator-managed credentials. WeChat codes must come from the
+        XBuilder main mini program and are consumed once. Verification has a 15-second timeout and a 30-second
+        completion deadline. A failure is persisted before its error response. Query the same authentication state
+        after a lost response for the safe reason and allowed recovery actions. An unknown verification result
+        requires a fresh authentication request and code, not resubmission of the old code.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAccountAuthenticationCredentialsRequest"
+            examples:
+              password:
+                value:
+                  expectedVersion: 1
+                  type: password
+                  username: john
+                  password: example-password
+              wechat:
+                value:
+                  expectedVersion: 1
+                  type: wechat_code
+                  code: fresh-main-mini-program-code
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequest"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}/start:
+    post:
+      operationId: startAccountAuthentication
+      tags:
+        - Account
+      summary: Prepare a direct provider or WeChat URL Link entry
+      description: |
+        Accept `wechat_website`, `wechat_service_account`, `provider_redirect`, or `wechat_url_link` acquisition
+        using the initiating flow credential. Fix upstream state, PKCE, nonce, callback, and provider application
+        for this authentication. Repeated preparation recovers the same valid provider state and address. URL Link
+        generation can be retried for the same authentication request if its response is unknown. External-browser
+        provider authentication instead starts through helper/start. Enable the open action only after preparation
+        succeeds.
+      security:
+        - accountFlowCookie: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthenticationVersionRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationStartResult"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}/complete:
+    post:
+      operationId: completeAccountAuthentication
+      tags:
+        - Account
+      summary: Confirm an account and complete primary authentication
+      description: |
+        Only the initiating entry point completes primary authentication. Confirm the resolved account or explicitly
+        create or link it, consuming required proof, writing identity changes, and issuing or reusing the initiating
+        facade session in one transaction. Linking always requires fresh current account proof matching the target
+        user. Never move an identity owned by another user. A current session must match `expectedSessionID` and the
+        facade. Reuse a valid session for the same user. Otherwise issue a new one. Web delivers a new token only in
+        its session cookie. WeChat returns `sessionToken` only for a new session or recovery of that issuance.
+        Repeating the same validated completion recovers its result for at most 5 minutes without creating users or
+        sessions again. A changed session returns `account_changed`. Revoked sessions are never reactivated.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+        - accountFlowCookie: []
+          accountSessionCookie: []
+        - accountFlowToken: []
+          accountSessionBearer: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteAccountAuthenticationRequest"
+            examples:
+              existingAccount:
+                value:
+                  expectedVersion: 4
+                  action: sign_in
+                  expectedUserID: "42"
+                  expectedSessionID: null
+              newAccount:
+                value:
+                  expectedVersion: 4
+                  action: create_user
+                  expectedUserID: null
+                  expectedSessionID: null
+                  profile:
+                    username: john
+                    displayName: John Doe
+              linkAccount:
+                value:
+                  expectedVersion: 4
+                  action: link_identity
+                  expectedUserID: "42"
+                  expectedSessionID: null
+                  accountProofRequestID: account_proof_reference
+      responses:
+        "200":
+          description: Account operation completed or the same result recovered.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+            Set-Cookie:
+              $ref: "#/components/headers/AccountSessionSetCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationCompletion"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}/cancel:
+    post:
+      operationId: cancelAccountAuthenticationRequest
+      tags:
+        - Account
+      summary: Cancel the current authentication attempt
+      description: |
+        The initiating entry point cancels the selected authentication attempt while retaining the still-valid
+        original authorization. Clear recoverable proofs and ignore late upstream results. Completed state is not
+        overwritten and an established Account session is not revoked. Reauthentication or a method change creates a
+        new attempt and never extends the original PAR deadline.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthenticationVersionRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationRequest"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}/helper:
+    get:
+      operationId: getAccountAuthenticationHelper
+      tags:
+        - Account
+      summary: Get public authentication assistance metadata
+      description: |
+        Return only trusted requester metadata, fixed method and purpose, initiating and executing facades,
+        comparison code, status, and deadline. The public authentication reference does not authorize reading
+        identity results, account actions, or session tokens. Display the same comparison code at both entry points
+        and require the user to compare the trusted request context before starting. Helpers offer no method
+        selection and never use or modify an existing Account session.
+      security: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAuthenticationHelper"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}/helper/start:
+    post:
+      operationId: startAccountAuthenticationHelper
+      tags:
+        - Account
+      summary: Start fixed provider authentication in a helping browser
+      description: |
+        For `external_browser` acquisition only. After the user checks the original entry point and confirms the
+        trusted context, bind the helping browser flow cookie and prepare the fixed provider address. Only this
+        bound helper context can recover the same valid address after a lost response. Another context cannot
+        replace the binding. Do not read, create, switch, refresh, or clear an Account session. Closing the page
+        alone does not cancel authentication. The initiating entry point resumes the result and performs account
+        confirmation.
+      security:
+        - accountFlowCookie: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthenticationVersionRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationStartResult"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}/helper/wechat:
+    post:
+      operationId: submitAccountAuthenticationHelperWechat
+      tags:
+        - Account
+      summary: Verify WeChat identity for the initiating browser
+      description: |
+        For `wechat_url_link` acquisition only. The XBuilder main mini program displays trusted request information
+        and the comparison code. After user confirmation, submit a fresh wx.login code and bind the helper flow
+        credential. Verify only the fixed main mini program application, recording one-time credential use before
+        calling WeChat. Store the verified result without resolving or creating an account or changing any Account
+        session. Return only helper status and instruct the user to return to the original browser, which reads the
+        result using its own private flow credential.
+      security:
+        - accountFlowToken: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAccountHelperWechatRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAuthenticationHelper"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /account/authentication-requests/{requestID}/helper/cancel:
+    post:
+      operationId: cancelAccountAuthenticationHelper
+      tags:
+        - Account
+      summary: Cancel bound authentication assistance
+      description: |
+        Only the already bound helping context may cancel this authentication. Preserve the original authorization
+        and both entry points' Account sessions. Late provider results cannot complete a cancelled attempt. Return
+        metadata only, never the verified identity or an account action.
+      security:
+        - accountFlowCookie: []
+        - accountFlowToken: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Public authentication request reference.
+          schema:
+            $ref: "#/components/schemas/AuthenticationRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAuthenticationVersionRequest"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAuthenticationHelper"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /sign-in-requests:
+    post:
+      operationId: createSignInRequest
+      tags:
+        - Sign-in
+      summary: Prepare an XBuilder product sign-in request
+      description: |
+        Create a local product sign-in transaction and Account PAR using the server-configured OAuth client, scope,
+        callback, and platform target. The caller cannot choose another app or client. Validate and fix `returnTo`
+        as a product-internal path. Web and `wechat_web_view` use a private product flow cookie and trusted
+        `Origin`. Native mini programs receive `signInToken`. Keep the PKCE verifier and Account recovery credential
+        in the backend. H5 hosts receive only public correlation and Account entry information, never these
+        credentials or the product flow cookie. Local records last at most 20 minutes.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSignInRequest"
+            examples:
+              web:
+                value:
+                  platform: web
+                  returnTo: /
+              miniProgram:
+                value:
+                  platform: wechat_mini_program
+                  returnTo: /projects
+                  uiLocales: zh-CN en
+              webView:
+                value:
+                  platform: wechat_web_view
+                  returnTo: /projects
+      responses:
+        "201":
+          description: Local sign-in request and Account entry prepared.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+            Set-Cookie:
+              $ref: "#/components/headers/SignInFlowSetCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedSignInRequest"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /sign-in-requests/{requestID}/entry:
+    post:
+      operationId: prepareSignInRequestEntry
+      tags:
+        - Sign-in
+      summary: Prepare the original product sign-in entry again
+      description: |
+        Validate the original local flow credential and use the saved Account recovery credential to prepare a
+        still-valid entry. Return authorize for pending authorization or return for an issued available code. A Web
+        return opens Account Web directly. The original facade still delivers the authorization code through its
+        registered callback or mini program relationship. This endpoint never retrieves a code or discloses backend
+        credentials. H5 keeps the configured same-origin callback and original host association.
+      security:
+        - signInFlowCookie: []
+        - signInFlowToken: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Local product sign-in request reference.
+          schema:
+            $ref: "#/components/schemas/SignInRequestID"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreparedSignInRequest"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "410":
+          $ref: "#/components/responses/AccountFlowExpired"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /sign-in-requests/{requestID}/complete:
+    post:
+      operationId: completeSignInRequest
+      tags:
+        - Sign-in
+      summary: Complete or recover the known product sign-in request
+      description: |
+        Validate the original local flow credential and OAuth state before accepting a success or error return.
+        Accept only the same return for a request and exchange a validated success code at most once, using a
+        15-second timeout and a 30-second completion deadline. An empty JSON object queries Account state without
+        retrieving a code. An available issued code returns return_required so the user reopens the original facade.
+        Keep successful token results private for at most 5 minutes and deliver them only to the original local flow
+        holder. Recovered `expires_in` uses the fixed `accessTokenExpiresAt`. Unknown exchange outcomes never replay
+        a code and require restart after the deadline. A cancelled local request never signs the user in from a late
+        response.
+      security:
+        - signInFlowCookie: []
+        - signInFlowToken: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Local product sign-in request reference.
+          schema:
+            $ref: "#/components/schemas/SignInRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteSignInRequest"
+            examples:
+              callback:
+                value:
+                  code: account-authorization-code
+                  state: state_reference
+              denied:
+                value:
+                  error: access_denied
+                  state: state_reference
+              recovery:
+                value: {}
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignInRequestResult"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "409":
+          $ref: "#/components/responses/AccountFlowConflict"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
+
+  /sign-in-requests/{requestID}/cancel:
+    post:
+      operationId: cancelSignInRequest
+      tags:
+        - Sign-in
+      summary: Cancel the local product sign-in attempt
+      description: |
+        Close the known local attempt, cancel Account authorization if it is still unfinished, and stop accepting
+        late completion results. Repeating cancellation returns cancelled. Revoke known tokens produced for the
+        cancelled attempt that have not been delivered. This operation does not revoke the facade Account session or
+        another product sign-in. Web and H5 requests validate the trusted product `Origin`.
+      security:
+        - signInFlowCookie: []
+        - signInFlowToken: []
+      parameters:
+        - name: requestID
+          in: path
+          required: true
+          description: Local product sign-in request reference.
+          schema:
+            $ref: "#/components/schemas/SignInRequestID"
+      responses:
+        "200":
+          description: Successful response.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/AccountNoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelledSignInRequest"
+        "400":
+          $ref: "#/components/responses/AccountFlowBadRequest"
+        "401":
+          $ref: "#/components/responses/AccountFlowUnauthorized"
+        "403":
+          $ref: "#/components/responses/AccountFlowForbidden"
+        "404":
+          $ref: "#/components/responses/AccountFlowNotFound"
+        "429":
+          $ref: "#/components/responses/AccountFlowTooManyRequests"
+        "500":
+          $ref: "#/components/responses/AccountFlowInternalServerError"
 
   /users:
     get:
@@ -3186,7 +4386,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
-
   /user/courses/playground/copilot-context:
     post:
       operationId: generatePlaygroundCourseCopilotContext
@@ -4108,7 +5307,7 @@ paths:
                   type: object
                   additionalProperties: true
                   examples:
-                    - position: [10, 20]
+                    - position: [ 10, 20 ]
                       health: 80
                 role:
                   description: Persona the AI should adopt.
@@ -5963,6 +7162,23 @@ paths:
                   minLength: 1
                   maxLength: 500
                   pattern: "\\P{White_Space}"
+                wechatReturnTargets:
+                  description: Defaults to an empty array. All callbacks must be exact registered entries and the client must support user authorization.
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/wechatReturnTargets"
+              allOf:
+                - if:
+                    properties:
+                      grantTypes:
+                        contains:
+                          type: string
+                          enum:
+                            - client_credentials
+                    required:
+                      - grantTypes
+                  then:
+                    properties:
+                      wechatReturnTargets:
+                        maxItems: 0
       responses:
         "201":
           description: Account OAuth client created.
@@ -6025,12 +7241,13 @@ paths:
         - Account Admin
       summary: Update an account OAuth client as admin
       description: |
-        Update the status or exact redirect URIs of an OAuth client.
-
-        Disabling a client revokes its outstanding authorization flows and tokens. Re-enabling the client does not
-        reactivate previously revoked authorization flows or tokens.
-
-        Requires the `accountAdmin` role.
+        Update status, exact redirect URIs, or WeChat return targets. Submit
+        `wechatReturnTargets` as the complete target array. Validate each unique mini program AppID and callback
+        pair against the resulting full client configuration, including redirect URI changes. App-only clients
+        require an empty target array. Removing or changing a target invalidates affected unfinished authorization
+        and unredeemed codes without revoking existing access tokens solely for that target change. Disabling a
+        client revokes its outstanding flows and tokens. Re-enabling configuration never revives revoked flows or
+        tokens. Record the management audit in the same transaction. Requires `accountAdmin`.
       parameters:
         - name: appID
           description: ID of the app.
@@ -6056,6 +7273,8 @@ paths:
                     - status
                 - required:
                     - redirectURIs
+                - required:
+                    - wechatReturnTargets
               properties:
                 status:
                   $ref: "#/components/schemas/AccountOAuthClient/properties/status"
@@ -6067,6 +7286,8 @@ paths:
                   minLength: 1
                   maxLength: 500
                   pattern: "\\P{White_Space}"
+                wechatReturnTargets:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/wechatReturnTargets"
       responses:
         "200":
           description: Account OAuth client updated.
@@ -6849,6 +8070,7 @@ components:
 
         XBuilder Account access tokens are issued by `/account/oauth/token` and can be validated with
         `/account/oauth/introspect`.
+
     accountSessionCookie:
       type: apiKey
       in: cookie
@@ -6859,10 +8081,53 @@ components:
         The cookie must be `HttpOnly`, `Secure`, `SameSite=Lax`, use `Path=/`, and omit `Domain`.
 
         Cookie-authenticated mutation endpoints must validate Origin or use equivalent CSRF protection.
+
     oauthClientSecretBasic:
       type: http
       scheme: basic
       description: OAuth client authentication using client secret basic.
+
+    accountFlowCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-xbuilder-account-flow
+      description: |
+        Private Account Web flow credential. HttpOnly, Secure, SameSite=Lax, Path=/, no Domain, with a 30-minute
+        cookie lifetime. It binds authorization or helping context and is independent of the Account session cookie.
+        State-changing Web operations validate the trusted `Origin`.
+
+    accountFlowToken:
+      type: apiKey
+      in: header
+      name: Account-Flow-Token
+      description: |
+        Private main mini program flow credential. Submit it only to bound Account flow operations. It is not an
+        Account session or product token and never enters navigation parameters.
+
+    accountSessionBearer:
+      type: http
+      scheme: bearer
+      description: |
+        Opaque Account WeChat session token, accepted only by Account flow operations and GET or DELETE
+        /account/session. The backend requires facade=wechat. It is not an OAuth access token and cannot
+        authenticate product APIs or OAuth token exchange. Supplying it with an Account session cookie returns 400.
+
+    signInFlowCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-xbuilder-sign-in-flow
+      description: |
+        Private XBuilder product sign-in flow cookie for browsers and business H5 pages. HttpOnly, Secure,
+        SameSite=Lax, Path=/, no Domain, with a 30-minute cookie lifetime. It is not passed to Account facades or
+        mini program hosts. Requests validate the product trusted `Origin`.
+
+    signInFlowToken:
+      type: apiKey
+      in: header
+      name: Sign-In-Token
+      description: |
+        Private local product sign-in flow credential for native mini program pages. It is returned only at creation
+        and never passed to Account facades or a web-view host.
 
   responses:
     MovedPermanently:
@@ -6883,6 +8148,7 @@ components:
           schema:
             type: string
             example: no-cache
+
     ResourceMoved:
       description: |
         Requested resource moved to its canonical route. Returned on non-`GET` and non-`HEAD` requests.
@@ -6893,6 +8159,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/MovedResourceError"
+
     ProjectUpdateConflict:
       description: |
         The update conflicts with current project state because the requested project route moved or the requested name
@@ -6903,6 +8170,7 @@ components:
             oneOf:
               - $ref: "#/components/schemas/ConflictError"
               - $ref: "#/components/schemas/MovedResourceError"
+
     ProjectReleaseCreateConflict:
       description: |
         The release creation conflicts with current project state because `projectRevision` does not match the current
@@ -6913,6 +8181,7 @@ components:
             oneOf:
               - $ref: "#/components/schemas/ConflictError"
               - $ref: "#/components/schemas/MovedResourceError"
+
     BadRequest:
       description: Invalid request syntax, parameters, or body.
       content:
@@ -6924,6 +8193,7 @@ components:
               value:
                 code: 40001
                 msg: Invalid args
+
     Unauthorized:
       description: Authentication is required or the supplied bearer token is invalid.
       headers:
@@ -6942,6 +8212,7 @@ components:
               value:
                 code: 40100
                 msg: Unauthorized
+
     Forbidden:
       description: The authenticated principal does not have permission to perform this operation.
       content:
@@ -6953,6 +8224,7 @@ components:
               value:
                 code: 40300
                 msg: Forbidden
+
     ForbiddenOrQuotaExceeded:
       description: |
         The authenticated principal does not have permission to perform this operation, or a long-window quota was
@@ -6975,6 +8247,7 @@ components:
               value:
                 code: 40301
                 msg: aigc:image quota exceeded
+
     NotFound:
       description: The requested resource was not found.
       content:
@@ -6986,6 +8259,7 @@ components:
               value:
                 code: 40400
                 msg: Not found
+
     Conflict:
       description: The request conflicts with the current resource state.
       content:
@@ -6997,6 +8271,7 @@ components:
               value:
                 code: 40900
                 msg: Conflict
+
     ContentTooLarge:
       description: The request or uploaded content exceeds the allowed size.
       content:
@@ -7008,6 +8283,7 @@ components:
               value:
                 code: 41300
                 msg: Content too large
+
     UnsupportedMediaType:
       description: The request or uploaded content type is not supported.
       content:
@@ -7019,6 +8295,7 @@ components:
               value:
                 code: 41500
                 msg: Unsupported media type
+
     TooManyRequests:
       description: Too many requests.
       headers:
@@ -7033,6 +8310,7 @@ components:
               value:
                 code: 42900
                 msg: Too many requests
+
     RateLimitExceeded:
       description: The authenticated user exceeded a short-window rate limit for this operation.
       headers:
@@ -7047,6 +8325,7 @@ components:
               value:
                 code: 42901
                 msg: aigc:image rate limit exceeded
+
     InternalServerError:
       description: An internal server error occurred.
       content:
@@ -7058,6 +8337,7 @@ components:
               value:
                 code: 50000
                 msg: Internal server error
+
     UnsupportedScratchFeature:
       description: The uploaded Scratch project uses a feature that cannot be converted.
       content:
@@ -7069,6 +8349,7 @@ components:
               value:
                 code: 50101
                 msg: Unsupported scratch feature
+
     OAuthError:
       description: OAuth error response.
       headers:
@@ -7086,6 +8367,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
+
     OAuthInvalidClient:
       description: OAuth client authentication failed.
       headers:
@@ -7109,6 +8391,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
+
     OAuthInsufficientScope:
       description: The OAuth bearer token's subject or scope does not permit this operation.
       headers:
@@ -7129,6 +8412,7 @@ components:
               value:
                 code: 40300
                 msg: Forbidden
+
     AccountForbidden:
       description: |
         Account request is forbidden.
@@ -7151,6 +8435,7 @@ components:
               value:
                 code: 40300
                 msg: Forbidden
+
     OAuthUnsupportedMediaType:
       description: |
         OAuth form request content type is not supported.
@@ -7171,6 +8456,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/OAuthError"
+
     AccountUnauthorized:
       description: |
         Account authentication is required.
@@ -7201,6 +8487,136 @@ components:
                 code: 40100
                 msg: Unauthorized
 
+    AccountFlowBadRequest:
+      description: |
+        Invalid parameters, conflicting credential categories, or rejected submitted credentials. Verification
+        failures are persisted before responding. Read the bound authentication request for its safe failure reason.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+
+    AccountFlowUnauthorized:
+      description: |
+        A required flow credential, local product flow credential, recovery credential, or Account session is
+        missing or invalid. These credential categories are not interchangeable.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+
+    AccountFlowForbidden:
+      description: The source, facade, client purpose, operation, or trusted `Origin` is not allowed.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+
+    AccountFlowNotFound:
+      description: |
+        The target associated with the supplied credential or public helper reference does not exist. Other requests
+        are not disclosed.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+
+    AccountFlowConflict:
+      description: |
+        The request conflicts with the current flow or account state. Branch on reason and reread context when
+        appropriate.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AccountFlowConflictError"
+
+    AccountFlowExpired:
+      description: |
+        An operation requires a request or proof that has expired. Status queries still return stored terminal state
+        rather than replacing it with this error.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AccountFlowExpiredError"
+
+    AccountFlowTooManyRequests:
+      description: Sign-in, public entry, or recovery rate limit exceeded. Honor `Retry-After` before retrying.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+
+    AccountFlowInternalServerError:
+      description: |
+        A server or upstream failure occurred. Retain flow correlation and query known state before retrying. Never
+        replay a provider code or authorization code after an unknown verification or exchange outcome.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+
+    OAuthTooManyRequests:
+      description: OAuth request rate limit exceeded. Honor `Retry-After` before retrying.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+        Pragma:
+          description: Do not cache OAuth responses in HTTP/1.0 caches.
+          schema:
+            type: string
+            enum:
+              - no-cache
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OAuthError"
+
+    OAuthServerError:
+      description: |
+        OAuth processing failed temporarily. Preserve request correlation and do not replay an authorization code
+        after an unknown exchange result.
+      headers:
+        Cache-Control:
+          $ref: "#/components/headers/AccountNoStore"
+        Pragma:
+          description: Do not cache OAuth responses in HTTP/1.0 caches.
+          schema:
+            type: string
+            enum:
+              - no-cache
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OAuthError"
+
   headers:
     RetryAfter:
       description: |
@@ -7211,6 +8627,42 @@ components:
         type: integer
         format: int64
         minimum: 1
+
+    AccountNoStore:
+      description: All flow, recovery, credential, and callback responses are not cacheable.
+      schema:
+        type: string
+        enum:
+          - no-store
+
+    AccountNoReferrer:
+      description: Do not disclose authorization paths or query parameters through referrers.
+      schema:
+        type: string
+        enum:
+          - no-referrer
+
+    AccountFlowSetCookie:
+      description: |
+        Set or reuse `__Host-xbuilder-account-flow` with HttpOnly, Secure, SameSite=Lax, Path=/, no Domain, and
+        Max-Age=1800. No Account session is created.
+      schema:
+        type: string
+
+    AccountSessionSetCookie:
+      description: |
+        Set `__Host-xbuilder-account-session` only for a newly issued or recovered Web session, with HttpOnly,
+        Secure, SameSite=Lax, Path=/, and no Domain. Reusing a valid session does not create a new token.
+      schema:
+        type: string
+
+    SignInFlowSetCookie:
+      description: |
+        Set or reuse `__Host-xbuilder-sign-in-flow` for web and `wechat_web_view`, with HttpOnly, Secure,
+        SameSite=Lax, Path=/, no Domain, and Max-Age=1800. Native mini program creation returns `signInToken`
+        instead.
+      schema:
+        type: string
 
   schemas:
     APIError:
@@ -7250,6 +8702,7 @@ components:
         | 40400 | 404 | Not found | The requested resource was not found. |
         | 40900 | 409 | Conflict | The request conflicts with current resource state. |
         | 40901 | 409 | Resource moved | The request used a historical resource route. |
+        | 41000 | 410 | Gone | An Account request or proof required for this operation has expired. |
         | 41300 | 413 | Content too large | Request or uploaded content exceeds the allowed size. |
         | 41500 | 415 | Unsupported media type | Request or uploaded content type is not supported. |
         | 42900 | 429 | Too many requests | Generic request throttling. |
@@ -7266,6 +8719,7 @@ components:
         - 40400
         - 40900
         - 40901
+        - 41000
         - 41300
         - 41500
         - 42900
@@ -7471,36 +8925,62 @@ components:
       examples:
         - 1abc def2
 
-    AccountIdentityProvider:
+    AccountFacade:
+      description: Facade owning this flow or Account session.
+      type: string
+      enum:
+        - web
+        - wechat
+
+    AccountProviderName:
+      description: Registered third-party identity provider.
+      type: string
+      enum:
+        - wechat
+        - qq
+        - github
+        - apple
+        - google
+        - x
+
+    AccountWechatMiniProgramAppID:
+      description: WeChat mini program AppID registered for this purpose.
+      type: string
+      minLength: 1
+      examples:
+        - <caller-mini-program-app-id>
+
+    AccountWechatReturnTarget:
       type: object
-      description: Identity provider available for hosted sign-in.
+      additionalProperties: false
       required:
-        - name
-        - displayName
-        - enabled
+        - redirectURI
+        - miniProgramAppID
       properties:
-        name:
-          description: Identity provider name.
+        redirectURI:
+          description: An exact registered OAuth callback for this client. Preview wildcard rules do not apply.
           type: string
-          enum:
-            - wechat
-            - qq
-            - github
-            - apple
-            - google
-            - x
-          examples:
-            - github
-        displayName:
-          description: Display name of the identity provider.
-          type: string
-          examples:
-            - GitHub
-        enabled:
-          description: Whether the identity provider is currently available for hosted sign-in.
-          type: boolean
-          examples:
-            - true
+          minLength: 1
+          format: uri
+        miniProgramAppID:
+          $ref: "#/components/schemas/AccountWechatMiniProgramAppID"
+      description: |
+        Original calling mini program and its corresponding OAuth callback. No AppSecret or internal page route is
+        registered.
+      examples:
+        - redirectURI: https://xatom.example.com/account/callback
+          miniProgramAppID: <caller-mini-program-app-id>
+
+    OAuthUILocales:
+      description: |
+        Preferred UI locales as space-separated BCP 47 language tags. Select a supported preference when available
+        and otherwise use the default locale.
+      type: string
+      minLength: 1
+      maxLength: 256
+      pattern: "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*(?: [A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*)*$"
+      examples:
+        - zh-CN zh en
 
     AccountUserIdentity:
       type: object
@@ -7519,7 +8999,7 @@ components:
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
         provider:
-          $ref: "#/components/schemas/AccountIdentityProvider/properties/name"
+          $ref: "#/components/schemas/AccountProviderName"
         subject:
           description: Stable provider subject.
           type: string
@@ -7548,6 +9028,7 @@ components:
         - id
         - createdAt
         - updatedAt
+        - facade
         - lastUsedAt
         - expiresAt
       properties:
@@ -7557,6 +9038,8 @@ components:
           $ref: "#/components/schemas/Model/properties/createdAt"
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
+        facade:
+          $ref: "#/components/schemas/AccountFacade"
         lastUsedAt:
           description: Timestamp when the account session was last used.
           type: string
@@ -7580,22 +9063,6 @@ components:
             - string
             - "null"
 
-    CreateAccountSessionRequest:
-      type: object
-      description: Request to create an account session with an administrator-managed password.
-      required:
-        - username
-        - password
-      properties:
-        username:
-          description: Username for password sign-in.
-          $ref: "#/components/schemas/AccountUser/properties/username"
-        password:
-          description: |
-            Administrator-managed password submitted verbatim for sign-in, up to 128 bytes when encoded as UTF-8.
-          type: string
-          minLength: 1
-
     CurrentAccountSession:
       type: object
       description: Current account session.
@@ -7603,6 +9070,7 @@ components:
         - id
         - createdAt
         - updatedAt
+        - facade
         - lastUsedAt
         - expiresAt
         - user
@@ -7613,6 +9081,8 @@ components:
           $ref: "#/components/schemas/AccountSession/properties/createdAt"
         updatedAt:
           $ref: "#/components/schemas/AccountSession/properties/updatedAt"
+        facade:
+          $ref: "#/components/schemas/AccountSession/properties/facade"
         lastUsedAt:
           $ref: "#/components/schemas/AccountSession/properties/lastUsedAt"
         expiresAt:
@@ -7680,7 +9150,6 @@ components:
             - disabled
           examples:
             - active
-
     AdminAccountApp:
       description: Account app registration and app-only permissions for administration.
       allOf:
@@ -7714,6 +9183,7 @@ components:
         - grantTypes
         - redirectURIs
         - redirectURIPatterns
+        - wechatReturnTargets
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -7790,6 +9260,14 @@ components:
             type: string
           examples:
             - - https://app-*.example.com/oauth/callback
+        wechatReturnTargets:
+          description: |
+            Allowed original calling mini programs paired with exact OAuth callbacks. The pair must be unique. Empty for
+            app-only clients. No caller AppSecret or internal mini program page route is included.
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/AccountWechatReturnTarget"
 
     AccountOAuthClientSecret:
       type: object
@@ -8031,11 +9509,11 @@ components:
         - account:app:read account:user:read
 
     OAuthPKCECodeChallenge:
-      description: PKCE code challenge.
+      description: Unpadded Base64url SHA-256 digest of the original verifier for PKCE S256.
       type: string
       minLength: 43
-      maxLength: 128
-      pattern: "^[A-Za-z0-9._~-]{43,128}$"
+      maxLength: 43
+      pattern: "^[A-Za-z0-9_-]{43}$"
 
     OAuthPKCECodeVerifier:
       description: PKCE code verifier.
@@ -8050,6 +9528,9 @@ components:
       required:
         - request_uri
         - expires_in
+        - xbuilder_recovery_token
+        - xbuilder_entry_token
+        - xbuilder_entry_expires_in
       properties:
         request_uri:
           description: |
@@ -8068,6 +9549,29 @@ components:
           minimum: 1
           examples:
             - 600
+          maximum: 600
+        xbuilder_recovery_token:
+          description: |
+            Private backend credential for status, cancellation, and entry preparation. It cannot read codes or operate
+            on authentication requests.
+          $ref: "#/components/schemas/AccountOpaqueCredential"
+        xbuilder_entry_token:
+          description: One-time entry credential forwarded to the selected facade. It does not authorize result reads.
+          $ref: "#/components/schemas/AccountOpaqueCredential"
+        xbuilder_entry_expires_in:
+          description: Entry credential lifetime in seconds, at most 60 and no longer than the PAR.
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 60
+          examples:
+            - 60
+      examples:
+        - request_uri: urn:ietf:params:oauth:request_uri:par_reference
+          expires_in: 600
+          xbuilder_recovery_token: RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR
+          xbuilder_entry_token: EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+          xbuilder_entry_expires_in: 60
 
     CreateOAuthTokenRequest:
       description: Request to create or refresh Account-issued OAuth tokens.
@@ -8311,6 +9815,2165 @@ components:
           description: URI identifying a human-readable web page with information about the error.
           type: string
           format: uri-reference
+
+    AccountAuthenticationMethod:
+      type: string
+      enum:
+        - wechat
+        - qq
+        - github
+        - apple
+        - google
+        - x
+        - password
+
+    AccountAuthenticationAcquisition:
+      type: string
+      enum:
+        - password
+        - wechat_login
+        - wechat_website
+        - wechat_service_account
+        - provider_redirect
+        - external_browser
+        - wechat_url_link
+
+    AccountOpaqueCredential:
+      description: Independent 32-byte secure random value encoded as unpadded Base64url. Never log or share it.
+      type: string
+      minLength: 43
+      maxLength: 43
+      pattern: "^[A-Za-z0-9_-]{43}$"
+
+    AccountFlowVersion:
+      description: |
+        Version of the record whose state is being changed. A stale version returns `request_changed` unless the
+        same operation can be recovered.
+      type: integer
+      format: int64
+      minimum: 1
+
+    AccountRequestURI:
+      description: Opaque PAR reference. It locates the request but grants no authority to read results.
+      type: string
+      minLength: 1
+      format: uri
+
+    AuthenticationRequestID:
+      description: Independent opaque public authentication request reference, not a PAR URN.
+      type: string
+      minLength: 1
+      examples:
+        - authentication_reference
+
+    AccountRequestingApp:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - displayName
+        - avatar
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        displayName:
+          $ref: "#/components/schemas/AccountApp/properties/displayName"
+        avatar:
+          $ref: "#/components/schemas/AccountApp/properties/avatar"
+      description: Trusted display information resolved from the OAuth client and owning app registry.
+
+    AccountAuthenticationOption:
+      type: object
+      additionalProperties: false
+      required:
+        - method
+        - acquisition
+      properties:
+        method:
+          $ref: "#/components/schemas/AccountAuthenticationMethod"
+        acquisition:
+          $ref: "#/components/schemas/AccountAuthenticationAcquisition"
+      description: |
+        A configured method and execution mode that this entry point can complete. Only options returned by the
+        current context may be submitted.
+      allOf:
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - password
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - password
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_login
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_website
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_service_account
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_url_link
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - provider_redirect
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - qq
+                  - github
+                  - apple
+                  - google
+                  - x
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - external_browser
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - qq
+                  - github
+                  - apple
+                  - google
+                  - x
+
+    AccountEntryPurpose:
+      type: string
+      enum:
+        - authorize
+        - return
+
+    AccountAuthorizationRecoveryRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - clientID
+        - requestURI
+        - recoveryToken
+      properties:
+        clientID:
+          $ref: "#/components/schemas/OAuthClientID"
+        requestURI:
+          $ref: "#/components/schemas/AccountRequestURI"
+        recoveryToken:
+          $ref: "#/components/schemas/AccountOpaqueCredential"
+
+    AccountAuthorizationEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - entryPurpose
+        - entryToken
+        - entryExpiresAt
+      properties:
+        entryPurpose:
+          $ref: "#/components/schemas/AccountEntryPurpose"
+        entryToken:
+          $ref: "#/components/schemas/AccountOpaqueCredential"
+        entryExpiresAt:
+          description: Entry credential deadline, at most 60 seconds and no later than the PAR or code deadline.
+          type: string
+          minLength: 1
+          format: date-time
+      description: |
+        One-time entry information. Preparing it invalidates any previous unused entry credential and does not
+        extend the request or code lifetime.
+      examples:
+        - entryPurpose: authorize
+          entryToken: EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+          entryExpiresAt: 2026-11-05T12:01:00Z
+
+    OpenAccountAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - clientID
+        - requestURI
+        - entryToken
+        - facade
+      properties:
+        clientID:
+          $ref: "#/components/schemas/OAuthClientID"
+        requestURI:
+          $ref: "#/components/schemas/AccountRequestURI"
+        entryToken:
+          $ref: "#/components/schemas/AccountOpaqueCredential"
+        facade:
+          $ref: "#/components/schemas/AccountFacade"
+        sourceMiniProgramAppID:
+          $ref: "#/components/schemas/AccountWechatMiniProgramAppID"
+      allOf:
+        - if:
+            properties:
+              facade:
+                type: string
+                enum:
+                  - wechat
+            required:
+              - facade
+          then:
+            required:
+              - sourceMiniProgramAppID
+          else:
+            not:
+              anyOf:
+                - required:
+                    - sourceMiniProgramAppID
+
+    AccountAuthorizationContextRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - requestURI
+      properties:
+        requestURI:
+          $ref: "#/components/schemas/AccountRequestURI"
+
+    DecideAccountAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - requestURI
+        - expectedVersion
+        - decision
+      properties:
+        requestURI:
+          $ref: "#/components/schemas/AccountRequestURI"
+        expectedVersion:
+          $ref: "#/components/schemas/AccountFlowVersion"
+        decision:
+          type: string
+          enum:
+            - approve
+            - deny
+            - cancel
+        expectedUserID:
+          $ref: "#/components/schemas/Model/properties/id"
+        expectedSessionID:
+          $ref: "#/components/schemas/Model/properties/id"
+      allOf:
+        - if:
+            properties:
+              decision:
+                type: string
+                enum:
+                  - approve
+            required:
+              - decision
+          then:
+            required:
+              - expectedUserID
+              - expectedSessionID
+          else:
+            not:
+              anyOf:
+                - required:
+                    - expectedUserID
+                - required:
+                    - expectedSessionID
+
+    AccountAuthorizationState:
+      type: object
+      required:
+        - requestURI
+        - version
+        - status
+        - state
+      properties:
+        requestURI:
+          $ref: "#/components/schemas/AccountRequestURI"
+        version:
+          $ref: "#/components/schemas/AccountFlowVersion"
+        status:
+          type: string
+          enum:
+            - pending
+            - authorized
+            - denied
+            - cancelled
+            - expired
+        state:
+          description: Original OAuth state.
+          type: string
+          minLength: 1
+        expiresAt:
+          description: Original PAR deadline for unfinished authorization.
+          type: string
+          minLength: 1
+          format: date-time
+        codeAvailable:
+          type: boolean
+          description: Whether the issued authorization code can still be delivered by the original facade.
+        codeExpiresAt:
+          description: Fixed authorization code deadline, 5 minutes after issuance.
+          type: string
+          minLength: 1
+          format: date-time
+        unavailableReason:
+          type: string
+          enum:
+            - consumed
+            - expired
+            - revoked
+        oauthError:
+          $ref: "#/components/schemas/OAuthError"
+      description: |
+        Shared authorization state. Consumption or expiry of a code does not overwrite the authorized terminal
+        state.
+      allOf:
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - pending
+            required:
+              - status
+          then:
+            required:
+              - expiresAt
+            not:
+              anyOf:
+                - required:
+                    - codeAvailable
+                - required:
+                    - codeExpiresAt
+                - required:
+                    - unavailableReason
+                - required:
+                    - oauthError
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - authorized
+            required:
+              - status
+          then:
+            required:
+              - codeAvailable
+              - codeExpiresAt
+            not:
+              anyOf:
+                - required:
+                    - oauthError
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - authorized
+              codeAvailable:
+                type: boolean
+                enum:
+                  - false
+            required:
+              - status
+              - codeAvailable
+          then:
+            required:
+              - unavailableReason
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - authorized
+              codeAvailable:
+                type: boolean
+                enum:
+                  - true
+            required:
+              - status
+              - codeAvailable
+          then:
+            not:
+              anyOf:
+                - required:
+                    - unavailableReason
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - denied
+            required:
+              - status
+          then:
+            required:
+              - oauthError
+            properties:
+              oauthError:
+                allOf:
+                  - $ref: "#/components/schemas/OAuthError"
+                  - properties:
+                      error:
+                        type: string
+                        enum:
+                          - access_denied
+            not:
+              anyOf:
+                - required:
+                    - codeAvailable
+                - required:
+                    - codeExpiresAt
+                - required:
+                    - unavailableReason
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - cancelled
+            required:
+              - status
+          then:
+            required:
+              - oauthError
+            properties:
+              oauthError:
+                allOf:
+                  - $ref: "#/components/schemas/OAuthError"
+                  - properties:
+                      error:
+                        type: string
+                        enum:
+                          - access_denied
+            not:
+              anyOf:
+                - required:
+                    - codeAvailable
+                - required:
+                    - codeExpiresAt
+                - required:
+                    - unavailableReason
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - expired
+            required:
+              - status
+          then:
+            required:
+              - oauthError
+            properties:
+              oauthError:
+                allOf:
+                  - $ref: "#/components/schemas/OAuthError"
+                  - properties:
+                      error:
+                        type: string
+                        enum:
+                          - invalid_request
+            not:
+              anyOf:
+                - required:
+                    - codeAvailable
+                - required:
+                    - codeExpiresAt
+                - required:
+                    - unavailableReason
+
+    AuthorizationStatus:
+      description: |
+        Status-only response for the integrating app backend. It never contains an authorization code or
+        authentication result.
+      allOf:
+        - $ref: "#/components/schemas/AccountAuthorizationState"
+      unevaluatedProperties: false
+      examples:
+        - requestURI: urn:ietf:params:oauth:request_uri:par_reference
+          version: 1
+          status: pending
+          state: state_reference
+          expiresAt: 2026-11-05T12:10:00Z
+        - requestURI: urn:ietf:params:oauth:request_uri:par_reference
+          version: 4
+          status: authorized
+          state: state_reference
+          codeAvailable: true
+          codeExpiresAt: 2026-11-05T12:07:00Z
+        - requestURI: urn:ietf:params:oauth:request_uri:par_reference
+          version: 4
+          status: authorized
+          state: state_reference
+          codeAvailable: false
+          codeExpiresAt: 2026-11-05T12:07:00Z
+          unavailableReason: consumed
+
+    AuthorizationResult:
+      description: |
+        Authorization result delivered only to the original bound facade through the registered callback or mini
+        program return channel. Account session changes do not change an already issued result.
+      allOf:
+        - $ref: "#/components/schemas/AccountAuthorizationState"
+        - type: object
+          required:
+            - redirectURI
+            - wechatReturnTarget
+          properties:
+            redirectURI:
+              description: Original registered OAuth callback.
+              type: string
+              minLength: 1
+              format: uri
+            wechatReturnTarget:
+              oneOf:
+                - $ref: "#/components/schemas/AccountWechatReturnTarget"
+                - type: "null"
+            code:
+              description: The same issued, valid, unconsumed authorization code. Never obtained through a recovery credential.
+              type: string
+              minLength: 1
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - authorized
+              codeAvailable:
+                type: boolean
+                enum:
+                  - true
+            required:
+              - status
+              - codeAvailable
+          then:
+            required:
+              - code
+          else:
+            not:
+              anyOf:
+                - required:
+                    - code
+      unevaluatedProperties: false
+      examples:
+        - requestURI: urn:ietf:params:oauth:request_uri:par_reference
+          version: 4
+          status: authorized
+          state: state_reference
+          codeAvailable: true
+          codeExpiresAt: 2026-11-05T12:07:00Z
+          redirectURI: https://xatom.example.com/account/callback
+          wechatReturnTarget:
+            redirectURI: https://xatom.example.com/account/callback
+            miniProgramAppID: <caller-mini-program-app-id>
+          code: issued-account-authorization-code
+        - requestURI: urn:ietf:params:oauth:request_uri:par_reference
+          version: 3
+          status: denied
+          state: state_reference
+          oauthError:
+            error: access_denied
+          redirectURI: https://xatom.example.com/account/callback
+          wechatReturnTarget:
+            redirectURI: https://xatom.example.com/account/callback
+            miniProgramAppID: <caller-mini-program-app-id>
+
+    AuthorizationContext:
+      description: |
+        Trusted authorization context for the bound facade. Authentication options and the current session may
+        change while authorization is pending. An authorized context displays the original authorized account.
+      allOf:
+        - $ref: "#/components/schemas/AccountAuthorizationState"
+        - type: object
+          required:
+            - app
+            - scope
+            - facade
+            - wechatReturnTarget
+            - authenticationRequestID
+            - authenticationOptions
+            - session
+            - uiLocales
+          properties:
+            app:
+              $ref: "#/components/schemas/AccountRequestingApp"
+            scope:
+              $ref: "#/components/schemas/OAuthScope"
+            facade:
+              $ref: "#/components/schemas/AccountFacade"
+            wechatReturnTarget:
+              oneOf:
+                - $ref: "#/components/schemas/AccountWechatReturnTarget"
+                - type: "null"
+            authenticationRequestID:
+              oneOf:
+                - $ref: "#/components/schemas/AuthenticationRequestID"
+                - type: "null"
+            authenticationOptions:
+              type: array
+              items:
+                $ref: "#/components/schemas/AccountAuthenticationOption"
+              uniqueItems: true
+            session:
+              oneOf:
+                - $ref: "#/components/schemas/CurrentAccountSession"
+                - type: "null"
+            authorizedUser:
+              $ref: "#/components/schemas/AccountUser"
+            uiLocales:
+              oneOf:
+                - $ref: "#/components/schemas/OAuthUILocales"
+                - type: "null"
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - authorized
+            required:
+              - status
+          then:
+            required:
+              - authorizedUser
+          else:
+            not:
+              anyOf:
+                - required:
+                    - authorizedUser
+        - if:
+            properties:
+              facade:
+                type: string
+                enum:
+                  - wechat
+            required:
+              - facade
+          then:
+            properties:
+              wechatReturnTarget:
+                $ref: "#/components/schemas/AccountWechatReturnTarget"
+          else:
+            properties:
+              wechatReturnTarget:
+                type: "null"
+      unevaluatedProperties: false
+      examples:
+        - requestURI: urn:ietf:params:oauth:request_uri:par_reference
+          version: 1
+          status: pending
+          state: state_reference
+          expiresAt: 2026-11-05T12:10:00Z
+          app:
+            id: "2"
+            displayName: XAtom
+            avatar: null
+          scope: account:user:read
+          facade: wechat
+          wechatReturnTarget:
+            redirectURI: https://xatom.example.com/account/callback
+            miniProgramAppID: <caller-mini-program-app-id>
+          authenticationRequestID: null
+          authenticationOptions:
+            - method: wechat
+              acquisition: wechat_login
+            - method: password
+              acquisition: password
+            - method: google
+              acquisition: external_browser
+          session: null
+          uiLocales: null
+
+    CreateAccountAuthenticationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - requestURI
+        - expectedVersion
+        - method
+        - acquisition
+      properties:
+        requestURI:
+          $ref: "#/components/schemas/AccountRequestURI"
+        expectedVersion:
+          $ref: "#/components/schemas/AccountFlowVersion"
+        method:
+          $ref: "#/components/schemas/AccountAuthenticationMethod"
+        acquisition:
+          $ref: "#/components/schemas/AccountAuthenticationAcquisition"
+        parentAuthenticationRequestID:
+          $ref: "#/components/schemas/AuthenticationRequestID"
+      description: |
+        Create or replace primary authentication using the PAR version. For account proof, submit
+        `parentAuthenticationRequestID` and its version instead. This keeps the primary authentication and replaces
+        only its active proof.
+      allOf:
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - password
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - password
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_login
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_website
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_service_account
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_url_link
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - provider_redirect
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - qq
+                  - github
+                  - apple
+                  - google
+                  - x
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - external_browser
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - qq
+                  - github
+                  - apple
+                  - google
+                  - x
+
+    AccountUserCreationProfile:
+      type: object
+      additionalProperties: false
+      properties:
+        username:
+          $ref: "#/components/schemas/AccountUser/properties/username"
+        displayName:
+          $ref: "#/components/schemas/AccountUser/properties/displayName"
+      description: |
+        Optional edits to generated account details. Omitted fields retain existing generation rules. No provider
+        token, subject, or avatar override is accepted.
+
+    AccountUserCreationCandidate:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - displayName
+        - avatar
+      properties:
+        username:
+          $ref: "#/components/schemas/AccountUser/properties/username"
+        displayName:
+          $ref: "#/components/schemas/AccountUser/properties/displayName"
+        avatar:
+          $ref: "#/components/schemas/AccountUser/properties/avatar"
+
+    AccountAuthenticationAction:
+      description: |
+        Backend-resolved account action. Provider display details never overwrite an existing account, and email or
+        username never automatically links identities.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - type
+            - allowedActions
+            - user
+          properties:
+            type:
+              type: string
+              enum:
+                - confirm_account
+            allowedActions:
+              type: array
+              items:
+                type: string
+                enum:
+                  - sign_in
+              minItems: 1
+              uniqueItems: true
+            user:
+              $ref: "#/components/schemas/AccountUser"
+        - type: object
+          additionalProperties: false
+          required:
+            - type
+            - allowedActions
+            - profile
+            - accountProofOptions
+          properties:
+            type:
+              type: string
+              enum:
+                - create_account
+            allowedActions:
+              type: array
+              items:
+                type: string
+                enum:
+                  - create_user
+                  - link_identity
+              minItems: 1
+              uniqueItems: true
+            profile:
+              $ref: "#/components/schemas/AccountUserCreationCandidate"
+            accountProofOptions:
+              type: array
+              items:
+                $ref: "#/components/schemas/AccountAuthenticationOption"
+              uniqueItems: true
+        - type: object
+          additionalProperties: false
+          required:
+            - type
+            - allowedActions
+            - user
+            - accountProofRequestID
+          properties:
+            type:
+              type: string
+              enum:
+                - confirm_link
+            allowedActions:
+              type: array
+              items:
+                type: string
+                enum:
+                  - link_identity
+              minItems: 1
+              uniqueItems: true
+            user:
+              $ref: "#/components/schemas/AccountUser"
+            accountProofRequestID:
+              $ref: "#/components/schemas/AuthenticationRequestID"
+        - type: object
+          additionalProperties: false
+          required:
+            - type
+            - allowedActions
+            - user
+          properties:
+            type:
+              type: string
+              enum:
+                - identity_conflict
+            allowedActions:
+              type: array
+              items:
+                type: string
+                enum:
+                  - sign_in
+              minItems: 1
+              uniqueItems: true
+            user:
+              $ref: "#/components/schemas/AccountUser"
+
+    CompleteAccountAuthenticationRequest:
+      description: |
+        Explicit account confirmation for primary authentication. The expected session is null when no session
+        exists. Repeated completion must contain the same validated content, excluding `expectedVersion` from its
+        digest.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - expectedVersion
+            - expectedSessionID
+            - action
+            - expectedUserID
+          properties:
+            expectedVersion:
+              $ref: "#/components/schemas/AccountFlowVersion"
+            expectedSessionID:
+              oneOf:
+                - $ref: "#/components/schemas/Model/properties/id"
+                - type: "null"
+            action:
+              type: string
+              enum:
+                - sign_in
+            expectedUserID:
+              $ref: "#/components/schemas/Model/properties/id"
+        - type: object
+          additionalProperties: false
+          required:
+            - expectedVersion
+            - expectedSessionID
+            - action
+            - expectedUserID
+          properties:
+            expectedVersion:
+              $ref: "#/components/schemas/AccountFlowVersion"
+            expectedSessionID:
+              oneOf:
+                - $ref: "#/components/schemas/Model/properties/id"
+                - type: "null"
+            action:
+              type: string
+              enum:
+                - create_user
+            expectedUserID:
+              type: "null"
+            profile:
+              $ref: "#/components/schemas/AccountUserCreationProfile"
+        - type: object
+          additionalProperties: false
+          required:
+            - expectedVersion
+            - expectedSessionID
+            - action
+            - expectedUserID
+            - accountProofRequestID
+          properties:
+            expectedVersion:
+              $ref: "#/components/schemas/AccountFlowVersion"
+            expectedSessionID:
+              oneOf:
+                - $ref: "#/components/schemas/Model/properties/id"
+                - type: "null"
+            action:
+              type: string
+              enum:
+                - link_identity
+            expectedUserID:
+              $ref: "#/components/schemas/Model/properties/id"
+            accountProofRequestID:
+              $ref: "#/components/schemas/AuthenticationRequestID"
+
+    AccountAuthenticationFailure:
+      type: object
+      additionalProperties: false
+      required:
+        - reason
+        - allowedActions
+      properties:
+        reason:
+          description: Safe reason mapped to user-facing copy by the client. Raw provider errors are not returned.
+          type: string
+          enum:
+            - invalid_credentials
+            - provider_error
+            - provider_unavailable
+            - missing_identity
+            - verification_unknown
+            - configuration_changed
+        allowedActions:
+          type: array
+          items:
+            type: string
+            enum:
+              - retry
+              - choose_method
+          uniqueItems: true
+          description: |
+            Recovery choices still permitted by the parent authorization and current configuration. Empty when this
+            attempt can no longer continue. Retry creates a new authentication request and fresh credentials. Cancelling
+            the authorization remains a separate operation.
+
+    AuthenticationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - authenticationRequestID
+        - version
+        - status
+        - method
+        - purpose
+        - acquisition
+        - expiresAt
+        - comparisonCode
+      properties:
+        authenticationRequestID:
+          $ref: "#/components/schemas/AuthenticationRequestID"
+        version:
+          $ref: "#/components/schemas/AccountFlowVersion"
+        status:
+          type: string
+          enum:
+            - pending
+            - verifying
+            - verified
+            - completed
+            - failed
+            - cancelled
+            - expired
+        method:
+          $ref: "#/components/schemas/AccountAuthenticationMethod"
+        purpose:
+          type: string
+          enum:
+            - sign_in
+            - account_proof
+        acquisition:
+          $ref: "#/components/schemas/AccountAuthenticationAcquisition"
+        expiresAt:
+          description: Authentication deadline, at most 5 minutes and no later than its PAR deadline.
+          type: string
+          minLength: 1
+          format: date-time
+        comparisonCode:
+          description: Public six-digit code displayed by both entry points for the user to compare. It is not a credential.
+          type: string
+          minLength: 1
+          pattern: "^[0-9]{6}$"
+        parentAuthenticationRequestID:
+          $ref: "#/components/schemas/AuthenticationRequestID"
+        accountProofRequestID:
+          $ref: "#/components/schemas/AuthenticationRequestID"
+        accountAction:
+          $ref: "#/components/schemas/AccountAuthenticationAction"
+        user:
+          $ref: "#/components/schemas/AccountUser"
+        helperURL:
+          description: Account Web assistance link carrying only the public authentication reference.
+          type: string
+          minLength: 1
+          format: uri
+        failure:
+          $ref: "#/components/schemas/AccountAuthenticationFailure"
+        completionAvailable:
+          type: boolean
+        completion:
+          $ref: "#/components/schemas/CompleteAccountAuthenticationRequest"
+      description: |
+        Authentication state read by its initiating entry point. It never exposes raw verified subjects, provider
+        tokens, or Account session tokens. Replaced attempts retain terminal state but lose recoverable results.
+      allOf:
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - external_browser
+            required:
+              - acquisition
+          then:
+            required:
+              - helperURL
+          else:
+            not:
+              anyOf:
+                - required:
+                    - helperURL
+        - if:
+            properties:
+              status:
+                type: string
+                enum:
+                  - failed
+            required:
+              - status
+          then:
+            required:
+              - failure
+          else:
+            not:
+              anyOf:
+                - required:
+                    - failure
+        - if:
+            properties:
+              purpose:
+                type: string
+                enum:
+                  - sign_in
+              status:
+                type: string
+                enum:
+                  - verified
+            required:
+              - purpose
+              - status
+          then:
+            required:
+              - accountAction
+          else:
+            not:
+              anyOf:
+                - required:
+                    - accountAction
+        - if:
+            properties:
+              purpose:
+                type: string
+                enum:
+                  - sign_in
+              status:
+                type: string
+                enum:
+                  - completed
+            required:
+              - purpose
+              - status
+          then:
+            required:
+              - completionAvailable
+          else:
+            not:
+              anyOf:
+                - required:
+                    - completionAvailable
+                - required:
+                    - completion
+        - if:
+            properties:
+              completionAvailable:
+                type: boolean
+                enum:
+                  - true
+            required:
+              - completionAvailable
+          then:
+            required:
+              - completion
+          else:
+            not:
+              anyOf:
+                - required:
+                    - completion
+        - if:
+            properties:
+              purpose:
+                type: string
+                enum:
+                  - account_proof
+            required:
+              - purpose
+          then:
+            required:
+              - parentAuthenticationRequestID
+            not:
+              anyOf:
+                - required:
+                    - accountAction
+                - required:
+                    - completionAvailable
+                - required:
+                    - completion
+                - required:
+                    - accountProofRequestID
+          else:
+            not:
+              anyOf:
+                - required:
+                    - parentAuthenticationRequestID
+                - required:
+                    - user
+        - if:
+            properties:
+              purpose:
+                type: string
+                enum:
+                  - account_proof
+              status:
+                type: string
+                enum:
+                  - verified
+            required:
+              - purpose
+              - status
+          then:
+            required:
+              - user
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - password
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - password
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_login
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_website
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_service_account
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - wechat_url_link
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - wechat
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - provider_redirect
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - qq
+                  - github
+                  - apple
+                  - google
+                  - x
+        - if:
+            properties:
+              acquisition:
+                type: string
+                enum:
+                  - external_browser
+            required:
+              - acquisition
+          then:
+            properties:
+              method:
+                type: string
+                enum:
+                  - qq
+                  - github
+                  - apple
+                  - google
+                  - x
+      examples:
+        - authenticationRequestID: authentication_reference
+          version: 2
+          status: verified
+          method: wechat
+          purpose: sign_in
+          acquisition: wechat_login
+          expiresAt: 2026-11-05T12:05:00Z
+          comparisonCode: "123456"
+          accountAction:
+            type: confirm_account
+            allowedActions:
+              - sign_in
+            user:
+              id: "42"
+              createdAt: 2026-11-05T12:00:00Z
+              updatedAt: 2026-11-05T12:00:00Z
+              username: john
+              displayName: John Doe
+              avatar: https://avatars.example.com/users/42.png
+        - authenticationRequestID: authentication_reference
+          version: 5
+          status: completed
+          method: wechat
+          purpose: sign_in
+          acquisition: wechat_login
+          expiresAt: 2026-11-05T12:05:00Z
+          comparisonCode: "123456"
+          completionAvailable: true
+          completion:
+            expectedVersion: 4
+            action: sign_in
+            expectedUserID: "42"
+            expectedSessionID: null
+
+    SubmitAccountAuthenticationCredentialsRequest:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - expectedVersion
+            - type
+            - username
+            - password
+          properties:
+            expectedVersion:
+              $ref: "#/components/schemas/AccountFlowVersion"
+            type:
+              type: string
+              enum:
+                - password
+            username:
+              $ref: "#/components/schemas/AccountUser/properties/username"
+            password:
+              description: |
+                Password submitted verbatim, up to 128 bytes when UTF-8 encoded. Do not apply account creation password
+                rules to sign-in.
+              type: string
+              minLength: 1
+        - type: object
+          additionalProperties: false
+          required:
+            - expectedVersion
+            - type
+            - code
+          properties:
+            expectedVersion:
+              $ref: "#/components/schemas/AccountFlowVersion"
+            type:
+              type: string
+              enum:
+                - wechat_code
+            code:
+              description: Fresh wx.login code from the XBuilder main mini program, used once.
+              type: string
+              minLength: 1
+
+    AccountAuthenticationVersionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          $ref: "#/components/schemas/AccountFlowVersion"
+
+    SubmitAccountHelperWechatRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - code
+      properties:
+        expectedVersion:
+          $ref: "#/components/schemas/AccountFlowVersion"
+        code:
+          description: Fresh main mini program wx.login code for this fixed WeChat authentication.
+          type: string
+          minLength: 1
+
+    AuthenticationStartResult:
+      type: object
+      additionalProperties: false
+      required:
+        - authenticationRequestID
+        - version
+        - entry
+        - expiresAt
+      properties:
+        authenticationRequestID:
+          $ref: "#/components/schemas/AuthenticationRequestID"
+        version:
+          $ref: "#/components/schemas/AccountFlowVersion"
+        entry:
+          type: object
+          additionalProperties: false
+          required:
+            - type
+            - url
+          properties:
+            type:
+              type: string
+              enum:
+                - provider_redirect
+                - wechat_url_link
+            url:
+              description: |
+                Trusted fixed provider authorization address or generated WeChat URL Link. No source flow credential is
+                included.
+              type: string
+              minLength: 1
+              format: uri
+        expiresAt:
+          description: Fixed deadline for this authentication entry.
+          type: string
+          minLength: 1
+          format: date-time
+      examples:
+        - authenticationRequestID: authentication_reference
+          version: 2
+          entry:
+            type: wechat_url_link
+            url: https://wxaurl.cn/example
+          expiresAt: 2026-11-05T12:05:00Z
+
+    AuthenticationCompletion:
+      type: object
+      additionalProperties: false
+      required:
+        - authenticationRequestID
+        - version
+        - status
+        - session
+      properties:
+        authenticationRequestID:
+          $ref: "#/components/schemas/AuthenticationRequestID"
+        version:
+          $ref: "#/components/schemas/AccountFlowVersion"
+        status:
+          type: string
+          enum:
+            - completed
+        session:
+          $ref: "#/components/schemas/CurrentAccountSession"
+        sessionToken:
+          description: |
+            Only returned to Account WeChat when issuing or recovering the same new session. Never returned to Web or an
+            integrating app.
+          type: string
+          minLength: 1
+      allOf:
+        - if:
+            properties:
+              session:
+                properties:
+                  facade:
+                    type: string
+                    enum:
+                      - web
+                required:
+                  - facade
+            required:
+              - session
+          then:
+            not:
+              anyOf:
+                - required:
+                    - sessionToken
+      examples:
+        - authenticationRequestID: authentication_reference
+          version: 5
+          status: completed
+          session:
+            id: "7"
+            createdAt: 2026-11-05T12:00:00Z
+            updatedAt: 2026-11-05T12:00:00Z
+            lastUsedAt: 2026-11-05T12:00:00Z
+            expiresAt: 2026-12-05T12:00:00Z
+            facade: wechat
+            user:
+              id: "42"
+              createdAt: 2026-11-05T12:00:00Z
+              updatedAt: 2026-11-05T12:00:00Z
+              username: john
+              displayName: John Doe
+              avatar: https://avatars.example.com/users/42.png
+          sessionToken: SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+
+    AccountAuthenticationHelper:
+      type: object
+      additionalProperties: false
+      required:
+        - authenticationRequestID
+        - version
+        - status
+        - app
+        - method
+        - purpose
+        - initiatingFacade
+        - executingFacade
+        - comparisonCode
+        - expiresAt
+        - uiLocales
+      properties:
+        authenticationRequestID:
+          $ref: "#/components/schemas/AuthenticationRequestID"
+        version:
+          $ref: "#/components/schemas/AccountFlowVersion"
+        status:
+          $ref: "#/components/schemas/AuthenticationRequest/properties/status"
+        app:
+          $ref: "#/components/schemas/AccountRequestingApp"
+        method:
+          $ref: "#/components/schemas/AccountAuthenticationMethod"
+        purpose:
+          $ref: "#/components/schemas/AuthenticationRequest/properties/purpose"
+        initiatingFacade:
+          $ref: "#/components/schemas/AccountFacade"
+        executingFacade:
+          $ref: "#/components/schemas/AccountFacade"
+        comparisonCode:
+          $ref: "#/components/schemas/AuthenticationRequest/properties/comparisonCode"
+        expiresAt:
+          $ref: "#/components/schemas/AuthenticationRequest/properties/expiresAt"
+        uiLocales:
+          oneOf:
+            - $ref: "#/components/schemas/OAuthUILocales"
+            - type: "null"
+      description: |
+        Public metadata and completion status for the fixed assistance request. Never returns identity results,
+        account actions, session credentials, or source flow credentials.
+      examples:
+        - authenticationRequestID: authentication_reference
+          version: 2
+          status: verified
+          app:
+            id: "2"
+            displayName: XAtom
+            avatar: null
+          method: wechat
+          purpose: sign_in
+          initiatingFacade: web
+          executingFacade: wechat
+          comparisonCode: "123456"
+          expiresAt: 2026-11-05T12:05:00Z
+          uiLocales: null
+
+    AccountFlowConflictReason:
+      type: string
+      enum:
+        - account_changed
+        - request_changed
+        - return_context_lost
+        - already_completed
+        - identity_conflict
+        - configuration_changed
+
+    AccountFlowConflictError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - msg
+        - reason
+      properties:
+        code:
+          type: integer
+          enum:
+            - 40900
+        msg:
+          description: Safe diagnostic string. Do not parse it.
+          type: string
+          minLength: 1
+        reason:
+          $ref: "#/components/schemas/AccountFlowConflictReason"
+      examples:
+        - code: 40900
+          msg: Conflict
+          reason: request_changed
+
+    AccountFlowExpiredError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - msg
+        - reason
+      properties:
+        code:
+          type: integer
+          enum:
+            - 41000
+        msg:
+          description: Safe diagnostic string. Do not parse it.
+          type: string
+          minLength: 1
+        reason:
+          type: string
+          enum:
+            - request_expired
+            - proof_expired
+      examples:
+        - code: 41000
+          msg: Gone
+          reason: proof_expired
+
+    SignInPlatform:
+      type: string
+      enum:
+        - web
+        - wechat_mini_program
+        - wechat_web_view
+
+    SignInRequestID:
+      description: Opaque local product sign-in request reference. It is not an Account request URI.
+      type: string
+      minLength: 1
+
+    ProductReturnPath:
+      description: |
+        Valid path within the product. The backend validates and fixes it at creation and rejects external
+        destinations.
+      type: string
+      minLength: 1
+      pattern: "^/(?!/)"
+
+    AccountAuthorizationEntryDescriptor:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - facade
+            - entryPurpose
+            - url
+            - expiresAt
+          properties:
+            facade:
+              type: string
+              enum:
+                - web
+            entryPurpose:
+              $ref: "#/components/schemas/AccountEntryPurpose"
+            url:
+              description: Account browser entry. Authorize uses the OAuth authorize endpoint. Return opens Account Web directly.
+              type: string
+              minLength: 1
+              format: uri
+            expiresAt:
+              description: One-time entry deadline.
+              type: string
+              minLength: 1
+              format: date-time
+        - type: object
+          additionalProperties: false
+          required:
+            - facade
+            - entryPurpose
+            - miniProgramAppID
+            - path
+            - extraData
+            - expiresAt
+          properties:
+            facade:
+              type: string
+              enum:
+                - wechat
+            entryPurpose:
+              $ref: "#/components/schemas/AccountEntryPurpose"
+            miniProgramAppID:
+              $ref: "#/components/schemas/AccountWechatMiniProgramAppID"
+            path:
+              description: Configured Account page path with only public `clientID` and `requestURI` query parameters.
+              type: string
+              minLength: 1
+            extraData:
+              type: object
+              additionalProperties: false
+              required:
+                - entryToken
+              properties:
+                entryToken:
+                  $ref: "#/components/schemas/AccountOpaqueCredential"
+            expiresAt:
+              description: One-time entry deadline.
+              type: string
+              minLength: 1
+              format: date-time
+
+    CreateSignInRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - platform
+        - returnTo
+      properties:
+        platform:
+          $ref: "#/components/schemas/SignInPlatform"
+        returnTo:
+          $ref: "#/components/schemas/ProductReturnPath"
+        uiLocales:
+          $ref: "#/components/schemas/OAuthUILocales"
+
+    PreparedSignInState:
+      type: object
+      required:
+        - signInRequestID
+        - platform
+        - state
+        - expiresAt
+        - entry
+      properties:
+        signInRequestID:
+          $ref: "#/components/schemas/SignInRequestID"
+        platform:
+          $ref: "#/components/schemas/SignInPlatform"
+        state:
+          description: Original OAuth state retained for return validation.
+          type: string
+          minLength: 1
+        expiresAt:
+          description: |
+            Local transaction deadline, at most 20 minutes. Account request and code deadlines still apply
+            independently.
+          type: string
+          minLength: 1
+          format: date-time
+        entry:
+          $ref: "#/components/schemas/AccountAuthorizationEntryDescriptor"
+        redirectURI:
+          description: Registered business H5 callback, fixed by the backend and on the original page origin.
+          type: string
+          minLength: 1
+          format: uri
+      allOf:
+        - if:
+            properties:
+              platform:
+                type: string
+                enum:
+                  - wechat_web_view
+            required:
+              - platform
+          then:
+            required:
+              - redirectURI
+          else:
+            not:
+              anyOf:
+                - required:
+                    - redirectURI
+        - if:
+            properties:
+              platform:
+                type: string
+                enum:
+                  - web
+            required:
+              - platform
+          then:
+            properties:
+              entry:
+                properties:
+                  facade:
+                    type: string
+                    enum:
+                      - web
+          else:
+            properties:
+              entry:
+                properties:
+                  facade:
+                    type: string
+                    enum:
+                      - wechat
+
+    PreparedSignInRequest:
+      allOf:
+        - $ref: "#/components/schemas/PreparedSignInState"
+      unevaluatedProperties: false
+      examples:
+        - signInRequestID: local_sign_in_reference
+          platform: web
+          state: state_reference
+          expiresAt: 2026-11-05T12:20:00Z
+          entry:
+            facade: web
+            entryPurpose: authorize
+            url: https://account.xbuilder.com/api/oauth/authorize?client_id=K7mR2qV9sT4wX6yZ8aB0Cg&request_uri=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3Apar_reference&xbuilder_entry_token=EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+            expiresAt: 2026-11-05T12:01:00Z
+
+    CreatedSignInRequest:
+      allOf:
+        - $ref: "#/components/schemas/PreparedSignInState"
+        - type: object
+          properties:
+            signInToken:
+              $ref: "#/components/schemas/AccountOpaqueCredential"
+        - if:
+            properties:
+              platform:
+                type: string
+                enum:
+                  - wechat_mini_program
+            required:
+              - platform
+          then:
+            required:
+              - signInToken
+          else:
+            not:
+              anyOf:
+                - required:
+                    - signInToken
+      unevaluatedProperties: false
+      description: |
+        Only native mini program creation returns `signInToken`. Browser and web-view requests use a private product
+        cookie instead. No PKCE verifier or Account recovery credential is returned.
+      examples:
+        - signInRequestID: local_sign_in_reference
+          platform: web
+          state: state_reference
+          expiresAt: 2026-11-05T12:20:00Z
+          entry:
+            facade: web
+            entryPurpose: authorize
+            url: https://account.xbuilder.com/api/oauth/authorize?client_id=K7mR2qV9sT4wX6yZ8aB0Cg&request_uri=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3Apar_reference&xbuilder_entry_token=EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+            expiresAt: 2026-11-05T12:01:00Z
+        - signInRequestID: local_sign_in_reference
+          platform: wechat_mini_program
+          state: state_reference
+          expiresAt: 2026-11-05T12:20:00Z
+          entry:
+            facade: wechat
+            entryPurpose: authorize
+            miniProgramAppID: <main-mini-program-app-id>
+            path: pages/account/index?clientID=K7mR2qV9sT4wX6yZ8aB0Cg&requestURI=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3Apar_reference
+            extraData:
+              entryToken: EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+            expiresAt: 2026-11-05T12:01:00Z
+          signInToken: LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+        - signInRequestID: local_sign_in_reference
+          platform: wechat_web_view
+          state: state_reference
+          expiresAt: 2026-11-05T12:20:00Z
+          entry:
+            facade: wechat
+            entryPurpose: authorize
+            miniProgramAppID: <main-mini-program-app-id>
+            path: pages/account/index?clientID=K7mR2qV9sT4wX6yZ8aB0Cg&requestURI=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3Apar_reference
+            extraData:
+              entryToken: EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+            expiresAt: 2026-11-05T12:01:00Z
+          redirectURI: https://xbuilder.com/account/callback
+
+    CompleteSignInRequest:
+      description: |
+        Submit a success or error return, or an empty object to recover known local processing state. Neither
+        request parameters nor foreground events create a new local flow.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - code
+            - state
+          properties:
+            code:
+              description: Account authorization code from the original return channel.
+              type: string
+              minLength: 1
+            state:
+              description: Original OAuth state.
+              type: string
+              minLength: 1
+        - type: object
+          additionalProperties: false
+          required:
+            - error
+            - state
+          properties:
+            error:
+              $ref: "#/components/schemas/OAuthError/properties/error"
+            state:
+              description: Original OAuth state.
+              type: string
+              minLength: 1
+            error_description:
+              $ref: "#/components/schemas/OAuthError/properties/error_description"
+        - type: object
+          additionalProperties: false
+          properties: {}
+
+    SignInRequestResult:
+      description: Canonical local sign-in state. Recovery never fetches a code using only the Account recovery credential.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - signInRequestID
+            - status
+          properties:
+            signInRequestID:
+              $ref: "#/components/schemas/SignInRequestID"
+            status:
+              type: string
+              enum:
+                - pending
+        - type: object
+          additionalProperties: false
+          required:
+            - signInRequestID
+            - status
+            - entry
+          properties:
+            signInRequestID:
+              $ref: "#/components/schemas/SignInRequestID"
+            status:
+              type: string
+              enum:
+                - return_required
+            entry:
+              $ref: "#/components/schemas/AccountAuthorizationEntryDescriptor"
+        - type: object
+          additionalProperties: false
+          required:
+            - signInRequestID
+            - status
+            - clientID
+            - token
+            - accessTokenExpiresAt
+            - returnTo
+          properties:
+            signInRequestID:
+              $ref: "#/components/schemas/SignInRequestID"
+            status:
+              type: string
+              enum:
+                - completed
+            clientID:
+              $ref: "#/components/schemas/OAuthClientID"
+            token:
+              $ref: "#/components/schemas/OAuthToken"
+            accessTokenExpiresAt:
+              description: Fixed access token deadline. Recovered `expires_in` reflects only remaining lifetime.
+              type: string
+              minLength: 1
+              format: date-time
+            returnTo:
+              $ref: "#/components/schemas/ProductReturnPath"
+        - type: object
+          additionalProperties: false
+          required:
+            - signInRequestID
+            - status
+            - oauthError
+          properties:
+            signInRequestID:
+              $ref: "#/components/schemas/SignInRequestID"
+            status:
+              type: string
+              enum:
+                - failed
+            oauthError:
+              $ref: "#/components/schemas/OAuthError"
+        - type: object
+          additionalProperties: false
+          required:
+            - signInRequestID
+            - status
+          properties:
+            signInRequestID:
+              $ref: "#/components/schemas/SignInRequestID"
+            status:
+              type: string
+              enum:
+                - cancelled
+        - type: object
+          additionalProperties: false
+          required:
+            - signInRequestID
+            - status
+          properties:
+            signInRequestID:
+              $ref: "#/components/schemas/SignInRequestID"
+            status:
+              type: string
+              enum:
+                - restart_required
+      examples:
+        - signInRequestID: local_sign_in_reference
+          status: return_required
+          entry:
+            facade: web
+            entryPurpose: return
+            url: https://account.xbuilder.com/sign-in?clientID=K7mR2qV9sT4wX6yZ8aB0Cg&requestURI=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3Apar_reference&entryToken=EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+            expiresAt: 2026-11-05T12:01:00Z
+        - signInRequestID: local_sign_in_reference
+          status: completed
+          clientID: K7mR2qV9sT4wX6yZ8aB0Cg
+          token:
+            access_token: example-access-token
+            token_type: Bearer
+            expires_in: 300
+            refresh_token: example-refresh-token
+            scope: account:user:read
+          accessTokenExpiresAt: 2026-11-05T12:05:00Z
+          returnTo: /projects
+
+    CancelledSignInRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - signInRequestID
+        - status
+      properties:
+        signInRequestID:
+          $ref: "#/components/schemas/SignInRequestID"
+        status:
+          type: string
+          enum:
+            - cancelled
+
+    PreparedAccountFlowToken:
+      type: object
+      additionalProperties: false
+      required:
+        - flowToken
+        - expiresAt
+      properties:
+        flowToken:
+          $ref: "#/components/schemas/AccountOpaqueCredential"
+        expiresAt:
+          description: Local retention deadline, 30 minutes after preparation.
+          type: string
+          minLength: 1
+          format: date-time
+      examples:
+        - flowToken: FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+          expiresAt: 2026-11-05T12:30:00Z
 
     User:
       description: User account information.
@@ -8789,7 +12452,6 @@ components:
             - h1:qUqP5cyxm6YcTAhz05Hph5gvu9M=
         visibility:
           $ref: "#/components/schemas/Visibility"
-
     CourseKind:
       description: Kind of a course, deciding how the course is driven and what its content holds.
       type: string
@@ -8866,7 +12528,6 @@ components:
             follow the [Tutorial content-format contract](./develop/tutorial-v2/course-storage.md) and stay opaque to
             the API and storage.
           type: object
-
     GuidedCourseContent:
       description: Content of a `guided` course, driven by Copilot.
       type: object
@@ -8887,7 +12548,6 @@ components:
           maxLength: 12000
           examples:
             - Learn the basics of XGo programming language
-
     PlaygroundCourseContent:
       description: |
         Content of a `playground` course, driven by course code: a file collection mapping file paths to universal URLs.
@@ -8960,7 +12620,7 @@ components:
           items:
             $ref: "#/components/schemas/Model/properties/id"
           examples:
-            - ["1", "2", "3"]
+            - [ "1", "2", "3" ]
         units:
           description: |
             Units the series is divided into, in order; empty if it is not divided. The course IDs of the units, joined
@@ -8974,7 +12634,6 @@ components:
           format: int32
           examples:
             - 1
-
     CourseSeriesUnit:
       description: A unit of a course series, a titled run of its courses.
       type: object
@@ -9006,7 +12665,7 @@ components:
           items:
             $ref: "#/components/schemas/Model/properties/id"
           examples:
-            - ["1", "2"]
+            - [ "1", "2" ]
 
     FileObject:
       description: A content-addressed file object stored in Kodo.
@@ -9436,7 +13095,7 @@ components:
           type: object
           additionalProperties: true
           examples:
-            - position: [10, 20]
+            - position: [ 10, 20 ]
               health: 80
         responseCommandName:
           $ref: "#/components/schemas/AIInteractionCommandName"

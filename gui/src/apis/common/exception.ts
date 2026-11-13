@@ -43,6 +43,7 @@ export enum ApiExceptionCode {
   errorNotFound = 40400,
   errorConflict = 40900,
   errorResourceMoved = 40901,
+  errorExpired = 41000,
   errorContentTooLarge = 41300,
   errorUnsupportedMediaType = 41500,
   errorTooManyRequests = 42900,
@@ -76,6 +77,48 @@ export function isTooManyRequestsMeta(code: number, _meta: unknown): _meta is To
   return code === ApiExceptionCode.errorTooManyRequests
 }
 
+export type AccountFlowConflictMeta = {
+  reason:
+    | 'account_changed'
+    | 'request_changed'
+    | 'return_context_lost'
+    | 'already_completed'
+    | 'identity_conflict'
+    | 'configuration_changed'
+}
+
+export type AccountFlowExpiredMeta = {
+  reason: 'request_expired' | 'proof_expired'
+}
+
+export function createAccountFlowErrorMeta(
+  code: number,
+  reason: unknown
+): AccountFlowConflictMeta | AccountFlowExpiredMeta | null {
+  switch (reason) {
+    case 'account_changed':
+    case 'request_changed':
+    case 'return_context_lost':
+    case 'already_completed':
+    case 'identity_conflict':
+    case 'configuration_changed':
+      return code === ApiExceptionCode.errorConflict ? { reason } : null
+    case 'request_expired':
+    case 'proof_expired':
+      return code === ApiExceptionCode.errorExpired ? { reason } : null
+    default:
+      return null
+  }
+}
+
+export function isAccountFlowConflictMeta(code: number, meta: unknown): meta is AccountFlowConflictMeta {
+  return code === ApiExceptionCode.errorConflict && meta != null
+}
+
+export function isAccountFlowExpiredMeta(code: number, meta: unknown): meta is AccountFlowExpiredMeta {
+  return code === ApiExceptionCode.errorExpired && meta != null
+}
+
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorInvalidArgs]: {
     en: 'invalid args',
@@ -104,6 +147,10 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorResourceMoved]: {
     en: 'resource moved',
     zh: '资源已迁移'
+  },
+  [ApiExceptionCode.errorExpired]: {
+    en: 'request expired',
+    zh: '\u6d41\u7a0b\u5df2\u8fc7\u671f'
   },
   [ApiExceptionCode.errorContentTooLarge]: {
     en: 'content too large',

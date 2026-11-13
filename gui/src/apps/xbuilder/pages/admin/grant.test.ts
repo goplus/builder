@@ -50,7 +50,8 @@ describe('admin app grant', () => {
           status: 'active',
           grantTypes: ['authorization_code'],
           redirectURIs: ['https://flight.test/callback'],
-          redirectURIPatterns: []
+          redirectURIPatterns: [],
+          wechatReturnTargets: []
         }
       ]
     })

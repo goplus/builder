@@ -42,7 +42,10 @@ export type AccountUserIdentity = AccountModel & {
   avatar?: string | null
 }
 
+export type AccountFacade = 'web' | 'wechat'
+
 export type AccountSession = AccountModel & {
+  facade: AccountFacade
   /** Timestamp when the account session was last used */
   lastUsedAt: string
   /** Expiration timestamp */
@@ -79,6 +82,11 @@ export type AccountOAuthClientType = 'public' | 'confidential'
 
 export type AccountOAuthGrantType = 'authorization_code' | 'refresh_token' | 'client_credentials'
 
+export type AccountWeChatReturnTarget = {
+  redirectURI: string
+  miniProgramAppID: string
+}
+
 export type AccountOAuthClient = AccountModel & {
   /** Stable ID of the owning app */
   appID: string
@@ -96,6 +104,7 @@ export type AccountOAuthClient = AccountModel & {
   redirectURIs: string[]
   /** Read-only redirect URI patterns for HTTPS preview environments */
   redirectURIPatterns: string[]
+  wechatReturnTargets: AccountWeChatReturnTarget[]
 }
 
 export type AccountOAuthClientSecret = {

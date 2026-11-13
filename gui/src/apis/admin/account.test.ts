@@ -63,7 +63,8 @@ describe('OAuth client adapters', () => {
     status: 'active',
     grantTypes: ['client_credentials'],
     redirectURIs: [],
-    redirectURIPatterns: []
+    redirectURIPatterns: [],
+    wechatReturnTargets: []
   }
 
   it('addresses configuration with the management ID and preserves the protocol ID', async () => {
