@@ -135,6 +135,90 @@ describe('Task', () => {
     expect(result).toBeTruthy()
   })
 
+  describe('stream reconnection', () => {
+    beforeEach(() => vi.useFakeTimers())
+    afterEach(() => vi.useRealTimers())
+
+    it.each([TaskStatus.Pending, TaskStatus.Processing, TaskStatus.Cancelling])(
+      'resubscribes to the same task after a stream ends with status %s',
+      async (status) => {
+        const task = new Task(TaskType.GenerateCostume)
+        await task.start(costumeParams)
+        task.data!.status = status
+        const subscribe = vi.mocked(aigcMock.subscribeTaskEvents)
+        subscribe.mockImplementationOnce(async function* () {
+          yield { type: TaskEventType.Snapshot, data: { ...task.data! } }
+        })
+        const pending = task.untilCompleted()
+        await vi.advanceTimersByTimeAsync(1000)
+        await expect(pending).resolves.toBeTruthy()
+        expect(subscribe).toHaveBeenCalledTimes(2)
+        expect(subscribe.mock.calls.map(([id]) => id)).toEqual([task.data!.id, task.data!.id])
+        expect(aigcMock.createTask).toHaveBeenCalledTimes(1)
+      }
+    )
+
+    it.each([TaskStatus.Completed, TaskStatus.Failed, TaskStatus.Cancelled])(
+      'handles a terminal %s snapshot after reconnecting',
+      async (status) => {
+        const task = new Task(TaskType.GenerateCostume)
+        await task.start(costumeParams)
+        const result = { imageUrls: [] }
+        const subscribe = vi.mocked(aigcMock.subscribeTaskEvents)
+        subscribe.mockImplementationOnce(async function* () {})
+        subscribe.mockImplementationOnce(async function* () {
+          yield {
+            type: TaskEventType.Snapshot,
+            data: { ...task.data!, status, result, error: { reason: TaskErrorReason.Timeout, message: 'timeout' } }
+          }
+        })
+        const pending = task.untilCompleted().catch((error) => error)
+        await vi.advanceTimersByTimeAsync(1000)
+        const outcome = await pending
+        if (status === TaskStatus.Completed) expect(outcome).toEqual(result)
+        else if (status === TaskStatus.Failed) expect(outcome).toBeInstanceOf(TaskException)
+        else expect(outcome).toBeInstanceOf(Cancelled)
+        expect(subscribe).toHaveBeenCalledTimes(2)
+      }
+    )
+
+    it('stops after three reconnects when streams repeatedly end without a terminal event', async () => {
+      const task = new Task(TaskType.GenerateCostume)
+      await task.start(costumeParams)
+      const subscribe = vi.mocked(aigcMock.subscribeTaskEvents)
+      for (let i = 0; i < 4; i++) subscribe.mockImplementationOnce(async function* () {})
+      const pending = task.untilCompleted().catch((error) => error)
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(await pending).toEqual(new Error('task event stream ended before task completed (status: pending)'))
+      expect(subscribe).toHaveBeenCalledTimes(4)
+    })
+
+    it('stops reconnecting when disposed during the retry delay', async () => {
+      const task = new Task(TaskType.GenerateCostume)
+      await task.start(costumeParams)
+      const subscribe = vi.mocked(aigcMock.subscribeTaskEvents)
+      subscribe.mockImplementationOnce(async function* () {})
+      const pending = task.untilCompleted().catch((error) => error)
+      await vi.advanceTimersByTimeAsync(0)
+      task.dispose()
+      expect(await pending).toBe(task.getSignal().reason)
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(subscribe).toHaveBeenCalledTimes(1)
+    })
+
+    it('propagates subscription errors without reconnecting', async () => {
+      const task = new Task(TaskType.GenerateCostume)
+      await task.start(costumeParams)
+      const error = new Error('request failed')
+      const subscribe = vi.mocked(aigcMock.subscribeTaskEvents)
+      subscribe.mockImplementationOnce(async function* () {
+        throw error
+      })
+      await expect(task.untilCompleted()).rejects.toBe(error)
+      expect(subscribe).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('progress reporting', () => {
     beforeEach(() => {
       vi.useFakeTimers()
