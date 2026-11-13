@@ -221,6 +221,8 @@ The route-local runtime forwards:
 | Newly appended log output | `editor.runtime.log` with `{ log }`                     |
 | Copilot round completes   | `copilot.roundComplete` with its user and result messages |
 
+A run's `editor.runtime.start` comes before all of its `editor.runtime.log` and its `editor.runtime.exit`.
+
 Runtime exposes cumulative output. The Playground runtime keeps the last forwarded output ID and sends every new `log` entry exactly once and in order. Error output is not part of the judging channel.
 
 Subscriptions are installed immediately after executor startup is requested and before Worker messages arrive. They are removed when Program is disposed. Events arriving during stop are ignored.

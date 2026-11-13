@@ -155,7 +155,8 @@ type Project interface {
 }
 
 type Runtime interface {
-	// onStart registers a callback that is called when the project runtime starts.
+	// onStart registers a callback that is called when the project runtime starts,
+	// before any log or the exit of that run.
 	onStart(callback func())
 	// onExit registers a callback that is called when the project runtime exits.
 	onExit(callback func(code int))

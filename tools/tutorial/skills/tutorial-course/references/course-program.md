@@ -389,7 +389,7 @@ Observes runs of the learner's project, not the course program.
 
 | Callback | Called when |
 | --- | --- |
-| `Editor.Runtime.onStart => { ... }` | The learner's project starts running. |
+| `Editor.Runtime.onStart => { ... }` | The learner's project starts running. It comes before every log and the exit of that run. |
 | `Editor.Runtime.onExit code => { ... }` | The learner's project exits. `code` is the exit code. Exiting does not mean the goal was reached. |
 | `Editor.Runtime.onLog log => { ... }` | The learner's project prints a log line, once per line and in output order. `log` is the line as printed, including the line break `println` ends it with. Runtime errors are not part of this channel. This is the main way to detect what the learner achieved. |
 

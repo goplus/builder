@@ -74,8 +74,9 @@ type Runtime struct {
 	courseProgram *courseProgram
 }
 
-// OnStart registers a callback for the learner's project starting to run.
-// Several may be registered.
+// OnStart registers a callback for the learner's project starting to run. The
+// start of a run comes before all of its logs and its exit. Several may be
+// registered.
 func (p *Runtime) OnStart(handler func()) {
 	register(p.courseProgram, func(struct{}) { handler() },
 		func(h *handlers, r *registration[struct{}]) { h.runtimeStart = append(h.runtimeStart, r) })

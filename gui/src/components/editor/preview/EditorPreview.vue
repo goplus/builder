@@ -112,6 +112,7 @@
             :on-stop="handleStop.fn"
             :stop-loading="handleStop.isLoading.value"
             :inline-anchor="getStageInlineAnchor"
+            @start="handleStart"
             @log="handleLog"
             @execution-locations="handleExecutionLocations"
             @update:fullscreen="handleFullscreenChange"
@@ -258,6 +259,10 @@ function keepRunnerHostVisibleForOverlay() {
   }, 450)
 }
 
+function handleStart() {
+  runtime.value.emit('didStart')
+}
+
 function handleLog(log: SpxLog) {
   const { file, line } = log
   const column = log.level === 'ERROR' ? log.column : 1
@@ -346,7 +351,6 @@ async function executeRun(action: 'run' | 'rerun') {
     runnerState.value = 'running'
     lastFilesHash.value = filesHash
     runtime.value.setRunning({ mode: 'debug', initializing: false }, filesHash)
-    runtime.value.emit('didStart')
   } catch (error) {
     runnerState.value = 'running'
     runtime.value.setRunning({ mode: 'debug', initializing: false, initializingError: error })
