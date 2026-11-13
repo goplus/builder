@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { setupPageTests, mountPages, signIn } from '@/apps/xbuilder/pages/test'
+import { setupPageTests, mountPages, signIn, makeProject } from '@/apps/xbuilder/pages/test'
 import * as userApis from '@/apis/user'
+import * as projectApis from '@/apis/project'
+import ProjectItem from '@/components/project/ProjectItem.vue'
 
 describe('user profile', () => {
   setupPageTests()
@@ -84,5 +86,96 @@ describe('user profile', () => {
     await wrapper.get('[aria-label="Follow button"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.get('[aria-label="Follow button"]').text()).toBe('Follow'))
     expect(userApis.unfollow).toHaveBeenCalledWith('bob')
+  })
+
+  it('returns to the previous projects page when deletion empties the current page', async () => {
+    await signIn()
+    let projectDeleted = false
+    vi.mocked(projectApis.listSignedInUserProjects).mockImplementation(async (params) => {
+      if (params?.pageIndex === 2 && !projectDeleted) {
+        return { total: 9, data: [makeProject('Last project')] }
+      }
+      if (params?.pageIndex === 2) return { total: 8, data: [] }
+      return { total: 8, data: [makeProject('Remaining project')] }
+    })
+
+    const { wrapper, router } = await mountPages('/user/alice/projects?p=2&o=likes')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Last project'))
+
+    projectDeleted = true
+    wrapper.findComponent(ProjectItem).vm.$emit('removed')
+
+    await vi.waitFor(() => expect(router.currentRoute.value.query.p).toBeUndefined())
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Remaining project'))
+    expect(router.currentRoute.value.query.o).toBe('likes')
+    expect(projectApis.listSignedInUserProjects).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pageIndex: 1, pageSize: 8, orderBy: 'likeCount', sortOrder: 'desc' })
+    )
+  })
+
+  it('returns to the immediately previous page from a later page', async () => {
+    await signIn()
+    let projectDeleted = false
+    vi.mocked(projectApis.listSignedInUserProjects).mockImplementation(async (params) => {
+      if (params?.pageIndex === 4 && !projectDeleted) {
+        return { total: 25, data: [makeProject('Last page project')] }
+      }
+      if (params?.pageIndex === 4) return { total: 24, data: [] }
+      if (params?.pageIndex === 3) return { total: 24, data: [makeProject('Previous page project')] }
+      return { total: 24, data: [] }
+    })
+
+    const { wrapper, router } = await mountPages('/user/alice/projects?p=4')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Last page project'))
+
+    projectDeleted = true
+    wrapper.findComponent(ProjectItem).vm.$emit('removed')
+
+    await vi.waitFor(() => expect(router.currentRoute.value.query.p).toBe('3'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Previous page project'))
+    expect(projectApis.listSignedInUserProjects).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pageIndex: 3, pageSize: 8 })
+    )
+  })
+
+  it('keeps the current projects page when it still has projects after deletion', async () => {
+    await signIn()
+    let projectDeleted = false
+    vi.mocked(projectApis.listSignedInUserProjects).mockImplementation(async (params) => {
+      if (params?.pageIndex === 2 && !projectDeleted) {
+        return { total: 9, data: [makeProject('Project one'), makeProject('Project two')] }
+      }
+      if (params?.pageIndex === 2) return { total: 9, data: [makeProject('Project two')] }
+      return { total: 9, data: [makeProject('Project on page one')] }
+    })
+
+    const { wrapper, router } = await mountPages('/user/alice/projects?p=2')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Project one'))
+
+    projectDeleted = true
+    wrapper.findComponent(ProjectItem).vm.$emit('removed')
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Project two'))
+    expect(router.currentRoute.value.query.p).toBe('2')
+    expect(projectApis.listSignedInUserProjects).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pageIndex: 2, pageSize: 8 })
+    )
+  })
+
+  it('shows the empty state when the final project is deleted', async () => {
+    await signIn()
+    let projectDeleted = false
+    vi.mocked(projectApis.listSignedInUserProjects).mockImplementation(async () =>
+      projectDeleted ? { total: 0, data: [] } : { total: 1, data: [makeProject('Only project')] }
+    )
+
+    const { wrapper, router } = await mountPages('/user/alice/projects')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Only project'))
+
+    projectDeleted = true
+    wrapper.findComponent(ProjectItem).vm.$emit('removed')
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain('No projects'))
+    expect(router.currentRoute.value.query.p).toBeUndefined()
   })
 })
