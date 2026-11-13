@@ -5,7 +5,7 @@ description: Maintain the XBuilder frontend's default project. Use when changing
 
 # XBuilder Default Project
 
-Use this skill when updating the template created by **New project...**. The template lives in `spx-gui/src/components/project/default-project/`; its construction code is `spx-gui/src/components/project/default-project.ts`.
+Use this skill when updating the template created by **New project...**. The template lives in `gui/src/components/project/default-project/`; its construction code is `gui/src/components/project/default-project.ts`.
 
 ## Prepare and export in XBuilder
 

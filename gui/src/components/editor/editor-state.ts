@@ -1,0 +1,397 @@
+import { computed, ref, watch, type WatchSource } from 'vue'
+import { shiftPath, type IScopedRouter, type PathSegments } from '@/utils/route'
+import { Disposable } from '@/utils/disposable'
+import type { I18n, LocaleMessage } from '@/utils/i18n'
+import type { Files } from '@/models/common/file'
+import type { ResourceModel } from '@/models/spx/common/resource'
+import type { SpxProject } from '@/models/spx/project'
+import { Stage } from '@/models/spx/stage'
+import { Sprite } from '@/models/spx/sprite'
+import { Sound } from '@/models/spx/sound'
+import { Backdrop } from '@/models/spx/backdrop'
+import { isWidget } from '@/models/spx/widget'
+import { Costume } from '@/models/spx/costume'
+import { Animation } from '@/models/spx/animation'
+import type { IProject, PartialMetadata, ProjectSerialized } from '@/models/project'
+import type { SignedIn } from '@/stores/user'
+import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
+import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
+import { Runtime } from './runtime'
+import * as editing from './editing'
+import { History } from './history'
+import { GenState } from './gen'
+
+export type SelectedType = 'stage' | 'sprite'
+
+export type Selected =
+  | {
+      type: 'stage'
+      stageSelected: StageEditorSelected
+    }
+  | {
+      type: 'sprite'
+      sprite: Sprite | null
+      spriteSelected: SpriteEditorSelected | null
+    }
+
+export enum EditMode {
+  Default = 'default',
+  Map = 'map',
+  Simple = 'simple'
+}
+
+class SpxProjectWithGens implements IProject {
+  constructor(
+    private project: SpxProject,
+    private genState: GenState
+  ) {}
+  get mutex() {
+    return this.project.mutex
+  }
+  get owner() {
+    return this.project.owner
+  }
+  get name() {
+    return this.project.name
+  }
+  setMetadata(metadata: PartialMetadata) {
+    return this.project.setMetadata(metadata)
+  }
+  private filesComputed = computed(() => {
+    const files: Files = {}
+    const projectFiles = this.project.exportFiles()
+    Object.assign(files, projectFiles)
+    const genFiles = this.genState.export()
+    Object.assign(files, genFiles)
+    return files
+  })
+  exportFiles() {
+    return this.filesComputed.value
+  }
+  async loadFiles(files: Files): Promise<void> {
+    await Promise.all([this.project.loadFiles(files), this.genState.load(files)])
+  }
+  async load({ metadata, files }: ProjectSerialized) {
+    await Promise.all([this.project.load({ metadata, files }), this.genState.load(files)])
+  }
+  async export(signal?: AbortSignal): Promise<ProjectSerialized> {
+    const files: Files = {}
+    const { metadata, files: projectFiles } = await this.project.export(signal)
+    Object.assign(files, projectFiles)
+    const genFiles = this.genState.export()
+    Object.assign(files, genFiles)
+    return { metadata, files }
+  }
+}
+
+export class EditorState extends Disposable {
+  constructor(
+    i18n: I18n,
+    readonly project: SpxProject,
+    isOnline: WatchSource<boolean>,
+    signedIn: Pick<SignedIn, 'username'>,
+    cloudHelpers: editing.CloudHelpers,
+    localCache: editing.ILocalCache,
+    /**
+     * Where edits are recorded for undo and redo; a history of `project` alone by default. Pass one when the project
+     * is part of something larger, so that its edits and those of the rest are undone in one order.
+     */
+    history?: History
+  ) {
+    super()
+    this.addDisposable((this.runtime = new Runtime(project)))
+    this.history = history ?? new History(project)
+    this.addDisposable((this.genState = new GenState(i18n, project)))
+    const projectWithGens = new SpxProjectWithGens(project, this.genState)
+    this.addDisposable(
+      (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedIn))
+    )
+    this.addDisposable(
+      (this.stageState = new StageEditorState(
+        () => project.stage,
+        () => project.sounds
+      ))
+    )
+
+    this.addDisposer(() => this.spriteState?.dispose())
+
+    this.addDisposer(
+      watch(
+        () => this.selected,
+        (selected) => {
+          if (selected.type === 'sprite' && selected.sprite == null && this.project.sprites.length > 0) {
+            this.select({ type: 'sprite', id: this.project.sprites[0].id })
+          }
+        },
+        { immediate: true }
+      )
+    )
+  }
+
+  runtime: Runtime
+  /**
+   * NOTE: This is a history of `project` alone, with one exception: the Course Editor passes the course's history,
+   * so that edits of the embedded project and of the rest of the course are undone in one order. There it records
+   * and restores the whole course, not just `project`.
+   * TODO: Make the history (or the editor state) independent of spx, see
+   * https://github.com/goplus/builder/pull/3494#discussion_r4237184023
+   */
+  history: History
+  genState: GenState
+  editing: editing.Editing
+  stageState: StageEditorState
+  spriteState: SpriteEditorState | null = null
+
+  private selectedEditModeRef = ref<EditMode>(EditMode.Default)
+  private selectedTypeRef = ref<SelectedType>('sprite')
+  private selectedSpriteIdRef = ref<string | null>(null)
+
+  get selectedEditMode() {
+    return this.selectedEditModeRef.value
+  }
+
+  get codeReadOnly() {
+    return this.selectedEditMode === EditMode.Simple && this.runtime.running.mode === 'debug'
+  }
+
+  get codeReadOnlyReason(): LocaleMessage {
+    return {
+      en: 'Stop the run before editing code',
+      zh: '请先停止运行，再修改代码'
+    }
+  }
+
+  get selectedSprite() {
+    if (this.selectedTypeRef.value !== 'sprite') return null
+    return this.project.sprites.find((s) => s.id === this.selectedSpriteIdRef.value) ?? null
+  }
+
+  get selectedCostume() {
+    if (this.selectedTypeRef.value !== 'sprite' || this.spriteState == null) return null
+    return this.spriteState.selectedCostume
+  }
+
+  get selectedAnimation() {
+    if (this.selectedTypeRef.value !== 'sprite' || this.spriteState == null) return null
+    return this.spriteState.selectedAnimation
+  }
+
+  get selectedWidget() {
+    if (this.selectedTypeRef.value !== 'stage') return null
+    return this.stageState.selectedWidget
+  }
+
+  get selectedBackdrop() {
+    if (this.selectedTypeRef.value !== 'stage') return null
+    return this.stageState.selectedBackdrop
+  }
+
+  /** The current selection */
+  get selected(): Selected {
+    switch (this.selectedTypeRef.value) {
+      case 'stage':
+        return { type: 'stage', stageSelected: this.stageState.selected }
+      case 'sprite': {
+        const sprite = this.selectedSprite
+        if (sprite == null || this.spriteState == null) return { type: 'sprite', sprite: null, spriteSelected: null }
+        return { type: 'sprite', sprite, spriteSelected: this.spriteState.selected }
+      }
+      default:
+        throw new Error(`Unknown selected type: ${this.selectedTypeRef.value}`)
+    }
+  }
+
+  selectEditMode(editMode: EditMode) {
+    this.selectedEditModeRef.value = editMode
+  }
+
+  select(target: { type: 'stage' } | { type: 'sprite'; id?: string | null }) {
+    switch (target.type) {
+      case 'stage':
+        this.selectedTypeRef.value = 'stage'
+        break
+      case 'sprite':
+        this.selectedTypeRef.value = 'sprite'
+        if (target.id != null && target.id !== this.selectedSpriteIdRef.value) {
+          let prevSelected: SpriteEditorSelected | undefined
+          if (this.spriteState != null) {
+            prevSelected = this.spriteState?.selected
+            this.spriteState.dispose()
+          }
+          this.selectedSpriteIdRef.value = target.id
+          if (this.selectedSprite == null) {
+            this.spriteState = null
+            return
+          }
+          const getSprite = () => this.project.sprites.find((s) => s.id === target.id) ?? null
+          this.spriteState = new SpriteEditorState(getSprite, prevSelected)
+        }
+        break
+      default:
+        throw new Error(`Unknown target type: ${(target as any).type}`)
+    }
+  }
+
+  selectByName(target: { type: 'stage' } | { type: 'sprite'; name?: string | null }) {
+    switch (target.type) {
+      case 'stage':
+        this.select({ type: 'stage' })
+        break
+      case 'sprite': {
+        const id = this.project.sprites.find((s) => s.name === target.name)?.id ?? null
+        this.select({ type: 'sprite', id })
+        break
+      }
+      default:
+        throw new Error(`Unknown target type: ${(target as any).type}`)
+    }
+  }
+
+  selectSprite(spriteId: string) {
+    this.select({ type: 'sprite', id: spriteId })
+  }
+
+  selectSound(soundId: string) {
+    this.select({ type: 'stage' })
+    this.stageState.selectSound(soundId)
+  }
+
+  selectWidget(widgetId: string) {
+    this.select({ type: 'stage' })
+    this.stageState.selectWidget(widgetId)
+  }
+
+  selectBackdrop(backdropId: string) {
+    this.select({ type: 'stage' })
+    this.stageState.selectBackdrop(backdropId)
+  }
+
+  selectCostume(spriteId: string, costumeId: string) {
+    this.select({ type: 'sprite', id: spriteId })
+    if (this.spriteState == null) throw new Error('Sprite state expected')
+    this.spriteState.selectCostume(costumeId)
+  }
+
+  selectAnimation(spriteId: string, animationId: string) {
+    this.select({ type: 'sprite', id: spriteId })
+    if (this.spriteState == null) throw new Error('Sprite state expected')
+    this.spriteState.selectAnimation(animationId)
+  }
+
+  selectResource(resource: ResourceModel) {
+    if (resource instanceof Sprite) return this.select({ type: 'sprite', id: resource.id })
+    if (resource instanceof Sound) return this.selectSound(resource.id)
+    if (resource instanceof Stage) return this.select({ type: 'stage' })
+    if (resource instanceof Backdrop) return this.selectBackdrop(resource.id)
+    if (isWidget(resource)) return this.selectWidget(resource.id)
+    if (resource instanceof Costume) {
+      if (!(resource.parent instanceof Sprite)) throw new Error('Expect costume in a sprite')
+      return this.selectCostume(resource.parent.id, resource.id)
+    }
+    if (resource instanceof Animation) {
+      if (resource.sprite == null) throw new Error('Expect animation in a sprite')
+      return this.selectAnimation(resource.sprite.id, resource.id)
+    }
+  }
+
+  /** Select a target by route path. Throws if the path is not recognized. */
+  selectByRoute(path: PathSegments) {
+    let [segment, extra] = shiftPath(path)
+
+    switch (segment) {
+      // Temporarily retain `sounds` and `stage` routes for `map` mode.
+      // Although this deviates from the plan (where `map` mode only supports `sprites`),
+      // it is done to minimize the complexity of handling additional route redirects.
+      // For instance, navigating from `sounds` to `map` might otherwise cause the history stack to shift from
+      // `map/sounds` to `map/sprites/default/code`, increasing the cost of stack maintenance.
+      case EditMode.Map:
+        this.selectEditMode(EditMode.Map)
+        break
+      case EditMode.Simple:
+        this.selectEditMode(EditMode.Simple)
+        break
+      default:
+        this.selectEditMode(EditMode.Default)
+        break
+    }
+
+    if (this.selectedEditMode !== EditMode.Default) {
+      ;[segment, extra] = shiftPath(extra)
+    }
+
+    if (this.selectedEditMode === EditMode.Simple && segment !== 'sprites') {
+      this.selectByName({ type: 'sprite' })
+      this.spriteState?.select('code')
+      return
+    }
+
+    switch (segment) {
+      case 'stage':
+        this.select({ type: 'stage' })
+        this.stageState.selectByRoute(extra)
+        return
+      // Backward compat: old top-level `sounds/…` routes → `stage/sounds/…`
+      case 'sounds':
+        this.select({ type: 'stage' })
+        this.stageState.selectByRoute(['sounds', ...extra])
+        return
+      case 'sprites':
+      default: {
+        const [spriteName, inSpriteRoute] = shiftPath(extra)
+        this.selectByName({ type: 'sprite', name: spriteName })
+        this.spriteState?.selectByRoute(inSpriteRoute)
+        return
+      }
+    }
+  }
+
+  private getRoute(): PathSegments {
+    const pathSegments = []
+    const selected = this.selected
+    const editMode = this.selectedEditMode
+
+    if (editMode !== EditMode.Default) {
+      pathSegments.push(editMode)
+    }
+
+    switch (selected.type) {
+      case 'stage':
+        pathSegments.push('stage', ...this.stageState.getRoute())
+        break
+      case 'sprite': {
+        const sprite = selected.sprite
+        pathSegments.push('sprites')
+        if (sprite != null && this.spriteState != null) {
+          pathSegments.push(sprite.name, ...this.spriteState.getRoute())
+        }
+        break
+      }
+    }
+
+    return pathSegments
+  }
+
+  syncWithRouter(router: IScopedRouter) {
+    // Sync from router to selected state
+    this.addDisposer(watch(router.currentPath, (currentPath) => this.selectByRoute(currentPath), { immediate: true }))
+
+    // Sync from selected state to router
+    this.addDisposer(
+      watch(
+        () => [this.selected, this.selectedEditMode],
+        (_, __, onCleanup) => {
+          // If `selected` or `selectedEditMode` changes, push new route
+          router.push(this.getRoute())
+          onCleanup(
+            watch(
+              () => this.getRoute(),
+              // If route changes without `selected` changing, replace current route
+              () => router.push(this.getRoute(), { replace: true })
+            )
+          )
+        },
+        { immediate: true }
+      )
+    )
+  }
+}

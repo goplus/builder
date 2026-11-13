@@ -8,6 +8,13 @@ export interface XGoLanguageServer {
    * @param message - The message to process. Any required response will be sent via the `messageReplier` callback.
    */
   handleMessage(message: RequestMessage | NotificationMessage): Error | null
+
+  /**
+   * Disposes this instance and releases its project and callback references. Repeated calls have no effect.
+   * Queued requests are cancelled. Running analysis may finish without sending messages to the client.
+   * Calls to handleMessage after disposal return an Error, including previously obtained method references.
+   */
+  dispose(): void
 }
 
 /**
@@ -15,14 +22,14 @@ export interface XGoLanguageServer {
  */
 export interface XGoLanguageServerOptions {
   /**
-   * Classfile registrations in `gox.mod` syntax, including `project`, `class`, `import`, and `autolambda` directives.
-   * An omitted or empty string selects only XGo's builtin classfiles.
+   * Class framework registrations in `gox.mod` syntax, including `project`, `class`, `import`, and `autolambda` directives.
+   * An omitted or empty string selects only XGo's builtin class frameworks.
    * Framework packages and their dependencies must be available in package data.
    *
    * @example
    * "project main.actor App example.com/framework\nclass -embed *.actor Item\nimport helper example.com/helper\n"
    */
-  classfileConfig?: string
+  classFrameworkConfig?: string
 
   /**
    * Custom package data for this server, with priority over the embedded archive.
@@ -43,7 +50,7 @@ declare global {
    * @param messageReplier - Function called when the language server needs to reply to the client. The client should
    *                        handle these messages according to the LSP specification.
    *
-   * @param options - Instance configuration. Omitted fields use builtin classfiles and embedded package data.
+   * @param options - Instance configuration. Omitted fields use builtin class frameworks and embedded package data.
    */
   function NewXGoLanguageServer(
     filesProvider: () => Files,
@@ -160,5 +167,5 @@ export type Files = {
  */
 export type File = {
   content: Uint8Array
-  modTime: number // Unix timestamp in milliseconds.
+  modTime: number // Unix timestamp in milliseconds. Must change with content. Values need not increase.
 }

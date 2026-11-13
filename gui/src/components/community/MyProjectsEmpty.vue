@@ -1,0 +1,39 @@
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { useMessageHandle } from '@/utils/exception'
+import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
+import { UIEmpty, UIButton } from '@/components/ui'
+import { useCreateProject } from '@/components/project'
+
+const router = useRouter()
+const createProject = useCreateProject()
+const handleNewProject = useMessageHandle(
+  async () => {
+    const name = await createProject()
+    router.push(getOwnProjectEditorRoute(name))
+  },
+  { en: 'Failed to create new project', zh: '新建项目失败' }
+).fn
+</script>
+
+<template>
+  <UIEmpty size="extra-large">
+    {{
+      $t({
+        en: 'No projects yet',
+        zh: '没有项目'
+      })
+    }}
+    <template #op>
+      <UIButton
+        v-radar="{ name: 'new-project-button', desc: 'Click to create a new project' }"
+        type="neutral"
+        icon="folder"
+        size="large"
+        @click="handleNewProject"
+      >
+        {{ $t({ en: 'New project', zh: '新建项目' }) }}
+      </UIButton>
+    </template>
+  </UIEmpty>
+</template>

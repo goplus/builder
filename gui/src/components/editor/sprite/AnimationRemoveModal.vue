@@ -1,0 +1,89 @@
+<template>
+  <UIFormModal
+    :radar="{ name: 'animation-remove-modal', desc: 'Modal for removing animations' }"
+    style="width: 560px"
+    :title="$t({ en: 'Remove animation', zh: '删除动画' })"
+    :visible="visible"
+    @update:visible="emit('cancelled')"
+  >
+    <div>
+      <div>
+        {{
+          $t({
+            en: `Animation ${animation.name} will be removed. Do you want to preserve the costumes?`,
+            zh: `动画 ${animation.name} 将被删除。是否保留其中的造型？`
+          })
+        }}
+      </div>
+      <UICheckbox v-model:checked="preserveCostumes" class="mt-5">
+        {{
+          $t({
+            en: "Preserve (the costumes will be moved to the sprite's costume list)",
+            zh: '保留（造型将被移动到精灵的造型列表中）'
+          })
+        }}
+      </UICheckbox>
+    </div>
+    <div class="mt-10 flex justify-end gap-xl">
+      <UIButton
+        v-radar="{ name: 'cancel-button', desc: 'Click to cancel removing animation' }"
+        type="neutral"
+        @click="emit('cancelled')"
+      >
+        {{ $t({ en: 'Cancel', zh: '取消' }) }}
+      </UIButton>
+      <UIButton
+        v-radar="{ name: 'confirm-button', desc: 'Click to confirm removing animation' }"
+        type="primary"
+        @click="handleConfirm"
+      >
+        {{ $t({ en: 'Confirm', zh: '确认' }) }}
+      </UIButton>
+    </div>
+  </UIFormModal>
+</template>
+<script setup lang="ts">
+import { UIButton, UICheckbox, UIFormModal } from '@/components/ui'
+import type { Animation } from '@/models/spx/animation'
+import type { SpxProject } from '@/models/spx/project'
+import { useEditorCtx } from '../EditorContextProvider.vue'
+
+import { ref } from 'vue'
+
+const props = defineProps<{
+  visible: boolean
+  animation: Animation
+  project: SpxProject
+}>()
+const emit = defineEmits<{
+  cancelled: []
+  resolved: []
+}>()
+
+const editorCtx = useEditorCtx()
+
+const preserveCostumes = ref(false)
+
+const handleConfirm = async () => {
+  const sprite = props.animation.sprite
+  if (sprite == null) throw new Error('sprite not found')
+  await editorCtx.state.history.doAction(
+    {
+      name: {
+        en: `Remove animation ${props.animation.name}`,
+        zh: `删除动画 ${props.animation.name}`
+      }
+    },
+    () => {
+      sprite.removeAnimation(props.animation.id)
+      if (preserveCostumes.value) {
+        for (const costume of props.animation.costumes) {
+          const clonedCostume = costume.clone()
+          sprite.addCostume(clonedCostume)
+        }
+      }
+    }
+  )
+  emit('resolved')
+}
+</script>

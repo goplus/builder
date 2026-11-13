@@ -1,0 +1,219 @@
+<template>
+  <EditorItemDetail style="background-color: var(--ui-color-grey-100)" :name="monitor.name" @rename="handleRename">
+    <div class="flex justify-center gap-8 py-5">
+      <!-- eslint-disable vue/no-v-html -->
+      <div
+        class="monitor-icon h-24 w-24 flex-none flex items-center justify-center rounded-md bg-grey-300"
+        v-html="mntIcon"
+      ></div>
+      <!-- eslint-enable vue/no-v-html -->
+      <div class="min-w-0 flex flex-col gap-xl">
+        <div class="flex items-center gap-xl">
+          <p class="flex items-center gap-2 break-keep">
+            {{ $t({ en: 'Label', zh: '标签' }) }}
+            <UITextInput
+              v-radar="{ name: 'label-input', desc: 'Input field for monitor label' }"
+              class="w-45"
+              :value="monitor.label"
+              @update:value="handleLabelUpdate"
+            />
+          </p>
+        </div>
+        <div class="flex items-center gap-xl">
+          <p class="flex-1 flex items-center gap-2 break-keep">
+            {{ $t({ en: 'Target', zh: '对象' }) }}
+            <UISelect
+              v-radar="{ name: 'target-select', desc: 'Select target for monitor value' }"
+              class="basis-45 shrink"
+              :value="monitor.target"
+              @update:value="handleTargetUpdate"
+            >
+              <UISelectOption value="">{{ $t({ en: 'Stage', zh: '舞台' }) }}</UISelectOption>
+              <UISelectOption v-for="sprite in sprites" :key="sprite.name" :value="sprite.name">
+                {{ sprite.name }}
+              </UISelectOption>
+            </UISelect>
+          </p>
+          <p class="flex-1 flex items-center gap-2 break-keep">
+            {{ $t({ en: 'Value', zh: '值' }) }}
+            <UISelect
+              v-radar="{ name: 'property-select', desc: 'Select property for monitor value' }"
+              class="basis-45 shrink"
+              :value="monitor.variableName || null"
+              :placeholder="$t({ en: 'Select property', zh: '选择属性' })"
+              @update:value="handlePropertyUpdate"
+            >
+              <UISelectOption v-for="prop in properties" :key="prop.name" :value="prop.name">
+                <!-- TODO: Consider showing type and documentation info -->
+                {{ prop.name }}
+              </UISelectOption>
+            </UISelect>
+          </p>
+        </div>
+        <div class="divider"></div>
+        <div class="flex items-center gap-xl">
+          <p class="flex-1 flex items-center gap-2 break-keep">
+            {{ $t({ en: 'Position', zh: '位置' }) }}
+            <UINumberInput
+              v-radar="{ name: 'x-position-input', desc: 'Input field for monitor X position' }"
+              class="basis-45 shrink"
+              :value="monitor.x"
+              @update:value="handleXUpdate"
+            >
+              <template #prefix>X</template>
+            </UINumberInput>
+            <UINumberInput
+              v-radar="{ name: 'y-position-input', desc: 'Input field for monitor Y position' }"
+              class="basis-45 shrink"
+              :value="monitor.y"
+              @update:value="handleYUpdate"
+            >
+              <template #prefix>Y</template>
+            </UINumberInput>
+          </p>
+        </div>
+        <div class="flex items-center gap-xl">
+          <p class="flex-1 flex items-center gap-2 break-keep">
+            {{ $t({ en: 'Size', zh: '大小' }) }}
+            <UINumberInput
+              v-radar="{ name: 'size-input', desc: 'Input field for monitor size' }"
+              class="basis-45 shrink"
+              :min="0"
+              :value="sizePercent"
+              @update:value="handleSizePercentUpdate"
+            >
+              <template #suffix>%</template>
+            </UINumberInput>
+          </p>
+        </div>
+        <div class="flex items-center gap-xl">
+          <p class="flex-1 flex items-center gap-2 break-keep">
+            {{ $t({ en: 'Show', zh: '显示' }) }}
+            <UIButtonGroup
+              v-radar="{ name: 'visibility-control', desc: 'Control to set monitor visibility' }"
+              :value="monitor.visible ? 'visible' : 'hidden'"
+              @update:value="(v) => handleVisibleUpdate(v === 'visible')"
+            >
+              <UIButtonGroupItem value="visible">
+                <UIIcon type="eye" />
+              </UIButtonGroupItem>
+              <UIButtonGroupItem value="hidden">
+                <UIIcon type="eyeSlash" />
+              </UIButtonGroupItem>
+            </UIButtonGroup>
+          </p>
+        </div>
+      </div>
+    </div>
+  </EditorItemDetail>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import {
+  UITextInput,
+  UINumberInput,
+  UIButtonGroup,
+  UIButtonGroupItem,
+  UIIcon,
+  UISelect,
+  UISelectOption
+} from '@/components/ui'
+import { round, useAsyncComputed } from '@/utils/utils'
+import { getCleanupSignal } from '@/utils/disposable'
+import { debounce } from 'lodash'
+import { capture, useMessageHandle } from '@/utils/exception'
+import type { Monitor } from '@/models/spx/widget/monitor'
+import { useRenameWidget } from '@/components/asset'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { filterOwnProperties, useCodeEditor } from '@/components/editor/spx-code-editor'
+import EditorItemDetail from '../../../common/EditorItemDetail.vue'
+import mntIcon from '../monitor.svg?raw'
+
+const props = defineProps<{
+  monitor: Monitor
+}>()
+
+const editorCtx = useEditorCtx()
+const codeEditor = useCodeEditor()
+const renameWidget = useRenameWidget()
+const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
+  en: 'Failed to rename widget',
+  zh: '重命名控件失败'
+}).fn
+
+const sprites = computed(() => editorCtx.project.sprites)
+
+async function getOwnProperties(target: string, signal: AbortSignal) {
+  const properties = await codeEditor.getProperties(target, signal)
+  return filterOwnProperties(target, properties)
+}
+
+const properties = useAsyncComputed(async (onCleanup) => {
+  const target = props.monitor.target
+  const signal = getCleanupSignal(onCleanup)
+  try {
+    return await getOwnProperties(target, signal)
+  } catch (e) {
+    capture(e, `Failed to load properties for target: "${target}"`)
+    return []
+  }
+})
+
+// We call wrapUpdateHandler `withDebounce: false` here, because:
+// 1. Unlike `UINumberInput`, debounce for value-update causes delay of `UITextInput` UI-update
+//   - `UITextInput` works like "controlled input" in React
+//   - `UINumberInput` works like "uncontrolled input" in React
+// 2. It's ok to omit the debounce for label / value update
+// TODO: we should make the behaviors of different inputs (`UINumberInput`, `UITextInput`, ...) consistent. Then remove differences here.
+const handleLabelUpdate = wrapUpdateHandler((label: string) => props.monitor.setLabel(label), false)
+
+const handleTargetUpdate = wrapUpdateHandler((target: string | null) => {
+  props.monitor.setTarget(target ?? '')
+  props.monitor.setVariableName('')
+}, false)
+
+const handlePropertyUpdate = wrapUpdateHandler(
+  (propertyName: string | null) => props.monitor.setVariableName(propertyName ?? ''),
+  false
+)
+
+// TODO: common logic may be extracted when we have more widget types
+const handleXUpdate = wrapUpdateHandler((x: number | null) => props.monitor.setX(x ?? 0))
+const handleYUpdate = wrapUpdateHandler((y: number | null) => props.monitor.setY(y ?? 0))
+
+// use `round` to avoid `0.07 * 100 = 7.000000000000001`
+// TODO: use some 3rd-party tool like [Fraction.js](https://github.com/rawify/Fraction.js)
+const sizePercent = computed(() => round(props.monitor.size * 100))
+
+const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null) => {
+  if (sizeInPercent == null) return
+  props.monitor.setSize(round(sizeInPercent / 100, 2))
+})
+
+const handleVisibleUpdate = wrapUpdateHandler((visible: boolean) => props.monitor.setVisible(visible), false)
+
+function wrapUpdateHandler<Args extends any[]>(
+  handler: (...args: Args) => unknown,
+  withDebounce = true
+): (...args: Args) => void {
+  const name = props.monitor.name
+  const action = { name: { en: `Configure widget ${name}`, zh: `修改控件 ${name} 配置` } }
+  const wrapped = (...args: Args) => editorCtx.state.history.doAction(action, () => handler(...args))
+  return withDebounce ? debounce(wrapped, 300) : wrapped
+}
+</script>
+
+<style scoped>
+.monitor-icon :deep(svg) {
+  width: 44px;
+  height: 44px;
+}
+
+.divider {
+  /* TODO: Should this be extracted as something like `<UIDivider dashed />` ? */
+  width: 100%;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--ui-color-grey-500) 0 4px, #0000 0 7px);
+}
+</style>

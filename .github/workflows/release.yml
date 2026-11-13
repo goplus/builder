@@ -27,14 +27,14 @@ jobs:
         with:
           node-version: 24.11.1
           cache: pnpm
-          cache-dependency-path: spx-gui/pnpm-lock.yaml
+          cache-dependency-path: gui/pnpm-lock.yaml
 
       - name: Install Node modules
-        working-directory: spx-gui
+        working-directory: gui
         run: pnpm install --frozen-lockfile
 
       - name: Build account frontend
-        working-directory: spx-gui
+        working-directory: gui
         run: pnpm run build:account
 
       - name: Deploy builder_account
@@ -43,10 +43,10 @@ jobs:
           token: ${{ secrets.GOPLUS_DEPLOY_TOKEN }}
           app-id: ${{ vars.BUILDER_ACCOUNT_APP_ID }}
           package-name: builder_account
-          package-dir: ${{ github.workspace }}/spx-gui/dist
+          package-dir: ${{ github.workspace }}/gui/dist
 
       - name: Build account frontend for mainland China deployment
-        working-directory: spx-gui
+        working-directory: gui
         run: VITE_MODE=production-cn pnpm run build:account
 
       - name: Deploy builder_account_cn
@@ -55,4 +55,4 @@ jobs:
           token: ${{ secrets.GOPLUS_DEPLOY_TOKEN }}
           app-id: ${{ vars.BUILDER_ACCOUNT_CN_APP_ID }}
           package-name: builder_account
-          package-dir: ${{ github.workspace }}/spx-gui/dist
+          package-dir: ${{ github.workspace }}/gui/dist

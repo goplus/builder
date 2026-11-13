@@ -38,7 +38,7 @@ Consumers use `spx-code-editor` today. A future yap editor would create a `yap-c
 
 ### `ClassFramework`
 
-Declared in [`project.ts`](../../spx-gui/src/components/editor/code-editor/xgo-code-editor/project.ts), this describes the class framework in use for a project. It maps directly to `modfile.Project` in the XGo module system.
+Declared in [`project.ts`](../../gui/src/components/editor/code-editor/xgo-code-editor/project.ts), this describes the class framework in use for a project. It maps directly to `modfile.Project` in the XGo module system.
 
 ```ts
 export interface ClassFramework {
@@ -82,13 +82,13 @@ export interface ICodeOwner {
 
 Generic LSP client interface extracted from the spx-specific implementation. Generic providers interact only with this interface, which exposes both standard LSP methods and a few higher-level helpers.
 
-Declared in [`lsp/types.ts`](../../spx-gui/src/components/editor/code-editor/xgo-code-editor/lsp/types.ts).
+Declared in [`lsp/types.ts`](../../gui/src/components/editor/code-editor/xgo-code-editor/lsp/types.ts).
 
 ### `DocumentBase`
 
 A local store of definition documentation items (hover docs, API reference content, etc.) — sourced from static definitions rather than the language server. It is pre-populated with XGo built-in definitions and any additional framework/spx-specific definitions passed at construction time.
 
-Declared in [`document-base/index.ts`](../../spx-gui/src/components/editor/code-editor/xgo-code-editor/document-base/index.ts).
+Declared in [`document-base/index.ts`](../../gui/src/components/editor/code-editor/xgo-code-editor/document-base/index.ts).
 
 ### Providers
 
@@ -96,7 +96,7 @@ Each editor feature (`hover`, `completion`, `diagnostics`, `resource`, `inlay-hi
 
 ### `CodeEditor`
 
-The central class declared in [`code-editor.ts`](../../spx-gui/src/components/editor/code-editor/xgo-code-editor/code-editor.ts). It is constructed with `CodeEditorParams` and owns a `TextDocument` per code file. All editor operations (format, rename, diagnostics, apply edits, …) go through `CodeEditor`.
+The central class declared in [`code-editor.ts`](../../gui/src/components/editor/code-editor/xgo-code-editor/code-editor.ts). It is constructed with `CodeEditorParams` and owns a `TextDocument` per code file. All editor operations (format, rename, diagnostics, apply edits, …) go through `CodeEditor`.
 
 ```ts
 export type CodeEditorParams = {
@@ -128,13 +128,13 @@ The spx layer re-exports everything from `xgo-code-editor` and adds/overrides sp
 
 Adapts `SpxProject` to `IXGoProject`. Declares the `spxClassFramework` constant and maps stage/sprites to code owners.
 
-File: [`spx-project.ts`](../../spx-gui/src/components/editor/code-editor/spx-code-editor/spx-project.ts)
+File: [`spx-project.ts`](../../gui/src/components/editor/code-editor/spx-code-editor/spx-project.ts)
 
 ### `SpxLSPClient`
 
 Implements `ILSPClient` on top of the spxls Web Worker. Handles file sync, request tracing, and spx-specific custom commands.
 
-File: [`lsp/spx-lsp-client.ts`](../../spx-gui/src/components/editor/code-editor/spx-code-editor/lsp/spx-lsp-client.ts)
+File: [`lsp/spx-lsp-client.ts`](../../gui/src/components/editor/code-editor/spx-code-editor/lsp/spx-lsp-client.ts)
 
 ### spx Providers
 
@@ -152,7 +152,7 @@ These override the generic defaults, typically wrapping `SpxLSPClient` for resou
 
 The Vue composition function that wires everything together and injects the `CodeEditor` instance into the app context.
 
-File: [`context.ts`](../../spx-gui/src/components/editor/code-editor/spx-code-editor/context.ts)
+File: [`context.ts`](../../gui/src/components/editor/code-editor/spx-code-editor/context.ts)
 
 ```ts
 export function useProvideCodeEditorCtx(editorStateRet: QueryRet<SpxEditorState>): QueryRet<CodeEditor> {

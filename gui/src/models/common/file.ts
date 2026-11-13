@@ -1,0 +1,283 @@
+/**
+ * @file class File
+ * @desc File-like class, while load lazily.
+ *       Files are expected to be immutable. Everytime you want to modify a file, create a new instance.
+ */
+
+import { markRaw } from 'vue'
+import { getMimeFromExt, isSvgMimeType } from '@/utils/file'
+import { getSVGSize } from '@/utils/img'
+import { extname } from '@/utils/path'
+import { Disposable, getCleanupSignal, type OnCleanup } from '@/utils/disposable'
+import type { Size } from '.'
+
+export type Metadata = {
+  universalUrl?: string
+  hash?: string
+  imgSize?: Size
+  videoSize?: Size
+}
+
+export type Options = {
+  /** MIME type of file */
+  type?: string
+  /** Last modified time in milliseconds since Unix epoch */
+  lastModified?: number
+  /** Metadata related to current file */
+  meta?: Metadata
+}
+
+export type Loader = (signal?: AbortSignal) => Promise<ArrayBuffer>
+
+/** File loading operation */
+class Loading {
+  private ctrl: AbortController
+  private promise: Promise<ArrayBuffer>
+  constructor(loader: Loader) {
+    this.ctrl = new AbortController()
+    this.promise = loader(this.ctrl.signal)
+  }
+
+  // There's cases when `Loading` instance is aborted while the waiting
+  // promises not settled yet. So we need to expose the aborted status of Loading instance to
+  // allow `File` to check the aborted status synchronously to avoid waiting for aborted loadings.
+  get aborted() {
+    return this.ctrl.signal.aborted
+  }
+
+  private waitingNum = 0
+  private cancelWaiting(reason: unknown) {
+    this.waitingNum--
+    if (this.waitingNum <= 0) {
+      this.ctrl.abort(reason)
+    }
+  }
+  wait(signal?: AbortSignal) {
+    signal?.throwIfAborted()
+    this.waitingNum++
+    const promise = this.promise
+    if (signal == null) return promise
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+      promise.then(resolve, reject)
+      signal.addEventListener(
+        'abort',
+        () => {
+          reject(signal.reason)
+          this.cancelWaiting(signal.reason)
+        },
+        { once: true }
+      )
+    })
+  }
+}
+
+/** File-like class, while load lazily */
+export class File {
+  /** MIME type of file */
+  readonly type: string
+  /** Last modified time in milliseconds since Unix epoch */
+  readonly lastModified: number
+
+  /**
+   * Metadata related to current file.
+   * If you want to save data during the file's lifetime (including serialization & deserialization), put it here.
+   * It's ok to read & write this field directly as long as you are clear about what you are doing.
+   */
+  readonly meta: Metadata
+
+  constructor(
+    /** File name */
+    public readonly name: string,
+    /** Loader for file content */
+    private loader: Loader,
+    /** Options for file */
+    options?: Options
+  ) {
+    this.type = options?.type ?? getMimeFromExt(extname(name).slice(1)) ?? ''
+    this.lastModified = options?.lastModified ?? Date.now()
+    this.meta = { ...options?.meta }
+    markRaw(this)
+  }
+
+  private content: ArrayBuffer | null = null
+  private loading: Loading | null = null
+
+  arrayBuffer(signal?: AbortSignal) {
+    if (this.content != null) return Promise.resolve(this.content)
+    if (this.loading != null && !this.loading.aborted) return this.loading.wait(signal)
+    this.loading = new Loading((signal) =>
+      this.loader(signal)
+        .then((ab) => {
+          this.content = ab
+          return ab
+        })
+        .finally(() => {
+          this.loading = null
+        })
+    )
+    return this.loading.wait(signal)
+  }
+
+  async url(cleanup: OnCleanup | AbortSignal) {
+    const signal = typeof cleanup === 'function' ? getCleanupSignal(cleanup) : cleanup
+    const ab = await this.arrayBuffer(signal)
+    signal.throwIfAborted()
+    const url = URL.createObjectURL(new Blob([ab], { type: this.type }))
+    signal.addEventListener('abort', () => URL.revokeObjectURL(url), { once: true })
+    return url
+  }
+}
+
+/**
+ * Map from relative path to `File` instance
+ * Relative path starts with slash, e.g. `index.json`
+ */
+export type Files = {
+  [path: string]: File | undefined
+}
+
+function str2Ab(str: string) {
+  const encoder = new TextEncoder()
+  const view = encoder.encode(str)
+  return view.buffer
+}
+
+export function fromBlob(name: string, blob: Blob) {
+  return new File(name, () => blob.arrayBuffer(), { type: blob.type })
+}
+
+export function fromNativeFile(file: globalThis.File) {
+  return fromBlob(file.name, file)
+}
+
+export async function toNativeFile(file: File, signal?: AbortSignal) {
+  const ab = await file.arrayBuffer(signal)
+  return new window.File([ab], file.name, {
+    type: file.type
+  })
+}
+
+export function fromText(name: string, text: string, options?: Options) {
+  // Default to `text/plain` for text content when MIME type cannot be determined from file extension.
+  const type = options?.type ?? getMimeFromExt(extname(name).slice(1)) ?? 'text/plain'
+  return new File(name, async () => str2Ab(text), { ...options, type })
+}
+
+export async function toText(file: File, signal?: AbortSignal) {
+  const ab = await file.arrayBuffer(signal)
+  const decoder = new TextDecoder()
+  return decoder.decode(ab)
+}
+
+export const isText = (() => {
+  const types = ['application/json']
+  return (file: File) => file.type.startsWith('text/') || types.includes(file.type)
+})()
+
+export function fromConfig(name: string, config: unknown, options?: Options) {
+  return fromText(name, JSON.stringify(config), options)
+}
+
+export async function toConfig(file: File) {
+  const text = await toText(file)
+  return JSON.parse(text) as unknown
+}
+
+async function getBitmapImageSize(bitmapImgFile: File) {
+  const d = new Disposable()
+  const imgUrl = await bitmapImgFile.url((fn) => d.addDisposer(fn))
+  return new Promise<Size>((resolve, reject) => {
+    const img = new window.Image()
+    img.src = imgUrl
+    img.onload = () => {
+      resolve({
+        width: img.width,
+        height: img.height
+      })
+    }
+    img.onerror = (e) => {
+      reject(new Error(`load image failed: ${e.toString()}`))
+    }
+  }).finally(() => {
+    d.dispose()
+  })
+}
+
+export async function getImageSize(file: File): Promise<Size> {
+  if (file.meta.imgSize != null) return file.meta.imgSize
+  let size: Size
+  if (isSvgMimeType(file.type)) {
+    const svgText = await toText(file)
+    size = await getSVGSize(svgText)
+  } else {
+    size = await getBitmapImageSize(file)
+  }
+  file.meta.imgSize = size
+  return size
+}
+
+export function listDirs(
+  files: { [path: string]: unknown },
+  /** path of parent dir to do list, with no tailing slash */
+  dirname: string
+) {
+  const dirs: string[] = []
+  const prefix = dirname + '/'
+  for (const filePath of Object.keys(files)) {
+    if (!filePath.startsWith(prefix)) continue
+    const segments = filePath.slice(prefix.length).split('/')
+    if (segments.length > 1 && !dirs.includes(segments[0])) dirs.push(segments[0])
+  }
+  return dirs
+}
+
+export function listFiles(
+  files: { [path: string]: unknown },
+  /** path of parent dir to do list, with no tailing slash */
+  dirname: string
+) {
+  const fileList: string[] = []
+  const prefix = dirname + '/'
+  for (const filePath of Object.keys(files)) {
+    if (!filePath.startsWith(prefix)) continue
+    const segments = filePath.slice(prefix.length).split('/')
+    if (segments.length === 1) fileList.push(segments[0])
+  }
+  return fileList
+}
+
+export function listAllFiles(
+  files: Files,
+  /** path of parent dir to do list, with no tailing slash */
+  dirname: string
+) {
+  const prefix = dirname + '/'
+  const fileList: string[] = []
+  for (const filePath of Object.keys(files)) {
+    if (!filePath.startsWith(prefix)) continue
+    const relative = filePath.slice(prefix.length)
+    if (relative && !relative.endsWith('/')) {
+      fileList.push(filePath)
+    }
+  }
+  return fileList
+}
+
+/** Return files under dirname with that prefix removed from their paths. */
+export function unprefixFiles(files: Files, dirname: string) {
+  const prefix = dirname + '/'
+  const extracted: Files = {}
+  for (const [path, file] of Object.entries(files)) {
+    if (path.startsWith(prefix)) extracted[path.slice(prefix.length)] = file
+  }
+  return extracted
+}
+
+/** Add dirname to every file path. This is the inverse of unprefixFiles. */
+export function prefixFiles(files: Files, dirname: string) {
+  const prefixed: Files = {}
+  for (const [path, file] of Object.entries(files)) {
+    prefixed[`${dirname}/${path}`] = file
+  }
+  return prefixed
+}

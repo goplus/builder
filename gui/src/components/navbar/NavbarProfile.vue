@@ -1,0 +1,151 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useNetwork } from '@/utils/network'
+import { useMessageHandle } from '@/utils/exception'
+import { getCourseManagementRoute, getUserPageRoute } from '@/apps/xbuilder/router'
+import { AssetType } from '@/apis/asset'
+import { useSignedIn } from '@/stores/user'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
+import { useAssetLibraryManagement } from '@/components/asset'
+import { useSendFeedback } from '@/components/feedback'
+import { useI18n } from '@/utils/i18n'
+import enSvg from './icons/en.svg?raw'
+import zhSvg from './icons/zh.svg?raw'
+
+const { isOnline } = useNetwork()
+const router = useRouter()
+const i18n = useI18n()
+const signedIn = useSignedIn()
+const canUseAdminConsole = computed(() => signedIn.canUseAdminConsole === true)
+
+const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
+function toggleLang() {
+  i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
+}
+
+function handleUserPage() {
+  const username = signedIn.username
+  if (username != null) router.push(getUserPageRoute(username))
+}
+
+function handleProjects() {
+  const username = signedIn.username
+  if (username != null) router.push(getUserPageRoute(username, 'projects'))
+}
+
+function handleAdminConsole() {
+  router.push('/admin')
+}
+
+const manageAssetLibrary = useAssetLibraryManagement()
+const manageAssets = useMessageHandle(manageAssetLibrary).fn
+
+function handleCourseManagement() {
+  router.push(getCourseManagementRoute())
+}
+
+const sendFeedback = useMessageHandle(useSendFeedback()).fn
+
+async function handleSignOut() {
+  await signedIn.signOut()
+  router.go(0) // Reload the page to trigger navigation guards.
+}
+</script>
+
+<!-- eslint-disable vue/no-v-html -->
+<template>
+  <div v-if="!signedIn.isSignedIn" class="h-full flex items-center px-3 whitespace-nowrap">
+    <UIButton
+      v-radar="{ name: 'sign-in-button', desc: 'Click to sign in' }"
+      type="secondary"
+      :disabled="!isOnline"
+      @click="signedIn.signIn()"
+      >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
+    >
+  </div>
+  <UIDropdown v-else trigger="click" placement="bottom-end" :offset="{ x: 0, y: 8 }">
+    <template #trigger>
+      <div
+        v-radar="{
+          name: 'profile-menu',
+          desc: 'Hover to see profile options (profile page, language, assets, courses, feedback, sign out, etc.)'
+        }"
+        class="h-full flex items-center justify-center px-3 hover:bg-grey-400"
+      >
+        <img
+          class="h-8 w-8 rounded-full"
+          crossorigin="anonymous"
+          :src="signedIn.user?.avatar"
+          :alt="signedIn.user?.displayName ?? ''"
+        />
+      </div>
+    </template>
+    <UIMenu class="min-w-30">
+      <UIMenuGroup>
+        <UIMenuItem :interactive="false">
+          <div class="user-info-wrapper">
+            {{ signedIn.user?.displayName ?? signedIn.username }}
+          </div>
+        </UIMenuItem>
+        <UITooltip placement="left">
+          <template #trigger>
+            <UIMenuItem
+              v-radar="{ name: 'language-switcher', desc: 'Click to switch between English and Chinese' }"
+              class="justify-between p-2"
+              @click="toggleLang"
+            >
+              {{ $t({ en: 'Language', zh: '语言' }) }}
+              <div class="lang-switch-icon h-4.5 w-4.5 text-turquoise-600" v-html="langContent"></div>
+            </UIMenuItem>
+          </template>
+          {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
+        </UITooltip>
+      </UIMenuGroup>
+      <UIMenuGroup>
+        <UIMenuItem @click="handleUserPage">
+          {{ $t({ en: 'Profile', zh: '个人主页' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="handleProjects">
+          {{ $t({ en: 'Projects', zh: '项目列表' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup v-if="signedIn.user?.capabilities.canManageAssets">
+        <UIMenuItem @click="manageAssets(AssetType.Sprite)">
+          {{ $t({ en: 'Manage sprites', zh: '管理精灵' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="manageAssets(AssetType.Sound)">
+          {{ $t({ en: 'Manage sounds', zh: '管理声音' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="manageAssets(AssetType.Backdrop)">
+          {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup v-if="signedIn.user?.capabilities.canManageCourses">
+        <UIMenuItem @click="handleCourseManagement">
+          {{ $t({ en: 'Course management', zh: '课程管理' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup v-if="canUseAdminConsole">
+        <UIMenuItem @click="handleAdminConsole">
+          {{ $t({ en: 'Admin console', zh: '管理后台' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup>
+        <UIMenuItem @click="sendFeedback('profileMenu')">
+          {{ $t({ en: 'Send feedback...', zh: '提交反馈...' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup>
+        <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
+      </UIMenuGroup>
+    </UIMenu>
+  </UIDropdown>
+</template>
+
+<style scoped>
+.lang-switch-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+}
+</style>

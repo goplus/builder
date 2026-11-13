@@ -1,0 +1,493 @@
+import { createDirectUploadTask } from 'qiniu-js'
+import { filename } from '@/utils/path'
+import type { ProgressReporter } from '@/utils/progress'
+import { humanizeFileSize, withRetry } from '@/utils/utils'
+import { mergeSignals } from '@/utils/disposable'
+import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
+import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
+import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
+import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
+import type { ProjectData } from '@/apis/project'
+import {
+  isSupportedProjectType,
+  Visibility,
+  addProject,
+  getProject,
+  type UpdateProjectParams,
+  updateProject
+} from '@/apis/project'
+import {
+  createFileURLSignatures,
+  createUploadSession,
+  getFileObject,
+  type UploadSession as RawUploadSession
+} from '@/apis/file'
+import { ActionException, Cancelled, capture, DefaultException, TimeoutException } from '@/utils/exception'
+import { calculateQiniuEtag, getUphostsByRegion } from '@/utils/kodo'
+import type { Metadata, PartialMetadata, ProjectSerialized } from '../project'
+import { File, toText, type Files, isText } from './file'
+import { hashFileCollection } from './hash'
+import { createAIDescriptionFiles, extractAIDescription } from './'
+import {
+  getUniversalUrlFilename,
+  getUniversalUrlScheme,
+  stringifyDataUrl,
+  stringifyKodoUrl,
+  UniversalUrlScheme
+} from '@/utils/universal-url'
+
+export type PreferPublishedContent = boolean | ((project: ProjectData) => boolean | Promise<boolean>)
+
+export type CloudHelpersConfig = {
+  baseUrl: string
+  bucket: string
+}
+
+/** Helpers for cloud storage of project data. */
+export class CloudHelpers {
+  private config: CloudHelpersConfig | null = null
+
+  setConfig(config: CloudHelpersConfig) {
+    this.config = config
+  }
+
+  private ensureConfig() {
+    if (this.config == null) throw new Error('Cloud helpers config is not set')
+    return this.config
+  }
+
+  load(
+    owner: string,
+    name: string,
+    preferPublishedContent: PreferPublishedContent = false,
+    signal?: AbortSignal
+  ): Promise<ProjectSerialized<Metadata>> {
+    return load(owner, name, preferPublishedContent, signal)
+  }
+  save({ metadata, files }: ProjectSerialized, signal?: AbortSignal) {
+    return save(metadata, files, signal)
+  }
+
+  universalUrlToWebUrl(universalUrl: UniversalUrl) {
+    return universalUrlToWebUrlImpl(universalUrl, this.ensureConfig())
+  }
+
+  /** Resolve an existing saved file URL without loading or uploading its contents. */
+  async getFileWebUrl(file: File, signal?: AbortSignal): Promise<WebUrl | null> {
+    signal?.throwIfAborted()
+    const universalUrl = getUniversalUrl(file)
+    if (universalUrl == null) return null
+    const webUrl = await this.universalUrlToWebUrl(universalUrl)
+    signal?.throwIfAborted()
+    return webUrl
+  }
+
+  clearUniversalUrlCache() {
+    universalUrlCache.clear()
+  }
+}
+
+// TODO: Exported functions in this module that depend on `cloudHelpers` directly or indirectly
+// should be moved onto `CloudHelpers` and consumed through a configured helpers instance.
+export const cloudHelpers = new CloudHelpers()
+
+async function load(
+  owner: string,
+  name: string,
+  preferPublishedContent: PreferPublishedContent = false,
+  signal?: AbortSignal
+) {
+  let projectData = await getProject(owner, name, signal)
+  const shouldPreferPublishedContent =
+    typeof preferPublishedContent === 'function' ? await preferPublishedContent(projectData) : preferPublishedContent
+  if (shouldPreferPublishedContent) {
+    const published = getPublishedContent(projectData)
+    if (published != null) {
+      projectData = {
+        ...projectData,
+        thumbnail: published.thumbnail,
+        files: published.files
+      }
+    }
+  }
+  if (!isSupportedProjectType(projectData.type)) {
+    throw new DefaultException({
+      en: `The project type "${projectData.type}" is not supported.`,
+      zh: `该项目类型暂不支持：${projectData.type}。`
+    })
+  }
+  return parseProjectData(projectData)
+}
+
+export function getPublishedContent(project: ProjectData) {
+  // "published content" is the latest release of a public project
+  if (project.visibility === Visibility.Public && project.latestRelease != null) return project.latestRelease
+  return null
+}
+
+async function save(metadata: PartialMetadata, files: Files, signal?: AbortSignal) {
+  const { owner, name, displayName, id, type } = metadata
+  if (owner == null) throw new Error('owner expected')
+  if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
+  if (!displayName) throw new DefaultException({ en: 'project display name not specified', zh: '未指定项目显示名' })
+  if (type == null) throw new DefaultException({ en: 'project type not specified', zh: '未指定项目类型' })
+
+  const aiDescriptionFiles = createAIDescriptionFiles(metadata)
+  const filesToSave = { ...files, ...aiDescriptionFiles }
+
+  const [{ fileCollection }, thumbnailUniversalUrl] = await Promise.all([
+    saveFiles(filesToSave, signal),
+    metadata.thumbnail == null ? '' : await saveFile(metadata.thumbnail, { signal })
+  ])
+  signal?.throwIfAborted()
+
+  const visibility = metadata.visibility ?? Visibility.Private
+  const {
+    files: _files,
+    thumbnail,
+    ...savedMetadata
+  } = await (id != null
+    ? (() => {
+        const updateParams: UpdateProjectParams = {
+          visibility,
+          files: fileCollection,
+          displayName,
+          description: metadata.description,
+          instructions: metadata.instructions,
+          thumbnail: thumbnailUniversalUrl
+        }
+        return updateProject(owner, name, updateParams, signal)
+      })()
+    : addProject(
+        {
+          name,
+          displayName,
+          visibility,
+          thumbnail: thumbnailUniversalUrl,
+          files: fileCollection,
+          type
+        },
+        signal
+      ))
+  signal?.throwIfAborted()
+
+  const savedProjectMetadata = {
+    ...savedMetadata,
+    thumbnail: metadata.thumbnail
+  }
+  return { metadata: savedProjectMetadata, files }
+}
+
+async function parseProjectData({ files: fileCollection, thumbnail: thumbnailUniversalUrl, ...extra }: ProjectData) {
+  const files = getFiles(fileCollection)
+  const thumbnail = thumbnailUniversalUrl === '' ? null : createFileWithUniversalUrl(thumbnailUniversalUrl)
+  const { aiDescription, aiDescriptionHash } = await extractAIDescription(files)
+
+  const metadata: Metadata = { ...extra, thumbnail, aiDescription, aiDescriptionHash }
+  return { metadata, files }
+}
+
+export async function saveFiles(
+  files: Files,
+  signal?: AbortSignal,
+  reporter?: ProgressReporter
+): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
+  const paths = Object.keys(files)
+  let completed = 0
+  const fileCollection = Object.fromEntries(
+    await Promise.all(
+      paths.map(async (path) => {
+        const entry = await saveFileAtPath(path, files[path]!, signal)
+        reporter?.report(++completed / paths.length)
+        return entry
+      })
+    )
+  )
+  const fileCollectionHash = await hashFileCollection(fileCollection)
+  reporter?.report(1)
+  return { fileCollection, fileCollectionHash }
+}
+
+async function saveFileAtPath(path: string, file: File, signal?: AbortSignal): Promise<[string, UniversalUrl]> {
+  try {
+    return [path, await saveFile(file, { signal })]
+  } catch (e) {
+    if (e instanceof Cancelled) throw e
+    throw new ActionException(e, {
+      en: `Failed to save file ${path}`,
+      zh: `保存文件 ${path} 失败`
+    })
+  }
+}
+
+export function getFiles(fileCollection: FileCollection): Files {
+  const files: Files = {}
+  Object.keys(fileCollection).forEach((path) => {
+    const universalUrl = fileCollection[path]
+    const file = createFileWithUniversalUrl(universalUrl, filename(path))
+    files[path] = file
+  })
+  return files
+}
+
+function setUniversalUrl(file: File, url: UniversalUrl) {
+  file.meta.universalUrl = url
+  // for files stored in kodo, use universalUrl as hash to skip hash-calculating
+  if (getUniversalUrlScheme(url) === UniversalUrlScheme.Kodo && file.meta.hash == null) {
+    file.meta.hash = url
+  }
+}
+function getUniversalUrl(file: File): UniversalUrl | null {
+  return file.meta.universalUrl ?? null
+}
+
+export function createFileWithUniversalUrl(url: UniversalUrl, name = getUniversalUrlFilename(url)) {
+  const file = new File(name, async (signal) => {
+    const webUrl = await cloudHelpers.universalUrlToWebUrl(url)
+    signal?.throwIfAborted()
+    return fetchFile(webUrl, signal)
+  })
+  setUniversalUrl(file, url)
+  return file
+}
+
+export function createFileWithWebUrl(url: WebUrl, name = getUniversalUrlFilename(url)) {
+  return new File(name, async (signal) => fetchFile(url, signal))
+}
+
+const fetchFileController = new ConcurrencyLimitController(20)
+
+const fetchFile = (url: WebUrl, signal?: AbortSignal) =>
+  fetchFileController.run(() => {
+    signal?.throwIfAborted()
+    const respTimeout = 15_000 // ms. Timeout for response (headers) to arrive
+    return withRetry(
+      async () => {
+        const controller = new AbortController()
+        const respTimeoutId = setTimeout(() => controller.abort(new TimeoutException()), respTimeout)
+        const mergedSignal = mergeSignals(signal, controller.signal)
+        const resp = await fetch(url, { signal: mergedSignal }).finally(() => clearTimeout(respTimeoutId))
+        if (!resp.ok) throw new Error(`status ${resp.status} for file: ${url.slice(0, 200)}`)
+        return resp.arrayBuffer()
+      },
+      2,
+      500
+    )
+  })
+
+export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
+  const universalUrl = await saveFile(file, { signal })
+  return cloudHelpers.universalUrlToWebUrl(universalUrl)
+}
+
+type UniversalUrlCacheEntry = { webUrl: WebUrl; cachedAt: number }
+
+const universalUrlCache = (() => {
+  const entries = new Map<UniversalUrl, UniversalUrlCacheEntry>()
+  const ttl = 60 * 60 * 1000 // 1 hour in milliseconds
+  const isFresh = (entry: UniversalUrlCacheEntry) => Date.now() - entry.cachedAt < ttl
+  return {
+    get: (universalUrl: UniversalUrl) => {
+      const entry = entries.get(universalUrl)
+      if (entry != null) {
+        if (isFresh(entry)) return entry.webUrl
+        entries.delete(universalUrl)
+      }
+      return null
+    },
+    set: (universalUrl: UniversalUrl, webUrl: WebUrl) => entries.set(universalUrl, { webUrl, cachedAt: Date.now() }),
+    clear: () => entries.clear()
+  }
+})()
+
+const makeObjectUrl = (() => {
+  const batch = new Set<UniversalUrl>()
+  const batchDelay = 15 // 15ms
+  let batchPromise: Promise<UniversalToWebUrlMap> | null = null
+  const processBatch = (config: CloudHelpersConfig) => {
+    const currentBatch = Array.from(batch)
+    batch.clear()
+    batchPromise = null
+    return createFileURLSignatures(currentBatch, config)
+  }
+  return async (universalUrl: UniversalUrl, config: CloudHelpersConfig) => {
+    batch.add(universalUrl)
+    if (batchPromise == null) {
+      batchPromise = new Promise((resolve) => setTimeout(() => resolve(processBatch(config)), batchDelay))
+    }
+    const objectUrls = await batchPromise
+    return objectUrls[universalUrl]
+  }
+})()
+
+async function universalUrlToWebUrlImpl(universalUrl: UniversalUrl, config: CloudHelpersConfig): Promise<WebUrl> {
+  const scheme = getUniversalUrlScheme(universalUrl)
+  if (scheme !== UniversalUrlScheme.Kodo) return universalUrl
+
+  const cached = universalUrlCache.get(universalUrl)
+  if (cached != null) return cached
+
+  const webUrl = await makeObjectUrl(universalUrl, config)
+  if (!webUrl.startsWith(config.baseUrl)) {
+    console.warn(`\
+Expect webUrl (${webUrl}) to start with usercontentBaseUrl (${config.baseUrl}). \
+The env variable \`VITE_USERCONTENT_BASE_URL\` may be misconfigured. \
+See details in file \`src/apps/xbuilder/.env\`.
+`)
+  }
+  universalUrlCache.set(universalUrl, webUrl)
+  return webUrl
+}
+
+/** Save file to cloud and return its universal URL */
+export async function saveFile(
+  file: File,
+  {
+    signal,
+    inlineable = true
+  }: {
+    signal?: AbortSignal
+    /** Whether a small text file may be saved as a data URL instead of a Kodo object. Defaults to `true`. */
+    inlineable?: boolean
+  } = {}
+) {
+  const savedUrl = getUniversalUrl(file)
+  if (savedUrl != null && (inlineable || getUniversalUrlScheme(savedUrl) !== UniversalUrlScheme.Data)) return savedUrl
+
+  // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
+  const url = await (inlineable && (await isInlineable(file, signal)) ? inlineFile(file) : saveToKodo(file, signal))
+  setUniversalUrl(file, url)
+  return url
+}
+
+async function isInlineable(file: File, signal?: AbortSignal) {
+  const maxInlineSize = 10 * 1024 // 10 KB threshold
+  if (!isText(file)) return false
+  const arrayBuffer = await file.arrayBuffer(signal)
+  return arrayBuffer.byteLength <= maxInlineSize
+}
+
+async function inlineFile(file: File): Promise<UniversalUrl> {
+  if (!isText(file)) throw new Error(`unsupported file type (${file.type}) for inlining`)
+  return stringifyDataUrl(file.type, await toText(file))
+}
+
+type KodoUploadRes = {
+  key: string
+  hash: string
+}
+
+// Minimum size for checking an existing Kodo object (1 MiB); for smaller files, the added hashing and query may not justify the upload saved on a hit.
+const minFileSizeForExistingCheck = 1024 * 1024
+
+async function getExistingKodoUrl(file: File, data: ArrayBuffer, signal?: AbortSignal): Promise<UniversalUrl | null> {
+  const hash = await calculateQiniuEtag(data)
+  signal?.throwIfAborted()
+  try {
+    return (await getFileObject(hash, data.byteLength, file.name, signal)).url
+  } catch (err) {
+    signal?.throwIfAborted()
+    if (!(err instanceof ApiException && err.code === ApiExceptionCode.errorNotFound)) {
+      capture(err, 'Failed to get existing Kodo file object')
+    }
+    return null
+  }
+}
+
+const saveToKodoController = new ConcurrencyLimitController(20)
+
+const saveToKodo = (file: File, signal?: AbortSignal) =>
+  saveToKodoController.run<UniversalUrl>(async () => {
+    const ab = await file.arrayBuffer(signal)
+    if (ab.byteLength >= minFileSizeForExistingCheck) {
+      const existingUrl = await getExistingKodoUrl(file, ab, signal)
+      if (existingUrl != null) return existingUrl
+    }
+    const { token, maxSize, bucket, region } = await getUploadSessionWithCache()
+    signal?.throwIfAborted()
+    if (ab.byteLength > maxSize)
+      throw new DefaultException({
+        en: `Single file size must not exceed ${humanizeFileSize(maxSize).en}`,
+        zh: `单个文件尺寸不得超过 ${humanizeFileSize(maxSize).zh}`
+      })
+    const task = createDirectUploadTask(
+      {
+        type: 'array-buffer',
+        data: ab,
+        filename: file.name,
+        mimeType: file.type === '' ? undefined : file.type
+      },
+      {
+        tokenProvider: () => Promise.resolve(token),
+        uploadHosts: getUphostsByRegion(region)
+      }
+    )
+    const respBody = await new Promise<string>((resolve, reject) => {
+      signal?.addEventListener('abort', () => {
+        reject(signal.reason)
+        task.cancel()
+      })
+      task.start()
+      task.onError(reject)
+      task.onComplete((respBody) => {
+        if (respBody == null) {
+          reject(new Error('upload response expected'))
+          return
+        }
+        resolve(respBody)
+      })
+    })
+    const parsed = JSON.parse(respBody) as KodoUploadRes
+    return stringifyKodoUrl(bucket, parsed.key)
+  })
+
+type CachedUploadSession = Omit<RawUploadSession, 'expiresAt'> & {
+  /** Timestamp (ms) after which the uptoken is considered expired */
+  expiresAt: number
+}
+
+let cachedUploadSession: CachedUploadSession | null = null
+let fetchingCachedUploadSession: Promise<CachedUploadSession> | null = null
+
+async function getUploadSessionWithCache() {
+  if (cachedUploadSession != null && cachedUploadSession.expiresAt > Date.now()) return cachedUploadSession
+  if (fetchingCachedUploadSession != null) return fetchingCachedUploadSession
+  return (fetchingCachedUploadSession = createUploadSession()
+    .then(({ expiresAt: rawExpiresAt, ...others }) => {
+      const uploadTokenRefreshBuffer = 5 * 60 * 1000
+      const rawExpiresAtMs = Date.parse(rawExpiresAt)
+      if (!Number.isFinite(rawExpiresAtMs)) throw new Error(`invalid upload session expiresAt: ${rawExpiresAt}`)
+      const expiresAt = rawExpiresAtMs - uploadTokenRefreshBuffer
+      cachedUploadSession = { ...others, expiresAt }
+      return cachedUploadSession
+    })
+    .finally(() => {
+      fetchingCachedUploadSession = null
+    }))
+}
+
+async function validateFileSizeForUpload(files: globalThis.File[]) {
+  const uploadSession = await getUploadSessionWithCache()
+  const oversizedFileNames = Array.from(files!)
+    .filter((file) => file.size > uploadSession.maxSize)
+    .map((file) => file.name)
+  if (oversizedFileNames.length > 0) {
+    const maxSizeText = humanizeFileSize(uploadSession.maxSize)
+    throw new DefaultException({
+      en: `File ${oversizedFileNames.join(', ')} size exceeds limit (max ${maxSizeText.en})`,
+      zh: `文件 ${oversizedFileNames.join('、')} 尺寸超限（最大 ${maxSizeText.zh}）`
+    })
+  }
+}
+
+export async function selectFileWithUploadLimit(options: FileSelectOptions) {
+  const file = await selectFile(options)
+  await validateFileSizeForUpload([file])
+  return file
+}
+
+export async function selectFilesWithUploadLimit(options: FileSelectOptions) {
+  const files = await selectFiles(options)
+  await validateFileSizeForUpload(files)
+  return files
+}

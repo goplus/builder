@@ -1,0 +1,57 @@
+<script lang="ts">
+export const moveActionNames = {
+  up: { en: 'Bring forward', zh: '向前移动' },
+  top: { en: 'Bring to front', zh: '移到最前' },
+  down: { en: 'Send backward', zh: '向后移动' },
+  bottom: { en: 'Send to back', zh: '移到最后' }
+}
+export type MoveAction = keyof typeof moveActionNames
+</script>
+
+<script lang="ts" setup>
+import { UIDropdown, UIMenu, UIMenuItem } from '@/components/ui'
+
+defineProps<{ type: 'sprite' | 'widget' }>()
+
+const emit = defineEmits<{
+  'move-zorder': [MoveAction]
+}>()
+
+function moveZorder(action: MoveAction) {
+  emit('move-zorder', action)
+}
+</script>
+
+<template>
+  <UIDropdown trigger="click" placement="top">
+    <template #trigger>
+      <slot></slot>
+    </template>
+    <UIMenu>
+      <UIMenuItem
+        v-radar="{ name: 'move-up', desc: `Click to move ${type} up in z-order` }"
+        class="w-full whitespace-nowrap"
+        @click="moveZorder('up')"
+        >{{ $t(moveActionNames.up) }}</UIMenuItem
+      >
+      <UIMenuItem
+        v-radar="{ name: 'move-to-top', desc: `Click to move ${type} to top in z-order` }"
+        class="w-full whitespace-nowrap"
+        @click="moveZorder('top')"
+        >{{ $t(moveActionNames.top) }}</UIMenuItem
+      >
+      <UIMenuItem
+        v-radar="{ name: 'move-down', desc: `Click to move ${type} down in z-order` }"
+        class="w-full whitespace-nowrap"
+        @click="moveZorder('down')"
+        >{{ $t(moveActionNames.down) }}</UIMenuItem
+      >
+      <UIMenuItem
+        v-radar="{ name: 'move-to-bottom', desc: `Click to move ${type} to bottom in z-order` }"
+        class="w-full whitespace-nowrap"
+        @click="moveZorder('bottom')"
+        >{{ $t(moveActionNames.bottom) }}</UIMenuItem
+      >
+    </UIMenu>
+  </UIDropdown>
+</template>

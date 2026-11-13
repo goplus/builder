@@ -1,0 +1,17 @@
+<script setup lang="ts">
+import { UIDropdown, UICornerIcon, UIMenu } from '@/components/ui'
+</script>
+
+<template>
+  <UIDropdown trigger="click">
+    <template #trigger>
+      <UICornerIcon
+        v-radar="{ name: 'options-button', desc: 'Click to view more options (save to asset library, remove, etc.)' }"
+        type="more"
+      />
+    </template>
+    <UIMenu>
+      <slot></slot>
+    </UIMenu>
+  </UIDropdown>
+</template>

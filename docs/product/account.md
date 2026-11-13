@@ -751,7 +751,7 @@ Casdoor-derived identity identifiers should only be used as one-time migration m
 of the runtime account model.
 
 After frontend migration, the frontend should no longer depend on Casdoor SDKs, Casdoor JWTs, or decoding username from
-tokens. `spx-gui` can keep the Bearer request model, but the Bearer value should be replaced with a product API token.
+tokens. `gui` can keep the Bearer request model, but the Bearer value should be replaced with a product API token.
 
 ## Glossary
 

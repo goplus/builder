@@ -37,9 +37,13 @@ Feedback 有三种状态：
 | - | - |
 | `new` | 等待管理员处理 |
 | `replied` | 管理员已完成回复 |
-| `handled` | 管理员通过“标记为已处理”完成处理 |
+| `handled` | 管理员通过“标记为无需回复”完成处理 |
 
 Feedback 创建时为 `new`，可以从 `new` 进入 `replied` 或 `handled`；两者均为终态。
+
+### 回复 Reply
+
+一条 Reply 包含 Markdown 格式的 Content 和发送时间 CreatedAt。Content 最多 1000 个字符，包含 Markdown 语法和 URL。图片和链接都是 Content 的一部分。
 
 ### 上下文 Context
 
@@ -106,6 +110,8 @@ Copilot、Costume 生成和 Animation 生成分别展示对应的功能与额度
 
 ### 回复与通知
 
+管理员在支持 Markdown 的普通文本框中填写回复。上传图片后，图片会插入 Content 的光标位置，上传大小沿用现有限制。
+
 管理员成功发送 Reply 后，Feedback 进入 `replied` 状态，并为提交用户创建 [In-Product Notification](./in-product-notification.zh.md)。发送 Reply 失败时，表单保留草稿，管理员可以重试。
 
 ## User Story
@@ -116,4 +122,4 @@ Copilot、Costume 生成和 Animation 生成分别展示对应的功能与额度
 
 ### 处理 Feedback
 
-`feedbackAdmin` 打开一条 `new` 状态的 Feedback，根据 Title、Description 和可用的 Context 排查问题。管理员可以在本地编辑器会话中打开 Project Snapshot，然后发送 Reply 或将 Feedback 标记为 `handled`。成功发送 Reply 后，Feedback 进入 `replied`，并为提交用户创建 In-Product Notification。发送 Reply 失败时，草稿保留，供管理员重试。其他管理员先完成处理时，界面显示最终生效的终态。
+`feedbackAdmin` 打开一条 `new` 状态的 Feedback，根据 Title、Description 和可用的 Context 排查问题。管理员可以在本地编辑器会话中打开 Project Snapshot，然后发送 Reply，或通过“标记为无需回复”将 Feedback 置为 `handled`，不通知用户。成功发送 Reply 后，Feedback 进入 `replied`，并为提交用户创建 In-Product Notification。发送 Reply 失败时，草稿保留，供管理员重试。其他管理员先完成处理时，界面显示最终生效的终态。

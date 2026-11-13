@@ -1,0 +1,227 @@
+<script lang="ts">
+type SubCategory = {
+  id: string
+  label: LocaleMessage
+  items: APIReferenceItem[]
+}
+
+type MainCategory = {
+  id: string
+  label: LocaleMessage
+  icon: string
+  subCategories: SubCategory[]
+}
+
+function belongs(item: APIReferenceItem, mcid: string, scid: string) {
+  return item.categories.some((c) => c[0] === mcid && c[1] === scid)
+}
+</script>
+
+<script setup lang="ts">
+import { throttle } from 'lodash'
+import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
+import { type LocaleMessage } from '@/utils/i18n'
+import { ActionException, Cancelled } from '@/utils/exception'
+import { getCleanupSignal } from '@/utils/disposable'
+import { untilTaskScheduled } from '@/utils/utils'
+import { useRegisterLoading } from '@/utils/readiness'
+import { UIError } from '@/components/ui'
+import { type DefinitionDocumentationItem } from '../../common'
+import { stringifyDefinitionId } from '../../definition-id'
+import type { APIReferenceController, APIReferenceItem } from '.'
+import APIReferenceItemComp from './APIReferenceItem.vue'
+
+const props = defineProps<{
+  controller: APIReferenceController
+  simpleMode?: boolean
+  disabled?: boolean
+}>()
+
+const itemsForDisplay = computed<DefinitionDocumentationItem[] | null>((oldValue) => {
+  // Preserve displayed items across null results, but apply completed empty arrays.
+  return props.controller.items ?? oldValue ?? null
+})
+
+const categorizationThreshold = 20
+const needsCategorization = computed(() => (itemsForDisplay.value?.length ?? 0) >= categorizationThreshold)
+
+const renderingCategories = ref(false)
+// APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial).
+// Report loading until the deferred rendering finishes so those modules can wait for the UI.
+useRegisterLoading(
+  () => (props.controller.items == null && props.controller.error == null) || renderingCategories.value
+)
+
+const err = computed(() => {
+  const err = props.controller.error
+  if (err == null) return null
+  if (err instanceof Cancelled) return null
+  return new ActionException(err, { en: 'Failed to load data', zh: '加载数据失败' })
+})
+
+const categoriesComputed = computed<MainCategory[] | null>((oldValue) => {
+  const items = itemsForDisplay.value
+  const categoryViewInfos = props.controller.categoryViewInfos
+  // Preserve categories when items or category metadata are unavailable.
+  if (items == null || categoryViewInfos == null) return oldValue ?? null
+  const result: MainCategory[] = []
+  for (const mcvi of categoryViewInfos) {
+    const scs: SubCategory[] = []
+    for (const scvi of mcvi.subCategories) {
+      const scItems = items.filter((item) => belongs(item, mcvi.id, scvi.id))
+      if (scItems.length === 0) continue
+      scs.push({ ...scvi, items: scItems })
+    }
+    if (scs.length === 0) continue
+    result.push({ ...mcvi, subCategories: scs })
+  }
+  return result
+})
+
+// When categorization is needed and no categories are displayed, render the first category before yielding.
+// Subsequent updates with displayed categories render all categories immediately.
+const categoriesForItems = shallowRef<MainCategory[]>([])
+watch(
+  categoriesComputed,
+  async (categories, _, onCleanup) => {
+    renderingCategories.value = false
+    if (categories == null) return
+    if (!needsCategorization.value || categoriesForItems.value.length > 0) {
+      categoriesForItems.value = categories
+      return
+    }
+    categoriesForItems.value = categories.slice(0, 1)
+    renderingCategories.value = true
+    await untilTaskScheduled('background', getCleanupSignal(onCleanup))
+    categoriesForItems.value = categories
+    renderingCategories.value = false
+  },
+  { immediate: true }
+)
+
+const activeCategoryIdRef = ref<string | null>(null)
+
+watch(
+  categoriesComputed,
+  (categories) => {
+    if (categories == null) return
+    if (categories.some((c) => c.id === activeCategoryIdRef.value)) return
+    activeCategoryIdRef.value = categories[0]?.id ?? null
+  },
+  { immediate: true }
+)
+
+const itemsWrapperRef = ref<HTMLElement>()
+
+const scrolling = ref(false)
+
+// Update `activeCategoryId` & `scrolling` when scrolling
+watchEffect((onCleanup) => {
+  const itemsWrapper = itemsWrapperRef.value
+  if (itemsWrapper == null) return
+  const signal = getCleanupSignal(onCleanup)
+  let clearScrollingTimer: ReturnType<typeof setTimeout> | null = null
+
+  const handleScroll = throttle(() => {
+    scrolling.value = true
+    if (clearScrollingTimer != null) clearTimeout(clearScrollingTimer)
+    clearScrollingTimer = setTimeout(() => {
+      scrolling.value = false
+    }, 200)
+
+    const scrollTop = itemsWrapper.scrollTop
+    const categories = categoriesComputed.value ?? []
+    const categoryWrappers = itemsWrapper.querySelectorAll('[data-category-id]')
+    if (categoryWrappers.length <= 1) return
+    for (let i = 1; i < categoryWrappers.length; i++) {
+      if ((categoryWrappers[i] as HTMLElement).offsetTop > scrollTop) {
+        activeCategoryIdRef.value = categories[i - 1].id
+        break
+      }
+      if (i === categoryWrappers.length - 1) {
+        activeCategoryIdRef.value = categories[i].id
+      }
+    }
+  }, 100)
+  itemsWrapper.addEventListener('scroll', handleScroll, { signal })
+})
+
+function handleCategoryClick(id: string) {
+  const itemsWrapper = itemsWrapperRef.value
+  if (itemsWrapper == null) return
+  const categoryWrapper = itemsWrapper.querySelector(`[data-category-id="${id}"]`)
+  if (categoryWrapper == null) return
+  itemsWrapper.scrollTo({
+    top: (categoryWrapper as HTMLElement).offsetTop,
+    behavior: 'smooth'
+  })
+}
+</script>
+
+<template>
+  <section
+    v-radar="{
+      name: 'api-references',
+      label: 'API References',
+      desc: 'All available API reference items at left side of the code editor. Drag-n-drop or click one item to insert corresponding code snippet.'
+    }"
+    class="flex min-h-0"
+  >
+    <UIError v-if="err != null">
+      {{ $t(err.userMessage) }}
+    </UIError>
+    <template v-else>
+      <ul v-if="needsCategorization" class="flex-none flex flex-col gap-3 border-r border-dividing-line-2 px-1 py-3">
+        <li
+          v-for="c in categoriesComputed"
+          :key="c.id"
+          class="h-13 w-13 cursor-pointer flex flex-col items-center justify-center rounded-md transition-colors duration-100"
+          :class="c.id === activeCategoryIdRef ? 'bg-grey-400 text-grey-1000' : 'text-grey-800 hover:bg-grey-300'"
+          @click="handleCategoryClick(c.id)"
+        >
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="h-6 w-6" v-html="c.icon"></div>
+          <p class="mt-0.5 text-center text-2xs">{{ $t(c.label) }}</p>
+        </li>
+      </ul>
+      <ul
+        ref="itemsWrapperRef"
+        class="flex flex-[1_1_0] min-w-0 flex-col overflow-y-auto px-4 pb-3 [scrollbar-width:thin]"
+        :class="{ 'gap-md pt-3': !needsCategorization }"
+      >
+        <template v-if="needsCategorization">
+          <li
+            v-for="c in categoriesForItems"
+            :key="c.id"
+            :data-category-id="c.id"
+            class="[&:last-child>section:last-child]:border-b-0"
+          >
+            <section v-for="sc in c.subCategories" :key="sc.id" class="border-b border-dashed border-grey-500">
+              <h5 class="sticky top-0 z-10 -mx-4 bg-grey-100 px-4 py-3 text-xs text-hint-2">{{ $t(sc.label) }}</h5>
+              <ul class="flex flex-col gap-md pb-5">
+                <APIReferenceItemComp
+                  v-for="item in sc.items"
+                  :key="stringifyDefinitionId(item.definition)"
+                  :item="item"
+                  :block-style="simpleMode"
+                  :interaction-disabled="scrolling"
+                  :disabled="disabled"
+                />
+              </ul>
+            </section>
+          </li>
+        </template>
+        <template v-else>
+          <APIReferenceItemComp
+            v-for="item in itemsForDisplay"
+            :key="stringifyDefinitionId(item.definition)"
+            :item="item"
+            :block-style="simpleMode"
+            :interaction-disabled="false"
+            :disabled="disabled"
+          />
+        </template>
+      </ul>
+    </template>
+  </section>
+</template>

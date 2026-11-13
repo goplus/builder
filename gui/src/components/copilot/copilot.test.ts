@@ -1,0 +1,1547 @@
+import { describe, expect, it } from 'vitest'
+import { defineComponent } from 'vue'
+import { z } from 'zod'
+import {
+  Copilot,
+  sampleApiMessages,
+  type ISessionExportedStorage,
+  type IMessageEventGenerator,
+  type Topic,
+  RoundState,
+  toApiMessage,
+  type SessionExported
+} from './copilot'
+import type { Message } from '@/apis/copilot'
+import * as apis from '@/apis/copilot'
+import { timeout } from '@/utils/utils'
+import { InMemorySkillRegistry } from './skills/registry'
+
+// Test constants
+const THROTTLE_WAIT_TIME = 400
+const COMPLETION_WAIT_TIME = 500
+
+function createTestSkillRegistry() {
+  return new InMemorySkillRegistry()
+}
+
+// Test helper functions
+function createBasicTopic(title = 'Test Topic', description = 'Test description'): Topic {
+  return {
+    title: { en: title, zh: '测试主题' },
+    description,
+    reactToEvents: false
+  }
+}
+
+function createEventTopic(title = 'Event Test Topic'): Topic {
+  return {
+    title: { en: title, zh: '事件测试主题' },
+    description: 'Testing user events',
+    reactToEvents: true
+  }
+}
+
+function createTextDeltaEvent(text: string): apis.MessageEvent {
+  return {
+    type: 'text_delta',
+    data: {
+      text
+    }
+  }
+}
+
+function createToolCallDeltaEvent(
+  data: Extract<apis.MessageEvent, { type: 'tool_call_delta' }>['data']
+): apis.MessageEvent {
+  return {
+    type: 'tool_call_delta',
+    data
+  }
+}
+
+function createDoneEvent(finishReason: string): apis.MessageEvent {
+  return {
+    type: 'done',
+    data: {
+      finishReason
+    }
+  }
+}
+
+function createTextDeltaEvents(...texts: string[]): apis.MessageEvent[] {
+  return texts.map((text) => createTextDeltaEvent(text))
+}
+
+function createTextStreamBatch(...texts: string[]): apis.MessageEvent[] {
+  return [...createTextDeltaEvents(...texts), createDoneEvent('stop')]
+}
+
+function createTextStreamBatches(...responses: string[]): apis.MessageEvent[][] {
+  return responses.map((response) => createTextStreamBatch(response))
+}
+
+function getMessageText(message: Message): string {
+  const content = message.content
+  if (content == null) {
+    throw new Error('Expected message text content')
+  }
+  return content.text
+}
+
+function createCopilotWithStorage(
+  eventBatches: apis.MessageEvent[][] = createTextStreamBatches('Hello! How can I help you?'),
+  delay = 0,
+  shouldNeverComplete = false
+) {
+  const storage = new MockStorage()
+  const mockGenerator = new MockMessageEventGenerator(eventBatches, delay, shouldNeverComplete)
+  const copilot = new Copilot(createTestSkillRegistry(), mockGenerator)
+  copilot.syncSessionWith(storage)
+  return { copilot, storage, mockGenerator }
+}
+
+async function waitForThrottledSave() {
+  await timeout(THROTTLE_WAIT_TIME)
+}
+
+async function waitForCompletion() {
+  await timeout(COMPLETION_WAIT_TIME)
+}
+
+describe('Copilot panel state', () => {
+  it.each([false, true])('preserves global expansion (%s) while using docked UI', (globalActive) => {
+    const copilot = new Copilot(createTestSkillRegistry())
+    if (globalActive) copilot.open()
+    else copilot.close()
+    copilot.disableGlobalUI()
+    expect(copilot.active).toBe(false)
+    copilot.open()
+    expect(copilot.active).toBe(true)
+    copilot.close()
+    expect(copilot.active).toBe(false)
+    copilot.open()
+    copilot.enableGlobalUI()
+    expect(copilot.active).toBe(globalActive)
+    copilot.disableGlobalUI()
+    expect(copilot.active).toBe(true)
+    copilot.enableGlobalUI()
+    copilot.close()
+    copilot.dispose()
+  })
+})
+
+describe('sampleApiMessages', () => {
+  it('should do truncation if the original messages are too long', () => {
+    const originalMessages: Message[] = [
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: 'Hello, how can I help you?'
+        }
+      },
+      {
+        role: 'copilot',
+        content: {
+          type: 'text',
+          text: 'I need assistance with my account.'
+        }
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: 'What can you do for me?'
+        }
+      }
+    ]
+    const limit = getMessageText(originalMessages[1]!).length + getMessageText(originalMessages[2]!).length + 10
+    const messages = sampleApiMessages(originalMessages, limit)
+    expect(messages.length).toBe(2)
+    expect(messages[0]).toEqual(originalMessages[1])
+    expect(messages[1]).toEqual(originalMessages[2])
+  })
+
+  it('should support copilot messages without text content', () => {
+    const originalMessages: Message[] = [
+      {
+        role: 'copilot',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: {
+              name: 'list_projects',
+              arguments: '{"query":"demo"}'
+            }
+          }
+        ]
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: 'What happened?'
+        }
+      }
+    ]
+
+    expect(sampleApiMessages(originalMessages, 100)).toEqual(originalMessages)
+  })
+})
+
+describe('Copilot markdown elements', () => {
+  it('should register and dispose markdown element renderers', () => {
+    const copilot = new Copilot(createTestSkillRegistry())
+    const codeBlock = defineComponent(() => () => null)
+
+    const dispose = copilot.registerMarkdownElements({ codeBlock })
+    expect(copilot.markdownElements.codeBlock).toBe(codeBlock)
+
+    dispose()
+    expect(copilot.markdownElements.codeBlock).toBeUndefined()
+  })
+
+  it('should ignore empty markdown element registrations', () => {
+    const copilot = new Copilot(createTestSkillRegistry())
+    const codeBlock = defineComponent(() => () => null)
+
+    copilot.registerMarkdownElements({ codeBlock })
+    const dispose = copilot.registerMarkdownElements({ codeBlock: undefined })
+    dispose()
+
+    expect(copilot.markdownElements.codeBlock).toBe(codeBlock)
+  })
+})
+
+class MockStorage implements ISessionExportedStorage {
+  private saved: SessionExported | null = null
+  set(value: SessionExported | null): void {
+    this.saved = value
+  }
+  get(): SessionExported | null {
+    return this.saved
+  }
+}
+
+class MockMessageEventGenerator implements IMessageEventGenerator {
+  private eventBatches: apis.MessageEvent[][]
+  private delay: number
+  private shouldNeverComplete: boolean
+  private callCount = 0
+
+  constructor(
+    eventBatches: apis.MessageEvent[][] = createTextStreamBatches('Hello! How can I help you?'),
+    delay = 0,
+    shouldNeverComplete = false
+  ) {
+    this.eventBatches = eventBatches
+    this.delay = delay
+    this.shouldNeverComplete = shouldNeverComplete
+  }
+
+  async *generateCopilotMessage(
+    messages: apis.Message[],
+    options?: apis.GenerateCopilotMessageOptions
+  ): AsyncIterableIterator<apis.MessageEvent> {
+    const batch = this.eventBatches[this.callCount] ?? []
+    this.callCount += 1
+
+    for (const event of batch) {
+      if (options?.signal?.aborted) {
+        throw new Error('Request was aborted')
+      }
+
+      if (this.delay > 0) {
+        await timeout(this.delay)
+      }
+
+      yield event
+    }
+
+    if (!this.shouldNeverComplete) {
+      return
+    }
+
+    while (!options?.signal?.aborted) {
+      await timeout(100)
+    }
+  }
+}
+
+class MockSingleBatchMessageEventGenerator implements IMessageEventGenerator {
+  constructor(
+    private events: apis.MessageEvent[],
+    private delay = 0
+  ) {}
+
+  async *generateCopilotMessage(
+    messages: apis.Message[],
+    options?: apis.GenerateCopilotMessageOptions
+  ): AsyncIterableIterator<apis.MessageEvent> {
+    for (const event of this.events) {
+      if (options?.signal?.aborted) {
+        throw new Error('Request was aborted')
+      }
+
+      if (this.delay > 0) {
+        await timeout(this.delay)
+      }
+
+      yield event
+    }
+  }
+}
+
+class MockBatchedMessageEventGenerator implements IMessageEventGenerator {
+  calls: apis.Message[][] = []
+  callOptions: Array<apis.GenerateCopilotMessageOptions | null> = []
+
+  constructor(
+    private eventBatches: apis.MessageEvent[][],
+    private delay = 0
+  ) {}
+
+  async *generateCopilotMessage(
+    messages: apis.Message[],
+    options?: apis.GenerateCopilotMessageOptions
+  ): AsyncIterableIterator<apis.MessageEvent> {
+    this.calls.push(messages)
+    this.callOptions.push(options ?? null)
+
+    const batch = this.eventBatches[this.calls.length - 1] ?? []
+    for (const event of batch) {
+      if (options?.signal?.aborted) {
+        throw new Error('Request was aborted')
+      }
+
+      if (this.delay > 0) {
+        await timeout(this.delay)
+      }
+
+      yield event
+    }
+  }
+}
+
+describe('Copilot', () => {
+  it('starts sessions without changing the UI state', async () => {
+    const { copilot } = createCopilotWithStorage()
+    copilot.close()
+
+    await copilot.startSession(createBasicTopic())
+
+    expect(copilot.active).toBe(false)
+  })
+
+  it('emits completed rounds as plain text', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Done'))
+    const rounds: Array<{ userMessage: string; resultMessages: string[] }> = []
+    copilot.on('roundComplete', (round) => rounds.push(round))
+
+    await copilot.startSession(createBasicTopic())
+    copilot.addUserTextMessage('Help me')
+    await waitForCompletion()
+
+    expect(rounds).toEqual([{ userMessage: 'Help me', resultMessages: ['Done'] }])
+  })
+
+  it('generates text and JSON responses without adding a conversation round', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      createTextStreamBatch('Nice work'),
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'return_json_1',
+          function: { name: 'return_json', arguments: '{"complete":true}' }
+        }),
+        createDoneEvent('tool_calls')
+      ]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    await copilot.startSession(createBasicTopic())
+
+    await expect(copilot.generateTextResponse('Give feedback')).resolves.toBe('Nice work')
+    await expect(copilot.generateJSONResponse('Is the goal complete?', { type: 'object' })).resolves.toEqual({
+      complete: true
+    })
+
+    expect(copilot.currentSession?.rounds).toEqual([])
+    expect(generator.calls[0]?.at(-1)).toEqual({
+      role: 'user',
+      content: { type: 'text', text: 'Give feedback' }
+    })
+    expect(generator.callOptions[1]?.tools).toEqual([
+      {
+        type: apis.ToolType.Function,
+        function: {
+          name: 'return_json',
+          description: 'Return the requested JSON response.',
+          parameters: { type: 'object' }
+        }
+      }
+    ])
+  })
+
+  it('provides user conversation as context for one-shot responses', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      createTextStreamBatch('Hello learner'),
+      createTextStreamBatch('Course feedback')
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    await copilot.startSession(createBasicTopic())
+    copilot.addUserTextMessage('How do I make a sprite move?')
+    await waitForCompletion()
+
+    await expect(copilot.generateTextResponse('Summarize the learner progress.')).resolves.toBe('Course feedback')
+
+    expect(generator.calls[1]).toEqual([
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: expect.stringContaining('<user>How do I make a sprite move?</user>\n<copilot>Hello learner</copilot>')
+        }
+      },
+      {
+        role: 'user',
+        content: { type: 'text', text: 'Summarize the learner progress.' }
+      }
+    ])
+  })
+
+  it('aborts text responses that attempt to call a tool', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [createToolCallDeltaEvent({ index: 0, function: { name: 'unexpected', arguments: '' } })]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+
+    await expect(copilot.generateTextResponse('Give feedback')).rejects.toThrow('Unexpected tool call in text response')
+    expect(generator.callOptions[0]?.signal?.aborted).toBe(true)
+  })
+
+  it('rejects invalid JSON responses', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'return_json_1',
+          function: { name: 'return_json', arguments: '{invalid' }
+        })
+      ]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+
+    await expect(copilot.generateJSONResponse('Return JSON', { type: 'object' })).rejects.toThrow(
+      'Copilot returned invalid JSON'
+    )
+  })
+
+  it('should convert copilot messages with text and tool calls to structured api messages', () => {
+    expect(
+      toApiMessage({
+        role: 'copilot',
+        content: 'Let me check that for you.',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: {
+              name: 'list_projects',
+              arguments: '{"query":"demo"}'
+            }
+          }
+        ]
+      })
+    ).toEqual({
+      role: 'copilot',
+      content: {
+        type: 'text',
+        text: 'Let me check that for you.'
+      },
+      toolCalls: [
+        {
+          id: 'call_1',
+          type: 'function',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":"demo"}'
+          }
+        }
+      ]
+    })
+  })
+
+  it('should convert copilot messages with tool calls only to structured api messages', () => {
+    expect(
+      toApiMessage({
+        role: 'copilot',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: {
+              name: 'list_projects',
+              arguments: '{"query":"demo"}'
+            }
+          }
+        ]
+      })
+    ).toEqual({
+      role: 'copilot',
+      toolCalls: [
+        {
+          id: 'call_1',
+          type: 'function',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":"demo"}'
+          }
+        }
+      ]
+    })
+  })
+
+  it('should convert completed tool messages to structured api tool messages', () => {
+    const message = toApiMessage({
+      role: 'tool',
+      callId: 'call_1',
+      execution: {
+        state: 'completed',
+        result: {
+          projects: ['demo']
+        }
+      }
+    })
+
+    expect(message).toEqual({
+      role: 'tool',
+      toolCallId: 'call_1',
+      content: {
+        type: 'text',
+        text: '{"projects":["demo"]}'
+      }
+    })
+    if (message.role !== 'tool') throw new Error('Expected a tool message')
+    expect(message.content.text.includes('<tool-result')).toBe(false)
+  })
+
+  it('should sync session with storage correctly', async () => {
+    const { copilot, storage, mockGenerator } = createCopilotWithStorage(
+      createTextStreamBatches('Hello! How can I help you?')
+    )
+
+    // Sync with empty storage initially
+    expect(copilot.currentSession).toBe(null)
+    expect(storage.get()).toBe(null)
+
+    // Start a new session
+    const topic = createBasicTopic('Test Topic', 'This is a test topic for testing purposes')
+    topic.reactToEvents = true
+    topic.endable = true
+
+    await copilot.startSession(topic)
+    expect(copilot.currentSession).not.toBe(null)
+    expect(copilot.currentSession?.topic).toEqual(topic)
+
+    // Wait for session to be saved to storage
+    await waitForThrottledSave()
+    const savedData = storage.get()
+    expect(savedData).not.toBe(null)
+    expect(savedData!.topic).toEqual(topic)
+    expect(savedData!.rounds).toEqual([])
+
+    // Add a user message
+    copilot.addUserTextMessage('What is the weather today?', topic)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+    const userMessage = copilot.currentSession?.rounds[0].userMessage
+    expect(userMessage?.type).toBe('text')
+    if (userMessage?.type === 'text') {
+      expect(userMessage.content).toBe('What is the weather today?')
+    }
+
+    // Wait for the copilot response to complete and storage sync
+    await waitForCompletion()
+
+    // Check that the round completed successfully
+    const currentRound = copilot.currentSession?.currentRound
+    expect(currentRound?.state).toBe(RoundState.Completed)
+    expect(currentRound?.resultMessages.length).toBe(1)
+    expect(currentRound?.resultMessages[0].role).toBe('copilot')
+
+    // Create a new copilot instance and sync with the same storage
+    const newCopilot = new Copilot(createTestSkillRegistry(), mockGenerator)
+    newCopilot.syncSessionWith(storage)
+
+    // Verify session was restored correctly
+    expect(newCopilot.currentSession).not.toBe(null)
+    expect(newCopilot.currentSession?.topic).toEqual(topic)
+    expect(newCopilot.currentSession?.rounds.length).toBe(1)
+    const restoredUserMessage = newCopilot.currentSession?.rounds[0].userMessage
+    expect(restoredUserMessage?.type).toBe('text')
+    if (restoredUserMessage?.type === 'text') {
+      expect(restoredUserMessage.content).toBe('What is the weather today?')
+    }
+    expect(newCopilot.currentSession?.rounds[0].resultMessages.length).toBe(1)
+    expect(newCopilot.currentSession?.rounds[0].state).toBe(RoundState.Completed)
+  })
+
+  it('should export the current session and restore it after another session took over', async () => {
+    const { copilot, storage } = createCopilotWithStorage(createTextStreamBatches('Author reply', 'Learner reply'))
+
+    // Nothing to export without a session.
+    expect(copilot.exportCurrentSession()).toBe(null)
+
+    // The author's session, with one completed round.
+    const authorTopic = createBasicTopic('Author chat', 'Helping the author')
+    await copilot.startSession(authorTopic)
+    copilot.addUserTextMessage('How do I show a video?', authorTopic)
+    await waitForCompletion()
+    const exported = copilot.exportCurrentSession()
+    expect(exported).not.toBe(null)
+    expect(exported!.topic).toEqual(authorTopic)
+    expect(exported!.rounds.length).toBe(1)
+
+    // Another flow takes the copilot over with its own session (e.g. a course preview), then the panel is closed.
+    const learnerTopic = createBasicTopic('Learner chat', 'Course context')
+    await copilot.startSession(learnerTopic)
+    copilot.addUserTextMessage('Hi', learnerTopic)
+    await waitForCompletion()
+    expect(copilot.currentSession?.topic).toEqual(learnerTopic)
+    copilot.close()
+
+    // Bring the author's session back: same topic and rounds, panel untouched, storage follows.
+    copilot.restoreSession(exported!)
+    expect(copilot.currentSession?.topic).toEqual(authorTopic)
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+    const round = copilot.currentSession!.rounds[0]
+    expect(round.state).toBe(RoundState.Completed)
+    expect(round.userMessage.type === 'text' && round.userMessage.content).toBe('How do I show a video?')
+    const reply = round.resultMessages[0]
+    expect(reply.role === 'copilot' && reply.content).toBe('Author reply')
+    expect(copilot.active).toBe(false)
+    await waitForThrottledSave()
+    expect(storage.get()?.topic).toEqual(authorTopic)
+  })
+
+  it('should restore an in-progress round as cancelled and abort the round of the replaced session', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('never'), 0, true)
+
+    const topicA = createBasicTopic('A')
+    await copilot.startSession(topicA)
+    copilot.addUserTextMessage('a', topicA)
+    await timeout(50)
+    const exported = copilot.exportCurrentSession()!
+    expect([RoundState.Loading, RoundState.InProgress]).toContain(exported.rounds[0].state)
+
+    const topicB = createBasicTopic('B')
+    await copilot.startSession(topicB)
+    copilot.addUserTextMessage('b', topicB)
+    await timeout(50)
+    const roundB = copilot.currentSession!.currentRound!
+    expect([RoundState.Loading, RoundState.InProgress]).toContain(roundB.state)
+
+    copilot.restoreSession(exported)
+    // The replaced session's request is aborted (the mock generator notices the signal on its next poll), and the
+    // restored request is not resumed.
+    await timeout(200)
+    expect(roundB.state).toBe(RoundState.Cancelled)
+    expect(copilot.currentSession?.topic).toEqual(topicA)
+    expect(copilot.currentSession?.rounds[0].state).toBe(RoundState.Cancelled)
+  })
+
+  it('should export rounds whose messages do not follow the live round afterwards', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('First reply', 'Second reply'), 100)
+    const topic = createBasicTopic('Snapshot')
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('hello', topic)
+    await timeout(50)
+
+    // Exported while the round is still streaming: no result message yet.
+    const exported = copilot.exportCurrentSession()!
+    expect(exported.rounds[0].resultMessages).toEqual([])
+
+    // The live round completes, then is retried (which clears its messages before re-sending).
+    await waitForCompletion()
+    const liveRound = copilot.currentSession!.rounds[0]
+    expect(liveRound.resultMessages.length).toBe(1)
+    liveRound.retry()
+    await waitForCompletion()
+    expect(liveRound.resultMessages.length).toBe(1)
+
+    // The export kept its own array, and so does a session restored from it.
+    expect(exported.rounds[0].resultMessages).toEqual([])
+    copilot.restoreSession(exported)
+    expect(copilot.currentSession!.rounds[0].resultMessages).toEqual([])
+    copilot.currentSession!.rounds[0].resultMessages.push({ role: 'copilot', content: 'later' })
+    expect(exported.rounds[0].resultMessages).toEqual([])
+  })
+
+  it('should restore an event round still waiting for its delayed start as it is, without sending it', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Reply', 'Never used'))
+    const topic = createEventTopic('Events')
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('hello', topic)
+    await waitForCompletion()
+
+    // A user event in the middle of a session is sent after a delay; export inside that window.
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, 'User navigated to /somewhere')
+    expect(copilot.currentSession!.currentRound!.state).toBe(RoundState.Initialized)
+    const exported = copilot.exportCurrentSession()!
+
+    // Another session takes over, then the snapshot is restored: the event stays part of the history as
+    // `Initialized` (like events superseded by a later one); the restored round is never sent.
+    await copilot.startSession(createBasicTopic('Other'))
+    copilot.restoreSession(exported)
+    await timeout(1200)
+    const restored = copilot.currentSession!.rounds[1]
+    expect(copilot.currentSession?.rounds.length).toBe(2)
+    expect(restored.state).toBe(RoundState.Initialized)
+    expect(restored.resultMessages).toEqual([])
+  })
+
+  it('should handle user events correctly', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Event received and processed.'))
+    const topic = createEventTopic('Event Test Topic')
+
+    await copilot.startSession(topic)
+
+    // Notify a user event
+    copilot.notifyUserEvent(
+      { en: 'Project Started', zh: '项目启动' },
+      'User started a new project with name "MyProject"'
+    )
+
+    expect(copilot.currentSession?.rounds.length).toBe(1)
+    const eventMessage = copilot.currentSession?.rounds[0].userMessage
+    expect(eventMessage?.type).toBe('event')
+    if (eventMessage?.type === 'event') {
+      expect(eventMessage.name).toEqual({ en: 'Project Started', zh: '项目启动' })
+      expect(eventMessage.detail).toBe('User started a new project with name "MyProject"')
+    }
+
+    // Wait for response
+    await waitForCompletion()
+    expect(copilot.currentSession?.currentRound?.state).toBe(RoundState.Completed)
+  })
+
+  it('should handle session ending and storage clearing', async () => {
+    const { copilot, storage } = createCopilotWithStorage(createTextStreamBatches('Goodbye!'))
+    const topic = createBasicTopic('Ending Test', 'Testing session ending')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Hello', topic)
+
+    // Wait for session to be saved
+    await waitForThrottledSave()
+    expect(storage.get()).not.toBe(null)
+
+    // End the session
+    copilot.endCurrentSession()
+    expect(copilot.currentSession).toBe(null)
+
+    // Wait for storage to be cleared
+    await waitForThrottledSave()
+    expect(storage.get()).toBe(null)
+  })
+
+  it('should handle multiple user messages in sequence', async () => {
+    const { copilot } = createCopilotWithStorage(
+      createTextStreamBatches('First response', 'Second response', 'Third response')
+    )
+    const topic = createBasicTopic('Multi Message Test', 'Testing multiple messages')
+
+    await copilot.startSession(topic)
+
+    // Add messages in quick succession
+    copilot.addUserTextMessage('First question', topic)
+    await timeout(100)
+
+    copilot.addUserTextMessage('Second question', topic)
+    await timeout(100)
+
+    copilot.addUserTextMessage('Third question', topic)
+
+    // Wait for completion
+    await waitForCompletion()
+
+    expect(copilot.currentSession?.rounds.length).toBe(3)
+    const thirdUserMessage = copilot.currentSession?.rounds[2].userMessage
+    expect(thirdUserMessage?.type).toBe('text')
+    if (thirdUserMessage?.type === 'text') {
+      expect(thirdUserMessage.content).toBe('Third question')
+    }
+    expect(copilot.currentSession?.currentRound?.state).toBe(RoundState.Completed)
+  })
+
+  it('should handle storage errors gracefully', async () => {
+    class FailingStorage implements ISessionExportedStorage {
+      set(): void {
+        // Silently fail to avoid unhandled rejections
+      }
+      get(): SessionExported | null {
+        throw new Error('Storage read failed')
+      }
+    }
+
+    const failingStorage = new FailingStorage()
+    const mockGenerator = new MockMessageEventGenerator(createTextStreamBatches('Hello!'))
+    const copilot = new Copilot(createTestSkillRegistry(), mockGenerator)
+
+    // Should not throw when syncing with failing storage
+    expect(() => copilot.syncSessionWith(failingStorage)).not.toThrow()
+    expect(copilot.currentSession).toBe(null)
+
+    // Should still be able to start a session
+    const topic = createBasicTopic('Error Test', 'Testing error handling')
+
+    await copilot.startSession(topic)
+    expect(copilot.currentSession).not.toBe(null)
+
+    // Dispose of the copilot to prevent any pending watcher operations
+    copilot.dispose()
+
+    // Wait for any pending operations to complete
+    await timeout(100)
+  })
+
+  it('should sync session with in-progress copilot message content', async () => {
+    // Use a mock generator that streams a bit and then waits (never completes)
+    const { copilot, storage } = createCopilotWithStorage(
+      [createTextDeltaEvents('This is a streaming response...')],
+      0,
+      true
+    )
+    const topic = createBasicTopic('Streaming Test', 'Testing streaming message sync')
+
+    await copilot.startSession(topic)
+
+    // Add a user message to trigger streaming response
+    copilot.addUserTextMessage('Tell me something', topic)
+
+    // Wait a bit for streaming to start but not complete (the mock will never complete)
+    await timeout(100)
+
+    // At this point, there should be an in-progress message
+    const currentRound = copilot.currentSession?.currentRound
+    expect(currentRound?.state).toBe(RoundState.InProgress)
+    expect(currentRound?.inProgressCopilotMessageContent).not.toBe(null)
+    expect(currentRound?.inProgressCopilotMessageContent?.length).toBeGreaterThan(0)
+
+    // Wait for throttled storage save
+    await waitForThrottledSave()
+
+    // Create a new copilot instance and sync with the same storage
+    const newMockGenerator = new MockMessageEventGenerator(
+      createTextStreamBatches('Continuing from where we left off...')
+    )
+    const newCopilot = new Copilot(createTestSkillRegistry(), newMockGenerator)
+    newCopilot.syncSessionWith(storage)
+
+    // Verify the in-progress message content was restored
+    expect(newCopilot.currentSession).not.toBe(null)
+    expect(newCopilot.currentSession?.rounds.length).toBe(1)
+    const restoredRound = newCopilot.currentSession?.rounds[0]
+    expect(restoredRound?.state).toBe(RoundState.Cancelled)
+    expect(restoredRound?.inProgressCopilotMessageContent).toBe(currentRound?.inProgressCopilotMessageContent)
+
+    // Clean up by aborting the original streaming
+    copilot.currentSession?.abortCurrentRound()
+    await timeout(100)
+  })
+
+  it('should finalize streamed assistant text-only responses', async () => {
+    const generator = new MockSingleBatchMessageEventGenerator(
+      [createTextDeltaEvent('Hello'), createTextDeltaEvent(', world!'), createDoneEvent('stop')],
+      50
+    )
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    const topic = createBasicTopic('Text-only stream test', 'Testing streamed assistant text-only completion')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Say hello', topic)
+
+    await timeout(60)
+
+    const currentRound = copilot.currentSession?.currentRound
+    expect(currentRound?.state).toBe(RoundState.InProgress)
+    expect(currentRound?.inProgressCopilotMessageContent).toBe('Hello')
+    expect(currentRound?.resultMessages).toEqual([])
+
+    await waitForCompletion()
+
+    expect(currentRound?.state).toBe(RoundState.Completed)
+    expect(currentRound?.inProgressCopilotMessageContent).toBe(null)
+    expect(currentRound?.error).toBe(null)
+    expect(currentRound?.resultMessages).toEqual([
+      {
+        role: 'copilot',
+        content: 'Hello, world!',
+        toolCalls: []
+      }
+    ])
+  })
+
+  it('should finalize streamed assistant responses with text and tool calls in the same turn', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [
+        createTextDeltaEvent('Let me check that for you.'),
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'call_1',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":'
+          }
+        }),
+        createToolCallDeltaEvent({
+          index: 0,
+          function: {
+            arguments: '"demo"}'
+          }
+        }),
+        createDoneEvent('tool_calls')
+      ],
+      [createTextDeltaEvent('I found one matching project.'), createDoneEvent('stop')]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerTool({
+      name: 'list_projects',
+      description: 'List projects matching the query.',
+      parameters: z.object({
+        query: z.string()
+      }),
+      implementation: async ({ query }) => ({
+        projects: [query]
+      })
+    })
+    const topic = createBasicTopic(
+      'Mixed assistant tool turn test',
+      'Testing streamed assistant text + tool call finalization'
+    )
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Find my projects', topic)
+
+    await waitForCompletion()
+
+    const currentRound = copilot.currentSession?.currentRound
+    expect(currentRound?.state).toBe(RoundState.Completed)
+    expect(currentRound?.inProgressCopilotMessageContent).toBe(null)
+    expect(currentRound?.resultMessages[0]).toEqual({
+      role: 'copilot',
+      content: 'Let me check that for you.',
+      toolCalls: [
+        {
+          id: 'call_1',
+          type: 'function',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":"demo"}'
+          }
+        }
+      ]
+    })
+    expect(currentRound?.resultMessages[1]).toEqual({
+      role: 'tool',
+      callId: 'call_1',
+      execution: {
+        state: 'completed',
+        result: {
+          projects: ['demo']
+        }
+      }
+    })
+    expect(currentRound?.resultMessages[2]).toEqual({
+      role: 'copilot',
+      content: 'I found one matching project.',
+      toolCalls: []
+    })
+
+    expect(generator.calls).toHaveLength(2)
+    const contextMessage = await copilot.getContextMessage()
+
+    expect(generator.calls[1]).toEqual([
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: 'Find my projects'
+        }
+      },
+      {
+        role: 'copilot',
+        content: {
+          type: 'text',
+          text: 'Let me check that for you.'
+        },
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: {
+              name: 'list_projects',
+              arguments: '{"query":"demo"}'
+            }
+          }
+        ]
+      },
+      {
+        role: 'tool',
+        toolCallId: 'call_1',
+        content: {
+          type: 'text',
+          text: '{"projects":["demo"]}'
+        }
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: contextMessage.content
+        }
+      }
+    ])
+  })
+
+  it('should finalize copilot messages with tool calls and no text', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'call_1',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":'
+          }
+        }),
+        createToolCallDeltaEvent({
+          index: 0,
+          function: {
+            arguments: '"demo"}'
+          }
+        }),
+        createDoneEvent('tool_calls')
+      ],
+      [createTextDeltaEvent('Here are your projects.'), createDoneEvent('stop')]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerTool({
+      name: 'list_projects',
+      description: 'List projects matching the query.',
+      parameters: z.object({
+        query: z.string()
+      }),
+      implementation: async ({ query }) => ({
+        projects: [query]
+      })
+    })
+    const topic = createBasicTopic('Tool-call only assistant test', 'Testing tool-call only finalization')
+    const completedRounds: Array<{ userMessage: string; resultMessages: string[] }> = []
+    copilot.on('roundComplete', (round) => completedRounds.push(round))
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Find my projects', topic)
+
+    await waitForCompletion()
+
+    const currentRound = copilot.currentSession?.currentRound
+    expect(currentRound?.state).toBe(RoundState.Completed)
+    expect(currentRound?.inProgressCopilotMessageContent).toBe(null)
+    expect(currentRound?.resultMessages[0]).toEqual({
+      role: 'copilot',
+      toolCalls: [
+        {
+          id: 'call_1',
+          type: 'function',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":"demo"}'
+          }
+        }
+      ]
+    })
+    expect(currentRound?.resultMessages[1]).toEqual({
+      role: 'tool',
+      callId: 'call_1',
+      execution: {
+        state: 'completed',
+        result: {
+          projects: ['demo']
+        }
+      }
+    })
+    expect(currentRound?.resultMessages[2]).toEqual({
+      role: 'copilot',
+      content: 'Here are your projects.',
+      toolCalls: []
+    })
+    expect(completedRounds).toEqual([{ userMessage: 'Find my projects', resultMessages: ['Here are your projects.'] }])
+    const message = currentRound?.resultMessages[0]
+    expect(message?.role).toBe('copilot')
+    if (message?.role !== 'copilot') throw new Error('Expected a copilot message')
+    expect(toApiMessage(message)).toEqual({
+      role: 'copilot',
+      toolCalls: [
+        {
+          id: 'call_1',
+          type: 'function',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":"demo"}'
+          }
+        }
+      ]
+    })
+
+    const secondCallMessages = generator.calls[1]
+    expect(secondCallMessages).toBeDefined()
+
+    const toolMessage = secondCallMessages?.find(
+      (candidate): candidate is Extract<apis.Message, { role: 'tool' }> => candidate.role === 'tool'
+    )
+    expect(toolMessage).toEqual({
+      role: 'tool',
+      toolCallId: 'call_1',
+      content: {
+        type: 'text',
+        text: '{"projects":["demo"]}'
+      }
+    })
+    const hasToolResultContext =
+      secondCallMessages?.some((candidate) => {
+        if (candidate.role !== 'user') return false
+        return candidate.content.text.includes('<tool-result')
+      }) ?? false
+    expect(hasToolResultContext).toBe(false)
+  })
+
+  it('should continue the tool loop after tool execution', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'call_1',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":"demo"}'
+          }
+        }),
+        createDoneEvent('tool_calls')
+      ],
+      [createTextDeltaEvent('Finished after the tool call.'), createDoneEvent('stop')]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerTool({
+      name: 'list_projects',
+      description: 'List projects matching the query.',
+      parameters: z.object({
+        query: z.string()
+      }),
+      implementation: async ({ query }) => ({
+        projects: [query]
+      })
+    })
+    const topic = createBasicTopic('Tool loop continuation test', 'Testing continued model rounds after tool execution')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Find my projects', topic)
+
+    await waitForCompletion()
+
+    const currentRound = copilot.currentSession?.currentRound
+    expect(currentRound?.state).toBe(RoundState.Completed)
+    expect(generator.calls).toHaveLength(2)
+    const contextMessage = await copilot.getContextMessage()
+
+    expect(generator.calls[1]).toEqual([
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: 'Find my projects'
+        }
+      },
+      {
+        role: 'copilot',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: {
+              name: 'list_projects',
+              arguments: '{"query":"demo"}'
+            }
+          }
+        ]
+      },
+      {
+        role: 'tool',
+        toolCallId: 'call_1',
+        content: {
+          type: 'text',
+          text: '{"projects":["demo"]}'
+        }
+      },
+      {
+        role: 'user',
+        content: {
+          type: 'text',
+          text: contextMessage.content
+        }
+      }
+    ])
+    expect(currentRound?.resultMessages).toEqual([
+      {
+        role: 'copilot',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: {
+              name: 'list_projects',
+              arguments: '{"query":"demo"}'
+            }
+          }
+        ]
+      },
+      {
+        role: 'tool',
+        callId: 'call_1',
+        execution: {
+          state: 'completed',
+          result: {
+            projects: ['demo']
+          }
+        }
+      },
+      {
+        role: 'copilot',
+        content: 'Finished after the tool call.',
+        toolCalls: []
+      }
+    ])
+  })
+
+  it('should pass through string tool results without json stringification', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'call_1',
+          function: {
+            name: 'load_skill',
+            arguments: '{"skillId":"spx-core"}'
+          }
+        }),
+        createDoneEvent('tool_calls')
+      ],
+      [createTextDeltaEvent('Loaded.'), createDoneEvent('stop')]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerTool({
+      name: 'load_skill',
+      description: 'Load a skill document.',
+      parameters: z.object({
+        skillId: z.string()
+      }),
+      implementation: async ({ skillId }) => `<skill_content id="${skillId}">demo</skill_content>`
+    })
+    const topic = createBasicTopic('String tool result test', 'Testing plain string tool results')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Load the skill', topic)
+
+    await waitForCompletion()
+
+    expect(generator.calls).toHaveLength(2)
+    expect(generator.calls[1]?.[2]).toEqual({
+      role: 'tool',
+      toolCallId: 'call_1',
+      content: {
+        type: 'text',
+        text: '<skill_content id="spx-core">demo</skill_content>'
+      }
+    })
+  })
+
+  it('should preserve the current copilot tool-call block when history sampling truncates older rounds', async () => {
+    const previousUserMessage = 'u'.repeat(60_000)
+    const previousCopilotMessage = 'a'.repeat(60_000)
+    const generator = new MockBatchedMessageEventGenerator([
+      [createTextDeltaEvent(previousCopilotMessage), createDoneEvent('stop')],
+      [
+        createToolCallDeltaEvent({
+          index: 0,
+          id: 'call_1',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":"demo"}'
+          }
+        }),
+        createDoneEvent('tool_calls')
+      ],
+      [createTextDeltaEvent('Finished after the tool call.'), createDoneEvent('stop')]
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerTool({
+      name: 'list_projects',
+      description: 'List projects matching the query.',
+      parameters: z.object({
+        query: z.string()
+      }),
+      implementation: async ({ query }) => ({
+        projects: [query]
+      })
+    })
+    const topic = createBasicTopic('History sampling tool pairing test', 'Testing tool-call history sampling')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage(previousUserMessage, topic)
+
+    await waitForCompletion()
+
+    copilot.addUserTextMessage('Find my projects', topic)
+
+    await waitForCompletion()
+
+    expect(generator.calls).toHaveLength(3)
+
+    const sampledMessages = generator.calls[2]
+    expect(sampledMessages).toBeDefined()
+    const hasLatestUserMessage =
+      sampledMessages?.some((message) => {
+        if (message.role !== 'user') return false
+        return message.content.text === 'Find my projects'
+      }) ?? false
+    expect(hasLatestUserMessage).toBe(true)
+
+    const toolResultIndex = sampledMessages?.findIndex(
+      (message) => message.role === 'tool' && message.toolCallId === 'call_1'
+    )
+    expect(toolResultIndex).toBeGreaterThan(0)
+    expect(sampledMessages?.slice((toolResultIndex ?? 0) - 1, (toolResultIndex ?? 0) + 1)).toEqual([
+      {
+        role: 'copilot',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: {
+              name: 'list_projects',
+              arguments: '{"query":"demo"}'
+            }
+          }
+        ]
+      },
+      {
+        role: 'tool',
+        toolCallId: 'call_1',
+        content: {
+          type: 'text',
+          text: '{"projects":["demo"]}'
+        }
+      }
+    ])
+    const contextMessage = await copilot.getContextMessage()
+
+    expect(sampledMessages?.at(-1)).toEqual({
+      role: 'user',
+      content: {
+        type: 'text',
+        text: contextMessage.content
+      }
+    })
+  })
+
+  it('should keep custom element descriptions in context while sending tool definitions via api options', async () => {
+    const generator = new MockBatchedMessageEventGenerator([[createTextDeltaEvent('Done.'), createDoneEvent('stop')]])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerContextProvider({
+      provideContext: () => 'Project context'
+    })
+    copilot.registerCustomElement({
+      tagName: 'project-link',
+      description: 'Display a link to a project page.',
+      attributes: z.object({
+        project: z.string().describe('Project identifier to link to'),
+        children: z.string().describe('Text shown for the link')
+      }),
+      isRaw: false,
+      component: defineComponent(() => () => null)
+    })
+    copilot.registerTool({
+      name: 'list_projects',
+      description: 'List projects matching the query.',
+      parameters: z.object({
+        query: z.string()
+      }),
+      implementation: async ({ query }) => ({
+        projects: [query]
+      })
+    })
+    const topic = createBasicTopic('Prompt migration test', 'Testing prompt context without injected tools')
+
+    expect((await copilot.getContextMessage({ toolsCustomElementsEnabled: false })).content).not.toContain(
+      '# Available custom elements'
+    )
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Find my projects', topic)
+
+    await waitForCompletion()
+
+    expect(generator.calls).toHaveLength(1)
+    expect(generator.callOptions).toHaveLength(1)
+
+    const contextMessage = generator.calls[0].at(-1)
+    const expectedContextMessage = await copilot.getContextMessage()
+
+    expect(contextMessage).toEqual({
+      role: 'user',
+      content: {
+        type: 'text',
+        text: expectedContextMessage.content
+      }
+    })
+    expect(contextMessage).toBeDefined()
+    if (contextMessage == null) throw new Error('Expected a context message')
+    expect(contextMessage.role).toBe('user')
+    if (contextMessage.role !== 'user') throw new Error('Expected a user context message')
+    expect(contextMessage.content.text).toContain('Project context')
+    expect(contextMessage.content.text).toContain('# Current topic between you and user')
+    expect(contextMessage.content.text).toContain('# Available custom elements')
+    expect(contextMessage.content.text).toContain('### `project-link`')
+    expect(contextMessage.content.text).toContain('Display a link to a project page.')
+    expect(contextMessage.content.text).toContain('Project identifier to link to')
+    expect(contextMessage.content.text).not.toContain('# Available tools')
+    expect(contextMessage.content.text).not.toContain('list_projects')
+
+    const tools = generator.callOptions[0]?.tools
+    expect(tools).toHaveLength(3)
+    const listProjectsTool = tools?.find((tool) => tool.function.name === 'list_projects')
+    expect(listProjectsTool).toMatchObject({
+      type: apis.ToolType.Function,
+      function: {
+        name: 'list_projects',
+        description: 'List projects matching the query.'
+      }
+    })
+    expect(listProjectsTool?.function.parameters).toMatchObject({
+      type: 'object',
+      required: ['query'],
+      properties: {
+        query: {
+          type: 'string'
+        }
+      }
+    })
+  })
+
+  it('should enter in-progress state for tool-call-only assistant turns', async () => {
+    const generator = new MockBatchedMessageEventGenerator(
+      [
+        [
+          createToolCallDeltaEvent({
+            index: 0,
+            id: 'call_1',
+            function: {
+              name: 'list_projects',
+              arguments: '{"query":"demo"}'
+            }
+          }),
+          createDoneEvent('tool_calls')
+        ],
+        [createTextDeltaEvent('Done.'), createDoneEvent('stop')]
+      ],
+      100
+    )
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerTool({
+      name: 'list_projects',
+      description: 'List projects matching the query.',
+      parameters: z.object({
+        query: z.string()
+      }),
+      implementation: async ({ query }) => ({
+        projects: [query]
+      })
+    })
+    const topic = createBasicTopic('Tool-call only progress test', 'Testing tool-call-only round progress state')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Find my projects', topic)
+
+    await timeout(120)
+
+    const currentRound = copilot.currentSession?.currentRound
+    expect(currentRound?.state).toBe(RoundState.InProgress)
+    expect(currentRound?.inProgressCopilotMessageContent).toBe(null)
+
+    await waitForCompletion()
+
+    expect(currentRound?.state).toBe(RoundState.Completed)
+    expect(currentRound?.resultMessages[0]).toEqual({
+      role: 'copilot',
+      toolCalls: [
+        {
+          id: 'call_1',
+          type: 'function',
+          function: {
+            name: 'list_projects',
+            arguments: '{"query":"demo"}'
+          }
+        }
+      ]
+    })
+    expect(currentRound?.resultMessages[1]).toEqual({
+      role: 'tool',
+      callId: 'call_1',
+      execution: {
+        state: 'completed',
+        result: {
+          projects: ['demo']
+        }
+      }
+    })
+    expect(currentRound?.resultMessages[2]).toEqual({
+      role: 'copilot',
+      content: 'Done.',
+      toolCalls: []
+    })
+  })
+
+  it('should ignore legacy tool-use markup in assistant text during tool execution', async () => {
+    const generator = new MockSingleBatchMessageEventGenerator([
+      createTextDeltaEvent('<tool-use id="call_legacy" tool="echo" parameters=' + '\'{"text":"demo"}\'' + ' />'),
+      createDoneEvent('stop')
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    copilot.registerTool({
+      name: 'echo',
+      description: 'Echo the provided text.',
+      parameters: z.object({
+        text: z.string()
+      }),
+      implementation: async ({ text }) => ({
+        echoed: text
+      })
+    })
+    const topic = createBasicTopic('Legacy tool-use ignore test', 'Testing legacy tool-use execution path removal')
+
+    await copilot.startSession(topic)
+    copilot.addUserTextMessage('Do not execute legacy markup', topic)
+
+    await waitForCompletion()
+
+    const currentRound = copilot.currentSession?.currentRound
+    expect(currentRound?.state).toBe(RoundState.Completed)
+    expect(currentRound?.resultMessages).toEqual([
+      {
+        role: 'copilot',
+        content: '<tool-use id="call_legacy" tool="echo" parameters=' + '\'{"text":"demo"}\'' + ' />',
+        toolCalls: []
+      }
+    ])
+    expect(copilot.executor.getExecution('call_legacy')).toBe(null)
+  })
+})

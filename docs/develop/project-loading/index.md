@@ -1,8 +1,8 @@
-# SPX-GUI Cloud Project Loading & Saving Mechanism
+# GUI Cloud Project Loading & Saving Mechanism
 
 ## Overview
 
-This document focuses on the cloud-based project loading and saving mechanisms in SPX-GUI, detailing how projects are stored, retrieved, and synchronized with Qiniu Kodo cloud storage through the universal URL system.
+This document focuses on the cloud-based project loading and saving mechanisms in GUI, detailing how projects are stored, retrieved, and synchronized with Qiniu Kodo cloud storage through the universal URL system.
 
 ## Key Components for Cloud Operations
 
@@ -23,7 +23,7 @@ src/models/project/
 ```mermaid
 graph TB
     subgraph "Client (Browser)"
-        A[SPX-GUI Application]
+        A[GUI Application]
     end
 
     subgraph "Kodo + CDN"
@@ -53,7 +53,7 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Client (Browser)"
-        A[SPX-GUI Application]
+        A[GUI Application]
     end
     
     subgraph "Backend Server"

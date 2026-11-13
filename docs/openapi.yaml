@@ -8,6 +8,12 @@ info:
     **The API endpoints documented here are not yet stable and may change or break without notice. Use them at your own
     risk.**
 
+    ## Pagination
+
+    List endpoints that support jumping to a page take `pageIndex` and `pageSize` and return `ByPage`. Those that only
+    move to the next page take `pageToken` and `pageSize` and return `ByPageToken`. When passing `pageToken`, keep all
+    other query parameters except `pageSize` unchanged; otherwise the server responds with `400`.
+
     ## Error responses
 
     Most non-OAuth JSON endpoints return the shared `APIError` body for non-2xx responses:
@@ -267,8 +273,8 @@ paths:
 
         Account Web may authenticate with an account session cookie.
 
-        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:read`
-        Account API scope.
+        App backends may authenticate with a delegated user access token with the `account:user:read` Account API scope.
+        App-only access tokens cannot identify the current user.
       security:
         - accountSessionCookie: []
         - bearerAuth: []
@@ -293,8 +299,8 @@ paths:
 
         Account Web may authenticate with an account session cookie.
 
-        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:write`
-        Account API scope.
+        App backends may authenticate with a delegated user access token with the `account:user:write` Account API
+        scope. App-only access tokens cannot identify the current user.
 
         Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
@@ -335,8 +341,8 @@ paths:
 
         Account Web may authenticate with an account session cookie.
 
-        App backends may authenticate with an Account-issued app-scoped OAuth access token with the `account:user:write`
-        Account API scope.
+        App backends may authenticate with a delegated user access token with the `account:user:write` Account API
+        scope. App-only access tokens cannot identify the current user.
 
         Cookie-authenticated mutations must validate Origin or use equivalent CSRF protection.
       security:
@@ -413,6 +419,47 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /account/users/{userID}:
+    get:
+      operationId: getAccountUserByID
+      tags:
+        - Account
+      summary: Get an account user by ID
+      description: |
+        Retrieve user fields exposed by XBuilder Account for the specified user. The response uses the same
+        `AccountUser` representation as `GET /account/user`.
+
+        Requires an app-only access token with the `account:user:read` Account API scope. User access tokens and account
+        session cookies are not accepted.
+
+        App directory queries and user queries by ID share a rate limit per OAuth client.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userID
+          description: ID of the user to retrieve.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
 
   /account/session:
     post:
@@ -590,6 +637,102 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /account/apps:
+    get:
+      operationId: listAccountApps
+      tags:
+        - Account
+      summary: List account apps
+      description: |
+        Retrieve a list of registered account apps, including disabled apps.
+
+        Requires an app-only access token with the `account:app:read` Account API scope. User access tokens and account
+        session cookies are not accepted.
+
+        App directory queries and user queries by ID share a rate limit per OAuth client.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountApp"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /account/apps/{appID}:
+    get:
+      operationId: getAccountApp
+      tags:
+        - Account
+      summary: Get an account app
+      description: |
+        Retrieve the registration details of an account app, including a disabled app.
+
+        Requires an app-only access token with the `account:app:read` Account API scope. User access tokens and account
+        session cookies are not accepted.
+
+        App directory queries and user queries by ID share a rate limit per OAuth client.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountApp"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/OAuthInsufficientScope"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
   /account/oauth/par:
     post:
       operationId: createAccountOAuthPushedAuthorizationRequest
@@ -764,12 +907,16 @@ paths:
         - Account OAuth
       summary: Create an OAuth token
       description: |
-        Create or refresh Account-issued app-scoped OAuth tokens.
+        Exchange an authorization code, rotate a refresh token, or create an app-only access token.
 
-        Authorization code exchange validates the redirect URI and PKCE verifier.
+        Authorization codes must be exchanged by the original OAuth client, with the original redirect URI and a
+        matching PKCE verifier.
 
-        Refresh token exchange rotates the refresh token. Reuse of a rotated refresh token is treated as a replay signal
-        and revokes the corresponding token family or grant.
+        Refresh requests cannot expand the original refresh token scope. The replacement refresh token retains that
+        scope. Reuse of a consumed refresh token revokes its token family.
+
+        App-only access uses `client_credentials` with a confidential client and explicitly requested, approved scopes.
+        It does not issue a refresh token.
       security:
         - oauthClientSecretBasic: []
         - {}
@@ -782,6 +929,19 @@ paths:
       responses:
         "200":
           description: Successful response.
+          headers:
+            Cache-Control:
+              description: OAuth token responses are not cacheable.
+              schema:
+                type: string
+                examples:
+                  - no-store
+            Pragma:
+              description: OAuth token responses are not cacheable by HTTP/1.0 caches.
+              schema:
+                type: string
+                examples:
+                  - no-cache
           content:
             application/json:
               schema:
@@ -799,7 +959,13 @@ paths:
       tags:
         - Account OAuth
       summary: Introspect an OAuth token
-      description: Introspect an Account-issued OAuth token using OAuth 2.0 Token Introspection.
+      description: |
+        Introspect an Account-issued OAuth token using OAuth 2.0 Token Introspection.
+
+        A confidential OAuth client may introspect tokens belonging to the same app. Unknown tokens, inactive tokens,
+        and tokens belonging to another app return `{ "active": false }`.
+
+        Only active access tokens include `token_type`, with the value `Bearer`.
       security:
         - oauthClientSecretBasic: []
       requestBody:
@@ -827,6 +993,19 @@ paths:
       responses:
         "200":
           description: Successful response.
+          headers:
+            Cache-Control:
+              description: OAuth token responses are not cacheable.
+              schema:
+                type: string
+                examples:
+                  - no-store
+            Pragma:
+              description: OAuth token responses are not cacheable by HTTP/1.0 caches.
+              schema:
+                type: string
+                examples:
+                  - no-cache
           content:
             application/json:
               schema:
@@ -845,10 +1024,13 @@ paths:
         - Account OAuth
       summary: Revoke an OAuth token
       description: |
-        Revoke an Account-issued OAuth token using OAuth 2.0 Token Revocation.
+        Revoke a token issued to the requesting OAuth client. Revoking an access token affects that token. Revoking a
+        refresh token affects its token family, including when the submitted refresh token has already been consumed.
 
         Confidential clients authenticate with `client_secret_basic` and must not send `client_id` in the request body.
         Public clients must send `client_id`.
+
+        Requests for unknown tokens or tokens issued to another client succeed without revoking any tokens.
       security:
         - oauthClientSecretBasic: []
         - {}
@@ -1303,6 +1485,96 @@ paths:
           $ref: "#/components/responses/MovedPermanently"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /user/notifications:
+    get:
+      operationId: listAuthenticatedUserNotifications
+      tags:
+        - Notifications
+      summary: List notifications for the authenticated user
+      description: |
+        List one category of notifications, newest first. Reading a notification does not change its position among
+        all notifications of the category, but removes it from `read=false` results. To count unread notifications,
+        use the `total` of a `read=false` request.
+      parameters:
+        - name: category
+          description: Category of notifications to list.
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/NotificationCategory"
+        - name: read
+          description: Filter notifications by read state. Omit to list both read and unread notifications.
+          in: query
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/PageToken"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                  - nextPageToken
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPageToken/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notification"
+                  nextPageToken:
+                    $ref: "#/components/schemas/ByPageToken/properties/nextPageToken"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /user/notifications/read:
+    put:
+      operationId: markAllAuthenticatedUserNotificationsRead
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      description: |
+        Mark all unread notifications of the authenticated user as read, across all categories. Notifications delivered
+        after the request remain unread.
+      responses:
+        "204":
+          description: All unread notifications marked as read.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /user/notifications/{notificationID}/read:
+    put:
+      operationId: markAuthenticatedUserNotificationRead
+      tags:
+        - Notifications
+      summary: Mark a notification as read
+      description: |
+        Mark a notification of the authenticated user as read. Marking an already read notification again keeps its
+        first read time.
+      parameters:
+        - name: notificationID
+          description: ID of the notification to mark as read.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Notification marked as read, or it was already read.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -2738,6 +3010,11 @@ paths:
         - {}
         - bearerAuth: []
       parameters:
+        - name: kind
+          description: Filter courses by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Course/properties/kind"
         - name: courseSeriesID
           description: Filter courses by the course series ID.
           in: query
@@ -2786,6 +3063,11 @@ paths:
       summary: List courses owned by the authenticated user
       description: Retrieve a list of courses owned by the authenticated user.
       parameters:
+        - name: kind
+          description: Filter courses by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Course/properties/kind"
         - name: courseSeriesID
           description: Filter courses by the course series ID.
           in: query
@@ -2835,6 +3117,9 @@ paths:
       description: |
         Create a new course owned by the authenticated user.
 
+        `content` must match `kind`: `GuidedCourseContent` for a `guided` course, `PlaygroundCourseContent` for a
+        `playground` course.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can create courses.
@@ -2845,19 +3130,40 @@ paths:
             schema:
               type: object
               required:
+                - kind
                 - title
                 - thumbnail
-                - entrypoint
-                - prompt
+                - content
+              allOf:
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: guided
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/GuidedCourseContent"
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: playground
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/PlaygroundCourseContent"
               properties:
+                kind:
+                  $ref: "#/components/schemas/Course/properties/kind"
                 title:
                   $ref: "#/components/schemas/Course/properties/title"
                 thumbnail:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
-                entrypoint:
-                  $ref: "#/components/schemas/Course/properties/entrypoint"
-                prompt:
-                  $ref: "#/components/schemas/Course/properties/prompt"
+                content:
+                  $ref: "#/components/schemas/Course/properties/content"
       responses:
         "201":
           description: Successfully created the course.
@@ -2880,6 +3186,67 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /user/courses/playground/copilot-context:
+    post:
+      operationId: generatePlaygroundCourseCopilotContext
+      tags:
+        - Courses
+      summary: Generate a playground course copilot context
+      description: |
+        Generate an editable Copilot context draft from the author's current, possibly unsaved, playground course
+        content.
+
+        Permission requirements:
+
+        - Only users with the `courseAdmin` role can generate course copilot contexts.
+
+        Quota and rate limits:
+
+        - Each generation consumes 1 quota from the authenticated user's `copilotMessage` allowance. The quota is
+          refunded when generation fails on the server side; it is not refunded when the client cancels the request.
+        - Per-user short-window rate limits also apply. Hitting them returns 429 with `Retry-After`; reaching the
+          long-window quota limit returns 403 with `Retry-After`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - thumbnail
+                - content
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                content:
+                  description: Current, possibly unsaved, playground course content.
+                  $ref: "#/components/schemas/PlaygroundCourseContent"
+                  minProperties: 1
+      responses:
+        "200":
+          description: Successfully generated the copilot context.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - copilotContext
+                properties:
+                  copilotContext:
+                    description: Generated copilot context, editable by the author before saving.
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ForbiddenOrQuotaExceeded"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
 
   /courses/{courseID}:
     get:
@@ -2917,6 +3284,10 @@ paths:
       description: |
         Update the details of a specific course.
 
+        The course kind is immutable: a `kind` field is accepted only when it matches the course's current kind. `content`
+        is validated against the course's kind (`GuidedCourseContent` or `PlaygroundCourseContent`) and replaced as a
+        whole, never merged.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can update courses.
@@ -2934,15 +3305,36 @@ paths:
             schema:
               type: object
               minProperties: 1
+              allOf:
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: guided
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/GuidedCourseContent"
+                - if:
+                    required:
+                      - kind
+                    properties:
+                      kind:
+                        const: playground
+                  then:
+                    properties:
+                      content:
+                        $ref: "#/components/schemas/PlaygroundCourseContent"
               properties:
+                kind:
+                  $ref: "#/components/schemas/Course/properties/kind"
                 title:
                   $ref: "#/components/schemas/Course/properties/title"
                 thumbnail:
                   $ref: "#/components/schemas/Course/properties/thumbnail"
-                entrypoint:
-                  $ref: "#/components/schemas/Course/properties/entrypoint"
-                prompt:
-                  $ref: "#/components/schemas/Course/properties/prompt"
+                content:
+                  $ref: "#/components/schemas/Course/properties/content"
       responses:
         "200":
           description: Successfully updated the course.
@@ -2964,7 +3356,8 @@ paths:
         - Courses
       summary: Delete a course
       description: |
-        Permanently delete a specific course.
+        Permanently delete a specific course. The course is also taken out of every course series, and unit, that
+        holds it.
 
         Permission requirements:
 
@@ -3003,6 +3396,11 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
+        - name: kind
+          description: Filter courses by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Course/properties/kind"
         - name: courseSeriesID
           description: Filter courses by the course series ID.
           in: query
@@ -3058,6 +3456,11 @@ paths:
         - {}
         - bearerAuth: []
       parameters:
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -3101,6 +3504,11 @@ paths:
       summary: List course series owned by the authenticated user
       description: Retrieve a list of course series owned by the authenticated user.
       parameters:
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -3145,6 +3553,11 @@ paths:
       description: |
         Create a new course series owned by the authenticated user.
 
+        Every course named in `courseIDs` must have the series' `kind`.
+
+        A nonempty `units` divides the series into units. `courseIDs` must then be the course IDs of the units joined in
+        order.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can create course series.
@@ -3155,11 +3568,14 @@ paths:
             schema:
               type: object
               required:
+                - kind
                 - title
                 - thumbnail
                 - courseIDs
                 - order
               properties:
+                kind:
+                  $ref: "#/components/schemas/CourseSeries/properties/kind"
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
                 thumbnail:
@@ -3168,6 +3584,11 @@ paths:
                   $ref: "#/components/schemas/CourseSeries/properties/description"
                 courseIDs:
                   $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                units:
+                  description: Units to divide the series into, in order. Omitted or empty, the series is undivided.
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/CourseSeriesUnit"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
@@ -3231,6 +3652,14 @@ paths:
       description: |
         Update the details of a specific course series.
 
+        The course series kind is immutable: a `kind` field is accepted only when it matches the series' current kind.
+        Every course named in `courseIDs` must have that kind.
+
+        `units` replaces the units of the series, each with the `id` it is given. `units` and `courseIDs` each change
+        only themselves, and one left out keeps its value: an empty `units` leaves the series undivided, with its
+        courses as they are. While the series is divided into units after the update, the course IDs of its units joined
+        in order must equal its `courseIDs`, whether given or kept; an update that would leave them apart is rejected.
+
         Permission requirements:
 
         - Only users with the `courseAdmin` role can update course series.
@@ -3249,6 +3678,8 @@ paths:
               type: object
               minProperties: 1
               properties:
+                kind:
+                  $ref: "#/components/schemas/CourseSeries/properties/kind"
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
                 thumbnail:
@@ -3257,6 +3688,11 @@ paths:
                   $ref: "#/components/schemas/CourseSeries/properties/description"
                 courseIDs:
                   $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                units:
+                  description: Units to divide the series into, in order; empty to leave it undivided.
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/CourseSeriesUnit"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
@@ -3319,6 +3755,11 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/User/properties/username"
+        - name: kind
+          description: Filter course series by kind.
+          in: query
+          schema:
+            $ref: "#/components/schemas/CourseSeries/properties/kind"
         - name: orderBy
           description: Field by which to order the results.
           in: query
@@ -4648,6 +5089,44 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /user/feedback:
+    post:
+      operationId: createFeedback
+      tags:
+        - Feedback
+      summary: Submit feedback
+      description: Submit feedback as the authenticated user.
+      requestBody:
+        description: Encoded JSON request body, limited to 256 KiB.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  $ref: "#/components/schemas/Feedback/properties/title"
+                description:
+                  $ref: "#/components/schemas/Feedback/properties/description"
+                context:
+                  $ref: "#/components/schemas/Feedback/properties/context"
+      responses:
+        "201":
+          description: Successfully submitted the feedback.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+
   /admin/account/users:
     get:
       operationId: listAdminAccountUsers
@@ -5131,7 +5610,7 @@ paths:
         - Account Admin
       summary: List account apps as admin
       description: |
-        Retrieve a list of account apps registered for first-party app SSO.
+        Retrieve a list of registered account apps.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5165,7 +5644,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AccountApp"
+                      $ref: "#/components/schemas/AdminAccountApp"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5178,7 +5657,7 @@ paths:
         - Account Admin
       summary: Create an account app as admin
       description: |
-        Register an account app for first-party app SSO.
+        Register an account app without creating an OAuth client.
 
         Requires the `accountAdmin` role.
       requestBody:
@@ -5187,27 +5666,33 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required:
                 - name
-                - displayName
-                - clientType
-                - redirectURIs
               properties:
                 name:
                   $ref: "#/components/schemas/AccountApp/properties/name"
                 displayName:
+                  description: Defaults to `name` if not provided.
                   $ref: "#/components/schemas/AccountApp/properties/displayName"
-                clientType:
-                  $ref: "#/components/schemas/AccountApp/properties/clientType"
-                redirectURIs:
-                  $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
+                description:
+                  $ref: "#/components/schemas/AccountApp/properties/description"
+                clientCredentialsScopes:
+                  description: Defaults to an empty array if not provided.
+                  $ref: "#/components/schemas/AdminAccountApp/allOf/1/properties/clientCredentialsScopes"
+                reason:
+                  description: Reason for the change, recorded in the audit log.
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  pattern: "\\P{White_Space}"
       responses:
         "201":
           description: Account app created.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountApp"
+                $ref: "#/components/schemas/AdminAccountApp"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5224,7 +5709,7 @@ paths:
         - Account Admin
       summary: Get an account app as admin
       description: |
-        Retrieve an account app registered for first-party app SSO.
+        Retrieve the registration details of an account app.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5240,7 +5725,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountApp"
+                $ref: "#/components/schemas/AdminAccountApp"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5255,7 +5740,14 @@ paths:
         - Account Admin
       summary: Update an account app as admin
       description: |
-        Update an account app registered for first-party app SSO.
+        Update the display details, status, or approved app-only scopes of an account app.
+
+        Disabling an app revokes its outstanding authorization flows and all tokens. Re-enabling the app does not
+        reactivate those flows or tokens.
+
+        Removing scopes revokes affected app-only tokens across all clients of the app. Clearing
+        `clientCredentialsScopes` removes app-only access. Restoring scopes does not reactivate revoked tokens.
+        User grants and user tokens are unaffected by app-only permission changes.
 
         Requires the `accountAdmin` role.
       parameters:
@@ -5271,21 +5763,39 @@ paths:
           application/json:
             schema:
               type: object
-              minProperties: 1
+              additionalProperties: false
+              anyOf:
+                - required:
+                    - displayName
+                - required:
+                    - description
+                - required:
+                    - status
+                - required:
+                    - clientCredentialsScopes
               properties:
                 displayName:
                   $ref: "#/components/schemas/AccountApp/properties/displayName"
+                description:
+                  description: Set to `null` to clear the app description.
+                  $ref: "#/components/schemas/AccountApp/properties/description"
                 status:
                   $ref: "#/components/schemas/AccountApp/properties/status"
-                redirectURIs:
-                  $ref: "#/components/schemas/AccountApp/properties/redirectURIs"
+                clientCredentialsScopes:
+                  $ref: "#/components/schemas/AdminAccountApp/allOf/1/properties/clientCredentialsScopes"
+                reason:
+                  description: Reason for the change, recorded in the audit log.
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  pattern: "\\P{White_Space}"
       responses:
         "200":
           description: Account app updated.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountApp"
+                $ref: "#/components/schemas/AdminAccountApp"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5295,19 +5805,303 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /admin/account/apps/{appID}/secrets:
-    get:
-      operationId: listAdminAccountAppSecrets
+  /admin/account/apps/{appID}/avatar:
+    put:
+      operationId: updateAdminAccountAppAvatar
       tags:
         - Account Admin
-      summary: List account app secrets as admin
+      summary: Update an account app avatar as admin
       description: |
-        Retrieve a list of secrets configured for a confidential account app.
+        Upload and replace an account app's avatar image.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: appID
-          description: ID of the app whose secrets are listed.
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  description: |
+                    Avatar image file.
+
+                    Avatar requirements:
+
+                    - The image format must be PNG (`image/png`) or JPEG (`image/jpeg`).
+                    - The maximum file size is 5 MiB.
+
+                    Uploaded avatars are normalized to a 512x512 PNG. Upload a square image for best visual quality.
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: image/png, image/jpeg
+      responses:
+        "204":
+          description: Account app avatar updated.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+
+  /admin/account/apps/{appID}/oauth-clients:
+    get:
+      operationId: listAdminAccountOAuthClients
+      tags:
+        - Account Admin
+      summary: List account OAuth clients as admin
+      description: |
+        Retrieve a list of OAuth clients registered under an account app.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountOAuthClient"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createAdminAccountOAuthClient
+      tags:
+        - Account Admin
+      summary: Create an account OAuth client as admin
+      description: |
+        Register an OAuth client for an account app.
+
+        User authorization requires `authorization_code`, optionally `refresh_token`, and at least one exact redirect
+        URI. App-only access requires a confidential client with only `client_credentials` and no redirect URIs.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - clientType
+                - grantTypes
+              properties:
+                name:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/name"
+                clientType:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/clientType"
+                grantTypes:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/grantTypes"
+                redirectURIs:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/redirectURIs"
+                reason:
+                  description: Reason for the change, recorded in the audit log.
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  pattern: "\\P{White_Space}"
+      responses:
+        "201":
+          description: Account OAuth client created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountOAuthClient"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /admin/account/apps/{appID}/oauth-clients/{oauthClientID}:
+    get:
+      operationId: getAdminAccountOAuthClient
+      tags:
+        - Account Admin
+      summary: Get an account OAuth client as admin
+      description: |
+        Retrieve the configuration of an OAuth client registered under an account app.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountOAuthClient"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAdminAccountOAuthClient
+      tags:
+        - Account Admin
+      summary: Update an account OAuth client as admin
+      description: |
+        Update the status or exact redirect URIs of an OAuth client.
+
+        Disabling a client revokes its outstanding authorization flows and tokens. Re-enabling the client does not
+        reactivate previously revoked authorization flows or tokens.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              anyOf:
+                - required:
+                    - status
+                - required:
+                    - redirectURIs
+              properties:
+                status:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/status"
+                redirectURIs:
+                  $ref: "#/components/schemas/AccountOAuthClient/properties/redirectURIs"
+                reason:
+                  description: Reason for the change, recorded in the audit log.
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  pattern: "\\P{White_Space}"
+      responses:
+        "200":
+          description: Account OAuth client updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountOAuthClient"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/account/apps/{appID}/oauth-clients/{oauthClientID}/secrets:
+    get:
+      operationId: listAdminAccountOAuthClientSecrets
+      tags:
+        - Account Admin
+      summary: List account OAuth client secrets as admin
+      description: |
+        Retrieve a list of active secrets for a confidential OAuth client.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appID
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
           in: path
           required: true
           schema:
@@ -5330,7 +6124,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AccountAppSecret"
+                      $ref: "#/components/schemas/AccountOAuthClientSecret"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5340,17 +6134,24 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
     post:
-      operationId: createAdminAccountAppSecret
+      operationId: createAdminAccountOAuthClientSecret
       tags:
         - Account Admin
-      summary: Create an account app secret as admin
+      summary: Create an account OAuth client secret as admin
       description: |
-        Create a secret for a confidential account app. The secret value is only returned once.
+        Create a secret for a confidential OAuth client. The secret value is returned only once in the creation
+        response.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: appID
-          description: ID of the app whose secret is created.
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
           in: path
           required: true
           schema:
@@ -5365,14 +6166,14 @@ paths:
                 - name
               properties:
                 name:
-                  $ref: "#/components/schemas/AccountAppSecret/properties/name"
+                  $ref: "#/components/schemas/AccountOAuthClientSecret/properties/name"
       responses:
         "201":
-          description: Account app secret created.
+          description: Account OAuth client secret created.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreatedAccountAppSecret"
+                $ref: "#/components/schemas/CreatedAccountOAuthClientSecret"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5384,22 +6185,26 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /admin/account/apps/{appID}/secrets/{secretID}:
+  /admin/account/apps/{appID}/oauth-clients/{oauthClientID}/secrets/{secretID}:
     delete:
-      operationId: revokeAdminAccountAppSecret
+      operationId: revokeAdminAccountOAuthClientSecret
       tags:
         - Account Admin
-      summary: Revoke an account app secret as admin
+      summary: Revoke an account OAuth client secret as admin
       description: |
-        Permanently revoke a secret from a confidential account app. The secret can no longer authenticate the client
-        and cannot be restored.
-
-        Existing grants and tokens issued before revocation remain valid. This operation does not revoke them.
+        Revoke a secret of a confidential OAuth client. Previously issued tokens remain valid until they expire or are
+        separately revoked.
 
         Requires the `accountAdmin` role.
       parameters:
         - name: appID
-          description: ID of the app whose secret is revoked.
+          description: ID of the app.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+        - name: oauthClientID
+          description: Management ID of the OAuth client.
           in: path
           required: true
           schema:
@@ -5412,7 +6217,7 @@ paths:
             $ref: "#/components/schemas/Model/properties/id"
       responses:
         "204":
-          description: Account app secret revoked.
+          description: Account OAuth client secret revoked.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5504,6 +6309,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountAppGrant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: revokeAdminAccountAppGrant
+      tags:
+        - Account Admin
+      summary: Revoke an account app grant as admin
+      description: |
+        Revoke a user's authorization for an account app across all of its OAuth clients.
+
+        Outstanding authorization codes and user tokens for this grant are revoked. App-only permissions are unchanged.
+        Repeating the revocation succeeds.
+
+        Requires the `accountAdmin` role.
+      parameters:
+        - name: appGrantID
+          description: ID of the app grant to revoke.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "204":
+          description: Account app grant revoked.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5793,6 +6628,216 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /admin/feedback:
+    get:
+      operationId: listAdminFeedback
+      tags:
+        - Feedback Admin
+      summary: List feedback as admin
+      description: |
+        Retrieve a list of feedback submitted by users.
+
+        Items do not include `context` or `reply`. Get the feedback to read them.
+
+        Requires the `feedbackAdmin` role.
+      parameters:
+        - name: status
+          description: Filter feedback by status.
+          in: query
+          schema:
+            $ref: "#/components/schemas/Feedback/properties/status"
+        - name: orderBy
+          description: Field by which to order the results.
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+            default: createdAt
+            examples:
+              - createdAt
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - data
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - createdAt
+                        - updatedAt
+                        - owner
+                        - title
+                        - description
+                        - status
+                      properties:
+                        id:
+                          $ref: "#/components/schemas/Feedback/properties/id"
+                        createdAt:
+                          $ref: "#/components/schemas/Feedback/properties/createdAt"
+                        updatedAt:
+                          $ref: "#/components/schemas/Feedback/properties/updatedAt"
+                        owner:
+                          $ref: "#/components/schemas/Feedback/properties/owner"
+                        title:
+                          $ref: "#/components/schemas/Feedback/properties/title"
+                        description:
+                          $ref: "#/components/schemas/Feedback/properties/description"
+                        status:
+                          $ref: "#/components/schemas/Feedback/properties/status"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/feedback/{feedbackID}:
+    get:
+      operationId: getAdminFeedback
+      tags:
+        - Feedback Admin
+      summary: Get feedback as admin
+      description: |
+        Retrieve feedback submitted by a user.
+
+        Requires the `feedbackAdmin` role.
+      parameters:
+        - name: feedbackID
+          description: ID of the feedback to get.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAdminFeedback
+      tags:
+        - Feedback Admin
+      summary: Update feedback as admin
+      description: |
+        Update the status of feedback submitted by a user.
+
+        Only feedback in the `new` status can be updated. Updating feedback in any other status fails with `409`.
+
+        Requires the `feedbackAdmin` role.
+      parameters:
+        - name: feedbackID
+          description: ID of the feedback to update.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                status:
+                  description: New status of the feedback.
+                  type: string
+                  enum:
+                    - handled
+                  examples:
+                    - handled
+      responses:
+        "200":
+          description: Feedback updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /admin/feedback/{feedbackID}/reply:
+    post:
+      operationId: createAdminFeedbackReply
+      tags:
+        - Feedback Admin
+      summary: Reply to feedback as admin
+      description: |
+        Reply to feedback submitted by a user. The feedback moves to the `replied` status, and the user who submitted it
+        receives a notification containing the reply.
+
+        Only feedback in the `new` status can be replied to. Replying to feedback in any other status fails with `409`.
+
+        Requires the `feedbackAdmin` role.
+      parameters:
+        - name: feedbackID
+          description: ID of the feedback to reply to.
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  $ref: "#/components/schemas/FeedbackReply/properties/content"
+      responses:
+        "201":
+          description: Reply sent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackReply"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -5802,8 +6847,8 @@ components:
       description: |
         Opaque access token, in the format `Bearer {token}`.
 
-        For XBuilder Account OAuth flows, app-scoped access tokens are issued by `/account/oauth/token` and can be
-        validated with `/account/oauth/introspect`.
+        XBuilder Account access tokens are issued by `/account/oauth/token` and can be validated with
+        `/account/oauth/introspect`.
     accountSessionCookie:
       type: apiKey
       in: cookie
@@ -6065,13 +7110,14 @@ components:
           schema:
             $ref: "#/components/schemas/OAuthError"
     OAuthInsufficientScope:
-      description: OAuth bearer token does not have the required scope.
+      description: The OAuth bearer token's subject or scope does not permit this operation.
       headers:
         WWW-Authenticate:
           description: Bearer token insufficient scope challenge.
           schema:
             type: string
             examples:
+              - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:app:read"
               - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:read"
               - Bearer realm="XBuilder Account", error="insufficient_scope", scope="account:user:write"
       content:
@@ -6330,6 +7376,25 @@ components:
           items:
             type: object
 
+    ByPageToken:
+      description: Paginated response wrapper using page tokens.
+      type: object
+      required:
+        - total
+        - data
+        - nextPageToken
+      properties:
+        total:
+          $ref: "#/components/schemas/ByPage/properties/total"
+        data:
+          $ref: "#/components/schemas/ByPage/properties/data"
+        nextPageToken:
+          description: Opaque token for the next page, or `null` when pagination is complete.
+          type:
+            - string
+            - "null"
+          minLength: 1
+
     Model:
       type: object
       description: Base model with common fields for all entities.
@@ -6561,17 +7626,16 @@ components:
 
     AccountApp:
       type: object
-      description: Registered app for first-party app SSO.
+      description: First-party app registered with XBuilder Account.
       required:
         - id
         - createdAt
         - updatedAt
         - name
         - displayName
-        - clientType
+        - avatar
+        - description
         - status
-        - redirectURIs
-        - redirectURIPatterns
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -6592,16 +7656,22 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+          pattern: "^\\P{White_Space}(?:[^\\r\\n]*\\P{White_Space})?$(?![\\s\\S])"
           examples:
             - XBuilder
-        clientType:
-          description: OAuth client type of the app.
-          type: string
-          enum:
-            - public
-            - confidential
-          examples:
-            - public
+        avatar:
+          description: Public HTTP URL of the Account-managed app avatar, or `null` when unset.
+          type:
+            - string
+            - "null"
+          format: uri
+          pattern: "^https?://"
+        description:
+          description: Optional plain-text app description.
+          type:
+            - string
+            - "null"
+          maxLength: 200
         status:
           description: App status.
           type: string
@@ -6610,6 +7680,89 @@ components:
             - disabled
           examples:
             - active
+
+    AdminAccountApp:
+      description: Account app registration and app-only permissions for administration.
+      allOf:
+        - $ref: "#/components/schemas/AccountApp"
+        - type: object
+          required:
+            - clientCredentialsScopes
+          properties:
+            clientCredentialsScopes:
+              description: Approved scopes for app-only access.
+              type: array
+              uniqueItems: true
+              items:
+                type: string
+                enum:
+                  - account:app:read
+                  - account:user:read
+
+    AccountOAuthClient:
+      type: object
+      description: OAuth client configuration owned by an account app.
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - appID
+        - clientID
+        - name
+        - clientType
+        - status
+        - grantTypes
+        - redirectURIs
+        - redirectURIPatterns
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        appID:
+          $ref: "#/components/schemas/Model/properties/id"
+        clientID:
+          $ref: "#/components/schemas/OAuthClientID"
+        name:
+          description: Management name unique within the owning app.
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: "^[A-Za-z0-9_-]{1,100}$"
+          examples:
+            - web
+        clientType:
+          description: OAuth client authentication type.
+          type: string
+          enum:
+            - public
+            - confidential
+          examples:
+            - public
+        status:
+          description: Client status.
+          type: string
+          enum:
+            - active
+            - disabled
+          examples:
+            - active
+        grantTypes:
+          description: Allowed OAuth grant types.
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - authorization_code
+              - refresh_token
+              - client_credentials
+          examples:
+            - - authorization_code
+              - refresh_token
         redirectURIs:
           description: |
             Allowed redirect URIs.
@@ -6618,29 +7771,19 @@ components:
 
             Native app and loopback exceptions must be explicitly registered and validated by client type.
           type: array
-          minItems: 1
           items:
             type: string
             format: uri
+          uniqueItems: true
+          examples:
+            - - https://app.example.com/oauth/callback
         redirectURIPatterns:
           description: |
-            Allowed redirect URI patterns.
+            Read-only redirect URI patterns for HTTPS preview environments.
 
-            **Exact redirect URIs remain the primary allowlist.**
-
-            Wildcard patterns should be reserved for controlled preview or non-production callback hosts because broad
-            redirect matching can increase open redirect risk.
-
-            Pattern rules:
-
-            - The pattern must be an absolute `http` or `https` URL.
-            - The pattern must contain at most one `*`.
-            - The wildcard must be located in a subdomain within the hostname.
-            - The wildcard must be located in the subdomain furthest from the root domain.
-            - The wildcard may be prefixed or suffixed with valid hostname characters.
-            - The wildcard matches only one hostname label and does not match `.`.
-            - All non-host components, including path and query, are matched exactly.
-            - Fragments are not allowed.
+            At most one wildcard in the leftmost subdomain label matches a nonempty fragment within that label.
+            Hostnames are case-insensitive. Scheme, port, encoded path, and query must match exactly. Userinfo,
+            fragments, and wildcards outside the hostname are rejected.
           readOnly: true
           type: array
           items:
@@ -6648,9 +7791,9 @@ components:
           examples:
             - - https://app-*.example.com/oauth/callback
 
-    AccountAppSecret:
+    AccountOAuthClientSecret:
       type: object
-      description: OAuth client secret metadata for a confidential app.
+      description: OAuth client secret metadata for a confidential client.
       required:
         - id
         - createdAt
@@ -6661,25 +7804,28 @@ components:
         createdAt:
           $ref: "#/components/schemas/Model/properties/createdAt"
         name:
-          description: App secret name.
+          description: Client secret name. Must be unique among the client's active secrets.
           type: string
           minLength: 1
           maxLength: 100
+          pattern: "^\\P{White_Space}(?:[^\\r\\n]*\\P{White_Space})?$(?![\\s\\S])"
           examples:
             - production
 
-    CreatedAccountAppSecret:
+    CreatedAccountOAuthClientSecret:
       description: Response returned after creating an OAuth client secret, including the one-time secret value.
       allOf:
-        - $ref: "#/components/schemas/AccountAppSecret"
+        - $ref: "#/components/schemas/AccountOAuthClientSecret"
         - type: object
           required:
             - value
           properties:
             value:
-              description: One-time app secret value.
+              description: One-time client secret value.
               type: string
-              minLength: 1
+              minLength: 43
+              maxLength: 43
+              pattern: "^[A-Za-z0-9_-]{43}$"
 
     AccountAppGrant:
       type: object
@@ -6735,6 +7881,7 @@ components:
         - id
         - createdAt
         - updatedAt
+        - oauthClientID
         - grantID
         - tokenType
         - scope
@@ -6747,15 +7894,12 @@ components:
           $ref: "#/components/schemas/Model/properties/createdAt"
         updatedAt:
           $ref: "#/components/schemas/Model/properties/updatedAt"
+        oauthClientID:
+          description: ID of the OAuth client associated with the token.
+          $ref: "#/components/schemas/Model/properties/id"
         grantID:
           description: ID of the app grant associated with the token.
           $ref: "#/components/schemas/Model/properties/id"
-        name:
-          description: Human-readable token name.
-          type: string
-          maxLength: 100
-          examples:
-            - SPX API testing
         tokenType:
           description: OAuth token type.
           type: string
@@ -6767,6 +7911,12 @@ components:
         scope:
           description: Account OAuth scope associated with the token.
           $ref: "#/components/schemas/OAuthScope"
+        name:
+          description: Human-readable token name.
+          type: string
+          maxLength: 100
+          examples:
+            - SPX API testing
         expiresAt:
           description: Expiration timestamp.
           type: string
@@ -6805,17 +7955,14 @@ components:
 
         The token scope is inherited from the associated app grant and cannot be overridden.
       required:
+        - oauthClientID
         - tokenType
         - name
         - expiresAt
       properties:
-        name:
-          description: Human-readable token name.
-          type: string
-          minLength: 1
-          maxLength: 100
-          examples:
-            - SPX API testing
+        oauthClientID:
+          description: ID of an active OAuth client for user authorization belonging to the grant's app.
+          $ref: "#/components/schemas/Model/properties/id"
         tokenType:
           description: |
             OAuth token type to create.
@@ -6826,18 +7973,23 @@ components:
             - accessToken
           examples:
             - accessToken
+        name:
+          description: Human-readable token name.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - SPX API testing
         expiresAt:
           description: |
-            Expiration timestamp of the created token.
-
-            The server must reject expiration timestamps later than 365 days from creation.
+            Expiration timestamp of the created token. Must be in the future and no later than 365 days from creation.
           type: string
           format: date-time
           examples:
             - 2027-01-15T00:00:00Z
 
     CreatedAccountAppToken:
-      description: Response returned after creating an Account app token, including the one-time token value.
+      description: Response returned after creating an account app token, including the one-time token value.
       allOf:
         - $ref: "#/components/schemas/AccountAppToken"
         - type: object
@@ -6852,23 +8004,31 @@ components:
                 - xb_at_2L5f8xQy...
 
     OAuthClientID:
-      description: OAuth client ID of the app.
+      description: |
+        OAuth client ID used in OAuth requests.
+
+        New clients receive 22 unpadded Base64url characters. Existing clients may use a decimal identifier. Values are
+        case-sensitive.
       type: string
       minLength: 1
-      maxLength: 19
-      pattern: "^[1-9][0-9]{0,18}$"
       examples:
+        - K7mR2qV9sT4wX6yZ8aB0Cg
         - "1"
 
     OAuthScope:
-      description: Space-delimited Account API OAuth scopes supported by XBuilder Account.
+      description: |
+        Space-delimited Account API scopes without duplicates.
+
+        Delegated user access supports `account:user:read` and `account:user:write`. App-only access supports
+        `account:app:read` and `account:user:read` when approved for the app.
       type: string
       minLength: 1
-      pattern: "^(account:user:read|account:user:write|account:user:read account:user:write|account:user:write account:user:read)$"
+      pattern: "^account:(app:read|user:read|user:write)( account:(app:read|user:read|user:write))*$"
       examples:
         - account:user:read
         - account:user:write
         - account:user:read account:user:write
+        - account:app:read account:user:read
 
     OAuthPKCECodeChallenge:
       description: PKCE code challenge.
@@ -6910,15 +8070,17 @@ components:
             - 600
 
     CreateOAuthTokenRequest:
-      description: Request to create or refresh Account-issued app-scoped OAuth tokens.
+      description: Request to create or refresh Account-issued OAuth tokens.
       oneOf:
         - $ref: "#/components/schemas/CreateAuthorizationCodeOAuthTokenRequest"
         - $ref: "#/components/schemas/CreateRefreshTokenOAuthTokenRequest"
+        - $ref: "#/components/schemas/CreateClientCredentialsOAuthTokenRequest"
       discriminator:
         propertyName: grant_type
         mapping:
           authorization_code: "#/components/schemas/CreateAuthorizationCodeOAuthTokenRequest"
           refresh_token: "#/components/schemas/CreateRefreshTokenOAuthTokenRequest"
+          client_credentials: "#/components/schemas/CreateClientCredentialsOAuthTokenRequest"
 
     CreateAuthorizationCodeOAuthTokenRequest:
       type: object
@@ -6982,6 +8144,28 @@ components:
           allOf:
             - $ref: "#/components/schemas/OAuthClientID"
 
+    CreateClientCredentialsOAuthTokenRequest:
+      type: object
+      description: |
+        Request to create an app-only access token using `client_secret_basic` authentication.
+
+        Scopes must be explicitly requested and approved for the app. This grant requires a confidential OAuth client and
+        does not issue a refresh token.
+      required:
+        - grant_type
+        - scope
+      not:
+        required:
+          - client_id
+      properties:
+        grant_type:
+          description: OAuth grant type.
+          type: string
+          enum:
+            - client_credentials
+        scope:
+          $ref: "#/components/schemas/OAuthScope"
+
     OAuthToken:
       type: object
       description: OAuth token response.
@@ -6992,7 +8176,7 @@ components:
         - scope
       properties:
         access_token:
-          description: Account-issued app-scoped OAuth access token.
+          description: Account-issued OAuth access token.
           type: string
           minLength: 1
         token_type:
@@ -7008,7 +8192,9 @@ components:
           examples:
             - 300
         refresh_token:
-          description: Refresh token issued by XBuilder Account.
+          description: |
+            Refresh token issued by XBuilder Account for user authorization when the OAuth client enables
+            `refresh_token`. Omitted for `client_credentials`.
           type: string
           minLength: 1
         scope:
@@ -7027,11 +8213,17 @@ components:
           type: boolean
           examples:
             - true
+        token_type:
+          description: "`Bearer` for an active access token. Omitted for refresh tokens and inactive tokens."
+          type: string
+          enum:
+            - Bearer
         sub:
-          description: Stable XBuilder user ID used as the OAuth subject.
-          $ref: "#/components/schemas/Model/properties/id"
+          description: Stable user ID for delegated access, or `app:{appID}` for an app principal.
+          type: string
+          pattern: "^(app:)?[1-9][0-9]{0,18}$"
         client_id:
-          description: OAuth client ID of the app the token was issued to.
+          description: OAuth client ID associated with the token.
           $ref: "#/components/schemas/OAuthClientID"
         scope:
           description: OAuth scope associated with the token.
@@ -7238,6 +8430,7 @@ components:
         - canManageAuthorization
         - canManageAssets
         - canManageCourses
+        - canManageFeedback
         - canUsePremiumLLM
       properties:
         canManageAccount:
@@ -7260,11 +8453,65 @@ components:
           type: boolean
           examples:
             - true
+        canManageFeedback:
+          description: Whether the user can manage feedback.
+          type: boolean
+          examples:
+            - true
         canUsePremiumLLM:
           description: Whether the user can access premium LLM models.
           type: boolean
           examples:
             - true
+
+    NotificationCategory:
+      description: Category used to group notifications in the client.
+      type: string
+      enum:
+        - message
+        - announcement
+      examples:
+        - message
+
+    Notification:
+      description: Notification delivered to the authenticated user.
+      type: object
+      required:
+        - id
+        - category
+        - title
+        - body
+        - createdAt
+        - readAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        category:
+          $ref: "#/components/schemas/NotificationCategory"
+        title:
+          description: Title of the notification.
+          type: string
+          minLength: 1
+          maxLength: 200
+          examples:
+            - New follower
+        body:
+          description: Body of the notification in Markdown.
+          type: string
+          minLength: 1
+          maxLength: 5000
+          examples:
+            - "[John Doe](/user/john) started following you."
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        readAt:
+          description: Time when the user first read the notification, or `null` if the notification is unread.
+          type:
+            - string
+            - "null"
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05+07:00
 
     Project:
       type: object
@@ -7543,6 +8790,15 @@ components:
         visibility:
           $ref: "#/components/schemas/Visibility"
 
+    CourseKind:
+      description: Kind of a course, deciding how the course is driven and what its content holds.
+      type: string
+      enum:
+        - guided
+        - playground
+      examples:
+        - guided
+
     Course:
       description: Educational course with learning content.
       type: object
@@ -7551,10 +8807,31 @@ components:
         - createdAt
         - updatedAt
         - owner
+        - kind
         - title
         - thumbnail
-        - entrypoint
-        - prompt
+        - content
+      allOf:
+        - if:
+            required:
+              - kind
+            properties:
+              kind:
+                const: guided
+          then:
+            properties:
+              content:
+                $ref: "#/components/schemas/GuidedCourseContent"
+        - if:
+            required:
+              - kind
+            properties:
+              kind:
+                const: playground
+          then:
+            properties:
+              content:
+                $ref: "#/components/schemas/PlaygroundCourseContent"
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -7565,6 +8842,9 @@ components:
         owner:
           description: Username of the course's owner.
           $ref: "#/components/schemas/User/properties/username"
+        kind:
+          description: Kind of the course. Immutable after creation.
+          $ref: "#/components/schemas/CourseKind"
         title:
           description: Title of the course.
           type: string
@@ -7579,6 +8859,21 @@ components:
           minLength: 1
           examples:
             - kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
+        content:
+          description: |
+            Kind-specific course content, selected by `kind`: `GuidedCourseContent` for a `guided` course,
+            `PlaygroundCourseContent` for a `playground` course. The API validates only the top-level shape; internals
+            follow the [Tutorial content-format contract](./develop/tutorial-v2/course-storage.md) and stay opaque to
+            the API and storage.
+          type: object
+
+    GuidedCourseContent:
+      description: Content of a `guided` course, driven by Copilot.
+      type: object
+      required:
+        - entrypoint
+        - prompt
+      properties:
         entrypoint:
           description: Starting entrypoint of the course.
           type: string
@@ -7593,6 +8888,21 @@ components:
           examples:
             - Learn the basics of XGo programming language
 
+    PlaygroundCourseContent:
+      description: |
+        Content of a `playground` course, driven by course code: a file collection mapping file paths to universal URLs.
+        The referenced files form the Tutorial project; its layout is owned by the
+        [Tutorial Class Framework contract](./develop/tutorial-v2/tutorial-class-framework.go). An empty collection is
+        valid, so a course can be created before its files are uploaded.
+      type: object
+      additionalProperties:
+        type: string
+        format: uri-reference
+      examples:
+        - main_course.gox: kodo://xbuilder-usercontent-test/files/FvYyHLNrtx8qFHSwnLjEe57UA2fF-2824936
+          project/Lita.spx: kodo://xbuilder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
+          assets/videos/step-to/index.json: data:application/json,%7B%22path%22%3A%22step-to.mp4%22%7D
+
     CourseSeries:
       description: Collection of related courses.
       type: object
@@ -7601,10 +8911,12 @@ components:
         - createdAt
         - updatedAt
         - owner
+        - kind
         - title
         - thumbnail
         - description
         - courseIDs
+        - units
         - order
       properties:
         id:
@@ -7616,6 +8928,11 @@ components:
         owner:
           description: Username of the course series' owner.
           $ref: "#/components/schemas/User/properties/username"
+        kind:
+          description: |
+            Kind of the courses in this series; a course series holds courses of exactly one kind. Immutable after
+            creation.
+          $ref: "#/components/schemas/CourseKind"
         title:
           description: Title of the course series.
           type: string
@@ -7639,16 +8956,57 @@ components:
         courseIDs:
           description: Array of course IDs included in this series.
           type: array
+          uniqueItems: true
           items:
             $ref: "#/components/schemas/Model/properties/id"
           examples:
             - ["1", "2", "3"]
+        units:
+          description: |
+            Units the series is divided into, in order; empty if it is not divided. The course IDs of the units, joined
+            in unit order, are `courseIDs`: every course of the series is in exactly one unit.
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseSeriesUnit"
         order:
           description: Order/priority of the course series for sorting.
           type: integer
           format: int32
           examples:
             - 1
+
+    CourseSeriesUnit:
+      description: A unit of a course series, a titled run of its courses.
+      type: object
+      required:
+        - id
+        - title
+        - courseIDs
+      properties:
+        id:
+          description: |
+            Identifier of the unit within its series, unique there. The client that creates the unit chooses it, and it
+            is stored as given.
+          type: string
+          minLength: 1
+          maxLength: 64
+          examples:
+            - V1StGXR8_Z5jdHi6B-myT
+        title:
+          description: Title of the unit.
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - Running, moving and planning routes
+        courseIDs:
+          description: IDs of the courses in the unit, in order.
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Model/properties/id"
+          examples:
+            - ["1", "2"]
 
     FileObject:
       description: A content-addressed file object stored in Kodo.
@@ -8570,6 +9928,104 @@ components:
                 - ui
                 - unspecified
 
+    Feedback:
+      description: Problem report submitted by a user.
+      type: object
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - owner
+        - title
+        - description
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        owner:
+          description: Username of the user who submitted the feedback.
+          $ref: "#/components/schemas/User/properties/username"
+        title:
+          description: Summary of the problem.
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: "\\S"
+          examples:
+            - Sprite stops moving after renaming
+        description:
+          description: Details about the problem.
+          type: string
+          minLength: 1
+          maxLength: 2000
+          pattern: "\\S"
+          examples:
+            - After I renamed the sprite, pressing the arrow keys no longer moves it.
+        context:
+          description: |
+            Diagnostic information the user chose to share, captured when the feedback was submitted.
+
+            Its structure is defined by the client. Omitted if the user did not share it.
+          type: object
+          additionalProperties: true
+          examples:
+            - source: profileMenu
+              page:
+                path: /editor/alice/game
+                language: en
+              project:
+                identifier: alice/game
+                displayName: Game
+        status:
+          description: |
+            Processing status of the feedback.
+
+            - `new`: Awaiting administrator processing.
+            - `handled`: Marked by an administrator as needing no reply.
+            - `replied`: Replied by an administrator.
+          type: string
+          enum:
+            - new
+            - handled
+            - replied
+          examples:
+            - new
+        reply:
+          description: |
+            Administrator reply to the feedback.
+
+            Omitted unless the status is `replied`.
+          $ref: "#/components/schemas/FeedbackReply"
+
+    FeedbackReply:
+      description: Administrator reply to feedback.
+      type: object
+      required:
+        - content
+        - createdAt
+      properties:
+        content:
+          description: |
+            Reply in Markdown, including links and inline images.
+
+            The length limit includes Markdown syntax and URLs.
+          type: string
+          minLength: 1
+          maxLength: 1000
+          pattern: "\\S"
+          examples:
+            - |
+              Thanks for reporting. Renaming a sprite no longer stops it from moving.
+
+              ![screenshot.png](kodo://bucket/screenshot.png)
+        createdAt:
+          description: Time when the reply was sent.
+          $ref: "#/components/schemas/Model/properties/createdAt"
+
     UserAuthorization:
       type: object
       description: XBuilder Authorization inputs and derived capabilities for a user.
@@ -8667,6 +10123,14 @@ components:
         default: 1
         examples:
           - 1
+
+    PageToken:
+      name: pageToken
+      description: The `nextPageToken` of the previous page. Omit to retrieve the first page.
+      in: query
+      schema:
+        type: string
+        minLength: 1
 
     PageSize:
       name: pageSize

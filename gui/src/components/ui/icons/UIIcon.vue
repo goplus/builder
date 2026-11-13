@@ -1,0 +1,218 @@
+<!-- TODO: is there any way to avoid the wrapper `<div>`? -->
+<!-- eslint-disable vue/no-v-html -->
+<template>
+  <div :class="rootClass" :data-icon-type="type" v-html="typeIconMap[type]"></div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { cn, type ClassValue } from '../utils'
+import file from './file.svg?raw'
+import folder from './folder.svg?raw'
+import arrowDown from './arrow-down.svg?raw'
+import arrowUp from './arrow-up.svg?raw'
+import play from './play.svg?raw'
+import playHollow from './play-hollow.svg?raw'
+import playCircle from './play-circle.svg?raw'
+import loading from './loading.svg?raw'
+import check from './check.svg?raw'
+import microphone from './microphone.svg?raw'
+import reload from './reload.svg?raw'
+import stop from './stop.svg?raw'
+import plus from './plus.svg?raw'
+import trash from './trash.svg?raw'
+import edit from './edit.svg?raw'
+import publish from './publish.svg?raw'
+import eye from './eye.svg?raw'
+import eyeSlash from './eye-slash.svg?raw'
+import eyeOff from './eye-off.svg?raw'
+import more from './more.svg?raw'
+import exchange from './exchange.svg?raw'
+import search from './search.svg?raw'
+import close from './close.svg?raw'
+import closeCircle from './close-circle.svg?raw'
+import rotate from './rotate.svg?raw'
+import share from './share.svg?raw'
+import arrowAlt from './arrow-alt.svg?raw'
+import arrowMini from './arrow-mini.svg?raw'
+import arrowRightSmall from './arrow-right-small.svg?raw'
+import doubleArrowDown from './double-arrow-down.svg?raw'
+import clock from './clock.svg?raw'
+import timer from './timer.svg?raw'
+import status from './status.svg?raw'
+import sound from './sound.svg?raw'
+import volumeUp from './volume-up.svg?raw'
+import volumeOff from './volume-off.svg?raw'
+import statePublic from './state-public.svg?raw'
+import statePrivate from './state-private.svg?raw'
+import heart from './heart.svg?raw'
+import calendar from './calendar.svg?raw'
+import remix from './remix.svg?raw'
+import heartHollow from './heart-hollow.svg?raw'
+import info from './info.svg?raw'
+import warning from './warning.svg?raw'
+import error from './error.svg?raw'
+import errorTriangle from './error-triangle.svg?raw'
+import success from './success.svg?raw'
+import apply from './apply.svg?raw'
+import insert from './insert.svg?raw'
+import copy from './copy.svg?raw'
+import copyAltFilled from './copy-alt-filled.svg?raw'
+import fullScreen from './full-screen.svg?raw'
+import enterFullScreen from './enter-full-screen.svg?raw'
+import exitFullScreen from './exit-full-screen.svg?raw'
+import end from './end.svg?raw'
+import eyedrop from './eyedrop.svg?raw'
+import tutorial from './tutorial.svg?raw'
+import question from './question.svg?raw'
+import setting from './setting.svg?raw'
+import undo from './undo.svg?raw'
+import redo from './redo.svg?raw'
+import localFile from './local-file.svg?raw'
+import upload from './upload.svg?raw'
+import assetLibrary from './asset-library.svg?raw'
+import minus from './minus.svg?raw'
+import layer from './layer.svg?raw'
+import notRotate from './not-rotate.svg?raw'
+import leftRight from './left-right.svg?raw'
+import rotateAround from './rotate-around.svg?raw'
+import back from './back.svg?raw'
+import position from './position.svg?raw'
+import resize from './resize.svg?raw'
+import camera from './camera.svg?raw'
+import zoomIn from './zoom-in.svg?raw'
+import zoomOut from './zoom-out.svg?raw'
+import zoomReset from './zoom-reset.svg?raw'
+import wordWrap from './word-wrap.svg?raw'
+import graduationCap from './graduation-cap.svg?raw'
+import gamepad from './gamepad.svg?raw'
+import video from './video.svg?raw'
+import picture from './picture.svg?raw'
+import code from './code.svg?raw'
+import backdropTile from './backdrop-tile.svg?raw'
+import backdropScale from './backdrop-scale.svg?raw'
+import backdropOriginal from './backdrop-original.svg?raw'
+import angleLeft from './angle-left.svg?raw'
+import notification from './notification.svg?raw'
+
+const typeIconMap = {
+  file,
+  folder,
+  arrowDown,
+  arrowUp,
+  play,
+  playHollow,
+  playCircle,
+  loading,
+  check,
+  microphone,
+  reload,
+  stop,
+  plus,
+  trash,
+  edit,
+  publish,
+  eye,
+  eyeSlash,
+  eyeOff,
+  more,
+  exchange,
+  search,
+  close,
+  closeCircle,
+  rotate,
+  rotateAround,
+  share,
+  arrowAlt,
+  arrowMini,
+  arrowRightSmall,
+  doubleArrowDown,
+  clock,
+  timer,
+  status,
+  sound,
+  volumeUp,
+  volumeOff,
+  statePublic,
+  statePrivate,
+  heart,
+  calendar,
+  remix,
+  heartHollow,
+  info,
+  warning,
+  error,
+  errorTriangle,
+  success,
+  apply,
+  insert,
+  copy,
+  copyAltFilled,
+  fullScreen,
+  enterFullScreen,
+  exitFullScreen,
+  end,
+  eyedrop,
+  tutorial,
+  question,
+  setting,
+  undo,
+  redo,
+  localFile,
+  upload,
+  assetLibrary,
+  minus,
+  layer,
+  notRotate,
+  leftRight,
+  back,
+  position,
+  resize,
+  camera,
+  zoomIn,
+  zoomOut,
+  zoomReset,
+  wordWrap,
+  backdropTile,
+  backdropScale,
+  backdropOriginal,
+  graduationCap,
+  gamepad,
+  video,
+  picture,
+  code,
+  angleLeft,
+  notification
+}
+
+export type Type = keyof typeof typeIconMap
+
+const props = defineProps<{
+  type: Type
+  class?: ClassValue
+}>()
+
+const rootClass = computed(() => cn('ui-icon flex h-4 w-4', props.type === 'loading' ? 'spinning' : null, props.class))
+</script>
+
+<style scoped>
+.ui-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
+}
+
+.spinning {
+  animation: ui-icon-spinning 1s linear infinite;
+}
+
+@keyframes ui-icon-spinning {
+  from {
+    transform-origin: 50% 50%;
+    transform: rotate(0);
+  }
+  to {
+    transform-origin: 50% 50%;
+    transform: rotate(360deg);
+  }
+}
+</style>

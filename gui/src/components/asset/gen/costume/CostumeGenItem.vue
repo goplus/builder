@@ -1,0 +1,74 @@
+<script lang="ts">
+export function isCostumeLoading(gen: CostumeGen) {
+  return [gen.enrichState.status, gen.generateState.status].includes('running')
+}
+
+export function isCostumesLoading(gens: CostumeGen[]) {
+  return gens.some((gen) => isCostumeLoading(gen))
+}
+</script>
+
+<script lang="ts" setup>
+import { computed } from 'vue'
+import { useRenderableImageUrl } from '@/utils/img-rendering'
+import { UIBlockItemTitle, UIImg } from '@/components/ui'
+import type { CostumeGen } from '@/models/spx/gen/costume-gen'
+import CornerMenu from '@/components/editor/common/CornerMenu.vue'
+import RenameMenuItem from '@/components/editor/common/corner-menu-item/RenameMenuItem.vue'
+import RemoveMenuItem from '@/components/editor/common/corner-menu-item/RemoveMenuItem.vue'
+import GenItem from '../common/GenItem.vue'
+import costumeSVG from '../common/costume.svg?raw'
+
+export type Operable = {
+  removable: boolean
+}
+
+const props = defineProps<{
+  gen: CostumeGen
+  active: boolean
+  // TODO: implement isDefault style
+  isDefault: boolean
+  operable: false | Operable
+}>()
+
+const emit = defineEmits<{
+  click: []
+  rename: []
+  remove: []
+}>()
+
+const [url, imageLoading] = useRenderableImageUrl(() => props.gen.image)
+
+const isLoading = computed(() => isCostumeLoading(props.gen) || imageLoading.value)
+const highlight = computed(() => props.gen.generateState.status === 'finished')
+</script>
+
+<template>
+  <GenItem
+    v-radar="{
+      name: 'costume-generation-item',
+      desc: `Click to view generation settings and preview for costume '${gen.name}'`,
+      attrs: { name: gen.name }
+    }"
+    :placeholder="costumeSVG"
+    :active="active"
+    :loading="isLoading"
+    :highlight="highlight"
+    @click="emit('click')"
+  >
+    <template v-if="gen.result != null" #preview>
+      <UIImg class="h-full w-full" :src="url" :loading="imageLoading" />
+    </template>
+    <UIBlockItemTitle size="medium" :class="{ 'text-turquoise-500': isDefault }" :title="gen.name">{{
+      gen.name
+    }}</UIBlockItemTitle>
+    <CornerMenu v-if="operable && active">
+      <RenameMenuItem v-radar="{ name: 'rename', desc: 'Click to rename the costume' }" @click="emit('rename')" />
+      <RemoveMenuItem
+        v-radar="{ name: 'remove', desc: 'Click to remove the costume' }"
+        :disabled="!operable.removable"
+        @click="emit('remove')"
+      />
+    </CornerMenu>
+  </GenItem>
+</template>

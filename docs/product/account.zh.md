@@ -520,7 +520,7 @@ Casdoor 只应作为迁移数据源，用于迁移 users、identities、密码�
 
 Casdoor 来源的身份标识只应用作一次性迁移映射键，不应保留为运行时账号模型的一部分。
 
-前端迁移后不应继续依赖 Casdoor SDK、Casdoor JWT 或从 token 中 decode 用户名。`spx-gui` 可以保留 Bearer 请求模型，但 Bearer value 应替换为产品 API token。
+前端迁移后不应继续依赖 Casdoor SDK、Casdoor JWT 或从 token 中 decode 用户名。`gui` 可以保留 Bearer 请求模型，但 Bearer value 应替换为产品 API token。
 
 ## 术语表
 

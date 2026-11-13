@@ -1,0 +1,462 @@
+import { defineComponent, h, markRaw } from 'vue'
+import { describe, expect, it } from 'vitest'
+import { renderToString } from '@vue/test-utils'
+import { useSlotText } from '@/utils/vnode'
+import MarkdowView, {
+  getMarkdownText,
+  preprocessCustomRawComponents,
+  preprocessIncompleteTags,
+  preprocessSelfClosingComponents
+} from './MarkdownView'
+
+describe('preprocessCustomRawComponents', () => {
+  it('should convert custom raw components to <pre> tags', () => {
+    const value = '<custom-raw-component>Content</custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component">Content</pre>')
+  })
+  it('should handle multiple custom raw components', () => {
+    const value = '<custom-raw-1>Content 1</custom-raw-1><custom-raw-2>Content 2</custom-raw-2>'
+    const tagNames = ['custom-raw-1', 'custom-raw-2']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-1">Content 1</pre><pre is="custom-raw-2">Content 2</pre>')
+  })
+  it('should not modify content without custom raw components', () => {
+    const value = '<div>Normal content</div>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<div>Normal content</div>')
+  })
+  it('should handle empty value', () => {
+    const value = ''
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('')
+  })
+  it('should handle no tag names', () => {
+    const value = '<custom-raw-component>Content</custom-raw-component>'
+    const tagNames: string[] = []
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<custom-raw-component>Content</custom-raw-component>')
+  })
+  it('should handle tags with attributes', () => {
+    const value = '<custom-raw-component attr="value">Content</custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component" attr="value">Content</pre>')
+  })
+  it('should handle self-closing tags', () => {
+    const value = '<custom-raw-component />'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component" />')
+  })
+  it('should handle nested custom raw components', () => {
+    const value = '<custom-raw-component><nested-component>Content</nested-component></custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component"><nested-component>Content</nested-component></pre>')
+  })
+  it('should handle multiple occurrences of the same tag', () => {
+    const value =
+      '<custom-raw-component>Content 1</custom-raw-component><custom-raw-component>Content 2</custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component">Content 1</pre><pre is="custom-raw-component">Content 2</pre>')
+  })
+  it('should handle mixed content with custom raw components', () => {
+    const value = '<div>Normal content</div><custom-raw-component>Content</custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<div>Normal content</div><pre is="custom-raw-component">Content</pre>')
+  })
+  it('should handle custom raw components with special characters', () => {
+    const value = '<custom-raw-component>Content with special characters: !@#$%^&*()</custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component">Content with special characters: !@#$%^&*()</pre>')
+  })
+  it('should handle custom raw components with empty content', () => {
+    const value = '<custom-raw-component></custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component"></pre>')
+  })
+  it('should handle custom raw components with more than one attributes', () => {
+    const value = '<custom-raw-component attr1="value1" attr2="value2">Content</custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component" attr1="value1" attr2="value2">Content</pre>')
+  })
+  it('should handle custom raw components with attributes mixed with more than one spaces', () => {
+    const value = '<custom-raw-component  attr1="value1"   attr2="value2">Content</custom-raw-component>'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component"  attr1="value1"   attr2="value2">Content</pre>')
+  })
+  it('should handle custom raw components with attributes and self-closing tag', () => {
+    const value = '<custom-raw-component attr1="value1" attr2="value2" />'
+    const tagNames = ['custom-raw-component']
+    const result = preprocessCustomRawComponents(value, tagNames)
+    expect(result).toBe('<pre is="custom-raw-component" attr1="value1" attr2="value2" />')
+  })
+})
+
+describe('preprocessSelfClosingComponents', () => {
+  it('should convert self-closing tags to opening and closing tags', () => {
+    const value = '<custom-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component>')
+  })
+
+  it('should handle attributes', () => {
+    const value = '<custom-component attr="value" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr="value"></custom-component>')
+  })
+
+  it('should handle attributes with function', () => {
+    const value = '<custom-component attr="() => {}" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr="() => {}"></custom-component>')
+  })
+
+  it('should handle attributes with function and other attributes', () => {
+    const value = `<custom-component attr="() => {}" some='() => []' some="'foo'" disabled a="a" b="b" c="c" d="d" e="e" :f="f" v-model="value" v-for="key in list" />`
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe(
+      `<custom-component attr="() => {}" some='() => []' some="'foo'" disabled a="a" b="b" c="c" d="d" e="e" :f="f" v-model="value" v-for="key in list"></custom-component>`
+    )
+  })
+
+  it('should handle multiple attributes', () => {
+    const value = '<custom-component attr1="value1" attr2="value2" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr1="value1" attr2="value2"></custom-component>')
+  })
+
+  it('should handle spaces before closing slash', () => {
+    const value = '<custom-component   />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component>')
+  })
+
+  it('should handle multiple occurrences', () => {
+    const value = '<custom-component /> <custom-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component> <custom-component></custom-component>')
+  })
+
+  it('should not affect other tags', () => {
+    const value = '<other-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<other-component />')
+  })
+
+  it('should handle empty value', () => {
+    const value = ''
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('')
+  })
+
+  it('should handle no tag names', () => {
+    const value = '<custom-component />'
+    const tagNames: string[] = []
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component />')
+  })
+})
+
+describe('preprocessIncompleteTags', () => {
+  it('should remove the last incomplete tag', () => {
+    const value = 'Before<custom-incomplete-component>Content'
+    const tagNames = ['custom-incomplete-component']
+    const result = preprocessIncompleteTags(value, tagNames)
+    expect(result).toBe('Before')
+  })
+  it('should remove the last incomplete tag 2', () => {
+    const value = 'Before<custom-incomplete-'
+    const tagNames = ['custom-incomplete-component']
+    const result = preprocessIncompleteTags(value, tagNames)
+    expect(result).toBe('Before')
+  })
+  it('should handle multiple incomplete tags', () => {
+    const value = 'Before<custom-incomplete-1>Content 1<custom-incomplete-2>Content 2'
+    const tagNames = ['custom-incomplete-1', 'custom-incomplete-2']
+    const result = preprocessIncompleteTags(value, tagNames)
+    expect(result).toBe('Before')
+  })
+  it('should not modify content without incomplete tags', () => {
+    const value = '<div>Normal content</div>'
+    const tagNames = ['custom-incomplete-component']
+    const result = preprocessIncompleteTags(value, tagNames)
+    expect(result).toBe('<div>Normal content</div>')
+  })
+  it('should handle empty value', () => {
+    const value = ''
+    const tagNames = ['custom-incomplete-component']
+    const result = preprocessIncompleteTags(value, tagNames)
+    expect(result).toBe('')
+  })
+  it('should handle no tag names', () => {
+    const value = '<custom-incomplete-component>Content'
+    const tagNames: string[] = []
+    const result = preprocessIncompleteTags(value, tagNames)
+    expect(result).toBe('<custom-incomplete-component>Content')
+  })
+})
+
+describe('getMarkdownText', () => {
+  it('should get text of blocks and inline elements in one line', () => {
+    const value =
+      '# Title\n\nFirst *line*\\\nsecond [link](https://example.com)\n\n> ![Screenshot](a.png) `code`\n\n- a\n- b'
+    expect(getMarkdownText(value)).toBe('Title First line second link Screenshot code a b')
+  })
+  it('should keep escaped characters and drop unsafe HTML', () => {
+    expect(getMarkdownText('1\\. Fixed \\*now\\* <script>alert(1)</script>')).toBe('1. Fixed *now*')
+  })
+  it('should keep the text after a trailing `<`', () => {
+    expect(getMarkdownText('Use \\<audio\\> if x \\< 10')).toBe('Use <audio> if x < 10')
+  })
+})
+
+describe('MarkdownView', () => {
+  it('should render correctly', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: '# Hello World'
+      }
+    })
+    expect(result).toBe('<div><h1>Hello World</h1></div>')
+  })
+  it('should render GFM tables', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `| Name | Value |
+| ---- | ----- |
+| Foo | Bar |`
+      }
+    })
+    expect(result).toContain(
+      '<table><thead><tr><th>Name</th><th>Value</th></tr></thead><tbody><tr><td>Foo</td><td>Bar</td></tr></tbody></table>'
+    )
+  })
+  it('should drop URLs of unsafe or custom protocols by default', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value:
+          '[file](custom://bucket/file.png) [unsafe](javascript:alert) [safe](https://example.com) ![image](custom://bucket/image.png) ![inline](data:image/png;base64,AAAA) ![safe](https://example.com/a.png)'
+      }
+    })
+    expect(result).toBe(
+      '<div><p><a>file</a> <a>unsafe</a> <a href="https://example.com">safe</a> <img alt="image"> <img alt="inline"> <img src="https://example.com/a.png" alt="safe"></p></div>'
+    )
+  })
+  it('should render links and images with `link` and `image` components', async () => {
+    const link = {
+      template: '<a class="custom-link" :href="href" :title="title"><slot /></a>',
+      props: ['href', 'title']
+    }
+    const image = {
+      template: '<img class="custom-image" :src="src" :alt="alt" :title="title">',
+      props: ['src', 'alt', 'title']
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: '[*Docs*](https://example.com "Read") ![Shot](https://example.com/a.png "Screen")',
+        components: markRaw({ link, image })
+      }
+    })
+    expect(result).toBe(
+      '<div><p><a class="custom-link" href="https://example.com" title="Read"><!--[--><em>Docs</em><!--]--></a> <img class="custom-image" src="https://example.com/a.png" alt="Shot" title="Screen"></p></div>'
+    )
+  })
+  it('should keep URLs of `customProtocols` and still drop unsafe URLs', async () => {
+    const value =
+      '[file](custom://bucket/file.png) [unsafe](javascript:alert) ![image](custom://bucket/image.png) ![inline](data:image/png;base64,AAAA)'
+    const link = { template: '<a class="custom-link" :href="href"><slot /></a>', props: ['href'] }
+    const image = { template: '<img class="custom-image" :src="src" :alt="alt">', props: ['src', 'alt'] }
+    const components = markRaw({ link, image })
+    const withoutProtocols = await renderToString(MarkdowView, { props: { value, components } })
+    expect(withoutProtocols).toBe(
+      '<div><p><a class="custom-link"><!--[-->file<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a> <img class="custom-image" alt="image"> <img class="custom-image" alt="inline"></p></div>'
+    )
+    const withProtocols = await renderToString(MarkdowView, {
+      props: { value, components, customProtocols: ['custom'] }
+    })
+    expect(withProtocols).toBe(
+      '<div><p><a class="custom-link" href="custom://bucket/file.png"><!--[-->file<!--]--></a> <a class="custom-link"><!--[-->unsafe<!--]--></a> <img class="custom-image" src="custom://bucket/image.png" alt="image"> <img class="custom-image" alt="inline"></p></div>'
+    )
+  })
+  it('should render code blocks with `codeBlock` component', async () => {
+    const codeBlock = { template: '<div class="code-block">{{ language }}: <slot /></div>', props: ['language'] }
+    const result = await renderToString(MarkdowView, {
+      props: { value: '```js\nconst a = 1\n```\n\n```\nplain\n```', components: markRaw({ codeBlock }) }
+    })
+    expect(result).toBe(
+      '<div><div class="code-block">js: <!--[-->const a = 1\n<!--]--></div>\n<div class="code-block">: <!--[-->plain\n<!--]--></div></div>'
+    )
+  })
+  it('should keep the content after `<` if complete', async () => {
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: 'Use \\<audio\\>\n\n> If x \\< 10',
+        complete: true
+      }
+    })
+    expect(result).toBe('<div><p>Use &lt;audio&gt;</p>\n<blockquote>\n<p>If x &lt; 10</p>\n</blockquote></div>')
+  })
+  it('should handle custom components', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1">{{content}}</div>',
+      props: ['content']
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: 'Before<test-comp-1 content="Hello" />After',
+        components: markRaw({
+          custom: {
+            'test-comp-1': testComp1
+          }
+        })
+      }
+    })
+    expect(result).toBe('<div><p>Before<div class="test-comp-1">Hello</div>After</p></div>')
+  })
+  it('should handle custom components with children', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1"><slot /></div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: 'Before<test-comp-1>Content</test-comp-1>After',
+        components: markRaw({
+          custom: {
+            'test-comp-1': testComp1
+          }
+        })
+      }
+    })
+    expect(result).toBe('<div><p>Before<div class="test-comp-1"><!--[-->Content<!--]--></div>After</p></div>')
+  })
+  it('should handle custom raw components', async () => {
+    const customRawComponent = defineComponent(
+      () => {
+        const innerText = useSlotText()
+        return function render() {
+          return h('div', { class: 'test-comp-1' }, [innerText.value])
+        }
+      },
+      {
+        props: []
+      }
+    )
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `
+Before
+
+<custom-raw-component>
+Content1
+
+  Content2
+</custom-raw-component>
+
+After`,
+        components: markRaw({
+          customRaw: {
+            'custom-raw-component': customRawComponent
+          }
+        })
+      }
+    })
+    expect(result).toBe(`<div><p>Before</p>
+<div class="test-comp-1">Content1
+
+  Content2
+</div>
+<p>After</p></div>`)
+  })
+  it('should support self-closing custom components', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1"></div>'
+    }
+    const testComp2 = {
+      template: '<div class="test-comp-2">{{content}}</div>',
+      props: ['content']
+    }
+    const testComp3 = {
+      template: '<div class="test-comp-3"><slot /></div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `
+<test-comp3>
+1111
+
+222
+</test-comp3>
+
+<test-comp1 />aaa<test-comp2 content="bbb" /><test-comp2 content="ccc" />ddd<test-comp3 />`,
+        components: markRaw({
+          custom: {
+            'test-comp1': testComp1,
+            'test-comp2': testComp2
+          },
+          customRaw: {
+            'test-comp3': testComp3
+          }
+        })
+      }
+    })
+    expect(result).toBe(`<div><div class="test-comp-3"><!--[-->1111
+
+222
+<!--]--></div>
+<p><div class="test-comp-1"></div>aaa<div class="test-comp-2">bbb</div><div class="test-comp-2">ccc</div>ddd</p><div class="test-comp-3"><!--[--><p></p><!--]--></div></div>`)
+  })
+  it('should handle a custom self-closing tag with text on the next line', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1">hello world</div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `Before<test-comp-1 />
+After`,
+        components: markRaw({
+          custom: {
+            'test-comp-1': testComp1
+          }
+        })
+      }
+    })
+    expect(result).toBe('<div><p>Before<div class="test-comp-1">hello world</div>\nAfter</p></div>')
+  })
+  it('should handle a custom self-closing tag when text follows immediately on the next line', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1">hello world</div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `Before<test-comp-1 />middle
+After`,
+        components: markRaw({
+          custom: {
+            'test-comp-1': testComp1
+          }
+        })
+      }
+    })
+    expect(result).toBe('<div><p>Before<div class="test-comp-1">hello world</div>middle\nAfter</p></div>')
+  })
+})

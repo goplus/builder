@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "pnpm run dev",
+      "detail": "Run dev server for gui",
+      "type": "shell",
+      "command": "pnpm run dev",
+      "presentation": {
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build wasm",
+      "detail": "Build WASM modules for gui",
+      "type": "shell",
+      "command": "bash build-wasm.sh",
+      "options": {
+        "env": {
+          "GOTOOLCHAIN": "go1.26.10"
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

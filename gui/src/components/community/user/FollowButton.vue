@@ -1,0 +1,42 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useSignedIn } from '@/stores/user'
+import { UIButton } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
+import { useEnsureSignedIn } from '@/utils/user'
+import { useFollow, useIsFollowing, useUnfollow } from '@/stores/following'
+
+const props = defineProps<{
+  /** Name of user to follow */
+  name: string
+}>()
+
+const signedIn = useSignedIn()
+const followable = computed(() => {
+  const signedInUsername = signedIn.username
+  return signedInUsername != null && props.name !== signedInUsername
+})
+
+const { data: following } = useIsFollowing(() => props.name)
+const follow = useFollow()
+const unfollow = useUnfollow()
+
+const ensureSignedIn = useEnsureSignedIn()
+const handleClick = useMessageHandle(async () => {
+  await ensureSignedIn()
+  await (following.value ? unfollow(props.name) : follow(props.name))
+})
+</script>
+
+<template>
+  <UIButton
+    v-if="followable && following != null"
+    v-radar="{ name: 'follow-button', desc: 'Click to follow or unfollow user' }"
+    class="follow-button"
+    :type="following ? 'neutral' : 'primary'"
+    :loading="handleClick.isLoading.value"
+    @click="handleClick.fn"
+  >
+    {{ $t(following ? { en: 'Unfollow', zh: '取消关注' } : { en: 'Follow', zh: '关注' }) }}
+  </UIButton>
+</template>

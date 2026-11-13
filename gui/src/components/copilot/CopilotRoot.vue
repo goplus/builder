@@ -1,0 +1,245 @@
+<script lang="ts">
+import { z } from 'zod'
+import { debounce } from 'lodash'
+import { onBeforeUnmount, onUnmounted, watch } from 'vue'
+import { useRouter, type Router } from 'vue-router'
+import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
+import { useI18n, type I18n } from '@/utils/i18n'
+import { escapeHTML, getStringLengthInCodePoints, unicodeSafeSlice } from '@/utils/utils'
+import type { ReadinessScope } from '@/utils/readiness'
+import * as projectApis from '@/apis/project'
+import { projectSearchKeywordMaxLength } from '@/apis/project'
+import { useMessageEvents, useModalEvents } from '@/components/ui'
+import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
+import * as pageLink from './markdown-elements/PageLink'
+import * as highlightLink from './markdown-elements/HighlightLink.vue'
+import { useSignedIn, type SignedIn } from '@/stores/user'
+import { useUserSessionStorage } from '@/utils/user-storage'
+import { provideCopilot } from './context'
+import { createBuiltInSkillRegistry } from './skills/built-in'
+
+const listProjectsParamsSchema = z.object({
+  owner: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,100}$/)
+    .optional()
+    .describe('Username whose public projects should be listed. Omit it to list projects owned by the signed-in user'),
+  allUsers: z
+    .boolean()
+    .optional()
+    .describe('List projects visible to the current session across all users. Do not use this with owner'),
+  keyword: z
+    .string()
+    .refine((value) => getStringLengthInCodePoints(value) <= projectSearchKeywordMaxLength, {
+      message: `Must be ${projectSearchKeywordMaxLength} characters or fewer`
+    })
+    .optional()
+    .describe('Keyword in the project display name or project name'),
+  pageSize: z.number().describe('Number of projects to return per page'),
+  pageIndex: z.number().describe('Page index, starting from 1')
+})
+
+const listProjectsTool: ToolDefinition = {
+  name: 'list_projects',
+  description:
+    'List projects. Omit owner to list projects owned by the signed-in user, including private projects. ' +
+    'Set allUsers to true to list visible projects across all users. Set owner to a username to list public projects owned by that user.',
+  parameters: listProjectsParamsSchema,
+  async implementation({ owner, allUsers, ...params }: z.infer<typeof listProjectsParamsSchema>) {
+    if (allUsers && owner != null) throw new Error('owner cannot be used with allUsers')
+    let result: Awaited<ReturnType<typeof projectApis.listProjects>>
+    if (allUsers) {
+      result = await projectApis.listProjects(params)
+    } else if (owner == null) {
+      result = await projectApis.listSignedInUserProjects(params)
+    } else {
+      result = await projectApis.listUserPublicProjects(owner, params)
+    }
+    const { total, data } = result
+    return { total, data: data.map((project) => [project.owner, project.name].map(encodeURIComponent).join('/')) }
+  }
+}
+
+const getUINodeTextContentParamsSchema = z.object({
+  selector: z.string().describe('Radar selector of the UI node to get content')
+})
+
+class GetUINodeTextContentTool implements ToolDefinition {
+  name = 'get_ui_node_text_content'
+  description = 'Get text content of the first visible UI node selected by a Radar selector.'
+  parameters = getUINodeTextContentParamsSchema
+
+  constructor(private radar: Radar) {}
+
+  async implementation({ selector }: z.infer<typeof getUINodeTextContentParamsSchema>) {
+    const nodeInfo = this.radar.select(selector)
+    if (nodeInfo == null) throw new Error(`No visible Radar node matches selector: ${selector}`)
+    const textContent = nodeInfo.getElement()?.textContent ?? ''
+    const textContentPreview = unicodeSafeSlice(textContent, 0, 500)
+    return textContentPreview === textContent ? textContent : textContentPreview + '...'
+  }
+}
+
+class UIContextProvider implements ICopilotContextProvider {
+  constructor(
+    private radar: Radar,
+    private i18n: I18n
+  ) {}
+
+  private serializeNode(name: string, attrs: Record<string, string>, childrenStr: string) {
+    const attrsStr = Object.entries(attrs)
+      .map(([key, value]) => `${key}="${escapeHTML(value)}"`)
+      .join(' ')
+    const openTag = `<${name}${attrsStr === '' ? '' : ` ${attrsStr}`}`
+    if (childrenStr.trim() === '') {
+      return `${openTag}/>`
+    }
+    return `${openTag}>${childrenStr}</${name}>`
+  }
+
+  private stringifyNode(node: RadarNodeInfo): string {
+    const childrenStr = this.stringifyNodes(node.getChildren())
+    return this.serializeNode(node.name, node.attrs, childrenStr)
+  }
+
+  private stringifyNodes(nodes: RadarNodeInfo[]): string {
+    return nodes.map((node) => this.stringifyNode(node)).join('')
+  }
+
+  provideContext(): string {
+    const lang =
+      {
+        en: 'English',
+        zh: 'Chinese'
+      }[this.i18n.lang.value] ?? 'Unknown'
+    return `# Current UI of XBuilder
+
+Current UI language: ${lang}.
+
+Current UI structure:
+
+<xbuilder>${this.stringifyNodes(this.radar.getRootNodes())}</xbuilder>
+
+Each UI element's tag and attributes form a Radar selector. Use a selector whenever you refer to a UI element; do not use internal node IDs. Select descendants with whitespace, and filter attributes with JSON strings, for example \`costume-item[name="foo"]\`.
+
+DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly represented in the UI structure.
+
+If there's an API References UI in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
+  }
+}
+
+class UserContextProvider implements ICopilotContextProvider {
+  constructor(private signedIn: Pick<SignedIn, 'isSignedIn' | 'username' | 'user'>) {}
+
+  provideContext(): string {
+    const user = this.signedIn.user
+    const userInfo = !this.signedIn.isSignedIn
+      ? 'The user is not signed in'
+      : `Now the user is signed in as "${this.signedIn.username}"` +
+        (user == null ? '' : `, with display name: "${user.displayName}"`)
+    return `# Current user
+${userInfo}`
+  }
+}
+
+class LocationContextProvider implements ICopilotContextProvider {
+  constructor(private router: Router) {}
+
+  provideContext(): string {
+    return `# Current location
+The user is now browsing page with path: \`${this.router.currentRoute.value.fullPath}\``
+  }
+}
+</script>
+
+<script setup lang="ts">
+const props = defineProps<{ routeReadiness: ReadinessScope }>()
+
+const radar = useRadar()
+const i18n = useI18n()
+const router = useRouter()
+const modalEvents = useModalEvents()
+const messageEvents = useMessageEvents()
+const signedIn = useSignedIn()
+const skillRegistry = createBuiltInSkillRegistry()
+const copilot = new Copilot(skillRegistry)
+const sessionStorageRef = useUserSessionStorage<SessionExported | null>('spx-gui-copilot-session', null)
+
+copilot.syncSessionWith({
+  get() {
+    return sessionStorageRef.value
+  },
+  set(value) {
+    sessionStorageRef.value = value
+  }
+})
+
+onUnmounted(() => {
+  copilot.dispose()
+})
+
+copilot.registerTool(listProjectsTool)
+copilot.registerCustomElement({
+  tagName: pageLink.tagName,
+  description: pageLink.detailedDescription,
+  attributes: pageLink.attributes,
+  isRaw: pageLink.isRaw,
+  component: pageLink.default
+})
+copilot.registerCustomElement({
+  tagName: highlightLink.tagName,
+  description: highlightLink.detailedDescription,
+  attributes: highlightLink.attributes,
+  isRaw: highlightLink.isRaw,
+  component: highlightLink.default
+})
+copilot.registerTool(new GetUINodeTextContentTool(radar))
+copilot.registerContextProvider(new UIContextProvider(radar, i18n))
+copilot.registerContextProvider(new UserContextProvider(signedIn))
+copilot.registerContextProvider(new LocationContextProvider(router))
+
+watch(
+  router.currentRoute,
+  debounce(async (route) => {
+    await props.routeReadiness.untilReady()
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
+  }, 100)
+)
+
+onBeforeUnmount(
+  modalEvents.on('open', () => {
+    copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal dialog')
+  })
+)
+onBeforeUnmount(
+  modalEvents.on('resolved', () => {
+    copilot.notifyUserEvent(
+      { en: 'Operation completed in modal', zh: '模态框中操作完成' },
+      'User completed operation in modal'
+    )
+  })
+)
+onBeforeUnmount(
+  modalEvents.on('cancelled', () => {
+    copilot.notifyUserEvent(
+      { en: 'Operation cancelled in modal', zh: '模态框中操作取消' },
+      'User cancelled operation in modal'
+    )
+  })
+)
+
+onBeforeUnmount(
+  messageEvents.on('message', ({ type, content }) => {
+    copilot.notifyUserEvent(
+      { en: 'UI Notification', zh: '消息提示' },
+      `A ${type} notification showed with content: ${content}`
+    )
+  })
+)
+
+provideCopilot(copilot)
+</script>
+
+<template>
+  <slot />
+</template>

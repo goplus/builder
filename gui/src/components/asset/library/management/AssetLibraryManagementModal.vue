@@ -1,0 +1,199 @@
+<script lang="ts" setup>
+import { debounce } from 'lodash'
+import { computed, ref, shallowRef, watch } from 'vue'
+import { useI18n } from '@/utils/i18n'
+import { useMessageHandle } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
+import { listSignedInUserAssets, AssetType, type AssetData, Visibility, updateAsset, deleteAsset } from '@/apis/asset'
+import { humanizeAssetType } from '@/models/spx/common/asset'
+import {
+  UITextInput,
+  UIIcon,
+  UIPagination,
+  UISearchableModal,
+  useModal,
+  useConfirmDialog,
+  useMessage
+} from '@/components/ui'
+import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
+import SoundItem from './SoundItem.vue'
+import SpriteItem from './SpriteItem.vue'
+import BackdropItem from './BackdropItem.vue'
+import CornerMenu from './AssetItemCornerMenu.vue'
+import AssetEditModal from './AssetEditModal.vue'
+import VisibilityIcon from './VisibilityIcon.vue'
+
+const props = defineProps<{
+  type: AssetType
+  visible: boolean
+}>()
+
+const emit = defineEmits<{
+  cancelled: []
+  resolved: []
+}>()
+
+const ItemComponent = computed(
+  () =>
+    ({
+      [AssetType.Sound]: SoundItem,
+      [AssetType.Sprite]: SpriteItem,
+      [AssetType.Backdrop]: BackdropItem
+    })[props.type]
+)
+
+const entityMessage = computed(() => humanizeAssetType(props.type))
+
+const searchInput = ref('')
+const keyword = ref('')
+
+// do search (with a delay) when search-input changed
+watch(
+  searchInput,
+  debounce(() => {
+    keyword.value = searchInput.value
+  }, 500)
+)
+
+const page = shallowRef(1)
+const pageSize = 28 // 7 * 4
+const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
+
+watch(keyword, () => (page.value = 1))
+
+const queryRet = useQuery({
+  queryFn: () =>
+    listSignedInUserAssets({
+      pageSize,
+      pageIndex: page.value,
+      type: props.type,
+      keyword: keyword.value,
+      orderBy: 'displayName'
+    }),
+  failureSummaryMessage: {
+    en: 'Failed to list',
+    zh: '获取列表失败'
+  }
+})
+
+function handleSearch() {
+  keyword.value = searchInput.value
+}
+
+const selectedId = ref<string | null>(null)
+
+const i18n = useI18n()
+const m = useMessage()
+const confirm = useConfirmDialog()
+
+const handlePublish = useMessageHandle(
+  async ({ id }: AssetData) => {
+    await m.withLoading(
+      updateAsset(id, { visibility: Visibility.Public }),
+      i18n.t({ en: 'Making asset public', zh: '设置为公开中' })
+    )
+    queryRet.refetch()
+  },
+  {
+    en: 'Failed to make asset public',
+    zh: '设置为公开失败'
+  }
+).fn
+
+const handleUnpublish = useMessageHandle(
+  async ({ id }: AssetData) => {
+    await m.withLoading(
+      updateAsset(id, { visibility: Visibility.Private }),
+      i18n.t({ en: 'Making asset private', zh: '设置为私有中' })
+    )
+    queryRet.refetch()
+  },
+  {
+    en: 'Failed to make asset private',
+    zh: '设置为私有失败'
+  }
+).fn
+
+const invokeEditModal = useModal(AssetEditModal)
+
+const handleEdit = useMessageHandle(
+  async (asset: AssetData) => {
+    await invokeEditModal({ asset })
+    queryRet.refetch()
+  },
+  {
+    en: 'Failed to edit asset',
+    zh: '编辑素材失败'
+  }
+).fn
+
+const handleRemove = useMessageHandle(
+  async ({ id, displayName }: AssetData) => {
+    await confirm({
+      type: 'warning',
+      title: i18n.t({
+        en: `Remove ${entityMessage.value.en}`,
+        zh: `删除${entityMessage.value.zh}`
+      }),
+      content: i18n.t({
+        en: `Are you sure to remove ${displayName}?`,
+        zh: `确定要删除 ${displayName} 吗？`
+      })
+    })
+    await m.withLoading(deleteAsset(id), i18n.t({ en: 'Removing asset', zh: '删除素材中' }))
+    queryRet.refetch()
+  },
+  {
+    en: 'Failed to remove asset',
+    zh: '删除素材失败'
+  }
+).fn
+</script>
+
+<template>
+  <UISearchableModal
+    :radar="{ name: 'asset-library-management-modal', desc: 'Modal for managing assets in the library' }"
+    style="width: 1076px"
+    :visible="props.visible"
+    :title="$t({ en: `Manage ${entityMessage.en}s`, zh: `管理${entityMessage.zh}` })"
+    @update:visible="emit('cancelled')"
+  >
+    <template #input>
+      <UITextInput
+        v-model:value="searchInput"
+        v-radar="{ name: 'search-input', desc: 'Input to search library assets' }"
+        class="w-80"
+        clearable
+        :placeholder="$t({ en: 'Search', zh: '搜索' })"
+        @keypress.enter="handleSearch"
+      >
+        <template #prefix><UIIcon class="text-grey-700" type="search" /></template>
+      </UITextInput>
+    </template>
+    <main class="px-6 py-5">
+      <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="584">
+        <!-- fixed asset-list height to keep the layout stable -->
+        <ul class="flex flex-wrap content-start gap-2" style="height: 584px">
+          <ItemComponent
+            v-for="asset in slotProps.data.data"
+            :key="asset.id"
+            :asset="asset"
+            :selected="selectedId === asset.id"
+            @click="selectedId = asset.id"
+          >
+            <VisibilityIcon :visibility="asset.visibility" />
+            <CornerMenu
+              v-if="selectedId === asset.id"
+              :asset="asset"
+              @publish="handlePublish(asset)"
+              @unpublish="handleUnpublish(asset)"
+              @edit="handleEdit(asset)"
+              @remove="handleRemove(asset)"
+            />
+          </ItemComponent>
+        </ul>
+      </ListResultWrapper>
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="mt-9 justify-center" :total="pageTotal" />
+    </main>
+  </UISearchableModal>
+</template>

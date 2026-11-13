@@ -4,7 +4,7 @@
 
 - **`/docs`**: Documentations for XBuilder.
 - **`/scripts`**: Scripts for building, deploying, or other automation tasks.
-- **`/spx-gui`**: Front-end project.
+- **`/gui`**: Front-end project.
 - **`/tools`**: Other independent tools that XBuilder depends on.
 - **`/tutorial`**: Tutorial content for learning in XBuilder.
 
@@ -12,8 +12,12 @@
 
 See `package.json` or `go.mod` files in subdirectories for details.
 
+### Project Maintenance
+
+- [Issue Management](./issue-management.md)
+
 ### Frontend Development
 
-- [spx-gui Apps](./spx-gui-apps.md)
+- [GUI Apps](./gui-apps.md)
 - [Account Local Debugging](./account-local-debugging.md)
 - [Maintaining the Default Project](../../skills/xbuilder-default-project/SKILL.md)
