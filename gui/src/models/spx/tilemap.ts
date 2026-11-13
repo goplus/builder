@@ -311,21 +311,28 @@ export class DumbTilemap extends Disposable {
     const tilemapFiles: Files = {}
     const tilemapPath = resolve(parentDir, rawTilemapPath)
     const tilemapsAssetsPath = resolve(parentDir, tilemapsAssetsPathName)
-    // Match spx's file-versus-directory format selection.
+    // SPX treats any path containing ".json" as a legacy file, not just paths with that suffix.
+    // https://github.com/goplus/spx/blob/v4.0.1/internal/tilemap/load.go#L138-L140
     const isDirectory = !rawTilemapPath.includes('.json')
     const configPath = isDirectory ? resolve(tilemapPath, 'tilemap.json') : tilemapPath
     const tilemapFile = files[configPath]
     if (tilemapFile == null) throw new Error(`tilemap file not found: ${configPath}`)
     tilemapFiles[configPath] = tilemapFile
     const resourcesPath = isDirectory ? tilemapPath : tilemapsAssetsPath
-    const others = [...listAllFiles(files, tilemapsAssetsPath), ...listAllFiles(files, resourcesPath)].filter(
-      (filePath) => !filePath.endsWith('.DS_Store') && !filePath.endsWith('.import')
+    // Keep other maps under tilemaps/ available for runtime loadTilemap calls.
+    const others = Object.keys(files).filter(
+      (filePath) =>
+        (filePath.startsWith(tilemapsAssetsPath + '/') || filePath.startsWith(resourcesPath + '/')) &&
+        !filePath.endsWith('/') &&
+        !filePath.endsWith('.DS_Store') &&
+        !filePath.endsWith('.import')
     )
     for (const filePath of others) {
       tilemapFiles[filePath] = files[filePath]
     }
     const decoratorFile = isDirectory ? files[resolve(tilemapPath, 'decorator.json')] : tilemapFile
-    const config = decoratorFile == null ? null : ((await toConfig(decoratorFile)) as RawTilemapConfig)
+    const config =
+      decoratorFile == null ? null : ((await toConfig(decoratorFile)) as Pick<RawTilemapConfig, 'decorators'>)
     const decorators = (config?.decorators ?? []).map((d) => Decorator.load(d, resourcesPath, files))
     return new DumbTilemap(rawTilemapPath, tilemapFiles, decorators)
   }
