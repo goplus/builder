@@ -42,6 +42,22 @@ export async function startWorker(
   })
   vi.resetModules()
   await import('./worker')
+  // In-process Workers need explicit server cleanup because there is no Worker to terminate.
+  vi.stubGlobal(
+    'Go',
+    class extends Go {
+      run(instance: WebAssembly.Instance) {
+        const exitPromise = super.run(instance)
+        const createServer = NewXGoLanguageServer
+        vi.stubGlobal('NewXGoLanguageServer', (...args: Parameters<typeof createServer>) => {
+          const server = createServer(...args)
+          if (!(server instanceof Error)) onTestFinished(() => server.dispose())
+          return server
+        })
+        return exitPromise
+      }
+    }
+  )
   send({
     type: 'initialize',
     classFrameworkConfig: serializeGoxMod({

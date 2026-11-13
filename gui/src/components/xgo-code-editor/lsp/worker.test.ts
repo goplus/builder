@@ -2,11 +2,27 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type * as lsp from 'vscode-languageserver-protocol'
+import type { XGoLanguageServer } from './spxls'
 import type { xgoGetProperties } from './spxls/commands'
 import { startWorker } from './test'
 
 describe('XGo language server Worker', () => {
   afterEach(() => vi.unstubAllGlobals())
+
+  it('disposes in-process server instances when the test finishes', async ({ onTestFinished }) => {
+    const message = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { capabilities: {} } }
+    let server: XGoLanguageServer | null = null
+    // Register first so this check runs after the harness disposes its servers.
+    onTestFinished(() => expect(server?.handleMessage(message)).toBeInstanceOf(Error))
+    await startWorker({})
+    const result = NewXGoLanguageServer(
+      () => ({}),
+      () => {}
+    )
+    if (result instanceof Error) throw result
+    server = result
+    expect(server.handleMessage(message)).toBeNull()
+  })
 
   it('analyzes ordinary XGo without a class framework registration', async () => {
     const { request, command, setFiles } = await startWorker({
