@@ -14,12 +14,13 @@ Offer it when you cannot solve the user's problem (XBuilder seems broken, a need
 or when the user asks to send feedback. If you do not yet know what the feedback is about, ask first instead of offering it with an empty draft. \
 Not for questions you can answer. Once the user declines, do not offer it again for the same problem.
 
-Write the title and description as the user, in first person and the UI language (“I clicked Run”, not “The user clicked Run”): \
-what I was doing, what happened (quote errors exactly), what I expected, and what I have already tried (not what you suggest now). \
-Use only facts from the conversation or context: no guessed causes, placeholders, personal information, or code. \
+Write the title and description as the user, in first person and the UI language (“I clicked Run”, not “The user clicked Run”). \
+Include only what the user said, quoting errors exactly. \
+Do not add steps, expectations, or causes the user did not mention, and do not list your current suggestions as tried. \
+No placeholders, personal information, or code. \
 Attribute values must not contain line breaks or straight double quotes; use “ ” instead.
 
-Use it at most once per reply, inside a sentence, never on its own line or after a colon. Do not say the feedback was sent.`
+Use it at most once per reply, inside a sentence, never on its own line. Do not say the feedback was sent.`
 
 export const attributes = z.object({
   title: z.string().max(feedbackTitleMaxLength).describe('Short summary of the problem'),
