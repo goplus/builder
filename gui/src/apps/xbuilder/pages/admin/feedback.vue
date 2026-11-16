@@ -5,7 +5,8 @@ import type { LocaleMessage } from '@/utils/i18n'
 import type { FeedbackSource } from '@/components/feedback/context'
 
 const feedbackSourceLabels: Record<FeedbackSource, LocaleMessage> = {
-  profileMenu: { en: 'Profile menu', zh: '用户菜单' }
+  profileMenu: { en: 'Profile menu', zh: '用户菜单' },
+  copilotReply: { en: 'Copilot reply', zh: 'Copilot 回复' }
 }
 
 function formatOutputTime(value: string) {

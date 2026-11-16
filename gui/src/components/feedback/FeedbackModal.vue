@@ -1,3 +1,11 @@
+<script lang="ts">
+/** Initial content of the Feedback form, which the user can still edit before sending */
+export type FeedbackDraft = {
+  title: string
+  description: string
+}
+</script>
+
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -17,6 +25,7 @@ import { captureFeedbackContext, getEncodedSize, type FeedbackSource } from './c
 
 const props = defineProps<{
   source: FeedbackSource
+  draft: FeedbackDraft | null
   visible: boolean
 }>()
 
@@ -31,8 +40,8 @@ const editorCtxRef = useEditorCtxRef()
 const codeEditorRef = useCodeEditorRef()
 
 const form = useForm({
-  title: ['', validateTitle],
-  description: ['', validateDescription],
+  title: [props.draft?.title ?? '', validateTitle],
+  description: [props.draft?.description ?? '', validateDescription],
   shareContext: [true]
 })
 

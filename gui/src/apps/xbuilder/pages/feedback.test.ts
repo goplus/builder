@@ -2,6 +2,7 @@ import type { VueWrapper } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { setupPageTests, mountPages, makeFeedback, signIn } from '@/apps/xbuilder/pages/test'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
+import * as copilotApis from '@/apis/copilot'
 import { feedbackDescriptionMaxLength, feedbackTitleMaxLength } from '@/apis/feedback'
 import * as feedbackApis from '@/apis/feedback'
 import { saveProjectSnapshot } from '@/components/feedback/project-snapshot'
@@ -53,6 +54,58 @@ describe('feedback', () => {
       description: 'It no longer moves.',
       context: {
         source: 'profileMenu',
+        page: { path: '/explore', language: 'en' }
+      }
+    })
+  })
+
+  it('sends feedback drafted by Copilot from the button in its reply', async () => {
+    await signIn()
+    mockCreateFeedback()
+    const draft = {
+      title: 'Saving my project fails',
+      description: 'I clicked Save and saw “Save failed”. I have tried refreshing the page.'
+    }
+    vi.mocked(copilotApis.generateCopilotMessage).mockImplementation(async function* () {
+      yield {
+        type: 'text_delta',
+        data: {
+          text: `I could not fix this. You can <feedback-link title="${draft.title}" description="${draft.description}">send feedback</feedback-link> to the XBuilder team.`
+        }
+      }
+      yield { type: 'done', data: { finishReason: 'stop' } }
+    })
+    const { wrapper } = await mountPages('/explore')
+
+    await vi.waitFor(() => expect(wrapper.find('.copilot-trigger').exists()).toBe(true))
+    await wrapper.get('.copilot-trigger').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('.copilot-panel textarea').exists()).toBe(true))
+    await wrapper.get('.copilot-panel textarea').setValue('Saving still fails')
+    await wrapper.get('.copilot-panel textarea').trigger('keypress', { key: 'Enter' })
+    const findFeedbackLink = () =>
+      wrapper.findAll('.copilot-panel button').find((button) => button.text() === 'send feedback')
+    await vi.waitFor(() => expect(findFeedbackLink()).toBeDefined())
+    const feedbackLink = findFeedbackLink()!
+    expect(feedbackLink.element.closest('p')?.textContent).toBe(
+      'I could not fix this. You can send feedback to the XBuilder team.'
+    )
+    expect(wrapper.find('[aria-label="Feedback modal"]').exists()).toBe(false)
+
+    await feedbackLink.trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Feedback modal"]').exists()).toBe(true))
+    const modal = wrapper.get('[aria-label="Feedback modal"]')
+    expect(modal.get<HTMLInputElement>('[aria-label="Feedback title input"] input').element.value).toBe(draft.title)
+    expect(modal.get<HTMLTextAreaElement>('[aria-label="Feedback description input"] textarea').element.value).toBe(
+      draft.description
+    )
+    expect(feedbackApis.createFeedback).not.toHaveBeenCalled()
+
+    await modal.get('form').trigger('submit')
+    await vi.waitFor(() => expect(feedbackApis.createFeedback).toHaveBeenCalledTimes(1))
+    expect(vi.mocked(feedbackApis.createFeedback).mock.calls[0][0]).toEqual({
+      ...draft,
+      context: {
+        source: 'copilotReply',
         page: { path: '/explore', language: 'en' }
       }
     })
