@@ -18,16 +18,11 @@ import { toNativeFile } from '@/models/common/file'
 import { CollisionShapeType, type Sprite } from '@/models/spx/sprite'
 import type { Pivot as CostumePivot } from '@/models/spx/costume'
 import { UIButton } from '@/components/ui'
-import { useEditorCtx } from '../EditorContextProvider.vue'
-import type { CustomTransformer, CustomTransformerConfig } from '../common/viewer/custom-transformer'
-import { getPivotMarkerConfigs } from '../common/pivot-marker'
-import {
-  applyPivotCollisionEdit,
-  getColliderBounds,
-  getColliderPolygonPoints,
-  getColliderPreviewTransform
-} from './collider'
-import CheckerboardBackground from './CheckerboardBackground.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import type { CustomTransformer, CustomTransformerConfig } from '../../common/viewer/custom-transformer'
+import { getPivotMarkerConfigs } from '../../common/pivot-marker'
+import { applyPivotCollisionEdit, getColliderBounds, getColliderPolygonPoints, isColliderEditable } from './collider'
+import CheckerboardBackground from '../CheckerboardBackground.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -53,35 +48,14 @@ const [image] = useRenderableImage(() => defaultCostume.value.img)
 const costumeSize = useAsyncComputed(() => defaultCostume.value.getSize())
 const canvasSize = computed(() => {
   if (costumeSize.value == null) return null
-  if (!worldPreview.value) return { width: costumeSize.value.width * 2, height: costumeSize.value.height * 2 }
-  const pivot = pivotPos.value
-  const extentX = Math.max(
-    pivot.x,
-    costumeSize.value.width - pivot.x,
-    Math.abs(colliderPos.value.x - pivot.x),
-    Math.abs(colliderPos.value.x + colliderSize.value.width - pivot.x)
-  )
-  const extentY = Math.max(
-    pivot.y,
-    costumeSize.value.height - pivot.y,
-    Math.abs(colliderPos.value.y - pivot.y),
-    Math.abs(colliderPos.value.y + colliderSize.value.height - pivot.y)
-  )
-  const diameter = Math.max(1, Math.hypot(extentX, extentY) * 2.5 * props.sprite.size)
-  return { width: diameter, height: diameter }
+  return { width: costumeSize.value.width * 2, height: costumeSize.value.height * 2 }
 })
 
 /** Whether the values have been modified */
 const dirty = ref(false)
 const colliderDirty = ref(false)
-const worldPreview = ref(false)
 const canEditCollider = computed(
-  () =>
-    props.collisionEditingEnabled &&
-    !worldPreview.value &&
-    [CollisionShapeType.Auto, CollisionShapeType.Rect, CollisionShapeType.Circle].includes(
-      props.sprite.collisionShapeType
-    )
+  () => props.collisionEditingEnabled && isColliderEditable(props.sprite.collisionShapeType)
 )
 const isCircle = computed(() => props.sprite.collisionShapeType === CollisionShapeType.Circle)
 const polygonPoints = ref<number[]>([])
@@ -95,7 +69,7 @@ const colliderPos = ref({ x: 0, y: 0 })
 async function resetValues() {
   const sprite = props.sprite
   pivotPos.value = defaultCostume.value.pivot
-  let bounds = getColliderBounds(sprite, pivotPos.value)
+  let bounds = getColliderBounds(sprite)
   if (sprite.collisionShapeType === CollisionShapeType.Auto) {
     const { img, bitmapResolution } = defaultCostume.value
     const rect = await getContentBoundingRect(await toNativeFile(img))
@@ -108,8 +82,7 @@ async function resetValues() {
   }
   colliderSize.value = { width: bounds?.width ?? 0, height: bounds?.height ?? 0 }
   colliderPos.value = { x: bounds?.x ?? 0, y: bounds?.y ?? 0 }
-  polygonPoints.value =
-    sprite.collisionShapeType === CollisionShapeType.Polygon ? getColliderPolygonPoints(sprite, pivotPos.value) : []
+  polygonPoints.value = sprite.collisionShapeType === CollisionShapeType.Polygon ? getColliderPolygonPoints(sprite) : []
   colliderDirty.value = false
   dirty.value = false
 }
@@ -157,13 +130,8 @@ const stageConfig = computed<StageConfig | null>(() => {
 const layerConfig = computed<LayerConfig | null>(() => {
   if (canvasSize.value == null || costumeSize.value == null) return null
   return {
-    x: canvasSize.value.width / 2,
-    y: canvasSize.value.height / 2,
-    offsetX: worldPreview.value ? pivotPos.value.x : costumeSize.value.width / 2,
-    offsetY: worldPreview.value ? pivotPos.value.y : costumeSize.value.height / 2,
-    ...(worldPreview.value
-      ? getColliderPreviewTransform(props.sprite, defaultCostume.value.faceRight)
-      : { rotation: 0, scaleX: 1, scaleY: 1 }),
+    x: (canvasSize.value.width - costumeSize.value.width) / 2,
+    y: (canvasSize.value.height - costumeSize.value.height) / 2,
     imageSmoothingEnabled: false
   }
 })
@@ -186,7 +154,7 @@ const pivotGroupConfig = computed(() => {
   return {
     x: pivotPos.value.x,
     y: pivotPos.value.y,
-    draggable: !worldPreview.value,
+    draggable: true,
     scale: {
       x: scale,
       y: scale
@@ -260,9 +228,18 @@ const colliderTransformerConfig = computed<CustomTransformerConfig>(() => ({
 
 watchEffect(() => {
   if (colliderNode.value == null || colliderTransformer.value == null) return
-  const colliderNodeNode = colliderNode.value.getNode()
+  const node = colliderNode.value.getNode()
   const transformerNode = colliderTransformer.value.getNode()
-  transformerNode.nodes([colliderNodeNode])
+  transformerNode.nodes([node])
+  transformerNode.boundBoxFunc((oldBounds, newBounds) => {
+    if (
+      props.sprite.collisionShapeType === CollisionShapeType.Capsule &&
+      Math.abs(newBounds.width) > Math.abs(newBounds.height)
+    ) {
+      return oldBounds
+    }
+    return newBounds
+  })
 })
 
 function syncColliderTitlePos(e: KonvaEventObject<unknown>) {
@@ -318,30 +295,14 @@ const { fn: save } = useMessageHandle(
 
 <template>
   <div class="h-full w-full flex flex-col items-center gap-xl">
-    <div v-if="collisionEditingEnabled" class="flex items-center gap-md text-sm">
-      <UIButton
-        v-radar="{ name: 'collider-view-button', desc: 'Switch between costume editing and transformed preview' }"
-        type="white"
-        @click="worldPreview = !worldPreview"
-      >
-        {{
-          worldPreview
-            ? $t({ en: 'Edit in costume coordinates', zh: '在造型坐标中编辑' })
-            : $t({ en: 'Preview sprite transform', zh: '预览精灵变换' })
-        }}
-      </UIButton>
-      <span>{{
-        worldPreview
-          ? $t({ en: 'Initial size and rotation · Preview only', zh: '初始大小与旋转 · 仅预览' })
-          : $t({ en: 'Costume coordinates · Before sprite size and rotation', zh: '造型坐标 · 未应用精灵大小与旋转' })
-      }}</span>
-    </div>
-    <div v-if="collisionEditingEnabled" class="text-sm text-text">
+    <div
+      v-if="collisionEditingEnabled && sprite.collisionShapeType !== CollisionShapeType.Auto"
+      class="text-sm text-text"
+    >
       {{
         $t(
           {
             [CollisionShapeType.None]: { en: 'None', zh: '无' },
-            [CollisionShapeType.Auto]: { en: 'Automatic', zh: '自动' },
             [CollisionShapeType.Circle]: { en: 'Circle', zh: '圆形' },
             [CollisionShapeType.Rect]: { en: 'Rectangle', zh: '矩形' },
             [CollisionShapeType.Capsule]: { en: 'Capsule', zh: '胶囊' },
@@ -352,17 +313,9 @@ const { fn: save } = useMessageHandle(
       <template v-if="sprite.collisionShapeType === CollisionShapeType.None">
         · {{ $t({ en: 'No physical collider', zh: '无物理碰撞体' }) }}</template
       >
-      <template
-        v-else-if="
-          sprite.collisionShapeType === CollisionShapeType.Capsule ||
-          sprite.collisionShapeType === CollisionShapeType.Polygon
-        "
-      >
+      <template v-else-if="sprite.collisionShapeType === CollisionShapeType.Polygon">
         · {{ $t({ en: 'Shape preview only; pivot can be edited', zh: '形状仅预览；可编辑参考点' }) }}</template
       >
-      <template v-else-if="sprite.collisionShapeType === CollisionShapeType.Auto">
-        · {{ $t({ en: 'Editing the bounds creates a rectangle', zh: '编辑边界会创建矩形碰撞体' }) }}
-      </template>
       <template v-else-if="isCircle">
         · {{ $t({ en: 'Radius', zh: '半径' }) }}: {{ Math.round((colliderSize.width / 2) * 100) / 100 }} ·
         {{ $t({ en: 'World diameter', zh: '世界直径' }) }}:
@@ -375,7 +328,7 @@ const { fn: save } = useMessageHandle(
         <v-layer v-if="layerConfig != null" :config="layerConfig">
           <v-image v-if="imgConfig != null" :config="imgConfig" />
           <template v-if="collisionEditingEnabled && sprite.collisionShapeType !== CollisionShapeType.None">
-            <v-text v-if="!worldPreview" ref="colliderTitle" :config="colliderTitleConfig" />
+            <v-text ref="colliderTitle" :config="colliderTitleConfig" />
             <v-circle
               v-if="isCircle"
               ref="colliderNode"
@@ -416,7 +369,7 @@ const { fn: save } = useMessageHandle(
               :config="colliderTransformerConfig"
             />
           </template>
-          <v-group v-if="!worldPreview" :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
+          <v-group :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
             <v-group :config="pivotMarkerConfigs.drawingGroup">
               <template v-for="(shape, idx) in pivotMarkerConfigs.shapes" :key="`pivot-marker-${idx}`">
                 <v-circle v-if="shape.kind === 'circle'" :config="shape.config" />

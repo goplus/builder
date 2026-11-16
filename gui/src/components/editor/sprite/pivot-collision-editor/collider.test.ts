@@ -1,13 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { File, fromText } from '@/models/common/file'
 import { Costume } from '@/models/spx/costume'
-import { CollisionShapeType, RotationStyle, Sprite } from '@/models/spx/sprite'
-import {
-  applyPivotCollisionEdit,
-  getColliderBounds,
-  getColliderPolygonPoints,
-  getColliderPreviewTransform
-} from './collider'
+import { CollisionShapeType, Sprite } from '@/models/spx/sprite'
+import { applyPivotCollisionEdit, getColliderBounds, getColliderPolygonPoints, isColliderEditable } from './collider'
 
 function makeSprite(type: CollisionShapeType, params: number[]) {
   const sprite = new Sprite('Test', '', {
@@ -44,15 +39,15 @@ describe('physical collider geometry', () => {
     sprite.addCostume(costume)
     expect(costume.pivot).toEqual({ x: 25, y: 18.75 })
     expect(await costume.getSize()).toEqual({ width: 60, height: 50 })
-    expect(getColliderBounds(sprite, costume.pivot)).toEqual({ x: 15, y: 8.75, width: 20, height: 20 })
+    expect(getColliderBounds(sprite)).toEqual({ x: 15, y: 8.75, width: 20, height: 20 })
   })
 
-  it('uses costume units for a circle, with size applied only in the world preview', () => {
+  it('uses costume units for a circle before sprite scaling', () => {
     const sprite = makeSprite(CollisionShapeType.Circle, [10])
     sprite.setCollisionPivot({ x: 0, y: 0 })
-    const bounds = getColliderBounds(sprite, sprite.defaultCostume!.pivot)!
+    const bounds = getColliderBounds(sprite)!
     expect(bounds).toEqual({ x: 15, y: 8.75, width: 20, height: 20 })
-    expect(bounds.width * getColliderPreviewTransform(sprite, 0).scaleX).toBe(40)
+    expect(bounds.width * sprite.size).toBe(40)
   })
 
   it.each([
@@ -61,26 +56,13 @@ describe('physical collider geometry', () => {
     [CollisionShapeType.Capsule, [20, 10], { x: 23, y: 8.75, width: 10, height: 10 }]
   ] as const)('previews %s with parameters %j', (type, params, expected) => {
     const sprite = makeSprite(type, [...params])
-    expect(getColliderBounds(sprite, sprite.defaultCostume!.pivot)).toEqual(expected)
+    expect(getColliderBounds(sprite)).toEqual(expected)
   })
 
   it('converts polygon vertices and collision pivot from y-up into costume coordinates', () => {
     const sprite = makeSprite(CollisionShapeType.Polygon, [-10, -5, 10, -5, 0, 15])
-    expect(getColliderPolygonPoints(sprite, sprite.defaultCostume!.pivot)).toEqual([18, 18.75, 38, 18.75, 28, -1.25])
-    expect(getColliderBounds(sprite, sprite.defaultCostume!.pivot)).toEqual({ x: 18, y: -1.25, width: 20, height: 20 })
-  })
-
-  it.each([
-    [RotationStyle.Normal, 135, 15, { rotation: 60, scaleX: 2, scaleY: 2 }],
-    [RotationStyle.None, 135, 15, { rotation: 0, scaleX: 2, scaleY: 2 }],
-    [RotationStyle.LeftRight, -45, 15, { rotation: 0, scaleX: -2, scaleY: 2 }],
-    [RotationStyle.LeftRight, 315, 15, { rotation: 0, scaleX: 2, scaleY: 2 }],
-    [RotationStyle.LeftRight, 45, 15, { rotation: 0, scaleX: 2, scaleY: 2 }]
-  ])('applies %s heading=%s faceRight=%s', (style, heading, faceRight, expected) => {
-    const sprite = makeSprite(CollisionShapeType.Circle, [10])
-    sprite.setRotationStyle(style)
-    sprite.setHeading(heading)
-    expect(getColliderPreviewTransform(sprite, faceRight)).toEqual(expected)
+    expect(getColliderPolygonPoints(sprite)).toEqual([18, 18.75, 38, 18.75, 28, -1.25])
+    expect(getColliderBounds(sprite)).toEqual({ x: 18, y: -1.25, width: 20, height: 20 })
   })
 })
 
@@ -109,8 +91,8 @@ describe('saving pivot and collider edits', () => {
     [CollisionShapeType.None, []]
   ])('preserves %s parameters when only the pivot moves, including export/load', async (type, params) => {
     const sprite = makeSprite(type, params)
-    const bounds = getColliderBounds(sprite, sprite.defaultCostume!.pivot)
-    const points = getColliderPolygonPoints(sprite, sprite.defaultCostume!.pivot)
+    const bounds = getColliderBounds(sprite)
+    const points = getColliderPolygonPoints(sprite)
     applyPivotCollisionEdit(sprite, { x: 30, y: 20.75 }, null)
     const [loaded] = await Sprite.loadAll(sprite.export({ sounds: [] }), { sounds: [] })
     expect(loaded.collisionShapeType).toBe(type)
@@ -118,10 +100,10 @@ describe('saving pivot and collider edits', () => {
     expect(loaded.defaultCostume!.pivot).toEqual({ x: 30, y: 20.75 })
     expect(loaded.collisionPivot).toEqual(type === CollisionShapeType.None ? { x: 3, y: 5 } : { x: -2, y: 7 })
     if (type !== CollisionShapeType.None) {
-      expect(getColliderBounds(loaded, loaded.defaultCostume!.pivot)).toEqual(bounds)
+      expect(getColliderBounds(loaded)).toEqual(bounds)
     }
     if (type === CollisionShapeType.Polygon) {
-      expect(getColliderPolygonPoints(loaded, loaded.defaultCostume!.pivot)).toEqual(points)
+      expect(getColliderPolygonPoints(loaded)).toEqual(points)
     }
   })
 
@@ -143,4 +125,38 @@ describe('saving pivot and collider edits', () => {
       expect(sprite.collisionPivot).toEqual({ x: 10, y: -10 })
     }
   )
+})
+
+describe('collider bounds editing', () => {
+  it.each([
+    [CollisionShapeType.Auto, true],
+    [CollisionShapeType.Rect, true],
+    [CollisionShapeType.Circle, true],
+    [CollisionShapeType.Capsule, true],
+    [CollisionShapeType.Polygon, false],
+    [CollisionShapeType.None, false]
+  ])('reports editing support for %s', (type, editable) => {
+    expect(isColliderEditable(type)).toBe(editable)
+  })
+
+  it('saves capsule center, radius and total height through export/load', async () => {
+    const sprite = makeSprite(CollisionShapeType.Capsule, [4, 20])
+    applyPivotCollisionEdit(sprite, { x: 30, y: 20 }, { x: 20, y: 15, width: 16, height: 30 })
+    const [loaded] = await Sprite.loadAll(sprite.export({ sounds: [] }), { sounds: [] })
+    expect(loaded.collisionShapeType).toBe(CollisionShapeType.Capsule)
+    expect(loaded.collisionShapeParams).toEqual([8, 30])
+    expect(loaded.collisionPivot).toEqual({ x: -2, y: -10 })
+    expect(getColliderBounds(loaded)).toEqual({ x: 20, y: 15, width: 16, height: 30 })
+  })
+
+  it('rejects polygon bounds edits before changing the model', () => {
+    const sprite = makeSprite(CollisionShapeType.Polygon, [-10, -5, 10, -5, 0, 15])
+    expect(() => applyPivotCollisionEdit(sprite, { x: 30, y: 20 }, { x: 20, y: 15, width: 40, height: 30 })).toThrow(
+      'not editable'
+    )
+    expect(sprite.defaultCostume!.pivot).toEqual({ x: 25, y: 18.75 })
+    expect(sprite.collisionPivot).toEqual({ x: 3, y: 5 })
+    expect(sprite.collisionShapeType).toBe(CollisionShapeType.Polygon)
+    expect(sprite.collisionShapeParams).toEqual([-10, -5, 10, -5, 0, 15])
+  })
 })

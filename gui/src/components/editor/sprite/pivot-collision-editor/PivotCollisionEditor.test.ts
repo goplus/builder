@@ -7,7 +7,7 @@ import { Costume } from '@/models/spx/costume'
 import { CollisionShapeType, Sprite } from '@/models/spx/sprite'
 import PivotCollisionEditor from './PivotCollisionEditor.vue'
 
-vi.mock('../EditorContextProvider.vue', () => ({
+vi.mock('../../EditorContextProvider.vue', () => ({
   useEditorCtx: () => ({ state: { history: { doAction: async (_: unknown, fn: () => void) => fn() } } })
 }))
 vi.mock('@/utils/exception', async (importOriginal) => ({
@@ -21,7 +21,10 @@ const shapeStub = (name: string) =>
   defineComponent({
     name,
     props: { config: { type: Object, required: true } },
-    setup: () => ({ getNode: () => ({ nodes: () => {} }) }),
+    setup: () => {
+      const node = { nodes: vi.fn(), boundBoxFunc: vi.fn() }
+      return { getNode: () => node }
+    },
     template: '<div><slot /></div>'
   })
 
@@ -112,18 +115,37 @@ describe('PivotCollisionEditor', () => {
     }
   })
 
-  it('switches to a transformed, non-draggable preview without dirtying the form', async () => {
-    const { sprite, wrapper } = makeEditor(CollisionShapeType.Circle, [10])
+  it('edits a capsule and rejects bounds wider than their height', async () => {
+    const { sprite, wrapper } = makeEditor(CollisionShapeType.Capsule, [14, 56])
     try {
       await flushPromises()
-      await wrapper.get('button').trigger('click')
-      const circle = wrapper.getComponent({ name: 'v-circle' })
-      expect(circle.props('config').draggable).toBe(false)
-      const layer = wrapper.getComponent({ name: 'v-layer' })
-      expect(layer.props('config')).toMatchObject({ rotation: 45, scaleX: 2, scaleY: 2, offsetX: 25, offsetY: 18.75 })
-      expect(wrapper.get('button:last-child').attributes('disabled')).toBeDefined()
-      await wrapper.get('button').trigger('click')
-      expect(circle.props('config').draggable).toBe(true)
+      const transformer = wrapper.getComponent({ name: 'v-custom-transformer' })
+      const constrain = transformer.vm.getNode().boundBoxFunc.mock.calls[0][0]
+      const oldBounds = { x: 10, y: 20, width: 28, height: 56, rotation: 0 }
+      const validBounds = { ...oldBounds, width: 42, height: 70 }
+      expect(constrain(oldBounds, validBounds)).toBe(validBounds)
+      expect(constrain(oldBounds, { ...oldBounds, width: 70, height: 42 })).toBe(oldBounds)
+      const circleBounds = { ...oldBounds, width: 42, height: 42 }
+      expect(constrain(oldBounds, circleBounds)).toBe(circleBounds)
+      const capsule = wrapper.getComponent({ name: 'v-rect' })
+      expect(capsule.props('config')).toMatchObject({ draggable: true, cornerRadius: 14 })
+      capsule.vm.$emit('transformend', {
+        target: {
+          x: () => 30,
+          y: () => 10,
+          width: () => 28,
+          height: () => 56,
+          scaleX: vi.fn(() => 1.5),
+          scaleY: vi.fn(() => 1.25)
+        }
+      })
+      await wrapper.vm.$nextTick()
+      expect(capsule.props('config').cornerRadius).toBe(21)
+      await wrapper.get('button:last-child').trigger('click')
+      await flushPromises()
+      expect(sprite.collisionShapeType).toBe(CollisionShapeType.Capsule)
+      expect(sprite.collisionShapeParams).toEqual([21, 70])
+      expect(sprite.collisionPivot).toEqual({ x: 26, y: -26.25 })
     } finally {
       wrapper.unmount()
       sprite.dispose()
