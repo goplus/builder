@@ -11,13 +11,17 @@ import { fromLSPDiagnostic, positionEq } from './common'
 import type { ILSPClient, RequestContext } from './lsp/types'
 import type { IXGoProject } from './project'
 
+export type ProvidedDiagnostic = Diagnostic & {
+  lspDiagnostic: lsp.Diagnostic | null
+}
+
 export type DiagnosticsContext = BaseContext
 
 export interface IDiagnosticsProvider
   extends Emitter<{
     didChangeDiagnostics: void
   }> {
-  provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]>
+  provideDiagnostics(ctx: DiagnosticsContext): Promise<ProvidedDiagnostic[]>
 }
 
 export class DiagnosticsProvider extends Emitter<{ didChangeDiagnostics: void }> implements IDiagnosticsProvider {
@@ -76,8 +80,8 @@ export class DiagnosticsProvider extends Emitter<{ didChangeDiagnostics: void }>
     return result
   }
 
-  async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
-    const diagnostics: Diagnostic[] = []
+  async provideDiagnostics(ctx: DiagnosticsContext): Promise<ProvidedDiagnostic[]> {
+    const diagnostics: ProvidedDiagnostic[] = []
     // Use workspace/diagnostic instead of textDocument/diagnostic to maximize cache reuse
     const workspaceReport = await this.fetchWorkspaceDiagnosticReport({ signal: ctx.signal })
     const report = workspaceReport.items.find((item) => item.uri === ctx.textDocument.id.uri)
@@ -87,7 +91,7 @@ export class DiagnosticsProvider extends Emitter<{ didChangeDiagnostics: void }>
     for (const item of report.items) {
       const diagnostic = fromLSPDiagnostic(item)
       const range = this.adaptLSDiagnosticRange(diagnostic.range, ctx.textDocument)
-      diagnostics.push({ ...diagnostic, range })
+      diagnostics.push({ ...diagnostic, range, lspDiagnostic: item })
     }
     return diagnostics
   }

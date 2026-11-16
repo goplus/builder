@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { sleep } from '@/utils/test'
 import { fromText } from '@/models/common/file'
 import { Costume } from '@/models/spx/costume'
@@ -38,6 +38,25 @@ function makeProject() {
 }
 
 describe('History', () => {
+  it('preserves undo and redo when an action fails validation', async () => {
+    const project = makeProject()
+    const history = new History(project)
+    await history.doAction(actionRenameSprite, () => project.sprites[0].setName('Renamed'))
+    await history.undo()
+    const redo = history.getRedoAction()
+    const update = vi.fn()
+    const error = new Error('The source has changed')
+    await expect(
+      history.doAction(actionUpdateCode, update, () => {
+        throw error
+      })
+    ).rejects.toBe(error)
+    expect(update).not.toHaveBeenCalled()
+    expect(history.getUndoAction()).toBeNull()
+    expect(history.getRedoAction()).toBe(redo)
+    expect(project.sprites[0].name).toBe('MySprite')
+  })
+
   it('should work well', async () => {
     const project = makeProject()
     const history = new History(project)

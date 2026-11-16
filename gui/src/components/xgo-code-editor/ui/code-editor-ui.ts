@@ -44,6 +44,7 @@ import {
   type ICopilot
 } from '../copilot'
 import type { CodeEditor } from '../code-editor'
+import type { CodeAction } from '../code-action'
 
 export * from './hover'
 export * from './completion'
@@ -96,9 +97,12 @@ export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = '
 export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentRange], void> = 'xgo.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'xgo.renameResource'
 export const builtInCommandInvokeInputHelper: Command<[InternalInputSlot], void> = 'xgo.invokeInputHelper'
+export const builtInCommandApplyCodeAction: Command<[CodeAction], void> = 'xgo.applyCodeAction'
+
+export const fixProblemTitle: LocaleMessage = { en: 'Fix problem', zh: '修复问题' }
 
 export type InternalAction<A extends any[] = any, R = any> = {
-  title: string
+  title: LocaleMessage
   command: Command<A, R>
   commandInfo: CommandInfo<A, R>
   arguments: A
@@ -131,7 +135,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
     const info = this.getCommandInfo(action.command)
     if (info == null) return null
     return {
-      title: action.title ?? this.i18n.t(info.title),
+      title: action.title ?? info.title,
       command: action.command,
       commandInfo: info,
       arguments: action.arguments
@@ -557,7 +561,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
 
     this.registerCommand(builtInCommandCopilotFixProblem, {
       icon: 'fix',
-      title: { en: 'Fix problem', zh: '修复问题' },
+      title: fixProblemTitle,
       handler: ({ textDocument, problem }) => {
         const codeLink = makeCodeLinkWithRange(textDocument, problem.range)
         const message = this.i18n.t({
@@ -565,7 +569,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
           zh: `如何修复这个问题：\n\n${codeLink}\n\n> ${problem.message}`
         })
         copilot.addUserTextMessage(message, {
-          title: { en: 'Fix problem', zh: '修复问题' },
+          title: fixProblemTitle,
           description: '',
           reactToEvents: false
         })
@@ -640,6 +644,12 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
         }
       })
     }
+
+    this.registerCommand(builtInCommandApplyCodeAction, {
+      icon: 'fix',
+      title: { en: 'Quick fix', zh: '快速修复' },
+      handler: (action) => this.codeEditor.applyCodeAction(action)
+    })
 
     this.registerCommand(builtInCommandInvokeInputHelper, {
       icon: 'modify',

@@ -43,6 +43,10 @@ export interface ILSPClient {
     params: lsp.PrepareRenameParams
   ): Promise<lsp.PrepareRenameResult | null>
   textDocumentRename(ctx: RequestContext, params: lsp.RenameParams): Promise<lsp.WorkspaceEdit | null>
+  textDocumentCodeAction(
+    ctx: RequestContext,
+    params: lsp.CodeActionParams
+  ): Promise<(lsp.CodeAction | lsp.Command)[] | null>
   textDocumentFormatting(ctx: RequestContext, params: lsp.DocumentFormattingParams): Promise<lsp.TextEdit[] | null>
   textDocumentInlayHint(ctx: RequestContext, params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null>
   textDocumentDocumentLink(ctx: RequestContext, params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null>

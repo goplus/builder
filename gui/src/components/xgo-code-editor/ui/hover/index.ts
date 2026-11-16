@@ -1,26 +1,30 @@
-import { debounce } from 'lodash'
+import { debounce, isEqual } from 'lodash'
+import { watch } from 'vue'
 import { escapeHTML } from '@/utils/utils'
+import { Cancelled, capture } from '@/utils/exception'
 import Emitter from '@/utils/emitter'
 import { TaskManager } from '@/utils/task'
 import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import {
   type Action,
+  type BaseContext,
   type DefinitionDocumentationString,
   type Range,
   type Position,
   makeBasicMarkdownString,
-  type ITextDocument,
   containsPosition,
   InputKind,
   rangeEq
 } from '../../common'
 import type { monaco } from '../../monaco'
 import type { Hover } from '../../hover'
+import type { ProvidedDiagnostic } from '../../diagnostics'
 import type { InlayHintItem } from '../../inlay-hint'
 
 export type { Hover, HoverContext, IHoverProvider } from '../../hover'
 import {
   builtInCommandCopilotFixProblem,
+  fixProblemTitle,
   builtInCommandGoToResource,
   type CodeEditorUIController,
   builtInCommandRenameResource,
@@ -86,8 +90,9 @@ export class HoverController extends Emitter<{
 
     const provider = this.ui.codeEditor.hoverProvider
     const position = target.position
-    const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
-    const providedHover = await provider.provideHover({ textDocument, signal }, position)
+    const ctx = { textDocument, signal }
+    const providedHover = await provider.provideHover(ctx, position)
+    if (textDocument !== this.ui.activeTextDocument) return null
     let providedTextHover: TextHover | null = null
     if (providedHover != null) {
       const range = providedHover.range ?? textDocument.getDefaultRange(position)
@@ -118,6 +123,8 @@ export class HoverController extends Emitter<{
       hover.actions.push(...hoverItem.actions)
     }
 
+    const diagnosticsHover = await this.getDiagnosticsHover(ctx, position)
+    if (textDocument !== this.ui.activeTextDocument) return null
     if (diagnosticsHover != null) {
       if (hover == null) return diagnosticsHover
       // Show diagnostics after the main hover content, but keep its action first as it is usually higher priority.
@@ -146,32 +153,43 @@ export class HoverController extends Emitter<{
     return hover.range != null && containsPosition(hover.range, target.position)
   }
 
-  private getDiagnosticsHover(textDocument: ITextDocument, position: Position): TextHover | null {
-    const diagnosticsController = this.ui.diagnosticsController
-    if (diagnosticsController.diagnostics == null) return null
-    for (const diagnostic of diagnosticsController.diagnostics) {
-      if (!containsPosition(diagnostic.range, position)) continue
-      return {
-        contents: [
-          makeBasicMarkdownString(
-            `<pre is="diagnostic-item" severity="${diagnostic.severity}">${diagnostic.message}</pre>`
-          )
-        ],
-        range: diagnostic.range,
-        actions: [
-          {
-            command: builtInCommandCopilotFixProblem,
-            arguments: [
-              {
-                textDocument: textDocument.id,
-                problem: diagnostic
-              }
-            ]
-          }
-        ]
-      }
+  private async getDiagnosticsHover(ctx: BaseContext, position: Position): Promise<TextHover | null> {
+    const diagnostic = this.ui.diagnosticsController.diagnostics?.find(({ range }) => containsPosition(range, position))
+    if (diagnostic == null) return null
+    const quickFix = await this.getDiagnosticQuickFix(ctx, diagnostic)
+    return {
+      contents: [
+        makeBasicMarkdownString(
+          `<pre is="diagnostic-item" severity="${diagnostic.severity}">${diagnostic.message}</pre>`
+        )
+      ],
+      range: diagnostic.range,
+      actions: [
+        quickFix ?? {
+          command: builtInCommandCopilotFixProblem,
+          arguments: [{ textDocument: ctx.textDocument.id, problem: diagnostic }]
+        }
+      ]
     }
-    return null
+  }
+
+  private async getDiagnosticQuickFix(ctx: BaseContext, diagnostic: ProvidedDiagnostic): Promise<Action | null> {
+    const { lspDiagnostic } = diagnostic
+    if (this.ui.readOnly || lspDiagnostic == null) return null
+    const { diagnosticsController } = this.ui
+    const diagnostics = diagnosticsController.currentDiagnostics
+    if (diagnostics == null) return null
+    const matches = diagnostics.filter((item) => isEqual(item.lspDiagnostic, lspDiagnostic))
+    if (matches.length !== 1 || matches[0] !== diagnostic) return null
+    try {
+      const actions = await this.ui.codeEditor.codeActionProvider.provideCodeActions(ctx, lspDiagnostic)
+      if (actions.length !== 1 || diagnosticsController.currentDiagnostics !== diagnostics) return null
+      return { ...actions[0], title: fixProblemTitle }
+    } catch (error) {
+      if (error instanceof Cancelled) throw error
+      capture(error, 'Error while providing diagnostic quick fixes')
+      return null
+    }
   }
 
   private getResourceReferenceHover(position: Position): TextHover | null {
@@ -326,6 +344,14 @@ export class HoverController extends Emitter<{
 
     this.addDisposable(editor.onKeyDown(() => this.hideHover()))
     this.addDisposable(editor.onMouseDown(() => this.hideHover()))
+
+    this.addDisposer(
+      watch(
+        () => this.ui.readOnly,
+        () => this.hideHover(),
+        { flush: 'sync' }
+      )
+    )
 
     this.addDisposer(
       resourceReferenceController.on('didStartModifying', () => {
