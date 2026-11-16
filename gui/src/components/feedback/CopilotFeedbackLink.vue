@@ -8,7 +8,8 @@ export const isRaw = false
 
 export const detailedDescription = `Display a button that opens the feedback form prefilled with your draft. \
 The user reviews, edits, and sends it to the XBuilder team. For example:
-I could not fix this. You can <feedback-link title="My sprite stops moving" description="After I renamed my sprite, it stopped moving. I have tried refreshing the page.">send feedback</feedback-link> to the XBuilder team.
+You can <feedback-link title="My sprite stops moving" description="After I renamed my sprite, it stopped moving. I have tried refreshing the page.">send feedback</feedback-link> to the XBuilder team. \
+I've filled it in with what you told me, and you can change it before sending.
 
 Offer it when you cannot solve the user's problem (XBuilder seems broken, a needed feature is missing, or your suggestions failed twice), \
 or when the user asks to send feedback. If you do not yet know what the feedback is about, ask first instead of offering it with an empty draft. \
@@ -20,7 +21,8 @@ Do not add steps, expectations, or causes the user did not mention, and do not l
 No placeholders, personal information, or code. \
 Attribute values must not contain line breaks or straight double quotes; use “ ” instead.
 
-Use it at most once per reply, inside a sentence, never on its own line. Do not say the feedback was sent.`
+Use it at most once per reply, inside a sentence, never on its own line. \
+Say you filled it in with what the user told you and that they can change it before sending. Never say it was sent.`
 
 export const attributes = z.object({
   title: z.string().max(feedbackTitleMaxLength).describe('Short summary of the problem'),
