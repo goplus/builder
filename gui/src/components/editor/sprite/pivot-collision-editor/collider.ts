@@ -79,6 +79,7 @@ export function applyPivotCollisionEdit(sprite: Sprite, newPivot: Pivot, editedB
     return
   }
   sprite.applyCostumesPivotChange(delta)
+  // Keep the collider aligned with the artwork, including Auto shapes with a stored collisionPivot.
   if (sprite.collisionShapeType !== CollisionShapeType.None) {
     sprite.setCollisionPivot({ x: sprite.collisionPivot.x - delta.x, y: sprite.collisionPivot.y + delta.y })
   }

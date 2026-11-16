@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
 import { File } from '@/models/common/file'
 import { Costume } from '@/models/spx/costume'
@@ -10,9 +10,10 @@ import PivotCollisionEditor from './PivotCollisionEditor.vue'
 vi.mock('../../EditorContextProvider.vue', () => ({
   useEditorCtx: () => ({ state: { history: { doAction: async (_: unknown, fn: () => void) => fn() } } })
 }))
-vi.mock('@/utils/exception', async (importOriginal) => ({
+const messages = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
+vi.mock('@/components/ui', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useMessageHandle: (fn: unknown) => ({ fn })
+  useMessage: () => messages
 }))
 vi.mock('@/utils/img-rendering', () => ({ useRenderableImage: () => [ref(null)] }))
 vi.mock('@/utils/dom', () => ({ useContentSize: () => ref({ width: 640, height: 320 }) }))
@@ -70,6 +71,8 @@ function makeEditor(type: CollisionShapeType, params: number[], collisionEditing
 }
 
 describe('PivotCollisionEditor', () => {
+  beforeEach(() => vi.clearAllMocks())
+
   it.each([true, false])('preserves circle parameters on a pivot-only save (collision editing=%s)', async (enabled) => {
     const { sprite, wrapper } = makeEditor(CollisionShapeType.Circle, [10], enabled)
     try {
@@ -79,6 +82,9 @@ describe('PivotCollisionEditor', () => {
       await wrapper.vm.$nextTick()
       await wrapper.get('button:last-child').trigger('click')
       await flushPromises()
+      expect(messages.success).toHaveBeenCalledWith(
+        enabled ? 'Save sprite pivot and collision successfully' : 'Save sprite pivot successfully'
+      )
       expect(sprite.collisionShapeType).toBe(CollisionShapeType.Circle)
       expect(sprite.collisionShapeParams).toEqual([10])
       expect(sprite.collisionPivot).toEqual({ x: -5, y: 1.25 })
@@ -87,6 +93,30 @@ describe('PivotCollisionEditor', () => {
       sprite.dispose()
     }
   })
+
+  it.each([true, false])(
+    'reports save failure for the enabled editing scope (collision editing=%s)',
+    async (enabled) => {
+      const { sprite, wrapper } = makeEditor(CollisionShapeType.Circle, [10], enabled)
+      try {
+        await flushPromises()
+        vi.spyOn(sprite, 'applyCostumesPivotChange').mockImplementation(() => {
+          throw new Error('Save failed')
+        })
+        wrapper.getComponent({ name: 'v-group' }).vm.$emit('dragend', { target: { x: () => 30, y: () => 20 } })
+        await wrapper.vm.$nextTick()
+        await wrapper.get('button:last-child').trigger('click')
+        await flushPromises()
+        expect(messages.error).toHaveBeenCalledWith(
+          enabled ? 'Failed to update sprite pivot or collision' : 'Failed to update sprite pivot'
+        )
+      } finally {
+        vi.restoreAllMocks()
+        wrapper.unmount()
+        sprite.dispose()
+      }
+    }
+  )
 
   it('saves an edited circle using its center and one radius', async () => {
     const { sprite, wrapper } = makeEditor(CollisionShapeType.Circle, [10])

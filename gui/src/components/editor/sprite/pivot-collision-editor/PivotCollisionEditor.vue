@@ -269,25 +269,33 @@ function handleColliderTransformEnd(e: KonvaEventObject<unknown>) {
   node.scaleY(1)
 }
 
-const { fn: save } = useMessageHandle(
-  async () => {
-    await editorCtx.state.history.doAction(
-      {
-        name: props.collisionEditingEnabled
-          ? { en: 'Update sprite pivot and collision', zh: '更新精灵参考点和碰撞体' }
-          : { en: 'Update sprite pivot', zh: '更新精灵参考点' }
-      },
-      () =>
-        applyPivotCollisionEdit(
-          props.sprite,
-          pivotPos.value,
-          props.collisionEditingEnabled && colliderDirty.value ? { ...colliderPos.value, ...colliderSize.value } : null
-        )
-    )
-    dirty.value = false
-    colliderDirty.value = false
-    emits('updateSuccess')
-  },
+async function save() {
+  await editorCtx.state.history.doAction(
+    {
+      name: props.collisionEditingEnabled
+        ? { en: 'Update sprite pivot and collision', zh: '更新精灵参考点和碰撞体' }
+        : { en: 'Update sprite pivot', zh: '更新精灵参考点' }
+    },
+    () =>
+      applyPivotCollisionEdit(
+        props.sprite,
+        pivotPos.value,
+        props.collisionEditingEnabled && colliderDirty.value ? { ...colliderPos.value, ...colliderSize.value } : null
+      )
+  )
+  dirty.value = false
+  colliderDirty.value = false
+  emits('updateSuccess')
+}
+
+const { fn: savePivot } = useMessageHandle(
+  save,
+  { en: 'Failed to update sprite pivot', zh: '更新精灵参考点失败' },
+  { en: 'Save sprite pivot successfully', zh: '更新精灵参考点成功' }
+)
+
+const { fn: savePivotAndCollision } = useMessageHandle(
+  save,
   { en: 'Failed to update sprite pivot or collision', zh: '更新精灵参考点或碰撞体失败' },
   { en: 'Save sprite pivot and collision successfully', zh: '更新精灵参考点和碰撞体成功' }
 )
@@ -361,7 +369,7 @@ const { fn: save } = useMessageHandle(
       }"
       type="green"
       :disabled="!dirty"
-      @click="save"
+      @click="collisionEditingEnabled ? savePivotAndCollision() : savePivot()"
     >
       {{ $t({ en: 'Save', zh: '保存' }) }}
     </UIButton>
