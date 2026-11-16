@@ -44,6 +44,30 @@ function makeProject(screenshotTaker: ScreenshotTaker | null = async () => mockF
 }
 
 describe('Project', () => {
+  it('preserves a directory tilemap and its resources across project save and reload', async () => {
+    const mapPath = 'assets/tilemaps/river/tilemap.json'
+    const texturePath = 'assets/tilemaps/river/textures/water.png'
+    const files: Files = {
+      [projectConfigFilePath]: fromConfig('index.json', { tilemapPath: 'tilemaps/river' }),
+      [mapPath]: fromConfig('tilemap.json', {
+        version: 1,
+        tileset: { physics_layers: [{ collision_layer: 2, collision_mask: 1 }] }
+      }),
+      [texturePath]: mockFile('water.png')
+    }
+    const project = new SpxProject()
+    await project.loadFiles(files)
+
+    const exported = project.exportFiles()
+    expect(await toConfig(exported[projectConfigFilePath]!)).toMatchObject({ tilemapPath: 'tilemaps/river' })
+    expect(exported[mapPath]).toBe(files[mapPath])
+    expect(exported[texturePath]).toBe(files[texturePath])
+
+    await project.loadFiles(exported)
+    expect(project.tilemap?.tilemapPath).toBe('tilemaps/river')
+    expect(project.exportFiles()[mapPath]).toBe(files[mapPath])
+  })
+
   it('should restore persisted asset names and references without interactive corrections', async () => {
     const longName = 'a'.repeat(101)
     const spriteName = 'not an identifier'
