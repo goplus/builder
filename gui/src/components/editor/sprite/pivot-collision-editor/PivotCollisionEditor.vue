@@ -295,33 +295,6 @@ const { fn: save } = useMessageHandle(
 
 <template>
   <div class="h-full w-full flex flex-col items-center gap-xl">
-    <div
-      v-if="collisionEditingEnabled && sprite.collisionShapeType !== CollisionShapeType.Auto"
-      class="text-sm text-text"
-    >
-      {{
-        $t(
-          {
-            [CollisionShapeType.None]: { en: 'None', zh: '无' },
-            [CollisionShapeType.Circle]: { en: 'Circle', zh: '圆形' },
-            [CollisionShapeType.Rect]: { en: 'Rectangle', zh: '矩形' },
-            [CollisionShapeType.Capsule]: { en: 'Capsule', zh: '胶囊' },
-            [CollisionShapeType.Polygon]: { en: 'Polygon', zh: '多边形' }
-          }[sprite.collisionShapeType]
-        )
-      }}
-      <template v-if="sprite.collisionShapeType === CollisionShapeType.None">
-        · {{ $t({ en: 'No physical collider', zh: '无物理碰撞体' }) }}</template
-      >
-      <template v-else-if="sprite.collisionShapeType === CollisionShapeType.Polygon">
-        · {{ $t({ en: 'Shape preview only; pivot can be edited', zh: '形状仅预览；可编辑参考点' }) }}</template
-      >
-      <template v-else-if="isCircle">
-        · {{ $t({ en: 'Radius', zh: '半径' }) }}: {{ Math.round((colliderSize.width / 2) * 100) / 100 }} ·
-        {{ $t({ en: 'World diameter', zh: '世界直径' }) }}:
-        {{ Math.round(colliderSize.width * sprite.size * 100) / 100 }}</template
-      >
-    </div>
     <div ref="wrapper" class="relative h-full w-full flex-1 overflow-hidden rounded-md">
       <CheckerboardBackground class="absolute inset-0" />
       <v-stage v-if="stageConfig != null" :config="stageConfig">
