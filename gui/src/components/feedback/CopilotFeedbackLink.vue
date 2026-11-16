@@ -11,7 +11,8 @@ The user reviews, edits, and sends it to the XBuilder team. For example:
 I could not fix this. You can <feedback-link title="My sprite stops moving" description="After I renamed my sprite, it stopped moving. I have tried refreshing the page.">send feedback</feedback-link> to the XBuilder team.
 
 Offer it when you cannot solve the user's problem (XBuilder seems broken, a needed feature is missing, or your suggestions failed twice), \
-or when the user asks to send feedback. Not for questions you can answer. Once the user declines, do not offer it again for the same problem.
+or when the user asks to send feedback. If you do not yet know what the feedback is about, ask first instead of offering it with an empty draft. \
+Not for questions you can answer. Once the user declines, do not offer it again for the same problem.
 
 Write the title and description as the user, in first person and the UI language (“I clicked Run”, not “The user clicked Run”): \
 what I was doing, what happened (quote errors exactly), what I expected, and what I have already tried (not what you suggest now). \
