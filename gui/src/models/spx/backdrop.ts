@@ -198,6 +198,7 @@ export class Backdrop {
     includeAssetMetadata = true,
     assetPath = backdropAssetPath
   }: BackdropExportLoadOptions = {}): [RawBackdropConfig, Files] {
+    // NOTE: Keep the filename stem nonempty so empty names retain their extension after reload.
     const filename = encodeFilename('backdrop-' + this.name + extname(this.img.name))
     const config: RawBackdropConfig = {
       x: this.pivot.x * this.bitmapResolution,
