@@ -13,15 +13,13 @@ import { useI18n } from '@/utils/i18n'
 import { useRenderableImage } from '@/utils/img-rendering'
 import { useContentSize } from '@/utils/dom'
 import { useMessageHandle } from '@/utils/exception'
-import { getContentBoundingRect } from '@/utils/img'
-import { toNativeFile } from '@/models/common/file'
 import { CollisionShapeType, type Sprite } from '@/models/spx/sprite'
 import type { Pivot as CostumePivot } from '@/models/spx/costume'
 import { UIButton } from '@/components/ui'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import type { CustomTransformer, CustomTransformerConfig } from '../../common/viewer/custom-transformer'
 import { getPivotMarkerConfigs } from '../../common/pivot-marker'
-import { applyPivotCollisionEdit, getColliderBounds, getColliderPolygonPoints, isColliderEditable } from './collider'
+import { applyPivotCollisionEdit, getColliderGeometry, isColliderEditable } from './collider'
 import CheckerboardBackground from '../CheckerboardBackground.vue'
 
 const props = defineProps<{
@@ -68,21 +66,11 @@ const colliderPos = ref({ x: 0, y: 0 })
 
 async function resetValues() {
   const sprite = props.sprite
+  const { bounds, polygonPoints: points } = await getColliderGeometry(sprite)
   pivotPos.value = defaultCostume.value.pivot
-  let bounds = getColliderBounds(sprite)
-  if (sprite.collisionShapeType === CollisionShapeType.Auto) {
-    const { img, bitmapResolution } = defaultCostume.value
-    const rect = await getContentBoundingRect(await toNativeFile(img))
-    bounds = {
-      x: rect.x / bitmapResolution,
-      y: rect.y / bitmapResolution,
-      width: rect.width / bitmapResolution,
-      height: rect.height / bitmapResolution
-    }
-  }
   colliderSize.value = { width: bounds?.width ?? 0, height: bounds?.height ?? 0 }
   colliderPos.value = { x: bounds?.x ?? 0, y: bounds?.y ?? 0 }
-  polygonPoints.value = sprite.collisionShapeType === CollisionShapeType.Polygon ? getColliderPolygonPoints(sprite) : []
+  polygonPoints.value = points
   colliderDirty.value = false
   dirty.value = false
 }

@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { File, fromText } from '@/models/common/file'
 import { Costume } from '@/models/spx/costume'
 import { CollisionShapeType, Sprite } from '@/models/spx/sprite'
-import { applyPivotCollisionEdit, getColliderBounds, getColliderPolygonPoints, isColliderEditable } from './collider'
+import { applyPivotCollisionEdit, getColliderGeometry, isColliderEditable } from './collider'
+
+vi.mock('@/utils/img', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getContentBoundingRect: vi.fn(async () => ({ x: 20, y: 12, width: 120, height: 80 }))
+}))
 
 function makeSprite(type: CollisionShapeType, params: number[]) {
   const sprite = new Sprite('Test', '', {
@@ -39,30 +44,45 @@ describe('physical collider geometry', () => {
     sprite.addCostume(costume)
     expect(costume.pivot).toEqual({ x: 25, y: 18.75 })
     expect(await costume.getSize()).toEqual({ width: 60, height: 50 })
-    expect(getColliderBounds(sprite)).toEqual({ x: 15, y: 8.75, width: 20, height: 20 })
+    expect((await getColliderGeometry(sprite)).bounds).toEqual({ x: 15, y: 8.75, width: 20, height: 20 })
   })
 
-  it('uses costume units for a circle before sprite scaling', () => {
+  it('uses costume units for a circle before sprite scaling', async () => {
     const sprite = makeSprite(CollisionShapeType.Circle, [10])
     sprite.setCollisionPivot({ x: 0, y: 0 })
-    const bounds = getColliderBounds(sprite)!
+    const { bounds } = await getColliderGeometry(sprite)
     expect(bounds).toEqual({ x: 15, y: 8.75, width: 20, height: 20 })
-    expect(bounds.width * sprite.size).toBe(40)
+    expect(bounds!.width * sprite.size).toBe(40)
   })
 
   it.each([
     [CollisionShapeType.Rect, [20, 30], { x: 18, y: -1.25, width: 20, height: 30 }],
     [CollisionShapeType.Capsule, [4, 20], { x: 24, y: 3.75, width: 8, height: 20 }],
     [CollisionShapeType.Capsule, [20, 10], { x: 23, y: 8.75, width: 10, height: 10 }]
-  ] as const)('previews %s with parameters %j', (type, params, expected) => {
+  ] as const)('previews %s with parameters %j', async (type, params, expected) => {
     const sprite = makeSprite(type, [...params])
-    expect(getColliderBounds(sprite)).toEqual(expected)
+    expect((await getColliderGeometry(sprite)).bounds).toEqual(expected)
   })
 
-  it('converts polygon vertices and collision pivot from y-up into costume coordinates', () => {
+  it('reads automatic image bounds and converts bitmap pixels into costume units', async () => {
+    const sprite = makeSprite(CollisionShapeType.Auto, [])
+    expect(await getColliderGeometry(sprite)).toEqual({
+      bounds: { x: 5, y: 3, width: 30, height: 20 },
+      polygonPoints: []
+    })
+  })
+
+  it('returns no geometry for a sprite without a collider', async () => {
+    const sprite = makeSprite(CollisionShapeType.None, [])
+    expect(await getColliderGeometry(sprite)).toEqual({ bounds: null, polygonPoints: [] })
+  })
+
+  it('converts polygon vertices and collision pivot from y-up into costume coordinates', async () => {
     const sprite = makeSprite(CollisionShapeType.Polygon, [-10, -5, 10, -5, 0, 15])
-    expect(getColliderPolygonPoints(sprite)).toEqual([18, 18.75, 38, 18.75, 28, -1.25])
-    expect(getColliderBounds(sprite)).toEqual({ x: 18, y: -1.25, width: 20, height: 20 })
+    expect(await getColliderGeometry(sprite)).toEqual({
+      bounds: { x: 18, y: -1.25, width: 20, height: 20 },
+      polygonPoints: [18, 18.75, 38, 18.75, 28, -1.25]
+    })
   })
 })
 
@@ -91,20 +111,14 @@ describe('saving pivot and collider edits', () => {
     [CollisionShapeType.None, []]
   ])('preserves %s parameters when only the pivot moves, including export/load', async (type, params) => {
     const sprite = makeSprite(type, params)
-    const bounds = getColliderBounds(sprite)
-    const points = getColliderPolygonPoints(sprite)
+    const geometry = await getColliderGeometry(sprite)
     applyPivotCollisionEdit(sprite, { x: 30, y: 20.75 }, null)
     const [loaded] = await Sprite.loadAll(sprite.export({ sounds: [] }), { sounds: [] })
     expect(loaded.collisionShapeType).toBe(type)
     expect(loaded.collisionShapeParams).toEqual(params)
     expect(loaded.defaultCostume!.pivot).toEqual({ x: 30, y: 20.75 })
     expect(loaded.collisionPivot).toEqual(type === CollisionShapeType.None ? { x: 3, y: 5 } : { x: -2, y: 7 })
-    if (type !== CollisionShapeType.None) {
-      expect(getColliderBounds(loaded)).toEqual(bounds)
-    }
-    if (type === CollisionShapeType.Polygon) {
-      expect(getColliderPolygonPoints(loaded)).toEqual(points)
-    }
+    expect(await getColliderGeometry(loaded)).toEqual(geometry)
   })
 
   it('edits circle center and radius without changing its type', () => {
@@ -146,7 +160,7 @@ describe('collider bounds editing', () => {
     expect(loaded.collisionShapeType).toBe(CollisionShapeType.Capsule)
     expect(loaded.collisionShapeParams).toEqual([8, 30])
     expect(loaded.collisionPivot).toEqual({ x: -2, y: -10 })
-    expect(getColliderBounds(loaded)).toEqual({ x: 20, y: 15, width: 16, height: 30 })
+    expect((await getColliderGeometry(loaded)).bounds).toEqual({ x: 20, y: 15, width: 16, height: 30 })
   })
 
   it('rejects polygon bounds edits before changing the model', () => {

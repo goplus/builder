@@ -1,16 +1,39 @@
+import { getContentBoundingRect } from '@/utils/img'
+import { toNativeFile } from '@/models/common/file'
 import { CollisionShapeType, type Sprite } from '@/models/spx/sprite'
 import type { Pivot } from '@/models/spx/costume'
 
 export type ColliderBounds = { x: number; y: number; width: number; height: number }
 
-/** Shape coordinates use costume units (after bitmapResolution), with screen y pointing down. */
-export function getColliderBounds(sprite: Sprite): ColliderBounds | null {
-  const pivot = sprite.defaultCostume?.pivot
-  if (pivot == null) throw new Error('Sprite has no default costume')
+type ColliderGeometry = {
+  /** Collider bounds; null when the shape is None. */
+  bounds: ColliderBounds | null
+  /** Polygon vertices in costume coordinates; empty for other shapes. */
+  polygonPoints: number[]
+}
+
+/** Reads collider geometry in costume units (after bitmapResolution), with screen y pointing down. */
+export async function getColliderGeometry(sprite: Sprite): Promise<ColliderGeometry> {
+  const costume = sprite.defaultCostume
+  if (costume == null) throw new Error('Sprite has no default costume')
+  const pivot = costume.pivot
   const [a, b] = sprite.collisionShapeParams
   let width: number
   let height: number
   switch (sprite.collisionShapeType) {
+    case CollisionShapeType.Auto: {
+      const { img, bitmapResolution } = costume
+      const rect = await getContentBoundingRect(await toNativeFile(img))
+      return {
+        bounds: {
+          x: rect.x / bitmapResolution,
+          y: rect.y / bitmapResolution,
+          width: rect.width / bitmapResolution,
+          height: rect.height / bitmapResolution
+        },
+        polygonPoints: []
+      }
+    }
     case CollisionShapeType.Circle:
       width = height = a * 2
       break
@@ -24,30 +47,27 @@ export function getColliderBounds(sprite: Sprite): ColliderBounds | null {
       height = b
       break
     case CollisionShapeType.Polygon: {
-      const points = getColliderPolygonPoints(sprite)
+      const points = sprite.collisionShapeParams.map((value, i) =>
+        i % 2 === 0 ? pivot.x + sprite.collisionPivot.x + value : pivot.y - sprite.collisionPivot.y - value
+      )
       const xs = points.filter((_, i) => i % 2 === 0)
       const ys = points.filter((_, i) => i % 2 === 1)
       const x = Math.min(...xs)
       const y = Math.min(...ys)
-      return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
+      return { bounds: { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }, polygonPoints: points }
     }
     default:
-      return null
+      return { bounds: null, polygonPoints: [] }
   }
   return {
-    x: pivot.x + sprite.collisionPivot.x - width / 2,
-    y: pivot.y - sprite.collisionPivot.y - height / 2,
-    width,
-    height
+    bounds: {
+      x: pivot.x + sprite.collisionPivot.x - width / 2,
+      y: pivot.y - sprite.collisionPivot.y - height / 2,
+      width,
+      height
+    },
+    polygonPoints: []
   }
-}
-
-export function getColliderPolygonPoints(sprite: Sprite): number[] {
-  const pivot = sprite.defaultCostume?.pivot
-  if (pivot == null) throw new Error('Sprite has no default costume')
-  return sprite.collisionShapeParams.map((value, i) =>
-    i % 2 === 0 ? pivot.x + sprite.collisionPivot.x + value : pivot.y - sprite.collisionPivot.y - value
-  )
 }
 
 const shapeSetters: Partial<Record<CollisionShapeType, (sprite: Sprite, bounds: ColliderBounds) => void>> = {
