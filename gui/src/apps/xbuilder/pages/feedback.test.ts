@@ -63,14 +63,17 @@ describe('feedback', () => {
     await signIn()
     mockCreateFeedback()
     const draft = {
-      title: 'Saving my project fails',
-      description: 'I clicked Save and saw “Save failed”. I have tried refreshing the page.'
+      title: 'Saving fails with "Save failed" & no details',
+      description:
+        'I clicked Save and saw:\nSave failed: "Hero" & <Stage> are invalid\nThe sprite list shows &lt;sprite&gt;. I have tried refreshing the page.'
     }
+    const escapeAttribute = (value: string) =>
+      value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('\n', '&#10;')
     vi.mocked(copilotApis.generateCopilotMessage).mockImplementation(async function* () {
       yield {
         type: 'text_delta',
         data: {
-          text: `I could not fix this. You can <feedback-link title="${draft.title}" description="${draft.description}">send feedback</feedback-link> to the XBuilder team.`
+          text: `I could not fix this. You can <feedback-link title="${escapeAttribute(draft.title)}" description="${escapeAttribute(draft.description)}">send feedback</feedback-link> to the XBuilder team.`
         }
       }
       yield { type: 'done', data: { finishReason: 'stop' } }

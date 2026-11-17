@@ -19,7 +19,7 @@ Write the title and description as the user, in first person and the UI language
 Include only what the user said, quoting errors exactly. \
 Do not add steps, expectations, or causes the user did not mention, and do not list your current suggestions as tried. \
 No placeholders, personal information, or code. \
-Attribute values must not contain line breaks or straight double quotes; use “ ” instead.
+Escape attribute values as in HTML without changing the text: write & as &amp;, " as &quot;, and line breaks as &#10;.
 
 Use it at most once per reply, inside a sentence, never on its own line. \
 Say you filled it in with what the user told you and that they can change it before sending. Never say it was sent.`
