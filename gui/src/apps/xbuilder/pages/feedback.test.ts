@@ -114,7 +114,7 @@ describe('feedback', () => {
     })
   })
 
-  it('sends feedback from the Copilot quota-exceeded bar', async () => {
+  it('sends feedback from the Copilot quota-exceeded message', async () => {
     await signIn()
     mockCreateFeedback()
     const req = new Request('http://localhost/api/copilot/messages', { method: 'POST' })
@@ -140,22 +140,16 @@ describe('feedback', () => {
     const findButton = (text: string) =>
       wrapper.findAll('.copilot-panel button').find((button) => button.text() === text)
     await vi.waitFor(() => expect(findButton('Retry')).toBeDefined())
-    expect(findButton('Send feedback')).toBeUndefined()
+    expect(findButton('Report an issue')).toBeUndefined()
 
     shouldExceedQuota = true
     await findButton('Retry')!.trigger('click')
     await vi.waitFor(() => expect(wrapper.get('.copilot-panel').text()).toContain('Quota exceeded.'))
-    expect(wrapper.get('.copilot-panel').text()).toContain('Ran into an issue?')
-    expect(findButton('Send feedback')).toBeDefined()
+    const reportButton = findButton('Report an issue')
+    expect(reportButton).toBeDefined()
+    expect(reportButton!.element.parentElement).toBe(findButton('Retry')!.element.parentElement)
 
-    await wrapper.get('.copilot-panel button[aria-label="Close"]').trigger('click')
-    expect(findButton('Send feedback')).toBeUndefined()
-    expect(wrapper.get('.copilot-panel').text()).toContain('Quota exceeded.')
-
-    await findButton('Retry')!.trigger('click')
-    await vi.waitFor(() => expect(findButton('Send feedback')).toBeDefined())
-
-    await findButton('Send feedback')!.trigger('click')
+    await reportButton!.trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Feedback modal"]').exists()).toBe(true))
     const modal = wrapper.get('[aria-label="Feedback modal"]')
     expect(modal.get<HTMLInputElement>('[aria-label="Feedback title input"] input').element.value).toBe('')
