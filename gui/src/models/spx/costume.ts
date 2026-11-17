@@ -196,7 +196,7 @@ export class Costume {
 
   export({ basePath, includeId = true, namePrefix = '' }: CostumeExportLoadOptions): [RawCostumeConfig, Files] {
     const name = namePrefix + this.name
-    const filename = encodeFilename(name + extname(this.img.name))
+    const filename = encodeFilename('costume-' + name + extname(this.img.name))
     const config: RawCostumeConfig = {
       x: this.pivot.x * this.bitmapResolution,
       y: this.pivot.y * this.bitmapResolution,

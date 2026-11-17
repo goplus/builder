@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { TimeoutException } from '@/utils/exception'
 import { ProjectType } from '@/apis/project'
 import { History } from '@/components/editor/history'
+import { cloudHelpers, getFiles } from '../common/cloud'
 import { Sprite, State } from './sprite'
 import { Animation } from './animation'
 import { Sound } from './sound'
@@ -44,6 +45,65 @@ function makeProject(screenshotTaker: ScreenshotTaker | null = async () => mockF
 }
 
 describe('Project', () => {
+  it.each(['png', 'svg'])('preserves empty image names across cloud save and reload (%s)', async (ext) => {
+    cloudHelpers.setConfig({ baseUrl: 'https://usercontent.example', bucket: 'test' })
+    const project = new SpxProject()
+    const sprite = new Sprite('thumbnail')
+    const contents = ['blank costume', 'named costume', 'blank backdrop', 'named backdrop', 'animation frame']
+    const images = contents.map((content) => fromText(`md5.${ext}`, content))
+    sprite.addCostume(new Costume('', images[0]), true)
+    sprite.addCostume(new Costume('costume-', images[1]), true)
+    project.stage.addBackdrop(new Backdrop('', images[2]), true)
+    project.stage.addBackdrop(new Backdrop('backdrop-', images[3]), true)
+    const animation = new Animation('')
+    animation.setCostumes([new Costume('', images[4])], true)
+    sprite.addAnimation(animation, true)
+    sprite.setAnimationBoundStates(animation.id, [State.Default])
+    project.addSprite(sprite)
+
+    const expectedPaths = [
+      `assets/sprites/thumbnail/costume-.${ext}`,
+      `assets/sprites/thumbnail/costume-costume-.${ext}`,
+      `assets/backdrop-.${ext}`,
+      `assets/backdrop-backdrop-.${ext}`,
+      `assets/sprites/thumbnail/costume-__animation__.${ext}`
+    ]
+    for (let round = 0; round < 3; round++) {
+      const files = project.exportFiles()
+      expect(
+        Object.keys(files)
+          .filter((path) => path.endsWith(`.${ext}`))
+          .sort()
+      ).toEqual([...expectedPaths].sort())
+      for (const [index, path] of expectedPaths.entries()) {
+        expect(await files[path]!.arrayBuffer()).toEqual(await images[index].arrayBuffer())
+      }
+      const fileCollection = Object.fromEntries(
+        await Promise.all(
+          Object.entries(files).map(async ([path, file]) => {
+            const bytes = new Uint8Array(await file!.arrayBuffer())
+            return [path, `data:application/octet-stream;base64,${btoa(String.fromCharCode(...bytes))}`]
+          })
+        )
+      )
+      await project.loadFiles(getFiles(fileCollection))
+      const loadedSprite = project.sprites[0]
+      expect(loadedSprite.costumes.map((c) => c.name)).toEqual(['', 'costume-'])
+      expect(project.stage.backdrops.map((b) => b.name)).toEqual(['', 'backdrop-'])
+      expect(loadedSprite.animations[0].name).toBe('')
+      expect(loadedSprite.animations[0].costumes[0].name).toBe('')
+      expect(loadedSprite.getAnimationBoundStates(loadedSprite.animations[0].id)).toContain(State.Default)
+      const loadedImages = [
+        ...loadedSprite.costumes.map((c) => c.img),
+        ...project.stage.backdrops.map((b) => b.img),
+        loadedSprite.animations[0].costumes[0].img
+      ]
+      for (const image of loadedImages) {
+        expect(image.type).toBe(ext === 'png' ? 'image/png' : 'image/svg+xml')
+      }
+    }
+  })
+
   it('preserves a directory tilemap and its resources across project save and reload', async () => {
     const mapPath = 'assets/tilemaps/river/tilemap.json'
     const texturePath = 'assets/tilemaps/river/textures/water.png'
