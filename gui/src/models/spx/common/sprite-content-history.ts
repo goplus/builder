@@ -68,6 +68,9 @@ export class SpriteContentHistory {
   canRedo(id: string) {
     return (this.entries[id]?.redo.length ?? 0) > 0
   }
+  getVersion(id: string) {
+    return this.entries[id]?.undo.length ?? 0
+  }
   hasChanges(id: string) {
     return this.canUndo(id)
   }

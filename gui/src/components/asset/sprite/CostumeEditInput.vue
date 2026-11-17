@@ -137,18 +137,22 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
       </UIDropdown>
     </template>
     <template #submit>
-      <UIButton
-        v-radar="{ name: 'Edit costume', desc: 'Apply the instructions to the selected costume with AI' }"
-        :type="workspace?.canReview.value ? 'secondary' : 'primary'"
-        :shape="compact ? 'square' : 'default'"
-        :icon="compact ? 'publish' : undefined"
-        :title="$t({ en: 'Generate changes', zh: '生成修改' })"
-        :disabled="disabled || (instruction.trim() === '' && gen.editComments.length === 0)"
-        :loading="submitting"
-        @click="handleSubmit"
-      >
-        <template v-if="!compact">{{ $t({ en: 'Edit costume', zh: '修改造型' }) }}</template>
-      </UIButton>
+      <Teleport :to="workspace?.submitTarget.value ?? 'body'" :disabled="workspace?.submitTarget.value == null">
+        <UIButton
+          v-radar="{ name: 'Edit costume', desc: 'Apply the instructions to the selected costume with AI' }"
+          :type="workspace?.canReview.value ? 'secondary' : 'primary'"
+          :title="$t({ en: 'Generate changes', zh: '生成修改' })"
+          :disabled="
+            disabled ||
+            (workspace?.submitTarget.value != null && !workspace.aiActive.value) ||
+            (instruction.trim() === '' && gen.editComments.length === 0)
+          "
+          :loading="submitting"
+          @click="handleSubmit"
+        >
+          {{ $t({ en: 'Generate changes', zh: '生成修改' }) }}
+        </UIButton>
+      </Teleport>
     </template>
   </SettingsInput>
 </template>

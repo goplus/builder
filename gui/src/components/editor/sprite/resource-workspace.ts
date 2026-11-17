@@ -19,6 +19,7 @@ export type ResourceWorkspace = {
   resourceKey: Readonly<Ref<string | null>>
   tools: Map<string, ResourceTool>
   panel: Ref<HTMLElement | null>
+  submitTarget: Ref<HTMLElement | null>
   details: Ref<HTMLElement | null>
   instruction: Ref<string>
   previewBottomSpace: Readonly<Ref<number>>

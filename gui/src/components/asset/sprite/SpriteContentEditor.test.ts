@@ -49,7 +49,7 @@ vi.mock('@/utils/user', () => ({ useEnsureSignedIn: () => async () => {} }))
 
 type Mode = 'generate' | 'edit'
 
-function setup<T extends Mode>(mode: T, embedded = false) {
+function setup<T extends Mode>(mode: T, embedded = false, initiallyOpen = false) {
   const i18n = createI18n({ lang: 'zh' })
   const project = new SpxProject()
   const source = new Sprite('Cat')
@@ -94,6 +94,7 @@ function setup<T extends Mode>(mode: T, embedded = false) {
               {
                 content: edit,
                 embedded: true,
+                initiallyOpen,
                 applyResource: apply,
                 savedAnimation: animation,
                 savedCostume: source.costumes[0]
@@ -112,6 +113,7 @@ function setup<T extends Mode>(mode: T, embedded = false) {
         plugins: [i18n],
         renderStubDefaultSlot: true,
         stubs: {
+          Teleport: false,
           ResourceWorkspace: embedded ? false : true,
           ResourceTool: false,
           ResourceEditActions: false,
@@ -167,7 +169,7 @@ function setup<T extends Mode>(mode: T, embedded = false) {
     edit.dispose()
     project.dispose()
   })
-  return { wrapper, parent, edit: edit as T extends 'edit' ? SpriteEdit : SpriteGen, source, apply }
+  return { wrapper, parent, edit: edit as T extends 'edit' ? SpriteEdit : SpriteGen, source, apply, project }
 }
 
 beforeEach(() => {
@@ -412,7 +414,7 @@ describe('Sprite content editing', () => {
     await input.setValue('把衣服改成蓝色，保留姿势')
     expect(wrapper.find('button[aria-label="Enrich details"]').exists()).toBe(false)
     const submit = wrapper.get('button[aria-label="Edit costume"]')
-    expect(submit.text()).toBe('修改造型')
+    expect(submit.text()).toBe('生成修改')
     await submit.trigger('click')
     await flushPromises()
 
@@ -428,9 +430,9 @@ describe('Sprite content editing', () => {
     edit.setSelectedItem({ type: 'costume', id: gen.id })
     await wrapper.vm.$nextTick()
     expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('把衣服改成蓝色，保留姿势')
-    expect(wrapper.get('button[aria-label="Edit costume"]').text()).toBe('修改造型')
+    expect(wrapper.get('button[aria-label="Edit costume"]').text()).toBe('生成修改')
     await wrapper.get('textarea').setValue('把衣服改成红色')
-    expect(wrapper.get('button[aria-label="Edit costume"]').text()).toBe('修改造型')
+    expect(wrapper.get('button[aria-label="Edit costume"]').text()).toBe('生成修改')
     expect(wrapper.get('textarea').attributes('disabled')).toBeUndefined()
   })
 
@@ -602,6 +604,46 @@ describe('Embedded AI workspace', () => {
     expect(apply).not.toHaveBeenCalled()
   })
 
+  it.each(['costume', 'animation'] as const)(
+    'navigates numbered %s drafts without changing the source',
+    async (type) => {
+      const { wrapper, edit, source } = setup('edit', true, true)
+      const gen = type === 'costume' ? edit.costumes[0] : edit.addAnimation()
+      const originalImage = source.costumes[0].img
+      edit.setSelectedItem({ type, id: gen.id })
+      const first = mockFile(type === 'costume' ? 'first.png' : 'first.mp4')
+      const second = mockFile(type === 'costume' ? 'second.png' : 'second.mp4')
+      edit.editHistory.record(gen)
+      if (gen instanceof CostumeGen) gen.setImage(first)
+      else gen.setVideo(first)
+      edit.editHistory.record(gen)
+      if (gen instanceof CostumeGen) gen.setImage(second)
+      else gen.setVideo(second)
+      await flushPromises()
+      wrapper.getComponent(SpriteContentEditor).vm.openAIEditor()
+      await flushPromises()
+
+      const actions = () => wrapper.get('[aria-label="Resource edit actions"]')
+      const preview = () => (type === 'costume' ? edit.costumes[0].image : edit.getAnimationById(gen.id)?.video)
+      expect(actions().text()).toContain('第 2 版')
+      expect(actions().get('button[aria-label="Redo edit"]').attributes('disabled')).toBeDefined()
+      await actions().get('button[aria-label="Undo edit"]').trigger('click')
+      expect(actions().text()).toContain('第 1 版')
+      expect(preview()).toBe(first)
+      await actions().get('button[aria-label="Undo edit"]').trigger('click')
+      expect(actions().text()).toContain(type === 'costume' ? '原版' : '未生成')
+      expect(actions().get('button[aria-label="Undo edit"]').attributes('disabled')).toBeDefined()
+      await actions().get('button[aria-label="Redo edit"]').trigger('click')
+      expect(actions().text()).toContain('第 1 版')
+      expect(preview()).toBe(first)
+      await actions().get('button[aria-label="Redo edit"]').trigger('click')
+      expect(actions().text()).toContain('第 2 版')
+      expect(preview()).toBe(second)
+      expect(source.costumes[0].img).toBe(originalImage)
+      expect(source.animations).toHaveLength(1)
+    }
+  )
+
   it.each(['costume'] as const)('shows %s actions only for an unsaved result or redo history', async (type) => {
     const { wrapper, edit } = setup('edit', true)
     const gen = type === 'costume' ? edit.costumes[0] : edit.animations[0]
@@ -757,6 +799,37 @@ describe('Embedded AI workspace', () => {
     expect(wrapper.get('[aria-label="Resource tool panel ai"]').isVisible()).toBe(true)
   })
 
+  it('keeps an extracted animation editable when adoption fails and exits only after applying it', async () => {
+    const { wrapper, edit, source, apply, project } = setup('edit', true)
+    const result = new Animation('run')
+    result.setCostumes([new Costume('run-frame', mockFile('run.png'))])
+    const gen = new AnimationGen(createI18n({ lang: 'zh' }), edit, project, {
+      settings: { name: 'run', description: 'Run forward' },
+      video: mockFile('run.mp4'),
+      framesConfig: { startTime: 0, duration: 1000, interval: 100 },
+      finishPhase: new Phase({ en: 'save', zh: '保存' }, { status: 'finished', result })
+    })
+    edit.animations.push(gen)
+    edit.editHistory.record(gen)
+    edit.setSelectedItem({ type: 'animation', id: gen.id })
+    await flushPromises()
+
+    apply.mockRejectedValueOnce(new DefaultException({ en: 'Save failed', zh: '保存失败' }))
+    await wrapper.get('button[aria-label="Save resource"]').trigger('click')
+    await flushPromises()
+    expect(edit.isNewResource({ type: 'animation', id: gen.id })).toBe(true)
+    expect(wrapper.get('textarea').element.value).toBe('Run forward')
+    expect(wrapper.get('textarea').attributes('readonly')).toBeUndefined()
+    expect(wrapper.get('button[aria-label="submit"]').attributes('disabled')).toBeUndefined()
+    expect(source.animations).toHaveLength(1)
+
+    await wrapper.get('button[aria-label="Save resource"]').trigger('click')
+    await flushPromises()
+    expect(source.animations).toHaveLength(2)
+    expect(wrapper.get('[aria-label="Resource edit actions"]').isVisible()).toBe(false)
+    expect(wrapper.find('[aria-label="Resource tool panel ai"]').exists()).toBe(false)
+  })
+
   it('can undo, redo and discard an animation generation without creating a project resource', async () => {
     const { wrapper, edit, source } = setup('edit', true)
     const gen = edit.addAnimation()
@@ -798,9 +871,55 @@ describe('Embedded AI workspace', () => {
     expect(wrapper.get('[aria-label="Resource tool panel ai"]').isVisible()).toBe(true)
     expect(wrapper.get('[aria-label="Resource edit actions"]').isVisible()).toBe(false)
     expect(wrapper.find('[role="tablist"]').exists()).toBe(false)
-    expect(wrapper.find('[aria-label="Close resource workspace"]').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="Close resource workspace"]').exists()).toBe(false)
     expect(openModal).not.toHaveBeenCalled()
     expect(source.costumes[0].name).toBe('idle')
+  })
+
+  it('takes over an open prompt before generation starts, without reopening after outside interaction', async () => {
+    const { wrapper, edit } = setup('edit', true, true)
+    await flushPromises()
+    const panel = wrapper.get('[aria-label="Resource tool panel ai"]')
+    expect(panel.isVisible()).toBe(true)
+    expect(wrapper.get('[aria-label="ai-edit"]').isVisible()).toBe(false)
+    expect(wrapper.getComponent(ResourceWorkspace).props('busy')).toBe(false)
+
+    edit.setCostumeInstruction(edit.costumes[0].id, 'Keep the pose')
+    await flushPromises()
+    expect(panel.isVisible()).toBe(true)
+    expect(wrapper.get('textarea').element.value).toBe('Keep the pose')
+    await wrapper.getComponent(ResourceWorkspace).trigger('pointerdown')
+    expect(panel.isVisible()).toBe(false)
+    expect(wrapper.get('[aria-label="ai-edit"]').isVisible()).toBe(true)
+  })
+
+  it('keeps one visible send button when expanding and collapsing, disabled while collapsed', async () => {
+    const { wrapper } = setup('edit', true)
+    await flushPromises()
+    const send = wrapper.get('button[aria-label="Edit costume"]')
+    const button = send.element
+    const panel = wrapper.get('[aria-label="Resource tool panel ai"]')
+    expect(panel.element.contains(button)).toBe(false)
+    expect(send.isVisible()).toBe(true)
+    expect(send.attributes('disabled')).toBeDefined()
+    await send.trigger('click')
+    expect(panel.isVisible()).toBe(false)
+
+    await wrapper.get('[aria-label="ai-edit"]').trigger('click')
+    await wrapper.get('textarea').setValue('Keep the pose')
+    expect(wrapper.findAll('button[aria-label="Edit costume"]')).toHaveLength(1)
+    expect(wrapper.get('button[aria-label="Edit costume"]').element).toBe(button)
+    expect(send.isVisible()).toBe(true)
+    expect(send.attributes('disabled')).toBeUndefined()
+
+    await wrapper.getComponent(ResourceWorkspace).trigger('pointerdown')
+    expect(wrapper.get('button[aria-label="Edit costume"]').element).toBe(button)
+    expect(send.isVisible()).toBe(true)
+    expect(send.attributes('disabled')).toBeDefined()
+    await wrapper.get('[aria-label="ai-edit"]').trigger('click')
+    expect(wrapper.get('button[aria-label="Edit costume"]').element).toBe(button)
+    expect(send.attributes('disabled')).toBeUndefined()
+    expect(wrapper.get('textarea').element.value).toBe('Keep the pose')
   })
 
   it('requires confirmation to discard and keeps the source unchanged', async () => {
@@ -823,5 +942,31 @@ describe('Embedded AI workspace', () => {
     expect(source.costumes[0].name).toBe('idle')
     await wrapper.getComponent(ResourceWorkspace).trigger('pointerdown')
     expect(wrapper.get('[aria-label="Resource tool panel ai"]').isVisible()).toBe(false)
+  })
+
+  it('keeps local editing open while choosing a point or holding unsent comments', async () => {
+    const { wrapper, edit } = setup('edit', true, true)
+    await flushPromises()
+    const workspace = wrapper.getComponent(ResourceWorkspace)
+    const panel = wrapper.get('[aria-label="Resource tool panel ai"]')
+    expect(workspace.props('selectionLocked')).toBe(false)
+
+    await wrapper.get('button[aria-label="Local edit tool"]').trigger('click')
+    expect(workspace.props('selectionLocked')).toBe(true)
+    await workspace.trigger('pointerdown')
+    expect(panel.isVisible()).toBe(true)
+
+    edit.costumes[0].setEditComments([{ id: 'point', x: 0.5, y: 0.5, content: 'Make this blue' }])
+    wrapper.getComponent(CostumeEditInput).vm.$emit('update:commenting', false)
+    await flushPromises()
+    expect(workspace.props('selectionLocked')).toBe(true)
+    await workspace.trigger('focusin')
+    expect(panel.isVisible()).toBe(true)
+
+    edit.costumes[0].setEditComments([])
+    await flushPromises()
+    expect(workspace.props('selectionLocked')).toBe(false)
+    await workspace.trigger('pointerdown')
+    expect(panel.isVisible()).toBe(false)
   })
 })

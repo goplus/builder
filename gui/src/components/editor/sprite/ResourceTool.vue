@@ -11,8 +11,9 @@ const props = withDefaults(
     title?: string | null
     icon: IconType
     closable?: boolean | null
+    visible?: boolean | null
   }>(),
-  { title: null, closable: null }
+  { title: null, closable: null, visible: null }
 )
 const workspace = useResourceWorkspace()
 const active = computed(() => workspace?.activeTool.value === props.tool)
@@ -38,7 +39,7 @@ function close() {
 <template>
   <Teleport v-if="workspace?.panel.value != null" :to="workspace.panel.value">
     <UICard
-      v-show="active"
+      v-show="visible ?? active"
       :id="`${id}-panel`"
       :key="workspace.resourceKey.value ?? undefined"
       v-radar="{ name: `Resource tool panel ${tool}`, desc: label }"

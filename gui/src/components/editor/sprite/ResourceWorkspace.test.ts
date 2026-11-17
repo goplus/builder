@@ -24,7 +24,7 @@ const DraftInput = defineComponent(() => {
 
 describe('ResourceWorkspace', () => {
   it.each(['costume', 'animation'] as const)(
-    'keeps the %s prompt beside the preview across state changes and resizing',
+    'keeps the %s preview and prompt stable across generation states and resizing',
     async (resourceType) => {
       const dimensions = ref<{ width: number; height: number } | null>(null)
       const size = vi.spyOn(dom, 'useContentSize').mockReturnValue(dimensions)
@@ -80,36 +80,20 @@ describe('ResourceWorkspace', () => {
       })
       onTestFinished(() => host.unmount())
       await nextTick()
-      const tools = host.get('[aria-label="Resource tool area"]')
       const input = host.get('input').element
       const initialFrame = host.get('.select-none').attributes('style')
-      const initialPosition = tools.attributes('style')
-      function expectPromptBelowPreview() {
-        const frame = (host.get('.select-none').element as HTMLElement).style
-        const prompt = (tools.element as HTMLElement).style
-        expect(prompt.width).toBe(frame.width)
-        expect(parseFloat(prompt.top) - parseFloat(frame.top) - parseFloat(frame.height)).toBe(
-          resourceType === 'animation' ? 88 : 24
-        )
-      }
-      expectPromptBelowPreview()
       expect(host.find('[aria-label="ai-edit"]').exists()).toBe(false)
       phase.value = 'loading'
       await nextTick()
-      expect(tools.attributes('style')).toBe(initialPosition)
       expect(host.get('.select-none').attributes('style')).toBe(initialFrame)
       dimensions.value = { width: 700, height: 1000 }
       height.mockReturnValue(1000)
       await nextTick()
       const resizedFrame = host.get('.select-none').attributes('style')
-      const resizedPosition = tools.attributes('style')
       expect(resizedFrame).not.toBe(initialFrame)
-      expect(resizedPosition).not.toBe(initialPosition)
-      expectPromptBelowPreview()
       for (const state of ['decoding', 'ready'] as const) {
         phase.value = state
         await nextTick()
-        expect(tools.attributes('style')).toBe(resizedPosition)
         expect(host.get('.select-none').attributes('style')).toBe(resizedFrame)
         expect(host.get('input').element).toBe(input)
       }
@@ -188,10 +172,7 @@ describe('ResourceWorkspace', () => {
       expect(panel.find('[aria-label="Close resource workspace"]').exists()).toBe(false)
       expect(panel.isVisible()).toBe(false)
       expect(host.find('[aria-label="Select resource"]').exists()).toBe(false)
-      const entryPosition =
-        resourceType === 'costume'
-          ? host.get('[aria-label="ai-edit"]').element.parentElement!.getAttribute('style')
-          : null
+      const entryPosition = host.get('[aria-label="Resource tool area"]').attributes('style')
       host.getComponent(ResourceWorkspace).vm.openAIEditor()
       await nextTick()
       expect(panel.isVisible()).toBe(true)
@@ -279,7 +260,7 @@ describe('ResourceWorkspace', () => {
     expect(ai.attributes('aria-selected')).toBe('true')
     expect(ai.text()).toBe(pending ? 'AI generate' : 'AI edit')
     expect(host.find('[aria-label="Resource tool panel ai"] [aria-label="Close resource workspace"]').exists()).toBe(
-      !pending
+      false
     )
     expect(panel(ai).find('footer').exists()).toBe(false)
     await panel(ai).get('input').setValue('Make it blue')
@@ -287,7 +268,7 @@ describe('ResourceWorkspace', () => {
     expect(panel(ai).isVisible()).toBe(true)
     await host.setProps({ selectionLocked: true })
     expect(host.find('[aria-label="Resource tool panel ai"] [aria-label="Close resource workspace"]').exists()).toBe(
-      !pending
+      false
     )
     await host.setProps({ busy: true })
     expect(host.find('[aria-label="Resource tool panel ai"] [aria-label="Close resource workspace"]').exists()).toBe(
@@ -297,14 +278,6 @@ describe('ResourceWorkspace', () => {
     await host.trigger('pointerdown')
     expect(panel(ai).isVisible()).toBe(true)
     await host.setProps({ selectionLocked: false })
-    if (!pending) {
-      await host.get('[aria-label="Resource tool panel ai"] [aria-label="Close resource workspace"]').trigger('click')
-      expect(panel(ai).isVisible()).toBe(false)
-      expect(ai.attributes('aria-selected')).toBe('false')
-      expect(ai.attributes('tabindex')).toBe('0')
-      await ai.trigger('click')
-      expect(panel(ai).isVisible()).toBe(true)
-    }
     expect(panel(ai).get('input').element.value).toBe('Make it blue')
 
     await duration.trigger('click')
@@ -351,7 +324,7 @@ describe('ResourceWorkspace', () => {
     await nextTick()
     const aiPanel = () => host.get('[aria-label="Resource tool panel ai"]')
     expect(host.find('[role="tablist"]').exists()).toBe(false)
-    expect(host.find('[aria-label="Close resource workspace"]').exists()).toBe(true)
+    expect(host.find('[aria-label="Close resource workspace"]').exists()).toBe(false)
     expect(aiPanel().isVisible()).toBe(true)
     await aiPanel().get('input').setValue('Keep the pose')
     const input = aiPanel().get('input').element
@@ -366,17 +339,21 @@ describe('ResourceWorkspace', () => {
     showDuration.value = false
     await nextTick()
     expect(host.find('[role="tablist"]').exists()).toBe(false)
-    expect(host.find('[aria-label="Close resource workspace"]').exists()).toBe(true)
+    expect(host.find('[aria-label="Close resource workspace"]').exists()).toBe(false)
     expect(aiPanel().isVisible()).toBe(true)
     expect(aiPanel().get('input').element).toBe(input)
     expect(input.value).toBe('Keep the pose')
   })
 
-  it('opens from the edit entry and restores it when closing, without losing the draft', async () => {
+  it('collapses idle editing on outside interaction without losing the draft or taking focus back', async () => {
     const host = mount(ResourceWorkspace, {
       attachTo: document.body,
       props: { resourceKey: 'saved-costume' },
-      slots: { actions: () => h('span'), prompt: () => h(DraftInput) },
+      slots: {
+        actions: () => h('span'),
+        prompt: () => [h(DraftInput), h('button', 'Local edit')],
+        default: () => h('button', { 'data-outside': true }, 'Outside')
+      },
       global: {
         plugins: [createI18n({ lang: 'en' })],
         directives: {
@@ -391,21 +368,68 @@ describe('ResourceWorkspace', () => {
     expect(panel.isVisible()).toBe(false)
     await host.get('[aria-label="ai-edit"]').trigger('click')
     expect(panel.isVisible()).toBe(true)
-    expect(host.find('[aria-label="ai-edit"]').exists()).toBe(false)
+    expect(host.get('[aria-label="ai-edit"]').isVisible()).toBe(false)
     const input = panel.get('input')
     expect(document.activeElement).toBe(input.element)
     await input.setValue('Keep the pose')
     await input.trigger('blur')
-    await host.trigger('pointerdown')
+    await panel.get('button').trigger('pointerdown')
+    panel.get('button').element.focus()
+    await nextTick()
     expect(panel.isVisible()).toBe(true)
-    expect(host.find('[aria-label="ai-edit"]').exists()).toBe(false)
-    await host.get('[aria-label="Close resource workspace"]').trigger('click')
+    expect(host.get('[aria-label="ai-edit"]').isVisible()).toBe(false)
+    expect(host.find('[aria-label="Close resource workspace"]').exists()).toBe(false)
+    const outside = host.get<HTMLButtonElement>('[data-outside]')
+    await outside.trigger('pointerdown')
+    outside.element.focus()
+    await nextTick()
     expect(panel.isVisible()).toBe(false)
+    const entry = host.get('[aria-label="ai-edit"]')
+    expect(entry.text()).toBe('Describe changes to this costume')
+    expect(entry.attributes('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(outside.element)
     await host.get('[aria-label="ai-edit"]').trigger('click')
+    expect(entry.attributes('aria-expanded')).toBe('true')
+    expect(entry.attributes('aria-controls')).toBe(panel.attributes('id'))
     expect(panel.get('input').element).toBe(input.element)
     expect(input.element.value).toBe('Keep the pose')
     expect(document.activeElement).toBe(input.element)
+    outside.element.focus()
+    await nextTick()
+    expect(panel.isVisible()).toBe(false)
+    expect(document.activeElement).toBe(outside.element)
+    await entry.trigger('click')
+    await host.setProps({ activeTool: null })
+    expect(panel.isVisible()).toBe(false)
+    expect(entry.isVisible()).toBe(true)
+    expect(document.activeElement).toBe(entry.element)
+    expect(panel.get('input').element).toBe(input.element)
   })
+
+  it.each(['pending', 'busy', 'selectionLocked', 'canReview'] as const)(
+    'keeps the AI panel open on outside interaction while %s',
+    async (lockedProp) => {
+      const host = mount(ResourceWorkspace, {
+        attachTo: document.body,
+        props: { resourceKey: 'costume', initiallyOpen: true, [lockedProp]: true },
+        slots: { actions: () => h('span'), prompt: () => h(DraftInput) },
+        global: {
+          plugins: [createI18n({ lang: 'en' })],
+          directives: {
+            radar: (el: HTMLElement, binding: { value: { name: string } }) =>
+              el.setAttribute('aria-label', binding.value.name)
+          }
+        }
+      })
+      onTestFinished(() => host.unmount())
+      await nextTick()
+      const panel = host.get('[aria-label="Resource tool panel ai"]')
+      expect(panel.isVisible()).toBe(true)
+      await host.trigger('pointerdown')
+      await host.trigger('focusin')
+      expect(panel.isVisible()).toBe(true)
+    }
+  )
 
   it('keeps adopted animation properties available without an AI editor', async () => {
     const host = mount(ResourceWorkspace, {

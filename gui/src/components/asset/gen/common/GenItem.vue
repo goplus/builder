@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { UIBlockItem, UITag } from '@/components/ui'
+import { UIBlockItem } from '@/components/ui'
 import GenerationIndicator from './GenerationIndicator.vue'
 
 withDefaults(
@@ -9,7 +9,6 @@ withDefaults(
     loading?: boolean
     /** highlight will highlight the placeholder. */
     highlight?: boolean
-    suggested?: boolean
     placeholder: string
   }>(),
   {
@@ -23,16 +22,6 @@ withDefaults(
 <template>
   <UIBlockItem class="gen-item" :class="{ loading, highlight, active }" :active="active" size="medium">
     <GenerationIndicator v-if="loading" />
-    <UITag
-      v-if="suggested"
-      variant="none"
-      class="pointer-events-none absolute top-1.5 left-1.5 z-1 h-4 min-w-5 justify-center bg-grey-400 px-1 text-2xs font-medium text-grey-900"
-      role="note"
-      :aria-label="$t({ en: 'AI suggested', zh: 'AI 推荐' })"
-      :tabindex="-1"
-    >
-      {{ $t({ en: 'Suggested', zh: '推荐' }) }}
-    </UITag>
     <div class="preview-wrapper">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="$slots.preview == null" class="placeholder" v-html="placeholder"></div>

@@ -28,7 +28,6 @@ const props = defineProps<{
   gen: CostumeGen
   costume: Costume | null
   active: boolean
-  suggested?: boolean
   // TODO: implement isDefault style
   isDefault: boolean
   operable: false | Operable
@@ -55,7 +54,6 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
     }"
     :placeholder="costumeSVG"
     :active="active"
-    :suggested="suggested"
     :loading="isLoading"
     :highlight="highlight"
     @click="emit('click')"

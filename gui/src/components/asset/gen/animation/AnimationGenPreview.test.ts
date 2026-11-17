@@ -6,12 +6,14 @@ import { DefaultException } from '@/utils/exception'
 import { mockFile } from '@/models/common/test'
 import { Animation } from '@/models/spx/animation'
 import { Costume } from '@/models/spx/costume'
+import { SpriteEdit } from '@/models/spx/edit/sprite-edit'
 import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { Phase } from '@/models/spx/gen/common'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
 import { UIError } from '@/components/ui'
 import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
+import { resourceWorkspaceKey } from '@/components/editor/sprite/resource-workspace'
 import GenLoading from '../common/GenLoading.vue'
 import GenStateFailed from '../common/GenStateFailed.vue'
 import AnimationGenPreview from './AnimationGenPreview.vue'
@@ -24,7 +26,7 @@ vi.mock('@/components/ui/message/UIMessageProvider.vue', async (importOriginal) 
   useMessage: () => ({ error: vi.fn(), success: vi.fn() })
 }))
 
-function setup() {
+function setup(inWorkspace = false) {
   const i18n = createI18n({ lang: 'zh' })
   const project = new SpxProject()
   const sprite = new Sprite('Cat')
@@ -32,14 +34,17 @@ function setup() {
   result.setCostumes([new Costume('walk-frame', mockFile('walk.png'))])
   sprite.addAnimation(result)
   project.addSprite(sprite)
+  const edit = inWorkspace ? SpriteEdit.fromSprite(i18n, project, sprite) : null
   const generatePhase = shallowReactive(new Phase<ReturnType<typeof mockFile>>({ en: 'generate', zh: '生成' }))
   const finishPhase = shallowReactive(new Phase<Animation>({ en: 'save', zh: '保存' }, { status: 'finished', result }))
-  const gen = new AnimationGen(i18n, sprite, project, {
+  const gen = new AnimationGen(i18n, edit ?? sprite, project, {
     settings: { name: 'walk' },
     generateVideoPhase: generatePhase,
     finishPhase
   })
+  edit?.animations.push(gen)
   const pending = ref(false)
+  const aiActive = ref(true)
   vi.spyOn(gen, 'hasPendingVideo', 'get').mockImplementation(() => pending.value)
   const finish = vi.spyOn(gen, 'finish').mockImplementation(async () => {
     const saved = new Animation(result.name, { id: result.id })
@@ -53,6 +58,7 @@ function setup() {
     {
       global: {
         plugins: [i18n],
+        provide: inWorkspace ? { [resourceWorkspaceKey as symbol]: { aiActive } } : {},
         renderStubDefaultSlot: true,
         stubs: {
           AnimationGenPreview: false,
@@ -68,13 +74,60 @@ function setup() {
   const wrapper = host.getComponent(AnimationGenPreview)
   onTestFinished(() => {
     host.unmount()
-    gen.dispose()
+    if (edit != null) edit.dispose()
+    else gen.dispose()
     project.dispose()
   })
-  return { wrapper, gen, result, generatePhase, finishPhase, pending, finish }
+  return { wrapper, gen, result, generatePhase, finishPhase, pending, finish, aiActive, edit }
 }
 
 describe('AnimationGenPreview', () => {
+  it('keeps trim adjustments within the generated version when navigating history', async () => {
+    const { wrapper, gen, edit } = setup(true)
+    const history = edit!.editHistory
+    history.record(gen)
+    gen.setVideo(mockFile('first.mp4'))
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 100 })
+    await nextTick()
+    const preview = wrapper.getComponent(AnimationVideoPreview)
+    preview.vm.$emit('update:framesConfig', { startTime: 100, duration: 900, interval: 100 })
+    preview.vm.$emit('update:framesConfig', { startTime: 200, duration: 600, interval: 100 })
+    await nextTick()
+    expect(gen.framesConfig).toEqual({ startTime: 200, duration: 600, interval: 100 })
+    expect(history.getVersion(gen.id)).toBe(1)
+
+    history.record(gen)
+    gen.setVideo(mockFile('second.mp4'))
+    history.undo(gen)
+    const restored = edit!.getAnimationById(gen.id)!
+    expect(history.getVersion(gen.id)).toBe(1)
+    expect(restored.video?.name).toBe('first.mp4')
+    expect(restored.framesConfig).toEqual({ startTime: 200, duration: 600, interval: 100 })
+    history.redo(restored)
+    expect(history.getVersion(gen.id)).toBe(2)
+    expect(edit!.getAnimationById(gen.id)?.video?.name).toBe('second.mp4')
+  })
+
+  it('keeps the video and trim controls after extraction until adoption ends the AI session', async () => {
+    const { wrapper, gen, finish, pending, aiActive } = setup(true)
+    gen.setVideo(mockFile('generated.mp4'))
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 100 })
+    pending.value = true
+    await nextTick()
+    await finish()
+    await nextTick()
+
+    expect(gen.result).toBeDefined()
+    expect(gen.hasPendingVideo).toBe(false)
+    expect(wrapper.findComponent(AnimationDetail).exists()).toBe(false)
+    expect(wrapper.getComponent(AnimationVideoPreview).props('showControls')).toBe(true)
+    expect(wrapper.getComponent(AnimationVideoPreview).props('framesConfig')).toEqual(gen.framesConfig)
+
+    aiActive.value = false
+    await nextTick()
+    expect(wrapper.getComponent(AnimationDetail).props('animation')).toBe(gen.result)
+  })
+
   it('does not show generation progress when loading existing video previews', async () => {
     const { wrapper, gen, generatePhase, pending } = setup()
     pending.value = true

@@ -6,12 +6,13 @@ import GenerationGame from './GenerationGame.vue'
 import { gameCellSize, gameGrid, gameLayout, type Game } from './generation-game'
 
 const props = withDefaults(
-  defineProps<{ cover?: boolean; visible?: boolean; playable?: boolean; completed?: boolean }>(),
+  defineProps<{ cover?: boolean; visible?: boolean; playable?: boolean; completed?: boolean; compact?: boolean }>(),
   {
     cover: false,
     visible: true,
     playable: false,
-    completed: false
+    completed: false,
+    compact: false
   }
 )
 const emit = defineEmits<{ hidden: [] }>()
@@ -37,7 +38,7 @@ const uiVariables = useUIVariables()
 // Keep one motion seed per loading session, including when the preview resizes.
 const motion = computed(() => {
   if (canvas.value == null) return null
-  return { seed: Math.random() * 1024, started: performance.now() }
+  return props.compact ? { seed: 0, started: 0 } : { seed: Math.random() * 1024, started: performance.now() }
 })
 
 function smooth(value: number) {
@@ -55,6 +56,18 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
   el.height = Math.round(height * pixelRatio)
   ctx.scale(pixelRatio, pixelRatio)
   const { seed, started } = motion
+  // Thumbnails use the same light field, without the maze's status-row space.
+  const columns = Math.max(1, Math.floor((width - 16) / 12) + 1)
+  const rows = Math.max(1, Math.floor((height - 16) / 12) + 1)
+  const loadingGrid = props.compact
+    ? {
+        columns,
+        rows,
+        scale: 12 / gameCellSize,
+        x: (width - (columns - 1) * 12) / 2,
+        y: (height - (rows - 1) * 12) / 2
+      }
+    : gameGrid(width, height)
   let frame = 0
 
   const draw = (now: number) => {
@@ -62,10 +75,14 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
     const gameBlend = current == null ? 0 : reduced ? 1 : Math.min(1, (now - current.startedAt) / 240)
     const time = reduced ? 0 : ((current?.startedAt ?? now) - started) / 1000
     ctx.clearRect(0, 0, width, height)
-    const grid = current == null ? gameGrid(width, height) : { ...current, ...gameLayout(current, width, height) }
+    const grid = current == null ? loadingGrid : { ...current, ...gameLayout(current, width, height) }
     const spacing = gameCellSize * grid.scale
-    for (let row = Math.ceil(-grid.y / spacing); grid.y + row * spacing < height; row++) {
-      for (let column = Math.ceil(-grid.x / spacing); grid.x + column * spacing < width; column++) {
+    const firstRow = props.compact ? 0 : Math.ceil(-grid.y / spacing)
+    const firstColumn = props.compact ? 0 : Math.ceil(-grid.x / spacing)
+    const rowCount = props.compact ? grid.rows : Math.ceil((height - grid.y) / spacing)
+    const columnCount = props.compact ? grid.columns : Math.ceil((width - grid.x) / spacing)
+    for (let row = firstRow; row < rowCount; row++) {
+      for (let column = firstColumn; column < columnCount; column++) {
         const x = grid.x + column * spacing
         const y = grid.y + row * spacing
         const nx = x / width
@@ -93,7 +110,7 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
         ctx.fillStyle = uiVariables.color.primary.main
         ctx.globalAlpha = loadingAlpha + (gameAlpha - loadingAlpha) * gameBlend
         ctx.beginPath()
-        ctx.arc(x, y, 1.7 * grid.scale, 0, Math.PI * 2)
+        ctx.arc(x, y, props.compact ? 1.2 : 1.7 * grid.scale, 0, Math.PI * 2)
         ctx.fill()
       }
     }

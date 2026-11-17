@@ -193,7 +193,6 @@ const renameAnimation = useMessageHandle(useRenameAnimationGen()).fn
           v-for="gen in edit.costumes.filter((gen) => isDraft(gen.id))"
           :key="gen.id"
           :gen="gen"
-          :suggested="edit.isSuggestedResource(gen.id)"
           :costume="null"
           :active="edit.selectedItem?.id === gen.id"
           :is-default="gen.id === edit.defaultCostume?.id"
@@ -208,7 +207,6 @@ const renameAnimation = useMessageHandle(useRenameAnimationGen()).fn
           v-for="gen in edit.animations.filter((gen) => isDraft(gen.id))"
           :key="gen.id"
           :gen="gen"
-          :suggested="edit.isSuggestedResource(gen.id)"
           :animation="null"
           :active="edit.selectedItem?.id === gen.id"
           operable
@@ -246,6 +244,7 @@ const renameAnimation = useMessageHandle(useRenameAnimationGen()).fn
         :key="edit.id"
         v-model:commenting="commenting"
         :content="edit"
+        :initially-open="editorCtx.state.spriteState?.aiEditorOpen"
         :saved-animation="savedResource instanceof Animation ? savedResource : null"
         :saved-costume="savedResource instanceof Costume ? savedResource : null"
         :apply-resource="applyResource"

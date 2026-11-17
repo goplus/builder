@@ -32,6 +32,7 @@ import ResourceWorkspace from '@/components/editor/sprite/ResourceWorkspace.vue'
 const props = defineProps<{
   content: SpriteContent
   embedded?: boolean
+  initiallyOpen?: boolean
   savedAnimation?: Animation | null
   savedCostume?: Costume | null
   applyResource?: (item: SpriteContentSelected) => Promise<void>
@@ -142,6 +143,13 @@ const selectedPreview = computed(() => {
 const canDiscard = computed(() => {
   const gen = selectedGen.value
   return gen != null && (props.content.editHistory.canUndo(gen.id) || props.content.editHistory.canRedo(gen.id))
+})
+const versionLabel = computed(() => {
+  const gen = selectedGen.value
+  const version = gen == null ? 0 : props.content.editHistory.getVersion(gen.id)
+  if (version > 0) return { en: `Version ${version}`, zh: `第 ${version} 版` }
+  const hasMedia = selectedCostume.value?.image != null || selectedAnimation.value?.video != null || gen?.result != null
+  return hasMedia ? { en: 'Original', zh: '原版' } : { en: 'Not generated', zh: '未生成' }
 })
 const hasDraft = computed(() => {
   const item = props.content.selectedItem
@@ -368,8 +376,9 @@ provideLocalEditorCtx(
         v-model:active-tool="activeTool"
         :can-review="canReview"
         :busy="selectedBusy"
-        :selection-locked="canDiscard || canReview"
+        :selection-locked="commenting || (selectedCostume?.editComments.length ?? 0) > 0 || canDiscard || canReview"
         :ai-enabled="aiEnabled"
+        :initially-open="initiallyOpen"
         :enabled="embedded"
         :resource-key="selectedGen?.id"
         :resource-type="content.selectedItem?.type"
@@ -464,6 +473,7 @@ provideLocalEditorCtx(
         <template v-if="embedded" #actions="{ section }">
           <ResourceEditActions
             :section="section"
+            :version-label="$t(versionLabel)"
             :busy="selectedBusy"
             :can-undo="selectedGen != null && content.editHistory.canUndo(selectedGen.id)"
             :can-redo="selectedGen != null && content.editHistory.canRedo(selectedGen.id)"

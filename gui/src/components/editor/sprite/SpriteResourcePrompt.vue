@@ -52,17 +52,18 @@ const activate = useMessageHandle(
       </UIButton>
     </template>
     <template #submit>
-      <UIButton
-        v-radar="{ name: 'Edit resource', desc: 'Generate changes to this resource with AI' }"
-        type="primary"
-        shape="square"
-        icon="publish"
-        :title="$t({ en: 'Generate changes', zh: '生成修改' })"
-        :disabled="instruction.trim() === ''"
-        :loading="activate.isLoading.value"
-        @click="activate.fn(false)"
-      >
-      </UIButton>
+      <Teleport :to="workspace?.submitTarget.value ?? 'body'" :disabled="workspace?.submitTarget.value == null">
+        <UIButton
+          v-radar="{ name: 'Edit resource', desc: 'Generate changes to this resource with AI' }"
+          type="primary"
+          :title="$t({ en: 'Generate changes', zh: '生成修改' })"
+          :disabled="instruction.trim() === '' || (workspace?.submitTarget.value != null && !workspace.aiActive.value)"
+          :loading="activate.isLoading.value"
+          @click="activate.fn(false)"
+        >
+          {{ $t({ en: 'Generate changes', zh: '生成修改' }) }}
+        </UIButton>
+      </Teleport>
     </template>
   </SettingsInput>
 </template>

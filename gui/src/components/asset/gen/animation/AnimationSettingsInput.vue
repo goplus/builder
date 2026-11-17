@@ -17,10 +17,10 @@ const props = defineProps<{
   gen: AnimationGen
 }>()
 
-const readonly = computed(() => props.gen.result != null)
+const readonly = computed(() => props.gen.result != null && !workspace?.aiActive.value)
 const isGenerating = computed(() => props.gen.generateVideoState.status === 'running')
 const isFinishing = computed(() => props.gen.finishState.status === 'running')
-const disabled = computed(() => isGenerating.value || isFinishing.value)
+const disabled = computed(() => isGenerating.value || isFinishing.value || workspace?.busy.value === true)
 const ensureSignedIn = useEnsureSignedIn()
 const handleEnrich = useMessageHandle(
   async () => {
@@ -33,7 +33,7 @@ const handleEnrich = useMessageHandle(
   }
 ).fn
 const submitDisabled = computed(
-  () => props.gen.enrichState.status === 'running' || isFinishing.value || props.gen.settings.description === ''
+  () => props.gen.enrichState.status === 'running' || disabled.value || props.gen.settings.description === ''
 )
 const submitText = computed(() => {
   if (props.gen.generateVideoState.status === 'initial') return { en: 'Generate', zh: '生成' }

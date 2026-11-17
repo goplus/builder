@@ -2,7 +2,9 @@
 import { computed, nextTick, provide, ref, shallowReactive, toRef, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { UIButton, UIButtonGroup, UIButtonGroupItem, UIIcon, UIModalClose, useConfirmDialog } from '@/components/ui'
+import { getCleanupSignal } from '@/utils/disposable'
+import { useContentSize } from '@/utils/dom'
+import { UIButton, UIButtonGroup, UIButtonGroupItem, UIIcon, useConfirmDialog } from '@/components/ui'
 import { resourceWorkspaceKey, type ResourceTool as Tool } from './resource-workspace'
 import ResourceEditActions from './ResourceEditActions.vue'
 import ResourceTool from './ResourceTool.vue'
@@ -13,6 +15,7 @@ const props = withDefaults(
     resourceKey?: string | null
     resourceType?: 'costume' | 'animation'
     aiEnabled?: boolean
+    initiallyOpen?: boolean
     pending?: boolean
     busy?: boolean
     selectionLocked?: boolean
@@ -21,6 +24,7 @@ const props = withDefaults(
   {
     enabled: true,
     aiEnabled: true,
+    initiallyOpen: false,
     pending: false,
     busy: false,
     selectionLocked: false,
@@ -39,6 +43,9 @@ const toolItems = computed(() => {
   const entries = Array.from(tools, ([tool, item]) => ({ tool, ...item }))
   return [...entries.filter((item) => item.tool === 'ai'), ...entries.filter((item) => item.tool !== 'ai')]
 })
+const collapsibleEditor = computed(() => canOpenAIEditor.value && tools.size === 1)
+const editEntry = ref<InstanceType<typeof UIButton> | null>(null)
+const editorShell = ref<HTMLElement | null>(null)
 watch(
   () => Array.from(tools.keys()),
   () => {
@@ -47,26 +54,28 @@ watch(
   }
 )
 const panel = ref<HTMLElement | null>(null)
+const submitTarget = ref<HTMLElement | null>(null)
+const submitSize = useContentSize(submitTarget)
 const details = ref<HTMLElement | null>(null)
 const instruction = ref('')
 const selectionLocked = computed(() => (props.aiEnabled && props.pending) || props.busy || props.selectionLocked)
 const previewArea = ref<{ left: number; top: number; width: number; height: number } | null>(null)
-const previewBottomSpace = computed(() => (props.resourceType === 'animation' ? 244 : 180))
-const promptPosition = computed(() => {
-  if (previewArea.value == null) return undefined
-  const area = previewArea.value
-  return {
-    top: `${area.top + area.height + (props.resourceType === 'animation' ? 88 : 24)}px`,
-    bottom: 'auto',
-    left: '50%',
-    right: 'auto',
-    transform: 'translateX(-50%)',
-    width: `${Math.max(320, area.width)}px`,
-    maxWidth: 'calc(100% - 48px)'
-  }
-})
+const previewBottomSpace = computed(() =>
+  props.resourceType === 'animation' ? 244 : collapsibleEditor.value ? 196 : 180
+)
 const previewTopSpace = computed(() => 64)
-const canCloseEditor = computed(() => !props.pending && !props.busy && !props.canReview)
+const canCollapseEditor = computed(
+  () => props.enabled && collapsibleEditor.value && aiActive.value && !selectionLocked.value && !props.canReview
+)
+watch([editorShell, canCollapseEditor], ([element, canCollapse], _, onCleanup) => {
+  if (element == null || !canCollapse) return
+  const handleOutside = (event: Event) => {
+    if (event.target instanceof Node && !element.contains(event.target)) selected.value = false
+  }
+  const signal = getCleanupSignal(onCleanup)
+  document.addEventListener('pointerdown', handleOutside, { capture: true, signal })
+  document.addEventListener('focusin', handleOutside, { capture: true, signal })
+})
 const { t } = useI18n()
 const confirm = useConfirmDialog()
 const discardInstruction = useMessageHandle(async () => {
@@ -95,6 +104,7 @@ provide(
         resourceKey: toRef(props, 'resourceKey'),
         tools,
         panel,
+        submitTarget,
         details,
         instruction,
         previewBottomSpace
@@ -106,8 +116,8 @@ watch(selectionLocked, (locked) => {
 })
 watch(
   () => [props.resourceKey, props.aiEnabled],
-  () => {
-    selected.value = selectionLocked.value
+  (_, previous) => {
+    selected.value = selectionLocked.value || (previous == null && props.initiallyOpen)
     activeTool.value = props.aiEnabled ? 'ai' : null
     instruction.value = ''
   },
@@ -124,6 +134,13 @@ async function handleOpenAIEditor() {
   await nextTick()
   panel.value?.querySelector<HTMLElement>('textarea, input, [contenteditable="true"]')?.focus({ preventScroll: true })
 }
+watch(
+  aiActive,
+  (active, wasActive) => {
+    if (!active && wasActive && selected.value && collapsibleEditor.value) editEntry.value?.focus()
+  },
+  { flush: 'post' }
+)
 defineExpose({ openAIEditor })
 
 function handleToolKeydown(event: KeyboardEvent) {
@@ -151,16 +168,6 @@ function handleToolKeydown(event: KeyboardEvent) {
       role="toolbar"
       :aria-label="$t({ en: 'Result actions', zh: '结果操作' })"
       class="absolute left-6 right-6 top-2 z-30 flex h-10 items-center justify-between gap-4"
-      :style="
-        previewArea == null
-          ? undefined
-          : {
-              left: `${previewArea.left}px`,
-              top: `${previewArea.top - 48}px`,
-              width: `${previewArea.width}px`,
-              right: 'auto'
-            }
-      "
     >
       <div v-radar="{ name: 'Resource result tools', desc: 'Review versions of the current result' }">
         <slot name="actions" :section="'history' as const"><ResourceEditActions section="history" /></slot>
@@ -170,50 +177,65 @@ function handleToolKeydown(event: KeyboardEvent) {
       </slot>
     </div>
     <div
-      v-if="canOpenAIEditor && !aiActive"
-      class="absolute inset-x-6 bottom-4 z-30 flex justify-center"
-      :style="promptPosition"
-    >
-      <UIButton
-        v-radar="{
-          name: 'ai-edit',
-          label: $t({ en: 'AI edit', zh: 'AI 编辑' }),
-          desc: 'Edit the current costume with AI'
-        }"
-        type="white"
-        :disabled="busy"
-        @click="handleOpenAIEditor"
-      >
-        <UIIcon type="wandSparkles" />
-        {{ $t({ en: 'AI edit...', zh: 'AI 编辑…' }) }}
-      </UIButton>
-    </div>
-    <div
-      v-show="!aiEnabled || selected"
+      v-show="collapsibleEditor || !aiEnabled || selected"
       v-radar="{ name: 'Resource tool area', desc: 'Tools for the selected media' }"
       class="absolute inset-x-6 bottom-4 z-30 flex flex-col items-center gap-2 pointer-events-none"
-      :style="aiActive ? promptPosition : undefined"
     >
-      <div ref="panel" class="w-full pointer-events-auto" :class="aiActive ? 'max-w-[640px]' : 'max-w-[440px]'"></div>
+      <div
+        ref="editorShell"
+        class="w-full pointer-events-auto"
+        :style="{ '--edit-submit-width': `${submitSize?.width ?? 96}px` }"
+        :class="[
+          collapsibleEditor && !aiActive ? 'max-w-[480px]' : aiActive ? 'max-w-[640px]' : 'max-w-[440px]',
+          { 'resource-editor t-resize': collapsibleEditor, 'is-expanded': aiActive }
+        ]"
+      >
+        <div
+          v-if="collapsibleEditor"
+          class="resource-editor-entry absolute inset-x-0 top-0 flex h-[54px] w-full items-center pl-4"
+          :style="{ visibility: aiActive ? 'hidden' : 'visible' }"
+          :inert="aiActive"
+          :aria-hidden="aiActive"
+          @click.self="handleOpenAIEditor"
+        >
+          <UIButton
+            ref="editEntry"
+            v-radar="{
+              name: 'ai-edit',
+              label: $t({ en: 'Describe changes to this costume', zh: '描述对当前造型的修改' }),
+              desc: 'Expand the AI editor for this costume'
+            }"
+            type="white"
+            class="h-full min-w-0 flex-1 cursor-text justify-start rounded-none border-none p-0 text-hint-2 enabled:hover:bg-transparent enabled:active:bg-transparent"
+            :aria-expanded="aiActive"
+            :aria-controls="`${tools.get('ai')?.id}-panel`"
+            :disabled="busy"
+            @click="handleOpenAIEditor"
+          >
+            <span class="truncate">{{
+              $t({ en: 'Describe changes to this costume', zh: '描述对当前造型的修改' })
+            }}</span>
+          </UIButton>
+        </div>
+        <div
+          ref="panel"
+          class="w-full"
+          :class="{ 'resource-editor-panel': collapsibleEditor }"
+          :style="collapsibleEditor ? { visibility: aiActive ? 'visible' : 'hidden' } : undefined"
+          :inert="collapsibleEditor && !aiActive"
+          :aria-hidden="collapsibleEditor && !aiActive ? true : undefined"
+        ></div>
+        <div v-if="collapsibleEditor" ref="submitTarget" class="absolute bottom-3 right-4 z-10"></div>
+      </div>
       <ResourceTool
         v-if="aiEnabled"
         tool="ai"
         icon="wandSparkles"
         :closable="!pending && !busy"
+        :visible="collapsibleEditor ? true : null"
         :label="$t(pending ? { en: 'AI generate', zh: 'AI 生成' } : { en: 'AI edit', zh: 'AI 编辑' })"
       >
-        <form class="relative w-full" :class="{ 'with-close': canCloseEditor }" @submit.prevent>
-          <UIModalClose
-            v-if="canCloseEditor"
-            v-radar="{ name: 'Close resource workspace', desc: 'Close the AI editor' }"
-            class="absolute right-2 top-2 z-10"
-            role="button"
-            :aria-label="$t({ en: 'Close AI editor', zh: '关闭 AI 编辑' })"
-            tabindex="0"
-            @click="activeTool = null"
-            @keydown.enter.prevent="activeTool = null"
-            @keydown.space.prevent="activeTool = null"
-          />
+        <form class="relative w-full" @submit.prevent>
           <slot name="prompt"></slot>
         </form>
         <template v-if="$slots.details != null" #details><slot name="details"></slot></template>
@@ -253,7 +275,79 @@ function handleToolKeydown(event: KeyboardEvent) {
 </template>
 
 <style scoped>
-.with-close :deep(.description-input .main) {
-  margin-right: 28px;
+.resource-editor {
+  --resize-dur: 300ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  height: 56px;
+  overflow: hidden;
+  border: 1px solid var(--ui-color-grey-400);
+  border-radius: var(--ui-border-radius-lg);
+  background: var(--ui-color-grey-100);
+}
+
+.resource-editor.is-expanded {
+  height: 140px;
+  border-radius: var(--ui-border-radius-md);
+}
+
+.resource-editor:focus-within {
+  border-color: var(--ui-color-primary-500);
+}
+
+.t-resize {
+  transition:
+    max-width var(--resize-dur) var(--resize-ease),
+    height var(--resize-dur) var(--resize-ease),
+    border-radius 150ms var(--resize-ease);
+  will-change: max-width, height;
+}
+
+.resource-editor-entry,
+.resource-editor-panel {
+  transition:
+    opacity 150ms ease-out,
+    visibility 150ms;
+}
+
+.resource-editor-panel,
+.is-expanded > .resource-editor-entry {
+  opacity: 0;
+}
+
+.is-expanded > .resource-editor-panel {
+  opacity: 1;
+}
+
+.resource-editor:not(.is-expanded) > .resource-editor-entry,
+.is-expanded > .resource-editor-panel {
+  transition-duration: 150ms, 0s;
+}
+
+.resource-editor-panel :deep(.description-input) {
+  height: 138px;
+  min-height: 138px;
+  border: none;
+  border-radius: 0;
+  padding: 16px 16px 12px;
+}
+
+.resource-editor-panel :deep(.description-input .footer) {
+  padding-right: calc(var(--edit-submit-width) + 12px);
+}
+
+.resource-editor-entry {
+  padding-right: calc(var(--edit-submit-width) + 28px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-resize {
+    transition: none !important;
+  }
+
+  .resource-editor-entry,
+  .resource-editor-panel {
+    transition: none;
+  }
 }
 </style>

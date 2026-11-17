@@ -2,12 +2,13 @@
 import { computed, ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import type { Animation } from '@/models/spx/animation'
-import type { AnimationGen, FramesConfig } from '@/models/spx/gen/animation-gen'
+import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { UIButton, UIError } from '@/components/ui'
 import AnimationDetail from '@/components/editor/sprite/AnimationDetail.vue'
 import ResourceCanvas from '@/components/editor/sprite/ResourceCanvas.vue'
 import ResourceGenerationPlaceholder from '@/components/editor/sprite/ResourceGenerationPlaceholder.vue'
 import { useResourceCanvas } from '@/components/editor/sprite/resource-canvas'
+import { useResourceWorkspace } from '@/components/editor/sprite/resource-workspace'
 import { useRenameAnimationGen } from '../..'
 import { humanizeTimeLeft } from '../common/time-left'
 import GenLoading from '../common/GenLoading.vue'
@@ -26,20 +27,8 @@ const props = withDefaults(
   { savedAnimation: null, resourceActions: true, settingsEditable: true }
 )
 
-function updateFramesConfig(config: FramesConfig) {
-  if (
-    'editHistory' in props.gen.parent &&
-    props.gen.framesConfig != null &&
-    (config.startTime !== props.gen.framesConfig.startTime ||
-      config.duration !== props.gen.framesConfig.duration ||
-      config.interval !== props.gen.framesConfig.interval)
-  ) {
-    props.gen.parent.editHistory.record(props.gen)
-  }
-  props.gen.setFramesConfig(config)
-}
-
 const canvas = useResourceCanvas()
+const workspace = useResourceWorkspace()
 const renameAnimation = useRenameAnimationGen()
 const handleRenameAnimation = useMessageHandle(() => renameAnimation(props.gen), {
   en: 'Failed to rename animation',
@@ -103,6 +92,7 @@ const loading = computed(
 <template>
   <GenPreview
     v-if="
+      (workspace?.aiActive.value && gen.video != null) ||
       gen.result == null ||
       gen.hasPendingVideo ||
       gen.generateVideoState.status === 'running' ||
@@ -146,7 +136,7 @@ const loading = computed(
         :frames-config="gen.framesConfig"
         :show-controls="!loadingMounted && !savingAnimation"
         @ready="videoReady = true"
-        @update:frames-config="updateFramesConfig"
+        @update:frames-config="gen.setFramesConfig($event)"
       >
         <GenLoading
           v-if="gen.finishState.status === 'running'"

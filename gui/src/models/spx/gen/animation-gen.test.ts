@@ -367,6 +367,39 @@ describe('AnimationGen', () => {
     project.dispose()
   })
 
+  it('invalidates extracted frames when an unapplied animation is trimmed again', async () => {
+    const project = makeSpxProject()
+    const sprite = project.sprites[0]
+    const gen = new AnimationGen(i18n, sprite, project, {
+      settings: { name: 'run' },
+      video: mockFile('run.mp4'),
+      framesConfig: { startTime: 0, duration: 1000, interval: 200 }
+    })
+    onTestFinished(() => {
+      gen.dispose()
+      project.dispose()
+    })
+    const extracted = await gen.finish()
+    expect(gen.hasPendingVideo).toBe(false)
+    gen.setFramesConfig({ startTime: 0, duration: 1000, interval: 200 })
+    expect(gen.hasPendingVideo).toBe(false)
+
+    gen.setFramesConfig({ startTime: 200, duration: 600, interval: 200 })
+    expect(gen.hasPendingVideo).toBe(true)
+    const [config, files] = gen.export()
+    const restored = AnimationGen.load(i18n, sprite, project, sndConfig(config), sndFiles(files))
+    onTestFinished(() => restored.dispose())
+    await flushPromises()
+    expect(restored.hasPendingVideo).toBe(true)
+    expect(restored.result?.duration).toBe(extracted.duration)
+    expect(aigcMock.tasks.size).toBe(1)
+
+    const updated = await restored.finish()
+    expect(updated.duration).toBe(0.6)
+    expect([...aigcMock.tasks.values()].at(-1)?.params).toMatchObject({ startTime: 200, duration: 600, interval: 200 })
+    expect(restored.hasPendingVideo).toBe(false)
+  })
+
   it('does not restore extraction from the previous video after regenerating', async () => {
     const project = makeSpxProject()
     const sprite = project.sprites[0]

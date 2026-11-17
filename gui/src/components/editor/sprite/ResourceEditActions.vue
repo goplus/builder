@@ -4,6 +4,7 @@ import { UIButton, UIIcon, UITooltip } from '@/components/ui'
 withDefaults(
   defineProps<{
     section?: 'all' | 'history' | 'commit'
+    versionLabel?: string | null
     canUndo?: boolean
     canRedo?: boolean
     canSave?: boolean
@@ -12,6 +13,7 @@ withDefaults(
   }>(),
   {
     section: 'all',
+    versionLabel: null,
     canUndo: false,
     canRedo: false,
     canSave: false,
@@ -27,34 +29,37 @@ defineEmits<{ undo: []; redo: []; discard: []; save: [] }>()
     v-if="section !== 'commit'"
     v-radar="{ name: 'Resource edit history', desc: 'Undo or redo this resource draft' }"
     role="group"
-    class="flex items-center gap-1"
+    class="flex items-center gap-2"
   >
     <UITooltip>
-      {{ $t({ en: 'Undo', zh: '撤销' }) }}
+      {{ $t({ en: 'Previous version', zh: '上一版' }) }}
       <template #trigger
         ><UIButton
           v-radar="{ name: 'Undo edit', desc: 'Return to the previous draft' }"
           type="white"
           size="medium"
           shape="square"
-          class="border-transparent! bg-transparent flex-none"
+          class="flex-none"
           :disabled="busy || !canUndo"
           @click="$emit('undo')"
-          ><template #icon><UIIcon type="undo" class="size-5" /></template></UIButton
+          ><template #icon><UIIcon type="angleLeft" class="size-4" /></template></UIButton
       ></template>
     </UITooltip>
+    <span class="min-w-16 text-center text-base text-text tabular-nums whitespace-nowrap" aria-live="polite">
+      {{ versionLabel ?? $t({ en: 'Original', zh: '原版' }) }}
+    </span>
     <UITooltip>
-      {{ $t({ en: 'Redo', zh: '重做' }) }}
+      {{ $t({ en: 'Next version', zh: '下一版' }) }}
       <template #trigger
         ><UIButton
           v-radar="{ name: 'Redo edit', desc: 'Restore the next draft' }"
           type="white"
           size="medium"
           shape="square"
-          class="border-transparent! bg-transparent flex-none"
+          class="flex-none"
           :disabled="busy || !canRedo"
           @click="$emit('redo')"
-          ><template #icon><UIIcon type="redo" class="size-5" /></template></UIButton
+          ><template #icon><UIIcon type="angleLeft" class="size-4 rotate-180" /></template></UIButton
       ></template>
     </UITooltip>
   </div>

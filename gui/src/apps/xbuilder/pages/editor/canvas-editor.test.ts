@@ -193,8 +193,10 @@ describe('canvas resource workflows', () => {
     const { wrapper, state, sprite } = await setupCanvas()
     const original = sprite.costumes[0]
     const instruction = 'Make the costume blue'
-    await vi.waitFor(() => expect(wrapper.find('[aria-label="AI edit"]').isVisible()).toBe(true))
-    await wrapper.get('[aria-label="AI edit"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[aria-label="Describe changes to this costume"]').isVisible()).toBe(true)
+    )
+    await wrapper.get('[aria-label="Describe changes to this costume"]').trigger('click')
     await wrapper.get('[aria-label="AI edit prompt"] textarea').trigger('focus')
     await wrapper.get('[aria-label="AI edit prompt"] textarea').setValue(instruction)
     await wrapper.get('[aria-label="Local edit tool"]').trigger('click')
@@ -233,15 +235,18 @@ describe('canvas resource workflows', () => {
     await wrapper.get('[aria-label="Save resource"]').trigger('click')
     await vi.waitFor(() => expect(edit.editHistory.canUndo(gen.id)).toBe(false))
     expect(sprite.costumes.some((costume) => costume.img.name === 'blue.svg')).toBe(true)
-    await vi.waitFor(() => expect(wrapper.get('[aria-label="Edit resource"]').isVisible()).toBe(false))
+    await vi.waitFor(() => expect(wrapper.get('[aria-label="AI edit prompt"]').isVisible()).toBe(false))
+    expect(wrapper.get('[aria-label="Edit resource"]').attributes('disabled')).toBeDefined()
   })
 
   it.each(['costume'] as const)('edits a %s in place without losing the instruction', async (type) => {
     const { wrapper, state, sprite } = await setupCanvas()
     const generate = vi.spyOn(SpriteEdit.prototype, 'editCostume').mockResolvedValue()
     expect(wrapper.get('[aria-label="AI edit prompt"]').isVisible()).toBe(false)
-    await vi.waitFor(() => expect(wrapper.find('[aria-label="AI edit"]').isVisible()).toBe(true))
-    await wrapper.get('[aria-label="AI edit"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[aria-label="Describe changes to this costume"]').isVisible()).toBe(true)
+    )
+    await wrapper.get('[aria-label="Describe changes to this costume"]').trigger('click')
     const input = wrapper.get('[aria-label="AI edit prompt"] textarea')
     expect(wrapper.get('[aria-label="Edit resource"]').isVisible()).toBe(true)
     expect(input.attributes('placeholder')).toBe(`Describe changes to this ${type}`)

@@ -286,6 +286,16 @@ export class AnimationGen extends Disposable {
 
   framesConfig: FramesConfig | null
   setFramesConfig(config: FramesConfig | null) {
+    if (
+      config?.startTime !== this.framesConfig?.startTime ||
+      config?.duration !== this.framesConfig?.duration ||
+      config?.interval !== this.framesConfig?.interval
+    ) {
+      this.extractFramesTask?.tryCancel()
+      this.extractFramesTask?.dispose()
+      this.extractFramesTask = null
+      this.videoPending = this.video != null
+    }
     this.framesConfig = config
   }
 

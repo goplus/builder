@@ -27,7 +27,6 @@ const props = defineProps<{
   gen: AnimationGen
   animation: Animation | null
   active: boolean
-  suggested?: boolean
   operable?: boolean
 }>()
 
@@ -58,7 +57,6 @@ const highlight = computed(() => props.gen.generateVideoState.status === 'finish
     :loading="isLoading"
     :highlight="highlight"
     :active="active"
-    :suggested="suggested"
     @click="emit('click')"
   >
     <template v-if="animation != null" #preview>

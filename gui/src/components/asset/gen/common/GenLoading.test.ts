@@ -1,18 +1,20 @@
 import { shallowMount } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { useContentSize } from '@/utils/dom'
 import { createI18n } from '@/utils/i18n'
 import GenLoading from './GenLoading.vue'
 import GenerationGame from './GenerationGame.vue'
 import { createGame, gameGrid, type Game } from './generation-game'
 
-vi.mock('@/utils/dom', () => ({ useContentSize: () => ref({ width: 360, height: 360 }) }))
+vi.mock('@/utils/dom', () => ({ useContentSize: vi.fn() }))
 vi.mock('@/components/ui', () => ({
   useUIVariables: () => ({ color: { grey: { 800: '#76808c' }, primary: { main: '#36c2cf' } } })
 }))
 
-async function setup(reduced = false, mountGame = false) {
+async function setup(reduced = false, mountGame = false, dimensions = { width: 360, height: 360 }) {
   vi.useFakeTimers()
+  vi.mocked(useContentSize).mockReturnValue(ref(dimensions))
   const media = Object.assign(new EventTarget(), { matches: reduced })
   const requestFrame = vi.fn().mockReturnValue(1)
   const cancelFrame = vi.fn()
@@ -41,6 +43,25 @@ async function setup(reduced = false, mountGame = false) {
 }
 
 describe('GenLoading', () => {
+  it.each([
+    { width: 140, height: 140 },
+    { width: 140, height: 108 },
+    { width: 88, height: 66 }
+  ])('centers thumbnail dots without reserving a game footer ($width × $height)', async (dimensions) => {
+    const { wrapper, context } = await setup(false, false, dimensions)
+    context.arc.mockClear()
+    await wrapper.setProps({ compact: true, playable: false })
+    const xs = context.arc.mock.calls.map(([x]) => x)
+    const ys = context.arc.mock.calls.map(([, y]) => y)
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(8)
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(8)
+    expect(Math.min(...xs) + Math.max(...xs)).toBe(dimensions.width)
+    expect(Math.min(...ys) + Math.max(...ys)).toBe(dimensions.height)
+    expect(new Set(xs).size).toBeGreaterThanOrEqual(5)
+    expect(new Set(ys).size).toBeGreaterThanOrEqual(5)
+    expect(wrapper.findComponent(GenerationGame).exists()).toBe(false)
+  })
+
   it('uses the loading grid when screen dimensions differ from layout dimensions', async () => {
     const { wrapper, context, requestFrame } = await setup(false, true)
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 540, 540))
