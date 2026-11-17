@@ -832,7 +832,7 @@ export const glide2: DefinitionDocumentationItem = {
 export const glide3: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true, // not included in the reference panel, keep it out of the default list
+  hiddenFromList: true, // prefer `glide4` with explicit coordinates
   definition: {
     package: packageSpx,
     name: 'Sprite.glide',

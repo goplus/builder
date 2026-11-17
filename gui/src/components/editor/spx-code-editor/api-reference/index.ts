@@ -1,7 +1,7 @@
 /**
  * @desc SpxAPIReferenceProvider — spx-specific API reference provider.
- * Contains the full list of spx API reference item IDs and differentiates
- * between stage (Game) and sprite (Sprite) code.
+ * Provides default or explicitly selected reference items for stage (Game)
+ * and sprite (Sprite) code.
  */
 
 import { once } from 'lodash'
@@ -26,8 +26,8 @@ import iconControl from './icons/control.svg?raw'
 import iconGame from './icons/game.svg?raw'
 import iconSensing from './icons/sensing.svg?raw'
 
-/** Definition ID strings for APIReference items */
-const apiReferenceItems = [
+/** Definition ID strings for the default API Reference. */
+const defaultAPIReferenceItems = [
   'xgo:fmt?println',
   `xgo:${packageSpx}?rand#0`,
   `xgo:${packageSpx}?rand#1`,
@@ -103,7 +103,9 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.turn#0`,
   `xgo:${packageSpx}?Sprite.turn#1`,
   `xgo:${packageSpx}?Sprite.turnTo#0`,
+  `xgo:${packageSpx}?Sprite.turnTo#2`,
   `xgo:${packageSpx}?Sprite.turnTo#4`,
+  `xgo:${packageSpx}?Sprite.turnTo#6`,
   `xgo:${packageSpx}?Sprite.changeHeading`,
   `xgo:${packageSpx}?Sprite.setHeading`,
   `xgo:${packageSpx}?Up`,
@@ -301,37 +303,43 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
     private whitelist: DefinitionIdentifier[] | null = null
   ) {}
 
-  private getStageAPIReferenceItems = once(async () => {
-    const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
-    const allItems = maybeItems.filter((i) => i != null)
-    return allItems.filter((item) => {
-      if (item.definition.package !== packageSpx) return true
-      const [receiver] = parseDefinitionName(item.definition.name)
-      return receiver !== 'Sprite'
-    })
-  })
-
-  private getSpriteAPIReferenceItems = once(async () => {
-    const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
-    const allItems = maybeItems.filter((i) => i != null)
-    const spriteMethods = allItems.reduce((set, item) => {
-      const [receiver, method] = parseDefinitionName(item.definition.name)
-      if (receiver === 'Sprite') set.add(method)
-      return set
-    }, new Set<string>())
-    return allItems.filter((item) => {
-      if (item.definition.package !== packageSpx) return true
-      const [receiver, method] = parseDefinitionName(item.definition.name)
-      if (receiver === 'Game' && spriteMethods.has(method)) return false
-      return true
+  private getAPIReferenceItems = once(async () => {
+    const whitelist = this.whitelist
+    const items =
+      whitelist == null
+        ? (await Promise.all(defaultAPIReferenceItems.map((id) => this.documentBase.getDocumentation(id)))).filter(
+            (item) => item != null
+          )
+        : (await this.documentBase.getAllDocumentations()).filter((item) => matchesAPI(item.definition, whitelist))
+    return items.filter((item) => {
+      if (item.hiddenFromList) return false
+      if (item.definition.package === packageSpx) {
+        const [receiver] = parseDefinitionName(item.definition.name)
+        // Other instance methods need a receiver that their documentation snippets do not provide.
+        if (receiver != null && receiver !== 'Game' && receiver !== 'Sprite' && receiver !== 'Camera') return false
+      }
+      return item.categories.some(([main, sub]) =>
+        categoryViewInfos.some((category) => category.id === main && category.subCategories.some((c) => c.id === sub))
+      )
     })
   })
 
   async provideAPIReference(ctx: APIReferenceContext) {
     const isStage = isTextDocumentStageCode(ctx.textDocument.id)
-    const items = await (isStage ? this.getStageAPIReferenceItems() : this.getSpriteAPIReferenceItems())
-    const whitelist = this.whitelist
-    return whitelist == null ? items : items.filter((item) => matchesAPI(item.definition, whitelist))
+    const items = await this.getAPIReferenceItems()
+    const spriteMethods = new Set(
+      items
+        .filter(
+          (item) => item.definition.package === packageSpx && parseDefinitionName(item.definition.name)[0] === 'Sprite'
+        )
+        .map((item) => `${parseDefinitionName(item.definition.name)[1]}#${item.definition.overloadId ?? ''}`)
+    )
+    return items.filter((item) => {
+      if (item.definition.package !== packageSpx) return true
+      const [receiver, method] = parseDefinitionName(item.definition.name)
+      if (isStage) return receiver !== 'Sprite'
+      return receiver !== 'Game' || !spriteMethods.has(`${method}#${item.definition.overloadId ?? ''}`)
+    })
   }
 
   provideCategoryViewInfos(): APICategoryViewInfo[] {

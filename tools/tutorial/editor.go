@@ -114,8 +114,10 @@ type CodeEditor struct {
 }
 
 // FilterAPIs limits the APIs offered by editor assistance. Use definition IDs
-// such as "xgo:preset/spx?Sprite.stepTo"; omitting #<overloadId> selects all overloads.
-// Identifier semantics are defined in docs/develop/tutorial-v2/tutorial-class-framework.go.
+// such as "xgo:preset/spx?Sprite.stepTo"; omitting #<overloadId> selects all matching
+// overloads that remain eligible for recommendation. API Reference selection is
+// independent of its default curated list. Selection and identifier semantics are
+// defined in docs/develop/tutorial-v2/tutorial-class-framework.go.
 func (p *CodeEditor) FilterAPIs(apis []string) {
 	p.courseProgram.mustCallCapability("editor_codeEditor_filterAPIs", struct {
 		APIs []string `json:"apis"`
