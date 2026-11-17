@@ -458,7 +458,7 @@ const remixesRet = useQuery({
                 shape="square"
                 icon="enterFullScreen"
                 :disabled="handleStop.isLoading.value"
-                @click="isFullScreenRunning = true"
+                @click="projectRunnerRef?.enterFullscreen($event)"
               ></UIButton>
             </template>
             {{ $t({ en: 'Enter full screen', zh: '进入全屏' }) }}

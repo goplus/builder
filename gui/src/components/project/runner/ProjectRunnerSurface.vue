@@ -47,6 +47,7 @@ const emit = defineEmits<{
 const runnerRef = ref<InstanceType<typeof ProjectRunner>>()
 const rootRef = ref<HTMLDivElement>()
 const wrapperRef = ref<HTMLDivElement>()
+const toolbarRef = ref<HTMLDivElement | null>(null)
 const overlayActive = ref(false)
 const overlayVisible = ref(false)
 const initialLoading = ref(false)
@@ -105,6 +106,14 @@ const overlayTransform = computed<OverlayTransform>(() => {
 })
 
 let overlayTransitionToken = 0
+let fullscreenOpener: HTMLElement | null = null
+let focusToolbarOnOpen = false
+
+function focusToolbar(edge: 'first' | 'last') {
+  const buttons = toolbarRef.value?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')
+  const target = buttons?.[edge === 'first' ? 0 : buttons.length - 1] ?? wrapperRef.value
+  target?.focus({ preventScroll: true })
+}
 
 function waitForAnimationFrame() {
   return new Promise<void>((resolve) => {
@@ -256,6 +265,8 @@ function updateOverlayTransformTargets() {
 
 async function openOverlay() {
   const token = ++overlayTransitionToken
+  const shouldFocusToolbar = focusToolbarOnOpen
+  focusToolbarOnOpen = false
 
   overlayClosing.value = false
   overlayOpening.value = true
@@ -268,6 +279,7 @@ async function openOverlay() {
   await nextTick()
   if (token !== overlayTransitionToken) return
 
+  wrapperRef.value?.focus({ preventScroll: true })
   updateOverlayTransformTargets()
   void wrapperRef.value?.getBoundingClientRect()
   overlayTransitionSuspended.value = false
@@ -283,6 +295,13 @@ async function openOverlay() {
 
   overlayOpening.value = false
   initialLoading.value = false
+  await nextTick()
+  if (token !== overlayTransitionToken) return
+
+  const wrapper = wrapperRef.value
+  if (shouldFocusToolbar && wrapper != null && wrapper.ownerDocument.activeElement === wrapper) {
+    focusToolbar('first')
+  }
 }
 
 async function closeOverlay() {
@@ -297,6 +316,8 @@ async function closeOverlay() {
   }
 
   const token = ++overlayTransitionToken
+  const wrapper = wrapperRef.value
+  const hadFocus = wrapper?.contains(wrapper.ownerDocument.activeElement)
 
   overlayClosing.value = true
   overlayOpening.value = false
@@ -312,8 +333,23 @@ async function closeOverlay() {
   overlayOpening.value = false
   initialLoading.value = false
   await nextTick()
+  if (token !== overlayTransitionToken) return
+
+  if (wrapper != null && hadFocus) {
+    const { activeElement, body } = wrapper.ownerDocument
+    if (activeElement === body || wrapper.contains(activeElement)) {
+      const opener = fullscreenOpener
+      const target =
+        opener?.isConnected && !opener.matches(':disabled')
+          ? opener
+          : wrapper.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? wrapper
+      target.focus({ preventScroll: true })
+    }
+  }
+  fullscreenOpener = null
   captureInlineMetrics()
   await waitForAnimationFrame()
+  if (token !== overlayTransitionToken) return
   overlayTransitionSuspended.value = false
 }
 
@@ -331,6 +367,10 @@ onMounted(() => {
 })
 
 const runnerState = computed<RunnerState>(() => props.runnerState ?? 'running')
+const runnerAspectRatio = computed(() => {
+  const { width, height } = props.project.viewportSize
+  return width / height
+})
 
 const handleInternalRun = useMessageHandle(() => runnerRef.value?.run(), {
   en: 'Failed to run project',
@@ -378,11 +418,18 @@ function handleStopClick() {
   return fn()
 }
 
+function enterFullscreen(event: MouseEvent) {
+  fullscreenOpener = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
+  focusToolbarOnOpen = event.detail === 0
+  emit('update:fullscreen', true)
+}
+
 function closeFullscreen() {
   emit('update:fullscreen', false)
 }
 
 defineExpose({
+  enterFullscreen,
   async run() {
     const runner = await untilNotNull(runnerRef)
     return runner.run()
@@ -403,10 +450,14 @@ defineExpose({
 <template>
   <div ref="rootRef" class="project-runner-surface" :class="{ fullscreen: overlayActive }">
     <div v-if="overlayActive" class="h-full w-full"></div>
+    <!-- Keep Tab navigation inside fullscreen while letting the game handle its own keys. -->
+    <span v-if="overlayActive && !overlayClosing" class="sr-only" tabindex="0" @focus="focusToolbar('last')"></span>
     <div
       ref="wrapperRef"
       v-radar="{ name: 'project-runner-surface', desc: 'Container hosting project runner' }"
       class="runner-wrapper"
+      tabindex="-1"
+      :role="overlayActive ? 'dialog' : undefined"
       :class="{
         fullscreen: overlayActive,
         visible: overlayVisible,
@@ -419,60 +470,69 @@ defineExpose({
         '--overlay-scale-x': overlayTransform.scaleX,
         '--overlay-scale-y': overlayTransform.scaleY,
         '--overlay-translate-x': `${overlayTransform.translateX}px`,
-        '--overlay-translate-y': `${overlayTransform.translateY}px`
+        '--overlay-translate-y': `${overlayTransform.translateY}px`,
+        '--runner-aspect-ratio': runnerAspectRatio
       }"
     >
-      <div v-if="overlayActive && (overlayVisible || overlayClosing || overlayOpening)" class="header">
-        <div class="flex-[1_1_30%]"></div>
-        <div class="flex-[1_1_40%] truncate text-center">
-          {{ project.displayName }}
-        </div>
-        <div class="flex-[1_1_30%] grid grid-flow-col items-center justify-end justify-items-end gap-3">
-          <UIButton
-            v-if="runnerState === 'initial'"
-            v-radar="{ name: 'run-button', desc: 'Click to run the project in overlay' }"
-            type="primary"
-            icon="playHollow"
-            :loading="runButtonLoading"
-            @click="handleRunClick"
+      <div v-if="overlayVisible && !overlayOpening" ref="toolbarRef" class="toolbar-zone">
+        <div class="header">
+          <div class="flex-[1_1_30%]"></div>
+          <div class="toolbar-on-reveal flex-[1_1_40%] truncate text-center">
+            {{ project.displayName }}
+          </div>
+          <div
+            class="flex-[1_1_30%] grid min-w-max grid-flow-col items-center justify-end justify-items-end gap-3 whitespace-nowrap"
           >
-            {{ $t({ en: 'Run', zh: '运行' }) }}
-          </UIButton>
-          <UIButton
-            v-else
-            v-radar="{ name: 'rerun-button', desc: 'Click to rerun the project in overlay' }"
-            icon="rotate"
-            :disabled="runnerState !== 'running' || stopButtonLoading"
-            :loading="rerunButtonLoading && !stopButtonLoading"
-            @click="handleRerunClick"
-          >
-            {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
-          </UIButton>
-          <UIButton
-            v-if="runnerState !== 'initial'"
-            v-radar="{ name: 'stop-button', desc: 'Click to stop the project' }"
-            type="neutral"
-            icon="end"
-            :loading="stopButtonLoading"
-            @click="handleStopClick"
-          >
-            {{ $t({ en: 'Stop', zh: '停止' }) }}
-          </UIButton>
-          <UITooltip>
-            <template #trigger>
-              <UIButton
-                v-radar="{
-                  name: 'exit-full-screen-button',
-                  desc: 'Click to exit full screen for the running project'
-                }"
-                type="neutral"
-                shape="square"
-                icon="exitFullScreen"
-                @click="closeFullscreen"
-              ></UIButton>
-            </template>
-            {{ $t({ en: 'Exit full screen', zh: '退出全屏' }) }}
-          </UITooltip>
+            <UIButton
+              v-if="runnerState === 'initial'"
+              v-radar="{ name: 'run-button', desc: 'Click to run the project in overlay' }"
+              type="primary"
+              icon="playHollow"
+              class="toolbar-on-reveal"
+              :loading="runButtonLoading"
+              @click="handleRunClick"
+            >
+              {{ $t({ en: 'Run', zh: '运行' }) }}
+            </UIButton>
+            <UIButton
+              v-else
+              v-radar="{ name: 'rerun-button', desc: 'Click to rerun the project in overlay' }"
+              icon="rotate"
+              class="toolbar-on-reveal"
+              :disabled="runnerState !== 'running' || stopButtonLoading"
+              :loading="rerunButtonLoading && !stopButtonLoading"
+              @click="handleRerunClick"
+            >
+              {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+            </UIButton>
+            <UIButton
+              v-if="runnerState !== 'initial'"
+              v-radar="{ name: 'stop-button', desc: 'Click to stop the project' }"
+              type="neutral"
+              icon="end"
+              class="toolbar-on-reveal"
+              :loading="stopButtonLoading"
+              @click="handleStopClick"
+            >
+              {{ $t({ en: 'Stop', zh: '停止' }) }}
+            </UIButton>
+            <UITooltip>
+              <template #trigger>
+                <UIButton
+                  v-radar="{
+                    name: 'exit-full-screen-button',
+                    desc: 'Click to exit full screen for the running project'
+                  }"
+                  type="neutral"
+                  shape="square"
+                  icon="exitFullScreen"
+                  class="fullscreen-exit"
+                  @click="closeFullscreen"
+                ></UIButton>
+              </template>
+              {{ $t({ en: 'Exit full screen', zh: '退出全屏' }) }}
+            </UITooltip>
+          </div>
         </div>
       </div>
       <div class="runner-area">
@@ -489,6 +549,7 @@ defineExpose({
         <slot v-if="!overlayActive" name="inline-overlay" />
         <div v-if="overlayActive && initialLoading && !overlayOpening" class="overlay-loading"></div>
       </div>
+      <span v-if="overlayActive && !overlayClosing" class="sr-only" tabindex="0" @focus="focusToolbar('first')"></span>
     </div>
   </div>
 </template>
@@ -529,17 +590,6 @@ defineExpose({
     background-color 0.2s ease;
 }
 
-.runner-wrapper.fullscreen .header {
-  opacity: 1;
-  pointer-events: auto;
-  transition:
-    opacity 0.2s ease,
-    height 0.2s ease,
-    padding 0.2s ease,
-    border-bottom-color 0.2s ease;
-  transition-delay: 0s;
-}
-
 .runner-wrapper.fullscreen .runner-area {
   padding: 20px;
   background-color: var(--ui-color-grey-300);
@@ -556,12 +606,6 @@ defineExpose({
   background-color: transparent;
 }
 
-.runner-wrapper.fullscreen.opening .header {
-  opacity: 0;
-  visibility: hidden;
-  border-bottom-color: transparent;
-}
-
 .runner-wrapper.fullscreen.opening .runner-area {
   padding: 20px;
   background-color: transparent;
@@ -569,15 +613,6 @@ defineExpose({
 
 .runner-wrapper.fullscreen.opening.visible {
   background-color: #fff;
-}
-
-.runner-wrapper.fullscreen.opening.visible .header {
-  opacity: 1;
-  visibility: visible;
-  height: 56px;
-  padding: 0 20px;
-  border-bottom-color: var(--ui-color-grey-400);
-  transition-delay: 0.15s;
 }
 
 .runner-wrapper.fullscreen.opening.visible .runner-area {
@@ -590,16 +625,8 @@ defineExpose({
   background-color: transparent;
 }
 
-.runner-wrapper.fullscreen.closing:not(.visible) .header {
-  opacity: 0;
-}
-
 .runner-wrapper.fullscreen.closing:not(.visible) .runner-area {
   background-color: transparent;
-}
-
-.runner-wrapper.fullscreen:not(.visible):not(.closing):not(.opening) .header {
-  display: none;
 }
 
 .runner-wrapper.fullscreen:not(.visible):not(.closing):not(.opening) .runner-area {
@@ -607,19 +634,53 @@ defineExpose({
   background-color: transparent;
 }
 
+/* Pin the hover target to the top edge of the fullscreen surface, above the game. */
+.toolbar-zone {
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto;
+  height: 8px;
+}
+
+.toolbar-zone:hover .header,
+.toolbar-zone:has(:focus-visible) .header {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .header {
-  flex: 0 0 auto;
+  position: absolute;
+  inset: 0 0 auto;
   height: 48px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
   padding: 0 16px;
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: clamp(8px, 2.5vw, 32px);
   font-size: 16px;
   border-bottom: 1px solid var(--ui-color-grey-400);
   color: var(--ui-color-title);
   background-color: #fff;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+@media (hover: none) {
+  .toolbar-zone:not(:hover, :has(:focus-visible)) .header {
+    opacity: 1;
+    background-color: transparent;
+    border-bottom-color: transparent;
+  }
+
+  .toolbar-zone:not(:hover, :has(:focus-visible)) .toolbar-on-reveal {
+    opacity: 0;
+  }
+
+  .fullscreen-exit {
+    pointer-events: auto;
+  }
 }
 
 .runner-area {
@@ -638,7 +699,9 @@ defineExpose({
 .project-runner-surface.fullscreen .runner-area {
   flex: 1 1 auto;
   display: flex;
+  align-items: center;
   justify-content: center;
+  container-type: size;
   min-width: 0;
   min-height: 0;
   padding: 20px;
@@ -646,11 +709,9 @@ defineExpose({
 }
 
 .project-runner-surface.fullscreen .runner-area .runner {
-  width: auto;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 4 / 3;
+  width: min(100cqw, 100cqh * var(--runner-aspect-ratio));
+  height: auto;
+  aspect-ratio: var(--runner-aspect-ratio);
   overflow: hidden;
 }
 
