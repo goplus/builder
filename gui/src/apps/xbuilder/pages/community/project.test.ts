@@ -4,9 +4,33 @@ import { setupPageTests, mountPages, signIn, makeProject } from '@/apps/xbuilder
 import * as projectApis from '@/apis/project'
 import * as releaseApis from '@/apis/project-release'
 import * as userApis from '@/apis/user'
+import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 
 describe('community project', () => {
   setupPageTests()
+
+  it('passes fullscreen button activation and its opener to the runner surface', async () => {
+    const { wrapper } = await mountPages('/project/alice/First%20flight')
+    await vi.waitFor(() => expect(wrapper.findComponent(ProjectRunnerSurface).exists()).toBe(true))
+    const surface = wrapper.getComponent(ProjectRunnerSurface)
+    const exposed = surface.vm.$.exposed as InstanceType<typeof ProjectRunnerSurface>
+    vi.spyOn(exposed, 'run').mockResolvedValue('files-hash')
+    const enterFullscreen = vi.spyOn(exposed, 'enterFullscreen').mockImplementation((event: MouseEvent) => ({
+      opener: event.currentTarget,
+      detail: event.detail
+    }))
+    await wrapper.get('button[aria-label="Run button"]').trigger('click')
+    await flushPromises()
+    const button = wrapper.get('button[aria-label="Enter full screen button"]')
+
+    for (const detail of [0, 1]) {
+      const event = new MouseEvent('click', { bubbles: true, detail })
+      button.element.dispatchEvent(event)
+      expect(enterFullscreen).toHaveBeenLastCalledWith(event)
+      expect(enterFullscreen.mock.results.at(-1)?.value).toEqual({ opener: button.element, detail })
+    }
+    expect(enterFullscreen).toHaveBeenCalledTimes(2)
+  })
 
   it('records views using local identity while user information is still loading', async () => {
     await signIn()

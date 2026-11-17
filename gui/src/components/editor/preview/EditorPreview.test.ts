@@ -43,17 +43,24 @@ function mountPreview() {
   useEditorCtx.mockReturnValue({ project, state: { runtime } })
   const run = vi.fn(async () => 'files-hash')
   const stop = vi.fn(async () => {})
+  const enterFullscreen = vi.fn((event: MouseEvent) => ({
+    opener: event.currentTarget,
+    detail: event.detail
+  }))
   const wrapper = shallowMount(EditorPreview, {
     global: {
       directives: { radar: {} },
       mocks: { $t: (msg: { en: string }) => msg.en },
       renderStubDefaultSlot: true,
       stubs: {
+        UIButton: { template: '<button><slot /></button>' },
+        UITooltip: { template: '<div><slot name="trigger" /><slot /></div>' },
         ProjectRunnerSurface: {
           name: 'ProjectRunnerSurface',
           props: ['onRun', 'onRerun', 'onStop'],
           template: '<div />',
           methods: {
+            enterFullscreen,
             run,
             stop,
             async rerun() {
@@ -76,10 +83,25 @@ function mountPreview() {
     surface.vm.$emit('update:fullscreen', false)
     await flushPromises()
   }
-  return { runtime, surface, run, stop, toggleFullscreen }
+  return { wrapper, runtime, surface, run, stop, enterFullscreen, toggleFullscreen }
 }
 
 describe('Editor Preview execution lifecycle', () => {
+  it('passes fullscreen button activation and its opener to the runner surface', async () => {
+    const { wrapper, surface, enterFullscreen } = mountPreview()
+    await surface.props('onRun')()
+    await flushPromises()
+    const button = wrapper.get('button[icon="enterFullScreen"]')
+
+    for (const detail of [0, 1]) {
+      const event = new MouseEvent('click', { bubbles: true, detail })
+      button.element.dispatchEvent(event)
+      expect(enterFullscreen).toHaveBeenLastCalledWith(event)
+      expect(enterFullscreen.mock.results.at(-1)?.value).toEqual({ opener: button.element, detail })
+    }
+    expect(enterFullscreen).toHaveBeenCalledTimes(2)
+  })
+
   it('emits starts only for successful runs and reruns, after updating runtime state', async () => {
     const { runtime, surface, run, toggleFullscreen } = mountPreview()
     const started = vi.fn(() => {
