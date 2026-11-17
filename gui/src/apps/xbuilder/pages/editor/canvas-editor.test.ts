@@ -1,5 +1,5 @@
 import { nextTick } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { Facing, type SpriteContentSettings } from '@/apis/aigc'
 import { AnimationLoopMode, ArtStyle, Perspective } from '@/apis/common'
 import { mountPages, setupPageTests, signIn } from '@/apps/xbuilder/pages/test'
@@ -11,6 +11,9 @@ import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { Phase } from '@/models/spx/gen/common'
 import { createI18n } from '@/utils/i18n'
 import { Animation } from '@/models/spx/animation'
+import { Backdrop } from '@/models/spx/backdrop'
+import { setSpriteEditDemoEnabled } from '@/models/spx/gen/edit-demo'
+import * as editDemo from '@/models/spx/gen/edit-demo'
 import SpriteGenPhaseSettings from '@/components/asset/gen/sprite/SpriteGenPhaseSettings.vue'
 import CostumeGenItem from '@/components/asset/gen/costume/CostumeGenItem.vue'
 import AnimationGenItem from '@/components/asset/gen/animation/AnimationGenItem.vue'
@@ -41,6 +44,44 @@ async function setupCanvas() {
 
 describe('canvas resource workflows', () => {
   setupPageTests()
+
+  it('edits a backdrop with the shared input and version controls, keeping the stage unchanged until adoption', async () => {
+    const { wrapper, project, state } = await setupCanvas()
+    setSpriteEditDemoEnabled(true)
+    onTestFinished(() => setSpriteEditDemoEnabled(false))
+    const backdrop = new Backdrop('Forest', image('green'))
+    project.stage.addBackdrop(backdrop)
+    state.selectBackdrop(backdrop.id)
+    const original = backdrop.img
+    const result = image('orange')
+    const simulate = vi.spyOn(editDemo, 'simulateSpriteEdit').mockResolvedValue(result)
+    const entry = '[aria-label="Describe changes to this backdrop"]'
+    await vi.waitFor(() => expect(wrapper.find(entry).isVisible()).toBe(true))
+    await wrapper.get(entry).trigger('click')
+    const input = wrapper.get('[aria-label="Backdrop edit instructions"] textarea')
+    await input.setValue('Change the lighting to sunset')
+    await wrapper.get('[aria-label="Resource preview"]').trigger('pointerdown')
+    expect(input.isVisible()).toBe(false)
+    await wrapper.get(entry).trigger('click')
+    expect((input.element as HTMLTextAreaElement).value).toBe('Change the lighting to sunset')
+    await wrapper.get('button[aria-label="Edit backdrop"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.get('[aria-label="Save resource"]').isVisible()).toBe(true))
+    expect(simulate).toHaveBeenCalledOnce()
+    expect(backdrop.img).toBe(original)
+    await wrapper.get('[aria-label="Resource preview"]').trigger('pointerdown')
+    expect(input.isVisible()).toBe(true)
+    await wrapper.get('[aria-label="Undo edit"]').trigger('click')
+    expect(state.backdropEditState.edits[0].image).toBe(original)
+    expect(wrapper.get('[aria-label="Save resource"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[aria-label="Redo edit"]').trigger('click')
+    await wrapper.get('[aria-label="Save resource"]').trigger('click')
+    await vi.waitFor(() => expect(backdrop.img).toBe(result))
+    await vi.waitFor(() => expect(wrapper.get(entry).isVisible()).toBe(true))
+    expect(input.isVisible()).toBe(false)
+    expect(state.backdropEditState.export()).toEqual({})
+    await state.history.undo()
+    expect(project.stage.backdrops.find((item) => item.id === backdrop.id)?.img.name).toBe(original.name)
+  })
 
   it('generates the default costume in a modal, then continues in the editor', async () => {
     const { wrapper, project, state } = await setupCanvas()

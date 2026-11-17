@@ -8,7 +8,10 @@ import SettingsInput from '../gen/common/SettingsInput.vue'
 
 const workspace = useResourceWorkspace()
 const props = defineProps<{
-  gen: CostumeGen
+  gen: Pick<CostumeGen, 'generateState' | 'editComments' | 'setEditComments' | 'edit'> & {
+    finishState?: Pick<CostumeGen['finishState'], 'status'>
+  }
+  resourceType?: 'costume' | 'backdrop'
   instruction: string
   commenting: boolean
   submit?: () => Promise<void>
@@ -22,7 +25,14 @@ const emit = defineEmits<{
 }>()
 
 const submitting = computed(() => props.gen.generateState.status === 'running')
-const disabled = computed(() => submitting.value || props.gen.finishState.status === 'running')
+const disabled = computed(
+  () => submitting.value || props.gen.finishState?.status === 'running' || workspace?.busy.value
+)
+const placeholder = computed(() =>
+  props.resourceType === 'backdrop'
+    ? { en: 'Describe changes to this backdrop', zh: '描述对当前背景的修改' }
+    : { en: 'Describe changes to this costume', zh: '描述对当前造型的修改' }
+)
 const commentsVisible = ref(false)
 const commentButton = ref<InstanceType<typeof UIButton> | null>(null)
 watch([() => props.gen, disabled], () => (commentsVisible.value = false))
@@ -62,17 +72,22 @@ function handleFocusIn(event: FocusEvent) {
   }
 }
 
-const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(props.instruction), {
-  en: 'Failed to edit costume',
-  zh: '修改造型失败'
-}).fn
+const handleSubmit = useMessageHandle(
+  () => props.submit?.() ?? props.gen.edit(props.instruction),
+  props.resourceType === 'backdrop'
+    ? { en: 'Failed to edit backdrop', zh: '修改背景失败' }
+    : { en: 'Failed to edit costume', zh: '修改造型失败' }
+).fn
 </script>
 
 <template>
   <SettingsInput
-    v-radar="{ name: 'Costume edit instructions', desc: 'Describe changes to the selected costume' }"
+    v-radar="{
+      name: resourceType === 'backdrop' ? 'backdrop-edit-instructions' : 'Costume edit instructions',
+      desc: 'Describe changes to the selected image'
+    }"
     :description="instruction"
-    :placeholder="$t({ en: 'Describe changes to this costume', zh: '描述对当前造型的修改' })"
+    :placeholder="$t(placeholder)"
     :enrichable="false"
     :disabled="disabled"
     @update:description="emit('update:instruction', $event)"
@@ -139,7 +154,10 @@ const handleSubmit = useMessageHandle(() => props.submit?.() ?? props.gen.edit(p
     <template #submit>
       <Teleport :to="workspace?.submitTarget.value ?? 'body'" :disabled="workspace?.submitTarget.value == null">
         <UIButton
-          v-radar="{ name: 'Edit costume', desc: 'Apply the instructions to the selected costume with AI' }"
+          v-radar="{
+            name: resourceType === 'backdrop' ? 'edit-backdrop' : 'Edit costume',
+            desc: 'Apply the instructions to the selected image with AI'
+          }"
           :type="workspace?.canReview.value ? 'secondary' : 'primary'"
           :title="$t({ en: 'Generate changes', zh: '生成修改' })"
           :disabled="

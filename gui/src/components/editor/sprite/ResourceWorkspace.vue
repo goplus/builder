@@ -13,7 +13,7 @@ const props = withDefaults(
   defineProps<{
     enabled?: boolean
     resourceKey?: string | null
-    resourceType?: 'costume' | 'animation'
+    resourceType?: 'costume' | 'animation' | 'backdrop'
     aiEnabled?: boolean
     initiallyOpen?: boolean
     pending?: boolean
@@ -36,7 +36,12 @@ const props = withDefaults(
 const activeTool = defineModel<string | null>('activeTool', { default: 'ai' })
 const selected = ref(true)
 const aiActive = computed(() => props.aiEnabled && selected.value && activeTool.value === 'ai')
-const canOpenAIEditor = computed(() => props.aiEnabled && !props.pending && props.resourceType === 'costume')
+const canOpenAIEditor = computed(() => props.aiEnabled && !props.pending && props.resourceType !== 'animation')
+const editPlaceholder = computed(() =>
+  props.resourceType === 'backdrop'
+    ? { en: 'Describe changes to this backdrop', zh: '描述对当前背景的修改' }
+    : { en: 'Describe changes to this costume', zh: '描述对当前造型的修改' }
+)
 const showEditActions = computed(() => selected.value && activeTool.value === 'ai' && props.canReview)
 const tools = shallowReactive(new Map<string, Tool>())
 const toolItems = computed(() => {
@@ -202,8 +207,8 @@ function handleToolKeydown(event: KeyboardEvent) {
             ref="editEntry"
             v-radar="{
               name: 'ai-edit',
-              label: $t({ en: 'Describe changes to this costume', zh: '描述对当前造型的修改' }),
-              desc: 'Expand the AI editor for this costume'
+              label: $t(editPlaceholder),
+              desc: 'Expand the AI editor for this image'
             }"
             type="white"
             class="h-full min-w-0 flex-1 cursor-text justify-start rounded-none border-none p-0 text-hint-2 enabled:hover:bg-transparent enabled:active:bg-transparent"
@@ -212,9 +217,7 @@ function handleToolKeydown(event: KeyboardEvent) {
             :disabled="busy"
             @click="handleOpenAIEditor"
           >
-            <span class="truncate">{{
-              $t({ en: 'Describe changes to this costume', zh: '描述对当前造型的修改' })
-            }}</span>
+            <span class="truncate">{{ $t(editPlaceholder) }}</span>
           </UIButton>
         </div>
         <div

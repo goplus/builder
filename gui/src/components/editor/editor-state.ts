@@ -21,6 +21,7 @@ import * as editing from './editing'
 import { History } from './history'
 import { GenState } from './gen'
 import { SpriteEditState } from './sprite-edit'
+import { BackdropEditState } from './backdrop-edit'
 
 export type SelectedType = 'stage' | 'sprite'
 
@@ -45,7 +46,8 @@ class SpxProjectWithGens implements IProject {
   constructor(
     private project: SpxProject,
     private genState: GenState,
-    private spriteEditState: SpriteEditState
+    private spriteEditState: SpriteEditState,
+    private backdropEditState: BackdropEditState
   ) {}
   get mutex() {
     return this.project.mutex
@@ -66,6 +68,7 @@ class SpxProjectWithGens implements IProject {
     const genFiles = this.genState.export()
     Object.assign(files, genFiles)
     Object.assign(files, this.spriteEditState.export())
+    Object.assign(files, this.backdropEditState.export())
     return files
   })
   exportFiles() {
@@ -73,11 +76,11 @@ class SpxProjectWithGens implements IProject {
   }
   async loadFiles(files: Files): Promise<void> {
     await this.project.loadFiles(files)
-    await Promise.all([this.genState.load(files), this.spriteEditState.load(files)])
+    await Promise.all([this.genState.load(files), this.spriteEditState.load(files), this.backdropEditState.load(files)])
   }
   async load({ metadata, files }: ProjectSerialized) {
     await this.project.load({ metadata, files })
-    await Promise.all([this.genState.load(files), this.spriteEditState.load(files)])
+    await Promise.all([this.genState.load(files), this.spriteEditState.load(files), this.backdropEditState.load(files)])
   }
   async export(signal?: AbortSignal): Promise<ProjectSerialized> {
     const files: Files = {}
@@ -86,6 +89,7 @@ class SpxProjectWithGens implements IProject {
     const genFiles = this.genState.export()
     Object.assign(files, genFiles)
     Object.assign(files, this.spriteEditState.export())
+    Object.assign(files, this.backdropEditState.export())
     return { metadata, files }
   }
 }
@@ -109,7 +113,8 @@ export class EditorState extends Disposable {
     this.history = history ?? new History(project)
     this.addDisposable((this.genState = new GenState(i18n, project)))
     this.addDisposable((this.spriteEditState = new SpriteEditState(i18n, project)))
-    const projectWithGens = new SpxProjectWithGens(project, this.genState, this.spriteEditState)
+    this.addDisposable((this.backdropEditState = new BackdropEditState(project)))
+    const projectWithGens = new SpxProjectWithGens(project, this.genState, this.spriteEditState, this.backdropEditState)
     this.addDisposable(
       (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedIn))
     )
@@ -146,6 +151,7 @@ export class EditorState extends Disposable {
   history: History
   genState: GenState
   spriteEditState: SpriteEditState
+  backdropEditState: BackdropEditState
   editing: editing.Editing
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null

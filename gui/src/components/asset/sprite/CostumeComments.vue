@@ -10,7 +10,7 @@ import { useResourceWorkspace } from '@/components/editor/sprite/resource-worksp
 const vAutofocus = { mounted: (el: HTMLInputElement | HTMLTextAreaElement) => requestAnimationFrame(() => el.focus()) }
 
 const props = defineProps<{
-  gen: CostumeGen
+  gen: Pick<CostumeGen, 'image' | 'editComments' | 'setEditComments'>
   canvasArea?: { left: number; top: number; width: number; height: number } | null
 }>()
 const workspace = useResourceWorkspace()
