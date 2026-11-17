@@ -6,7 +6,8 @@ import type { FeedbackSource } from '@/components/feedback/context'
 
 const feedbackSourceLabels: Record<FeedbackSource, LocaleMessage> = {
   profileMenu: { en: 'Profile menu', zh: '用户菜单' },
-  copilotReply: { en: 'Copilot reply', zh: 'Copilot 回复' }
+  copilotReply: { en: 'Copilot reply', zh: 'Copilot 回复' },
+  copilotQuotaExceeded: { en: 'Copilot quota exceeded', zh: 'Copilot 配额超限' }
 }
 
 function formatOutputTime(value: string) {

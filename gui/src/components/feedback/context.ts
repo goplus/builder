@@ -11,7 +11,7 @@ import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runti
 import { DiagnosticSeverity, getCodeFilePath, type CodeEditor } from '@/components/editor/spx-code-editor'
 import { projectSnapshotUrlSchema, saveProjectSnapshot } from './project-snapshot'
 
-const feedbackSourceSchema = z.enum(['profileMenu', 'copilotReply'])
+const feedbackSourceSchema = z.enum(['profileMenu', 'copilotReply', 'copilotQuotaExceeded'])
 
 /** Feature and entry point from which the Feedback form was opened. */
 export type FeedbackSource = z.infer<typeof feedbackSourceSchema>

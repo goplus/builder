@@ -114,6 +114,69 @@ describe('feedback', () => {
     })
   })
 
+  it('sends feedback from the Copilot quota-exceeded bar', async () => {
+    await signIn()
+    mockCreateFeedback()
+    const req = new Request('http://localhost/api/copilot/messages', { method: 'POST' })
+    let shouldExceedQuota = false
+    vi.mocked(copilotApis.generateCopilotMessage).mockImplementation(async function* () {
+      yield* []
+      if (!shouldExceedQuota) {
+        throw new ApiException(ApiExceptionCode.errorInternalServerError, 'internal error', { req })
+      }
+      throw new ApiException(ApiExceptionCode.errorQuotaExceeded, 'quota exceeded', {
+        req,
+        meta: { retryAfter: 3600_000 }
+      })
+    })
+    const { wrapper } = await mountPages('/explore')
+
+    await vi.waitFor(() => expect(wrapper.find('.copilot-trigger').exists()).toBe(true))
+    await wrapper.get('.copilot-trigger').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('.copilot-panel textarea').exists()).toBe(true))
+    await wrapper.get('.copilot-panel textarea').setValue('How do I make my sprite jump?')
+    await wrapper.get('.copilot-panel textarea').trigger('keypress', { key: 'Enter' })
+
+    const findButton = (text: string) =>
+      wrapper.findAll('.copilot-panel button').find((button) => button.text() === text)
+    await vi.waitFor(() => expect(findButton('Retry')).toBeDefined())
+    expect(findButton('Send feedback')).toBeUndefined()
+
+    shouldExceedQuota = true
+    await findButton('Retry')!.trigger('click')
+    await vi.waitFor(() => expect(wrapper.get('.copilot-panel').text()).toContain('Quota exceeded.'))
+    expect(wrapper.get('.copilot-panel').text()).toContain('Ran into an issue?')
+    expect(findButton('Send feedback')).toBeDefined()
+
+    await wrapper.get('.copilot-panel button[aria-label="Close"]').trigger('click')
+    expect(findButton('Send feedback')).toBeUndefined()
+    expect(wrapper.get('.copilot-panel').text()).toContain('Quota exceeded.')
+
+    await findButton('Retry')!.trigger('click')
+    await vi.waitFor(() => expect(findButton('Send feedback')).toBeDefined())
+
+    await findButton('Send feedback')!.trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Feedback modal"]').exists()).toBe(true))
+    const modal = wrapper.get('[aria-label="Feedback modal"]')
+    expect(modal.get<HTMLInputElement>('[aria-label="Feedback title input"] input').element.value).toBe('')
+    expect(modal.get<HTMLTextAreaElement>('[aria-label="Feedback description input"] textarea').element.value).toBe('')
+
+    await modal.get('[aria-label="Feedback title input"] input').setValue('Quota ran out during class')
+    await modal
+      .get('[aria-label="Feedback description input"] textarea')
+      .setValue('I sent a few messages while building my game and hit the quota limit.')
+    await modal.get('form').trigger('submit')
+    await vi.waitFor(() => expect(feedbackApis.createFeedback).toHaveBeenCalledTimes(1))
+    expect(vi.mocked(feedbackApis.createFeedback).mock.calls[0][0]).toEqual({
+      title: 'Quota ran out during class',
+      description: 'I sent a few messages while building my game and hit the quota limit.',
+      context: {
+        source: 'copilotQuotaExceeded',
+        page: { path: '/explore', language: 'en' }
+      }
+    })
+  })
+
   it('sends feedback without context when sharing is turned off', async () => {
     await signIn()
     mockCreateFeedback()

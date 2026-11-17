@@ -5,9 +5,11 @@ import { useBottomSticky } from '@/utils/dom'
 import { assertNever } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import type { LocaleMessage } from '@/utils/i18n'
+import { ApiExceptionCode } from '@/apis/common/exception'
 import { UIButton, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
+import QuotaFeedbackBar from './QuotaFeedbackBar.vue'
 import { useCopilot } from './context'
 import { type QuickInput, RoundState } from './copilot'
 
@@ -17,6 +19,17 @@ const session = computed(() => copilot.currentSession)
 const activeRound = computed(() => {
   const round = session.value?.rounds.at(-1)
   if (round == null || [RoundState.Loading, RoundState.Initialized].includes(round.state)) return null
+  return round
+})
+const quotaExceededRound = computed(() => {
+  const round = activeRound.value
+  if (
+    round == null ||
+    round.state !== RoundState.Failed ||
+    round.apiExceptionCode !== ApiExceptionCode.errorQuotaExceeded
+  ) {
+    return null
+  }
   return round
 })
 
@@ -81,6 +94,7 @@ const handleQuickInputClick = useMessageHandle(
         </div>
       </template>
     </div>
+    <QuotaFeedbackBar v-if="quotaExceededRound != null" :round="quotaExceededRound" />
     <div v-if="activeRound != null || session == null" class="h-px bg-linear-to-r from-[#72bbff] to-[#c390ff]"></div>
     <CopilotInput class="h-15.5 overflow-hidden" :class="{ 'only-input': activeRound == null }" :copilot="copilot" />
   </div>
