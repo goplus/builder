@@ -26,6 +26,10 @@ const hasNextCourse = computed(() => {
 
 const completionTitle = computed(() => props.course.title.replace(/^\s*\d+\.\s+/, ''))
 
+const completionHeading = computed(() =>
+  props.series.title === 'Code: Lita-NEW' ? { en: 'Lesson Complete', zh: '课程完成' } : { en: 'Great!', zh: '太棒了！' }
+)
+
 const emit = defineEmits<{
   cancelled: []
   resolved: [action: CompletionAction]
@@ -45,7 +49,7 @@ const emit = defineEmits<{
       <div class="flex flex-col items-center text-center">
         <UIImg :src="successImg" class="aspect-[2/1] w-full object-contain" />
         <div class="w-full rounded-lg bg-grey-300 px-6 py-8">
-          <div class="text-xl/[1.4] font-medium text-title">{{ $t({ en: 'Great!', zh: '太棒了！' }) }}</div>
+          <div class="text-xl/[1.4] font-medium text-title">{{ $t(completionHeading) }}</div>
           <CourseMarkdown
             class="mt-2 text-center"
             :value="
