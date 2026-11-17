@@ -44,6 +44,16 @@ describe('SPX API Reference selection', () => {
     expect(await references([spxId('Sprite.turnTo#2')])).toEqual([spxDefinitions.turnTo2])
   })
 
+  it('preserves configured order and expands overloads in documentation order', async () => {
+    const apis = ['Sprite.turnTo#2', 'Sprite.onKey', 'Sprite.stepTo#2']
+    expect(await references(apis.map(spxId))).toEqual([
+      spxDefinitions.turnTo2,
+      spxDefinitions.spriteOnKey0,
+      spxDefinitions.spriteOnKey1,
+      spxDefinitions.stepTo2
+    ])
+  })
+
   it.each([
     { name: 'Sprite.onKey', overloads: ['0', '1'] },
     { name: 'Sprite.stepTo', overloads: ['0', '2', '3', '4', '6', '7', '8', 'a', 'b'] },
@@ -69,18 +79,23 @@ describe('SPX API Reference selection', () => {
     expect(await references(apis)).toEqual([])
   })
 
-  it('excludes entries without a usable receiver or a supported Reference category', async () => {
-    const apis = ['Widget.hide', 'Monitor.hide', 'Monitor', 'TurningInfo.NewDir', 'Prev', 'List.append']
-    expect(await references(apis.map(spxId))).toEqual([])
-  })
-
-  it('keeps qualified Camera entries and categorized constants', async () => {
-    const apis = ['Camera.zoom', 'Right', 'KeyUp'].map(spxId)
+  it('selects documented methods, constants and types', async () => {
+    const apis = [
+      'Widget.hide',
+      'Monitor.hide',
+      'TurningInfo.NewDir',
+      'List.append',
+      'Camera.zoom',
+      'Right',
+      'KeyUp',
+      'Prev',
+      'Monitor'
+    ].map(spxId)
     const items = await references(apis)
     expect(items.map((item) => stringifyDefinitionId(item.definition)).sort()).toEqual(apis.sort())
   })
 
-  it('offers Game methods on the stage and prefers selected Sprite counterparts in sprite code', async () => {
+  it('offers Game methods on the stage and Sprite counterparts in sprite code', async () => {
     const apis = ['Game.onKey#0', 'Sprite.onKey#0', 'Sprite.turnTo#2'].map(spxId)
     expect(await references(apis, 'main.spx')).toEqual([spxDefinitions.gameOnKey0])
     const items = await references(apis)
@@ -88,13 +103,24 @@ describe('SPX API Reference selection', () => {
     expect(items).toHaveLength(2)
   })
 
-  it('does not let unselected Sprite methods suppress explicit Game selections', async () => {
-    expect(await references([spxId('Game.onKey#0')])).toEqual([spxDefinitions.gameOnKey0])
+  it('keeps Game methods shadowed in sprite code even when their Sprite counterparts are not selected', async () => {
+    const apis = [spxId('Game.onKey#0')]
+    expect(await references(apis)).toEqual([])
+    expect(await references(apis, 'main.spx')).toEqual([spxDefinitions.gameOnKey0])
   })
 
-  it('preserves distinct selected overloads when Game and Sprite share a method name', async () => {
-    const items = await references(['Game.onKey#1', 'Sprite.onKey#0'].map(spxId))
-    expect(items).toEqual(expect.arrayContaining([spxDefinitions.gameOnKey1, spxDefinitions.spriteOnKey0]))
-    expect(items).toHaveLength(2)
+  it('offers the default backdrop listener for the active context', async () => {
+    const spriteItems = await references(null)
+    expect(spriteItems).toContainEqual(spxDefinitions.spriteOnBackdrop1)
+    expect(spriteItems).not.toContainEqual(spxDefinitions.gameOnBackdrop1)
+    const stageItems = await references(null, 'main.spx')
+    expect(stageItems).toContainEqual(spxDefinitions.gameOnBackdrop1)
+    expect(stageItems).not.toContainEqual(spxDefinitions.spriteOnBackdrop1)
+  })
+
+  it('resolves Game and Sprite methods by context before selecting overloads', async () => {
+    const apis = ['Game.onKey#0', 'Sprite.onKey#1'].map(spxId)
+    expect(await references(apis)).toEqual([spxDefinitions.spriteOnKey1])
+    expect(await references(apis, 'main.spx')).toEqual([spxDefinitions.gameOnKey0])
   })
 })

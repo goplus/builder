@@ -463,10 +463,14 @@ match nothing.
 
 Without a filter, API Reference shows its default curated list. A filter selects
 from all available documented, insertable reference items, so it can show APIs
-outside that default list. Reference items still respect the active editor context
-and `hiddenFromList`. Language-server suggestions continue to honor
-`//xgols:notrecommended`. Even an exact overload selector does not override these
-recommendation exclusions.
+outside that default list. Items follow the configured order; selectors without
+an overload suffix expand in documentation order. Grouped views retain their
+category order and follow the configured item order within each category.
+This ordering applies to Reference, not completion.
+Reference items still respect the active editor context and `hiddenFromList`,
+even for exact overload selections. If the language server
+later introduces a mechanism such as `//xgols:notrecommended`, this filter will not
+override its recommendation exclusions either.
 Selecting a definition does not automatically create a custom API Reference card.
 The filter controls editor assistance, not which APIs the learner's code can call.
 

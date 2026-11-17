@@ -177,10 +177,14 @@ type CodeEditor interface {
 	// match nothing. An empty list hides all filtered APIs.
 	// Without a filter, API Reference uses its default curated list. With a
 	// filter, it selects from all available documented, insertable reference
-	// items, independently of that default list. Reference items still respect
-	// context restrictions and hiddenFromList. Language-server suggestions still
-	// honor //xgols:notrecommended. Even an exact overload selection does not
-	// override these recommendation exclusions.
+	// items, independently of that default list. Items follow the configured
+	// order; overloads expand in documentation order. Grouped views retain
+	// their category order.
+	// Reference items still respect context restrictions and hiddenFromList,
+	// even for exact overload selections.
+	// If the language server later introduces a mechanism such as
+	// //xgols:notrecommended, this filter will not override its recommendation
+	// exclusions either.
 	// Selecting a definition does not create a custom API Reference item.
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
