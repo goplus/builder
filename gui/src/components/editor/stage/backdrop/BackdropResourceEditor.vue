@@ -20,7 +20,6 @@ const edit = computed(() => state.backdropEditState.start(props.backdrop))
 const activeTool = ref<string | null>('ai')
 const commenting = ref(false)
 const comments = ref<InstanceType<typeof CostumeComments> | null>(null)
-const workspace = ref<InstanceType<typeof ResourceWorkspace> | null>(null)
 const { t } = useI18n()
 const message = useMessage()
 const confirm = useConfirmDialog()
@@ -78,12 +77,10 @@ async function selectComment(comment: CostumeEditComment) {
   await nextTick()
   comments.value?.open(comment)
 }
-defineExpose({ openAIEditor: () => workspace.value?.openAIEditor() })
 </script>
 
 <template>
   <ResourceWorkspace
-    ref="workspace"
     v-model:active-tool="activeTool"
     :resource-key="backdrop.id"
     resource-type="backdrop"

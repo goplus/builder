@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIEditorBackdropItem, UIMenuItem, UIIcon } from '@/components/ui'
+import { UIEditorBackdropItem } from '@/components/ui'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import type { Backdrop } from '@/models/spx/backdrop'
-import { spriteEditDemoEnabled } from '@/models/spx/gen/edit-demo'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import CornerMenu from '../../common/CornerMenu.vue'
 import { useMessageHandle } from '@/utils/exception'
@@ -29,7 +28,6 @@ const props = withDefaults(
 )
 
 const editorCtx = useEditorCtx()
-defineEmits<{ edit: [] }>()
 const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.backdrop.img)
 
 const radarNodeMeta = computed(() => {
@@ -89,14 +87,6 @@ const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdro
     :selectable="selectable"
   >
     <CornerMenu v-if="operable && selectable && selectable.selected">
-      <UIMenuItem
-        v-if="spriteEditDemoEnabled"
-        v-radar="{ name: 'edit-backdrop', desc: 'Open AI editing for this backdrop' }"
-        @click="$emit('edit')"
-      >
-        <UIIcon type="wandSparkles" />
-        {{ $t({ en: 'AI edit...', zh: 'AI 编辑...' }) }}
-      </UIMenuItem>
       <DuplicateMenuItem
         v-radar="{ name: 'duplicate', desc: 'Click to duplicate the backdrop' }"
         @click="handleDuplicate"

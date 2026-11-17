@@ -12,7 +12,6 @@
       :selectable="{ selected: state.selected?.id === backdrop.id }"
       operable
       @click="handleSelect(backdrop)"
-      @edit="handleEdit(backdrop)"
     />
     <template #add-options>
       <UIMenu>
@@ -40,7 +39,6 @@
       <BackdropResourceEditor
         v-if="state.selected != null && spriteEditDemoEnabled"
         :key="state.selected.id"
-        ref="resourceEditor"
         :backdrop="state.selected"
       />
       <BackdropDetail v-else-if="state.selected != null" :backdrop="state.selected" />
@@ -84,7 +82,7 @@ export class BackdropsEditorState {
 </script>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed } from 'vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
 import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
@@ -105,13 +103,6 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 const stage = computed(() => editorCtx.project.stage)
-const resourceEditor = ref<InstanceType<typeof BackdropResourceEditor> | null>(null)
-
-async function handleEdit(backdrop: Backdrop) {
-  props.state.select(backdrop.id)
-  await nextTick()
-  resourceEditor.value?.openAIEditor()
-}
 
 function handleSelect(backdrop: Backdrop) {
   const action = { name: { en: 'Set default backdrop', zh: '设置默认背景' } }
