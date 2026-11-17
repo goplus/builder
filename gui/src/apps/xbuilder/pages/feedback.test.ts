@@ -126,7 +126,7 @@ describe('feedback', () => {
       }
       throw new ApiException(ApiExceptionCode.errorQuotaExceeded, 'quota exceeded', {
         req,
-        meta: { retryAfter: 3600_000 }
+        meta: { retryAfter: Date.now() + 3600_000 }
       })
     })
     const { wrapper } = await mountPages('/explore')

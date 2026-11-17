@@ -72,8 +72,7 @@ const updateRetryAfterTime = () => {
 useInterval(updateRetryAfterTime, interval)
 onMounted(updateRetryAfterTime)
 
-const sendFeedback = useSendFeedback()
-const handleFeedback = useMessageHandle(() => sendFeedback('copilotQuotaExceeded')).fn
+const sendFeedback = useMessageHandle(useSendFeedback()).fn
 </script>
 
 <template>
@@ -91,7 +90,7 @@ const handleFeedback = useMessageHandle(() => sendFeedback('copilotQuotaExceeded
       }}
     </template>
     <template #actions>
-      <UIButton class="text-xs" type="white" size="small" @click="handleFeedback">
+      <UIButton class="text-xs" type="white" size="small" @click="sendFeedback('copilotQuotaExceeded')">
         {{ $t({ en: 'Report an issue', zh: '反馈使用问题' }) }}
       </UIButton>
     </template>
