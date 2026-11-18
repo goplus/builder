@@ -26,7 +26,7 @@ Say you filled it in with what the user told you and that they can change it bef
 
 export const attributes = z.object({
   title: z.string().max(feedbackTitleMaxLength).describe('Short summary of the problem'),
-  description: z.string().max(feedbackDescriptionMaxLength).describe('Details of the problem in one paragraph')
+  description: z.string().max(feedbackDescriptionMaxLength).describe('Details of the problem')
 })
 </script>
 
