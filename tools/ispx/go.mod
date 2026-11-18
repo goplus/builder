@@ -8,7 +8,7 @@ require (
 	github.com/goplus/builder/tools/ai v0.0.0
 	github.com/goplus/ixgo v1.2.7-0.20261112024403-b12d40fe1431
 	github.com/goplus/mod v0.22.1
-	github.com/goplus/spx/v4 v4.0.1
+	github.com/goplus/spx/v4 v4.0.2
 )
 
 require (
@@ -22,7 +22,7 @@ require (
 	github.com/visualfc/xtype v0.3.3 // indirect
 	golang.org/x/image v0.23.0 // indirect
 	golang.org/x/mobile v0.0.0-20220518205345-8578da9835fd // indirect
-	golang.org/x/mod v0.42.0 // indirect
+	golang.org/x/mod v0.43.0 // indirect
 	golang.org/x/tools v0.52.0 // indirect
 )
 
