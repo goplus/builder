@@ -1,4 +1,4 @@
-import type { VueWrapper } from '@vue/test-utils'
+import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { setupPageTests, mountPages, makeFeedback, signIn } from '@/apps/xbuilder/pages/test'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
@@ -33,6 +33,18 @@ async function sendFeedback(wrapper: VueWrapper, { shareContext = true } = {}) {
   await vi.waitFor(() => expect(feedbackApis.createFeedback).toHaveBeenCalledTimes(1))
   await vi.waitFor(() => expect(wrapper.find('[aria-label="Feedback modal"]').exists()).toBe(false))
   return vi.mocked(feedbackApis.createFeedback).mock.calls[0][0]
+}
+
+async function askCopilot(wrapper: VueWrapper, message: string) {
+  await vi.waitFor(() => expect(wrapper.find('.copilot-trigger').exists()).toBe(true))
+  await wrapper.get('.copilot-trigger').trigger('click')
+  await vi.waitFor(() => expect(wrapper.find('.copilot-panel textarea').exists()).toBe(true))
+  await wrapper.get('.copilot-panel textarea').setValue(message)
+  await wrapper.get('.copilot-panel textarea').trigger('keypress', { key: 'Enter' })
+}
+
+function findCopilotButton(wrapper: VueWrapper, text: string) {
+  return wrapper.findAll('.copilot-panel button').find((button) => button.text() === text)
 }
 
 describe('feedback', () => {
@@ -80,15 +92,9 @@ describe('feedback', () => {
     })
     const { wrapper } = await mountPages('/explore')
 
-    await vi.waitFor(() => expect(wrapper.find('.copilot-trigger').exists()).toBe(true))
-    await wrapper.get('.copilot-trigger').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('.copilot-panel textarea').exists()).toBe(true))
-    await wrapper.get('.copilot-panel textarea').setValue('Saving still fails')
-    await wrapper.get('.copilot-panel textarea').trigger('keypress', { key: 'Enter' })
-    const findFeedbackLink = () =>
-      wrapper.findAll('.copilot-panel button').find((button) => button.text() === 'send feedback')
-    await vi.waitFor(() => expect(findFeedbackLink()).toBeDefined())
-    const feedbackLink = findFeedbackLink()!
+    await askCopilot(wrapper, 'Saving still fails')
+    await vi.waitFor(() => expect(findCopilotButton(wrapper, 'send feedback')).toBeDefined())
+    const feedbackLink = findCopilotButton(wrapper, 'send feedback')!
     expect(feedbackLink.element.closest('p')?.textContent).toBe(
       'I could not fix this. You can send feedback to the XBuilder team.'
     )
@@ -114,6 +120,36 @@ describe('feedback', () => {
     })
   })
 
+  it('opens one Feedback form at a time from Copilot', async () => {
+    await signIn()
+    mockCreateFeedback()
+    vi.mocked(copilotApis.generateCopilotMessage).mockImplementation(async function* () {
+      yield {
+        type: 'text_delta',
+        data: {
+          text: 'You can <feedback-link title="Saving fails" description="I clicked Save and nothing happened.">send feedback</feedback-link> to the XBuilder team.'
+        }
+      }
+      yield { type: 'done', data: { finishReason: 'stop' } }
+    })
+    const { wrapper } = await mountPages('/explore')
+    await askCopilot(wrapper, 'Saving still fails')
+    await vi.waitFor(() => expect(findCopilotButton(wrapper, 'send feedback')).toBeDefined())
+
+    // The Copilot panel stays above the modal mask, so its buttons can still be clicked.
+    await findCopilotButton(wrapper, 'send feedback')!.trigger('click')
+    await findCopilotButton(wrapper, 'send feedback')!.trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Feedback modal"]').exists()).toBe(true))
+    await flushPromises()
+    expect(wrapper.findAll('[aria-label="Feedback modal"]')).toHaveLength(1)
+
+    await wrapper.get('[aria-label="Feedback modal"] form').trigger('submit')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Feedback modal"]').exists()).toBe(false))
+    await findCopilotButton(wrapper, 'send feedback')!.trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Feedback modal"]').exists()).toBe(true))
+    expect(feedbackApis.createFeedback).toHaveBeenCalledTimes(1)
+  })
+
   it('sends feedback from the Copilot quota-exceeded message', async () => {
     await signIn()
     mockCreateFeedback()
@@ -131,14 +167,8 @@ describe('feedback', () => {
     })
     const { wrapper } = await mountPages('/explore')
 
-    await vi.waitFor(() => expect(wrapper.find('.copilot-trigger').exists()).toBe(true))
-    await wrapper.get('.copilot-trigger').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('.copilot-panel textarea').exists()).toBe(true))
-    await wrapper.get('.copilot-panel textarea').setValue('How do I make my sprite jump?')
-    await wrapper.get('.copilot-panel textarea').trigger('keypress', { key: 'Enter' })
-
-    const findButton = (text: string) =>
-      wrapper.findAll('.copilot-panel button').find((button) => button.text() === text)
+    await askCopilot(wrapper, 'How do I make my sprite jump?')
+    const findButton = (text: string) => findCopilotButton(wrapper, text)
     await vi.waitFor(() => expect(findButton('Retry')).toBeDefined())
     expect(findButton('Report an issue')).toBeUndefined()
 
