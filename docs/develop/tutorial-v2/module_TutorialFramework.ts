@@ -136,8 +136,8 @@ export interface TutorialFrameworkHost {
     codeEditor: {
       /**
        * Limits APIs offered by Code Editor assistance using definition IDs.
-       * Identifier syntax, preset resolution and failure semantics are defined
-       * in tutorial-class-framework.go (CodeEditor.filterAPIs).
+       * Selection and identifier semantics, including preset resolution and
+       * failures, are defined in tutorial-class-framework.go (CodeEditor.filterAPIs).
        */
       filterAPIs(apis: string[]): void;
       /**

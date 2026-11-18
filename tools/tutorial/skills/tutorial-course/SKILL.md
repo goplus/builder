@@ -30,8 +30,8 @@ no main loop.
 
 A typical lesson has the same three parts:
 
-1. **Set the stage.** In `onStart`, narrow what the learner can use (`Editor.CodeEditor.filterAPIs`), state the
-   task (`showPrelude`), and show them how if they need it (`showVideo`, `Spotlight.reveal`).
+1. **Set the stage.** In `onStart`, choose the APIs offered by editor assistance (`Editor.CodeEditor.filterAPIs`),
+   state the task (`showPrelude`), and show them how if they need it (`showVideo`, `Spotlight.reveal`).
 2. **Wait for evidence.** The project's own code prints something the course can recognise
    (`Editor.Runtime.onLog`), or the learner's code is read back (`Editor.Project.getCode`).
 3. **Close the loop.** Judge the evidence, then `completeWith` a sentence of feedback.
