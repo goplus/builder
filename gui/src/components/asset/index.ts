@@ -1,4 +1,3 @@
-import { defineAsyncComponent } from 'vue'
 import { useMessage, useModal } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
 import { getSupportedAudioExts, imgExts, selectFile } from '@/utils/file'
@@ -35,6 +34,7 @@ import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
+import SoundGenModal from './gen/sound/SoundGenModal.vue'
 import type { GenHelpers } from './gen/modal'
 
 export function useSpriteGenModal() {
@@ -161,8 +161,6 @@ export function useAddSoundFromLocalFile() {
     return sound
   }
 }
-
-const SoundGenModal = defineAsyncComponent(() => import('./gen/sound/SoundGenModal.vue'))
 
 export function useAddSoundByRecording() {
   const invokeSoundRecorderModal = useModal(SoundRecorderModal)
