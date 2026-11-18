@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { copilotMessageContentMaxLength } from '@/apis/copilot'
 import { useI18n } from '@/utils/i18n'
 import { getStringLengthInCodePoints } from '@/utils/utils'
@@ -10,12 +10,7 @@ const props = defineProps<{
   copilot: Copilot
 }>()
 
-const inputStr = computed({
-  get: () => props.copilot.inputDraft,
-  set: (value: string) => {
-    props.copilot.inputDraft = value
-  }
-})
+const inputStr = ref('')
 const textareaRef = ref<HTMLTextAreaElement>()
 const i18n = useI18n()
 const message = useMessage()
@@ -53,18 +48,8 @@ function handleAbort() {
 }
 
 function focus() {
-  textareaRef.value?.focus({ preventScroll: true })
+  textareaRef.value?.focus()
 }
-
-watch(
-  () => props.copilot.inputFocusRequest,
-  async (request) => {
-    if (request === 0) return
-    await nextTick()
-    focus()
-  },
-  { immediate: true, flush: 'post' }
-)
 
 defineExpose({ focus })
 </script>

@@ -3944,7 +3944,7 @@ paths:
           $ref: "#/components/responses/ContentTooLarge"
         "429":
           description: |
-            The IP or authenticated user exceeded the request rate limit (code 42901),
+            The anonymous caller's IP or the authenticated user exceeded the request rate limit (code 42901),
             or search/inference capacity was exhausted (code 42900).
           headers:
             Retry-After:

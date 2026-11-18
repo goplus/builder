@@ -3,7 +3,7 @@ import { request } from 'node:http'
 import { describe, expect, it } from 'vitest'
 import { DocumentBase } from '@/components/xgo-code-editor/document-base'
 import { getTextDocumentId } from '@/components/xgo-code-editor/common'
-import { stringifyDefinitionId } from '@/components/xgo-code-editor/definition-id'
+import { parseDefinitionId, stringifyDefinitionId } from '@/components/xgo-code-editor/definition-id'
 import { apiReferenceSimilarityThreshold } from '@/components/editor/spx-code-editor/api-reference/search'
 import {
   getAPIReferenceSearchText,
@@ -98,7 +98,8 @@ describe.skipIf(endpoint == null)('API Reference real-service relevance', () => 
       const selected = rankAPIReferenceResults(items, query, results, threshold)
       if (expected === '') expect(selected).toEqual([])
       else expect(selected.some((item) => item.definition.name === expected)).toBe(true)
-      const rank = ranked.findIndex(({ id }) => id.includes(`?${encodeURIComponent(expected)}`)) + 1
+      const rankIndex = expected === '' ? -1 : ranked.findIndex(({ id }) => parseDefinitionId(id).name === expected)
+      const rank = rankIndex < 0 ? null : rankIndex + 1
       const row = { query, expected, rank, ms: Math.round(performance.now() - start), scores: ranked }
       rows.push(row)
       process.stdout.write(JSON.stringify({ ...row, scores: ranked.slice(0, 5) }) + '\n')

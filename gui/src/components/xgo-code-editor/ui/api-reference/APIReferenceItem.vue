@@ -4,18 +4,19 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { untilTaskScheduled } from '@/utils/utils'
-import { UIDropdown } from '@/components/ui'
+import { UIDropdown, UITooltip } from '@/components/ui'
 import { type Action, setDdiDragData } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
-import { CopilotExplainKind, builtInCommandCopilotExplain } from '../code-editor-ui'
+import { CopilotExplainKind, builtInCommandCopilotExplain, type InternalAction } from '../code-editor-ui'
 import { useCodeEditor } from '../../context'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import HoverCard from '../hover/HoverCard.vue'
 import HoverCardContent from '../hover/HoverCardContent.vue'
 import type { APIReferenceItem } from '.'
-import APIReferenceActions from './APIReferenceActions.vue'
+import ActionOverflowMenu from '../ActionOverflowMenu.vue'
+import CommandIcon from '../command/CommandIcon.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -71,7 +72,8 @@ const parsed = computed(() => {
 })
 
 const hoverCardVisible = ref(false)
-const actionsMenuVisible = ref(false)
+const rowMenuVisible = ref(false)
+const hoverMenuVisible = ref(false)
 const hoverCardRef = ref<InstanceType<typeof HoverCard>>()
 
 const actions = computed<Action[]>(() => {
@@ -89,9 +91,23 @@ const actions = computed<Action[]>(() => {
   ]
 })
 
+const resolvedActions = computed(() =>
+  actions.value.map((action) => codeEditorUICtx.ui.resolveAction(action)).filter((action) => action != null)
+)
+const primaryAction = computed(() => resolvedActions.value[0] ?? null)
+const secondaryActions = computed(() => resolvedActions.value.slice(1))
+
+const handleAction = useMessageHandle(
+  (action: InternalAction) => {
+    if (props.disabled || props.interactionDisabled) return
+    return codeEditorUICtx.ui.executeCommand(action.command, ...action.arguments)
+  },
+  { en: 'Failed to execute command', zh: '执行命令失败' }
+).fn
+
 function updateHoverCardVisible(visible: boolean) {
   // The action menu is teleported outside the hover card.
-  if (!visible && actionsMenuVisible.value) return
+  if (!visible && hoverMenuVisible.value) return
   hoverCardVisible.value = visible
 }
 
@@ -99,18 +115,18 @@ async function closeInactiveHoverCard() {
   // Wait for Escape focus restoration or Tab's default focus movement.
   await nextTick()
   await untilTaskScheduled('user-visible')
-  if (actionsMenuVisible.value) return
+  if (hoverMenuVisible.value) return
   const card = hoverCardRef.value?.$el as HTMLElement | undefined
   if (card != null && !card.matches(':hover, :focus-within')) hideDropdown()
 }
 
 function handleActionsMenuVisibleChange(visible: boolean) {
-  actionsMenuVisible.value = visible
+  hoverMenuVisible.value = visible
   if (!visible) void closeInactiveHoverCard()
 }
 
 function hideDropdown() {
-  actionsMenuVisible.value = false
+  hoverMenuVisible.value = false
   hoverCardVisible.value = false
 }
 
@@ -196,27 +212,51 @@ function handleMouseUp(e: MouseEvent) {
           >
             {{ parsed.overview }}
           </DefinitionOverviewWrapper>
-          <APIReferenceActions
-            v-if="showDescription"
-            class="actions"
-            :actions="actions"
-            compact
-            :disabled="interactionDisabled || disabled"
-          />
+          <div
+            v-if="showDescription && primaryAction != null"
+            class="actions flex shrink-0 items-center gap-1"
+            :data-menu-open="rowMenuVisible"
+            draggable="true"
+            @dragstart.stop.prevent
+            @mousedown.stop
+            @mouseup.stop
+            @click.stop
+          >
+            <UITooltip>
+              <template #trigger>
+                <button
+                  v-radar="{ name: 'api-action', label: primaryAction.title, desc: 'Run this API action' }"
+                  type="button"
+                  class="size-6 cursor-pointer flex items-center justify-center rounded-sm border-0 bg-transparent p-0 text-primary-main transition-colors enabled:hover:text-primary-400 enabled:active:text-primary-600 disabled:cursor-not-allowed disabled:text-disabled-text"
+                  :aria-label="primaryAction.title"
+                  :disabled="interactionDisabled || disabled"
+                  @click="handleAction(primaryAction)"
+                >
+                  <CommandIcon :type="primaryAction.commandInfo.icon" aria-hidden="true" />
+                </button>
+              </template>
+              {{ primaryAction.title }}
+            </UITooltip>
+            <ActionOverflowMenu
+              :actions="secondaryActions"
+              :disabled="interactionDisabled || disabled"
+              @visible-change="rowMenuVisible = $event"
+              @select="handleAction"
+            />
+          </div>
         </div>
         <p v-if="showDescription" class="mt-1 text-xs text-hint-1">{{ description }}</p>
       </li>
     </template>
-    <HoverCard ref="hoverCardRef" :actions="actions" @focusout="closeInactiveHoverCard">
-      <template #actions>
-        <APIReferenceActions
-          :actions="actions"
-          :disabled="interactionDisabled || disabled"
-          @menu-visible-change="handleActionsMenuVisibleChange"
-          @dismiss="hideDropdown"
-          @action="hideDropdown"
-        />
-      </template>
+    <HoverCard
+      ref="hoverCardRef"
+      :actions="actions"
+      :disabled="interactionDisabled || disabled"
+      @focusout="closeInactiveHoverCard"
+      @menu-visible-change="handleActionsMenuVisibleChange"
+      @dismiss="hideDropdown"
+      @action="hideDropdown"
+    >
       <HoverCardContent>
         <DefinitionOverviewWrapper :kind="item.kind" :inlay-hints="parsed.inlayHints">
           {{ parsed.overview }}

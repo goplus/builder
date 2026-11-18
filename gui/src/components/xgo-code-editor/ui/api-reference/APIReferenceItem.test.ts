@@ -1,10 +1,12 @@
 import { shallowMount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
+import { builtInCommandCopilotExplain, CopilotExplainKind } from '../code-editor-ui'
 import type { APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
 
-const { insertDefinition, doAction } = vi.hoisted(() => ({
+const { executeCommand, insertDefinition, doAction } = vi.hoisted(() => ({
+  executeCommand: vi.fn(),
   insertDefinition: vi.fn(),
   doAction: vi.fn((_action: unknown, fn: () => void) => fn())
 }))
@@ -12,6 +14,8 @@ vi.mock('../../context', () => ({ useCodeEditor: () => ({ history: { doAction } 
 vi.mock('../CodeEditorUI.vue', () => ({
   useCodeEditorUICtx: () => ({
     ui: {
+      executeCommand,
+      resolveAction: (action: object) => ({ ...action, title: 'Explain', commandInfo: { icon: 'explain' } }),
       insertDefinition,
       parseSnippet: () => ({ toString: () => 'say "Hi"', placeholders: [] })
     }
@@ -69,4 +73,32 @@ describe('API Reference insertion', () => {
     expect(doAction).toHaveBeenCalledTimes(2)
     wrapper.unmount()
   })
+})
+
+it('runs the search row action without inserting the snippet', async () => {
+  doAction.mockClear()
+  const item = {
+    definition: { package: 'spx', name: 'say' },
+    overview: 'say message',
+    detail: { value: 'Display a message' }
+  } as unknown as APIReferenceItem
+  const wrapper = shallowMount(APIReferenceItemComp, {
+    props: { item, interactionDisabled: false, showDescription: true },
+    global: {
+      plugins: [createI18n({ lang: 'en' })],
+      directives: { radar: {} },
+      stubs: {
+        UIDropdown: { template: '<div><slot name="trigger" /></div>' },
+        UITooltip: { template: '<div><slot name="trigger" /></div>' }
+      }
+    }
+  })
+  await wrapper.get('li button').trigger('click')
+  expect(executeCommand).toHaveBeenCalledExactlyOnceWith(builtInCommandCopilotExplain, {
+    kind: CopilotExplainKind.Definition,
+    overview: 'say message',
+    definition: item.definition
+  })
+  expect(doAction).not.toHaveBeenCalled()
+  wrapper.unmount()
 })

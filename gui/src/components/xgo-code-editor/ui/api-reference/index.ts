@@ -8,7 +8,7 @@ import type {
   IAPIReferenceProvider
 } from '../../api-reference'
 import { searchAPIReferenceNames } from './search'
-import type { CodeEditorUIController } from '../code-editor-ui'
+import { builtInCommandCopilotInspire, type CodeEditorUIController } from '../code-editor-ui'
 
 export type { APIReferenceItem, APIReferenceContext, IAPIReferenceProvider, APICategoryViewInfo }
 
@@ -48,13 +48,14 @@ export class APIReferenceController extends Disposable {
   }
 
   get canAskCopilot() {
-    return this.ui.codeEditor.copilot?.prefillInput != null
+    return this.ui.codeEditor.copilot != null
   }
 
   askCopilot(query: string) {
     const search = query.trim()
-    if (search === '') return
-    this.ui.codeEditor.copilot?.prefillInput?.(
+    if (search === '' || !this.canAskCopilot) return
+    return this.ui.executeCommand(
+      builtInCommandCopilotInspire,
       this.ui.i18n.t({
         en: `I want to ${search}. How can I do this?`,
         zh: `我想实现「${search}」，可以怎么做？`

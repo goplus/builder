@@ -76,13 +76,14 @@ async function runSearch(waitForInput = false, keepLoading = false) {
   const query = searchQuery.value.trim()
   const items = props.controller.items
   resetSearch(keepLoading && isSearchPending.value && query !== '' && (items?.length ?? 0) > 0)
-  if (query === '' || items == null || items.length === 0) return
+  if (query === '' || items == null) return
+  submittedSearchQuery.value = query
+  if (isCategoryMenuVisible.value) void setCategoryMenuVisible(false)
+  if (items.length === 0) return
   const controller = new AbortController()
   searchController = controller
-  submittedSearchQuery.value = query
   isSearchPending.value = true
   isWaitingForInput = waitForInput
-  if (isCategoryMenuVisible.value) void setCategoryMenuVisible(false)
   if (searchLoadingTimer == null && !showSearchLoading.value) {
     // Keep the loading deadline across successive keystrokes.
     searchLoadingTimer = setTimeout(() => {
@@ -506,7 +507,7 @@ async function handleCategoryClick(id: string) {
           "
           v-radar="{
             name: 'ask-copilot-about-snippet-search',
-            desc: 'Open Copilot with this search as an unsent draft'
+            desc: 'Send this search as a question to Copilot'
           }"
           type="button"
           class="cursor-pointer appearance-none whitespace-nowrap rounded-sm border-none bg-transparent p-0 text-sm text-primary-main transition-colors hover:text-primary-400 active:text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"

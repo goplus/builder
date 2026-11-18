@@ -86,6 +86,22 @@ describe('API Reference search lifecycle', () => {
     wrapper.unmount()
   })
 
+  it('shows no matches when the provider finishes loading an empty list', async () => {
+    const { state, wrapper } = setup()
+    state.items = null
+    await wrapper.get('button').trigger('click')
+    await wrapper.get('input').setValue('按键')
+    expect(wrapper.get('[role="status"]').isVisible()).toBe(false)
+    state.items = []
+    await flushPromises()
+    expect(wrapper.get('[role="status"]').text()).toBe('No matching snippets')
+    expect(state.search).not.toHaveBeenCalled()
+    const ask = wrapper.findAll('button').find((button) => button.text() === 'Ask Copilot')!
+    await ask.trigger('click')
+    expect(state.askCopilot).toHaveBeenCalledWith('按键')
+    wrapper.unmount()
+  })
+
   it('keeps the loading deadline across input changes and ignores a superseded request failure', async () => {
     vi.useFakeTimers()
     const { state, wrapper, items } = setup()

@@ -15,6 +15,7 @@ const props = defineProps<{
 const codeEditorUICtx = useCodeEditorUICtx()
 
 const dropdownVisible = ref(false)
+const actionsMenuVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
 const hoveredTextCls = 'code-editor-hovered-text'
 
@@ -23,6 +24,7 @@ watchPostEffect(async () => {
   const hover = props.controller.hover
   if (hover == null) {
     dropdownVisible.value = false
+    actionsMenuVisible.value = false
     return
   }
 
@@ -77,7 +79,9 @@ useDecorations(() => {
       v-if="controller.hover != null"
       :actions="controller.hover.actions"
       @mouseenter="controller.emit('cardMouseEnter', $event)"
-      @mouseleave="controller.emit('cardMouseLeave', $event)"
+      @mouseleave="!actionsMenuVisible && controller.emit('cardMouseLeave', $event)"
+      @menu-visible-change="actionsMenuVisible = $event"
+      @dismiss="controller.hideHover()"
       @action="controller.hideHover()"
     >
       <HoverCardContent v-for="(content, i) in controller.hover.contents" :key="i">
