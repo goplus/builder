@@ -17,14 +17,14 @@ require (
 	github.com/goplus/mod v0.22.1 // indirect
 	github.com/goplus/reflectx v1.8.3 // indirect
 	github.com/goplus/spbase v0.1.1 // indirect
-	github.com/goplus/spx/v4 v4.0.1 // indirect
+	github.com/goplus/spx/v4 v4.0.2 // indirect
 	github.com/goplus/xgo v1.7.6-0.20260925200949-51a44c58fd65 // indirect
 	github.com/qiniu/x v1.18.3 // indirect
 	github.com/visualfc/funcval v0.1.5 // indirect
 	github.com/visualfc/gid v0.3.6 // indirect
 	github.com/visualfc/xtype v0.3.3 // indirect
 	golang.org/x/image v0.23.0 // indirect
-	golang.org/x/mod v0.42.0 // indirect
+	golang.org/x/mod v0.43.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/tools v0.52.0 // indirect
 )
