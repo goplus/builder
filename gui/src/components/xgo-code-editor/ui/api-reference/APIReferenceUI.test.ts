@@ -33,7 +33,12 @@ function createHarness(items: APIReferenceItem[] | null, categorized = true) {
     global: {
       plugins: [createI18n({ lang: 'en' })],
       directives: { radar: {} },
-      stubs: { APIReferenceItemComp: true, UIError: { template: '<div><slot /></div>' } }
+      stubs: {
+        UITooltip: { template: '<div><slot name="trigger" /></div>' },
+        UIDropdown: { template: '<div><slot name="trigger" /></div>' },
+        APIReferenceItemComp: true,
+        UIError: { template: '<div><slot /></div>' }
+      }
     }
   })
   return { state, scope, wrapper }
@@ -42,7 +47,7 @@ function createHarness(items: APIReferenceItem[] | null, categorized = true) {
 afterEach(() => vi.restoreAllMocks())
 
 describe('API Reference readiness', () => {
-  it.each([0, 1])('finishes loading with %s items and no category metadata', async (count) => {
+  it.each([0, 1, 20])('finishes loading with %s items and no category metadata', async (count) => {
     const { wrapper, scope } = createHarness(createItems(count), false)
     await nextTick()
     expect(scope.ready.value).toBe(true)
@@ -99,6 +104,19 @@ describe('API Reference readiness', () => {
     await nextTick()
     expect(scope.ready.value).toBe(true)
     expect(wrapper.findAllComponents({ name: 'APIReferenceItemComp' })).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('switches to flat browsing when a provider no longer supplies categories', async () => {
+    vi.spyOn(utils, 'untilTaskScheduled').mockResolvedValue()
+    const { wrapper, state, scope } = createHarness(createItems(20))
+    await flushPromises()
+    expect(wrapper.findAll('h5')).toHaveLength(2)
+    state.categoryViewInfos = null
+    await nextTick()
+    expect(wrapper.findAll('h5')).toHaveLength(0)
+    expect(wrapper.findAllComponents({ name: 'APIReferenceItemComp' })).toHaveLength(20)
+    expect(scope.ready.value).toBe(true)
     wrapper.unmount()
   })
 })

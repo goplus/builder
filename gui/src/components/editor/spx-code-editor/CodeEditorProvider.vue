@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
+import { searchAPIReferences } from './api-reference/search'
 import { useCopilot } from '@/components/copilot/context'
 import { type Monaco, CodeEditor, DocumentBase, XGoLSPClient, useProvideCodeEditor } from '@/components/xgo-code-editor'
 import { useEditorCtx } from '../EditorContextProvider.vue'
@@ -43,6 +44,7 @@ watch(
     const codeEditor = new CodeEditor({
       project,
       history,
+      apiReferenceSearch: searchAPIReferences,
       copilot,
       monaco,
       lspClient,

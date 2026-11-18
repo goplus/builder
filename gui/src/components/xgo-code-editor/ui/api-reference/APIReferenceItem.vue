@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
+import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
+import { untilTaskScheduled } from '@/utils/utils'
 import { UIDropdown } from '@/components/ui'
 import { type Action, setDdiDragData } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
@@ -13,12 +15,14 @@ import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import HoverCard from '../hover/HoverCard.vue'
 import HoverCardContent from '../hover/HoverCardContent.vue'
 import type { APIReferenceItem } from '.'
+import APIReferenceActions from './APIReferenceActions.vue'
 
 const props = withDefaults(
   defineProps<{
     item: APIReferenceItem
     /** Suspend the hover dropdown while the list is scrolling. */
     interactionDisabled: boolean
+    showDescription?: boolean
     blockStyle?: boolean
     disabled?: boolean
   }>(),
@@ -26,6 +30,12 @@ const props = withDefaults(
     blockStyle: false
   }
 )
+
+const i18n = useI18n()
+const description = computed(() => {
+  const detail = props.item.detail.value
+  return typeof detail === 'string' ? detail : i18n.t(detail)
+})
 
 const codeEditor = useCodeEditor()
 const codeEditorUICtx = useCodeEditorUICtx()
@@ -60,9 +70,11 @@ const parsed = computed(() => {
   return { overview, inlayHints: inlayHintsStr }
 })
 
-const hoverDropdown = ref<InstanceType<typeof UIDropdown> | null>(null)
+const hoverCardVisible = ref(false)
+const actionsMenuVisible = ref(false)
+const hoverCardRef = ref<InstanceType<typeof HoverCard>>()
 
-const hoverCardActions = computed<Action[]>(() => {
+const actions = computed<Action[]>(() => {
   return [
     {
       command: builtInCommandCopilotExplain,
@@ -77,10 +89,37 @@ const hoverCardActions = computed<Action[]>(() => {
   ]
 })
 
-function hideDropdown() {
-  // TODO: proper typing for UIDropdown exposed
-  ;(hoverDropdown.value as any)?.setVisible(false)
+function updateHoverCardVisible(visible: boolean) {
+  // The action menu is teleported outside the hover card.
+  if (!visible && actionsMenuVisible.value) return
+  hoverCardVisible.value = visible
 }
+
+async function closeInactiveHoverCard() {
+  // Wait for Escape focus restoration or Tab's default focus movement.
+  await nextTick()
+  await untilTaskScheduled('user-visible')
+  if (actionsMenuVisible.value) return
+  const card = hoverCardRef.value?.$el as HTMLElement | undefined
+  if (card != null && !card.matches(':hover, :focus-within')) hideDropdown()
+}
+
+function handleActionsMenuVisibleChange(visible: boolean) {
+  actionsMenuVisible.value = visible
+  if (!visible) void closeInactiveHoverCard()
+}
+
+function hideDropdown() {
+  actionsMenuVisible.value = false
+  hoverCardVisible.value = false
+}
+
+watch(
+  () => props.interactionDisabled || props.showDescription,
+  (disabled) => {
+    if (disabled) hideDropdown()
+  }
+)
 
 // Apply styling class BEFORE the `dragstart` event triggers to ensure
 // the visual effect is applied during dragging (just another weird Chrome requirement).
@@ -111,10 +150,11 @@ function handleMouseUp(e: MouseEvent) {
 
 <template>
   <UIDropdown
-    ref="hoverDropdown"
+    :visible="hoverCardVisible"
     placement="bottom-start"
     :offset="{ x: 0, y: 4 }"
-    :disabled="interactionDisabled || disabled"
+    :disabled="interactionDisabled || disabled || showDescription"
+    @update:visible="updateHoverCardVisible"
   >
     <template #trigger>
       <li
@@ -128,9 +168,10 @@ function handleMouseUp(e: MouseEvent) {
             'overload-id': item.definition.overloadId
           }
         }"
-        class="api-reference-item max-w-full self-start translate-x-0 bg-grey-100 px-1.5 select-none transition-all duration-200 [scroll-margin-bottom:16px] [scroll-margin-top:42px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
+        class="api-reference-item max-w-full self-start translate-x-0 bg-grey-100 px-1.5 select-none transition-all duration-200 [scroll-margin-bottom:16px] [scroll-margin-top:34px] [&.before-dragging]:bg-grey-300/60 [&.before-dragging_.overview]:opacity-60"
         :aria-disabled="disabled"
         :class="{
+          'search-result': showDescription,
           'rounded-sm': !blockStyle,
           'cursor-not-allowed opacity-50': disabled,
           'cursor-pointer hover:bg-grey-300': !disabled,
@@ -147,16 +188,35 @@ function handleMouseUp(e: MouseEvent) {
         @mouseup.passive="handleMouseUp"
         @click="handleInsert"
       >
-        <DefinitionOverviewWrapper
-          class="overview break-all pt-0.5 pb-px"
-          :kind="item.kind"
-          :inlay-hints="parsed.inlayHints"
-        >
-          {{ parsed.overview }}
-        </DefinitionOverviewWrapper>
+        <div :class="{ 'flex items-center gap-2': showDescription }">
+          <DefinitionOverviewWrapper
+            class="overview min-w-0 flex-[1_1_0] break-all pt-0.5 pb-px"
+            :kind="item.kind"
+            :inlay-hints="parsed.inlayHints"
+          >
+            {{ parsed.overview }}
+          </DefinitionOverviewWrapper>
+          <APIReferenceActions
+            v-if="showDescription"
+            class="actions"
+            :actions="actions"
+            compact
+            :disabled="interactionDisabled || disabled"
+          />
+        </div>
+        <p v-if="showDescription" class="mt-1 text-xs text-hint-1">{{ description }}</p>
       </li>
     </template>
-    <HoverCard :actions="hoverCardActions" @action="hideDropdown">
+    <HoverCard ref="hoverCardRef" :actions="actions" @focusout="closeInactiveHoverCard">
+      <template #actions>
+        <APIReferenceActions
+          :actions="actions"
+          :disabled="interactionDisabled || disabled"
+          @menu-visible-change="handleActionsMenuVisibleChange"
+          @dismiss="hideDropdown"
+          @action="hideDropdown"
+        />
+      </template>
       <HoverCardContent>
         <DefinitionOverviewWrapper :kind="item.kind" :inlay-hints="parsed.inlayHints">
           {{ parsed.overview }}
@@ -170,6 +230,24 @@ function handleMouseUp(e: MouseEvent) {
 </template>
 
 <style scoped>
+.api-reference-item.search-result {
+  align-self: stretch;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .search-result .actions {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .search-result:hover .actions,
+  .search-result:focus-within .actions,
+  .search-result .actions[data-menu-open='true'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .api-reference-item.block-style::before {
   position: absolute;
   top: 50%;

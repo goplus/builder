@@ -1,5 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { createI18n } from '@/utils/i18n'
 import type { APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
 
@@ -30,6 +31,7 @@ describe('API Reference insertion', () => {
     const wrapper = shallowMount(APIReferenceItemComp, {
       props: { item, interactionDisabled: false, disabled: true },
       global: {
+        plugins: [createI18n({ lang: 'en' })],
         directives: { radar: {} },
         stubs: {
           UIDropdown: {
