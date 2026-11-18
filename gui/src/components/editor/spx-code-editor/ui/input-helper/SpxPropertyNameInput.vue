@@ -40,15 +40,16 @@ const { ui } = useCodeEditorUICtx()
 const codeEditor = useCodeEditor()
 
 const properties = ref<Property[]>([])
+const unlistedPropertyName = computed(() => {
+  const name = props.value
+  return name !== '' && !properties.value.some((property) => property.name === name) ? name : null
+})
 
 function getProperties(textDocument: TextDocument, signal?: AbortSignal) {
   const codeFilePath = getCodeFilePath(textDocument.id.uri)
   const isStage = stageCodeFilePaths.includes(codeFilePath)
-  if (isStage) {
-    return codeEditor.getProperties('', signal)
-  }
-  const spriteName = codeFilePath.replace(/\.spx$/, '')
-  return codeEditor.getProperties(spriteName, signal)
+  const target = isStage ? '' : codeFilePath.replace(/\.spx$/, '')
+  return codeEditor.getProperties(target, signal, { excludeNotRecommended: true })
 }
 
 watchEffect(async (onCleanup) => {
@@ -63,6 +64,7 @@ watchEffect(async (onCleanup) => {
     signal.throwIfAborted()
     properties.value = result
   } catch (e) {
+    if (signal.aborted) return
     properties.value = []
     capture(e, 'Failed to get properties in SpxPropertyNameInput')
   }
@@ -71,6 +73,9 @@ watchEffect(async (onCleanup) => {
 
 <template>
   <UISelect v-model:value="modelValue" :style="{ alignSelf: 'stretch' }">
+    <UISelectOption v-if="unlistedPropertyName != null" :value="unlistedPropertyName" hidden disabled>
+      {{ unlistedPropertyName }}
+    </UISelectOption>
     <UISelectOption v-for="property in properties" :key="property.name" :value="property.name">
       {{ property.name }}
     </UISelectOption>

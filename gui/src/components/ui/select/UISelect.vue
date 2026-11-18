@@ -68,7 +68,7 @@ const { controlBindings, onBlur, onChange, validationState } = useFieldControlBi
 async function syncSelected() {
   const select = await untilNotNull(() => selectRef.value)
   const selectedOption = select.selectedOptions[0]
-  if (selectedOption == null || selectedOption.disabled) {
+  if (selectedOption == null || (selectedOption.disabled && selectedOption.value !== props.value)) {
     selectedRef.value = null
     return
   }

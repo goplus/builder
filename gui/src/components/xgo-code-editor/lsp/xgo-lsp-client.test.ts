@@ -135,6 +135,8 @@ class *.actor Actor
       expect(getProperties).toHaveBeenLastCalledWith({}, { target: className })
       await client.getProperties({}, 'Actor')
       expect(getProperties).toHaveBeenLastCalledWith({}, { target: 'Actor' })
+      await client.getProperties({}, '', { excludeNotRecommended: true })
+      expect(getProperties).toHaveBeenLastCalledWith({}, { target: className, excludeNotRecommended: true })
 
       const events: PropertyRenamedEvent[] = []
       client.onPropertyRenamed((event) => events.push(event))

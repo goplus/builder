@@ -18,7 +18,7 @@ import {
 } from '../common'
 import type { DefinitionIdentifier } from '../definition-id'
 import type { IXGoProject } from '../project'
-import type { ILSPClient, RequestContext, LSPClientEvents, PropertyRenamedEvent } from './types'
+import type { GetPropertiesOptions, ILSPClient, RequestContext, LSPClientEvents, PropertyRenamedEvent } from './types'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, MessageID, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
 import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/commands'
@@ -578,7 +578,10 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
   }
 
   /** Get properties of a named type; an empty target denotes the default project class. */
-  async getProperties(ctx: RequestContext, target: string): Promise<Property[]> {
-    return this.workspaceExecuteCommandXGoGetProperties(ctx, { target: target === '' ? this.projectClassName : target })
+  async getProperties(ctx: RequestContext, target: string, options?: GetPropertiesOptions): Promise<Property[]> {
+    return this.workspaceExecuteCommandXGoGetProperties(ctx, {
+      ...options,
+      target: target === '' ? this.projectClassName : target
+    })
   }
 }

@@ -40,6 +40,33 @@ describe('SPX language server Worker', () => {
     expect(diagnostics.items).toContainEqual(expect.objectContaining({ uri: 'file:///main.spx', items: [] }))
   })
 
+  it('excludes marked Stage properties from recommendations while keeping them available for existing uses', async () => {
+    const { command } = await startSpxWorker({
+      'main.spx': `var (
+    //xgols:notrecommended
+    internalScore int
+    score int
+)
+//xgols:notrecommended
+func InternalValue() int { return 1 }
+`,
+      'assets/index.json': '{}'
+    })
+    const target = 'Game'
+    const allProperties = await command<xgoGetProperties.Result>('xgo.getProperties', { target })
+    expect(allProperties.map(({ name }) => name)).toEqual(
+      expect.arrayContaining(['internalScore', 'internalValue', 'score'])
+    )
+    const recommended = await command<xgoGetProperties.Result>('xgo.getProperties', {
+      target,
+      excludeNotRecommended: true
+    })
+    const names = recommended.map(({ name }) => name)
+    expect(names).toContain('score')
+    expect(names).not.toContain('internalScore')
+    expect(names).not.toContain('internalValue')
+  })
+
   it('analyzes stage and sprite code with the SDK, engine, math, and AI packages', async () => {
     const { request, command } = await startSpxWorker({
       'main.spx': `import engine "github.com/goplus/spx/v4/pkg/spx/pkg/engine"

@@ -37,6 +37,30 @@ function createFormHarness(validateTemplate: ReturnType<typeof vi.fn>) {
 }
 
 describe('UISelect', () => {
+  it('displays a bound value that is hidden and disabled in the dropdown', async () => {
+    const harness = defineComponent({
+      components: { UISelect },
+      props: { unlisted: Boolean },
+      template: `
+        <UISelect value="existing" placeholder="Choose a value">
+          <option v-if="unlisted" value="existing" hidden disabled>Existing value</option>
+          <option v-else value="existing">Existing value</option>
+          <option value="other">Other</option>
+        </UISelect>
+      `
+    })
+    const wrapper = mount(harness)
+
+    await vi.waitFor(() => expect(wrapper.get('span').text()).toBe('Existing value'))
+    await wrapper.setProps({ unlisted: true })
+    const select = wrapper.get('select')
+    await vi.waitFor(() => expect(wrapper.get('span').text()).toBe('Existing value'))
+    expect(select.element.value).toBe('existing')
+    expect(select.get('option[value="existing"]').attributes()).toMatchObject({ disabled: '', hidden: '' })
+    await select.setValue('other')
+    expect(wrapper.getComponent(UISelect).emitted('update:value')).toEqual([['other']])
+  })
+
   it('binds form accessibility attributes onto the native select element', () => {
     const validateTemplate = vi.fn(() => null)
     const wrapper = mount(createFormHarness(validateTemplate))

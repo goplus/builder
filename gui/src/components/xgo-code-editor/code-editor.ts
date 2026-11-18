@@ -6,7 +6,7 @@ import type { History } from '@/components/editor/history'
 import type { IXGoProject } from './project'
 import { resolveDefinitionId, type DefinitionIdentifier, type PresetPackages } from './definition-id'
 import { type IDocumentBase, DocumentBase } from './document-base'
-import type { ILSPClient } from './lsp/types'
+import type { GetPropertiesOptions, ILSPClient } from './lsp/types'
 import { EmptyAPIReferenceProvider } from './api-reference'
 import {
   type ICodeEditorUIController,
@@ -308,8 +308,8 @@ export class CodeEditor extends Disposable {
   }
 
   /** Get properties for a given target */
-  async getProperties(target: string, signal?: AbortSignal): Promise<Property[]> {
-    const properties = await this.lspClient.getProperties({ signal }, target)
+  async getProperties(target: string, signal?: AbortSignal, options?: GetPropertiesOptions): Promise<Property[]> {
+    const properties = await this.lspClient.getProperties({ signal }, target, options)
     return filterPropertiesByDocumentation(properties, this.documentBase, this.project.classFramework.pkgPaths[0])
   }
 

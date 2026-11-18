@@ -17,6 +17,10 @@ export type RequestContext = {
 
 export type { DefinitionIdentifier }
 
+export type GetPropertiesOptions = {
+  excludeNotRecommended?: boolean
+}
+
 export type PropertyRenamedEvent = {
   /** The target that owns the property. */
   target: string
@@ -72,6 +76,6 @@ export interface ILSPClient {
   getResourceReferences(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<ResourceReference[]>
   getCompletionList(ctx: RequestContext, params: lsp.CompletionParams): Promise<lsp.CompletionList>
   getInputSlots(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<InputSlot[]>
-  getProperties(ctx: RequestContext, target: string): Promise<Property[]>
+  getProperties(ctx: RequestContext, target: string, options?: GetPropertiesOptions): Promise<Property[]>
   onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void): Disposer
 }
