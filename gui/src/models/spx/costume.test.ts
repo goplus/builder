@@ -104,7 +104,7 @@ describe('Costume', () => {
     })
     const [reExportedConfig, reExportedFiles] = loaded.export({ basePath: 'assets/sprites/Sprite' })
 
-    expect(config.path).toBe('=%2F.svg')
+    expect(config.path).toBe('costume-=%2F.svg')
     expect(reExportedConfig.path).toBe(config.path)
     expect(Object.keys(reExportedFiles)).toEqual(Object.keys(files))
   })
