@@ -1,9 +1,8 @@
 <script lang="ts">
+import type { Feedback } from '@/apis/feedback'
+
 /** Initial content of the Feedback form, which the user can still edit before sending */
-export type FeedbackDraft = {
-  title: string
-  description: string
-}
+export type FeedbackDraft = Pick<Feedback, 'title' | 'description'>
 </script>
 
 <script lang="ts" setup>
@@ -15,8 +14,7 @@ import {
   createFeedback,
   feedbackDescriptionMaxLength,
   feedbackRequestBodyMaxSize,
-  feedbackTitleMaxLength,
-  type Feedback
+  feedbackTitleMaxLength
 } from '@/apis/feedback'
 import { UIButton, UICheckbox, UIForm, UIFormItem, UIFormModal, UITextInput, UITooltip, useForm } from '@/components/ui'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
