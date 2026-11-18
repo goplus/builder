@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 import { useMessage, useModal } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
 import { getSupportedAudioExts, imgExts, selectFile } from '@/utils/file'
@@ -161,10 +162,23 @@ export function useAddSoundFromLocalFile() {
   }
 }
 
+const SoundGenModal = defineAsyncComponent(() => import('./gen/sound/SoundGenModal.vue'))
+
 export function useAddSoundByRecording() {
   const invokeSoundRecorderModal = useModal(SoundRecorderModal)
   return async function addSoundFromRecording(project: SpxProject): Promise<Sound> {
     return invokeSoundRecorderModal({ project })
+  }
+}
+
+export function useAddSoundByGeneration() {
+  const editorCtx = useEditorCtx()
+  const invokeSoundGenModal = useModal(SoundGenModal)
+  return async function addSoundByGeneration(project: SpxProject): Promise<Sound> {
+    const sound = await invokeSoundGenModal({})
+    const action = { name: { en: 'Add sound', zh: '添加声音' } }
+    await editorCtx.state.history.doAction(action, () => project.addSound(sound))
+    return sound
   }
 }
 

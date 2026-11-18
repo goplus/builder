@@ -25,7 +25,7 @@ function getTemplateAssets(): Files {
   )
 }
 
-export async function createDefaultProject(owner: string, name: string, fontPreferences: string[]) {
+export async function createDefaultProject(owner: string | undefined, name: string, fontPreferences: string[]) {
   const project = new SpxProject(owner, name)
   const files = getTemplateAssets()
   const backdropFile = files['assets/grass.svg']!
