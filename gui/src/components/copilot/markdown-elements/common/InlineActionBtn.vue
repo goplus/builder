@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    class="inline-block w-fit cursor-pointer rounded-[4px] border-none bg-turquoise-main px-1.25 py-0.5 text-sm/[normal] text-grey-100 outline-none hover:bg-turquoise-400 active:bg-turquoise-600"
+    class="inline-block w-fit rounded-[4px] border-none bg-turquoise-main px-1.25 py-0.5 text-sm/[normal] text-grey-100 outline-none enabled:cursor-pointer enabled:hover:bg-turquoise-400 enabled:active:bg-turquoise-600 disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-text"
   >
     <slot></slot>
   </button>

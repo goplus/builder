@@ -45,11 +45,11 @@ const props = defineProps<{
 const sendFeedback = useSendFeedback()
 const handleClick = useMessageHandle(() =>
   sendFeedback('copilotReply', { title: props.title, description: props.description })
-).fn
+)
 </script>
 
 <template>
-  <InlineActionBtn @click="handleClick">
+  <InlineActionBtn :disabled="handleClick.isLoading.value" @click="handleClick.fn">
     <slot>{{ $t({ en: 'Send feedback', zh: '提交反馈' }) }}</slot>
   </InlineActionBtn>
 </template>
