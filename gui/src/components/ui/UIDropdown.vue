@@ -1,7 +1,7 @@
 <script lang="ts">
 import { inject, type InjectionKey } from 'vue'
 import type { PopupPlacement } from './popup'
-import type { ClassValue } from './utils'
+import type { ClassValue, LayerStack } from './utils'
 
 export type DropdownCtrl = {
   setVisible(visible: boolean): void
@@ -11,6 +11,23 @@ export const dropdownCtrlKey: InjectionKey<DropdownCtrl> = Symbol('dropdown-ctrl
 
 export function useDropdown() {
   return inject(dropdownCtrlKey)
+}
+
+type OpenClickDropdown = {
+  id: number
+  close: () => void
+}
+
+const dropdownAncestorsKey: InjectionKey<number[]> = Symbol('dropdown-ancestors')
+const openClickDropdownsByStack = new WeakMap<LayerStack, Set<OpenClickDropdown>>()
+
+function getOpenClickDropdowns(stack: LayerStack) {
+  let set = openClickDropdownsByStack.get(stack)
+  if (set == null) {
+    set = new Set()
+    openClickDropdownsByStack.set(stack, set)
+  }
+  return set
 }
 
 export type Placement = Extract<
@@ -46,7 +63,7 @@ export type Props = {
 import { computed, onScopeDispose, provide, ref, useSlots, watch, watchEffect, type CSSProperties } from 'vue'
 import { timeout } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
-import { cn, useLayerRegistration } from './utils'
+import { cn, useLayerRegistration, useLayerStack, usePopupContainer } from './utils'
 import {
   PopupRenderTrigger,
   PopupReadyProvider,
@@ -55,7 +72,6 @@ import {
   resolveTriggerElement,
   useFloatingPopup
 } from './popup'
-import { usePopupContainer } from './utils'
 
 const HOVER_OPEN_DELAY = 100
 const HOVER_CLOSE_DELAY = 100
@@ -88,7 +104,10 @@ const internalVisibleRef = ref(false)
 const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
 // Register the dropdown in the shared popup stack so ESC/outside-click logic can
 // reason about the current topmost popup and its live DOM anchors.
+const layerStack = useLayerStack()
 const popup = useLayerRegistration(visibleComputed)
+const ancestorDropdownIds = inject(dropdownAncestorsKey, [])
+provide(dropdownAncestorsKey, [...ancestorDropdownIds, popup.id])
 const {
   referenceRef: triggerRef,
   floatingRef: contentRef,
@@ -131,6 +150,28 @@ function setVisible(visible: boolean) {
 }
 
 provide(dropdownCtrlKey, { setVisible })
+
+const openClickEntry: OpenClickDropdown = {
+  id: popup.id,
+  close: () => setVisible(false)
+}
+
+watch(
+  () => props.trigger === 'click' && visibleComputed.value,
+  (isOpenClick, _, onCleanup) => {
+    if (!isOpenClick) return
+    const openClickDropdowns = getOpenClickDropdowns(layerStack)
+    for (const entry of Array.from(openClickDropdowns)) {
+      if (entry === openClickEntry || ancestorDropdownIds.includes(entry.id)) continue
+      entry.close()
+    }
+    openClickDropdowns.add(openClickEntry)
+    onCleanup(() => {
+      openClickDropdowns.delete(openClickEntry)
+    })
+  },
+  { immediate: true }
+)
 
 function setTriggerRef(target: Element | { $el?: Node } | null) {
   triggerRef.value = resolveTriggerElement(target)
