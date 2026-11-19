@@ -11,6 +11,15 @@ const mockConfirm = vi.fn()
 const mockCreateSound = vi.fn()
 const mockRegisterPlayer = vi.fn()
 
+vi.mock('@lottiefiles/dotlottie-vue', () => ({
+  DotLottieVue: defineComponent({
+    setup(_, { expose }) {
+      expose({ getDotLottieInstance: () => null })
+      return () => h('span', { 'data-test': 'dotlottie' })
+    }
+  })
+}))
+
 vi.mock('./samples', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./samples')>()
   return {
@@ -192,7 +201,7 @@ describe('SoundWaveform', () => {
 })
 
 describe('SoundTakeCard', () => {
-  it('renders loading skeleton bars matching generated waveform count and gap', () => {
+  it('renders Builder GenLoading while loading and waveform once ready', () => {
     const loadingWrapper = mount(SoundTakeCard, {
       props: {
         name: '阳光草地跑酷 1',
@@ -205,12 +214,10 @@ describe('SoundTakeCard', () => {
       }
     })
 
-    const skeletonBars = loadingWrapper.findAll('.skeleton-bar')
-    expect(skeletonBars).toHaveLength(PEAK_COUNT)
-    expect(skeletonBars[0].element.parentElement?.className).toContain('gap-[2px]')
-    expect(loadingWrapper.find('.loading-wash').exists()).toBe(false)
+    expect(loadingWrapper.find('.gen-loading').exists()).toBe(true)
+    expect(loadingWrapper.find('.gen-loading.cover').exists()).toBe(true)
     expect(loadingWrapper.find('[data-test="play-control"]').exists()).toBe(false)
-    expect(loadingWrapper.find('[data-test="icon"][data-type="play"]').exists()).toBe(true)
+    expect(loadingWrapper.find('.waveform-track').exists()).toBe(false)
 
     const readyWrapper = mount(SoundTakeCard, {
       props: {
@@ -224,6 +231,7 @@ describe('SoundTakeCard', () => {
       }
     })
 
+    expect(readyWrapper.find('.gen-loading').exists()).toBe(false)
     const waveformTrack = readyWrapper.find('.waveform-track > div')
     expect(waveformTrack.classes()).toContain('gap-[2px]')
     expect(waveformTrack.findAll('.waveform-bar')).toHaveLength(PEAK_COUNT)
@@ -238,10 +246,8 @@ describe('SoundGenModal', () => {
     mockConfirm.mockReset()
     mockCreateSound.mockReset()
     mockRegisterPlayer.mockReset()
-    vi.stubGlobal('URL', {
-      createObjectURL: vi.fn(() => 'blob:mock-audio'),
-      revokeObjectURL: vi.fn()
-    })
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-audio')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     vi.stubGlobal(
       'Audio',
       vi.fn(function () {
@@ -261,6 +267,7 @@ describe('SoundGenModal', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })
 

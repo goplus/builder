@@ -1,15 +1,9 @@
-<script lang="ts">
-const SKELETON_HEIGHTS = [
-  8, 13, 18, 11, 20, 15, 9, 17, 22, 12, 16, 19, 10, 14, 21, 13, 8, 18, 15, 11, 19, 14, 10, 13, 17, 21, 13, 9, 16, 22,
-  14, 10, 18, 12, 8, 15, 20, 13, 11, 19, 14, 9, 16, 17, 12, 8, 14, 10
-]
-</script>
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import { UIBlockItem, UICornerIcon, UIIcon } from '@/components/ui'
+import { UIBlockItem, UICornerIcon } from '@/components/ui'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
+import GenLoading from '../common/GenLoading.vue'
 import SoundWaveform from './SoundWaveform.vue'
 import { formatAudioTime, type Sample } from './samples'
 
@@ -47,7 +41,7 @@ const canInteract = computed(() => isReady.value && !props.disabled)
 const playingState = computed(() => (props.playing ? { progress: props.progress } : null))
 
 const durationLabel = computed(() => {
-  if (props.sample == null) return t({ en: 'Generating', zh: '生成中' })
+  if (props.sample == null) return ''
   const total = formatAudioTime(props.sample.seconds)
   if (props.playing) {
     const current = formatAudioTime(props.progress * props.sample.seconds)
@@ -80,68 +74,48 @@ async function handlePlay() {
     :active="active"
     :interactive="canInteract"
     :button-label="isReady ? t({ en: `Select ${name}`, zh: `选择“${name}”` }) : null"
-    class="sound-take-card w-full! h-auto! flex-row! items-center! gap-3! p-3.5!"
-    :class="{ 'is-loading': !isReady }"
+    class="sound-take-card w-full! min-h-[82px]! h-auto! flex-row! items-center! gap-3! p-3.5!"
     :style="{ '--stagger-index': index }"
     @click="canInteract && emit('select')"
   >
-    <div
-      v-if="!isReady"
-      aria-hidden="true"
-      class="relative z-10 flex h-9 w-9 flex-none items-center justify-center rounded-full bg-disabled-bg text-disabled-text"
-    >
-      <UIIcon type="play" class="h-4 w-4" />
-    </div>
-    <PlayControl
-      v-else
-      class="relative z-10 flex-none"
-      :class="{
-        'pointer-events-none': !canInteract,
-        'opacity-60': disabled
-      }"
-      size="medium"
-      :playing="playingState"
-      :progress-interval="0"
-      :play-handler="handlePlay"
-      @stop="emit('stop')"
-    />
+    <GenLoading v-if="!isReady" animation-style="width: 60px; height: 60px;" cover />
+    <template v-else>
+      <PlayControl
+        class="relative z-10 flex-none"
+        :class="{
+          'pointer-events-none': !canInteract,
+          'opacity-60': disabled
+        }"
+        size="medium"
+        :playing="playingState"
+        :progress-interval="0"
+        :play-handler="handlePlay"
+        @stop="emit('stop')"
+      />
 
-    <div class="pointer-events-none relative z-10 flex min-w-0 flex-1 flex-col gap-2.5">
-      <div class="flex h-5 items-center justify-between gap-2">
-        <span class="truncate text-sm font-medium" :class="isReady ? 'text-title' : 'text-hint-1'">
-          {{ name }}
-        </span>
-        <span
-          class="flex-none text-xs tabular-nums transition-colors duration-150"
-          :class="!isReady ? 'text-primary-main' : 'text-hint-1'"
-        >
-          {{ durationLabel }}
-        </span>
-      </div>
+      <div class="pointer-events-none relative z-10 flex min-w-0 flex-1 flex-col gap-2.5">
+        <div class="flex h-5 items-center justify-between gap-2">
+          <span class="truncate text-sm font-medium text-title">
+            {{ name }}
+          </span>
+          <span class="flex-none text-xs tabular-nums text-hint-1">
+            {{ durationLabel }}
+          </span>
+        </div>
 
-      <div v-if="!isReady" aria-hidden="true" class="flex h-6 w-full items-center gap-[2px]">
-        <i
-          v-for="(barHeight, barIndex) in SKELETON_HEIGHTS"
-          :key="barIndex"
-          class="skeleton-bar block flex-1 min-w-0 rounded-full bg-primary-300/75"
-          :style="{
-            height: `${barHeight}px`,
-            animationDelay: `${(barIndex % 8) * 90}ms`
-          }"
+        <SoundWaveform
+          v-if="sample != null"
+          class="pointer-events-auto"
+          :peaks="sample.peaks"
+          :progress="playing ? progress : 0"
+          :active="active"
+          :playing="playing"
+          :disabled="disabled"
+          :label="name"
+          @seek="emit('seek', $event)"
         />
       </div>
-      <SoundWaveform
-        v-else-if="sample != null"
-        class="pointer-events-auto"
-        :peaks="sample.peaks"
-        :progress="playing ? progress : 0"
-        :active="active"
-        :playing="playing"
-        :disabled="disabled"
-        :label="name"
-        @seek="emit('seek', $event)"
-      />
-    </div>
+    </template>
 
     <Transition name="corner-check">
       <UICornerIcon v-if="active" type="check" class="pointer-events-none z-20" />
@@ -150,28 +124,6 @@ async function handlePlay() {
 </template>
 
 <style scoped>
-@property --sound-loading-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes sound-rotate-gradient {
-  to {
-    --sound-loading-angle: 360deg;
-  }
-}
-
-@keyframes sound-skeleton-pulse {
-  0%,
-  100% {
-    opacity: 0.45;
-  }
-  50% {
-    opacity: 0.95;
-  }
-}
-
 .sound-take-card {
   transition-property: background-color, box-shadow, transform;
   transition-duration: 180ms;
@@ -190,40 +142,6 @@ async function handlePlay() {
   box-shadow: 0 4px 12px rgba(36, 41, 47, 0.06);
 }
 
-.sound-take-card.is-loading::before {
-  /* Force override UIBlockItem's border */
-  border: none;
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 2px;
-  border-radius: inherit;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-  /* Use GenItem's palette with perimeter-orbiting radial glows so the sweep stays smooth on wide cards. */
-  background-color: #dcf7fa;
-  background-image: radial-gradient(
-      64px 32px at calc(50% + cos(var(--sound-loading-angle) + 32deg) * 50%)
-        calc(50% + sin(var(--sound-loading-angle) + 32deg) * 50%),
-      rgba(243, 252, 253, 0.85) 0%,
-      transparent 72%
-    ),
-    radial-gradient(
-      140px 52px at calc(50% + cos(var(--sound-loading-angle)) * 50%) calc(50% + sin(var(--sound-loading-angle)) * 50%),
-      #0bc0cf 0%,
-      rgba(11, 192, 207, 0.45) 45%,
-      transparent 76%
-    );
-  animation: sound-rotate-gradient 3s linear infinite;
-}
-
-.skeleton-bar {
-  animation: sound-skeleton-pulse 1.3s ease-in-out infinite;
-}
-
 .corner-check-enter-active,
 .corner-check-leave-active {
   transition-property: opacity, transform, filter;
@@ -239,14 +157,6 @@ async function handlePlay() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sound-take-card.is-loading::before {
-    animation: none;
-  }
-
-  .skeleton-bar {
-    animation: none;
-  }
-
   .sound-take-card.ui-block-item-interactive:has(> button:active) {
     transform: none;
   }
