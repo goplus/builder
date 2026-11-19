@@ -43,9 +43,6 @@
               :placeholder="$t({ en: 'Select property', zh: '选择属性' })"
               @update:value="handlePropertyUpdate"
             >
-              <UISelectOption v-if="unlistedPropertyName != null" :value="unlistedPropertyName" hidden disabled>
-                {{ unlistedPropertyName }}
-              </UISelectOption>
               <UISelectOption v-for="prop in properties" :key="prop.name" :value="prop.name">
                 <!-- TODO: Consider showing type and documentation info -->
                 {{ prop.name }}
@@ -148,7 +145,7 @@ const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
 const sprites = computed(() => editorCtx.project.sprites)
 
 async function getOwnProperties(target: string, signal: AbortSignal) {
-  const properties = await codeEditor.getProperties(target, signal, { excludeNotRecommended: true })
+  const properties = await codeEditor.getProperties(target, { signal, excludeNotRecommended: true })
   return filterOwnProperties(target, properties)
 }
 
@@ -161,11 +158,6 @@ const properties = useAsyncComputed(async (onCleanup) => {
     capture(e, `Failed to load properties for target: "${target}"`)
     return []
   }
-})
-
-const unlistedPropertyName = computed(() => {
-  const name = props.monitor.variableName
-  return name !== '' && !properties.value?.some((property) => property.name === name) ? name : null
 })
 
 // We call wrapUpdateHandler `withDebounce: false` here, because:

@@ -18,6 +18,7 @@ export type RequestContext = {
 export type { DefinitionIdentifier }
 
 export type GetPropertiesOptions = {
+  /** Exclude properties marked with `//xgols:notRecommended` when true. Defaults to false. */
   excludeNotRecommended?: boolean
 }
 

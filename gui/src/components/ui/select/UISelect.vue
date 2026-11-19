@@ -7,29 +7,30 @@
   >
     <span
       class="min-w-0 flex-1 overflow-x-hidden text-ellipsis whitespace-nowrap"
-      :class="selectedRef == null ? 'text-grey-700' : null"
+      :class="selectedLabel == null ? 'text-grey-700' : null"
     >
-      {{ selectedRef?.label ?? placeholder }}
+      {{ selectedLabel ?? placeholder }}
     </span>
     <UIIcon class="shrink-0" type="arrowDown" />
     <select
       ref="selectRef"
       v-bind="controlBindings"
       class="absolute inset-0 h-full w-full opacity-0"
-      :value="value"
       :disabled="props.disabled"
       @change="handleSelectChange"
       @blur="handleBlur"
     >
-      <option v-if="selectedRef == null" disabled :value="placeholderValue">{{ placeholder }}</option>
+      <option v-if="selectedLabel == null" disabled :value="placeholderValue">{{ placeholder }}</option>
       <slot></slot>
+      <option v-if="unlistedValue != null" ref="unlistedOptionRef" hidden disabled :value="unlistedValue">
+        {{ unlistedValue }}
+      </option>
     </select>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { untilNotNull } from '@/utils/utils'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import UIIcon from '../icons/UIIcon.vue'
 import { useFieldControlBindings } from '../form/field-control-bindings'
@@ -52,30 +53,25 @@ const emit = defineEmits<{
   'update:value': [string | null]
 }>()
 
-type Selected = {
-  value: string
-  label: string
-} | null
-
 // Internal sentinel for the disabled placeholder option.
 // Uses a NUL character so it cannot collide with any real option value.
 const placeholderValue = '\0'
 
-const selectedRef = ref<Selected>(null)
+const listedLabel = ref<string | null>(null)
+const unlistedValue = computed(() => (listedLabel.value == null && props.value !== '' ? props.value : null))
+const selectedLabel = computed(() => listedLabel.value ?? unlistedValue.value)
 const selectRef = ref<HTMLSelectElement | null>(null)
+const unlistedOptionRef = ref<HTMLOptionElement | null>(null)
 const { controlBindings, onBlur, onChange, validationState } = useFieldControlBindings()
 
-async function syncSelected() {
-  const select = await untilNotNull(() => selectRef.value)
-  const selectedOption = select.selectedOptions[0]
-  if (selectedOption == null || (selectedOption.disabled && selectedOption.value !== props.value)) {
-    selectedRef.value = null
-    return
-  }
-  selectedRef.value = {
-    value: selectedOption.value,
-    label: selectedOption.textContent ?? ''
-  }
+function syncSelected() {
+  const select = selectRef.value
+  if (select == null) return
+  const option = Array.from(select.options).find(
+    (option) => option.value === props.value && option !== unlistedOptionRef.value && option.value !== placeholderValue
+  )
+  listedLabel.value = option?.textContent ?? null
+  select.value = option?.value ?? unlistedValue.value ?? placeholderValue
 }
 
 function handleSelectChange() {
@@ -89,18 +85,16 @@ function handleBlur() {
   onBlur()
 }
 
-watch(() => props.value, syncSelected, {
-  flush: 'post', // wait for HTML select to react to value change
-  immediate: true
-})
+watch(() => props.value, syncSelected, { flush: 'post' })
 
 // Re-sync when child options change (e.g., async-loaded options)
 let observer: MutationObserver | null = null
 
 onMounted(() => {
   if (selectRef.value == null) return
-  observer = new MutationObserver(() => syncSelected())
+  observer = new MutationObserver(syncSelected)
   observer.observe(selectRef.value, { childList: true })
+  syncSelected()
 })
 
 onBeforeUnmount(() => {

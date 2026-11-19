@@ -308,7 +308,10 @@ export class CodeEditor extends Disposable {
   }
 
   /** Get properties for a given target */
-  async getProperties(target: string, signal?: AbortSignal, options?: GetPropertiesOptions): Promise<Property[]> {
+  async getProperties(
+    target: string,
+    { signal, ...options }: GetPropertiesOptions & { signal?: AbortSignal } = {}
+  ): Promise<Property[]> {
     const properties = await this.lspClient.getProperties({ signal }, target, options)
     return filterPropertiesByDocumentation(properties, this.documentBase, this.project.classFramework.pkgPaths[0])
   }
