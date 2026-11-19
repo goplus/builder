@@ -24,10 +24,12 @@ const props = withDefaults(
     nodeReadyMap: Map<string, boolean>
     mapScale?: number
     simpleMode?: boolean
+    highlighted?: boolean
   }>(),
   {
     mapScale: 1,
-    simpleMode: false
+    simpleMode: false,
+    highlighted: false
   }
 )
 
@@ -51,6 +53,7 @@ const emit = defineEmits<{
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
   updateTransformOp: [op: TransformOp | null]
+  hoverChange: [hovered: boolean]
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -283,7 +286,14 @@ function handleClick() {
   if (!props.simpleMode) emit('selected')
 }
 
+function handleHover(hovered: boolean) {
+  if (hovered) nameLabelRef.value?.show()
+  else nameLabelRef.value?.hide()
+  emit('hoverChange', hovered)
+}
+
 defineExpose({
+  highlightConfig: config,
   async withPivotMarkerHidden<T>(callback: () => T | Promise<T>): Promise<Awaited<T>> {
     pivotMarkerRef.value?.getNode().hide()
     try {
@@ -305,8 +315,8 @@ defineExpose({
     @transform="handleTransform"
     @transformend="handleTransformEnd"
     @click="handleClick"
-    @mouseenter="nameLabelRef?.show()"
-    @mouseleave="nameLabelRef?.hide()"
+    @mouseenter="handleHover(true)"
+    @mouseleave="handleHover(false)"
   />
   <v-group v-if="selected && !simpleMode" ref="pivotMarkerRef" :config="pivotMarkerGroupConfig">
     <v-group :config="pivotMarkerConfigs.drawingGroup">
@@ -322,7 +332,9 @@ defineExpose({
     :name="localConfig.name"
     :anchor="nameLabelAnchor"
     :selected="selected"
+    :highlighted="highlighted && config.visible !== false"
     :map-scale="mapScale"
     @click="emit('nameClick', $event)"
+    @hover-change="emit('hoverChange', $event)"
   />
 </template>

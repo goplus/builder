@@ -10,6 +10,7 @@
         :read-only="editorCtx.state.codeReadOnly"
         :read-only-message="editorCtx.state.codeReadOnlyReason"
         simple-mode
+        @resource-hover="handleResourceHover"
       />
       <div class="absolute right-3 bottom-4 z-10 flex items-center gap-4">
         <div ref="simpleControlsAnchor"></div>
@@ -18,7 +19,12 @@
     </UICard>
     <EditorPlaceholder v-else />
     <div class="min-w-[660px] flex-[3_1_0] flex flex-col">
-      <EditorPreview simple-mode :controls-anchor="simpleControlsAnchor" :ruler-enabled="rulerEnabled" />
+      <EditorPreview
+        simple-mode
+        :controls-anchor="simpleControlsAnchor"
+        :ruler-enabled="rulerEnabled"
+        :highlighted-sprite-id="highlightedSpriteId"
+      />
     </div>
   </template>
   <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
@@ -66,6 +72,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Sprite } from '@/models/spx/sprite'
 import { UICard } from '@/components/ui'
 import DockedCopilotUI from '@/components/copilot/DockedCopilotUI.vue'
 import SpriteEditor from './sprite/SpriteEditor.vue'
@@ -77,7 +84,7 @@ import { useEditorCtx } from './EditorContextProvider.vue'
 import { EditMode } from './editor-state'
 import MapEditor from './map-editor/MapEditor.vue'
 import { useSpxEditorCopilot } from './copilot'
-import { CodeEditorUI } from './spx-code-editor'
+import { CodeEditorUI, getResourceModel, type ResourceIdentifier } from './spx-code-editor'
 
 withDefaults(
   defineProps<{
@@ -92,6 +99,12 @@ const selected = computed(() => editorCtx.state.selected)
 const mode = computed(() => editorCtx.state.selectedEditMode)
 const selectedSprite = computed(() => (selected.value.type === 'sprite' ? selected.value.sprite : null))
 const simpleControlsAnchor = ref<HTMLElement | null>(null)
+const highlightedSpriteId = ref<string | null>(null)
+
+function handleResourceHover(resource: ResourceIdentifier | null) {
+  const model = resource == null ? null : getResourceModel(project.value, resource)
+  highlightedSpriteId.value = model instanceof Sprite ? model.id : null
+}
 
 useSpxEditorCopilot()
 
