@@ -201,7 +201,7 @@ describe('SoundWaveform', () => {
 })
 
 describe('SoundTakeCard', () => {
-  it('renders Builder GenLoading while loading and waveform once ready', () => {
+  it('renders audio-native loading state with sparkle badge and skeleton waveform matching ready geometry', () => {
     const loadingWrapper = mount(SoundTakeCard, {
       props: {
         name: '阳光草地跑酷 1',
@@ -214,10 +214,12 @@ describe('SoundTakeCard', () => {
       }
     })
 
-    expect(loadingWrapper.find('.gen-loading').exists()).toBe(true)
-    expect(loadingWrapper.find('.gen-loading.cover').exists()).toBe(true)
+    expect(loadingWrapper.find('.is-loading').exists()).toBe(true)
+    expect(loadingWrapper.find('[data-test="dotlottie"]').exists()).toBe(true)
     expect(loadingWrapper.find('[data-test="play-control"]').exists()).toBe(false)
-    expect(loadingWrapper.find('.waveform-track').exists()).toBe(false)
+    const skeletonBars = loadingWrapper.findAll('.skeleton-bar')
+    expect(skeletonBars).toHaveLength(PEAK_COUNT)
+    expect(skeletonBars[0].element.parentElement?.className).toContain('gap-[2px]')
 
     const readyWrapper = mount(SoundTakeCard, {
       props: {
@@ -231,7 +233,8 @@ describe('SoundTakeCard', () => {
       }
     })
 
-    expect(readyWrapper.find('.gen-loading').exists()).toBe(false)
+    expect(readyWrapper.find('.is-loading').exists()).toBe(false)
+    expect(readyWrapper.find('[data-test="dotlottie"]').exists()).toBe(false)
     const waveformTrack = readyWrapper.find('.waveform-track > div')
     expect(waveformTrack.classes()).toContain('gap-[2px]')
     expect(waveformTrack.findAll('.waveform-bar')).toHaveLength(PEAK_COUNT)
