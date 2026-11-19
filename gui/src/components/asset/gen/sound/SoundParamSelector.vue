@@ -100,7 +100,7 @@ const optionsText = computed(() => props.options.map((item) => t(item.label)).jo
     </template>
     <template #dropdown-content>
       <div class="max-w-102 flex flex-col gap-3 p-4">
-        <div class="text-sm text-text">{{ $t(tips) }}</div>
+        <div>{{ $t(tips) }}</div>
         <ul class="m-0 list-none flex flex-row flex-wrap gap-2 p-0">
           <li v-for="(item, index) in options" :key="index">
             <SoundParamOptionItem

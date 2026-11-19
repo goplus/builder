@@ -41,26 +41,24 @@ function handleSelect() {
     :button-label="props.label"
     @click="handleSelect"
   >
-    <div
-      v-if="props.play != null"
-      class="relative z-1 pointer-events-none mt-1 flex min-h-0 w-full flex-1 items-start justify-center"
-    >
-      <PlayControl
-        class="pointer-events-auto scale-90"
-        size="medium"
-        :playing="props.playing ? { progress: props.progress } : null"
-        :progress-interval="0"
-        :play-handler="props.play"
-        @stop="emit('stop')"
-      />
-    </div>
-    <UIBlockItemTitle
-      size="medium"
-      :class="props.play == null ? 'mt-0! w-auto! px-0! leading-none!' : ''"
-      :title="props.label"
-    >
+    <template v-if="props.play != null">
+      <div class="relative z-1 pointer-events-none mt-1 flex min-h-0 w-full flex-1 items-start justify-center">
+        <PlayControl
+          class="pointer-events-auto scale-90"
+          size="medium"
+          :playing="props.playing ? { progress: props.progress } : null"
+          :progress-interval="0"
+          :play-handler="props.play"
+          @stop="emit('stop')"
+        />
+      </div>
+      <UIBlockItemTitle size="medium" :title="props.label">
+        {{ props.label }}
+      </UIBlockItemTitle>
+    </template>
+    <span v-else class="pointer-events-none relative z-1 text-base text-title whitespace-nowrap">
       {{ props.label }}
-    </UIBlockItemTitle>
+    </span>
     <UICornerIcon
       v-if="props.active && props.clearable"
       v-radar="{
