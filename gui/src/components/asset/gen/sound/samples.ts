@@ -8,7 +8,7 @@ export type Sample = {
   seconds: number
 }
 
-const PEAK_COUNT = 48
+export const PEAK_COUNT = 48
 
 function computePeaks(mono: Float32Array, end: number): number[] {
   const peaks = Array.from({ length: PEAK_COUNT }, (_, index) => {

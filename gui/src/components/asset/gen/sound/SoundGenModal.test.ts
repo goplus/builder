@@ -2,8 +2,9 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SoundGenModal from './SoundGenModal.vue'
+import SoundTakeCard from './SoundTakeCard.vue'
 import SoundWaveform from './SoundWaveform.vue'
-import type { Sample } from './samples'
+import { PEAK_COUNT, type Sample } from './samples'
 
 const mockLoadSample = vi.fn()
 const mockConfirm = vi.fn()
@@ -187,6 +188,42 @@ describe('SoundWaveform', () => {
 
     await slider.trigger('keydown', { key: 'ArrowLeft' })
     expect(wrapper.emitted('seek')?.[1]?.[0]).toBeCloseTo(0.2, 5)
+  })
+})
+
+describe('SoundTakeCard', () => {
+  it('renders loading skeleton bars matching generated waveform count and gap', () => {
+    const loadingWrapper = mount(SoundTakeCard, {
+      props: {
+        name: '阳光草地跑酷 1',
+        sample: null,
+        index: 0,
+        play: vi.fn().mockResolvedValue(undefined)
+      },
+      global: {
+        directives: { radar: () => undefined }
+      }
+    })
+
+    const skeletonBars = loadingWrapper.findAll('.skeleton-bar')
+    expect(skeletonBars).toHaveLength(PEAK_COUNT)
+    expect(skeletonBars[0].element.parentElement?.className).toContain('gap-[2px]')
+
+    const readyWrapper = mount(SoundTakeCard, {
+      props: {
+        name: '阳光草地跑酷 1',
+        sample: makeSample(),
+        index: 0,
+        play: vi.fn().mockResolvedValue(undefined)
+      },
+      global: {
+        directives: { radar: () => undefined }
+      }
+    })
+
+    const waveformTrack = readyWrapper.find('.waveform-track > div')
+    expect(waveformTrack.classes()).toContain('gap-[2px]')
+    expect(waveformTrack.findAll('.waveform-bar')).toHaveLength(PEAK_COUNT)
   })
 })
 

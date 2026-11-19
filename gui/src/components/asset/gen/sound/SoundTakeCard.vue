@@ -1,6 +1,7 @@
 <script lang="ts">
 const SKELETON_HEIGHTS = [
-  10, 16, 22, 14, 24, 18, 12, 20, 26, 15, 19, 23, 13, 17, 25, 16, 11, 21, 18, 14, 22, 16, 12, 15
+  8, 13, 18, 11, 20, 15, 9, 17, 22, 12, 16, 19, 10, 14, 21, 13, 8, 18, 15, 11, 19, 14, 10, 13, 17, 21, 13, 9, 16, 22,
+  14, 10, 18, 12, 8, 15, 20, 13, 11, 19, 14, 9, 16, 17, 12, 8, 14, 10
 ]
 </script>
 
@@ -113,7 +114,7 @@ async function handlePlay() {
         </span>
       </div>
 
-      <div v-if="!isReady" aria-hidden="true" class="flex h-6 items-center gap-[3px]">
+      <div v-if="!isReady" aria-hidden="true" class="flex h-6 w-full items-center gap-[2px]">
         <i
           v-for="(barHeight, barIndex) in SKELETON_HEIGHTS"
           :key="barIndex"
