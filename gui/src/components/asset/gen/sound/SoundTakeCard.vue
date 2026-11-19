@@ -8,7 +8,7 @@ const SKELETON_HEIGHTS = [
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import { UIBlockItem, UICornerIcon } from '@/components/ui'
+import { UIBlockItem, UICornerIcon, UIIcon } from '@/components/ui'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
 import SoundWaveform from './SoundWaveform.vue'
 import { formatAudioTime, type Sample } from './samples'
@@ -85,18 +85,23 @@ async function handlePlay() {
     :style="{ '--stagger-index': index }"
     @click="canInteract && emit('select')"
   >
-    <div v-if="!isReady" aria-hidden="true" class="loading-wash pointer-events-none absolute inset-0 rounded-md" />
-
+    <div
+      v-if="!isReady"
+      aria-hidden="true"
+      class="relative z-10 flex h-9 w-9 flex-none items-center justify-center rounded-full bg-disabled-bg text-disabled-text"
+    >
+      <UIIcon type="play" class="h-4 w-4" />
+    </div>
     <PlayControl
+      v-else
       class="relative z-10 flex-none"
       :class="{
         'pointer-events-none': !canInteract,
-        'opacity-60': isReady && disabled
+        'opacity-60': disabled
       }"
       size="medium"
       :playing="playingState"
       :progress-interval="0"
-      :loading="!isReady"
       :play-handler="handlePlay"
       @stop="emit('stop')"
     />
@@ -188,27 +193,31 @@ async function handlePlay() {
 .sound-take-card.is-loading::before {
   /* Force override UIBlockItem's border */
   border: none;
+  content: '';
+  position: absolute;
+  inset: 0;
   padding: 2px;
+  border-radius: inherit;
   mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  background: conic-gradient(
-    from var(--sound-loading-angle) at 50% 50%,
-    #dcf7fa 100deg,
-    #0bc0cf 288deg,
-    rgba(243, 252, 253, 0.8) 324deg,
-    #dcf7fa 360deg
-  );
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 160% 160%;
+  pointer-events: none;
+  /* Use GenItem's palette with perimeter-orbiting radial glows so the sweep stays smooth on wide cards. */
+  background-color: #dcf7fa;
+  background-image: radial-gradient(
+      64px 32px at calc(50% + cos(var(--sound-loading-angle) + 32deg) * 50%)
+        calc(50% + sin(var(--sound-loading-angle) + 32deg) * 50%),
+      rgba(243, 252, 253, 0.85) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      140px 52px at calc(50% + cos(var(--sound-loading-angle)) * 50%) calc(50% + sin(var(--sound-loading-angle)) * 50%),
+      #0bc0cf 0%,
+      rgba(11, 192, 207, 0.45) 45%,
+      transparent 76%
+    );
   animation: sound-rotate-gradient 3s linear infinite;
-}
-
-.loading-wash {
-  background-image: radial-gradient(circle at 18% 25%, var(--ui-color-turquoise-100) 0%, transparent 60%),
-    radial-gradient(circle at 86% 78%, var(--ui-color-blue-100) 0%, transparent 62%);
 }
 
 .skeleton-bar {

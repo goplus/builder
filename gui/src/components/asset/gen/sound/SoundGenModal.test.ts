@@ -208,6 +208,9 @@ describe('SoundTakeCard', () => {
     const skeletonBars = loadingWrapper.findAll('.skeleton-bar')
     expect(skeletonBars).toHaveLength(PEAK_COUNT)
     expect(skeletonBars[0].element.parentElement?.className).toContain('gap-[2px]')
+    expect(loadingWrapper.find('.loading-wash').exists()).toBe(false)
+    expect(loadingWrapper.find('[data-test="play-control"]').exists()).toBe(false)
+    expect(loadingWrapper.find('[data-test="icon"][data-type="play"]').exists()).toBe(true)
 
     const readyWrapper = mount(SoundTakeCard, {
       props: {
@@ -224,6 +227,7 @@ describe('SoundTakeCard', () => {
     const waveformTrack = readyWrapper.find('.waveform-track > div')
     expect(waveformTrack.classes()).toContain('gap-[2px]')
     expect(waveformTrack.findAll('.waveform-bar')).toHaveLength(PEAK_COUNT)
+    expect(readyWrapper.get('[data-test="play-control"]').attributes('data-loading')).toBe('false')
   })
 })
 
