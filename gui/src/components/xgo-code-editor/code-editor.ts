@@ -6,7 +6,7 @@ import type { IXGoProject } from './project'
 import { resolveDefinitionId, type DefinitionIdentifier, type PresetPackages } from './definition-id'
 import { type IDocumentBase, DocumentBase } from './document-base'
 import type { ILSPClient } from './lsp/types'
-import { EmptyAPIReferenceProvider } from './api-reference'
+import { EmptyAPIReferenceProvider, type APIReferenceSearch } from './api-reference'
 import {
   type ICodeEditorUIController,
   type IDiagnosticsProvider,
@@ -51,6 +51,8 @@ const formatTabSize = 4
 const formatInsertSpaces = false
 
 export type CodeEditorParams = {
+  apiReferenceSearch?: APIReferenceSearch
+
   project: IXGoProject
   history: History
   copilot?: ICopilot | null
@@ -62,6 +64,8 @@ export type CodeEditorParams = {
 }
 
 export class CodeEditor extends Disposable {
+  readonly apiReferenceSearch: APIReferenceSearch | null
+
   readonly monaco: Monaco
   readonly project: IXGoProject
   readonly history: History
@@ -72,6 +76,7 @@ export class CodeEditor extends Disposable {
 
   constructor(params: CodeEditorParams) {
     super()
+    this.apiReferenceSearch = params.apiReferenceSearch ?? null
     this.presetPackages = params.presetPackages ?? {}
     this.project = params.project
     this.history = params.history

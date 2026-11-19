@@ -1,13 +1,28 @@
 import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowReactive } from 'vue'
+import { createI18n } from '@/utils/i18n'
 import type { ITextDocument } from '../../common'
-import type { CodeEditorUIController } from '../code-editor-ui'
+import { builtInCommandCopilotInspire, type CodeEditorUIController } from '../code-editor-ui'
 import { APIReferenceController, type APIReferenceItem, type IAPIReferenceProvider } from '.'
 
 function createProvider(provideAPIReference: IAPIReferenceProvider['provideAPIReference']): IAPIReferenceProvider {
   return { provideAPIReference, provideCategoryViewInfos: () => null }
 }
+
+it('sends the search query through the existing Copilot question command', async () => {
+  const executeCommand = vi.fn()
+  const ui = { codeEditor: { copilot: {} }, i18n: createI18n({ lang: 'zh' }), executeCommand }
+  const controller = new APIReferenceController(ui as unknown as CodeEditorUIController)
+
+  await controller.askCopilot(' 播放动画 ')
+
+  expect(executeCommand).toHaveBeenCalledExactlyOnceWith(
+    builtInCommandCopilotInspire,
+    '我想实现「播放动画」，可以怎么做？'
+  )
+  controller.dispose()
+})
 
 describe('API Reference data loading', () => {
   it('distinguishes pending requests from completed empty results on provider and document changes', async () => {

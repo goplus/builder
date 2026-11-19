@@ -7,6 +7,12 @@ import type { BaseContext, DefinitionDocumentationItem } from './common'
 
 export type APIReferenceItem = DefinitionDocumentationItem
 
+export type APIReferenceSearch = (
+  items: APIReferenceItem[],
+  query: string,
+  signal: AbortSignal
+) => Promise<APIReferenceItem[]>
+
 export type APIReferenceContext = BaseContext
 
 export type APICategoryViewInfo = {
