@@ -42,9 +42,8 @@ function handleSelect() {
     @click="handleSelect"
   >
     <template v-if="props.play != null">
-      <div class="relative z-1 pointer-events-none mt-1 flex min-h-0 w-full flex-1 items-start justify-center">
+      <div class="relative z-1 my-3 h-9 w-9">
         <PlayControl
-          class="pointer-events-auto scale-90"
           size="medium"
           :playing="props.playing ? { progress: props.progress } : null"
           :progress-interval="0"
