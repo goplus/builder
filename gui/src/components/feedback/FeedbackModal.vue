@@ -1,3 +1,10 @@
+<script lang="ts">
+import type { Feedback } from '@/apis/feedback'
+
+/** Initial content of the Feedback form, which the user can still edit before sending */
+export type FeedbackDraft = Pick<Feedback, 'title' | 'description'>
+</script>
+
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -7,8 +14,7 @@ import {
   createFeedback,
   feedbackDescriptionMaxLength,
   feedbackRequestBodyMaxSize,
-  feedbackTitleMaxLength,
-  type Feedback
+  feedbackTitleMaxLength
 } from '@/apis/feedback'
 import { UIButton, UICheckbox, UIForm, UIFormItem, UIFormModal, UITextInput, UITooltip, useForm } from '@/components/ui'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -17,6 +23,7 @@ import { captureFeedbackContext, getEncodedSize, type FeedbackSource } from './c
 
 const props = defineProps<{
   source: FeedbackSource
+  draft: FeedbackDraft | null
   visible: boolean
 }>()
 
@@ -31,8 +38,8 @@ const editorCtxRef = useEditorCtxRef()
 const codeEditorRef = useCodeEditorRef()
 
 const form = useForm({
-  title: ['', validateTitle],
-  description: ['', validateDescription],
+  title: [props.draft?.title ?? '', validateTitle],
+  description: [props.draft?.description ?? '', validateDescription],
   shareContext: [true]
 })
 

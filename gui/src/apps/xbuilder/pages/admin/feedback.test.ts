@@ -383,7 +383,7 @@ describe('admin feedback', () => {
     vi.mocked(feedbackAdminApis.getFeedback).mockResolvedValue(
       makeFeedback({
         context: {
-          source: 'profileMenu',
+          source: 'copilotQuotaExceeded',
           page: { path: '/editor/alice/space', language: 'en' },
           projectSnapshotUrl: 'kodo://test/files/project-snapshot.json'
         }
@@ -392,6 +392,7 @@ describe('admin feedback', () => {
 
     const { wrapper, router } = await mountPages('/admin/feedback/1')
     await vi.waitFor(() => expect(wrapper.text()).toContain('After I renamed the sprite'))
+    expect(wrapper.text()).toContain('Copilot quota exceeded')
     await wrapper.get('[aria-label="Open project snapshot"]').trigger('click')
 
     await vi.waitFor(() => expect(router.currentRoute.value.path).toMatch(/^\/admin\/feedback\/1\/project-snapshot/))
