@@ -43,11 +43,13 @@ describe('SPX language server Worker', () => {
   it('excludes marked Stage properties from recommendations while keeping them available for existing uses', async () => {
     const { command } = await startSpxWorker({
       'main.spx': `var (
-    //xgols:notrecommended
+    //xgols:notRecommended
     internalScore int
     score int
+    //xgols:notrecommended
+    legacyScore int
 )
-//xgols:notrecommended
+//xgols:notRecommended
 func InternalValue() int { return 1 }
 `,
       'assets/index.json': '{}'
@@ -62,7 +64,7 @@ func InternalValue() int { return 1 }
       excludeNotRecommended: true
     })
     const names = recommended.map(({ name }) => name)
-    expect(names).toContain('score')
+    expect(names).toEqual(expect.arrayContaining(['score', 'legacyScore']))
     expect(names).not.toContain('internalScore')
     expect(names).not.toContain('internalValue')
   })
