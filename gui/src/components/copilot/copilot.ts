@@ -402,6 +402,15 @@ export class Session {
   rounds: Round[] = shallowReactive([])
 
   private maxRounds = 10
+  private roundsDroppedRef = ref(false)
+
+  /**
+   * Whether earlier rounds have been dropped to stay within the round limit.
+   * Sessions restored by `load` start with it unset.
+   */
+  get roundsDropped() {
+    return this.roundsDroppedRef.value
+  }
 
   constructor(
     topic: Topic,
@@ -441,6 +450,7 @@ export class Session {
   private limitRounds() {
     if (this.rounds.length > this.maxRounds) {
       this.rounds.splice(0, this.rounds.length - this.maxRounds)
+      this.roundsDroppedRef.value = true
     }
   }
 

@@ -28,6 +28,7 @@ import { useRouter } from 'vue-router'
 import type { ReadinessScope } from '@/utils/readiness'
 
 import { useCopilot } from '@/components/copilot/context'
+import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 
 import { GuidedTutorial } from './guided/guided-tutorial'
 import GuidedTutorialRoot from './guided/GuidedTutorialRoot.vue'
@@ -37,8 +38,9 @@ const props = defineProps<{ routeReadiness: ReadinessScope }>()
 
 const copilot = useCopilot()
 const router = useRouter()
+const editorCtxRef = useEditorCtxRef()
 const { courseID, seriesID } = useGuidedTutorialStorage()
-const guidedTutorial = new GuidedTutorial(copilot, router, props.routeReadiness, courseID, seriesID)
+const guidedTutorial = new GuidedTutorial(copilot, router, props.routeReadiness, courseID, seriesID, editorCtxRef)
 const tutorial = new Tutorial(guidedTutorial, router)
 
 provideTutorial(tutorial)

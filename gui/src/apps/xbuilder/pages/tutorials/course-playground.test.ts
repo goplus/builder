@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   courses: {} as Record<string, object>,
   openCompletion: vi.fn(),
   startCourse: vi.fn(),
+  registerChangeCheck: vi.fn(),
   loadProject: vi.fn(),
   signIn: vi.fn()
 }))
@@ -47,6 +48,7 @@ vi.mock('@/components/tutorials/tutorial', () => ({
     notifyPlaygroundCourseStarted: vi.fn(),
     notifyPlaygroundCourseEnded: vi.fn(),
     notifyPlaygroundCourseCompleted: vi.fn(),
+    registerPlaygroundCourseChangeCheck: mocks.registerChangeCheck,
     startCourse: mocks.startCourse
   })
 }))
@@ -81,6 +83,7 @@ beforeEach(() => {
   }
   mocks.openCompletion.mockReset()
   mocks.startCourse.mockReset()
+  mocks.registerChangeCheck.mockReset()
   mocks.loadProject.mockReset().mockResolvedValue({
     disposeOnSignal: vi.fn(),
     getSignal: () => new AbortController().signal,
@@ -110,6 +113,29 @@ describe('Course page startup', () => {
     complete('next')
     await flushPromises()
     expect(mocks.startCourse).toHaveBeenCalledWith('series', 'next')
+  })
+
+  it('registers the project-change check of each Playground session until it is disposed', async () => {
+    mocks.seriesQueryRet.data.value = { id: 'series', courseIDs: ['course', 'next'] }
+    mocks.seriesQueryRet.isLoading.value = false
+    const unregister = vi.fn()
+    mocks.registerChangeCheck.mockReturnValue(unregister)
+    wrapper = mount(CoursePlaygroundPage, {
+      props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inPlaygroundPath: ['code'] },
+      global: { plugins: [createI18n({ lang: 'en' })] }
+    })
+    await flushPromises()
+    const session = {
+      project: { id: 'course' },
+      hasProjectChanges: vi.fn().mockResolvedValue(true),
+      addDisposer: vi.fn()
+    }
+    wrapper.findComponent(PlaygroundComponent).vm.$emit('session-created', session)
+
+    expect(mocks.registerChangeCheck).toHaveBeenCalledExactlyOnceWith('course', expect.any(Function))
+    await expect(mocks.registerChangeCheck.mock.calls[0][1]()).resolves.toBe(true)
+    expect(session.hasProjectChanges).toHaveBeenCalledOnce()
+    expect(session.addDisposer).toHaveBeenCalledExactlyOnceWith(unregister)
   })
 
   it('rejects a course that is not a member of the series', async () => {

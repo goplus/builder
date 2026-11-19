@@ -152,7 +152,7 @@ beforeEach(() => {
 })
 
 function createProjectQueryRet(
-  project: TutorialProject | null = { title: 'Course', project: {} } as TutorialProject
+  project: TutorialProject | null = { title: 'Course', project: { exportFiles: () => ({}) } } as TutorialProject
 ): QueryRet<TutorialProject> {
   return {
     data: shallowRef(project),
@@ -219,7 +219,7 @@ describe('Playground startup rendering', () => {
     await nextTick()
     const before = Number(wrapper.find('.detailed-loading').attributes('data-percentage'))
     expect(before).toBeGreaterThan(0)
-    queryRet.data.value = { title: 'Course', project: {} } as TutorialProject
+    queryRet.data.value = { title: 'Course', project: { exportFiles: () => ({}) } } as TutorialProject
     queryRet.progress.value = { percentage: 1, timeLeft: null, desc: null }
     queryRet.isLoading.value = false
     await flushPromises()
@@ -257,7 +257,7 @@ describe('Playground startup rendering', () => {
     })
     await wrapper.find('button').trigger('click')
     expect(queryRet.refetch).toHaveBeenCalledOnce()
-    queryRet.data.value = { title: 'Course', project: {} } as TutorialProject
+    queryRet.data.value = { title: 'Course', project: { exportFiles: () => ({}) } } as TutorialProject
     queryRet.progress.value = { percentage: 1, timeLeft: null, desc: null }
     queryRet.isLoading.value = false
     await flushPromises()
@@ -380,7 +380,10 @@ describe('Playground startup rendering', () => {
     expect(wrapper.emitted('courseRestart')).toEqual([[]])
     wrapper.props('projectQueryRet').isLoading.value = true
     await nextTick()
-    wrapper.props('projectQueryRet').data.value = { title: 'Restarted course', project: {} } as TutorialProject
+    wrapper.props('projectQueryRet').data.value = {
+      title: 'Restarted course',
+      project: { exportFiles: () => ({}) }
+    } as TutorialProject
     wrapper.props('projectQueryRet').isLoading.value = false
     await nextTick()
     await flushPromises()

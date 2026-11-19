@@ -770,4 +770,40 @@ describe('PlaygroundCourseSession', () => {
     expect(harness.copilot.startSession).not.toHaveBeenCalled()
     expect(harness.executor.run).not.toHaveBeenCalled()
   })
+
+  it('reports learner project changes since startup finished, ignoring edits changed back', async () => {
+    const harness = makeHarness()
+    const sprite = new Sprite('Lita')
+    sprite.setCode('step 100')
+    harness.project.project.addSprite(sprite)
+    await harness.courseSession.start()
+    sprite.setCode('step 100\n')
+    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(false)
+
+    await harness.getExecutorOptions().framework!.capabilities.lifecycle_started(null)
+    expect(harness.courseSession.starting).toBe(false)
+    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(false)
+
+    sprite.setCode('step 200')
+    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(true)
+    sprite.setCode('step 100\n')
+    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(false)
+    harness.project.project.addSprite(new Sprite('Mushroom'))
+    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(true)
+  })
+
+  it('keeps the startup baseline when the course completes afterwards', async () => {
+    const harness = makeHarness()
+    const sprite = new Sprite('Lita')
+    sprite.setCode('step 100')
+    harness.project.project.addSprite(sprite)
+    await harness.courseSession.start()
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    await capabilities.lifecycle_started(null)
+    sprite.setCode('step 200')
+
+    await capabilities.course_complete(null)
+
+    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(true)
+  })
 })

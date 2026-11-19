@@ -130,7 +130,10 @@ async function openEntry(destination: string) {
       }
     ]
   })
-  const tutorial = new Tutorial({ currentCourse: null, enterCourse: vi.fn(), endCurrentCourse: vi.fn() }, router)
+  const tutorial = new Tutorial(
+    { currentCourse: null, enterCourse: vi.fn(), endCurrentCourse: vi.fn(), isCurrentCourseInInitialState: vi.fn() },
+    router
+  )
   const enter = vi.spyOn(tutorial, 'enterCourse')
   await router.push(destination)
   const wrapper = mount(

@@ -346,6 +346,19 @@ describe('Copilot', () => {
     expect(rounds).toEqual([{ userMessage: 'Help me', resultMessages: ['Done'] }])
   })
 
+  it('marks a session once rounds beyond the limit are dropped', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Reply'), 0, true)
+    await copilot.startSession(createBasicTopic())
+    const session = copilot.currentSession!
+    for (let i = 0; i < 10; i++) copilot.addUserTextMessage(`Message ${i}`)
+    expect(session.rounds).toHaveLength(10)
+    expect(session.roundsDropped).toBe(false)
+
+    copilot.addUserTextMessage('Message 10')
+    expect(session.rounds).toHaveLength(10)
+    expect(session.roundsDropped).toBe(true)
+  })
+
   it('generates text and JSON responses without adding a conversation round', async () => {
     const generator = new MockBatchedMessageEventGenerator([
       createTextStreamBatch('Nice work'),
