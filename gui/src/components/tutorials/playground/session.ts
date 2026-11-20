@@ -6,7 +6,7 @@ import type { ProgressReporter } from '@/utils/progress'
 import { untilNotNull } from '@/utils/utils'
 import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot, Session as CopilotSession } from '@/components/copilot/copilot'
-import { EditMode, type EditorState } from '@/components/editor/editor-state'
+import type { EditorState } from '@/components/editor/editor-state'
 import type { CodeEditor } from '@/components/editor/spx-code-editor'
 
 import { PlaygroundCourseProgram, type PlaygroundCourseCompletion, type PlaygroundCoursePresentation } from './program'
@@ -130,11 +130,9 @@ export class PlaygroundCourseSession extends Emitter<{
   }
 
   private async startCopilotSession() {
-    const { selectedEditMode, selectedSprite } = this.editorState
     const topic = getPlaygroundCopilotTopic({
       title: this.project.title,
-      copilotContext: this.project.config?.copilotContext ?? '',
-      onlyVisibleSprite: selectedEditMode === EditMode.Simple ? selectedSprite?.name ?? null : null
+      copilotContext: this.project.config?.copilotContext ?? ''
     })
     const starting = this.copilot.startSession(topic)
     this.copilotSession = this.copilot.currentSession

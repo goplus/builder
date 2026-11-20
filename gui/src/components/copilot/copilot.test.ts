@@ -410,26 +410,25 @@ describe('Copilot', () => {
     ])
   })
 
-  it('uses the one-shot topic description for one-shot responses only', async () => {
+  it('tells Copilot that a one-shot request does not come from the user', async () => {
     const generator = new MockBatchedMessageEventGenerator([
       createTextStreamBatch('Hello learner'),
       createTextStreamBatch('Course feedback')
     ])
     const copilot = new Copilot(createTestSkillRegistry(), generator)
-    await copilot.startSession({
-      ...createBasicTopic('Test Topic', 'Talk with the learner'),
-      oneShotDescription: 'Serve the course program'
-    })
+    await copilot.startSession(createBasicTopic('Test Topic', 'Talk with the learner'))
     copilot.addUserTextMessage('How do I make a sprite move?')
     await waitForCompletion()
     await copilot.generateTextResponse('Summarize the learner progress.')
 
     const roundContext = generator.calls[0].at(-1)?.content?.text
     expect(roundContext).toContain('Talk with the learner')
-    expect(roundContext).not.toContain('Serve the course program')
+    expect(roundContext).not.toContain('# Automated request')
     const oneShotContext = generator.calls[1][0].content?.text
-    expect(oneShotContext).toContain('Serve the course program')
-    expect(oneShotContext).not.toContain('Talk with the learner')
+    expect(oneShotContext).toContain('Talk with the learner')
+    expect(oneShotContext).toContain(
+      '# Automated request\n\nThe message after this context is a one-off automated request, not written by the user.'
+    )
   })
 
   it('aborts text responses that attempt to call a tool', async () => {

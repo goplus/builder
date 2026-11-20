@@ -42,7 +42,6 @@ vi.mock('@/utils/radar', () => ({ useRadar: () => ({ select: vi.fn() }) }))
 vi.mock('@/utils/spotlight', () => ({ useSpotlight: () => ({ reveal: vi.fn() }) }))
 vi.mock('@/components/project', () => ({ useSaveProjectAs: () => vi.fn() }))
 vi.mock('@/components/editor/editor-state', () => ({
-  EditMode: { Default: 'default', Simple: 'simple' },
   EditorState: class extends Disposable {
     editing = { startEditing: vi.fn() }
     syncWithRouter() {}

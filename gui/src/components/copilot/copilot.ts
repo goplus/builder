@@ -64,9 +64,11 @@ export type Message = UserMessage | CopilotMessage | ToolMessage
 type ContextMessageOptions = {
   toolsCustomElementsEnabled?: boolean
   extraContext?: string
-  /** Whether the context is for a one-shot response instead of a session round. */
-  oneShot?: boolean
 }
+
+const oneShotRequestContext = `# Automated request
+
+The message after this context is a one-off automated request, not written by the user. The current topic may say who sends such requests. Do what it asks, in the form it asks for. Your answer goes back to the sender, not to the user.`
 
 function getToolExecutionText(execution: ToolExecution): string {
   switch (execution.state) {
@@ -127,11 +129,6 @@ export type Topic = {
    * * "Now you will help the user to finish learning a course. The course is about ..."
    */
   description: string
-  /**
-   * Description used in place of `description` for one-shot responses, whose request does not come from the user.
-   * Defaults to `description`.
-   */
-  oneShotDescription?: string
   /** Whether the copilot should react to user events under the topic */
   reactToEvents: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
@@ -694,25 +691,23 @@ ${stringifyZodSchema(customElement.attributes)}
 ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
   }
 
-  private getTopicPrompt(oneShot: boolean) {
+  private getTopicPrompt() {
     if (this.currentSession == null) return ''
     const topic = this.currentSession.topic
-    const description = oneShot ? topic.oneShotDescription ?? topic.description : topic.description
-    if (description.trim() === '') return ''
+    if (topic.description.trim() === '') return ''
     return `# Current topic between you and user
 
-${description}`
+${topic.description}`
   }
 
   async getContextMessage({
     toolsCustomElementsEnabled = true,
-    extraContext = '',
-    oneShot = false
+    extraContext = ''
   }: ContextMessageOptions = {}): Promise<UserTextMessage> {
     const parts = [
       toolsCustomElementsEnabled ? this.getCustomElementsPrompt() : '',
       await this.getContext(toolsCustomElementsEnabled),
-      this.getTopicPrompt(oneShot),
+      this.getTopicPrompt(),
       extraContext
     ]
     const content = `<context>
@@ -920,8 +915,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     const messages: Message[] = [
       await this.getContextMessage({
         toolsCustomElementsEnabled: false,
-        extraContext: this.getUserConversationContext(),
-        oneShot: true
+        extraContext: [oneShotRequestContext, this.getUserConversationContext()].filter((s) => s !== '').join('\n\n')
       }),
       { type: 'text', role: 'user', content: message }
     ]
