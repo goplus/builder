@@ -125,24 +125,21 @@ function derivePromptBaseName(prompt: string, exampleText: string, defaultBaseNa
 
 <script setup lang="ts">
 import { computed, markRaw, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
-import { getAudioContext, trimAndApplyGainToWavBlob } from '@/utils/audio'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { registerPlayer } from '@/utils/player-registry'
 import { timeout } from '@/utils/utils'
 import { fromBlob } from '@/models/common/file'
-import { ensureValidSoundName, soundNameTip, validateSoundName } from '@/models/spx/common/asset-name'
+import { ensureValidSoundName } from '@/models/spx/common/asset-name'
 import type { SpxProject } from '@/models/spx/project'
 import { Sound } from '@/models/spx/sound'
-import { UIButton, UIModal, UIModalClose, useConfirmDialog, useModal } from '@/components/ui'
-import RenameModal from '@/components/common/RenameModal.vue'
+import { UIButton, UIModal, UIModalClose, useConfirmDialog } from '@/components/ui'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import SettingsInput from '../common/SettingsInput.vue'
 import leftBottomBgUrl from '../common/phase-settings-left-bottom-bg.png'
 import rightTopBgUrl from '../common/phase-settings-right-top-bg.png'
-import SoundGenPreview, { type AudioTrimRange } from './SoundGenPreview.vue'
 import SoundParamSelector from './SoundParamSelector.vue'
-import SoundSquareItem from './SoundSquareItem.vue'
+import SoundTakeCard from './SoundTakeCard.vue'
 import { getStylePreview, loadSample, type Sample } from './samples'
 
 const props = withDefaults(
@@ -162,31 +159,14 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const confirm = useConfirmDialog()
-const invokeRenameModal = useModal(RenameModal)
-
-type CandidateEdit = {
-  customName: string | null
-  range: AudioTrimRange
-  gain: number
-}
 
 type Draft = {
   prompt: string
   timingValue: number
   style: string | null
   results: Array<Sample | null>
-  edits: CandidateEdit[]
   selected: number | null
-  hasPreview: boolean
   generating: boolean
-}
-
-function createDefaultEdit(): CandidateEdit {
-  return {
-    customName: null,
-    range: { left: 0, right: 1 },
-    gain: 1
-  }
 }
 
 function createDraft(kind: SoundKind): Draft {
@@ -195,9 +175,7 @@ function createDraft(kind: SoundKind): Draft {
     timingValue: SOUND_OPTIONS[kind].defaultTiming,
     style: null,
     results: [],
-    edits: Array.from({ length: CANDIDATE_COUNT }, createDefaultEdit),
     selected: null,
-    hasPreview: false,
     generating: false
   }
 }
@@ -219,14 +197,8 @@ const draft = computed(() => drafts[kind.value])
 const selectedSample = computed(() =>
   draft.value.selected == null ? null : draft.value.results[draft.value.selected] ?? null
 )
-const selectedEdit = computed(() =>
-  draft.value.selected == null ? createDefaultEdit() : draft.value.edits[draft.value.selected] ?? createDefaultEdit()
-)
-const completedCount = computed(() => draft.value.results.filter((sample) => sample != null).length)
 
 function takeName(targetKind: SoundKind, index: number) {
-  const custom = drafts[targetKind].edits[index]?.customName
-  if (custom != null && custom !== '') return custom
   const base = derivePromptBaseName(
     drafts[targetKind].prompt,
     t(SOUND_OPTIONS[targetKind].example),
@@ -235,15 +207,7 @@ function takeName(targetKind: SoundKind, index: number) {
   return `${base} ${index + 1}`
 }
 
-function candidateDurationSeconds(targetKind: SoundKind, index: number): number | null {
-  const sample = drafts[targetKind].results[index]
-  if (sample == null) return null
-  const edit = drafts[targetKind].edits[index]
-  if (edit == null) return sample.seconds
-  return sample.seconds * (edit.range.right - edit.range.left)
-}
-
-type DirectPlayingState =
+type PlayingState =
   | {
       source: 'take'
       kind: SoundKind
@@ -255,16 +219,13 @@ type DirectPlayingState =
       style: string
     }
 
-const soundPreviewRef = ref<InstanceType<typeof SoundGenPreview> | null>(null)
-const directPlaying = ref<DirectPlayingState | null>(null)
-const directProgress = ref(0)
-const previewPlaying = ref(false)
-const previewProgress = ref(0)
+const playing = ref<PlayingState | null>(null)
+const playingProgress = ref(0)
 
 let playbackAudio: HTMLAudioElement | null = null
 let playbackObjectUrl: string | null = null
 let playbackRafId: number | null = null
-const player = registerPlayer(stopDirectPlayback)
+const player = registerPlayer(stopPlayback)
 
 function stopRaf() {
   if (playbackRafId != null) {
@@ -278,13 +239,13 @@ function startRaf(audio: HTMLAudioElement, totalSeconds: number) {
   const tick = () => {
     if (playbackAudio !== audio || audio.paused || audio.ended) return
     const denominator = totalSeconds > 0 ? totalSeconds : audio.duration || 1
-    directProgress.value = Math.max(0, Math.min(1, audio.currentTime / denominator))
+    playingProgress.value = Math.max(0, Math.min(1, audio.currentTime / denominator))
     playbackRafId = requestAnimationFrame(tick)
   }
   playbackRafId = requestAnimationFrame(tick)
 }
 
-function stopDirectPlayback() {
+function stopPlayback() {
   stopRaf()
   if (playbackAudio != null) {
     playbackAudio.pause()
@@ -296,36 +257,29 @@ function stopDirectPlayback() {
     URL.revokeObjectURL(playbackObjectUrl)
     playbackObjectUrl = null
   }
-  directPlaying.value = null
-  directProgress.value = 0
+  playing.value = null
+  playingProgress.value = 0
   player.onStopped()
 }
 
-function stopAllPlayback() {
-  stopDirectPlayback()
-  soundPreviewRef.value?.stop()
-  previewPlaying.value = false
-  previewProgress.value = 0
-}
-
-async function startDirectPlayback(blob: Blob, seconds: number, nextPlaying: DirectPlayingState) {
-  stopDirectPlayback()
-  if (previewPlaying.value) {
-    soundPreviewRef.value?.stop()
-    previewPlaying.value = false
-    previewProgress.value = 0
-  }
+async function startPlayback(blob: Blob, seconds: number, nextPlaying: PlayingState, startRatio = 0) {
+  stopPlayback()
   player.onStart()
 
+  const clampedRatio = Math.max(0, Math.min(1, startRatio))
   const objectUrl = URL.createObjectURL(blob)
   const audio = new Audio(objectUrl)
   playbackAudio = audio
   playbackObjectUrl = objectUrl
-  directPlaying.value = nextPlaying
-  directProgress.value = 0
+  playing.value = nextPlaying
+  playingProgress.value = clampedRatio
+
+  if (clampedRatio > 0 && seconds > 0) {
+    audio.currentTime = clampedRatio * seconds
+  }
 
   audio.onended = () => {
-    if (playbackAudio === audio) stopDirectPlayback()
+    if (playbackAudio === audio) stopPlayback()
   }
 
   try {
@@ -334,115 +288,57 @@ async function startDirectPlayback(blob: Blob, seconds: number, nextPlaying: Dir
     startRaf(audio, seconds)
   } catch (error) {
     if (playbackAudio !== audio) return
-    stopDirectPlayback()
+    stopPlayback()
     throw error
   }
 }
 
 function isTakePlaying(index: number) {
-  if (draft.value.selected === index && previewPlaying.value) return true
-  return (
-    directPlaying.value?.source === 'take' &&
-    directPlaying.value.kind === kind.value &&
-    directPlaying.value.index === index
-  )
-}
-
-function takePlayingProgress(index: number) {
-  if (draft.value.selected === index && previewPlaying.value) return previewProgress.value
-  if (
-    directPlaying.value?.source === 'take' &&
-    directPlaying.value.kind === kind.value &&
-    directPlaying.value.index === index
-  ) {
-    return directProgress.value
-  }
-  return 0
+  return playing.value?.source === 'take' && playing.value.kind === kind.value && playing.value.index === index
 }
 
 async function playTake(index: number) {
-  if (draft.value.selected === index && soundPreviewRef.value != null) {
-    await soundPreviewRef.value.play()
-    return
-  }
   const sample = draft.value.results[index]
   if (sample == null) return
-  await startDirectPlayback(sample.blob, sample.seconds, { source: 'take', kind: kind.value, index })
+  await startPlayback(sample.blob, sample.seconds, { source: 'take', kind: kind.value, index })
 }
 
-function stopTakePlayback(index: number) {
-  if (draft.value.selected === index && previewPlaying.value) {
-    soundPreviewRef.value?.stop()
+function seekTake(index: number, ratio: number) {
+  const sample = draft.value.results[index]
+  if (sample == null || adopting.value) return
+  const clamped = Math.max(0, Math.min(1, ratio))
+  if (isTakePlaying(index) && playbackAudio != null) {
+    const duration = sample.seconds > 0 ? sample.seconds : playbackAudio.duration || 0
+    if (duration > 0) {
+      playbackAudio.currentTime = clamped * duration
+    }
+    playingProgress.value = clamped
     return
   }
-  stopDirectPlayback()
+  void startPlayback(sample.blob, sample.seconds, { source: 'take', kind: kind.value, index }, clamped).catch(() => {
+    // Ignore interrupted playback promises when user scrubs rapidly across takes.
+  })
 }
 
 function playStylePreview(style: string) {
   const preview = getStylePreview(style)
-  return startDirectPlayback(preview.blob, preview.seconds, { source: 'style', kind: kind.value, style })
+  return startPlayback(preview.blob, preview.seconds, { source: 'style', kind: kind.value, style })
 }
 
 function stopStylePreview() {
-  if (directPlaying.value?.source === 'style') {
-    stopDirectPlayback()
+  if (playing.value?.source === 'style') {
+    stopPlayback()
   }
 }
 
 function selectTake(index: number) {
   if (draft.value.results[index] == null || adopting.value) return
-  if (draft.value.selected !== index) {
-    stopAllPlayback()
-  }
   draft.value.selected = index
-  draft.value.hasPreview = true
 }
-
-function updateSelectedRange(nextRange: AudioTrimRange) {
-  const index = draft.value.selected
-  if (index == null || draft.value.edits[index] == null) return
-  draft.value.edits[index].range = nextRange
-}
-
-function updateSelectedGain(nextGain: number) {
-  const index = draft.value.selected
-  if (index == null || draft.value.edits[index] == null) return
-  draft.value.edits[index].gain = nextGain
-}
-
-function resetSelectedEdit() {
-  const index = draft.value.selected
-  if (index == null || draft.value.edits[index] == null) return
-  draft.value.edits[index].range = { left: 0, right: 1 }
-  draft.value.edits[index].gain = 1
-}
-
-const handleRenameSelected = useMessageHandle(
-  async () => {
-    const currentKind = kind.value
-    const index = drafts[currentKind].selected
-    if (index == null || adopting.value) return
-    const currentName = takeName(currentKind, index)
-    await invokeRenameModal({
-      target: {
-        name: currentName,
-        validateName(newName) {
-          return validateSoundName(newName, props.project)
-        },
-        async applyName(newName) {
-          drafts[currentKind].edits[index].customName = newName
-        },
-        inputTip: soundNameTip,
-        warning: null
-      }
-    })
-  },
-  { zh: '重命名声音失败', en: 'Failed to rename sound' }
-).fn
 
 function switchKind(nextKind: SoundKind) {
   if (nextKind === kind.value) return
-  stopAllPlayback()
+  stopPlayback()
   kind.value = nextKind
 }
 
@@ -464,10 +360,8 @@ const generate = useMessageHandle(
     const currentDraft = drafts[currentKind]
     if (currentDraft.prompt.trim() === '' || adopting.value) return
 
-    if (currentKind === kind.value) {
-      stopAllPlayback()
-    } else if (directPlaying.value?.kind === currentKind) {
-      stopDirectPlayback()
+    if (playing.value?.kind === currentKind) {
+      stopPlayback()
     }
 
     controllers[currentKind]?.abort()
@@ -476,7 +370,6 @@ const generate = useMessageHandle(
     currentDraft.generating = true
     currentDraft.selected = null
     currentDraft.results = Array.from({ length: CANDIDATE_COUNT }, () => null)
-    currentDraft.edits = Array.from({ length: CANDIDATE_COUNT }, createDefaultEdit)
 
     try {
       for (let i = 0; i < CANDIDATE_COUNT; i++) {
@@ -515,18 +408,9 @@ const { fn: adopt, isLoading: adopting } = useMessageHandle(
     const index = draft.value.selected
     if (sample == null || index == null) return
 
-    stopAllPlayback()
-    const edit = draft.value.edits[index]
-    const hasAudioEdits = edit != null && (edit.range.left !== 0 || edit.range.right !== 1 || edit.gain !== 1)
-
-    let finalBlob = sample.blob
-    if (hasAudioEdits && edit != null) {
-      const audioBuffer = await getAudioContext().decodeAudioData(await sample.blob.arrayBuffer())
-      finalBlob = await trimAndApplyGainToWavBlob(audioBuffer, edit.range.left, edit.range.right, edit.gain)
-    }
-
+    stopPlayback()
     const name = ensureValidSoundName(takeName(kind.value, index), props.project)
-    const file = fromBlob(`${name}.wav`, finalBlob)
+    const file = fromBlob(`${name}.wav`, sample.blob)
     const sound = await Sound.create(name, file)
 
     abortAllDrafts()
@@ -537,7 +421,7 @@ const { fn: adopt, isLoading: adopting } = useMessageHandle(
 
 const close = useMessageHandle(async () => {
   if (adopting.value) return
-  stopAllPlayback()
+  stopPlayback()
 
   const hasUnsavedWork = (Object.keys(drafts) as SoundKind[]).some(
     (k) =>
@@ -563,7 +447,7 @@ const close = useMessageHandle(async () => {
 
 onBeforeUnmount(() => {
   abortAllDrafts()
-  stopAllPlayback()
+  stopPlayback()
 })
 
 const bodyRef = ref<HTMLElement | null>(null)
@@ -609,13 +493,8 @@ const backdropStyle = {
       :style="backdropStyle"
       @keydown="handleInputKeydown"
     >
-      <LayoutWithPreview :has-preview="draft.hasPreview">
-        <SettingsInput
-          v-model:description="draft.prompt"
-          :class="{ 'h-75': draft.hasPreview }"
-          :enrichable="false"
-          :disabled="draft.generating || adopting"
-        >
+      <LayoutWithPreview :has-preview="false">
+        <SettingsInput v-model:description="draft.prompt" :enrichable="false" :disabled="draft.generating || adopting">
           <template #extra>
             <SoundParamSelector
               :name="{ zh: '声音类型', en: 'Sound type' }"
@@ -650,10 +529,8 @@ const backdropStyle = {
               :placeholder-label="SOUND_OPTIONS[kind].styleName"
               :value="draft.style"
               clearable
-              :playing-value="
-                directPlaying?.source === 'style' && directPlaying.kind === kind ? directPlaying.style : null
-              "
-              :playing-progress="directPlaying?.source === 'style' && directPlaying.kind === kind ? directProgress : 0"
+              :playing-value="playing?.source === 'style' && playing.kind === kind ? playing.style : null"
+              :playing-progress="playing?.source === 'style' && playing.kind === kind ? playingProgress : 0"
               :play-option="playStylePreview"
               @update:value="(v) => (draft.style = v)"
               @stop-preview="stopStylePreview"
@@ -756,7 +633,7 @@ const backdropStyle = {
               v-radar="{ name: 'submit', desc: 'Click to generate sounds' }"
               type="primary"
               :loading="draft.generating"
-              :disabled="adopting || !draft.prompt.trim()"
+              :disabled="adopting || draft.prompt.trim() === ''"
               @click="generate"
             >
               {{
@@ -768,36 +645,32 @@ const backdropStyle = {
           </template>
         </SettingsInput>
 
-        <div class="min-h-42.5">
+        <div class="min-h-48.5">
           <section
             v-if="draft.results.length > 0"
             v-radar="{ name: 'sound-selector', desc: 'Selector for choosing from generated sounds' }"
             class="flex flex-col items-center gap-3"
           >
-            <ul class="m-0 list-none flex flex-nowrap items-center justify-center gap-2 p-0">
-              <li v-for="(sample, index) in draft.results" :key="`${kind}-${index}`">
-                <SoundSquareItem
+            <ul class="m-0 grid w-full list-none grid-cols-2 gap-3 p-0">
+              <li v-for="(sample, index) in draft.results" :key="`${kind}-${index}`" class="min-w-0">
+                <SoundTakeCard
                   :name="takeName(kind, index)"
                   :sample="sample"
-                  :duration-seconds="candidateDurationSeconds(kind, index)"
-                  :compact="draft.hasPreview"
                   :active="draft.selected === index"
                   :playing="isTakePlaying(index)"
-                  :progress="takePlayingProgress(index)"
+                  :progress="isTakePlaying(index) ? playingProgress : 0"
                   :disabled="adopting"
                   :play="() => playTake(index)"
                   @select="selectTake(index)"
-                  @stop="stopTakePlayback(index)"
+                  @stop="stopPlayback"
+                  @seek="(ratio) => seekTake(index, ratio)"
                 />
               </li>
             </ul>
 
             <p class="text-center text-xs text-hint-2">
               <template v-if="draft.generating">
-                <span role="status">
-                  {{ $t(SOUND_OPTIONS[kind].loadingTip) }}
-                  <span class="tabular-nums">{{ completedCount }} / {{ CANDIDATE_COUNT }}</span>
-                </span>
+                <span role="status">{{ $t(SOUND_OPTIONS[kind].loadingTip) }}</span>
               </template>
               <template v-else>
                 {{ $t(SOUND_OPTIONS[kind].selectionTip) }}
@@ -805,37 +678,6 @@ const backdropStyle = {
             </p>
           </section>
         </div>
-
-        <template #preview>
-          <SoundGenPreview
-            v-if="draft.hasPreview"
-            ref="soundPreviewRef"
-            :name="draft.selected != null ? takeName(kind, draft.selected) : takeName(kind, 0)"
-            :sample="selectedSample"
-            :range="selectedEdit.range"
-            :gain="selectedEdit.gain"
-            :generating="draft.generating"
-            :loading-text="$t(SOUND_OPTIONS[kind].loadingTip)"
-            :disabled="adopting"
-            @rename="handleRenameSelected"
-            @reset="resetSelectedEdit"
-            @update:range="updateSelectedRange"
-            @update:gain="updateSelectedGain"
-            @play="
-              () => {
-                stopDirectPlayback()
-                previewPlaying = true
-              }
-            "
-            @stop="
-              () => {
-                previewPlaying = false
-                previewProgress = 0
-              }
-            "
-            @progress="(v) => (previewProgress = v)"
-          />
-        </template>
       </LayoutWithPreview>
 
       <footer class="w-full flex-none flex items-center justify-end gap-4 px-6 py-5">
