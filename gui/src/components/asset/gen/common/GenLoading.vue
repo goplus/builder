@@ -145,7 +145,7 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
         <div class="min-w-0"><slot></slot></div>
         <div
           v-if="game?.status === 'playing'"
-          class="flex shrink-0 items-center gap-2 tabular-nums"
+          class="flex shrink-0 items-center gap-2 text-text tabular-nums"
           aria-live="off"
           :aria-label="
             $t({
