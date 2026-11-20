@@ -192,8 +192,8 @@ describe('SoundWaveform', () => {
 })
 
 describe('SoundTakeCard', () => {
-  it('renders restrained internal loading state with orbital ring, shimmer waveform, and placeholder duration matching ready geometry', () => {
-    const loadingWrapper = mount(SoundTakeCard, {
+  it('renders AI synthesis animation while generating and cross-fades to play control and waveform when ready', async () => {
+    const wrapper = mount(SoundTakeCard, {
       props: {
         name: '阳光草地跑酷 1',
         sample: null,
@@ -205,35 +205,25 @@ describe('SoundTakeCard', () => {
       }
     })
 
-    expect(loadingWrapper.find('.is-loading').exists()).toBe(true)
-    expect(loadingWrapper.find('.loading-ring-arc').exists()).toBe(true)
-    expect(loadingWrapper.find('[data-test="icon"][data-type="play"]').exists()).toBe(true)
-    expect(loadingWrapper.find('[data-test="play-control"]').exists()).toBe(false)
-    expect(loadingWrapper.text()).toContain('--:--')
-    expect(loadingWrapper.find('.skeleton-shimmer').exists()).toBe(true)
-    const skeletonBars = loadingWrapper.findAll('.skeleton-bar')
-    expect(skeletonBars).toHaveLength(PEAK_COUNT)
-    expect(skeletonBars[0].element.parentElement?.className).toContain('gap-[2px]')
+    expect(wrapper.find('.is-loading').exists()).toBe(true)
+    expect(wrapper.get('.synth-medallion-slot').classes()).toContain('slot-visible')
+    expect(wrapper.get('.play-slot').classes()).toContain('slot-hidden')
+    expect(wrapper.text()).not.toContain('--:--')
+    const synthBars = wrapper.findAll('.synth-bar')
+    expect(synthBars).toHaveLength(PEAK_COUNT)
+    expect(synthBars[0].element.parentElement?.className).toContain('gap-[2px]')
 
-    const readyWrapper = mount(SoundTakeCard, {
-      props: {
-        name: '阳光草地跑酷 1',
-        sample: makeSample(),
-        index: 0,
-        play: vi.fn().mockResolvedValue(undefined)
-      },
-      global: {
-        directives: { radar: () => undefined }
-      }
-    })
+    await wrapper.setProps({ sample: makeSample() })
 
-    expect(readyWrapper.find('.is-loading').exists()).toBe(false)
-    expect(readyWrapper.find('.loading-ring').exists()).toBe(false)
-    expect(readyWrapper.find('.skeleton-shimmer').exists()).toBe(false)
-    const waveformTrack = readyWrapper.find('.waveform-track > div')
+    expect(wrapper.find('.is-loading').exists()).toBe(false)
+    expect(wrapper.get('.synth-medallion-slot').classes()).toContain('slot-hidden')
+    expect(wrapper.get('.play-slot').classes()).toContain('slot-visible')
+    expect(wrapper.text()).toContain('0:15')
+    expect(wrapper.findAll('.synth-bar')).toHaveLength(0)
+    const waveformTrack = wrapper.find('.waveform-track > div')
     expect(waveformTrack.classes()).toContain('gap-[2px]')
     expect(waveformTrack.findAll('.waveform-bar')).toHaveLength(PEAK_COUNT)
-    expect(readyWrapper.get('[data-test="play-control"]').attributes('data-loading')).toBe('false')
+    expect(wrapper.get('[data-test="play-control"]').attributes('data-loading')).toBe('false')
   })
 })
 

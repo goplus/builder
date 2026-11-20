@@ -8,7 +8,7 @@ const SKELETON_HEIGHTS = [
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import { UIBlockItem, UICornerIcon, UIIcon } from '@/components/ui'
+import { UIBlockItem, UICornerIcon } from '@/components/ui'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
 import SoundWaveform from './SoundWaveform.vue'
 import { formatAudioTime, type Sample } from './samples'
@@ -47,7 +47,7 @@ const canInteract = computed(() => isReady.value && !props.disabled)
 const playingState = computed(() => (props.playing ? { progress: props.progress } : null))
 
 const durationLabel = computed(() => {
-  if (props.sample == null) return '--:--'
+  if (props.sample == null) return ''
   const total = formatAudioTime(props.sample.seconds)
   if (props.playing) {
     const current = formatAudioTime(props.progress * props.sample.seconds)
@@ -55,6 +55,8 @@ const durationLabel = computed(() => {
   }
   return total
 })
+
+const basePhaseMs = computed(() => -2400 - props.index * 220)
 
 const cardRadar = computed(() =>
   isReady.value
@@ -85,68 +87,99 @@ async function handlePlay() {
     :style="{ '--stagger-index': index }"
     @click="canInteract && emit('select')"
   >
-    <div
-      v-if="!isReady"
-      aria-hidden="true"
-      class="relative z-10 flex h-9 w-9 flex-none items-center justify-center rounded-full bg-grey-300 text-grey-700"
-    >
-      <svg viewBox="0 0 36 36" class="loading-ring pointer-events-none absolute inset-0 h-full w-full">
-        <circle class="loading-ring-track" cx="18" cy="18" r="17" />
-        <circle class="loading-ring-arc" cx="18" cy="18" r="17" />
-      </svg>
-      <UIIcon type="play" class="h-3.5 w-3.5" />
-    </div>
-    <PlayControl
-      v-else
-      class="relative z-10 flex-none"
-      :class="{
-        'pointer-events-none': !canInteract,
-        'opacity-60': disabled
-      }"
-      size="medium"
-      :playing="playingState"
-      :progress-interval="0"
-      :play-handler="handlePlay"
-      @stop="emit('stop')"
-    />
-
-    <div class="pointer-events-none relative z-10 flex min-w-0 flex-1 flex-col gap-2.5">
-      <div class="flex h-5 items-center justify-between gap-2">
-        <span class="truncate text-sm font-medium" :class="isReady ? 'text-title' : 'text-hint-1'">
-          {{ name }}
-        </span>
-        <span class="flex-none text-xs tabular-nums" :class="isReady ? 'text-hint-1' : 'text-hint-2 opacity-75'">
-          {{ durationLabel }}
-        </span>
+    <div class="relative z-10 h-9 w-9 flex-none">
+      <div
+        aria-hidden="true"
+        class="synth-medallion-slot pointer-events-none absolute inset-0 flex items-center justify-center"
+        :class="isReady ? 'slot-hidden' : 'slot-visible'"
+      >
+        <div
+          class="synth-medallion flex h-9 w-9 items-center justify-center rounded-full text-primary-600"
+          :style="{ animationDelay: `${basePhaseMs}ms` }"
+        >
+          <svg viewBox="0 0 16 16" class="h-[18px] w-[18px]" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              class="synth-sparkle-main"
+              d="M6.75 2.75C6.98 6.12 8.13 7.27 11.5 7.5C8.13 7.73 6.98 8.88 6.75 12.25C6.52 8.88 5.37 7.73 2 7.5C5.37 7.27 6.52 6.12 6.75 2.75Z"
+              fill="currentColor"
+            />
+            <path
+              class="synth-sparkle-sub"
+              :style="{ animationDelay: `${basePhaseMs}ms` }"
+              d="M12.25 1.5C12.38 3.18 12.97 3.77 14.65 3.9C12.97 4.03 12.38 4.62 12.25 6.3C12.12 4.62 11.53 4.03 9.85 3.9C11.53 3.77 12.12 3.18 12.25 1.5Z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
       </div>
 
       <div
-        v-if="!isReady"
-        aria-hidden="true"
-        class="skeleton-waveform relative flex h-6 w-full items-center gap-[2px] overflow-hidden"
+        class="play-slot absolute inset-0 flex items-center justify-center"
+        :class="isReady ? 'slot-visible' : 'slot-hidden pointer-events-none'"
+        :inert="!canInteract"
       >
-        <i
-          v-for="(barHeight, barIndex) in SKELETON_HEIGHTS"
-          :key="barIndex"
-          class="skeleton-bar block flex-1 min-w-0 rounded-full bg-grey-500/60"
-          :style="{ height: `${barHeight}px` }"
-        />
-        <span
-          class="skeleton-shimmer pointer-events-none absolute inset-y-0 left-0 w-1/2"
-          :style="{ animationDelay: `${index * 160}ms` }"
+        <PlayControl
+          class="flex-none"
+          :class="{
+            'pointer-events-none': !canInteract,
+            'opacity-60': disabled
+          }"
+          size="medium"
+          :playing="playingState"
+          :progress-interval="0"
+          :play-handler="handlePlay"
+          @stop="emit('stop')"
         />
       </div>
-      <SoundWaveform
-        v-else-if="sample != null"
-        class="pointer-events-auto"
-        :peaks="sample.peaks"
-        :progress="playing ? progress : 0"
-        :active="active"
-        :playing="playing"
-        :disabled="disabled"
-        :label="name"
-        @seek="emit('seek', $event)"
-      />
+    </div>
+
+    <div class="pointer-events-none relative z-10 flex min-w-0 flex-1 flex-col gap-2.5">
+      <div class="flex h-5 items-center justify-between gap-2">
+        <span
+          class="truncate text-sm font-medium transition-colors duration-200"
+          :class="isReady ? 'text-title' : 'text-hint-1'"
+        >
+          {{ name }}
+        </span>
+        <Transition name="duration-fade">
+          <span v-if="durationLabel !== ''" class="flex-none text-xs tabular-nums text-hint-1">
+            {{ durationLabel }}
+          </span>
+        </Transition>
+      </div>
+
+      <div class="relative h-6 w-full">
+        <Transition name="waveform-crossfade">
+          <div
+            v-if="!isReady"
+            key="synth"
+            aria-hidden="true"
+            class="synth-waveform flex h-6 w-full items-center gap-[2px]"
+          >
+            <i
+              v-for="(barHeight, barIndex) in SKELETON_HEIGHTS"
+              :key="barIndex"
+              class="synth-bar block flex-1 min-w-0 rounded-full"
+              :style="{
+                height: `${barHeight}px`,
+                animationDelay: `${basePhaseMs + barIndex * 24}ms`
+              }"
+            />
+          </div>
+          <SoundWaveform
+            v-else-if="sample != null"
+            key="ready"
+            class="pointer-events-auto"
+            :peaks="sample.peaks"
+            :progress="playing ? progress : 0"
+            :active="active"
+            :playing="playing"
+            :disabled="disabled"
+            :label="name"
+            @seek="emit('seek', $event)"
+          />
+        </Transition>
+      </div>
     </div>
 
     <Transition name="corner-check">
@@ -156,31 +189,46 @@ async function handlePlay() {
 </template>
 
 <style scoped>
-@keyframes sound-ring-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes sound-ring-arc {
+@keyframes sound-medallion-pulse {
   0%,
+  72%,
   100% {
-    stroke-dasharray: 22 85;
-    stroke-dashoffset: 0;
+    transform: scale(0.96);
+    opacity: 0.86;
   }
-  50% {
-    stroke-dasharray: 44 63;
-    stroke-dashoffset: -18;
+  16% {
+    transform: scale(1.04);
+    opacity: 1;
   }
 }
 
-@keyframes sound-waveform-shimmer {
-  0% {
-    transform: translateX(-110%);
-  }
-  65%,
+@keyframes sound-sparkle-twinkle {
+  0%,
+  72%,
   100% {
-    transform: translateX(210%);
+    opacity: 0.45;
+  }
+  20% {
+    opacity: 1;
+  }
+}
+
+@keyframes sound-synth-wave {
+  0%,
+  68%,
+  100% {
+    transform: scaleY(0.48);
+    background-color: var(--ui-color-grey-400);
+  }
+  14% {
+    background-color: var(--ui-color-blue-200);
+  }
+  28% {
+    transform: scaleY(1);
+    background-color: var(--ui-color-turquoise-300);
+  }
+  46% {
+    background-color: var(--ui-color-blue-200);
   }
 }
 
@@ -202,36 +250,68 @@ async function handlePlay() {
   box-shadow: 0 4px 12px rgba(36, 41, 47, 0.06);
 }
 
-.loading-ring {
+.synth-medallion-slot,
+.play-slot {
+  transition-property: opacity, filter, transform;
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.slot-visible {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0px);
+}
+
+.slot-hidden {
+  opacity: 0;
+  transform: scale(0.25);
+  filter: blur(4px);
+}
+
+.synth-medallion {
+  background: linear-gradient(135deg, var(--ui-color-turquoise-200) 0%, var(--ui-color-blue-100) 100%);
+  box-shadow: inset 0 0 0 1px rgba(54, 194, 207, 0.18);
+  animation: sound-medallion-pulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.synth-sparkle-sub {
+  animation: sound-sparkle-twinkle 2.4s ease-in-out infinite;
+}
+
+.synth-bar {
   transform-origin: center;
-  animation: sound-ring-spin 1.6s linear infinite;
+  background-color: var(--ui-color-grey-400);
+  animation: sound-synth-wave 2.4s ease-in-out infinite;
 }
 
-.loading-ring circle {
-  fill: none;
-  stroke-width: 1.5;
-  stroke-linecap: round;
+.duration-fade-enter-active,
+.duration-fade-leave-active {
+  transition-property: opacity;
+  transition-duration: 180ms;
+  transition-timing-function: ease-out;
 }
 
-.loading-ring-track {
-  stroke: var(--ui-color-grey-400);
+.duration-fade-enter-from,
+.duration-fade-leave-to {
+  opacity: 0;
 }
 
-.loading-ring-arc {
-  stroke: var(--ui-color-primary-400);
-  stroke-dasharray: 28 79;
-  transform-origin: center;
-  animation: sound-ring-arc 2.2s ease-in-out infinite;
+.waveform-crossfade-enter-active,
+.waveform-crossfade-leave-active {
+  transition-property: opacity;
+  transition-duration: 200ms;
+  transition-timing-function: ease-out;
 }
 
-.skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(251, 252, 253, 0) 0%,
-    rgba(251, 252, 253, 0.72) 50%,
-    rgba(251, 252, 253, 0) 100%
-  );
-  animation: sound-waveform-shimmer 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+.waveform-crossfade-leave-active {
+  position: absolute;
+  inset: 0;
+}
+
+.waveform-crossfade-enter-from,
+.waveform-crossfade-leave-to {
+  opacity: 0;
 }
 
 .corner-check-enter-active,
@@ -248,15 +328,33 @@ async function handlePlay() {
   filter: blur(3px);
 }
 
+@media (prefers-contrast: more) {
+  .synth-medallion {
+    color: var(--ui-color-primary-700);
+    box-shadow: inset 0 0 0 1px var(--ui-color-primary-300);
+  }
+
+  .synth-bar {
+    background-color: var(--ui-color-grey-600);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .loading-ring,
-  .loading-ring-arc,
-  .skeleton-shimmer {
+  .synth-medallion,
+  .synth-sparkle-sub,
+  .synth-bar {
     animation: none;
   }
 
-  .skeleton-shimmer {
-    display: none;
+  .synth-medallion-slot,
+  .play-slot {
+    filter: none;
+    transition: opacity 150ms ease;
+  }
+
+  .slot-hidden {
+    transform: none;
+    filter: none;
   }
 
   .sound-take-card.ui-block-item-interactive:has(> button:active) {
