@@ -4,6 +4,8 @@ import { ActionException, capture, type Exception } from '@/utils/exception'
 import type { ReadinessScope } from '@/utils/readiness'
 import type { ProgressReporter } from '@/utils/progress'
 import { untilNotNull } from '@/utils/utils'
+import type { File, Files } from '@/models/common/file'
+import { hashFile } from '@/models/common/hash'
 import type { TutorialProject } from '@/models/tutorial/project'
 import type { Copilot, Session as CopilotSession, Topic } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
@@ -40,12 +42,23 @@ export class PlaygroundCourseSession extends Emitter<{
   private copilotSession: CopilotSession | null = null
   private started = false
   private startingRef = ref(true)
+  private startedFiles: Files | null = null
   private codeEditorRef = shallowRef<CodeEditor | null>(null)
   private errorRef = shallowRef<Exception | null>(null)
 
   /** Remains true until Host readiness and initial configuration rendering finish. */
   get starting() {
     return this.startingRef.value
+  }
+
+  /**
+   * Whether the learner project differs from what it was when startup finished.
+   * Files edited back to the same content do not count; nothing counts before startup finishes.
+   */
+  async hasProjectChanges(signal?: AbortSignal): Promise<boolean> {
+    const startedFiles = this.startedFiles
+    if (startedFiles == null) return false
+    return hasChangedContent(startedFiles, this.project.project.exportFiles(), signal)
   }
 
   /** Borrowed from CodeEditorProvider; the Session does not dispose it. */
@@ -119,6 +132,8 @@ export class PlaygroundCourseSession extends Emitter<{
   private async finishStarting(signal: AbortSignal) {
     await this.options.readiness.untilReady(signal)
     this.options.startReporter.report(1)
+    if (!this.startingRef.value) return
+    this.startedFiles = this.project.project.exportFiles()
     this.startingRef.value = false
   }
 
@@ -140,4 +155,22 @@ export class PlaygroundCourseSession extends Emitter<{
     this.copilotSession = this.copilot.currentSession
     await starting
   }
+}
+
+async function hasChangedContent(before: Files, after: Files, signal?: AbortSignal) {
+  const replaced: Array<[File, File]> = []
+  for (const path of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    const beforeFile = before[path]
+    const afterFile = after[path]
+    if (beforeFile === afterFile) continue
+    if (beforeFile == null || afterFile == null) return true
+    replaced.push([beforeFile, afterFile])
+  }
+  const changes = await Promise.all(
+    replaced.map(async ([beforeFile, afterFile]) => {
+      const [beforeHash, afterHash] = await Promise.all([hashFile(beforeFile, signal), hashFile(afterFile, signal)])
+      return beforeHash !== afterHash
+    })
+  )
+  return changes.some(Boolean)
 }

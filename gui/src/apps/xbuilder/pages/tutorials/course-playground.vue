@@ -15,6 +15,7 @@ import CoursePlaygroundCompletionModal, {
   type CompletionAction
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
+import type { PlaygroundCourseSession } from '@/components/tutorials/playground/session'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { useModal } from '@/components/ui'
@@ -85,6 +86,13 @@ const projectQueryRet: QueryRet<TutorialProject> = {
   data: computed(() => session.value?.project ?? null)
 }
 
+function handleSessionCreated(playgroundSession: PlaygroundCourseSession) {
+  const unregister = tutorial.registerPlaygroundCourseChangeCheck(playgroundSession.project.id, () =>
+    playgroundSession.hasProjectChanges()
+  )
+  playgroundSession.addDisposer(unregister)
+}
+
 const { fn: handleRestart } = useMessageHandle(
   async () => {
     const currentSession = session.value
@@ -127,6 +135,7 @@ const { fn: handleCompleted } = useMessageHandle(
   <CoursePlayground
     :project-query-ret="projectQueryRet"
     :router="inPlaygroundRouter"
+    @session-created="handleSessionCreated"
     @course-completed="handleCompleted"
     @course-restart="handleRestart"
   />

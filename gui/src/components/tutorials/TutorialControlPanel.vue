@@ -60,7 +60,7 @@ async function confirmCourseAction(
     zh: '当前课程的学习状态将被丢弃，确认继续吗？'
   }
 ) {
-  // TODO: Skip confirmation when the course is still in its initial state (https://github.com/goplus/builder/issues/3546).
+  if (await tutorial.isCurrentCourseInInitialState()) return true
   return confirm({
     title: t(action),
     content: t(content)

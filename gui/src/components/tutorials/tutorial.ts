@@ -6,10 +6,14 @@ import { isNavigationFailure, type Router } from 'vue-router'
 import type { Course, CourseKind } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { getCoursePlaygroundRoute, getCourseStartRoute, getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
+import type { Disposer } from '@/utils/disposable'
 import { Cancelled } from '@/utils/exception'
 
 import type { GuidedTutorial } from './guided/guided-tutorial'
-type GuidedTutorialController = Pick<GuidedTutorial, 'currentCourse' | 'enterCourse' | 'endCurrentCourse'>
+type GuidedTutorialController = Pick<
+  GuidedTutorial,
+  'currentCourse' | 'enterCourse' | 'endCurrentCourse' | 'isCurrentCourseInInitialState'
+>
 type TutorialRouter = Pick<Router, 'push' | 'replace'>
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
@@ -36,8 +40,14 @@ export function provideTutorial(tutorial: Tutorial) {
   provide(tutorialKey, tutorial)
 }
 
+type PlaygroundCourseChangeCheck = {
+  courseID: string
+  hasChanges: () => Promise<boolean>
+}
+
 export class Tutorial {
   private currentPlaygroundCourseRef = shallowRef<CurrentCourse | null>(null)
+  private playgroundCourseChangeCheck: PlaygroundCourseChangeCheck | null = null
 
   constructor(
     private guidedTutorial: GuidedTutorialController,
@@ -56,6 +66,29 @@ export class Tutorial {
           kind: 'guided',
           state: CourseState.InProgress
         }
+  }
+
+  /**
+   * Whether the current course has made no progress.
+   * A Playground Course has progress once its registered check reports project changes;
+   * before a check is registered, it has none.
+   */
+  async isCurrentCourseInInitialState(): Promise<boolean> {
+    const currentCourse = this.currentCourse
+    if (currentCourse == null) return true
+    if (currentCourse.kind === 'guided') return this.guidedTutorial.isCurrentCourseInInitialState()
+    const check = this.playgroundCourseChangeCheck
+    if (check == null || check.courseID !== currentCourse.id) return true
+    return !(await check.hasChanges())
+  }
+
+  /** Registers the project-change check of the Playground Course with courseID, replacing any previous one. */
+  registerPlaygroundCourseChangeCheck(courseID: string, hasChanges: () => Promise<boolean>): Disposer {
+    const check = { courseID, hasChanges }
+    this.playgroundCourseChangeCheck = check
+    return () => {
+      if (this.playgroundCourseChangeCheck === check) this.playgroundCourseChangeCheck = null
+    }
   }
 
   /** URL of the Start page used by course links and startCourse. */

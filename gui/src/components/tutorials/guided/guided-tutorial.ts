@@ -1,11 +1,13 @@
 import { inject, provide, ref } from 'vue'
-import type { InjectionKey, WritableComputedRef } from 'vue'
+import type { InjectionKey, Ref, WritableComputedRef } from 'vue'
 import { isNavigationFailure, type Router } from 'vue-router'
 
 import type { ReadinessScope } from '@/utils/readiness'
 import type { GuidedCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
-import type { Copilot, Topic } from '@/components/copilot/copilot'
+import { RoundState, type Copilot, type Topic } from '@/components/copilot/copilot'
+import { EditingMode } from '@/components/editor/editing'
+import type { EditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { tagName as highlightLinkTagName } from '@/components/copilot/markdown-elements/HighlightLink.vue'
 
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
@@ -42,7 +44,8 @@ export class GuidedTutorial {
     private router: Router,
     private routeReadiness: ReadinessScope,
     private courseID: WritableComputedRef<string | null>,
-    private seriesID: WritableComputedRef<string | null>
+    private seriesID: WritableComputedRef<string | null>,
+    private editorCtx: Readonly<Ref<EditorCtx | undefined>>
   ) {}
 
   get currentCourse(): CurrentCourse | null {
@@ -50,6 +53,24 @@ export class GuidedTutorial {
     const seriesID = this.seriesID.value
     if (courseID == null || seriesID == null) return null
     return { id: courseID, seriesID }
+  }
+
+  /**
+   * Whether the current course has made no progress. It has progress once any of these holds:
+   * - its Copilot session has a text message from the learner;
+   * - its Copilot session has a round after the first completed round, or has dropped earlier rounds;
+   * - the current editor has unsaved edits in effect-free mode.
+   */
+  isCurrentCourseInInitialState(): boolean {
+    const editing = this.editorCtx.value?.state.editing
+    if (editing?.mode === EditingMode.EffectFree && editing.dirty) return false
+    const session = this.copilot.currentSession
+    if (session == null || !isGuidedTutorialTopic(session.topic)) return true
+    if (session.roundsDropped) return false
+    const { rounds } = session
+    if (rounds.some((round) => round.userMessage.type === 'text')) return false
+    const firstCompletedIndex = rounds.findIndex((round) => round.state === RoundState.Completed)
+    return firstCompletedIndex === -1 || firstCompletedIndex === rounds.length - 1
   }
 
   private abandonPredictionCountRef = ref(0)

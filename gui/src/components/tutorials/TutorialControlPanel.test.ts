@@ -107,7 +107,8 @@ describe('tutorial course dropdown', () => {
     mocks.tutorial = reactive({
       currentCourse: { id: 'b', seriesID: 'series', kind: 'guided', state: CourseState.InProgress },
       startCourse: vi.fn(),
-      endCurrentCourse: vi.fn()
+      endCurrentCourse: vi.fn(),
+      isCurrentCourseInInitialState: vi.fn().mockResolvedValue(false)
     })
     mocks.confirm.mockResolvedValue(true)
   })
@@ -236,5 +237,63 @@ describe('tutorial course dropdown', () => {
       'b',
       'c'
     ])
+  })
+
+  const courseActions = [
+    {
+      name: 'exit',
+      trigger: (wrapper: ReturnType<typeof mountPanel>) =>
+        wrapper
+          .findAll('button')
+          .find((button) => button.text() === 'Exit course')!
+          .trigger('click'),
+      done: () => expect(mocks.tutorial.endCurrentCourse).toHaveBeenCalledOnce()
+    },
+    {
+      name: 'return to series',
+      trigger: (wrapper: ReturnType<typeof mountPanel>) =>
+        wrapper
+          .findAll('button')
+          .find((button) => button.text() === 'Back to series courses')!
+          .trigger('click'),
+      done: () => expect(mocks.push).toHaveBeenCalledWith('/course-series/series#course-b')
+    },
+    {
+      name: 'switch',
+      trigger: (wrapper: ReturnType<typeof mountPanel>) => wrapper.findAll('li')[0].trigger('click'),
+      done: () => expect(mocks.tutorial.startCourse).toHaveBeenCalledWith('series', 'a')
+    },
+    {
+      name: 'restart',
+      trigger: (wrapper: ReturnType<typeof mountPanel>) => wrapper.get('[aria-current="step"] button').trigger('click'),
+      done: () => expect(mocks.tutorial.startCourse).toHaveBeenCalledWith('series', 'b')
+    }
+  ]
+
+  it.each(courseActions)('runs $name without confirmation while the course is in its initial state', async (action) => {
+    mocks.tutorial.isCurrentCourseInInitialState.mockResolvedValue(true)
+    const wrapper = mountPanel()
+    await flushPromises()
+    await action.trigger(wrapper)
+    await flushPromises()
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    action.done()
+  })
+
+  it.each(courseActions)('asks before $name once the course has progress', async (action) => {
+    mocks.confirm.mockResolvedValue(false)
+    const wrapper = mountPanel()
+    await flushPromises()
+    await action.trigger(wrapper)
+    await flushPromises()
+    expect(mocks.confirm).toHaveBeenCalledOnce()
+    expect(mocks.tutorial.endCurrentCourse).not.toHaveBeenCalled()
+    expect(mocks.tutorial.startCourse).not.toHaveBeenCalled()
+    expect(mocks.push).not.toHaveBeenCalled()
+
+    mocks.confirm.mockResolvedValue(true)
+    await action.trigger(wrapper)
+    await flushPromises()
+    action.done()
   })
 })
