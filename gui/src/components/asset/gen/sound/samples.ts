@@ -4,22 +4,7 @@ export type SoundKind = 'music' | 'effect' | 'speech'
 
 export type Sample = {
   blob: Blob
-  peaks: number[]
   seconds: number
-}
-
-export const PEAK_COUNT = 48
-
-function computePeaks(mono: Float32Array, end: number): number[] {
-  const peaks = Array.from({ length: PEAK_COUNT }, (_, index) => {
-    const start = Math.floor((end * index) / PEAK_COUNT)
-    const stop = Math.max(start + 1, Math.floor((end * (index + 1)) / PEAK_COUNT))
-    let energy = 0
-    for (let i = start; i < stop; i++) energy += mono[i] ** 2
-    return Math.sqrt(energy / (stop - start))
-  })
-  const max = Math.max(...peaks, 0.001)
-  return peaks.map((value) => value / max)
 }
 
 export async function loadSample(
@@ -35,7 +20,7 @@ export async function loadSample(
   }
 
   const file = `${kind}-${version}`
-  const url = new URL(`./samples/${file}.mp3`, import.meta.url)
+  const url = new URL(`./samples/${file}.mp3`, import.meta.url).href
   const response = await fetch(url, { signal })
   if (!response.ok) throw new Error(`Could not load sample ${file}: ${response.status}`)
 
@@ -53,19 +38,12 @@ export async function loadSample(
     }
   }
 
-  const peaks = computePeaks(audio.getChannelData(0), end)
   const blob = await trimAndApplyGainToWavBlob(audio, 0, end / audio.length, 1)
 
   return {
     blob,
-    peaks,
     seconds: end / audio.sampleRate
   }
-}
-
-export function formatAudioTime(seconds: number): string {
-  const total = Math.max(0, Math.round(seconds))
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
 }
 
 export type StylePreview = {
@@ -209,7 +187,6 @@ function synthesizeSpeechTake(version: number, speed: number, voice: string): Sa
 
   return {
     blob: encodeMonoWav(pcm, PREVIEW_SAMPLE_RATE),
-    peaks: computePeaks(pcm, pcm.length),
     seconds
   }
 }
@@ -237,7 +214,6 @@ function synthesizeStyleSamples(style: string, sampleRate: number): { pcm: Float
 
   switch (style) {
     case 'pop': {
-      // Bright major pluck melody + warm bass
       const melody = [523.25, 659.25, 783.99, 880, 783.99, 659.25, 523.25, 587.33]
       melody.forEach((f, idx) => addPluckNote(pcm, sampleRate, idx * 0.25, 0.32, f, 0.28, 'sine'))
       melody.forEach((f, idx) => addPluckNote(pcm, sampleRate, idx * 0.25, 0.2, f * 2, 0.08, 'triangle'))
@@ -246,134 +222,98 @@ function synthesizeStyleSamples(style: string, sampleRate: number): { pcm: Float
       break
     }
     case 'electronic': {
-      // Punchy octave bass + bright sawtooth arp
       const arp = [440, 523.25, 659.25, 783.99, 880, 659.25, 523.25, 659.25, 783.99, 880, 1046.5, 880]
-      arp.forEach((f, idx) => addPluckNote(pcm, sampleRate, idx * 0.16, 0.18, f, 0.16, 'saw'))
-      for (let b = 0; b < 8; b++) {
-        addPluckNote(pcm, sampleRate, b * 0.26, 0.22, b % 2 === 0 ? 110 : 220, 0.24, 'square')
+      arp.forEach((f, idx) => addPluckNote(pcm, sampleRate, idx * 0.17, 0.15, f, 0.22, 'saw'))
+      for (let beat = 0; beat < 4; beat++) {
+        addPluckNote(pcm, sampleRate, beat * 0.5, 0.22, 110, 0.34, 'triangle')
       }
       break
     }
     case 'orchestral': {
-      // Lush sustained string/horn chord swell
-      const chord1 = [130.81, 196.0, 261.63, 329.63, 392.0]
-      const chord2 = [174.61, 261.63, 349.23, 440.0, 523.25]
+      const chord1 = [261.63, 329.63, 392.0, 523.25]
+      const chord2 = [293.66, 369.99, 440.0, 587.33]
       for (let i = 0; i < pcm.length; i++) {
         const t = i / sampleRate
         const chord = t < 1.1 ? chord1 : chord2
         const localT = t < 1.1 ? t : t - 1.1
-        const env = Math.sin(Math.min(1, localT / 1.1) * Math.PI)
-        const vib = 1 + 0.004 * Math.sin(2 * Math.PI * 5.2 * t)
-        let sum = 0
+        const swell = Math.sin(Math.min(1, localT / 1.1) * Math.PI)
+        let sample = 0
         for (const f of chord) {
-          sum += Math.sin(2 * Math.PI * f * vib * t) + 0.25 * Math.sin(4 * Math.PI * f * vib * t)
+          sample += Math.sin(2 * Math.PI * f * t + 0.15 * Math.sin(2 * Math.PI * 5 * t))
         }
-        pcm[i] = (sum / chord.length) * env * 0.45
+        pcm[i] += (sample / chord.length) * swell * 0.34
       }
       break
     }
     case 'chiptune': {
-      // Crisp 8-bit square arpeggio + triangle bass
-      const notes = [523.25, 659.25, 783.99, 987.77, 1046.5, 783.99, 659.25, 523.25, 587.33, 783.99, 987.77, 1174.66]
-      notes.forEach((f, idx) => addPluckNote(pcm, sampleRate, idx * 0.16, 0.14, f, 0.2, 'square'))
-      ;[130.81, 196.0, 146.83, 196.0].forEach((f, idx) =>
-        addPluckNote(pcm, sampleRate, idx * 0.5, 0.46, f, 0.3, 'triangle')
-      )
+      const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5, 1318.5, 1046.5, 783.99, 659.25, 523.25, 783.99]
+      notes.forEach((f, idx) => addPluckNote(pcm, sampleRate, idx * 0.16, 0.13, f, 0.2, 'square'))
       break
     }
     case 'ambient': {
-      // Soft shimmering pad + delicate bell notes
-      const freqs = [293.66, 440.0, 554.37, 659.25]
+      const pad = [220, 329.63, 440, 493.88, 659.25]
       for (let i = 0; i < pcm.length; i++) {
         const t = i / sampleRate
         const env = Math.sin((t / seconds) * Math.PI)
-        let sum = 0
-        for (let k = 0; k < freqs.length; k++) {
-          sum += Math.sin(2 * Math.PI * (freqs[k] + k * 0.4) * t)
+        let sample = 0
+        for (const f of pad) {
+          sample += Math.sin(2 * Math.PI * f * t)
         }
-        pcm[i] = (sum / freqs.length) * env * 0.35
+        pcm[i] += (sample / pad.length) * env * 0.32
       }
-      addPluckNote(pcm, sampleRate, 0.25, 1.4, 880, 0.15, 'sine')
-      addPluckNote(pcm, sampleRate, 0.95, 1.1, 1108.73, 0.13, 'sine')
       break
     }
     case 'rock': {
-      // Crunchy soft-clipped power chords + kick pulse
-      const chords = [
-        [82.41, 123.47, 164.81],
-        [98.0, 146.83, 196.0],
-        [110.0, 164.81, 220.0]
-      ]
-      ;[0, 0.5, 1.0, 1.35, 1.7].forEach((startSec, idx) => {
-        const chord = chords[idx % chords.length]
-        for (const f of chord) addPluckNote(pcm, sampleRate, startSec, 0.42, f, 0.3, 'saw')
+      const roots = [164.81, 164.81, 196.0, 220.0, 146.83, 146.83, 196.0, 164.81]
+      roots.forEach((f, idx) => {
+        addPluckNote(pcm, sampleRate, idx * 0.26, 0.24, f, 0.26, 'saw')
+        addPluckNote(pcm, sampleRate, idx * 0.26, 0.24, f * 1.5, 0.22, 'saw')
       })
-      for (let i = 0; i < pcm.length; i++) {
-        pcm[i] = Math.tanh(pcm[i] * 2.2) * 0.55
-      }
       break
     }
     case 'cartoon': {
-      // Playful slide-whistle glide + pop
-      let phase = 0
       for (let i = 0; i < pcm.length; i++) {
         const t = i / sampleRate
-        const freq = t < 0.7 ? 320 + 780 * (t / 0.7) ** 1.5 : 1100 - 520 * Math.min(1, (t - 0.7) / 0.45)
-        phase += (2 * Math.PI * freq) / sampleRate
-        const env = Math.sin(Math.min(1, t / 1.25) * Math.PI)
-        pcm[i] = Math.sin(phase) * env * 0.42
+        if (t > 0.75) break
+        const freq = 260 + 620 * (t / 0.75) * (t / 0.75) + 35 * Math.sin(2 * Math.PI * 18 * t)
+        const env = Math.sin((t / 0.75) * Math.PI)
+        pcm[i] += Math.sin(2 * Math.PI * freq * t) * env * 0.42
       }
+      addPluckNote(pcm, sampleRate, 0.8, 0.35, 1046.5, 0.32, 'triangle')
       break
     }
     case 'retro': {
-      // Classic 8-bit coin/power-up jump
-      addPluckNote(pcm, sampleRate, 0.05, 0.14, 987.77, 0.28, 'square')
+      addPluckNote(pcm, sampleRate, 0.05, 0.12, 987.77, 0.28, 'square')
       addPluckNote(pcm, sampleRate, 0.17, 0.55, 1318.51, 0.28, 'square')
-      addPluckNote(pcm, sampleRate, 0.65, 0.14, 987.77, 0.2, 'square')
-      addPluckNote(pcm, sampleRate, 0.77, 0.45, 1318.51, 0.2, 'square')
+      addPluckNote(pcm, sampleRate, 0.82, 0.1, 1046.5, 0.24, 'square')
+      addPluckNote(pcm, sampleRate, 0.92, 0.4, 1567.98, 0.26, 'square')
       break
     }
     case 'scifi': {
-      // Futuristic FM laser sweep + shimmer
-      let phase = 0
       for (let i = 0; i < pcm.length; i++) {
         const t = i / sampleRate
-        const sweep = 1400 * Math.exp(-3.2 * t) + 180
-        const mod = Math.sin(2 * Math.PI * 38 * t) * 140
-        phase += (2 * Math.PI * (sweep + mod)) / sampleRate
-        const env = Math.exp(-2.1 * t) * Math.min(1, t / 0.015)
-        pcm[i] = Math.sin(phase) * env * 0.48
+        if (t > 1.1) break
+        const sweep = 1200 * Math.exp(-2.2 * t) + 180
+        const fm = Math.sin(2 * Math.PI * 28 * t) * 90
+        const env = Math.min(1, t / 0.02) * Math.exp(-2.4 * t)
+        pcm[i] += Math.sin(2 * Math.PI * (sweep + fm) * t) * env * 0.38
       }
       break
     }
     case 'realistic': {
-      // Warm acoustic wood knock + natural chime decay
-      ;[0.06, 0.48].forEach((startSec) => {
-        const start = Math.floor(startSec * sampleRate)
-        const len = Math.floor(0.28 * sampleRate)
-        for (let i = 0; i < len && start + i < pcm.length; i++) {
-          const t = i / sampleRate
-          const body = Math.sin(2 * Math.PI * 220 * t) * Math.exp(-28 * t)
-          const tap = Math.sin(2 * Math.PI * 740 * t) * Math.exp(-45 * t) * 0.4
-          pcm[start + i] += (body + tap) * 0.55
-        }
-      })
-      addPluckNote(pcm, sampleRate, 0.82, 0.55, 659.25, 0.25, 'sine')
+      const partials = [185, 372, 540, 810]
+      partials.forEach((f, idx) => addPluckNote(pcm, sampleRate, 0.04, 0.32 / (idx + 1), f, 0.24 / (idx + 1), 'sine'))
+      partials.forEach((f, idx) =>
+        addPluckNote(pcm, sampleRate, 0.52, 0.45 / (idx + 1), f * 1.12, 0.26 / (idx + 1), 'sine')
+      )
       break
     }
+    case 'ui':
     default: {
-      // Glassy UI two-tone chime
-      addPluckNote(pcm, sampleRate, 0.05, 0.45, 659.25, 0.3, 'sine')
-      addPluckNote(pcm, sampleRate, 0.22, 0.75, 987.77, 0.32, 'sine')
+      addPluckNote(pcm, sampleRate, 0.08, 0.28, 783.99, 0.3, 'sine')
+      addPluckNote(pcm, sampleRate, 0.24, 0.55, 1174.66, 0.32, 'sine')
       break
     }
-  }
-
-  // Smooth fade-in and fade-out to guarantee click-free edges.
-  const fadeSamples = Math.floor(0.025 * sampleRate)
-  for (let i = 0; i < fadeSamples && i < pcm.length; i++) {
-    pcm[i] *= i / fadeSamples
-    pcm[pcm.length - 1 - i] *= i / fadeSamples
   }
 
   return { pcm, seconds }

@@ -36,7 +36,7 @@ function handleSelect() {
 
 <template>
   <UIBlockItem
-    :class="props.play == null ? 'h-10! w-auto! min-w-21 flex-row! justify-center! px-3!' : ''"
+    :class="props.play == null ? 'h-10 w-auto min-w-21 flex-row justify-center px-3' : ''"
     :active="props.active"
     :button-label="props.label"
     @click="handleSelect"
@@ -61,7 +61,7 @@ function handleSelect() {
     <UICornerIcon
       v-if="props.active && props.clearable"
       v-radar="{
-        name: `Deselect '${props.label}'`,
+        name: 'deselect-option',
         desc: `Deselect '${props.label}'`
       }"
       type="minus"

@@ -173,7 +173,7 @@ export function useAddSoundByGeneration() {
   const editorCtx = useEditorCtx()
   const invokeSoundGenModal = useModal(SoundGenModal)
   return async function addSoundByGeneration(project: SpxProject): Promise<Sound> {
-    const sound = await invokeSoundGenModal({})
+    const sound = await invokeSoundGenModal({ project })
     const action = { name: { en: 'Add sound', zh: '添加声音' } }
     await editorCtx.state.history.doAction(action, () => project.addSound(sound))
     return sound

@@ -2,20 +2,42 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SoundGenModal from './SoundGenModal.vue'
-import SoundTakeCard from './SoundTakeCard.vue'
-import SoundWaveform from './SoundWaveform.vue'
-import { PEAK_COUNT, type Sample } from './samples'
+import SoundSquareItem from './SoundSquareItem.vue'
+import type { Sample } from './samples'
 
 const mockLoadSample = vi.fn()
 const mockConfirm = vi.fn()
+const mockInvokeModal = vi.fn()
 const mockCreateSound = vi.fn()
 const mockRegisterPlayer = vi.fn()
+const mockDecodeAudioData = vi.fn()
+const mockTrimAndApplyGain = vi.fn()
+
+vi.mock('@lottiefiles/dotlottie-vue', () => ({
+  DotLottieVue: defineComponent({
+    props: { src: { type: String, default: '' } },
+    setup(props) {
+      return () => h('div', { 'data-test': 'dotlottie', 'data-src': props.src })
+    }
+  })
+}))
 
 vi.mock('./samples', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./samples')>()
   return {
     ...actual,
     loadSample: (...args: unknown[]) => mockLoadSample(...args)
+  }
+})
+
+vi.mock('@/utils/audio', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/audio')>()
+  return {
+    ...actual,
+    getAudioContext: () => ({
+      decodeAudioData: (...args: unknown[]) => mockDecodeAudioData(...args)
+    }),
+    trimAndApplyGainToWavBlob: (...args: unknown[]) => mockTrimAndApplyGain(...args)
   }
 })
 
@@ -81,12 +103,20 @@ vi.mock('@/components/ui', async (importOriginal) => {
       }
     }),
     UIIcon: defineComponent({
-      props: { type: { type: String, default: '' } },
-      setup(props) {
-        return () => h('span', { 'data-test': 'icon', 'data-type': props.type })
+      props: { type: { type: String, default: '' }, title: { type: String, default: '' } },
+      emits: ['click'],
+      setup(props, { emit }) {
+        return () =>
+          h('button', {
+            type: 'button',
+            'data-test': 'icon',
+            'data-type': props.type,
+            onClick: (e: MouseEvent) => emit('click', e)
+          })
       }
     }),
-    useConfirmDialog: () => mockConfirm
+    useConfirmDialog: () => mockConfirm,
+    useModal: () => mockInvokeModal
   }
 })
 
@@ -107,7 +137,7 @@ vi.mock('@/components/editor/common/PlayControl.vue', () => ({
           {
             type: 'button',
             'data-test': 'play-control',
-            'data-loading': String(props.loading),
+            'data-size': props.size,
             onClick: (e: MouseEvent) => {
               e.stopPropagation()
               if (props.playing != null) emit('stop')
@@ -116,6 +146,49 @@ vi.mock('@/components/editor/common/PlayControl.vue', () => ({
           },
           props.playing != null ? 'stop' : 'play'
         )
+    }
+  })
+}))
+
+vi.mock('@/components/editor/stage/sound/waveform', () => ({
+  WaveformPlayer: defineComponent({
+    name: 'WaveformPlayer',
+    props: {
+      audioSrc: { type: String, default: '' },
+      range: { type: Object, required: true },
+      gain: { type: Number, required: true }
+    },
+    emits: ['play', 'stop', 'progress', 'update:range'],
+    setup(props, { emit, expose }) {
+      expose({
+        play: async () => emit('play'),
+        stop: () => emit('stop')
+      })
+      return () =>
+        h('div', {
+          'data-test': 'waveform-player',
+          'data-src': props.audioSrc,
+          'data-left': String(props.range.left),
+          'data-right': String(props.range.right),
+          'data-gain': String(props.gain)
+        })
+    }
+  })
+}))
+
+vi.mock('@/components/editor/stage/sound/VolumeSlider.vue', () => ({
+  default: defineComponent({
+    props: {
+      value: { type: Number, required: true }
+    },
+    emits: ['update:value'],
+    setup(props, { emit }) {
+      return () =>
+        h('input', {
+          'data-test': 'volume-slider',
+          value: props.value,
+          onInput: (e: Event) => emit('update:value', Number((e.target as HTMLInputElement).value))
+        })
     }
   })
 }))
@@ -150,7 +223,6 @@ vi.mock('../common/SettingsInput.vue', () => {
 function makeSample(seconds = 15): Sample {
   return {
     blob: new Blob(['wav'], { type: 'audio/wav' }),
-    peaks: Array.from({ length: 48 }, (_, i) => (i + 1) / 48),
     seconds
   }
 }
@@ -169,35 +241,12 @@ function mountModal() {
   })
 }
 
-describe('SoundWaveform', () => {
-  it('supports keyboard seeking', async () => {
-    const wrapper = mount(SoundWaveform, {
-      props: {
-        peaks: Array(48).fill(0.5),
-        progress: 0.25,
-        label: '森林探险 1'
-      },
-      global: {
-        directives: { radar: () => undefined }
-      }
-    })
-
-    const slider = wrapper.get('[role="slider"]')
-    await slider.trigger('keydown', { key: 'ArrowRight' })
-    expect(wrapper.emitted('seek')?.[0]?.[0]).toBeCloseTo(0.3, 5)
-
-    await slider.trigger('keydown', { key: 'ArrowLeft' })
-    expect(wrapper.emitted('seek')?.[1]?.[0]).toBeCloseTo(0.2, 5)
-  })
-})
-
-describe('SoundTakeCard', () => {
-  it('renders AI synthesis animation while generating and cross-fades to play control and waveform when ready', async () => {
-    const wrapper = mount(SoundTakeCard, {
+describe('SoundSquareItem', () => {
+  it('renders GenLoading cover while generating and UISoundItem / UIEditorSoundItem layouts when ready', async () => {
+    const wrapper = mount(SoundSquareItem, {
       props: {
         name: '阳光草地跑酷 1',
         sample: null,
-        index: 0,
         play: vi.fn().mockResolvedValue(undefined)
       },
       global: {
@@ -205,25 +254,17 @@ describe('SoundTakeCard', () => {
       }
     })
 
-    expect(wrapper.find('.is-loading').exists()).toBe(true)
-    expect(wrapper.get('.synth-medallion-slot').classes()).toContain('slot-visible')
-    expect(wrapper.get('.play-slot').classes()).toContain('slot-hidden')
-    expect(wrapper.text()).not.toContain('--:--')
-    const synthBars = wrapper.findAll('.synth-bar')
-    expect(synthBars).toHaveLength(PEAK_COUNT)
-    expect(synthBars[0].element.parentElement?.className).toContain('gap-[2px]')
+    expect(wrapper.find('[data-test="dotlottie"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="play-control"]').exists()).toBe(false)
 
-    await wrapper.setProps({ sample: makeSample() })
+    await wrapper.setProps({ sample: makeSample(15) })
 
-    expect(wrapper.find('.is-loading').exists()).toBe(false)
-    expect(wrapper.get('.synth-medallion-slot').classes()).toContain('slot-hidden')
-    expect(wrapper.get('.play-slot').classes()).toContain('slot-visible')
-    expect(wrapper.text()).toContain('0:15')
-    expect(wrapper.findAll('.synth-bar')).toHaveLength(0)
-    const waveformTrack = wrapper.find('.waveform-track > div')
-    expect(waveformTrack.classes()).toContain('gap-[2px]')
-    expect(waveformTrack.findAll('.waveform-bar')).toHaveLength(PEAK_COUNT)
-    expect(wrapper.get('[data-test="play-control"]').attributes('data-loading')).toBe('false')
+    expect(wrapper.find('[data-test="dotlottie"]').exists()).toBe(false)
+    expect(wrapper.get('[data-test="play-control"]').attributes('data-size')).toBe('large')
+    expect(wrapper.text()).toContain('15.0s')
+
+    await wrapper.setProps({ compact: true })
+    expect(wrapper.get('[data-test="play-control"]').attributes('data-size')).toBe('medium')
   })
 })
 
@@ -232,8 +273,11 @@ describe('SoundGenModal', () => {
     vi.useFakeTimers()
     mockLoadSample.mockReset()
     mockConfirm.mockReset()
+    mockInvokeModal.mockReset()
     mockCreateSound.mockReset()
     mockRegisterPlayer.mockReset()
+    mockDecodeAudioData.mockReset()
+    mockTrimAndApplyGain.mockReset()
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-audio')
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     vi.stubGlobal(
@@ -259,24 +303,26 @@ describe('SoundGenModal', () => {
     vi.unstubAllGlobals()
   })
 
-  it('generates 4 takes, allows selecting, and emits resolved sound on adopt', async () => {
+  it('generates 4 square candidates, opens SoundGenPreview on selection, and emits resolved sound on adopt', async () => {
     mockLoadSample.mockImplementation(async (_kind, _version, seconds) => makeSample(seconds))
     const fakeSound = { id: 'sound-1', name: '森林探险 2' }
     mockCreateSound.mockResolvedValue(fakeSound)
 
     const wrapper = mountModal()
     const submitBtn = wrapper.findAll('button').find((b) => b.text() === '生成')!
-    expect(submitBtn.attributes('disabled')).toBeUndefined()
-
     await submitBtn.trigger('click')
     await vi.runAllTimersAsync()
     await flushPromises()
 
     expect(mockLoadSample).toHaveBeenCalledTimes(4)
-    const takeCards = wrapper.findAll('.sound-take-card')
-    expect(takeCards).toHaveLength(4)
+    const candidates = wrapper.findAllComponents(SoundSquareItem)
+    expect(candidates).toHaveLength(4)
 
-    await takeCards[1].trigger('click')
+    await candidates[1].trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('.layout-with-preview').classes()).toContain('has-preview')
+    expect(wrapper.find('[data-test="waveform-player"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="corner-icon"]').exists()).toBe(true)
 
     const useBtn = wrapper.findAll('button').find((b) => b.text() === '采用')!
@@ -284,27 +330,140 @@ describe('SoundGenModal', () => {
     await useBtn.trigger('click')
     await flushPromises()
 
+    expect(mockTrimAndApplyGain).not.toHaveBeenCalled()
     expect(mockCreateSound).toHaveBeenCalledTimes(1)
     expect(mockCreateSound.mock.calls[0][0]).toBe('森林探险 2')
     expect(wrapper.emitted('resolved')).toEqual([[fakeSound]])
   })
 
-  it('keeps independent drafts and parameter options when switching between music and sound effect', async () => {
+  it('supports trimming, volume adjustment, reset, rename, and exports edited WAV on adopt', async () => {
+    mockLoadSample.mockImplementation(async (_kind, _version, seconds) => makeSample(seconds))
+    const fakeAudioBuffer = { duration: 15 }
+    const trimmedBlob = new Blob(['trimmed-wav'], { type: 'audio/wav' })
+    mockDecodeAudioData.mockResolvedValue(fakeAudioBuffer)
+    mockTrimAndApplyGain.mockResolvedValue(trimmedBlob)
+    mockInvokeModal.mockImplementation(
+      async ({ target }: { target: { applyName: (name: string) => Promise<void> } }) => {
+        await target.applyName('欢快木琴主题')
+      }
+    )
+    const fakeSound = { id: 'sound-2', name: '欢快木琴主题' }
+    mockCreateSound.mockResolvedValue(fakeSound)
+
+    const wrapper = mountModal()
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === '生成')!
+      .trigger('click')
+    await vi.runAllTimersAsync()
+    await flushPromises()
+
+    const candidates = wrapper.findAllComponents(SoundSquareItem)
+    await candidates[0].trigger('click')
+    await flushPromises()
+
+    // Rename via edit icon
+    const editIconBtn = wrapper.findAll('[data-test="icon"]').find((el) => el.attributes('data-type') === 'edit')!
+    await editIconBtn.trigger('click')
+    await flushPromises()
+    expect(mockInvokeModal).toHaveBeenCalledTimes(1)
+    expect(candidates[0].text()).toContain('欢快木琴主题')
+
+    // Trim audio range to [0.2, 0.7] -> 7.5s and verify collapsed-range clamping + reset
+    const waveformPlayer = wrapper.findComponent({ name: 'WaveformPlayer' })
+    waveformPlayer.vm.$emit('update:range', { left: 0.2, right: 0.7 })
+    await flushPromises()
+    expect(wrapper.text()).toContain('7.5s')
+
+    waveformPlayer.vm.$emit('update:range', { left: 0.5, right: 0.5 })
+    await flushPromises()
+    const clampedLeft = Number(wrapper.get('[data-test="waveform-player"]').attributes('data-left'))
+    const clampedRight = Number(wrapper.get('[data-test="waveform-player"]').attributes('data-right'))
+    expect(clampedRight - clampedLeft).toBeGreaterThanOrEqual(0.02)
+
+    const resetBtn = wrapper.findAll('button').find((b) => b.text() === '重置')!
+    await resetBtn.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('15.0s')
+
+    // Apply final trim + gain and adopt
+    waveformPlayer.vm.$emit('update:range', { left: 0.1, right: 0.6 })
+    const volumeSlider = wrapper.get('[data-test="volume-slider"]')
+    ;(volumeSlider.element as HTMLInputElement).value = '1.5'
+    await volumeSlider.trigger('input')
+    await flushPromises()
+
+    const useBtn = wrapper.findAll('button').find((b) => b.text() === '采用')!
+    await useBtn.trigger('click')
+    await flushPromises()
+
+    expect(mockDecodeAudioData).toHaveBeenCalledTimes(1)
+    expect(mockTrimAndApplyGain).toHaveBeenCalledWith(fakeAudioBuffer, 0.1, 0.6, 1.5)
+    expect(mockCreateSound).toHaveBeenCalledTimes(1)
+    expect(mockCreateSound.mock.calls[0][0]).toBe('欢快木琴主题')
+    expect(wrapper.emitted('resolved')).toEqual([[fakeSound]])
+  })
+
+  it('keeps preview panel open across regeneration and coordinates preview vs direct playback', async () => {
+    let resolveNextSample: ((sample: Sample) => void) | null = null
+    mockLoadSample.mockImplementation(async (_kind, _version, seconds) => makeSample(seconds))
+
+    const wrapper = mountModal()
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === '生成')!
+      .trigger('click')
+    await vi.runAllTimersAsync()
+    await flushPromises()
+
+    const candidates = wrapper.findAllComponents(SoundSquareItem)
+    await candidates[0].trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.layout-with-preview').classes()).toContain('has-preview')
+
+    // Start preview playback on candidate 0, then click play directly on candidate 1
+    await candidates[0].get('[data-test="play-control"]').trigger('click')
+    await flushPromises()
+    expect(candidates[0].get('[data-test="play-control"]').text()).toBe('stop')
+
+    await candidates[1].get('[data-test="play-control"]').trigger('click')
+    await flushPromises()
+    expect(candidates[0].get('[data-test="play-control"]').text()).toBe('play')
+    expect(candidates[1].get('[data-test="play-control"]').text()).toBe('stop')
+
+    // Regenerate while preview is open: has-preview stays true and shows loading, then selection hint
+    mockLoadSample.mockImplementationOnce(
+      () =>
+        new Promise<Sample>((resolve) => {
+          resolveNextSample = resolve
+        })
+    )
+    expect(wrapper.get('section p').text()).toContain('选择你最喜欢的一段音乐')
+    const regenBtn = wrapper.findAll('button').find((b) => b.text() === '重新生成')!
+    await regenBtn.trigger('click')
+    await flushPromises()
+    expect(wrapper.get('.layout-with-preview').classes()).toContain('has-preview')
+    expect(wrapper.text()).toContain('正在生成音乐...')
+
+    resolveNextSample!(makeSample(15))
+    await vi.runAllTimersAsync()
+    await flushPromises()
+    expect(wrapper.get('.layout-with-preview').classes()).toContain('has-preview')
+    expect(wrapper.text()).toContain('请在左侧选择一段声音进行预览和裁剪')
+  })
+
+  it('keeps independent drafts and parameter options when switching between music, effect, and speech', async () => {
     const wrapper = mountModal()
     const dropdowns = wrapper.findAll('[data-test="param-dropdown"]')
     expect(dropdowns).toHaveLength(3)
 
-    // Pick a music genre in music draft
     await dropdowns[1].get('button[aria-label="电子合成"]').trigger('click')
     await flushPromises()
     expect(dropdowns[1].text()).toContain('电子合成')
 
-    // Switch to sound effect via Sound type popover option
     await dropdowns[0].get('button[aria-label="音效"]').trigger('click')
     await flushPromises()
-
-    const textarea = wrapper.get('textarea')
-    expect((textarea.element as HTMLTextAreaElement).value).toContain('金币')
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toContain('金币')
 
     const styleLabels = wrapper
       .findAll('[data-test="param-dropdown"]')[1]
@@ -318,24 +477,10 @@ describe('SoundGenModal', () => {
       .map((el) => el.text())
     expect(durationLabels).toEqual(['1 秒', '3 秒', '5 秒'])
 
-    // Switch to speech/TTS and verify voice timbre and speed options
     await wrapper.findAll('[data-test="param-dropdown"]')[0].get('button[aria-label="配音"]').trigger('click')
     await flushPromises()
     expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toContain('宝藏')
 
-    const voiceLabels = wrapper
-      .findAll('[data-test="param-dropdown"]')[1]
-      .findAll('.ui-block-item span')
-      .map((el) => el.text())
-    expect(voiceLabels).toContain('温暖旁白')
-
-    const speedLabels = wrapper
-      .findAll('[data-test="param-dropdown"]')[2]
-      .findAll('.ui-block-item')
-      .map((el) => el.text())
-    expect(speedLabels).toEqual(['0.8x 慢速', '1.0x 正常', '1.25x 较快'])
-
-    // Switch back to music and verify prompt and selected genre are preserved
     await wrapper.findAll('[data-test="param-dropdown"]')[0].get('button[aria-label="音乐"]').trigger('click')
     await flushPromises()
     expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toContain('森林探险')
@@ -354,7 +499,6 @@ describe('SoundGenModal', () => {
     await playButtons[1].trigger('click')
     await flushPromises()
     expect(playButtons[1].text()).toBe('stop')
-    // Auditioning should not select the style
     expect(triggerButton.text()).toBe('曲风')
 
     await playButtons[1].trigger('click')

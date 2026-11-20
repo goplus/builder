@@ -78,8 +78,10 @@ const optionsText = computed(() => props.options.map((item) => t(item.label)).jo
     <template #trigger>
       <button
         v-radar="{
-          name: $t(name),
-          desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`
+          name: 'param-selector',
+          label: `Param selector &quot;${$t(name)}&quot;`,
+          desc: `Click to select '${$t(name)}' (e.g., ${optionsText})`,
+          attrs: { name: name.en }
         }"
         type="button"
         class="h-8 flex items-center justify-center gap-1 rounded-md border border-grey-400 bg-grey-100 pr-2.5 pl-1.5 text-sm text-grey-900 cursor-pointer hover:bg-grey-300 disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
@@ -87,8 +89,8 @@ const optionsText = computed(() => props.options.map((item) => t(item.label)).jo
         :disabled="effectiveDisabled"
       >
         <span
-          class="flex size-5 shrink-0 items-center justify-center"
-          :class="effectiveDisabled ? 'text-grey-600 opacity-60' : 'text-grey-800'"
+          class="flex h-5 w-5 flex-none items-center justify-center"
+          :class="effectiveDisabled ? 'text-grey-600' : 'text-grey-900'"
         >
           <slot name="icon"></slot>
         </span>
@@ -105,8 +107,10 @@ const optionsText = computed(() => props.options.map((item) => t(item.label)).jo
           <li v-for="(item, index) in options" :key="index">
             <SoundParamOptionItem
               v-radar="{
-                name: `Option '${$t(item.label)}'`,
-                desc: `Select '${$t(item.label)}' as the '${$t(name)}'`
+                name: 'param-option',
+                label: `Param option &quot;${$t(item.label)}&quot;`,
+                desc: `Select '${$t(item.label)}' as the '${$t(name)}'`,
+                attrs: { name: item.label.en }
               }"
               :active="value === item.value"
               :label="$t(item.label)"
