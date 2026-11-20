@@ -38,6 +38,7 @@ import { useFieldControlBindings } from '../form/field-control-bindings'
 const props = withDefaults(
   defineProps<{
     value: string | null
+    /** Prompt shown when no value is selected. */
     placeholder?: string
     disabled?: boolean
     class?: ClassValue
@@ -85,7 +86,9 @@ function handleBlur() {
   onBlur()
 }
 
-watch(() => props.value, syncSelected, { flush: 'post' })
+watch(() => props.value, syncSelected, {
+  flush: 'post' // Wait for Vue to render the options before reading them.
+})
 
 // Re-sync when child options change (e.g., async-loaded options)
 let observer: MutationObserver | null = null

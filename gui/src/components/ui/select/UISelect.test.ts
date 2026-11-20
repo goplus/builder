@@ -37,7 +37,7 @@ function createFormHarness(validateTemplate: ReturnType<typeof vi.fn>) {
 }
 
 describe('UISelect', () => {
-  it('displays a bound value that is hidden and disabled in the dropdown', async () => {
+  it('keeps the bound value visible until its option returns', async () => {
     const harness = defineComponent({
       components: { UISelect, UISelectOption },
       props: { unlisted: Boolean },
@@ -66,6 +66,16 @@ describe('UISelect', () => {
       expect(select.element.value).toBe('existing')
       expect(select.find('option[hidden]').exists()).toBe(false)
     })
+  })
+
+  it('displays the option label when an empty string is a valid value', async () => {
+    const wrapper = mount(UISelect, {
+      props: { value: '', placeholder: 'Choose a target' },
+      slots: { default: '<option value="sprite">Sprite</option><option value="">Stage</option>' }
+    })
+    await vi.waitFor(() => expect(wrapper.get('span').text()).toBe('Stage'))
+    expect(wrapper.get('select').element.value).toBe('')
+    expect(wrapper.find('option[disabled]').exists()).toBe(false)
   })
 
   it('uses the placeholder for an empty value without a matching option', async () => {
