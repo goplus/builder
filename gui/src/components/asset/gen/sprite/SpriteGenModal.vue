@@ -74,7 +74,8 @@ const handleModalClose = useMessageHandle(
   <UIModal
     ref="modalRef"
     :radar="{ name: 'sprite-generation-modal', desc: 'Modal for sprite generation' }"
-    style="width: 1076px; max-width: calc(100vw - 32px); height: 800px; max-height: calc(100dvh - 32px)"
+    style="width: 1076px; max-width: calc(100vw - 32px); height: 800px"
+    :style="{ maxHeight: gen?.isPreparePhase === false ? 'calc(100dvh - 32px)' : null }"
     :visible="visible"
     mask-closable
     @update:visible="handleModalClose"

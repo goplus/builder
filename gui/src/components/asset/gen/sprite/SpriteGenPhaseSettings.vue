@@ -86,63 +86,61 @@ const handleUseAsset = useMessageHandle(
     }"
     class="phase-settings h-full flex flex-col items-stretch"
   >
-    <div class="min-h-0 flex-[1_1_0] overflow-y-auto [overflow-anchor:none]">
-      <LayoutWithPreview class="min-h-full" :has-preview="hasPreview">
-        <SpriteSettingsInput
-          :class="{ 'h-75': hasPreview }"
-          :gen="gen"
+    <LayoutWithPreview :has-preview="hasPreview">
+      <SpriteSettingsInput
+        :class="{ 'h-75': hasPreview }"
+        :gen="gen"
+        :disabled="handleSubmit.isLoading.value"
+        :description-placeholder="descriptionPlaceholder"
+      />
+      <!-- Fixed height to prevent layout shift when suggestions appear/disappear -->
+      <div class="min-h-42.5">
+        <AssetSuggestions
+          v-if="isLibrarySearchEnabled"
+          :type="AssetType.Sprite"
+          :loading="isSuggestionsLoading"
+          :keyword="keyword"
+          :suggestions="suggestions"
+          :selected="selectedAsset"
+          @toggle="toggleSelectedAsset"
+        >
+          <template #item="{ asset, selected, onClick }">
+            <SpriteItem :asset="asset" :selected="selected" @click="onClick" />
+          </template>
+        </AssetSuggestions>
+        <ImageSelector
+          :state="gen.imagesGenState"
+          :selected="gen.imageIndex"
           :disabled="handleSubmit.isLoading.value"
-          :description-placeholder="descriptionPlaceholder"
-        />
-        <!-- Fixed height to prevent layout shift when suggestions appear/disappear -->
-        <div class="min-h-42.5">
-          <AssetSuggestions
-            v-if="isLibrarySearchEnabled"
-            :type="AssetType.Sprite"
-            :loading="isSuggestionsLoading"
-            :keyword="keyword"
-            :suggestions="suggestions"
-            :selected="selectedAsset"
-            @toggle="toggleSelectedAsset"
-          >
-            <template #item="{ asset, selected, onClick }">
-              <SpriteItem :asset="asset" :selected="selected" @click="onClick" />
+          @select="handleImageSelect"
+        >
+          <template #loading-item>
+            <SpriteImageItem loading />
+          </template>
+          <template #item="{ file, active, onClick }">
+            <SpriteImageItem :file="file" :active="active" @click="onClick" />
+          </template>
+          <template #tip>
+            <template v-if="gen.imagesGenState.status === 'running'">
+              {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
+              {{ gen.imagesGenState.timeLeft != null ? $t(humanizeTimeLeft(gen.imagesGenState.timeLeft)) : '' }}
             </template>
-          </AssetSuggestions>
-          <ImageSelector
-            :state="gen.imagesGenState"
-            :selected="gen.imageIndex"
-            :disabled="handleSubmit.isLoading.value"
-            @select="handleImageSelect"
-          >
-            <template #loading-item>
-              <SpriteImageItem loading />
+            <template v-else-if="gen.imagesGenState.status === 'finished'">
+              {{
+                $t({
+                  en: 'Choose a costume to start with, or generate new options.',
+                  zh: '选一个造型作为精灵的初始造型，或重新生成。'
+                })
+              }}
             </template>
-            <template #item="{ file, active, onClick }">
-              <SpriteImageItem :file="file" :active="active" @click="onClick" />
-            </template>
-            <template #tip>
-              <template v-if="gen.imagesGenState.status === 'running'">
-                {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
-                {{ gen.imagesGenState.timeLeft != null ? $t(humanizeTimeLeft(gen.imagesGenState.timeLeft)) : '' }}
-              </template>
-              <template v-else-if="gen.imagesGenState.status === 'finished'">
-                {{
-                  $t({
-                    en: 'Choose a costume to start with, or generate new options.',
-                    zh: '选一个造型作为精灵的初始造型，或重新生成。'
-                  })
-                }}
-              </template>
-            </template>
-          </ImageSelector>
-        </div>
+          </template>
+        </ImageSelector>
+      </div>
 
-        <template #preview>
-          <ImagePreview :file="gen.image" />
-        </template>
-      </LayoutWithPreview>
-    </div>
+      <template #preview>
+        <ImagePreview :file="gen.image" />
+      </template>
+    </LayoutWithPreview>
     <footer class="w-full flex-none px-6 py-5 flex justify-end gap-4">
       <UIButton
         v-if="selectedAsset != null"
