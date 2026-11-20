@@ -80,7 +80,7 @@ defineEmits<{ undo: []; redo: []; discard: []; save: [] }>()
       :disabled="busy || !canSave"
       :loading="saving"
       @click="$emit('save')"
-      >{{ $t({ en: 'Keep', zh: '保留' }) }}</UIButton
+      >{{ $t({ en: 'Apply', zh: '采用' }) }}</UIButton
     >
   </div>
 </template>

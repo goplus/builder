@@ -27,7 +27,7 @@ const emit = defineEmits<{
     <header class="min-h-14 shrink-0 flex items-center justify-between gap-4 border-b border-grey-400 px-6">
       <h2 class="text-xl text-title">{{ $t({ zh: '编辑精灵', en: 'Edit Sprite' }) }}</h2>
       <UITooltip>
-        {{ $t({ en: 'Minimize and keep your changes', zh: '收起，保留未采用的修改' }) }}
+        {{ $t({ en: 'Minimize and keep the draft', zh: '收起并保留草稿' }) }}
         <template #trigger><UIModalClose @click="emit('cancelled')" /></template>
       </UITooltip>
     </header>

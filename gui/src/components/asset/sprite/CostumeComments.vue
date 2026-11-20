@@ -210,7 +210,7 @@ function position(comment: CostumeEditComment) {
               type="white"
               shape="square"
               class="border-transparent! mr-auto"
-              :title="$t({ en: 'Remove edit', zh: '移除修改' })"
+              :title="$t({ en: 'Remove instruction', zh: '移除这条指令' })"
               @click="remove()"
             >
               <UIIcon type="trash" class="h-4 w-4" />

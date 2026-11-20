@@ -540,7 +540,7 @@ function formatTime(timeInMs: number) {
                   </button>
                 </div>
                 <span v-if="shouldNudge" class="track-hint">
-                  {{ $t({ en: 'Drag to trim', zh: '拖动两端裁剪' }) }}
+                  {{ $t({ en: 'Drag the handles to select a clip', zh: '拖动两端，选取视频片段' }) }}
                 </span>
                 <i v-show="!shouldNudge" class="current-time" :style="currentTimeStyle"></i>
               </div>

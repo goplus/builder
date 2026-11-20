@@ -27,7 +27,7 @@ const activate = useMessageHandle(
     }
     await edit.editCostume(item.id, text)
   },
-  { en: 'Failed to edit with AI', zh: '使用 AI 编辑失败' }
+  { en: 'Failed to edit costume', zh: '修改造型失败' }
 )
 </script>
 

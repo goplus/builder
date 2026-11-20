@@ -24,7 +24,7 @@ const generating = computed(() => props.edit.generateState.status === 'running')
       </template>
       <template #media-overlay>
         <GenLoading :visible="generating" cover>{{
-          $t({ en: 'Generating changes...', zh: '正在生成修改...' })
+          $t({ en: 'Editing backdrop...', zh: '正在修改背景...' })
         }}</GenLoading>
         <GenStateFailed v-if="edit.generateState.status === 'failed'" :state-failed="edit.generateState" cover />
       </template>

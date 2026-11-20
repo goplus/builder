@@ -114,7 +114,7 @@ const handleSubmit = useMessageHandle(
                   ? { en: 'Local edit', zh: '局部修改' }
                   : {
                       en: `${gen.editComments.length} ${gen.editComments.length === 1 ? 'local edit' : 'local edits'}`,
-                      zh: `${gen.editComments.length} 处修改`
+                      zh: `${gen.editComments.length} 处局部修改`
                     }
               )
             }}
@@ -142,7 +142,7 @@ const handleSubmit = useMessageHandle(
               v-radar="{ name: `Remove local edit ${index + 1}`, desc: 'Remove the edit instruction at this point' }"
               type="button"
               class="h-7 w-7 shrink-0 flex items-center justify-center rounded-sm border-none bg-transparent text-grey-900 cursor-pointer hover:text-primary-main focus-visible:outline-2 focus-visible:outline-primary-main"
-              :title="$t({ en: 'Remove edit', zh: '移除修改' })"
+              :title="$t({ en: 'Remove instruction', zh: '移除这条指令' })"
               @click="removeComment(comment.id)"
             >
               <UIIcon type="trash" class="h-4 w-4" />

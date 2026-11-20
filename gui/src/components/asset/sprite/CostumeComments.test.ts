@@ -79,7 +79,7 @@ describe('CostumeComments', () => {
     expect(gen.editComments).toHaveLength(1)
     expect(gen.editComments[0].content).toBe('Make this blue')
     await wrapper.get('.comment-marker').trigger('click')
-    await wrapper.get('button[title="Remove edit"]').trigger('click')
+    await wrapper.get('button[title="Remove instruction"]').trigger('click')
     await flushPromises()
     expect(gen.editComments).toEqual([])
   })

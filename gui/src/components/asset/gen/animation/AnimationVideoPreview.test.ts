@@ -80,11 +80,11 @@ describe('AnimationVideoPreview', () => {
     const { framesConfig, showControls, loadVideo } = setup(config)
     const wrapper = await loadVideo()
     expect(wrapper.get('.track-inner').classes()).toContain('nudge')
-    expect(wrapper.text()).toContain('拖动两端裁剪')
+    expect(wrapper.text()).toContain('拖动两端，选取视频片段')
 
     await wrapper.get('.track-inner').trigger('mouseenter')
     expect(wrapper.get('.track-inner').classes()).not.toContain('nudge')
-    expect(wrapper.text()).not.toContain('拖动两端裁剪')
+    expect(wrapper.text()).not.toContain('拖动两端，选取视频片段')
     showControls.value = false
     await nextTick()
     showControls.value = true

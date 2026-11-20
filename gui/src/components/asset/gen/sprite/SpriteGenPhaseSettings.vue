@@ -128,8 +128,8 @@ const handleUseAsset = useMessageHandle(
             <template v-else-if="gen.imagesGenState.status === 'finished'">
               {{
                 $t({
-                  en: 'Select the sprite you like the most, or generate new ones.',
-                  zh: '选择你最喜欢的一个精灵，或者重新生成。'
+                  en: 'Choose a costume to start with, or generate new options.',
+                  zh: '选一个造型作为精灵的初始造型，或重新生成。'
                 })
               }}
             </template>
@@ -166,7 +166,7 @@ const handleUseAsset = useMessageHandle(
         :loading="handleSubmit.isLoading.value"
         @click="handleSubmit.fn"
       >
-        {{ $t({ en: 'Use', zh: '采用' }) }}
+        {{ $t({ en: 'Add sprite', zh: '添加精灵' }) }}
       </UIButton>
     </footer>
   </main>

@@ -756,7 +756,7 @@ describe('Embedded AI workspace', () => {
     expect(input().get('textarea').element.value).toBe('Keep the pose')
     gen.setEditComments([{ id: 'point', x: 0.5, y: 0.5, content: 'Make this blue' }])
     await flushPromises()
-    expect(localEdit().text()).toBe('1 处修改')
+    expect(localEdit().text()).toBe('1 处局部修改')
     await localEdit().trigger('click')
     await flushPromises()
     expect(localEdit().attributes('aria-expanded')).toBe('true')
