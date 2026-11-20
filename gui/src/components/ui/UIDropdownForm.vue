@@ -1,6 +1,6 @@
 <template>
   <form :class="rootClass" @submit.prevent="emit('confirm')">
-    <header class="h-11 flex flex-none items-center px-4">
+    <header v-if="showHeader" class="h-11 flex flex-none items-center px-4">
       <h4 class="flex-1 text-xl text-title">{{ title }}</h4>
       <div
         v-radar="{ name: 'close-button', desc: 'Click to close the dropdown' }"
@@ -10,15 +10,18 @@
         <UIIcon type="close" class="h-5 w-5" />
       </div>
     </header>
-    <UIDivider />
+    <UIDivider v-if="showHeader" />
     <main class="flex-auto min-h-0 overflow-y-auto px-4 py-3">
       <slot></slot>
     </main>
-    <footer class="flex-none flex items-center justify-between gap-3 p-4">
+    <footer
+      v-if="showActions || $slots['footer-left'] != null"
+      class="flex-none flex items-center justify-between gap-3 p-4"
+    >
       <div class="min-w-0 flex items-center">
         <slot name="footer-left"></slot>
       </div>
-      <div class="flex justify-end gap-3">
+      <div v-if="showActions" class="flex justify-end gap-3">
         <UIButton
           v-radar="{ name: 'cancel-button', desc: 'Click to cancel the operation in dropdown' }"
           type="neutral"
@@ -42,10 +45,15 @@ import { computed } from 'vue'
 import { UIButton, UIDivider, UIIcon } from '@/components/ui'
 import { cn, type ClassValue } from './utils'
 
-const props = defineProps<{
-  title: string
-  class?: ClassValue
-}>()
+const props = withDefaults(
+  defineProps<{
+    title: string
+    class?: ClassValue
+    showHeader?: boolean
+    showActions?: boolean
+  }>(),
+  { showHeader: true, showActions: true, class: undefined }
+)
 
 const emit = defineEmits<{
   cancel: []

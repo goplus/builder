@@ -12,6 +12,7 @@ import EnrichableSubmitButton from '../common/EnrichableSubmitButton.vue'
 const props = withDefaults(
   defineProps<{
     gen: SpriteGen
+    disabled?: boolean
     descriptionPlaceholder?: string
   }>(),
   {
@@ -27,7 +28,7 @@ const readonly = computed(() => props.gen.result != null)
 const enriching = computed(() => props.gen.enrichState.status === 'running')
 const imageGenerating = computed(() => props.gen.imagesGenState.status === 'running')
 const contentPreparing = computed(() => props.gen.contentPreparingState.status === 'running')
-const disabled = computed(() => imageGenerating.value || contentPreparing.value)
+const disabled = computed(() => props.disabled || imageGenerating.value || contentPreparing.value)
 const buttonDisabled = computed(() => disabled.value || enriching.value || props.gen.settings.description === '')
 
 const handleEnrich = useMessageHandle(() => props.gen.enrich(), {

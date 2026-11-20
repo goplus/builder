@@ -9,6 +9,9 @@ import { Costume } from '@/models/spx/costume'
 import { Animation } from '@/models/spx/animation'
 import { UIImg, UIEditorSpriteItem, UIMenuItem } from '@/components/ui'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
+import GenerationIndicator from '@/components/asset/gen/common/GenerationIndicator.vue'
+import { isCostumesLoading } from '@/components/asset/gen/costume/CostumeGenItem.vue'
+import { isAnimationsLoading } from '@/components/asset/gen/animation/AnimationGenItem.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
   SaveAssetToLibraryMenuItem,
@@ -38,11 +41,14 @@ const props = withDefaults(
 )
 
 const editorCtx = useEditorCtx()
-
 const [imgSrc, imgLoading] = useRenderableImageUrl(() => props.sprite.defaultCostume?.img)
 const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 const animation = computed(() => props.sprite.getDefaultAnimation())
+const generating = computed(() => {
+  const edit = editorCtx.state.spriteEditState.edits.find((edit) => edit.sourceSpriteId === props.sprite.id)
+  return edit != null && (isCostumesLoading(edit.costumes) || isAnimationsLoading(edit.animations))
+})
 
 const radarNodeMeta = computed(() => {
   const desc = props.selectable ? 'Click to select the sprite and view more options' : ''
@@ -157,6 +163,7 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     :selectable="selectable"
     :visible="sprite.visible"
   >
+    <GenerationIndicator v-if="generating" />
     <template #img="{ style }">
       <CostumesAutoPlayer
         v-if="animation != null && (autoplay || hovered)"

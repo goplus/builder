@@ -31,7 +31,7 @@ const placeholder = computed(() => ({
 
 <template>
   <ParamSelector
-    :name="{ en: 'Art Style', zh: '艺术风格' }"
+    :name="{ en: 'Art style', zh: '艺术风格' }"
     :tips="{ en: 'Please select the art style you want to generate', zh: '请选择您想要生成的艺术风格' }"
     :options="artStyleOptions"
     :placeholder="placeholder"

@@ -1,18 +1,9 @@
 <script setup lang="ts">
-import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
-import { useI18n } from '@/utils/i18n'
-import { useNetwork } from '@/utils/network'
-import type { Sprite } from '@/models/spx/sprite'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import { useSignedIn } from '@/stores/user'
-import { cloudHelpers } from '@/models/common/cloud'
-import { provideLocalEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { EditorState } from '@/components/editor/editor-state'
-import type { ILocalCache } from '@/components/editor/editing'
+import type { SpriteGen, SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import SpriteGenPhaseSettings from './SpriteGenPhaseSettings.vue'
 import SpriteGenPhaseContent from './SpriteGenPhaseContent.vue'
 
-const props = defineProps<{
+defineProps<{
   gen: SpriteGen
   descriptionPlaceholder?: string
   librarySearchEnabled?: boolean
@@ -20,28 +11,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   collapse: []
-  resolved: [Sprite]
+  resolved: [SpriteGenResult]
 }>()
-
-const i18n = useI18n()
-const signedIn = useSignedIn()
-const { isOnline } = useNetwork()
-// Local cache is not really used in sprite gen, so a dummy implementation is sufficient.
-const localCache: ILocalCache = {
-  load: () => Promise.reject(new Error('Not implemented')),
-  save: () => Promise.reject(new Error('Not implemented')),
-  clear: () => Promise.reject(new Error('Not implemented'))
-}
-// We should override the state to avoid history operations caused by animation / costume changes within sprite gen.
-const editorStateInGen = useComputedDisposable(
-  () => new EditorState(i18n, props.gen.previewProject, isOnline, signedIn, cloudHelpers, localCache)
-)
-const editorCtxInGen = computedShallowReactive(() => ({
-  project: props.gen.previewProject,
-  state: editorStateInGen.value
-}))
-
-provideLocalEditorCtx(editorCtxInGen)
 </script>
 
 <template>

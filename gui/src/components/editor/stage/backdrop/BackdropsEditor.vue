@@ -36,7 +36,12 @@
       </UIMenu>
     </template>
     <template #detail>
-      <BackdropDetail v-if="state.selected != null" :backdrop="state.selected" />
+      <BackdropResourceEditor
+        v-if="state.selected != null && spriteEditDemoEnabled"
+        :key="state.selected.id"
+        :backdrop="state.selected"
+      />
+      <BackdropDetail v-else-if="state.selected != null" :backdrop="state.selected" />
     </template>
   </EditorList>
 </template>
@@ -83,12 +88,14 @@ import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Stage } from '@/models/spx/stage'
 import { Backdrop } from '@/models/spx/backdrop'
+import { spriteEditDemoEnabled } from '@/models/spx/gen/edit-demo'
 import { useAddAssetFromLibrary, useAddBackdropFromLocalFile, useBackdropGenModal } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import EditorList from '../../common/EditorList.vue'
 import BackdropItem from './BackdropItem.vue'
 import BackdropDetail from './BackdropDetail.vue'
+import BackdropResourceEditor from './BackdropResourceEditor.vue'
 
 const props = defineProps<{
   state: BackdropsEditorState
