@@ -468,9 +468,9 @@ an overload suffix expand in documentation order. Grouped views retain their
 category order and follow the configured item order within each category.
 This ordering applies to Reference, not completion.
 Reference items still respect the active editor context and `hiddenFromList`,
-even for exact overload selections. If the language server
-later introduces a mechanism such as `//xgols:notrecommended`, this filter will not
-override its recommendation exclusions either.
+even for exact overload selections. API Reference uses its own documented items.
+The language server applies `//xgols:notRecommended` independently.
+`filterAPIs` cannot restore a recommendation that the language server excludes.
 Selecting a definition does not automatically create a custom API Reference card.
 The filter controls editor assistance, not which APIs the learner's code can call.
 
