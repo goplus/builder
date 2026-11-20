@@ -145,7 +145,7 @@ const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
 const sprites = computed(() => editorCtx.project.sprites)
 
 async function getOwnProperties(target: string, signal: AbortSignal) {
-  const properties = await codeEditor.getProperties(target, signal)
+  const properties = await codeEditor.getProperties(target, { signal, excludeNotRecommended: true })
   return filterOwnProperties(target, properties)
 }
 

@@ -1,11 +1,12 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { shallowRef, type ShallowRef } from 'vue'
 import { Disposable } from '@/utils/disposable'
+import { DefaultException } from '@/utils/exception'
 import type { History } from '@/components/editor/history'
 import type { IXGoProject } from './project'
 import { resolveDefinitionId, type DefinitionIdentifier, type PresetPackages } from './definition-id'
 import { type IDocumentBase, DocumentBase } from './document-base'
-import type { ILSPClient } from './lsp/types'
+import type { GetPropertiesOptions, ILSPClient } from './lsp/types'
 import { EmptyAPIReferenceProvider } from './api-reference'
 import {
   type ICodeEditorUIController,
@@ -42,6 +43,7 @@ import { InlayHintProvider } from './inlay-hint'
 import { ResourceAdapter } from './resource'
 import { InputHelperProvider } from './input-helper'
 import { CompletionProvider } from './completion'
+import { CodeActionProvider, type CodeAction } from './code-action'
 import { DiagnosticsProvider } from './diagnostics'
 import { SnippetVariablesProvider } from './snippet-variables'
 import type { ICopilot } from './copilot'
@@ -68,6 +70,7 @@ export class CodeEditor extends Disposable {
   readonly copilot: ICopilot | null
   readonly lspClient: ILSPClient
   readonly documentBase: IDocumentBase
+  readonly codeActionProvider: CodeActionProvider
   private readonly presetPackages: PresetPackages
 
   constructor(params: CodeEditorParams) {
@@ -87,6 +90,7 @@ export class CodeEditor extends Disposable {
     this.inputHelperProviderRef = shallowRef(new InputHelperProvider(params.lspClient, () => this.resourceAdapter))
     this.apiReferenceProviderRef = shallowRef(new EmptyAPIReferenceProvider())
     this.completionProviderRef = shallowRef(new CompletionProvider(params.lspClient, documentBase))
+    this.codeActionProvider = new CodeActionProvider(params.lspClient)
     this.diagnosticsProviderRef = shallowRef(new DiagnosticsProvider(params.lspClient, params.project))
     this.snippetVariablesProviderRef = shallowRef(new SnippetVariablesProvider())
   }
@@ -200,6 +204,28 @@ export class CodeEditor extends Disposable {
     return this.addTextDocument(id)
   }
 
+  async applyCodeAction(action: CodeAction) {
+    const getCurrentDocument = () => {
+      const textDocument = this.getTextDocument(action.textDocument)
+      const owner = this.project.getCodeOwner(getCodeFilePath(action.textDocument.uri))
+      if (textDocument == null || owner?.getCode() !== action.source || textDocument.getValue() !== action.source) {
+        throw new DefaultException({
+          en: 'The code has changed. Request quick fixes again.',
+          zh: '代码已更改，请重新获取快速修复。'
+        })
+      }
+      return textDocument
+    }
+    let textDocument = getCurrentDocument()
+    await this.history.doAction(
+      { name: action.title },
+      () => textDocument.pushEdits(action.edits),
+      () => {
+        textDocument = getCurrentDocument()
+      }
+    )
+  }
+
   async formatTextDocument(id: TextDocumentIdentifier) {
     const textDocument = this.getTextDocument(id)
     if (textDocument == null) return
@@ -282,8 +308,11 @@ export class CodeEditor extends Disposable {
   }
 
   /** Get properties for a given target */
-  async getProperties(target: string, signal?: AbortSignal): Promise<Property[]> {
-    const properties = await this.lspClient.getProperties({ signal }, target)
+  async getProperties(
+    target: string,
+    { signal, ...options }: GetPropertiesOptions & { signal?: AbortSignal } = {}
+  ): Promise<Property[]> {
+    const properties = await this.lspClient.getProperties({ signal }, target, options)
     return filterPropertiesByDocumentation(properties, this.documentBase, this.project.classFramework.pkgPaths[0])
   }
 

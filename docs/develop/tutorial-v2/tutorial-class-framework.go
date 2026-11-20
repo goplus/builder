@@ -171,9 +171,21 @@ type CodeEditor interface {
 	// filterAPIs limits Code Editor assistance. Prefer "xgo:preset/spx?Sprite.stepTo":
 	// preset/spx resolves to the active editor's SPX package, including after upgrades.
 	// Entries use "xgo:<package>?<name>#<overloadId>"; omitting # selects all
-	// overloads. preset/<name> selects a project-provided package; other package
+	// matching overloads, subject to the recommendation rules below.
+	// preset/<name> selects a project-provided package; other package
 	// names and full paths match literally. Unknown presets, packages and APIs
 	// match nothing. An empty list hides all filtered APIs.
+	// Without a filter, API Reference uses its default curated list. With a
+	// filter, it selects from all available documented, insertable reference
+	// items, independently of that default list. Items follow the configured
+	// order; overloads expand in documentation order. Grouped views retain
+	// their category order.
+	// Reference items still respect context restrictions and hiddenFromList,
+	// even for exact overload selections.
+	// If the language server later introduces a mechanism such as
+	// //xgols:notrecommended, this filter will not override its recommendation
+	// exclusions either.
+	// Selecting a definition does not create a custom API Reference item.
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
 	formatWorkspace()

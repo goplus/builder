@@ -66,6 +66,10 @@ type ContextMessageOptions = {
   extraContext?: string
 }
 
+const oneShotRequestContext = `# Automated request
+
+The message after this context is a one-off automated request, not written by the user. The current topic may say who sends such requests. Do what it asks, in the form it asks for. Your answer goes back to the sender, not to the user.`
+
 function getToolExecutionText(execution: ToolExecution): string {
   switch (execution.state) {
     case 'executing':
@@ -911,7 +915,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     const messages: Message[] = [
       await this.getContextMessage({
         toolsCustomElementsEnabled: false,
-        extraContext: this.getUserConversationContext()
+        extraContext: [oneShotRequestContext, this.getUserConversationContext()].filter((s) => s !== '').join('\n\n')
       }),
       { type: 'text', role: 'user', content: message }
     ]

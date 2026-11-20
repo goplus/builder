@@ -2,7 +2,7 @@ import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
 import { TaskManager } from '@/utils/task'
-import { type Selection, type Position, isSelectionEmpty } from '../../common'
+import { type Selection, type Position, isSelectionEmpty, selection2Range } from '../../common'
 import type { monaco } from '../../monaco'
 import {
   builtInCommandCopy,
@@ -56,19 +56,23 @@ export class ContextMenuController extends Disposable {
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) return null
     const ctx: ContextMenuContext = { textDocument, signal }
-    const items = await (
-      'line' in posOrSel
+    const range = 'line' in posOrSel ? { start: posOrSel, end: posOrSel } : selection2Range(posOrSel)
+    const handleProviderError = (error: unknown) => {
+      if (error instanceof Cancelled) throw error
+      capture(error, 'Error while providing context menu items')
+      return []
+    }
+    const [items, codeActions] = await Promise.all([
+      ('line' in posOrSel
         ? provider.provideContextMenu(ctx, posOrSel)
         : provider.provideSelectionContextMenu(ctx, posOrSel)
-    ).catch((err) => {
-      if (err instanceof Cancelled) throw err
-      capture(err, 'Error while providing context menu items')
-      return []
-    })
+      ).catch(handleProviderError),
+      this.ui.codeEditor.codeActionProvider.provideCodeActions(ctx, range).catch(handleProviderError)
+    ])
     const groups = [this.builtinMenuItems]
-    const resolvedItems = items?.map((item) => this.ui.resolveAction(item)).filter((i) => i != null)
-    if (resolvedItems != null && resolvedItems?.length > 0) {
-      groups.unshift(resolvedItems as InternalMenuItem[])
+    const resolvedItems = [...codeActions, ...items].map((item) => this.ui.resolveAction(item)).filter((i) => i != null)
+    if (resolvedItems.length > 0) {
+      groups.unshift(resolvedItems)
     }
     return { groups, position: aPos }
   })

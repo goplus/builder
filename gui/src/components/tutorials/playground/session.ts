@@ -5,12 +5,13 @@ import type { ReadinessScope } from '@/utils/readiness'
 import type { ProgressReporter } from '@/utils/progress'
 import { untilNotNull } from '@/utils/utils'
 import type { TutorialProject } from '@/models/tutorial/project'
-import type { Copilot, Session as CopilotSession, Topic } from '@/components/copilot/copilot'
+import type { Copilot, Session as CopilotSession } from '@/components/copilot/copilot'
 import type { EditorState } from '@/components/editor/editor-state'
 import type { CodeEditor } from '@/components/editor/spx-code-editor'
 
 import { PlaygroundCourseProgram, type PlaygroundCourseCompletion, type PlaygroundCoursePresentation } from './program'
 import { APIWhitelist } from './api-whitelist'
+import { getPlaygroundCopilotTopic } from './copilot-topic'
 import { Ruler } from './ruler'
 
 export type PlaygroundCourseSessionOptions = {
@@ -129,13 +130,10 @@ export class PlaygroundCourseSession extends Emitter<{
   }
 
   private async startCopilotSession() {
-    const topic: Topic = {
-      title: { en: this.project.title, zh: this.project.title },
-      description: `You are assisting the learner in the Playground Course: ${this.project.title}.\n\n${this.project.config?.copilotContext ?? ''}`,
-      reactToEvents: false,
-      endable: true,
-      codeHelperEnabled: false
-    }
+    const topic = getPlaygroundCopilotTopic({
+      title: this.project.title,
+      copilotContext: this.project.config?.copilotContext ?? ''
+    })
     const starting = this.copilot.startSession(topic)
     this.copilotSession = this.copilot.currentSession
     await starting

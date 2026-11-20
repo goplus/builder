@@ -2,8 +2,8 @@ import { resolveObjectURL } from 'node:buffer'
 import { defineComponent, h, onUnmounted } from 'vue'
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from 'vue-router'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
-import { enableAutoUnmount, mount } from '@vue/test-utils'
-import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
+import { enableAutoUnmount, mount, type VueWrapper } from '@vue/test-utils'
+import { afterEach, beforeAll, beforeEach, expect, vi } from 'vitest'
 import { createAppState } from '@/utils/app-state'
 import { createI18n } from '@/utils/i18n'
 import { createRadar } from '@/utils/radar'
@@ -257,6 +257,18 @@ export async function mountPages(path: string) {
     }
   )
   return { wrapper, router, signedIn }
+}
+
+export async function askCopilot(wrapper: VueWrapper, message: string) {
+  await vi.waitFor(() => expect(wrapper.find('.copilot-trigger').exists()).toBe(true))
+  await wrapper.get('.copilot-trigger').trigger('click')
+  await vi.waitFor(() => expect(wrapper.find('.copilot-panel textarea').exists()).toBe(true))
+  await wrapper.get('.copilot-panel textarea').setValue(message)
+  await wrapper.get('.copilot-panel textarea').trigger('keypress', { key: 'Enter' })
+}
+
+export function findCopilotButton(wrapper: VueWrapper, text: string) {
+  return wrapper.findAll<HTMLButtonElement>('.copilot-panel button').find((button) => button.text() === text)
 }
 
 export function setupPageTests() {

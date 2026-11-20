@@ -35,14 +35,17 @@ const handleAction = useMessageHandle(
     <ul class="min-h-0 max-h-75 min-w-62.5 max-w-82 flex flex-col overflow-y-auto [scrollbar-width:thin]">
       <slot></slot>
     </ul>
-    <footer v-if="actions.length > 0" class="mt-1.5 flex gap-3 border-t border-dividing-line-2 px-2 pt-3.5 pb-2">
+    <footer
+      v-if="actions.length > 0"
+      class="mt-1.5 flex flex-wrap gap-3 border-t border-dividing-line-2 px-2 pt-3.5 pb-2"
+    >
       <ActionButton
         v-for="(action, i) in actions"
         :key="i"
         :icon="action.commandInfo.icon"
         @click="handleAction(action)"
       >
-        {{ action.title }}
+        {{ $t(action.title) }}
       </ActionButton>
     </footer>
   </CodeEditorCard>

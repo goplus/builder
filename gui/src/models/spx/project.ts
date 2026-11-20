@@ -70,6 +70,9 @@ export type RawProjectConfig = RawStageConfig &
     zorder?: ZorderItem[]
     run?: RawRunConfig
     camera?: RawCameraConfig
+    /**
+     * Map path relative to assets: a legacy JSON file or a directory containing tilemap.json and optional decorator.json.
+     */
     tilemapPath?: string
     /**
      * Sprite order info, used by Builder to determine the order of sprites.

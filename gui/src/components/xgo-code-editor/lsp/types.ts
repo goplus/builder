@@ -17,6 +17,11 @@ export type RequestContext = {
 
 export type { DefinitionIdentifier }
 
+export type GetPropertiesOptions = {
+  /** Exclude properties marked with `//xgols:notRecommended` when true. Defaults to false. */
+  excludeNotRecommended?: boolean
+}
+
 export type PropertyRenamedEvent = {
   /** The target that owns the property. */
   target: string
@@ -43,6 +48,10 @@ export interface ILSPClient {
     params: lsp.PrepareRenameParams
   ): Promise<lsp.PrepareRenameResult | null>
   textDocumentRename(ctx: RequestContext, params: lsp.RenameParams): Promise<lsp.WorkspaceEdit | null>
+  textDocumentCodeAction(
+    ctx: RequestContext,
+    params: lsp.CodeActionParams
+  ): Promise<(lsp.CodeAction | lsp.Command)[] | null>
   textDocumentFormatting(ctx: RequestContext, params: lsp.DocumentFormattingParams): Promise<lsp.TextEdit[] | null>
   textDocumentInlayHint(ctx: RequestContext, params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null>
   textDocumentDocumentLink(ctx: RequestContext, params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null>
@@ -68,6 +77,6 @@ export interface ILSPClient {
   getResourceReferences(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<ResourceReference[]>
   getCompletionList(ctx: RequestContext, params: lsp.CompletionParams): Promise<lsp.CompletionList>
   getInputSlots(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<InputSlot[]>
-  getProperties(ctx: RequestContext, target: string): Promise<Property[]>
+  getProperties(ctx: RequestContext, target: string, options?: GetPropertiesOptions): Promise<Property[]>
   onPropertyRenamed(handler: (event: PropertyRenamedEvent) => void): Disposer
 }
