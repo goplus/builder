@@ -468,9 +468,9 @@ an overload suffix expand in documentation order. Grouped views retain their
 category order and follow the configured item order within each category.
 This ordering applies to Reference, not completion.
 Reference items still respect the active editor context and `hiddenFromList`,
-even for exact overload selections. If the language server
-later introduces a mechanism such as `//xgols:notrecommended`, this filter will not
-override its recommendation exclusions either.
+even for exact overload selections. API Reference uses its own documented items.
+The language server applies `//xgols:notRecommended` independently.
+`filterAPIs` cannot restore a recommendation that the language server excludes.
 Selecting a definition does not automatically create a custom API Reference card.
 The filter controls editor assistance, not which APIs the learner's code can call.
 
@@ -479,6 +479,26 @@ valid entries still take effect. If none match, the result is the same as an emp
 list. An empty list hides all APIs covered by the filter; project-local completions
 and items without a definition remain eligible under the editor's normal recommendation
 rules. Malformed identifiers are rejected when the editor applies the filter.
+
+#### Internal helpers in the learner project
+
+Put `//xgols:notRecommended` on its own line in the comment immediately above a
+declaration to keep an internal helper out of suggestions. For example, mark an
+assessment helper in the SPX project source:
+
+```xgo
+// Reports whether Lita has reached the goal.
+//xgols:notRecommended
+func isAtGoal(x float64) bool {
+	return x >= 100
+}
+```
+
+Use the directive for internal helpers and leave the APIs learners need for the
+exercise eligible for suggestions. The directive affects proactive assistance
+such as completion, input suggestions, and property pickers. Explicit uses still
+compile and retain editor assistance such as hover, diagnostics, signature help,
+and go to definition.
 
 ### Editor.Ruler
 
