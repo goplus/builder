@@ -10,6 +10,7 @@ import * as cloud from '@/models/common/cloud'
 import { sndFiles } from '@/models/common/test'
 import { GenState } from '@/components/editor/gen'
 import { CollisionShapeType, RotationStyle, State } from '../sprite'
+import { Sound } from '../sound'
 import { makeSpxProject } from '../common/test'
 import type { CostumeGen } from './costume-gen'
 import type { AnimationGen } from './animation-gen'
@@ -739,5 +740,36 @@ describe('SpriteGen', () => {
     const files = sndFiles(rawConfig)
     const loadedGen = await SpriteGen.load(gen.name, i18n, project, files)
     expect(loadedGen.referenceImage?.name).toBe(localFile.name)
+  })
+
+  it('persists preview sounds bound to generated animations and transfers them on finish', async () => {
+    const project = makeSpxProject()
+    const existingSound = new Sound('existing', mockFile('existing.wav'))
+    project.addSound(existingSound)
+
+    const gen = new SpriteGen(i18n, project, 'A knight with sound')
+    await gen.genImages()
+    gen.setImageIndex(0)
+    await gen.prepareContent()
+
+    expect(gen.previewProject.sounds.map((s) => s.id)).toContain(existingSound.id)
+
+    const animation = await finishAnimationGen('walk', gen.animations[0])
+    const generatedSound = new Sound('footstep', mockFile('footstep.wav'))
+    gen.previewProject.addSound(generatedSound)
+    animation.setSound(generatedSound.id)
+
+    const files = sndFiles(gen.export())
+    const loadedGen = await SpriteGen.load(gen.name, i18n, project, files)
+    expect(loadedGen.animations[0].result?.sound).toBe(generatedSound.id)
+    expect(loadedGen.previewProject.sounds.map((s) => s.id)).toContain(generatedSound.id)
+
+    expect(project.sounds.map((s) => s.id)).not.toContain(generatedSound.id)
+    const finishedSprite = await loadedGen.finish()
+    expect(finishedSprite.animations[0].sound).toBe(generatedSound.id)
+    expect(project.sounds.map((s) => s.id)).toContain(generatedSound.id)
+
+    gen.dispose()
+    loadedGen.dispose()
   })
 })

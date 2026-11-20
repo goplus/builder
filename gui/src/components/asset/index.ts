@@ -34,6 +34,7 @@ import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
+import SoundGenModal from './gen/sound/SoundGenModal.vue'
 import type { GenHelpers } from './gen/modal'
 
 export function useSpriteGenModal() {
@@ -165,6 +166,17 @@ export function useAddSoundByRecording() {
   const invokeSoundRecorderModal = useModal(SoundRecorderModal)
   return async function addSoundFromRecording(project: SpxProject): Promise<Sound> {
     return invokeSoundRecorderModal({ project })
+  }
+}
+
+export function useAddSoundByGeneration() {
+  const editorCtx = useEditorCtx()
+  const invokeSoundGenModal = useModal(SoundGenModal)
+  return async function addSoundByGeneration(project: SpxProject): Promise<Sound> {
+    const sound = await invokeSoundGenModal({ project })
+    const action = { name: { en: 'Add sound', zh: '添加声音' } }
+    await editorCtx.state.history.doAction(action, () => project.addSound(sound))
+    return sound
   }
 }
 

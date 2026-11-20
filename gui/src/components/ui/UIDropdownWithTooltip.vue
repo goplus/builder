@@ -16,6 +16,10 @@
 import { UIDropdown, UITooltip } from '@/components/ui'
 import { ref } from 'vue'
 
+const emit = defineEmits<{
+  'update:visible': [boolean]
+}>()
+
 const dropdownVisible = ref(false)
 const tooltipVisible = ref(false)
 
@@ -24,6 +28,7 @@ const handleDropdownVisibleChange = (v: boolean) => {
   if (v) {
     tooltipVisible.value = false
   }
+  emit('update:visible', v)
 }
 
 const handleTooltipVisibleChange = (v: boolean) => {

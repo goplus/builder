@@ -87,7 +87,6 @@ const videoPreviewKey = computed(() => {
     v-else
     :style="{ background: 'transparent' }"
     :animation="gen.result"
-    :sound-editable="false"
     @rename="handleRenameAnimation"
   />
 </template>

@@ -615,4 +615,93 @@ describe('UIDropdown', () => {
     expect(popupContainer.text()).toContain('Parent content')
     expect(popupContainer.text()).toContain('Child content')
   })
+
+  it('closes a previously open sibling click dropdown when opening another one', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () => [
+                h(
+                  UIDropdown,
+                  { trigger: 'click' },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger-1' }, 'First'),
+                    default: () => h('div', 'First content')
+                  }
+                ),
+                h(
+                  UIDropdown,
+                  { trigger: 'click' },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'trigger-2' }, 'Second'),
+                    default: () => h('div', 'Second content')
+                  }
+                )
+              ]
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const popupContainer = wrapper.get('[data-test-id="popup-container"]')
+
+    await wrapper.get('[data-test-id="trigger-1"]').trigger('click')
+    await flushDropdown()
+    expect(popupContainer.text()).toContain('First content')
+
+    // Even before the outside-click macrotask settles, opening a sibling click dropdown closes the first.
+    await wrapper.get('[data-test-id="trigger-2"]').trigger('click')
+    await flushDropdown()
+    expect(popupContainer.text()).not.toContain('First content')
+    expect(popupContainer.text()).toContain('Second content')
+  })
+
+  it('keeps an ancestor click dropdown open when opening a nested click dropdown', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () =>
+                h(
+                  UIDropdown,
+                  { trigger: 'click' },
+                  {
+                    trigger: () => h('button', { 'data-test-id': 'parent-trigger' }, 'Parent'),
+                    default: () =>
+                      h('div', [
+                        h('div', 'Parent content'),
+                        h(
+                          UIDropdown,
+                          { trigger: 'click' },
+                          {
+                            trigger: () => h('button', { 'data-test-id': 'child-trigger' }, 'Child'),
+                            default: () => h('div', 'Child content')
+                          }
+                        )
+                      ])
+                  }
+                )
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const popupContainer = wrapper.get('[data-test-id="popup-container"]')
+
+    await wrapper.get('[data-test-id="parent-trigger"]').trigger('click')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushDropdown()
+    expect(popupContainer.text()).toContain('Parent content')
+
+    await popupContainer.get('[data-test-id="child-trigger"]').trigger('click')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushDropdown()
+    expect(popupContainer.text()).toContain('Parent content')
+    expect(popupContainer.text()).toContain('Child content')
+  })
 })

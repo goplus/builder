@@ -21,6 +21,7 @@ import { SpxProject } from '../project'
 import { RotationStyle, Sprite, State } from '../sprite'
 import { Costume, type Pivot as CostumePivot } from '../costume'
 import type { Animation } from '../animation'
+import { Sound } from '../sound'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
 import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
 import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
@@ -66,6 +67,14 @@ export type SpriteGenInits = {
   animations?: AnimationGen[]
 }
 
+type RawPreviewSoundConfig = {
+  id: string
+  name: string
+  rate: number
+  sampleCount: number
+  filePath: string
+}
+
 export type RawSpriteGenConfig = Prettify<
   Omit<
     SpriteGenInits,
@@ -84,6 +93,7 @@ export type RawSpriteGenConfig = Prettify<
     prepareContentPhaseSerialized?: PhaseSerialized<void>
     costumeConfigs?: RawCostumeGenConfig[]
     animationConfigs?: RawAnimationGenConfig[]
+    previewSoundConfigs?: RawPreviewSoundConfig[]
   }
 >
 
@@ -262,7 +272,15 @@ export class SpriteGen extends Disposable {
   /** The sprite instance for preview within generation */
   previewSprite: Sprite
 
+  private syncPreviewSounds() {
+    for (const sound of this.project.sounds) {
+      if (this.previewProject.sounds.some((s) => s.id === sound.id)) continue
+      this.previewProject.addSound(sound.clone(true), true)
+    }
+  }
+
   private preparePreviewSprite() {
+    this.syncPreviewSounds()
     // Clear existing preview sprite
     if (this.previewSprite != null) {
       // removeSprite will dispose the target sprite, so we don't need to dispose it manually here
@@ -461,6 +479,14 @@ export class SpriteGen extends Disposable {
       previewSprite.removeAnimation(animation.id)
       sprite.addAnimation(animation)
       sprite.setAnimationBoundStates(animation.id, boundStates)
+      if (animation.sound != null && !this.project.sounds.some((s) => s.id === animation.sound)) {
+        const previewSound = this.previewProject.sounds.find((s) => s.id === animation.sound)
+        if (previewSound != null) {
+          this.project.addSound(previewSound.clone(true))
+        } else {
+          animation.setSound(null)
+        }
+      }
     }
     if (shouldUseFeetPivot(this.settings.category, this.settings.perspective) && sprite.defaultCostume != null) {
       const inferredPivotDelta = await getFeetPivotDelta(sprite.defaultCostume)
@@ -541,7 +567,8 @@ export class SpriteGen extends Disposable {
       genImagesPhaseSerialized,
       prepareContentPhaseSerialized,
       costumeConfigs,
-      animationConfigs
+      animationConfigs,
+      previewSoundConfigs
     } = config
 
     const genId = id ?? nanoid()
@@ -572,6 +599,20 @@ export class SpriteGen extends Disposable {
     if (prepareContentPhaseSerialized != null) inits.prepareContentPhase = Phase.load(prepareContentPhaseSerialized)
 
     const gen = new SpriteGen(i18n, project, inits)
+    gen.syncPreviewSounds()
+    if (previewSoundConfigs != null) {
+      for (const sc of previewSoundConfigs) {
+        const file = files[sc.filePath]
+        if (file == null) throw new Error(`file ${sc.filePath} not found for preview sound ${sc.name}`)
+        if (gen.previewProject.sounds.some((s) => s.id === sc.id)) continue
+        const sound = new Sound(sc.name, file, {
+          id: sc.id,
+          rate: sc.rate,
+          sampleCount: sc.sampleCount
+        })
+        gen.previewProject.addSound(sound, true)
+      }
+    }
 
     if (costumeConfigs != null) {
       gen.costumes = costumeConfigs.map((cc) => CostumeGen.load(i18n, gen, project, cc, files, basePath))
@@ -600,6 +641,19 @@ export class SpriteGen extends Disposable {
       Object.assign(files, af)
       return ac
     })
+    const previewSoundConfigs: RawPreviewSoundConfig[] = []
+    for (const sound of this.previewProject.sounds) {
+      if (this.project.sounds.some((s) => s.id === sound.id)) continue
+      const filePath = `${basePath}/sounds/${encodePathSegment(sound.id)}${extname(sound.file.name)}`
+      files[filePath] = sound.file
+      previewSoundConfigs.push({
+        id: sound.id,
+        name: sound.name,
+        rate: sound.rate,
+        sampleCount: sound.sampleCount,
+        filePath
+      })
+    }
 
     const referenceImagePath =
       this.referenceImage == null ? null : saveReferenceImageFile(files, basePath, this.referenceImage)
@@ -620,7 +674,8 @@ export class SpriteGen extends Disposable {
       ),
       prepareContentPhaseSerialized: this.prepareContentPhase.export(),
       costumeConfigs,
-      animationConfigs
+      animationConfigs,
+      ...(previewSoundConfigs.length > 0 ? { previewSoundConfigs } : {})
     }
     if (this.imageIndex != null) config.imageIndex = this.imageIndex
     if (this.selectedItem != null) config.selectedItem = this.selectedItem

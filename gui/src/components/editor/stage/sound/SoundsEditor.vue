@@ -11,7 +11,7 @@
             {{ $t({ en: 'Add sound', zh: '添加声音' }) }}
           </UIButton>
         </template>
-        <AddSoundMenu :state="state" />
+        <AddSoundMenu :state="state" @generate="handleGenerate" />
       </UIDropdown>
     </template>
   </UIEmpty>
@@ -31,7 +31,7 @@
       @click="state.select(sound.id)"
     />
     <template #add-options>
-      <AddSoundMenu :state="state" />
+      <AddSoundMenu :state="state" @generate="handleGenerate" />
     </template>
     <template #detail>
       <SoundDetail v-if="state.selected != null" :sound="state.selected" />
@@ -39,9 +39,11 @@
   </EditorList>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { UIEmpty, UIButton, UIDropdown, UIIcon } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
+import { useAddSoundByGeneration } from '@/components/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { SoundsEditorState } from './sounds-editor-state'
 import EditorList from '../../common/EditorList.vue'
@@ -49,12 +51,32 @@ import SoundItem from './SoundItem.vue'
 import SoundDetail from './SoundDetail.vue'
 import AddSoundMenu from './AddSoundMenu.vue'
 
-defineProps<{
+const props = defineProps<{
   state: SoundsEditorState
 }>()
 
 const editorCtx = useEditorCtx()
 const sounds = computed(() => editorCtx.project.sounds)
+
+const addSoundByGeneration = useAddSoundByGeneration()
+const handleGenerate = useMessageHandle(
+  async () => {
+    const sound = await addSoundByGeneration(editorCtx.project)
+    props.state.select(sound.id)
+  },
+  { en: 'Failed to add sound', zh: '添加声音失败' }
+).fn
+
+const router = useRouter()
+onMounted(async () => {
+  const { params, query } = router.currentRoute.value
+  if (params.ownerNameInput !== '~demo' || params.projectNameInput !== 'sound-lab' || query.generateSound == null)
+    return
+  const nextQuery = { ...query }
+  delete nextQuery.generateSound
+  await router.replace({ query: nextQuery })
+  await handleGenerate()
+})
 
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
