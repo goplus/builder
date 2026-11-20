@@ -172,8 +172,12 @@ to the caller, borrows the caller's TutorialProject, and owns one Program.
 
 Session creates a Playground Copilot Topic with the Course title and
 `copilotContext`, proactive reactions disabled, and code Copy/Apply helpers
-disabled. It starts Copilot before starting Program. Project, code, and runtime
-context still come from the normal editor context providers.
+disabled. The Topic explains what a Playground Course is and that Copilot deals
+with two parties, the learner and the Course program; `copilotContext` is
+presented as the author's instructions for conversations with the learner. It
+starts Copilot before starting Program. Project, code, and runtime context still
+come from the normal editor context providers, including which code the learner
+can see and when Copilot should read code that is not in the context.
 
 Program owns the XGo executor, Runtime and Copilot event subscriptions, and the
 signal for pending capability calls. The component provides presentation and

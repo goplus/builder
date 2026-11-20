@@ -45,6 +45,7 @@ export interface Copilot {
   /**
    * Generates one plain-text response without adding a round to the current session.
    * Existing Builder user conversation is reference context, separately from this request.
+   * Copilot is told that the request comes from a program instead of the user.
    */
   generateTextResponse(
     message: string,
@@ -54,6 +55,7 @@ export interface Copilot {
   /**
    * Generates one JSON response conforming to the supplied schema without adding a round to the current session.
    * Existing Builder user conversation is reference context, separately from this request.
+   * Copilot is told that the request comes from a program instead of the user.
    */
   generateJSONResponse(
     message: string,

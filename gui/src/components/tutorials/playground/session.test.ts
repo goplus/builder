@@ -15,6 +15,7 @@ import type { EditorState } from '@/components/editor/editor-state'
 import type { Copilot } from '@/components/copilot/copilot'
 import { DefaultException } from '@/utils/exception'
 
+import { getPlaygroundCopilotTopic } from './copilot-topic'
 import type { PlaygroundCoursePresentationOptions } from './program'
 import { PlaygroundCourseSession } from './session'
 
@@ -160,13 +161,9 @@ describe('PlaygroundCourseSession', () => {
     await harness.courseSession.start()
 
     expect(harness.copilot.startSession).toHaveBeenCalledOnce()
-    expect(harness.copilot.startSession).toHaveBeenCalledWith({
-      title: { en: 'Build a game', zh: 'Build a game' },
-      description: 'You are assisting the learner in the Playground Course: Build a game.\n\nHelp with this Course',
-      reactToEvents: false,
-      endable: true,
-      codeHelperEnabled: false
-    })
+    expect(harness.copilot.startSession).toHaveBeenCalledWith(
+      getPlaygroundCopilotTopic({ title: 'Build a game', copilotContext: 'Help with this Course' })
+    )
     expect(harness.executor.run).toHaveBeenCalledWith({
       [mainCourseFilePath]: 'onStart => { complete }'
     })
