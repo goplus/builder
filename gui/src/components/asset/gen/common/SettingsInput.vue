@@ -221,7 +221,7 @@ provide(settingsInputCtxKey, ctx)
   caret-color: var(--ui-color-turquoise-500);
 }
 
-.description-input .main .description:read-only {
+.description-input .main .description[readonly]:not(:disabled) {
   color: var(--ui-color-grey-1000);
 }
 

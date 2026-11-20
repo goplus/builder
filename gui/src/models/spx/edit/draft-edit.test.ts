@@ -7,6 +7,8 @@ import * as fileHelpers from '@/models/common/file'
 import { mockFile, sndFiles } from '@/models/common/test'
 import { makeSpxProject } from '../common/test'
 import { mockSaveFile } from '../gen/test-helpers'
+import { CostumeGen } from '../gen/costume-gen'
+import { AnimationGen } from '../gen/animation-gen'
 import { SpriteEdit } from './sprite-edit'
 
 const aigc = setupAigcMock()
@@ -30,6 +32,67 @@ beforeEach(() => {
 })
 
 describe('Resource edit drafts', () => {
+  it.each(['costume', 'animation'] as const)(
+    'keeps the empty %s checkpoint for discard but not version navigation',
+    async (type) => {
+      const { project, edit } = setup()
+      const gen = type === 'costume' ? edit.addCostume() : edit.addAnimation()
+      edit.editHistory.record(gen)
+      const media = mockFile(type === 'costume' ? 'first.png' : 'first.mp4')
+      if (gen instanceof CostumeGen) gen.setImage(media)
+      else gen.setVideo(media)
+      expect(edit.editHistory.getVersion(gen.id)).toBe(1)
+      expect(edit.editHistory.canUndo(gen.id)).toBe(false)
+      expect(edit.editHistory.hasChanges(gen.id)).toBe(true)
+      edit.editHistory.undo(gen)
+      expect(gen instanceof CostumeGen ? gen.image : gen.video).toBe(media)
+
+      const [restored] = await SpriteEdit.loadAll(i18n, project, sndFiles(edit.export()))
+      onTestFinished(() => restored.dispose())
+      const draft = type === 'costume' ? restored.getCostumeById(gen.id)! : restored.getAnimationById(gen.id)!
+      expect(restored.editHistory.getVersion(gen.id)).toBe(1)
+      expect(restored.editHistory.canUndo(gen.id)).toBe(false)
+      restored.editHistory.discard(draft)
+      const empty =
+        type === 'costume' ? restored.getCostumeById(gen.id)!.image : restored.getAnimationById(gen.id)!.video
+      expect(empty).toBeNull()
+      expect(restored.editHistory.hasChanges(gen.id)).toBe(false)
+    }
+  )
+
+  it.each([
+    ['costume', 'undo'],
+    ['costume', 'redo'],
+    ['costume', 'discard'],
+    ['animation', 'undo'],
+    ['animation', 'redo'],
+    ['animation', 'discard']
+  ] as const)('does not replace the last %s when the %s target has been removed', (type, action) => {
+    const { edit } = setup()
+    const gen = type === 'costume' ? edit.addCostume() : edit.addAnimation()
+    if (gen instanceof CostumeGen) gen.setImage(mockFile('first.png'))
+    else gen.setVideo(mockFile('first.mp4'))
+    edit.editHistory.record(gen)
+    if (gen instanceof CostumeGen) gen.setImage(mockFile('second.png'))
+    else gen.setVideo(mockFile('second.mp4'))
+    if (action === 'redo') edit.editHistory.undo(gen)
+    const items = type === 'costume' ? edit.costumes : edit.animations
+    const [removed] = items.splice(
+      items.findIndex((item) => item.id === gen.id),
+      1
+    )
+    onTestFinished(() => removed.dispose())
+    const remaining = [...items]
+    const dispose = vi.spyOn(removed, 'dispose')
+    const load = vi.spyOn(type === 'costume' ? CostumeGen : AnimationGen, 'load')
+    edit.editHistory[action](removed)
+    expect(items).toEqual(remaining)
+    expect(dispose).not.toHaveBeenCalled()
+    const restored = load.mock.results.at(-1)!.value
+    expect(restored.isDisposed).toBe(true)
+    load.mockRestore()
+  })
+
   it('iterates from the current costume and persists undo/redo without changing the source', async () => {
     const { project, source, edit } = setup()
     const gen = edit.costumes[0]
@@ -118,10 +181,30 @@ describe('Resource edit drafts', () => {
     aigc.injectErrorOnce('subscribeTaskEvents', new Error('Unavailable'))
     await expect(edit.editCostume(gen.id, 'Blue coat')).rejects.toThrow('Unavailable')
     expect(gen.image).toBe(preview)
+    expect(edit.editHistory.getVersion(gen.id)).toBe(1)
     edit.editHistory.undo(gen)
     expect(edit.costumes[0].generateState.status).toBe('finished')
     expect(edit.costumes[0].image).toBe(preview)
     expect(edit.costumes[0].result?.img).toBe(originalImage)
+    expect(edit.editHistory.getVersion(gen.id)).toBe(1)
+    expect(edit.editHistory.canRedo(gen.id)).toBe(false)
     expect(source.costumes[0].img).toBe(originalImage)
+  })
+
+  it('keeps the current version number during generation and after a failed retry', async () => {
+    const { edit } = setup()
+    const gen = edit.costumes[0]
+    await edit.editCostume(gen.id, 'Red hair')
+    const attempt = edit.editCostume(gen.id, 'Blue coat')
+    expect(gen.generateState.status).toBe('running')
+    expect(edit.editHistory.getVersion(gen.id)).toBe(1)
+    await attempt
+    expect(edit.editHistory.getVersion(gen.id)).toBe(2)
+
+    aigc.injectErrorOnce('subscribeTaskEvents', new Error('Unavailable'))
+    await expect(edit.editCostume(gen.id, 'Green coat')).rejects.toThrow('Unavailable')
+    expect(edit.editHistory.getVersion(gen.id)).toBe(2)
+    await edit.editCostume(gen.id, 'Green coat')
+    expect(edit.editHistory.getVersion(gen.id)).toBe(3)
   })
 })

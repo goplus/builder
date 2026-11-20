@@ -138,7 +138,10 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
         :viewport="size"
         @change="game = $event"
       />
-      <div v-if="($slots.default != null || game != null) && game?.status !== 'won'" class="message">
+      <div
+        v-if="($slots.default != null || game != null) && game?.status !== 'won'"
+        class="message text-xs text-hint-2"
+      >
         <div class="min-w-0"><slot></slot></div>
         <div
           v-if="game?.status === 'playing'"
@@ -192,9 +195,6 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  color: var(--ui-color-text);
-  font-size: 12px;
-  line-height: 18px;
   text-align: left;
 }
 

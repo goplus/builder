@@ -39,7 +39,7 @@ const suggestion = computed(() => {
 </script>
 
 <template>
-  <p v-if="suggestion != null" class="mb-2 text-center text-base text-grey-700">{{ $t(suggestion) }}</p>
+  <p v-if="suggestion != null" class="mb-2 text-center text-xs text-hint-2">{{ $t(suggestion) }}</p>
   <template v-if="costume != null">
     <CostumeEditInput
       v-if="costume.result != null"

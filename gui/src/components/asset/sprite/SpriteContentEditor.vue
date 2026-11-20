@@ -142,7 +142,7 @@ const selectedPreview = computed(() => {
 })
 const canDiscard = computed(() => {
   const gen = selectedGen.value
-  return gen != null && (props.content.editHistory.canUndo(gen.id) || props.content.editHistory.canRedo(gen.id))
+  return gen != null && props.content.editHistory.hasChanges(gen.id)
 })
 const versionLabel = computed(() => {
   const gen = selectedGen.value

@@ -67,7 +67,7 @@ defineEmits<{ undo: []; redo: []; discard: []; save: [] }>()
     <UIButton
       v-radar="{ name: 'Discard changes', desc: 'Discard unapplied changes to this resource' }"
       type="white"
-      size="small"
+      size="medium"
       class="border-transparent! bg-transparent flex-none"
       :disabled="busy"
       @click="$emit('discard')"
@@ -76,7 +76,7 @@ defineEmits<{ undo: []; redo: []; discard: []; save: [] }>()
     <UIButton
       v-radar="{ name: 'Save resource', desc: 'Save this resource and clear its draft history' }"
       type="primary"
-      size="small"
+      size="medium"
       :disabled="busy || !canSave"
       :loading="saving"
       @click="$emit('save')"
