@@ -410,6 +410,28 @@ describe('Copilot', () => {
     ])
   })
 
+  it('uses the one-shot topic description for one-shot responses only', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      createTextStreamBatch('Hello learner'),
+      createTextStreamBatch('Course feedback')
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    await copilot.startSession({
+      ...createBasicTopic('Test Topic', 'Talk with the learner'),
+      oneShotDescription: 'Serve the course program'
+    })
+    copilot.addUserTextMessage('How do I make a sprite move?')
+    await waitForCompletion()
+    await copilot.generateTextResponse('Summarize the learner progress.')
+
+    const roundContext = generator.calls[0].at(-1)?.content?.text
+    expect(roundContext).toContain('Talk with the learner')
+    expect(roundContext).not.toContain('Serve the course program')
+    const oneShotContext = generator.calls[1][0].content?.text
+    expect(oneShotContext).toContain('Serve the course program')
+    expect(oneShotContext).not.toContain('Talk with the learner')
+  })
+
   it('aborts text responses that attempt to call a tool', async () => {
     const generator = new MockBatchedMessageEventGenerator([
       [createToolCallDeltaEvent({ index: 0, function: { name: 'unexpected', arguments: '' } })]

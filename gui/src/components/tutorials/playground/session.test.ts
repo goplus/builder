@@ -11,10 +11,11 @@ import { Sprite } from '@/models/spx/sprite'
 import { TutorialProject } from '@/models/tutorial/project'
 import { type CopilotRound, type Topic } from '@/components/copilot/copilot'
 import { Runtime, RuntimeOutputKind } from '@/components/editor/runtime'
-import type { EditorState } from '@/components/editor/editor-state'
+import { EditMode, type EditorState } from '@/components/editor/editor-state'
 import type { Copilot } from '@/components/copilot/copilot'
 import { DefaultException } from '@/utils/exception'
 
+import { getPlaygroundCopilotTopic } from './copilot-topic'
 import type { PlaygroundCoursePresentationOptions } from './program'
 import { PlaygroundCourseSession } from './session'
 
@@ -97,10 +98,16 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function makeHarness() {
+function makeHarness(selection: Pick<EditorState, 'selectedEditMode' | 'selectedSprite'> | null = null) {
   const project = makeProject()
   const editorRuntime = new Runtime(project.project)
-  const editorState = { runtime: editorRuntime, dispose: vi.fn() } as unknown as EditorState
+  const editorState = {
+    runtime: editorRuntime,
+    dispose: vi.fn(),
+    selectedEditMode: EditMode.Default,
+    selectedSprite: null,
+    ...selection
+  } as unknown as EditorState
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
     showPrelude: vi.fn().mockResolvedValue(undefined),
@@ -160,16 +167,30 @@ describe('PlaygroundCourseSession', () => {
     await harness.courseSession.start()
 
     expect(harness.copilot.startSession).toHaveBeenCalledOnce()
-    expect(harness.copilot.startSession).toHaveBeenCalledWith({
-      title: { en: 'Build a game', zh: 'Build a game' },
-      description: 'You are assisting the learner in the Playground Course: Build a game.\n\nHelp with this Course',
-      reactToEvents: false,
-      endable: true,
-      codeHelperEnabled: false
-    })
+    expect(harness.copilot.startSession).toHaveBeenCalledWith(
+      getPlaygroundCopilotTopic({
+        title: 'Build a game',
+        copilotContext: 'Help with this Course',
+        onlyVisibleSprite: null
+      })
+    )
     expect(harness.executor.run).toHaveBeenCalledWith({
       [mainCourseFilePath]: 'onStart => { complete }'
     })
+  })
+
+  it('tells Copilot which sprite the learner can see in simple mode', async () => {
+    const harness = makeHarness({ selectedEditMode: EditMode.Simple, selectedSprite: new Sprite('Bird') })
+
+    await harness.courseSession.start()
+
+    expect(harness.copilot.startSession).toHaveBeenCalledWith(
+      getPlaygroundCopilotTopic({
+        title: 'Build a game',
+        copilotContext: 'Help with this Course',
+        onlyVisibleSprite: 'Bird'
+      })
+    )
   })
 
   it('waits for editor readiness and startup rendering acknowledgments', async () => {

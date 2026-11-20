@@ -44,6 +44,10 @@ class Retriever {
   }
 }
 
+function countLines(code: string) {
+  return code.split(/\r?\n/).length
+}
+
 function getProjectContent(project: SpxProject) {
   const physics = project.stage.physics
   return `\
@@ -55,7 +59,10 @@ ${project.sounds.map((sound) => `- ${sound.name}`).join('\n')}
 ${project.stage.backdrops.map((backdrop) => `- ${backdrop.name}`).join('\n')}
 ### Widgets (num: ${project.stage.widgets.length})
 ${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}
-### Physics: ${physics.enabled ? 'Enabled' : 'Disabled'}`
+### Physics: ${physics.enabled ? 'Enabled' : 'Disabled'}
+### Code files
+- \`${project.stage.codeFilePath}\` (stage, ${countLines(project.stage.code)} lines)
+${project.sprites.map((sprite) => `- \`${sprite.codeFilePath}\` (${countLines(sprite.code)} lines)`).join('\n')}`
 }
 
 function getSpriteContent(sprite: Sprite) {
@@ -69,7 +76,7 @@ function getSpriteContent(sprite: Sprite) {
     size: sprite.size,
     rotationStyle: sprite.rotationStyle,
     visible: sprite.visible,
-    codeLinesNum: sprite.code.split(/\r?\n/).length
+    codeLinesNum: countLines(sprite.code)
   }
 }
 
@@ -157,7 +164,8 @@ const getProjectCodeParamsSchema = z.object({
 
 class GetProjectCodeTool implements ToolDefinition {
   name = 'get_project_code'
-  description = 'Get code content of a file in project.'
+  description =
+    'Get code content of a file in project. Use it to read the code of the stage or of a sprite whose code is not in the context, for example to see which functions and variables it defines.'
   parameters = getProjectCodeParamsSchema
 
   constructor(private retriever: Retriever) {}
@@ -188,16 +196,23 @@ class GetCodeDiagnosticsTool implements ToolDefinition {
   }
 }
 
+export function getProjectContext(project: SpxProject) {
+  const identity =
+    project.owner != null && project.name != null
+      ? `The user is now working on project: ${project.displayName} (${project.owner}/${project.name})`
+      : 'The user is now working on an unsaved project that has no owner or name. When calling project tools, omit the `project` parameter to use this project.'
+  return `# Current project
+${identity}
+Class framework ID: spx
+## Project content
+${getProjectContent(project)}`
+}
+
 class ProjectContextProvider implements ICopilotContextProvider {
   constructor(private editorCtx: EditorCtx) {}
 
   provideContext(): string {
-    const project = this.editorCtx.project
-    return `# Current project
-The user is now working on project: ${project.displayName} (${project.owner}/${project.name})
-Class framework ID: spx
-## Project content
-${getProjectContent(project)}`
+    return getProjectContext(this.editorCtx.project)
   }
 }
 

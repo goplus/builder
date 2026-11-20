@@ -64,6 +64,8 @@ export type Message = UserMessage | CopilotMessage | ToolMessage
 type ContextMessageOptions = {
   toolsCustomElementsEnabled?: boolean
   extraContext?: string
+  /** Whether the context is for a one-shot response instead of a session round. */
+  oneShot?: boolean
 }
 
 function getToolExecutionText(execution: ToolExecution): string {
@@ -125,6 +127,11 @@ export type Topic = {
    * * "Now you will help the user to finish learning a course. The course is about ..."
    */
   description: string
+  /**
+   * Description used in place of `description` for one-shot responses, whose request does not come from the user.
+   * Defaults to `description`.
+   */
+  oneShotDescription?: string
   /** Whether the copilot should react to user events under the topic */
   reactToEvents: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
@@ -687,23 +694,25 @@ ${stringifyZodSchema(customElement.attributes)}
 ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
   }
 
-  private getTopicPrompt() {
+  private getTopicPrompt(oneShot: boolean) {
     if (this.currentSession == null) return ''
     const topic = this.currentSession.topic
-    if (topic.description.trim() === '') return ''
+    const description = oneShot ? topic.oneShotDescription ?? topic.description : topic.description
+    if (description.trim() === '') return ''
     return `# Current topic between you and user
 
-${topic.description}`
+${description}`
   }
 
   async getContextMessage({
     toolsCustomElementsEnabled = true,
-    extraContext = ''
+    extraContext = '',
+    oneShot = false
   }: ContextMessageOptions = {}): Promise<UserTextMessage> {
     const parts = [
       toolsCustomElementsEnabled ? this.getCustomElementsPrompt() : '',
       await this.getContext(toolsCustomElementsEnabled),
-      this.getTopicPrompt(),
+      this.getTopicPrompt(oneShot),
       extraContext
     ]
     const content = `<context>
@@ -911,7 +920,8 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     const messages: Message[] = [
       await this.getContextMessage({
         toolsCustomElementsEnabled: false,
-        extraContext: this.getUserConversationContext()
+        extraContext: this.getUserConversationContext(),
+        oneShot: true
       }),
       { type: 'text', role: 'user', content: message }
     ]
