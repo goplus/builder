@@ -28,7 +28,7 @@ const handleItemClick = useMessageHandle((item: InternalMenuItem) => props.contr
     <UIMenu>
       <UIMenuGroup v-for="(group, i) in data?.groups" :key="i">
         <UIMenuItem v-for="(item, j) in group" :key="j" @click="handleItemClick(item)">
-          {{ item.title }}
+          {{ $t(item.title) }}
         </UIMenuItem>
       </UIMenuGroup>
     </UIMenu>

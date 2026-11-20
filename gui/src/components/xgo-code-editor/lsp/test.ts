@@ -84,7 +84,8 @@ export async function startWorker(
     capabilities: {
       textDocument: {
         completion: { completionItem: { snippetSupport: true, documentationFormat: ['markdown'] } },
-        hover: { contentFormat: ['markdown'] }
+        hover: { contentFormat: ['markdown'] },
+        codeAction: { codeActionLiteralSupport: { codeActionKind: { valueSet: ['quickfix'] } } }
       }
     }
   })

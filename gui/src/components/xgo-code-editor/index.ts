@@ -15,6 +15,7 @@ export * from './monaco'
 export * from './text-document'
 
 export * from './api-reference'
+export * from './code-action'
 export * from './completion'
 export * from './context-menu'
 export * from './diagnostics'

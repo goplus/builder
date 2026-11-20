@@ -249,6 +249,11 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
           hover: {
             contentFormat: [lsp.MarkupKind.Markdown]
           },
+          codeAction: {
+            codeActionLiteralSupport: {
+              codeActionKind: { valueSet: [lsp.CodeActionKind.QuickFix] }
+            }
+          },
           rename: {
             prepareSupport: true
           },
@@ -448,6 +453,13 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
 
   async textDocumentRename(ctx: RequestContext, params: lsp.RenameParams): Promise<lsp.WorkspaceEdit | null> {
     return this.request<lsp.WorkspaceEdit | null>(ctx, lsp.RenameRequest.method, params)
+  }
+
+  async textDocumentCodeAction(
+    ctx: RequestContext,
+    params: lsp.CodeActionParams
+  ): Promise<(lsp.CodeAction | lsp.Command)[] | null> {
+    return this.request<(lsp.CodeAction | lsp.Command)[] | null>(ctx, lsp.CodeActionRequest.method, params)
   }
 
   async textDocumentFormatting(

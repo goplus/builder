@@ -7,7 +7,6 @@
 import { hashFiles } from '@/models/common/hash'
 import { RuntimeOutputKind, type Runtime } from '@/components/editor/runtime'
 import {
-  type Diagnostic,
   type ITextDocument,
   type Range,
   type Position,
@@ -16,6 +15,7 @@ import {
   DiagnosticSeverity,
   DiagnosticsProvider,
   type DiagnosticsContext,
+  type ProvidedDiagnostic,
   type ILSPClient
 } from '@/components/xgo-code-editor'
 
@@ -49,7 +49,7 @@ export class SpxDiagnosticsProvider extends DiagnosticsProvider {
     const { outputSnapshot, filesHash } = this.runtime
     const currentFilesHash = await hashFiles(this.project.exportFiles(), ctx.signal)
     if (filesHash !== currentFilesHash) return []
-    const diagnostics: Diagnostic[] = []
+    const diagnostics: ProvidedDiagnostic[] = []
     for (const output of outputSnapshot) {
       if (output.kind !== RuntimeOutputKind.Error) continue
       if (output.source == null) continue
@@ -58,13 +58,14 @@ export class SpxDiagnosticsProvider extends DiagnosticsProvider {
       diagnostics.push({
         message: output.message,
         range,
-        severity: DiagnosticSeverity.Error
+        severity: DiagnosticSeverity.Error,
+        lspDiagnostic: null
       })
     }
     return diagnostics
   }
 
-  override async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
+  override async provideDiagnostics(ctx: DiagnosticsContext): Promise<ProvidedDiagnostic[]> {
     const [runtimeDiagnostics, lspDiagnostics] = await Promise.all([
       this.getRuntimeDiagnostics(ctx),
       super.provideDiagnostics(ctx)

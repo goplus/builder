@@ -11,6 +11,35 @@ const startSpxWorker = (sources: Record<string, string>) => startWorker(sources,
 describe('SPX language server Worker', () => {
   afterEach(() => vi.unstubAllGlobals())
 
+  it('merges class var declarations through a literal code action', async () => {
+    const sources = { 'main.spx': 'var score int\nvar speed int\n', 'assets/index.json': '{}' }
+    const { request, setFiles } = await startSpxWorker(sources)
+    const { items } = await request<lsp.WorkspaceDiagnosticReport>('workspace/diagnostic', { previousResultIds: [] })
+    const report = items.find((item) => item.uri === 'file:///main.spx')
+    if (report?.kind !== 'full') throw new Error('Expected diagnostics for main.spx')
+    expect(report.items).toHaveLength(1)
+    const params = {
+      textDocument: { uri: 'file:///main.spx' },
+      range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+      context: { diagnostics: report.items, only: ['quickfix'] }
+    }
+    const actions = await request<lsp.CodeAction[]>('textDocument/codeAction', params)
+    expect(actions).toHaveLength(1)
+    expect(actions[0]).toMatchObject({
+      title: 'Merge top-level var declarations',
+      kind: 'quickfix.xgo.mergeVarDeclarations'
+    })
+    expect(actions[0].diagnostics).toEqual(report.items)
+    const changes = actions[0].edit?.changes?.['file:///main.spx']
+    expect(changes).toHaveLength(2)
+    expect(changes?.[0].newText).toContain('score int')
+    expect(changes?.[0].newText).toContain('speed int')
+    setFiles({ ...sources, 'main.spx': changes![0].newText })
+    expect(await request('textDocument/codeAction', params)).toBeNull()
+    const diagnostics = await request<lsp.WorkspaceDiagnosticReport>('workspace/diagnostic', { previousResultIds: [] })
+    expect(diagnostics.items).toContainEqual(expect.objectContaining({ uri: 'file:///main.spx', items: [] }))
+  })
+
   it('analyzes stage and sprite code with the SDK, engine, math, and AI packages', async () => {
     const { request, command } = await startSpxWorker({
       'main.spx': `import engine "github.com/goplus/spx/v4/pkg/spx/pkg/engine"
