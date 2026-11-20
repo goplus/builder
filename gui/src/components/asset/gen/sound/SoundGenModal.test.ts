@@ -192,7 +192,7 @@ describe('SoundWaveform', () => {
 })
 
 describe('SoundTakeCard', () => {
-  it('renders audio-native loading state with static muted play icon and skeleton waveform matching ready geometry', () => {
+  it('renders restrained internal loading state with orbital ring, shimmer waveform, and placeholder duration matching ready geometry', () => {
     const loadingWrapper = mount(SoundTakeCard, {
       props: {
         name: '阳光草地跑酷 1',
@@ -206,8 +206,11 @@ describe('SoundTakeCard', () => {
     })
 
     expect(loadingWrapper.find('.is-loading').exists()).toBe(true)
+    expect(loadingWrapper.find('.loading-ring-arc').exists()).toBe(true)
     expect(loadingWrapper.find('[data-test="icon"][data-type="play"]').exists()).toBe(true)
     expect(loadingWrapper.find('[data-test="play-control"]').exists()).toBe(false)
+    expect(loadingWrapper.text()).toContain('--:--')
+    expect(loadingWrapper.find('.skeleton-shimmer').exists()).toBe(true)
     const skeletonBars = loadingWrapper.findAll('.skeleton-bar')
     expect(skeletonBars).toHaveLength(PEAK_COUNT)
     expect(skeletonBars[0].element.parentElement?.className).toContain('gap-[2px]')
@@ -225,6 +228,8 @@ describe('SoundTakeCard', () => {
     })
 
     expect(readyWrapper.find('.is-loading').exists()).toBe(false)
+    expect(readyWrapper.find('.loading-ring').exists()).toBe(false)
+    expect(readyWrapper.find('.skeleton-shimmer').exists()).toBe(false)
     const waveformTrack = readyWrapper.find('.waveform-track > div')
     expect(waveformTrack.classes()).toContain('gap-[2px]')
     expect(waveformTrack.findAll('.waveform-bar')).toHaveLength(PEAK_COUNT)

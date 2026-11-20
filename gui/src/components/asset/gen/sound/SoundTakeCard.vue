@@ -47,7 +47,7 @@ const canInteract = computed(() => isReady.value && !props.disabled)
 const playingState = computed(() => (props.playing ? { progress: props.progress } : null))
 
 const durationLabel = computed(() => {
-  if (props.sample == null) return ''
+  if (props.sample == null) return '--:--'
   const total = formatAudioTime(props.sample.seconds)
   if (props.playing) {
     const current = formatAudioTime(props.progress * props.sample.seconds)
@@ -81,7 +81,7 @@ async function handlePlay() {
     :interactive="canInteract"
     :button-label="isReady ? t({ en: `Select ${name}`, zh: `选择“${name}”` }) : null"
     class="sound-take-card w-full! min-h-[82px]! h-auto! flex-row! items-center! gap-3! p-3.5!"
-    :class="{ 'is-loading': !isReady }"
+    :class="{ 'is-loading bg-grey-200!': !isReady }"
     :style="{ '--stagger-index': index }"
     @click="canInteract && emit('select')"
   >
@@ -90,7 +90,11 @@ async function handlePlay() {
       aria-hidden="true"
       class="relative z-10 flex h-9 w-9 flex-none items-center justify-center rounded-full bg-grey-300 text-grey-700"
     >
-      <UIIcon type="play" class="h-4 w-4" />
+      <svg viewBox="0 0 36 36" class="loading-ring pointer-events-none absolute inset-0 h-full w-full">
+        <circle class="loading-ring-track" cx="18" cy="18" r="17" />
+        <circle class="loading-ring-arc" cx="18" cy="18" r="17" />
+      </svg>
+      <UIIcon type="play" class="h-3.5 w-3.5" />
     </div>
     <PlayControl
       v-else
@@ -111,20 +115,25 @@ async function handlePlay() {
         <span class="truncate text-sm font-medium" :class="isReady ? 'text-title' : 'text-hint-1'">
           {{ name }}
         </span>
-        <span v-if="durationLabel !== ''" class="flex-none text-xs tabular-nums text-hint-1">
+        <span class="flex-none text-xs tabular-nums" :class="isReady ? 'text-hint-1' : 'text-hint-2 opacity-75'">
           {{ durationLabel }}
         </span>
       </div>
 
-      <div v-if="!isReady" aria-hidden="true" class="flex h-6 w-full items-center gap-[2px]">
+      <div
+        v-if="!isReady"
+        aria-hidden="true"
+        class="skeleton-waveform relative flex h-6 w-full items-center gap-[2px] overflow-hidden"
+      >
         <i
           v-for="(barHeight, barIndex) in SKELETON_HEIGHTS"
           :key="barIndex"
-          class="skeleton-bar block flex-1 min-w-0 rounded-full bg-grey-400"
-          :style="{
-            height: `${barHeight}px`,
-            animationDelay: `${barIndex * 28}ms`
-          }"
+          class="skeleton-bar block flex-1 min-w-0 rounded-full bg-grey-500/60"
+          :style="{ height: `${barHeight}px` }"
+        />
+        <span
+          class="skeleton-shimmer pointer-events-none absolute inset-y-0 left-0 w-1/2"
+          :style="{ animationDelay: `${index * 160}ms` }"
         />
       </div>
       <SoundWaveform
@@ -147,25 +156,31 @@ async function handlePlay() {
 </template>
 
 <style scoped>
-@property --sound-loading-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes sound-rotate-gradient {
+@keyframes sound-ring-spin {
   to {
-    --sound-loading-angle: 360deg;
+    transform: rotate(360deg);
   }
 }
 
-@keyframes sound-skeleton-pulse {
+@keyframes sound-ring-arc {
   0%,
   100% {
-    opacity: 0.45;
+    stroke-dasharray: 22 85;
+    stroke-dashoffset: 0;
   }
   50% {
-    opacity: 0.9;
+    stroke-dasharray: 44 63;
+    stroke-dashoffset: -18;
+  }
+}
+
+@keyframes sound-waveform-shimmer {
+  0% {
+    transform: translateX(-110%);
+  }
+  65%,
+  100% {
+    transform: translateX(210%);
   }
 }
 
@@ -187,34 +202,36 @@ async function handlePlay() {
   box-shadow: 0 4px 12px rgba(36, 41, 47, 0.06);
 }
 
-.sound-take-card.is-loading::before {
-  /* Force override UIBlockItem's border; matches GenItem.vue loading glow. */
-  border: none;
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 2px;
-  border-radius: inherit;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-  background: conic-gradient(
-    from var(--sound-loading-angle) at 50% 50%,
-    #dcf7fa 100deg,
-    #0bc0cf 288deg,
-    rgba(243, 252, 253, 0.8) 324deg,
-    #dcf7fa 360deg
-  );
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 150% 150%;
-  animation: sound-rotate-gradient 3s linear infinite;
+.loading-ring {
+  transform-origin: center;
+  animation: sound-ring-spin 1.6s linear infinite;
 }
 
-.skeleton-bar {
-  animation: sound-skeleton-pulse 1.8s ease-in-out infinite;
+.loading-ring circle {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.loading-ring-track {
+  stroke: var(--ui-color-grey-400);
+}
+
+.loading-ring-arc {
+  stroke: var(--ui-color-primary-400);
+  stroke-dasharray: 28 79;
+  transform-origin: center;
+  animation: sound-ring-arc 2.2s ease-in-out infinite;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(251, 252, 253, 0) 0%,
+    rgba(251, 252, 253, 0.72) 50%,
+    rgba(251, 252, 253, 0) 100%
+  );
+  animation: sound-waveform-shimmer 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .corner-check-enter-active,
@@ -232,12 +249,14 @@ async function handlePlay() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sound-take-card.is-loading::before {
+  .loading-ring,
+  .loading-ring-arc,
+  .skeleton-shimmer {
     animation: none;
   }
 
-  .skeleton-bar {
-    animation: none;
+  .skeleton-shimmer {
+    display: none;
   }
 
   .sound-take-card.ui-block-item-interactive:has(> button:active) {
