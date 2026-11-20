@@ -11,15 +11,6 @@ const mockConfirm = vi.fn()
 const mockCreateSound = vi.fn()
 const mockRegisterPlayer = vi.fn()
 
-vi.mock('@lottiefiles/dotlottie-vue', () => ({
-  DotLottieVue: defineComponent({
-    setup(_, { expose }) {
-      expose({ getDotLottieInstance: () => null })
-      return () => h('span', { 'data-test': 'dotlottie' })
-    }
-  })
-}))
-
 vi.mock('./samples', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./samples')>()
   return {
@@ -201,7 +192,7 @@ describe('SoundWaveform', () => {
 })
 
 describe('SoundTakeCard', () => {
-  it('renders audio-native loading state with sparkle badge and skeleton waveform matching ready geometry', () => {
+  it('renders audio-native loading state with static muted play icon and skeleton waveform matching ready geometry', () => {
     const loadingWrapper = mount(SoundTakeCard, {
       props: {
         name: '阳光草地跑酷 1',
@@ -215,7 +206,7 @@ describe('SoundTakeCard', () => {
     })
 
     expect(loadingWrapper.find('.is-loading').exists()).toBe(true)
-    expect(loadingWrapper.find('[data-test="dotlottie"]').exists()).toBe(true)
+    expect(loadingWrapper.find('[data-test="icon"][data-type="play"]').exists()).toBe(true)
     expect(loadingWrapper.find('[data-test="play-control"]').exists()).toBe(false)
     const skeletonBars = loadingWrapper.findAll('.skeleton-bar')
     expect(skeletonBars).toHaveLength(PEAK_COUNT)
@@ -234,7 +225,6 @@ describe('SoundTakeCard', () => {
     })
 
     expect(readyWrapper.find('.is-loading').exists()).toBe(false)
-    expect(readyWrapper.find('[data-test="dotlottie"]').exists()).toBe(false)
     const waveformTrack = readyWrapper.find('.waveform-track > div')
     expect(waveformTrack.classes()).toContain('gap-[2px]')
     expect(waveformTrack.findAll('.waveform-bar')).toHaveLength(PEAK_COUNT)

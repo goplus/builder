@@ -7,14 +7,11 @@ const SKELETON_HEIGHTS = [
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import { useI18n } from '@/utils/i18n'
-import { UIBlockItem, UICornerIcon } from '@/components/ui'
+import { UIBlockItem, UICornerIcon, UIIcon } from '@/components/ui'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
 import SoundWaveform from './SoundWaveform.vue'
 import { formatAudioTime, type Sample } from './samples'
-
-const loadingSparkleUrl = new URL('../common/gen-loading.lottie', import.meta.url).href
 
 const props = withDefaults(
   defineProps<{
@@ -91,9 +88,9 @@ async function handlePlay() {
     <div
       v-if="!isReady"
       aria-hidden="true"
-      class="relative z-10 flex h-9 w-9 flex-none items-center justify-center rounded-full bg-primary-200"
+      class="relative z-10 flex h-9 w-9 flex-none items-center justify-center rounded-full bg-grey-300 text-grey-700"
     >
-      <DotLottieVue class="h-6 w-6" autoplay loop :src="loadingSparkleUrl" />
+      <UIIcon type="play" class="h-4 w-4" />
     </div>
     <PlayControl
       v-else
