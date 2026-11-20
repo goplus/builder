@@ -47,7 +47,7 @@ export class SpxSnippetVariablesProvider implements ISnippetVariablesProvider {
   }
 
   private async loadProperties(target: string, signal?: AbortSignal): Promise<Property[]> {
-    const properties = await this.lspClient.getProperties({ signal }, target)
+    const properties = await this.lspClient.getProperties({ signal }, target, { excludeNotRecommended: true })
     return filterPropertiesByDocumentation(properties, this.documentBase, this.classFrameworkPkg)
   }
 

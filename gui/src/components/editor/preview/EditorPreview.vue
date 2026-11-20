@@ -320,7 +320,7 @@ async function checkAndNotifyMonitorError() {
   const monitors = stage.widgets.filter((w) => w.type === 'monitor')
   const spriteNames = new Set(sprites.map((s) => s.name))
   const invalidMonitors = await withTimeout(CODE_EDITOR_OPERATION_TIMEOUT, (signal) =>
-    getInvalidMonitors(monitors, spriteNames, (target, s) => codeEditor.getProperties(target, s), signal)
+    getInvalidMonitors(monitors, spriteNames, (target, signal) => codeEditor.getProperties(target, { signal }), signal)
   )
   if (invalidMonitors.length === 0) return
   const monitorNames = humanizeListWithLimit(invalidMonitors.map((m) => ({ en: m.name, zh: m.name })))

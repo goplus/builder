@@ -113,7 +113,11 @@ describe('admin app grant', () => {
       )
     )
     await vi.waitFor(() => expect(wrapper.text()).toContain('No active tokens'))
-    await wrapper.get('select').setValue('accessToken')
+    const tokenFilter = wrapper.get('select')
+    tokenFilter.element.value = 'accessToken'
+    // Happy DOM caches selectedOptions across value assignments until a DOM mutation invalidates it.
+    tokenFilter.element.setAttribute('data-test-refresh-selection', '')
+    await tokenFilter.trigger('change')
     await vi.waitFor(() => expect(wrapper.get('tbody').text()).toContain('Test automation'))
     let rejectTokenRevoke: (error: Error) => void = () => {}
     vi.mocked(accountAdminApis.revokeAccountAppGrantToken)
