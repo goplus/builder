@@ -9,6 +9,7 @@ import {
   ApiException,
   ApiExceptionCode,
   OAuthException,
+  createAccountFlowErrorMeta,
   type MovedResourceCanonical,
   type RetryAfterMeta
 } from './exception'
@@ -21,6 +22,7 @@ export type ApiExceptionPayload = {
   /** Message for developer reading */
   msg: string
   canonical?: MovedResourceCanonical
+  reason?: unknown
 }
 
 /** Response body when OAuth exception encountered for API calling */
@@ -68,6 +70,9 @@ function getApiExceptionMeta(code: number, resp: Response, payload: ApiException
       return getRetryAfterMeta(resp.headers)
     case ApiExceptionCode.errorResourceMoved:
       return payload.canonical ?? null
+    case ApiExceptionCode.errorConflict:
+    case ApiExceptionCode.errorExpired:
+      return createAccountFlowErrorMeta(code, payload.reason)
     default:
       return null
   }

@@ -29,7 +29,8 @@ function registeredClient(): accountAdminApis.AccountOAuthClient {
     status: 'active',
     grantTypes: ['client_credentials'],
     redirectURIs: [],
-    redirectURIPatterns: []
+    redirectURIPatterns: [],
+    wechatReturnTargets: []
   }
 }
 

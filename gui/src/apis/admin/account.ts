@@ -12,6 +12,7 @@ import type {
   AccountSession,
   AccountUser,
   AccountUserIdentity,
+  AccountWeChatReturnTarget,
   AdminAccountApp,
   CreatedAccountAppToken,
   CreatedAccountOAuthClientSecret
@@ -30,6 +31,7 @@ export type {
   AccountSession,
   AccountUser,
   AccountUserIdentity,
+  AccountWeChatReturnTarget,
   AdminAccountApp,
   CreatedAccountAppToken,
   CreatedAccountOAuthClientSecret
@@ -264,6 +266,7 @@ export type CreateAccountOAuthClientParams = {
   grantTypes: AccountOAuthGrantType[]
   /** Exact redirect URI allowlist for user authorization */
   redirectURIs?: string[]
+  wechatReturnTargets?: AccountWeChatReturnTarget[]
   /** Administrator-provided reason retained in the audit log */
   reason?: string
 }
@@ -281,6 +284,7 @@ export type UpdateAccountOAuthClientParams = {
   status?: AccountAppStatus
   /** Target exact redirect URI allowlist */
   redirectURIs?: string[]
+  wechatReturnTargets?: AccountWeChatReturnTarget[]
   /** Administrator-provided reason retained in the audit log */
   reason?: string
 }
