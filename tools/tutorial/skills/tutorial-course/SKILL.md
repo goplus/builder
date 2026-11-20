@@ -71,6 +71,25 @@ the course's mistake; see goplus/builder#3419.
   channel operations and long loops freeze the whole course instead, and a goroutine the course starts itself
   (`go`, `time.AfterFunc`) fails the program as soon as it uses the framework.
 
+### Editor suggestions in the embedded project
+
+Keep editor suggestions focused on the APIs and variables learners use in the exercise. For internal
+scene state, assessment signals and helpers, put the case-sensitive `//xgols:notRecommended` on its own
+line in the comment immediately above the declaration in the SPX project source.
+
+```xgo
+// Reports whether Lita has reached the goal.
+//xgols:notRecommended
+func isAtGoal(x float64) bool {
+	return x >= 100
+}
+```
+
+The directive affects proactive suggestions in completion, input helpers and property pickers. Explicit
+uses still compile and retain help such as diagnostics, hover and go to definition. See the
+[xgolsw directive reference](https://github.com/goplus/xgolsw/blob/93262916548a5751b808c8d80bc56aa71c240428/README.md#declaration-directives)
+for declaration placement and scope.
+
 ## Working in the Course Editor
 
 The activity bar along the left edge switches between the four parts of the course: the course itself (its

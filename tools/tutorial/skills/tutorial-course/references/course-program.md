@@ -480,26 +480,6 @@ list. An empty list hides all APIs covered by the filter; project-local completi
 and items without a definition remain eligible under the editor's normal recommendation
 rules. Malformed identifiers are rejected when the editor applies the filter.
 
-#### Internal helpers in the learner project
-
-Put `//xgols:notRecommended` on its own line in the comment immediately above a
-declaration to keep an internal helper out of suggestions. For example, mark an
-assessment helper in the SPX project source:
-
-```xgo
-// Reports whether Lita has reached the goal.
-//xgols:notRecommended
-func isAtGoal(x float64) bool {
-	return x >= 100
-}
-```
-
-Use the directive for internal helpers and leave the APIs learners need for the
-exercise eligible for suggestions. The directive affects proactive assistance
-such as completion, input suggestions, and property pickers. Explicit uses still
-compile and retain editor assistance such as hover, diagnostics, signature help,
-and go to definition.
-
 ### Editor.Ruler
 
 | Call | Notes |
