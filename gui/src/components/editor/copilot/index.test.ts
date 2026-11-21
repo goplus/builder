@@ -32,7 +32,7 @@ describe('getProjectContext', () => {
 describe('getCodeContext', () => {
   const code = Array.from({ length: 40 }, (_, i) => `line${i + 1}`).join('\n')
 
-  it('shows a whole short file and tells Copilot to read other code itself', () => {
+  it('shows a whole short file without tool guidance', () => {
     const context = getCodeContext({
       codeFilePath: 'Bird.spx',
       code: 'onStart => {\n\tstep 10\n}',
@@ -45,7 +45,7 @@ describe('getCodeContext', () => {
 The user is now viewing / editing code of file \`Bird.spx\`. Cursor position: Line 2, Column 3. Selection: None.
 Code content of \`Bird.spx\` (the whole file; \`lineCount\` is the number of lines in the file):
 {"lineCount":3,"sampledLines":{"1":"onStart => {","2":"\\tstep 10","3":"}"}}
-Other code of the project is not in this context. If and only if a question depends on code you have not seen, read that code with \`get_project_code\` before replying. Read it yourself instead of asking the user to look it up.`)
+Other code of the project is not in this context.`)
   })
 
   it('states which lines of a long file are shown', () => {
