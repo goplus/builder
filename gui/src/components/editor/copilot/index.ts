@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import { z } from 'zod'
 import { onScopeDispose, watch } from 'vue'
+import type { Tool } from '@/apis/copilot'
 import { useCopilot } from '@/components/copilot/context'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from '@/components/copilot/common'
 import { type ICopilotContextProvider, type ToolDefinition } from '@/components/copilot/copilot'
@@ -237,12 +238,20 @@ export type CodeContextParams = {
   selection: Selection | null
   /** Whether the editor keeps the user on this file, with no way to open other code files. */
   otherFilesHidden: boolean
+  canReadProjectCode: boolean
 }
 
 /** Number of lines included before and after the cursor line. */
 const codeContextLinesAround = 10
 
-export function getCodeContext({ codeFilePath, code, cursorPosition, selection, otherFilesHidden }: CodeContextParams) {
+export function getCodeContext({
+  codeFilePath,
+  code,
+  cursorPosition,
+  selection,
+  otherFilesHidden,
+  canReadProjectCode
+}: CodeContextParams) {
   const cursorPositionStr =
     cursorPosition == null ? 'None' : `Line ${cursorPosition.line}, Column ${cursorPosition.column}`
   const selectionStr =
@@ -264,19 +273,23 @@ export function getCodeContext({ codeFilePath, code, cursorPosition, selection, 
   }
   lines.push(
     `Code content of \`${codeFilePath}\` (${range}; \`lineCount\` is the number of lines in the file):`,
-    JSON.stringify(sampled),
-    `Other code of the project is not in this context. If and only if a question depends on code you have not seen, read that code with \`${getProjectCodeToolName}\` before replying. Read it yourself instead of asking the user to look it up.`
+    JSON.stringify(sampled)
   )
+  if (canReadProjectCode) {
+    lines.push(
+      `Other code of the project is not in this context. If and only if a question depends on code you have not seen, read that code with \`${getProjectCodeToolName}\` before replying. Read it yourself instead of asking the user to look it up.`
+    )
+  }
   return lines.join('\n')
 }
 
-class CodeContextProvider implements ICopilotContextProvider {
+export class CodeContextProvider implements ICopilotContextProvider {
   constructor(
     private editorCtx: EditorCtx,
     private codeEditor: CodeEditor
   ) {}
 
-  provideContext(): string {
+  provideContext(tools: readonly Tool[]): string {
     const codeEditorUI = this.codeEditor.getAttachedUI()
     if (codeEditorUI == null) return ''
     const { activeTextDocument, cursorPosition, selection } = codeEditorUI
@@ -286,7 +299,8 @@ class CodeContextProvider implements ICopilotContextProvider {
       code: activeTextDocument.getValue(),
       cursorPosition,
       selection,
-      otherFilesHidden: this.editorCtx.state.selectedEditMode === EditMode.Simple
+      otherFilesHidden: this.editorCtx.state.selectedEditMode === EditMode.Simple,
+      canReadProjectCode: tools.some((tool) => tool.function.name === getProjectCodeToolName)
     })
   }
 }

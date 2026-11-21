@@ -63,6 +63,7 @@ export type Message = UserMessage | CopilotMessage | ToolMessage
 
 type ContextMessageOptions = {
   toolsCustomElementsEnabled?: boolean
+  tools?: readonly apis.Tool[]
   extraContext?: string
 }
 
@@ -337,14 +338,15 @@ export class Round {
   private async generateCopilotMessage() {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      messages.push(await this.copilot.getContextMessage())
+      const tools = this.copilot.getTools().map(toApiTool)
+      messages.push(await this.copilot.getContextMessage({ tools }))
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
       const toolCalls: Array<ToolCallDraft | null> = []
       const result = this.copilot.generator.generateCopilotMessage(sampledApiMessages, {
         signal: this.ctrl.signal,
-        tools: this.copilot.getTools().map(toApiTool)
+        tools
       })
       for await (const event of result) {
         switch (event.type) {
@@ -472,7 +474,7 @@ export interface ICopilotContextProvider {
    * Provide context information for the copilot.
    * Use plain text in English.
    */
-  provideContext?(): string
+  provideContext?(/** Tools available to this request. */ tools: readonly apis.Tool[]): string
   /** List skill names that should be preloaded as part of current context. */
   providePreloadSkills?(): string[]
 }
@@ -665,9 +667,9 @@ These skills are already preloaded. Avoid calling \`load_skill\` for them again.
 ${skillContents.join('\n\n')}`
   }
 
-  private async getContext(toolsEnabled = true): Promise<string> {
+  private async getContext(toolsEnabled: boolean, tools: readonly apis.Tool[]): Promise<string> {
     const contextParts = await Promise.all([
-      ...this.contextProviders.map((p) => p.provideContext?.()),
+      ...this.contextProviders.map((p) => p.provideContext?.(tools)),
       ...(toolsEnabled ? [this.getSkillCatalogContext()] : []),
       this.getPreloadSkillsContext()
     ])
@@ -702,11 +704,12 @@ ${topic.description}`
 
   async getContextMessage({
     toolsCustomElementsEnabled = true,
+    tools = toolsCustomElementsEnabled ? this.getTools().map(toApiTool) : [],
     extraContext = ''
   }: ContextMessageOptions = {}): Promise<UserTextMessage> {
     const parts = [
       toolsCustomElementsEnabled ? this.getCustomElementsPrompt() : '',
-      await this.getContext(toolsCustomElementsEnabled),
+      await this.getContext(toolsCustomElementsEnabled, tools),
       this.getTopicPrompt(),
       extraContext
     ]
@@ -915,6 +918,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     const messages: Message[] = [
       await this.getContextMessage({
         toolsCustomElementsEnabled: false,
+        tools: options.tools ?? [],
         extraContext: [oneShotRequestContext, this.getUserConversationContext()].filter((s) => s !== '').join('\n\n')
       }),
       { type: 'text', role: 'user', content: message }

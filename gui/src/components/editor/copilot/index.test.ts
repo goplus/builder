@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
+import * as apis from '@/apis/copilot'
+import { Copilot, type IMessageEventGenerator } from '@/components/copilot/copilot'
+import { InMemorySkillRegistry } from '@/components/copilot/skills/registry'
 import { SpxProject } from '@/models/spx/project'
 import { Sprite } from '@/models/spx/sprite'
-import { getCodeContext, getProjectContext } from '.'
+import type { EditorCtx } from '../EditorContextProvider.vue'
+import { EditMode } from '../editor-state'
+import type { CodeEditor } from '../spx-code-editor'
+import { CodeContextProvider, getCodeContext, getProjectContext } from '.'
 
 function makeProject(owner?: string, name?: string) {
   const project = new SpxProject(owner, name)
@@ -38,7 +45,8 @@ describe('getCodeContext', () => {
       code: 'onStart => {\n\tstep 10\n}',
       cursorPosition: { line: 2, column: 3 },
       selection: null,
-      otherFilesHidden: false
+      otherFilesHidden: false,
+      canReadProjectCode: true
     })
 
     expect(context).toBe(`# Current code
@@ -54,7 +62,8 @@ Other code of the project is not in this context. If and only if a question depe
       code,
       cursorPosition: { line: 25, column: 1 },
       selection: null,
-      otherFilesHidden: false
+      otherFilesHidden: false,
+      canReadProjectCode: true
     })
 
     expect(context).toContain(
@@ -70,17 +79,103 @@ Other code of the project is not in this context. If and only if a question depe
       code,
       cursorPosition: { line: 38, column: 1 },
       selection: null,
-      otherFilesHidden: false
+      otherFilesHidden: false,
+      canReadProjectCode: true
     })
 
     expect(context).toContain('(lines 28-40; `lineCount`')
   })
 
   it('says when the editor keeps the user on the current file', () => {
-    const params = { codeFilePath: 'Bird.spx', code, cursorPosition: null, selection: null }
+    const params = { canReadProjectCode: true, codeFilePath: 'Bird.spx', code, cursorPosition: null, selection: null }
     const hidden = 'The editor keeps the user on this file: they cannot open the code of other sprites or the stage'
 
     expect(getCodeContext({ ...params, otherFilesHidden: true })).toContain(hidden)
     expect(getCodeContext({ ...params, otherFilesHidden: false })).not.toContain(hidden)
   })
+})
+
+describe('editor code context in Copilot requests', () => {
+  it.each(['conversation', 'JSON', 'text', 'conversation without code tool'] as const)(
+    'matches the tools available to a %s request and keeps fresh code context',
+    async (kind) => {
+      const calls: Array<{ messages: apis.Message[]; tools: apis.Tool[] }> = []
+      const generator: IMessageEventGenerator = {
+        async *generateCopilotMessage(messages, options) {
+          const tools = options?.tools ?? []
+          calls.push({ messages, tools })
+          if (kind === 'JSON') {
+            yield {
+              type: 'tool_call_delta',
+              data: {
+                index: 0,
+                id: 'return_json_1',
+                function: { name: 'return_json', arguments: '{"complete":true}' }
+              }
+            }
+          } else {
+            yield { type: 'text_delta', data: { text: 'Done' } }
+          }
+          yield { type: 'done', data: { finishReason: 'stop' } }
+        }
+      }
+      const copilot = new Copilot(new InMemorySkillRegistry(), generator)
+      const editorCtx = { state: { selectedEditMode: EditMode.Default } }
+      let code = 'old code'
+      const ui = {
+        activeTextDocument: { id: { uri: 'file:///Bird.spx' }, getValue: () => code },
+        cursorPosition: { line: 1, column: 1 },
+        selection: null
+      }
+      const codeEditor = { getAttachedUI: () => ui }
+      copilot.registerContextProvider(
+        new CodeContextProvider(editorCtx as unknown as EditorCtx, codeEditor as unknown as CodeEditor)
+      )
+      if (kind !== 'conversation without code tool') {
+        copilot.registerTool({
+          name: 'get_project_code',
+          description: 'Read project code',
+          parameters: z.object({}),
+          implementation: async () => 'Other code'
+        })
+      }
+      await copilot.startSession({ title: { en: 'Course', zh: '课程' }, description: '', reactToEvents: false })
+      code = 'onStart => {\n\tstep 20\n}'
+      ui.cursorPosition = { line: 2, column: 3 }
+      editorCtx.state.selectedEditMode = EditMode.Simple
+
+      if (kind === 'JSON') {
+        await expect(copilot.generateJSONResponse('Assess the code', { type: 'object' })).resolves.toEqual({
+          complete: true
+        })
+      } else if (kind === 'text') {
+        await expect(copilot.generateTextResponse('Give feedback')).resolves.toBe('Done')
+      } else {
+        const completed = new Promise<void>((resolve) => copilot.on('roundComplete', () => resolve()))
+        copilot.addUserTextMessage('Help with this code')
+        await completed
+      }
+
+      expect(calls).toHaveLength(1)
+      const { messages, tools } = calls[0]
+      const context = messages.map((message) => message.content?.text ?? '').join('\n')
+      expect(context).toContain('Cursor position: Line 2, Column 3')
+      expect(context).toContain('The editor keeps the user on this file')
+      expect(context).toContain(
+        JSON.stringify({ lineCount: 3, sampledLines: { 1: 'onStart => {', 2: '\tstep 20', 3: '}' } })
+      )
+      expect(context).not.toContain('old code')
+      if (kind === 'conversation') {
+        expect(tools.map((tool) => tool.function.name)).toContain('get_project_code')
+        expect(context).toContain('read that code with `get_project_code` before replying')
+      } else {
+        expect(context).not.toContain('get_project_code')
+        expect(context).not.toContain('Read it yourself instead of asking the user to look it up')
+        if (kind === 'JSON') expect(tools.map((tool) => tool.function.name)).toEqual(['return_json'])
+        else if (kind === 'text') expect(tools).toEqual([])
+        else expect(tools.map((tool) => tool.function.name)).not.toContain('get_project_code')
+      }
+      copilot.dispose()
+    }
+  )
 })

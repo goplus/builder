@@ -18,7 +18,7 @@ const programMaxLength = 20000
  */
 function whileAuthoring(isPreviewing: () => boolean, provider: ICopilotContextProvider): ICopilotContextProvider {
   return {
-    provideContext: () => (isPreviewing() ? '' : provider.provideContext?.() ?? ''),
+    provideContext: (tools) => (isPreviewing() ? '' : provider.provideContext?.(tools) ?? ''),
     providePreloadSkills: () => (isPreviewing() ? [] : provider.providePreloadSkills?.() ?? [])
   }
 }

@@ -49,7 +49,7 @@ async function loadProject() {
 /** Everything the registered providers would put into one round's context. */
 function currentContext() {
   return providers
-    .map((provider) => provider.provideContext?.() ?? '')
+    .map((provider) => provider.provideContext?.([]) ?? '')
     .filter((context) => context !== '')
     .join('\n\n')
 }
