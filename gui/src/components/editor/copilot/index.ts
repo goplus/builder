@@ -1,7 +1,6 @@
 import dayjs from 'dayjs'
 import { z } from 'zod'
 import { onScopeDispose, watch } from 'vue'
-import type { Tool } from '@/apis/copilot'
 import { useCopilot } from '@/components/copilot/context'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from '@/components/copilot/common'
 import { type ICopilotContextProvider, type ToolDefinition } from '@/components/copilot/copilot'
@@ -169,7 +168,7 @@ const getProjectCodeToolName = 'get_project_code'
 class GetProjectCodeTool implements ToolDefinition {
   name = getProjectCodeToolName
   description =
-    'Get code content of a file in project. Use it to read the code of the stage or of a sprite whose code is not in the context, for example to see which functions and variables it defines.'
+    'Get code content of a file in project, for example to see which functions and variables a stage or sprite defines. If and only if a question depends on code you have not seen, read that code with this tool before replying. Read it yourself instead of asking the user to look it up.'
   parameters = getProjectCodeParamsSchema
 
   constructor(private retriever: Retriever) {}
@@ -238,20 +237,12 @@ export type CodeContextParams = {
   selection: Selection | null
   /** Whether the editor keeps the user on this file, with no way to open other code files. */
   otherFilesHidden: boolean
-  canReadProjectCode: boolean
 }
 
 /** Number of lines included before and after the cursor line. */
 const codeContextLinesAround = 10
 
-export function getCodeContext({
-  codeFilePath,
-  code,
-  cursorPosition,
-  selection,
-  otherFilesHidden,
-  canReadProjectCode
-}: CodeContextParams) {
+export function getCodeContext({ codeFilePath, code, cursorPosition, selection, otherFilesHidden }: CodeContextParams) {
   const cursorPositionStr =
     cursorPosition == null ? 'None' : `Line ${cursorPosition.line}, Column ${cursorPosition.column}`
   const selectionStr =
@@ -273,23 +264,19 @@ export function getCodeContext({
   }
   lines.push(
     `Code content of \`${codeFilePath}\` (${range}; \`lineCount\` is the number of lines in the file):`,
-    JSON.stringify(sampled)
+    JSON.stringify(sampled),
+    'Other code of the project is not in this context.'
   )
-  if (canReadProjectCode) {
-    lines.push(
-      `Other code of the project is not in this context. If and only if a question depends on code you have not seen, read that code with \`${getProjectCodeToolName}\` before replying. Read it yourself instead of asking the user to look it up.`
-    )
-  }
   return lines.join('\n')
 }
 
-export class CodeContextProvider implements ICopilotContextProvider {
+class CodeContextProvider implements ICopilotContextProvider {
   constructor(
     private editorCtx: EditorCtx,
     private codeEditor: CodeEditor
   ) {}
 
-  provideContext(tools: readonly Tool[]): string {
+  provideContext(): string {
     const codeEditorUI = this.codeEditor.getAttachedUI()
     if (codeEditorUI == null) return ''
     const { activeTextDocument, cursorPosition, selection } = codeEditorUI
@@ -299,8 +286,7 @@ export class CodeContextProvider implements ICopilotContextProvider {
       code: activeTextDocument.getValue(),
       cursorPosition,
       selection,
-      otherFilesHidden: this.editorCtx.state.selectedEditMode === EditMode.Simple,
-      canReadProjectCode: tools.some((tool) => tool.function.name === getProjectCodeToolName)
+      otherFilesHidden: this.editorCtx.state.selectedEditMode === EditMode.Simple
     })
   }
 }
