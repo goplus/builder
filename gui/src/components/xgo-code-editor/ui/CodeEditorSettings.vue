@@ -71,7 +71,7 @@ function activateMenuItem(event: KeyboardEvent) {
           @click="emit('reset')"
         >
           <template #icon><UIIcon type="zoomReset" aria-hidden="true" /></template>
-          {{ $t({ en: 'Reset', zh: '重置' }) }}
+          {{ $t({ en: 'Reset font size', zh: '重置字号' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -87,7 +87,7 @@ function activateMenuItem(event: KeyboardEvent) {
           @click="wordWrap = !wordWrap"
         >
           <template #icon><UIIcon type="wordWrap" aria-hidden="true" /></template>
-          <span class="flex-1">{{ $t({ en: 'Word wrap', zh: '换行' }) }}</span>
+          <span class="flex-1">{{ $t({ en: 'Word wrap', zh: '自动换行' }) }}</span>
           <UIIcon v-if="wordWrap" type="check" class="h-4 w-4 shrink-0" aria-hidden="true" />
         </UIMenuItem>
       </UIMenuGroup>

@@ -223,7 +223,10 @@ export class SpxResourceAdapter extends ResourceAdapter {
     const humanizedType = humanizeResourceType(type)
     const selector = createResourceSelector(project, contextURI, this.resourceSelectorHelpers)
     return {
-      title: { en: `Select a ${humanizedType.en}`, zh: `选择${humanizedType.zh}` },
+      title: {
+        en: type === 'animation' ? 'Select an animation' : `Select a ${humanizedType.en}`,
+        zh: `选择${humanizedType.zh}`
+      },
       getItems() {
         return selector.items.map((item) => {
           const uri = getResourceURI(item)

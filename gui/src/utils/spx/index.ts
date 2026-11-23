@@ -114,7 +114,7 @@ export function cssColorStringForSpxColor(value: ColorValue) {
 export const effectKinds = [
   { name: 'ColorEffect', text: { en: 'Color', zh: '颜色' } },
   { name: 'FishEyeEffect', text: { en: 'Fish Eye', zh: '鱼眼' } },
-  { name: 'WhirlEffect', text: { en: 'Whirl', zh: '旋转' } },
+  { name: 'WhirlEffect', text: { en: 'Whirl', zh: '漩涡' } },
   { name: 'PixelateEffect', text: { en: 'Pixelate', zh: '像素化' } },
   { name: 'MosaicEffect', text: { en: 'Mosaic', zh: '马赛克' } },
   { name: 'BrightnessEffect', text: { en: 'Brightness', zh: '亮度' } },
@@ -216,10 +216,10 @@ export const playActions = [
 export const specialObjs = [
   { name: 'Mouse', text: { en: 'Mouse', zh: '鼠标' } },
   { name: 'Edge', text: { en: 'Edge', zh: '边缘' } },
-  { name: 'EdgeLeft', text: { en: 'Edge Left', zh: '左边缘' } },
-  { name: 'EdgeTop', text: { en: 'Edge Top', zh: '上边缘' } },
-  { name: 'EdgeRight', text: { en: 'Edge Right', zh: '右边缘' } },
-  { name: 'EdgeBottom', text: { en: 'Edge Bottom', zh: '下边缘' } }
+  { name: 'EdgeLeft', text: { en: 'Left edge', zh: '左边缘' } },
+  { name: 'EdgeTop', text: { en: 'Top edge', zh: '上边缘' } },
+  { name: 'EdgeRight', text: { en: 'Right edge', zh: '右边缘' } },
+  { name: 'EdgeBottom', text: { en: 'Bottom edge', zh: '下边缘' } }
 ]
 
 export const rotationStyles = [

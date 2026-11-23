@@ -297,6 +297,8 @@ function handleExit(code: number) {
   runnerState.value = shouldRestore ? 'running' : 'loading'
 }
 
+const runAnywayText = { en: 'Run anyway', zh: '仍要运行' }
+
 async function checkAndNotifyCodeError() {
   const r = await withTimeout(CODE_EDITOR_OPERATION_TIMEOUT, (signal) => codeEditor.diagnosticWorkspace(signal))
   const codeFilesWithError: LocaleMessage[] = []
@@ -307,11 +309,12 @@ async function checkAndNotifyCodeError() {
   if (codeFilesWithError.length === 0) return
   const codeFileNamesWithError = humanizeListWithLimit(codeFilesWithError)
   await confirm({
-    title: i18n.t({ en: 'Error exists in code', zh: '代码中存在错误' }),
+    title: i18n.t({ en: 'Code errors', zh: '代码中存在错误' }),
     content: i18n.t({
-      en: `There are stills errors in the project code (${codeFileNamesWithError.en}). The project may not run correctly. Are you sure to continue?`,
-      zh: `当前项目代码（${codeFileNamesWithError.zh}文件）中存在错误，项目可能无法正常运行，确定继续吗？`
-    })
+      en: `The project may not run correctly. Check the code in ${codeFileNamesWithError.en} first.`,
+      zh: `项目可能无法正常运行。建议先检查相关文件：${codeFileNamesWithError.zh}。`
+    }),
+    confirmText: i18n.t(runAnywayText)
   })
 }
 
@@ -327,9 +330,10 @@ async function checkAndNotifyMonitorError() {
   await confirm({
     title: i18n.t({ en: 'Invalid monitor configuration', zh: '监视器配置无效' }),
     content: i18n.t({
-      en: `Monitor ${monitorNames.en} has no valid variable configured and will not display correctly. Are you sure to continue?`,
-      zh: `监视器 ${monitorNames.zh} 未配置有效的变量，运行时将无法正常显示，确定继续吗？`
-    })
+      en: `When you run the project, ${monitorNames.en} won’t show values correctly. Check the Target and Value settings.`,
+      zh: `以下监视器在运行时无法正常显示：${monitorNames.zh}。请检查“对象”和“值”设置。`
+    }),
+    confirmText: i18n.t(runAnywayText)
   })
 }
 
