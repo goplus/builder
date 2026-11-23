@@ -354,7 +354,7 @@ const DiffResourceItem = defineComponent({
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton type="primary" @click="emit('confirmed')">
-        {{ $t({ en: 'Confirm checkout', zh: '确认检出' }) }}
+        {{ $t({ en: 'Restore project from this release', zh: '用此版本恢复项目' }) }}
       </UIButton>
     </div>
   </UIFormModal>

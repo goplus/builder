@@ -28,7 +28,7 @@
               {{ $t({ en: 'Edit', zh: '编辑' }) }}
             </UIMenuItem>
             <UIMenuItem v-radar="{ name: 'remove-option', desc: 'Click to remove the project' }" @click="handleRemove">
-              {{ $t({ en: 'Remove', zh: '删除' }) }}
+              {{ $t({ en: 'Delete', zh: '删除' }) }}
             </UIMenuItem>
           </UIMenu>
         </UIDropdown>

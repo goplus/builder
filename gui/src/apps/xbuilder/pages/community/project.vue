@@ -560,7 +560,7 @@ const remixesRet = useQuery({
                     v-radar="{ name: 'remove-option', desc: 'Click to remove the project' }"
                     @click="handleRemove.fn"
                   >
-                    {{ $t({ en: 'Remove', zh: '删除' }) }}
+                    {{ $t({ en: 'Delete', zh: '删除' }) }}
                   </UIMenuItem>
                 </UIMenu>
               </UIDropdown>
