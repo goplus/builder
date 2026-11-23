@@ -4,23 +4,7 @@ export type SoundKind = 'music' | 'effect' | 'speech'
 
 export type Sample = {
   blob: Blob
-  peaks: number[]
   seconds: number
-}
-
-/** 53 × 2px bars + 52 × 2px gaps = 210px, matching SoundTakeCard's waveform track width without subpixel snapping. */
-export const PEAK_COUNT = 53
-
-function computePeaks(mono: Float32Array, end: number): number[] {
-  const peaks = Array.from({ length: PEAK_COUNT }, (_, index) => {
-    const start = Math.floor((end * index) / PEAK_COUNT)
-    const stop = Math.max(start + 1, Math.floor((end * (index + 1)) / PEAK_COUNT))
-    let energy = 0
-    for (let i = start; i < stop; i++) energy += mono[i] ** 2
-    return Math.sqrt(energy / (stop - start))
-  })
-  const max = Math.max(...peaks, 0.001)
-  return peaks.map((value) => value / max)
 }
 
 export async function loadSample(
@@ -54,19 +38,12 @@ export async function loadSample(
     }
   }
 
-  const peaks = computePeaks(audio.getChannelData(0), end)
   const blob = await trimAndApplyGainToWavBlob(audio, 0, end / audio.length, 1)
 
   return {
     blob,
-    peaks,
     seconds: end / audio.sampleRate
   }
-}
-
-export function formatAudioTime(seconds: number): string {
-  const total = Math.max(0, Math.round(seconds))
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
 }
 
 export type StylePreview = {
@@ -210,7 +187,6 @@ function synthesizeSpeechTake(version: number, speed: number, voice: string): Sa
 
   return {
     blob: encodeMonoWav(pcm, PREVIEW_SAMPLE_RATE),
-    peaks: computePeaks(pcm, pcm.length),
     seconds
   }
 }

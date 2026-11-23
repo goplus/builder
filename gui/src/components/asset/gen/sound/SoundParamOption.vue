@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { UIBlockItem, UIBlockItemTitle, UICornerIcon } from '@/components/ui'
-import { useDropdown } from '@/components/ui/UIDropdown.vue'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
 
 const props = withDefaults(
@@ -25,13 +24,6 @@ const emit = defineEmits<{
   clear: []
   stop: []
 }>()
-
-const dropdown = useDropdown()
-
-function handleSelect() {
-  emit('select')
-  dropdown?.setVisible(false)
-}
 </script>
 
 <template>
@@ -39,7 +31,7 @@ function handleSelect() {
     :class="props.play == null ? 'h-10 w-auto min-w-21 flex-row justify-center px-3' : ''"
     :active="props.active"
     :button-label="props.label"
-    @click="handleSelect"
+    @click="emit('select')"
   >
     <template v-if="props.play != null">
       <div class="relative z-1 my-3 h-9 w-9">

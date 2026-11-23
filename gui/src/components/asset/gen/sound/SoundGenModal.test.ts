@@ -5,14 +5,15 @@ import { useContentSize } from '@/utils/dom'
 import type { SpxProject } from '@/models/spx/project'
 import SoundDotLoading from './SoundDotLoading.vue'
 import SoundGenModal from './SoundGenModal.vue'
+import SoundParamOption from './SoundParamOption.vue'
 import SoundTakeCard from './SoundTakeCard.vue'
-import SoundWaveform from './SoundWaveform.vue'
-import { PEAK_COUNT, type Sample } from './samples'
+import type { Sample } from './samples'
 
 const mockLoadSample = vi.fn()
 const mockConfirm = vi.fn()
 const mockCreateSound = vi.fn()
 const mockRegisterPlayer = vi.fn()
+const mockDropdownSetVisible = vi.fn()
 
 vi.mock('./samples', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./samples')>()
@@ -64,7 +65,7 @@ vi.mock('@/models/spx/sound', () => ({
 }))
 
 vi.mock('@/components/ui/UIDropdown.vue', () => ({
-  useDropdown: () => ({ setVisible: vi.fn() })
+  useDropdown: () => ({ setVisible: mockDropdownSetVisible })
 }))
 
 vi.mock('@/components/ui', async (importOriginal) => {
@@ -166,7 +167,6 @@ vi.mock('../common/SettingsInput.vue', () => {
 function makeSample(seconds = 15): Sample {
   return {
     blob: new Blob(['wav'], { type: 'audio/wav' }),
-    peaks: Array.from({ length: PEAK_COUNT }, (_, i) => (i + 1) / PEAK_COUNT),
     seconds
   }
 }
@@ -191,8 +191,8 @@ describe('SoundDotLoading', () => {
     vi.unstubAllGlobals()
   })
 
-  it('centers a 23×6 dot-matrix field on 286×84 cards and cleans up animation frames on hide', async () => {
-    vi.mocked(useContentSize).mockReturnValue(ref({ width: 286, height: 84 }))
+  it('centers an 11×11 dot-matrix field on 140×140 square cards and cleans up animation frames on hide', async () => {
+    vi.mocked(useContentSize).mockReturnValue(ref({ width: 140, height: 140 }))
     const media = Object.assign(new EventTarget(), { matches: false })
     const requestFrame = vi.fn().mockReturnValue(42)
     const cancelFrame = vi.fn()
@@ -219,11 +219,11 @@ describe('SoundDotLoading', () => {
 
     const xs = context.arc.mock.calls.map(([x]) => x as number)
     const ys = context.arc.mock.calls.map(([, y]) => y as number)
-    expect(xs).toHaveLength(23 * 6)
-    expect(new Set(xs).size).toBe(23)
-    expect(new Set(ys).size).toBe(6)
-    expect(Math.min(...xs) + Math.max(...xs)).toBe(286)
-    expect(Math.min(...ys) + Math.max(...ys)).toBe(84)
+    expect(xs).toHaveLength(11 * 11)
+    expect(new Set(xs).size).toBe(11)
+    expect(new Set(ys).size).toBe(11)
+    expect(Math.min(...xs) + Math.max(...xs)).toBe(140)
+    expect(Math.min(...ys) + Math.max(...ys)).toBe(140)
     expect(requestFrame).toHaveBeenCalledOnce()
 
     await wrapper.setProps({ visible: false })
@@ -233,7 +233,7 @@ describe('SoundDotLoading', () => {
   })
 
   it('renders a static dot field without scheduling animation frames under prefers-reduced-motion', async () => {
-    vi.mocked(useContentSize).mockReturnValue(ref({ width: 286, height: 84 }))
+    vi.mocked(useContentSize).mockReturnValue(ref({ width: 140, height: 140 }))
     const media = Object.assign(new EventTarget(), { matches: true })
     const requestFrame = vi.fn().mockReturnValue(1)
     vi.stubGlobal('matchMedia', () => media)
@@ -254,41 +254,38 @@ describe('SoundDotLoading', () => {
     const wrapper = mount(SoundDotLoading, { props: { visible: true } })
     await nextTick()
 
-    expect(context.fill).toHaveBeenCalledTimes(23 * 6)
+    expect(context.fill).toHaveBeenCalledTimes(11 * 11)
     expect(requestFrame).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 })
 
-describe('SoundWaveform', () => {
-  it('renders integer-width bars and supports keyboard seeking', async () => {
-    const wrapper = mount(SoundWaveform, {
+describe('SoundParamOption', () => {
+  beforeEach(() => {
+    mockDropdownSetVisible.mockReset()
+  })
+
+  it('emits select without closing the parent popover', async () => {
+    const wrapper = mount(SoundParamOption, {
       props: {
-        peaks: Array(PEAK_COUNT).fill(0.5),
-        progress: 0.25,
-        label: '森林探险 1'
+        label: '轻快流行',
+        active: false,
+        clearable: true,
+        play: vi.fn().mockResolvedValue(undefined)
       },
       global: {
         directives: { radar: () => undefined }
       }
     })
 
-    const baseBars = wrapper.findAll('div[aria-hidden="true"]')[0].findAll('i')
-    expect(baseBars).toHaveLength(53)
-    expect(baseBars[0].classes()).toContain('w-0.5')
-    expect(baseBars[0].classes()).toContain('flex-none')
-
-    const slider = wrapper.get('[role="slider"]')
-    await slider.trigger('keydown', { key: 'ArrowRight' })
-    expect(wrapper.emitted('seek')?.[0]?.[0]).toBeCloseTo(0.3, 5)
-
-    await slider.trigger('keydown', { key: 'ArrowLeft' })
-    expect(wrapper.emitted('seek')?.[1]?.[0]).toBeCloseTo(0.2, 5)
+    await wrapper.trigger('click')
+    expect(wrapper.emitted('select')).toEqual([[]])
+    expect(mockDropdownSetVisible).not.toHaveBeenCalled()
   })
 })
 
 describe('SoundTakeCard', () => {
-  it('renders SoundDotLoading while generating and transitions to PlayControl and SoundWaveform when ready', async () => {
+  it('renders SoundDotLoading while generating and transitions to UISoundItem with large PlayControl and static duration', async () => {
     const wrapper = mount(SoundTakeCard, {
       props: {
         name: '森林探险 1',
@@ -300,6 +297,7 @@ describe('SoundTakeCard', () => {
       }
     })
 
+    expect(wrapper.classes()).toContain('ui-block-item-large')
     expect(wrapper.find('.sound-dot-loading').exists()).toBe(true)
     expect(wrapper.find('[data-test="play-control"]').exists()).toBe(false)
     expect(wrapper.attributes('role')).toBeUndefined()
@@ -307,14 +305,16 @@ describe('SoundTakeCard', () => {
     await wrapper.setProps({ sample: makeSample(15) })
 
     expect(wrapper.find('.sound-dot-loading').exists()).toBe(false)
-    expect(wrapper.get('[data-test="play-control"]').attributes('data-size')).toBe('medium')
+    expect(wrapper.get('[data-test="play-control"]').attributes('data-size')).toBe('large')
     expect(wrapper.attributes('role')).toBe('button')
-    expect(wrapper.text()).toContain('0:15')
-    expect(wrapper.findComponent(SoundWaveform).exists()).toBe(true)
+    expect(wrapper.text()).toContain('森林探险 1')
+    expect(wrapper.text()).toContain('15.0s')
 
+    // Keep duration static during playback (no live elapsed seconds) and show check badge on active
     await wrapper.setProps({ playing: true, progress: 0.4, active: true })
-    expect(wrapper.text()).toContain('0:06 / 0:15')
-    expect(wrapper.find('[data-test="corner-icon"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('15.0s')
+    expect(wrapper.text()).not.toContain('0:06')
+    expect(wrapper.find('[data-test="corner-icon"]').attributes('data-type')).toBe('check')
   })
 })
 
@@ -337,6 +337,7 @@ describe('SoundGenModal', () => {
     mockConfirm.mockReset()
     mockCreateSound.mockReset()
     mockRegisterPlayer.mockReset()
+    mockDropdownSetVisible.mockReset()
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-audio')
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     vi.stubGlobal(
@@ -364,7 +365,7 @@ describe('SoundGenModal', () => {
     vi.unstubAllGlobals()
   })
 
-  it('progressively generates 4 horizontal candidates, seeks playback, and deduplicates sound name on adopt', async () => {
+  it('progressively generates 4 side-by-side single-select cards without preview panel and deduplicates sound name on adopt', async () => {
     let resolveFirst: ((sample: Sample) => void) | null = null
     mockLoadSample
       .mockImplementationOnce(
@@ -388,7 +389,7 @@ describe('SoundGenModal', () => {
     await submitBtn.trigger('click')
     await flushPromises()
 
-    // While in flight: 4 loading cards with dot-matrix loading overlay and loading tip
+    // While in flight: 4 loading cards in a single row with dot-matrix overlay and loading tip
     const cardsWhileLoading = wrapper.findAllComponents(SoundTakeCard)
     expect(cardsWhileLoading).toHaveLength(4)
     expect(wrapper.findAll('.sound-dot-loading')).toHaveLength(4)
@@ -403,20 +404,24 @@ describe('SoundGenModal', () => {
     expect(wrapper.text()).toContain('选择你最喜欢的一段音乐，或者重新生成。')
 
     const cards = wrapper.findAllComponents(SoundTakeCard)
+    await cards[0].trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('[data-test="corner-icon"]')).toHaveLength(1)
+    expect(cards[0].props('active')).toBe(true)
+
+    // Single-select only: selecting card 2 replaces card 1, and preview panel never opens
     await cards[1].trigger('click')
     await flushPromises()
-    expect(wrapper.find('[data-test="corner-icon"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-test="corner-icon"]')).toHaveLength(1)
+    expect(cards[0].props('active')).toBe(false)
+    expect(cards[1].props('active')).toBe(true)
+    expect(wrapper.get('.layout-with-preview').classes()).not.toContain('has-preview')
 
-    // Seek via waveform starts playback at target timestamp and seeks in-place when already playing
-    cards[1].findComponent(SoundWaveform).vm.$emit('seek', 0.5)
+    // Playing via PlayControl does not alter card selection
+    await cards[0].get('[data-test="play-control"]').trigger('click')
     await flushPromises()
     expect(audioInstances).toHaveLength(1)
-    expect(audioInstances[0].currentTime).toBeCloseTo(7.5, 5)
-
-    cards[1].findComponent(SoundWaveform).vm.$emit('seek', 0.8)
-    await flushPromises()
-    expect(audioInstances).toHaveLength(1)
-    expect(audioInstances[0].currentTime).toBeCloseTo(12, 5)
+    expect(cards[1].props('active')).toBe(true)
 
     const useBtn = wrapper.findAll('button').find((b) => b.text() === '采用')!
     expect(useBtn.attributes('disabled')).toBeUndefined()
@@ -437,6 +442,7 @@ describe('SoundGenModal', () => {
     await dropdowns[1].get('button[aria-label="电子合成"]').trigger('click')
     await flushPromises()
     expect(dropdowns[1].text()).toContain('电子合成')
+    expect(mockDropdownSetVisible).not.toHaveBeenCalled()
 
     await dropdowns[0].get('button[aria-label="音效"]').trigger('click')
     await flushPromises()

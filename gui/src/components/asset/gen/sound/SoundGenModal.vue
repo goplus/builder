@@ -262,21 +262,16 @@ function stopPlayback() {
   player.onStopped()
 }
 
-async function startPlayback(blob: Blob, seconds: number, nextPlaying: PlayingState, startRatio = 0) {
+async function startPlayback(blob: Blob, seconds: number, nextPlaying: PlayingState) {
   stopPlayback()
   player.onStart()
 
-  const clampedRatio = Math.max(0, Math.min(1, startRatio))
   const objectUrl = URL.createObjectURL(blob)
   const audio = new Audio(objectUrl)
   playbackAudio = audio
   playbackObjectUrl = objectUrl
   playing.value = nextPlaying
-  playingProgress.value = clampedRatio
-
-  if (clampedRatio > 0 && seconds > 0) {
-    audio.currentTime = clampedRatio * seconds
-  }
+  playingProgress.value = 0
 
   audio.onended = () => {
     if (playbackAudio === audio) stopPlayback()
@@ -301,23 +296,6 @@ async function playTake(index: number) {
   const sample = draft.value.results[index]
   if (sample == null) return
   await startPlayback(sample.blob, sample.seconds, { source: 'take', kind: kind.value, index })
-}
-
-function seekTake(index: number, ratio: number) {
-  const sample = draft.value.results[index]
-  if (sample == null || adopting.value) return
-  const clamped = Math.max(0, Math.min(1, ratio))
-  if (isTakePlaying(index) && playbackAudio != null) {
-    const duration = sample.seconds > 0 ? sample.seconds : playbackAudio.duration || 0
-    if (duration > 0) {
-      playbackAudio.currentTime = clamped * duration
-    }
-    playingProgress.value = clamped
-    return
-  }
-  void startPlayback(sample.blob, sample.seconds, { source: 'take', kind: kind.value, index }, clamped).catch(() => {
-    // Ignore interrupted playback promises when user scrubs rapidly across takes.
-  })
 }
 
 function playStylePreview(style: string) {
@@ -645,14 +623,14 @@ const backdropStyle = {
           </template>
         </SettingsInput>
 
-        <div class="min-h-48.5">
+        <div class="min-h-42.5">
           <section
             v-if="draft.results.length > 0"
             v-radar="{ name: 'sound-selector', desc: 'Selector for choosing from generated sounds' }"
             class="flex flex-col items-center gap-3"
           >
-            <ul class="m-0 grid w-full list-none grid-cols-2 gap-3 p-0">
-              <li v-for="(sample, index) in draft.results" :key="`${kind}-${index}`" class="min-w-0">
+            <ul class="m-0 flex list-none flex-nowrap items-center content-center justify-center gap-2 p-0">
+              <li v-for="(sample, index) in draft.results" :key="`${kind}-${index}`">
                 <SoundTakeCard
                   :name="takeName(kind, index)"
                   :sample="sample"
@@ -663,7 +641,6 @@ const backdropStyle = {
                   :play="() => playTake(index)"
                   @select="selectTake(index)"
                   @stop="stopPlayback"
-                  @seek="(ratio) => seekTake(index, ratio)"
                 />
               </li>
             </ul>
