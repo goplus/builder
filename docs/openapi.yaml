@@ -3868,6 +3868,91 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api-reference-searches:
+    post:
+      operationId: createAPIReferenceSearch
+      tags:
+        - API Reference
+      summary: Create an API Reference search
+      description: |
+        Compute cosine similarities between a query and the supplied API Reference candidate texts.
+        Returns one score per candidate in request order. The scores array has the same length as the
+        candidates array, and scores[i] corresponds to candidates[i]. Scores are not probabilities.
+        This is a synchronous computation; no persistent search resource is created.
+        The request body is limited to 2 MiB. String length limits count Unicode code points.
+        The search deadline is 12 seconds. Rate limits apply to anonymous and authenticated requests.
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, candidates]
+              properties:
+                query:
+                  type: string
+                  minLength: 1
+                  maxLength: 512
+                candidates:
+                  type: array
+                  minItems: 1
+                  maxItems: 512
+                  description: Total candidate text is limited to 262144 Unicode code points.
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 4096
+                    description: Candidate text to compare with the query.
+      responses:
+        "200":
+          description: Similarity scores for the supplied candidates, in request order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [scores]
+                properties:
+                  scores:
+                    type: array
+                    minItems: 1
+                    maxItems: 512
+                    items:
+                      type: number
+                      minimum: -1
+                      maximum: 1
+                      description: Cosine similarity between the query and candidate embeddings.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+        "429":
+          description: |
+            The anonymous caller's IP or the authenticated user exceeded the request rate limit (code 42901),
+            or search/inference capacity was exhausted (code 42900).
+          headers:
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIError"
+
+        "503":
+          description: Search service or its dependencies are unavailable (code 50300).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIError"
+        "504":
+          description: Search exceeded its deadline (code 50400).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIError"
+
   /file-url-signatures:
     post:
       operationId: createFileURLSignatures
@@ -7256,6 +7341,8 @@ components:
         | 42901 | 429 | Rate limit exceeded | A short-window rate limit was exceeded. |
         | 50000 | 500 | Internal server error | An unexpected server-side failure occurred. |
         | 50101 | 501 | Unsupported scratch feature | Scratch conversion hit an unsupported feature. |
+        | 50300 | 503 | Service unavailable | The service or a dependency is unavailable. |
+        | 50400 | 504 | Gateway timeout | The request exceeded its deadline. |
       type: integer
       format: int32
       enum:
@@ -7272,6 +7359,8 @@ components:
         - 42901
         - 50000
         - 50101
+        - 50300
+        - 50400
       examples:
         - 40001
 

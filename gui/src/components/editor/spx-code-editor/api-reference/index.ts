@@ -5,19 +5,25 @@
  */
 
 import { once } from 'lodash'
+import { capture } from '@/utils/exception'
 import { packageSpx } from '@/utils/spx'
+import { createAPIReferenceSearch } from '@/apis/api-reference'
+import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import {
   type APICategoryViewInfo,
   type DefinitionIdentifier,
   type IDocumentBase,
   type IAPIReferenceProvider,
   type APIReferenceContext,
+  type APIReferenceItem,
   mainCategories,
   subCategories,
-  parseDefinitionName
+  parseDefinitionName,
+  searchAPIReferenceNames
 } from '@/components/xgo-code-editor'
 import { isTextDocumentStageCode } from '../common'
 import { matchesAPI } from '../api-filter'
+import { getAPIReferenceSearchText, rankAPIReferenceResults } from './search'
 import iconEvent from './icons/event.svg?raw'
 import iconLook from './icons/look.svg?raw'
 import iconMotion from './icons/motion.svg?raw'
@@ -338,6 +344,20 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
       if (receiver === 'Game' && spriteMethods.has(method)) return false
       return true
     })
+  }
+
+  async searchAPIReference(items: APIReferenceItem[], query: string, signal: AbortSignal): Promise<APIReferenceItem[]> {
+    const candidates = items.map(getAPIReferenceSearchText)
+    try {
+      const { scores } = await createAPIReferenceSearch({ query, candidates }, signal)
+      return rankAPIReferenceResults(items, query, scores)
+    } catch (error) {
+      // Deployments without semantic search configured are expected to fall back to name matching.
+      const unavailable = error instanceof ApiException && error.code === ApiExceptionCode.errorServiceUnavailable
+      if (!unavailable) capture(error, 'POST /api-reference-searches failed')
+      signal.throwIfAborted()
+      return searchAPIReferenceNames(items, query)
+    }
   }
 
   provideCategoryViewInfos(): APICategoryViewInfo[] {
