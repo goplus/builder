@@ -546,7 +546,7 @@ defineExpose({
           @execution-locations="emit('executionLocations', $event)"
           @exit="emit('exit', $event)"
         />
-        <slot v-if="!overlayActive" name="inline-overlay" />
+        <slot name="inline-overlay" />
         <div v-if="overlayActive && initialLoading && !overlayOpening" class="overlay-loading"></div>
       </div>
       <span v-if="overlayActive && !overlayClosing" class="sr-only" tabindex="0" @focus="focusToolbar('first')"></span>
@@ -591,7 +591,7 @@ defineExpose({
 }
 
 .runner-wrapper.fullscreen .runner-area {
-  padding: 20px;
+  padding: 0;
   background-color: var(--ui-color-grey-300);
   transition:
     padding 0.2s ease,
@@ -607,7 +607,7 @@ defineExpose({
 }
 
 .runner-wrapper.fullscreen.opening .runner-area {
-  padding: 20px;
+  padding: 0;
   background-color: transparent;
 }
 
@@ -616,7 +616,7 @@ defineExpose({
 }
 
 .runner-wrapper.fullscreen.opening.visible .runner-area {
-  padding: 20px;
+  padding: 0;
   background-color: var(--ui-color-grey-300);
   transition-delay: 0.15s;
 }
@@ -637,9 +637,9 @@ defineExpose({
 /* Pin the hover target to the top edge of the fullscreen surface, above the game. */
 .toolbar-zone {
   position: absolute;
-  z-index: 1;
+  z-index: 3;
   inset: 0 0 auto;
-  height: 8px;
+  height: 40px;
 }
 
 .toolbar-zone:hover .header,
@@ -704,7 +704,7 @@ defineExpose({
   container-type: size;
   min-width: 0;
   min-height: 0;
-  padding: 20px;
+  padding: 0;
   background-color: var(--ui-color-grey-300);
 }
 

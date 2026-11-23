@@ -172,6 +172,10 @@ function handleSignIn() {
 
 const handleRun = useMessageHandle(
   async () => {
+    if (needsSignInToRun.value) {
+      handleSignIn()
+      return
+    }
     runnerState.value = 'loading'
     try {
       await projectRunnerRef.value?.run()
@@ -447,17 +451,17 @@ const remixesRet = useQuery({
           >
             {{ $t({ en: 'Stop', zh: '停止' }) }}
           </UIButton>
-          <UITooltip v-if="runnerState === 'loading' || runnerState === 'running'">
+          <UITooltip>
             <template #trigger>
               <UIButton
                 v-radar="{
                   name: 'enter-full-screen-button',
-                  desc: 'Click to enter full screen for the running project'
+                  desc: 'Click to enter full screen for the project'
                 }"
                 type="neutral"
                 shape="square"
                 icon="enterFullScreen"
-                :disabled="handleStop.isLoading.value"
+                :disabled="projectRunnerRef == null || handleStop.isLoading.value"
                 @click="projectRunnerRef?.enterFullscreen($event)"
               ></UIButton>
             </template>

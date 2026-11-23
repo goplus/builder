@@ -9,6 +9,75 @@ import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurfa
 describe('community project', () => {
   setupPageTests()
 
+  it('opens fullscreen before running and starts from its centered run button', async () => {
+    const { wrapper } = await mountPages('/project/alice/First%20flight')
+    await vi.waitFor(() => expect(wrapper.findComponent(ProjectRunnerSurface).exists()).toBe(true))
+    const surface = wrapper.getComponent(ProjectRunnerSurface)
+    const exposed = surface.vm.$.exposed as InstanceType<typeof ProjectRunnerSurface>
+    const run = vi.spyOn(exposed, 'run').mockResolvedValue('files-hash')
+    const enter = wrapper.get('button[aria-label="Enter full screen button"]')
+    const share = wrapper.get('button[aria-label="Share button"]')
+    expect(share.element.previousElementSibling).toBe(enter.element)
+
+    await enter.trigger('click', { detail: 1 })
+    expect(surface.props('fullscreen')).toBe(true)
+    expect(surface.props('runnerState')).toBe('initial')
+    expect(run).not.toHaveBeenCalled()
+
+    await surface.get('.runner-area button[aria-label="Run button"]').trigger('click')
+    await flushPromises()
+    expect(run).toHaveBeenCalledOnce()
+    expect(surface.props('runnerState')).toBe('running')
+    expect(surface.props('fullscreen')).toBe(true)
+  })
+
+  it('returns to the initial preview when exiting fullscreen before running', async () => {
+    const { wrapper } = await mountPages('/project/alice/First%20flight')
+    await vi.waitFor(() => expect(wrapper.findComponent(ProjectRunnerSurface).exists()).toBe(true))
+    const surface = wrapper.getComponent(ProjectRunnerSurface)
+    const exposed = surface.vm.$.exposed as InstanceType<typeof ProjectRunnerSurface>
+    const run = vi.spyOn(exposed, 'run')
+    const enter = wrapper.get<HTMLButtonElement>('button[aria-label="Enter full screen button"]')
+
+    await enter.trigger('click', { detail: 1 })
+    await vi.waitFor(() => expect(surface.find('.fullscreen-exit').exists()).toBe(true))
+    await surface.get('.fullscreen-exit').trigger('click')
+    await vi.waitFor(() => expect(surface.classes()).not.toContain('fullscreen'))
+
+    expect(surface.props('fullscreen')).toBe(false)
+    expect(surface.props('runnerState')).toBe('initial')
+    expect(surface.find('.runner-area button[aria-label="Run button"]').exists()).toBe(true)
+    expect(document.activeElement).toBe(enter.element)
+    expect(run).not.toHaveBeenCalled()
+  })
+
+  it('keeps the sign-in prompt in fullscreen and requires sign-in for its toolbar run action', async () => {
+    const { wrapper, signedIn } = await mountPages('/project/alice/First%20flight')
+    await vi.waitFor(() => expect(wrapper.findComponent(ProjectRunnerSurface).exists()).toBe(true))
+    const surface = wrapper.getComponent(ProjectRunnerSurface)
+    surface.props('project').stage.setCode('var player ai.Player')
+    const exposed = surface.vm.$.exposed as InstanceType<typeof ProjectRunnerSurface>
+    const run = vi.spyOn(exposed, 'run')
+    const signIn = vi.spyOn(signedIn, 'signIn').mockResolvedValue()
+    await flushPromises()
+
+    await wrapper.get('button[aria-label="Enter full screen button"]').trigger('click', { detail: 1 })
+    const gameArea = surface.get('.runner-area')
+    expect(gameArea.text()).toContain('This game requires sign-in before playing')
+    expect(gameArea.find('button[aria-label="Run button"]').exists()).toBe(false)
+    await gameArea.get('button[aria-label="Sign in button"]').trigger('click')
+    expect(signIn).toHaveBeenCalledOnce()
+
+    await vi.waitFor(() => expect(surface.find('.toolbar-zone').exists()).toBe(true))
+    await surface.get('.toolbar-zone button[aria-label="Run button"]').trigger('click')
+    await flushPromises()
+    expect(signIn).toHaveBeenCalledTimes(2)
+    expect(run).not.toHaveBeenCalled()
+    expect(surface.props('runnerState')).toBe('initial')
+    expect(surface.props('fullscreen')).toBe(true)
+    expect(surface.get('.runner-area').text()).toContain('This game requires sign-in before playing')
+  })
+
   it('passes fullscreen button activation and its opener to the runner surface', async () => {
     const { wrapper } = await mountPages('/project/alice/First%20flight')
     await vi.waitFor(() => expect(wrapper.findComponent(ProjectRunnerSurface).exists()).toBe(true))
