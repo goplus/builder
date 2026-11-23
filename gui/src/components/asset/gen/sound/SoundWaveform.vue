@@ -112,24 +112,24 @@ const baseBarClass = computed(() => (props.active ? 'bg-primary-300' : 'bg-grey-
     @click.stop
     @keydown="handleKeydown"
   >
-    <div class="h-full w-full flex items-center gap-0.5" aria-hidden="true">
+    <div class="h-full w-full flex items-center gap-0.5 overflow-hidden" aria-hidden="true">
       <i
         v-for="(peak, index) in peaks"
         :key="index"
-        class="block min-w-0 flex-[1_1_0] rounded-full transition-colors duration-150"
+        class="block w-0.5 flex-none rounded-full transition-colors duration-150"
         :class="baseBarClass"
         :style="{ height: `${Math.max(3, Math.round(peak * 22))}px` }"
       />
     </div>
     <div
-      class="pointer-events-none absolute inset-0 flex items-center gap-0.5"
+      class="pointer-events-none absolute inset-0 flex items-center gap-0.5 overflow-hidden"
       aria-hidden="true"
       :style="{ clipPath: progressClip }"
     >
       <i
         v-for="(peak, index) in peaks"
         :key="index"
-        class="block min-w-0 flex-[1_1_0] rounded-full bg-primary-main"
+        class="block w-0.5 flex-none rounded-full bg-primary-main"
         :style="{ height: `${Math.max(3, Math.round(peak * 22))}px` }"
       />
     </div>

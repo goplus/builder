@@ -8,7 +8,8 @@ export type Sample = {
   seconds: number
 }
 
-export const PEAK_COUNT = 48
+/** 53 × 2px bars + 52 × 2px gaps = 210px, matching SoundTakeCard's waveform track width without subpixel snapping. */
+export const PEAK_COUNT = 53
 
 function computePeaks(mono: Float32Array, end: number): number[] {
   const peaks = Array.from({ length: PEAK_COUNT }, (_, index) => {

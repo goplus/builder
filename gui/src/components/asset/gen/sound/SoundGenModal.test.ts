@@ -180,7 +180,7 @@ function mountModal(project: SpxProject | null = null) {
 }
 
 describe('SoundWaveform', () => {
-  it('supports keyboard seeking', async () => {
+  it('renders integer-width bars and supports keyboard seeking', async () => {
     const wrapper = mount(SoundWaveform, {
       props: {
         peaks: Array(PEAK_COUNT).fill(0.5),
@@ -191,6 +191,11 @@ describe('SoundWaveform', () => {
         directives: { radar: () => undefined }
       }
     })
+
+    const baseBars = wrapper.findAll('div[aria-hidden="true"]')[0].findAll('i')
+    expect(baseBars).toHaveLength(53)
+    expect(baseBars[0].classes()).toContain('w-0.5')
+    expect(baseBars[0].classes()).toContain('flex-none')
 
     const slider = wrapper.get('[role="slider"]')
     await slider.trigger('keydown', { key: 'ArrowRight' })
