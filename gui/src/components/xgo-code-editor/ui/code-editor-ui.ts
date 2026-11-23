@@ -489,12 +489,13 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   private registerCopilotCommands(copilot: ICopilot) {
+    const askCopilotTitle = { en: 'Ask Copilot', zh: '问问 Copilot' }
     this.registerCommand(builtInCommandCopilotAsk, {
       icon: 'copilot',
-      title: { en: 'Ask Copilot', zh: '问问 Copilot' },
+      title: askCopilotTitle,
       handler: (question) => {
         copilot.addUserTextMessage(question, {
-          title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
+          title: askCopilotTitle,
           description: '',
           reactToEvents: false
         })

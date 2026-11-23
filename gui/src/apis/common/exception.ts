@@ -49,7 +49,8 @@ export enum ApiExceptionCode {
   errorRateLimitExceeded = 42901,
   errorInternalServerError = 50000,
   errorScratchFeatureNotSupported = 50101,
-  errorServiceUnavailable = 50300
+  errorServiceUnavailable = 50300,
+  errorGatewayTimeout = 50400
 }
 
 export type MovedResourceCanonical = {
@@ -133,5 +134,9 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorServiceUnavailable]: {
     en: 'service unavailable',
     zh: '服务暂不可用'
+  },
+  [ApiExceptionCode.errorGatewayTimeout]: {
+    en: 'request timed out',
+    zh: '请求超时'
   }
 }

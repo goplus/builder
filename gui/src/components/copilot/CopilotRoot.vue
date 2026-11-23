@@ -125,7 +125,7 @@ Each UI element's tag and attributes form a Radar selector. Use a selector whene
 
 DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly represented in the UI structure.
 
-If there's an API References UI in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
+If there's an API References panel in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
   }
 }
 

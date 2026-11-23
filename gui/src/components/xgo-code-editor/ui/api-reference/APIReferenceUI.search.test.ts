@@ -1,10 +1,11 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, ref, shallowReactive } from 'vue'
+import { defineComponent, h, ref, shallowReactive } from 'vue'
 import { createI18n } from '@/utils/i18n'
 import * as utils from '@/utils/utils'
 import { createAPIReferenceSearch } from '@/apis/api-reference'
-import { providePopupReady } from '@/components/ui/utils'
+import { UIMessageProvider } from '@/components/ui/message'
+import { providePopupReady, provideRootContainer } from '@/components/ui/utils'
 import { SpxAPIReferenceProvider } from '@/components/editor/spx-code-editor/api-reference'
 import * as spxDefinitions from '@/components/editor/spx-code-editor/document-base'
 import { APIWhitelist } from '@/components/tutorials/playground/api-whitelist'
@@ -63,9 +64,17 @@ function setup(lang: 'en' | 'zh' = 'en', hasCopilotCommand = true) {
       return () => slots.default?.()
     }
   })
-  const wrapper = mount(APIReferenceUI, {
+  const Harness = defineComponent({
+    setup() {
+      provideRootContainer(ref(document.body))
+      return () =>
+        h(UIMessageProvider, null, {
+          default: () => h(APIReferenceUI, { controller: state as unknown as APIReferenceController })
+        })
+    }
+  })
+  const wrapper = mount(Harness, {
     attachTo: document.body,
-    props: { controller: state as unknown as APIReferenceController },
     global: {
       plugins: [createI18n({ lang })],
       directives: { radar: (el, { value }) => el.setAttribute('data-radar-name', value.name) },
@@ -174,8 +183,23 @@ describe('API Reference search lifecycle', () => {
     await ask.trigger('click')
     expect(ui.executeCommand).toHaveBeenCalledExactlyOnceWith(
       builtInCommandCopilotAsk,
-      'I want to 动画. How can I do this?'
+      'I searched for “动画” in the API References panel but found no matches. Can you help me find the right API?'
     )
+  })
+
+  it('shows an error when the Ask Copilot command fails', async () => {
+    const { state, wrapper, submitSearch } = setup()
+    state.search.mockResolvedValueOnce([])
+    ui.executeCommand.mockRejectedValueOnce(new Error('Copilot unavailable'))
+    const report = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await submitSearch('animate')
+    await flushPromises()
+    await wrapper.get('[data-radar-name="ask-copilot-about-snippet-search"]').trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('Failed to ask Copilot')
+    report.mockRestore()
   })
 
   it('cancels the wait for candidates when the search is cleared', async () => {

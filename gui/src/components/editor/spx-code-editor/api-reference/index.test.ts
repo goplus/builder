@@ -184,7 +184,8 @@ describe('SPX API Reference search', () => {
   it.each([
     { code: ApiExceptionCode.errorServiceUnavailable, reported: false },
     { code: ApiExceptionCode.errorRateLimitExceeded, reported: true },
-    { code: ApiExceptionCode.errorInternalServerError, reported: true }
+    { code: ApiExceptionCode.errorInternalServerError, reported: true },
+    { code: ApiExceptionCode.errorGatewayTimeout, reported: true }
   ])('falls back after search API error $code (reported: $reported)', async ({ code, reported }) => {
     const capture = vi.spyOn(exception, 'capture')
     const items = candidates()

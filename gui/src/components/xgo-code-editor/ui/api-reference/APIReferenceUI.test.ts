@@ -39,6 +39,7 @@ function createHarness(items: APIReferenceItem[] | null, categorized = true) {
         UITooltip: { template: '<div><slot name="trigger" /></div>' },
         UIDropdown: { template: '<div><slot name="trigger" /></div>' },
         APIReferenceItemComp: true,
+        APIReferenceSearchResults: true,
         UIError: { template: '<div><slot /></div>' }
       }
     }

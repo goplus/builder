@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { UIIcon } from '@/components/ui'
 import { builtInCommandCopilotAsk } from '../code-editor-ui'
@@ -46,12 +47,20 @@ const askCopilotAction = computed(() => {
     command: builtInCommandCopilotAsk,
     arguments: [
       i18n.t({
-        en: `I want to ${completed.query}. How can I do this?`,
-        zh: `我想实现「${completed.query}」，可以怎么做？`
+        en: `I searched for “${completed.query}” in the API References panel but found no matches. Can you help me find the right API?`,
+        zh: `我在 API 参考面板里搜索了「${completed.query}」，但没有找到匹配的结果。你能帮我找到合适的 API 吗？`
       })
     ]
   })
 })
+
+const handleAskCopilot = useMessageHandle(
+  () => {
+    const action = askCopilotAction.value
+    if (action != null) return codeEditorUICtx.ui.executeCommand(action.command, ...action.arguments)
+  },
+  { en: 'Failed to ask Copilot', zh: '向 Copilot 提问失败' }
+).fn
 </script>
 
 <template>
@@ -74,7 +83,7 @@ const askCopilotAction = computed(() => {
       }"
       type="button"
       class="cursor-pointer appearance-none whitespace-nowrap rounded-sm border-none bg-transparent p-0 text-sm text-primary-main transition-colors hover:text-primary-400 active:text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-main"
-      @click="codeEditorUICtx.ui.executeCommand(askCopilotAction.command, ...askCopilotAction.arguments)"
+      @click="handleAskCopilot"
     >
       {{ $t(askCopilotAction.title) }}
     </button>

@@ -352,7 +352,7 @@ export class SpxAPIReferenceProvider implements IAPIReferenceProvider {
       const { scores } = await createAPIReferenceSearch({ query, candidates }, signal)
       return rankAPIReferenceResults(items, query, scores)
     } catch (error) {
-      // Deployments without semantic search configured are expected to fall back to name matching.
+      // HTTP 503 (code 50300) is expected when the search service or its dependencies are unavailable.
       const unavailable = error instanceof ApiException && error.code === ApiExceptionCode.errorServiceUnavailable
       if (!unavailable) capture(error, 'POST /api-reference-searches failed')
       signal.throwIfAborted()
