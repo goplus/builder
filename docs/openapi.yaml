@@ -316,6 +316,8 @@ paths:
               properties:
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
+                preferredLanguage:
+                  $ref: "#/components/schemas/PreferredLanguage"
       responses:
         "200":
           description: Account user updated.
@@ -1159,6 +1161,8 @@ paths:
                   $ref: "#/components/schemas/User/properties/displayName"
                 description:
                   $ref: "#/components/schemas/User/properties/description"
+                preferredLanguage:
+                  $ref: "#/components/schemas/PreferredLanguage"
       responses:
         "200":
           description: Successfully updated the authenticated user.
@@ -5282,6 +5286,8 @@ paths:
               properties:
                 displayName:
                   $ref: "#/components/schemas/AccountUser/properties/displayName"
+                preferredLanguage:
+                  $ref: "#/components/schemas/PreferredLanguage"
       responses:
         "200":
           description: Account user updated.
@@ -7433,6 +7439,15 @@ components:
       examples:
         - private
 
+    PreferredLanguage:
+      description: Supported account UI language preference.
+      type: string
+      enum:
+        - en
+        - zh
+      examples:
+        - en
+
     AccountUser:
       description: User fields exposed by XBuilder Account.
       type: object
@@ -7443,6 +7458,7 @@ components:
         - username
         - displayName
         - avatar
+        - preferredLanguage
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
@@ -7461,6 +7477,18 @@ components:
           pattern: "^https?://"
           examples:
             - https://avatars.example.com/users/10137.png
+        preferredLanguage:
+          description: Account UI language preference, or `null` when unset.
+          type:
+            - string
+            - "null"
+          enum:
+            - en
+            - zh
+            - null
+          examples:
+            - en
+            - null
 
     AccountManagedPassword:
       description: Administrator-managed password using printable ASCII characters with no leading or trailing spaces.
@@ -8421,6 +8449,10 @@ components:
         - type: object
           required:
             - capabilities
+          properties:
+            preferredLanguage:
+              description: Account UI language preference when explicitly set. Omitted when unset.
+              $ref: "#/components/schemas/PreferredLanguage"
 
     UserCapabilities:
       type: object

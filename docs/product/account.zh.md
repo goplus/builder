@@ -53,7 +53,9 @@ XBuilder Account 的目标是替换 Casdoor，成为 XBuilder 产品自己的账
 
 `app` 是产品和管理资源名。OAuth 协议层仍然使用标准 client 概念和标准参数名，例如 `client_id`、`client_secret`、`redirect_uri`、`request_uri`、`code` 和 `grant_type`。
 
-XBuilder Account 可以复用现有 `user` 表，但账号系统边界不等同于物理表边界。Account API 只暴露账号系统拥有的用户字段，例如 `id`、`username`、`displayName` 和 `avatar`。`avatar` 对外返回可展示的 HTTP URL。可写字段由具体接口定义。`description`、`roles`、`plan`、`capabilities`、统计字段和产品字段属于 XBuilder 产品或授权系统，不由 XBuilder Account API 暴露或管理。
+XBuilder Account 可以复用现有 `user` 表，但账号系统边界不等同于物理表边界。Account API 只暴露账号系统拥有的用户字段，例如 `id`、`username`、`displayName`、`avatar` 和 `preferredLanguage`。`avatar` 对外返回可展示的 HTTP URL。可写字段由具体接口定义。`description`、`roles`、`plan`、`capabilities`、统计字段和产品字段属于 XBuilder 产品或授权系统，不由 XBuilder Account API 暴露或管理。
+
+`preferredLanguage` 是账号的界面语言（`en` 或 `zh`），未显式设置时在 Account API 响应中返回 `null`（在 XBuilder 已登录 `/user` 响应中省略）。新账号及迁移后的历史账号初始均为未设置，未设置时由各应用或服务端按各自站点默认语言或本地选择处理。只有用户主动切换语言或管理员显式修改时才会更新该持久化偏好；登录、加载用户资料、浏览器语言及 OAuth `ui_locales` 均不覆盖它。`ui_locales` 仅用于托管登录页展示，XBuilder 等应用在完成登录或加载已登录用户资料时，仅在账号已设置 `preferredLanguage` 时应用该偏好。
 
 `auth_flow` 是逻辑概念，只定义生命周期和安全语义，不约束物理存储方式。Provider redirect state、pushed authorization request、authorization code、PKCE challenge 和 provider code consumption records 都必须短生命周期保存。一次性状态必须一次性使用。失败的 provider callback、失败的 token exchange 或重复提交不得留下可 replay 的有效状态。
 
@@ -208,7 +210,7 @@ Provider credential handoff 的错误应通过 PAR 或 authorize 流程返回 OA
 
 ## OAuth 与产品 API 接入
 
-XBuilder Account 的 OAuth endpoints 位于 `api.xbuilder.com/account/oauth/*`。它们只承载 OAuth 和 OAuth RFC 扩展协议端点，并签发 Account-issued app-scoped OAuth tokens。Token subject 是稳定的 `user.id`，token client 是具体 `app`。本文定义用于读取当前账号用户，以及更新 `displayName` 和 `avatar` 的 Account API scopes。这些 scopes 不表达产品授权状态，也不表达任何 app 的产品 API 权限。
+XBuilder Account 的 OAuth endpoints 位于 `api.xbuilder.com/account/oauth/*`。它们只承载 OAuth 和 OAuth RFC 扩展协议端点，并签发 Account-issued app-scoped OAuth tokens。Token subject 是稳定的 `user.id`，token client 是具体 `app`。本文定义用于读取当前账号用户，以及更新 `displayName`、`avatar` 和 `preferredLanguage` 的 Account API scopes。这些 scopes 不表达产品授权状态，也不表达任何 app 的产品 API 权限。
 
 Account-issued app-scoped OAuth token 可以作为对应 app 的产品 API credential。产品 API 是否接受该 token，取决于 token 绑定的 app 和该产品 backend 的鉴权策略。产品 API 必须校验 token client/app，不应只校验 token active。
 
@@ -264,7 +266,7 @@ sequenceDiagram
 
 Provider credential handoff 如果已足够解析账号且不需要 hosted interaction，`/account/oauth/authorize` 直接返回 app callback。微信小程序等受限运行环境可以在程序内部处理这一跳。如果 authorize 返回 hosted sign-in 或其他交互 URL，app frontend 应打开该 URL 完成交互。
 
-在 Account-issued token model 中，app backend 不维护该用户的 XBuilder Account token 状态。它可以把自己的 `/oauth/*` 作为透明 OAuth facade 转发到 `api.xbuilder.com/account/oauth/*`。App frontend 拿到的仍然是 Account-issued app-scoped OAuth token。App backend 应在收到产品请求时使用 `/account/oauth/introspect` 校验 token，并校验 token 绑定的 app 与当前 app 一致。需要账号字段时，app backend 可以在 token 具备 `account:user:read` scope 时使用 `GET /account/user` 获取当前账号的最小用户信息。Sibling app 提供产品内 `displayName` 或 `avatar` 编辑 UI 时，app backend 只有在 token 具备 `account:user:write` scope 时才能使用 `PATCH /account/user` 和 `PUT /account/user/avatar`。第三方身份和 account session 管理不属于 app-scoped OAuth token 的 Account API surface。
+在 Account-issued token model 中，app backend 不维护该用户的 XBuilder Account token 状态。它可以把自己的 `/oauth/*` 作为透明 OAuth facade 转发到 `api.xbuilder.com/account/oauth/*`。App frontend 拿到的仍然是 Account-issued app-scoped OAuth token。App backend 应在收到产品请求时使用 `/account/oauth/introspect` 校验 token，并校验 token 绑定的 app 与当前 app 一致。需要账号字段时，app backend 可以在 token 具备 `account:user:read` scope 时使用 `GET /account/user` 获取当前账号的最小用户信息。Sibling app 提供产品内 `displayName`、`avatar` 或 `preferredLanguage` 编辑 UI 时，app backend 只有在 token 具备 `account:user:write` scope 时才能使用 `PATCH /account/user` 和 `PUT /account/user/avatar`。第三方身份和 account session 管理不属于 app-scoped OAuth token 的 Account API surface。
 
 `xbuilder.com` 也可以使用 Account-issued token model。对 XBuilder 产品 API 来说，token client/app 应为 `xbuilder`。`api.xbuilder.com` 接受该 token 后，应通过 XBuilder Authorization 和资源规则判断 projects、assets、courses、AI interaction 等产品权限，而不是用 `account:user:read` 表达这些产品权限。
 

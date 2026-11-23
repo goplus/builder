@@ -64,9 +64,16 @@ standard parameter names, such as `client_id`, `client_secret`, `redirect_uri`, 
 
 XBuilder Account can reuse the existing `user` table, but the account system boundary is not the same as the physical
 table boundary. Account API only exposes user fields owned by the account system, such as `id`, `username`,
-`displayName`, and `avatar`. `avatar` is returned as a displayable HTTP URL. Writable fields are defined by concrete
-endpoints. `description`, `roles`, `plan`, `capabilities`, statistics fields, and product fields belong to the XBuilder
-product or authorization system. They are not exposed or managed by XBuilder Account API.
+`displayName`, `avatar`, and `preferredLanguage`. `avatar` is returned as a displayable HTTP URL. Writable fields are
+defined by concrete endpoints. `description`, `roles`, `plan`, `capabilities`, statistics fields, and product fields
+belong to the XBuilder product or authorization system. They are not exposed or managed by XBuilder Account API.
+
+`preferredLanguage` is the account UI language (`en` or `zh`), or `null` when unset in Account API responses (and
+omitted when unset on XBuilder's authenticated `/user` response). New and migrated accounts start unset so apps and
+services can apply their own deployment or local default until a language is explicitly set. Only explicit language
+updates by the user or an account admin change this stored preference. Signing in, loading user information, browser
+language, and OAuth `ui_locales` do not overwrite it; `ui_locales` only selects the hosted sign-in UI language, while
+apps such as XBuilder apply `preferredLanguage` when signing in or loading the signed-in user if it is set.
 
 `auth_flow` is a logical concept. It only defines lifecycle and security semantics, and it does not constrain physical
 storage. Provider redirect state, pushed authorization request, authorization code, PKCE challenge, and provider code
@@ -300,8 +307,8 @@ must consume provider codes atomically with recording consumption state to avoid
 XBuilder Account OAuth endpoints live under `api.xbuilder.com/account/oauth/*`. They only host OAuth and OAuth RFC
 extension protocol endpoints, and issue Account-issued app-scoped OAuth tokens. The token subject is stable `user.id`,
 and the token client is the concrete `app`. This document defines Account API scopes for reading the current account
-user and updating `displayName` and `avatar`. These scopes do not express product authorization state or any app's
-product API permissions.
+user and updating `displayName`, `avatar`, and `preferredLanguage`. These scopes do not express product authorization
+state or any app's product API permissions.
 
 Account-issued app-scoped OAuth tokens can be used as product API credentials for the corresponding app. Whether a
 product API accepts the token depends on the app bound to the token and the authentication policy of the product
@@ -370,10 +377,10 @@ its own `/oauth/*` as a transparent OAuth facade forwarding to `api.xbuilder.com
 still receives Account-issued app-scoped OAuth tokens. When receiving product requests, the app backend should use
 `/account/oauth/introspect` to validate the token and verify that the token is bound to the current app. When account
 fields are needed, the app backend can use `GET /account/user` to fetch the minimum account user fields if the token has
-the `account:user:read` scope. When a sibling app provides product-local UI for editing `displayName` or `avatar`, the
-app backend can use `PATCH /account/user` and `PUT /account/user/avatar` only if the token has the `account:user:write`
-scope. Third-party identities and account session management are not part of the Account API surface for app-scoped
-OAuth tokens.
+the `account:user:read` scope. When a sibling app provides product-local UI for editing `displayName`, `avatar`, or
+`preferredLanguage`, the app backend can use `PATCH /account/user` and `PUT /account/user/avatar` only if the token has
+the `account:user:write` scope. Third-party identities and account session management are not part of the Account API
+surface for app-scoped OAuth tokens.
 
 `xbuilder.com` can also use Account-issued token model. For XBuilder product APIs, the token client/app should be
 `xbuilder`. After `api.xbuilder.com` accepts the token, it should use XBuilder Authorization and resource rules to

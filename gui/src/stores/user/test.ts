@@ -1,7 +1,7 @@
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { computed, createApp, ref, shallowRef, type Ref } from 'vue'
 import { vi } from 'vitest'
-import { createI18n } from '@/utils/i18n'
+import { createI18n, type I18n } from '@/utils/i18n'
 import { until } from '@/utils/utils'
 import { OAuthFlow } from '@/utils/oauth'
 import type { ActionException } from '@/utils/exception'
@@ -40,7 +40,10 @@ export function makeSignedInUserQuery(initialUser: SignedInUser | null, isLoadin
 export function makeSignedInMock(
   userQuery = makeSignedInUserQuery(null, true),
   username: Readonly<Ref<string | null>> = computed(() => userQuery.data.value?.username ?? null)
-): Pick<SignedIn, 'getUser' | 'user' | 'isSignedIn' | 'username' | 'signIn' | 'canUseAdminConsole'> {
+): Pick<
+  SignedIn,
+  'getUser' | 'user' | 'isSignedIn' | 'username' | 'signIn' | 'setPreferredLanguage' | 'canUseAdminConsole'
+> {
   const signedIn = computed(() => username.value != null)
   return {
     getUser: async ({ signal } = {}) => {
@@ -59,6 +62,7 @@ export function makeSignedInMock(
       return username.value
     },
     signIn: vi.fn(),
+    setPreferredLanguage: vi.fn(),
     get canUseAdminConsole() {
       return (
         userQuery.data.value?.capabilities.canManageAccount === true ||
@@ -77,9 +81,9 @@ export function mockCompleteSignIn(signedIn: SignedIn, accessToken: string) {
   return signedIn.completeSignIn('?code=test&state=test')
 }
 
-export function createSignedIn(options: SignedInOptions) {
+export function createSignedIn(options: SignedInOptions, i18n: I18n = createI18n({ lang: 'en' })) {
   const app = createApp({})
-  app.use(createI18n({ lang: 'en' }))
+  app.use(i18n)
   app.use(VueQueryPlugin, { queryClient: new QueryClient() })
   return initSignedIn(app, options)
 }

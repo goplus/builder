@@ -3,7 +3,7 @@ import { useQueryCache } from '@/utils/query'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 import { Disposable } from '@/utils/disposable'
 import { OAuthErrorCode, OAuthFlow, type OAuthTokenResponse } from '@/utils/oauth'
-import { normalizeLang, useI18n, type I18n } from '@/utils/i18n'
+import { normalizeLang, useI18n, type I18n, type Lang } from '@/utils/i18n'
 import { OAuthException } from '@/apis/common/exception'
 import * as userApis from '@/apis/user'
 import { accountOAuthApisForXBuilder as oauthApis } from '@/apis/account/oauth'
@@ -184,10 +184,12 @@ export class SignedIn extends Disposable {
 
   /** Cancels operations from the previous identity on sign-in, sign-out or account switching. */
   private identityScope: Disposable
+  private hasExplicitLanguage = false
 
   private resetIdentity(credentials: Credentials | null, user: SignedInUser | null = null) {
     this.identityScope.dispose()
     this.identityScope = new Disposable()
+    this.hasExplicitLanguage = false
     this.cancelPendingUserRequest()
     this.cachedUserRef.value = user
     this.updateCredentials(credentials)
@@ -211,6 +213,7 @@ export class SignedIn extends Disposable {
     const next = { ...credentials, username: user.username }
     this.writeStoredCredentials(next)
     this.resetIdentity(next, user)
+    if (user.preferredLanguage != null) this.i18n.setLang(user.preferredLanguage)
     return extraData
   }
 
@@ -265,6 +268,7 @@ export class SignedIn extends Disposable {
       const user = token == null ? null : await userApis.getSignedInUser(token)
       signal.throwIfAborted()
       this.setCachedUser(user)
+      if (user?.preferredLanguage != null && !this.hasExplicitLanguage) this.i18n.setLang(user.preferredLanguage)
       return user
     } catch (e) {
       signal.throwIfAborted()
@@ -305,6 +309,25 @@ export class SignedIn extends Disposable {
     } catch (e) {
       if (e instanceof Cancelled) throw e
       throw new ActionException(e, { en: 'Failed to update profile', zh: '更新个人信息失败' })
+    }
+  }
+
+  async setPreferredLanguage(preferredLanguage: Lang) {
+    const signal = this.identityScope.getSignal()
+    this.hasExplicitLanguage = true
+    this.i18n.setLang(preferredLanguage)
+    try {
+      const user = await userApis.updateSignedInUser({ preferredLanguage })
+      signal.throwIfAborted()
+      this.setCachedUser(user)
+      return user
+    } catch (e) {
+      if (this.isSignedIn) signal.throwIfAborted()
+      if (e instanceof Cancelled) throw e
+      throw new ActionException(e, {
+        en: 'Language changed, but could not be saved to your account',
+        zh: '语言已切换，但未能保存到账号'
+      })
     }
   }
 

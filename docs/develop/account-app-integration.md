@@ -535,8 +535,8 @@ inherits the active grant's scope, which cannot be overridden by the request. No
 | `GET /account/users/{userID}` | `account:user:read` | `AccountUser` |
 
 These endpoints accept only app-only access tokens and do not fall back to Account cookie sessions. Directory queries
-include disabled apps for historical references. `AccountUser` shares the six fields `id`, `createdAt`, `updatedAt`,
-`username`, `displayName`, and `avatar` with the current-user query.
+include disabled apps for historical references. `AccountUser` shares the seven fields `id`, `createdAt`, `updatedAt`,
+`username`, `displayName`, `avatar`, and `preferredLanguage` with the current-user query.
 
 The three data query endpoints share a rate limit per OAuth client, reusing Redis counters from `internal/ratelimit`.
 Deployment configuration defines the window and limit. Rate limits are checked after subject and scope validation and

@@ -1,3 +1,4 @@
+import type { Lang } from '@/utils/i18n'
 import { client, SortOrder, type ByPage, type PaginationParams } from '@/apis/common'
 import type {
   AccountAppGrant,
@@ -77,6 +78,8 @@ export function getAccountUser(userID: string) {
 export type UpdateAccountUserParams = {
   /** Display name of the account user */
   displayName?: string
+  /** Account UI language preference */
+  preferredLanguage?: Lang
 }
 
 export function updateAccountUser(userID: string, params: UpdateAccountUserParams) {
