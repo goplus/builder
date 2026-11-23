@@ -1,7 +1,9 @@
 import { mount, flushPromises } from '@vue/test-utils'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useContentSize } from '@/utils/dom'
 import type { SpxProject } from '@/models/spx/project'
+import SoundDotLoading from './SoundDotLoading.vue'
 import SoundGenModal from './SoundGenModal.vue'
 import SoundTakeCard from './SoundTakeCard.vue'
 import SoundWaveform from './SoundWaveform.vue'
@@ -12,20 +14,19 @@ const mockConfirm = vi.fn()
 const mockCreateSound = vi.fn()
 const mockRegisterPlayer = vi.fn()
 
-vi.mock('@lottiefiles/dotlottie-vue', () => ({
-  DotLottieVue: defineComponent({
-    props: { src: { type: String, default: '' } },
-    setup(props) {
-      return () => h('div', { 'data-test': 'dotlottie', 'data-src': props.src })
-    }
-  })
-}))
-
 vi.mock('./samples', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./samples')>()
   return {
     ...actual,
     loadSample: (...args: unknown[]) => mockLoadSample(...args)
+  }
+})
+
+vi.mock('@/utils/dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/dom')>()
+  return {
+    ...actual,
+    useContentSize: vi.fn(actual.useContentSize)
   }
 })
 
@@ -96,7 +97,12 @@ vi.mock('@/components/ui', async (importOriginal) => {
         return () => h('span', { 'data-test': 'icon', 'data-type': props.type })
       }
     }),
-    useConfirmDialog: () => mockConfirm
+    useConfirmDialog: () => mockConfirm,
+    useUIVariables: () => ({
+      color: {
+        primary: { main: '#0bc0cf' }
+      }
+    })
   }
 })
 
@@ -179,6 +185,81 @@ function mountModal(project: SpxProject | null = null) {
   })
 }
 
+describe('SoundDotLoading', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('centers a 23×6 dot-matrix field on 286×84 cards and cleans up animation frames on hide', async () => {
+    vi.mocked(useContentSize).mockReturnValue(ref({ width: 286, height: 84 }))
+    const media = Object.assign(new EventTarget(), { matches: false })
+    const requestFrame = vi.fn().mockReturnValue(42)
+    const cancelFrame = vi.fn()
+    vi.stubGlobal('matchMedia', () => media)
+    vi.stubGlobal('requestAnimationFrame', requestFrame)
+    vi.stubGlobal('cancelAnimationFrame', cancelFrame)
+
+    const context = {
+      scale: vi.fn(),
+      clearRect: vi.fn(),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      fillStyle: '',
+      globalAlpha: 1
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as unknown as CanvasRenderingContext2D)
+
+    const wrapper = mount(SoundDotLoading, {
+      props: { visible: true },
+      global: { stubs: { Transition: false } }
+    })
+    await nextTick()
+
+    const xs = context.arc.mock.calls.map(([x]) => x as number)
+    const ys = context.arc.mock.calls.map(([, y]) => y as number)
+    expect(xs).toHaveLength(23 * 6)
+    expect(new Set(xs).size).toBe(23)
+    expect(new Set(ys).size).toBe(6)
+    expect(Math.min(...xs) + Math.max(...xs)).toBe(286)
+    expect(Math.min(...ys) + Math.max(...ys)).toBe(84)
+    expect(requestFrame).toHaveBeenCalledOnce()
+
+    await wrapper.setProps({ visible: false })
+    await nextTick()
+    expect(cancelFrame).toHaveBeenCalledWith(42)
+    wrapper.unmount()
+  })
+
+  it('renders a static dot field without scheduling animation frames under prefers-reduced-motion', async () => {
+    vi.mocked(useContentSize).mockReturnValue(ref({ width: 286, height: 84 }))
+    const media = Object.assign(new EventTarget(), { matches: true })
+    const requestFrame = vi.fn().mockReturnValue(1)
+    vi.stubGlobal('matchMedia', () => media)
+    vi.stubGlobal('requestAnimationFrame', requestFrame)
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+
+    const context = {
+      scale: vi.fn(),
+      clearRect: vi.fn(),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      fillStyle: '',
+      globalAlpha: 1
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as unknown as CanvasRenderingContext2D)
+
+    const wrapper = mount(SoundDotLoading, { props: { visible: true } })
+    await nextTick()
+
+    expect(context.fill).toHaveBeenCalledTimes(23 * 6)
+    expect(requestFrame).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
 describe('SoundWaveform', () => {
   it('renders integer-width bars and supports keyboard seeking', async () => {
     const wrapper = mount(SoundWaveform, {
@@ -207,7 +288,7 @@ describe('SoundWaveform', () => {
 })
 
 describe('SoundTakeCard', () => {
-  it('renders GenLoading cover while generating and transitions to PlayControl and SoundWaveform when ready', async () => {
+  it('renders SoundDotLoading while generating and transitions to PlayControl and SoundWaveform when ready', async () => {
     const wrapper = mount(SoundTakeCard, {
       props: {
         name: '森林探险 1',
@@ -219,13 +300,13 @@ describe('SoundTakeCard', () => {
       }
     })
 
-    expect(wrapper.find('[data-test="dotlottie"]').exists()).toBe(true)
+    expect(wrapper.find('.sound-dot-loading').exists()).toBe(true)
     expect(wrapper.find('[data-test="play-control"]').exists()).toBe(false)
     expect(wrapper.attributes('role')).toBeUndefined()
 
     await wrapper.setProps({ sample: makeSample(15) })
 
-    expect(wrapper.find('[data-test="dotlottie"]').exists()).toBe(false)
+    expect(wrapper.find('.sound-dot-loading').exists()).toBe(false)
     expect(wrapper.get('[data-test="play-control"]').attributes('data-size')).toBe('medium')
     expect(wrapper.attributes('role')).toBe('button')
     expect(wrapper.text()).toContain('0:15')
@@ -307,10 +388,10 @@ describe('SoundGenModal', () => {
     await submitBtn.trigger('click')
     await flushPromises()
 
-    // While in flight: 4 loading cards with GenLoading cover and loading tip
+    // While in flight: 4 loading cards with dot-matrix loading overlay and loading tip
     const cardsWhileLoading = wrapper.findAllComponents(SoundTakeCard)
     expect(cardsWhileLoading).toHaveLength(4)
-    expect(wrapper.findAll('[data-test="dotlottie"]')).toHaveLength(4)
+    expect(wrapper.findAll('.sound-dot-loading')).toHaveLength(4)
     expect(wrapper.text()).toContain('正在生成音乐...')
 
     resolveFirst!(makeSample(15))
@@ -318,7 +399,7 @@ describe('SoundGenModal', () => {
     await flushPromises()
 
     expect(mockLoadSample).toHaveBeenCalledTimes(4)
-    expect(wrapper.findAll('[data-test="dotlottie"]')).toHaveLength(0)
+    expect(wrapper.findAll('.sound-dot-loading')).toHaveLength(0)
     expect(wrapper.text()).toContain('选择你最喜欢的一段音乐，或者重新生成。')
 
     const cards = wrapper.findAllComponents(SoundTakeCard)

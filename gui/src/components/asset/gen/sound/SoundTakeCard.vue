@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { UIBlockItem, UICornerIcon } from '@/components/ui'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
-import GenLoading from '../common/GenLoading.vue'
+import SoundDotLoading from './SoundDotLoading.vue'
 import SoundWaveform from './SoundWaveform.vue'
 import { formatAudioTime, type Sample } from './samples'
 
@@ -68,8 +68,7 @@ async function handlePlay() {
     @keydown.enter.prevent="canInteract && emit('select')"
     @keydown.space.prevent="canInteract && emit('select')"
   >
-    <GenLoading v-if="!isReady" cover animation-style="width: 56px; height: 56px;" />
-    <template v-else-if="sample != null">
+    <template v-if="sample != null">
       <div class="h-9 w-9 flex-none">
         <PlayControl
           :class="{ 'opacity-60': disabled }"
@@ -104,5 +103,6 @@ async function handlePlay() {
 
       <UICornerIcon v-if="active" type="check" />
     </template>
+    <SoundDotLoading :visible="!isReady" />
   </UIBlockItem>
 </template>
