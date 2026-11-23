@@ -144,6 +144,16 @@ describe('notifications', () => {
     expect(wrapper.text()).not.toContain('Re: Sprite stops moving')
   })
 
+  it('shows the empty message for the selected notification category', async () => {
+    await signIn()
+    mockNotifications([])
+    const { wrapper } = await mountPages('/explore')
+    await (await vi.waitFor(() => wrapper.get('[aria-label="Notifications button"]'))).trigger('click')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('No messages yet'))
+    await wrapper.get('[aria-label="Announcements"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('No announcements yet'))
+  })
+
   it('marks all notifications as read', async () => {
     await signIn()
     mockNotifications([

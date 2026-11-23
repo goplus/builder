@@ -41,7 +41,7 @@ export class Cancelled extends Exception {
 
 export class TimeoutException extends Exception {
   name = 'TimeoutException'
-  userMessage = { en: 'operation timeout', zh: '操作超时' }
+  userMessage = { en: 'Operation timed out', zh: '操作超时' }
   constructor() {
     super('operation timeout')
   }

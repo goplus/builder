@@ -8,6 +8,7 @@
 
 <script setup lang="ts" generic="T extends unknown[] | ByPage<unknown>">
 import { computed, useSlots } from 'vue'
+import type { LocaleMessage } from '@/utils/i18n'
 import type { QueryRet } from '@/utils/query'
 import { UILoading, UIError, UIEmpty } from '@/components/ui'
 import type { ByPage } from '@/apis/common'
@@ -15,6 +16,7 @@ import type { ByPage } from '@/apis/common'
 const props = defineProps<{
   queryRet: QueryRet<T | null>
   height?: number
+  emptyMessage?: LocaleMessage
   /** Type of the list content */
   contentType?: 'project'
 }>()
@@ -43,7 +45,10 @@ const slots = useSlots()
       <slot name="empty" :style="extraStyle"></slot>
     </template>
     <UIEmpty v-else size="large" :style="extraStyle" :img="contentType === 'project' ? 'box' : 'document'">
-      <template v-if="contentType === 'project'">
+      <template v-if="emptyMessage != null">
+        {{ $t(emptyMessage) }}
+      </template>
+      <template v-else-if="contentType === 'project'">
         {{ $t({ en: 'No projects', zh: '没有项目' }) }}
       </template>
       <template v-else>

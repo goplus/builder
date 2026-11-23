@@ -227,7 +227,7 @@ describe('feedback', () => {
 
     const modal = await fillFeedbackForm(wrapper)
     const checkbox = modal.get<HTMLInputElement>('input[type="checkbox"]').element
-    const explanation = 'Includes the current page, a snapshot of the project, code errors, and runtime output'
+    const explanation = 'This may include page details, a copy of your project, code diagnostics, and runtime output'
     checkbox.focus()
     await vi.waitFor(() => expect(document.body.textContent).toContain(explanation))
     checkbox.blur()

@@ -7,6 +7,11 @@ const tabs: Array<{ category: NotificationCategory; label: LocaleMessage }> = [
   { category: NotificationCategory.Announcement, label: { en: 'Announcements', zh: '公告' } }
 ]
 
+const emptyMessages: Record<NotificationCategory, LocaleMessage> = {
+  [NotificationCategory.Message]: { en: 'No messages yet', zh: '暂无消息' },
+  [NotificationCategory.Announcement]: { en: 'No announcements yet', zh: '暂无公告' }
+}
+
 function formatUnreadCount(count: number) {
   return count > 99 ? '99+' : String(count)
 }
@@ -76,7 +81,7 @@ function openNotification(notification: Notification) {
           :disabled="totalUnreadCount === 0 || markAllNotificationsRead.isLoading.value"
           @click="markAllNotificationsRead.fn"
         >
-          {{ $t({ en: 'Mark all as read', zh: '全部已读' }) }}
+          {{ $t({ en: 'Mark all notifications as read', zh: '将所有通知标为已读' }) }}
         </button>
       </div>
 
@@ -114,7 +119,7 @@ function openNotification(notification: Notification) {
         class="flex min-h-0 flex-1 items-center justify-center"
       >
         <UIEmpty size="large" img="document" class="text-sm">
-          {{ $t({ en: 'No notifications', zh: '暂无通知' }) }}
+          {{ $t(emptyMessages[activeCategory]) }}
         </UIEmpty>
       </div>
       <div
@@ -164,7 +169,7 @@ function openNotification(notification: Notification) {
           class="block w-full cursor-pointer border-0 bg-transparent py-3 text-sm text-primary-main hover:text-primary-600"
           @click="notificationsQuery.fetchNextPage"
         >
-          {{ $t({ en: 'Failed to load more. Retry', zh: '加载失败，重试' }) }}
+          {{ $t({ en: 'Failed to load more notifications. Retry', zh: '加载更多通知失败，重试' }) }}
         </button>
       </div>
       <div v-else-if="notificationsQuery.isLoading.value" class="flex min-h-0 flex-1 items-center justify-center">

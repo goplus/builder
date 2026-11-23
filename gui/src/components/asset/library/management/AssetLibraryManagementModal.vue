@@ -16,6 +16,7 @@ import {
   useMessage
 } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
+import { getAssetListEmptyMessage } from '../empty-message'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
@@ -171,7 +172,12 @@ const handleRemove = useMessageHandle(
       </UITextInput>
     </template>
     <main class="px-6 py-5">
-      <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="584">
+      <ListResultWrapper
+        v-slot="slotProps"
+        :query-ret="queryRet"
+        :height="584"
+        :empty-message="getAssetListEmptyMessage(keyword)"
+      >
         <!-- fixed asset-list height to keep the layout stable -->
         <ul class="flex flex-wrap content-start gap-2" style="height: 584px">
           <ItemComponent

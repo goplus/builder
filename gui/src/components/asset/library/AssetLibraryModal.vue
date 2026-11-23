@@ -46,6 +46,7 @@ import {
   type AssetModel
 } from '@/models/spx/common/asset'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
+import { getAssetListEmptyMessage } from './empty-message'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
@@ -393,7 +394,7 @@ const title = computed(() => {
                   <UIChipRadio value="personal">{{ $t({ zh: '我的素材库', en: 'My library' }) }}</UIChipRadio>
                 </UIChipRadioGroup>
               </div>
-              <ListResultWrapper :query-ret="queryRet" :height="436">
+              <ListResultWrapper :query-ret="queryRet" :height="436" :empty-message="getAssetListEmptyMessage(keyword)">
                 <template v-if="SettingsInput != null && gen != null && librarySource === 'public'" #empty>
                   <div class="mx-auto h-109 flex flex-col items-center gap-6 pt-10">
                     <div class="text-grey-700">

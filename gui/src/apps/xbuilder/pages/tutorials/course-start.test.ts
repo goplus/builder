@@ -20,7 +20,7 @@ describe('course start', () => {
     })
     vi.mocked(copilotApis.generateCopilotMessage).mockImplementation(async function* (messages) {
       const nextStep = messages.some(
-        (message) => message.role === 'user' && message.content.text.includes('I did what you asked.')
+        (message) => message.role === 'user' && message.content.text.includes('What should I do next?')
       )
       yield {
         type: 'text_delta',
@@ -42,7 +42,7 @@ describe('course start', () => {
           expect.objectContaining({
             role: 'user',
             content: expect.objectContaining({
-              text: expect.stringContaining('I did what you asked. Tell me what to do next.')
+              text: expect.stringContaining('What should I do next?')
             })
           })
         ]),
