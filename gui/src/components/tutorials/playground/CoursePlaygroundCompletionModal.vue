@@ -58,6 +58,15 @@ const emit = defineEmits<{
 
         <div class="mt-6 w-full flex flex-col gap-3">
           <UIButton
+            v-if="hasNextCourse"
+            v-radar="{ name: 'course-next', desc: 'Start the next Course' }"
+            size="large"
+            class="w-full!"
+            @click="emit('resolved', 'next')"
+          >
+            {{ $t({ en: 'Learn next course', zh: '学习下一个课程' }) }}
+          </UIButton>
+          <UIButton
             v-radar="{ name: 'course-retry', desc: 'Restart the current Course' }"
             type="white"
             size="large"
@@ -74,15 +83,6 @@ const emit = defineEmits<{
             @click="emit('resolved', 'exit')"
           >
             {{ $t({ en: 'Back to course series', zh: '返回系列课程' }) }}
-          </UIButton>
-          <UIButton
-            v-if="hasNextCourse"
-            v-radar="{ name: 'course-next', desc: 'Start the next Course' }"
-            size="large"
-            class="w-full!"
-            @click="emit('resolved', 'next')"
-          >
-            {{ $t({ en: 'Learn next course', zh: '学习下一个课程' }) }}
           </UIButton>
         </div>
       </div>

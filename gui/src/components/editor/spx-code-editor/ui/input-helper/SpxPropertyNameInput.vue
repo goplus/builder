@@ -10,13 +10,7 @@ import { capture } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { UISelect, UISelectOption } from '@/components/ui'
 import { stageCodeFilePaths } from '@/models/spx/stage'
-import {
-  useCodeEditor,
-  useCodeEditorUICtx,
-  getCodeFilePath,
-  type Property,
-  type TextDocument
-} from '@/components/xgo-code-editor'
+import { useCodeEditor, useCodeEditorUICtx, getCodeFilePath, type Property } from '@/components/xgo-code-editor'
 
 const props = defineProps<{
   value: string
@@ -41,28 +35,21 @@ const codeEditor = useCodeEditor()
 
 const properties = ref<Property[]>([])
 
-function getProperties(textDocument: TextDocument, signal?: AbortSignal) {
-  const codeFilePath = getCodeFilePath(textDocument.id.uri)
-  const isStage = stageCodeFilePaths.includes(codeFilePath)
-  if (isStage) {
-    return codeEditor.getProperties('', signal)
-  }
-  const spriteName = codeFilePath.replace(/\.spx$/, '')
-  return codeEditor.getProperties(spriteName, signal)
-}
-
 watchEffect(async (onCleanup) => {
   const textDocument = ui.activeTextDocument
   if (textDocument == null) {
     properties.value = []
     return
   }
+  const codeFilePath = getCodeFilePath(textDocument.id.uri)
+  const target = stageCodeFilePaths.includes(codeFilePath) ? '' : codeFilePath.replace(/\.spx$/, '')
   const signal = getCleanupSignal(onCleanup)
   try {
-    const result = await getProperties(textDocument, signal)
+    const result = await codeEditor.getProperties(target, { signal, excludeNotRecommended: true })
     signal.throwIfAborted()
     properties.value = result
   } catch (e) {
+    if (signal.aborted) return
     properties.value = []
     capture(e, 'Failed to get properties in SpxPropertyNameInput')
   }

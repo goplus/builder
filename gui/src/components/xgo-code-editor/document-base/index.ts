@@ -4,6 +4,7 @@ import * as xgoDefinitionsByName from './xgo'
 
 export interface IDocumentBase {
   getDocumentation(defId: DefinitionIdentifier | DefinitionIdString): Promise<DefinitionDocumentationItem | null>
+  getAllDocumentations(): Promise<DefinitionDocumentationItem[]>
 }
 
 const xgoDefinitions = Object.values(xgoDefinitionsByName)

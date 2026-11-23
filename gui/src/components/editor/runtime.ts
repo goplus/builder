@@ -45,7 +45,7 @@ export class Runtime extends Emitter<{
   didAppendOutput: RuntimeOutput
   /** The bounded UI snapshot changed, batched per frame except when cleared. */
   didChangeOutputSnapshot: void
-  /** Emitted once after a run or rerun succeeds. */
+  /** Emitted once per run or rerun right before the project's code starts, before any of its output or exit. */
   didStart: void
   /** Emitted synchronously after the active source locations are updated or cleared. */
   didChangeLocations: void

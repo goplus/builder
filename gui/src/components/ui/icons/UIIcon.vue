@@ -92,6 +92,8 @@ import code from './code.svg?raw'
 import backdropTile from './backdrop-tile.svg?raw'
 import backdropScale from './backdrop-scale.svg?raw'
 import backdropOriginal from './backdrop-original.svg?raw'
+import angleLeft from './angle-left.svg?raw'
+import notification from './notification.svg?raw'
 
 const typeIconMap = {
   file,
@@ -178,7 +180,9 @@ const typeIconMap = {
   gamepad,
   video,
   picture,
-  code
+  code,
+  angleLeft,
+  notification
 }
 
 export type Type = keyof typeof typeIconMap

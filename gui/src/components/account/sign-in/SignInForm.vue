@@ -60,18 +60,27 @@ function completeSignInWithCurrentAccount() {
   window.location.assign(authorizeUrl)
 }
 
-const sessionQuery = useQuery(getSession, { en: 'Failed to get current session', zh: '获取当前会话失败' })
-const idpsQuery = useQuery(() => getIdentityProviders(props.request), {
-  en: 'Failed to get identity providers',
-  zh: '获取身份提供商列表失败'
+const sessionQuery = useQuery({
+  queryFn: getSession,
+  failureSummaryMessage: { en: 'Failed to get current session', zh: '获取当前会话失败' }
+})
+const idpsQuery = useQuery({
+  queryFn: () => getIdentityProviders(props.request),
+  failureSummaryMessage: {
+    en: 'Failed to get identity providers',
+    zh: '获取身份提供商列表失败'
+  }
 })
 const {
   isLoading: isInitializing,
   error: initializationError,
   refetch: reinitialize
-} = useQuery((ctx) => Promise.all([composeQuery(ctx, sessionQuery), composeQuery(ctx, idpsQuery)]), {
-  en: 'Failed to initialize sign-in form',
-  zh: '初始化登录表单失败'
+} = useQuery({
+  queryFn: (ctx) => Promise.all([composeQuery(ctx, sessionQuery), composeQuery(ctx, idpsQuery)]),
+  failureSummaryMessage: {
+    en: 'Failed to initialize sign-in form',
+    zh: '初始化登录表单失败'
+  }
 })
 
 watch(sessionQuery.data, (session) => {

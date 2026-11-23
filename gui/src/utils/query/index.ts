@@ -1,6 +1,8 @@
 import {
   shallowRef,
   watchEffect,
+  effectScope,
+  type EffectScope,
   type Ref,
   type ShallowRef,
   type WatchSource,
@@ -12,7 +14,16 @@ import {
   onScopeDispose,
   nextTick
 } from 'vue'
-import { useQuery as useVueQuery, useQueryClient as useVueQueryClient, isCancelledError } from '@tanstack/vue-query'
+// eslint-disable-next-line vue/prefer-import-from-vue -- Vue does not re-export these tracking controls.
+import { pauseTracking, resetTracking } from '@vue/reactivity'
+import {
+  useInfiniteQuery as useVueInfiniteQuery,
+  useQuery as useVueQuery,
+  useQueryClient as useVueQueryClient,
+  isCancelledError,
+  hashKey,
+  type QueryState
+} from '@tanstack/vue-query'
 import { type LocaleMessage } from '../i18n'
 import { useAction, ActionException, Cancelled, capture } from '../exception'
 import { until } from '../utils'
@@ -59,12 +70,35 @@ export type QueryContext = {
   reporter: ProgressReporter
 }
 
-export type QueryOptions = {
+type QueryComposition = {
+  dependOn(query: QueryRet<unknown>): void
+  onCleanup(stop: () => void): void
+}
+
+const queryCompositions = new WeakMap<QueryContext, QueryComposition>()
+
+/** Keep synchronous callbacks from registering their reads with the surrounding query. */
+function withoutTracking<T>(fn: () => T): T {
+  pauseTracking()
+  try {
+    return fn()
+  } finally {
+    resetTracking()
+  }
+}
+
+export type QueryOptions<T> = {
+  /** Read data. Without queryKey, synchronous reactive accesses are tracked; composeQuery always registers dependencies. */
+  queryFn: (ctx: QueryContext) => Promise<T>
+  /** Localized summary for query failures; omitted summaries preserve action errors or use a generic message. */
+  failureSummaryMessage?: LocaleMessage
   /**
-   * Clear previous data and error when a new fetch starts.
-   * TODO: Replace this option with a `mode` mechanism consistent with `useQueryWithCache`.
+   * Defaults to legacy: retain the result while every fetch enters loading.
+   * TODO: Migrate existing consumers to appropriate query modes and remove legacy.
    */
-  clearResultOnFetch?: boolean
+  mode?: QueryMode | 'legacy'
+  /** Explicit inputs and identity, without caching. When set, ordinary queryFn reads are not tracked; key changes reset every mode. */
+  queryKey?: unknown[] | WatchSource<unknown[]>
 }
 
 /**
@@ -73,71 +107,157 @@ export type QueryOptions = {
  * - transform exceptions like `useAction`
  * - manage states for query result
  */
-export function useQuery<T>(
-  queryFn: (ctx: QueryContext) => Promise<T>,
-  failureSummaryMessage?: LocaleMessage,
-  options: QueryOptions = {}
-): QueryRet<T> {
-  if (failureSummaryMessage != null) {
-    queryFn = useAction(queryFn, failureSummaryMessage)
+export function useQuery<T>(options: QueryOptions<T>): QueryRet<T> {
+  let queryFn = options.queryFn
+  if (options.failureSummaryMessage != null) {
+    queryFn = useAction(queryFn, options.failureSummaryMessage)
   }
-  const isLoading = ref(false)
-  const data = shallowRef<T | null>(null)
-  const error = shallowRef<ActionException | null>(null)
+  const result = shallowRef<{ data: T | null; error: ActionException | null; isLoading: boolean }>({
+    data: null,
+    error: null,
+    isLoading: true
+  })
   const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
 
-  let lastCtrl: AbortController | null = null
-  const abortLast = (reason: Cancelled) => {
-    const ctrl = lastCtrl
-    lastCtrl = null
-    ctrl?.abort(reason)
-  }
-  onBeforeUnmount(() => abortLast(new Cancelled('unmounted')))
+  const mode = options.mode ?? 'legacy'
+  const queryKey = options.queryKey
+  let hasSuccess = false
+  let readScope: EffectScope | null = null
 
-  function fetch(source: QuerySource) {
-    const ctrl = new AbortController()
-    lastCtrl = ctrl
-    const signal = ctrl.signal
-    progress.value = { percentage: 0, timeLeft: null, desc: null }
-    const reporter = new ProgressReporter((p) => {
-      if (signal.aborted) return
-      progress.value = p
+  function startRead(source: QuerySource, identityChanged = false) {
+    const previous = readScope
+    const scope = effectScope(true)
+    readScope = scope
+    previous?.stop()
+    // Aborting the previous read can synchronously change the key or unmount the consumer.
+    if (!scope.active) return
+    if (identityChanged || mode === QueryMode.Snapshot) hasSuccess = false
+
+    const dependencyChange = shallowRef<unknown>(null)
+    // An async composition can discover more children as its pending reads restart.
+    let refetchedChildren = source === 'refetch' ? new Set<QueryRet<unknown>>() : null
+    let cancelAttempt: (() => void) | null = null
+    scope.run(() => {
+      onScopeDispose(() => cancelAttempt?.())
+      watchEffect(() => {
+        toValue(dependencyChange)
+        if (mode === QueryMode.Snapshot && hasSuccess) return
+        cancelAttempt?.()
+        if (!scope.active) return
+        const ctrl = new AbortController()
+        const signal = ctrl.signal
+        let executing = true
+        const dependencies = new Set<QueryRet<unknown>>()
+        const subscriptions = new Set<() => void>()
+        function stopSubscriptions() {
+          subscriptions.forEach((stop) => stop())
+          subscriptions.clear()
+          dependencies.clear()
+          queryCompositions.delete(ctx)
+        }
+        function cancel() {
+          cancelAttempt = null
+          stopSubscriptions()
+          withoutTracking(() => ctrl.abort(new Cancelled('new query')))
+        }
+        const reporter = new ProgressReporter((p) => {
+          if (!signal.aborted && !(mode === QueryMode.Snapshot && hasSuccess)) progress.value = p
+        })
+        const ctx: QueryContext = { signal, source, reporter }
+        source = 'auto'
+        cancelAttempt = cancel
+        queryCompositions.set(ctx, {
+          dependOn(query) {
+            if (dependencies.has(query)) return
+            dependencies.add(query)
+            if (refetchedChildren != null && !refetchedChildren.has(query)) {
+              refetchedChildren.add(query)
+              withoutTracking(() => query.refetch())
+            }
+            signal.throwIfAborted()
+            subscriptions.add(
+              watch(
+                [query.isLoading, query.data, query.error],
+                () => {
+                  cancel()
+                  const notify = () => {
+                    if (scope.active && cancelAttempt == null) dependencyChange.value = {}
+                  }
+                  // Vue suppresses self-triggers when a sibling refetch changes this child inside queryFn.
+                  if (executing) queueMicrotask(notify)
+                  else notify()
+                },
+                { flush: 'sync' }
+              )
+            )
+          },
+          onCleanup: (stop) => subscriptions.add(stop)
+        })
+
+        progress.value = { percentage: 0, timeLeft: null, desc: null }
+        if (signal.aborted) return
+        const previousResult = withoutTracking(() => result.value)
+        const clear = identityChanged || mode === QueryMode.BlockingRefresh || mode === QueryMode.Snapshot
+        identityChanged = false
+        result.value = {
+          data: clear ? null : previousResult.data,
+          error: clear ? null : previousResult.error,
+          isLoading: mode !== QueryMode.BackgroundRefresh || !hasSuccess
+        }
+        if (signal.aborted) return
+        const pending = queryKey == null ? queryFn(ctx) : withoutTracking(() => queryFn(ctx))
+        executing = false
+        pending.then(
+          (value) => {
+            if (signal.aborted) return
+            refetchedChildren = null
+            hasSuccess = true
+            if (mode === QueryMode.Snapshot) stopSubscriptions()
+            result.value = { data: value, error: null, isLoading: false }
+          },
+          (cause) => {
+            if (cause instanceof Cancelled || signal.aborted) return
+            refetchedChildren = null
+            capture(cause, 'useQuery error')
+            result.value = { data: result.value.data, error: normalizeQueryError(cause), isLoading: false }
+            ctrl.abort(cause)
+          }
+        )
+      })
     })
-    if (options.clearResultOnFetch) {
-      data.value = null
-      error.value = null
-    }
-    isLoading.value = true
-    queryFn({ signal, source, reporter }).then(
-      (d) => {
-        if (signal.aborted) return
-        data.value = d
-        error.value = null
-        isLoading.value = false
-      },
-      (e) => {
-        if (e instanceof Cancelled) return
-        if (signal.aborted) return
-        capture(e, 'useQuery error')
-        error.value = normalizeQueryError(e)
-        isLoading.value = false
-        ctrl.abort(e)
-      }
-    )
   }
 
-  watchEffect((onCleanup) => {
-    // Cleanup runs outside dependency tracking, so abort listeners cannot become query dependencies.
-    onCleanup(() => abortLast(new Cancelled('new query')))
-    fetch('auto')
+  const stopKey =
+    queryKey == null
+      ? null
+      : watch(
+          () => hashKey(toValue(queryKey)),
+          () => startRead('auto', true),
+          { immediate: true, flush: 'sync' }
+        )
+  if (queryKey == null) startRead('auto')
+  onBeforeUnmount(() => {
+    stopKey?.()
+    const scope = readScope
+    readScope = null
+    scope?.stop()
   })
-
   const refetch = () => {
-    abortLast(new Cancelled('new query'))
-    fetch('refetch')
+    if (readScope != null) startRead('refetch')
   }
 
-  return { isLoading, data, error, progress, refetch }
+  return {
+    isLoading: computed(() => result.value.isLoading),
+    data: computed({
+      get: () => result.value.data,
+      set: (data) => {
+        result.value = { ...withoutTracking(() => result.value), data }
+      }
+    }),
+    error: computed(() => result.value.error),
+    progress,
+    refetch
+  }
 }
 
 export const enum QueryMode {
@@ -148,17 +268,23 @@ export const enum QueryMode {
   BackgroundRefresh = 'backgroundRefresh',
   /**
    * Capture the first valid result, revalidating stale cache data before accepting it.
-   * Ignore later shared-cache changes; a key change or explicit refetch starts a new read.
+   * Ignore automatic refreshes; explicit refetch starts a new read. Cached queries also restart on key changes.
    */
-  Snapshot = 'snapshot'
+  Snapshot = 'snapshot',
+  /** Clear the current result and error while awaiting a refreshed result, including offline pauses. */
+  BlockingRefresh = 'blockingRefresh'
 }
 
 export type QueryWithCacheOptions<T> = {
+  /** Shared cache identity, compared by value. Include every input that identifies the result. */
   queryKey: unknown[] | WatchSource<unknown[]>
+  /** Fetch data for the current key; receives the request's cancellation signal. */
   queryFn: (signal: AbortSignal) => Promise<T>
+  /** Freshness lifetime in milliseconds. Expiry alone does not trigger a refresh. */
   staleTime?: number
   /** Consumer-local result policy; defaults to `QueryMode.BackgroundRefresh`. */
   mode?: QueryMode
+  /** Localized summary for query failures; omitted summaries preserve action errors or use a generic message. */
   failureSummaryMessage?: LocaleMessage
 }
 
@@ -191,6 +317,38 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
   const queryOptions = computed(() =>
     queryClient.defaultQueryOptions({ queryKey: toValue(options.queryKey), staleTime: options.staleTime })
   )
+  if (mode === QueryMode.BlockingRefresh) {
+    const state = shallowRef<QueryState<T, Error> | null>(null)
+    function updateState() {
+      state.value = queryClient.getQueryCache().get<T, Error>(queryOptions.value.queryHash)?.state ?? null
+    }
+    watch(() => queryOptions.value.queryHash, updateState, { immediate: true, flush: 'sync' })
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (event.query.queryHash === queryOptions.value.queryHash) updateState()
+    })
+    onScopeDispose(unsubscribe)
+    const isLoading = computed(() => {
+      const current = state.value
+      return (
+        current == null ||
+        current.status === 'pending' ||
+        current.fetchStatus !== 'idle' ||
+        (current.isInvalidated && current.status === 'success')
+      )
+    })
+    return {
+      isLoading,
+      data: computed(() => (isLoading.value || state.value?.status !== 'success' ? null : state.value.data ?? null)),
+      error: computed(() =>
+        isLoading.value || state.value?.error == null ? null : normalizeQueryError(state.value.error)
+      ),
+      progress,
+      refetch: () => {
+        void ret.refetch()
+      }
+    }
+  }
+
   const result = shallowRef<{ data: T | null; error: ActionException | null } | null>(null)
   let readID = 0
 
@@ -232,6 +390,61 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
     error: computed(() => result.value?.error ?? null),
     progress,
     refetch: () => read(true)
+  }
+}
+
+export type InfiniteQueryRet<T> = QueryRet<T[]> & {
+  hasNextPage: Ref<boolean>
+  isFetchingNextPage: Ref<boolean>
+  /** Fetch the next page, if there is one and no fetching is in progress */
+  fetchNextPage: () => void
+}
+
+export type InfiniteQueryWithCacheOptions<T> = {
+  /** Shared cache identity, compared by value. Include every input that identifies the page sequence. */
+  queryKey: unknown[] | WatchSource<unknown[]>
+  /** Fetch one page; `pageToken` is `null` for the first page, and `signal` cancels the request. */
+  queryFn: (pageToken: string | null, signal: AbortSignal) => Promise<T>
+  /** Return the next page token, or `null` when no pages remain. */
+  getNextPageToken: (lastPage: T) => string | null
+  /** Localized summary for failures; omitted summaries preserve action errors or use a generic message. */
+  failureSummaryMessage?: LocaleMessage
+}
+
+/**
+ * `useInfiniteQueryWithCache` is similar to `useQueryWithCache`, while it queries data page by page.
+ * The data is the list of loaded pages. Refetching or invalidating it refetches all loaded pages.
+ * It always behaves like `QueryMode.BackgroundRefresh`.
+ */
+export function useInfiniteQueryWithCache<T>(options: InfiniteQueryWithCacheOptions<T>): InfiniteQueryRet<T> {
+  let queryFn = options.queryFn
+  if (options.failureSummaryMessage != null) {
+    queryFn = useAction(queryFn, options.failureSummaryMessage)
+  }
+
+  const ret = useVueInfiniteQuery({
+    queryKey: computed(() => toValue(options.queryKey)),
+    queryFn: (ctx) => queryFn(ctx.pageParam, ctx.signal),
+    initialPageParam: null as string | null,
+    getNextPageParam: options.getNextPageToken
+  })
+
+  const progress = shallowRef<Progress>({ percentage: 0, timeLeft: null, desc: null })
+  function fetchNextPage() {
+    // Calling `fetchNextPage` of vue-query while fetching cancels and restarts the fetching,
+    // so frequent calls (for example, on scrolling) may keep the next page from loading.
+    if (!ret.hasNextPage.value || ret.isFetching.value) return
+    ret.fetchNextPage()
+  }
+  return {
+    isLoading: ret.isLoading,
+    data: computed(() => ret.data.value?.pages ?? null),
+    error: computed(() => (ret.error.value == null ? null : normalizeQueryError(ret.error.value))),
+    progress,
+    refetch: () => ret.refetch(),
+    hasNextPage: ret.hasNextPage,
+    isFetchingNextPage: ret.isFetchingNextPage,
+    fetchNextPage
   }
 }
 
@@ -318,19 +531,16 @@ export async function composeQuery<T>(
   queryRet: QueryRet<T>,
   subReportParams?: SubReporterParams
 ): Promise<T> {
-  if (ctx.source === 'refetch') {
-    queryRet.refetch()
-  } else {
-    // Track the composed result so changes to its loading, data or error rerun the parent query.
-    toValue(queryRet.isLoading)
-    toValue(queryRet.data)
-    toValue(queryRet.error)
-  }
+  ctx.signal.throwIfAborted()
+  const composition = queryCompositions.get(ctx)
+  if (composition != null) composition.dependOn(queryRet)
+  else if (ctx.source === 'refetch') queryRet.refetch()
 
   const collector = getCollector(ctx.reporter)
   const subReporter = collector.getSubReporter(...(subReportParams ?? []))
   const stopWatch = watch(queryRet.progress, (p) => subReporter.report(p), { immediate: true })
-  ctx.signal.addEventListener('abort', () => stopWatch())
+  if (composition != null) composition.onCleanup(stopWatch)
+  ctx.signal.addEventListener('abort', stopWatch, { once: true })
 
   return untilLoaded(queryRet, ctx.signal)
 }

@@ -1,5 +1,4 @@
 import type { CourseSeries } from '@/apis/course-series'
-import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import type { LocaleMessage } from '@/utils/i18n'
 
 /**
@@ -21,11 +20,6 @@ export function getSeriesUnits(series: CourseSeries): SeriesUnit[] {
 /** The index of the unit holding the course, or -1 if none does. */
 export function findUnitIndexOfCourse(units: SeriesUnit[], courseID: string) {
   return units.findIndex((unit) => unit.courseIDs.includes(courseID))
-}
-
-/** The route of the series page, showing the unit that holds the course. */
-export function getCourseSeriesPageRouteOfCourse(series: CourseSeries, courseID: string) {
-  return getCourseSeriesPageRoute(series.id, Math.max(findUnitIndexOfCourse(getSeriesUnits(series), courseID), 0))
 }
 
 const chineseDigits = '零一二三四五六七八九'

@@ -389,7 +389,7 @@ Observes runs of the learner's project, not the course program.
 
 | Callback | Called when |
 | --- | --- |
-| `Editor.Runtime.onStart => { ... }` | The learner's project starts running. |
+| `Editor.Runtime.onStart => { ... }` | The learner's project starts running. It comes before every log and the exit of that run. |
 | `Editor.Runtime.onExit code => { ... }` | The learner's project exits. `code` is the exit code. Exiting does not mean the goal was reached. |
 | `Editor.Runtime.onLog log => { ... }` | The learner's project prints a log line, once per line and in output order. `log` is the line as printed, including the line break `println` ends it with. Runtime errors are not part of this channel. This is the main way to detect what the learner achieved. |
 
@@ -443,7 +443,7 @@ Editor.Runtime.onExit code => {
 
 | Call | Returns | Notes |
 | --- | --- | --- |
-| `Editor.CodeEditor.filterAPIs apis` | Immediately | Limits the APIs offered by Code Editor assistance. Each entry is a definition reference, `xgo:<package>?<name>#<overloadId>`. Omitting `#<overloadId>` includes every overload of the name. Short names such as `"stepTo"` are not accepted. |
+| `Editor.CodeEditor.filterAPIs apis` | Immediately | Selects the APIs offered by Code Editor assistance. Each entry is a definition reference, `xgo:<package>?<name>#<overloadId>`. Omitting `#<overloadId>` matches all overloads of the name, subject to the recommendation rules below. Short names such as `"stepTo"` are not accepted. |
 | `Editor.CodeEditor.formatWorkspace` | After formatting is done | Formats the learner's code. |
 
 ```go
@@ -461,11 +461,24 @@ packages; SPX editors provide `spx`. Other package names, including bare `spx` a
 fully qualified paths, match literally and do not follow upgrades. Unavailable APIs
 match nothing.
 
+Without a filter, API Reference shows its default curated list. A filter selects
+from all available documented, insertable reference items, so it can show APIs
+outside that default list. Items follow the configured order; selectors without
+an overload suffix expand in documentation order. Grouped views retain their
+category order and follow the configured item order within each category.
+This ordering applies to Reference, not completion.
+Reference items still respect the active editor context and `hiddenFromList`,
+even for exact overload selections. API Reference uses its own documented items.
+The language server applies `//xgols:notRecommended` independently.
+`filterAPIs` cannot restore a recommendation that the language server excludes.
+Selecting a definition does not automatically create a custom API Reference card.
+The filter controls editor assistance, not which APIs the learner's code can call.
+
 Unknown presets (such as `preset/spxx`), packages and APIs match nothing; other
 valid entries still take effect. If none match, the result is the same as an empty
 list. An empty list hides all APIs covered by the filter; project-local completions
-and items without a definition remain available. Malformed identifiers are rejected
-when the editor applies the filter.
+and items without a definition remain eligible under the editor's normal recommendation
+rules. Malformed identifiers are rejected when the editor applies the filter.
 
 ### Editor.Ruler
 

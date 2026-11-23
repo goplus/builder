@@ -28,9 +28,11 @@ import dayjs from 'dayjs'
 import type { Round } from '@/components/copilot/copilot'
 import type { LocaleMessage } from '@/utils/i18n'
 import { spacingLocaleZhMessage, useInterval } from '@/utils/utils'
+import { useMessageHandle } from '@/utils/exception'
 import RetryableWrapper from '../RetryableWrapper.vue'
 import { isQuotaExceededMeta } from '@/apis/common/exception'
-import { UIIcon } from '@/components/ui'
+import { UIButton, UIIcon } from '@/components/ui'
+import { useSendFeedback } from '@/components/feedback'
 
 // TODO: Consider using the `QuotaExceededCountdown` component directly in the future
 const props = defineProps<{
@@ -69,6 +71,8 @@ const updateRetryAfterTime = () => {
 
 useInterval(updateRetryAfterTime, interval)
 onMounted(updateRetryAfterTime)
+
+const handleSendFeedback = useMessageHandle(useSendFeedback())
 </script>
 
 <template>
@@ -84,6 +88,17 @@ onMounted(updateRetryAfterTime)
       {{
         $t(spacingLocaleZhMessage({ en: `Please try again ${retryAfterTime.en}`, zh: `请${retryAfterTime.zh}尝试` }))
       }}
+    </template>
+    <template #actions>
+      <UIButton
+        class="text-xs"
+        type="white"
+        size="small"
+        :disabled="handleSendFeedback.isLoading.value"
+        @click="handleSendFeedback.fn('copilotQuotaExceeded')"
+      >
+        {{ $t({ en: 'Report an issue', zh: '反馈使用问题' }) }}
+      </UIButton>
     </template>
   </RetryableWrapper>
 </template>

@@ -32,6 +32,7 @@ const panelOutline = computed(() => {
 
 onMounted(() => {
   copilot.disableGlobalUI()
+  // Docked expansion survives unmounts; start each mount collapsed.
   if (copilot.active) copilot.close()
 })
 

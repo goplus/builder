@@ -155,7 +155,8 @@ type Project interface {
 }
 
 type Runtime interface {
-	// onStart registers a callback that is called when the project runtime starts.
+	// onStart registers a callback that is called when the project runtime starts,
+	// before any log or the exit of that run.
 	onStart(callback func())
 	// onExit registers a callback that is called when the project runtime exits.
 	onExit(callback func(code int))
@@ -170,9 +171,21 @@ type CodeEditor interface {
 	// filterAPIs limits Code Editor assistance. Prefer "xgo:preset/spx?Sprite.stepTo":
 	// preset/spx resolves to the active editor's SPX package, including after upgrades.
 	// Entries use "xgo:<package>?<name>#<overloadId>"; omitting # selects all
-	// overloads. preset/<name> selects a project-provided package; other package
+	// matching overloads, subject to the recommendation rules below.
+	// preset/<name> selects a project-provided package; other package
 	// names and full paths match literally. Unknown presets, packages and APIs
 	// match nothing. An empty list hides all filtered APIs.
+	// Without a filter, API Reference uses its default curated list. With a
+	// filter, it selects from all available documented, insertable reference
+	// items, independently of that default list. Items follow the configured
+	// order; overloads expand in documentation order. Grouped views retain
+	// their category order.
+	// Reference items still respect context restrictions and hiddenFromList,
+	// even for exact overload selections.
+	// The language server applies //xgols:notRecommended independently of
+	// API Reference. This filter cannot restore a recommendation the language
+	// server excludes. Explicit uses still compile and retain editor assistance.
+	// Selecting a definition does not create a custom API Reference item.
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.
 	formatWorkspace()

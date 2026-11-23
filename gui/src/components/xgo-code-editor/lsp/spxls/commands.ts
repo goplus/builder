@@ -1,5 +1,6 @@
 import type * as lsp from 'vscode-languageserver-protocol'
 import type { Input, InputSlotKind, Property, ResourceIdentifier, InputSlotAccept } from '../../common'
+import type { GetPropertiesOptions } from '../types'
 
 export namespace xgoRenameResources {
   export const command = 'xgo.renameResources'
@@ -33,7 +34,7 @@ export namespace xgoGetInputSlots {
 
 export namespace xgoGetProperties {
   export const command = 'xgo.getProperties'
-  type XGoGetPropertiesParams = {
+  type XGoGetPropertiesParams = GetPropertiesOptions & {
     /** The target type name in the current workspace. */
     target: string
   }

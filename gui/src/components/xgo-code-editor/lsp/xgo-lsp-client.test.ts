@@ -55,6 +55,28 @@ async function startClient(project = createProject()) {
 describe('XGo language client', () => {
   afterEach(() => vi.unstubAllGlobals())
 
+  it('negotiates literal quick fixes and sends code action requests through the existing connection', async () => {
+    const { client, sent } = await startClient()
+    const initialize = sent.find((message) => message.type === 'lsp' && message.message.method === 'initialize')
+    expect(initialize).toMatchObject({
+      type: 'lsp',
+      message: {
+        params: {
+          capabilities: {
+            textDocument: { codeAction: { codeActionLiteralSupport: { codeActionKind: { valueSet: ['quickfix'] } } } }
+          }
+        }
+      }
+    })
+    const params = {
+      textDocument: { uri: 'file:///main.gox' },
+      range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
+      context: { diagnostics: [], only: ['quickfix'] }
+    }
+    await client.textDocumentCodeAction({}, params)
+    expect(sent.at(-1)).toMatchObject({ type: 'lsp', message: { method: 'textDocument/codeAction', params } })
+  })
+
   it('serializes framework configuration before sending it to the Worker', async () => {
     const { sent } = await startClient(
       createProject(`// Application framework
@@ -113,6 +135,8 @@ class *.actor Actor
       expect(getProperties).toHaveBeenLastCalledWith({}, { target: className })
       await client.getProperties({}, 'Actor')
       expect(getProperties).toHaveBeenLastCalledWith({}, { target: 'Actor' })
+      await client.getProperties({}, '', { excludeNotRecommended: true })
+      expect(getProperties).toHaveBeenLastCalledWith({}, { target: className, excludeNotRecommended: true })
 
       const events: PropertyRenamedEvent[] = []
       client.onPropertyRenamed((event) => events.push(event))

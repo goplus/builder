@@ -40,8 +40,8 @@ const projectsRoute = computed(() => {
   return getUserPageRoute(props.nameInput, 'projects')
 })
 
-const projectsRet = useQuery(
-  async () => {
+const projectsRet = useQuery({
+  queryFn: async () => {
     const params: ListUserPublicProjectsParams = {
       type: ProjectType.Game,
       pageIndex: 1,
@@ -54,15 +54,15 @@ const projectsRet = useQuery(
       : await listUserPublicProjects(props.nameInput, params)
     return projects
   },
-  { en: 'Failed to load projects', zh: '加载失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load projects', zh: '加载失败' }
+})
 
 const likesRoute = computed(() => {
   return getUserPageRoute(props.nameInput, 'likes')
 })
 
-const likesRet = useQuery(
-  async () => {
+const likesRet = useQuery({
+  queryFn: async () => {
     const { data: likes } = await listUserLikedProjects(props.nameInput, {
       type: ProjectType.Game,
       orderBy: 'likedAt',
@@ -72,8 +72,8 @@ const likesRet = useQuery(
     })
     return likes
   },
-  { en: 'Failed to load likes', zh: '加载失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load likes', zh: '加载失败' }
+})
 </script>
 
 <template>

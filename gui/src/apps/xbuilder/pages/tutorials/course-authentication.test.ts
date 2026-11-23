@@ -1,5 +1,5 @@
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
-import { defineComponent, ref, type Ref } from 'vue'
+import { computed, defineComponent, ref, watch, type Ref } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -36,8 +36,9 @@ vi.mock('@/stores/user', () => ({
   })
 }))
 vi.mock('@/stores/course', () => ({
-  useCourse: () => {
-    const data = ref(mocks.course)
+  useCourse: (courseID: () => string) => {
+    const data = ref<typeof mocks.course | null>(mocks.course)
+    watch(courseID, () => (data.value = null), { flush: 'sync' })
     mocks.courseData = data
     return {
       data,
@@ -48,12 +49,16 @@ vi.mock('@/stores/course', () => ({
   }
 }))
 vi.mock('@/stores/course-series', () => ({
-  useSeriesCoursesByPage: () => ({
-    data: ref({ data: [mocks.course], total: 30 }),
-    error: ref(null),
-    isLoading: ref(false),
-    refetch: vi.fn()
-  }),
+  useSeriesWithCourses: () => {
+    const data = ref<typeof mocks.series | null>(mocks.series)
+    mocks.seriesData = data
+    return {
+      data: computed(() => (data.value == null ? null : { series: data.value, courses: [mocks.course] })),
+      error: ref(null),
+      isLoading: ref(false),
+      progress: ref({ percentage: 0 })
+    }
+  },
   useSeries: () => {
     const data = ref(mocks.series)
     mocks.seriesData = data

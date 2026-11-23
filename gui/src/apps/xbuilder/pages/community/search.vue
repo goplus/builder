@@ -125,8 +125,11 @@ const listParams = computed<ListProjectsParams>(() => {
   return p
 })
 
-const queryRet = useQuery(() => listProjects(listParams.value), {
-  en: 'Failed to search projects',
-  zh: '搜索项目失败'
+const queryRet = useQuery({
+  queryFn: () => listProjects(listParams.value),
+  failureSummaryMessage: {
+    en: 'Failed to search projects',
+    zh: '搜索项目失败'
+  }
 })
 </script>

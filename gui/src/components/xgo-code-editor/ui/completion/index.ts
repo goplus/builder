@@ -65,7 +65,7 @@ export class CompletionController extends Emitter<{
     return items
   }
 
-  startCompletion() {
+  private startCompletion() {
     this.completionMgr.start()
   }
 
@@ -80,6 +80,7 @@ export class CompletionController extends Emitter<{
 
   /** Check if completion should be triggered, and trigger if needed */
   private async checkAndTrigger(char?: string) {
+    if (this.ui.readOnly) return
     const { activeTextDocument: textDocument, cursorPosition: position } = this.ui
     if (textDocument == null || position == null) return
 
@@ -180,10 +181,14 @@ export class CompletionController extends Emitter<{
 
     this.addDisposer(
       watch(
-        () => [this.ui.activeTextDocument, this.ui.cursorPosition] as const,
-        ([textDocument, position]) => {
-          if (this.completion == null) return
-          if (this.completion.textDocument !== textDocument || !positionEq(this.completion.position, position)) {
+        () => [this.ui.activeTextDocument, this.ui.cursorPosition, this.ui.readOnly] as const,
+        ([textDocument, position, readOnly]) => {
+          const completion = this.completion
+          if (
+            readOnly ||
+            (completion != null &&
+              (completion.textDocument !== textDocument || !positionEq(completion.position, position)))
+          ) {
             this.stopCompletion()
           }
         }

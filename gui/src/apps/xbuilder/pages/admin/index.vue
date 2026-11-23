@@ -15,14 +15,16 @@ usePageTitle({ en: 'Admin console', zh: '管理后台' })
 const route = useRoute()
 const router = useRouter()
 const signedIn = useSignedIn()
-const signedInUserQuery = useQuery(({ signal }) => signedIn.getUser({ signal }))
+const signedInUserQuery = useQuery({
+  queryFn: ({ signal }) => signedIn.getUser({ signal })
+})
 const canManageAccount = computed(() => signedIn.user?.capabilities.canManageAccount === true)
 const canManageFeedback = computed(() => signedIn.user?.capabilities.canManageFeedback === true)
 const canUseAdminConsole = computed(() => signedIn.canUseAdminConsole === true)
 
 const accountNavItems = [
   { to: '/admin/users', label: { en: 'Users', zh: '用户' } },
-  { to: '/admin/apps', label: { en: 'OAuth apps', zh: 'OAuth 应用' } }
+  { to: '/admin/apps', label: { en: 'Account apps', zh: '账号应用' } }
 ]
 const isAccountRoute = computed(() => accountNavItems.some((item) => route.path.startsWith(item.to)))
 
@@ -137,7 +139,7 @@ watch(
         </template>
       </UIError>
       <CenteredWrapper v-else class="py-6 tablet:py-8" size="large">
-        <RouterView />
+        <RouterView :key="route.path" />
       </CenteredWrapper>
     </main>
   </div>

@@ -74,8 +74,9 @@ type Runtime struct {
 	courseProgram *courseProgram
 }
 
-// OnStart registers a callback for the learner's project starting to run.
-// Several may be registered.
+// OnStart registers a callback for the learner's project starting to run. The
+// start of a run comes before all of its logs and its exit. Several may be
+// registered.
 func (p *Runtime) OnStart(handler func()) {
 	register(p.courseProgram, func(struct{}) { handler() },
 		func(h *handlers, r *registration[struct{}]) { h.runtimeStart = append(h.runtimeStart, r) })
@@ -113,8 +114,10 @@ type CodeEditor struct {
 }
 
 // FilterAPIs limits the APIs offered by editor assistance. Use definition IDs
-// such as "xgo:preset/spx?Sprite.stepTo"; omitting #<overloadId> selects all overloads.
-// Identifier semantics are defined in docs/develop/tutorial-v2/tutorial-class-framework.go.
+// such as "xgo:preset/spx?Sprite.stepTo"; omitting #<overloadId> selects all matching
+// overloads that remain eligible for recommendation. API Reference selection is
+// independent of its default curated list. Selection and identifier semantics are
+// defined in docs/develop/tutorial-v2/tutorial-class-framework.go.
 func (p *CodeEditor) FilterAPIs(apis []string) {
 	p.courseProgram.mustCallCapability("editor_codeEditor_filterAPIs", struct {
 		APIs []string `json:"apis"`

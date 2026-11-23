@@ -10,6 +10,7 @@ import type { ReadinessScope } from '@/utils/readiness'
 import * as projectApis from '@/apis/project'
 import { projectSearchKeywordMaxLength } from '@/apis/project'
 import { useMessageEvents, useModalEvents } from '@/components/ui'
+import * as feedbackLink from '@/components/feedback/CopilotFeedbackLink.vue'
 import { Copilot, type ICopilotContextProvider, type SessionExported, type ToolDefinition } from './copilot'
 import * as pageLink from './markdown-elements/PageLink'
 import * as highlightLink from './markdown-elements/HighlightLink.vue'
@@ -192,6 +193,13 @@ copilot.registerCustomElement({
   attributes: highlightLink.attributes,
   isRaw: highlightLink.isRaw,
   component: highlightLink.default
+})
+copilot.registerCustomElement({
+  tagName: feedbackLink.tagName,
+  description: feedbackLink.detailedDescription,
+  attributes: feedbackLink.attributes,
+  isRaw: feedbackLink.isRaw,
+  component: feedbackLink.default
 })
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))

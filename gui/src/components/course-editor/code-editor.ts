@@ -1,6 +1,6 @@
 import { computed, toValue, type WatchSource } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import { useQuery } from '@/utils/query'
+import { QueryMode, useQuery } from '@/utils/query'
 import { useRegisterLoading } from '@/utils/readiness'
 import type { Files } from '@/models/common/file'
 import { mainCourseFilePath } from '@/models/tutorial/course'
@@ -59,8 +59,8 @@ export class TutorialCodeEditorProject implements IXGoProject {
 /** The Course Editor owns this session; program views only attach their UI to it. */
 export function useCourseCodeEditor(projectSource: WatchSource<TutorialProject>, history: History) {
   const lang = useI18n().lang.value
-  const query = useQuery(
-    async ({ signal }) => {
+  const query = useQuery({
+    queryFn: async ({ signal }) => {
       const project = toValue(projectSource)
       const monaco = await loadMonaco(lang)
       signal.throwIfAborted()
@@ -73,9 +73,9 @@ export function useCourseCodeEditor(projectSource: WatchSource<TutorialProject>,
       for (const path of editorProject.getCodeFiles()) editor.getTextDocument(getTextDocumentId(path))
       return editor
     },
-    { en: 'Failed to load code editor', zh: '加载代码编辑器失败' },
-    { clearResultOnFetch: true }
-  )
+    failureSummaryMessage: { en: 'Failed to load code editor', zh: '加载代码编辑器失败' },
+    mode: QueryMode.BlockingRefresh
+  })
   useRegisterLoading(query.isLoading)
   // Keep the Course program editor local; app-wide consumers still depend on the embedded SPX editor.
   // Track migration to explicit workspace dependencies: https://github.com/goplus/builder/issues/3635

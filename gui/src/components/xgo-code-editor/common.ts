@@ -364,7 +364,7 @@ export type CommandArgs<C> = C extends Command<infer A, any> ? A : never
 
 export type Action<A extends any[] = any, R = any> = {
   /** Title for the action. Command title will be used if not provided. */
-  title?: string
+  title?: LocaleMessage
   /** Command to be executed when action is triggered. */
   command: Command<A, R>
   /** Arguments passed to the command. */

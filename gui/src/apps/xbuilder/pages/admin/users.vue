@@ -51,8 +51,8 @@ function hideBrokenImage(event: Event) {
   ;(event.currentTarget as HTMLImageElement).style.display = 'none'
 }
 
-const usersQuery = useQuery(
-  async () => {
+const usersQuery = useQuery({
+  queryFn: async () => {
     if (!canManageAccount.value) return { total: 0, data: [] }
     const params: accountAdminApis.ListAccountUsersParams = {
       pageIndex: page.value,
@@ -65,8 +65,8 @@ const usersQuery = useQuery(
     }
     return accountAdminApis.listAccountUsers(params)
   },
-  { en: 'Failed to load Account users', zh: '加载账号用户失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load Account users', zh: '加载账号用户失败' }
+})
 
 const pageTotal = computed(() => Math.ceil((usersQuery.data.value?.total ?? 0) / pageSize))
 

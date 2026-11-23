@@ -1,7 +1,7 @@
 <template>
   <Teleport v-if="attachTo != null" :to="attachTo">
-    <Transition name="ui-drawer">
-      <div v-if="visible" class="fixed inset-0 z-1100 bg-overlay-modal" @click="handleMaskClick">
+    <Transition name="ui-drawer" @before-enter="entering = true" @after-enter="entering = false">
+      <UIDialogMask v-if="visible" :content-element="containerRef" @click="handleMaskClick">
         <div
           v-bind="surfaceAttrs"
           ref="containerRef"
@@ -28,7 +28,7 @@
             </div>
           </template>
         </div>
-      </div>
+      </UIDialogMask>
     </Transition>
   </Teleport>
 </template>
@@ -40,9 +40,17 @@ export type DrawerSize = 'small' | 'medium' | 'large'
 <script setup lang="ts">
 import { computed, mergeProps, ref, useAttrs } from 'vue'
 import type { RadarNodeMeta } from '@/utils/radar'
-import { cn, type ClassValue, providePopupContainer, useLayerRegistration, useModalContainer } from '../utils'
+import {
+  cn,
+  type ClassValue,
+  providePopupContainer,
+  providePopupReady,
+  useLayerRegistration,
+  useModalContainer
+} from '../utils'
 import UIDivider from '../UIDivider.vue'
 import UIModalClose from './UIModalClose.vue'
+import UIDialogMask from './UIDialogMask.vue'
 import { useDialogAutoFocus, useDialogEscape } from './dialog'
 
 defineOptions({
@@ -94,6 +102,9 @@ const attachTo = useModalContainer()
 const containerRef = ref<HTMLElement | undefined>(undefined)
 providePopupContainer(containerRef)
 
+const entering = ref(false)
+const popupReady = providePopupReady(computed(() => props.visible && !entering.value))
+
 const drawerRegistration = useLayerRegistration(computed(() => props.visible))
 
 const surfaceAttrs = computed(() => mergeProps(drawerRegistration.rootAttrs, attrs))
@@ -109,7 +120,7 @@ const surfaceClass = computed(() =>
   )
 )
 
-useDialogAutoFocus(containerRef, () => props.visible && props.autoFocus)
+useDialogAutoFocus(containerRef, popupReady, () => props.autoFocus)
 useDialogEscape(containerRef, drawerRegistration.isTopmost, close)
 </script>
 

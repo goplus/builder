@@ -18,7 +18,7 @@ import {
 } from '../common'
 import type { DefinitionIdentifier } from '../definition-id'
 import type { IXGoProject } from '../project'
-import type { ILSPClient, RequestContext, LSPClientEvents, PropertyRenamedEvent } from './types'
+import type { GetPropertiesOptions, ILSPClient, RequestContext, LSPClientEvents, PropertyRenamedEvent } from './types'
 import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, MessageID, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
 import { xgoGetInputSlots, xgoGetProperties, xgoRenameResources } from './spxls/commands'
@@ -249,6 +249,11 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
           hover: {
             contentFormat: [lsp.MarkupKind.Markdown]
           },
+          codeAction: {
+            codeActionLiteralSupport: {
+              codeActionKind: { valueSet: [lsp.CodeActionKind.QuickFix] }
+            }
+          },
           rename: {
             prepareSupport: true
           },
@@ -450,6 +455,13 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
     return this.request<lsp.WorkspaceEdit | null>(ctx, lsp.RenameRequest.method, params)
   }
 
+  async textDocumentCodeAction(
+    ctx: RequestContext,
+    params: lsp.CodeActionParams
+  ): Promise<(lsp.CodeAction | lsp.Command)[] | null> {
+    return this.request<(lsp.CodeAction | lsp.Command)[] | null>(ctx, lsp.CodeActionRequest.method, params)
+  }
+
   async textDocumentFormatting(
     ctx: RequestContext,
     params: lsp.DocumentFormattingParams
@@ -566,7 +578,10 @@ export class XGoLSPClient extends Disposable implements ILSPClient {
   }
 
   /** Get properties of a named type; an empty target denotes the default project class. */
-  async getProperties(ctx: RequestContext, target: string): Promise<Property[]> {
-    return this.workspaceExecuteCommandXGoGetProperties(ctx, { target: target === '' ? this.projectClassName : target })
+  async getProperties(ctx: RequestContext, target: string, options?: GetPropertiesOptions): Promise<Property[]> {
+    return this.workspaceExecuteCommandXGoGetProperties(ctx, {
+      ...options,
+      target: target === '' ? this.projectClassName : target
+    })
   }
 }

@@ -27,8 +27,8 @@ function toISOString(value: string) {
   return date.toISOString()
 }
 
-const auditLogsQuery = useQuery(
-  async () =>
+const auditLogsQuery = useQuery({
+  queryFn: async () =>
     auditApis.listAuditLogs({
       pageIndex: page.value,
       pageSize,
@@ -37,8 +37,8 @@ const auditLogsQuery = useQuery(
       createdAfter: toISOString(createdAfter.value),
       createdBefore: toISOString(createdBefore.value)
     }),
-  { en: 'Failed to load audit logs', zh: '加载审计日志失败' }
-)
+  failureSummaryMessage: { en: 'Failed to load audit logs', zh: '加载审计日志失败' }
+})
 
 const pageTotal = computed(() => Math.ceil((auditLogsQuery.data.value?.total ?? 0) / pageSize))
 

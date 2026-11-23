@@ -66,6 +66,10 @@ type ContextMessageOptions = {
   extraContext?: string
 }
 
+const oneShotRequestContext = `# Automated request
+
+The message after this context is a one-off automated request, not written by the user. The current topic may say who sends such requests. Do what it asks, in the form it asks for. Your answer goes back to the sender, not to the user.`
+
 function getToolExecutionText(execution: ToolExecution): string {
   switch (execution.state) {
     case 'executing':
@@ -587,9 +591,14 @@ export class Copilot extends Emitter<{ roundComplete: CopilotRound }> {
     this.registerTool(createLoadSkillResourceTool(this.skillRegistry))
   }
 
-  private activeRef = localStorageRef('spx-gui-copilot-active', false)
+  private globalActiveRef = localStorageRef('spx-gui-copilot-active', false)
+  private dockedActiveRef = ref(false)
   get active() {
-    return this.activeRef.value
+    return this.globalUIEnabled ? this.globalActiveRef.value : this.dockedActiveRef.value
+  }
+  private setActive(active: boolean) {
+    if (this.globalUIEnabled) this.globalActiveRef.value = active
+    else this.dockedActiveRef.value = active
   }
 
   private globalUIEnabledRef = ref(true)
@@ -798,7 +807,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    */
   private checkIdleTimeout() {
     const session = this.currentSession
-    if (session == null || this.activeRef.value) return
+    if (session == null || this.active) return
 
     const lastRoundUpdatedTime = session.currentRound?.updatedAt
     if (lastRoundUpdatedTime == null) return
@@ -854,12 +863,12 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /** Open copilot, checks idle timeout and may end the current session if conditions are met */
   open() {
     this.checkIdleTimeout()
-    this.activeRef.value = true
+    this.setActive(true)
   }
 
   close() {
     this.currentSession?.abortCurrentRound()
-    this.activeRef.value = false
+    this.setActive(false)
   }
 
   /**
@@ -906,7 +915,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     const messages: Message[] = [
       await this.getContextMessage({
         toolsCustomElementsEnabled: false,
-        extraContext: this.getUserConversationContext()
+        extraContext: [oneShotRequestContext, this.getUserConversationContext()].filter((s) => s !== '').join('\n\n')
       }),
       { type: 'text', role: 'user', content: message }
     ]

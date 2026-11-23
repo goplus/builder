@@ -1,7 +1,7 @@
 <template>
   <Teleport v-if="attachTo != null" :to="attachTo">
-    <Transition name="ui-modal">
-      <div v-if="visible" class="fixed inset-0 z-1100 bg-overlay-modal" @click="handleMaskClick">
+    <Transition name="ui-modal" @before-enter="entering = true" @after-enter="entering = false">
+      <UIDialogMask v-if="visible" :content-element="containerRef" @click="handleMaskClick">
         <div
           class="h-full w-full overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
@@ -22,7 +22,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </UIDialogMask>
     </Transition>
   </Teleport>
 </template>
@@ -43,10 +43,12 @@ import {
   cn,
   type ClassValue,
   providePopupContainer,
+  providePopupReady,
   useLastClickEvent,
   useLayerRegistration,
   useModalContainer
 } from '../utils'
+import UIDialogMask from './UIDialogMask.vue'
 import { useDialogAutoFocus, useDialogEscape } from './dialog'
 
 defineOptions({
@@ -99,6 +101,9 @@ const attachTo = useModalContainer()
 const containerRef = ref<HTMLElement | undefined>(undefined)
 providePopupContainer(containerRef)
 
+const entering = ref(false)
+const popupReady = providePopupReady(computed(() => props.visible && !entering.value))
+
 const modalRegistration = useLayerRegistration(computed(() => props.visible))
 
 // Modal stack attrs and fallthrough attrs should both live on the surface element:
@@ -119,7 +124,7 @@ const surfaceClass = computed(() =>
   )
 )
 
-useDialogAutoFocus(containerRef, () => props.visible && props.autoFocus)
+useDialogAutoFocus(containerRef, popupReady, () => props.autoFocus)
 useDialogEscape(containerRef, modalRegistration.isTopmost, () => {
   if (props.closeOnEsc) emit('update:visible', false)
 })

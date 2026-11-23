@@ -62,8 +62,8 @@ const {
   isLoading,
   error,
   refetch
-} = useQuery(
-  async () => {
+} = useQuery({
+  queryFn: async () => {
     const { owner, name } = props
     if (owner === '' || name === '') throw new Error('owner and name required')
 
@@ -72,8 +72,8 @@ const {
     await project.load(serialized)
     return project
   },
-  { en: 'Load project failed', zh: '加载项目失败' }
-)
+  failureSummaryMessage: { en: 'Load project failed', zh: '加载项目失败' }
+})
 
 const runnable = computed(() => project.value != null && !isLoading.value && error.value == null)
 

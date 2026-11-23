@@ -30,8 +30,8 @@ no main loop.
 
 A typical lesson has the same three parts:
 
-1. **Set the stage.** In `onStart`, narrow what the learner can use (`Editor.CodeEditor.filterAPIs`), state the
-   task (`showPrelude`), and show them how if they need it (`showVideo`, `Spotlight.reveal`).
+1. **Set the stage.** In `onStart`, choose the APIs offered by editor assistance (`Editor.CodeEditor.filterAPIs`),
+   state the task (`showPrelude`), and show them how if they need it (`showVideo`, `Spotlight.reveal`).
 2. **Wait for evidence.** The project's own code prints something the course can recognise
    (`Editor.Runtime.onLog`), or the learner's code is read back (`Editor.Project.getCode`).
 3. **Close the loop.** Judge the evidence, then `completeWith` a sentence of feedback.
@@ -70,6 +70,25 @@ the course's mistake; see goplus/builder#3419.
 - **Pause with `wait`, never block.** `wait 2` pauses one callback while the others keep running. `time.Sleep`,
   channel operations and long loops freeze the whole course instead, and a goroutine the course starts itself
   (`go`, `time.AfterFunc`) fails the program as soon as it uses the framework.
+
+### Editor suggestions in the embedded project
+
+Keep editor suggestions focused on the APIs and variables learners use in the exercise. For internal
+scene state, assessment signals and helpers, put the case-sensitive `//xgols:notRecommended` on its own
+line in the comment immediately above the declaration in the SPX project source.
+
+```xgo
+// Reports whether Lita has reached the goal.
+//xgols:notRecommended
+func isAtGoal(x float64) bool {
+	return x >= 100
+}
+```
+
+The directive affects proactive suggestions in completion, input helpers and property pickers. Explicit
+uses still compile and retain help such as diagnostics, hover and go to definition. See the
+[xgolsw directive reference](https://github.com/goplus/xgolsw/blob/93262916548a5751b808c8d80bc56aa71c240428/README.md#declaration-directives)
+for declaration placement and scope.
 
 ## Working in the Course Editor
 

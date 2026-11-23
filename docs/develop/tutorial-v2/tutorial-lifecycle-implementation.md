@@ -172,8 +172,12 @@ to the caller, borrows the caller's TutorialProject, and owns one Program.
 
 Session creates a Playground Copilot Topic with the Course title and
 `copilotContext`, proactive reactions disabled, and code Copy/Apply helpers
-disabled. It starts Copilot before starting Program. Project, code, and runtime
-context still come from the normal editor context providers.
+disabled. The Topic explains what a Playground Course is and that Copilot deals
+with two parties, the learner and the Course program; `copilotContext` is
+presented as the author's instructions for conversations with the learner. It
+starts Copilot before starting Program. Project, code, and runtime context still
+come from the normal editor context providers, including which code the learner
+can see and when Copilot should read code that is not in the context.
 
 Program owns the XGo executor, Runtime and Copilot event subscriptions, and the
 signal for pending capability calls. The component provides presentation and
@@ -220,6 +224,8 @@ The route-local runtime forwards:
 | Runtime exits             | `editor.runtime.exit` with `{ code }`                   |
 | Newly appended log output | `editor.runtime.log` with `{ log }`                     |
 | Copilot round completes   | `copilot.roundComplete` with its user and result messages |
+
+A run's `editor.runtime.start` comes before all of its `editor.runtime.log` and its `editor.runtime.exit`.
 
 Runtime exposes cumulative output. The Playground runtime keeps the last forwarded output ID and sends every new `log` entry exactly once and in order. Error output is not part of the judging channel.
 

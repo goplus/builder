@@ -108,6 +108,28 @@ async function waitForCompletion() {
   await timeout(COMPLETION_WAIT_TIME)
 }
 
+describe('Copilot panel state', () => {
+  it.each([false, true])('preserves global expansion (%s) while using docked UI', (globalActive) => {
+    const copilot = new Copilot(createTestSkillRegistry())
+    if (globalActive) copilot.open()
+    else copilot.close()
+    copilot.disableGlobalUI()
+    expect(copilot.active).toBe(false)
+    copilot.open()
+    expect(copilot.active).toBe(true)
+    copilot.close()
+    expect(copilot.active).toBe(false)
+    copilot.open()
+    copilot.enableGlobalUI()
+    expect(copilot.active).toBe(globalActive)
+    copilot.disableGlobalUI()
+    expect(copilot.active).toBe(true)
+    copilot.enableGlobalUI()
+    copilot.close()
+    copilot.dispose()
+  })
+})
+
 describe('sampleApiMessages', () => {
   it('should do truncation if the original messages are too long', () => {
     const originalMessages: Message[] = [
@@ -386,6 +408,27 @@ describe('Copilot', () => {
         content: { type: 'text', text: 'Summarize the learner progress.' }
       }
     ])
+  })
+
+  it('tells Copilot that a one-shot request does not come from the user', async () => {
+    const generator = new MockBatchedMessageEventGenerator([
+      createTextStreamBatch('Hello learner'),
+      createTextStreamBatch('Course feedback')
+    ])
+    const copilot = new Copilot(createTestSkillRegistry(), generator)
+    await copilot.startSession(createBasicTopic('Test Topic', 'Talk with the learner'))
+    copilot.addUserTextMessage('How do I make a sprite move?')
+    await waitForCompletion()
+    await copilot.generateTextResponse('Summarize the learner progress.')
+
+    const roundContext = generator.calls[0].at(-1)?.content?.text
+    expect(roundContext).toContain('Talk with the learner')
+    expect(roundContext).not.toContain('# Automated request')
+    const oneShotContext = generator.calls[1][0].content?.text
+    expect(oneShotContext).toContain('Talk with the learner')
+    expect(oneShotContext).toContain(
+      '# Automated request\n\nThe message after this context is a one-off automated request, not written by the user.'
+    )
   })
 
   it('aborts text responses that attempt to call a tool', async () => {

@@ -2,8 +2,8 @@ import { resolveObjectURL } from 'node:buffer'
 import { defineComponent, h, onUnmounted } from 'vue'
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from 'vue-router'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
-import { enableAutoUnmount, mount } from '@vue/test-utils'
-import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
+import { enableAutoUnmount, mount, type VueWrapper } from '@vue/test-utils'
+import { afterEach, beforeAll, beforeEach, expect, vi } from 'vitest'
 import { createAppState } from '@/utils/app-state'
 import { createI18n } from '@/utils/i18n'
 import { createRadar } from '@/utils/radar'
@@ -12,6 +12,7 @@ import { initDayjs } from '@/setup/dayjs'
 import { client } from '@/apis/common'
 import { AssetType, type AssetData } from '@/apis/asset'
 import { FeedbackStatus, type Feedback } from '@/apis/feedback'
+import * as notificationApis from '@/apis/notification'
 import { ProjectType, Visibility, type ProjectData } from '@/apis/project'
 import * as projectApis from '@/apis/project'
 import * as releaseApis from '@/apis/project-release'
@@ -46,6 +47,7 @@ import UserLikes from './community/user/likes.vue'
 import Admin from './admin/index.vue'
 import AdminApps from './admin/apps.vue'
 import AdminApp from './admin/app.vue'
+import AdminOAuthClient from './admin/oauth-client.vue'
 import AdminGrant from './admin/grant.vue'
 import AdminUsers from './admin/users.vue'
 import AdminAuditLogs from './admin/audit-logs.vue'
@@ -74,6 +76,7 @@ vi.mock('@/apis/admin/account', { spy: true })
 vi.mock('@/apis/admin/audit', { spy: true })
 vi.mock('@/apis/admin/feedback', { spy: true })
 vi.mock('@/apis/feedback', { spy: true })
+vi.mock('@/apis/notification', { spy: true })
 
 enableAutoUnmount(afterEach)
 initDayjs()
@@ -193,6 +196,7 @@ export async function mountPages(path: string) {
         { path: 'users', component: AdminUsers },
         { path: 'apps', component: AdminApps },
         { path: 'apps/:appID', component: AdminApp, props: true },
+        { path: 'apps/:appID/oauth-clients/:oauthClientID', component: AdminOAuthClient, props: true },
         { path: 'users/:userID/app-grants/:grantID', component: AdminGrant, props: true },
         { path: 'audit-logs', component: AdminAuditLogs },
         { path: 'feedback', component: AdminFeedbackList },
@@ -253,6 +257,18 @@ export async function mountPages(path: string) {
     }
   )
   return { wrapper, router, signedIn }
+}
+
+export async function askCopilot(wrapper: VueWrapper, message: string) {
+  await vi.waitFor(() => expect(wrapper.find('.copilot-trigger').exists()).toBe(true))
+  await wrapper.get('.copilot-trigger').trigger('click')
+  await vi.waitFor(() => expect(wrapper.find('.copilot-panel textarea').exists()).toBe(true))
+  await wrapper.get('.copilot-panel textarea').setValue(message)
+  await wrapper.get('.copilot-panel textarea').trigger('keypress', { key: 'Enter' })
+}
+
+export function findCopilotButton(wrapper: VueWrapper, text: string) {
+  return wrapper.findAll<HTMLButtonElement>('.copilot-panel button').find((button) => button.text() === text)
 }
 
 export function setupPageTests() {
@@ -345,6 +361,7 @@ export function setupPageTests() {
     vi.mocked(projectApis.exploreProjects).mockImplementation(async ({ order }) => [makeProject(order)])
     vi.mocked(projectApis.getProject).mockImplementation(async (owner, name) => ({ ...makeProject(name), owner }))
     vi.mocked(releaseApis.listProjectReleases).mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(notificationApis.listNotifications).mockResolvedValue({ data: [], total: 0, nextPageToken: null })
     vi.mocked(projectApis.listUserPublicProjects).mockResolvedValue({ data: [makeProject('First flight')], total: 1 })
     vi.mocked(projectApis.listUserLikedProjects).mockResolvedValue({ data: [makeProject('Moon landing')], total: 1 })
     vi.mocked(projectApis.listProjects).mockResolvedValue({ data: [makeProject('Space game')], total: 1 })
@@ -363,6 +380,7 @@ export function setupPageTests() {
     }
     vi.mocked(courseSeriesApis.listCourseSeries).mockResolvedValue({ total: 1, data: [series] })
     vi.mocked(courseSeriesApis.getCourseSeries).mockResolvedValue(series)
+    vi.mocked(courseApis.listAllSeriesCourses).mockImplementation(async () => (await courseApis.listCourses()).data)
     vi.mocked(courseApis.listCourses).mockResolvedValue({
       total: 1,
       data: [

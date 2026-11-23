@@ -25,8 +25,8 @@ usePageTitle(() => {
   return title == null ? page : [{ en: title, zh: title }, page]
 })
 
-const allQueryRet = useQuery(
-  async (ctx) => {
+const allQueryRet = useQuery({
+  queryFn: async (ctx) => {
     const [course, series] = await Promise.all([composeQuery(ctx, courseQueryRet), composeQuery(ctx, seriesQueryRet)])
     ctx.signal.throwIfAborted()
     if (!signedIn.isSignedIn) {
@@ -35,8 +35,8 @@ const allQueryRet = useQuery(
     }
     await tutorial.enterCourse(course, series)
   },
-  { en: 'Failed to start course', zh: '启动课程失败' }
-)
+  failureSummaryMessage: { en: 'Failed to start course', zh: '启动课程失败' }
+})
 </script>
 
 <template>

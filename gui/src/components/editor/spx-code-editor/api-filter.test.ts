@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   getTextDocumentId,
   parseDefinitionId,
+  DocumentBase,
   type CompletionList,
   type DefinitionDocumentationItem,
-  type IDocumentBase,
   type ICompletionProvider
 } from '@/components/xgo-code-editor'
 import { FilteredCompletionProvider, matchesAPI } from './api-filter'
@@ -21,15 +21,9 @@ describe('API whitelist', () => {
   })
 
   it('filters SPX API reference items', async () => {
-    const items = new Map(
-      [stepTo, turn].map((definition) => [
-        `xgo:${definition.package}?${definition.name}#${definition.overloadId}`,
-        { definition } as DefinitionDocumentationItem
-      ])
+    const documentBase = new DocumentBase(
+      [stepTo, turn].map((definition) => ({ definition }) as DefinitionDocumentationItem)
     )
-    const documentBase = {
-      getDocumentation: vi.fn(async (id: string) => items.get(id) ?? null)
-    } as unknown as IDocumentBase
     const ctx = { textDocument: { id: getTextDocumentId('Lita.spx') }, signal: new AbortController().signal } as never
 
     const provider = new SpxAPIReferenceProvider(documentBase, [stepTo])

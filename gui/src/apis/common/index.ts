@@ -15,6 +15,13 @@ export type ByPage<T> = {
   data: T[]
 }
 
+export type ByPageToken<T> = {
+  total: number
+  data: T[]
+  /** Token for the next page, `null` when there are no more pages */
+  nextPageToken: string | null
+}
+
 export enum Visibility {
   Private = 'private',
   Public = 'public'

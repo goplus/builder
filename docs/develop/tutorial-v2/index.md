@@ -52,7 +52,8 @@ See [Radar](./module_Radar.ts).
 
 SPX Project Editor provides the learner-facing project editing experience and its editor capabilities. Tutorial learning and Course Preview compose this existing editor around an embedded project model; the editor remains responsible for editing behavior and for turning a learner's work into a regular saved project.
 
-See [SPX Project Editor](./module_SpxProjectEditor.ts).
+See [SPX Project Editor](./module_SpxProjectEditor.ts) and the
+[runtime line-highlighting rules](./runtime-line-highlighting.md).
 
 ### Copilot
 

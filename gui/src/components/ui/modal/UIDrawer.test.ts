@@ -1,6 +1,6 @@
 import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref, type Ref } from 'vue'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   UI_LAYER_ROOT_ATTR,
   provideLayerStack,
@@ -123,7 +123,9 @@ describe('UIDrawer', () => {
     await new DOMWrapper(getLatestElement('.ui-drawer-surface')!).trigger('click')
     expect(drawer.emitted('update:visible')).toBeUndefined()
 
-    await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger('click')
+    for (const type of ['pointerdown', 'pointerup', 'click']) {
+      await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger(type)
+    }
     await drawer.findComponent(UIModalClose).trigger('click')
     expect(drawer.emitted('update:visible')).toEqual([[false], [false]])
   })
@@ -134,7 +136,9 @@ describe('UIDrawer', () => {
     )
     await flushDrawer()
 
-    await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger('click')
+    for (const type of ['pointerdown', 'pointerup', 'click']) {
+      await new DOMWrapper(getLatestElement('.bg-overlay-modal')!).trigger(type)
+    }
     expect(wrapper.findComponent(UIDrawer).emitted('update:visible')).toBeUndefined()
   })
 
@@ -144,7 +148,7 @@ describe('UIDrawer', () => {
     )
     await flushDrawer()
 
-    expect(document.activeElement).toBe(getLatestElement('[data-test-id="first-input"]'))
+    await vi.waitFor(() => expect(document.activeElement).toBe(getLatestElement('[data-test-id="first-input"]')))
   })
 
   it('closes on Escape, leaving it to a dialog opened above it first', async () => {

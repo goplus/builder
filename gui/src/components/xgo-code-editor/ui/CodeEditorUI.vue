@@ -44,12 +44,12 @@ const props = withDefaults(
   defineProps<{
     codeFilePath: string
     simpleMode?: boolean
-    hasApiReference?: boolean
+    apiReferenceEnabled?: boolean
     readOnly?: boolean
     readOnlyMessage?: LocaleMessage
   }>(),
   {
-    hasApiReference: true,
+    apiReferenceEnabled: true,
     readOnlyMessage: () => ({ en: 'Cannot edit in read-only editor', zh: '无法在只读编辑器中编辑' })
   }
 )
@@ -83,6 +83,12 @@ const uiRef = computed(() => {
     simpleMode: props.simpleMode,
     isReadOnly: () => props.readOnly ?? false
   })
+})
+
+const apiReferenceVisible = computed(() => {
+  const controller = uiRef.value.apiReferenceController
+  // Keep the panel mounted while loading or showing an error; hide only completed empty results.
+  return props.apiReferenceEnabled && controller.items?.length !== 0
 })
 
 const initialFontSize = 12
@@ -286,7 +292,7 @@ providePopupContainer(codeEditorEl)
     :style="{ userSelect: isResizing ? 'none' : undefined }"
   >
     <aside
-      v-if="hasApiReference"
+      v-if="apiReferenceVisible"
       class="relative flex min-h-0 min-w-0 flex-none flex-col border-r border-r-dividing-line-2"
       :style="{ flexBasis: `${sidebarWidth}px` }"
     >
@@ -298,7 +304,7 @@ providePopupContainer(codeEditorEl)
       />
     </aside>
     <div
-      v-if="hasApiReference"
+      v-if="apiReferenceVisible"
       ref="resizeHandleEl"
       v-radar="{ name: 'resize-handle', desc: 'Drag to resize the sidebar' }"
       class="absolute z-10 -ml-1.75 h-full w-3.25 cursor-col-resize transition-colors hover:bg-black/5"
@@ -308,6 +314,7 @@ providePopupContainer(codeEditorEl)
     <MonacoEditorComp
       v-radar="{ name: 'code-text-editor', desc: 'Text editor for code' }"
       class="my-3 min-w-0 flex-[1_1_0]"
+      :class="{ 'code-editor-read-only': readOnly }"
       :monaco="codeEditor.monaco"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
@@ -329,3 +336,55 @@ providePopupContainer(codeEditorEl)
     </aside>
   </div>
 </template>
+
+<style scoped>
+/* Monaco 0.52's internal message DOM: recheck these selectors on upgrades. */
+.code-editor-read-only :deep(.monaco-editor-overlaymessage) {
+  isolation: isolate;
+  width: max-content;
+  padding-bottom: 9px;
+  /* Compensate for Monaco's -6px margin, then offset by 4px in each direction. */
+  transform: translate(10px, 4px);
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below) {
+  padding-top: 9px;
+  padding-bottom: 0;
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage::before) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Nine-slicing keeps the corners and tail fixed as the message wraps. */
+  border: solid transparent;
+  border-width: 8px 8px 21px 16px;
+  border-image: url('./read-only-message-bubble.svg') 8 8 21 16 fill / 8px 8px 21px 16px;
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 8%));
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage.below::before) {
+  transform: scaleY(-1);
+}
+
+.code-editor-read-only :deep(.monaco-editor-overlaymessage .message) {
+  box-sizing: border-box;
+  max-width: 320px;
+  padding: 7px var(--ui-spacing-md);
+  border: 0;
+  background: transparent;
+  color: var(--ui-color-grey-1000);
+  font-family: var(--ui-font-family-main);
+  font-size: var(--ui-font-size-base);
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+/* Hide Monaco's triangular anchors, including its more specific .below rule. */
+.code-editor-read-only :deep(.monaco-editor-overlaymessage .anchor) {
+  display: none !important;
+}
+</style>

@@ -135,7 +135,15 @@ function handleSubmit() {
           <UIIcon type="eyedrop" />
         </template>
       </UIButton>
-      <UINumberInput v-model:value="hue" class="flex-[1_1_0]" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
+      <UINumberInput
+        v-model:value="hue"
+        autofocus
+        class="flex-[1_1_0]"
+        :min="0"
+        :max="100"
+        :step="1"
+        @keyup.enter="handleSubmit"
+      >
         <template #prefix>H</template>
       </UINumberInput>
       <UINumberInput

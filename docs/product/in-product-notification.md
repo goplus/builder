@@ -39,7 +39,7 @@ Product features create Notifications for their Recipients and set the Category 
 
 ### Listing Notifications
 
-Each category has an unread count; the navigation entry shows their sum. Notifications are ordered from newest to oldest by CreatedAt, with a stable order when times are equal. Reading one does not change its position or cause items to be skipped or repeated when loading more.
+Each category has an unread count; the navigation entry indicates whether any Notification is unread. Notifications are ordered from newest to oldest by CreatedAt, with a stable order when times are equal. Reading one does not change its position or cause items to be skipped or repeated when loading more.
 
 ### Reading Notifications
 

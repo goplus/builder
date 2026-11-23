@@ -112,6 +112,7 @@
             :on-stop="handleStop.fn"
             :stop-loading="handleStop.isLoading.value"
             :inline-anchor="getStageInlineAnchor"
+            @start="handleStart"
             @log="handleLog"
             @execution-locations="handleExecutionLocations"
             @update:fullscreen="handleFullscreenChange"
@@ -258,6 +259,10 @@ function keepRunnerHostVisibleForOverlay() {
   }, 450)
 }
 
+function handleStart() {
+  runtime.value.emit('didStart')
+}
+
 function handleLog(log: SpxLog) {
   const { file, line } = log
   const column = log.level === 'ERROR' ? log.column : 1
@@ -315,7 +320,7 @@ async function checkAndNotifyMonitorError() {
   const monitors = stage.widgets.filter((w) => w.type === 'monitor')
   const spriteNames = new Set(sprites.map((s) => s.name))
   const invalidMonitors = await withTimeout(CODE_EDITOR_OPERATION_TIMEOUT, (signal) =>
-    getInvalidMonitors(monitors, spriteNames, (target, s) => codeEditor.getProperties(target, s), signal)
+    getInvalidMonitors(monitors, spriteNames, (target, signal) => codeEditor.getProperties(target, { signal }), signal)
   )
   if (invalidMonitors.length === 0) return
   const monitorNames = humanizeListWithLimit(invalidMonitors.map((m) => ({ en: m.name, zh: m.name })))
@@ -346,7 +351,6 @@ async function executeRun(action: 'run' | 'rerun') {
     runnerState.value = 'running'
     lastFilesHash.value = filesHash
     runtime.value.setRunning({ mode: 'debug', initializing: false }, filesHash)
-    runtime.value.emit('didStart')
   } catch (error) {
     runnerState.value = 'running'
     runtime.value.setRunning({ mode: 'debug', initializing: false, initializingError: error })

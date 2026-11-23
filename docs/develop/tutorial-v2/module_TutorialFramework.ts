@@ -38,7 +38,7 @@ export type TutorialProjectFiles = FileCollection;
  * timing.
  */
 export type TutorialEvent =
-  /** The learner's project runtime started. */
+  /** The learner's project is about to run; comes before that run's log and exit events. */
   | { name: "editor.runtime.start"; payload: null }
   /** The learner's project runtime exited with the given code. */
   | { name: "editor.runtime.exit"; payload: { code: number } }
@@ -136,8 +136,8 @@ export interface TutorialFrameworkHost {
     codeEditor: {
       /**
        * Limits APIs offered by Code Editor assistance using definition IDs.
-       * Identifier syntax, preset resolution and failure semantics are defined
-       * in tutorial-class-framework.go (CodeEditor.filterAPIs).
+       * Selection and identifier semantics, including preset resolution and
+       * failures, are defined in tutorial-class-framework.go (CodeEditor.filterAPIs).
        */
       filterAPIs(apis: string[]): void;
       /**

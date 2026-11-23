@@ -27,8 +27,9 @@ export type GuidedTutorialTopic = Topic & {
   isTutorialTopic: true
 }
 
-export type CurrentCourse = GuidedCourse & {
-  series: CourseSeries
+export type CurrentCourse = {
+  id: string
+  seriesID: string
 }
 
 export function isGuidedTutorialTopic(topic: Topic): topic is GuidedTutorialTopic {
@@ -40,15 +41,15 @@ export class GuidedTutorial {
     private copilot: Copilot,
     private router: Router,
     private routeReadiness: ReadinessScope,
-    private course: WritableComputedRef<GuidedCourse | null>,
-    private series: WritableComputedRef<CourseSeries | null>
+    private courseID: WritableComputedRef<string | null>,
+    private seriesID: WritableComputedRef<string | null>
   ) {}
 
   get currentCourse(): CurrentCourse | null {
-    const course = this.course.value
-    const series = this.series.value
-    if (course == null || series == null) return null
-    return { ...course, series }
+    const courseID = this.courseID.value
+    const seriesID = this.seriesID.value
+    if (courseID == null || seriesID == null) return null
+    return { id: courseID, seriesID }
   }
 
   private abandonPredictionCountRef = ref(0)
@@ -62,8 +63,8 @@ export class GuidedTutorial {
   async enterCourse(course: GuidedCourse, series: CourseSeries): Promise<void> {
     try {
       this.copilot.endCurrentSession()
-      this.course.value = course
-      this.series.value = series
+      this.courseID.value = course.id
+      this.seriesID.value = series.id
       this.abandonPredictionCountRef.value = 0
 
       const { entrypoint } = course.content
@@ -210,8 +211,8 @@ This is an example for messages between you and the user in a course:
   endCurrentCourse() {
     this.copilot.close()
     this.copilot.endCurrentSession()
-    this.course.value = null
-    this.series.value = null
+    this.courseID.value = null
+    this.seriesID.value = null
     this.abandonPredictionCountRef.value = 0
   }
 }

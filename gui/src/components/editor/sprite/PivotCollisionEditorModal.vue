@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Sprite } from '@/models/spx/sprite'
 import { UIFormModal } from '@/components/ui'
-import PivotCollisionEditor from './PivotCollisionEditor.vue'
+import PivotCollisionEditor from './pivot-collision-editor/PivotCollisionEditor.vue'
 
 defineProps<{
   sprite: Sprite
