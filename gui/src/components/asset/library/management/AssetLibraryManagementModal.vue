@@ -22,6 +22,7 @@ import BackdropItem from './BackdropItem.vue'
 import CornerMenu from './AssetItemCornerMenu.vue'
 import AssetEditModal from './AssetEditModal.vue'
 import VisibilityIcon from './VisibilityIcon.vue'
+import { assetListLoadError } from '../messages'
 
 const props = defineProps<{
   type: AssetType
@@ -70,10 +71,7 @@ const queryRet = useQuery({
       keyword: keyword.value,
       orderBy: 'displayName'
     }),
-  failureSummaryMessage: {
-    en: 'Failed to list',
-    zh: '获取列表失败'
-  }
+  failureSummaryMessage: assetListLoadError
 })
 
 function handleSearch() {
