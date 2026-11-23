@@ -50,7 +50,7 @@ const handleSubmit = useMessageHandle(
     emit('resolved', saved.name)
     return saved.name
   },
-  { en: 'Failed to rename the project', zh: '修改项目名失败' }
+  { en: 'Failed to update project name', zh: '更新项目名失败' }
 )
 
 async function validateName(name: string): Promise<FormValidationResult> {
@@ -85,7 +85,7 @@ async function validateName(name: string): Promise<FormValidationResult> {
 <template>
   <UIFormModal
     :radar="{ name: 'project-name-modal', desc: 'Modal for updating project name' }"
-    :title="$t({ en: 'Rename project', zh: '修改项目名' })"
+    :title="$t({ en: 'Modify project name', zh: '修改项目名' })"
     :visible="props.visible"
     :mask-closable="false"
     @update:visible="handleCancel"

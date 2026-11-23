@@ -57,7 +57,7 @@
               </UIMenuItem>
               <UIMenuItem v-if="canManageProject" class="w-full" @click="handleModifyProjectName">
                 <template #icon><img :src="modifyProjectNameSvg" /></template>
-                {{ $t({ en: 'Rename project', zh: '修改项目名' }) }}
+                {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
               </UIMenuItem>
             </UIMenuGroup>
             <UIMenuGroup v-if="canManageProject" :disabled="project == null">
@@ -263,7 +263,7 @@ const handleModifyProjectName = useMessageHandle(
       })
     }
   },
-  { en: 'Failed to rename the project', zh: '修改项目名失败' }
+  { en: 'Failed to modify project name', zh: '修改项目名失败' }
 ).fn
 
 const unpublishProject = useUnpublishProject()
