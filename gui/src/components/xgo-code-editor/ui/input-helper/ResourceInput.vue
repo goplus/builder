@@ -38,7 +38,7 @@ const handleCreateWith = useMessageHandle(
     const created = await handler()
     if (created != null) select(created)
   },
-  { en: 'Failed to create', zh: '创建失败' }
+  { en: 'Failed to add the resource', zh: '添加资源失败' }
 ).fn
 
 onMounted(() => {

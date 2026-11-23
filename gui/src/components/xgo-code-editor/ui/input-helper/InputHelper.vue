@@ -107,7 +107,7 @@ function handlePredefinedNameUpdate(name: string | null) {
         @submit="emit('submit')"
       />
       <div v-else class="text-center leading-8 text-hint-2">
-        {{ $t({ en: 'Value not supported', zh: '不支持输入值' }) }}
+        {{ $t({ en: 'You can’t enter this type of value directly.', zh: '此类型不支持直接输入值。' }) }}
       </div>
     </template>
     <UISelect
