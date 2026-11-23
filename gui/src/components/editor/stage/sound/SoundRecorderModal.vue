@@ -38,11 +38,12 @@ const handleFormModalVisibleUpdate = useMessageHandle(async (visible: boolean) =
   if (recordStarted.value) {
     await withConfirm({
       type: 'warning',
-      title: i18n.t({ en: 'Quit recording?', zh: '退出录音？' }),
+      title: i18n.t({ en: 'Close the recorder?', zh: '退出录音？' }),
       content: i18n.t({
-        en: 'The current content will not be saved. Are you sure you want to quit?',
-        zh: '当前内容不会被保存，确定要退出吗？'
-      })
+        en: 'Unsaved work will be lost.',
+        zh: '未保存的内容会丢失。'
+      }),
+      confirmText: i18n.t({ en: 'Close', zh: '退出' })
     })
   }
   emit('cancelled')
