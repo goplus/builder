@@ -1,14 +1,62 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import { setupPageTests, mountPages, signIn, makeAsset } from '@/apps/xbuilder/pages/test'
+import saveAs from 'file-saver'
+import * as courseApis from '@/apis/course'
 import { AssetType } from '@/apis/asset'
 import * as assetApis from '@/apis/asset'
 import { Visibility } from '@/apis/project'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 
+vi.mock('file-saver', () => ({ default: vi.fn() }))
+
 describe('editor', () => {
   setupPageTests()
+
+  it.each([true, false])(
+    'offers a personal copy in the project menu only during a Guided course (guided: %s)',
+    async (guided) => {
+      if (guided) {
+        const [course] = (await courseApis.listCourses()).data
+        vi.mocked(courseApis.getCourse).mockResolvedValue(course)
+        sessionStorage.setItem('spx-gui-tutorial-course', JSON.stringify(course.id))
+        sessionStorage.setItem('spx-gui-tutorial-series', JSON.stringify('space'))
+      }
+      const { wrapper } = await mountPages('/editor/alice/First%20flight')
+      await vi.waitFor(() => expect(wrapper.find('[aria-label="Stage overview"]').exists()).toBe(true), {
+        timeout: 4000
+      })
+      await wrapper.get('[aria-label="Project menu"]').trigger('click')
+      await vi.waitFor(() =>
+        expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Export project file')).toBe(true)
+      )
+      expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Save as my project')).toBe(guided)
+    }
+  )
+
+  it('exports the current exercise directly from the Playground project menu', async () => {
+    const { SpxProject } = await import('@/models/spx/project')
+    const project = new SpxProject()
+    project.setMetadata({ name: 'exercise' })
+    const { wrapper, router } = await mountPages('/tutorials')
+    router.addRoute({
+      path: '/test-playground-menu',
+      component: EditorNavbar,
+      props: { courseKind: 'playground', project, state: null, title: 'Exercise' }
+    })
+    await router.push('/test-playground-menu')
+    await wrapper.get('[aria-label="Project menu"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.findAll('.ui-menu-item').map((item) => item.text())).toEqual([
+        'Save as my project',
+        'Export project file'
+      ])
+    )
+    await wrapper.findAll('.ui-menu-item')[1].trigger('click')
+    await vi.waitFor(() => expect(saveAs).toHaveBeenCalledWith(expect.any(File), 'exercise.xbp'))
+    project.dispose()
+  })
 
   it('opens the editor and creates, edits and manages a monitor', async () => {
     const { wrapper } = await mountPages('/editor/alice/First%20flight')

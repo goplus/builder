@@ -12,11 +12,11 @@
         </template>
         <UIMenu>
           <slot name="project-menu">
-            <UIMenuGroup :disabled="!isOnline">
+            <UIMenuGroup v-if="!isPlayground" :disabled="!isOnline">
               <NavbarNewProjectItem />
               <NavbarOpenProjectItem />
             </UIMenuGroup>
-            <UIMenuGroup :disabled="project == null">
+            <UIMenuGroup v-if="!isPlayground" :disabled="project == null">
               <UIMenuItem @click="handleImportProjectFile">
                 <template #icon><img :src="importProjectSvg" /></template>
                 {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
@@ -34,12 +34,25 @@
               </UIMenuItem>
             </UIMenuGroup>
             <UIMenuGroup :disabled="project == null">
+              <UIMenuItem
+                v-if="courseKind != null"
+                v-radar="{
+                  name: 'save-as-my-project',
+                  label: $t(saveCopyLabel),
+                  desc: 'Save a personal copy of this course project'
+                }"
+                :disabled="!isOnline"
+                @click="project && emit('saveCourseCopy', project)"
+              >
+                <template #icon><UIIcon type="copy" /></template>
+                {{ $t(saveCopyLabel) }}
+              </UIMenuItem>
               <UIMenuItem @click="handleExportProjectFile">
                 <template #icon><img :src="exportProjectSvg" /></template>
                 {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
               </UIMenuItem>
             </UIMenuGroup>
-            <UIMenuGroup :disabled="project == null || !isOnline">
+            <UIMenuGroup v-if="!isPlayground" :disabled="project == null || !isOnline">
               <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
                 <template #icon><img :src="publishSvg" /></template>
                 {{ $t({ en: 'Publish project...', zh: '发布项目...' }) }}
@@ -60,7 +73,7 @@
                 {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
               </UIMenuItem>
             </UIMenuGroup>
-            <UIMenuGroup v-if="canManageProject" :disabled="project == null">
+            <UIMenuGroup v-if="!isPlayground && canManageProject" :disabled="project == null">
               <UIMenuItem @click="handleRemoveProject">
                 <template #icon><img :src="removeProjectSvg" /></template>
                 {{ $t({ en: 'Remove project...', zh: '删除项目...' }) }}
@@ -102,6 +115,7 @@ import { convertScratchProject } from '@/apis/project-conversion'
 import { type SpxProject } from '@/models/spx/project'
 import { useSignedIn } from '@/stores/user'
 import { Visibility } from '@/apis/common'
+import type { CourseKind } from '@/apis/course'
 import { getProjectPageRoute } from '@/apps/xbuilder/router'
 import { useModifyProjectName, usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
@@ -135,6 +149,7 @@ const props = defineProps<{
   project: SpxProject | null
   state: EditorState | null
   title?: string
+  courseKind?: CourseKind | null
 }>()
 
 const { isOnline } = useNetwork()
@@ -148,6 +163,9 @@ const canManageProject = computed(() => {
   return props.project.owner === signedInUsername
 })
 
+const saveCopyLabel = { en: 'Save as my project', zh: '另存为我的项目' }
+const emit = defineEmits<{ saveCourseCopy: [project: SpxProject] }>()
+const isPlayground = computed(() => props.courseKind === 'playground')
 const isSimpleMode = computed(() => props.state?.selectedEditMode === EditMode.Simple)
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }

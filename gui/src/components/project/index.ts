@@ -19,8 +19,9 @@ import ProjectModifyNameModal from './ProjectModifyNameModal.vue'
 export function useCreateProject() {
   const modal = useModal(ProjectCreateModal)
 
-  return function createProject(remixSource?: string) {
-    return modal({ remixSource })
+  return async function createProject(remixSource?: string) {
+    const project = await modal({ remixSource })
+    return project.name
   }
 }
 

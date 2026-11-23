@@ -1,7 +1,12 @@
 <template>
   <section class="min-h-full w-full flex flex-col bg-grey-300">
     <header class="flex-none">
-      <EditorNavbar :project="state?.project ?? null" :state="state" />
+      <EditorNavbar
+        :project="state?.project ?? null"
+        :state="state"
+        :course-kind="tutorial.currentCourse?.kind === 'guided' ? 'guided' : null"
+        @save-course-copy="saveCourseProjectCopy"
+      />
     </header>
     <main class="flex-[1_1_0] flex gap-xl p-4 pt-2">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
@@ -60,6 +65,8 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
 import { usePublishProject } from '@/components/project'
+import { useTutorial } from '@/components/tutorials/tutorial'
+import { useSaveCourseProjectCopy } from '@/components/tutorials/use-save-course-project-copy'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -75,6 +82,7 @@ const props = defineProps<{
 const localCache = new LocalCache(localHelpers)
 
 const signedIn = useSignedIn()
+const tutorial = useTutorial()
 
 const router = useRouter()
 const routeProjectIdentifier = computed<ProjectIdentifier>(() => ({
@@ -137,6 +145,10 @@ const stateQueryRet = useQuery({
 })
 
 const state = stateQueryRet.data
+const saveCourseProjectCopy = useSaveCourseProjectCopy((source) => {
+  const editor = state.value
+  return editor != null && editor.project === source && ensureAutoSaved(editor)
+})
 const currentProjectIdentifier = computed(() =>
   toProjectIdentifier(state.value?.project.owner, state.value?.project.name)
 )
@@ -182,6 +194,35 @@ const allQueryRet = useQuery({
     ]),
   failureSummaryMessage: { en: 'Failed to load editor', zh: '加载编辑器失败' }
 })
+
+// Claim the navigation hint before the editor selects its initial subroute.
+let copyToAnnounce: ProjectIdentifier | null = null
+watch(
+  routeProjectIdentifier,
+  (target) => {
+    const history = router.options.history
+    copyToAnnounce = null
+    if (history.state.savedCourseCopy !== getProjectEditorRoute(target.owner, target.name)) return
+    copyToAnnounce = target
+    history.replace(history.location, { ...history.state, savedCourseCopy: null })
+  },
+  { immediate: true }
+)
+
+watch(
+  allQueryRet.data,
+  (loaded) => {
+    if (loaded == null || !isSameProjectIdentifier(copyToAnnounce, currentProjectIdentifier.value)) return
+    copyToAnnounce = null
+    m.success(
+      t({
+        en: 'You’re now editing your copy. You can open it again from My projects in your profile menu.',
+        zh: '你正在编辑自己的项目副本。下次可以从头像菜单的“我的项目”再次打开。'
+      })
+    )
+  },
+  { flush: 'post' }
+)
 
 // TODO: Evaluate dropping the error check: it currently keeps consumers waiting until editor context is available.
 useRegisterLoading(() => allQueryRet.isLoading.value || allQueryRet.error.value != null)

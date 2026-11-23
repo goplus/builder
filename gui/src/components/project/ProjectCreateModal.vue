@@ -21,6 +21,14 @@
           v-radar="{ name: 'project-name-input', desc: 'Input field for project name' }"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
+        <template v-if="props.sourceProject != null" #tip>
+          {{
+            $t({
+              en: 'Your copy will open in the editor after you save it.',
+              zh: '保存后，编辑器会打开你的项目副本。'
+            })
+          }}
+        </template>
       </UIFormItem>
       <footer class="mt-10 flex justify-center">
         <UIButton
@@ -57,6 +65,7 @@ import {
   parseRemixSource
 } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
+import type { ProjectIdentifier } from '@/utils/project-route'
 import { useMessageHandle } from '@/utils/exception'
 import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -74,7 +83,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [name: string]
+  resolved: [project: ProjectIdentifier]
 }>()
 
 const { t } = useI18n()
@@ -101,9 +110,10 @@ const handleSubmit = useMessageHandle(
     const projectName = form.value.name.trim()
     const username = signedIn.username
     if (username == null) throw new Error('login required')
+    let created: ProjectIdentifier
     if (props.sourceProject != null) {
       const { files, metadata } = props.sourceProject
-      await cloudHelpers.save({
+      const saved = await cloudHelpers.save({
         files,
         metadata: {
           owner: username,
@@ -114,8 +124,9 @@ const handleSubmit = useMessageHandle(
           thumbnail: metadata.thumbnail
         }
       })
+      created = saved.metadata
     } else if (props.remixSource != null) {
-      await addProject({
+      created = await addProject({
         name: projectName,
         displayName: projectName,
         // This modal will own project type selection in a later design.
@@ -130,15 +141,18 @@ const handleSubmit = useMessageHandle(
       const exported = await project.export()
       const saved = await cloudHelpers.save(exported)
       project.setMetadata(saved.metadata)
+      created = saved.metadata
     }
-    emit('resolved', projectName)
+    emit('resolved', { owner: created.owner, name: created.name })
     return projectName
   },
   { en: 'Failed to create project', zh: '项目创建失败' },
-  (projectName) => ({
-    en: `Project ${projectName} created`,
-    zh: `项目 ${projectName} 创建成功`
-  })
+  props.sourceProject != null
+    ? undefined
+    : (projectName) => ({
+        en: `Project ${projectName} created`,
+        zh: `项目 ${projectName} 创建成功`
+      })
 )
 
 async function validateName(name: string): Promise<FormValidationResult> {

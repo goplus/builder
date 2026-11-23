@@ -25,14 +25,13 @@ const mocks = vi.hoisted(() => ({
 vi.mock('vue-router', () => ({ useRouter: () => ({ currentRoute: ref({ params: {}, query: {} }), push: vi.fn() }) }))
 vi.mock('@/utils/i18n', () => ({ useI18n: () => ({ lang: ref('en') }) }))
 vi.mock('@/utils/network', () => ({ useNetwork: () => ({ isOnline: ref(true) }) }))
-vi.mock('@/utils/user', () => ({ useEnsureSignedIn: () => vi.fn() }))
 vi.mock('@/utils/exception', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/exception')>()),
   useMessageHandle: (fn: unknown) => ({ fn })
 }))
-vi.mock('@/apps/xbuilder/router', () => ({ getOwnProjectEditorRoute: vi.fn() }))
 vi.mock('@/stores/user', () => ({ useSignedIn: () => ({}) }))
 vi.mock('@/models/common/cloud', () => ({ cloudHelpers: {} }))
+vi.mock('@/components/tutorials/use-save-course-project-copy', () => ({ useSaveCourseProjectCopy: () => vi.fn() }))
 vi.mock('@/components/copilot/context', () => ({
   useCopilot: () => mocks.copilot ?? { startSession: vi.fn().mockResolvedValue(undefined), endCurrentSession: vi.fn() }
 }))
@@ -40,7 +39,6 @@ vi.mock('@/components/copilot/CopilotChat.vue', () => ({ default: { template: '<
 vi.mock('@/components/copilot/CopilotTrigger.vue', () => ({ default: { template: '<button>Copilot</button>' } }))
 vi.mock('@/utils/radar', () => ({ useRadar: () => ({ select: vi.fn() }) }))
 vi.mock('@/utils/spotlight', () => ({ useSpotlight: () => ({ reveal: vi.fn() }) }))
-vi.mock('@/components/project', () => ({ useSaveProjectAs: () => vi.fn() }))
 vi.mock('@/components/editor/editor-state', () => ({
   EditorState: class extends Disposable {
     editing = { startEditing: vi.fn() }
@@ -59,7 +57,11 @@ vi.mock('@/components/editor/EditorContextProvider.vue', () => ({
 vi.mock('@/components/editor/navbar/EditorNavbar.vue', () => ({
   default: defineComponent({
     name: 'EditorNavbar',
-    props: { project: { type: Object, default: null }, state: { type: Object, default: null } },
+    props: {
+      project: { type: Object, default: null },
+      state: { type: Object, default: null },
+      courseKind: { type: String, default: null }
+    },
     render: () => h('nav', 'Navbar')
   })
 }))
@@ -77,8 +79,6 @@ vi.mock('@/components/ui', () => ({
     props: { retry: { type: Function, default: null } },
     setup: (props) => () => h('button', { onClick: props.retry }, 'Retry')
   }),
-  UIMenuGroup: {},
-  UIMenuItem: {},
   useModal: () => vi.fn()
 }))
 vi.mock('@/components/editor/spx-code-editor', () => ({
@@ -302,6 +302,7 @@ describe('Playground startup rendering', () => {
     expect(wrapper.find('header nav').exists()).toBe(true)
     expect(wrapper.find('header').attributes('inert')).toBeUndefined()
     expect(wrapper.find('[role="status"]').element.parentElement).toBe(wrapper.find('main').element)
+    expect(navbar.props('courseKind')).toBe('playground')
     expect(navbar.props('project')).toBeNull()
     expect(navbar.props('state')).toBeNull()
     await flushPromises()
