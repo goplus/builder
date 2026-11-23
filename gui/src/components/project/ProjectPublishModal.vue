@@ -52,13 +52,13 @@ function validateText(val: string, maxLength: number) {
   if (val.length > maxLength)
     return t({
       en: `The input must be ${maxLength} characters or fewer`,
-      zh: `输入不能超过 ${maxLength} 字`
+      zh: `输入不能超过 ${maxLength} 个字符`
     })
   return null
 }
 
 function validateReleaseDescription(val: string) {
-  if (val.trim() === '') return t({ en: 'Release description is required', zh: '发布内容不能为空' })
+  if (val.trim() === '') return t({ en: 'Enter a release description.', zh: '请填写本次发布内容。' })
   return validateText(val, projectReleaseDescriptionMaxLength)
 }
 
@@ -90,7 +90,7 @@ const handleSubmit = useMessageHandle(
     })
     emit('resolved')
   },
-  { en: 'Failed to publish project', zh: '项目发布失败' }
+  { en: 'Failed to publish the project', zh: '发布项目失败' }
 )
 </script>
 

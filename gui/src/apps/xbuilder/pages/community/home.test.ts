@@ -164,11 +164,11 @@ describe('community home', () => {
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Stage overview"]').exists()).toBe(true), { timeout: 4000 })
     await wrapper.get('[aria-label="Project menu"]').trigger('click')
     await vi.waitFor(() =>
-      expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Modify project name')).toBe(true)
+      expect(wrapper.findAll('.ui-menu-item').some((item) => item.text() === 'Rename project')).toBe(true)
     )
     await wrapper
       .findAll('.ui-menu-item')
-      .find((item) => item.text() === 'Modify project name')!
+      .find((item) => item.text() === 'Rename project')!
       .trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Project name warning modal"]').exists()).toBe(true))
     await wrapper.get('[aria-label="Project name warning modal"] button').trigger('click')

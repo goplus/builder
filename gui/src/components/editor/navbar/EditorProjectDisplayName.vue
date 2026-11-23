@@ -77,7 +77,7 @@ const handleSubmit = useMessageHandle(
     if (newName.length > projectDisplayNameMaxLength) {
       throw new DefaultException({
         en: `The project display name must be ${projectDisplayNameMaxLength} characters or fewer`,
-        zh: `项目显示名不能超过 ${projectDisplayNameMaxLength} 字`
+        zh: `项目显示名不能超过 ${projectDisplayNameMaxLength} 个字符`
       })
     }
     try {

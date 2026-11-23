@@ -27,7 +27,7 @@
         :loading="handleCopy.isLoading.value"
         @click="handleCopy.fn"
       >
-        {{ $t({ en: 'Copy', zh: '复制' }) }}
+        {{ $t({ en: 'Copy link', zh: '复制链接' }) }}
       </UIButton>
     </div>
   </UIFormModal>
