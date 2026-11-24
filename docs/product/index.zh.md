@@ -119,6 +119,7 @@ Asset 包含以下信息：
 	- 添加并编辑 Backdrop 信息
 		+ 设置 Backdrop Name
 		+ 上传 Image
+		+ 编辑 Image
 		+ 修改其他 Backdrop Config（细节 TODO）
 	- 修改其他 Stage Config（细节 TODO）
 * 添加并编辑 Sprite
@@ -127,6 +128,7 @@ Asset 包含以下信息：
 	- 添加并编辑 Costume 信息
 		+ 设置 Costume Name
 		+ 上传 Image
+		+ 编辑 Image
 		+ 修改其他 Costume Config（细节 TODO）
 	- 修改其他 Sprite Config（细节 TODO）
 * 添加并编辑 Sound

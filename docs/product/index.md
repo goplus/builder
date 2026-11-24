@@ -119,6 +119,7 @@ Users can create a new Project through XBuilder and then edit it:
 	- Add and edit Backdrop information
 		+ Set Backdrop Name
 		+ Upload Image
+		+ Edit Image
 		+ Modify other Backdrop Config (details TODO)
 	- Modify other Stage Config (details TODO)
 * Add and edit Sprite
@@ -127,6 +128,7 @@ Users can create a new Project through XBuilder and then edit it:
 	- Add and edit Costume information
 		+ Set Costume Name
 		+ Upload Image
+		+ Edit Image
 		+ Modify other Costume Config (details TODO)
 	- Modify other Sprite Config (details TODO)
 * Add and edit Sound
