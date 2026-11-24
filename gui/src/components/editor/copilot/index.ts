@@ -168,7 +168,7 @@ const getProjectCodeToolName = 'get_project_code'
 class GetProjectCodeTool implements ToolDefinition {
   name = getProjectCodeToolName
   description =
-    'Get code content of a file in project, for example to see which functions and variables a stage or sprite defines. If and only if a question depends on code you have not seen, read that code with this tool before replying. Read it yourself instead of asking the user to look it up.'
+    'Get code content of a file in project. Use it to read the code of the stage or of a sprite whose code is not in the context, for example to see which functions and variables it defines.'
   parameters = getProjectCodeParamsSchema
 
   constructor(private retriever: Retriever) {}
@@ -265,7 +265,7 @@ export function getCodeContext({ codeFilePath, code, cursorPosition, selection, 
   lines.push(
     `Code content of \`${codeFilePath}\` (${range}; \`lineCount\` is the number of lines in the file):`,
     JSON.stringify(sampled),
-    'Other code of the project is not in this context.'
+    'Other code of the project is not in this context. If the question depends on code you have not seen and a tool for reading code is available, read the code yourself before replying instead of asking the user to look it up.'
   )
   return lines.join('\n')
 }
