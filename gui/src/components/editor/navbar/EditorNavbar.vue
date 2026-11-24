@@ -44,7 +44,7 @@
                 :disabled="!isOnline"
                 @click="project && emit('saveCourseCopy', project)"
               >
-                <template #icon><UIIcon type="copy" /></template>
+                <template #icon><img :src="saveAsProjectSvg" alt="" /></template>
                 {{ $t(saveCopyLabel) }}
               </UIMenuItem>
               <UIMenuItem @click="handleExportProjectFile">
@@ -135,6 +135,7 @@ import { EditMode, type EditorState } from '../editor-state'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
+import saveAsProjectSvg from './icons/save-as-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
 import modifyProjectNameSvg from './icons/modify-project-name.svg'
 import importScratchSvg from './icons/import-scratch.svg'
