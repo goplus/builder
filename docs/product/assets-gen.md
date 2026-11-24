@@ -21,23 +21,27 @@ We plan to provide the following types of AI asset generation features (in order
 
 ### Sprite Generation
 
-Generate complete Sprites (without code) based on an existing Project, which can be subdivided into:
+XBuilder can generate the following types of Sprite for the current Project, each without code.
 
 * Character Sprite - based on Animation & Costume generation capabilities
 * Prop Sprite
 * Others
 
+In the generation dialog, users can use a Sprite from the asset library or generate candidate Costumes. **Add sprite** creates a Sprite in the Project with the selected Costume.
+
+AI suggestions for additional Costumes and Animations appear as drafts in their respective lists. A hint above the description identifies the suggestion. Users can generate it as described or edit the description first. Unfinished Sprite drafts from earlier releases can still be completed in the original dialog.
+
 ### Costume Generation
 
-Generate new Costumes for an existing Sprite.
+Users add a draft to the Sprite's Costume list and describe the new Costume. They can use an existing Costume or upload an image as a reference.
 
 ### Animation Generation
 
-Generate new Animations for an existing Sprite.
+Users generate a video from a reference image and a description of the motion. After previewing it, they can generate another version or drag the timeline handles to select a clip. Trimming changes only the selection within the current version. **Apply** extracts frames from the selected clip. If this fails, users can retry with the same video and selection. [Animation Duration](./animation.md#animation-1) controls how fast those frames play.
 
 ### Backdrop Generation
 
-Generate new Backdrops for an existing Project.
+Users generate new Backdrops for the current Project in the backdrop generation dialog.
 
 ### Sound Generation
 
@@ -51,6 +55,12 @@ Subdivided into:
 
 Low priority. The prerequisite is that XBuilder exposes the Map concept to users.
 
+## Editing an Existing Image
+
+Costumes and Backdrops share an edit field at the bottom of the detail view. Clicking the field expands it upward. Users can describe changes to the whole image, mark individual points with instructions, or do both. **Generate changes** applies those instructions together to the current preview. Edit instructions are stored separately from the original generation description.
+
+Clicking outside collapses the field and preserves the instructions. It stays open while users mark local changes, wait for an edit, or review a result. Applying the result exits editing.
+
 ## Concept Definitions
 
 The concepts involved are:
@@ -60,6 +70,7 @@ The concepts involved are:
 * Project Setting
 * Asset Setting
 * Asset Generation
+* Asset Draft
 
 ### Perspective
 
@@ -123,6 +134,14 @@ Because asset generation is usually a complex and time-consuming process, we nee
 
 Similar to the current usage of Copilot and AI Interaction, asset generation usage is limited. Different Settings may correspond to different quota consumption rules.
 
+### Asset Draft
+
+In the editor, each Costume, Animation, or Backdrop has its own draft. Users can switch assets or reopen the Project and resume editing. Drafts take effect in the game only when applied.
+
+* Each successful generation or edit adds a version. If generation fails, users can retry or switch to an existing version. Editing an earlier version replaces the versions after it once the new result is ready.
+* **Apply** updates this asset in the Project with the selected version and clears its draft history. Users can undo this action in the project editor.
+* **Discard** clears all changes in this draft. An existing asset returns to its state before editing. A new Costume or Animation returns to an empty draft.
+
 ## Key Issues
 
 ### How to optimize user experience and balance costs given high cost and slow speed of asset generation
@@ -138,17 +157,21 @@ Therefore, the general asset generation process is as follows:
 
 Note that this means we need to blur the boundary between "searching for assets" and "generating assets" at the entry point.
 
+For Sprite, Costume, and Backdrop generation, the loading message names only the type of asset being generated. The result appears without changing the scroll position.
+
+While waiting for a video, users can play a maze game with the arrow keys or WASD. Players win by collecting all the pellets or surviving until the video is ready. Getting caught by the ghost returns them to the loading view. After a win, the score appears for five seconds. The video then appears if ready. Otherwise, the loading view resumes.
+
 ### How to generate highly consistent Character Sprites with coherent animations
 
 The specific process is as follows:
 
 1. Generate Sprite Setting based on user input
 2. Generate Default Costume based on Setting
-3. Generate Animation Setting list based on Setting
-4. Generate Animation for each Animation Setting:
+3. Suggest settings for additional Costumes and Animations based on the Sprite Setting
+4. Generate the Animation the user selects
 	1. Generate first and last frames based on Animation Setting
 	2. Generate (possibly voiced) animation video based on first and last frames using video generation model
-	3. Construct Costume-group Animation & bound Sound based on video frames
+	3. Construct the Costume-group Animation and its bound Sound from the selected clip
 
 ## Technical Risks
 

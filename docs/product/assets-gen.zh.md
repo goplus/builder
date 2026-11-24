@@ -21,23 +21,27 @@
 
 ### Sprite 生成
 
-基于已有的 Project 生成完整的 Sprite（不含代码），可细分为
+为当前 Project 生成 Sprite（不含代码），可细分为
 
 * 角色（Character Sprite），会基于 Animation & Costume 生成的能力
 * 道具（Prop Sprite）
 * 其他
 
+在生成弹窗中，用户可以直接采用素材库中的 Sprite，也可以生成一组候选造型。选好初始造型后，点击「添加精灵」将 Sprite 加入 Project。
+
+AI 建议的其他 Costume 和 Animation 以草稿出现在各自的列表中。选中草稿后，输入框上方会说明这是 AI 的建议。用户可以按预填的描述生成，也可以先修改描述。旧版中尚未采用的 Sprite 草稿仍可在原弹窗中完成。
+
 ### Costume 生成
 
-基于已有的 Sprite 生成新的 Costume
+用户在 Sprite 的造型列表中添加草稿，描述新造型。可以用已有 Costume 或上传的图片作为参考。
 
 ### Animation 生成
 
-基于已有的 Sprite 生成新的 Animation
+用户根据参考图和动作描述生成视频。预览后可以重新生成，也可以拖动时间轴两端选取片段。裁剪只调整当前版本的选区。采用时从所选片段提取动画帧，失败时保留视频和选区供重试。[Animation 的 Duration](./animation.zh.md#动画-animation-1) 控制这些帧的播放速度。
 
 ### Backdrop 生成
 
-基于已有的 Project 生成新的 Backdrop
+用户在背景生成弹窗中为当前 Project 生成新的 Backdrop。
 
 ### Sound 生成
 
@@ -51,6 +55,12 @@
 
 低优先级，前置条件是 XBuilder 对用户暴露 Map 的概念。
 
+## 修改已有图片
+
+Costume 和 Backdrop 共用详情区底部的编辑入口。点击后，输入框向上展开。用户可以描述对整张图的修改，也可以点选图中的位置，逐处说明要改什么。「生成修改」以当前预览的图片为基础，一次处理整图和局部要求。修改指令与原始生成描述分开保存。
+
+点击输入框外会收起输入框并保留已输入的要求。标注局部修改、生成修改或查看待采用结果时，输入框保持展开。采用后退出编辑。
+
 ## 概念定义
 
 这次涉及到的概念有
@@ -60,6 +70,7 @@
 * 项目设定 Project Setting
 * 素材设定 Asset Setting
 * 素材生成 Asset Generation
+* 素材草稿
 
 ### 视角 Perspective
 
@@ -127,6 +138,14 @@ Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程
 
 与目前 Copilot、AI Interaction 的使用类似，素材生成的使用是受限的。不同 Setting 可能对应不同的使用额度消耗规则。
 
+### 素材草稿
+
+在编辑器中，Costume、Animation 和 Backdrop 各自保留草稿。切换素材或重新打开 Project 后，可以继续上次的修改。草稿只有在采用后才会在游戏中生效。
+
+* 每次成功生成或修改都会得到一个版本。生成失败后，可以重试或切换到已有版本。从较早的版本继续修改时，新结果取代其后的版本。
+* 「采用」将选中的版本用于 Project 中的这项素材，并清除它的草稿历史。可以在项目编辑器中撤销这次采用。
+* 「放弃」清除这项素材本轮的所有修改。已有素材恢复到修改前，新建的造型或动画回到未生成状态。
+
 ## 关键问题
 
 ### 素材生成的成本高、速度慢，如何优化用户体验且平衡成本
@@ -142,17 +161,21 @@ Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程
 
 需要注意，这意味着我们需要在入口上模糊“检索素材”与“生成素材”的界限。
 
+生成 Sprite、Costume 或 Backdrop 时，等待提示只说明正在生成哪种素材。结果出现时保持当前滚动位置。
+
+等待视频生成时，可以用方向键或 WASD 玩迷宫。吃完豆子，或坚持到视频生成完成，即可通关。被幽灵抓到后回到加载画面。通关后显示得分五秒。如果视频已生成，就显示视频，否则回到加载画面。
+
 ### 如何生成高一致性、动作连贯的 Character Sprite
 
 具体的过程如下
 
 1. 基于用户输入生成 Sprite Setting
 2. 基于 Setting 生成 Default Costume
-3. 基于 Setting 生成 Animation Setting 列表
-4. 基于每个 Animation Setting 生成 Animation
+3. 基于 Setting 建议其他 Costume 和 Animation 的设定
+4. 生成用户选定的 Animation
 	1. 基于 Animation Setting 生成首尾帧
 	2. 通过视频生成模型，基于首尾帧生成（可能含配音的）动画视频
-	3. 基于视频截帧构造 Costume-group Animation & 绑定的 Sound
+	3. 基于用户选取的视频片段构造 Costume-group Animation & 绑定的 Sound
 
 ## 技术风险
 
