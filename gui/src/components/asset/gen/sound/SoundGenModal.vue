@@ -30,14 +30,14 @@ const SOUND_OPTIONS: Record<
     loadingTip: { zh: '正在生成音乐...', en: 'Generating music...' },
     selectionTip: {
       zh: '选择你最喜欢的一段音乐，或者重新生成。',
-      en: 'Select the music you like the most, or generate new ones.'
+      en: 'Select the music track you like the most, or generate new ones.'
     },
     timingName: { zh: '时长', en: 'Duration' },
-    timingTips: { zh: '请选择想要生成的声音时长', en: 'Please select the sound duration you want to generate' },
+    timingTips: { zh: '选择音乐时长', en: 'Choose a music duration' },
     defaultTiming: 15,
     timingOptions: [15, 30, 60].map((s) => ({ value: s, label: { zh: `${s} 秒`, en: `${s}s` } })),
     styleName: { zh: '曲风', en: 'Genre' },
-    styleTips: { zh: '请选择您想要生成的音乐曲风', en: 'Please select the music genre you want to generate' },
+    styleTips: { zh: '选择音乐曲风', en: 'Choose a music genre' },
     styles: [
       { value: 'pop', label: { zh: '轻快流行', en: 'Pop' } },
       { value: 'electronic', label: { zh: '电子合成', en: 'Electronic' } },
@@ -60,33 +60,33 @@ const SOUND_OPTIONS: Record<
       en: 'Select the sound effect you like the most, or generate new ones.'
     },
     timingName: { zh: '时长', en: 'Duration' },
-    timingTips: { zh: '请选择想要生成的声音时长', en: 'Please select the sound duration you want to generate' },
+    timingTips: { zh: '选择音效时长', en: 'Choose a sound effect duration' },
     defaultTiming: 1,
     timingOptions: [1, 3, 5].map((s) => ({ value: s, label: { zh: `${s} 秒`, en: `${s}s` } })),
     styleName: { zh: '风格', en: 'Style' },
-    styleTips: { zh: '请选择您想要生成的音效风格', en: 'Please select the sound effect style you want to generate' },
+    styleTips: { zh: '选择音效风格', en: 'Choose a sound effect style' },
     styles: [
       { value: 'cartoon', label: { zh: '卡通趣味', en: 'Cartoon' } },
       { value: 'retro', label: { zh: '像素复古', en: 'Retro' } },
       { value: 'scifi', label: { zh: '科幻电子', en: 'Sci-Fi' } },
       { value: 'realistic', label: { zh: '写实拟真', en: 'Realistic' } },
-      { value: 'ui', label: { zh: '界面交互', en: 'UI' } }
+      { value: 'ui', label: { zh: '界面交互', en: 'UI sound' } }
     ]
   },
   speech: {
-    label: { zh: '配音', en: 'Voice' },
+    label: { zh: '配音', en: 'Voiceover' },
     example: {
-      zh: '勇敢的小松鼠，准备好一起去森林里寻找宝藏了吗！',
-      en: 'Brave little squirrel, are you ready to search the forest for treasure!'
+      zh: '勇敢的小松鼠，准备好一起去森林里寻找宝藏了吗？',
+      en: 'Brave little squirrel, are you ready to search the forest for treasure?'
     },
     name: { zh: '角色配音', en: 'character voice' },
-    loadingTip: { zh: '正在生成配音...', en: 'Generating voice...' },
+    loadingTip: { zh: '正在生成配音...', en: 'Generating voiceover...' },
     selectionTip: {
       zh: '选择你最喜欢的一段配音，或者重新生成。',
-      en: 'Select the voice take you like the most, or generate new ones.'
+      en: 'Select the voiceover you like the most, or generate new ones.'
     },
     timingName: { zh: '语速', en: 'Speed' },
-    timingTips: { zh: '请选择您想要生成的配音语速', en: 'Please select the speech speed you want to generate' },
+    timingTips: { zh: '选择配音语速', en: 'Choose a speech speed' },
     defaultTiming: 1,
     timingOptions: [
       { value: 0.8, label: { zh: '0.8x 慢速', en: '0.8x Slow' } },
@@ -94,7 +94,7 @@ const SOUND_OPTIONS: Record<
       { value: 1.25, label: { zh: '1.25x 较快', en: '1.25x Fast' } }
     ],
     styleName: { zh: '音色', en: 'Voice' },
-    styleTips: { zh: '请选择您想要生成的配音音色', en: 'Please select the voice timbre you want to generate' },
+    styleTips: { zh: '选择配音音色', en: 'Choose a voice' },
     styles: [
       { value: 'narrator', label: { zh: '温暖旁白', en: 'Narrator' } },
       { value: 'hero', label: { zh: '活力少年', en: 'Energetic Kid' } },
@@ -370,7 +370,7 @@ const generate = useMessageHandle(
       }
     }
   },
-  { zh: '加载示例声音失败', en: 'Failed to load sample sounds' }
+  { zh: '生成声音失败', en: 'Failed to generate sounds' }
 ).fn
 
 function handleInputKeydown(event: KeyboardEvent) {
@@ -397,31 +397,34 @@ const { fn: adopt, isLoading: adopting } = useMessageHandle(
   { zh: '创建声音失败', en: 'Failed to create sound' }
 )
 
-const close = useMessageHandle(async () => {
-  if (adopting.value) return
-  stopPlayback()
+const close = useMessageHandle(
+  async () => {
+    if (adopting.value) return
+    stopPlayback()
 
-  const hasUnsavedWork = (Object.keys(drafts) as SoundKind[]).some(
-    (k) =>
-      drafts[k].generating ||
-      drafts[k].results.length > 0 ||
-      drafts[k].style != null ||
-      drafts[k].prompt !== t(SOUND_OPTIONS[k].example)
-  )
-  if (hasUnsavedWork) {
-    await confirm({
-      title: t({ zh: '退出声音生成？', en: 'Exit sound generation?' }),
-      content: t({
-        zh: '当前内容不会被保存，确定要退出吗？',
-        en: 'Current progress will not be saved. Are you sure you want to exit?'
-      }),
-      confirmText: t({ zh: '退出', en: 'Exit' })
-    })
-  }
+    const hasUnsavedWork = (Object.keys(drafts) as SoundKind[]).some(
+      (k) =>
+        drafts[k].generating ||
+        drafts[k].results.length > 0 ||
+        drafts[k].style != null ||
+        drafts[k].prompt !== t(SOUND_OPTIONS[k].example)
+    )
+    if (hasUnsavedWork) {
+      await confirm({
+        title: t({ zh: '退出声音生成？', en: 'Exit sound generation?' }),
+        content: t({
+          zh: '退出后，这次的描述、设置和已生成的声音都不会保存。',
+          en: "If you exit, your description, settings, and any sounds generated here won't be saved."
+        }),
+        confirmText: t({ zh: '退出', en: 'Exit' })
+      })
+    }
 
-  abortAllDrafts()
-  emit('cancelled')
-}).fn
+    abortAllDrafts()
+    emit('cancelled')
+  },
+  { zh: '关闭窗口失败', en: 'Failed to close the window' }
+).fn
 
 onBeforeUnmount(() => {
   abortAllDrafts()
@@ -476,7 +479,7 @@ const backdropStyle = {
           <template #extra>
             <SoundParamSelector
               :name="{ zh: '声音类型', en: 'Sound type' }"
-              :tips="{ zh: '请选择想要生成的声音类型', en: 'Please select the sound type you want to generate' }"
+              :tips="{ zh: '选择声音类型', en: 'Choose a sound type' }"
               :options="SOUND_TYPE_OPTIONS"
               :value="kind"
               :clearable="false"

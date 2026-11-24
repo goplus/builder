@@ -64,7 +64,7 @@ const handleGenerate = useMessageHandle(
     const sound = await addSoundByGeneration(editorCtx.project)
     props.state.select(sound.id)
   },
-  { en: 'Failed to add sound', zh: '添加声音失败' }
+  { en: 'Failed to generate sound', zh: '生成声音失败' }
 ).fn
 
 const router = useRouter()

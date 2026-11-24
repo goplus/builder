@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from '@/utils/i18n'
 import { UIBlockItem, UIBlockItemTitle, UICornerIcon } from '@/components/ui'
 import PlayControl from '@/components/editor/common/PlayControl.vue'
+
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -54,7 +57,7 @@ const emit = defineEmits<{
       v-if="props.active && props.clearable"
       v-radar="{
         name: 'deselect-option',
-        desc: `Deselect '${props.label}'`
+        desc: t({ zh: `取消选择「${props.label}」`, en: `Deselect &quot;${props.label}&quot;` })
       }"
       type="minus"
       button
