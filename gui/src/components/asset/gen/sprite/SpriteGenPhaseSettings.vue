@@ -11,7 +11,6 @@ import { AssetType } from '@/apis/asset'
 import { asset2Sprite } from '@/models/spx/common/asset'
 import type { SpriteGen, SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
-import { humanizeTimeLeft } from '../common/time-left'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
 import ImageSelector from '../common/ImageSelector.vue'
@@ -122,8 +121,7 @@ const handleUseAsset = useMessageHandle(
           </template>
           <template #tip>
             <template v-if="gen.imagesGenState.status === 'running'">
-              {{ $t({ en: `Generating sprites... `, zh: `正在生成精灵...` }) }}
-              {{ gen.imagesGenState.timeLeft != null ? $t(humanizeTimeLeft(gen.imagesGenState.timeLeft)) : '' }}
+              {{ $t({ en: 'Generating a sprite...', zh: '正在生成精灵...' }) }}
             </template>
             <template v-else-if="gen.imagesGenState.status === 'finished'">
               {{

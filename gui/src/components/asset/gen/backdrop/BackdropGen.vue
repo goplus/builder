@@ -6,7 +6,6 @@ import type { Backdrop } from '@/models/spx/backdrop'
 import { asset2Backdrop } from '@/models/spx/common/asset'
 import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import { capture, useMessageHandle } from '@/utils/exception'
-import { humanizeTimeLeft } from '../common/time-left'
 import BackdropSettingInput from './BackdropSettingsInput.vue'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
@@ -122,8 +121,7 @@ const handleUseAsset = useMessageHandle(
           </template>
           <template #tip>
             <template v-if="gen.imagesGenState.status === 'running'">
-              {{ $t({ en: `Generating backdrops... `, zh: `正在生成背景...` }) }}
-              {{ gen.imagesGenState.timeLeft != null ? $t(humanizeTimeLeft(gen.imagesGenState.timeLeft)) : '' }}
+              {{ $t({ en: 'Generating a backdrop...', zh: '正在生成背景...' }) }}
             </template>
             <template v-else-if="gen.imagesGenState.status === 'finished'">
               {{

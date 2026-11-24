@@ -128,9 +128,9 @@ watch(
         <GenLoading :visible="loading" cover>
           <template v-if="removingBackground">{{ $t({ en: 'Saving costume...', zh: '正在保存造型...' }) }}</template>
           <template v-else>
-            {{ $t(pendingMessage ?? { en: 'Generating costume...', zh: '正在生成造型...' }) }}
+            {{ $t(pendingMessage ?? { en: 'Generating a costume…', zh: '正在生成造型…' }) }}
             {{
-              gen.generateState.status === 'running' && gen.generateState.timeLeft != null
+              pendingMessage != null && gen.generateState.status === 'running' && gen.generateState.timeLeft != null
                 ? $t(humanizeTimeLeft(gen.generateState.timeLeft))
                 : ''
             }}
