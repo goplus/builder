@@ -1,11 +1,11 @@
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { setupAigcMock } from '@/models/spx/gen/aigc-mock'
+import { setupAigcMock } from '@/models/spx/gen/aigc-mock' // Put me before importing `@/apis/aigc` to ensure the mock is set up correctly
+import { mountPages, setupPageTests, signIn } from '@/apps/xbuilder/pages/test' // Initializes page mocks before app modules load
+import { createI18n } from '@/utils/i18n'
 import { TaskType } from '@/apis/aigc'
-import { mountPages, setupPageTests, signIn } from '@/apps/xbuilder/pages/test'
 import * as cloud from '@/models/common/cloud'
 import { fromText } from '@/models/common/file'
-import { createI18n } from '@/utils/i18n'
 import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { mockSaveFile } from '@/models/spx/gen/test-helpers'
@@ -132,5 +132,30 @@ describe('sprite generation', () => {
     expect(legacy.costumes.length).toBeGreaterThan(1)
     expect(project.sprites).toHaveLength(0)
     expect(state.genState.spriteResources.drafts).toHaveLength(0)
+  })
+  it('returns from a costume draft to the current default costume without adding a history step', async () => {
+    const { wrapper } = await mountPages('/editor/alice/First%20flight')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Sprites panel"]').exists()).toBe(true), { timeout: 4000 })
+    const { project, state } = wrapper.getComponent(EditorContextProvider).props()
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, { settings: { name: 'Fox', description: 'A fox' } })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    const sprite = await gen.finishWithDefaultCostume()
+    await state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () => project.addSprite(sprite))
+    await state.history.doAction({ name: { en: 'Move sprite', zh: '移动精灵' } }, () => sprite.setX(10))
+    await state.history.undo()
+    const currentSprite = project.sprites[0]
+    state.selectSprite(currentSprite.id)
+    state.genState.spriteResources.addCostume(currentSprite)
+    await wrapper.get('[aria-label="Costumes tab"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label^="Costume generation item"]').exists()).toBe(true))
+    await wrapper.get('[aria-label^="Costume generation item"]').trigger('click')
+    expect(state.spriteState?.costumesState.selectedDraft).not.toBeNull()
+    await wrapper.get('[aria-label^="Costume item"]').trigger('click')
+    await flushPromises()
+    expect(state.spriteState?.costumesState.selectedDraft).toBeNull()
+    expect(state.spriteState?.costumesState.selected?.id).toBe(currentSprite.defaultCostume?.id)
+    expect(state.history.getUndoAction()?.name.en).toBe('Add sprite')
+    expect(state.history.getRedoAction()?.name.en).toBe('Move sprite')
   })
 })

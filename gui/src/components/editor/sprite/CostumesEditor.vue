@@ -127,6 +127,10 @@ const addDraft = useMessageHandle(
 const renameDraft = useMessageHandle(useRenameCostumeGen(), { en: 'Failed to rename costume', zh: '重命名造型失败' })
 
 function handleSelect(costume: Costume) {
+  if (props.sprite.defaultCostume?.id === costume.id) {
+    props.state.select(costume.id)
+    return
+  }
   const action = { name: { en: 'Set default costume', zh: '设置默认造型' } }
   editorCtx.state.history.doAction(action, () => props.state.select(costume.id))
 }
