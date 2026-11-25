@@ -63,11 +63,9 @@ function toggleSpriteVisible() {
 const { fn: handleDuplicate } = useMessageHandle(
   async () => {
     const sprite = props.sprite
-    const newSprite = sprite.clone()
-    const action = {
-      name: { en: `Duplicate sprite ${sprite.name}`, zh: `复制精灵 ${sprite.name}` }
-    }
+    const action = { name: { en: `Duplicate sprite ${sprite.name}`, zh: `复制精灵 ${sprite.name}` } }
     await editorCtx.state.history.doAction(action, () => {
+      const newSprite = sprite.clone()
       // Offset the new sprite a bit to avoid being exactly overlapped with the original one
       newSprite.setX(newSprite.x + 10)
       newSprite.setY(newSprite.y - 10)
@@ -85,9 +83,7 @@ const handleRemove = useMessageHandle(
   async () => {
     const spriteId = props.sprite.id
     const spriteName = props.sprite.name
-    const action = {
-      name: { en: `Remove sprite ${spriteName}`, zh: `删除精灵 ${spriteName}` }
-    }
+    const action = { name: { en: `Remove sprite ${spriteName}`, zh: `删除精灵 ${spriteName}` } }
     await editorCtx.state.history.doAction(action, () => editorCtx.project.removeSprite(spriteId))
   },
   {
