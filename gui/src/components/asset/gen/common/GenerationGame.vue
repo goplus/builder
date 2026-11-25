@@ -155,7 +155,7 @@ onScopeDispose(() => {
         class="absolute inset-0 h-full w-full pointer-events-auto focus:outline-none"
         :viewBox="`0 0 ${viewport.width} ${viewport.height}`"
         role="application"
-        tabindex="-1"
+        tabindex="0"
         :aria-label="
           $t({
             en: 'Maze game. Use arrow keys or WASD to move, Escape to exit.',

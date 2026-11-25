@@ -90,6 +90,13 @@ describe('GenerationGame', () => {
     expect(wrapper.emitted('change')).toHaveLength(1)
   })
 
+  it('keeps the board reachable with Tab while playing', async () => {
+    const { wrapper, press } = setup()
+    await press('ArrowRight')
+    expect(wrapper.attributes('tabindex')).toBe('-1')
+    expect(wrapper.get('[role="application"]').attributes('tabindex')).toBe('0')
+  })
+
   it('freezes for the result transition and releases keyboard listeners on unmount', async () => {
     const { wrapper, press } = setup()
     await press('ArrowRight')
