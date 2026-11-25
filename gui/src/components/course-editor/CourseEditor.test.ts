@@ -747,6 +747,7 @@ describe('CourseEditor history', () => {
         directives: { radar: {} },
         stubs: {
           CourseActivityBar: true,
+          UIDropdownWithTooltip: true,
           NavbarWrapper: defineComponent(
             (_, { slots }) =>
               () =>

@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { isNavigationFailure, useRouter } from 'vue-router'
 
-import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
+import { getCourseEditorRoute, getCourseManagementRoute, getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { getCleanupSignal } from '@/utils/disposable'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -12,9 +12,16 @@ import { EditingMode } from '@/components/editor/editing'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { UIButton, UIError, UILoading, useConfirmDialogWithResult } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
-import { useTutorial } from './tutorial'
+import { CourseState, useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
 import { getSeriesUnits, getUnitHeading } from './units'
+
+const props = withDefaults(
+  defineProps<{
+    editingCourse?: { id: string; seriesID: string } | null
+  }>(),
+  { editingCourse: null }
+)
 
 const router = useRouter()
 const tutorial = useTutorial()
@@ -22,7 +29,11 @@ const dropdown = useDropdown()
 const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
-const seriesWithCoursesQuery = useSeriesWithCourses(() => tutorial.currentCourse?.seriesID ?? null)
+const currentCourse = computed(() => props.editingCourse ?? tutorial.currentCourse)
+const currentCourseState = computed(() =>
+  props.editingCourse != null ? CourseState.InProgress : tutorial.currentCourse?.state ?? null
+)
+const seriesWithCoursesQuery = useSeriesWithCourses(() => currentCourse.value?.seriesID ?? null)
 const courseSeries = computed(() => seriesWithCoursesQuery.data.value?.series ?? null)
 
 const units = computed(() => (courseSeries.value == null ? [] : getSeriesUnits(courseSeries.value)))
@@ -44,7 +55,7 @@ const signal = getCleanupSignal(onBeforeUnmount)
 // The dropdown remounts the panel on each opening; wait for the course rows to render.
 onMounted(async () => {
   try {
-    const currentCourseID = tutorial.currentCourse?.id
+    const currentCourseID = currentCourse.value?.id
     if (currentCourseID == null) return
     const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === currentCourseID), signal)
     if (!signal.aborted) row.scrollIntoView()
@@ -94,6 +105,11 @@ const { fn: handleExitCourse } = useMessageHandle(
 
 const { fn: handleReturnSeries } = useMessageHandle(
   async () => {
+    if (props.editingCourse != null) {
+      dropdown?.setVisible(false)
+      await router.push(getCourseManagementRoute(props.editingCourse.seriesID))
+      return
+    }
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null) return
     const confirmed = await confirmCourseAction(
@@ -114,6 +130,13 @@ const { fn: handleReturnSeries } = useMessageHandle(
 
 const { fn: handleSelectCourse } = useMessageHandle(
   async (courseID: string, courseTitle: string) => {
+    if (props.editingCourse != null) {
+      if (courseID === props.editingCourse.id) return
+      dropdown?.setVisible(false)
+      // The Course Editor route guard handles unsaved work before changing the editing session.
+      await router.push(getCourseEditorRoute(props.editingCourse.seriesID, courseID))
+      return
+    }
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null || courseID === currentCourse.id) return
     const confirmed = await confirmCourseAction(
@@ -124,7 +147,7 @@ const { fn: handleSelectCourse } = useMessageHandle(
     dropdown?.setVisible(false)
     await tutorial.startCourse(currentCourse.seriesID, courseID)
   },
-  { en: 'Failed to start course', zh: '开始课程失败' }
+  { en: 'Failed to open course', zh: '打开课程失败' }
 )
 
 const { fn: handleRestartCourse } = useMessageHandle(
@@ -150,12 +173,17 @@ const { fn: handleRestartCourse } = useMessageHandle(
 </script>
 
 <template>
-  <div class="flex max-h-[70vh] w-100 flex-col p-2">
+  <div class="flex max-h-[70vh] w-100 max-w-[calc(100vw-2rem)] flex-col p-2">
     <header class="flex flex-none items-center justify-between py-1 pl-2 pr-1">
-      <span class="min-w-0 truncate pr-2 text-base font-medium text-text" :title="courseSeries?.title">
+      <span
+        class="min-w-0 truncate pr-2 text-base font-medium text-text"
+        :class="{ 'max-w-60': editingCourse != null }"
+        :title="courseSeries?.title"
+      >
         {{ courseSeries?.title }}
       </span>
       <UIButton
+        v-if="editingCourse == null"
         v-radar="{ name: 'exit-course-button', desc: 'Click to exit the current course' }"
         class="flex-none"
         type="secondary"
@@ -184,8 +212,9 @@ const { fn: handleRestartCourse } = useMessageHandle(
             ref="courseRows"
             :course="course"
             :sequence="sequence"
-            :active="course.id === tutorial.currentCourse?.id"
-            :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
+            :active="course.id === currentCourse?.id"
+            :state="course.id === currentCourse?.id ? currentCourseState : null"
+            :href="editingCourse == null ? null : getCourseEditorRoute(editingCourse.seriesID, course.id)"
             @select="handleSelectCourse(course.id, course.title)"
             @restart="handleRestartCourse"
           />

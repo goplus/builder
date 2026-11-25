@@ -1,1 +1,1 @@
-../../../../../../tools/spxls/index.d.ts
+export * from '../../../../../../tools/spxls'
