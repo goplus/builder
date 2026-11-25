@@ -27,8 +27,8 @@ function setup() {
     vi.unstubAllGlobals()
     vi.useRealTimers()
   })
-  async function press(key: string, target: EventTarget = document.body) {
-    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+  async function press(key: string, target: EventTarget = document.body, init: KeyboardEventInit = {}) {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init })
     target.dispatchEvent(event)
     await nextTick()
     return event
@@ -71,6 +71,78 @@ describe('GenerationGame', () => {
     wrapper.element.focus()
     expect((await press('ArrowRight', wrapper.element)).defaultPrevented).toBe(true)
     expect(document.activeElement).toBe(wrapper.get('svg').element)
+  })
+
+  it('leaves arrow keys with modifiers to the browser', async () => {
+    const { wrapper, press } = setup()
+    for (const modifier of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey']) {
+      expect((await press('ArrowRight', document.body, { [modifier]: true })).defaultPrevented).toBe(false)
+    }
+    expect(wrapper.emitted('change')).toBeUndefined()
+    expect((await press('ArrowRight')).defaultPrevented).toBe(true)
+  })
+
+  it.each<[string, (game: ReturnType<typeof setup>) => Promise<() => unknown>]>([
+    [
+      'while disabled',
+      async ({ wrapper }) => {
+        await wrapper.setProps({ enabled: false })
+        return () => wrapper.setProps({ enabled: true })
+      }
+    ],
+    [
+      'while the preview has no size',
+      async () => {
+        const rect = vi.mocked(HTMLElement.prototype.getBoundingClientRect)
+        rect.mockReturnValue(new DOMRect())
+        return () => rect.mockReturnValue(new DOMRect(0, 0, 320, 320))
+      }
+    ],
+    [
+      'behind a dialog that does not contain the game',
+      async ({ wrapper }) => {
+        const dialog = document.createElement('div')
+        dialog.setAttribute('aria-modal', 'true')
+        document.body.append(dialog)
+        onTestFinished(() => dialog.remove())
+        return () => dialog.append(wrapper.element)
+      }
+    ]
+  ])('ignores arrow keys %s', async (_, block) => {
+    const game = setup()
+    const unblock = await block(game)
+    expect((await game.press('ArrowRight')).defaultPrevented).toBe(false)
+    expect(game.wrapper.emitted('change')).toBeUndefined()
+    await unblock()
+    expect((await game.press('ArrowRight')).defaultPrevented).toBe(true)
+  })
+
+  it('leaves Escape to the page until a game is running', async () => {
+    const { wrapper, press } = setup()
+    expect((await press('Escape', wrapper.element)).defaultPrevented).toBe(false)
+    expect((await press('Escape')).defaultPrevented).toBe(false)
+    await press('ArrowRight')
+    expect((await press('Escape', wrapper.get('svg').element)).defaultPrevented).toBe(true)
+    expect(wrapper.emitted('change')?.at(-1)).toEqual([null])
+  })
+
+  it('keeps the victory screen until generation completes', async () => {
+    const { wrapper, press } = setup()
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
+    await press('ArrowRight')
+    const [game] = wrapper.emitted('change')![0] as [Game]
+    game.status = 'won'
+    await nextTick()
+    const board = wrapper.get('[role="application"]').element
+    expect((await press('ArrowLeft', board)).defaultPrevented).toBe(false)
+    expect.assert(board instanceof SVGElement)
+    board.blur()
+    expect((await press('Escape')).defaultPrevented).toBe(false)
+    expect((await press('Escape', board)).defaultPrevented).toBe(true)
+    expect(wrapper.find('.game-result').exists()).toBe(true)
+    await wrapper.setProps({ completed: true })
+    expect((await press('Escape', board)).defaultPrevented).toBe(true)
+    expect(wrapper.find('.game-result').exists()).toBe(false)
   })
 
   it('starts with WASD and uses the same directions while playing', async () => {
