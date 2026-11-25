@@ -96,7 +96,7 @@ const handleUseAsset = useMessageHandle(
       <SpriteSettingsInput
         :class="{ 'h-75': hasPreview }"
         :gen="gen"
-        :disabled="handleSubmit.isLoading.value || gen.contentPreparingState.status === 'running'"
+        :disabled="handleSubmit.isLoading.value"
         :description-placeholder="descriptionPlaceholder"
       />
       <!-- Fixed height to prevent layout shift when suggestions appear/disappear -->

@@ -1,4 +1,6 @@
 <script lang="ts">
+import type { Direction, Game } from './generation-game'
+
 const wasdDirections: Record<string, Direction> = {
   w: 'ArrowUp',
   a: 'ArrowLeft',
@@ -18,17 +20,7 @@ function consume(event: KeyboardEvent) {
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
-import {
-  createGame,
-  directions,
-  gameCellSize,
-  gameGrid,
-  gameLayout,
-  gameStepMs,
-  stepGame,
-  type Direction,
-  type Game
-} from './generation-game'
+import { createGame, directions, gameCellSize, gameGrid, gameLayout, gameStepMs, stepGame } from './generation-game'
 import GenerationGameResult from './GenerationGameResult.vue'
 
 const props = defineProps<{ enabled: boolean; completed?: boolean; viewport: { width: number; height: number } }>()

@@ -89,7 +89,9 @@ export class SpriteResourceGen extends Disposable {
     if (version == null) return null
     const { reference, referenceCostumeId } = version.generation.config
     const selection = loadReferenceImageSelection(reference, referenceCostumeId, version.files)
-    return selection?.type === 'costume' ? this.gen.sprite.costumes.find((c) => c.id === selection.costumeId) : null
+    return selection?.type === 'costume'
+      ? this.gen.sprite.costumes.find((c) => c.id === selection.costumeId) ?? null
+      : null
   }
 
   private get path() {
