@@ -4,7 +4,7 @@ import { describe, expect, it, onTestFinished, vi, type Mock } from 'vitest'
 import { useContentSize } from '@/utils/dom'
 import { createI18n } from '@/utils/i18n'
 import { createRadar } from '@/utils/radar'
-import GenLoading from './GenLoading.vue'
+import GenLoading, { loadingDots } from './GenLoading.vue'
 import GenerationGame from './GenerationGame.vue'
 import { createGame, gameGrid, type Game } from './generation-game'
 
@@ -13,8 +13,9 @@ vi.mock('@/components/ui', () => ({
   useUIVariables: () => ({ color: { grey: { 800: '#76808c' }, primary: { main: '#36c2cf' } } })
 }))
 
-async function setup(reduced = false, mountGame = false, dimensions = { width: 360, height: 360 }) {
+async function setup(reduced = false, mountGame = false, dimensions = { width: 360, height: 360 }, mountNow?: number) {
   vi.useFakeTimers()
+  if (mountNow != null) vi.spyOn(performance, 'now').mockReturnValue(mountNow)
   const size = ref(dimensions)
   vi.mocked(useContentSize).mockReturnValue(size)
   const media = Object.assign(new EventTarget(), { matches: reduced })
@@ -23,7 +24,14 @@ async function setup(reduced = false, mountGame = false, dimensions = { width: 3
   vi.stubGlobal('matchMedia', () => media)
   vi.stubGlobal('requestAnimationFrame', requestFrame)
   vi.stubGlobal('cancelAnimationFrame', cancelFrame)
-  const context = { globalAlpha: 1, scale: vi.fn(), clearRect: vi.fn(), beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn() }
+  const context = {
+    globalAlpha: 1,
+    scale: vi.fn(),
+    clearRect: vi.fn(),
+    beginPath: vi.fn(),
+    arc: vi.fn(),
+    fill: vi.fn()
+  }
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as unknown as CanvasRenderingContext2D)
   const wrapper = shallowMount(GenLoading, {
     attachTo: document.body,
@@ -292,6 +300,28 @@ describe('GenLoading', () => {
     expect(cancelFrame).toHaveBeenCalledTimes(2)
   })
 
+  it('draws exactly the dot field for the current motion seed and clock', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    const { context, requestFrame } = await setup(false, false, { width: 360, height: 360 }, 5000)
+    context.arc.mockClear()
+    const alphas = recordAlphas(context)
+    requestFrame.mock.lastCall![0](6000)
+    const dots = loadingDots({
+      width: 360,
+      height: 360,
+      compact: false,
+      seed: 0.5 * 1024,
+      started: 5000,
+      reduced: false,
+      now: 6000,
+      game: null
+    })!
+    expect(alphas).toEqual(dots.map((dot) => dot.alpha))
+    expect(context.arc.mock.calls.map(([x, y, radius]) => [x, y, radius])).toEqual(
+      dots.map((dot) => [dot.x, dot.y, dot.radius])
+    )
+  })
+
   it('draws a static field for reduced motion and responds to preference changes', async () => {
     const { media, requestFrame, cancelFrame, context } = await setup(true)
     expect(context.fill).toHaveBeenCalled()
@@ -305,5 +335,129 @@ describe('GenLoading', () => {
     await nextTick()
     expect(cancelFrame).toHaveBeenLastCalledWith(1)
     expect(requestFrame).toHaveBeenCalledOnce()
+  })
+})
+
+describe('loadingDots', () => {
+  type Field = Parameters<typeof loadingDots>[0]
+  function field(overrides: Partial<Field> = {}): Field {
+    return {
+      width: 360,
+      height: 360,
+      compact: false,
+      seed: 0,
+      started: 0,
+      reduced: false,
+      now: 0,
+      game: null,
+      ...overrides
+    }
+  }
+
+  it('returns null when the viewport collapses', () => {
+    expect(loadingDots(field({ width: 200, height: 40 }))).toBeNull()
+    expect(loadingDots(field({ width: 8, height: 200 }))).toBeNull()
+  })
+
+  it.each([
+    { width: 140, height: 140, count: 121, first: [10, 10], last: [130, 130] },
+    { width: 140, height: 108, count: 88, first: [10, 12], last: [130, 96] },
+    { width: 88, height: 66, count: 35, first: [8, 9], last: [80, 57] },
+    { width: 208, height: 208, count: 289, first: [8, 8], last: [200, 200] },
+    { width: 219, height: 219, count: 289, first: [13.5, 13.5], last: [205.5, 205.5] }
+  ])('lays out a centered thumbnail grid for $width × $height', ({ width, height, count, first, last }) => {
+    const dots = loadingDots(field({ width, height, compact: true }))!
+    expect(dots).toHaveLength(count)
+    expect([dots[0].x, dots[0].y]).toEqual(first)
+    expect([dots[dots.length - 1].x, dots[dots.length - 1].y]).toEqual(last)
+    expect(dots[0].x + dots[dots.length - 1].x).toBe(width)
+    expect(dots[0].y + dots[dots.length - 1].y).toBe(height)
+    expect(dots.every((dot) => dot.radius === 1.2)).toBe(true)
+  })
+
+  it('lays out the loading grid with a footer and scales the dot radius', () => {
+    const dots = loadingDots(field())!
+    expect(dots).toHaveLength(272)
+    expect([dots[0].x, dots[0].y]).toEqual([4, 10])
+    expect([dots[1].x, dots[1].y]).toEqual([26, 10])
+    expect(dots.every((dot) => Math.abs(dot.radius - 1.87) < 1e-12)).toBe(true)
+  })
+
+  it('matches the recorded light field (golden alphas)', () => {
+    const dots = loadingDots(field({ width: 140, height: 140, compact: true }))!
+    expect(dots[0].alpha).toBeCloseTo(0.04860978393429039, 12)
+    expect(dots[60].alpha).toBeCloseTo(1, 12)
+    expect(dots[120].alpha).toBeCloseTo(0.040021884419622386, 12)
+    const loading = loadingDots(field())!
+    expect(loading[0].alpha).toBe(0.04)
+    expect(loading[18].alpha).toBeCloseTo(0.06198008062579031, 12)
+    const moved = loadingDots(field({ width: 140, height: 140, compact: true, seed: 512, now: 1000 }))!
+    expect(moved[5].alpha).toBeCloseTo(0.3686043497526727, 12)
+    expect(moved[55].alpha).toBeCloseTo(0.2496106565254153, 12)
+    expect(moved[120].alpha).toBeCloseTo(0.3184311621673935, 12)
+  })
+
+  it('draws a flat dim field for reduced motion', () => {
+    const dots = loadingDots(field({ reduced: true }))!
+    expect(dots.length).toBeGreaterThan(0)
+    expect(dots.every((dot) => dot.alpha === 0.45)).toBe(true)
+  })
+
+  it('moves the light with the seed and with time before a game starts', () => {
+    const first = loadingDots(field())!
+    expect(loadingDots(field({ seed: 512 }))!.map((dot) => dot.alpha)).not.toEqual(first.map((dot) => dot.alpha))
+    expect(loadingDots(field({ now: 1000 }))!.map((dot) => dot.alpha)).not.toEqual(first.map((dot) => dot.alpha))
+  })
+
+  it('freezes the light once a game starts', () => {
+    const game = createGame('ArrowRight', 17, 15, 0)
+    const first = loadingDots(field({ game, now: 1000 }))!
+    expect(loadingDots(field({ game, now: 5000 }))!).toEqual(first)
+  })
+
+  it('blends the field into the maze over 240 ms', () => {
+    const game = createGame('ArrowRight', 17, 15, 0)
+    const start = loadingDots(field({ game, now: 0 }))!
+    expect(start).toEqual(loadingDots(field())!)
+    const middle = loadingDots(field({ game, now: 120 }))!
+    const end = loadingDots(field({ game, now: 240 }))!
+    expect(middle.map((dot) => [dot.x, dot.y])).toEqual(start.map((dot) => [dot.x, dot.y]))
+    middle.forEach((dot, i) => {
+      expect(dot.alpha).toBeCloseTo((start[i].alpha + end[i].alpha) / 2, 12)
+    })
+    expect(end.some((dot) => Math.abs(dot.alpha - 0.65) < 1e-9)).toBe(true)
+  })
+
+  it('shows the maze at once for reduced motion', () => {
+    const game = createGame('ArrowRight', 17, 15, 0)
+    const dots = loadingDots(field({ game, reduced: true, now: 0 }))!
+    expect(
+      countAlpha(
+        dots.map((dot) => dot.alpha),
+        0.65
+      )
+    ).toBe(game.pellets.size)
+  })
+
+  it('clips the grid to a short wide viewport without aliasing pellets across rows', () => {
+    const game = createGame('ArrowRight', 17, 5, 0)
+    game.pellets = new Set([16, 17])
+    const dots = loadingDots(field({ width: 360, height: 56, game, now: 1000 }))!
+    expect(dots).toHaveLength(1260)
+    const pellets = dots.filter((dot) => Math.abs(dot.alpha - 0.65) < 1e-9)
+    expect(pellets.map((dot) => [dot.x, dot.y])).toEqual([
+      [212, 4],
+      [148, 8]
+    ])
+  })
+
+  it('fades an eaten dot out over 160 ms', () => {
+    const game = createGame('ArrowRight', 17, 5, 0)
+    game.pellets = new Set([16])
+    game.eaten.set(16, 1000)
+    const at = (now: number) => loadingDots(field({ width: 360, height: 56, game, now }))!
+    expect(at(1000).find((dot) => dot.x === 212 && dot.y === 4)!.alpha).toBeCloseTo(0.65, 12)
+    expect(at(1080).find((dot) => dot.x === 212 && dot.y === 4)!.alpha).toBeCloseTo(0.325, 12)
+    expect(at(1160).find((dot) => dot.x === 212 && dot.y === 4)!.alpha).toBe(0)
   })
 })
