@@ -301,7 +301,7 @@ export class Round {
     }
 
     this.errorRef.value = new ActionException(err, {
-      en: 'Failed to get copilot response',
+      en: 'Failed to get a Copilot response',
       zh: '获取 Copilot 响应失败'
     }).userMessage
     this.setState(RoundState.Failed)

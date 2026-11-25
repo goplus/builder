@@ -45,22 +45,22 @@ const form = useForm({
 
 function validateTitle(value: string) {
   const trimmed = value.trim()
-  if (trimmed === '') return i18n.t({ en: 'The title must not be blank', zh: '标题不可为空' })
+  if (trimmed === '') return i18n.t({ en: 'Enter a title', zh: '请输入标题' })
   if (trimmed.length > feedbackTitleMaxLength)
     return i18n.t({
       en: `The title must be ${feedbackTitleMaxLength} characters or fewer`,
-      zh: `标题不能超过 ${feedbackTitleMaxLength} 字`
+      zh: `标题不能超过 ${feedbackTitleMaxLength} 个字符`
     })
   return null
 }
 
 function validateDescription(value: string) {
   const trimmed = value.trim()
-  if (trimmed === '') return i18n.t({ en: 'The description must not be blank', zh: '描述不可为空' })
+  if (trimmed === '') return i18n.t({ en: 'Describe the problem', zh: '请描述遇到的问题' })
   if (trimmed.length > feedbackDescriptionMaxLength)
     return i18n.t({
       en: `The description must be ${feedbackDescriptionMaxLength} characters or fewer`,
-      zh: `描述不能超过 ${feedbackDescriptionMaxLength} 字`
+      zh: `描述不能超过 ${feedbackDescriptionMaxLength} 个字符`
     })
   return null
 }
@@ -130,13 +130,13 @@ function handleCancel() {
               @focusin="shareContextTooltipVisible = true"
               @focusout="shareContextTooltipVisible = false"
             >
-              {{ $t({ en: 'Share page state', zh: '分享页面状态' }) }}
+              {{ $t({ en: 'Attach page and project details', zh: '附带页面和项目信息' }) }}
             </UICheckbox>
           </template>
           {{
             $t({
-              en: 'Includes the current page, a snapshot of the project, code errors, and runtime output to help us find the problem faster.',
-              zh: '附带当前页面、项目快照、代码报错和运行输出，帮助我们更快定位问题。'
+              en: 'This may include page details, a copy of your project, code diagnostics, and runtime output to help us investigate.',
+              zh: '可能附带页面信息、项目副本、代码检查结果和运行输出，帮助我们排查问题。'
             })
           }}
         </UITooltip>

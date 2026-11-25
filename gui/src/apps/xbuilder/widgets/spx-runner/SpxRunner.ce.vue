@@ -72,7 +72,7 @@ const {
     await project.load(serialized)
     return project
   },
-  failureSummaryMessage: { en: 'Load project failed', zh: '加载项目失败' }
+  failureSummaryMessage: { en: 'Failed to load the project', zh: '加载项目失败' }
 })
 
 const runnable = computed(() => project.value != null && !isLoading.value && error.value == null)
