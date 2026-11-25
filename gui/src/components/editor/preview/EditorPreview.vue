@@ -330,7 +330,10 @@ async function checkAndNotifyMonitorError() {
   await confirm({
     title: i18n.t({ en: 'Invalid monitor configuration', zh: '监视器配置无效' }),
     content: i18n.t({
-      en: `When you run the project, ${monitorNames.en} won’t show values correctly. Check the Target and Value settings.`,
+      en:
+        invalidMonitors.length === 1
+          ? `The monitor ${monitorNames.en} won’t display values correctly when you run the project. Check its Target and Value settings.`
+          : `These monitors won’t display values correctly when you run the project: ${monitorNames.en}. Check their Target and Value settings.`,
       zh: `以下监视器在运行时无法正常显示：${monitorNames.zh}。请检查“对象”和“值”设置。`
     }),
     confirmText: i18n.t(runAnywayText)
