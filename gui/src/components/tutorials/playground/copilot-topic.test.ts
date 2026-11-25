@@ -24,7 +24,7 @@ The course author wrote the instructions below about how you help the learner in
 Keep replies short.
 </course-instructions>
 
-The course instructions govern how you word your replies to the learner. They do not limit tool calls, which are not part of a reply: when this context tells you to read code before replying, do so even if the instructions ask for a short reply or a guiding question, then word your reply as they require.`,
+The course instructions govern how you word your replies to the learner. They do not limit tool calls, which are not part of a reply. If a tool for reading code is available, use it to read any code you need before replying, even if the instructions ask for a short reply or a guiding question. Then write your reply as the course instructions require.`,
       reactToEvents: false,
       endable: true,
       codeHelperEnabled: false

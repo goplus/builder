@@ -265,7 +265,7 @@ export function getCodeContext({ codeFilePath, code, cursorPosition, selection, 
   lines.push(
     `Code content of \`${codeFilePath}\` (${range}; \`lineCount\` is the number of lines in the file):`,
     JSON.stringify(sampled),
-    `Other code of the project is not in this context. If and only if a question depends on code you have not seen, read that code with \`${getProjectCodeToolName}\` before replying. Read it yourself instead of asking the user to look it up.`
+    'Other code of the project is not in this context. If the question depends on code you have not seen and a tool for reading code is available, read the code yourself before replying instead of asking the user to look it up.'
   )
   return lines.join('\n')
 }
