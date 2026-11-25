@@ -7,6 +7,7 @@ import { createI18n } from '@/utils/i18n'
 import * as aigc from '@/apis/aigc'
 import * as files from '@/models/common/file'
 import { makeSpxProject } from '@/models/spx/common/test'
+import { Costume } from '@/models/spx/costume'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { CostumeGen } from '@/models/spx/gen/costume-gen'
@@ -207,14 +208,13 @@ describe('sprite generation in the editor', () => {
       await expect(adopting).rejects.toBeInstanceOf(DefaultException)
       expect(project.sprites.find((s) => s.id === sprite.id)!.costumes).toHaveLength(1)
       expect(history.getUndoAction()).toBeNull()
-      await state.spriteResources.adopt(draft, history)
-    } else await adopting
-    expect(measure.mock.calls.map(([image]) => image)).toEqual(
-      replaceImage ? [costume.img, originalImage] : [originalImage]
-    )
+      expect(draft.gen.result ?? null).toBeNull()
+    }
+    const adopted = replaceImage ? await state.spriteResources.adopt(draft, history) : await adopting
+    expect.assert(adopted instanceof Costume)
     const restoredSprite = project.sprites.find((s) => s.id === sprite.id)!
-    expect(restoredSprite.defaultCostume).toBe(costume)
-    expect(costume.pivot).toEqual({ x: center.x + 16, y: center.y + 26 })
+    expect(restoredSprite.defaultCostume).toBe(adopted)
+    expect(adopted.pivot).toEqual({ x: center.x + 16, y: center.y + 26 })
     await history.undo()
     expect(history.getUndoAction()).toBeNull()
   })

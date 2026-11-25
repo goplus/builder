@@ -178,15 +178,13 @@ export class SpriteResourceGens extends Disposable {
   }
 
   /** Checks that the draft still shows what the user applied once the history lock is acquired. */
-  private checkAdoption(draft: SpriteResourceGen, { gen, source, resource, referenceImage }: Adoption) {
+  private checkAdoption(draft: SpriteResourceGen, { gen, source, referenceImage }: Adoption) {
     this.checkPresent(draft)
-    if (draft.gen !== gen || !isSameResultSource(gen, source)) {
-      if (gen.result === resource) gen.resetFinishState()
+    if (draft.gen !== gen || !isSameResultSource(gen, source))
       throw new DefaultException({
         en: 'The result has changed. Review it and apply again.',
         zh: '生成结果已变化，请查看后重新采用。'
       })
-    }
     if (referenceImageOf(draft) !== referenceImage)
       throw new DefaultException({
         en: 'The reference costume has changed. Apply again.',
@@ -201,11 +199,27 @@ export class SpriteResourceGens extends Disposable {
         en: 'Wait for generation to finish before applying this version.',
         zh: '请等待生成完成后再采用。'
       })
-    const { id, gen } = draft
+    const { gen } = draft
     const source = resultSource(gen)
     const resource = gen.result ?? (await gen.finish())
+    try {
+      return await this.applyResource(draft, history, {
+        gen,
+        source,
+        resource,
+        referenceImage: referenceImageOf(draft)
+      })
+    } catch (err) {
+      // A finished result keeps the draft settings read-only, so drop the result that was not applied.
+      if (gen.result === resource) gen.resetFinishState()
+      throw err
+    }
+  }
+
+  private async applyResource(draft: SpriteResourceGen, history: History, adoption: Adoption) {
+    const { id } = draft
+    const { gen, resource, referenceImage } = adoption
     // Measure outside the history lock so that undo stays available while the image loads.
-    const referenceImage = referenceImageOf(draft)
     const rawSize = referenceImage == null ? null : await getImageSize(referenceImage)
     let saved: TakenDraft | null = null
     const action: Action = {
@@ -224,7 +238,7 @@ export class SpriteResourceGens extends Disposable {
       saved = this.takeDraft(id)
       return resource
     }
-    return history.doAction(action, apply, () => this.checkAdoption(draft, { gen, source, resource, referenceImage }))
+    return history.doAction(action, apply, () => this.checkAdoption(draft, adoption))
   }
 
   remove(draft: SpriteResourceGen) {
