@@ -174,45 +174,34 @@ describe('Tutorial', () => {
 })
 
 describe('Tutorial initial state', () => {
-  it('uses the Guided Tutorial determination for a Guided Course', async () => {
+  it('uses the Guided Tutorial determination for a Guided Course', () => {
     const { guided, router } = makeControllers()
     const tutorial = new Tutorial(guided, router)
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(true)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
 
     guided.currentCourse = { id: 'course-1', seriesID: 'series-1' }
     guided.isCurrentCourseInInitialState.mockReturnValue(false)
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(false)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(false)
     guided.isCurrentCourseInInitialState.mockReturnValue(true)
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(true)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
   })
 
-  it('uses the change check registered for the current Playground Course', async () => {
+  it('has progress once the current Playground Course reports it, until the course starts again', () => {
     const { guided, router } = makeControllers()
     const tutorial = new Tutorial(guided, router)
     tutorial.notifyPlaygroundCourseStarted('course-1', 'series-1')
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(true)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
 
-    const hasChanges = vi.fn().mockResolvedValue(true)
-    const unregister = tutorial.registerPlaygroundCourseChangeCheck('course-1', hasChanges)
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(false)
-    hasChanges.mockResolvedValue(false)
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(true)
+    tutorial.notifyPlaygroundCourseProgressed('course-2')
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
+    tutorial.notifyPlaygroundCourseProgressed('course-1')
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(false)
+    tutorial.notifyPlaygroundCourseCompleted('course-1')
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(false)
     expect(guided.isCurrentCourseInInitialState).not.toHaveBeenCalled()
 
-    hasChanges.mockResolvedValue(true)
-    unregister()
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(true)
-  })
-
-  it('ignores a change check of another Playground Course and keeps a newer registration', async () => {
-    const { guided, router } = makeControllers()
-    const tutorial = new Tutorial(guided, router)
+    tutorial.notifyPlaygroundCourseEnded('course-1')
     tutorial.notifyPlaygroundCourseStarted('course-1', 'series-1')
-    const unregisterOther = tutorial.registerPlaygroundCourseChangeCheck('course-2', async () => true)
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(true)
-
-    tutorial.registerPlaygroundCourseChangeCheck('course-1', async () => true)
-    unregisterOther()
-    await expect(tutorial.isCurrentCourseInInitialState()).resolves.toBe(false)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
   })
 })

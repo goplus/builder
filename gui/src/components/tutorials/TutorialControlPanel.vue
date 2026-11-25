@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
-import { useRouter } from 'vue-router'
+import { isNavigationFailure, useRouter } from 'vue-router'
 
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { getCleanupSignal } from '@/utils/disposable'
@@ -55,16 +55,22 @@ onMounted(async () => {
 
 async function confirmCourseAction(
   action: LocaleMessage,
-  content: LocaleMessage = {
-    en: 'The current course learning state will be discarded. Continue?',
-    zh: '当前课程的学习状态将被丢弃，确认继续吗？'
-  }
+  {
+    content = {
+      en: 'The current course learning state will be discarded. Continue?',
+      zh: '当前课程的学习状态将被丢弃，确认继续吗？'
+    },
+    leavingPage = false
+  }: { content?: LocaleMessage; leavingPage?: boolean } = {}
 ) {
-  if (await tutorial.isCurrentCourseInInitialState()) return true
-  return confirm({
+  // Without this confirmation, the editor still asks before leaving its effect-free edits.
+  if (tutorial.isCurrentCourseInInitialState()) return true
+  const confirmed = await confirm({
     title: t(action),
     content: t(content)
   })
+  if (confirmed && leavingPage) resetEditorDirtyBeforeLeaving()
+  return confirmed
 }
 
 function resetEditorDirtyBeforeLeaving() {
@@ -90,12 +96,18 @@ const { fn: handleReturnSeries } = useMessageHandle(
   async () => {
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null) return
-    if (!(await confirmCourseAction({ en: 'Back to series courses', zh: '返回系列课程' }))) return
+    const confirmed = await confirmCourseAction(
+      { en: 'Back to series courses', zh: '返回系列课程' },
+      { leavingPage: true }
+    )
+    if (!confirmed) return
     const seriesRoute = getCourseSeriesPageRoute(currentCourse.seriesID, currentCourse.id)
-    resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
+    if (router.currentRoute.value.fullPath !== seriesRoute) {
+      const failure = await router.push(seriesRoute)
+      if (isNavigationFailure(failure)) return
+    }
     await tutorial.endCurrentCourse()
-    if (router.currentRoute.value.fullPath !== seriesRoute) await router.push(seriesRoute)
   },
   { en: 'Failed to return to series courses', zh: '返回系列课程失败' }
 )
@@ -104,8 +116,11 @@ const { fn: handleSelectCourse } = useMessageHandle(
   async (courseID: string, courseTitle: string) => {
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null || courseID === currentCourse.id) return
-    if (!(await confirmCourseAction({ en: `Start course ${courseTitle}`, zh: `开始课程 ${courseTitle}` }))) return
-    resetEditorDirtyBeforeLeaving()
+    const confirmed = await confirmCourseAction(
+      { en: `Start course ${courseTitle}`, zh: `开始课程 ${courseTitle}` },
+      { leavingPage: true }
+    )
+    if (!confirmed) return
     dropdown?.setVisible(false)
     await tutorial.startCourse(currentCourse.seriesID, courseID)
   },
@@ -119,12 +134,14 @@ const { fn: handleRestartCourse } = useMessageHandle(
     const confirmed = await confirmCourseAction(
       { en: 'Restart course', zh: '重新开始课程' },
       {
-        en: 'The current course learning state will be reset. Continue?',
-        zh: '当前课程的学习状态将被重置，确认继续吗？'
+        content: {
+          en: 'The current course learning state will be reset. Continue?',
+          zh: '当前课程的学习状态将被重置，确认继续吗？'
+        },
+        leavingPage: true
       }
     )
     if (!confirmed) return
-    resetEditorDirtyBeforeLeaving()
     dropdown?.setVisible(false)
     await tutorial.startCourse(currentCourse.seriesID, currentCourse.id)
   },

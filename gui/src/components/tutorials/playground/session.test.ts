@@ -1,4 +1,4 @@
-import { nextTick } from 'vue'
+import { nextTick, shallowReactive } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
@@ -100,7 +100,9 @@ afterEach(() => {
 function makeHarness() {
   const project = makeProject()
   const editorRuntime = new Runtime(project.project)
-  const editorState = { runtime: editorRuntime, dispose: vi.fn() } as unknown as EditorState
+  const editing = shallowReactive({ dirty: false, resetDirty: vi.fn() })
+  editing.resetDirty.mockImplementation(() => (editing.dirty = false))
+  const editorState = { runtime: editorRuntime, editing, dispose: vi.fn() } as unknown as EditorState
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
     showPrelude: vi.fn().mockResolvedValue(undefined),
@@ -128,6 +130,7 @@ function makeHarness() {
   const harness = {
     project,
     editorRuntime,
+    editing,
     editorState,
     session,
     copilot,
@@ -771,39 +774,31 @@ describe('PlaygroundCourseSession', () => {
     expect(harness.executor.run).not.toHaveBeenCalled()
   })
 
-  it('reports learner project changes since startup finished, ignoring edits changed back', async () => {
+  it('reports project changes made after startup finished', async () => {
     const harness = makeHarness()
-    const sprite = new Sprite('Lita')
-    sprite.setCode('step 100')
-    harness.project.project.addSprite(sprite)
     await harness.courseSession.start()
-    sprite.setCode('step 100\n')
-    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(false)
+    harness.editing.dirty = true
+    expect(harness.courseSession.projectChanged).toBe(false)
 
     await harness.getExecutorOptions().framework!.capabilities.lifecycle_started(null)
     expect(harness.courseSession.starting).toBe(false)
-    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(false)
+    expect(harness.editing.resetDirty).toHaveBeenCalledOnce()
+    expect(harness.courseSession.projectChanged).toBe(false)
 
-    sprite.setCode('step 200')
-    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(true)
-    sprite.setCode('step 100\n')
-    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(false)
-    harness.project.project.addSprite(new Sprite('Mushroom'))
-    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(true)
+    harness.editing.dirty = true
+    expect(harness.courseSession.projectChanged).toBe(true)
   })
 
-  it('keeps the startup baseline when the course completes afterwards', async () => {
+  it('keeps project changes when the course completes after startup', async () => {
     const harness = makeHarness()
-    const sprite = new Sprite('Lita')
-    sprite.setCode('step 100')
-    harness.project.project.addSprite(sprite)
     await harness.courseSession.start()
     const capabilities = harness.getExecutorOptions().framework!.capabilities
     await capabilities.lifecycle_started(null)
-    sprite.setCode('step 200')
+    harness.editing.dirty = true
 
     await capabilities.course_complete(null)
 
-    await expect(harness.courseSession.hasProjectChanges()).resolves.toBe(true)
+    expect(harness.editing.resetDirty).toHaveBeenCalledOnce()
+    expect(harness.courseSession.projectChanged).toBe(true)
   })
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { Cancelled, useMessageHandle } from '@/utils/exception'
@@ -87,10 +87,15 @@ const projectQueryRet: QueryRet<TutorialProject> = {
 }
 
 function handleSessionCreated(playgroundSession: PlaygroundCourseSession) {
-  const unregister = tutorial.registerPlaygroundCourseChangeCheck(playgroundSession.project.id, () =>
-    playgroundSession.hasProjectChanges()
+  const courseID = playgroundSession.project.id
+  playgroundSession.addDisposer(
+    watch(
+      () => playgroundSession.projectChanged,
+      (changed) => {
+        if (changed) tutorial.notifyPlaygroundCourseProgressed(courseID)
+      }
+    )
   )
-  playgroundSession.addDisposer(unregister)
 }
 
 const { fn: handleRestart } = useMessageHandle(
