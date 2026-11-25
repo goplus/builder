@@ -70,6 +70,7 @@ const props = defineProps<{
   remixSource?: string
   /** Serialized local project copied into a new private project owned by the current user. */
   sourceProject?: ProjectSerialized
+  /** Caller-provided hint shown below the project name field. */
   projectNameTip?: string
   visible: boolean
 }>()
@@ -105,7 +106,7 @@ const handleSubmit = useMessageHandle(
     if (username == null) throw new Error('login required')
     if (props.sourceProject != null) {
       const { files, metadata } = props.sourceProject
-      const saved = await cloudHelpers.save({
+      await cloudHelpers.save({
         files,
         metadata: {
           owner: username,
@@ -116,10 +117,7 @@ const handleSubmit = useMessageHandle(
           thumbnail: metadata.thumbnail
         }
       })
-      emit('resolved', saved.metadata.name)
-      return projectName
-    }
-    if (props.remixSource != null) {
+    } else if (props.remixSource != null) {
       await addProject({
         name: projectName,
         displayName: projectName,

@@ -210,9 +210,8 @@ async function checkBeforeLeavingProject() {
 }
 
 onBeforeRouteLeave(checkBeforeLeavingProject)
-onBeforeRouteUpdate((to, from) => {
+onBeforeRouteUpdate((to) => {
   const { ownerNameInput, projectNameInput } = to.params
-  if (ownerNameInput === from.params.ownerNameInput && projectNameInput === from.params.projectNameInput) return true
   const current = currentProjectIdentifier.value
   if (current?.owner === ownerNameInput && current?.name === projectNameInput) return true
   return checkBeforeLeavingProject()

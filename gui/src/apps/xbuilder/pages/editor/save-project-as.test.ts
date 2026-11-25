@@ -35,7 +35,7 @@ describe('saving edits to another user’s project', () => {
     const { router, wrapper, navbar } = await editProject()
     vi.mocked(isProjectNameTaken).mockResolvedValue(false)
     vi.spyOn(cloudHelpers, 'save').mockImplementationOnce(async ({ files, metadata }) => {
-      const copy = await cloudHelpers.load('alice', 'my-copy')
+      const copy = await cloudHelpers.load('alice', 'My-Copy')
       copy.metadata.displayName = metadata.displayName!
       copy.files = files
       vi.spyOn(cloudHelpers, 'load').mockResolvedValueOnce(copy)
@@ -49,8 +49,8 @@ describe('saving edits to another user’s project', () => {
     const modal = wrapper.get('[aria-label="Create project modal"]')
     await modal.get('input').setValue('My-Copy')
     await modal.get('form').trigger('submit')
-    await vi.waitFor(() => expect(navbar().props('project')?.name).toBe('my-copy'))
-    expect(router.currentRoute.value.path).toContain('/editor/alice/my-copy')
+    await vi.waitFor(() => expect(navbar().props('project')?.name).toBe('My-Copy'))
+    expect(router.currentRoute.value.path).toContain('/editor/alice/My-Copy')
     expect(navbar().props('project')!.stage.code).toBe('println "my edit"')
     expect(navbar().text()).toContain('My-Copy')
     expect(wrapper.text()).toContain('My projects in your profile menu')

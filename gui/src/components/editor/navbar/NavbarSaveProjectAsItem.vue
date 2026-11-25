@@ -1,6 +1,6 @@
 <template>
   <UIMenuItem :disabled="state == null || !isOnline" @click="handleSaveAs">
-    <template #icon><UIIcon type="copy" /></template>
+    <template #icon><img :src="saveAsProjectSvg" alt="" /></template>
     {{ $t({ en: 'Save as my project...', zh: '另存为我的项目...' }) }}
   </UIMenuItem>
 </template>
@@ -13,9 +13,10 @@ import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { useEnsureSignedIn } from '@/utils/user'
 import { useSaveProjectAs } from '@/components/project'
-import { UIIcon, UIMenuItem } from '@/components/ui'
+import { UIMenuItem } from '@/components/ui'
 import { EditingMode } from '../editing'
 import type { EditorState } from '../editor-state'
+import saveAsProjectSvg from './icons/save-as-project.svg'
 
 const props = defineProps<{ state: EditorState | null }>()
 const router = useRouter()
@@ -37,6 +38,7 @@ const handleSaveAs = useMessageHandle(
         zh: '保存后，编辑器会打开你的项目副本。'
       })
     )
+    // The copy preserves these edits, so opening it should skip the discard confirmation.
     if (state.editing.mode === EditingMode.EffectFree) state.editing.resetDirty()
     await router.push(getOwnProjectEditorRoute(name))
   },
