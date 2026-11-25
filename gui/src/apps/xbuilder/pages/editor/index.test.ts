@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
-import { setupPageTests, mountPages, signIn, makeAsset } from '@/apps/xbuilder/pages/test'
 import saveAs from 'file-saver'
+import { setupPageTests, mountPages, signIn, makeAsset } from '@/apps/xbuilder/pages/test'
 import * as courseApis from '@/apis/course'
 import { AssetType } from '@/apis/asset'
 import * as assetApis from '@/apis/asset'

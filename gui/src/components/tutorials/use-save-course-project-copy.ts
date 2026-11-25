@@ -21,7 +21,7 @@ export function useSaveCourseProjectCopy(beforeOpen?: (source: SpxProject) => bo
   const open = useAction(
     async (path: string) => {
       const failure = await router.push({ path, state: { savedCourseCopy: path } })
-      if (failure) throw failure
+      if (failure != null) throw failure
     },
     {
       en: 'Your copy was saved, but it couldn’t be opened. Try opening it from My projects.',
