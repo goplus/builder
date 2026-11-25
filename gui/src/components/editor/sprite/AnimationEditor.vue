@@ -75,14 +75,13 @@ export class AnimationsEditorState extends Disposable {
     private spriteResources: SpriteResourceGens
   ) {
     super()
-    this.selectedIdRef = ref(getSprite()?.animations[0]?.id ?? this.drafts[0]?.id ?? null)
+    this.selectedIdRef = ref(this.firstTargetId)
 
     this.addDisposer(
       watch(
         () => [this.selected, this.selectedDraft, this.animations[0], this.drafts[0]],
         () => {
-          if (this.selected == null && this.selectedDraft == null)
-            this.select(this.animations[0]?.id ?? this.drafts[0]?.id ?? null)
+          if (this.selected == null && this.selectedDraft == null) this.select(this.firstTargetId)
         }
       )
     )
@@ -94,6 +93,10 @@ export class AnimationsEditorState extends Disposable {
   }
 
   private selectedIdRef: Ref<string | null>
+
+  private get firstTargetId() {
+    return this.animations[0]?.id ?? this.drafts[0]?.id ?? null
+  }
 
   private get animations() {
     return this.getSprite()?.animations ?? []
