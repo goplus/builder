@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid'
 import { isSvgMimeType } from '@/utils/file'
 import { encodeFilename, extname, resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
+import type { Size } from '../common'
 import { File, type Files, getImageSize } from '../common/file'
 import { getCostumeName, validateCostumeName } from './common/asset-name'
 import type { Sprite } from './sprite'
@@ -110,12 +111,15 @@ export class Costume {
     return getImageSize(this.img)
   }
 
-  async getSize() {
-    const rawSize = await this.getRawSize()
+  getSizeFromRaw(rawSize: Size): Size {
     return {
       width: rawSize.width / this.bitmapResolution,
       height: rawSize.height / this.bitmapResolution
     }
+  }
+
+  async getSize() {
+    return this.getSizeFromRaw(await this.getRawSize())
   }
 
   constructor(name: string, file: File, inits?: CostumeInits) {

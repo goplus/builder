@@ -169,10 +169,8 @@ export class SpriteResourceGens extends Disposable {
       const sprite = gen.sprite
       const reference = draft.versionReferenceCostume
       if (reference != null && rawSize != null) {
-        const delta = {
-          x: reference.pivot.x - rawSize.width / reference.bitmapResolution / 2,
-          y: reference.pivot.y - rawSize.height / reference.bitmapResolution / 2
-        }
+        const size = reference.getSizeFromRaw(rawSize)
+        const delta = { x: reference.pivot.x - size.width / 2, y: reference.pivot.y - size.height / 2 }
         if (resource instanceof Costume)
           resource.setPivot({ x: resource.pivot.x + delta.x, y: resource.pivot.y + delta.y })
         else resource.applyCostumesPivotChange(delta)
@@ -188,32 +186,21 @@ export class SpriteResourceGens extends Disposable {
       return resource
     }
 
-    const referenceChanged = new Error('Reference image changed during adoption')
-    while (true) {
-      validate()
-      const image = draft.versionReferenceCostume?.img
-      let rawSize: Size | null = null
-      if (image != null) {
-        try {
-          rawSize = await getImageSize(image)
-        } catch (err) {
-          if (draft.versionReferenceCostume?.img !== image) continue
-          throw err
-        }
+    // Measure outside the history lock so that undo stays available while the image loads.
+    const image = draft.versionReferenceCostume?.img ?? null
+    const rawSize = image == null ? null : await getImageSize(image)
+    return history.doAction(
+      action,
+      () => apply(rawSize),
+      () => {
+        validate()
+        if ((draft.versionReferenceCostume?.img ?? null) !== image)
+          throw new DefaultException({
+            en: 'The reference costume has changed. Apply again.',
+            zh: '参考造型已变化，请重新采用。'
+          })
       }
-      try {
-        return await history.doAction(
-          action,
-          () => apply(rawSize),
-          () => {
-            validate()
-            if (draft.versionReferenceCostume?.img !== image) throw referenceChanged
-          }
-        )
-      } catch (err) {
-        if (err !== referenceChanged) throw err
-      }
-    }
+    )
   }
 
   remove(draft: SpriteResourceGen) {

@@ -174,7 +174,7 @@ describe('sprite generation in the editor', () => {
     expect(state.spriteResources.drafts.find((d) => d.id === draft.id)?.versions).toHaveLength(1)
   })
 
-  it.each([false, true])('allows undo during reference measurement (image replaced: %s)', async (replaceImage) => {
+  it.each([false, true])('handles undo during reference measurement (image replaced: %s)', async (replaceImage) => {
     const { project, state, gen } = await setup()
     const sprite = await gen.finishWithDefaultCostume()
     project.addSprite(sprite)
@@ -200,7 +200,13 @@ describe('sprite generation in the editor', () => {
       return image === originalImage ? { width: 512, height: 512 } : { width: 120, height: 200 }
     })
 
-    await state.spriteResources.adopt(draft, history)
+    const adopting = state.spriteResources.adopt(draft, history)
+    if (replaceImage) {
+      await expect(adopting).rejects.toBeInstanceOf(DefaultException)
+      expect(project.sprites.find((s) => s.id === sprite.id)!.costumes).toHaveLength(1)
+      expect(history.getUndoAction()).toBeNull()
+      await state.spriteResources.adopt(draft, history)
+    } else await adopting
     expect(measure.mock.calls.map(([image]) => image)).toEqual(
       replaceImage ? [costume.img, originalImage] : [originalImage]
     )
