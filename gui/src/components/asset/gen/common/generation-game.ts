@@ -9,11 +9,15 @@ export const directions = {
 export type Direction = keyof typeof directions
 type Position = { x: number; y: number }
 export type Game = ReturnType<typeof createGame>
+type Ghost = Game['ghosts'][number]
+
+function mazeSize(cells: number) {
+  return Math.max(5, cells - (cells % 2 === 0 ? 1 : 0))
+}
 
 export function gameGrid(width: number, height: number) {
-  const odd = (value: number) => Math.max(5, value - (value % 2 === 0 ? 1 : 0))
-  const columns = odd(Math.floor(width / gameCellSize))
-  const rows = odd(Math.floor((height - 32) / gameCellSize))
+  const columns = mazeSize(Math.floor(width / gameCellSize))
+  const rows = mazeSize(Math.floor((height - 32) / gameCellSize))
   return { columns, rows, ...gameLayout({ columns, rows }, width, height) }
 }
 
@@ -38,6 +42,10 @@ function neighbors(paths: Set<number>, columns: number, key: number) {
   return [key + 1, key + columns, key - 1, key - columns].filter((next) => paths.has(next))
 }
 
+function isInterior(columns: number, rows: number, position: Position) {
+  return position.x > 0 && position.y > 0 && position.x < columns - 1 && position.y < rows - 1
+}
+
 function distances(paths: Set<number>, columns: number, start: number) {
   const result = new Map([[start, 0]])
   const queue = [start]
@@ -51,17 +59,14 @@ function distances(paths: Set<number>, columns: number, start: number) {
   return result
 }
 
-function createMaze(columns: number, rows: number) {
+function carve(columns: number, rows: number) {
   const paths = new Set([columns + 1])
   const stack = [{ x: 1, y: 1 }]
   while (stack.length > 0) {
     const current = stack[stack.length - 1]
     const options = Object.values(directions)
       .map((delta) => ({ x: current.x + delta.x * 2, y: current.y + delta.y * 2 }))
-      .filter(
-        (next) =>
-          next.x > 0 && next.y > 0 && next.x < columns - 1 && next.y < rows - 1 && !paths.has(cell(columns, next))
-      )
+      .filter((next) => isInterior(columns, rows, next) && !paths.has(cell(columns, next)))
     if (options.length === 0) {
       stack.pop()
       continue
@@ -71,26 +76,26 @@ function createMaze(columns: number, rows: number) {
     paths.add(cell(columns, next))
     stack.push(next)
   }
-  // Open dead ends into loops so players can evade pursuers instead of being trapped.
+  return paths
+}
+
+/**
+ * Opens dead ends into loops so players can evade pursuers instead of being trapped.
+ * Carving reaches every interior room, so each dead end has a closed interior wall to open.
+ */
+function openDeadEnds(paths: Set<number>, columns: number, rows: number) {
   for (const key of [...paths]) {
     if (neighbors(paths, columns, key).length !== 1) continue
     const x = key % columns
     const y = Math.floor(key / columns)
-    const options = Object.values(directions).filter((delta) => {
-      const next = { x: x + delta.x * 2, y: y + delta.y * 2 }
-      return (
-        next.x > 0 &&
-        next.y > 0 &&
-        next.x < columns - 1 &&
-        next.y < rows - 1 &&
-        paths.has(cell(columns, next)) &&
-        !paths.has(cell(columns, { x: x + delta.x, y: y + delta.y }))
-      )
-    })
-    if (options.length === 0) continue
-    const delta = options[Math.floor(Math.random() * options.length)]
-    paths.add(cell(columns, { x: x + delta.x, y: y + delta.y }))
+    const walls = Object.values(directions)
+      .map((delta) => ({ x: x + delta.x, y: y + delta.y }))
+      .filter((wall) => isInterior(columns, rows, wall) && !paths.has(cell(columns, wall)))
+    paths.add(cell(columns, walls[Math.floor(Math.random() * walls.length)]))
   }
+}
+
+function drawWalls(paths: Set<number>, columns: number, rows: number) {
   const walls: string[] = []
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < columns; x++) {
@@ -103,12 +108,18 @@ function createMaze(columns: number, rows: number) {
       if (neighbors(paths, columns, key).length === 4) walls.push(`M${px - 1} ${py}h2`)
     }
   }
-  return { paths, walls: walls.join('') }
+  return walls.join('')
+}
+
+function createMaze(columns: number, rows: number) {
+  const paths = carve(columns, rows)
+  openDeadEnds(paths, columns, rows)
+  return { paths, walls: drawWalls(paths, columns, rows) }
 }
 
 export function createGame(direction: Direction, columns: number, rows: number, now: number) {
-  columns = Math.max(5, columns - (columns % 2 === 0 ? 1 : 0))
-  rows = Math.max(5, rows - (rows % 2 === 0 ? 1 : 0))
+  columns = mazeSize(columns)
+  rows = mazeSize(rows)
   const { paths, walls } = createMaze(columns, rows)
   const center = { x: Math.floor(columns / 2), y: Math.floor(rows / 2) }
   const start = [...paths].reduce((best, key) => {
@@ -136,44 +147,47 @@ export function createGame(direction: Direction, columns: number, rows: number, 
   }
 }
 
+function move(game: Game, position: Position, direction: Direction) {
+  const delta = directions[direction]
+  const next = { x: position.x + delta.x, y: position.y + delta.y }
+  return game.paths.has(cell(game.columns, next)) ? next : null
+}
+
+function movePlayer(game: Game, now: number) {
+  if (move(game, game.player, game.turn) != null) game.direction = game.turn
+  game.player = move(game, game.player, game.direction) ?? game.player
+  const key = cell(game.columns, game.player)
+  if (game.pellets.has(key) && !game.eaten.has(key)) game.eaten.set(key, now)
+}
+
+function chase(game: Game, ghost: Ghost, elapsed: number) {
+  if (ghost.restUntil > elapsed) return ghost
+  const distance = distances(game.paths, game.columns, cell(game.columns, game.player))
+  const start = cell(game.columns, ghost)
+  const next = neighbors(game.paths, game.columns, start).reduce(
+    (best, next) => (distance.get(next)! < distance.get(best)! ? next : best),
+    start
+  )
+  return { ...ghost, x: next % game.columns, y: Math.floor(next / game.columns) }
+}
+
+function isCaught(game: Game, elapsed: number) {
+  const key = cell(game.columns, game.player)
+  return game.ghosts.some((ghost) => ghost.restUntil <= elapsed && cell(game.columns, ghost) === key)
+}
+
 export function stepGame(game: Game, now: number) {
   if (game.status !== 'playing') return
   game.ticks++
   const elapsed = game.ticks * gameStepMs
-  const move = (position: Position, direction: Direction) => {
-    const delta = directions[direction]
-    const next = { x: position.x + delta.x, y: position.y + delta.y }
-    return game.paths.has(cell(game.columns, next)) ? next : null
+  movePlayer(game, now)
+  if (!isCaught(game, elapsed) && game.ticks % 2 === 0) {
+    game.ghosts = game.ghosts.map((ghost) => chase(game, ghost, elapsed))
   }
-  if (move(game.player, game.turn) != null) game.direction = game.turn
-  game.player = move(game.player, game.direction) ?? game.player
-  const key = cell(game.columns, game.player)
-  if (game.pellets.has(key) && !game.eaten.has(key)) {
-    game.eaten.set(key, now)
-  }
-  const collide = () => {
-    for (const ghost of game.ghosts) {
-      if (ghost.restUntil > elapsed || key !== cell(game.columns, ghost)) continue
-      game.status = 'caught'
-      game.finishedAt = now
-    }
-    return game.status === 'caught'
-  }
-  if (collide()) return
-  if (game.ticks % 2 === 0) {
-    game.ghosts = game.ghosts.map((ghost) => {
-      if (ghost.restUntil > elapsed) return ghost
-      const distance = distances(game.paths, game.columns, cell(game.columns, game.player))
-      const start = cell(game.columns, ghost)
-      const next = neighbors(game.paths, game.columns, start).reduce(
-        (best, next) => (distance.get(next)! < distance.get(best)! ? next : best),
-        start
-      )
-      return { ...ghost, x: next % game.columns, y: Math.floor(next / game.columns) }
-    })
-  }
-  if (collide()) return
-  if (game.eaten.size === game.pellets.size) {
+  if (isCaught(game, elapsed)) {
+    game.status = 'caught'
+    game.finishedAt = now
+  } else if (game.eaten.size === game.pellets.size) {
     game.status = 'won'
     game.finishedAt = now
   }
