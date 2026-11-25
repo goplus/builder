@@ -113,20 +113,22 @@ export class SpriteResourceGen extends Disposable {
         { flush: 'sync' }
       )
     )
-    if (gen instanceof AnimationGen) {
-      gen.addDisposer(
-        watch(
-          () => gen.framesConfig,
-          (config) => {
-            const version = this.versions[this.index]
-            if (gen.video == null || version?.generation.type !== 'animation') return
-            version.generation.config.framesConfig = config ?? undefined
-            if (gen.result != null) gen.resetFinishState()
-          },
-          { flush: 'sync' }
-        )
+    if (gen instanceof AnimationGen) this.observeFramesConfig(gen)
+  }
+
+  private observeFramesConfig(gen: AnimationGen) {
+    gen.addDisposer(
+      watch(
+        () => gen.framesConfig,
+        (config) => {
+          const version = this.versions[this.index]
+          if (gen.video == null || version?.generation.type !== 'animation') return
+          version.generation.config.framesConfig = config ?? undefined
+          if (gen.result != null) gen.resetFinishState()
+        },
+        { flush: 'sync' }
       )
-    }
+    )
   }
 
   previousVersion() {
