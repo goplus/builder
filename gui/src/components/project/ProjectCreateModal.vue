@@ -62,10 +62,10 @@ import {
   ProjectType,
   projectNameMaxLength,
   Visibility,
-  parseRemixSource
+  parseRemixSource,
+  stringifyProjectFullName
 } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
-import type { ProjectIdentifier } from '@/utils/project-route'
 import { useMessageHandle } from '@/utils/exception'
 import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
@@ -83,7 +83,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [project: ProjectIdentifier]
+  /** Course copies return the saved project's full name. New projects and remixes return the submitted name. */
+  resolved: [name: string]
 }>()
 
 const { t } = useI18n()
@@ -110,7 +111,6 @@ const handleSubmit = useMessageHandle(
     const projectName = form.value.name.trim()
     const username = signedIn.username
     if (username == null) throw new Error('login required')
-    let created: ProjectIdentifier
     if (props.sourceProject != null) {
       const { files, metadata } = props.sourceProject
       const saved = await cloudHelpers.save({
@@ -124,9 +124,11 @@ const handleSubmit = useMessageHandle(
           thumbnail: metadata.thumbnail
         }
       })
-      created = saved.metadata
-    } else if (props.remixSource != null) {
-      created = await addProject({
+      emit('resolved', stringifyProjectFullName(saved.metadata.owner, saved.metadata.name))
+      return projectName
+    }
+    if (props.remixSource != null) {
+      await addProject({
         name: projectName,
         displayName: projectName,
         // This modal will own project type selection in a later design.
@@ -141,9 +143,8 @@ const handleSubmit = useMessageHandle(
       const exported = await project.export()
       const saved = await cloudHelpers.save(exported)
       project.setMetadata(saved.metadata)
-      created = saved.metadata
     }
-    emit('resolved', { owner: created.owner, name: created.name })
+    emit('resolved', projectName)
     return projectName
   },
   { en: 'Failed to create project', zh: '项目创建失败' },

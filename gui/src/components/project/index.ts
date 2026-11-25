@@ -1,6 +1,6 @@
 import { useModal, useConfirmDialog } from '@/components/ui'
 import ModificationWarningModal from '@/components/common/ModificationWarningModal.vue'
-import { Visibility, deleteProject } from '@/apis/project'
+import { Visibility, deleteProject, parseProjectFullName } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import type { SpxProject } from '@/models/spx/project'
 import type { ProjectSerialized } from '@/models/project'
@@ -19,9 +19,8 @@ import ProjectModifyNameModal from './ProjectModifyNameModal.vue'
 export function useCreateProject() {
   const modal = useModal(ProjectCreateModal)
 
-  return async function createProject(remixSource?: string) {
-    const project = await modal({ remixSource })
-    return project.name
+  return function createProject(remixSource?: string) {
+    return modal({ remixSource })
   }
 }
 
@@ -29,8 +28,10 @@ export function useCreateProject() {
 export function useSaveProjectAs() {
   const modal = useModal(ProjectCreateModal)
 
-  return function saveProjectAs(project: ProjectSerialized) {
-    return modal({ sourceProject: project })
+  return async function saveProjectAs(project: ProjectSerialized) {
+    const fullName = await modal({ sourceProject: project })
+    const { owner, project: name } = parseProjectFullName(fullName)
+    return { owner, name }
   }
 }
 
