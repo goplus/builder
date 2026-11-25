@@ -28,8 +28,8 @@ export function useCreateProject() {
 export function useSaveProjectAs() {
   const modal = useModal(ProjectCreateModal)
 
-  return function saveProjectAs(project: ProjectSerialized) {
-    return modal({ sourceProject: project })
+  return function saveProjectAs(project: ProjectSerialized, projectNameTip: string) {
+    return modal({ sourceProject: project, projectNameTip })
   }
 }
 

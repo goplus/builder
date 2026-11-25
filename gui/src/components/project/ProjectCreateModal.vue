@@ -21,6 +21,7 @@
           v-radar="{ name: 'project-name-input', desc: 'Input field for project name' }"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
+        <template v-if="projectNameTip != null" #tip>{{ projectNameTip }}</template>
       </UIFormItem>
       <footer class="mt-10 flex justify-center">
         <UIButton
@@ -69,6 +70,7 @@ const props = defineProps<{
   remixSource?: string
   /** Serialized local project copied into a new private project owned by the current user. */
   sourceProject?: ProjectSerialized
+  projectNameTip?: string
   visible: boolean
 }>()
 
@@ -103,7 +105,7 @@ const handleSubmit = useMessageHandle(
     if (username == null) throw new Error('login required')
     if (props.sourceProject != null) {
       const { files, metadata } = props.sourceProject
-      await cloudHelpers.save({
+      const saved = await cloudHelpers.save({
         files,
         metadata: {
           owner: username,
@@ -114,7 +116,10 @@ const handleSubmit = useMessageHandle(
           thumbnail: metadata.thumbnail
         }
       })
-    } else if (props.remixSource != null) {
+      emit('resolved', saved.metadata.name)
+      return projectName
+    }
+    if (props.remixSource != null) {
       await addProject({
         name: projectName,
         displayName: projectName,
@@ -135,10 +140,16 @@ const handleSubmit = useMessageHandle(
     return projectName
   },
   { en: 'Failed to create project', zh: '项目创建失败' },
-  (projectName) => ({
-    en: `Project ${projectName} created`,
-    zh: `项目 ${projectName} 创建成功`
-  })
+  (projectName) =>
+    props.sourceProject != null
+      ? {
+          en: `Project copy ${projectName} saved. You can open it again from My projects in your profile menu.`,
+          zh: `项目副本 ${projectName} 已保存。下次可以从头像菜单的“我的项目”再次打开。`
+        }
+      : {
+          en: `Project ${projectName} created`,
+          zh: `项目 ${projectName} 创建成功`
+        }
 )
 
 async function validateName(name: string): Promise<FormValidationResult> {

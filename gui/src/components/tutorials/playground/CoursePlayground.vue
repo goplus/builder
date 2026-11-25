@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
-import { useRouter } from 'vue-router'
 
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { ProgressCollector, type Progress } from '@/utils/progress'
 import { QueryMode, composeQuery, useQuery, type QueryRet } from '@/utils/query'
 import { useProvideReadiness, useRegisterLoading } from '@/utils/readiness'
-import { useEnsureSignedIn } from '@/utils/user'
-import { useMessageHandle } from '@/utils/exception'
-import { getOwnProjectEditorRoute } from '@/apps/xbuilder/router'
 import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import type { TutorialProject } from '@/models/tutorial/project'
@@ -22,10 +18,11 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import type { ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
+import NavbarExportProjectItem from '@/components/editor/navbar/NavbarExportProjectItem.vue'
+import NavbarSaveProjectAsItem from '@/components/editor/navbar/NavbarSaveProjectAsItem.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
-import { UIDetailedLoading, UIError, UIMenuGroup, UIMenuItem, useModal } from '@/components/ui'
-import { useSaveProjectAs } from '@/components/project'
+import { UIDetailedLoading, UIError, UIMenuGroup, useModal } from '@/components/ui'
 
 import type { PlaygroundCourseCompletion, PlaygroundCoursePresentationOptions } from './program'
 import CoursePlaygroundMessageModal from './CoursePlaygroundMessageModal.vue'
@@ -44,29 +41,11 @@ const emit = defineEmits<{
 }>()
 
 const i18n = useI18n()
-const globalRouter = useRouter()
 const copilot = useCopilot()
 const radar = useRadar()
 const spotlight = useSpotlight()
 const { isOnline } = useNetwork()
 const signedIn = useSignedIn()
-const ensureSignedIn = useEnsureSignedIn()
-const saveProjectAs = useSaveProjectAs()
-
-const handleSaveAsMyProject = useMessageHandle(
-  async () => {
-    await ensureSignedIn()
-    // A learning result is a plain SPX project. Generated editor state is
-    // intentionally course-local and must not be copied into the user's project.
-    const project = session.value?.project
-    if (project == null) return
-    const snapshot = await project.project.export()
-    const name = await saveProjectAs(snapshot)
-    await globalRouter.push(getOwnProjectEditorRoute(name))
-  },
-  { en: 'Failed to save project', zh: '保存项目失败' }
-).fn
-
 const monacoQueryRet = useQuery({
   queryFn: async (ctx) => {
     const lang = i18n.lang.value
@@ -189,10 +168,9 @@ useRegisterLoading(loading)
         :title="projectQueryRet.data.value?.title"
       >
         <template #project-menu>
-          <UIMenuGroup :disabled="session == null || !isOnline">
-            <UIMenuItem @click="handleSaveAsMyProject">
-              {{ $t({ en: 'Save as my project...', zh: '另存为我的项目...' }) }}
-            </UIMenuItem>
+          <UIMenuGroup :disabled="session == null">
+            <NavbarSaveProjectAsItem :state="session?.editorState ?? null" />
+            <NavbarExportProjectItem :project="session?.project.project ?? null" />
           </UIMenuGroup>
         </template>
       </EditorNavbar>

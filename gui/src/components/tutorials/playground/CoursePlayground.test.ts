@@ -2,6 +2,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, nextTick, onMounted, ref, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import saveAs from 'file-saver'
 import { Disposable } from '@/utils/disposable'
 import { DefaultException } from '@/utils/exception/base'
 import { ActionException } from '@/utils/exception'
@@ -22,8 +23,9 @@ const mocks = vi.hoisted(() => ({
   editors: [] as any[],
   loadMonaco: vi.fn().mockResolvedValue({})
 }))
+vi.mock('file-saver', () => ({ default: vi.fn() }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ currentRoute: ref({ params: {}, query: {} }), push: vi.fn() }) }))
-vi.mock('@/utils/i18n', () => ({ useI18n: () => ({ lang: ref('en') }) }))
+vi.mock('@/utils/i18n', () => ({ useI18n: () => ({ lang: ref('en'), t: (message: { en: string }) => message.en }) }))
 vi.mock('@/utils/network', () => ({ useNetwork: () => ({ isOnline: ref(true) }) }))
 vi.mock('@/utils/user', () => ({ useEnsureSignedIn: () => vi.fn() }))
 vi.mock('@/utils/exception', async (importOriginal) => ({
@@ -60,7 +62,10 @@ vi.mock('@/components/editor/navbar/EditorNavbar.vue', () => ({
   default: defineComponent({
     name: 'EditorNavbar',
     props: { project: { type: Object, default: null }, state: { type: Object, default: null } },
-    render: () => h('nav', 'Navbar')
+    setup:
+      (_, { slots }) =>
+      () =>
+        h('nav', slots['project-menu']?.())
   })
 }))
 vi.mock('./CoursePlaygroundMessageModal.vue', () => ({ default: {} }))
@@ -77,8 +82,10 @@ vi.mock('@/components/ui', () => ({
     props: { retry: { type: Function, default: null } },
     setup: (props) => () => h('button', { onClick: props.retry }, 'Retry')
   }),
-  UIMenuGroup: {},
-  UIMenuItem: {},
+  UIIcon: {},
+  UIMenuGroup: { template: '<div><slot /></div>' },
+  UIMenuItem: { template: '<div class="menu-item"><slot /></div>' },
+  useMessage: () => ({ withLoading: (work: Promise<unknown>) => work }),
   useModal: () => vi.fn()
 }))
 vi.mock('@/components/editor/spx-code-editor', () => ({
@@ -206,6 +213,20 @@ describe('Playground Copilot on course exit', () => {
       copilot.close()
     }
   )
+})
+
+it('downloads the current exercise directly from the Playground menu', async () => {
+  const project = {
+    getSignal: () => new AbortController().signal,
+    export: vi.fn().mockResolvedValue({ metadata: { name: 'exercise' }, files: {} })
+  }
+  const wrapper = mountPlayground(createProjectQueryRet({ title: 'Course', project } as unknown as TutorialProject))
+  await flushPromises()
+  const items = wrapper.findAll('nav .menu-item')
+  expect(items.map((item) => item.text())).toEqual(['Save as my project...', 'Export project file'])
+  await items[1].trigger('click')
+  await vi.waitFor(() => expect(saveAs).toHaveBeenCalledWith(expect.any(File), 'exercise.xbp'))
+  expect(project.export).toHaveBeenCalledOnce()
 })
 
 describe('Playground startup rendering', () => {
