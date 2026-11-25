@@ -3,6 +3,10 @@ import { gameCellSize, gameGrid, gameLayout, type Game } from './generation-game
 
 export type LoadingDot = { x: number; y: number; radius: number; alpha: number }
 
+const mazeBlendMs = 240
+const pelletFadeMs = 160
+const dotFramesPerSecond = 30
+
 /** Prepares the backing store at device pixel ratio, or returns null when there is nothing to draw on. */
 function prepareCanvas(el: HTMLCanvasElement, { width, height }: { width: number; height: number }) {
   if (width === 0 || height === 0) return null
@@ -62,13 +66,13 @@ function pelletAlpha(game: Game, row: number, column: number, now: number) {
   const key = row * game.columns + column
   if (!game.pellets.has(key)) return 0
   const eatenAt = game.eaten.get(key)
-  const opacity = eatenAt == null ? 1 : Math.max(0, 1 - (now - eatenAt) / 160)
+  const opacity = eatenAt == null ? 1 : Math.max(0, 1 - (now - eatenAt) / pelletFadeMs)
   return 0.65 * opacity
 }
 
 function gameBlend(game: Game | null, reduced: boolean, now: number) {
   if (game == null) return 0
-  return reduced ? 1 : Math.min(1, (now - game.startedAt) / 240)
+  return reduced ? 1 : Math.min(1, (now - game.startedAt) / mazeBlendMs)
 }
 
 function fieldTime(game: Game | null, reduced: boolean, started: number, now: number) {
@@ -117,17 +121,19 @@ export function loadingDots(options: {
     for (let column = firstColumn; column < columnCount; column++) {
       const x = grid.x + column * spacing
       const y = grid.y + row * spacing
-      const intensity = lightIntensity(x / width, y / height, time, seed)
-      const loading = reduced ? 0.45 : 0.04 + intensity * 0.96
-      const pellet = game == null ? 0 : pelletAlpha(game, row, column, now)
-      dots.push({ x, y, radius, alpha: loading + (pellet - loading) * blend })
+      let alpha = game == null ? 0 : pelletAlpha(game, row, column, now)
+      if (blend < 1) {
+        const loading = reduced ? 0.45 : 0.04 + lightIntensity(x / width, y / height, time, seed) * 0.96
+        alpha = loading + (alpha - loading) * blend
+      }
+      dots.push({ x, y, radius, alpha })
     }
   }
   return dots
 }
 </script>
 <script setup lang="ts">
-import { computed, onScopeDispose, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, toRaw, watch } from 'vue'
 import { useContentSize } from '@/utils/dom'
 import { useUIVariables } from '@/components/ui'
 import GenerationGame from './GenerationGame.vue'
@@ -170,25 +176,54 @@ watch([canvas, () => props.compact], ([el, compact]) => {
     el == null ? null : { seed: compact ? 0 : Math.random() * 1024, started: compact ? 0 : performance.now() }
 })
 
-watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensions, reduced], _, onCleanup) => {
+watch([motion, size, reducedMotion, game], ([motion, dimensions, reduced, current], _, onCleanup) => {
   const el = canvas.value
   if (el == null || motion == null || dimensions == null) return
   const ctx = prepareCanvas(el, dimensions)
   if (ctx == null) return
   const { width, height } = dimensions
   const { seed, started } = motion
-  let frame = 0
+  let frame: number | null = null
+  let lastPaintedFrame = -1
+  let animateUntil = reduced ? 0 : Infinity
+  if (current != null && !reduced) animateUntil = current.startedAt + mazeBlendMs
 
   const draw = (now: number) => {
-    ctx.clearRect(0, 0, width, height)
-    const dots = loadingDots({ width, height, compact: props.compact, seed, started, reduced, now, game: game.value })
-    if (dots == null) return
-    paintDots(ctx, uiVariables.color.primary.main, dots)
-    if (!reduced || game.value != null) frame = requestAnimationFrame(draw)
+    frame = null
+    const frameIndex = Math.floor((now * dotFramesPerSecond) / 1000)
+    if (frameIndex > lastPaintedFrame || now >= animateUntil) {
+      const dots = loadingDots({
+        width,
+        height,
+        compact: props.compact,
+        seed,
+        started,
+        reduced,
+        now,
+        game: toRaw(current)
+      })
+      ctx.clearRect(0, 0, width, height)
+      if (dots == null) return
+      paintDots(ctx, uiVariables.color.primary.main, dots)
+      lastPaintedFrame = frameIndex
+    }
+    if (now < animateUntil) frame = requestAnimationFrame(draw)
   }
 
-  draw(performance.now())
-  onCleanup(() => cancelAnimationFrame(frame))
+  // Once the maze is visible, only newly eaten dots need more frames.
+  const stop = watch(
+    () => current?.eaten.size ?? 0,
+    (eaten) => {
+      const now = performance.now()
+      if (eaten > 0) animateUntil = Math.max(animateUntil, now + pelletFadeMs)
+      if (frame == null) draw(now)
+    },
+    { immediate: true }
+  )
+  onCleanup(() => {
+    stop()
+    if (frame != null) cancelAnimationFrame(frame)
+  })
 })
 </script>
 

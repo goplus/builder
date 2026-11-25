@@ -1,5 +1,5 @@
 import { shallowMount } from '@vue/test-utils'
-import { nextTick, ref } from 'vue'
+import { nextTick, reactive, ref } from 'vue'
 import { describe, expect, it, onTestFinished, vi, type Mock } from 'vitest'
 import { useContentSize } from '@/utils/dom'
 import { createI18n } from '@/utils/i18n'
@@ -119,6 +119,12 @@ describe('GenLoading', () => {
     expect(context.clearRect).toHaveBeenLastCalledWith(0, 0, 360, 360)
   })
 
+  it('paints the loading field at 30 fps on a 120 Hz display', async () => {
+    const { context, requestFrame } = await setup(false, false, { width: 360, height: 360 }, 0)
+    for (let frame = 1; frame <= 120; frame++) requestFrame.mock.lastCall![0]((frame * 1000) / 120)
+    expect(context.clearRect).toHaveBeenCalledTimes(31) // Includes the initial paint.
+  })
+
   it.each([
     { width: 140, height: 140 },
     { width: 140, height: 108 },
@@ -167,41 +173,72 @@ describe('GenLoading', () => {
     expect(wrapper.get('.message').attributes('style')).toBe(footerStyle)
   })
 
-  it('fades an eaten dot out over 160 ms', async () => {
-    const { wrapper, context, requestFrame } = await setup()
+  it('rests after the maze transition and wakes for the full fade of each eaten dot', async () => {
+    const { wrapper, context, requestFrame } = await setup(false, false, { width: 360, height: 360 }, 0)
     const { columns, rows } = gameGrid(360, 360)
-    const game = createGame('ArrowRight', columns, rows, 0)
+    const game = reactive(createGame('ArrowRight', columns, rows, 0))
     wrapper.getComponent(GenerationGame).vm.$emit('change', game)
     await nextTick()
-    const [pellet] = game.pellets
-    game.eaten.set(pellet, 1000)
+    const lastFrame = requestFrame.mock.lastCall![0]
+    requestFrame.mockClear()
+    lastFrame(240)
+    expect(requestFrame).not.toHaveBeenCalled()
+
+    const [first, second] = game.pellets
     const alphas = recordAlphas(context)
-    requestFrame.mock.lastCall![0](1000)
+    vi.mocked(performance.now).mockReturnValue(1000)
+    game.eaten.set(first, 1000)
+    await nextTick()
     expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size)
     alphas.length = 0
+    vi.mocked(performance.now).mockReturnValue(1080)
+    game.eaten.set(second, 1080)
+    await nextTick()
     requestFrame.mock.lastCall![0](1080)
     expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size - 1)
     expect(countAlpha(alphas, 0.325)).toBe(1)
     alphas.length = 0
     requestFrame.mock.lastCall![0](1160)
-    expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size - 1)
-    expect(countAlpha(alphas, 0)).toBe(alphas.length - game.pellets.size + 1)
+    expect(countAlpha(alphas, 0.325)).toBe(1)
+    const finalFrame = requestFrame.mock.lastCall![0]
+    requestFrame.mockClear()
+    alphas.length = 0
+    finalFrame(1240)
+    expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size - 2)
+    expect(countAlpha(alphas, 0)).toBe(alphas.length - game.pellets.size + 2)
+    expect(requestFrame).not.toHaveBeenCalled()
   })
 
   it('shows the maze at once for reduced motion and still clears eaten dots', async () => {
-    const { wrapper, context, requestFrame } = await setup(true)
+    const { wrapper, context, requestFrame } = await setup(true, false, { width: 360, height: 360 }, 1000)
     const { columns, rows } = gameGrid(360, 360)
-    const game = createGame('ArrowRight', columns, rows, 0)
+    const game = reactive(createGame('ArrowRight', columns, rows, 0))
     const alphas = recordAlphas(context)
     wrapper.getComponent(GenerationGame).vm.$emit('change', game)
     await nextTick()
     expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size)
     expect(countAlpha(alphas, 0)).toBe(alphas.length - game.pellets.size)
+    expect(requestFrame).not.toHaveBeenCalled()
     const [pellet] = game.pellets
     game.eaten.set(pellet, 1000)
+    await nextTick()
     alphas.length = 0
     requestFrame.mock.lastCall![0](1160)
     expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size - 1)
+  })
+
+  it('resumes the loading animation when the player exits an idle maze', async () => {
+    const { wrapper, requestFrame } = await setup(false, true, { width: 360, height: 360 }, 0)
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 360, 360))
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    await nextTick()
+    const lastFrame = requestFrame.mock.lastCall![0]
+    requestFrame.mockClear()
+    lastFrame(240)
+    expect(requestFrame).not.toHaveBeenCalled()
+    await wrapper.get('[role="application"]').trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('[role="application"]').exists()).toBe(false)
+    expect(requestFrame).toHaveBeenCalledOnce()
   })
 
   it('keeps the same dot field and game through the result transition', async () => {
