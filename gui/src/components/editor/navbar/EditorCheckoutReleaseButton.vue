@@ -125,7 +125,7 @@ async function performCheckout(release: ProjectRelease) {
       const releaseFiles = getFiles(release.files)
       await props.project.loadFiles(releaseFiles)
     }),
-    t({ en: 'Restoring the project from this release...', zh: '正在从此发布版本恢复项目...' })
+    t({ en: 'Restoring the project from this release', zh: '正在从此发布版本恢复项目' })
   )
   m.success(t({ en: 'Project restored from the release', zh: '已从发布版本恢复项目' }))
 }
