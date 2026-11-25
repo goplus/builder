@@ -105,6 +105,20 @@ describe('generation game', () => {
     expect(game.finishedAt).toBe(120)
   })
 
+  it('keeps a resting ghost in place, then lets it catch a player who stands still', () => {
+    const game = ringGame()
+    game.direction = game.turn = 'ArrowUp'
+    game.ghosts = [{ x: 1, y: 2, restUntil: 300 }]
+    stepGame(game, 100)
+    stepGame(game, 200)
+    expect(game.ghosts[0]).toMatchObject({ x: 1, y: 2 })
+    stepGame(game, 300)
+    stepGame(game, 400)
+    expect(game.ghosts[0]).toMatchObject({ x: 1, y: 1 })
+    expect(game.status).toBe('caught')
+    expect(game.finishedAt).toBe(400)
+  })
+
   it('keeps ghost collisions lethal after eight seconds', () => {
     const game = ringGame()
     game.ticks = 79
