@@ -67,10 +67,9 @@ export function useBackdropGenModal() {
 
 export function useAddAssetFromLibrary() {
   const editorCtx = useEditorCtx()
-  const genHelpers = useGenHelpers()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: SpxProject, type: T) {
-    const result = await invokeAssetLibraryModal({ project, type, genHelpers })
+    const result = await invokeAssetLibraryModal({ project, type })
     const models = 'generatedSprite' in result ? [result.generatedSprite] : result.models
     const em = humanizeAssetType(type)
     await editorCtx.state.history.doAction(

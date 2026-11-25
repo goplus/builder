@@ -58,7 +58,7 @@ import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import SpriteGenPhaseSettings from '../gen/sprite/SpriteGenPhaseSettings.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
-import { initBackdropGen, initSpriteGen, type GenHelpers } from '../gen/modal'
+import { initBackdropGen, initSpriteGen } from '../gen/modal'
 
 import genAssetIcon from './gen-asset.svg?raw'
 import spriteBanner from './asset-library-sprite-banner.png'
@@ -69,7 +69,6 @@ const props = defineProps<{
   type: AssetType
   visible: boolean
   project: SpxProject
-  genHelpers: GenHelpers
 }>()
 
 const emit = defineEmits<{
@@ -123,11 +122,6 @@ const gen = useWatchResult(
 // Reset gen on keyword change to avoid stale state if the user searches again without entering gen phase.
 // TODO: Recreating gen on every keyword change might be too frequent. Consider constructing it only when needed.
 watch(keyword, resetGen)
-
-const allowBackFromGen = computed(() => {
-  if (gen.value instanceof SpriteGen) return gen.value.isPreparePhase
-  return true
-})
 
 const headerStyle = computed(() => {
   const banner = {
@@ -255,16 +249,6 @@ const handleBackFromGen = useMessageHandle(
   }
 ).fn
 
-const modalRef = ref<InstanceType<typeof UIModal> | null>()
-async function collapseGen() {
-  if (gen.value == null) throw new Error('asset gen expected')
-  const genPos = await props.genHelpers.getPos(gen.value)
-  if (modalRef.value != null && genPos != null) {
-    modalRef.value.setTransformOrigin(genPos)
-  }
-  emit('cancelled')
-}
-
 function handleGenResolved(model: AssetModel) {
   emit('resolved', { models: [model] })
 }
@@ -300,23 +284,16 @@ const handleModalClose = useMessageHandle(
       emit('cancelled')
       return
     }
-    if (!props.genHelpers.isPersisted(gen.value)) {
-      // If the gen is not persisted, closing the modal means dropping the current gen,
-      // which may cause data loss, so we should confirm with the user.
-      const em = entityMessage.value
-      await confirm({
-        title: i18n.t({ zh: `退出${em.zh}生成？`, en: `Exit ${em.en} generation?` }),
-        content: i18n.t({
-          zh: '当前内容不会被保存，确定要退出吗？',
-          en: 'Current progress will not be saved. Are you sure to exit?'
-        }),
-        confirmText: i18n.t({ en: 'Exit', zh: '退出' })
-      })
-      emit('cancelled')
-    } else {
-      // If the gen is already persisted, we can simply collapse the modal without worrying about data loss.
-      return collapseGen()
-    }
+    const em = entityMessage.value
+    await confirm({
+      title: i18n.t({ zh: `退出${em.zh}生成？`, en: `Exit ${em.en} generation?` }),
+      content: i18n.t({
+        zh: '当前内容不会被保存，确定要退出吗？',
+        en: 'Current progress will not be saved. Are you sure to exit?'
+      }),
+      confirmText: i18n.t({ en: 'Exit', zh: '退出' })
+    })
+    emit('cancelled')
   },
   { en: 'Failed to exit modal', zh: '退出失败' }
 ).fn
@@ -330,7 +307,6 @@ const title = computed(() => {
 
 <template>
   <UIModal
-    ref="modalRef"
     :radar="{ name: 'asset-library-modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
     style="width: 1076px; height: 800px"
     :visible="visible"
@@ -340,7 +316,7 @@ const title = computed(() => {
     <header class="h-14 flex items-center justify-between border-b border-grey-400 px-6">
       <div class="flex items-center gap-xl">
         <UIButton
-          v-if="isGenerating && allowBackFromGen"
+          v-if="isGenerating"
           class="-rotate-90"
           type="white"
           shape="square"
