@@ -448,7 +448,11 @@ const title = computed(() => {
             }}
           </span>
           <UIButton
-            v-radar="{ name: 'confirm-button', desc: 'Click to confirm asset selection' }"
+            v-radar="{
+              name: 'confirm-button',
+              label: $t({ en: 'Add', zh: '添加' }),
+              desc: 'Add the selected assets to the project'
+            }"
             size="large"
             :disabled="selected.length === 0"
             :loading="handleConfirm.isLoading.value"
