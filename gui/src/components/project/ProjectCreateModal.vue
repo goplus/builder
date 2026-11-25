@@ -89,10 +89,14 @@ const title = computed(() => {
   return { en: `Remix ${props.remixSource}`, zh: `改编 ${props.remixSource}` }
 })
 
-const initialName = props.remixSource == null ? '' : parseRemixSource(props.remixSource).project
+function getInitialProjectName() {
+  if (props.sourceProject != null) return props.sourceProject.metadata.name ?? ''
+  if (props.remixSource != null) return parseRemixSource(props.remixSource).project
+  return ''
+}
 
 const form = useForm({
-  name: [initialName, validateName]
+  name: [getInitialProjectName(), validateName]
 })
 
 function handleCancel() {

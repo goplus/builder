@@ -215,18 +215,20 @@ describe('Playground Copilot on course exit', () => {
   )
 })
 
-it('downloads the current exercise directly from the Playground menu', async () => {
-  const project = {
-    getSignal: () => new AbortController().signal,
-    export: vi.fn().mockResolvedValue({ metadata: { name: 'exercise' }, files: {} })
-  }
-  const wrapper = mountPlayground(createProjectQueryRet({ title: 'Course', project } as unknown as TutorialProject))
-  await flushPromises()
-  const items = wrapper.findAll('nav .menu-item')
-  expect(items.map((item) => item.text())).toEqual(['Save as my project...', 'Export project file'])
-  await items[1].trigger('click')
-  await vi.waitFor(() => expect(saveAs).toHaveBeenCalledWith(expect.any(File), 'exercise.xbp'))
-  expect(project.export).toHaveBeenCalledOnce()
+describe('Playground project menu', () => {
+  it('downloads the current exercise directly', async () => {
+    const project = {
+      getSignal: () => new AbortController().signal,
+      export: vi.fn().mockResolvedValue({ metadata: { name: 'exercise' }, files: {} })
+    }
+    const wrapper = mountPlayground(createProjectQueryRet({ title: 'Course', project } as unknown as TutorialProject))
+    await flushPromises()
+    const items = wrapper.findAll('nav .menu-item')
+    expect(items.map((item) => item.text())).toEqual(['Save as my project...', 'Export project file'])
+    await items[1].trigger('click')
+    await vi.waitFor(() => expect(saveAs).toHaveBeenCalledWith(expect.any(File), 'exercise.xbp'))
+    expect(project.export).toHaveBeenCalledOnce()
+  })
 })
 
 describe('Playground startup rendering', () => {
