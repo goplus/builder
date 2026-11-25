@@ -1,5 +1,7 @@
+import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setupAigcMock } from '@/models/spx/gen/aigc-mock'
+import { TaskType } from '@/apis/aigc'
 import { mountPages, setupPageTests, signIn } from '@/apps/xbuilder/pages/test'
 import * as cloud from '@/models/common/cloud'
 import { fromText } from '@/models/common/file'
@@ -59,7 +61,8 @@ describe('sprite generation', () => {
     expect(sprite.defaultCostume?.name).toBe('costume-1')
     expect(wrapper.findAll('[aria-label^="Costume generation item"]')).toHaveLength(1)
   })
-  it('shows the applied animation after applying a second generated animation', async () => {
+  /** Opens a sprite with one applied animation and shows a second generated animation ready to apply. */
+  async function openSecondAnimationDraft() {
     const { wrapper } = await mountPages('/editor/alice/First%20flight')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Sprites panel"]').exists()).toBe(true), { timeout: 4000 })
     const { project, state } = wrapper.getComponent(EditorContextProvider).props()
@@ -85,10 +88,31 @@ describe('sprite generation', () => {
     await wrapper.get('[aria-label="Animations tab"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.findAll('[aria-label^="Animation generation item"]')).toHaveLength(1))
     await wrapper.get('[aria-label^="Animation generation item"]').trigger('click')
+    const detailName = () => wrapper.get('[aria-label^="Item detail"] h4').text()
+    return { wrapper, sprite, detailName }
+  }
+  it('shows the applied animation after applying a second generated animation', async () => {
+    const { wrapper, sprite, detailName } = await openSecondAnimationDraft()
     await wrapper.get('[aria-label="Apply result"]').trigger('click')
     await vi.waitFor(() => expect(sprite.animations).toHaveLength(2))
-    const applied = sprite.animations[1].name
-    await vi.waitFor(() => expect(wrapper.get('[aria-label^="Item detail"]').text()).toContain(applied))
+    await vi.waitFor(() => expect(detailName()).toBe(sprite.animations[1].name))
+  })
+  it('keeps another animation selected while a generated animation is being applied', async () => {
+    const { wrapper, sprite, detailName } = await openSecondAnimationDraft()
+    let extract = () => {}
+    const extracting = new Promise<void>((resolve) => (extract = resolve))
+    api.registerTaskHandler(TaskType.ExtractVideoFrames, async function* (_task, _params, defaultHandler) {
+      await extracting
+      yield* defaultHandler()
+    })
+    await wrapper.get('[aria-label="Apply result"]').trigger('click')
+    const [first] = sprite.animations
+    await wrapper.get('[aria-label="Animations management"]').get(`[title="${first.name}"]`).trigger('click')
+    await vi.waitFor(() => expect(detailName()).toBe(first.name))
+    extract()
+    await vi.waitFor(() => expect(sprite.animations).toHaveLength(2))
+    await flushPromises()
+    expect(detailName()).toBe(first.name)
   })
   it('resumes a saved sprite in the original modal and prepares its costumes there', async () => {
     const { wrapper } = await mountPages('/editor/alice/First%20flight')

@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import { shallowReactive } from 'vue'
 import { Cancelled, capture, DefaultException } from '@/utils/exception'
-import { Disposable } from '@/utils/disposable'
+import Emitter from '@/utils/emitter'
 import type { I18n } from '@/utils/i18n'
 import { generateSpriteContentSettings, type AnimationSettings, type CostumeSettings } from '@/apis/aigc'
 import type { Size } from '@/models/common'
@@ -65,7 +65,10 @@ function addResource(sprite: Sprite, resource: Costume | Animation, boundStates:
   }
 }
 
-export class SpriteResourceGens extends Disposable {
+export class SpriteResourceGens extends Emitter<{
+  /** Emitted in the step that replaces the draft with the resource, so that listeners update together with it. */
+  didAdopt: { draftId: string; resourceId: string }
+}> {
   private readonly allDrafts = shallowReactive<SpriteResourceGen[]>([])
 
   constructor(
@@ -236,6 +239,7 @@ export class SpriteResourceGens extends Disposable {
       if (reference != null && rawSize != null) alignPivot(resource, reference, rawSize)
       addResource(gen.sprite, resource, draft.boundStates)
       saved = this.takeDraft(id)
+      this.emit('didAdopt', { draftId: id, resourceId: resource.id })
       return resource
     }
     return history.doAction(action, apply, () => this.checkAdoption(draft, adoption))

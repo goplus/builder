@@ -14,22 +14,15 @@ import AnimationSettingsInput from '@/components/asset/gen/animation/AnimationSe
 import AnimationVideoPreview from '@/components/asset/gen/animation/AnimationVideoPreview.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 
-const props = defineProps<{
-  draft: SpriteResourceGen
-  /** A prop rather than an event: adoption removes the draft and unmounts this detail, and Vue drops events emitted after unmount. */
-  onAdopted?: (id: string) => void
-}>()
+const props = defineProps<{ draft: SpriteResourceGen }>()
 const editor = useEditorCtx()
 const gen = computed(() => props.draft.gen)
 const phase = computed(() => (gen.value instanceof CostumeGen ? gen.value.generateState : gen.value.generateVideoState))
 const [image, loadingImage] = useRenderableImageUrl(() => (gen.value instanceof CostumeGen ? gen.value.image : null))
-const adopt = useMessageHandle(
-  async () => {
-    const resource = await editor.state.genState.spriteResources.adopt(props.draft, editor.state.history)
-    props.onAdopted?.(resource.id)
-  },
-  { en: 'Failed to add resource', zh: '添加资源失败' }
-)
+const adopt = useMessageHandle(() => editor.state.genState.spriteResources.adopt(props.draft, editor.state.history), {
+  en: 'Failed to add resource',
+  zh: '添加资源失败'
+})
 const { t } = useI18n()
 const confirm = useConfirmDialog()
 const discard = useMessageHandle(async () => {

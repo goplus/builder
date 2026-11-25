@@ -44,7 +44,6 @@
         v-if="state.selectedDraft != null"
         :key="state.selectedDraft.id"
         :draft="state.selectedDraft"
-        @adopted="state.select($event)"
       />
       <AnimationDetail
         v-else-if="state.selected != null"
@@ -86,6 +85,11 @@ export class AnimationsEditorState extends Disposable {
             this.select(this.animations[0]?.id ?? this.drafts[0]?.id ?? null)
         }
       )
+    )
+    this.addDisposer(
+      spriteResources.on('didAdopt', ({ draftId, resourceId }) => {
+        if (this.selectedIdRef.value === draftId) this.select(resourceId)
+      })
     )
   }
 
