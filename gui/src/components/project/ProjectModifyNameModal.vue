@@ -56,7 +56,7 @@ const handleSubmit = useMessageHandle(
 async function validateName(name: string): Promise<FormValidationResult> {
   name = name.trim()
 
-  if (name === '') return t({ en: 'Enter a project name.', zh: '请输入项目名' })
+  if (name === '') return t({ en: 'Enter a project name.', zh: '请输入项目名。' })
 
   if (!/^[\w-]+$/.test(name))
     return t({
@@ -76,8 +76,8 @@ async function validateName(name: string): Promise<FormValidationResult> {
   if (owner == null) throw new Error('Project owner is not loaded')
   if (await isProjectNameTaken(owner, name))
     return t({
-      en: `Project ${name} already exists`,
-      zh: `项目 ${name} 已存在`
+      en: `Project ${name} already exists.`,
+      zh: `项目 ${name} 已存在。`
     })
 }
 </script>

@@ -195,6 +195,10 @@ When working with backend unique string identifiers such as `username`, project 
 * Do not use native CSS nesting in plain `<style>` / `<style scoped>` blocks; use flat selectors to avoid browser compatibility issues.
 * Keep single-use values local; only add setup variables when reused/computed or clearly improving readability.
 
+### IDE Copy Guidelines
+
+Follow the [XBuilder IDE copy guidelines](../docs/develop/ide-copy.md) when writing or reviewing interface text.
+
 ### Menu Item Text Guidelines
 
 When creating or modifying menu items, follow these UI guidelines for ellipses:
@@ -204,7 +208,7 @@ When creating or modifying menu items, follow these UI guidelines for ellipses:
 - "Open project..." - Opens dialog to select project
 - "Import project file..." - Opens file picker
 - "Publish project..." - Opens dialog for settings
-- "Remove project..." - Opens confirmation dialog
+- "Delete project..." - Opens confirmation dialog
 
 **No ellipsis** when the action executes immediately or only displays information:
 - "Export project file" - Exports directly

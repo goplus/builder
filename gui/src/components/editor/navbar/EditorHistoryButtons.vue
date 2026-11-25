@@ -20,14 +20,14 @@ const undoAction = computed(() => props.history.getUndoAction())
 
 const undoText = computed(() => ({
   en: undoAction.value != null ? `Undo "${undoAction.value.name.en}"` : 'Undo',
-  zh: undoAction.value != null ? `撤销「${undoAction.value.name.zh}」` : '撤销'
+  zh: undoAction.value != null ? `撤销“${undoAction.value.name.zh}”` : '撤销'
 }))
 
 const redoAction = computed(() => props.history.getRedoAction())
 
 const redoText = computed(() => ({
   en: redoAction.value != null ? `Redo "${redoAction.value.name.en}"` : 'Redo',
-  zh: redoAction.value != null ? `重做「${redoAction.value.name.zh}」` : '重做'
+  zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
 }))
 
 const handleUndo = useMessageHandle(() => props.history.undo(), {

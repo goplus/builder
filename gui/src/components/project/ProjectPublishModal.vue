@@ -51,8 +51,8 @@ const form = useForm({
 function validateText(val: string, maxLength: number) {
   if (val.length > maxLength)
     return t({
-      en: `The input must be ${maxLength} characters or fewer`,
-      zh: `输入不能超过 ${maxLength} 个字符`
+      en: `The input must be ${maxLength} characters or fewer.`,
+      zh: `输入不能超过 ${maxLength} 个字符。`
     })
   return null
 }

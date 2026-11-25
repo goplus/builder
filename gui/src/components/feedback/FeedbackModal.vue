@@ -45,11 +45,11 @@ const form = useForm({
 
 function validateTitle(value: string) {
   const trimmed = value.trim()
-  if (trimmed === '') return i18n.t({ en: 'Enter a title', zh: '请输入标题' })
+  if (trimmed === '') return i18n.t({ en: 'Enter a title.', zh: '请输入标题。' })
   if (trimmed.length > feedbackTitleMaxLength)
     return i18n.t({
-      en: `The title must be ${feedbackTitleMaxLength} characters or fewer`,
-      zh: `标题不能超过 ${feedbackTitleMaxLength} 个字符`
+      en: `The title must be ${feedbackTitleMaxLength} characters or fewer.`,
+      zh: `标题不能超过 ${feedbackTitleMaxLength} 个字符。`
     })
   return null
 }
@@ -59,8 +59,8 @@ function validateDescription(value: string) {
   if (trimmed === '') return i18n.t({ en: 'Describe the problem', zh: '请描述遇到的问题' })
   if (trimmed.length > feedbackDescriptionMaxLength)
     return i18n.t({
-      en: `The description must be ${feedbackDescriptionMaxLength} characters or fewer`,
-      zh: `描述不能超过 ${feedbackDescriptionMaxLength} 个字符`
+      en: `The description must be ${feedbackDescriptionMaxLength} characters or fewer.`,
+      zh: `描述不能超过 ${feedbackDescriptionMaxLength} 个字符。`
     })
   return null
 }

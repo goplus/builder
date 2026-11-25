@@ -108,7 +108,7 @@ function handleConfirmCancel() {
         {{
           $t({
             en: `Selected release: ${selectedRelease?.name}`,
-            zh: `已选择发布版本「${selectedRelease?.name}」。`
+            zh: `已选择发布版本“${selectedRelease?.name}”。`
           })
         }}
       </p>
