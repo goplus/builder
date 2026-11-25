@@ -1,6 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
-import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi, type Mock } from 'vitest'
 import { useContentSize } from '@/utils/dom'
 import { createI18n } from '@/utils/i18n'
 import { createRadar } from '@/utils/radar'
@@ -23,7 +23,7 @@ async function setup(reduced = false, mountGame = false, dimensions = { width: 3
   vi.stubGlobal('matchMedia', () => media)
   vi.stubGlobal('requestAnimationFrame', requestFrame)
   vi.stubGlobal('cancelAnimationFrame', cancelFrame)
-  const context = { scale: vi.fn(), clearRect: vi.fn(), beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn() }
+  const context = { globalAlpha: 1, scale: vi.fn(), clearRect: vi.fn(), beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn() }
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as unknown as CanvasRenderingContext2D)
   const wrapper = shallowMount(GenLoading, {
     attachTo: document.body,
@@ -44,6 +44,16 @@ async function setup(reduced = false, mountGame = false, dimensions = { width: 3
   return { wrapper, media, requestFrame, cancelFrame, context, size }
 }
 
+function recordAlphas(context: { arc: Mock; globalAlpha: number }) {
+  const alphas: number[] = []
+  context.arc.mockImplementation(() => alphas.push(context.globalAlpha))
+  return alphas
+}
+
+function countAlpha(alphas: number[], alpha: number) {
+  return alphas.filter((value) => Math.abs(value - alpha) < 1e-9).length
+}
+
 describe('GenLoading', () => {
   it.each([
     { width: 200, height: 40 },
@@ -56,6 +66,49 @@ describe('GenLoading', () => {
     await nextTick()
     expect(context.arc).toHaveBeenCalled()
     expect(requestFrame).toHaveBeenCalled()
+  })
+
+  it.each([
+    { width: 0, height: 360 },
+    { width: 360, height: 0 }
+  ])('skips drawing when a dimension collapses to $width × $height', async (dimensions) => {
+    const { wrapper, context, requestFrame, cancelFrame, size } = await setup()
+    await wrapper.setProps({ compact: true, playable: false })
+    const arcs = context.arc.mock.calls.length
+    const frames = requestFrame.mock.calls.length
+    const cancels = cancelFrame.mock.calls.length
+    size.value = dimensions
+    await nextTick()
+    expect(context.arc).toHaveBeenCalledTimes(arcs)
+    expect(requestFrame).toHaveBeenCalledTimes(frames)
+    expect(cancelFrame).toHaveBeenCalledTimes(cancels + 1)
+  })
+
+  it('skips drawing when the canvas has no 2d context', async () => {
+    const { context, requestFrame, size } = await setup()
+    const arcs = context.arc.mock.calls.length
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
+    size.value = { width: 400, height: 400 }
+    await nextTick()
+    expect(context.arc).toHaveBeenCalledTimes(arcs)
+    expect(requestFrame).toHaveBeenCalledOnce()
+  })
+
+  it('scales the canvas backing store by the device pixel ratio', async () => {
+    vi.stubGlobal('devicePixelRatio', 2)
+    const { wrapper, context } = await setup()
+    const canvas = wrapper.get('canvas').element as HTMLCanvasElement
+    expect(canvas.width).toBe(720)
+    expect(canvas.height).toBe(720)
+    expect(context.scale).toHaveBeenCalledExactlyOnceWith(2, 2)
+  })
+
+  it('clears the viewport before every frame', async () => {
+    const { context, requestFrame } = await setup()
+    expect(context.clearRect).toHaveBeenCalledExactlyOnceWith(0, 0, 360, 360)
+    requestFrame.mock.lastCall![0](performance.now() + 100)
+    expect(context.clearRect).toHaveBeenCalledTimes(2)
+    expect(context.clearRect).toHaveBeenLastCalledWith(0, 0, 360, 360)
   })
 
   it.each([
@@ -104,6 +157,43 @@ describe('GenLoading', () => {
     const gameDots = context.arc.mock.calls.map(([x, y, radius]) => [x, y, radius])
     expect(gameDots).toEqual(loadingDots)
     expect(wrapper.get('.message').attributes('style')).toBe(footerStyle)
+  })
+
+  it('fades an eaten dot out over 160 ms', async () => {
+    const { wrapper, context, requestFrame } = await setup()
+    const { columns, rows } = gameGrid(360, 360)
+    const game = createGame('ArrowRight', columns, rows, 0)
+    wrapper.getComponent(GenerationGame).vm.$emit('change', game)
+    await nextTick()
+    const [pellet] = game.pellets
+    game.eaten.set(pellet, 1000)
+    const alphas = recordAlphas(context)
+    requestFrame.mock.lastCall![0](1000)
+    expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size)
+    alphas.length = 0
+    requestFrame.mock.lastCall![0](1080)
+    expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size - 1)
+    expect(countAlpha(alphas, 0.325)).toBe(1)
+    alphas.length = 0
+    requestFrame.mock.lastCall![0](1160)
+    expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size - 1)
+    expect(countAlpha(alphas, 0)).toBe(alphas.length - game.pellets.size + 1)
+  })
+
+  it('shows the maze at once for reduced motion and still clears eaten dots', async () => {
+    const { wrapper, context, requestFrame } = await setup(true)
+    const { columns, rows } = gameGrid(360, 360)
+    const game = createGame('ArrowRight', columns, rows, 0)
+    const alphas = recordAlphas(context)
+    wrapper.getComponent(GenerationGame).vm.$emit('change', game)
+    await nextTick()
+    expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size)
+    expect(countAlpha(alphas, 0)).toBe(alphas.length - game.pellets.size)
+    const [pellet] = game.pellets
+    game.eaten.set(pellet, 1000)
+    alphas.length = 0
+    requestFrame.mock.lastCall![0](1160)
+    expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size - 1)
   })
 
   it('keeps the same dot field and game through the result transition', async () => {
