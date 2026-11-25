@@ -56,6 +56,7 @@ import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import SpriteGenComp from '../gen/sprite/SpriteGen.vue'
 import BackdropGenComp from '../gen/backdrop/BackdropGen.vue'
 import { initBackdropGen, initSpriteGen, type GenHelpers } from '../gen/modal'
+import { assetListLoadError } from './messages'
 
 import genAssetIcon from './gen-asset.svg?raw'
 import spriteBanner from './asset-library-sprite-banner.png'
@@ -164,10 +165,7 @@ const queryRet = useQuery({
     if (librarySource.value === 'personal') return listSignedInUserAssets(params)
     return listAssets({ ...params, visibility: Visibility.Public })
   },
-  failureSummaryMessage: {
-    en: 'Failed to list',
-    zh: '获取列表失败'
-  }
+  failureSummaryMessage: assetListLoadError
 })
 
 const resultTooFew = computed(() => {
@@ -180,18 +178,6 @@ const isLastPage = computed(() => {
 })
 const shouldShowGenSuggestion = computed(() => {
   return (resultTooFew.value || isLastPage.value) && gen.value != null && librarySource.value === 'public'
-})
-const genSuggestionMessage = computed(() => {
-  if (resultTooFew.value) {
-    return {
-      en: 'Too few related assets. Why not let AI generate one for you?',
-      zh: '相关的素材太少，不如让 AI 帮你生成一个？'
-    }
-  }
-  return {
-    en: "Reached the end. Still haven't found the right asset? Why not let AI generate one for you?",
-    zh: '已经到底了，还没找到合适的素材？不如让 AI 帮你生成一个？'
-  }
 })
 
 const selected = shallowReactive<AssetData[]>([])
@@ -321,7 +307,7 @@ const handleModalClose = useMessageHandle(
 const title = computed(() => {
   const em = entityMessage.value
   if (isGenerating.value) return { en: `Generate ${em.en}`, zh: `生成${em.zh}` }
-  return { en: `Choose a ${em.en}`, zh: `选择${em.zh}` }
+  return { en: `Choose ${em.en}s`, zh: `选择${em.zh}` }
 })
 </script>
 
@@ -397,16 +383,12 @@ const title = computed(() => {
                 <template v-if="SettingsInput != null && gen != null && librarySource === 'public'" #empty>
                   <div class="mx-auto h-109 flex flex-col items-center gap-6 pt-10">
                     <div class="text-grey-700">
-                      <span>{{ $t({ zh: `没找到`, en: `No assets found for ` }) }}</span>
-                      <span class="text-grey-1000">{{ $t({ zh: `“${keyword}”`, en: `"${keyword}"` }) }}</span>
-                      <span>
-                        {{
-                          $t({
-                            zh: '相关的素材，不如让 AI 帮你生成一个？',
-                            en: '. Why not let AI generate one for you?'
-                          })
-                        }}
-                      </span>
+                      {{
+                        $t({
+                          en: 'No assets found. You can generate one with AI.',
+                          zh: '没找到素材。可以用 AI 生成一个。'
+                        })
+                      }}
                     </div>
                     <SettingsInput
                       class="w-146!"
@@ -435,7 +417,12 @@ const title = computed(() => {
                     />
                     <div v-if="shouldShowGenSuggestion" class="flex flex-col items-center gap-5 py-11">
                       <div class="text-xl text-grey-700">
-                        {{ $t(genSuggestionMessage) }}
+                        {{
+                          $t({
+                            en: 'Can’t find the right asset? Try generating one with AI.',
+                            zh: '还没找到合适的素材？可以试试 AI 生成。'
+                          })
+                        }}
                       </div>
                       <UIButton size="large" @click="handleGenStart">
                         <template #icon>
@@ -461,13 +448,17 @@ const title = computed(() => {
             }}
           </span>
           <UIButton
-            v-radar="{ name: 'confirm-button', desc: 'Click to confirm asset selection' }"
+            v-radar="{
+              name: 'confirm-button',
+              label: $t({ en: 'Add', zh: '添加' }),
+              desc: 'Add the selected assets to the project'
+            }"
             size="large"
             :disabled="selected.length === 0"
             :loading="handleConfirm.isLoading.value"
             @click="handleConfirm.fn"
           >
-            {{ $t({ en: 'Confirm', zh: '确认' }) }}
+            {{ $t({ en: 'Add', zh: '添加' }) }}
           </UIButton>
         </footer>
       </div>
