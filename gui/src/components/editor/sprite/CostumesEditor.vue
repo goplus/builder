@@ -91,30 +91,12 @@ export class CostumesEditorState {
     }
     this.select(costume.id)
   }
-  /** Select a costume (by specifying route path) */
-  selectByRoute(path: PathSegments) {
-    const [name, rest] = shiftPath(path)
-    if (name === 'drafts' && rest.length === 1) {
-      const draft = this.drafts.find((d) => d.id === rest[0])
-      if (draft != null) this.select(draft.id)
-      return
-    }
-    if (name == null) return
-    return this.selectByName(name)
-  }
-  /** Get route path for the current selection */
-  getRoute(): PathSegments {
-    if (this.selectedDraft != null) return ['drafts', this.selectedDraft.id]
-    if (this.selected == null) return []
-    return [this.selected.name]
-  }
 }
 </script>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { capture, useMessageHandle } from '@/utils/exception'
-import { shiftPath, type PathSegments } from '@/utils/route'
 import { useEnsureSignedIn } from '@/utils/user'
 import { Costume } from '@/models/spx/costume'
 import { CostumeGen } from '@/models/spx/gen/costume-gen'

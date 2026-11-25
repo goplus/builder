@@ -174,6 +174,43 @@ describe('sprite generation in the editor', () => {
     expect(state.spriteResources.drafts.find((d) => d.id === draft.id)?.versions).toHaveLength(1)
   })
 
+  it.each([false, true])('allows undo during reference measurement (image replaced: %s)', async (replaceImage) => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const reference = sprite.defaultCostume!
+    const originalImage = reference.img
+    reference.setBitmapResolution(4)
+    reference.setPivot({ x: 80, y: 90 })
+    const draft = state.spriteResources.addCostume(sprite)
+    expect.assert(draft.gen instanceof CostumeGen)
+    await draft.gen.generate()
+    const costume = await draft.gen.finish()
+    const center = costume.pivot
+    const history = new History(project)
+    await history.doAction({ name: { en: 'Change reference', zh: '修改参考造型' } }, () => {
+      reference.setPivot({ x: 0, y: 0 })
+      reference.setBitmapResolution(1)
+      if (replaceImage) reference.setImg(costume.img)
+    })
+    const measure = vi.mocked(files.getImageSize).mockClear()
+    measure.mockImplementationOnce(async (image) => {
+      expect(image).toBe(reference.img)
+      await history.undo()
+      return image === originalImage ? { width: 512, height: 512 } : { width: 120, height: 200 }
+    })
+
+    await state.spriteResources.adopt(draft, history)
+    expect(measure.mock.calls.map(([image]) => image)).toEqual(
+      replaceImage ? [costume.img, originalImage] : [originalImage]
+    )
+    const restoredSprite = project.sprites.find((s) => s.id === sprite.id)!
+    expect(restoredSprite.defaultCostume).toBe(costume)
+    expect(costume.pivot).toEqual({ x: center.x + 16, y: center.y + 26 })
+    await history.undo()
+    expect(history.getUndoAction()).toBeNull()
+  })
+
   it('does not adopt a removed draft when its pending operation finishes', async () => {
     const { project, state, gen } = await setup()
     const sprite = await gen.finishWithDefaultCostume()

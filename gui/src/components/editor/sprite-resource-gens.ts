@@ -4,22 +4,23 @@ import { Cancelled, capture, DefaultException } from '@/utils/exception'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { generateSpriteContentSettings, type AnimationSettings, type CostumeSettings } from '@/apis/aigc'
-import { type Files, fromConfig, toConfig } from '@/models/common/file'
+import type { Size } from '@/models/common'
+import { type Files, fromConfig, getImageSize, toConfig } from '@/models/common/file'
 import { ensureValidAnimationName, ensureValidCostumeName } from '@/models/spx/common/asset-name'
 import { resourceAnimationName, resourceCostumeName } from '@/models/spx/common/resource'
-import { Costume, type Pivot } from '@/models/spx/costume'
+import { Costume } from '@/models/spx/costume'
 import { getSpriteSettings, type SpriteResourceOwner } from '@/models/spx/gen/common'
 import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { SpriteResourceGen, type StoredSpriteResourceGen } from '@/models/spx/gen/sprite-resource-gen'
 import type { SpxProject } from '@/models/spx/project'
 import { State, type Sprite } from '@/models/spx/sprite'
-import type { History } from './history'
+import type { Action, History } from './history'
 
 const indexPath = 'gen/sprite-resources/index.json'
 
 export class SpriteResourceGens extends Disposable {
-  private readonly entries = shallowReactive<SpriteResourceGen[]>([])
+  private readonly allDrafts = shallowReactive<SpriteResourceGen[]>([])
 
   constructor(
     private i18n: I18n,
@@ -33,11 +34,11 @@ export class SpriteResourceGens extends Disposable {
   // Its drafts stay available for redo but are only displayed and saved while it belongs to the project.
   get drafts() {
     const spriteIds = new Set(this.project.sprites.map((sprite) => sprite.id))
-    return this.entries.filter((draft) => spriteIds.has(draft.spriteId))
+    return this.allDrafts.filter((draft) => spriteIds.has(draft.spriteId))
   }
 
   draftsFor<T extends typeof CostumeGen | typeof AnimationGen>(sprite: Sprite | null, type: T) {
-    return this.entries.filter(
+    return this.allDrafts.filter(
       (draft): draft is SpriteResourceGen & { gen: InstanceType<T> } =>
         draft.spriteId === sprite?.id && draft.gen instanceof type
     )
@@ -68,7 +69,7 @@ export class SpriteResourceGens extends Disposable {
       referenceCostumeId: sprite.defaultCostume?.id
     })
     const draft = new SpriteResourceGen(this.i18n, this.project, gen, settings != null)
-    this.entries.push(draft)
+    this.allDrafts.push(draft)
     return draft
   }
 
@@ -81,7 +82,7 @@ export class SpriteResourceGens extends Disposable {
       referenceCostumeId: sprite.defaultCostume?.id
     })
     const draft = new SpriteResourceGen(this.i18n, this.project, gen, settings != null, bindings)
-    this.entries.push(draft)
+    this.allDrafts.push(draft)
     return draft
   }
 
@@ -108,9 +109,9 @@ export class SpriteResourceGens extends Disposable {
   }
 
   private takeDraft(id: string) {
-    const index = this.entries.findIndex((draft) => draft.id === id)
+    const index = this.allDrafts.findIndex((draft) => draft.id === id)
     if (index === -1) return null
-    const draft = this.entries[index]
+    const draft = this.allDrafts[index]
     const [config, files] = draft.export()
     this.remove(draft)
     return { index, config, files }
@@ -130,76 +131,101 @@ export class SpriteResourceGens extends Disposable {
     const media = gen instanceof CostumeGen ? gen.image : gen.video
     const framesConfig = gen instanceof AnimationGen ? gen.framesConfig : null
     const resource = gen.result ?? (await gen.finish())
-    let pivotOffset: Pivot | null = null
-    const name =
-      resource instanceof Costume ? { en: 'Add costume', zh: '添加造型' } : { en: 'Add animation', zh: '添加动画' }
-    let saved: ReturnType<SpriteResourceGens['takeDraft']>
-    return history.doAction(
-      {
-        name,
-        onUndo: () => {
-          if (saved == null || this.isDisposed) return
-          const { config, files, index } = saved
-          const owner = this.project.sprites.find((s) => s.id === config.spriteId)
-          if (owner == null) return
-          const restored = SpriteResourceGen.load(this.i18n, this.owner(owner), this.project, config, files)
-          restored.gen.resetFinishState()
-          this.entries.splice(index, 0, restored)
-        },
-        onRedo: () => {
-          saved = this.takeDraft(id)
-        }
-      },
-      () => {
-        // History may have reloaded the sprite while the generated resource was being prepared.
-        const sprite = gen.sprite
-        if (pivotOffset != null) {
-          if (resource instanceof Costume)
-            resource.setPivot({ x: resource.pivot.x + pivotOffset.x, y: resource.pivot.y + pivotOffset.y })
-          else resource.applyCostumesPivotChange(pivotOffset)
-        }
-        if (resource instanceof Costume) {
-          sprite.addCostume(resource)
-          sprite.setDefaultCostume(resource.id)
-        } else {
-          sprite.addAnimation(resource)
-          sprite.setAnimationBoundStates(resource.id, draft.boundStates, false)
-        }
-        saved = this.takeDraft(id)
-        return resource
-      },
-      async () => {
-        const reference = draft.versionReferenceCostume
-        const size = await reference?.getSize()
-        checkPresent()
-        if (
-          draft.gen !== gen ||
-          (gen instanceof CostumeGen
-            ? gen.image !== media
-            : gen.video !== media || !isEqual(gen.framesConfig, framesConfig))
-        ) {
-          if (gen.result === resource) gen.resetFinishState()
-          throw new DefaultException({
-            en: 'The result has changed. Review it and apply again.',
-            zh: '生成结果已变化，请查看后重新采用。'
-          })
-        }
-        if (reference != null && size != null)
-          pivotOffset = { x: reference.pivot.x - size.width / 2, y: reference.pivot.y - size.height / 2 }
+    const validate = () => {
+      checkPresent()
+      if (
+        draft.gen !== gen ||
+        (gen instanceof CostumeGen
+          ? gen.image !== media
+          : gen.video !== media || !isEqual(gen.framesConfig, framesConfig))
+      ) {
+        if (gen.result === resource) gen.resetFinishState()
+        throw new DefaultException({
+          en: 'The result has changed. Review it and apply again.',
+          zh: '生成结果已变化，请查看后重新采用。'
+        })
       }
-    )
+    }
+    let saved: ReturnType<SpriteResourceGens['takeDraft']>
+    const action: Action = {
+      name:
+        resource instanceof Costume ? { en: 'Add costume', zh: '添加造型' } : { en: 'Add animation', zh: '添加动画' },
+      onUndo: () => {
+        if (saved == null || this.isDisposed) return
+        const { config, files, index } = saved
+        const owner = this.project.sprites.find((s) => s.id === config.spriteId)
+        if (owner == null) return
+        const restored = SpriteResourceGen.load(this.i18n, this.owner(owner), this.project, config, files)
+        restored.gen.resetFinishState()
+        this.allDrafts.splice(index, 0, restored)
+      },
+      onRedo: () => {
+        saved = this.takeDraft(id)
+      }
+    }
+
+    const apply = (rawSize: Size | null) => {
+      // Undo can restore a new sprite and reference costume backed by the same image.
+      const sprite = gen.sprite
+      const reference = draft.versionReferenceCostume
+      if (reference != null && rawSize != null) {
+        const delta = {
+          x: reference.pivot.x - rawSize.width / reference.bitmapResolution / 2,
+          y: reference.pivot.y - rawSize.height / reference.bitmapResolution / 2
+        }
+        if (resource instanceof Costume)
+          resource.setPivot({ x: resource.pivot.x + delta.x, y: resource.pivot.y + delta.y })
+        else resource.applyCostumesPivotChange(delta)
+      }
+      if (resource instanceof Costume) {
+        sprite.addCostume(resource)
+        sprite.setDefaultCostume(resource.id)
+      } else {
+        sprite.addAnimation(resource)
+        sprite.setAnimationBoundStates(resource.id, draft.boundStates, false)
+      }
+      saved = this.takeDraft(id)
+      return resource
+    }
+
+    const referenceChanged = new Error('Reference image changed during adoption')
+    while (true) {
+      validate()
+      const image = draft.versionReferenceCostume?.img
+      let rawSize: Size | null = null
+      if (image != null) {
+        try {
+          rawSize = await getImageSize(image)
+        } catch (err) {
+          if (draft.versionReferenceCostume?.img !== image) continue
+          throw err
+        }
+      }
+      try {
+        return await history.doAction(
+          action,
+          () => apply(rawSize),
+          () => {
+            validate()
+            if (draft.versionReferenceCostume?.img !== image) throw referenceChanged
+          }
+        )
+      } catch (err) {
+        if (err !== referenceChanged) throw err
+      }
+    }
   }
 
   remove(draft: SpriteResourceGen) {
-    const index = this.entries.indexOf(draft)
+    const index = this.allDrafts.indexOf(draft)
     if (index < 0) return
-    this.entries.splice(index, 1)
+    this.allDrafts.splice(index, 1)
     draft.gen.cancel()
     draft.dispose()
   }
 
   private clear() {
-    this.entries.splice(0).forEach((d) => d.dispose())
+    this.allDrafts.splice(0).forEach((d) => d.dispose())
   }
 
   export(): Files {
@@ -223,7 +249,7 @@ export class SpriteResourceGens extends Disposable {
     for (const config of configs) {
       const sprite = this.project.sprites.find((s) => s.id === config.spriteId)
       if (sprite != null)
-        this.entries.push(SpriteResourceGen.load(this.i18n, this.owner(sprite), this.project, config, files))
+        this.allDrafts.push(SpriteResourceGen.load(this.i18n, this.owner(sprite), this.project, config, files))
     }
   }
 }

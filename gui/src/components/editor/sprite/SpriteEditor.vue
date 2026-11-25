@@ -106,36 +106,33 @@ export class SpriteEditorState extends Disposable {
     this.animationsState.select(animationId)
   }
 
+  private resourceEditor(type: 'costumes' | 'animations') {
+    return type === 'costumes' ? this.costumesState : this.animationsState
+  }
+
   /** Select a target (by specifying route path) */
   selectByRoute(path: PathSegments) {
     const [type, extra] = shiftPath(path)
-    switch (type) {
-      case 'code':
-      case null:
-        this.select('code')
-        break
-      case 'costumes':
-        this.select('costumes')
-        this.costumesState.selectByRoute(extra)
-        break
-      case 'animations':
-        this.select('animations')
-        this.animationsState.selectByRoute(extra)
-        break
-      default:
-        throw new Error(`Unknown type: ${type}`)
+    if (type === 'code' || type == null) return this.select('code')
+    if (type !== 'costumes' && type !== 'animations') throw new Error(`Unknown type: ${type}`)
+    this.select(type)
+    const editor = this.resourceEditor(type)
+    const [name, rest] = shiftPath(extra)
+    if (name === 'drafts' && rest.length === 1) {
+      const draft = editor.drafts.find((d) => d.id === rest[0])
+      if (draft != null) editor.select(draft.id)
+    } else if (name != null) {
+      editor.selectByName(name)
     }
   }
   /** Get route path for the current selection */
   getRoute(): PathSegments {
-    switch (this.selected.type) {
-      case 'code':
-        return ['code']
-      case 'costumes':
-        return ['costumes', ...this.costumesState.getRoute()]
-      case 'animations':
-        return ['animations', ...this.animationsState.getRoute()]
-    }
+    const type = this.selectedTypeRef.value
+    if (type === 'code') return [type]
+    const editor = this.resourceEditor(type)
+    if (editor.selectedDraft != null) return [type, 'drafts', editor.selectedDraft.id]
+    if (editor.selected == null) return [type]
+    return [type, editor.selected.name]
   }
 }
 </script>

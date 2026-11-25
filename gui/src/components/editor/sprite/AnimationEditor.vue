@@ -120,23 +120,6 @@ export class AnimationsEditorState extends Disposable {
     }
     this.select(animation.id)
   }
-  /** Select a target (by specifying route path) */
-  selectByRoute(path: PathSegments) {
-    const [name, rest] = shiftPath(path)
-    if (name === 'drafts' && rest.length === 1) {
-      const draft = this.drafts.find((d) => d.id === rest[0])
-      if (draft != null) this.select(draft.id)
-      return
-    }
-    if (name == null) return
-    return this.selectByName(name)
-  }
-  /** Get route path for the current selection */
-  getRoute() {
-    if (this.selectedDraft != null) return ['drafts', this.selectedDraft.id]
-    if (this.selected == null) return []
-    return [this.selected.name]
-  }
 }
 </script>
 
@@ -144,7 +127,6 @@ export class AnimationsEditorState extends Disposable {
 import { ref, type Ref, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { capture, useMessageHandle } from '@/utils/exception'
-import { shiftPath, type PathSegments } from '@/utils/route'
 import { useEnsureSignedIn } from '@/utils/user'
 import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import type { Sprite } from '@/models/spx/sprite'
