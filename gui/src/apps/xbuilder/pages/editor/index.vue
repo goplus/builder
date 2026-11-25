@@ -145,9 +145,20 @@ const stateQueryRet = useQuery({
 })
 
 const state = stateQueryRet.data
-const saveCourseProjectCopy = useSaveCourseProjectCopy((source) => {
+const saveCourseProjectCopy = useSaveCourseProjectCopy(async (source) => {
   const editor = state.value
-  return editor != null && editor.project === source && ensureAutoSaved(editor)
+  if (editor == null || editor.project !== source) return false
+  const shouldOpen = await ensureAutoSaved(editor)
+  if (state.value !== editor) return false
+  if (!shouldOpen) {
+    m.success(
+      t({
+        en: 'Your copy was saved. To open it, choose My projects from your profile menu.',
+        zh: '副本已保存。你可以从头像菜单的“我的项目”打开它'
+      })
+    )
+  }
+  return shouldOpen
 })
 const currentProjectIdentifier = computed(() =>
   toProjectIdentifier(state.value?.project.owner, state.value?.project.name)
