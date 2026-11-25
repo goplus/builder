@@ -43,7 +43,6 @@
         v-if="state.selectedDraft != null"
         :key="state.selectedDraft.id"
         :draft="state.selectedDraft"
-        @adopted="state.select($event)"
       />
       <CostumeDetail
         v-else-if="state.selected != null"

@@ -4,6 +4,7 @@ import { mountPages, setupPageTests, signIn } from '@/apps/xbuilder/pages/test'
 import * as cloud from '@/models/common/cloud'
 import { fromText } from '@/models/common/file'
 import { createI18n } from '@/utils/i18n'
+import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { mockSaveFile } from '@/models/spx/gen/test-helpers'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
@@ -57,6 +58,37 @@ describe('sprite generation', () => {
     await vi.waitFor(() => expect(sprite.costumes).toHaveLength(2))
     expect(sprite.defaultCostume?.name).toBe('costume-1')
     expect(wrapper.findAll('[aria-label^="Costume generation item"]')).toHaveLength(1)
+  })
+  it('shows the applied animation after applying a second generated animation', async () => {
+    const { wrapper } = await mountPages('/editor/alice/First%20flight')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Sprites panel"]').exists()).toBe(true), { timeout: 4000 })
+    const { project, state } = wrapper.getComponent(EditorContextProvider).props()
+    vi.mocked(cloud.createFileWithUniversalUrl).mockImplementation((url) =>
+      fromText('fox.svg', '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"/>', {
+        meta: { universalUrl: url, imgSize: { width: 512, height: 512 } }
+      })
+    )
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, { settings: { name: 'Fox', description: 'A fox' } })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    const sprite = await gen.finishWithDefaultCostume()
+    await state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () => project.addSprite(sprite))
+    state.selectSprite(sprite.id)
+    const resources = state.genState.spriteResources
+    const drafts = [resources.addAnimation(sprite), resources.addAnimation(sprite)]
+    for (const draft of drafts) {
+      expect.assert(draft.gen instanceof AnimationGen)
+      await draft.gen.generateVideo()
+      draft.gen.setFramesConfig({ startTime: 0, duration: 400, interval: 100 })
+    }
+    await resources.adopt(drafts[0], state.history)
+    await wrapper.get('[aria-label="Animations tab"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.findAll('[aria-label^="Animation generation item"]')).toHaveLength(1))
+    await wrapper.get('[aria-label^="Animation generation item"]').trigger('click')
+    await wrapper.get('[aria-label="Apply result"]').trigger('click')
+    await vi.waitFor(() => expect(sprite.animations).toHaveLength(2))
+    const applied = sprite.animations[1].name
+    await vi.waitFor(() => expect(wrapper.get('[aria-label^="Item detail"]').text()).toContain(applied))
   })
   it('resumes a saved sprite in the original modal and prepares its costumes there', async () => {
     const { wrapper } = await mountPages('/editor/alice/First%20flight')
