@@ -51,6 +51,7 @@ function restore(
 /** Generation and selectable results for one pending resource of an adopted sprite. */
 export class SpriteResourceGen extends Disposable {
   versions = shallowReactive<Array<Version & { files: Files }>>([])
+  readonly spriteId: string
   index = -1
 
   constructor(
@@ -62,6 +63,7 @@ export class SpriteResourceGen extends Disposable {
     readonly id = nanoid()
   ) {
     super()
+    this.spriteId = gen.sprite.id
     const self = shallowReactive(this)
     self.observe(gen)
     this.addDisposer(() => self.gen.dispose())
@@ -104,7 +106,7 @@ export class SpriteResourceGen extends Disposable {
           if (media == null) return
           const path = this.path + '/' + nanoid()
           const [generation, files] = snapshot(gen, path)
-          this.versions.splice(this.index + 1, Infinity, { generation, files, path })
+          this.versions.push({ generation, files, path })
           this.index = this.versions.length - 1
         },
         { flush: 'sync' }
@@ -124,6 +126,14 @@ export class SpriteResourceGen extends Disposable {
         )
       )
     }
+  }
+
+  previousVersion() {
+    if (this.index >= 0) this.select(this.hasMedia ? this.index - 1 : this.index)
+  }
+
+  nextVersion() {
+    this.select(this.index + 1)
   }
 
   select(index: number) {
@@ -174,7 +184,7 @@ export class SpriteResourceGen extends Disposable {
     return [
       {
         id: this.id,
-        spriteId: this.gen.sprite.id,
+        spriteId: this.spriteId,
         suggested: this.suggested,
         boundStates: this.boundStates,
         current,

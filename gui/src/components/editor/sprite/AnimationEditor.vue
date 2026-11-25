@@ -15,16 +15,15 @@
       @click="state.select(animation.id)"
     />
     <template v-if="state.drafts.length > 0" #drafts>
-      <template v-for="draft in state.drafts" :key="draft.id">
-        <AnimationGenItem
-          v-if="draft.gen instanceof AnimationGen"
-          :gen="draft.gen"
-          :active="state.selectedDraft === draft"
-          @click="state.select(draft.id)"
-          @rename="renameDraft.fn(draft.gen)"
-          @remove="editorCtx.state.genState.spriteResources.remove(draft)"
-        />
-      </template>
+      <AnimationGenItem
+        v-for="draft in state.drafts"
+        :key="draft.id"
+        :gen="draft.gen"
+        :active="state.selectedDraft === draft"
+        @click="state.select(draft.id)"
+        @rename="renameDraft.fn(draft.gen)"
+        @remove="editorCtx.state.genState.spriteResources.remove(draft)"
+      />
     </template>
     <template #add-options>
       <UIMenu>
@@ -61,7 +60,7 @@
 export class AnimationsEditorState extends Disposable {
   constructor(
     private getSprite: () => Sprite | null,
-    private generations?: SpriteResourceGens
+    private spriteResources: SpriteResourceGens
   ) {
     super()
     this.selectedIdRef = ref(getSprite()?.animations[0]?.id ?? this.drafts[0]?.id ?? null)
@@ -84,9 +83,7 @@ export class AnimationsEditorState extends Disposable {
   }
 
   get drafts() {
-    return (
-      this.generations?.drafts.filter((d) => d.gen.sprite === this.getSprite() && d.gen instanceof AnimationGen) ?? []
-    )
+    return this.spriteResources.draftsFor(this.getSprite(), AnimationGen)
   }
 
   get selectedDraft() {
@@ -133,21 +130,20 @@ export class AnimationsEditorState extends Disposable {
 <script setup lang="ts">
 import { ref, type Ref, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
-import { shiftPath, type PathSegments } from '@/utils/route'
-import type { Sprite } from '@/models/spx/sprite'
-import EditorList from '../common/EditorList.vue'
-import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
 import { capture, useMessageHandle } from '@/utils/exception'
-import { useAddAnimationByGroupingCostumes, useRenameAnimation } from '@/components/asset'
-import AnimationDetail from './AnimationDetail.vue'
-import { AnimationGen } from '@/models/spx/gen/animation-gen'
+import { shiftPath, type PathSegments } from '@/utils/route'
 import { useEnsureSignedIn } from '@/utils/user'
-import { useRenameAnimationGen } from '@/components/asset'
+import { AnimationGen } from '@/models/spx/gen/animation-gen'
+import type { Sprite } from '@/models/spx/sprite'
+import { useAddAnimationByGroupingCostumes, useRenameAnimation, useRenameAnimationGen } from '@/components/asset'
 import AnimationGenItem from '@/components/asset/gen/animation/AnimationGenItem.vue'
-import type { SpriteResourceGens } from '../sprite-resource-gens'
-import SpriteResourceGenDetail from './SpriteResourceGenDetail.vue'
+import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
+import EditorList from '../common/EditorList.vue'
+import type { SpriteResourceGens } from '../sprite-resource-gens'
+import AnimationDetail from './AnimationDetail.vue'
 import AnimationItem from './AnimationItem.vue'
+import SpriteResourceGenDetail from './SpriteResourceGenDetail.vue'
 
 const props = defineProps<{
   sprite: Sprite

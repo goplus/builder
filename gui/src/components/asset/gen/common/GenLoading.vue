@@ -6,7 +6,14 @@ import GenerationGame from './GenerationGame.vue'
 import { gameCellSize, gameGrid, gameLayout, type Game } from './generation-game'
 
 const props = withDefaults(
-  defineProps<{ cover?: boolean; visible?: boolean; playable?: boolean; completed?: boolean; compact?: boolean }>(),
+  defineProps<{
+    cover?: boolean
+    visible?: boolean
+    playable?: boolean
+    completed?: boolean
+    compact?: boolean
+    footer?: boolean
+  }>(),
   {
     cover: false,
     visible: true,
@@ -15,16 +22,10 @@ const props = withDefaults(
     compact: false
   }
 )
-const emit = defineEmits<{ hidden: [] }>()
 const game = ref<Game | null>(null)
-const celebrating = computed(() => game.value?.status === 'won')
-watch(
-  () => props.completed,
-  (completed) => {
-    if (!completed || game.value?.status !== 'playing') return
-    game.value.status = 'won'
-    game.value.finishedAt = performance.now()
-  }
+// Keep the child mounted as it transitions from playing to its result on generation completion.
+const celebrating = computed(
+  () => game.value?.status === 'won' || (props.completed && game.value?.status === 'playing')
 )
 const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 const reducedMotion = ref(motionQuery.matches)
@@ -36,9 +37,10 @@ const canvas = ref<HTMLCanvasElement | null>(null)
 const size = useContentSize(canvas)
 const uiVariables = useUIVariables()
 // Keep one motion seed per loading session, including when the preview resizes.
-const motion = computed(() => {
-  if (canvas.value == null) return null
-  return props.compact ? { seed: 0, started: 0 } : { seed: Math.random() * 1024, started: performance.now() }
+const motion = ref<{ seed: number; started: number } | null>(null)
+watch([canvas, () => props.compact], ([el, compact]) => {
+  motion.value =
+    el == null ? null : { seed: compact ? 0 : Math.random() * 1024, started: compact ? 0 : performance.now() }
 })
 
 function smooth(value: number) {
@@ -125,12 +127,7 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
 </script>
 
 <template>
-  <Transition
-    name="generation"
-    :css="!reducedMotion"
-    :duration="reducedMotion ? 0 : { enter: 0, leave: 500 }"
-    @after-leave="emit('hidden')"
-  >
+  <Transition name="generation" :css="!reducedMotion" :duration="reducedMotion ? 0 : { enter: 0, leave: 500 }">
     <div v-if="visible || celebrating" class="gen-loading" :class="{ cover }" role="status" aria-live="polite">
       <canvas ref="canvas" class="flow" aria-hidden="true"></canvas>
       <GenerationGame
@@ -142,7 +139,8 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
       />
       <div
         v-if="($slots.default != null || game != null) && game?.status !== 'won'"
-        class="message text-xs text-hint-2"
+        class="message"
+        :class="footer ? 'text-xs text-hint-2' : 'centered text-base text-text'"
       >
         <div class="min-w-0"><slot></slot></div>
         <div
@@ -200,6 +198,14 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
   text-align: left;
 }
 
+.message.centered {
+  top: 50%;
+  bottom: auto;
+  justify-content: center;
+  transform: translateY(-50%);
+  text-align: center;
+}
+
 .generation-leave-active {
   pointer-events: none;
   transition: opacity 500ms ease-in-out;
@@ -207,11 +213,5 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
 
 .generation-leave-to {
   opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gen-loading {
-    transition: none;
-  }
 }
 </style>

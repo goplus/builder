@@ -4,7 +4,8 @@ import { UIModal, UIModalClose, useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useWatchResult } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { SpriteGen as SpriteGenModel, type SpriteGenResult } from '@/models/spx/gen/sprite-gen'
+import type { Sprite } from '@/models/spx/sprite'
+import { SpriteGen as SpriteGenModel } from '@/models/spx/gen/sprite-gen'
 import type { SpxProject } from '@/models/spx/project'
 import { initSpriteGen, type GenHelpers } from '../modal'
 import SpriteGenPhaseSettings from './SpriteGenPhaseSettings.vue'
@@ -23,7 +24,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  resolved: [SpriteGenResult]
+  resolved: [{ sprite: Sprite } | { generatedSprite: Sprite }]
   cancelled: []
 }>()
 
@@ -91,14 +92,15 @@ const handleModalClose = useMessageHandle(
       :gen="gen"
       library-search-enabled
       @collapse="collapseGen"
-      @resolved="emit('resolved', $event)"
+      @resolved="emit('resolved', { sprite: $event })"
     />
     <SpriteGenPhaseSettings
       v-else
       class="flex-[1_1_0] min-h-0"
       :gen="gen"
       library-search-enabled
-      @resolved="emit('resolved', $event)"
+      @generated="emit('resolved', { generatedSprite: $event })"
+      @resolved="emit('resolved', { sprite: $event })"
     />
   </UIModal>
 </template>

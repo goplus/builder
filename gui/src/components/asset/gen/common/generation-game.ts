@@ -161,13 +161,9 @@ export function stepGame(game: Game, now: number) {
   }
   if (collide()) return
   if (game.ticks % 2 === 0) {
-    game.ghosts = game.ghosts.map((ghost, index) => {
+    game.ghosts = game.ghosts.map((ghost) => {
       if (ghost.restUntil > elapsed) return ghost
-      let target = game.player
-      if (index === 1) {
-        for (let i = 0; i < 4; i++) target = move(target, game.direction) ?? target
-      }
-      const distance = distances(game.paths, game.columns, cell(game.columns, target))
+      const distance = distances(game.paths, game.columns, cell(game.columns, game.player))
       const start = cell(game.columns, ghost)
       const next = neighbors(game.paths, game.columns, start).reduce(
         (best, next) => (distance.get(next)! < distance.get(best)! ? next : best),

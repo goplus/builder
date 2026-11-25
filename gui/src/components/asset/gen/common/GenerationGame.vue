@@ -60,6 +60,16 @@ watch(
   }
 )
 
+watch(
+  () => props.completed,
+  (completed) => {
+    if (completed && game.value?.status === 'playing') {
+      game.value.status = 'won'
+      game.value.finishedAt = performance.now()
+    }
+  }
+)
+
 function start(direction: Direction) {
   const { columns, rows } = gameGrid(props.viewport.width, props.viewport.height)
   game.value = createGame(direction, columns, rows, performance.now())
@@ -80,14 +90,6 @@ async function handleKeydown(event: KeyboardEvent) {
   }
   if (game.value?.status === 'won') return
   if (!props.enabled || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
-    return
-  const target = event.target
-  if (
-    target instanceof Element &&
-    target.closest(
-      'input, textarea, select, canvas, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="slider"], [role="toolbar"], [role="menu"], [role="listbox"], [role="tablist"], [role="tree"], [role="grid"]'
-    ) != null
-  )
     return
   const bounds = root.value?.getBoundingClientRect()
   if (bounds == null || bounds.width === 0 || bounds.height === 0 || document.hidden) return
@@ -120,15 +122,22 @@ async function handleKeydown(event: KeyboardEvent) {
   board.value?.focus()
 }
 
-onMounted(() => window.addEventListener('keydown', handleKeydown, true))
+function handlePageKeydown(event: KeyboardEvent) {
+  const pageOwnsFocus = document.activeElement === document.body || document.activeElement === document.documentElement
+  if (pageOwnsFocus && (event.target === document.body || event.target === document.documentElement)) {
+    void handleKeydown(event)
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', handlePageKeydown))
 onScopeDispose(() => {
-  window.removeEventListener('keydown', handleKeydown, true)
+  window.removeEventListener('keydown', handlePageKeydown)
   exit()
 })
 </script>
 
 <template>
-  <div ref="root" class="absolute inset-0 pointer-events-none">
+  <div ref="root" class="absolute inset-0" :tabindex="enabled && game == null ? 0 : -1" @keydown="handleKeydown">
     <Transition name="characters">
       <svg
         v-if="game != null && layout != null"

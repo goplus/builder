@@ -14,18 +14,17 @@
       @click="handleSelect(costume)"
     />
     <template v-if="state.drafts.length > 0" #drafts>
-      <template v-for="draft in state.drafts" :key="draft.id">
-        <CostumeGenItem
-          v-if="draft.gen instanceof CostumeGen"
-          :gen="draft.gen"
-          :active="state.selectedDraft === draft"
-          :is-default="false"
-          :operable="{ removable: true }"
-          @click="state.select(draft.id)"
-          @rename="renameDraft.fn(draft.gen)"
-          @remove="editorCtx.state.genState.spriteResources.remove(draft)"
-        />
-      </template>
+      <CostumeGenItem
+        v-for="draft in state.drafts"
+        :key="draft.id"
+        :gen="draft.gen"
+        :active="state.selectedDraft === draft"
+        :is-default="false"
+        :operable="{ removable: true }"
+        @click="state.select(draft.id)"
+        @rename="renameDraft.fn(draft.gen)"
+        @remove="editorCtx.state.genState.spriteResources.remove(draft)"
+      />
     </template>
     <template #add-options>
       <UIMenu>
@@ -60,13 +59,11 @@
 export class CostumesEditorState {
   constructor(
     private getSprite: () => Sprite | null,
-    private generations?: SpriteResourceGens
+    private spriteResources: SpriteResourceGens
   ) {}
 
   get drafts() {
-    return (
-      this.generations?.drafts.filter((d) => d.gen.sprite === this.getSprite() && d.gen instanceof CostumeGen) ?? []
-    )
+    return this.spriteResources.draftsFor(this.getSprite(), CostumeGen)
   }
 
   get selectedDraft() {
@@ -116,22 +113,21 @@ export class CostumesEditorState {
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { UIMenu, UIMenuItem } from '@/components/ui'
 import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
-import type { Sprite } from '@/models/spx/sprite'
-import { Costume } from '@/models/spx/costume'
-import { useAddCostumeFromLocalFile, useRenameCostume } from '@/components/asset'
-import EditorList from '../common/EditorList.vue'
-import CostumeItem from './CostumeItem.vue'
-import CostumeDetail from './CostumeDetail.vue'
-import { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { useEnsureSignedIn } from '@/utils/user'
-import { useRenameCostumeGen } from '@/components/asset'
+import { Costume } from '@/models/spx/costume'
+import { CostumeGen } from '@/models/spx/gen/costume-gen'
+import type { Sprite } from '@/models/spx/sprite'
+import { useAddCostumeFromLocalFile, useRenameCostume, useRenameCostumeGen } from '@/components/asset'
 import CostumeGenItem from '@/components/asset/gen/costume/CostumeGenItem.vue'
-import type { SpriteResourceGens } from '../sprite-resource-gens'
-import SpriteResourceGenDetail from './SpriteResourceGenDetail.vue'
+import { UIMenu, UIMenuItem } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
+import EditorList from '../common/EditorList.vue'
+import type { SpriteResourceGens } from '../sprite-resource-gens'
+import CostumeDetail from './CostumeDetail.vue'
+import CostumeItem from './CostumeItem.vue'
+import SpriteResourceGenDetail from './SpriteResourceGenDetail.vue'
 
 const props = defineProps<{
   sprite: Sprite

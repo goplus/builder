@@ -226,7 +226,7 @@ export class EditorState extends Disposable {
             return
           }
           const getSprite = () => this.project.sprites.find((s) => s.id === target.id) ?? null
-          this.spriteState = new SpriteEditorState(getSprite, prevSelected, this.genState.spriteResources)
+          this.spriteState = new SpriteEditorState(getSprite, this.genState.spriteResources, prevSelected)
         }
         break
       default:

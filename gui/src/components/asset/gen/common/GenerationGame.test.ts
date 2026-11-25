@@ -54,6 +54,21 @@ describe('GenerationGame', () => {
     expect(clearInterval).toHaveBeenCalledOnce()
   })
 
+  it('leaves focus and navigation on buttons outside the preview', async () => {
+    const { wrapper, press } = setup()
+    const button = document.createElement('button')
+    document.body.append(button)
+    onTestFinished(() => button.remove())
+    button.focus()
+    expect((await press('ArrowRight', button)).defaultPrevented).toBe(false)
+    expect(document.activeElement).toBe(button)
+    expect(wrapper.find('svg').exists()).toBe(false)
+    expect.assert(wrapper.element instanceof HTMLElement)
+    wrapper.element.focus()
+    expect((await press('ArrowRight', wrapper.element)).defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(wrapper.get('svg').element)
+  })
+
   it('starts with WASD and uses the same directions while playing', async () => {
     const { wrapper, press } = setup()
     expect((await press('w')).defaultPrevented).toBe(true)
@@ -98,7 +113,10 @@ describe('GenerationGame', () => {
     button.focus()
     await vi.advanceTimersByTimeAsync(6000)
     expect(game.ticks).toBe(60)
-    await press('ArrowDown')
+    expect((await press('ArrowDown', button)).defaultPrevented).toBe(false)
+    expect(document.activeElement).toBe(button)
+    wrapper.get('svg').element.focus()
+    await press('ArrowDown', wrapper.get('svg').element)
     await vi.advanceTimersByTimeAsync(2100)
     expect(game.ticks).toBe(81)
   })

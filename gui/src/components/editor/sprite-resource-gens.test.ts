@@ -1,7 +1,7 @@
 import { nextTick } from 'vue'
 import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { setupAigcMock } from '@/models/spx/gen/aigc-mock'
-import { Cancelled } from '@/utils/exception'
+import { Cancelled, DefaultException } from '@/utils/exception'
 import { createI18n } from '@/utils/i18n'
 import * as files from '@/models/common/file'
 import { makeSpxProject } from '@/models/spx/common/test'
@@ -66,7 +66,7 @@ describe('sprite generation in the editor', () => {
     expect(state.spriteResources.drafts).not.toContain(draft)
   })
 
-  it('restores versions with the project and branches only after a successful generation', async () => {
+  it('restores versions with the project and keeps later results when generating from an earlier version', async () => {
     const { project, state, gen } = await setup()
     const sprite = await gen.finishWithDefaultCostume()
     project.addSprite(sprite)
@@ -105,10 +105,11 @@ describe('sprite generation in the editor', () => {
     expect(draft.versions).toHaveLength(2)
     first.setSettings({ description: 'Blue scarf' })
     await first.generate()
-    expect(draft.index).toBe(1)
-    expect(draft.versions).toHaveLength(2)
-    draft.select(0)
+    expect(draft.index).toBe(2)
+    expect(draft.versions).toHaveLength(3)
     draft.select(1)
+    expect(draft.gen.settings.description).toBe('Green scarf')
+    draft.select(2)
     expect(draft.gen.settings.description).toBe('Blue scarf')
     draft.discard()
     expect(draft.hasMedia).toBe(false)
@@ -155,6 +156,25 @@ describe('sprite generation in the editor', () => {
     expect(history.getUndoAction()).toBeNull()
   })
 
+  it('asks for another adoption when the trim changes during extraction and uses the new range on retry', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const draft = state.spriteResources.addAnimation(sprite)
+    const animation = draft.gen
+    expect.assert(animation instanceof AnimationGen)
+    await animation.generateVideo()
+    animation.setFramesConfig({ startTime: 0, duration: 400, interval: 100 })
+    const history = new History(project)
+    const applying = state.spriteResources.adopt(draft, history)
+    animation.setFramesConfig({ startTime: 200, duration: 600, interval: 100 })
+    await expect(applying).rejects.toBeInstanceOf(DefaultException)
+    expect(history.getUndoAction()).toBeNull()
+    await state.spriteResources.adopt(draft, history)
+    expect(sprite.animations[0].duration).toBe(0.6)
+    expect(draft.versions).toHaveLength(1)
+  })
+
   it('loads a legacy unfinished sprite back into the original generation flow', async () => {
     const { state, gen } = await setup()
     await gen.prepareContent()
@@ -181,15 +201,35 @@ describe('sprite generation in the editor', () => {
     await draft.gen.generate()
     expect(draft.versions).toHaveLength(2)
     const history = new History(project)
-    await history.doAction(
-      { name: { en: 'Remove', zh: '删除' }, ...state.spriteResources.historyForSprites(sprite.id) },
-      () => project.removeSprite(sprite.id)
-    )
+    await history.doAction({ name: { en: 'Remove', zh: '删除' } }, () => project.removeSprite(sprite.id))
     await nextTick()
     await history.undo()
     await nextTick()
     expect(project.sprites.some((s) => s.id === sprite.id)).toBe(true)
     expect(state.spriteResources.drafts.find((d) => d.id === draft.id)?.versions).toHaveLength(2)
+  })
+
+  it('keeps drafts across undo and redo of an ordinary sprite import, and omits missing owners from saves', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    const history = new History(project)
+    await history.doAction({ name: { en: 'Import sprite', zh: '导入精灵' } }, () => project.addSprite(sprite))
+    const draft = state.spriteResources.addCostume(sprite)
+    expect.assert(draft.gen instanceof CostumeGen)
+    await draft.gen.generate()
+    await draft.gen.generate()
+    draft.select(0)
+    await history.undo()
+    expect(state.spriteResources.drafts).toHaveLength(0)
+    expect(state.spriteResources.export()).toEqual({})
+    await history.redo()
+    const [restored] = state.spriteResources.drafts
+    expect(restored.id).toBe(draft.id)
+    expect(restored.gen.sprite).toBe(project.sprites.find((s) => s.id === sprite.id))
+    expect(restored.versions).toHaveLength(2)
+    expect(restored.index).toBe(0)
+    await state.spriteResources.adopt(restored, history)
+    expect(project.sprites.find((s) => s.id === sprite.id)?.costumes).toHaveLength(2)
   })
 
   it('checks sibling pending names when renaming', async () => {

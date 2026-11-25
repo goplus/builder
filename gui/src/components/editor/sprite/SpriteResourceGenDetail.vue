@@ -57,9 +57,8 @@ const canAdopt = computed(
             type="white"
             shape="square"
             size="medium"
-            :aria-label="$t({ en: 'Previous version', zh: '上一版' })"
             :disabled="draft.busy || draft.index < 0"
-            @click="draft.select(draft.hasMedia ? draft.index - 1 : draft.index)"
+            @click="draft.previousVersion()"
           >
             <template #icon><UIIcon type="angleLeft" /></template>
           </UIButton>
@@ -75,9 +74,8 @@ const canAdopt = computed(
             type="white"
             shape="square"
             size="medium"
-            :aria-label="$t({ en: 'Next version', zh: '下一版' })"
             :disabled="draft.busy || draft.index >= draft.versions.length - 1"
-            @click="draft.select(draft.index + 1)"
+            @click="draft.nextVersion()"
           >
             <template #icon><UIIcon type="angleLeft" class="rotate-180" /></template>
           </UIButton>
@@ -124,6 +122,7 @@ const canAdopt = computed(
         />
         <UIEmpty v-else-if="phase.status === 'initial'" size="large" img="box"><template #default /></UIEmpty>
         <GenLoading
+          footer
           :visible="phase.status === 'running'"
           :completed="phase.status === 'finished'"
           :playable="!(gen instanceof CostumeGen)"
@@ -138,7 +137,7 @@ const canAdopt = computed(
           }}
           {{ phase.status === 'running' && phase.timeLeft != null ? $t(humanizeTimeLeft(phase.timeLeft)) : '' }}
         </GenLoading>
-        <GenLoading v-if="gen.finishState.status === 'running'" cover>{{
+        <GenLoading v-if="gen.finishState.status === 'running'" cover footer>{{
           $t({ en: 'Saving…', zh: '正在保存…' })
         }}</GenLoading>
         <UIError

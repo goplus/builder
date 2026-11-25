@@ -1,6 +1,6 @@
 <template>
   <div class="flex-[1_1_0] flex">
-    <div class="min-w-[121px] flex-none flex flex-col border-r border-dividing-line-2">
+    <div class="flex-none flex flex-col border-r border-dividing-line-2">
       <div v-radar="listRadarInfo" class="items mx-1.5 flex-[1_1_0] flex flex-col gap-2 overflow-y-auto">
         <div v-if="$slots.default != null" ref="itemsWrapper" class="flex flex-col gap-2">
           <slot></slot>
@@ -85,7 +85,9 @@ useDragSortable(sortableList, itemsWrapper, {
 
 <style scoped>
 .items {
-  /* Keep padding outside the sortable container so end-of-list drops remain reachable. */
+  box-sizing: content-box;
+  min-width: var(--ui-block-item-size-md);
+  /* SortableJS measures the inner wrapper to detect drops after its last item. Keep the gutter outside that wrapper. */
   padding: 12px 10px;
 }
 

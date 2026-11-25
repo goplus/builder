@@ -42,18 +42,18 @@ export function useGenerateSprite() {
   const invokeModal = useModal(SpriteGenModal)
   return async function generateSprite(gen?: SpriteGen) {
     const { project, state } = editorCtx
-    const { sprite, suggestResources } = await invokeModal({ project, gen, helpers })
+    const result = await invokeModal({ project, gen, helpers })
+    const sprite = 'generatedSprite' in result ? result.generatedSprite : result.sprite
     await state.history.doAction(
       {
-        name: { en: 'Add sprite', zh: '添加精灵' },
-        ...state.genState.spriteResources.historyForSprites(sprite.id)
+        name: { en: 'Add sprite', zh: '添加精灵' }
       },
       async () => {
         project.addSprite(sprite)
         await sprite.autoFit()
       }
     )
-    if (suggestResources) void state.genState.spriteResources.suggest(sprite)
+    if ('generatedSprite' in result) void state.genState.spriteResources.suggest(result.generatedSprite)
     return sprite
   }
 }
@@ -70,13 +70,12 @@ export function useAddAssetFromLibrary() {
   const genHelpers = useGenHelpers()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: SpxProject, type: T) {
-    const { models, suggestResources } = await invokeAssetLibraryModal({ project, type, genHelpers })
+    const result = await invokeAssetLibraryModal({ project, type, genHelpers })
+    const models = 'generatedSprite' in result ? [result.generatedSprite] : result.models
     const em = humanizeAssetType(type)
-    const spriteIds = models.filter((model) => model instanceof Sprite).map((sprite) => sprite.id)
     await editorCtx.state.history.doAction(
       {
-        name: { en: `Add ${em.en}`, zh: `添加${em.zh}` },
-        ...editorCtx.state.genState.spriteResources.historyForSprites(...spriteIds)
+        name: { en: `Add ${em.en}`, zh: `添加${em.zh}` }
       },
       async () => {
         for (const model of models) {
@@ -91,8 +90,7 @@ export function useAddAssetFromLibrary() {
         }
       }
     )
-    if (suggestResources && models[0] instanceof Sprite)
-      void editorCtx.state.genState.spriteResources.suggest(models[0])
+    if ('generatedSprite' in result) void editorCtx.state.genState.spriteResources.suggest(result.generatedSprite)
     return models as Array<AssetModel<T>>
   }
 }
@@ -138,13 +136,10 @@ export function useAddSpriteFromLocalFile() {
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    await editorCtx.state.history.doAction(
-      { name: actionMessage, ...editorCtx.state.genState.spriteResources.historyForSprites(sprite.id) },
-      async () => {
-        project.addSprite(sprite)
-        await sprite.autoFit()
-      }
-    )
+    await editorCtx.state.history.doAction({ name: actionMessage }, async () => {
+      project.addSprite(sprite)
+      await sprite.autoFit()
+    })
     return sprite
   }
 }

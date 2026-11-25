@@ -87,11 +87,6 @@ export type RawSpriteGenConfig = Prettify<
   }
 >
 
-export type SpriteGenResult = {
-  sprite: Sprite
-  suggestResources: boolean
-}
-
 export class SpriteGen extends Disposable {
   id: string
   private i18n: I18n

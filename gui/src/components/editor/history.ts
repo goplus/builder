@@ -17,8 +17,9 @@ export type Action = {
    * Adjacent **same** (reference-equal) mergeable actions will be merged into one history item.
    */
   mergeable?: boolean
-  /** Capture editor state changed by this action that lives outside the game files. */
-  capture?: () => () => void
+  /** Called after this action is undone or redone and the project has been restored. */
+  onUndo?: () => void
+  onRedo?: () => void
 }
 
 export type State = {
@@ -26,8 +27,6 @@ export type State = {
   files: Files
   /** The action which results in the state */
   action: Action | null
-  /** Restores the extra state on the other side of the step starting here. */
-  restoreExtras?: () => void
 }
 
 /** What a history records: the files of a project, restored by loading them back. */
@@ -61,8 +60,7 @@ export class History {
   private saveCurrentState() {
     this.states[this.index] = {
       files: this.project.exportFiles(),
-      action: this.action,
-      restoreExtras: this.states[this.index]?.restoreExtras
+      action: this.action
     }
   }
 
@@ -70,14 +68,11 @@ export class History {
     if (index < 0 || index >= this.states.length) throw new Error(`invalid index ${index}`)
     this.saveCurrentState()
     const { action, files } = this.states[index]
-    const step = this.states[Math.min(index, this.index)]
-    const crossedAction = index < this.index ? this.action : action
-    const restore = step.restoreExtras
-    step.restoreExtras = crossedAction?.capture?.()
+    const afterRestore = index < this.index ? this.action?.onUndo : action?.onRedo
     this.index = index
     this.action = action
     await this.project.loadFiles(files)
-    restore?.()
+    afterRestore?.()
   }
 
   getRedoAction() {
@@ -112,7 +107,6 @@ export class History {
       if (this.action === action && action.mergeable) return fn()
 
       this.saveCurrentState()
-      this.states[this.index].restoreExtras = action.capture?.()
       this.action = action
       // update & check index with max length
       this.index++

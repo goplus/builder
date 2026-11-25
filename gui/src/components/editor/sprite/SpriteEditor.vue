@@ -56,10 +56,10 @@ export type Selected =
     }
 
 export class SpriteEditorState extends Disposable {
-  constructor(getSprite: () => Sprite | null, initialSelected?: Selected, drafts?: SpriteResourceGens) {
+  constructor(getSprite: () => Sprite | null, spriteResources: SpriteResourceGens, initialSelected?: Selected) {
     super()
-    this.costumesState = new CostumesEditorState(getSprite, drafts)
-    this.addDisposable((this.animationsState = new AnimationsEditorState(getSprite, drafts)))
+    this.costumesState = new CostumesEditorState(getSprite, spriteResources)
+    this.addDisposable((this.animationsState = new AnimationsEditorState(getSprite, spriteResources)))
     this.selectedTypeRef = ref(initialSelected?.type ?? 'code')
   }
 
@@ -142,17 +142,17 @@ export class SpriteEditorState extends Disposable {
 
 <script setup lang="ts">
 import { ref, type Ref } from 'vue'
-import type { SpriteResourceGens } from '../sprite-resource-gens'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
-import type { Costume } from '@/models/spx/costume'
 import type { Animation } from '@/models/spx/animation'
+import type { Costume } from '@/models/spx/costume'
 import { type Sprite } from '@/models/spx/sprite'
 import { UITabs, UITab } from '@/components/ui'
-import { CodeEditorUI, FormatButton } from '../spx-code-editor'
 import EditorHeader from '../common/EditorHeader.vue'
-import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
+import type { SpriteResourceGens } from '../sprite-resource-gens'
+import { CodeEditorUI, FormatButton } from '../spx-code-editor'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
+import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 
 defineProps<{
   sprite: Sprite

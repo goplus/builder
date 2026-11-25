@@ -65,8 +65,7 @@ const { fn: handleDuplicate } = useMessageHandle(
     const sprite = props.sprite
     const newSprite = sprite.clone()
     const action = {
-      name: { en: `Duplicate sprite ${sprite.name}`, zh: `复制精灵 ${sprite.name}` },
-      ...editorCtx.state.genState.spriteResources.historyForSprites(newSprite.id)
+      name: { en: `Duplicate sprite ${sprite.name}`, zh: `复制精灵 ${sprite.name}` }
     }
     await editorCtx.state.history.doAction(action, () => {
       // Offset the new sprite a bit to avoid being exactly overlapped with the original one
@@ -87,8 +86,7 @@ const handleRemove = useMessageHandle(
     const spriteId = props.sprite.id
     const spriteName = props.sprite.name
     const action = {
-      name: { en: `Remove sprite ${spriteName}`, zh: `删除精灵 ${spriteName}` },
-      ...editorCtx.state.genState.spriteResources.historyForSprites(spriteId)
+      name: { en: `Remove sprite ${spriteName}`, zh: `删除精灵 ${spriteName}` }
     }
     await editorCtx.state.history.doAction(action, () => editorCtx.project.removeSprite(spriteId))
   },
