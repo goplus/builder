@@ -59,20 +59,30 @@ function lightIntensity(nx: number, ny: number, time: number, seed: number) {
   return smooth(Math.max(0, Math.min(1, (field - 0.12) / 0.48)))
 }
 
-function pelletAlpha(game: Game, row: number, column: number, now: number) {
+function pelletAlpha(game: Game, row: number, column: number, reduced: boolean, now: number) {
   // Out-of-range columns would alias a neighboring row's cell key. Rows need no bound check:
   // with columns in range, keys of different rows never alias, so a missing row simply misses.
   if (column < 0 || column >= game.columns) return 0
   const key = row * game.columns + column
   if (!game.pellets.has(key)) return 0
   const eatenAt = game.eaten.get(key)
-  const opacity = eatenAt == null ? 1 : Math.max(0, 1 - (now - eatenAt) / pelletFadeMs)
+  if (eatenAt == null) return 0.65
+  if (reduced) return 0
+  const opacity = Math.max(0, Math.min(1, 1 - (now - eatenAt) / pelletFadeMs))
   return 0.65 * opacity
 }
 
 function gameBlend(game: Game | null, reduced: boolean, now: number) {
   if (game == null) return 0
-  return reduced ? 1 : Math.min(1, (now - game.startedAt) / mazeBlendMs)
+  return reduced ? 1 : Math.max(0, Math.min(1, (now - game.startedAt) / mazeBlendMs))
+}
+
+function gameAnimationEnd(game: Game | null, reduced: boolean) {
+  if (reduced) return 0
+  if (game == null) return Infinity
+  let end = game.startedAt + mazeBlendMs
+  for (const eatenAt of game.eaten.values()) end = Math.max(end, eatenAt + pelletFadeMs)
+  return end
 }
 
 function fieldTime(game: Game | null, reduced: boolean, started: number, now: number) {
@@ -121,7 +131,7 @@ export function loadingDots(options: {
     for (let column = firstColumn; column < columnCount; column++) {
       const x = grid.x + column * spacing
       const y = grid.y + row * spacing
-      let alpha = game == null ? 0 : pelletAlpha(game, row, column, now)
+      let alpha = game == null ? 0 : pelletAlpha(game, row, column, reduced, now)
       if (blend < 1) {
         const loading = reduced ? 0.45 : 0.04 + lightIntensity(x / width, y / height, time, seed) * 0.96
         alpha = loading + (alpha - loading) * blend
@@ -152,7 +162,8 @@ const props = withDefaults(
     visible: true,
     playable: false,
     completed: false,
-    compact: false
+    compact: false,
+    footer: false
   }
 )
 const game = ref<Game | null>(null)
@@ -183,10 +194,10 @@ watch([motion, size, reducedMotion, game], ([motion, dimensions, reduced, curren
   if (ctx == null) return
   const { width, height } = dimensions
   const { seed, started } = motion
+  const rawGame = toRaw(current)
   let frame: number | null = null
   let lastPaintedFrame = -1
-  let animateUntil = reduced ? 0 : Infinity
-  if (current != null && !reduced) animateUntil = current.startedAt + mazeBlendMs
+  let animateUntil = gameAnimationEnd(rawGame, reduced)
 
   const draw = (now: number) => {
     frame = null
@@ -200,7 +211,7 @@ watch([motion, size, reducedMotion, game], ([motion, dimensions, reduced, curren
         started,
         reduced,
         now,
-        game: toRaw(current)
+        game: rawGame
       })
       ctx.clearRect(0, 0, width, height)
       if (dots == null) return
@@ -211,17 +222,20 @@ watch([motion, size, reducedMotion, game], ([motion, dimensions, reduced, curren
   }
 
   // Once the maze is visible, only newly eaten dots need more frames.
-  const stop = watch(
-    () => current?.eaten.size ?? 0,
-    (eaten) => {
-      const now = performance.now()
-      if (eaten > 0) animateUntil = Math.max(animateUntil, now + pelletFadeMs)
-      if (frame == null) draw(now)
-    },
-    { immediate: true }
-  )
+  const stop =
+    current == null
+      ? null
+      : watch(
+          () => current.eaten.size,
+          () => {
+            const now = performance.now()
+            if (!reduced) animateUntil = Math.max(animateUntil, now + pelletFadeMs)
+            if (frame == null) draw(now)
+          }
+        )
+  draw(performance.now())
   onCleanup(() => {
-    stop()
+    stop?.()
     if (frame != null) cancelAnimationFrame(frame)
   })
 })

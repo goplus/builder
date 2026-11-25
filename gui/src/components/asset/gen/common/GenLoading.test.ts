@@ -209,7 +209,7 @@ describe('GenLoading', () => {
     expect(requestFrame).not.toHaveBeenCalled()
   })
 
-  it('shows the maze at once for reduced motion and still clears eaten dots', async () => {
+  it('shows the maze at once for reduced motion and clears eaten dots without scheduling frames', async () => {
     const { wrapper, context, requestFrame } = await setup(true, false, { width: 360, height: 360 }, 1000)
     const { columns, rows } = gameGrid(360, 360)
     const game = reactive(createGame('ArrowRight', columns, rows, 0))
@@ -220,11 +220,41 @@ describe('GenLoading', () => {
     expect(countAlpha(alphas, 0)).toBe(alphas.length - game.pellets.size)
     expect(requestFrame).not.toHaveBeenCalled()
     const [pellet] = game.pellets
+    alphas.length = 0
     game.eaten.set(pellet, 1000)
     await nextTick()
-    alphas.length = 0
-    requestFrame.mock.lastCall![0](1160)
     expect(countAlpha(alphas, 0.65)).toBe(game.pellets.size - 1)
+    expect(requestFrame).not.toHaveBeenCalled()
+  })
+
+  it('stays idle when resizing a settled maze and finishes a fade when resizing mid-fade', async () => {
+    const { wrapper, requestFrame, size } = await setup(false, false, { width: 360, height: 360 }, 0)
+    const { columns, rows } = gameGrid(360, 360)
+    const game = reactive(createGame('ArrowRight', columns, rows, 0))
+    const [pellet] = game.pellets
+    game.eaten.set(pellet, 1000)
+    wrapper.getComponent(GenerationGame).vm.$emit('change', game)
+    await nextTick()
+
+    vi.mocked(performance.now).mockReturnValue(2000)
+    requestFrame.mockClear()
+    size.value = { width: 400, height: 400 }
+    await nextTick()
+    expect(requestFrame).not.toHaveBeenCalled()
+
+    const [, second] = game.pellets
+    vi.mocked(performance.now).mockReturnValue(2050)
+    game.eaten.set(second, 2050)
+    await nextTick()
+    vi.mocked(performance.now).mockReturnValue(2100)
+    requestFrame.mockClear()
+    size.value = { width: 420, height: 420 }
+    await nextTick()
+    expect(requestFrame).toHaveBeenCalledOnce()
+    const finalFrame = requestFrame.mock.lastCall![0]
+    requestFrame.mockClear()
+    finalFrame(2210)
+    expect(requestFrame).not.toHaveBeenCalled()
   })
 
   it('resumes the loading animation when the player exits an idle maze', async () => {
@@ -492,9 +522,18 @@ describe('loadingDots', () => {
     const game = createGame('ArrowRight', 17, 5, 0)
     game.pellets = new Set([16])
     game.eaten.set(16, 1000)
-    const at = (now: number) => loadingDots(field({ width: 360, height: 56, game, now }))!
+    const at = (now: number, reduced = false) => loadingDots(field({ width: 360, height: 56, game, now, reduced }))!
+    expect(at(990).find((dot) => dot.x === 212 && dot.y === 4)!.alpha).toBeCloseTo(0.65, 12)
     expect(at(1000).find((dot) => dot.x === 212 && dot.y === 4)!.alpha).toBeCloseTo(0.65, 12)
     expect(at(1080).find((dot) => dot.x === 212 && dot.y === 4)!.alpha).toBeCloseTo(0.325, 12)
     expect(at(1160).find((dot) => dot.x === 212 && dot.y === 4)!.alpha).toBe(0)
+    expect(at(1000, true).find((dot) => dot.x === 212 && dot.y === 4)!.alpha).toBe(0)
+  })
+
+  it('clamps maze blend when the frame timestamp precedes game start', () => {
+    const game = createGame('ArrowRight', 17, 15, 100)
+    const before = loadingDots(field({ game, now: 90 }))!
+    const atStart = loadingDots(field({ game, now: 100 }))!
+    expect(before).toEqual(atStart)
   })
 })
