@@ -1,8 +1,10 @@
 import { nextTick } from 'vue'
 import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { setupAigcMock } from '@/models/spx/gen/aigc-mock'
+import * as exception from '@/utils/exception'
 import { Cancelled, DefaultException } from '@/utils/exception'
 import { createI18n } from '@/utils/i18n'
+import * as aigc from '@/apis/aigc'
 import * as files from '@/models/common/file'
 import { makeSpxProject } from '@/models/spx/common/test'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
@@ -375,6 +377,37 @@ describe('sprite generation in the editor', () => {
     await history.undo()
     expect(state.spriteResources.drafts.find((v) => v.id === draft.id)?.index).toBe(0)
     expect(sibling.gen.settings.description).toBe('Jump forward')
+  })
+
+  it('drops recommendations that arrive after the sprite is removed', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const history = new History(project)
+    const report = vi.spyOn(exception, 'capture')
+    vi.mocked(aigc.generateSpriteContentSettings).mockImplementationOnce(async (settings, lang) => {
+      await history.doAction({ name: { en: 'Remove', zh: '删除' } }, () => project.removeSprite(sprite.id))
+      return api.generateSpriteContentSettings(settings, lang)
+    })
+    await state.spriteResources.suggest(sprite)
+    await history.undo()
+    expect(project.sprites.some((s) => s.id === sprite.id)).toBe(true)
+    expect(state.spriteResources.drafts).toHaveLength(0)
+    expect(report).not.toHaveBeenCalled()
+  })
+
+  it('stops handling recommendations after the editor closes', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const report = vi.spyOn(exception, 'capture')
+    const succeeding = state.spriteResources.suggest(sprite)
+    api.injectErrorOnce('generateSpriteContentSettings', new Error('Network error'))
+    const failing = state.spriteResources.suggest(sprite)
+    state.spriteResources.dispose()
+    await Promise.all([succeeding, failing])
+    expect(state.spriteResources.drafts).toHaveLength(0)
+    expect(report).not.toHaveBeenCalled()
   })
 
   it('adds a selected initial costume even when recommendations fail', async () => {
