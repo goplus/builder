@@ -1,3 +1,21 @@
+<script lang="ts">
+const wasdDirections: Record<string, Direction> = {
+  w: 'ArrowUp',
+  a: 'ArrowLeft',
+  s: 'ArrowDown',
+  d: 'ArrowRight'
+}
+
+function hasModifier(event: KeyboardEvent) {
+  return event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+}
+
+function consume(event: KeyboardEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+}
+</script>
+
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
 import {
@@ -24,12 +42,6 @@ const layout = computed(() =>
 let previousFocus: HTMLElement | null = null
 let timer: ReturnType<typeof setInterval> | null = null
 let hasFinished = false
-const wasdDirections: Record<string, Direction> = {
-  w: 'ArrowUp',
-  a: 'ArrowLeft',
-  s: 'ArrowDown',
-  d: 'ArrowRight'
-}
 
 function exit() {
   if (timer != null) clearInterval(timer)
@@ -70,56 +82,57 @@ watch(
   }
 )
 
+function tick() {
+  const current = game.value
+  if (!props.enabled || current == null || document.hidden || document.activeElement !== board.value) return
+  stepGame(current, performance.now())
+}
+
 function start(direction: Direction) {
+  previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
   const { columns, rows } = gameGrid(props.viewport.width, props.viewport.height)
   game.value = createGame(direction, columns, rows, performance.now())
   emit('change', game.value)
+  timer = setInterval(tick, gameStepMs)
 }
 
-async function handleKeydown(event: KeyboardEvent) {
-  if (
-    game.value?.status === 'won' &&
-    event.target instanceof Node &&
-    root.value?.contains(event.target) &&
-    (event.key === 'Escape' || event.key === 'Enter')
-  ) {
-    event.preventDefault()
-    event.stopPropagation()
-    if (props.completed) exit()
-    return
-  }
-  if (game.value?.status === 'won') return
-  if (!props.enabled || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
-    return
+function isShown() {
   const bounds = root.value?.getBoundingClientRect()
-  if (bounds == null || bounds.width === 0 || bounds.height === 0 || document.hidden) return
+  return bounds != null && bounds.width !== 0 && bounds.height !== 0 && !document.hidden
+}
+
+function acceptsKey(event: KeyboardEvent) {
+  if (!props.enabled || event.defaultPrevented || hasModifier(event) || !isShown()) return false
   const modal = document.querySelector('[aria-modal="true"]')
-  if (modal != null && !modal.contains(root.value)) return
+  return modal == null || modal.contains(root.value)
+}
+
+function handleResultKey(event: KeyboardEvent) {
+  if (!(event.target instanceof Node) || !root.value?.contains(event.target)) return
+  if (event.key !== 'Escape' && event.key !== 'Enter') return
+  consume(event)
+  if (props.completed) exit()
+}
+
+async function handleGameKey(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     if (game.value == null) return
-    event.preventDefault()
-    event.stopPropagation()
+    consume(event)
     exit()
     return
   }
   const direction = (wasdDirections[event.key.toLowerCase()] ?? event.key) as Direction
   if (hasFinished || !(direction in directions)) return
-  event.preventDefault()
-  event.stopPropagation()
-  if (game.value == null) {
-    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    start(direction)
-    timer = setInterval(() => {
-      const current = game.value
-      if (!props.enabled || current == null || document.hidden || document.activeElement !== board.value) return
-      const now = performance.now()
-      if (current.status === 'playing') stepGame(current, now)
-    }, gameStepMs)
-  } else {
-    game.value.turn = direction
-  }
+  consume(event)
+  if (game.value == null) start(direction)
+  else game.value.turn = direction
   await nextTick()
   board.value?.focus()
+}
+
+async function handleKeydown(event: KeyboardEvent) {
+  if (game.value?.status === 'won') handleResultKey(event)
+  else if (acceptsKey(event)) await handleGameKey(event)
 }
 
 function handlePageKeydown(event: KeyboardEvent) {
