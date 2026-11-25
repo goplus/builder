@@ -83,4 +83,16 @@ describe('Animation trim dragging', () => {
     expect(wrapper.get('.segment').attributes('style')).toBe(initialStyle)
     expect(wrapper.emitted('update:framesConfig')).toHaveLength(updates)
   })
+
+  it('keeps the last selectable frame start compatible with the extract API', async () => {
+    const { wrapper, start, move } = await setup(5.175)
+    await start('right', 500)
+    await move(650)
+    await move(650, 'pointerup')
+    await start('left', 200)
+    await move(700)
+    await move(700, 'pointerup')
+    const [range] = wrapper.emitted('update:framesConfig')!.at(-1)! as [{ startTime: number; duration: number }]
+    expect(range).toEqual({ startTime: 5000, duration: 175, interval: 100 })
+  })
 })

@@ -43,9 +43,9 @@ const canSubmit = computed(() => props.gen.image != null && props.gen.imagesGenS
 const handleSubmit = useMessageHandle(
   async () => {
     if (props.resume) return props.gen.prepareContent()
-    const result = await props.gen.finishWithDefaultCostume()
+    const sprite = await props.gen.finishWithDefaultCostume()
     props.gen.recordAdoption().catch((err) => capture(err, 'failed to record sprite asset adoption'))
-    emit('resolved', result)
+    emit('resolved', { sprite, suggestResources: true })
   },
   {
     en: props.resume ? 'Failed to generate sprite content' : 'Failed to add sprite',
@@ -78,7 +78,7 @@ const handleUseAsset = useMessageHandle(
   async () => {
     if (selectedAsset.value == null) throw new Error('no asset selected')
     const sprite = await asset2Sprite(selectedAsset.value)
-    emit('resolved', { sprite, suggestions: null })
+    emit('resolved', { sprite, suggestResources: false })
   },
   {
     en: 'Failed to use asset',

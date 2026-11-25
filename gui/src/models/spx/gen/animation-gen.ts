@@ -21,6 +21,7 @@ import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
 import { Animation, type RawAnimationConfig } from '../animation'
 import { Costume, type RawCostumeConfig } from '../costume'
 import {
+  type SpriteResourceOwner,
   getProjectSettings,
   getSpriteSettings,
   mapPhaseResult,
@@ -29,7 +30,6 @@ import {
   type PhaseSerialized,
   type TaskSerialized
 } from './common'
-import type { SpriteGen } from './sprite-gen'
 import {
   loadReferenceImageSelection,
   resolveInitialReferenceImageSelection,
@@ -96,7 +96,7 @@ function sameReferenceSelection(left: ReferenceImageSelection, right: ReferenceI
 
 export class AnimationGen extends Disposable {
   id: string
-  parent: Sprite | SpriteGen
+  parent: Sprite | SpriteResourceOwner
   get sprite(): Sprite {
     if (this.parent instanceof Sprite) return this.parent
     return this.parent.previewSprite
@@ -110,7 +110,7 @@ export class AnimationGen extends Disposable {
   private extractFramesTask: Task<TaskType.ExtractVideoFrames> | null
   private finishPhase: Phase<Animation>
 
-  constructor(i18n: I18n, parent: Sprite | SpriteGen, project: SpxProject, inits: AnimationGenInits = {}) {
+  constructor(i18n: I18n, parent: Sprite | SpriteResourceOwner, project: SpxProject, inits: AnimationGenInits = {}) {
     super()
     this.id = inits.id ?? nanoid()
     this.i18n = i18n
@@ -154,6 +154,7 @@ export class AnimationGen extends Disposable {
     return this.settings.name
   }
   setName(name: string) {
+    if (name === this.name) return
     const err = validateAnimationName(name, this.parent)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
@@ -360,7 +361,7 @@ export class AnimationGen extends Disposable {
 
   static load(
     i18n: I18n,
-    parent: Sprite | SpriteGen,
+    parent: Sprite | SpriteResourceOwner,
     project: SpxProject,
     config: RawAnimationGenConfig,
     files: Files,

@@ -9,7 +9,6 @@ import { ArtStyle, Perspective, SpriteCategory } from '@/apis/common'
 import {
   enrichSpriteSettings,
   type SpriteSettings,
-  type SpriteContentSettings,
   generateSpriteContentSettings,
   type CostumeSettings,
   Facing,
@@ -90,7 +89,7 @@ export type RawSpriteGenConfig = Prettify<
 
 export type SpriteGenResult = {
   sprite: Sprite
-  suggestions: SpriteContentSettings | null
+  suggestResources: boolean
 }
 
 export class SpriteGen extends Disposable {
@@ -386,9 +385,8 @@ export class SpriteGen extends Disposable {
   async finishWithDefaultCostume() {
     const image = this.image
     if (image == null) throw new Error('image expected')
-    const suggestions = await generateSpriteContentSettings(this.settings, this.i18n.lang.value, this.getSignal())
     await this.prepareDefaultCostume(image)
-    return { sprite: await this.finish(), suggestions }
+    return this.finish()
   }
 
   /** Costumes gen */

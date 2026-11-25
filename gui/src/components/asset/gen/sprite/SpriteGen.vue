@@ -56,6 +56,6 @@ provideLocalEditorCtx(editorCtxInGen)
     v-else
     :gen="gen"
     @collapse="emit('collapse')"
-    @resolved="emit('resolved', { sprite: $event, suggestions: null })"
+    @resolved="emit('resolved', { sprite: $event, suggestResources: false })"
   />
 </template>

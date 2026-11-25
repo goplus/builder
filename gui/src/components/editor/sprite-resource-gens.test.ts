@@ -1,3 +1,4 @@
+import { nextTick } from 'vue'
 import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { setupAigcMock } from '@/models/spx/gen/aigc-mock'
 import { Cancelled } from '@/utils/exception'
@@ -38,9 +39,9 @@ async function setup() {
 describe('sprite generation in the editor', () => {
   it('adds the chosen costume and keeps recommended resources out of the game until adoption', async () => {
     const { project, state, gen } = await setup()
-    const { sprite, suggestions } = await gen.finishWithDefaultCostume()
+    const sprite = await gen.finishWithDefaultCostume()
     project.addSprite(sprite)
-    state.spriteResources.suggest(sprite, suggestions)
+    await state.spriteResources.suggest(sprite)
     expect(sprite.costumes).toHaveLength(1)
     expect(sprite.animations).toHaveLength(0)
     expect(state.sprites).toHaveLength(0)
@@ -67,7 +68,7 @@ describe('sprite generation in the editor', () => {
 
   it('restores versions with the project and branches only after a successful generation', async () => {
     const { project, state, gen } = await setup()
-    const { sprite } = await gen.finishWithDefaultCostume()
+    const sprite = await gen.finishWithDefaultCostume()
     project.addSprite(sprite)
     const original = state.spriteResources.addCostume(sprite)
     expect.assert(original.gen instanceof CostumeGen)
@@ -117,7 +118,7 @@ describe('sprite generation in the editor', () => {
 
   it('keeps the selected trim for each video when switching versions and reopening the project', async () => {
     const { project, state, gen } = await setup()
-    const { sprite } = await gen.finishWithDefaultCostume()
+    const sprite = await gen.finishWithDefaultCostume()
     project.addSprite(sprite)
     const draft = state.spriteResources.addAnimation(sprite)
     expect.assert(draft.gen instanceof AnimationGen)
@@ -141,7 +142,7 @@ describe('sprite generation in the editor', () => {
 
   it('does not adopt a removed draft when its pending operation finishes', async () => {
     const { project, state, gen } = await setup()
-    const { sprite } = await gen.finishWithDefaultCostume()
+    const sprite = await gen.finishWithDefaultCostume()
     project.addSprite(sprite)
     const draft = state.spriteResources.addCostume(sprite)
     expect.assert(draft.gen instanceof CostumeGen)
@@ -168,5 +169,104 @@ describe('sprite generation in the editor', () => {
     await legacy.costumes[1].finish()
     const completed = await legacy.finish()
     expect(completed.costumes.map((c) => c.name)).toEqual(['default', 'costume-1'])
+  })
+
+  it('restores pending generation history when sprite deletion is undone', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const draft = state.spriteResources.addCostume(sprite)
+    expect.assert(draft.gen instanceof CostumeGen)
+    await draft.gen.generate()
+    await draft.gen.generate()
+    expect(draft.versions).toHaveLength(2)
+    const history = new History(project)
+    await history.doAction(
+      { name: { en: 'Remove', zh: '删除' }, ...state.spriteResources.historyForSprites(sprite.id) },
+      () => project.removeSprite(sprite.id)
+    )
+    await nextTick()
+    await history.undo()
+    await nextTick()
+    expect(project.sprites.some((s) => s.id === sprite.id)).toBe(true)
+    expect(state.spriteResources.drafts.find((d) => d.id === draft.id)?.versions).toHaveLength(2)
+  })
+
+  it('checks sibling pending names when renaming', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const first = state.spriteResources.addCostume(sprite)
+    const second = state.spriteResources.addCostume(sprite)
+    expect(second.gen.name).not.toBe(first.gen.name)
+    expect(() => second.gen.setName(first.gen.name)).toThrow()
+    expect.assert(second.gen instanceof CostumeGen)
+    await second.gen.generate()
+    second.gen.setName('Cape')
+    second.select(-1)
+    second.select(0)
+    expect(second.gen.name).toBe('Cape')
+    const walk = state.spriteResources.addAnimation(sprite)
+    const jump = state.spriteResources.addAnimation(sprite)
+    expect(() => jump.gen.setName(walk.gen.name)).toThrow()
+    await state.load(state.export())
+    expect(() => state.spriteResources.drafts[0].gen.setName('Cape')).toThrow()
+  })
+
+  it('uses the pivot of the reference that produced the accepted version', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const originalReference = sprite.defaultCostume!
+    const nextReference = originalReference.clone()
+    sprite.addCostume(nextReference)
+    originalReference.setPivot({ x: 160, y: 140 })
+    nextReference.setPivot({ x: 30, y: 70 })
+    const draft = state.spriteResources.addAnimation(sprite)
+    const animation = draft.gen
+    expect.assert(animation instanceof AnimationGen)
+    animation.setReferenceCostume(originalReference.id)
+    await animation.generateVideo()
+    animation.setFramesConfig({ startTime: 0, duration: 400, interval: 100 })
+    animation.setReferenceCostume(nextReference.id)
+    expect(draft.hasMedia).toBe(true)
+    await state.spriteResources.adopt(draft, new History(project))
+    expect(sprite.animations[0].costumes[0].pivot).toEqual(originalReference.pivot)
+  })
+
+  it('retains the chosen versions when undoing adoption', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const sibling = state.spriteResources.addAnimation(sprite)
+    const draft = state.spriteResources.addCostume(sprite)
+    expect.assert(draft.gen instanceof CostumeGen)
+    await draft.gen.generate()
+    await draft.gen.generate()
+    const history = new History(project)
+    await state.spriteResources.adopt(draft, history)
+    await history.undo()
+    expect(project.sprites.find((s) => s.id === sprite.id)!.costumes).toHaveLength(1)
+    const restored = state.spriteResources.drafts.find((v) => v.id === draft.id)!
+    expect(restored.versions).toHaveLength(2)
+    expect(restored.gen.finishState.status).toBe('initial')
+    restored.select(0)
+    sibling.gen.setSettings({ description: 'Jump forward' })
+    await history.redo()
+    expect(state.spriteResources.drafts).toEqual([sibling])
+    await history.undo()
+    expect(state.spriteResources.drafts.find((v) => v.id === draft.id)?.index).toBe(0)
+    expect(sibling.gen.settings.description).toBe('Jump forward')
+  })
+
+  it('adds a selected initial costume even when recommendations fail', async () => {
+    const { gen, project, state } = await setup()
+    api.injectErrorOnce('generateSpriteContentSettings', new Error('Recommendations unavailable'))
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    await state.spriteResources.suggest(sprite)
+    expect(sprite.defaultCostume).not.toBeNull()
+    expect(project.sprites).toContain(sprite)
+    expect(state.spriteResources.drafts).toHaveLength(0)
   })
 })

@@ -14,7 +14,8 @@ vi.mock('@/components/ui', () => ({
 
 async function setup(reduced = false, mountGame = false, dimensions = { width: 360, height: 360 }) {
   vi.useFakeTimers()
-  vi.mocked(useContentSize).mockReturnValue(ref(dimensions))
+  const size = ref(dimensions)
+  vi.mocked(useContentSize).mockReturnValue(size)
   const media = Object.assign(new EventTarget(), { matches: reduced })
   const requestFrame = vi.fn().mockReturnValue(1)
   const cancelFrame = vi.fn()
@@ -39,10 +40,23 @@ async function setup(reduced = false, mountGame = false, dimensions = { width: 3
     vi.useRealTimers()
   })
   await nextTick()
-  return { wrapper, media, requestFrame, cancelFrame, context }
+  return { wrapper, media, requestFrame, cancelFrame, context, size }
 }
 
 describe('GenLoading', () => {
+  it.each([
+    { width: 200, height: 40 },
+    { width: 8, height: 200 }
+  ])('skips the grid when the preview collapses to $width × $height', async (dimensions) => {
+    const { context, requestFrame, size } = await setup(false, false, dimensions)
+    expect(context.arc).not.toHaveBeenCalled()
+    expect(requestFrame).not.toHaveBeenCalled()
+    size.value = { width: 360, height: 360 }
+    await nextTick()
+    expect(context.arc).toHaveBeenCalled()
+    expect(requestFrame).toHaveBeenCalled()
+  })
+
   it.each([
     { width: 140, height: 140 },
     { width: 140, height: 108 },

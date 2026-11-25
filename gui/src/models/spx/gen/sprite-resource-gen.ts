@@ -5,7 +5,8 @@ import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import type { Files } from '@/models/common/file'
 import type { SpxProject } from '../project'
-import type { Sprite, State } from '../sprite'
+import type { State } from '../sprite'
+import type { SpriteResourceOwner } from './common'
 import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
 import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
 import { loadReferenceImageSelection } from './reference-image'
@@ -34,10 +35,17 @@ function snapshot(gen: Gen, path: string): [Generation, Files] {
   return [{ type: 'animation', config: cloneDeep(config) }, files]
 }
 
-function restore(i18n: I18n, sprite: Sprite, project: SpxProject, generation: Generation, files: Files, path: string) {
+function restore(
+  i18n: I18n,
+  owner: Gen['parent'],
+  project: SpxProject,
+  generation: Generation,
+  files: Files,
+  path: string
+) {
   return generation.type === 'costume'
-    ? CostumeGen.load(i18n, sprite, project, generation.config, files, path)
-    : AnimationGen.load(i18n, sprite, project, generation.config, files, path)
+    ? CostumeGen.load(i18n, owner, project, generation.config, files, path)
+    : AnimationGen.load(i18n, owner, project, generation.config, files, path)
 }
 
 /** Generation and selectable results for one pending resource of an adopted sprite. */
@@ -71,6 +79,14 @@ export class SpriteResourceGen extends Disposable {
 
   get hasMedia() {
     return this.gen instanceof CostumeGen ? this.gen.image != null : this.gen.video != null
+  }
+
+  get versionReferenceCostume() {
+    const version = this.versions[this.index]
+    if (version == null) return null
+    const { reference, referenceCostumeId } = version.generation.config
+    const selection = loadReferenceImageSelection(reference, referenceCostumeId, version.files)
+    return selection?.type === 'costume' ? this.gen.sprite.costumes.find((c) => c.id === selection.costumeId) : null
   }
 
   private get path() {
@@ -124,20 +140,21 @@ export class SpriteResourceGen extends Disposable {
       )
       gen =
         version.generation.type === 'costume'
-          ? new CostumeGen(this.i18n, this.gen.sprite, this.project, {
+          ? new CostumeGen(this.i18n, this.gen.parent, this.project, {
               settings: version.generation.config.settings,
               referenceImageSelection
             })
-          : new AnimationGen(this.i18n, this.gen.sprite, this.project, {
+          : new AnimationGen(this.i18n, this.gen.parent, this.project, {
               settings: version.generation.config.settings,
               referenceImageSelection
             })
     } else {
-      gen = restore(this.i18n, this.gen.sprite, this.project, version.generation, version.files, version.path)
+      gen = restore(this.i18n, this.gen.parent, this.project, version.generation, version.files, version.path)
     }
-    gen.setSettings({ name: this.gen.name })
+    const name = this.gen.name
     this.gen.dispose()
     this.gen = gen
+    gen.setSettings({ name })
     this.index = index
     this.observe(gen)
   }
@@ -168,8 +185,14 @@ export class SpriteResourceGen extends Disposable {
     ]
   }
 
-  static load(i18n: I18n, sprite: Sprite, project: SpxProject, stored: StoredSpriteResourceGen, files: Files) {
-    const gen = restore(i18n, sprite, project, stored.current, files, `gen/sprite-resources/${stored.id}`)
+  static load(
+    i18n: I18n,
+    owner: SpriteResourceOwner,
+    project: SpxProject,
+    stored: StoredSpriteResourceGen,
+    files: Files
+  ) {
+    const gen = restore(i18n, owner, project, stored.current, files, `gen/sprite-resources/${stored.id}`)
     const draft = new SpriteResourceGen(i18n, project, gen, stored.suggested, stored.boundStates, stored.id)
     for (const version of stored.versions) {
       const media = Object.fromEntries(Object.entries(files).filter(([path]) => path.startsWith(version.path + '/')))

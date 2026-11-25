@@ -42,12 +42,18 @@ export function useGenerateSprite() {
   const invokeModal = useModal(SpriteGenModal)
   return async function generateSprite(gen?: SpriteGen) {
     const { project, state } = editorCtx
-    const { sprite, suggestions } = await invokeModal({ project, gen, helpers })
-    await state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-      project.addSprite(sprite)
-      await sprite.autoFit()
-      if (suggestions != null) state.genState.spriteResources.suggest(sprite, suggestions)
-    })
+    const { sprite, suggestResources } = await invokeModal({ project, gen, helpers })
+    await state.history.doAction(
+      {
+        name: { en: 'Add sprite', zh: '添加精灵' },
+        ...state.genState.spriteResources.historyForSprites(sprite.id)
+      },
+      async () => {
+        project.addSprite(sprite)
+        await sprite.autoFit()
+      }
+    )
+    if (suggestResources) void state.genState.spriteResources.suggest(sprite)
     return sprite
   }
 }
@@ -64,21 +70,29 @@ export function useAddAssetFromLibrary() {
   const genHelpers = useGenHelpers()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: SpxProject, type: T) {
-    const { models, suggestions } = await invokeAssetLibraryModal({ project, type, genHelpers })
+    const { models, suggestResources } = await invokeAssetLibraryModal({ project, type, genHelpers })
     const em = humanizeAssetType(type)
-    await editorCtx.state.history.doAction({ name: { en: `Add ${em.en}`, zh: `添加${em.zh}` } }, async () => {
-      for (const model of models) {
-        if (model instanceof Sprite) {
-          project.addSprite(model)
-          await model.autoFit()
-          if (suggestions != null) editorCtx.state.genState.spriteResources.suggest(model, suggestions)
-        } else if (model instanceof Backdrop) {
-          project.stage.addBackdrop(model)
-        } else if (model instanceof Sound) {
-          project.addSound(model)
+    const spriteIds = models.filter((model) => model instanceof Sprite).map((sprite) => sprite.id)
+    await editorCtx.state.history.doAction(
+      {
+        name: { en: `Add ${em.en}`, zh: `添加${em.zh}` },
+        ...editorCtx.state.genState.spriteResources.historyForSprites(...spriteIds)
+      },
+      async () => {
+        for (const model of models) {
+          if (model instanceof Sprite) {
+            project.addSprite(model)
+            await model.autoFit()
+          } else if (model instanceof Backdrop) {
+            project.stage.addBackdrop(model)
+          } else if (model instanceof Sound) {
+            project.addSound(model)
+          }
         }
       }
-    })
+    )
+    if (suggestResources && models[0] instanceof Sprite)
+      void editorCtx.state.genState.spriteResources.suggest(models[0])
     return models as Array<AssetModel<T>>
   }
 }
@@ -124,10 +138,13 @@ export function useAddSpriteFromLocalFile() {
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    await editorCtx.state.history.doAction({ name: actionMessage }, async () => {
-      project.addSprite(sprite)
-      await sprite.autoFit()
-    })
+    await editorCtx.state.history.doAction(
+      { name: actionMessage, ...editorCtx.state.genState.spriteResources.historyForSprites(sprite.id) },
+      async () => {
+        project.addSprite(sprite)
+        await sprite.autoFit()
+      }
+    )
     return sprite
   }
 }

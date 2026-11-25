@@ -77,6 +77,8 @@ watch([motion, size, reducedMotion, () => game.value != null], ([motion, dimensi
     ctx.clearRect(0, 0, width, height)
     const grid = current == null ? loadingGrid : { ...current, ...gameLayout(current, width, height) }
     const spacing = gameCellSize * grid.scale
+    // A collapsed viewport has no drawable grid. The size watcher resumes on resize.
+    if (spacing < 1) return
     const firstRow = props.compact ? 0 : Math.ceil(-grid.y / spacing)
     const firstColumn = props.compact ? 0 : Math.ceil(-grid.x / spacing)
     const rowCount = props.compact ? grid.rows : Math.ceil((height - grid.y) / spacing)

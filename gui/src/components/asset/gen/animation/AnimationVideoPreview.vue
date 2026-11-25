@@ -341,7 +341,9 @@ function handleDragEnd(e: PointerEvent) {
 
 function adjustStartTime(newTime: number, withSnap = false) {
   const time = withSnap ? snap(newTime) : newTime
-  return clamp(time, 0, Math.max(0, cutEndRef.value - frameInterval.value))
+  const maxStart = cutEndRef.value - frameInterval.value
+  const lastTick = Math.floor(maxStart / frameInterval.value) * frameInterval.value
+  return clamp(time, 0, Math.max(0, withSnap ? lastTick : maxStart))
 }
 
 function adjustEndTime(newTime: number, videoDuration: number, withSnap = false) {

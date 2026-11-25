@@ -1,5 +1,5 @@
 <script lang="ts">
-export type AssetLibraryResult = { models: AssetModel[]; suggestions: SpriteContentSettings | null }
+export type AssetLibraryResult = { models: AssetModel[]; suggestResources: boolean }
 
 const searchRecommendations: Record<AssetType, LocaleMessage[]> = {
   [AssetType.Sprite]: [
@@ -53,7 +53,6 @@ import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import SpriteSettingsInput from '@/components/asset/gen/sprite/SpriteSettingsInput.vue'
 import BackdropSettingsInput from '@/components/asset/gen/backdrop/BackdropSettingsInput.vue'
-import type { SpriteContentSettings } from '@/apis/aigc'
 import { SpriteGen, type SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
 import SpriteGenPhaseSettings from '../gen/sprite/SpriteGenPhaseSettings.vue'
@@ -209,7 +208,7 @@ const handleConfirm = useMessageHandle(
         throw new Error(`Unsupported asset type: ${data.type}`)
       })
     )
-    emit('resolved', { models: assetModels, suggestions: null })
+    emit('resolved', { models: assetModels, suggestResources: false })
   },
   { en: 'Failed to parse asset', zh: '素材解析失败' }
 )
@@ -266,7 +265,7 @@ async function collapseGen() {
 }
 
 function handleGenResolved(model: AssetModel) {
-  emit('resolved', { models: [model], suggestions: null })
+  emit('resolved', { models: [model], suggestResources: false })
 }
 
 const GenComp = computed(() => {
@@ -277,7 +276,8 @@ const GenComp = computed(() => {
         ...attrs,
         gen: g,
         descriptionPlaceholder: keyword.value.trim(),
-        onResolved: ({ sprite, suggestions }: SpriteGenResult) => emit('resolved', { models: [sprite], suggestions })
+        onResolved: ({ sprite, suggestResources }: SpriteGenResult) =>
+          emit('resolved', { models: [sprite], suggestResources })
       })
   } else if (g instanceof BackdropGen) {
     return (attrs: Record<string, unknown>) =>
