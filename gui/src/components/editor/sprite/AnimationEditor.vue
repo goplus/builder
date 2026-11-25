@@ -1,22 +1,5 @@
 <template>
-  <UIEmpty v-if="sprite.animations.length === 0" size="extra-large">
-    {{ $t({ en: 'No animations', zh: '没有动画' }) }}
-    <template #op>
-      <UIButton
-        v-radar="{ name: 'group-costumes-button', desc: 'Click to group costumes as animation' }"
-        type="neutral"
-        size="large"
-        @click="handleGroupCostumes"
-      >
-        <template #icon>
-          <img :src="galleryIcon" />
-        </template>
-        {{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}
-      </UIButton>
-    </template>
-  </UIEmpty>
   <EditorList
-    v-else
     v-radar="{ name: 'animations-management', desc: 'Managing animations of current sprite' }"
     resource-type="animation"
     :sortable="{ list: sprite.animations }"
@@ -31,6 +14,18 @@
       operable
       @click="state.select(animation.id)"
     />
+    <template v-if="state.drafts.length > 0" #drafts>
+      <template v-for="draft in state.drafts" :key="draft.id">
+        <AnimationGenItem
+          v-if="draft.gen instanceof AnimationGen"
+          :gen="draft.gen"
+          :active="state.selectedDraft === draft"
+          @click="state.select(draft.id)"
+          @rename="renameDraft.fn(draft.gen)"
+          @remove="editorCtx.state.genState.spriteResources.remove(draft)"
+        />
+      </template>
+    </template>
     <template #add-options>
       <UIMenu>
         <UIMenuItem
@@ -38,31 +33,45 @@
           @click="handleGroupCostumes"
           >{{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}</UIMenuItem
         >
+        <UIMenuItem
+          v-radar="{ name: 'generate-animation', desc: 'Generate an animation with AI' }"
+          @click="addDraft.fn"
+          >{{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}</UIMenuItem
+        >
       </UIMenu>
     </template>
     <template #detail>
+      <SpriteResourceGenDetail
+        v-if="state.selectedDraft != null"
+        :key="state.selectedDraft.id"
+        :draft="state.selectedDraft"
+        @adopted="state.select($event)"
+      />
       <AnimationDetail
-        v-if="state.selected != null"
+        v-else-if="state.selected != null"
         :animation="state.selected"
         @rename="handleRename(state.selected)"
       />
+      <UIEmpty v-else size="large">{{ $t({ en: 'Click + to add an animation', zh: '点击 + 添加动画' }) }}</UIEmpty>
     </template>
   </EditorList>
 </template>
 
 <script lang="ts">
 export class AnimationsEditorState extends Disposable {
-  constructor(private getSprite: () => Sprite | null) {
+  constructor(
+    private getSprite: () => Sprite | null,
+    private generations?: SpriteResourceGens
+  ) {
     super()
-    this.selectedIdRef = ref(getSprite()?.animations[0]?.id ?? null)
+    this.selectedIdRef = ref(getSprite()?.animations[0]?.id ?? this.drafts[0]?.id ?? null)
 
     this.addDisposer(
       watch(
-        () => this.selected,
-        (selected) => {
-          if (selected == null && this.animations.length > 0) {
-            this.select(this.animations[0].id)
-          }
+        () => [this.selected, this.selectedDraft, this.animations[0], this.drafts[0]],
+        () => {
+          if (this.selected == null && this.selectedDraft == null)
+            this.select(this.animations[0]?.id ?? this.drafts[0]?.id ?? null)
         }
       )
     )
@@ -72,6 +81,16 @@ export class AnimationsEditorState extends Disposable {
 
   private get animations() {
     return this.getSprite()?.animations ?? []
+  }
+
+  get drafts() {
+    return (
+      this.generations?.drafts.filter((d) => d.gen.sprite === this.getSprite() && d.gen instanceof AnimationGen) ?? []
+    )
+  }
+
+  get selectedDraft() {
+    return this.drafts.find((d) => d.id === this.selectedIdRef.value) ?? null
   }
 
   /** The currently selected animation */
@@ -93,12 +112,18 @@ export class AnimationsEditorState extends Disposable {
   }
   /** Select a target (by specifying route path) */
   selectByRoute(path: PathSegments) {
-    const [name] = shiftPath(path)
+    const [name, rest] = shiftPath(path)
+    if (name === 'drafts' && rest.length === 1) {
+      const draft = this.drafts.find((d) => d.id === rest[0])
+      if (draft != null) this.select(draft.id)
+      return
+    }
     if (name == null) return
     return this.selectByName(name)
   }
   /** Get route path for the current selection */
   getRoute() {
+    if (this.selectedDraft != null) return ['drafts', this.selectedDraft.id]
     if (this.selected == null) return []
     return [this.selected.name]
   }
@@ -111,13 +136,18 @@ import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/spx/sprite'
 import EditorList from '../common/EditorList.vue'
-import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
 import { capture, useMessageHandle } from '@/utils/exception'
 import { useAddAnimationByGroupingCostumes, useRenameAnimation } from '@/components/asset'
 import AnimationDetail from './AnimationDetail.vue'
+import { AnimationGen } from '@/models/spx/gen/animation-gen'
+import { useEnsureSignedIn } from '@/utils/user'
+import { useRenameAnimationGen } from '@/components/asset'
+import AnimationGenItem from '@/components/asset/gen/animation/AnimationGenItem.vue'
+import type { SpriteResourceGens } from '../sprite-resource-gens'
+import SpriteResourceGenDetail from './SpriteResourceGenDetail.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationItem from './AnimationItem.vue'
-import galleryIcon from './gallery.svg'
 
 const props = defineProps<{
   sprite: Sprite
@@ -125,6 +155,18 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const ensureSignedIn = useEnsureSignedIn()
+const addDraft = useMessageHandle(
+  async () => {
+    await ensureSignedIn()
+    props.state.select(editorCtx.state.genState.spriteResources.addAnimation(props.sprite).id)
+  },
+  { en: 'Failed to add animation', zh: '添加动画失败' }
+)
+const renameDraft = useMessageHandle(useRenameAnimationGen(), {
+  en: 'Failed to rename animation',
+  zh: '重命名动画失败'
+})
 
 const addAnimationByGroupingCostumes = useAddAnimationByGroupingCostumes()
 

@@ -36,11 +36,19 @@ import SpriteGenModal from './gen/sprite/SpriteGenModal.vue'
 import BackdropGenModal from './gen/backdrop/BackdropGenModal.vue'
 import type { GenHelpers } from './gen/modal'
 
-export function useSpriteGenModal() {
+export function useGenerateSprite() {
+  const editorCtx = useEditorCtx()
   const helpers = useGenHelpers()
   const invokeModal = useModal(SpriteGenModal)
-  return function invokeSpriteGenModal(project: SpxProject, gen?: SpriteGen) {
-    return invokeModal({ project, gen, helpers })
+  return async function generateSprite(gen?: SpriteGen) {
+    const { project, state } = editorCtx
+    const { sprite, suggestions } = await invokeModal({ project, gen, helpers })
+    await state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
+      project.addSprite(sprite)
+      await sprite.autoFit()
+      if (suggestions != null) state.genState.spriteResources.suggest(sprite, suggestions)
+    })
+    return sprite
   }
 }
 
@@ -56,13 +64,14 @@ export function useAddAssetFromLibrary() {
   const genHelpers = useGenHelpers()
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: SpxProject, type: T) {
-    const models = (await invokeAssetLibraryModal({ project, type, genHelpers })) as Array<AssetModel<T>>
+    const { models, suggestions } = await invokeAssetLibraryModal({ project, type, genHelpers })
     const em = humanizeAssetType(type)
     await editorCtx.state.history.doAction({ name: { en: `Add ${em.en}`, zh: `添加${em.zh}` } }, async () => {
       for (const model of models) {
         if (model instanceof Sprite) {
           project.addSprite(model)
           await model.autoFit()
+          if (suggestions != null) editorCtx.state.genState.spriteResources.suggest(model, suggestions)
         } else if (model instanceof Backdrop) {
           project.stage.addBackdrop(model)
         } else if (model instanceof Sound) {
@@ -70,7 +79,7 @@ export function useAddAssetFromLibrary() {
         }
       }
     })
-    return models
+    return models as Array<AssetModel<T>>
   }
 }
 
@@ -430,15 +439,10 @@ function useGenHelpers(): GenHelpers {
     if (gen instanceof BackdropGen) return editorCtx.state.genState.backdrops.some((b) => b.id === gen.id)
     throw new Error('Unsupported gen type')
   }
-  function persist(gen: AssetGenModel) {
-    if (gen instanceof SpriteGen) return editorCtx.state.genState.addSprite(gen)
-    if (gen instanceof BackdropGen) return editorCtx.state.genState.addBackdrop(gen)
-    throw new Error('Unsupported gen type')
-  }
   function getPos(gen: AssetGenModel) {
     if (gen instanceof SpriteGen) return editorCtx.state.genState.getSpritePos(gen)
     if (gen instanceof BackdropGen) return editorCtx.state.genState.getBackdropPos(gen)
     throw new Error('Unsupported gen type')
   }
-  return { isPersisted, persist, getPos }
+  return { isPersisted, getPos }
 }

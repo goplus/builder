@@ -1,0 +1,181 @@
+import { nanoid } from 'nanoid'
+import { cloneDeep } from 'lodash'
+import { shallowReactive, watch } from 'vue'
+import { Disposable } from '@/utils/disposable'
+import type { I18n } from '@/utils/i18n'
+import type { Files } from '@/models/common/file'
+import type { SpxProject } from '../project'
+import type { Sprite, State } from '../sprite'
+import { AnimationGen, type RawAnimationGenConfig } from './animation-gen'
+import { CostumeGen, type RawCostumeGenConfig } from './costume-gen'
+import { loadReferenceImageSelection } from './reference-image'
+
+type Gen = CostumeGen | AnimationGen
+type Generation =
+  | { type: 'costume'; config: RawCostumeGenConfig }
+  | { type: 'animation'; config: RawAnimationGenConfig }
+type Version = { path: string; generation: Generation }
+export type StoredSpriteResourceGen = {
+  id: string
+  spriteId: string
+  suggested: boolean
+  boundStates: State[]
+  current: Generation
+  versions: Version[]
+  index: number
+}
+
+function snapshot(gen: Gen, path: string): [Generation, Files] {
+  if (gen instanceof CostumeGen) {
+    const [config, files] = gen.export(path)
+    return [{ type: 'costume', config: cloneDeep(config) }, files]
+  }
+  const [config, files] = gen.export(path)
+  return [{ type: 'animation', config: cloneDeep(config) }, files]
+}
+
+function restore(i18n: I18n, sprite: Sprite, project: SpxProject, generation: Generation, files: Files, path: string) {
+  return generation.type === 'costume'
+    ? CostumeGen.load(i18n, sprite, project, generation.config, files, path)
+    : AnimationGen.load(i18n, sprite, project, generation.config, files, path)
+}
+
+/** Generation and selectable results for one pending resource of an adopted sprite. */
+export class SpriteResourceGen extends Disposable {
+  versions = shallowReactive<Array<Version & { files: Files }>>([])
+  index = -1
+
+  constructor(
+    private i18n: I18n,
+    private project: SpxProject,
+    public gen: Gen,
+    readonly suggested = false,
+    readonly boundStates: State[] = [],
+    readonly id = nanoid()
+  ) {
+    super()
+    const self = shallowReactive(this)
+    self.observe(gen)
+    this.addDisposer(() => self.gen.dispose())
+    return self
+  }
+
+  get busy() {
+    const gen = this.gen
+    return (
+      (gen instanceof CostumeGen ? gen.generateState : gen.generateVideoState).status === 'running' ||
+      gen.enrichState.status === 'running' ||
+      gen.finishState.status === 'running'
+    )
+  }
+
+  get hasMedia() {
+    return this.gen instanceof CostumeGen ? this.gen.image != null : this.gen.video != null
+  }
+
+  private get path() {
+    return `gen/sprite-resources/${this.id}`
+  }
+
+  private observe(gen: Gen) {
+    gen.addDisposer(
+      watch(
+        () => {
+          if (gen instanceof CostumeGen) return gen.generateState.status === 'finished' ? gen.image : null
+          return gen.generateVideoState.status === 'finished' ? gen.video : null
+        },
+        (media) => {
+          if (media == null) return
+          const path = this.path + '/' + nanoid()
+          const [generation, files] = snapshot(gen, path)
+          this.versions.splice(this.index + 1, Infinity, { generation, files, path })
+          this.index = this.versions.length - 1
+        },
+        { flush: 'sync' }
+      )
+    )
+    if (gen instanceof AnimationGen) {
+      gen.addDisposer(
+        watch(
+          () => gen.framesConfig,
+          (config) => {
+            const version = this.versions[this.index]
+            if (gen.video == null || version?.generation.type !== 'animation') return
+            version.generation.config.framesConfig = config ?? undefined
+            if (gen.result != null) gen.resetFinishState()
+          },
+          { flush: 'sync' }
+        )
+      )
+    }
+  }
+
+  select(index: number) {
+    const version = this.versions[index === -1 ? 0 : index]
+    if (this.busy || version == null) return
+    let gen: Gen
+    if (index === -1) {
+      // The initial choice restores the first submitted prompt and reference without a result.
+      const { config } = version.generation
+      const referenceImageSelection = loadReferenceImageSelection(
+        config.reference,
+        config.referenceCostumeId,
+        version.files
+      )
+      gen =
+        version.generation.type === 'costume'
+          ? new CostumeGen(this.i18n, this.gen.sprite, this.project, {
+              settings: version.generation.config.settings,
+              referenceImageSelection
+            })
+          : new AnimationGen(this.i18n, this.gen.sprite, this.project, {
+              settings: version.generation.config.settings,
+              referenceImageSelection
+            })
+    } else {
+      gen = restore(this.i18n, this.gen.sprite, this.project, version.generation, version.files, version.path)
+    }
+    gen.setSettings({ name: this.gen.name })
+    this.gen.dispose()
+    this.gen = gen
+    this.index = index
+    this.observe(gen)
+  }
+
+  discard() {
+    if (this.busy || this.versions.length === 0) return
+    this.select(-1)
+    this.versions.splice(0)
+  }
+
+  export(): [StoredSpriteResourceGen, Files] {
+    const [current, files] = snapshot(this.gen, this.path)
+    const versions = this.versions.map(({ path, generation, files: media }) => {
+      Object.assign(files, media)
+      return { path, generation }
+    })
+    return [
+      {
+        id: this.id,
+        spriteId: this.gen.sprite.id,
+        suggested: this.suggested,
+        boundStates: this.boundStates,
+        current,
+        versions,
+        index: this.index
+      },
+      files
+    ]
+  }
+
+  static load(i18n: I18n, sprite: Sprite, project: SpxProject, stored: StoredSpriteResourceGen, files: Files) {
+    const gen = restore(i18n, sprite, project, stored.current, files, `gen/sprite-resources/${stored.id}`)
+    const draft = new SpriteResourceGen(i18n, project, gen, stored.suggested, stored.boundStates, stored.id)
+    for (const version of stored.versions) {
+      const media = Object.fromEntries(Object.entries(files).filter(([path]) => path.startsWith(version.path + '/')))
+      draft.versions.push({ ...version, files: media })
+    }
+    draft.index = Math.min(Math.max(stored.index, -1), draft.versions.length - 1)
+    return draft
+  }
+}

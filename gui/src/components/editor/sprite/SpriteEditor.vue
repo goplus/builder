@@ -56,10 +56,10 @@ export type Selected =
     }
 
 export class SpriteEditorState extends Disposable {
-  constructor(getSprite: () => Sprite | null, initialSelected?: Selected) {
+  constructor(getSprite: () => Sprite | null, initialSelected?: Selected, drafts?: SpriteResourceGens) {
     super()
-    this.costumesState = new CostumesEditorState(getSprite)
-    this.addDisposable((this.animationsState = new AnimationsEditorState(getSprite)))
+    this.costumesState = new CostumesEditorState(getSprite, drafts)
+    this.addDisposable((this.animationsState = new AnimationsEditorState(getSprite, drafts)))
     this.selectedTypeRef = ref(initialSelected?.type ?? 'code')
   }
 
@@ -142,6 +142,7 @@ export class SpriteEditorState extends Disposable {
 
 <script setup lang="ts">
 import { ref, type Ref } from 'vue'
+import type { SpriteResourceGens } from '../sprite-resource-gens'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Costume } from '@/models/spx/costume'

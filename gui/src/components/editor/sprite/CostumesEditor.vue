@@ -13,6 +13,20 @@
       :selectable="{ selected: state.selected?.id === costume.id }"
       @click="handleSelect(costume)"
     />
+    <template v-if="state.drafts.length > 0" #drafts>
+      <template v-for="draft in state.drafts" :key="draft.id">
+        <CostumeGenItem
+          v-if="draft.gen instanceof CostumeGen"
+          :gen="draft.gen"
+          :active="state.selectedDraft === draft"
+          :is-default="false"
+          :operable="{ removable: true }"
+          @click="state.select(draft.id)"
+          @rename="renameDraft.fn(draft.gen)"
+          @remove="editorCtx.state.genState.spriteResources.remove(draft)"
+        />
+      </template>
+    </template>
     <template #add-options>
       <UIMenu>
         <UIMenuItem
@@ -20,11 +34,20 @@
           @click="handleAddFromLocalFile"
           >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
         >
+        <UIMenuItem v-radar="{ name: 'generate-costume', desc: 'Generate a costume with AI' }" @click="addDraft.fn">{{
+          $t({ en: 'Generate with AI', zh: '使用 AI 生成' })
+        }}</UIMenuItem>
       </UIMenu>
     </template>
     <template #detail>
+      <SpriteResourceGenDetail
+        v-if="state.selectedDraft != null"
+        :key="state.selectedDraft.id"
+        :draft="state.selectedDraft"
+        @adopted="state.select($event)"
+      />
       <CostumeDetail
-        v-if="state.selected != null"
+        v-else-if="state.selected != null"
         :sprite="sprite"
         :costume="state.selected"
         @rename="handleRename(state.selected)"
@@ -35,15 +58,32 @@
 
 <script lang="ts">
 export class CostumesEditorState {
-  constructor(private getSprite: () => Sprite | null) {}
+  constructor(
+    private getSprite: () => Sprite | null,
+    private generations?: SpriteResourceGens
+  ) {}
+
+  get drafts() {
+    return (
+      this.generations?.drafts.filter((d) => d.gen.sprite === this.getSprite() && d.gen instanceof CostumeGen) ?? []
+    )
+  }
+
+  get selectedDraft() {
+    return this.drafts.find((d) => d.id === this.draftId.value) ?? null
+  }
+
+  private draftId = ref<string | null>(null)
 
   /** The currently selected costume */
   get selected() {
-    return this.getSprite()?.defaultCostume ?? null
+    return this.selectedDraft == null ? this.getSprite()?.defaultCostume ?? null : null
   }
   /** Select a costume by its ID */
   select(id: string) {
-    this.getSprite()?.setDefaultCostume(id)
+    const draft = this.drafts.find((d) => d.id === id)
+    this.draftId.value = draft?.id ?? null
+    if (draft == null) this.getSprite()?.setDefaultCostume(id)
   }
   /** Select a costume by its name */
   selectByName(name: string): void {
@@ -56,12 +96,18 @@ export class CostumesEditorState {
   }
   /** Select a costume (by specifying route path) */
   selectByRoute(path: PathSegments) {
-    const [name] = shiftPath(path)
+    const [name, rest] = shiftPath(path)
+    if (name === 'drafts' && rest.length === 1) {
+      const draft = this.drafts.find((d) => d.id === rest[0])
+      if (draft != null) this.select(draft.id)
+      return
+    }
     if (name == null) return
     return this.selectByName(name)
   }
   /** Get route path for the current selection */
   getRoute(): PathSegments {
+    if (this.selectedDraft != null) return ['drafts', this.selectedDraft.id]
     if (this.selected == null) return []
     return [this.selected.name]
   }
@@ -69,6 +115,7 @@ export class CostumesEditorState {
 </script>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
 import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
@@ -78,6 +125,12 @@ import { useAddCostumeFromLocalFile, useRenameCostume } from '@/components/asset
 import EditorList from '../common/EditorList.vue'
 import CostumeItem from './CostumeItem.vue'
 import CostumeDetail from './CostumeDetail.vue'
+import { CostumeGen } from '@/models/spx/gen/costume-gen'
+import { useEnsureSignedIn } from '@/utils/user'
+import { useRenameCostumeGen } from '@/components/asset'
+import CostumeGenItem from '@/components/asset/gen/costume/CostumeGenItem.vue'
+import type { SpriteResourceGens } from '../sprite-resource-gens'
+import SpriteResourceGenDetail from './SpriteResourceGenDetail.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
@@ -86,10 +139,19 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const ensureSignedIn = useEnsureSignedIn()
+const addDraft = useMessageHandle(
+  async () => {
+    await ensureSignedIn()
+    props.state.select(editorCtx.state.genState.spriteResources.addCostume(props.sprite).id)
+  },
+  { en: 'Failed to add costume', zh: '添加造型失败' }
+)
+const renameDraft = useMessageHandle(useRenameCostumeGen(), { en: 'Failed to rename costume', zh: '重命名造型失败' })
 
 function handleSelect(costume: Costume) {
   const action = { name: { en: 'Set default costume', zh: '设置默认造型' } }
-  editorCtx.state.history.doAction(action, () => props.sprite.setDefaultCostume(costume.id))
+  editorCtx.state.history.doAction(action, () => props.state.select(costume.id))
 }
 
 const addFromLocalFile = useAddCostumeFromLocalFile()

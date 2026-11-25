@@ -175,7 +175,10 @@ describe('editor', () => {
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Rename modal"]').exists()).toBe(false))
 
     await wrapper.get('[aria-label="Animations tab"]').trigger('click')
-    await wrapper.get('[aria-label="Group costumes button"]').trigger('click')
+    await wrapper.get('[aria-label="Add animation"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Group costumes option"]').exists()).toBe(true))
+    expect(wrapper.find('[aria-label="Generate animation"]').exists()).toBe(true)
+    await wrapper.get('[aria-label="Group costumes option"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Group costumes modal"]').exists()).toBe(true))
     const grouping = wrapper.get('[aria-label="Group costumes modal"]')
     await grouping.get('[title="Idle"]').trigger('click')

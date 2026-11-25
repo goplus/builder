@@ -2,8 +2,7 @@
 import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import type { Sprite } from '@/models/spx/sprite'
-import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
+import type { SpriteGen, SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import { useSignedIn } from '@/stores/user'
 import { cloudHelpers } from '@/models/common/cloud'
 import { provideLocalEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -20,7 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   collapse: []
-  resolved: [Sprite]
+  resolved: [SpriteGenResult]
 }>()
 
 const i18n = useI18n()
@@ -47,10 +46,16 @@ provideLocalEditorCtx(editorCtxInGen)
 <template>
   <SpriteGenPhaseSettings
     v-if="gen.isPreparePhase"
+    resume
     :gen="gen"
     :description-placeholder="descriptionPlaceholder"
     :library-search-enabled="librarySearchEnabled"
     @resolved="emit('resolved', $event)"
   />
-  <SpriteGenPhaseContent v-else :gen="gen" @collapse="emit('collapse')" @resolved="emit('resolved', $event)" />
+  <SpriteGenPhaseContent
+    v-else
+    :gen="gen"
+    @collapse="emit('collapse')"
+    @resolved="emit('resolved', { sprite: $event, suggestions: null })"
+  />
 </template>

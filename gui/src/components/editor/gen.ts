@@ -10,16 +10,20 @@ import type { AssetGenModel } from '@/models/spx/common/asset'
 import type { SpxProject } from '@/models/spx/project'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { BackdropGen } from '@/models/spx/gen/backdrop-gen'
+import { SpriteResourceGens } from './sprite-resource-gens'
 
 export type GenPos = { x: number; y: number }
 export type GenPosProvider<T extends AssetType> = (gen: AssetGenModel<T>) => Promise<GenPos | null>
 
 export class GenState extends Disposable {
+  readonly spriteResources: SpriteResourceGens
   constructor(
     private i18n: I18n,
     private project: SpxProject
   ) {
     super()
+    this.spriteResources = new SpriteResourceGens(i18n, project)
+    this.addDisposable(this.spriteResources)
     this.addDisposer(() => {
       this.sprites.forEach((gen) => gen.dispose())
       this.backdrops.forEach((gen) => gen.dispose())
@@ -105,14 +109,15 @@ export class GenState extends Disposable {
     this.backdrops.splice(0).forEach((gen) => gen.dispose())
     const [loadedSprites, loadedBackdrops] = await Promise.all([
       SpriteGen.loadAll(this.i18n, this.project, files),
-      BackdropGen.loadAll(this.i18n, this.project, files)
+      BackdropGen.loadAll(this.i18n, this.project, files),
+      this.spriteResources.load(files)
     ])
     loadedSprites.forEach((gen) => this.addSprite(gen))
     loadedBackdrops.forEach((gen) => this.addBackdrop(gen))
   }
 
   export(): Files {
-    const files: Files = {}
+    const files = this.spriteResources.export()
     ;[...this.sprites, ...this.backdrops].forEach((gen) => {
       const genFiles = gen.export()
       Object.assign(files, genFiles)

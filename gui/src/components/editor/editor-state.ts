@@ -69,10 +69,12 @@ class SpxProjectWithGens implements IProject {
     return this.filesComputed.value
   }
   async loadFiles(files: Files): Promise<void> {
-    await Promise.all([this.project.loadFiles(files), this.genState.load(files)])
+    await this.project.loadFiles(files)
+    await this.genState.load(files)
   }
   async load({ metadata, files }: ProjectSerialized) {
-    await Promise.all([this.project.load({ metadata, files }), this.genState.load(files)])
+    await this.project.load({ metadata, files })
+    await this.genState.load(files)
   }
   async export(signal?: AbortSignal): Promise<ProjectSerialized> {
     const files: Files = {}
@@ -224,7 +226,7 @@ export class EditorState extends Disposable {
             return
           }
           const getSprite = () => this.project.sprites.find((s) => s.id === target.id) ?? null
-          this.spriteState = new SpriteEditorState(getSprite, prevSelected)
+          this.spriteState = new SpriteEditorState(getSprite, prevSelected, this.genState.spriteResources)
         }
         break
       default:

@@ -1020,7 +1020,7 @@
                 <div :class="groupLabelClass">Compact Without Text</div>
                 <div class="flex justify-center rounded-md bg-grey-100 p-4">
                   <div class="relative h-28 w-28 overflow-hidden rounded-md">
-                    <GenLoading cover :visible="loadingDemoVisible" animation-style="width: 60px; height: 60px;" />
+                    <GenLoading cover :visible="loadingDemoVisible" compact />
                   </div>
                 </div>
               </div>
