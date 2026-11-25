@@ -68,6 +68,7 @@ class SpxProjectWithGens implements IProject {
   exportFiles() {
     return this.filesComputed.value
   }
+  // Both load paths must restore sprites before generation drafts can resolve their sprite IDs.
   async loadFiles(files: Files): Promise<void> {
     await this.project.loadFiles(files)
     await this.genState.load(files)

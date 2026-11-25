@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { createI18n } from '@/utils/i18n'
+import { createRadar } from '@/utils/radar'
 import GenerationGame from './GenerationGame.vue'
 import type { Game } from './generation-game'
 
@@ -18,7 +19,7 @@ function setup() {
   const wrapper = mount(GenerationGame, {
     attachTo: document.body,
     props: { enabled: true, viewport: { width: 320, height: 320 } },
-    global: { plugins: [createI18n({ lang: 'en' })] }
+    global: { plugins: [createI18n({ lang: 'en' }), createRadar()] }
   })
   onTestFinished(() => {
     wrapper.unmount()
@@ -64,6 +65,9 @@ describe('GenerationGame', () => {
     expect(document.activeElement).toBe(button)
     expect(wrapper.find('svg').exists()).toBe(false)
     expect.assert(wrapper.element instanceof HTMLElement)
+    expect(wrapper.attributes('role')).toBe('group')
+    expect(wrapper.attributes('aria-label')).toBe('Maze game')
+    expect(wrapper.attributes('aria-description')).toContain('arrow keys')
     wrapper.element.focus()
     expect((await press('ArrowRight', wrapper.element)).defaultPrevented).toBe(true)
     expect(document.activeElement).toBe(wrapper.get('svg').element)

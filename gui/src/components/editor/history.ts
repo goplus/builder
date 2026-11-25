@@ -96,10 +96,10 @@ export class History {
     action: Action,
     fn: () => T | Promise<T>,
     /** Checks preconditions under the project lock, before recording history. */
-    validate?: () => void
+    validate?: () => void | Promise<void>
   ): Promise<T> {
     return this.project.mutex.runExclusive(async () => {
-      validate?.()
+      if (validate != null) await validate()
       // history after current state (for redo) will be discarded on any action
       this.states.splice(this.index)
 

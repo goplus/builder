@@ -103,8 +103,16 @@ describe('sprite generation in the editor', () => {
     api.injectErrorOnce('subscribeTaskEvents', new Error('Disconnected'))
     await expect(first.generate()).rejects.toThrow('Disconnected')
     expect(draft.versions).toHaveLength(2)
-    first.setSettings({ description: 'Blue scarf' })
-    await first.generate()
+    expect(draft.hasMedia).toBe(false)
+    draft.previousVersion()
+    expect(draft.index).toBe(0)
+    expect(draft.hasMedia).toBe(true)
+    draft.previousVersion()
+    expect(draft.index).toBe(-1)
+    draft.nextVersion()
+    expect.assert(draft.gen instanceof CostumeGen)
+    draft.gen.setSettings({ description: 'Blue scarf' })
+    await draft.gen.generate()
     expect(draft.index).toBe(2)
     expect(draft.versions).toHaveLength(3)
     draft.select(1)
@@ -141,6 +149,31 @@ describe('sprite generation in the editor', () => {
     expect(reloaded.versions).toHaveLength(2)
   })
 
+  it('applies the costume to the current sprite after an unrelated undo during adoption', async () => {
+    const { project, state, gen } = await setup()
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const draft = state.spriteResources.addCostume(sprite)
+    expect.assert(draft.gen instanceof CostumeGen)
+    await draft.gen.generate()
+    const history = new History(project)
+    const x = sprite.x
+    await history.doAction({ name: { en: 'Move sprite', zh: '移动精灵' } }, () => sprite.setX(x + 20))
+    vi.mocked(files.getImageSize).mockImplementationOnce(async () => {
+      await history.undo()
+      return { width: 512, height: 512 }
+    })
+    const costume = await state.spriteResources.adopt(draft, history)
+    const current = project.sprites.find((s) => s.id === sprite.id)!
+    expect(current).not.toBe(sprite)
+    expect(current.x).toBe(x)
+    expect(current.defaultCostume).toBe(costume)
+    expect(sprite.costumes).toHaveLength(1)
+    expect(state.spriteResources.drafts).not.toContain(draft)
+    await history.undo()
+    expect(state.spriteResources.drafts.find((d) => d.id === draft.id)?.versions).toHaveLength(1)
+  })
+
   it('does not adopt a removed draft when its pending operation finishes', async () => {
     const { project, state, gen } = await setup()
     const sprite = await gen.finishWithDefaultCostume()
@@ -170,7 +203,9 @@ describe('sprite generation in the editor', () => {
     animation.setFramesConfig({ startTime: 200, duration: 600, interval: 100 })
     await expect(applying).rejects.toBeInstanceOf(DefaultException)
     expect(history.getUndoAction()).toBeNull()
-    await state.spriteResources.adopt(draft, history)
+    const retry = state.spriteResources.adopt(draft, history)
+    animation.setFramesConfig({ startTime: 200, duration: 600, interval: 100 })
+    await retry
     expect(sprite.animations[0].duration).toBe(0.6)
     expect(draft.versions).toHaveLength(1)
   })

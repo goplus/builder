@@ -137,7 +137,18 @@ onScopeDispose(() => {
 </script>
 
 <template>
-  <div ref="root" class="absolute inset-0" :tabindex="enabled && game == null ? 0 : -1" @keydown="handleKeydown">
+  <div
+    ref="root"
+    v-radar="{
+      name: 'maze-game',
+      label: $t({ en: 'Maze game', zh: '迷宫小游戏' }),
+      desc: $t({ en: 'Use the arrow keys or WASD to start and move.', zh: '按方向键或 WASD 开始游戏并移动。' })
+    }"
+    class="absolute inset-0"
+    role="group"
+    :tabindex="enabled && game == null ? 0 : -1"
+    @keydown="handleKeydown"
+  >
     <Transition name="characters">
       <svg
         v-if="game != null && layout != null"

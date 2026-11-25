@@ -51,7 +51,20 @@
         :animation="state.selected"
         @rename="handleRename(state.selected)"
       />
-      <UIEmpty v-else size="large">{{ $t({ en: 'Click + to add an animation', zh: '点击 + 添加动画' }) }}</UIEmpty>
+      <UIEmpty v-else size="extra-large">
+        {{ $t({ en: 'No animations', zh: '没有动画' }) }}
+        <template #op>
+          <UIButton
+            v-radar="{ name: 'group-costumes-button', desc: 'Click to group costumes as animation' }"
+            type="neutral"
+            size="large"
+            @click="handleGroupCostumes"
+          >
+            <template #icon><img :src="galleryIcon" alt="" /></template>
+            {{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}
+          </UIButton>
+        </template>
+      </UIEmpty>
     </template>
   </EditorList>
 </template>
@@ -137,12 +150,13 @@ import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import type { Sprite } from '@/models/spx/sprite'
 import { useAddAnimationByGroupingCostumes, useRenameAnimation, useRenameAnimationGen } from '@/components/asset'
 import AnimationGenItem from '@/components/asset/gen/animation/AnimationGenItem.vue'
-import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
+import { UIButton, UIEmpty, UIMenu, UIMenuItem } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorList from '../common/EditorList.vue'
 import type { SpriteResourceGens } from '../sprite-resource-gens'
 import AnimationDetail from './AnimationDetail.vue'
 import AnimationItem from './AnimationItem.vue'
+import galleryIcon from './gallery.svg'
 import SpriteResourceGenDetail from './SpriteResourceGenDetail.vue'
 
 const props = defineProps<{

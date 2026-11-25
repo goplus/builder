@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash'
 import { shallowReactive } from 'vue'
 import { Cancelled, capture, DefaultException } from '@/utils/exception'
 import { Disposable } from '@/utils/disposable'
@@ -6,7 +7,7 @@ import { generateSpriteContentSettings, type AnimationSettings, type CostumeSett
 import { type Files, fromConfig, toConfig } from '@/models/common/file'
 import { ensureValidAnimationName, ensureValidCostumeName } from '@/models/spx/common/asset-name'
 import { resourceAnimationName, resourceCostumeName } from '@/models/spx/common/resource'
-import { Costume } from '@/models/spx/costume'
+import { Costume, type Pivot } from '@/models/spx/costume'
 import { getSpriteSettings, type SpriteResourceOwner } from '@/models/spx/gen/common'
 import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { CostumeGen } from '@/models/spx/gen/costume-gen'
@@ -126,27 +127,10 @@ export class SpriteResourceGens extends Disposable {
         zh: '请等待生成完成后再采用。'
       })
     const { id, gen } = draft
-    const sprite = gen.sprite
     const media = gen instanceof CostumeGen ? gen.image : gen.video
     const framesConfig = gen instanceof AnimationGen ? gen.framesConfig : null
     const resource = gen.result ?? (await gen.finish())
-    const validate = () => {
-      checkPresent()
-      if (
-        draft.gen !== gen ||
-        gen.sprite !== sprite ||
-        (gen instanceof CostumeGen ? gen.image !== media : gen.video !== media || gen.framesConfig !== framesConfig)
-      ) {
-        if (gen.result === resource) gen.resetFinishState()
-        throw new DefaultException({
-          en: 'The result has changed. Review it and apply again.',
-          zh: '生成结果已变化，请查看后重新采用。'
-        })
-      }
-    }
-    validate()
-    const reference = draft.versionReferenceCostume
-    const size = await reference?.getSize()
+    let pivotOffset: Pivot | null = null
     const name =
       resource instanceof Costume ? { en: 'Add costume', zh: '添加造型' } : { en: 'Add animation', zh: '添加动画' }
     let saved: ReturnType<SpriteResourceGens['takeDraft']>
@@ -167,12 +151,12 @@ export class SpriteResourceGens extends Disposable {
         }
       },
       () => {
-        // Keep the reference costume's offset from center when adding the new artwork.
-        if (reference != null && size != null) {
-          const delta = { x: reference.pivot.x - size.width / 2, y: reference.pivot.y - size.height / 2 }
+        // History may have reloaded the sprite while the generated resource was being prepared.
+        const sprite = gen.sprite
+        if (pivotOffset != null) {
           if (resource instanceof Costume)
-            resource.setPivot({ x: resource.pivot.x + delta.x, y: resource.pivot.y + delta.y })
-          else resource.applyCostumesPivotChange(delta)
+            resource.setPivot({ x: resource.pivot.x + pivotOffset.x, y: resource.pivot.y + pivotOffset.y })
+          else resource.applyCostumesPivotChange(pivotOffset)
         }
         if (resource instanceof Costume) {
           sprite.addCostume(resource)
@@ -184,7 +168,25 @@ export class SpriteResourceGens extends Disposable {
         saved = this.takeDraft(id)
         return resource
       },
-      validate
+      async () => {
+        const reference = draft.versionReferenceCostume
+        const size = await reference?.getSize()
+        checkPresent()
+        if (
+          draft.gen !== gen ||
+          (gen instanceof CostumeGen
+            ? gen.image !== media
+            : gen.video !== media || !isEqual(gen.framesConfig, framesConfig))
+        ) {
+          if (gen.result === resource) gen.resetFinishState()
+          throw new DefaultException({
+            en: 'The result has changed. Review it and apply again.',
+            zh: '生成结果已变化，请查看后重新采用。'
+          })
+        }
+        if (reference != null && size != null)
+          pivotOffset = { x: reference.pivot.x - size.width / 2, y: reference.pivot.y - size.height / 2 }
+      }
     )
   }
 

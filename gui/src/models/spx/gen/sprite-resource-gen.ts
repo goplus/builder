@@ -52,6 +52,7 @@ function restore(
 export class SpriteResourceGen extends Disposable {
   versions = shallowReactive<Array<Version & { files: Files }>>([])
   readonly spriteId: string
+  /** A selection of -1 restores the initial input without a generated result. */
   index = -1
 
   constructor(
@@ -129,7 +130,13 @@ export class SpriteResourceGen extends Disposable {
   }
 
   previousVersion() {
-    if (this.index >= 0) this.select(this.hasMedia ? this.index - 1 : this.index)
+    if (this.index < 0) return
+    if (!this.hasMedia) {
+      // Restore the selected result after a failed retry before stepping further back.
+      this.select(this.index)
+      return
+    }
+    this.select(this.index - 1)
   }
 
   nextVersion() {

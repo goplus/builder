@@ -3,6 +3,7 @@ import { nextTick, ref } from 'vue'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { useContentSize } from '@/utils/dom'
 import { createI18n } from '@/utils/i18n'
+import { createRadar } from '@/utils/radar'
 import GenLoading from './GenLoading.vue'
 import GenerationGame from './GenerationGame.vue'
 import { createGame, gameGrid, type Game } from './generation-game'
@@ -30,7 +31,7 @@ async function setup(reduced = false, mountGame = false, dimensions = { width: 3
     slots: { default: 'Generating...' },
     global: {
       stubs: { GenerationGame: !mountGame, GenerationGameResult: true },
-      plugins: [createI18n({ lang: 'en' })]
+      plugins: [createI18n({ lang: 'en' }), createRadar()]
     }
   })
   onTestFinished(() => {
