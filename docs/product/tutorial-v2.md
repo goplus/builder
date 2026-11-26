@@ -25,13 +25,13 @@ The conclusion: **two kinds of teaching scenarios call for two course types**:
 |  | Guided Course | Playground Course |
 | --- | --- | --- |
 | Driven by | Copilot guiding step by step per Prompt | Course code |
-| Teaching object | Builder UI operations | The course project (a game world to reshape) |
+| Teaching object | Builder UI operations | The exercise project (a game world to reshape) |
 | Where | Unbound — all of Builder is the stage | The project editor |
 | What learners do | Follow instructions | Explore freely in a prepared scene to reach the goal |
 | Completion judging | Judged by the Copilot (aided by the game-exit signal) | Judged by course code (runtime signals, code checks, LLM completion) |
 | LLM dependence | Strong (involved at every step) | Weak (invoked by course code as needed) |
 | Typical scenarios | Product usage teaching, asset operations | Teaching programming concepts |
-| What creators produce | A Prompt | Course code + course project + course assets |
+| What creators produce | A Prompt | Course code + exercise project + course assets |
 
 The two types target different scenarios, but the choice belongs to the course creator: in theory a coding course can also be built in the guided form (e.g., walking through the very first line of code hand in hand).
 
@@ -41,19 +41,18 @@ The two types are supported by separate mechanisms; we do not build a unified ab
 
 ### Course & Course Series
 
-Course remains the core teaching unit, made up of three parts: **metadata + type + content**.
+Each Course is a Project identified by `owner/name`, with a Project display name and thumbnail. Its immutable Project Type determines its file format and learning experience:
 
-* **Metadata**: Title, Thumbnail, etc., unchanged from the existing design
-* **Type**: Guided / Playground; determines the form of the content and how the course is driven
-* **Content**: for a Guided Course, a Prompt (Markdown-as-course) + entry URL; for a Playground Course, course data (course code + course project + course assets)
+* A `guided-course` stores its `entrypoint` in the root `index.json` and its Copilot instructions in `prompt.md`. The entrypoint can open a separate sample project.
+* A `playground-course` contains the course configuration, the course program `main_course.gox`, resources and an embedded exercise project. Resources and the exercise retain their relative paths within the course.
 
-The essential difference between the two types: **a Guided Course teaches "operating Builder" — its object is the UI, so it is not bound to a place: the homepage, the editor, or the community pages can all be its stage; a Playground Course teaches "reshaping a world" — its object is the course project, so it always takes place in the project editor**.
+The essential difference between the two types: **a Guided Course teaches "operating Builder" — its object is the UI, so it is not bound to a place: the homepage, the editor, or the community pages can all be its stage; a Playground Course teaches "reshaping a world" — its object is the exercise project, so it always takes place in the project editor**.
 
 One boundary that is easy to confuse: the distinction lies in "who drives the flow", not "whether an LLM is used". A Playground Course may well invoke LLM capabilities (judging expression-type goals, generating personalized feedback) and still be a Playground Course — its flow (opening, running, completion) is driven entirely by course code.
 
-A Course Series organizes a set of Courses into an ordered series, carrying course order and "next course" progression. Courses within one series share the same type; mixing types within a series is not supported for now. A Course belongs to exactly one Course Series: it is created in its series, and leaves it only by being deleted.
+A Course can be taken independently and can belong to at most one Course Series. A series groups courses of the same type and determines unit and lesson order. In Course Management, authors create courses of the series' type, reorder them and delete them. Deleting a series also deletes its courses.
 
-Course Gallery remains as designed. Course management is a page of the author's Course Series, each opening onto its Courses, where Courses are created, ordered, edited and deleted.
+Learners discover courses in Tutorials. A course detail page shows the cover, title, author, description and a **Start learning** action. Entering from a series carries `?series=<seriesID>` so learners can navigate to the previous or next lesson in series order. A shared course link can omit the series.
 
 ### Playground Course
 
@@ -62,10 +61,10 @@ Every Playground Course is associated with exactly one project, and entering the
 #### Course Data
 
 * **Course code**: written on top of the class framework; it orchestrates the entire course flow — opening, judging, completion — by invoking the atomic capabilities provided by the framework (see below). A typical course is just a handful of direct calls to these capabilities; a complex course can implement arbitrary orchestration and judging logic.
-* **Course project**: a game project built by the creator in advance — stage, sprites, and scene code. The project is part of the course data; it is not saved or published independently. The scene code serves two purposes: forming an interesting, explorable world (where the learner's changes produce visible feedback), and printing completion signals (specific log lines) at key events for the course code to judge.
+* **Exercise project**: a game project built by the creator in advance — stage, sprites, and scene code. The project is part of the course data; it is not saved or published independently. The scene code serves two purposes: forming an interesting, explorable world (where the learner's changes produce visible feedback), and printing completion signals (specific log lines) at key events for the course code to judge.
 * **Course assets**: assets referenced by the course, such as explainer videos, also part of the course data. (A shared asset library, allowing multiple courses to reuse the same asset, may be provided in the future.)
 
-A learner's modifications to the course project exist only within the current learning session; they affect neither the course itself nor other learners.
+A learner's modifications to the exercise project exist only within the current learning session; they affect neither the course itself nor other learners.
 
 #### Atomic Capabilities
 
@@ -110,7 +109,7 @@ In Playground Courses, the Copilot's answers must not do the task for the learne
 
 ### Learner: completing the Playground Course "Click the Target"
 
-* The learner enters the course; the editor opens the course project in simple mode: Lita and a mushroom on the stage
+* The learner enters the course; the editor opens the exercise project in simple mode: Lita and a mushroom on the stage
 * The opening proceeds: a dialog states the task ("Get Lita to the mushroom") → the `stepTo` explainer video plays
 * The learner experiments: first tries `step 200` and sees Lita overshoot; changes it to `step 150` — closer, but off target
 * The learner gets a successful run (the scene code detects Lita touching the mushroom and prints the completion signal), but the code does not use `stepTo`, which this course requires — the course prompts a retry: "Try clicking the mushroom on the stage and let Lita walk right up to it in one step"
@@ -121,7 +120,7 @@ Throughout, the learner can summon the Copilot with questions at any time; it an
 
 ### Creator: building the Playground Course "Click the Target"
 
-* Build the course project: place Lita and the mushroom; in the mushroom's scene code, detect being touched and `println` the completion signal
+* Build the exercise project: place Lita and the mushroom; in the mushroom's scene code, detect being touched and `println` the completion signal
 * Write the course code, orchestrating the flow with atomic capabilities:
 
 	- Opening: show the task description, play the `stepTo` explainer video (a course asset)
@@ -134,7 +133,7 @@ Throughout, the learner can summon the Copilot with questions at any time; it an
 
 	- Enable editor capabilities: simple mode; an API allowlist showing only `stepTo` and previously learned APIs
 * Preview in the Course Editor, running through the whole flow from the learner's perspective
-* Once tests pass, publish the course in its Course Series
+* After previewing the lesson, publish a new release of the course project
 
 ### Learner: completing the Guided Course "Create a Project"
 
@@ -142,6 +141,8 @@ Same as the [User Stories in the existing document](./tutorial.md#user-stories):
 
 ## Course Authoring
 
-* **Course Editor**: the editing entry for Playground Courses, where the course data (course project, course code, course assets) is edited. Guided Courses, and the metadata and order of courses and course series, are edited in course management
-* **Course Preview**: runs the real course flow from a learner's perspective (rather than a separate simulation), supporting single-course preview and whole-series walkthroughs; changes made during preview are not written back into the course data
-* Course data can be exported and imported, fitting different authoring workflows such as local editing
+Authors open either course type at `/editor/:owner/:name`. The editor autosaves the working project. Preview uses the current draft and keeps practice edits within the preview session. Opening the editor from Course Management also enables navigation through the series during preview.
+
+Authors publish by creating a Project release. Learning follows the project detail page rules. A public course with a release uses the latest release's files and thumbnail. Otherwise, users with access load the current Project data. For example, after publishing A, an author can edit and preview B while the same learning link still opens A. Once the author publishes B, reopening the link starts B.
+
+Authors can import or export an individual course as an XBP file. The Project Type in the package determines which course editor opens it.

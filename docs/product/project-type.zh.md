@@ -46,13 +46,14 @@ Project Type 不是展示标签，而是 Project 基础身份的一部分。
 
 ### 已确定与示意性的 Project Type
 
-当前阶段已确定的 Project Type 为 `game`，对应已有的 spx 项目。
+已确定的项目类型包括：
 
-为说明多类型机制，本文引入两个示意类型：`comic` 和 `robot-app`。它们仅用于讨论信息结构、页面组织和用户路径，不代表已确定的落地方向。
+* `game` 对应已有的 spx 游戏项目，也是历史项目的默认类型。
+* `guided-course` 对应引导式课程。作者指定入口页面并编写 Prompt，由 Copilot 引导学习者操作。
+* `playground-course` 对应目标式课程。作者使用 XGo class framework 编写课程程序，并随课程提供素材和内嵌的练习项目。
 
-三个类型说明如下：
+以下类型用于举例说明未来可能的创作场景：
 
-* `game`：已确定类型，对用户显示为“游戏/Game”。对应 Builder 已较成熟的游戏创作能力，也是历史项目的默认兼容类型。
 * `comic`：示意类型，对用户显示为“漫画/Comic”。以漫画、分镜、视觉叙事为核心的创作类别。
 * `robot-app`：示意类型，对用户显示为“机器人应用/Robot App”。面向机器人或实体设备交互的应用类别。
 
@@ -78,19 +79,9 @@ Project 由 Owner 与 Name 共同标识。Project Type 是基础属性之一，�
 
 ### Tutorial 与 Project Type 的关系
 
-Tutorial 系统保持统一，不按 Project Type 拆分为独立产品线。
+课程项目的类型决定课程内容的格式和学习方式。课程可以教授不同类型的作品，也可以引导用户熟悉 Builder 界面。例如，一节目标式课程的类型是 `playground-course`，其中供学员修改的 spx 游戏是这节课的练习内容。一节引导式课程可以把任何适合教学的页面作为入口。
 
-一个 Course 或 Course Series 可以与某类 Project Type 相关，也可以类型无关。例如：
-
-* "做一个平台跳跃游戏"面向 `game`
-* "画一个四格漫画"面向 `comic`
-* "让机器人沿线巡逻"面向 `robot-app`
-* "认识 Builder 首页"与具体类型无关
-
-因此：
-
-* `Course Series` 与 `Course` 不记录 Project Type 信息。
-* 课程与类型的关联体现在课程设计语义与所引用的样例 Project 上，而非数据建模层面的强关联。
+课程的创作、学习与系列导航见[教程产品设计](./tutorial-v2.zh.md)。
 
 ### XBP
 
@@ -133,6 +124,8 @@ Asset Library 是 XBuilder 的统一资源复用机制，不按 Project Type 拆
 ## User stories
 
 本部分关注用户如何在具体页面与交互流程中感知和使用多类型 Project。
+
+以下场景描述多类型创作的整体设计。课程项目有专门的入口：作者在课程管理页创建课程，学员通过教程页发现课程。通用的新建项目入口和项目列表继续面向 Game。课程详情使用 `/project/:owner/:name`，课程编辑使用 `/editor/:owner/:name`。
 
 所有展示 Project 列表的场景（首页、个人项目页、喜欢页、搜索结果、打开项目模态框等）均应通过 Badge、Icon 或文案标识项目类型，且类型信息应在用户做出点击决策前可见。
 

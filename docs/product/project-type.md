@@ -46,13 +46,14 @@ Project Type is not just a display label. It is part of a Project's core identit
 
 ### Confirmed and Illustrative Project Types
 
-At the current stage, the confirmed Project Type is `game`, which corresponds to existing spx projects.
+The confirmed Project Types are:
 
-To illustrate the multi-type mechanism, this document also introduces two example types: `comic` and `robot-app`. They are used only to discuss information structure, page organization, and user flows. They do not imply committed product directions.
+* `game` represents an spx game and is the default for historical projects.
+* `guided-course` represents a Guided Course. The author supplies an entrypoint and a prompt for Copilot to guide the learner.
+* `playground-course` represents a Playground Course. The author writes a course program using the XGo class framework and supplies resources and an embedded exercise project.
 
-These three types can be understood as follows:
+The following types illustrate possible future creation scenarios:
 
-* `game`: A confirmed type, shown to users as "Game". It corresponds to Builder's more mature game-creation capability and is also the default compatibility type for historical projects.
 * `comic`: An illustrative type, shown to users as "Comic". It represents creation centered on comics, storyboards, and visual storytelling.
 * `robot-app`: An illustrative type, shown to users as "Robot App". It represents applications centered on robots or physical-device interaction.
 
@@ -78,19 +79,9 @@ Cross-type billing and quota implications introduced by this unified account sys
 
 ### Tutorial and Project Type
 
-The Tutorial system remains unified and is not split into separate product lines by Project Type.
+A course project's type determines its content format and how a learner takes the course. The subject can be a particular kind of work or an activity in Builder. For example, a Playground Course has type `playground-course` even when the learner edits an spx game inside it. A Guided Course can start on any page relevant to the lesson.
 
-A Course or Course Series may be related to a specific Project Type, or it may be type-agnostic. For example:
-
-* "Build a platformer game" targets `game`.
-* "Create a four-panel comic" targets `comic`.
-* "Make a robot patrol along a line" targets `robot-app`.
-* "Get to know the Builder homepage" is not tied to a specific type.
-
-Therefore:
-
-* `Course` and `Course Series` do not store Project Type information.
-* The relationship between a course and a type is expressed through course semantics and referenced sample Projects, rather than through strong data modeling.
+See the [tutorial design](./tutorial-v2.md) for course authoring, learning and series navigation.
 
 ### XBP
 
@@ -133,6 +124,8 @@ To preserve backward compatibility, the following rules apply:
 ## User Stories
 
 This section focuses on how users perceive and use multi-type Projects across concrete pages and interaction flows.
+
+The scenarios below describe the broader multi-type design. Course projects have dedicated entry points: authors create them in Course Management and learners discover them in Tutorials. The general New Project action and project lists remain scoped to Game. Course detail pages use `/project/:owner/:name`, and course editors use `/editor/:owner/:name`.
 
 In any scenario that displays a Project list, Project Type should be visible through badges, icons, or text labels before the user makes a click decision. This includes the homepage, user project pages, liked-project pages, search results, and the Open Project modal.
 
