@@ -119,7 +119,6 @@ Asset 包含以下信息：
 	- 添加并编辑 Backdrop 信息
 		+ 设置 Backdrop Name
 		+ 上传 Image
-		+ 编辑 Image（详见 [素材编辑](./assets-edit.zh.md)）
 		+ 修改其他 Backdrop Config（细节 TODO）
 	- 修改其他 Stage Config（细节 TODO）
 * 添加并编辑 Sprite
@@ -128,13 +127,11 @@ Asset 包含以下信息：
 	- 添加并编辑 Costume 信息
 		+ 设置 Costume Name
 		+ 上传 Image
-		+ 编辑 Image（详见 [素材编辑](./assets-edit.zh.md)）
 		+ 修改其他 Costume Config（细节 TODO）
 	- 修改其他 Sprite Config（细节 TODO）
 * 添加并编辑 Sound
 	- 设置 Sound Name
 	- 上传或录制 Audio（细节 TODO）
-	- 编辑 Audio（详见 [素材编辑](./assets-edit.zh.md)）
 * 对 Zorder 进行控制（控制不同内容的层级）
 
 编辑过程中用户应当能从预览区得到反馈，实时地看到当前舞台上所有的内容（按照 Zorder 展示）。
