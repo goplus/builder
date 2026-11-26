@@ -116,7 +116,7 @@ Asset Setting 大概包括这些信息：
 
 对于非 AI 生成的 Asset，我们也可以通过为其补充一个“推测的” Asset Setting，从而使其能够参与到上述的推荐与检索过程中来。
 
-在 `Project.Game` 中，只有 `Sprite`、`Backdrop`、`Sound` 这类可独立保存为 [Asset](./index.zh.md#素材-asset) 的对象会保留 `Asset Setting`，`Costume`、`Animation` 等子 Asset 采用后不再单独保留各自的 `Asset Setting`。这些对象的内容在 Project 中被编辑后，对应的 `Asset Setting` 会随实际内容同步更新，详见 [素材编辑](./assets-edit.zh.md#asset-setting-同步)。
+在 `Project.Game` 中，只有 `Sprite`、`Backdrop`、`Sound` 这类可独立保存为 [Asset](./index.zh.md#素材-asset) 的对象会保留 `Asset Setting`，`Costume`、`Animation` 等子 Asset 采用后不再单独保留各自的 `Asset Setting`。
 
 ### 素材生成 Asset Generation
 
@@ -134,7 +134,7 @@ Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程
 
 ### 项目 Project
 
-在 [XBuilder Product](./index.zh.md#项目-project) 基础上，Project 除基本信息和 `Game` 外，还会保存未结束的 `Asset Generation` 以及 AI 编辑草稿（见 [素材编辑](./assets-edit.zh.md#草稿-draft)）。
+在 [XBuilder Product](./index.zh.md#项目-project) 基础上，Project 除基本信息和 `Game` 外，还会保存未结束的 `Asset Generation`。
 
 这部分数据与 `Game` 一样随 Project 保存到云端（未同步前暂存在浏览器本地），只有项目拥有者在编辑器中打开该 Project 时才会加载恢复。它不属于 `Project.Game`，运行游戏、导出本地文件和发布 [Release](./community.zh.md#版本-release) 时都不会包含它。
 

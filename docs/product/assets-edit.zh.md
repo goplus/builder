@@ -38,7 +38,7 @@
 
 每次成功的 AI 编辑都会生成一版 Draft，记录这次修改的输入和候选结果。每个编辑目标各自维护本轮的原始版本、按序生成的 Draft 列表，以及当前选中的版本。
 
-进行中的 AI 编辑任务与 Draft 保存在 [Project](./assets-gen.zh.md#项目-project) 中，但不属于 `Project.Game`：
+与未结束的 `Asset Generation` 一样（见 [素材生成](./assets-gen.zh.md#项目-project)），进行中的 AI 编辑任务与 Draft 保存在 Project 中，但不属于 `Project.Game`：
 
 * 随 Project 保存到云端（未同步前暂存在浏览器本地），项目拥有者下次在编辑器中打开该 Project 时可恢复继续编辑。
 * 采用前只在当前对象的编辑界面里预览和对比，舞台运行、导出、发布以及保存到素材库仍使用 `Project.Game` 中的原版本。关闭编辑界面或保存 Project 不会让 Draft 自动生效；只有用户确认采用时，选中的 Draft 才会写入 `Project.Game` 替换原对象。
