@@ -2,8 +2,7 @@
   "extends": "@tsconfig/node24/tsconfig.json",
   "include": [
     "vite.config.*",
-    "build/vite-plugins/*.ts",
-    "src/utils/i18n/lang.ts"
+    "build/**/*.ts"
   ],
   "compilerOptions": {
     "composite": true,

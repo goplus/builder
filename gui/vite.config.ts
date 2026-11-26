@@ -9,8 +9,7 @@ import browserslistToEsbuild from 'browserslist-to-esbuild'
 
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
 import { createVercelOutputPlugin } from './build/vite-plugins/vercel-output-plugin.js'
-
-import { normalizeLang } from './src/utils/i18n/lang.js'
+import { normalizeLang } from './build/lang.js'
 import pageMeta from './src/apps/xbuilder/page-meta.json' with { type: 'json' }
 
 const resolve = (dir: string) => path.join(__dirname, dir)
