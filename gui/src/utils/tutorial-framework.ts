@@ -1,1 +1,1 @@
-export * from '../../../tools/tutorial/client'
+../../../tools/tutorial/client.ts

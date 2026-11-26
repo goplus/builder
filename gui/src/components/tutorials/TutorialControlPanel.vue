@@ -224,7 +224,13 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <footer class="flex-none p-2">
       <button
-        v-radar="{ name: 'back-to-series-courses-button', desc: 'Click to leave the course and open its series page' }"
+        v-radar="{
+          name: 'back-to-series-courses-button',
+          desc:
+            editingCourse != null
+              ? 'Click to return to the series in course management'
+              : 'Click to leave the course and open its series page'
+        }"
         type="button"
         class="h-[34px] w-full cursor-pointer rounded-md border border-dividing-line-2 bg-grey-100 text-base text-text transition-colors hover:bg-grey-200"
         @click="handleReturnSeries"

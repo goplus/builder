@@ -2,8 +2,7 @@
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "include": [
     "src/**/*",
-    "src/**/*.vue",
-    "../tools/tutorial/client.ts"
+    "src/**/*.vue"
   ],
   "compilerOptions": {
     "composite": true,
