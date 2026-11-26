@@ -108,3 +108,6 @@ frontend code can consistently call same-origin `/api/*`.
 - When adding another app, give it its own `src/apps/<app>/index.html`,
   `main.ts`, router, and Vite config entry selection instead of making the
   existing app bootstrap branch on runtime flags.
+- For localized page metadata, add `page-meta.json` beside the app's `index.html`.
+  In the app's Vite config, pass `defaultLang` and `pageMeta[normalizeLang(defaultLang)]`
+  to the HTML template through `ViteEjsPlugin` as `defaultLang` and `pageMeta`.
