@@ -60,7 +60,6 @@
 * 项目设定 Project Setting
 * 素材设定 Asset Setting
 * 素材生成 Asset Generation
-* 项目 Project
 
 ### 视角 Perspective
 
@@ -128,15 +127,11 @@ Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程
 * Status，生成的当前状态，如 Pending、In Progress、Completed、Failed 等
 * Result Asset，生成成功后得到的 Asset
 
+未结束的 Asset Generation 保存在 [Project](./index.zh.md#项目-project) 中，但不属于 `Project.Game`。它随 Project 保存到云端（未同步前暂存在浏览器本地），仅项目拥有者在编辑器中打开该 Project 时恢复；运行游戏、导出本地文件和发布 [Release](./community.zh.md#版本-release) 时都不会包含它。
+
 用户采用之前，Result Asset 只保存在 Asset Generation 中，不会进入 `Project.Game` 或素材库 [Asset](./index.zh.md#素材-asset)；采用后写入 `Project.Game`，随后与放弃操作一样清掉这次 Asset Generation。
 
 与目前 Copilot、AI Interaction 的使用类似，素材生成的使用是受限的。不同 Setting 可能对应不同的使用额度消耗规则。
-
-### 项目 Project
-
-在 [XBuilder Product](./index.zh.md#项目-project) 基础上，Project 除基本信息和 `Game` 外，还会保存未结束的 `Asset Generation`。
-
-这部分数据与 `Game` 一样随 Project 保存到云端（未同步前暂存在浏览器本地），只有项目拥有者在编辑器中打开该 Project 时才会加载恢复。它不属于 `Project.Game`，运行游戏、导出本地文件和发布 [Release](./community.zh.md#版本-release) 时都不会包含它。
 
 ## 关键问题
 
