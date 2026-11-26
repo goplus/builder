@@ -18,6 +18,7 @@ import { getSeriesUnits, getUnitHeading } from './units'
 
 const props = withDefaults(
   defineProps<{
+    /** The course the author is editing; when omitted, use the current learning session. */
     editingCourse?: { id: string; seriesID: string } | null
   }>(),
   { editingCourse: null }
@@ -214,7 +215,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
             :sequence="sequence"
             :active="course.id === highlightedCourse?.id"
             :state="course.id === highlightedCourse?.id ? highlightedCourseState : null"
-            :href="editingCourse == null ? null : getCourseEditorRoute(editingCourse.seriesID, course.id)"
+            :editing="editingCourse != null"
             @select="handleSelectCourse(course.id, course.title)"
             @restart="handleRestartCourse"
           />

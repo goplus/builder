@@ -550,7 +550,7 @@ onUnmounted(() => {
                 :aria-controls="courseListID"
                 :disabled="saving"
               >
-                <UIIcon class="h-6 w-6" type="list" aria-hidden="true" />
+                <UIIcon class="h-5 w-5" type="list" aria-hidden="true" />
                 <UIIcon class="h-2 w-2" type="arrowMini" aria-hidden="true" />
               </button>
             </template>

@@ -263,6 +263,9 @@ describe('tutorial course dropdown', () => {
     expect(wrapper.text()).not.toContain('Exit course')
     expect(wrapper.text()).not.toContain('Restart course')
     expect(wrapper.get('[aria-current="page"]').text()).toContain('editing')
+    expect(wrapper.findAllComponents(TutorialStatusCourseRow).every((row) => row.props('editing'))).toBe(true)
+    expect(wrapper.findAll('li').filter((row) => row.text().includes('editing'))).toHaveLength(1)
+    expect(wrapper.find('a').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('in progress')
     expect(mocks.scrollIntoView).toHaveBeenCalled()
     expect(mocks.tutorial.currentCourse.id).toBe('b')
@@ -270,9 +273,9 @@ describe('tutorial course dropdown', () => {
 
   it('switches between editors through the router and leaves unsaved confirmation to its guard', async () => {
     const wrapper = mountPanel({ id: 'a', seriesID: 'series' })
-    await wrapper.get('[aria-current="page"] a').trigger('click')
+    await wrapper.get('[aria-current="page"]').trigger('click')
     expect(mocks.push).not.toHaveBeenCalled()
-    await wrapper.get('a[href="/course-editor/series/c/edit"]').trigger('click')
+    await wrapper.findAll('li')[2].trigger('click')
     await flushPromises()
     expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/course-editor/series/c/edit')
     expect(mocks.setVisible).toHaveBeenCalledWith(false)
@@ -301,13 +304,19 @@ describe('tutorial course dropdown', () => {
     expect(mocks.scrollIntoView.mock.contexts.at(-1)).toBe(wrapper.get('[aria-current="page"]').element)
   })
 
-  it('preserves modified link clicks and returns authors to series management', async () => {
+  it.each(['Enter', ' '])('selects a course with the %j key through the parent panel', async (key) => {
     const wrapper = mountPanel({ id: 'b', seriesID: 'series' })
-    const event = new MouseEvent('click', { ctrlKey: true, bubbles: true, cancelable: true })
-    wrapper.get('a[href="/course-editor/series/c/edit"]').element.dispatchEvent(event)
+    const row = wrapper.findAll('li')[2]
+    expect(row.attributes('role')).toBe('button')
+    expect(row.attributes('tabindex')).toBe('0')
+    await row.trigger('keydown', { key })
     await flushPromises()
-    expect(event.defaultPrevented).toBe(false)
-    expect(mocks.push).not.toHaveBeenCalled()
+    expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/course-editor/series/c/edit')
+    expect(mocks.tutorial.startCourse).not.toHaveBeenCalled()
+  })
+
+  it('returns authors to series management', async () => {
+    const wrapper = mountPanel({ id: 'b', seriesID: 'series' })
     await wrapper
       .findAll('button')
       .find((button) => button.text() === 'Back to series courses')!
