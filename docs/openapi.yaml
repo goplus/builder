@@ -5029,8 +5029,7 @@ paths:
         - AIGC
       summary: Adopt an AIGC-generated asset
       description: |
-        Validates task ownership and file provenance.
-        Adopted backdrops and sounds are published to the public library under the official account.
+        The backend verifies task ownership and file provenance and may publish the adopted asset to the public library.
       requestBody:
         required: true
         content:
@@ -5080,7 +5079,7 @@ paths:
                       minProperties: 1
       responses:
         "204":
-          description: Validation succeeded. For a backdrop or sound, publication is complete.
+          description: Adoption request processed.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
