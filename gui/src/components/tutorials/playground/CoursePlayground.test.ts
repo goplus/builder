@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils'
-import { defineComponent, h, nextTick, onMounted, ref, shallowRef } from 'vue'
+import { defineComponent, h, nextTick, onMounted, ref, shallowReactive, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { Disposable } from '@/utils/disposable'
@@ -43,7 +43,13 @@ vi.mock('@/utils/spotlight', () => ({ useSpotlight: () => ({ reveal: vi.fn() }) 
 vi.mock('@/components/project', () => ({ useSaveProjectAs: () => vi.fn() }))
 vi.mock('@/components/editor/editor-state', () => ({
   EditorState: class extends Disposable {
-    editing = { startEditing: vi.fn() }
+    editing = shallowReactive({
+      dirty: false,
+      startEditing: vi.fn(),
+      resetDirty() {
+        this.dirty = false
+      }
+    })
     syncWithRouter() {}
   }
 }))
@@ -440,5 +446,23 @@ describe('Playground startup rendering', () => {
     await nextTick()
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
     expect(wrapper.find('main [inert]').exists()).toBe(false)
+  })
+})
+
+describe('Playground course progress', () => {
+  it('forwards learner project changes made after startup', async () => {
+    const wrapper = mountPlayground()
+    await flushPromises()
+    const session = mocks.sessions[0]
+    mocks.editors[0].value = true
+    await flushPromises()
+    session.editorState.editing.dirty = true
+    await nextTick()
+    expect(wrapper.emitted('courseProgressed')).toBeUndefined()
+
+    await session.program.options.onStarted(session.program.getSignal())
+    session.editorState.editing.dirty = true
+    await nextTick()
+    expect(wrapper.emitted('courseProgressed')).toEqual([[]])
   })
 })

@@ -1,4 +1,4 @@
-import { ref, shallowRef } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { ActionException, capture, type Exception } from '@/utils/exception'
 import type { ReadinessScope } from '@/utils/readiness'
@@ -29,6 +29,8 @@ export type PlaygroundCourseSessionOptions = {
  * It remains available for editing after Program completes, and is disposed on Course leave.
  */
 export class PlaygroundCourseSession extends Emitter<{
+  /** The learner project changed after startup finished, even if changed back. */
+  progressed: void
   completed: PlaygroundCourseCompletion
   failed: Exception
 }> {
@@ -120,7 +122,19 @@ export class PlaygroundCourseSession extends Emitter<{
   private async finishStarting(signal: AbortSignal) {
     await this.options.readiness.untilReady(signal)
     this.options.startReporter.report(1)
+    if (!this.startingRef.value) return
+    const editing = this.editorState.editing
+    // Edits the course program makes during startup are not learner progress.
+    editing.resetDirty()
     this.startingRef.value = false
+    this.addDisposer(
+      watch(
+        () => editing.dirty,
+        (dirty) => {
+          if (dirty) this.emit('progressed')
+        }
+      )
+    )
   }
 
   private fail(error: Exception) {

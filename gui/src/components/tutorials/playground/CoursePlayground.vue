@@ -39,6 +39,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  courseProgressed: []
   courseCompleted: [completion: PlaygroundCourseCompletion]
   courseRestart: []
 }>()
@@ -139,6 +140,7 @@ const sessionQueryRet: QueryRet<PlaygroundCourseSession> = useQuery({
     })
     session.disposeOnSignal(ctx.signal)
     editorState.disposeOnSignal(ctx.signal)
+    session.on('progressed', () => emit('courseProgressed'))
     session.on('completed', (completion) => emit('courseCompleted', completion))
     void session.start()
     ctx.reporter.report(1)

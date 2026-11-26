@@ -52,6 +52,12 @@ export class GuidedTutorial {
     return { id: courseID, seriesID }
   }
 
+  /** Whether the learner has not interacted in the Copilot session of the current course. */
+  isCurrentCourseInInitialState(): boolean {
+    const session = this.copilot.currentSession
+    return session == null || !isGuidedTutorialTopic(session.topic) || !session.userInteracted
+  }
+
   private abandonPredictionCountRef = ref(0)
   predictAbandon() {
     return ++this.abandonPredictionCountRef.value

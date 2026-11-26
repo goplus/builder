@@ -8,8 +8,8 @@ import { useGuidedTutorialStorage } from '../TutorialRoot.vue'
 import type { GuidedCourse } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 import { makeSignedInMock, makeSignedInUser, makeSignedInUserQuery } from '@/stores/user/test'
-import type { Copilot } from '@/components/copilot/copilot'
-import { GuidedTutorial } from './guided-tutorial'
+import type { Copilot, Session, Topic } from '@/components/copilot/copilot'
+import { GuidedTutorial, type GuidedTutorialTopic } from './guided-tutorial'
 
 vi.mock('@/stores/user', () => ({ useSignedIn: () => makeSignedInMock(auth, username) }))
 enableAutoUnmount(afterEach)
@@ -26,6 +26,7 @@ let tutorial: GuidedTutorial
 let auth: ReturnType<typeof makeSignedInUserQuery>
 let username = ref<string | null>('alice')
 let copilot: {
+  currentSession: Session | null
   endCurrentSession: ReturnType<typeof vi.fn>
   startSession: ReturnType<typeof vi.fn>
   notifyUserEvent: ReturnType<typeof vi.fn>
@@ -38,6 +39,7 @@ beforeEach(() => {
   auth = makeSignedInUserQuery(null, true)
   username = ref<string | null>('alice')
   copilot = {
+    currentSession: null,
     endCurrentSession: vi.fn(),
     startSession: vi.fn().mockResolvedValue(null),
     notifyUserEvent: vi.fn(),
@@ -125,5 +127,35 @@ describe('Guided Tutorial persistence and identity', () => {
     await tutorial.enterCourse(course, series)
     username.value = 'bob'
     expect(tutorial.currentCourse).toBeNull()
+  })
+})
+
+describe('Guided Tutorial initial state', () => {
+  const courseTopic: GuidedTutorialTopic = {
+    isTutorialTopic: true,
+    title: { en: course.title, zh: course.title },
+    description: '',
+    reactToEvents: true,
+    endable: false
+  }
+
+  function setSession(userInteracted: boolean, topic: Topic = courseTopic) {
+    copilot.currentSession = { topic, userInteracted } as unknown as Session
+  }
+
+  it('stays initial without a Copilot session', () => {
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
+  })
+
+  it('has progress once the learner interacts in the course session', () => {
+    setSession(false)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
+    setSession(true)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(false)
+  })
+
+  it('ignores a Copilot session of another topic', () => {
+    setSession(true, { title: { en: 'Chat', zh: '聊天' }, description: '', reactToEvents: false })
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
   })
 })

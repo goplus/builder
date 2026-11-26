@@ -401,11 +401,24 @@ export type SessionExported = {
   rounds: RoundExported[]
 }
 
+function isUserInteraction(message: UserMessage, earlierRounds: Round[]) {
+  return message.type === 'text' || earlierRounds.some((round) => round.state === RoundState.Completed)
+}
+
 export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
 
   private maxRounds = 10
+  private userInteractedRef = ref(false)
+
+  /**
+   * Whether the user has interacted in this session: sent a text message, or sent any message after a round
+   * completed. It stays set when earlier rounds are dropped.
+   */
+  get userInteracted() {
+    return this.userInteractedRef.value
+  }
 
   constructor(
     topic: Topic,
@@ -424,6 +437,9 @@ export class Session {
   static load(exported: SessionExported, copilot: Copilot): Session {
     const session = new Session(exported.topic, copilot)
     session.rounds.push(...exported.rounds.map((round) => Round.load(round, copilot, session)))
+    session.userInteractedRef.value = session.rounds.some((round, i) =>
+      isUserInteraction(round.userMessage, session.rounds.slice(0, i))
+    )
     return session
   }
 
@@ -450,6 +466,7 @@ export class Session {
 
   addUserMessage(m: UserMessage) {
     this.abortCurrentRound() // TODO: or should we wait for the current round to finish? Then there may be a user message queue
+    if (isUserInteraction(m, this.rounds)) this.userInteractedRef.value = true
     const round = new Round(m, this.copilot, this)
     this.rounds.push(round)
     this.limitRounds()

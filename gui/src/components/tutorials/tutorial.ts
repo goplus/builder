@@ -9,7 +9,10 @@ import { getCoursePlaygroundRoute, getCourseStartRoute, getCourseSeriesPageRoute
 import { Cancelled } from '@/utils/exception'
 
 import type { GuidedTutorial } from './guided/guided-tutorial'
-type GuidedTutorialController = Pick<GuidedTutorial, 'currentCourse' | 'enterCourse' | 'endCurrentCourse'>
+type GuidedTutorialController = Pick<
+  GuidedTutorial,
+  'currentCourse' | 'enterCourse' | 'endCurrentCourse' | 'isCurrentCourseInInitialState'
+>
 type TutorialRouter = Pick<Router, 'push' | 'replace'>
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
@@ -38,6 +41,7 @@ export function provideTutorial(tutorial: Tutorial) {
 
 export class Tutorial {
   private currentPlaygroundCourseRef = shallowRef<CurrentCourse | null>(null)
+  private playgroundCourseProgressed = false
 
   constructor(
     private guidedTutorial: GuidedTutorialController,
@@ -56,6 +60,17 @@ export class Tutorial {
           kind: 'guided',
           state: CourseState.InProgress
         }
+  }
+
+  /**
+   * Whether the current course has made no progress.
+   * A Playground Course has progress once `notifyPlaygroundCourseProgressed` is called after it started.
+   */
+  isCurrentCourseInInitialState(): boolean {
+    const currentCourse = this.currentCourse
+    if (currentCourse == null) return true
+    if (currentCourse.kind === 'guided') return this.guidedTutorial.isCurrentCourseInInitialState()
+    return !this.playgroundCourseProgressed
   }
 
   /** URL of the Start page used by course links and startCourse. */
@@ -104,12 +119,18 @@ export class Tutorial {
   }
 
   notifyPlaygroundCourseStarted(courseID: string, seriesID: string) {
+    this.playgroundCourseProgressed = false
     this.currentPlaygroundCourseRef.value = {
       id: courseID,
       seriesID,
       kind: 'playground',
       state: CourseState.InProgress
     }
+  }
+
+  notifyPlaygroundCourseProgressed(courseID: string) {
+    if (this.currentPlaygroundCourseRef.value?.id !== courseID) return
+    this.playgroundCourseProgressed = true
   }
 
   notifyPlaygroundCourseCompleted(courseID: string) {
