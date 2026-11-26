@@ -1,4 +1,4 @@
-import { ref, shallowRef } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { ActionException, capture, type Exception } from '@/utils/exception'
 import type { ReadinessScope } from '@/utils/readiness'
@@ -28,6 +28,8 @@ export type PlaygroundCourseSessionOptions = {
  * It remains available for editing after Program completes, and is disposed on Course leave.
  */
 export class PlaygroundCourseSession extends Emitter<{
+  /** The learner project changed after startup finished, even if changed back. */
+  progressed: void
   completed: PlaygroundCourseCompletion
   failed: Exception
 }> {
@@ -46,11 +48,6 @@ export class PlaygroundCourseSession extends Emitter<{
   /** Remains true until Host readiness and initial configuration rendering finish. */
   get starting() {
     return this.startingRef.value
-  }
-
-  /** Whether the learner project has changed since startup finished, even if changed back. */
-  get projectChanged() {
-    return !this.starting && this.editorState.editing.dirty
   }
 
   /** Borrowed from CodeEditorProvider; the Session does not dispose it. */
@@ -125,8 +122,18 @@ export class PlaygroundCourseSession extends Emitter<{
     await this.options.readiness.untilReady(signal)
     this.options.startReporter.report(1)
     if (!this.startingRef.value) return
-    this.editorState.editing.resetDirty()
+    const editing = this.editorState.editing
+    // Edits the course program makes during startup are not learner progress.
+    editing.resetDirty()
     this.startingRef.value = false
+    this.addDisposer(
+      watch(
+        () => editing.dirty,
+        (dirty) => {
+          if (dirty) this.emit('progressed')
+        }
+      )
+    )
   }
 
   private fail(error: Exception) {

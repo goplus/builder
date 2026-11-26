@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { Cancelled, useMessageHandle } from '@/utils/exception'
@@ -15,7 +15,6 @@ import CoursePlaygroundCompletionModal, {
   type CompletionAction
 } from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
-import type { PlaygroundCourseSession } from '@/components/tutorials/playground/session'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { useModal } from '@/components/ui'
@@ -86,16 +85,10 @@ const projectQueryRet: QueryRet<TutorialProject> = {
   data: computed(() => session.value?.project ?? null)
 }
 
-function handleSessionCreated(playgroundSession: PlaygroundCourseSession) {
-  const courseID = playgroundSession.project.id
-  playgroundSession.addDisposer(
-    watch(
-      () => playgroundSession.projectChanged,
-      (changed) => {
-        if (changed) tutorial.notifyPlaygroundCourseProgressed(courseID)
-      }
-    )
-  )
+function handleProgressed() {
+  const currentSession = session.value
+  if (currentSession == null) return
+  tutorial.notifyPlaygroundCourseProgressed(currentSession.course.id)
 }
 
 const { fn: handleRestart } = useMessageHandle(
@@ -140,7 +133,7 @@ const { fn: handleCompleted } = useMessageHandle(
   <CoursePlayground
     :project-query-ret="projectQueryRet"
     :router="inPlaygroundRouter"
-    @session-created="handleSessionCreated"
+    @course-progressed="handleProgressed"
     @course-completed="handleCompleted"
     @course-restart="handleRestart"
   />

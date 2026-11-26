@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { computed, defineComponent, h, nextTick, ref, shallowReactive, shallowRef, toValue, type PropType } from 'vue'
+import { computed, defineComponent, h, nextTick, ref, shallowRef, toValue, type PropType } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createI18n } from '@/utils/i18n'
@@ -115,7 +115,7 @@ describe('Course page startup', () => {
     expect(mocks.startCourse).toHaveBeenCalledWith('series', 'next')
   })
 
-  it('reports progress of each Playground session until it is disposed', async () => {
+  it('reports Playground progress of the current course', async () => {
     mocks.seriesQueryRet.data.value = { id: 'series', courseIDs: ['course', 'next'] }
     mocks.seriesQueryRet.isLoading.value = false
     wrapper = mount(CoursePlaygroundPage, {
@@ -123,25 +123,8 @@ describe('Course page startup', () => {
       global: { plugins: [createI18n({ lang: 'en' })] }
     })
     await flushPromises()
-    const disposers: Array<() => void> = []
-    const session = shallowReactive({
-      project: { id: 'course' },
-      projectChanged: false,
-      addDisposer: (disposer: () => void) => disposers.push(disposer)
-    })
-    wrapper.findComponent(PlaygroundComponent).vm.$emit('session-created', session)
-    await nextTick()
-    expect(mocks.notifyProgressed).not.toHaveBeenCalled()
-
-    session.projectChanged = true
-    await nextTick()
+    wrapper.findComponent(PlaygroundComponent).vm.$emit('course-progressed')
     expect(mocks.notifyProgressed).toHaveBeenCalledExactlyOnceWith('course')
-
-    session.projectChanged = false
-    disposers.forEach((dispose) => dispose())
-    session.projectChanged = true
-    await nextTick()
-    expect(mocks.notifyProgressed).toHaveBeenCalledOnce()
   })
 
   it('rejects a course that is not a member of the series', async () => {
