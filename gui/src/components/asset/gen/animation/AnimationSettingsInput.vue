@@ -1,34 +1,52 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
+import { useEnsureSignedIn } from '@/utils/user'
 import type { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { validateAnimationReferenceImage } from '@/models/spx/gen/reference-image'
 import { UIButton } from '@/components/ui'
+import { useResourceWorkspace } from '@/components/editor/sprite/resource-workspace'
 import SettingsInput from '../common/SettingsInput.vue'
 import ReferenceImageInput from '../common/ReferenceImageInput.vue'
 import ArtStyleInput from '../common/ArtStyleInput.vue'
 import PerspectiveInput from '../common/PerspectiveInput.vue'
 import AnimationLoopModeInput from './AnimationLoopModeInput.vue'
 
+const workspace = useResourceWorkspace()
 const props = defineProps<{
   gen: AnimationGen
 }>()
 
-const readonly = computed(() => props.gen.result != null)
+const readonly = computed(() => props.gen.result != null && !workspace?.aiActive.value)
 const isGenerating = computed(() => props.gen.generateVideoState.status === 'running')
 const isFinishing = computed(() => props.gen.finishState.status === 'running')
-const disabled = computed(() => isGenerating.value || isFinishing.value)
-const handleEnrich = useMessageHandle(() => props.gen.enrich(), {
-  en: 'Failed to enrich animation details',
-  zh: '丰富动画细节失败'
-}).fn
+const disabled = computed(() => isGenerating.value || isFinishing.value || workspace?.busy.value === true)
+const ensureSignedIn = useEnsureSignedIn()
+const handleEnrich = useMessageHandle(
+  async () => {
+    await ensureSignedIn()
+    return props.gen.enrich()
+  },
+  {
+    en: 'Failed to enrich animation details',
+    zh: '丰富动画细节失败'
+  }
+).fn
 const submitDisabled = computed(
-  () => props.gen.enrichState.status === 'running' || isFinishing.value || props.gen.settings.description === ''
+  () => props.gen.enrichState.status === 'running' || disabled.value || props.gen.settings.description === ''
 )
 const submitText = computed(() => {
   if (props.gen.generateVideoState.status === 'initial') return { en: 'Generate', zh: '生成' }
   return { en: 'Regenerate', zh: '重新生成' }
 })
+const handleGenerate = useMessageHandle(
+  async () => {
+    await ensureSignedIn()
+    if (workspace != null && 'editHistory' in props.gen.parent) props.gen.parent.editHistory.record(props.gen)
+    return props.gen.generateVideo()
+  },
+  { en: 'Failed to generate animation', zh: '生成动画失败' }
+).fn
 </script>
 
 <template>
@@ -61,9 +79,10 @@ const submitText = computed(() => {
     <template #submit>
       <UIButton
         v-radar="{ name: 'submit', desc: 'Click to generate an animation' }"
+        :type="workspace?.canReview.value ? 'secondary' : 'primary'"
         :disabled="submitDisabled"
         :loading="isGenerating"
-        @click="gen.generateVideo()"
+        @click="handleGenerate"
       >
         {{ $t(submitText) }}
       </UIButton>

@@ -7,6 +7,7 @@ import { UIDropdown, UICornerIcon, UIMenu } from '@/components/ui'
     <template #trigger>
       <UICornerIcon
         v-radar="{ name: 'options-button', desc: 'Click to view more options (save to asset library, remove, etc.)' }"
+        class="z-1"
         type="more"
       />
     </template>

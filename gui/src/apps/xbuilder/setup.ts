@@ -4,6 +4,7 @@ import type { Router } from 'vue-router'
 import { client } from '@/apis/common'
 import { accountOAuthClientForXBuilder } from '@/apis/account/oauth'
 import { cloudHelpers } from '@/models/common/cloud'
+import { setSpriteEditDemoEnabled } from '@/models/spx/gen/edit-demo'
 import { initSignedIn } from '@/stores/user'
 import { configureApp, setup } from '@/setup'
 import { provideDisableAIGC } from '@/components/asset/preprocessing/config'
@@ -13,6 +14,8 @@ import { provideProjectConfig } from '@/components/project/config'
 import * as env from './env'
 
 export function setupXBuilder() {
+  // Demo: use the existing image API; simulate video and point edits after 3 seconds.
+  setSpriteEditDemoEnabled(env.spriteEditDemoEnabled)
   client.setBaseUrl(env.apiBaseUrl)
   accountOAuthClientForXBuilder.setBaseUrl(env.apiBaseUrl + '/account')
   cloudHelpers.setConfig({

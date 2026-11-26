@@ -4,8 +4,7 @@ import { UIModal, UIModalClose, useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useWatchResult } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import type { Sprite } from '@/models/spx/sprite'
-import { SpriteGen as SpriteGenModel } from '@/models/spx/gen/sprite-gen'
+import { SpriteGen as SpriteGenModel, type SpriteGenResult } from '@/models/spx/gen/sprite-gen'
 import type { SpxProject } from '@/models/spx/project'
 import { initSpriteGen, type GenHelpers } from '../modal'
 import SpriteGenComp from './SpriteGen.vue'
@@ -23,7 +22,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  resolved: [Sprite]
+  resolved: [SpriteGenResult]
   cancelled: []
 }>()
 
@@ -31,10 +30,10 @@ const i18n = useI18n()
 const confirm = useConfirmDialog()
 
 const gen = useWatchResult(
-  () => [props.gen, props.project, props.helpers] as const,
-  ([gen, project, helpers], onCleanup) => {
+  () => [props.gen, props.project] as const,
+  ([gen, project], onCleanup) => {
     if (gen != null) return gen
-    return initSpriteGen(i18n, project, helpers, onCleanup)
+    return initSpriteGen(i18n, project, onCleanup)
   }
 )
 
@@ -75,12 +74,13 @@ const handleModalClose = useMessageHandle(
   <UIModal
     ref="modalRef"
     :radar="{ name: 'sprite-generation-modal', desc: 'Modal for sprite generation' }"
-    style="width: 1076px; height: 800px"
+    style="width: 1076px; max-width: calc(100vw - 32px); height: 800px"
+    :style="{ maxHeight: gen?.isPreparePhase === false ? 'calc(100dvh - 32px)' : null }"
     :visible="visible"
     mask-closable
     @update:visible="handleModalClose"
   >
-    <header class="h-14 flex items-center justify-between border-b border-grey-400 px-6">
+    <header class="min-h-14 shrink-0 flex items-center justify-between gap-4 border-b border-grey-400 px-6">
       <h2 class="text-xl text-title">{{ $t({ zh: '生成精灵', en: 'Sprite Generator' }) }}</h2>
       <UIModalClose class="close" @click="handleModalClose" />
     </header>

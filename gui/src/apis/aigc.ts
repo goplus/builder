@@ -106,7 +106,9 @@ export type TaskResultRemoveBackground = {
 }
 
 export type TaskResultGenerateCostume = {
+  /** Generated images, which may have a native or removed transparent background. */
   imageUrls: UniversalUrl[]
+  transparentBackground?: boolean
 }
 
 export type TaskResultGenerateAnimationVideo = {
@@ -151,6 +153,10 @@ export const taskRemoveBackgroundSupportedImgExts = ['jpeg', 'jpg', 'png', 'bmp'
 
 export type TaskParamsGenerateCostume = {
   settings: CostumeSettings
+  /** Edits settings.referenceImageUrl. Must not be blank. */
+  editInstruction?: string
+  /** Remove backgrounds before returning candidates for initial sprite generation. Defaults to false. */
+  removeBackground?: boolean
   /** Number of costume images to generate. Defaults to 1. */
   n: number
 }

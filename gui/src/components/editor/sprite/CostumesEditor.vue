@@ -16,19 +16,26 @@
     <template #add-options>
       <UIMenu>
         <UIMenuItem
-          v-radar="{ name: 'add-from-local-file', desc: 'Click to add costume from local file' }"
-          @click="handleAddFromLocalFile"
-          >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
+          v-radar="{ name: 'Add from local file', desc: 'Click to add costumes from local files' }"
+          @click="handleImport"
         >
+          {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
+        </UIMenuItem>
+        <UIMenuItem
+          v-radar="{ name: 'Generate resource', desc: 'Click to generate a costume with AI' }"
+          @click="handleAdd"
+        >
+          {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
+        </UIMenuItem>
       </UIMenu>
     </template>
     <template #detail>
-      <CostumeDetail
-        v-if="state.selected != null"
-        :sprite="sprite"
-        :costume="state.selected"
-        @rename="handleRename(state.selected)"
-      />
+      <ResourceWorkspace v-if="state.selected != null" :key="state.selected.id" :resource-key="state.selected.id">
+        <CostumeDetail :sprite="sprite" :costume="state.selected" @rename="handleRename(state.selected)" />
+        <template #prompt>
+          <SpriteResourcePrompt :key="state.selected.id" :sprite="sprite" :resource="state.selected" />
+        </template>
+      </ResourceWorkspace>
     </template>
   </EditorList>
 </template>
@@ -37,13 +44,16 @@
 export class CostumesEditorState {
   constructor(private getSprite: () => Sprite | null) {}
 
+  private selectedId = ref<string | null>(null)
+
   /** The currently selected costume */
   get selected() {
-    return this.getSprite()?.defaultCostume ?? null
+    const sprite = this.getSprite()
+    return sprite?.costumes.find((costume) => costume.id === this.selectedId.value) ?? sprite?.defaultCostume ?? null
   }
   /** Select a costume by its ID */
   select(id: string) {
-    this.getSprite()?.setDefaultCostume(id)
+    this.selectedId.value = id
   }
   /** Select a costume by its name */
   selectByName(name: string): void {
@@ -69,15 +79,18 @@ export class CostumesEditorState {
 </script>
 
 <script setup lang="ts">
-import { UIMenu, UIMenuItem } from '@/components/ui'
+import { ref } from 'vue'
 import { capture, useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/spx/sprite'
 import { Costume } from '@/models/spx/costume'
-import { useAddCostumeFromLocalFile, useRenameCostume } from '@/components/asset'
+import { useAddSpriteResource, useAddCostumeFromLocalFile, useRenameCostume } from '@/components/asset'
+import { UIMenu, UIMenuItem } from '@/components/ui'
 import EditorList from '../common/EditorList.vue'
 import CostumeItem from './CostumeItem.vue'
 import CostumeDetail from './CostumeDetail.vue'
+import SpriteResourcePrompt from './SpriteResourcePrompt.vue'
+import ResourceWorkspace from './ResourceWorkspace.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
@@ -86,17 +99,19 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const addResource = useAddSpriteResource()
+const handleAdd = useMessageHandle(() => addResource(props.sprite, 'costume')).fn
+const addFromLocalFile = useAddCostumeFromLocalFile()
+const handleImport = useMessageHandle(async () => {
+  const costumes = await addFromLocalFile(props.sprite)
+  if (costumes[0] != null) props.state.select(costumes[0].id)
+}).fn
 
 function handleSelect(costume: Costume) {
+  props.state.select(costume.id)
   const action = { name: { en: 'Set default costume', zh: '设置默认造型' } }
   editorCtx.state.history.doAction(action, () => props.sprite.setDefaultCostume(costume.id))
 }
-
-const addFromLocalFile = useAddCostumeFromLocalFile()
-const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.sprite), {
-  en: 'Failed to add from local file',
-  zh: '从本地文件添加失败'
-}).fn
 
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {

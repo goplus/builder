@@ -35,8 +35,8 @@ const entityMessage = computed(() => humanizeAssetType(props.type))
       <p class="text-center text-xs text-hint-2">
         {{
           $t({
-            en: `There are related ${entityMessage.en}s in the asset library. You can choose the one you like or continue generating.`,
-            zh: `素材库中已有相关的${entityMessage.zh}，可以选择你喜欢的${entityMessage.zh}直接使用，或者继续生成。`
+            en: `Use a suggested ${entityMessage.en} from the library or generate a new one.`,
+            zh: `素材库里有相关${entityMessage.zh}。你可以选一个采用，也可以生成一个新的。`
           })
         }}
       </p>

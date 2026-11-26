@@ -1,6 +1,6 @@
 <script lang="ts">
 export function isCostumeLoading(gen: CostumeGen) {
-  return [gen.enrichState.status, gen.generateState.status].includes('running')
+  return [gen.enrichState.status, gen.generateState.status, gen.finishState.status].includes('running')
 }
 
 export function isCostumesLoading(gens: CostumeGen[]) {
@@ -12,6 +12,7 @@ export function isCostumesLoading(gens: CostumeGen[]) {
 import { computed } from 'vue'
 import { useRenderableImageUrl } from '@/utils/img-rendering'
 import { UIBlockItemTitle, UIImg } from '@/components/ui'
+import type { Costume } from '@/models/spx/costume'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
 import CornerMenu from '@/components/editor/common/CornerMenu.vue'
 import RenameMenuItem from '@/components/editor/common/corner-menu-item/RenameMenuItem.vue'
@@ -25,6 +26,7 @@ export type Operable = {
 
 const props = defineProps<{
   gen: CostumeGen
+  costume: Costume | null
   active: boolean
   // TODO: implement isDefault style
   isDefault: boolean
@@ -37,7 +39,7 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const [url, imageLoading] = useRenderableImageUrl(() => props.gen.image)
+const [url, imageLoading] = useRenderableImageUrl(() => props.costume?.img)
 
 const isLoading = computed(() => isCostumeLoading(props.gen) || imageLoading.value)
 const highlight = computed(() => props.gen.generateState.status === 'finished')
@@ -56,7 +58,7 @@ const highlight = computed(() => props.gen.generateState.status === 'finished')
     :highlight="highlight"
     @click="emit('click')"
   >
-    <template v-if="gen.result != null" #preview>
+    <template v-if="costume != null" #preview>
       <UIImg class="h-full w-full" :src="url" :loading="imageLoading" />
     </template>
     <UIBlockItemTitle size="medium" :class="{ 'text-turquoise-500': isDefault }" :title="gen.name">{{
