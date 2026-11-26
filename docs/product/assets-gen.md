@@ -60,6 +60,7 @@ The concepts involved are:
 * Project Setting
 * Asset Setting
 * Asset Generation
+* Project
 
 ### Perspective
 
@@ -111,6 +112,8 @@ The closer two Assets' Asset Settings are, the more similar they should be in st
 
 For non-AI-generated Assets, we can also supplement them with an "inferred" Asset Setting, allowing them to participate in the recommendation and search processes mentioned above.
 
+In `Project.Game`, only standalone [Asset](./index.md#asset) types (`Sprite`, `Backdrop`, `Sound`) retain `Asset Setting`; child Assets such as `Costume` and `Animation` do not keep separate `Asset Settings` once adopted. When their content is edited in a Project, the corresponding `Asset Setting` updates to match the current content; see [Asset Editing](./assets-edit.md#asset-setting-synchronization).
+
 ### Asset Generation
 
 Asset Generation refers to the process of generating a corresponding Asset based on a given Asset Setting.
@@ -121,7 +124,15 @@ Because asset generation is usually a complex and time-consuming process, we nee
 * Status - the current state of generation, such as Pending, In Progress, Completed, Failed, etc.
 * Result Asset - the Asset obtained after successful generation
 
+Until adopted, the Result Asset stays inside the Asset Generation without entering `Project.Game` or the [Asset](./index.md#asset) library; adopting writes it to `Project.Game`, and either adopting or discarding clears that Asset Generation.
+
 Similar to the current usage of Copilot and AI Interaction, asset generation usage is limited. Different Settings may correspond to different quota consumption rules.
+
+### Project
+
+Building on [XBuilder Product](./index.md#project), besides basic information and `Game`, a Project also stores unfinished `Asset Generation` records and AI editing drafts (see [Asset Editing](./assets-edit.md#draft)).
+
+Like `Game`, this data is saved to the cloud with the Project (and cached locally in the browser before syncing), and is restored only when the project owner opens that Project in the editor. Because it is not part of `Project.Game`, running the game, exporting local files, and publishing a [Release](./community.md#release) never include it.
 
 ## Key Issues
 

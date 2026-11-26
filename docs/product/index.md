@@ -119,7 +119,7 @@ Users can create a new Project through XBuilder and then edit it:
 	- Add and edit Backdrop information
 		+ Set Backdrop Name
 		+ Upload Image
-		+ Edit Image
+		+ Edit Image (see [Asset Editing](./assets-edit.md))
 		+ Modify other Backdrop Config (details TODO)
 	- Modify other Stage Config (details TODO)
 * Add and edit Sprite
@@ -128,12 +128,13 @@ Users can create a new Project through XBuilder and then edit it:
 	- Add and edit Costume information
 		+ Set Costume Name
 		+ Upload Image
-		+ Edit Image
+		+ Edit Image (see [Asset Editing](./assets-edit.md))
 		+ Modify other Costume Config (details TODO)
 	- Modify other Sprite Config (details TODO)
 * Add and edit Sound
 	- Set Sound Name
 	- Upload or record Audio (details TODO)
+	- Edit Audio (see [Asset Editing](./assets-edit.md))
 * Control Zorder (control the order of different content)
 
 During the editing process, users should be able to get feedback from the preview area and see all the content on the current stage in real-time (displayed according to Zorder).
