@@ -205,19 +205,6 @@ describe('BackdropGen', () => {
     await expect(gen.finish()).rejects.toThrow('image expected')
   })
 
-  it('should throw error when recording adoption without result', async () => {
-    const project = makeSpxProject()
-    const gen = new BackdropGen(i18n, project, {
-      settings: { description: 'A test backdrop' }
-    })
-
-    await gen.enrich()
-    await gen.genImages()
-
-    // Try to record adoption without finishing
-    await expect(gen.recordAdoption()).rejects.toThrow('result backdrop expected')
-  })
-
   it('should allow multiple enrichments', async () => {
     const project = makeSpxProject()
     const gen = new BackdropGen(i18n, project, {

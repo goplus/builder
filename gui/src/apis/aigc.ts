@@ -7,12 +7,10 @@ import {
   ArtStyle,
   BackdropCategory,
   client,
-  type FileCollection,
   Perspective,
   SpriteCategory,
   type UniversalUrl
 } from './common'
-import type { AssetExtraSettings, AssetType } from './asset'
 // TODO: avoid dep from apis to models
 import type { State } from '@/models/spx/sprite'
 
@@ -383,20 +381,4 @@ export function enrichSpriteSettings(
     },
     signal
   ) as Promise<SpriteSettings>
-}
-
-export type AssetAdoptionParams = {
-  taskIds: string[]
-  asset: {
-    displayName: string
-    type: AssetType
-    description: string
-    extraSettings: AssetExtraSettings
-    filesHash?: string
-    files: FileCollection
-  }
-}
-
-export function adoptAsset(params: AssetAdoptionParams, signal?: AbortSignal) {
-  return client.post('/aigc/asset-adoptions', params, { signal }) as Promise<void>
 }

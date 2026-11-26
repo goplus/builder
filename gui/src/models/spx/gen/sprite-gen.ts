@@ -13,9 +13,7 @@ import {
   type CostumeSettings,
   Facing,
   TaskType,
-  TaskStatus,
-  isTerminalTaskStatus,
-  adoptAsset
+  isTerminalTaskStatus
 } from '@/apis/aigc'
 import { SpxProject } from '../project'
 import { RotationStyle, Sprite, State } from '../sprite'
@@ -36,7 +34,6 @@ import {
   type SpriteLikeParent
 } from '../common/asset-name'
 import { resourceAnimationName, resourceCostumeName } from '../common/resource'
-import { sprite2Asset } from '../common/asset'
 
 /** User selected item in sprite gen */
 type SpriteGenSelected = {
@@ -480,27 +477,6 @@ export class SpriteGen extends Disposable {
     })
     this.result = sprite
     return sprite
-  }
-
-  async recordAdoption() {
-    const sprite = this.result
-    if (sprite == null) throw new Error('result sprite expected')
-    const taskIds = [
-      this.genImagesTask?.data?.status === TaskStatus.Completed ? this.genImagesTask.data.id : null,
-      ...this.costumes.flatMap((c) => c.getTaskIds()),
-      ...this.animations.flatMap((a) => a.getTaskIds())
-    ].filter((id) => id != null)
-    const assetData = await sprite2Asset(sprite)
-    const { name: displayName, description, ...extraSettings } = this.settings
-    return adoptAsset({
-      taskIds,
-      asset: {
-        ...assetData,
-        displayName,
-        description,
-        extraSettings
-      }
-    })
   }
 
   /**

@@ -134,7 +134,6 @@ Therefore, the general asset generation process is as follows:
 1. User inputs requirements (including art style, perspective, text description, etc., some of which can be obtained from Project context)
 2. Search Public Asset Library (match requirements with Asset Settings)
 3. If the user is not satisfied with search results, proceed with asset generation
-4. If the generated asset is approved (adopted or liked), automatically save it to Public Asset Library
 
 Note that this means we need to blur the boundary between "searching for assets" and "generating assets" at the entry point.
 

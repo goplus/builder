@@ -104,7 +104,6 @@ export class MockAigcApis {
     vi.mocked(aigcApis.cancelTask).mockImplementation(this.cancelTask)
     this.subscribeTaskEvents = vi.fn(this.subscribeTaskEvents.bind(this))
     vi.mocked(aigcApis.subscribeTaskEvents).mockImplementation(this.subscribeTaskEvents)
-    vi.mocked(aigcApis.adoptAsset).mockResolvedValue()
   }
 
   reset() {

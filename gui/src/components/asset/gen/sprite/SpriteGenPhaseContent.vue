@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
-import { capture, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import type { Sprite } from '@/models/spx/sprite'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import type { CostumeGen } from '@/models/spx/gen/costume-gen'
@@ -176,9 +176,6 @@ const handleSubmit = useMessageHandle(
   async () => {
     await beforeSubmit()
     const sprite = await props.gen.finish()
-    props.gen.recordAdoption().catch((err) => {
-      capture(err, 'failed to record sprite asset adoption')
-    })
     emit('resolved', sprite)
   },
   {
