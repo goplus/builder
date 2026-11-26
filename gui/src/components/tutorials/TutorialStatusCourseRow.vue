@@ -14,9 +14,10 @@ const props = withDefaults(
     sequence: number
     active: boolean
     state: CourseState | null
+    editing?: boolean
     href?: string | null
   }>(),
-  { href: null }
+  { editing: false, href: null }
 )
 
 const emit = defineEmits<{
@@ -83,9 +84,15 @@ defineExpose({
       <UIImg v-if="course.thumbnail !== ''" class="absolute inset-0 h-full w-full" :src="thumbnailUrl" size="cover" />
     </div>
     <span class="min-w-0 truncate text-base font-medium text-text">{{ course.title }}</span>
-    <span v-if="state != null" class="flex-none px-1 text-xs font-medium text-primary-main">
+    <span v-if="editing || state != null" class="flex-none px-1 text-xs font-medium text-primary-main">
       {{
-        $t(state === CourseState.Completed ? { en: 'completed', zh: '已完成' } : { en: 'in progress', zh: '进行中' })
+        $t(
+          editing
+            ? { en: 'editing', zh: '正在编辑' }
+            : state === CourseState.Completed
+              ? { en: 'completed', zh: '已完成' }
+              : { en: 'in progress', zh: '进行中' }
+        )
       }}
     </span>
     <UIButton

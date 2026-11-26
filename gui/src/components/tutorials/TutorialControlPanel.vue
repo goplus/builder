@@ -12,7 +12,7 @@ import { EditingMode } from '@/components/editor/editing'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import { UIButton, UIError, UILoading, useConfirmDialogWithResult } from '@/components/ui'
 import { useDropdown } from '@/components/ui/UIDropdown.vue'
-import { CourseState, useTutorial } from './tutorial'
+import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
 import { getSeriesUnits, getUnitHeading } from './units'
 
@@ -30,9 +30,7 @@ const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
 const currentCourse = computed(() => props.editingCourse ?? tutorial.currentCourse)
-const currentCourseState = computed(() =>
-  props.editingCourse != null ? CourseState.InProgress : tutorial.currentCourse?.state ?? null
-)
+const currentCourseState = computed(() => (props.editingCourse != null ? null : tutorial.currentCourse?.state ?? null))
 const seriesWithCoursesQuery = useSeriesWithCourses(() => currentCourse.value?.seriesID ?? null)
 const courseSeries = computed(() => seriesWithCoursesQuery.data.value?.series ?? null)
 
@@ -214,6 +212,7 @@ const { fn: handleRestartCourse } = useMessageHandle(
             :sequence="sequence"
             :active="course.id === currentCourse?.id"
             :state="course.id === currentCourse?.id ? currentCourseState : null"
+            :editing="editingCourse != null && course.id === editingCourse.id"
             :href="editingCourse == null ? null : getCourseEditorRoute(editingCourse.seriesID, course.id)"
             @select="handleSelectCourse(course.id, course.title)"
             @restart="handleRestartCourse"
