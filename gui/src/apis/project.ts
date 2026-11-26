@@ -14,11 +14,13 @@ export const projectInstructionsMaxLength = 400
 
 export enum ProjectType {
   /** 2D game project based on spx. */
-  Game = 'game'
+  Game = 'game',
+  GuidedCourse = 'guided-course',
+  PlaygroundCourse = 'playground-course'
 }
 
 export function isSupportedProjectType(type: string | null | undefined): boolean {
-  return type === ProjectType.Game
+  return type === ProjectType.Game || type === ProjectType.GuidedCourse || type === ProjectType.PlaygroundCourse
 }
 
 /** Source of extra settings of the project. */
