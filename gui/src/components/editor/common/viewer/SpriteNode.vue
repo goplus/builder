@@ -321,7 +321,6 @@ defineExpose({
     ref="nameLabelRef"
     :name="localConfig.name"
     :anchor="nameLabelAnchor"
-    :selected="selected"
     :map-scale="mapScale"
     @click="emit('nameClick', $event)"
   />
