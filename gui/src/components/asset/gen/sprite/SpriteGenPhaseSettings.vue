@@ -11,7 +11,7 @@ import { AssetType } from '@/apis/asset'
 import { asset2Sprite } from '@/models/spx/common/asset'
 import type { Sprite } from '@/models/spx/sprite'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
-import { capture, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { humanizeTimeLeft } from '../common/time-left'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
 import ImagePreview from '../common/ImagePreview.vue'
@@ -44,7 +44,6 @@ const canSubmit = computed(() => props.gen.image != null && props.gen.imagesGenS
 const handleSubmit = useMessageHandle(
   async () => {
     const sprite = await props.gen.finishWithDefaultCostume()
-    props.gen.recordAdoption().catch((err) => capture(err, 'failed to record sprite asset adoption'))
     emit('generated', sprite)
   },
   { en: 'Failed to add sprite', zh: '添加精灵失败' }
