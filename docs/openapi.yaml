@@ -5029,9 +5029,9 @@ paths:
         - AIGC
       summary: Adopt an AIGC-generated asset
       description: |
-        Record that an AIGC-generated asset has been adopted.
-
-        The backend verifies task ownership and file provenance and may publish the adopted asset to the public library.
+        The backend verifies task ownership and file provenance for all asset types.
+        For sprites, validation completes the request. For backdrops and sounds, the backend then publishes the asset
+        to the public library under the official account.
       requestBody:
         required: true
         content:
@@ -5081,7 +5081,7 @@ paths:
                       minProperties: 1
       responses:
         "204":
-          description: Asset adoption recorded.
+          description: Asset adoption acknowledged.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
