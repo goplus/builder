@@ -3,7 +3,7 @@
   "include": [
     "vite.config.*",
     "build/vite-plugins/*.ts",
-    "src/apps/*/page-meta.json"
+    "src/utils/i18n/lang.ts"
   ],
   "compilerOptions": {
     "composite": true,

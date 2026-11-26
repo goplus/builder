@@ -8,6 +8,7 @@ import browserslistToEsbuild from 'browserslist-to-esbuild'
 
 import { createBrowserHijackPlugin } from './build/vite-plugins/browser-hijack-plugin.js'
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
+import { normalizeLang } from './src/utils/i18n/lang.js'
 import pageMeta from './src/apps/account/page-meta.json' with { type: 'json' }
 
 const resolve = (dir: string) => path.join(__dirname, dir)
@@ -15,6 +16,7 @@ const accountEnvDir = resolve('src/apps/account')
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, accountEnvDir, '')
+  const defaultLang = env.VITE_DEFAULT_LANG || 'en'
   const accountWebOrigin = env.VITE_WEB_ORIGIN ?? ''
   const accountAPIProxyTarget = env.VITE_API_PROXY_TARGET ?? ''
 
@@ -58,7 +60,7 @@ export default defineConfig(({ mode }) => {
       createAppHtmlEntryPlugin(resolve('src/apps/account/index.html')),
       vue(),
       tailwindcss(),
-      ViteEjsPlugin({ pageMeta: pageMeta[env.VITE_DEFAULT_LANG === 'zh' ? 'zh' : 'en'] })
+      ViteEjsPlugin({ defaultLang, pageMeta: pageMeta[normalizeLang(defaultLang)] })
     ],
     resolve: {
       alias: {

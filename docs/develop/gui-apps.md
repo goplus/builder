@@ -58,7 +58,9 @@ replaces the placeholder with the selected app HTML during Vite dev/build:
 - `vite.config.account.ts` selects `src/apps/account/index.html`.
 
 This keeps Vite's normal single-root entry behavior while letting each app own
-its document metadata and script entry.
+its document metadata and script entry. Each app keeps its localized metadata in
+`page-meta.json`, and Vite renders it into the HTML at build time using the
+site's default language.
 
 ## Shared Code
 

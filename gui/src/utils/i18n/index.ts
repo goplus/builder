@@ -14,12 +14,9 @@ import {
   type SlotsType
 } from 'vue'
 
-export type Lang = 'en' | 'zh'
+import type { Lang } from './lang'
 
-export function normalizeLang(lang: string): Lang {
-  if (lang.toLowerCase().split('-')[0] === 'zh') return 'zh'
-  return 'en'
-}
+export { normalizeLang, type Lang } from './lang'
 
 // We may also support `VNode` as translated resule in the future, if needed
 export type Translated = string
