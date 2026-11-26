@@ -1,10 +1,10 @@
 import { useModal, useConfirmDialog } from '@/components/ui'
 import ModificationWarningModal from '@/components/common/ModificationWarningModal.vue'
-import { Visibility, deleteProject } from '@/apis/project'
+import { Visibility, deleteProject, updateProject } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import type { SpxProject } from '@/models/spx/project'
 import type { ProjectSerialized } from '@/models/project'
-import { cloudHelpers } from '@/models/common/cloud'
+import type { EditorState } from '@/components/editor/editor-state'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
@@ -104,8 +104,8 @@ export function usePublishProject() {
   const invokePublishModal = useModal(ProjectPublishModal)
   const invokePublishedModal = useModal(ProjectPublishedModal)
 
-  return async function publishProject(project: SpxProject) {
-    await invokePublishModal({ project })
+  return async function publishProject({ project, workingProject }: EditorState) {
+    await invokePublishModal({ project, workingProject })
     invokePublishedModal({ project })
   }
 }
@@ -115,10 +115,10 @@ export function useUnpublishProject() {
   const withConfirm = useConfirmDialog()
   // TODO: message for exception
   async function makePrivate(project: SpxProject) {
-    project.setVisibility(Visibility.Private)
-    const serialized = await project.export()
-    const saved = await cloudHelpers.save(serialized)
-    project.setMetadata(saved.metadata)
+    const { owner, name } = project
+    if (owner == null || name == null) throw new Error('Project owner or name is not loaded')
+    const { visibility, revision, updatedAt } = await updateProject(owner, name, { visibility: Visibility.Private })
+    project.setMetadata({ visibility, revision, updatedAt })
   }
 
   return async function unpublishProject(project: SpxProject) {

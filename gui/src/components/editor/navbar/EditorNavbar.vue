@@ -40,7 +40,7 @@
               </UIMenuItem>
             </UIMenuGroup>
             <UIMenuGroup :disabled="project == null || !isOnline">
-              <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
+              <UIMenuItem v-if="canManageProject && state != null" @click="handlePublishProject">
                 <template #icon><img :src="publishSvg" /></template>
                 {{ $t({ en: 'Publish project...', zh: '发布项目...' }) }}
               </UIMenuItem>
@@ -242,7 +242,7 @@ const handleImportFromScratch = useMessageHandle(
 ).fn
 
 const publishProject = usePublishProject()
-const handlePublishProject = useMessageHandle(() => publishProject(props.project!), {
+const handlePublishProject = useMessageHandle(() => publishProject(props.state!), {
   en: 'Failed to publish project',
   zh: '发布项目失败'
 }).fn

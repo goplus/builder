@@ -195,7 +195,7 @@ onMounted(async () => {
   const shouldPublish = publish !== undefined // Vue Router returns `publish: null` for `?publish`
   if (shouldPublish) {
     const s = await untilNotNull(state)
-    publishProject(s.project).finally(() => {
+    publishProject(s).finally(() => {
       router.replace({ query: restQuery }) // Remove `publish` from query
     })
   }

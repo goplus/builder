@@ -7,6 +7,7 @@ import { Visibility } from '@/apis/common'
 import { projectDescriptionMaxLength, projectInstructionsMaxLength } from '@/apis/project'
 import { createProjectRelease, projectReleaseDescriptionMaxLength } from '@/apis/project-release'
 import { cloudHelpers } from '@/models/common/cloud'
+import type { IProject } from '@/models/project'
 import type { SpxProject } from '@/models/spx/project'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
@@ -14,6 +15,7 @@ import stageBg from '@/assets/images/stage-bg.svg'
 
 const props = defineProps<{
   project: SpxProject
+  workingProject: Pick<IProject, 'export'>
   visible: boolean
 }>()
 
@@ -79,7 +81,7 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     if (isProjectUsingAIInteraction(project)) await project.ensureAIDescription(true) // Ensure AI description is available if needed
-    const serialized = await project.export()
+    const serialized = await props.workingProject.export()
     const saved = await cloudHelpers.save(serialized)
     const { owner, name, revision } = saved.metadata
     project.setMetadata(saved.metadata)

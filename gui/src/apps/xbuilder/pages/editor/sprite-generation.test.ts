@@ -4,11 +4,14 @@ import { setupAigcMock } from '@/models/spx/gen/aigc-mock' // Put me before impo
 import { mountPages, setupPageTests, signIn } from '@/apps/xbuilder/pages/test' // Initializes page mocks before app modules load
 import { createI18n } from '@/utils/i18n'
 import { TaskType } from '@/apis/aigc'
+import { createProjectRelease } from '@/apis/project-release'
 import * as cloud from '@/models/common/cloud'
 import { fromText } from '@/models/common/file'
+import { CostumeGen } from '@/models/spx/gen/costume-gen'
 import { AnimationGen } from '@/models/spx/gen/animation-gen'
 import { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { mockSaveFile } from '@/models/spx/gen/test-helpers'
+import ProjectPublishedModal from '@/components/project/ProjectPublishedModal.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 
 const api = setupAigcMock()
@@ -60,6 +63,47 @@ describe('sprite generation', () => {
     await vi.waitFor(() => expect(sprite.costumes).toHaveLength(2))
     expect(sprite.defaultCostume?.name).toBe('costume-1')
     expect(wrapper.findAll('[aria-label^="Costume generation item"]')).toHaveLength(1)
+  })
+  it('reopens both costume versions after publishing the project', async () => {
+    const path = '/editor/alice/First%20flight'
+    let stored = await cloud.cloudHelpers.load('alice', 'First flight')
+    vi.spyOn(cloud.cloudHelpers, 'load').mockImplementation(async () => stored)
+    vi.spyOn(cloud.cloudHelpers, 'save').mockImplementation(async ({ metadata, files }) => {
+      stored = { metadata: { ...stored.metadata, ...metadata, revision: stored.metadata.revision + 1 }, files }
+      return { metadata: { ...stored.metadata, latestRelease: null }, files }
+    })
+    vi.mocked(createProjectRelease, { partial: true }).mockResolvedValue({ name: 'v1.0.0' })
+    const { wrapper } = await mountPages(path + '?publish')
+    const form = '[aria-label="Project publish modal"] form'
+    await vi.waitFor(() => expect(wrapper.find(form).exists()).toBe(true), { timeout: 4000 })
+    const { project, state } = wrapper.getComponent(EditorContextProvider).props()
+    const gen = new SpriteGen(createI18n({ lang: 'en' }), project, { settings: { name: 'Fox', description: 'A fox' } })
+    await gen.genImages()
+    gen.setImageIndex(0)
+    const sprite = await gen.finishWithDefaultCostume()
+    project.addSprite(sprite)
+    const draft = state.genState.spriteResources.addCostume(sprite)
+    expect.assert(draft.gen instanceof CostumeGen)
+    for (const description of ['Red scarf', 'Green scarf']) {
+      draft.gen.setSettings({ description })
+      await draft.gen.generate()
+    }
+    draft.select(0)
+    await wrapper.get(form).trigger('submit')
+    await vi.waitFor(() => expect(wrapper.findComponent(ProjectPublishedModal).exists()).toBe(true))
+    wrapper.getComponent(ProjectPublishedModal).vm.$emit('resolved')
+    wrapper.unmount()
+
+    const { wrapper: reopened } = await mountPages(path)
+    await vi.waitFor(() => expect(reopened.findComponent(EditorContextProvider).exists()).toBe(true))
+    const { project: savedGame, state: savedEditor } = reopened.getComponent(EditorContextProvider).props()
+    expect(savedGame.sprites[0].costumes).toHaveLength(1)
+    const [restored] = savedEditor.genState.spriteResources.drafts
+    expect(restored.id).toBe(draft.id)
+    expect(restored.index).toBe(0)
+    expect(restored.gen.settings.description).toBe('Red scarf')
+    restored.select(1)
+    expect(restored.gen.settings.description).toBe('Green scarf')
   })
   /** Opens a sprite with one applied animation and shows a second generated animation ready to apply. */
   async function openSecondAnimationDraft() {

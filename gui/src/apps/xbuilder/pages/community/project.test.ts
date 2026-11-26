@@ -50,6 +50,32 @@ describe('community project', () => {
     await vi.waitFor(async () => expect(await navigator.clipboard.readText()).toBe(link))
   })
 
+  it('changes only visibility when the owner unpublishes from the project page', async () => {
+    await signIn()
+    vi.mocked(projectApis.updateProject).mockResolvedValue({
+      ...makeProject('Space'),
+      visibility: projectApis.Visibility.Private
+    })
+    const { wrapper } = await mountPages('/project/alice/Space')
+    const button = (label: string) => wrapper.get(`[aria-label="${label}"]`)
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="More options button"]').exists()).toBe(true))
+    await button('More options button').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Unpublish option"]').exists()).toBe(true))
+    await button('Unpublish option').trigger('click')
+    const dialog = await vi.waitFor(() => {
+      const dialog = wrapper.findAll('[role="dialog"]').find((item) => item.text().includes('Unpublish project'))
+      expect.assert(dialog != null)
+      return dialog
+    })
+    await dialog.get('[aria-label="Confirm button"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(projectApis.updateProject).toHaveBeenCalledExactlyOnceWith('alice', 'Space', {
+        visibility: projectApis.Visibility.Private
+      })
+    )
+    await vi.waitFor(() => expect(wrapper.findAll('button').some((item) => item.text() === 'Publish')).toBe(true))
+  })
+
   it('remixes a public project and opens the new project in the editor', async () => {
     await signIn()
     vi.mocked(projectApis.isProjectNameTaken).mockResolvedValue(false)
