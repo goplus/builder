@@ -8,7 +8,7 @@ import browserslistToEsbuild from 'browserslist-to-esbuild'
 
 import { createBrowserHijackPlugin } from './build/vite-plugins/browser-hijack-plugin.js'
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
-import { pageMeta } from './src/apps/account/page-meta.js'
+import pageMeta from './src/apps/account/page-meta.json' with { type: 'json' }
 
 const resolve = (dir: string) => path.join(__dirname, dir)
 const accountEnvDir = resolve('src/apps/account')
