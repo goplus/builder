@@ -435,7 +435,7 @@ describe('CostumeGen', () => {
     const loaded = CostumeGen.load(i18n, sprite, project, config, files)
     expect(loaded.referenceImageSelection).toBeNull()
     expect(loaded.image?.meta.universalUrl).toBe(gen.image?.meta.universalUrl)
-    expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
+    expect(loaded.export()[0].generateTaskSerialized).toEqual(config.generateTaskSerialized)
     gen.dispose()
     loaded.dispose()
   })

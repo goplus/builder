@@ -5,7 +5,7 @@ import { AssetType } from '@/apis/asset'
 import type { Backdrop } from '@/models/spx/backdrop'
 import { asset2Backdrop } from '@/models/spx/common/asset'
 import type { BackdropGen } from '@/models/spx/gen/backdrop-gen'
-import { capture, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { humanizeTimeLeft } from '../common/time-left'
 import BackdropSettingInput from './BackdropSettingsInput.vue'
 import LayoutWithPreview from '../common/LayoutWithPreview.vue'
@@ -36,9 +36,6 @@ const canSubmit = computed(() => props.gen.image != null)
 const handleSubmit = useMessageHandle(
   async () => {
     const backdrop = await props.gen.finish()
-    props.gen.recordAdoption().catch((err) => {
-      capture(err, 'failed to record backdrop asset adoption')
-    })
     emit('resolved', backdrop)
   },
   {
