@@ -118,8 +118,8 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
     zh: '请求过于频繁'
   },
   [ApiExceptionCode.errorRateLimitExceeded]: {
-    en: 'Too many requests. Try again later.',
-    zh: '请求过于频繁，请稍后重试'
+    en: 'Rate limit exceeded',
+    zh: '请求过于频繁'
   },
   [ApiExceptionCode.errorInternalServerError]: {
     en: 'Server error',

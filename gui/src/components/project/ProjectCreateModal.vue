@@ -144,18 +144,18 @@ const handleSubmit = useMessageHandle(
 async function validateName(name: string): Promise<FormValidationResult> {
   name = name.trim()
 
-  if (name === '') return t({ en: 'The project name must not be blank', zh: '项目名不可为空' })
+  if (name === '') return t({ en: 'Enter a project name.', zh: '请输入项目名。' })
 
   if (!/^[\w-]+$/.test(name))
     return t({
-      en: 'The project name can only contain letters, digits, and the characters - and _.',
-      zh: '项目名仅可包含字母、数字以及字符 - 和 _。'
+      en: 'Use only A–Z, a–z, 0–9, hyphens (-), and underscores (_).',
+      zh: '仅限英文字母、数字、连字符（-）和下划线（_）。'
     })
 
   if (name.length > projectNameMaxLength)
     return t({
-      en: `The project name is too long (maximum is ${projectNameMaxLength} characters)`,
-      zh: `项目名长度超出限制（最多 ${projectNameMaxLength} 个字符）`
+      en: `The project name must be ${projectNameMaxLength} characters or fewer.`,
+      zh: `项目名不能超过 ${projectNameMaxLength} 个字符。`
     })
 
   // check naming conflict

@@ -56,7 +56,7 @@ function validateTitle(value: string) {
 
 function validateDescription(value: string) {
   const trimmed = value.trim()
-  if (trimmed === '') return i18n.t({ en: 'Describe the problem', zh: '请描述遇到的问题' })
+  if (trimmed === '') return i18n.t({ en: 'Describe the problem.', zh: '请描述遇到的问题。' })
   if (trimmed.length > feedbackDescriptionMaxLength)
     return i18n.t({
       en: `The description must be ${feedbackDescriptionMaxLength} characters or fewer.`,

@@ -49,11 +49,11 @@ export function useRemoveProject() {
     const projectFullName = `${owner}/${name}`
     return withConfirm({
       title: t({
-        en: `Remove project ${displayName} (${projectFullName})`,
+        en: `Delete project ${displayName} (${projectFullName})`,
         zh: `删除项目 ${displayName} (${projectFullName})`
       }),
       content: t({
-        en: `Removed projects cannot be recovered. Are you sure you want to remove project ${displayName} (${projectFullName})?`,
+        en: `Deleted projects cannot be recovered. Are you sure you want to delete project ${displayName} (${projectFullName})?`,
         zh: `删除后的项目无法恢复，确定要删除项目 ${displayName} (${projectFullName}) 吗？`
       }),
       // TODO: message for exception
@@ -125,8 +125,8 @@ export function useUnpublishProject() {
     return withConfirm({
       title: t({ en: 'Unpublish project', zh: '取消发布项目' }),
       content: t({
-        en: 'Unpublishing will make this project private. Others will no longer be able to access it through the original share link.',
-        zh: '项目将转为私有，其他人无法通过原分享链接访问。'
+        en: 'Unpublishing will make this project private.',
+        zh: '取消发布后，项目将转为私有。'
       }),
       confirmText: t({ en: 'Unpublish', zh: '取消发布' }),
       cancelText: t({ en: 'Keep public', zh: '保持公开' }),

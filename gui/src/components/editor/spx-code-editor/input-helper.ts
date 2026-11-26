@@ -87,7 +87,7 @@ export class SpxInputHelperProvider extends InputHelperProvider {
       case SpxInputType.SpxLayerAction:
         return {
           component: SpxLayerActionInput,
-          getTitle: () => ({ en: 'Move to front or back', zh: '选择最前或最后' }),
+          getTitle: () => ({ en: 'Select a layer position', zh: '选择层级位置' }),
           getDefaultValue: spxLayerActionInput.getDefaultValue,
           exprForInput: (input: InPlaceInput) => {
             if (input.type !== SpxInputType.SpxLayerAction) return null
@@ -97,7 +97,7 @@ export class SpxInputHelperProvider extends InputHelperProvider {
       case SpxInputType.SpxDirAction:
         return {
           component: SpxDirActionInput,
-          getTitle: () => ({ en: 'Move forward or backward', zh: '选择前移或后移' }),
+          getTitle: () => ({ en: 'Select a movement direction', zh: '选择移动方向' }),
           getDefaultValue: spxDirActionInput.getDefaultValue,
           exprForInput: (input: InPlaceInput) => {
             if (input.type !== SpxInputType.SpxDirAction) return null
