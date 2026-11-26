@@ -2,7 +2,8 @@
   "extends": "@tsconfig/node24/tsconfig.json",
   "include": [
     "vite.config.*",
-    "build/vite-plugins/*.ts"
+    "build/vite-plugins/*.ts",
+    "src/apps/xbuilder/page-meta.ts"
   ],
   "compilerOptions": {
     "composite": true,

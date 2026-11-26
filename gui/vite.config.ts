@@ -10,7 +10,7 @@ import browserslistToEsbuild from 'browserslist-to-esbuild'
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
 import { createVercelOutputPlugin } from './build/vite-plugins/vercel-output-plugin.js'
 
-import { pageMeta } from './src/apps/xbuilder/page-meta'
+import { pageMeta } from './src/apps/xbuilder/page-meta.js'
 
 const resolve = (dir: string) => path.join(__dirname, dir)
 const xbuilderEnvDir = resolve('src/apps/xbuilder')
