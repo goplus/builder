@@ -5029,9 +5029,8 @@ paths:
         - AIGC
       summary: Adopt an AIGC-generated asset
       description: |
-        The backend validates task ownership and file provenance.
-        For a sprite, this endpoint returns without recording the adoption or creating an asset.
-        For a backdrop or sound, it creates an `Asset` with `visibility: public` and the platform's official account as its `owner`.
+        Validates task ownership and file provenance.
+        Adopted backdrops and sounds are published to the public library under the official account.
       requestBody:
         required: true
         content:
