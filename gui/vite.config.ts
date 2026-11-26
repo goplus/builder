@@ -10,6 +10,8 @@ import browserslistToEsbuild from 'browserslist-to-esbuild'
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
 import { createVercelOutputPlugin } from './build/vite-plugins/vercel-output-plugin.js'
 
+import { pageMeta } from './src/apps/xbuilder/page-meta'
+
 const resolve = (dir: string) => path.join(__dirname, dir)
 const xbuilderEnvDir = resolve('src/apps/xbuilder')
 
@@ -34,7 +36,7 @@ export default defineConfig(({ mode }) => {
       createAppHtmlEntryPlugin(resolve('src/apps/xbuilder/index.html')),
       vue(),
       tailwindcss(),
-      ViteEjsPlugin(),
+      ViteEjsPlugin({ pageMeta: pageMeta[env.VITE_DEFAULT_LANG === 'zh' ? 'zh' : 'en'] }),
       createVercelOutputPlugin({
         headers: [
           {
