@@ -1,0 +1,10 @@
+export const pageMeta = {
+  en: {
+    title: 'XBuilder Account',
+    description: 'Sign in and manage your XBuilder account.'
+  },
+  zh: {
+    title: 'XBuilder 账号',
+    description: '登录并管理你的 XBuilder 账号'
+  }
+}

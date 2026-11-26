@@ -3,7 +3,7 @@
   "include": [
     "vite.config.*",
     "build/vite-plugins/*.ts",
-    "src/apps/xbuilder/page-meta.ts"
+    "src/apps/*/page-meta.ts"
   ],
   "compilerOptions": {
     "composite": true,
