@@ -9,7 +9,9 @@ export function initI18n(app: VueApp, defaultLang: string) {
   const lang = localStorage.getItem(langLocalStorageKey) ?? defaultLang
   const i18n = createI18n({ lang: normalizeLang(lang) })
   const stop = watchEffect(() => {
-    localStorage.setItem(langLocalStorageKey, i18n.lang.value)
+    const currentLang = i18n.lang.value
+    document.documentElement.lang = currentLang
+    localStorage.setItem(langLocalStorageKey, currentLang)
   })
   app.onUnmount(stop)
   app.use(i18n)

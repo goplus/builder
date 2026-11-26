@@ -1,5 +1,5 @@
-// Keep language matching in sync with src/utils/i18n/index.ts.
-export function normalizeLang(lang: string): 'en' | 'zh' {
-  if (lang.toLowerCase().split('-')[0] === 'zh') return 'zh'
-  return 'en'
+export function getDefaultLang(value: string | undefined): 'en' | 'zh' {
+  if (!value) return 'en'
+  if (value === 'en' || value === 'zh') return value
+  throw new Error(`Default language must be "en" or "zh", got ${JSON.stringify(value)}`)
 }

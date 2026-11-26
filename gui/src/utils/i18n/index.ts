@@ -14,8 +14,13 @@ import {
   type SlotsType
 } from 'vue'
 
+/** Language keys available in UI messages. */
 export type Lang = 'en' | 'zh'
 
+/**
+ * Select the UI language for a single BCP 47 language tag.
+ * An empty string or any input whose primary subtag is not `zh` falls back to `en`.
+ */
 export function normalizeLang(lang: string): Lang {
   if (lang.toLowerCase().split('-')[0] === 'zh') return 'zh'
   return 'en'
@@ -27,7 +32,7 @@ export type Translated = string
 export type LocaleMessage = Record<Lang, Translated>
 
 export interface I18nConfig {
-  /** Initial lang */
+  /** Initial UI language. */
   lang: Lang
 }
 

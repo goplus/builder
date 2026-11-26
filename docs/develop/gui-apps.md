@@ -60,7 +60,7 @@ replaces the placeholder with the selected app HTML during Vite dev/build:
 This keeps Vite's normal single-root entry behavior while letting each app own
 its document metadata and script entry. Each app keeps its localized metadata in
 `page-meta.json`, and Vite renders it into the HTML at build time using the
-site's default language.
+site's default language (`VITE_DEFAULT_LANG`, either `en` or `zh`).
 
 ## Shared Code
 
@@ -109,5 +109,5 @@ frontend code can consistently call same-origin `/api/*`.
   `main.ts`, router, and Vite config entry selection instead of making the
   existing app bootstrap branch on runtime flags.
 - For localized page metadata, add `page-meta.json` beside the app's `index.html`.
-  In the app's Vite config, pass `defaultLang` and `pageMeta[normalizeLang(defaultLang)]`
+  In the app's Vite config, pass `defaultLang` and `pageMeta[defaultLang]`
   to the HTML template through `ViteEjsPlugin` as `defaultLang` and `pageMeta`.
