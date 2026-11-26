@@ -12,7 +12,7 @@ export function useCodeEditorUICtx() {
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
+import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed, onUnmounted } from 'vue'
 import { computedShallowReactive, untilNotNull, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { useRegisterLoading } from '@/utils/readiness'
@@ -22,7 +22,14 @@ import { theme, tabSize, insertSpaces } from '@/utils/xgo/highlighter'
 import { providePopupContainer, useModal } from '@/components/ui'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { useCodeEditor } from '../context'
-import { getDdiDragData, getTextDocumentId, type Position, type Range, type TextDocumentIdentifier } from '../common'
+import {
+  getDdiDragData,
+  getTextDocumentId,
+  type Position,
+  type Range,
+  type TextDocumentIdentifier,
+  type ResourceIdentifier
+} from '../common'
 import { type MonacoEditor, type monaco } from '../monaco'
 import { fromMonacoPosition } from './common'
 import { CodeEditorUIController } from './code-editor-ui'
@@ -55,6 +62,7 @@ const props = withDefaults(
 )
 
 const i18n = useI18n()
+const emit = defineEmits<{ resourceHover: [resource: ResourceIdentifier | null] }>()
 const codeEditor = useCodeEditor()
 const invokeRenameModal = useModal(RenameModal)
 
@@ -84,6 +92,13 @@ const uiRef = computed(() => {
     isReadOnly: () => props.readOnly ?? false
   })
 })
+
+watch(
+  () => (props.simpleMode && !props.readOnly ? uiRef.value.resourceReferenceController.hoveredResource : null),
+  (resource) => emit('resourceHover', resource),
+  { immediate: true }
+)
+onUnmounted(() => emit('resourceHover', null))
 
 const apiReferenceVisible = computed(() => {
   const controller = uiRef.value.apiReferenceController
