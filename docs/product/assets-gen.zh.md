@@ -115,8 +115,6 @@ Asset Setting 大概包括这些信息：
 
 对于非 AI 生成的 Asset，我们也可以通过为其补充一个“推测的” Asset Setting，从而使其能够参与到上述的推荐与检索过程中来。
 
-在 `Project.Game` 中，只有 `Sprite`、`Backdrop`、`Sound` 这类可独立保存为 [Asset](./index.zh.md#素材-asset) 的对象会保留 `Asset Setting`，`Costume`、`Animation` 等子 Asset 采用后不再单独保留各自的 `Asset Setting`。
-
 ### 素材生成 Asset Generation
 
 Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程。
@@ -127,9 +125,7 @@ Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程
 * Status，生成的当前状态，如 Pending、In Progress、Completed、Failed 等
 * Result Asset，生成成功后得到的 Asset
 
-未结束的 Asset Generation 保存在 [Project](./index.zh.md#项目-project) 中，但不属于 `Project.Game`。它随 Project 保存到云端（未同步前暂存在浏览器本地），仅项目拥有者在编辑器中打开该 Project 时恢复；运行游戏、导出本地文件和发布 [Release](./community.zh.md#版本-release) 时都不会包含它。
-
-用户采用之前，Result Asset 只保存在 Asset Generation 中，不会进入 `Project.Game` 或素材库 [Asset](./index.zh.md#素材-asset)；采用后写入 `Project.Game`，随后与放弃操作一样清掉这次 Asset Generation。
+用户在编辑 [Project](./index.zh.md#项目-project) 的过程中发起 Asset Generation。未结束的 Asset Generation 会随 Project 保存，以便后续继续编辑时恢复，但不属于其中的 Game；只有用户采用后，Result Asset 才会加入 Game，采用或放弃都会结束这次 Asset Generation。
 
 与目前 Copilot、AI Interaction 的使用类似，素材生成的使用是受限的。不同 Setting 可能对应不同的使用额度消耗规则。
 
