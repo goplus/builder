@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { isNavigationFailure, useRouter } from 'vue-router'
 
-import { getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
+import { getCourseEditorRoute, getCourseManagementRoute, getCourseSeriesPageRoute } from '@/apps/xbuilder/router'
 import { getCleanupSignal } from '@/utils/disposable'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -16,13 +16,23 @@ import { useTutorial } from './tutorial'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
 import { getSeriesUnits, getUnitHeading } from './units'
 
+const props = withDefaults(
+  defineProps<{
+    /** The course the author is editing; when omitted, use the current learning session. */
+    editingCourse?: { id: string; seriesID: string } | null
+  }>(),
+  { editingCourse: null }
+)
+
 const router = useRouter()
 const tutorial = useTutorial()
 const dropdown = useDropdown()
 const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
-const seriesWithCoursesQuery = useSeriesWithCourses(() => tutorial.currentCourse?.seriesID ?? null)
+const activeCourse = computed(() => props.editingCourse ?? tutorial.currentCourse)
+const activeCourseState = computed(() => (props.editingCourse != null ? null : tutorial.currentCourse?.state ?? null))
+const seriesWithCoursesQuery = useSeriesWithCourses(() => activeCourse.value?.seriesID ?? null)
 const courseSeries = computed(() => seriesWithCoursesQuery.data.value?.series ?? null)
 
 const units = computed(() => (courseSeries.value == null ? [] : getSeriesUnits(courseSeries.value)))
@@ -44,9 +54,9 @@ const signal = getCleanupSignal(onBeforeUnmount)
 // The dropdown remounts the panel on each opening; wait for the course rows to render.
 onMounted(async () => {
   try {
-    const currentCourseID = tutorial.currentCourse?.id
-    if (currentCourseID == null) return
-    const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === currentCourseID), signal)
+    const activeCourseID = activeCourse.value?.id
+    if (activeCourseID == null) return
+    const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === activeCourseID), signal)
     if (!signal.aborted) row.scrollIntoView()
   } catch (error) {
     if (!(error instanceof Cancelled)) throw error
@@ -94,6 +104,11 @@ const { fn: handleExitCourse } = useMessageHandle(
 
 const { fn: handleReturnSeries } = useMessageHandle(
   async () => {
+    if (props.editingCourse != null) {
+      dropdown?.setVisible(false)
+      await router.push(getCourseManagementRoute(props.editingCourse.seriesID))
+      return
+    }
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null) return
     const confirmed = await confirmCourseAction(
@@ -114,6 +129,13 @@ const { fn: handleReturnSeries } = useMessageHandle(
 
 const { fn: handleSelectCourse } = useMessageHandle(
   async (courseID: string, courseTitle: string) => {
+    if (props.editingCourse != null) {
+      if (courseID === props.editingCourse.id) return
+      dropdown?.setVisible(false)
+      // The Course Editor route guard handles unsaved work before changing the editing session.
+      await router.push(getCourseEditorRoute(props.editingCourse.seriesID, courseID))
+      return
+    }
     const currentCourse = tutorial.currentCourse
     if (currentCourse == null || courseID === currentCourse.id) return
     const confirmed = await confirmCourseAction(
@@ -124,7 +146,7 @@ const { fn: handleSelectCourse } = useMessageHandle(
     dropdown?.setVisible(false)
     await tutorial.startCourse(currentCourse.seriesID, courseID)
   },
-  { en: 'Failed to start course', zh: '开始课程失败' }
+  { en: 'Failed to open course', zh: '打开课程失败' }
 )
 
 const { fn: handleRestartCourse } = useMessageHandle(
@@ -150,12 +172,17 @@ const { fn: handleRestartCourse } = useMessageHandle(
 </script>
 
 <template>
-  <div class="flex max-h-[70vh] w-100 flex-col p-2">
+  <div class="flex max-h-[70vh] w-100 max-w-[calc(100vw-2rem)] flex-col p-2">
     <header class="flex flex-none items-center justify-between py-1 pl-2 pr-1">
-      <span class="min-w-0 truncate pr-2 text-base font-medium text-text" :title="courseSeries?.title">
+      <span
+        class="min-w-0 truncate pr-2 text-base font-medium text-text"
+        :class="{ 'max-w-60': editingCourse != null }"
+        :title="courseSeries?.title"
+      >
         {{ courseSeries?.title }}
       </span>
       <UIButton
+        v-if="editingCourse == null"
         v-radar="{ name: 'exit-course-button', desc: 'Click to exit the current course' }"
         class="flex-none"
         type="secondary"
@@ -184,8 +211,9 @@ const { fn: handleRestartCourse } = useMessageHandle(
             ref="courseRows"
             :course="course"
             :sequence="sequence"
-            :active="course.id === tutorial.currentCourse?.id"
-            :state="course.id === tutorial.currentCourse?.id ? tutorial.currentCourse?.state ?? null : null"
+            :active="course.id === activeCourse?.id"
+            :state="course.id === activeCourse?.id ? activeCourseState : null"
+            :editing="editingCourse != null"
             @select="handleSelectCourse(course.id, course.title)"
             @restart="handleRestartCourse"
           />
@@ -195,7 +223,13 @@ const { fn: handleRestartCourse } = useMessageHandle(
 
     <footer class="flex-none p-2">
       <button
-        v-radar="{ name: 'back-to-series-courses-button', desc: 'Click to leave the course and open its series page' }"
+        v-radar="{
+          name: 'back-to-series-courses-button',
+          desc:
+            editingCourse != null
+              ? 'Click to return to the series in course management'
+              : 'Click to leave the course and open its series page'
+        }"
         type="button"
         class="h-[34px] w-full cursor-pointer rounded-md border border-dividing-line-2 bg-grey-100 text-base text-text transition-colors hover:bg-grey-200"
         @click="handleReturnSeries"

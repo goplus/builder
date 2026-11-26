@@ -452,11 +452,13 @@ const handleRemoveSeries = useMessageHandle(
     <header class="flex min-h-10 items-center gap-3">
       <UIButton
         v-radar="{ name: 'back-button', desc: 'Click to go back to the list of course series' }"
-        type="neutral"
-        shape="circle"
+        type="white"
+        class="flex-none"
         icon="back"
         @click="handleBack"
-      />
+      >
+        {{ $t({ en: 'Back', zh: '返回' }) }}
+      </UIButton>
       <template v-if="courseSeries != null">
         <h1 class="m-0 truncate text-2xl text-title">{{ courseSeries.title }}</h1>
         <UITag :color="courseSeries.kind === 'playground' ? 'primary' : 'default'">

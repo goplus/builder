@@ -8,12 +8,17 @@ import { useFileUrl } from '@/utils/file'
 import stageBgUrl from '@/assets/images/stage-bg.svg'
 import { CourseState } from './tutorial'
 
-const props = defineProps<{
-  course: Course
-  sequence: number
-  active: boolean
-  state: CourseState | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    course: Course
+    sequence: number
+    active: boolean
+    state: CourseState | null
+    /** Whether the list is used for editing; `active` identifies the current course. */
+    editing?: boolean
+  }>(),
+  { editing: false }
+)
 
 const emit = defineEmits<{
   select: []
@@ -41,13 +46,17 @@ defineExpose({
     ref="row"
     v-radar="{
       name: 'tutorial-course-row',
-      desc: active ? 'Current course in the series' : 'Click to start this course',
+      desc: active ? 'Current course in the series' : 'Click to open this course',
       attrs: { name: course.title }
     }"
-    :aria-current="active ? 'step' : undefined"
-    class="flex h-11 flex-none cursor-pointer items-center gap-2 rounded-[6px] py-1 pl-1 pr-2 transition-colors"
+    :aria-current="active ? (editing ? 'page' : 'step') : undefined"
+    :role="editing ? 'button' : undefined"
+    :tabindex="editing ? 0 : undefined"
+    class="flex h-11 flex-none cursor-pointer items-center gap-2 rounded-[6px] py-1 pl-1 pr-2 transition-colors focus-visible:outline-2 focus-visible:outline-primary-main focus-visible:-outline-offset-2"
     :class="active ? 'bg-turquoise-100 hover:bg-turquoise-200' : 'hover:bg-grey-200'"
     @click="emit('select')"
+    @keydown.enter.self="emit('select')"
+    @keydown.space.self.prevent="emit('select')"
   >
     <div
       class="relative h-9 w-12 flex-none overflow-hidden rounded-sm bg-cover bg-center"
@@ -61,12 +70,27 @@ defineExpose({
       <UIImg v-if="course.thumbnail !== ''" class="absolute inset-0 h-full w-full" :src="thumbnailUrl" size="cover" />
     </div>
     <span class="min-w-0 truncate text-base font-medium text-text">{{ course.title }}</span>
-    <span v-if="state != null" class="flex-none px-1 text-xs font-medium text-primary-main">
+    <span
+      v-if="(editing && active) || (!editing && state != null)"
+      class="flex-none px-1 text-xs font-medium text-primary-main"
+    >
       {{
-        $t(state === CourseState.Completed ? { en: 'completed', zh: '已完成' } : { en: 'in progress', zh: '进行中' })
+        $t(
+          editing
+            ? { en: 'editing', zh: '正在编辑' }
+            : state === CourseState.Completed
+              ? { en: 'completed', zh: '已完成' }
+              : { en: 'in progress', zh: '进行中' }
+        )
       }}
     </span>
-    <UIButton v-if="active" class="ml-auto flex-none" type="white" size="small" @click.stop="emit('restart')">
+    <UIButton
+      v-if="active && !editing"
+      class="ml-auto flex-none"
+      type="white"
+      size="small"
+      @click.stop="emit('restart')"
+    >
       {{ $t({ en: 'Restart course', zh: '重新开始' }) }}
     </UIButton>
   </li>
