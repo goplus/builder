@@ -97,7 +97,7 @@ export class SpxInputHelperProvider extends InputHelperProvider {
       case SpxInputType.SpxDirAction:
         return {
           component: SpxDirActionInput,
-          getTitle: () => ({ en: 'Select a movement direction', zh: '选择移动方向' }),
+          getTitle: () => ({ en: 'Choose a layer direction', zh: '选择层级调整方向' }),
           getDefaultValue: spxDirActionInput.getDefaultValue,
           exprForInput: (input: InPlaceInput) => {
             if (input.type !== SpxInputType.SpxDirAction) return null
