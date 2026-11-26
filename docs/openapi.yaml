@@ -1823,7 +1823,7 @@ paths:
                   description: Defaults to `name` if not provided.
                   $ref: "#/components/schemas/Project/properties/displayName"
                 type:
-                  description: Defaults to `game` if not provided.
+                  description: When omitted, inherits the source project's type for a remix and defaults to `game` for other projects.
                   $ref: "#/components/schemas/Project/properties/type"
                 files:
                   description: |
