@@ -29,9 +29,11 @@ const dropdown = useDropdown()
 const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
-const currentCourse = computed(() => props.editingCourse ?? tutorial.currentCourse)
-const currentCourseState = computed(() => (props.editingCourse != null ? null : tutorial.currentCourse?.state ?? null))
-const seriesWithCoursesQuery = useSeriesWithCourses(() => currentCourse.value?.seriesID ?? null)
+const highlightedCourse = computed(() => props.editingCourse ?? tutorial.currentCourse)
+const highlightedCourseState = computed(() =>
+  props.editingCourse != null ? null : tutorial.currentCourse?.state ?? null
+)
+const seriesWithCoursesQuery = useSeriesWithCourses(() => highlightedCourse.value?.seriesID ?? null)
 const courseSeries = computed(() => seriesWithCoursesQuery.data.value?.series ?? null)
 
 const units = computed(() => (courseSeries.value == null ? [] : getSeriesUnits(courseSeries.value)))
@@ -53,9 +55,9 @@ const signal = getCleanupSignal(onBeforeUnmount)
 // The dropdown remounts the panel on each opening; wait for the course rows to render.
 onMounted(async () => {
   try {
-    const currentCourseID = currentCourse.value?.id
-    if (currentCourseID == null) return
-    const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === currentCourseID), signal)
+    const highlightedCourseID = highlightedCourse.value?.id
+    if (highlightedCourseID == null) return
+    const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === highlightedCourseID), signal)
     if (!signal.aborted) row.scrollIntoView()
   } catch (error) {
     if (!(error instanceof Cancelled)) throw error
@@ -210,9 +212,8 @@ const { fn: handleRestartCourse } = useMessageHandle(
             ref="courseRows"
             :course="course"
             :sequence="sequence"
-            :active="course.id === currentCourse?.id"
-            :state="course.id === currentCourse?.id ? currentCourseState : null"
-            :editing="editingCourse != null && course.id === editingCourse.id"
+            :active="course.id === highlightedCourse?.id"
+            :state="course.id === highlightedCourse?.id ? highlightedCourseState : null"
             :href="editingCourse == null ? null : getCourseEditorRoute(editingCourse.seriesID, course.id)"
             @select="handleSelectCourse(course.id, course.title)"
             @restart="handleRestartCourse"

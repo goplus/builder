@@ -539,7 +539,10 @@ onUnmounted(() => {
             <template #trigger="{ dropdownVisible }">
               <button
                 ref="courseListTrigger"
-                v-radar="{ name: 'course-list-button', desc: 'Open the course list to switch between lesson editors' }"
+                v-radar="{
+                  name: 'course-list-button',
+                  desc: 'Open the course list to switch to another course in the series'
+                }"
                 type="button"
                 class="h-full flex flex-none cursor-pointer items-center gap-1 border-none bg-transparent px-3 text-inherit hover:bg-grey-400 focus-visible:outline-2 focus-visible:outline-primary-main focus-visible:-outline-offset-2"
                 :class="{ 'bg-grey-400': dropdownVisible }"

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 
 import type { Course } from '@/apis/course'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
@@ -14,10 +14,9 @@ const props = withDefaults(
     sequence: number
     active: boolean
     state: CourseState | null
-    editing?: boolean
     href?: string | null
   }>(),
-  { editing: false, href: null }
+  { href: null }
 )
 
 const emit = defineEmits<{
@@ -30,6 +29,7 @@ const [thumbnailUrl] = useFileUrl(() =>
 )
 
 const row = useTemplateRef<HTMLLIElement>('row')
+const editing = computed(() => props.active && props.href != null)
 
 function handleLinkClick(event: MouseEvent) {
   event.stopPropagation()
