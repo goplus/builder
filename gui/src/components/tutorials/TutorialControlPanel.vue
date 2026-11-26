@@ -30,11 +30,9 @@ const dropdown = useDropdown()
 const editorCtxRef = useEditorCtxRef()
 const confirm = useConfirmDialogWithResult()
 const { t } = useI18n()
-const highlightedCourse = computed(() => props.editingCourse ?? tutorial.currentCourse)
-const highlightedCourseState = computed(() =>
-  props.editingCourse != null ? null : tutorial.currentCourse?.state ?? null
-)
-const seriesWithCoursesQuery = useSeriesWithCourses(() => highlightedCourse.value?.seriesID ?? null)
+const activeCourse = computed(() => props.editingCourse ?? tutorial.currentCourse)
+const activeCourseState = computed(() => (props.editingCourse != null ? null : tutorial.currentCourse?.state ?? null))
+const seriesWithCoursesQuery = useSeriesWithCourses(() => activeCourse.value?.seriesID ?? null)
 const courseSeries = computed(() => seriesWithCoursesQuery.data.value?.series ?? null)
 
 const units = computed(() => (courseSeries.value == null ? [] : getSeriesUnits(courseSeries.value)))
@@ -56,9 +54,9 @@ const signal = getCleanupSignal(onBeforeUnmount)
 // The dropdown remounts the panel on each opening; wait for the course rows to render.
 onMounted(async () => {
   try {
-    const highlightedCourseID = highlightedCourse.value?.id
-    if (highlightedCourseID == null) return
-    const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === highlightedCourseID), signal)
+    const activeCourseID = activeCourse.value?.id
+    if (activeCourseID == null) return
+    const row = await untilNotNull(() => courseRows.value?.find((row) => row.courseID === activeCourseID), signal)
     if (!signal.aborted) row.scrollIntoView()
   } catch (error) {
     if (!(error instanceof Cancelled)) throw error
@@ -213,8 +211,8 @@ const { fn: handleRestartCourse } = useMessageHandle(
             ref="courseRows"
             :course="course"
             :sequence="sequence"
-            :active="course.id === highlightedCourse?.id"
-            :state="course.id === highlightedCourse?.id ? highlightedCourseState : null"
+            :active="course.id === activeCourse?.id"
+            :state="course.id === activeCourse?.id ? activeCourseState : null"
             :editing="editingCourse != null"
             @select="handleSelectCourse(course.id, course.title)"
             @restart="handleRestartCourse"
