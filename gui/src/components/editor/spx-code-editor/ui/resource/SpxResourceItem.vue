@@ -48,5 +48,5 @@ const name = computed(() => {
   <SoundItem v-else-if="model instanceof Sound" :sound="model" :selectable="selectable" />
   <SpriteItem v-else-if="model instanceof Sprite" :sprite="model" :selectable="selectable" :autoplay="autoplay" />
   <WidgetItem v-else-if="model != null && isWidget(model)" :widget="model" :selectable="selectable" />
-  <div v-else>{{ $t({ zh: `未知资源（${name}）`, en: `Unknown resource (${name})` }) }}</div>
+  <div v-else>{{ $t({ zh: `无法显示资源“${name}”。`, en: `Can’t display this resource: ${name}` }) }}</div>
 </template>

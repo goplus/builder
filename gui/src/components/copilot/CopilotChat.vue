@@ -22,8 +22,8 @@ const activeRound = computed(() => {
 
 const suggestedQuestions: LocaleMessage[] = [
   { en: 'What can XBuilder do?', zh: 'XBuilder 可以做什么？' },
-  { en: 'How to create a new project?', zh: '如何创建一个新项目？' },
-  { en: 'Please describe the functions of this page.', zh: '介绍下这个页面有哪些功能。' }
+  { en: 'How do I create a project?', zh: '如何创建项目？' },
+  { en: 'What can I do on this page?', zh: '我可以在这个页面做什么？' }
 ]
 const handleSuggestedPromptClick = useMessageHandle((message: string) => copilot.addUserTextMessage(message), {
   en: 'Failed to send message',

@@ -78,55 +78,55 @@ export function isTooManyRequestsMeta(code: number, _meta: unknown): _meta is To
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorInvalidArgs]: {
-    en: 'invalid args',
-    zh: '参数错误'
+    en: 'invalid request parameters',
+    zh: '请求参数无效'
   },
   [ApiExceptionCode.errorUnauthorized]: {
-    en: 'you need to login first',
-    zh: '请先登录'
+    en: 'sign in to continue',
+    zh: '登录后继续'
   },
   [ApiExceptionCode.errorForbidden]: {
-    en: 'permission denied',
-    zh: '没有权限'
+    en: 'you don’t have permission to do this',
+    zh: '你没有执行此操作的权限'
   },
   [ApiExceptionCode.errorQuotaExceeded]: {
-    en: 'quota exceeded',
-    zh: '超出配额'
+    en: 'usage limit reached',
+    zh: '使用量已达上限'
   },
   [ApiExceptionCode.errorNotFound]: {
-    en: 'resource not exist',
-    zh: '资源不存在'
+    en: 'item not found',
+    zh: '未找到所需内容'
   },
   [ApiExceptionCode.errorConflict]: {
-    en: 'resource conflict',
-    zh: '资源状态冲突'
+    en: 'you can’t complete this action in the item’s current state',
+    zh: '当前状态与此操作冲突'
   },
   [ApiExceptionCode.errorResourceMoved]: {
-    en: 'resource moved',
-    zh: '资源已迁移'
+    en: 'this item has moved',
+    zh: '所需内容已迁移'
   },
   [ApiExceptionCode.errorContentTooLarge]: {
-    en: 'content too large',
+    en: 'content is too large',
     zh: '内容过大'
   },
   [ApiExceptionCode.errorUnsupportedMediaType]: {
     en: 'unsupported media type',
-    zh: '不支持的内容类型'
+    zh: '不支持此内容类型'
   },
   [ApiExceptionCode.errorTooManyRequests]: {
     en: 'too many requests',
-    zh: '请求太频繁了'
+    zh: '请求过于频繁'
   },
   [ApiExceptionCode.errorRateLimitExceeded]: {
-    en: 'rate limit exceeded, please retry later',
-    zh: '触发频率限制，请稍后重试'
+    en: 'rate limit exceeded',
+    zh: '请求过于频繁'
   },
   [ApiExceptionCode.errorInternalServerError]: {
-    en: 'something wrong with the server',
-    zh: '服务器出问题了'
+    en: 'server error',
+    zh: '服务器发生错误'
   },
   [ApiExceptionCode.errorScratchFeatureNotSupported]: {
-    en: 'Some Scratch features are not supported yet',
+    en: 'some Scratch features are not supported yet',
     zh: '部分 Scratch 特性暂不支持'
   }
 }

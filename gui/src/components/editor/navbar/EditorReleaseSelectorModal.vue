@@ -97,7 +97,7 @@ function handleConfirmCancel() {
       name: 'release-checkout-confirm-modal',
       desc: 'Modal for confirming checkout action after selecting a release'
     }"
-    :title="$t({ en: 'Checkout release', zh: '检出版本' })"
+    :title="$t({ en: 'Restore from a release', zh: '从发布版本恢复' })"
     :visible="visible"
     :style="{ width: '480px' }"
     :mask-closable="false"
@@ -107,16 +107,16 @@ function handleConfirmCancel() {
       <p class="text-grey-900">
         {{
           $t({
-            en: `You selected release "${selectedRelease?.name}". How would you like to proceed?`,
-            zh: `您选择了版本"${selectedRelease?.name}"，请选择操作方式：`
+            en: `Selected release: ${selectedRelease?.name}`,
+            zh: `已选择发布版本“${selectedRelease?.name}”。`
           })
         }}
       </p>
       <p class="text-sm text-grey-700">
         {{
           $t({
-            en: 'Checkout will replace the current project content with the selected release. Unsaved changes will be lost.',
-            zh: '检出操作将使用所选版本内容替换当前项目，未保存的更改将会丢失。'
+            en: 'Restoring from this release will replace your project’s current contents. Any unsaved changes will be lost.',
+            zh: '恢复后，当前项目的内容会被所选版本替换。未保存的修改会丢失。'
           })
         }}
       </p>
@@ -126,10 +126,10 @@ function handleConfirmCancel() {
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton type="secondary" @click="handleConfirmAction('diff')">
-        {{ $t({ en: 'Diff', zh: '查看差异' }) }}
+        {{ $t({ en: 'View code diff', zh: '查看代码差异' }) }}
       </UIButton>
       <UIButton type="primary" @click="handleConfirmAction('checkout')">
-        {{ $t({ en: 'Checkout', zh: '检出' }) }}
+        {{ $t({ en: 'Restore', zh: '恢复' }) }}
       </UIButton>
     </div>
   </UIFormModal>

@@ -407,8 +407,8 @@ const saveToKodo = (file: File, signal?: AbortSignal) =>
     signal?.throwIfAborted()
     if (ab.byteLength > maxSize)
       throw new DefaultException({
-        en: `Single file size must not exceed ${humanizeFileSize(maxSize).en}`,
-        zh: `单个文件尺寸不得超过 ${humanizeFileSize(maxSize).zh}`
+        en: `File size exceeds the ${humanizeFileSize(maxSize).en} limit`,
+        zh: `文件大小超过 ${humanizeFileSize(maxSize).zh} 上限`
       })
     const task = createDirectUploadTask(
       {
@@ -474,8 +474,8 @@ async function validateFileSizeForUpload(files: globalThis.File[]) {
   if (oversizedFileNames.length > 0) {
     const maxSizeText = humanizeFileSize(uploadSession.maxSize)
     throw new DefaultException({
-      en: `File ${oversizedFileNames.join(', ')} size exceeds limit (max ${maxSizeText.en})`,
-      zh: `文件 ${oversizedFileNames.join('、')} 尺寸超限（最大 ${maxSizeText.zh}）`
+      en: `Each file must be ${maxSizeText.en} or smaller. Files over the limit: ${oversizedFileNames.join(', ')}.`,
+      zh: `单个文件不能超过 ${maxSizeText.zh}。超限文件：${oversizedFileNames.join('、')}。`
     })
   }
 }

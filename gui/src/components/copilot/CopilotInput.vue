@@ -33,8 +33,8 @@ function handleSubmit() {
   if (getStringLengthInCodePoints(problem) > copilotMessageContentMaxLength) {
     message.error(
       i18n.t({
-        en: `The input must be ${copilotMessageContentMaxLength} characters or fewer`,
-        zh: `输入不能超过 ${copilotMessageContentMaxLength} 字`
+        en: `The input must be ${copilotMessageContentMaxLength} characters or fewer.`,
+        zh: `输入不能超过 ${copilotMessageContentMaxLength} 个字符。`
       })
     )
     return

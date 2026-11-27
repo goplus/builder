@@ -73,7 +73,7 @@
             <UIButton shape="circle" size="large" icon="check" type="green" @click="saveRecording" />
           </div>
           <span class="whitespace-nowrap">
-            {{ $t({ en: 'Save', zh: '保存' }) }}
+            {{ $t({ en: 'Add', zh: '添加' }) }}
           </span>
         </div>
       </template>

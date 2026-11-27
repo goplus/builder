@@ -38,8 +38,8 @@ const handleInsert = useMessageHandle(
     )
   },
   {
-    en: 'Failed to insert',
-    zh: '插入失败'
+    en: 'Failed to insert code',
+    zh: '插入代码失败'
   }
 ).fn
 

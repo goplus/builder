@@ -45,7 +45,7 @@ function activateMenuItem(event: KeyboardEvent) {
           @click="emit('in')"
         >
           <template #icon><UIIcon type="zoomIn" aria-hidden="true" /></template>
-          {{ $t({ en: 'Zoom in', zh: '放大' }) }}
+          {{ $t({ en: 'Increase font size', zh: '增大字号' }) }}
         </UIMenuItem>
         <UIMenuItem
           v-radar="{ name: 'zoom-out', desc: 'Zoom out the code editor' }"
@@ -58,7 +58,7 @@ function activateMenuItem(event: KeyboardEvent) {
           @click="emit('out')"
         >
           <template #icon><UIIcon type="zoomOut" aria-hidden="true" /></template>
-          {{ $t({ en: 'Zoom out', zh: '缩小' }) }}
+          {{ $t({ en: 'Decrease font size', zh: '减小字号' }) }}
         </UIMenuItem>
         <UIMenuItem
           v-radar="{ name: 'reset-zoom', desc: 'Reset code editor zoom to default' }"
@@ -71,7 +71,7 @@ function activateMenuItem(event: KeyboardEvent) {
           @click="emit('reset')"
         >
           <template #icon><UIIcon type="zoomReset" aria-hidden="true" /></template>
-          {{ $t({ en: 'Reset', zh: '重置' }) }}
+          {{ $t({ en: 'Reset font size', zh: '重置字号' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -87,7 +87,7 @@ function activateMenuItem(event: KeyboardEvent) {
           @click="wordWrap = !wordWrap"
         >
           <template #icon><UIIcon type="wordWrap" aria-hidden="true" /></template>
-          <span class="flex-1">{{ $t({ en: 'Word wrap', zh: '换行' }) }}</span>
+          <span class="flex-1">{{ $t({ en: 'Word wrap', zh: '自动换行' }) }}</span>
           <UIIcon v-if="wordWrap" type="check" class="h-4 w-4 shrink-0" aria-hidden="true" />
         </UIMenuItem>
       </UIMenuGroup>

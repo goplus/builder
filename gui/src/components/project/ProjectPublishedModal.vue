@@ -36,13 +36,13 @@ const handleCopy = useMessageHandle(
     <div class="mb-2 text-grey-900">
       <I18nT>
         <template #en>
-          Visit
+          Visit the
           <UILink
             v-radar="{ name: 'project-page-link', desc: 'Click to visit the project page' }"
             target="_blank"
             :href="projectPageRoute"
             >project page</UILink
-          >, or copy the link below to share the project with others.
+          >, or copy the link below to share your project.
         </template>
         <template #zh>
           访问<UILink
@@ -50,7 +50,7 @@ const handleCopy = useMessageHandle(
             target="_blank"
             :href="projectPageRoute"
             >项目主页</UILink
-          >，或者复制下方链接将项目分享给其他人。
+          >，或复制下方链接分享项目。
         </template>
       </I18nT>
     </div>

@@ -43,7 +43,7 @@ watch(angle, (v) => (modelValue.value = normalizeDegree(v)))
       :checkable="{ checked: modelValue === direction.value }"
       variant="none"
       @click="modelValue = direction.value"
-      >{{ direction.name }}</UITag
+      >{{ $t(direction.text) }}</UITag
     >
     <svg
       ref="svgEl"

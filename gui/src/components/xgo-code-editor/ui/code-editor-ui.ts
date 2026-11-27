@@ -491,10 +491,10 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   private registerCopilotCommands(copilot: ICopilot) {
     this.registerCommand(builtInCommandCopilotInspire, {
       icon: 'copilot',
-      title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
+      title: { en: 'Ask Copilot', zh: '向 Copilot 提问' },
       handler: (problem) => {
         copilot.addUserTextMessage(problem, {
-          title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
+          title: { en: 'Ask Copilot', zh: '向 Copilot 提问' },
           description: '',
           reactToEvents: false
         })
@@ -677,7 +677,7 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
           if (!this.options.simpleMode && adapter.openResource != null) {
             this.registerCommand(builtInCommandGoToResource, {
               icon: 'goto',
-              title: { en: 'View detail', zh: '查看详情' },
+              title: { en: 'View details', zh: '查看详情' },
               handler: adapter.openResource.bind(adapter)
             })
             onCleanup(() => {

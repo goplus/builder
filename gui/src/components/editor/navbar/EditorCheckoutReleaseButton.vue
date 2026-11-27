@@ -119,15 +119,15 @@ async function performCheckout(release: ProjectRelease) {
   const { state } = props
   if (state == null) throw new Error('Editor state expected')
 
-  const checkoutAction = { name: { en: 'Checkout release', zh: '检出版本' } }
+  const checkoutAction = { name: { en: 'Restore from a release', zh: '从发布版本恢复' } }
   await m.withLoading(
     state.history.doAction(checkoutAction, async () => {
       const releaseFiles = getFiles(release.files)
       await props.project.loadFiles(releaseFiles)
     }),
-    t({ en: 'Checking out release...', zh: '正在检出版本...' })
+    t({ en: 'Restoring the project from this release', zh: '正在从此发布版本恢复项目' })
   )
-  m.success(t({ en: 'Checkout successful', zh: '检出成功' }))
+  m.success(t({ en: 'Project restored from the release', zh: '已从发布版本恢复项目' }))
 }
 
 const handleSelectorAction = useMessageHandle(
@@ -138,10 +138,10 @@ const handleSelectorAction = useMessageHandle(
         const confirmed = await confirmWithResult({
           title: t({ en: 'Unsaved changes', zh: '存在未保存的更改' }),
           content: t({
-            en: 'You have unsaved changes. Checking out a release will discard them. Are you sure?',
-            zh: '当前有未保存的更改，检出版本将丢弃这些更改，确定继续吗？'
+            en: 'Restoring from this release will overwrite your unsaved changes.',
+            zh: '恢复此版本会覆盖当前未保存的修改。'
           }),
-          confirmText: t({ en: 'Checkout anyway', zh: '仍然检出' })
+          confirmText: t({ en: 'Restore anyway', zh: '仍要恢复' })
         })
         if (!confirmed) return
       }
@@ -173,10 +173,10 @@ const handleDiffConfirmed = useMessageHandle(
       const confirmed = await confirmWithResult({
         title: t({ en: 'Unsaved changes', zh: '存在未保存的更改' }),
         content: t({
-          en: 'You have unsaved changes. Checking out a release will discard them. Are you sure?',
-          zh: '当前有未保存的更改，检出版本将丢弃这些更改，确定继续吗？'
+          en: 'Restoring from this release will overwrite your unsaved changes.',
+          zh: '恢复此版本会覆盖当前未保存的修改。'
         }),
-        confirmText: t({ en: 'Checkout anyway', zh: '仍然检出' })
+        confirmText: t({ en: 'Restore anyway', zh: '仍要恢复' })
       })
       if (!confirmed) return
     }
@@ -186,26 +186,26 @@ const handleDiffConfirmed = useMessageHandle(
     diffResources.value = []
     await performCheckout(release)
   },
-  { en: 'Failed to checkout release', zh: '检出版本失败' }
+  { en: 'Failed to restore the project', zh: '恢复项目失败' }
 )
 
 const diffTitle = computed(() => {
   const release = pendingRelease.value
   if (release == null) return ''
-  return t({ en: `Diff: ${release.name}`, zh: `差异预览：${release.name}` })
+  return t({ en: `Code differences: ${release.name}`, zh: `代码差异：${release.name}` })
 })
 
-const selectorTitle = computed(() => t({ en: 'Checkout release...', zh: '检出版本...' }))
+const selectorTitle = computed(() => t({ en: 'Select a release', zh: '选择发布版本' }))
 </script>
 
 <template>
   <button
     v-radar="{
       name: 'checkout-release-button',
-      label: $t({ en: 'Checkout release...', zh: '检出版本...' }),
+      label: $t({ en: 'Restore from a release', zh: '从发布版本恢复' }),
       desc: 'Click to open release selector and checkout a historical release'
     }"
-    :title="$t({ en: 'Checkout release...', zh: '检出版本...' })"
+    :title="$t({ en: 'Restore from a release', zh: '从发布版本恢复' })"
     class="flex h-full items-center justify-center border-none bg-transparent px-3 text-grey-900 outline-none hover:bg-grey-400 cursor-pointer"
     @click="handleOpen"
   >

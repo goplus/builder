@@ -87,7 +87,7 @@ const {
     lspClient.disposeOnSignal(ctx.signal)
     return codeEditor
   },
-  failureSummaryMessage: { en: 'Load code editor failed', zh: '加载代码编辑器失败' }
+  failureSummaryMessage: { en: 'Failed to load the code editor', zh: '加载代码编辑器失败' }
 })
 
 useProvideCodeEditor(codeEditorRef)

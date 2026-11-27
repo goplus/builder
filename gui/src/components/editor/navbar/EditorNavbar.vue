@@ -61,7 +61,7 @@
             <UIMenuGroup v-if="isOwnProject" :disabled="project == null">
               <UIMenuItem @click="handleRemoveProject">
                 <template #icon><img :src="removeProjectSvg" /></template>
-                {{ $t({ en: 'Remove project...', zh: '删除项目...' }) }}
+                {{ $t({ en: 'Delete project...', zh: '删除项目...' }) }}
               </UIMenuItem>
             </UIMenuGroup>
           </slot>
@@ -158,10 +158,10 @@ const handleImportProjectFile = useMessageHandle(
     await confirm({
       title: i18n.t(importProjectFileMessage),
       content: i18n.t({
-        en: 'Existing content of current project will be replaced with imported content. Are you sure to continue?',
-        zh: '当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？'
+        en: 'Importing a file will replace the contents of the current project.',
+        zh: '导入的文件内容将替换当前项目内容。'
       }),
-      confirmText: i18n.t({ en: 'Continue', zh: '继续' })
+      confirmText: i18n.t({ en: 'Choose a file', zh: '选择文件' })
     })
     const file = await selectFile({ accept: ['xbp', 'gbp' /** For backward compatibility */] })
     const action = { name: importProjectFileMessage }
@@ -187,8 +187,8 @@ const handleImportAssetsFromScratch = useMessageHandle(
     state.selectResource(added[0])
   },
   {
-    en: 'Failed to import from Scratch file',
-    zh: '从 Scratch 项目文件导入失败'
+    en: 'Failed to import assets from the Scratch project file',
+    zh: '从 Scratch 项目文件导入素材失败'
   }
 ).fn
 
@@ -219,7 +219,7 @@ const handleImportFromScratch = useMessageHandle(
         const serialized = await xbpHelpers.load(xbpFile)
         await project.load(serialized)
       }),
-      i18n.t({ en: 'Importing converted project file', zh: '导入已转换的项目文件' })
+      i18n.t({ en: 'Importing the converted project file', zh: '正在导入已转换的项目文件' })
     )
   },
   { en: 'Failed to import Scratch project file', zh: '导入 Scratch 项目文件失败' }

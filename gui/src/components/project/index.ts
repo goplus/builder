@@ -49,11 +49,11 @@ export function useRemoveProject() {
     const projectFullName = `${owner}/${name}`
     return withConfirm({
       title: t({
-        en: `Remove project ${displayName} (${projectFullName})`,
+        en: `Delete project ${displayName} (${projectFullName})`,
         zh: `删除项目 ${displayName} (${projectFullName})`
       }),
       content: t({
-        en: `Removed projects cannot be recovered. Are you sure you want to remove project ${displayName} (${projectFullName})?`,
+        en: `Deleted projects cannot be recovered. Are you sure you want to delete project ${displayName} (${projectFullName})?`,
         zh: `删除后的项目无法恢复，确定要删除项目 ${displayName} (${projectFullName}) 吗？`
       }),
       // TODO: message for exception
@@ -82,7 +82,7 @@ export function useModifyProjectName() {
       items: [
         {
           en: 'The project page and editor URLs will change to use the new project name.',
-          zh: '项目页和编辑页链接将会切换为新的项目名。'
+          zh: '修改项目名后，项目主页和编辑页的网址也会改变。'
         },
         {
           en: 'Existing links should currently redirect to the new address, but may stop pointing to this project if the old project name is claimed again in the future.',
@@ -125,9 +125,11 @@ export function useUnpublishProject() {
     return withConfirm({
       title: t({ en: 'Unpublish project', zh: '取消发布项目' }),
       content: t({
-        en: 'If project unpublished, others will no longer have access to the current project, and its sharing links will expire. Would you like to proceed?',
-        zh: '如果取消发布，其他人将无法访问当前项目，且分享链接将会失效。确认继续吗？'
+        en: 'Unpublishing will make this project private. Others won’t be able to access it through a share link.',
+        zh: '取消发布后，项目将转为私有，其他人无法再通过分享链接访问。'
       }),
+      confirmText: t({ en: 'Unpublish', zh: '取消发布' }),
+      cancelText: t({ en: 'Keep public', zh: '保持公开' }),
       confirmHandler: () => makePrivate(project)
     })
   }
