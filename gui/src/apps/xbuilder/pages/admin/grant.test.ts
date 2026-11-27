@@ -8,13 +8,14 @@ describe('admin app grant', () => {
 
   it('creates and copies a test access token, then filters the app grant token list', async () => {
     await signIn({ canManageAccount: true })
-    const user = {
+    const user: accountAdminApis.AccountUser = {
       id: 'pilot',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
       username: 'pilot',
       displayName: 'Space pilot',
-      avatar: ''
+      avatar: '',
+      preferredLanguage: null
     }
     const app: accountAdminApis.AccountApp = {
       id: 'flight',

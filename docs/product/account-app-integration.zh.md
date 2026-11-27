@@ -113,7 +113,7 @@ Account API 按令牌主体、对应授权和 scope 限定访问范围，返回�
 | - | - | - |
 | `account:app:read` | 不支持 | 读取当前 Account 部署中的自有 app 基础登记资料 |
 | `account:user:read` | 读取令牌对应用户的 Account 资料 | 按用户 ID 读取当前 Account 部署中任意用户的 Account 资料 |
-| `account:user:write` | 更新令牌对应用户允许修改的昵称和头像 | 不支持 |
+| `account:user:write` | 更新令牌对应用户允许修改的昵称、头像和偏好语言 | 不支持 |
 
 ## 用户委托访问
 
@@ -244,7 +244,8 @@ Authorization: Bearer <account-app-only-access-token>
   "updatedAt": "2026-10-20T09:30:00+08:00",
   "username": "alice",
   "displayName": "Alice",
-  "avatar": "https://avatars.example.com/users/123.png"
+  "avatar": "https://avatars.example.com/users/123.png",
+  "preferredLanguage": "en"
 }
 ```
 

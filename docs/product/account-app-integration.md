@@ -153,7 +153,7 @@ returned fields. Authorization for delegated user access and app-only access is 
 | - | - | - |
 | `account:app:read` | Not supported | Read basic registration data for first-party apps in the current Account deployment |
 | `account:user:read` | Read the Account data of the token's user | Read the Account data of any user in the current Account deployment by user ID |
-| `account:user:write` | Update the display name and avatar fields that the token's user is allowed to change | Not supported |
+| `account:user:write` | Update the display name, avatar, and preferred language fields that the token's user is allowed to change | Not supported |
 
 ## Delegated user access
 
@@ -332,7 +332,8 @@ Authorization: Bearer <account-app-only-access-token>
   "updatedAt": "2026-10-20T09:30:00+08:00",
   "username": "alice",
   "displayName": "Alice",
-  "avatar": "https://avatars.example.com/users/123.png"
+  "avatar": "https://avatars.example.com/users/123.png",
+  "preferredLanguage": "en"
 }
 ```
 

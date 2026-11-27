@@ -401,7 +401,7 @@ Secret 管理资料沿用 `id`、`createdAt` 和 `name`。嵌套路径中的 cli
 | `GET /account/apps/{appID}` | `account:app:read` | `AccountApp` |
 | `GET /account/users/{userID}` | `account:user:read` | `AccountUser` |
 
-这些接口只接受 app 自主访问令牌，不回退到 Account cookie 会话。目录查询包含停用 app，以支持历史引用。`AccountUser` 与本人查询共用 `id`、`createdAt`、`updatedAt`、`username`、`displayName` 和 `avatar` 六个字段。
+这些接口只接受 app 自主访问令牌，不回退到 Account cookie 会话。目录查询包含停用 app，以支持历史引用。`AccountUser` 与本人查询共用 `id`、`createdAt`、`updatedAt`、`username`、`displayName`、`avatar` 和 `preferredLanguage` 七个字段。
 
 三个资料查询接口按 OAuth client 共用限流额度，复用 `internal/ratelimit` 的 Redis 计数，窗口和额度由部署配置确定。限流在主体与 scope 校验后、目标查询前执行，同一 client 的不同令牌在所有 Account 后端实例上共用计数。超额响应通过 `Retry-After` 返回等待秒数，限流存储不可用时返回服务器错误。
 

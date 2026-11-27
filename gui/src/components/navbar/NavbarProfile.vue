@@ -3,13 +3,13 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
+import { useI18n } from '@/utils/i18n'
 import { getCourseManagementRoute, getUserPageRoute } from '@/apps/xbuilder/router'
 import { AssetType } from '@/apis/asset'
 import { useSignedIn } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useSendFeedback } from '@/components/feedback'
-import { useI18n } from '@/utils/i18n'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
 
@@ -20,9 +20,9 @@ const signedIn = useSignedIn()
 const canUseAdminConsole = computed(() => signedIn.canUseAdminConsole === true)
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
-function toggleLang() {
-  i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
-}
+const { fn: toggleLang, isLoading: isSavingLanguage } = useMessageHandle(() =>
+  signedIn.setPreferredLanguage(i18n.lang.value === 'en' ? 'zh' : 'en')
+)
 
 function handleUserPage() {
   const username = signedIn.username
@@ -93,6 +93,7 @@ async function handleSignOut() {
             <UIMenuItem
               v-radar="{ name: 'language-switcher', desc: 'Click to switch between English and Chinese' }"
               class="justify-between p-2"
+              :disabled="isSavingLanguage"
               @click="toggleLang"
             >
               {{ $t({ en: 'Language', zh: '语言' }) }}
