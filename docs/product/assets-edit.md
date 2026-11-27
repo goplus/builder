@@ -2,11 +2,11 @@
 
 Users can modify the image, animation visuals, and audio content of existing assets in the current [Project](./index.md#project). Adding, deleting, renaming, and general property settings (such as animation duration and state bindings) are covered in [XBuilder](./index.md) and [Animation](./animation.md).
 
-## Background
-
 Once assets are in a Project, users often need to adjust them to fit their game, such as trimming silence from the start of a recording, changing an accessory on a character costume, or modifying part of a backdrop.
 
-Deterministic tool edits like trimming audio or adjusting volume can take effect as soon as they are saved. AI edits to images, animations, or audio take longer and do not always land on the first try, so users need to keep multiple drafts, compare them, step back to an earlier version, and apply the one they want. In addition, once an asset's content changes, its existing [Asset Setting](./assets-gen.md#asset-setting) can fall out of date and needs to update so follow-up generation and assets saved to the library stay accurate.
+Deterministic tool edits like trimming audio or adjusting volume can take effect as soon as they are saved. AI edits to images, animations, or audio take longer and do not always turn out as expected, so we keep AI results as drafts first. Users can compare versions, step back to an earlier one and try again, and apply the one they want.
+
+Once an asset's content changes, its existing [Asset Setting](./assets-gen.md#asset-setting) may no longer match the content and needs to update; otherwise follow-up generation and assets saved to the library would still use the old description.
 
 ## Features
 
@@ -25,7 +25,7 @@ Deterministic tool edits like trimming audio or adjusting volume can take effect
 
 ### Edit Targets
 
-Asset editing targets Costume, Backdrop, Animation, and Sound objects in the current Project, modifying only the objects in the current Project without affecting published [Assets](./index.md#asset) in the library. After editing, an object's Name, code references, and state bindings stay intact.
+Asset editing targets Costume, Backdrop, Animation, and Sound objects in the current Project. Edits affect only the current Project and do not change existing [Assets](./index.md#asset) in the library; an object's Name, code references, and state bindings also stay the same.
 
 ### Editing Modes
 
@@ -34,9 +34,15 @@ Asset editing targets Costume, Backdrop, Animation, and Sound objects in the cur
 
 ### Draft
 
-Each successful AI edit produces a Draft that stores the input of that edit and the generated target object as a whole. Every edit target independently tracks its original version from when the round started, its ordered list of Drafts, and the currently selected version.
+Each successful AI edit produces a Draft containing the input of that edit and the generated target object as a whole.
 
-Until the user applies or discards them, ongoing AI editing tasks and Drafts are saved with the [Project](./index.md#project) (restored only when the project owner reopens it in the editor), without entering the Project's Game content. Before adoption, Drafts are shown only for preview and comparison inside that object's editing view, and closing the editing view or saving the Project does not apply them.
+For each edit target, a round of editing includes the following information:
+
+* Original version: The object before the round started.
+* Drafts: The list of Drafts in the order they were generated.
+* Selected version: The original version or one of the Drafts.
+
+Until the user applies or discards them, ongoing AI editing tasks and Drafts are saved with the [Project](./index.md#project), and only the project owner gets them back when reopening the Project in the editor; they do not enter the Project's Game content. Drafts are previewed and compared only inside that object's editing view, and closing the editing view or saving the Project does not apply them.
 
 ## Core Mechanisms
 
@@ -46,11 +52,15 @@ Users can preview or listen in real time while adjusting content; cancelling res
 
 ### AI Editing
 
-The input to an AI edit includes the currently selected version and the user's edit requirements (either an instruction for the whole asset, or separate instructions attached to one or more localized positions), while also drawing on the current Project Setting and the Asset Setting of the owning Sprite, Backdrop, or Sound when available.
+The input to an AI edit includes:
 
-Each generated output is a complete target object: besides the new image, animation frames, or audio, settings coupled to the media update inside the Draft as well:
+* The currently selected version.
+* The edit requirements: an instruction for the whole asset, or separate instructions for one or more localized positions.
+* The current Project Setting, and the Asset Setting of the owning Sprite, Backdrop, or Sound when available.
 
-* Costume: Updates resolution and Pivot for the new image so display size and alignment on stage stay consistent.
+Each run produces a complete target object. Besides the new image, animation frames, or audio, related settings also update and are stored in the Draft:
+
+* Costume: Updates resolution and Pivot for the new image so the costume keeps its display size and alignment on stage.
 * Animation: Updates frame sequences and Duration for the new animation.
 
 ### Draft Rollback and Adoption
@@ -61,10 +71,10 @@ Applying replaces the original object with the selected Draft and adds an undo/r
 
 ### Asset Setting Synchronization
 
-In a Project, only Sprite, Backdrop, and Sound objects, which can be saved as standalone Assets, retain their own [Asset Setting](./assets-gen.md#asset-setting); Costume and Animation do not store separate settings. After an asset's effective content in the Project changes, XBuilder updates the corresponding Asset Setting asynchronously in the background without blocking editing or running the game:
+In a Project, only Sprite, Backdrop, and Sound objects, which can be saved as standalone Assets, retain their own [Asset Setting](./assets-gen.md#asset-setting); Costume and Animation do not store separate settings. After the content of these objects changes and takes effect, XBuilder updates the corresponding Asset Setting in the background while the user keeps editing and running the game:
 
 * Backdrop and Sound: Updates Asset Setting to reflect the modified content, or generates one if the asset had no setting yet (such as an uploaded local file).
-* Sprite: Asset Setting only describes traits shared across its Costume and Animation items. When those items are edited, added, or removed, changes shared across all items update together, traits that now differ broaden to what they still share, and if all original items are replaced, a fresh setting is generated from the new content.
+* Sprite: Asset Setting only records traits shared across its Costume and Animation items. After those items are edited, added, or removed, traits that changed across all items update with them; traits that no longer match broaden to a more general description; if all original items have been replaced, a fresh setting is generated from the new content.
 
 ## User Story
 
@@ -74,6 +84,6 @@ A user records a voice line as a Sound and notices silence at the start and low 
 
 ### Editing a Character Costume with AI and Generating Follow-up Actions
 
-After generating a Sprite with the setting "a fox wearing a red scarf", the user opens its default Costume and asks AI to turn the scarf green. After trying two drafts and closing the page, the drafts are still there when reopening the Project; the user switches back to the first draft and generates again, replacing the second draft.
+After generating a Sprite with the setting "a fox wearing a red scarf", the user opens its default Costume and asks AI to turn the scarf green. They try two drafts and close the page; when they reopen the Project, the drafts are still there. They switch back to the first draft and generate again, and the new result replaces the second draft.
 
-Once the user applies a version they like, the game switches to the new costume, clears the round's drafts, and keeps the character's size and pivot aligned on stage. In the background, XBuilder updates the Sprite's Asset Setting: broadening it to "a fox wearing a scarf" if other costumes still have a red scarf, or updating it to "a fox wearing a green scarf" if every costume now wears green. When the user later generates a running Animation for that Sprite, AI uses the updated setting and costume to keep the motion consistent.
+The user applies the version they like. The Sprite switches to the new costume, the round's drafts are cleared, and the character keeps its display size and alignment on stage. XBuilder then updates the Sprite's Asset Setting in the background: if other costumes still have a red scarf, the setting becomes "a fox wearing a scarf"; if every costume now wears green, it becomes "a fox wearing a green scarf". When the user later generates a running Animation for that Sprite, it is based on the updated setting and the new costume.
