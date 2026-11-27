@@ -125,7 +125,7 @@ Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程
 * Status，生成的当前状态，如 Pending、In Progress、Completed、Failed 等
 * Result Asset，生成成功后得到的 Asset
 
-用户在编辑 [Project](./index.zh.md#项目-project) 的过程中发起 Asset Generation。未结束的 Asset Generation 会随 Project 保存，以便后续继续编辑时恢复，但不属于其中的 Game；只有用户采用后，Result Asset 才会加入 Game，采用或放弃都会结束这次 Asset Generation。
+生成成功后，用户可以选择采用 Result Asset（将其加入当前 [Project](./index.zh.md#项目-project) 的 Game），也可以放弃。在此之前，Asset Generation 的信息会随 Project 保存，但不属于其中的 Game。
 
 与目前 Copilot、AI Interaction 的使用类似，素材生成的使用是受限的。不同 Setting 可能对应不同的使用额度消耗规则。
 

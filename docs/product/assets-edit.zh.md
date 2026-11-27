@@ -27,21 +27,21 @@
 
 素材编辑作用于当前 Project 中的 Costume、Backdrop、Animation 和 Sound，只改动当前 Project 内的对象，不影响素材库中已有的 [Asset](./index.zh.md#素材-asset)。
 
-编辑更新的是完整的素材对象。替换其中的图像、帧序列或音频时，对象的 Name、代码引用及关联绑定保持不变，与媒体内容耦合的配置同步更新。
+编辑更新的是完整的素材对象。替换其中的图像、帧序列或音频时，对象的 Name、代码引用及关联绑定保持不变，与内容相关的配置同步更新。
 
 ### 编辑方式
 
-* 直接编辑：通过确定性的编辑器工具修改内容，无需经过草稿筛选。
+* 直接编辑：通过编辑器工具直接修改内容，无需经过草稿筛选。
 * AI 编辑：基于已有内容和修改要求生成候选结果，任务状态与额度规则同 [Asset Generation](./assets-gen.zh.md#素材生成-asset-generation)。结果先存为 Draft，确认采用后才写入 Project 中的 Game。
 
 ### 草稿 Draft
 
 每次成功的 AI 编辑都会生成一版 Draft，记录这次修改的输入和候选结果。每个编辑目标各自维护本轮的原始版本、按序生成的 Draft 列表，以及当前选中的版本。
 
-与未结束的 [Asset Generation](./assets-gen.zh.md#素材生成-asset-generation) 一样，进行中的 AI 编辑任务与 Draft 随 [Project](./index.zh.md#项目-project) 保存（未同步前暂存在浏览器本地），项目拥有者下次在编辑器中打开该 Project 时可恢复继续编辑，但它们不属于 Project 中的 Game：
+用户采用或放弃之前，进行中的 AI 编辑任务和 Draft 会随 [Project](./index.zh.md#项目-project) 保存（仅项目拥有者下次在编辑器中打开时恢复），但不属于其中的游戏内容（Game）：
 
-* 采用前只在当前对象的编辑界面里预览和对比，舞台运行、导出、发布以及保存到素材库仍使用 Game 中的原版本。
-* 关闭编辑界面或保存 Project 不会让 Draft 自动生效；只有用户确认采用时，选中的 Draft 才会写入 Game 替换原对象。
+* Draft 只在当前对象的编辑界面里预览和对比；舞台运行、导出、发布以及保存到素材库仍使用 Game 中的原版本。
+* 关闭编辑界面或保存 Project 不会让 Draft 生效；只有确认采用时，选中的 Draft 才会写入 Game 替换原对象。
 
 ## 核心机制
 

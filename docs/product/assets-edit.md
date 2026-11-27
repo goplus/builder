@@ -38,9 +38,9 @@ Editing updates the complete asset object. When its image, frame sequence, or au
 
 Each successful AI edit produces a Draft that records the input and candidate result from that run. Every edit target independently tracks its original version from when the round started, its ordered list of Drafts, and the currently selected version.
 
-Like unfinished [Asset Generation](./assets-gen.md#asset-generation) records, ongoing AI editing tasks and Drafts are saved with the [Project](./index.md#project) (and cached locally in the browser before syncing) so the project owner can resume editing when reopening it in the editor, without becoming part of the Project's Game:
+Until the user applies or discards them, ongoing AI editing tasks and Drafts are saved with the [Project](./index.md#project) (restored only when the project owner reopens it in the editor), outside its Game content:
 
-* Before a Draft is applied, it is only shown for preview and comparison inside that object's editing view, while stage execution, exports, releases, and saving to the asset library keep using the original version in the Game.
+* Drafts are shown only for preview and comparison inside that object's editing view, while stage execution, exports, releases, and saving to the asset library keep using the original version in the Game.
 * Closing the editing view or saving the Project does not apply a Draft; it takes effect only when the user confirms applying a selected Draft, replacing the object in the Game.
 
 ## Core Mechanisms

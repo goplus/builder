@@ -121,7 +121,7 @@ Because asset generation is usually a complex and time-consuming process, we nee
 * Status - the current state of generation, such as Pending, In Progress, Completed, Failed, etc.
 * Result Asset - the Asset obtained after successful generation
 
-Users initiate Asset Generation while editing a [Project](./index.md#project). An unfinished Asset Generation is saved with the Project so it can be restored when editing resumes, without becoming part of its Game; only when adopted does the Result Asset enter the Game, and either adopting or discarding ends that Asset Generation.
+Once generation succeeds, the user can adopt the Result Asset (adding it to the current [Project](./index.md#project)'s Game) or discard it. Until then, the Asset Generation information is saved with the Project without becoming part of its Game.
 
 Similar to the current usage of Copilot and AI Interaction, asset generation usage is limited. Different Settings may correspond to different quota consumption rules.
 
