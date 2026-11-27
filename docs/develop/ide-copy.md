@@ -1,5 +1,7 @@
 # XBuilder UI Writing Guidelines
 
+[简体中文](./ide-copy.zh.md)
+
 Use these guidelines for all XBuilder interface text, including the editor, courses, and community pages.
 
 ## Product voice
