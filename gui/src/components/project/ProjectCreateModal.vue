@@ -30,7 +30,7 @@
           html-type="submit"
           :loading="handleSubmit.isLoading.value"
         >
-          {{ $t({ en: 'Create', zh: '创建' }) }}
+          {{ $t(props.sourceProject != null ? { en: 'Save', zh: '保存' } : { en: 'Create', zh: '创建' }) }}
         </UIButton>
       </footer>
     </UIForm>
