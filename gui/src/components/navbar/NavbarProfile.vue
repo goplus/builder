@@ -107,7 +107,7 @@ async function handleSignOut() {
           {{ $t({ en: 'Profile', zh: '个人主页' }) }}
         </UIMenuItem>
         <UIMenuItem @click="handleProjects">
-          {{ $t({ en: 'Projects', zh: '项目列表' }) }}
+          {{ $t({ en: 'My projects', zh: '我的项目' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="signedIn.user?.capabilities.canManageAssets">
@@ -137,7 +137,7 @@ async function handleSignOut() {
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
-        <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '退出登录' }) }}</UIMenuItem>
       </UIMenuGroup>
     </UIMenu>
   </UIDropdown>

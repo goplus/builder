@@ -5,14 +5,7 @@ import { encodePathSegment, extname } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { ArtStyle, Perspective } from '@/apis/common'
-import {
-  enrichCostumeSettings,
-  Facing,
-  isTerminalTaskStatus,
-  TaskType,
-  TaskStatus,
-  type CostumeSettings
-} from '@/apis/aigc'
+import { enrichCostumeSettings, Facing, isTerminalTaskStatus, TaskType, type CostumeSettings } from '@/apis/aigc'
 import type { File, Files } from '../../common/file'
 import { ensureValidCostumeName, validateCostumeName } from '../common/asset-name'
 import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
@@ -118,12 +111,6 @@ export class CostumeGen extends Disposable {
     )
     this.image = inits.image ?? null
     return reactive(this) as this
-  }
-
-  /** Get IDs for (completed) tasks. */
-  getTaskIds() {
-    if (this.generateTask?.data?.status !== TaskStatus.Completed) return []
-    return [this.generateTask.data.id]
   }
 
   get name() {

@@ -58,7 +58,9 @@ replaces the placeholder with the selected app HTML during Vite dev/build:
 - `vite.config.account.ts` selects `src/apps/account/index.html`.
 
 This keeps Vite's normal single-root entry behavior while letting each app own
-its document metadata and script entry.
+its document metadata and script entry. Each app keeps its localized metadata in
+`page-meta.json`, and Vite renders it into the HTML at build time using the
+site's default language (`VITE_DEFAULT_LANG`, either `en` or `zh`).
 
 ## Shared Code
 
@@ -106,3 +108,6 @@ frontend code can consistently call same-origin `/api/*`.
 - When adding another app, give it its own `src/apps/<app>/index.html`,
   `main.ts`, router, and Vite config entry selection instead of making the
   existing app bootstrap branch on runtime flags.
+- For localized page metadata, add `page-meta.json` beside the app's `index.html`.
+  In the app's Vite config, pass `defaultLang` and `pageMeta[defaultLang]`
+  to the HTML template through `ViteEjsPlugin` as `defaultLang` and `pageMeta`.

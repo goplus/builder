@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="<%= defaultLang %>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,14 +10,8 @@
     <link rel="dns-prefetch" href="%VITE_USERCONTENT_UPLOAD_BASE_URL%" />
 
     <title>XBuilder</title>
-    <meta
-      name="description"
-      content="XBuilder is a tool for building games. We create it to help children to learn abilities to build."
-    />
-    <meta
-      name="keywords"
-      content="XBuilder, game development for kids, educational coding tools, STEM education, creative game building, children's programming, learn to code for kids"
-    />
+    <meta name="description" content="<%= pageMeta.description %>" />
+    <meta name="keywords" content="<%= pageMeta.keywords %>" />
 
     <link rel="icon" href="/src/assets/logo.svg" />
 

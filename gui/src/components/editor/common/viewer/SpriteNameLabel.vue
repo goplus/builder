@@ -8,7 +8,6 @@ import { cancelBubble } from './common'
 const props = defineProps<{
   name: string | null
   anchor: { x: number; y: number } | null
-  selected: boolean
   mapScale: number
 }>()
 
@@ -20,8 +19,8 @@ const visible = ref(false)
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 
 const layout = computed(() => {
-  const { name, anchor, selected, mapScale } = props
-  if (name == null || anchor == null || (!selected && !visible.value)) return null
+  const { name, anchor, mapScale } = props
+  if (name == null || anchor == null || !visible.value) return null
   const fontSize = 12 / mapScale
   const textNode = new Konva.Text({ text: name, fontFamily: 'Inter', fontSize })
   const width = textNode.width() + 12 / mapScale
@@ -35,7 +34,6 @@ function show() {
 }
 
 function hide() {
-  if (props.selected) return
   if (hideTimer != null) clearTimeout(hideTimer)
   hideTimer = setTimeout(() => {
     visible.value = false

@@ -55,7 +55,8 @@ function makeControllers() {
     guided: {
       currentCourse: null as GuidedCurrentCourse | null,
       enterCourse: vi.fn().mockResolvedValue(undefined),
-      endCurrentCourse: vi.fn()
+      endCurrentCourse: vi.fn(),
+      isCurrentCourseInInitialState: vi.fn().mockReturnValue(true)
     },
     router: { push: vi.fn().mockResolvedValue(undefined), replace: vi.fn().mockResolvedValue(undefined) }
   }
@@ -169,5 +170,38 @@ describe('Tutorial', () => {
     )
     expect(guided.enterCourse).not.toHaveBeenCalled()
     expect(router.replace).not.toHaveBeenCalled()
+  })
+})
+
+describe('Tutorial initial state', () => {
+  it('uses the Guided Tutorial determination for a Guided Course', () => {
+    const { guided, router } = makeControllers()
+    const tutorial = new Tutorial(guided, router)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
+
+    guided.currentCourse = { id: 'course-1', seriesID: 'series-1' }
+    guided.isCurrentCourseInInitialState.mockReturnValue(false)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(false)
+    guided.isCurrentCourseInInitialState.mockReturnValue(true)
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
+  })
+
+  it('has progress once the current Playground Course reports it, until the course starts again', () => {
+    const { guided, router } = makeControllers()
+    const tutorial = new Tutorial(guided, router)
+    tutorial.notifyPlaygroundCourseStarted('course-1', 'series-1')
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
+
+    tutorial.notifyPlaygroundCourseProgressed('course-2')
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
+    tutorial.notifyPlaygroundCourseProgressed('course-1')
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(false)
+    tutorial.notifyPlaygroundCourseCompleted('course-1')
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(false)
+    expect(guided.isCurrentCourseInInitialState).not.toHaveBeenCalled()
+
+    tutorial.notifyPlaygroundCourseEnded('course-1')
+    tutorial.notifyPlaygroundCourseStarted('course-1', 'series-1')
+    expect(tutorial.isCurrentCourseInInitialState()).toBe(true)
   })
 })

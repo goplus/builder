@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   courses: {} as Record<string, object>,
   openCompletion: vi.fn(),
   startCourse: vi.fn(),
+  notifyProgressed: vi.fn(),
   loadProject: vi.fn(),
   signIn: vi.fn()
 }))
@@ -47,6 +48,7 @@ vi.mock('@/components/tutorials/tutorial', () => ({
     notifyPlaygroundCourseStarted: vi.fn(),
     notifyPlaygroundCourseEnded: vi.fn(),
     notifyPlaygroundCourseCompleted: vi.fn(),
+    notifyPlaygroundCourseProgressed: mocks.notifyProgressed,
     startCourse: mocks.startCourse
   })
 }))
@@ -81,6 +83,7 @@ beforeEach(() => {
   }
   mocks.openCompletion.mockReset()
   mocks.startCourse.mockReset()
+  mocks.notifyProgressed.mockReset()
   mocks.loadProject.mockReset().mockResolvedValue({
     disposeOnSignal: vi.fn(),
     getSignal: () => new AbortController().signal,
@@ -110,6 +113,18 @@ describe('Course page startup', () => {
     complete('next')
     await flushPromises()
     expect(mocks.startCourse).toHaveBeenCalledWith('series', 'next')
+  })
+
+  it('reports Playground progress of the current course', async () => {
+    mocks.seriesQueryRet.data.value = { id: 'series', courseIDs: ['course', 'next'] }
+    mocks.seriesQueryRet.isLoading.value = false
+    wrapper = mount(CoursePlaygroundPage, {
+      props: { courseSeriesIdInput: 'series', courseIdInput: 'course', inPlaygroundPath: ['code'] },
+      global: { plugins: [createI18n({ lang: 'en' })] }
+    })
+    await flushPromises()
+    wrapper.findComponent(PlaygroundComponent).vm.$emit('course-progressed')
+    expect(mocks.notifyProgressed).toHaveBeenCalledExactlyOnceWith('course')
   })
 
   it('rejects a course that is not a member of the series', async () => {

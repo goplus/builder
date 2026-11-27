@@ -138,7 +138,6 @@ Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程
 1. 用户输入需求（包括美术风格、视角、文本描述等，部分可以从 Project 上下文中获取）
 2. 检索 Public Asset Library（将需求与 Asset 的 Setting 进行匹配）
 3. 如果用户对检索结果不满意，则进行素材生成
-4. 生成后的素材如被认可（采用或点赞），自动保存到 Public Asset Library
 
 需要注意，这意味着我们需要在入口上模糊“检索素材”与“生成素材”的界限。
 

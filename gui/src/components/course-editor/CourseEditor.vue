@@ -4,7 +4,7 @@
  * editor kept mounted throughout, plus saving, unsaved-change tracking, the leave guards and the learner preview.
  */
 import { isEqual } from 'lodash'
-import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Cancelled, DefaultException, useMessageHandle } from '@/utils/exception'
 import { createResolvedQueryRet } from '@/utils/query'
@@ -24,6 +24,7 @@ import { History } from '@/components/editor/history'
 import EditorHistoryButtons from '@/components/editor/navbar/EditorHistoryButtons.vue'
 import EditorModeSwitch from '@/components/editor/navbar/EditorModeSwitch.vue'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
+import TutorialControlPanel from '@/components/tutorials/TutorialControlPanel.vue'
 import CoursePlayground from '@/components/tutorials/playground/CoursePlayground.vue'
 import CoursePlaygroundCompletionModal from '@/components/tutorials/playground/CoursePlaygroundCompletionModal.vue'
 import type { PlaygroundCourseCompletion } from '@/components/tutorials/playground/program'
@@ -31,7 +32,9 @@ import {
   UIButton,
   UICard,
   UIDetailedLoading,
+  UIDropdownWithTooltip,
   UIError,
+  UIIcon,
   UILoading,
   UITag,
   useConfirmDialogWithResult,
@@ -67,6 +70,8 @@ const confirm = useConfirmDialogWithResult()
 const openCompletion = useModal(CoursePlaygroundCompletionModal)
 const copilot = useCopilot()
 const updateCourse = useUpdateCourse()
+const courseListID = useId()
+const courseListTrigger = useTemplateRef<HTMLButtonElement>('courseListTrigger')
 
 const config = computed(() => {
   const config = props.project.config
@@ -530,6 +535,34 @@ onUnmounted(() => {
       <NavbarWrapper v-else>
         <template #left>
           <EditorHistoryButtons :history="history" />
+          <UIDropdownWithTooltip placement="bottom-start">
+            <template #trigger="{ dropdownVisible }">
+              <button
+                ref="courseListTrigger"
+                v-radar="{
+                  name: 'course-list-button',
+                  desc: 'Open the course list to switch to another course in the series'
+                }"
+                type="button"
+                class="h-full flex flex-none cursor-pointer items-center gap-1 border-none bg-transparent px-3 text-inherit hover:bg-grey-400 focus-visible:outline-2 focus-visible:outline-primary-main focus-visible:-outline-offset-2"
+                :class="{ 'bg-grey-400': dropdownVisible }"
+                :aria-expanded="dropdownVisible"
+                :aria-controls="courseListID"
+                :disabled="saving"
+              >
+                <UIIcon class="h-5 w-5" type="list" aria-hidden="true" />
+                <UIIcon class="h-2 w-2" type="arrowMini" aria-hidden="true" />
+              </button>
+            </template>
+            <template #dropdown-content>
+              <TutorialControlPanel
+                :id="courseListID"
+                :editing-course="{ id: course.id, seriesID: series.id }"
+                @keydown.esc="courseListTrigger?.focus()"
+              />
+            </template>
+            <template #tooltip-content>{{ $t({ en: 'Switch course', zh: '切换课程' }) }}</template>
+          </UIDropdownWithTooltip>
         </template>
         <template #center>
           <div
@@ -542,7 +575,8 @@ onUnmounted(() => {
             <span class="truncate font-semibold">{{ project.title }}</span>
             <RouterLink
               v-radar="{ name: 'series-link', desc: 'Link to the series in course management' }"
-              class="truncate text-sm text-grey-700 hover:text-primary-main"
+              class="max-w-40 truncate text-sm text-grey-700 hover:text-primary-main"
+              :title="series.title"
               :to="getCourseManagementRoute(series.id)"
             >
               {{ series.title }}

@@ -209,7 +209,7 @@ When creating or modifying menu items, follow these UI guidelines for ellipses:
 **No ellipsis** when the action executes immediately or only displays information:
 - "Export project file" - Exports directly
 - "Open project page" - Navigates directly
-- "Profile", "Projects", "Sign out" - Direct actions
+- "Profile", "My projects", "Sign out" - Direct actions
 - "Language", "Manage sprites/sounds/backdrops" - Settings/info windows
 
 Use `$t()` for i18n: `{{ $t({ en: 'New project...', zh: '新建项目...' }) }}`

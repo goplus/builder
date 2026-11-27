@@ -3,16 +3,20 @@ import { defineConfig, loadEnv } from 'vite'
 import type { Plugin, ProxyOptions } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
+import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import browserslistToEsbuild from 'browserslist-to-esbuild'
 
 import { createBrowserHijackPlugin } from './build/vite-plugins/browser-hijack-plugin.js'
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
+import { getDefaultLang } from './build/lang.js'
+import pageMeta from './src/apps/account/page-meta.json' with { type: 'json' }
 
 const resolve = (dir: string) => path.join(__dirname, dir)
 const accountEnvDir = resolve('src/apps/account')
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, accountEnvDir, '')
+  const defaultLang = getDefaultLang(env.VITE_DEFAULT_LANG)
   const accountWebOrigin = env.VITE_WEB_ORIGIN ?? ''
   const accountAPIProxyTarget = env.VITE_API_PROXY_TARGET ?? ''
 
@@ -55,7 +59,8 @@ export default defineConfig(({ mode }) => {
       ...accountBrowserHijackPlugins,
       createAppHtmlEntryPlugin(resolve('src/apps/account/index.html')),
       vue(),
-      tailwindcss()
+      tailwindcss(),
+      ViteEjsPlugin({ defaultLang, pageMeta: pageMeta[defaultLang] })
     ],
     resolve: {
       alias: {

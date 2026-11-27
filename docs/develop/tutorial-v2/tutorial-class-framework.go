@@ -182,9 +182,9 @@ type CodeEditor interface {
 	// their category order.
 	// Reference items still respect context restrictions and hiddenFromList,
 	// even for exact overload selections.
-	// If the language server later introduces a mechanism such as
-	// //xgols:notrecommended, this filter will not override its recommendation
-	// exclusions either.
+	// The language server applies //xgols:notRecommended independently of
+	// API Reference. This filter cannot restore a recommendation the language
+	// server excludes. Explicit uses still compile and retain editor assistance.
 	// Selecting a definition does not create a custom API Reference item.
 	filterAPIs(apis []string)
 	// formatWorkspace formats the current code workspace.

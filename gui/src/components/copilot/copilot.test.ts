@@ -346,6 +346,58 @@ describe('Copilot', () => {
     expect(rounds).toEqual([{ userMessage: 'Help me', resultMessages: ['Done'] }])
   })
 
+  it('counts messages after a completed round as user interaction, but not the ones before', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Cut off', 'Opening'))
+    await copilot.startSession(createEventTopic())
+    const session = copilot.currentSession!
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, 'User navigated to the entrypoint')
+    copilot.notifyUserEvent({ en: 'Course Started', zh: '课程开始' }, 'The course has just started')
+    await timeout(1000 + COMPLETION_WAIT_TIME)
+    expect(session.rounds.map((round) => round.state)).toEqual([RoundState.Cancelled, RoundState.Completed])
+    expect(session.userInteracted).toBe(false)
+
+    copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal')
+    expect(session.userInteracted).toBe(true)
+  })
+
+  it('counts a text message as user interaction before any round completes', async () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Reply'), 0, true)
+    await copilot.startSession(createBasicTopic())
+    expect(copilot.currentSession!.userInteracted).toBe(false)
+    copilot.addUserTextMessage('Help me')
+    expect(copilot.currentSession!.userInteracted).toBe(true)
+  })
+
+  it('restores user interaction from loaded rounds and keeps it when rounds are dropped', () => {
+    const { copilot } = createCopilotWithStorage(createTextStreamBatches('Reply'), 0, true)
+    const event = (state: RoundState) => ({
+      userMessage: {
+        type: 'event' as const,
+        role: 'user' as const,
+        name: { en: 'Event', zh: '事件' },
+        detail: 'event'
+      },
+      resultMessages: [],
+      inProgressCopilotMessageContent: null,
+      error: null,
+      state
+    })
+    const restore = (rounds: ReturnType<typeof event>[]) => {
+      copilot.restoreSession({ topic: createEventTopic(), rounds })
+      return copilot.currentSession!
+    }
+    expect(restore([event(RoundState.Cancelled), event(RoundState.Completed)]).userInteracted).toBe(false)
+    expect(
+      restore([event(RoundState.Cancelled), event(RoundState.Completed), event(RoundState.Cancelled)]).userInteracted
+    ).toBe(true)
+
+    const session = restore([event(RoundState.Cancelled), event(RoundState.Completed)])
+    for (let i = 0; i < 10; i++) copilot.notifyUserEvent({ en: 'Event', zh: '事件' }, `event ${i}`)
+    expect(session.rounds).toHaveLength(10)
+    expect(session.rounds.some((round) => round.state === RoundState.Completed)).toBe(false)
+    expect(session.userInteracted).toBe(true)
+  })
+
   it('generates text and JSON responses without adding a conversation round', async () => {
     const generator = new MockBatchedMessageEventGenerator([
       createTextStreamBatch('Nice work'),

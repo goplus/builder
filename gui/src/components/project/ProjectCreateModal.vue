@@ -21,6 +21,7 @@
           v-radar="{ name: 'project-name-input', desc: 'Input field for project name' }"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
+        <template v-if="projectNameTip != null" #tip>{{ projectNameTip }}</template>
       </UIFormItem>
       <footer class="mt-10 flex justify-center">
         <UIButton
@@ -69,6 +70,8 @@ const props = defineProps<{
   remixSource?: string
   /** Serialized local project copied into a new private project owned by the current user. */
   sourceProject?: ProjectSerialized
+  /** Caller-provided hint shown below the project name field. */
+  projectNameTip?: string
   visible: boolean
 }>()
 
@@ -86,10 +89,14 @@ const title = computed(() => {
   return { en: `Remix ${props.remixSource}`, zh: `改编 ${props.remixSource}` }
 })
 
-const initialName = props.remixSource == null ? '' : parseRemixSource(props.remixSource).project
+function getInitialProjectName() {
+  if (props.sourceProject != null) return props.sourceProject.metadata.name ?? ''
+  if (props.remixSource != null) return parseRemixSource(props.remixSource).project
+  return ''
+}
 
 const form = useForm({
-  name: [initialName, validateName]
+  name: [getInitialProjectName(), validateName]
 })
 
 function handleCancel() {
@@ -135,10 +142,16 @@ const handleSubmit = useMessageHandle(
     return projectName
   },
   { en: 'Failed to create project', zh: '项目创建失败' },
-  (projectName) => ({
-    en: `Project ${projectName} created`,
-    zh: `项目 ${projectName} 创建成功`
-  })
+  (projectName) =>
+    props.sourceProject != null
+      ? {
+          en: `Project copy ${projectName} saved. You can open it again from My projects in your profile menu.`,
+          zh: `项目副本 ${projectName} 已保存。下次可以从头像菜单的“我的项目”再次打开。`
+        }
+      : {
+          en: `Project ${projectName} created`,
+          zh: `项目 ${projectName} 创建成功`
+        }
 )
 
 async function validateName(name: string): Promise<FormValidationResult> {

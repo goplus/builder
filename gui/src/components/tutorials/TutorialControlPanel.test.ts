@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CourseSeries } from '@/apis/course-series'
 import type { Course } from '@/apis/course'
+import { EditingMode } from '@/components/editor/editing'
 import { CourseState } from './tutorial'
 import TutorialControlPanel from './TutorialControlPanel.vue'
 import TutorialStatusCourseRow from './TutorialStatusCourseRow.vue'
@@ -16,13 +17,17 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   setVisible: vi.fn(),
   scrollIntoView: vi.fn(),
-  push: vi.fn()
+  push: vi.fn(),
+  editorCtx: null as any
 }))
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ currentRoute: ref({ fullPath: '/editor/test' }), push: mocks.push })
+  useRouter: () => ({ currentRoute: ref({ fullPath: '/editor/test' }), push: mocks.push }),
+  isNavigationFailure: (value: unknown) => value instanceof Error
 }))
 vi.mock('@/apps/xbuilder/router', () => ({
-  getCourseSeriesPageRoute: (id: string, courseID: string) => `/course-series/${id}#course-${courseID}`
+  getCourseSeriesPageRoute: (id: string, courseID: string) => `/course-series/${id}#course-${courseID}`,
+  getCourseManagementRoute: (id: string) => `/course-management/${id}`,
+  getCourseEditorRoute: (id: string, courseID: string) => `/course-editor/${id}/${courseID}/edit`
 }))
 vi.mock('@/stores/course-series', () => ({
   useSeriesWithCourses: (source: () => string | null) => {
@@ -39,7 +44,13 @@ vi.mock('./tutorial', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./tutorial')>()),
   useTutorial: () => mocks.tutorial
 }))
-vi.mock('@/components/editor/EditorContextProvider.vue', () => ({ useEditorCtxRef: () => ref(null) }))
+vi.mock('@/components/editor/EditorContextProvider.vue', () => ({
+  useEditorCtxRef: () => ({
+    get value() {
+      return mocks.editorCtx
+    }
+  })
+}))
 vi.mock('@/components/ui/UIDropdown.vue', () => ({ useDropdown: () => ({ setVisible: mocks.setVisible }) }))
 vi.mock('@/utils/i18n', () => ({ useI18n: () => ({ t: (message: { en: string }) => message.en }) }))
 vi.mock('@/utils/exception', async (importOriginal) => ({
@@ -69,8 +80,9 @@ function makeCourse(id: string): Course {
   }
 }
 
-function mountPanel() {
+function mountPanel(editingCourse: { id: string; seriesID: string } | null = null) {
   return mount(TutorialControlPanel, {
+    props: { editingCourse },
     global: {
       mocks: { $t: (message: { en: string }) => message.en },
       directives: { radar: {} }
@@ -107,9 +119,12 @@ describe('tutorial course dropdown', () => {
     mocks.tutorial = reactive({
       currentCourse: { id: 'b', seriesID: 'series', kind: 'guided', state: CourseState.InProgress },
       startCourse: vi.fn(),
-      endCurrentCourse: vi.fn()
+      endCurrentCourse: vi.fn(),
+      isCurrentCourseInInitialState: vi.fn().mockReturnValue(false)
     })
+    mocks.editorCtx = { state: { editing: { mode: EditingMode.EffectFree, resetDirty: vi.fn() } } }
     mocks.confirm.mockResolvedValue(true)
+    mocks.push.mockResolvedValue(undefined)
   })
 
   it('shows the course series title in the heading and tooltip and updates both after renaming', async () => {
@@ -236,5 +251,163 @@ describe('tutorial course dropdown', () => {
       'b',
       'c'
     ])
+  })
+
+  it('locates the edited course independently of the learner session and omits learning actions', async () => {
+    const wrapper = mountPanel({ id: 'c', seriesID: 'author-series' })
+    await flushPromises()
+    expect(mocks.seriesSource!()).toBe('author-series')
+    expect(wrapper.get('[aria-current="page"]').text()).toContain('Course c')
+    expect(wrapper.findAll('li')).toHaveLength(3)
+    expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual(['Unit 1: Basics', 'Unit 2: Advanced'])
+    expect(wrapper.text()).not.toContain('Exit course')
+    expect(wrapper.text()).not.toContain('Restart course')
+    expect(wrapper.get('[aria-current="page"]').text()).toContain('editing')
+    expect(wrapper.findAllComponents(TutorialStatusCourseRow).every((row) => row.props('editing'))).toBe(true)
+    expect(wrapper.findAll('li').filter((row) => row.text().includes('editing'))).toHaveLength(1)
+    expect(wrapper.find('a').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('in progress')
+    expect(mocks.scrollIntoView).toHaveBeenCalled()
+    expect(mocks.tutorial.currentCourse.id).toBe('b')
+  })
+
+  it('switches between editors through the router and leaves unsaved confirmation to its guard', async () => {
+    const wrapper = mountPanel({ id: 'a', seriesID: 'series' })
+    await wrapper.get('[aria-current="page"]').trigger('click')
+    expect(mocks.push).not.toHaveBeenCalled()
+    await wrapper.findAll('li')[2].trigger('click')
+    await flushPromises()
+    expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/course-editor/series/c/edit')
+    expect(mocks.setVisible).toHaveBeenCalledWith(false)
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    expect(mocks.tutorial.startCourse).not.toHaveBeenCalled()
+    expect(mocks.tutorial.endCurrentCourse).not.toHaveBeenCalled()
+  })
+
+  it('scrolls to the edited lesson at the end of a 72-course series', async () => {
+    const courseIDs = Array.from({ length: 72 }, (_, index) => String(index + 1))
+    mocks.series.data.value = {
+      ...mocks.series.data.value,
+      courseIDs,
+      units: Array.from({ length: 6 }, (_, index) => ({
+        id: `unit-${index + 1}`,
+        title: `Unit ${index + 1}`,
+        courseIDs: courseIDs.slice(index * 12, (index + 1) * 12)
+      }))
+    }
+    mocks.courses.data.value = courseIDs.map(makeCourse)
+    mocks.tutorial.currentCourse = null
+    const wrapper = mountPanel({ id: '72', seriesID: 'series' })
+    await flushPromises()
+    expect(wrapper.findAll('li')).toHaveLength(72)
+    expect(wrapper.findAll('h3')).toHaveLength(6)
+    expect(mocks.scrollIntoView.mock.contexts.at(-1)).toBe(wrapper.get('[aria-current="page"]').element)
+  })
+
+  it.each(['Enter', ' '])('selects a course with the %j key through the parent panel', async (key) => {
+    const wrapper = mountPanel({ id: 'b', seriesID: 'series' })
+    const row = wrapper.findAll('li')[2]
+    expect(row.attributes('role')).toBe('button')
+    expect(row.attributes('tabindex')).toBe('0')
+    await row.trigger('keydown', { key })
+    await flushPromises()
+    expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/course-editor/series/c/edit')
+    expect(mocks.tutorial.startCourse).not.toHaveBeenCalled()
+  })
+
+  it('returns authors to series management', async () => {
+    const wrapper = mountPanel({ id: 'b', seriesID: 'series' })
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Back to series courses')!
+      .trigger('click')
+    await flushPromises()
+    expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/course-management/series')
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    expect(mocks.tutorial.endCurrentCourse).not.toHaveBeenCalled()
+  })
+
+  const courseActions = [
+    {
+      name: 'exit',
+      leavesPage: false,
+      trigger: (wrapper: ReturnType<typeof mountPanel>) =>
+        wrapper
+          .findAll('button')
+          .find((button) => button.text() === 'Exit course')!
+          .trigger('click'),
+      done: () => expect(mocks.tutorial.endCurrentCourse).toHaveBeenCalledOnce()
+    },
+    {
+      name: 'return to series',
+      leavesPage: true,
+      trigger: (wrapper: ReturnType<typeof mountPanel>) =>
+        wrapper
+          .findAll('button')
+          .find((button) => button.text() === 'Back to series courses')!
+          .trigger('click'),
+      done: () => {
+        expect(mocks.push).toHaveBeenCalledWith('/course-series/series#course-b')
+        expect(mocks.tutorial.endCurrentCourse).toHaveBeenCalledOnce()
+      }
+    },
+    {
+      name: 'switch',
+      leavesPage: true,
+      trigger: (wrapper: ReturnType<typeof mountPanel>) => wrapper.findAll('li')[0].trigger('click'),
+      done: () => expect(mocks.tutorial.startCourse).toHaveBeenCalledWith('series', 'a')
+    },
+    {
+      name: 'restart',
+      leavesPage: true,
+      trigger: (wrapper: ReturnType<typeof mountPanel>) => wrapper.get('[aria-current="step"] button').trigger('click'),
+      done: () => expect(mocks.tutorial.startCourse).toHaveBeenCalledWith('series', 'b')
+    }
+  ]
+
+  it.each(courseActions)(
+    'runs $name without confirmation while the course is in its initial state, keeping editor edits guarded',
+    async (action) => {
+      mocks.tutorial.isCurrentCourseInInitialState.mockReturnValue(true)
+      const wrapper = mountPanel()
+      await flushPromises()
+      await action.trigger(wrapper)
+      await flushPromises()
+      expect(mocks.confirm).not.toHaveBeenCalled()
+      expect(mocks.editorCtx.state.editing.resetDirty).not.toHaveBeenCalled()
+      action.done()
+    }
+  )
+
+  it.each(courseActions)('asks before $name once the course has progress', async (action) => {
+    mocks.confirm.mockResolvedValue(false)
+    const wrapper = mountPanel()
+    await flushPromises()
+    await action.trigger(wrapper)
+    await flushPromises()
+    expect(mocks.confirm).toHaveBeenCalledOnce()
+    expect(mocks.tutorial.endCurrentCourse).not.toHaveBeenCalled()
+    expect(mocks.tutorial.startCourse).not.toHaveBeenCalled()
+    expect(mocks.push).not.toHaveBeenCalled()
+    expect(mocks.editorCtx.state.editing.resetDirty).not.toHaveBeenCalled()
+
+    mocks.confirm.mockResolvedValue(true)
+    await action.trigger(wrapper)
+    await flushPromises()
+    action.done()
+    expect(mocks.editorCtx.state.editing.resetDirty).toHaveBeenCalledTimes(action.leavesPage ? 1 : 0)
+  })
+
+  it('keeps the course when leaving for its series page is blocked', async () => {
+    mocks.tutorial.isCurrentCourseInInitialState.mockReturnValue(true)
+    mocks.push.mockResolvedValue(new Error('blocked by the editor'))
+    const wrapper = mountPanel()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Back to series courses')!
+      .trigger('click')
+    await flushPromises()
+    expect(mocks.push).toHaveBeenCalledWith('/course-series/series#course-b')
+    expect(mocks.tutorial.endCurrentCourse).not.toHaveBeenCalled()
   })
 })

@@ -9,6 +9,7 @@ import { computed } from 'vue'
 import { cn, type ClassValue } from '../utils'
 import file from './file.svg?raw'
 import folder from './folder.svg?raw'
+import list from './list.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
 import arrowUp from './arrow-up.svg?raw'
 import play from './play.svg?raw'
@@ -98,6 +99,7 @@ import notification from './notification.svg?raw'
 const typeIconMap = {
   file,
   folder,
+  list,
   arrowDown,
   arrowUp,
   play,

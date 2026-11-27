@@ -532,12 +532,11 @@ describe('AnimationGen', () => {
     expect(videoTask.params).toMatchObject({
       settings: { referenceFrameUrl: 'kodo://mock-bucket/local_character.png' }
     })
-    expect(gen.getTaskIds()).toEqual([videoTask.task.id])
 
     const [rawConfig, rawFiles] = gen.export()
     const loaded = AnimationGen.load(i18n, sprite, project, sndConfig(rawConfig), sndFiles(rawFiles))
     expect(loaded.referenceImageSelection).toMatchObject({ type: 'local-image', file: { name: localFile.name } })
-    expect(loaded.getTaskIds()).toEqual([videoTask.task.id])
+    expect(loaded.export()[0].generateVideoTaskSerialized?.data?.id).toBe(videoTask.task.id)
     gen.dispose()
     loaded.dispose()
   })
@@ -663,7 +662,7 @@ describe('AnimationGen', () => {
     const loaded = AnimationGen.load(i18n, sprite, project, config, files)
     expect(loaded.referenceImageSelection).toBeNull()
     expect(loaded.video?.meta.universalUrl).toBe(gen.video?.meta.universalUrl)
-    expect(loaded.getTaskIds()).toEqual(gen.getTaskIds())
+    expect(loaded.export()[0].generateVideoTaskSerialized).toEqual(config.generateVideoTaskSerialized)
     gen.dispose()
     loaded.dispose()
   })

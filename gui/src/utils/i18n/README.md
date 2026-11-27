@@ -38,7 +38,7 @@ import { useI18n } from '@/utils/i18n'
 
 const { t } = useI18n()
 
-const signoutText = t({ en: 'Sign out', zh: '登出' })
+const signoutText = t({ en: 'Sign out', zh: '退出登录' })
 ```
 
 ### Translate complex elements in template of SFC

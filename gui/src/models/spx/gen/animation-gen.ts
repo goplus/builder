@@ -10,8 +10,7 @@ import {
   enrichAnimationSettings,
   isTerminalTaskStatus,
   type TaskParamsExtractVideoFrames,
-  TaskType,
-  TaskStatus
+  TaskType
 } from '@/apis/aigc'
 import type { SpxProject } from '../project'
 import { Sprite } from '../sprite'
@@ -140,14 +139,6 @@ export class AnimationGen extends Disposable {
     this.finishPhase =
       inits.finishPhase ?? new Phase({ en: 'extract frames and save animation', zh: '提取帧并保存动画' })
     return reactive(this) as this
-  }
-
-  /** Get IDs for (completed) tasks. */
-  getTaskIds() {
-    return [this.generateVideoTask, this.extractFramesTask]
-      .filter((t): t is Task<TaskType.GenerateAnimationVideo> | Task<TaskType.ExtractVideoFrames> => t != null)
-      .filter((t) => t.data?.status === TaskStatus.Completed)
-      .map((t) => t.data!.id)
   }
 
   get name() {

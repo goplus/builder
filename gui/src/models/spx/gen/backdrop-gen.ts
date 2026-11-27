@@ -5,19 +5,11 @@ import type { Prettify } from '@/utils/types'
 import type { I18n } from '@/utils/i18n'
 import { encodePathSegment, extname } from '@/utils/path'
 import { ArtStyle, BackdropCategory, Perspective } from '@/apis/common'
-import {
-  adoptAsset,
-  enrichBackdropSettings,
-  isTerminalTaskStatus,
-  TaskType,
-  TaskStatus,
-  type BackdropSettings
-} from '@/apis/aigc'
+import { enrichBackdropSettings, isTerminalTaskStatus, TaskType, type BackdropSettings } from '@/apis/aigc'
 import type { File, Files } from '../../common/file'
 import { fromConfig, toConfig, listDirs } from '../../common/file'
 import { createFileWithUniversalUrl, saveFile } from '../../common/cloud'
 import { ensureValidBackdropName, validateBackdropName, type BackdropLikeParent } from '../common/asset-name'
-import { backdrop2Asset } from '../common/asset'
 import type { SpxProject } from '../project'
 import { Backdrop, type RawBackdropConfig } from '../backdrop'
 import { getProjectSettings, mapPhaseResult, Phase, Task, type PhaseSerialized, type TaskSerialized } from './common'
@@ -188,23 +180,6 @@ export class BackdropGen extends Disposable {
     })
     this.result = backdrop
     return backdrop
-  }
-
-  async recordAdoption() {
-    const backdrop = this.result
-    if (backdrop == null) throw new Error('result backdrop expected')
-    const taskIds = this.generateTask?.data?.status === TaskStatus.Completed ? [this.generateTask.data.id] : []
-    const assetData = await backdrop2Asset(backdrop)
-    const { name: displayName, description, ...extraSettings } = this.settings
-    return adoptAsset({
-      taskIds,
-      asset: {
-        ...assetData,
-        displayName,
-        description,
-        extraSettings
-      }
-    })
   }
 
   /**

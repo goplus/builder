@@ -1,4 +1,4 @@
-import { nextTick } from 'vue'
+import { nextTick, shallowReactive } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { XGoExecutorOptions } from '@/utils/xgoexec'
@@ -101,7 +101,9 @@ afterEach(() => {
 function makeHarness() {
   const project = makeProject()
   const editorRuntime = new Runtime(project.project)
-  const editorState = { runtime: editorRuntime, dispose: vi.fn() } as unknown as EditorState
+  const editing = shallowReactive({ dirty: false, resetDirty: vi.fn() })
+  editing.resetDirty.mockImplementation(() => (editing.dirty = false))
+  const editorState = { runtime: editorRuntime, editing, dispose: vi.fn() } as unknown as EditorState
   const { session, controller: copilot } = makeCopilot()
   const presentation = {
     showPrelude: vi.fn().mockResolvedValue(undefined),
@@ -129,6 +131,7 @@ function makeHarness() {
   const harness = {
     project,
     editorRuntime,
+    editing,
     editorState,
     session,
     copilot,
@@ -766,5 +769,52 @@ describe('PlaygroundCourseSession', () => {
     await harness.courseSession.start()
     expect(harness.copilot.startSession).not.toHaveBeenCalled()
     expect(harness.executor.run).not.toHaveBeenCalled()
+  })
+
+  it('reports project changes made after startup finished', async () => {
+    const harness = makeHarness()
+    const progressed = vi.fn()
+    harness.courseSession.on('progressed', progressed)
+    await harness.courseSession.start()
+    harness.editing.dirty = true
+    await nextTick()
+    expect(progressed).not.toHaveBeenCalled()
+
+    await harness.getExecutorOptions().framework!.capabilities.lifecycle_started(null)
+    expect(harness.courseSession.starting).toBe(false)
+    expect(harness.editing.resetDirty).toHaveBeenCalledOnce()
+    await nextTick()
+    expect(progressed).not.toHaveBeenCalled()
+
+    harness.editing.dirty = true
+    await nextTick()
+    expect(progressed).toHaveBeenCalledOnce()
+  })
+
+  it('keeps project changes when the course completes after startup', async () => {
+    const harness = makeHarness()
+    await harness.courseSession.start()
+    const capabilities = harness.getExecutorOptions().framework!.capabilities
+    await capabilities.lifecycle_started(null)
+    harness.editing.dirty = true
+
+    await capabilities.course_complete(null)
+
+    expect(harness.editing.resetDirty).toHaveBeenCalledOnce()
+    expect(harness.editing.dirty).toBe(true)
+  })
+
+  it('stops reporting project changes once disposed', async () => {
+    const harness = makeHarness()
+    const progressed = vi.fn()
+    harness.courseSession.on('progressed', progressed)
+    await harness.courseSession.start()
+    await harness.getExecutorOptions().framework!.capabilities.lifecycle_started(null)
+
+    harness.courseSession.dispose()
+    harness.editing.dirty = true
+    await nextTick()
+
+    expect(progressed).not.toHaveBeenCalled()
   })
 })

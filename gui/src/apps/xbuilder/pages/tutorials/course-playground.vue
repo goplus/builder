@@ -85,6 +85,12 @@ const projectQueryRet: QueryRet<TutorialProject> = {
   data: computed(() => session.value?.project ?? null)
 }
 
+function handleProgressed() {
+  const currentSession = session.value
+  if (currentSession == null) return
+  tutorial.notifyPlaygroundCourseProgressed(currentSession.course.id)
+}
+
 const { fn: handleRestart } = useMessageHandle(
   async () => {
     const currentSession = session.value
@@ -127,6 +133,7 @@ const { fn: handleCompleted } = useMessageHandle(
   <CoursePlayground
     :project-query-ret="projectQueryRet"
     :router="inPlaygroundRouter"
+    @course-progressed="handleProgressed"
     @course-completed="handleCompleted"
     @course-restart="handleRestart"
   />
