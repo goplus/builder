@@ -12,6 +12,9 @@
     >
       {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
     </UIMenuItem>
+    <UIMenuItem v-radar="{ name: 'generate-sound', desc: 'Click to generate sound with AI' }" @click="emit('generate')">
+      {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
+    </UIMenuItem>
     <UIMenuItem v-radar="{ name: 'record-sound', desc: 'Click to record a new sound' }" @click="handleRecord">
       {{ $t({ en: 'Record', zh: '录音' }) }}
     </UIMenuItem>
@@ -30,6 +33,7 @@ const props = defineProps<{
   state: SoundsEditorState
 }>()
 
+const emit = defineEmits<{ generate: [] }>()
 const editorCtx = useEditorCtx()
 
 const addFromLocalFile = useAddSoundFromLocalFile()

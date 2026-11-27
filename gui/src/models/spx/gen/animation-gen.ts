@@ -93,6 +93,11 @@ function sameReferenceSelection(left: ReferenceImageSelection, right: ReferenceI
   return true
 }
 
+function getSoundsForParent(parent: Sprite | SpriteGen, project: SpxProject) {
+  if (parent instanceof Sprite) return project.sounds
+  return parent.previewProject.sounds
+}
+
 export class AnimationGen extends Disposable {
   id: string
   parent: Sprite | SpriteGen
@@ -332,7 +337,7 @@ export class AnimationGen extends Disposable {
       extractFramesTaskSerialized: this.extractFramesTask?.export(),
       finishPhaseSerialized: mapPhaseResult(this.finishPhase.export(), (result) => {
         const [animationConfig, costumeConfigs, animationFiles] = result.export(`${assetsPath}/result`, {
-          sounds: [],
+          sounds: getSoundsForParent(this.parent, this.project),
           includeId: true
         })
         Object.assign(files, animationFiles)
@@ -398,7 +403,10 @@ export class AnimationGen extends Disposable {
           const costumes = costumeConfigs.map((costumeConfig) =>
             Costume.load(costumeConfig, files, { basePath: `${assetsPath}/result`, includeId: true })
           )
-          const [animation] = Animation.load(settingsName, animationConfig, costumes, { sounds: [], includeId: true })
+          const [animation] = Animation.load(settingsName, animationConfig, costumes, {
+            sounds: getSoundsForParent(parent, project),
+            includeId: true
+          })
           return animation
         })
       )

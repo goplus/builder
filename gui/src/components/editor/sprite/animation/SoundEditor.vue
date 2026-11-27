@@ -36,6 +36,12 @@
           >
             {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
           </UIMenuItem>
+          <UIMenuItem
+            v-radar="{ name: 'generate-sound', desc: 'Click to generate sound with AI' }"
+            @click="handleGenerate"
+          >
+            {{ $t({ en: 'Generate with AI', zh: '使用 AI 生成' }) }}
+          </UIMenuItem>
           <UIMenuItem v-radar="{ name: 'record-sound', desc: 'Click to record a new sound' }" @click="handleRecord">
             {{ $t({ en: 'Record', zh: '录音' }) }}
           </UIMenuItem>
@@ -101,7 +107,12 @@ import {
 } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from '@/components/editor/stage/sound/SoundItem.vue'
-import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
+import {
+  useAddAssetFromLibrary,
+  useAddSoundByGeneration,
+  useAddSoundByRecording,
+  useAddSoundFromLocalFile
+} from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
 
@@ -148,6 +159,15 @@ const handleAddFromAssetLibrary = useMessageHandle(
     selected.value = sounds[0].id
   },
   { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
+).fn
+
+const addSoundByGeneration = useAddSoundByGeneration()
+const handleGenerate = useMessageHandle(
+  async () => {
+    const sound = await addSoundByGeneration(editorCtx.project)
+    selected.value = sound.id
+  },
+  { en: 'Failed to generate sound', zh: '生成声音失败' }
 ).fn
 
 const addSoundFromRecording = useAddSoundByRecording()

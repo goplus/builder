@@ -35,11 +35,13 @@ const props = withDefaults(
      * `description` will be synchronized with the placeholder value on the first focus.
      */
     descriptionPlaceholder?: string
+    enrichable?: boolean
     enriching?: boolean
     disabled?: boolean
     readonly?: boolean
   }>(),
   {
+    enrichable: true,
     enriching: false,
     descriptionPlaceholder: undefined,
     disabled: false,
@@ -53,7 +55,7 @@ const emit = defineEmits<{
 }>()
 
 const focus = ref(false)
-const enrichShow = computed(() => !ctx.readonly && focus.value && props.description.length > 0)
+const enrichShow = computed(() => props.enrichable && !ctx.readonly && focus.value && props.description.length > 0)
 
 const onInput = (e: InputEvent) => {
   const target = e.target

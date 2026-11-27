@@ -16,8 +16,7 @@ import {
   resolveTriggerElement,
   useFloatingPopup
 } from './popup'
-import { cn, useLayerRegistration, type ClassValue } from './utils'
-import { usePopupContainer } from './utils'
+import { UI_LAYER_ROOT_ATTR, cn, usePopupContainer, type ClassValue } from './utils'
 
 defineOptions({
   name: 'UITooltip',
@@ -49,7 +48,7 @@ const slots = useSlots()
 const attachTo = usePopupContainer()
 const internalVisibleRef = ref(false)
 const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
-const popup = useLayerRegistration(visibleComputed)
+const layerRootAttrs = { [UI_LAYER_ROOT_ATTR]: '' }
 const {
   referenceRef: triggerRef,
   floatingRef: contentRef,
@@ -174,7 +173,7 @@ function renderTriggerNode() {
     <Transition name="ui-popup-scale-fade">
       <div
         v-if="visibleComputed"
-        v-bind="popup.rootAttrs"
+        v-bind="layerRootAttrs"
         ref="contentRef"
         :class="cn('fixed z-1000 rounded-md bg-grey-1000 px-2 py-1.75 text-xs text-grey-100 shadow-sm', props.class)"
         :style="popupStyle"

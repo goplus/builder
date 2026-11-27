@@ -156,4 +156,97 @@ describe('UIDropdownWithTooltip', () => {
     expect(dropdownRoot).toBeInstanceOf(HTMLElement)
     expect((dropdownRoot as HTMLElement).style.visibility).toBe('visible')
   })
+
+  it('closes the open dropdown when hovering and clicking another sibling UIDropdownWithTooltip', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () => [
+                h(UIDropdownWithTooltip, null, {
+                  trigger: () => h('button', { 'data-test-id': 'trigger-1' }, 'First'),
+                  'tooltip-content': () => h('div', 'Tooltip 1'),
+                  'dropdown-content': () => h('div', 'Dropdown 1')
+                }),
+                h(UIDropdownWithTooltip, null, {
+                  trigger: () => h('button', { 'data-test-id': 'trigger-2' }, 'Second'),
+                  'tooltip-content': () => h('div', 'Tooltip 2'),
+                  'dropdown-content': () => h('div', 'Dropdown 2')
+                })
+              ]
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const popupContainer = wrapper.get('[data-test-id="popup-container"]')
+    const trigger1 = wrapper.get('[data-test-id="trigger-1"]')
+    const trigger2 = wrapper.get('[data-test-id="trigger-2"]')
+
+    await trigger1.trigger('click')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushPopup()
+    expect(popupContainer.text()).toContain('Dropdown 1')
+    expect(popupContainer.text()).not.toContain('Dropdown 2')
+
+    // Hover the second trigger until its tooltip opens before clicking it.
+    await trigger2.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(600)
+    await flushPopup()
+    expect(popupContainer.text()).toContain('Tooltip 2')
+    expect(popupContainer.text()).toContain('Dropdown 1')
+
+    await trigger2.trigger('click')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushPopup()
+
+    expect(popupContainer.text()).not.toContain('Dropdown 1')
+    expect(popupContainer.text()).not.toContain('Tooltip 2')
+    expect(popupContainer.text()).toContain('Dropdown 2')
+  })
+
+  it('still dismisses the open dropdown on Escape while a sibling tooltip is visible', async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          return () =>
+            h(PopupProvider, null, {
+              default: () => [
+                h(UIDropdownWithTooltip, null, {
+                  trigger: () => h('button', { 'data-test-id': 'trigger-1' }, 'First'),
+                  'tooltip-content': () => h('div', 'Tooltip 1'),
+                  'dropdown-content': () => h('div', 'Dropdown 1')
+                }),
+                h(UIDropdownWithTooltip, null, {
+                  trigger: () => h('button', { 'data-test-id': 'trigger-2' }, 'Second'),
+                  'tooltip-content': () => h('div', 'Tooltip 2'),
+                  'dropdown-content': () => h('div', 'Dropdown 2')
+                })
+              ]
+            })
+        }
+      }),
+      { attachTo: document.body }
+    )
+
+    const popupContainer = wrapper.get('[data-test-id="popup-container"]')
+    const trigger1 = wrapper.get('[data-test-id="trigger-1"]')
+    const trigger2 = wrapper.get('[data-test-id="trigger-2"]')
+
+    await trigger1.trigger('click')
+    await flushPopup()
+    expect(popupContainer.text()).toContain('Dropdown 1')
+
+    await trigger2.trigger('mouseenter')
+    await vi.advanceTimersByTimeAsync(600)
+    await flushPopup()
+    expect(popupContainer.text()).toContain('Tooltip 2')
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flushPopup()
+
+    expect(popupContainer.text()).not.toContain('Dropdown 1')
+  })
 })

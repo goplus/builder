@@ -59,6 +59,7 @@ import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { CodeEditorProvider, loadMonaco } from '@/components/editor/spx-code-editor'
+import { createDefaultProject } from '@/components/project/default-project'
 import { usePublishProject } from '@/components/project'
 import { EditingMode, type ILocalCache } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
@@ -113,22 +114,28 @@ const stateQueryRet = useQuery({
     const ownerInput = routeProjectIdentifier.value.owner
     const projectNameInput = routeProjectIdentifier.value.name
 
-    const project = new SpxProject()
+    // Open the local sound demo with the built-in project, without a cloud account.
+    const soundDemo = ownerInput === '~demo' && projectNameInput === 'sound-lab'
+    const project = soundDemo ? await createDefaultProject(undefined, projectNameInput, []) : new SpxProject()
+    if (soundDemo)
+      project.setMetadata({ displayName: t({ zh: '森林探险 · 声音试玩', en: 'Forest Adventure · Sound Demo' }) })
     project.disposeOnSignal(ctx.signal)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     ctx.signal.throwIfAborted()
     const state = new EditorState(i18n, project, isOnline, signedIn, cloudHelpers, localCache)
     state.disposeOnSignal(ctx.signal)
-    await state.editing.loadProject(
-      ownerInput,
-      projectNameInput,
-      {
-        confirmOpenTargetWithAnotherInCache,
-        openProject
-      },
-      ctx.reporter,
-      ctx.signal
-    )
+    if (!soundDemo) {
+      await state.editing.loadProject(
+        ownerInput,
+        projectNameInput,
+        {
+          confirmOpenTargetWithAnotherInCache,
+          openProject
+        },
+        ctx.reporter,
+        ctx.signal
+      )
+    }
     state.editing.startEditing()
     state.syncWithRouter(inEditorRouter)
     return state
