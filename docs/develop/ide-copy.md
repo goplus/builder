@@ -1,46 +1,68 @@
-# XBuilder 文案规范
+# XBuilder UI Writing Guidelines
 
-## 产品人格
+Use these guidelines for all XBuilder interface text, including the editor, courses, and community pages.
 
-XBuilder 的产品人格为「亦师亦友」：一位可靠的创作伙伴、一位引导学习的老师。
+## Product voice
 
-作为创作伙伴，XBuilder 平等沟通，提供可靠的支持，尊重用户的想法和选择；作为老师，它解释问题、引导思考，帮助用户理解，并留出自主尝试的空间。
+XBuilder is a reliable creative partner and a teacher who guides learning. As a partner, it communicates as an equal, offers reliable support, and respects users’ ideas and choices. As a teacher, it explains problems, guides thinking, and leaves room for users to try on their own.
 
-课程和 IDE 共用这份规范：表达风格保持一致，语气和引导程度按情境调整。
+Keep the voice consistent. Adjust the tone and level of guidance to the situation.
 
-## 四个原则
+## Four principles
 
-- **清楚**：具体说清任务、状态、问题或操作后果，删掉重复和无关的信息。
-- **可靠**：直接说已确认的事实，不把推测当成结论。
-- **尊重**：把判断和选择留给用户。
-- **实用**：提供用户当前任务需要的信息。需要引导时，说清可以检查什么，或接下来可以做什么。
+- **Clear:** State the task, status, problem, or consequence in concrete terms. Remove repeated or irrelevant information.
+- **Reliable:** State what you can verify. Don’t present assumptions as facts.
+- **Respectful:** Leave decisions and choices to the user.
+- **Useful:** Give users what they need for the task at hand. When guidance is needed, say what they can check or do next.
 
-## 案例
+## Examples
 
-### IDE｜导入项目文件
+### Editor: Import a project file
 
-| 位置 | 修改前 | 修改后 |
+| UI element | Before | After |
 | --- | --- | --- |
-| 标题 | 导入项目文件 | 导入项目文件（不变） |
-| 正文 | 当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？ | 导入的文件内容将替换当前项目内容。 |
-| 主按钮 | 继续 | 选择文件 |
-| 次按钮 | 取消 | 取消（不变） |
+| Title | 导入项目文件 / Import project file | Unchanged |
+| Body | 当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？ / Existing content of current project will be replaced with imported content. Are you sure to continue? | 导入的文件内容将替换当前项目内容。 / The imported file will replace the current project’s contents. |
+| Primary button | 继续 / Continue | 选择文件 / Choose a file |
+| Secondary button | 取消 / Cancel | Unchanged |
 
-- **清楚｜按钮写实际动作。** 点击只会打开文件选择器，所以改成“选择文件”。
-- **可靠｜有风险先说后果。** 保留导入会替换当前内容的提醒，删掉重复的“确定继续吗？”。
-- **尊重｜让用户自己决定。** 说清操作和后果，用户可以选择文件，也可以取消。
+The primary button opens a file picker; it doesn’t import immediately. Name that action on the button. Explain in the body that importing replaces the current project’s contents, then let the user choose a file or cancel.
 
-### 课程中｜第 34 课反馈弹窗
+### Course: Feedback during Lesson 34
 
-**适用情境：** 松鼠已经收集到蘑菇，但代码还没有用成熟判断来控制收集。
+The squirrel has collected the mushrooms, but the learner’s code doesn’t yet check whether a mushroom is ripe before collecting it.
 
-**文案结构：** 当前状态 → 未满足的本课要求（若有） → 下一步
+**Structure:** Current result → unmet lesson requirement (if any) → next step.
 
-**弹窗正文：** 蘑菇收集到了。本课还需要用成熟判断控制收集。检查判断条件和收集动作。
+**Chinese:** 蘑菇收集到了。本课还需要用成熟判断控制收集。检查判断条件和收集动作。
 
-先说已达成的结果，再指出还没满足的要求。告诉学员检查哪里，把怎么修改留给学员。
+**English example:** You collected the mushrooms. This lesson also asks you to use a ripeness check to control when the squirrel collects them. Check the condition and the collection action.
 
-## IDE 标点自查
+Start with the result the course verified, then explain what is still missing. Point learners to the relevant code without giving them the answer.
 
-- IDE 文案需要给名称加引号时，中文用双引号 “ ”，英文用半角双引号 "。例如：`撤销“移动精灵”` / `Undo "Move sprite"`。
-- 完整句子加句号，如 `请输入项目名。`；短语不加，如 `删除`。错误提示括号里补充的简短原因不加句号。菜单项是否加省略号，见 `gui/AGENTS.md` 的[菜单项文案规则](../../gui/AGENTS.md#menu-item-text-guidelines)。
+## Punctuation
+
+- When quoting a name, use “ ” in Chinese and straight double quotes in English. For example: `撤销“移动精灵”` / `Undo "Move sprite"`.
+- End complete statements and instructions presented on their own with a period. Don’t add periods to short labels. For example: `请输入项目名。` / `Enter a project name.` and `删除` / `Delete`.
+- Error messages that are combined with an action summary must work as part of the combined message. Omit terminal punctuation in these strings. In English, start a parenthetical reason lowercase unless it begins with a proper noun. For example: `Failed to load project (item not found)`.
+
+## Menu Item Text Guidelines
+
+When creating or modifying menu items, follow these UI guidelines for ellipses:
+
+**Use ellipsis (...)** when the action requires additional user input before completing (opens dialog/modal for input):
+- "New project..." - Opens dialog for project details
+- "Open project..." - Opens dialog to select project
+- "Import project file..." - Opens file picker
+- "Publish project..." - Opens dialog for settings
+- "Delete project..." - Opens confirmation dialog
+
+**No ellipsis** when the action executes immediately or only displays information:
+- "Export project file" - Exports directly
+- "Open project page" - Navigates directly
+- "Profile", "My projects", "Sign out" - Direct actions
+- "Language", "Manage sprites/sounds/backdrops" - Settings/info windows
+
+Use `$t()` for i18n: `{{ $t({ en: 'New project...', zh: '新建项目...' }) }}`
+
+Refs: [MS UX](https://learn.microsoft.com/en-us/windows/win32/uxguide/cmd-menus#using-ellipses), [Apple HIG](https://developer.apple.com/design/human-interface-guidelines/menus#Labels)

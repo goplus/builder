@@ -45,7 +45,7 @@ function activateMenuItem(event: KeyboardEvent) {
           @click="emit('in')"
         >
           <template #icon><UIIcon type="zoomIn" aria-hidden="true" /></template>
-          {{ $t({ en: 'Zoom in', zh: '放大' }) }}
+          {{ $t({ en: 'Increase font size', zh: '增大字号' }) }}
         </UIMenuItem>
         <UIMenuItem
           v-radar="{ name: 'zoom-out', desc: 'Zoom out the code editor' }"
@@ -58,7 +58,7 @@ function activateMenuItem(event: KeyboardEvent) {
           @click="emit('out')"
         >
           <template #icon><UIIcon type="zoomOut" aria-hidden="true" /></template>
-          {{ $t({ en: 'Zoom out', zh: '缩小' }) }}
+          {{ $t({ en: 'Decrease font size', zh: '减小字号' }) }}
         </UIMenuItem>
         <UIMenuItem
           v-radar="{ name: 'reset-zoom', desc: 'Reset code editor zoom to default' }"

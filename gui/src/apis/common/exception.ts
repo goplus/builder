@@ -78,35 +78,35 @@ export function isTooManyRequestsMeta(code: number, _meta: unknown): _meta is To
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorInvalidArgs]: {
-    en: 'Invalid request parameters',
+    en: 'invalid request parameters',
     zh: '请求参数无效'
   },
   [ApiExceptionCode.errorUnauthorized]: {
-    en: 'Sign in to continue',
+    en: 'sign in to continue',
     zh: '登录后继续'
   },
   [ApiExceptionCode.errorForbidden]: {
-    en: 'You don’t have permission to do this',
+    en: 'you don’t have permission to do this',
     zh: '你没有执行此操作的权限'
   },
   [ApiExceptionCode.errorQuotaExceeded]: {
-    en: 'Usage limit reached',
+    en: 'usage limit reached',
     zh: '使用量已达上限'
   },
   [ApiExceptionCode.errorNotFound]: {
-    en: 'Item not found',
+    en: 'item not found',
     zh: '未找到所需内容'
   },
   [ApiExceptionCode.errorConflict]: {
-    en: 'You can’t complete this action in the item’s current state',
+    en: 'you can’t complete this action in the item’s current state',
     zh: '当前状态与此操作冲突'
   },
   [ApiExceptionCode.errorResourceMoved]: {
-    en: 'This item has moved',
+    en: 'this item has moved',
     zh: '所需内容已迁移'
   },
   [ApiExceptionCode.errorContentTooLarge]: {
-    en: 'Content is too large',
+    en: 'content is too large',
     zh: '内容过大'
   },
   [ApiExceptionCode.errorUnsupportedMediaType]: {
@@ -114,19 +114,19 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
     zh: '不支持此内容类型'
   },
   [ApiExceptionCode.errorTooManyRequests]: {
-    en: 'Too many requests',
+    en: 'too many requests',
     zh: '请求过于频繁'
   },
   [ApiExceptionCode.errorRateLimitExceeded]: {
-    en: 'Rate limit exceeded',
+    en: 'rate limit exceeded',
     zh: '请求过于频繁'
   },
   [ApiExceptionCode.errorInternalServerError]: {
-    en: 'Server error',
+    en: 'server error',
     zh: '服务器发生错误'
   },
   [ApiExceptionCode.errorScratchFeatureNotSupported]: {
-    en: 'Some Scratch features are not supported yet',
+    en: 'some Scratch features are not supported yet',
     zh: '部分 Scratch 特性暂不支持'
   }
 }

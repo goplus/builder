@@ -125,8 +125,8 @@ export function useUnpublishProject() {
     return withConfirm({
       title: t({ en: 'Unpublish project', zh: '取消发布项目' }),
       content: t({
-        en: 'Unpublishing will make this project private.',
-        zh: '取消发布后，项目将转为私有。'
+        en: 'Unpublishing will make this project private. Others won’t be able to access it through a share link.',
+        zh: '取消发布后，项目将转为私有，其他人无法再通过分享链接访问。'
       }),
       confirmText: t({ en: 'Unpublish', zh: '取消发布' }),
       cancelText: t({ en: 'Keep public', zh: '保持公开' }),
