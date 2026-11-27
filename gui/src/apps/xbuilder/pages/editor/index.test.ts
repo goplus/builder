@@ -88,7 +88,7 @@ describe('editor', () => {
         expect.objectContaining({ keyword: 'grass', type: AssetType.Backdrop })
       )
     )
-    await vi.waitFor(() => expect(modal.text()).toContain('No data'))
+    await vi.waitFor(() => expect(modal.text()).toContain('No matching assets'))
     await modal
       .findAll('button')
       .find((button) => button.text() === 'Public library')!

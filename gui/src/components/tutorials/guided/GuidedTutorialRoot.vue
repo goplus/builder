@@ -58,8 +58,8 @@ watch(
                 role: 'user',
                 type: 'text',
                 content: i18n.t({
-                  en: 'I did what you asked. Tell me what to do next.',
-                  zh: '我按你说的操作了，接下来该做什么？'
+                  en: 'What should I do next?',
+                  zh: '接下来该做什么？'
                 })
               }
             }

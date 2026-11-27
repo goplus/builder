@@ -12,6 +12,6 @@ defineProps<{
 <template>
   <RetryableWrapper class="text-yellow-main" :round="round" :is-last-round="isLastRound">
     <UIIcon type="warning" />
-    {{ $t({ en: 'Cancelled', zh: '已取消' }) }}
+    {{ $t({ en: 'Stopped', zh: '已停止' }) }}
   </RetryableWrapper>
 </template>
