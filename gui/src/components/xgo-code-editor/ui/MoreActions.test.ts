@@ -90,6 +90,20 @@ describe('More actions', () => {
     expect(component.emitted('select')).toBeUndefined()
   })
 
+  it('closes an open menu when disabled and stays closed when enabled again', async () => {
+    const { wrapper, state } = mountActions()
+    const trigger = wrapper.get('[aria-label="更多操作"]')
+    await trigger.trigger('click')
+    await flushMenu()
+    expect(trigger.attributes('aria-expanded')).toBe('true')
+    state.disabled = true
+    await flushMenu()
+    expect(wrapper.find('[aria-label="操作"]').exists()).toBe(false)
+    state.disabled = false
+    await flushMenu()
+    expect(trigger.attributes('aria-expanded')).toBe('false')
+  })
+
   it('starts closed when actions become available again', async () => {
     const { wrapper, state } = mountActions()
     await wrapper.get('[aria-label="更多操作"]').trigger('click')

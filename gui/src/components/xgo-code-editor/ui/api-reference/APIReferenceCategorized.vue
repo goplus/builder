@@ -25,7 +25,7 @@ const props = defineProps<{
 
 const browseData = computed(() => groupItems(props.items, props.controller.categoryViewInfos ?? [], 'all'))
 const browseGroups = computed(() => browseData.value.groups)
-const { query, searchState, submit } = useAPIReferenceSearch(() => props.controller, browseGroups)
+const { query, searchState, submit, clear } = useAPIReferenceSearch(() => props.controller, browseGroups)
 
 const renderedBrowseGroups = shallowRef<MainCategory[]>([])
 // Tutorials wait for the rendered categories before targeting them.
@@ -143,7 +143,7 @@ function scrollToCategory(id: string) {
 </script>
 
 <template>
-  <APIReferenceHeader v-model:query="query" :search-state="searchState" @submit="submit">
+  <APIReferenceHeader v-model:query="query" :search-state="searchState" @submit-search="submit" @close-search="clear">
     <template v-if="browseGroups.length > 0" #category-menu>
       <APIReferenceCategoryMenu
         :categories="browseGroups"
@@ -156,7 +156,11 @@ function scrollToCategory(id: string) {
   <UIError v-if="error != null">{{ $t(error.userMessage) }}</UIError>
   <template v-else>
     <APIReferenceSearchResults ref="searchResultsRef" :search-state="searchState" :disabled="disabled" />
-    <div v-show="searchState == null" class="flex min-h-0 flex-[1_1_0] flex-col">
+    <div
+      v-show="searchState == null"
+      v-radar="{ name: 'browse-api-references', desc: 'Browse snippets by category', visible: searchState == null }"
+      class="flex min-h-0 flex-[1_1_0] flex-col"
+    >
       <ul
         ref="browseListRef"
         class="relative min-h-0 flex-[1_1_0] min-w-0 overflow-y-auto px-3 pb-3 [scrollbar-width:thin]"

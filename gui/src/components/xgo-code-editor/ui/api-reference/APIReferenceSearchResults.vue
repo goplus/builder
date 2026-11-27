@@ -48,7 +48,7 @@ const askCopilotAction = computed(() => {
     arguments: [
       i18n.t({
         en: `I searched for “${completed.query}” in the API References panel but found no matches. Can you help me find the right API?`,
-        zh: `我在 API 参考面板里搜索了「${completed.query}」，但没有找到匹配的结果。你能帮我找到合适的 API 吗？`
+        zh: `我在 API 参考面板里搜索了“${completed.query}”，但没有找到匹配的结果。你能帮我找到合适的 API 吗？`
       })
     ]
   })
@@ -68,7 +68,17 @@ const handleAskCopilot = useMessageHandle(
     v-show="searchState != null"
     class="min-h-7 flex flex-none flex-wrap items-baseline gap-x-1.5 px-3 pt-0.5 pb-1.5 text-sm"
   >
-    <p class="text-hint-2" role="status" aria-live="polite" aria-atomic="true">
+    <p
+      v-radar="{
+        name: 'api-reference-search-status',
+        desc: 'Current snippet search status',
+        visible: searchState != null
+      }"
+      class="text-hint-2"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       <span v-if="searchState?.isLoading.value" class="inline-flex items-center gap-1.5">
         <UIIcon type="loading" class="text-primary-main motion-reduce:animate-none!" aria-hidden="true" />
         {{ $t({ en: 'Searching…', zh: '正在查找…' }) }}

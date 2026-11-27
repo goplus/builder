@@ -2,6 +2,7 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref, shallowReactive } from 'vue'
 import { createI18n } from '@/utils/i18n'
+import { Radar } from '@/utils/radar'
 import * as utils from '@/utils/utils'
 import { createAPIReferenceSearch } from '@/apis/api-reference'
 import { UIMessageProvider } from '@/components/ui/message'
@@ -36,8 +37,8 @@ const motionCategory: APICategoryViewInfo = {
   subCategories: [{ id: 'default', label: { en: 'Movement', zh: '移动' } }]
 }
 
-const searchToggle = '[data-radar-name="toggle-api-search"]'
-const categoryToggle = '[data-radar-name="api-categories"]'
+const searchToggle = '[aria-label="Toggle api search"]'
+const categoryToggle = '[aria-label="Api categories"]'
 
 function setup(lang: 'en' | 'zh' = 'en', hasCopilotCommand = true) {
   ui.resolveAction
@@ -57,6 +58,7 @@ function setup(lang: 'en' | 'zh' = 'en', hasCopilotCommand = true) {
     categoryViewInfos: categoryViewInfos as APICategoryViewInfo[] | null,
     search: vi.fn(async (_items: APIReferenceItem[], _query: string, _signal: AbortSignal) => [items[0]])
   })
+  const radar = new Radar()
   const popupReady = ref(true)
   const PopupContent = defineComponent({
     setup(_, { slots }) {
@@ -76,13 +78,15 @@ function setup(lang: 'en' | 'zh' = 'en', hasCopilotCommand = true) {
   const wrapper = mount(Harness, {
     attachTo: document.body,
     global: {
-      plugins: [createI18n({ lang })],
-      directives: { radar: (el, { value }) => el.setAttribute('data-radar-name', value.name) },
+      plugins: [createI18n({ lang }), radar],
       stubs: {
-        APIReferenceItemComp: { props: ['item'], template: '<li>{{ item.overview }}</li>' },
+        APIReferenceItemComp: {
+          props: ['item'],
+          template: `<li v-radar="{ name: 'api-reference', desc: '' }">{{ item.overview }}</li>`
+        },
         APIReferenceSearchItem: {
           props: ['item'],
-          template: '<li data-search-result="true">{{ item.overview }}</li>'
+          template: `<li data-search-result="true" v-radar="{ name: 'api-reference', desc: '' }">{{ item.overview }}</li>`
         },
         UITooltip: { template: '<div><slot name="trigger" /></div>' },
         UIDropdown: {
@@ -100,7 +104,7 @@ function setup(lang: 'en' | 'zh' = 'en', hasCopilotCommand = true) {
     await wrapper.get('form').trigger('submit')
   }
 
-  return { state, wrapper, items, popupReady, submitSearch }
+  return { state, wrapper, items, popupReady, radar, submitSearch }
 }
 
 enableAutoUnmount(afterEach)
@@ -116,7 +120,7 @@ afterEach(() => {
 describe('API Reference search lifecycle', () => {
   it('debounces input, searches on Enter and clears back to browsing', async () => {
     vi.useFakeTimers()
-    const { state, wrapper, items } = setup()
+    const { state, wrapper, items, radar } = setup()
     await wrapper.get(searchToggle).trigger('click')
     await wrapper.get('input').setValue('播放动画')
     await vi.advanceTimersByTimeAsync(299)
@@ -124,27 +128,38 @@ describe('API Reference search lifecycle', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(state.search).toHaveBeenCalledWith(items, '播放动画', expect.any(AbortSignal))
-    expect(wrapper.get('[role="status"]').text()).toBe('Matched 1 snippet')
+    expect(radar.select('api-reference-search-status')?.getElement().textContent).toBe('Matched 1 snippet')
+    expect(radar.selectAll('api-reference').map((node) => node.getElement().textContent)).toEqual(['animate name'])
     await wrapper.get('input').setValue('')
+    expect(wrapper.get('[role="status"]').isVisible()).toBe(true)
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
     expect(wrapper.get('[role="status"]').isVisible()).toBe(false)
+    expect(radar.select('api-reference-search-status')).toBeNull()
+    expect(radar.selectAll('api-reference')).toHaveLength(items.length)
     expect(state.search).toHaveBeenCalledTimes(1)
   })
 
   it('closes the search form on Escape from its input while the category menu is open', async () => {
-    const { wrapper, popupReady } = setup()
+    vi.useFakeTimers()
+    const { wrapper, popupReady, state } = setup()
+    state.search.mockImplementationOnce(() => new Promise(() => {}))
     popupReady.value = false
     const searchButton = wrapper.get(searchToggle)
     const categoryButton = wrapper.get(categoryToggle)
     await searchButton.trigger('click')
     const input = wrapper.get('input')
+    await input.setValue('animate')
+    await wrapper.get('form').trigger('submit')
+    const signal = state.search.mock.calls[0][2]
     input.element.focus()
     await categoryButton.trigger('click')
     expect(categoryButton.attributes('aria-expanded')).toBe('true')
 
     await input.trigger('keydown', { key: 'Escape' })
 
+    expect(signal.aborted).toBe(true)
+    expect(wrapper.get('[role="status"]').isVisible()).toBe(false)
     expect(wrapper.find('input').exists()).toBe(false)
     expect(document.activeElement).toBe(searchButton.element)
   })
@@ -175,10 +190,18 @@ describe('API Reference search lifecycle', () => {
     expect(state.search).toHaveBeenLastCalledWith(newItems, '动画', expect.any(AbortSignal))
     expect(wrapper.get('[role="status"]').text()).toBe('Search failed. Try again.')
 
+    await wrapper.get(categoryToggle).trigger('click')
+    const category = wrapper.get('button[aria-pressed]')
+    expect(category.text()).toBe('Looks')
+    expect(category.attributes('disabled')).toBeDefined()
+    expect(category.attributes('aria-description')).toBe('')
+
     state.search.mockResolvedValueOnce([])
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(wrapper.get('[role="status"]').text()).toBe('No matching snippets')
+    expect(category.text()).toMatch(/^Looks\s*0$/)
+    expect(category.attributes('aria-description')).toBe('0 matching snippets')
     const ask = wrapper.findAll('button').find((button) => button.text() === 'Ask Copilot')!
     await ask.trigger('click')
     expect(ui.executeCommand).toHaveBeenCalledExactlyOnceWith(
@@ -195,7 +218,7 @@ describe('API Reference search lifecycle', () => {
 
     await submitSearch('animate')
     await flushPromises()
-    await wrapper.get('[data-radar-name="ask-copilot-about-snippet-search"]').trigger('click')
+    await wrapper.get('[aria-label="Ask copilot about snippet search"]').trigger('click')
     await flushPromises()
 
     expect(document.body.textContent).toContain('Failed to ask Copilot')

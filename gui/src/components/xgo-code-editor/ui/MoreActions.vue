@@ -46,7 +46,12 @@ const emit = defineEmits<{
           <UIMenuItem
             v-for="(action, i) in actions"
             :key="i"
-            v-radar="{ name: 'action', label: $t(action.title), desc: 'Run this action' }"
+            v-radar="{
+              name: 'action',
+              attrs: { command: action.command },
+              label: $t(action.title),
+              desc: 'Run this action'
+            }"
             @click="emit('select', action)"
           >
             <template #icon><CommandIcon :type="action.commandInfo.icon" /></template>

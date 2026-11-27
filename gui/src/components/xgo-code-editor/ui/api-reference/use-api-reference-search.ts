@@ -51,7 +51,13 @@ export function useAPIReferenceSearch(
     if (previousTerm !== '' && submittedQuery.value === previousTerm && !result.isLoading.value) result.refetch()
   }
 
+  function clear() {
+    query.value = ''
+    syncQuery.cancel()
+    submittedQuery.value = ''
+  }
+
   onBeforeUnmount(() => syncQuery.cancel())
 
-  return { query, searchState, submit }
+  return { query, searchState, submit, clear }
 }

@@ -8,7 +8,7 @@ defineProps<{
 }>()
 
 const query = defineModel<string>('query', { required: true })
-const emit = defineEmits<{ submit: [] }>()
+const emit = defineEmits<{ submitSearch: []; closeSearch: [] }>()
 
 const isSearchExpanded = ref(false)
 const searchInputRef = ref<InstanceType<typeof UITextInput> | null>(null)
@@ -19,7 +19,7 @@ function handleSearchEnter(event: KeyboardEvent) {
 }
 
 function closeSearch() {
-  query.value = ''
+  emit('closeSearch')
   isSearchExpanded.value = false
   searchToggleRef.value?.focus()
 }
@@ -73,7 +73,7 @@ function handleSearchEscape(event: KeyboardEvent) {
       class="mt-2 flex"
       :aria-label="$t({ en: 'Search snippets', zh: '搜索代码片段' })"
       :aria-busy="searchState?.isLoading.value ?? false"
-      @submit.prevent="emit('submit')"
+      @submit.prevent="emit('submitSearch')"
     >
       <UITextInput
         ref="searchInputRef"

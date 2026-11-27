@@ -103,12 +103,14 @@ function selectCategory(id: string) {
             attrs: { name: c.id },
             desc: searchState?.isLoading.value
               ? $t({ en: 'Searching…', zh: '正在查找…' })
-              : searchState != null
+              : searchState?.data.value != null
                 ? $t({
                     en: `${getResultCount(c.id)} matching snippets`,
                     zh: `匹配到 ${getResultCount(c.id)} 个代码片段`
                   })
-                : 'Click to view snippets in this category'
+                : searchState == null
+                  ? $t({ en: 'Click to view snippets in this category', zh: '点击查看该分类下的代码片段' })
+                  : ''
           }"
           type="button"
           class="h-8 w-full appearance-none flex items-center gap-2 rounded-sm border-none px-2 text-xs transition-colors duration-100 enabled:cursor-pointer disabled:cursor-not-allowed disabled:text-disabled-text"
@@ -124,7 +126,7 @@ function selectCategory(id: string) {
           <!-- eslint-disable-next-line vue/no-v-html -->
           <span class="size-4 shrink-0 [&>svg]:h-full [&>svg]:w-full" v-html="c.icon"></span>
           {{ $t(c.label) }}
-          <span v-if="searchState != null && !searchState.isLoading.value" class="ml-auto text-hint-2">
+          <span v-if="searchState?.data.value != null" class="ml-auto text-hint-2">
             {{ getResultCount(c.id) }}
           </span>
         </button>
