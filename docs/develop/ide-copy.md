@@ -44,5 +44,3 @@ XBuilder 的产品人格为「亦师亦友」：一位可靠的创作伙伴、�
 
 - IDE 文案需要给名称加引号时，中文用双引号 “ ”，英文用半角双引号 "。例如：`撤销“移动精灵”` / `Undo "Move sprite"`。
 - 完整句子加句号，如 `请输入项目名。`；短语不加，如 `删除`。错误提示括号里补充的简短原因不加句号。菜单项是否加省略号，见 `gui/AGENTS.md` 的[菜单项文案规则](../../gui/AGENTS.md#menu-item-text-guidelines)。
-
-更多案例和课程弹窗的完整结构见[线上文案指南](https://xbuilder-writing-guide-2026.anniemuse.chatgpt.site/)。
