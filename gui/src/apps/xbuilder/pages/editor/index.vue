@@ -38,7 +38,7 @@ class LocalCache implements ILocalCache {
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { useSignedIn } from '@/stores/user'
 import { getProjectEditorRoute } from '../../router'
 import { useRegisterLoading } from '@/utils/readiness'
@@ -201,12 +201,20 @@ onMounted(async () => {
   }
 })
 
-onBeforeRouteLeave(async () => {
+async function checkBeforeLeavingProject() {
   const es = state.value
   if (es == null) return true
   const okToLeave = await checkChangesNotToBeSaved(es)
   if (!okToLeave) return false
   return ensureAutoSaved(es)
+}
+
+onBeforeRouteLeave(checkBeforeLeavingProject)
+onBeforeRouteUpdate((to) => {
+  const { ownerNameInput, projectNameInput } = to.params
+  const current = currentProjectIdentifier.value
+  if (current?.owner === ownerNameInput && current?.name === projectNameInput) return true
+  return checkBeforeLeavingProject()
 })
 
 /**

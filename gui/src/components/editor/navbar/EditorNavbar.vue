@@ -34,18 +34,16 @@
               </UIMenuItem>
             </UIMenuGroup>
             <UIMenuGroup :disabled="project == null">
-              <UIMenuItem @click="handleExportProjectFile">
-                <template #icon><img :src="exportProjectSvg" /></template>
-                {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
-              </UIMenuItem>
+              <NavbarSaveProjectAsItem v-if="project != null && !isOwnProject" :state="state" />
+              <NavbarExportProjectItem :project="project" />
             </UIMenuGroup>
             <UIMenuGroup :disabled="project == null || !isOnline">
-              <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
+              <UIMenuItem v-if="isOwnProject" @click="handlePublishProject">
                 <template #icon><img :src="publishSvg" /></template>
                 {{ $t({ en: 'Publish project...', zh: '发布项目...' }) }}
               </UIMenuItem>
               <UIMenuItem
-                v-if="canManageProject && project?.visibility === Visibility.Public"
+                v-if="isOwnProject && project?.visibility === Visibility.Public"
                 @click="handleUnpublishProject"
               >
                 <template #icon><img :src="unpublishSvg" /></template>
@@ -55,12 +53,12 @@
                 <template #icon><img :src="projectPageSvg" /></template>
                 {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
               </UIMenuItem>
-              <UIMenuItem v-if="canManageProject" class="w-full" @click="handleModifyProjectName">
+              <UIMenuItem v-if="isOwnProject" class="w-full" @click="handleModifyProjectName">
                 <template #icon><img :src="modifyProjectNameSvg" /></template>
                 {{ $t({ en: 'Modify project name', zh: '修改项目名' }) }}
               </UIMenuItem>
             </UIMenuGroup>
-            <UIMenuGroup v-if="canManageProject" :disabled="project == null">
+            <UIMenuGroup v-if="isOwnProject" :disabled="project == null">
               <UIMenuItem @click="handleRemoveProject">
                 <template #icon><img :src="removeProjectSvg" /></template>
                 {{ $t({ en: 'Remove project...', zh: '删除项目...' }) }}
@@ -79,7 +77,7 @@
         <div v-if="title != null" class="max-w-62 truncate text-title text-xl">{{ title }}</div>
         <EditorProjectDisplayName v-else :project="project" />
         <EditorAutoSaveStateIcon :editing="state?.editing ?? null" />
-        <EditorCheckoutReleaseButton v-if="isDeveloperMode && canManageProject" :project="project" :state="state" />
+        <EditorCheckoutReleaseButton v-if="isDeveloperMode && isOwnProject" :project="project" :state="state" />
       </div>
     </template>
     <template #right>
@@ -91,7 +89,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import saveAs from 'file-saver'
 import { UIMenu, UIMenuGroup, UIMenuItem, UIIcon, useConfirmDialog, useMessage, UITag } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
@@ -120,7 +117,8 @@ import EditorModeSwitch from './EditorModeSwitch.vue'
 import { EditMode, type EditorState } from '../editor-state'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import importProjectSvg from './icons/import-project.svg'
-import exportProjectSvg from './icons/export-project.svg'
+import NavbarExportProjectItem from './NavbarExportProjectItem.vue'
+import NavbarSaveProjectAsItem from './NavbarSaveProjectAsItem.vue'
 import removeProjectSvg from './icons/remove-project.svg'
 import modifyProjectNameSvg from './icons/modify-project-name.svg'
 import importScratchSvg from './icons/import-scratch.svg'
@@ -142,7 +140,7 @@ const i18n = useI18n()
 const router = useRouter()
 const confirm = useConfirmDialog()
 const signedIn = useSignedIn()
-const canManageProject = computed(() => {
+const isOwnProject = computed(() => {
   const signedInUsername = signedIn.username
   if (signedInUsername == null || props.project == null) return false
   return props.project.owner === signedInUsername
@@ -179,20 +177,6 @@ const handleImportProjectFile = useMessageHandle(
 ).fn
 
 const m = useMessage()
-
-const handleExportProjectFile = useMessageHandle(
-  async () => {
-    const project = props.project
-    if (project == null) throw new Error('No project to export')
-    const signal = project.getSignal()
-    const xbpFile = await m.withLoading(
-      project.export(signal).then((serialized) => xbpHelpers.save(serialized, signal)),
-      i18n.t({ en: 'Exporting project file', zh: '导出项目文件中' })
-    )
-    saveAs(xbpFile, xbpFile.name) // TODO: what if user cancelled download?
-  },
-  { en: 'Failed to export project file', zh: '导出项目文件失败' }
-).fn
 
 const loadFromScratchModal = useLoadFromScratchModal()
 const handleImportAssetsFromScratch = useMessageHandle(
