@@ -672,6 +672,28 @@ describe('EditorState', () => {
       editorState.dispose()
     })
 
+    it.each(['costumes', 'animations'] as const)('resolves %s drafts by ID and adopted resources by name', (type) => {
+      const project = makeProjectWithResources()
+      const editor = makeEditorState(project)
+      try {
+        const sprite = project.sprites[0]
+        const resources = editor.genState.spriteResources
+        const draft = type === 'costumes' ? resources.addCostume(sprite) : resources.addAnimation(sprite)
+        const route = ['sprites', sprite.name, type]
+        editor.selectByRoute([...route, 'drafts', draft.id])
+        expect(editor.spriteState?.getRoute()).toEqual([type, 'drafts', draft.id])
+        editor.selectByRoute([...route, 'drafts', 'missing'])
+        expect(editor.spriteState?.getRoute()).toEqual([type, 'drafts', draft.id])
+
+        const resource = type === 'costumes' ? sprite.costumes[0] : sprite.animations[0]
+        resource.setName('drafts')
+        editor.selectByRoute([...route, 'drafts'])
+        expect(editor.spriteState?.getRoute()).toEqual([type, 'drafts'])
+      } finally {
+        editor.dispose()
+      }
+    })
+
     it('should select the focused sprite for a Simple Mode route', async () => {
       const project = makeProjectWithResources()
       const editorState = makeEditorState(project)

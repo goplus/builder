@@ -1,0 +1,284 @@
+<script lang="ts">
+import type { Direction, Game } from './generation-game'
+
+const wasdDirections: Record<string, Direction> = {
+  w: 'ArrowUp',
+  a: 'ArrowLeft',
+  s: 'ArrowDown',
+  d: 'ArrowRight'
+}
+
+function hasModifier(event: KeyboardEvent) {
+  return event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+}
+
+function consume(event: KeyboardEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+}
+</script>
+
+<script setup lang="ts">
+import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
+import { createGame, directions, gameCellSize, gameGrid, gameLayout, gameStepMs, stepGame } from './generation-game'
+import GenerationGameResult from './GenerationGameResult.vue'
+
+const props = defineProps<{ enabled: boolean; completed?: boolean; viewport: { width: number; height: number } }>()
+const emit = defineEmits<{ change: [Game | null] }>()
+const root = ref<HTMLElement | null>(null)
+const board = ref<SVGSVGElement | null>(null)
+const game = ref<Game | null>(null)
+const layout = computed(() =>
+  game.value == null ? null : gameLayout(game.value, props.viewport.width, props.viewport.height)
+)
+let previousFocus: HTMLElement | null = null
+let timer: ReturnType<typeof setInterval> | null = null
+let hasFinished = false
+
+function exit() {
+  if (timer != null) clearInterval(timer)
+  timer = null
+  if (document.activeElement === board.value && previousFocus?.isConnected) previousFocus.focus()
+  game.value = null
+  emit('change', null)
+}
+
+watch(
+  () => props.enabled,
+  (enabled) => {
+    if (!enabled) return
+    hasFinished = false
+    if (game.value?.status === 'won' || game.value?.status === 'caught') exit()
+  }
+)
+
+watch(
+  () => game.value?.status,
+  (status, _, onCleanup) => {
+    if (status !== 'caught' && status !== 'won') return
+    hasFinished = true
+    if (timer != null) clearInterval(timer)
+    timer = null
+    const timeout = setTimeout(exit, status === 'won' ? 5000 : 600)
+    onCleanup(() => clearTimeout(timeout))
+  }
+)
+
+watch(
+  () => props.completed,
+  (completed) => {
+    if (completed && game.value?.status === 'playing') {
+      game.value.status = 'won'
+      game.value.finishedAt = performance.now()
+    }
+  }
+)
+
+function tick() {
+  const current = game.value
+  if (!props.enabled || current == null || document.hidden || document.activeElement !== board.value) return
+  stepGame(current, performance.now())
+}
+
+function start(direction: Direction) {
+  previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  const { columns, rows } = gameGrid(props.viewport.width, props.viewport.height)
+  game.value = createGame(direction, columns, rows, performance.now())
+  emit('change', game.value)
+  timer = setInterval(tick, gameStepMs)
+}
+
+function isShown() {
+  const bounds = root.value?.getBoundingClientRect()
+  return bounds != null && bounds.width !== 0 && bounds.height !== 0 && !document.hidden
+}
+
+function acceptsKey(event: KeyboardEvent) {
+  if (!props.enabled || event.defaultPrevented || hasModifier(event) || !isShown()) return false
+  const modal = document.querySelector('[aria-modal="true"]')
+  return modal == null || modal.contains(root.value)
+}
+
+function handleResultKey(event: KeyboardEvent) {
+  if (!(event.target instanceof Node) || !root.value?.contains(event.target)) return
+  if (event.key !== 'Escape' && event.key !== 'Enter') return
+  consume(event)
+  if (props.completed) exit()
+}
+
+async function handleGameKey(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    if (game.value == null) return
+    consume(event)
+    exit()
+    return
+  }
+  const direction = (wasdDirections[event.key.toLowerCase()] ?? event.key) as Direction
+  if (hasFinished || !(direction in directions)) return
+  consume(event)
+  if (game.value == null) start(direction)
+  else game.value.turn = direction
+  await nextTick()
+  board.value?.focus()
+}
+
+async function handleKeydown(event: KeyboardEvent) {
+  if (game.value?.status === 'won') handleResultKey(event)
+  else if (acceptsKey(event)) await handleGameKey(event)
+}
+
+function handlePageKeydown(event: KeyboardEvent) {
+  const pageOwnsFocus = document.activeElement === document.body || document.activeElement === document.documentElement
+  if (pageOwnsFocus && (event.target === document.body || event.target === document.documentElement)) {
+    void handleKeydown(event)
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', handlePageKeydown))
+onScopeDispose(() => {
+  window.removeEventListener('keydown', handlePageKeydown)
+  exit()
+})
+</script>
+
+<template>
+  <div
+    ref="root"
+    v-radar="{
+      name: 'maze-game',
+      desc: 'Use the arrow keys or WASD to start and move.'
+    }"
+    class="absolute inset-0"
+    role="group"
+    :tabindex="enabled && game == null ? 0 : -1"
+    @keydown="handleKeydown"
+  >
+    <Transition name="characters">
+      <svg
+        v-if="game != null && layout != null"
+        ref="board"
+        class="absolute inset-0 h-full w-full pointer-events-auto focus:outline-none"
+        :viewBox="`0 0 ${viewport.width} ${viewport.height}`"
+        role="application"
+        tabindex="0"
+        :aria-label="
+          $t({
+            en: 'Maze game. Use arrow keys or WASD to move, Escape to exit.',
+            zh: '迷宫躲避。方向键或 WASD 移动，Esc 退出。'
+          })
+        "
+      >
+        <g :transform="`translate(${layout.x} ${layout.y}) scale(${layout.scale})`">
+          <path
+            :d="game.walls"
+            class="fill-none stroke-primary-300"
+            :class="{ won: game.status === 'won' }"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle
+            v-if="game.status === 'caught'"
+            :cx="game.player.x * gameCellSize"
+            :cy="game.player.y * gameCellSize"
+            r="10"
+            class="collision fill-none stroke-grey-800"
+            stroke-width="2"
+          />
+          <g
+            class="player"
+            :class="{ reset: game.ticks === 0, caught: game.status === 'caught' }"
+            :style="{
+              transform: `translate(${game.player.x * gameCellSize}px, ${game.player.y * gameCellSize}px)`,
+              '--move-duration': `${gameStepMs}ms`
+            }"
+          >
+            <g :transform="`rotate(${directions[game.direction].angle})`">
+              <path
+                :d="game.ticks % 2 === 0 ? 'M0 0L4.2 -4.2A6 6 0 1 0 4.2 4.2Z' : 'M0 0L5.8 -1.5A6 6 0 1 0 5.8 1.5Z'"
+                class="fill-primary-main"
+              />
+            </g>
+          </g>
+          <g
+            v-for="(ghost, index) in game.ghosts"
+            :key="index"
+            class="ghost"
+            :class="{ reset: game.ticks === 0 || ghost.restUntil > game.ticks * gameStepMs }"
+            :style="{
+              transform: `translate(${ghost.x * gameCellSize}px, ${ghost.y * gameCellSize}px)`,
+              opacity: ghost.restUntil > game.ticks * gameStepMs ? 0.3 : 1,
+              '--move-duration': `${gameStepMs * 2}ms`
+            }"
+          >
+            <path
+              d="M-5 5V0a5 5 0 0 1 10 0v5L2.5 3.5 0 5-2.5 3.5Z"
+              :class="index === 0 ? 'fill-grey-900' : 'fill-grey-800'"
+            />
+            <circle cx="-1.8" cy="0" r="1.3" class="fill-grey-100" />
+            <circle cx="1.8" cy="0" r="1.3" class="fill-grey-100" />
+          </g>
+        </g>
+      </svg>
+    </Transition>
+    <span v-if="game?.status === 'caught'" class="sr-only" role="status">
+      {{ $t({ en: 'Caught. Returning to loading.', zh: '被抓到了，返回加载。' }) }}
+    </span>
+    <GenerationGameResult v-if="game != null && game.status === 'won'" :score="game.eaten.size" />
+  </div>
+</template>
+
+<style scoped>
+.won {
+  animation: maze-complete 500ms ease-out both;
+}
+@keyframes maze-complete {
+  35% {
+    stroke: var(--ui-color-primary-main);
+  }
+}
+
+.collision {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: collision 400ms ease-out both;
+}
+@keyframes collision {
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+.player,
+.ghost {
+  transition:
+    transform var(--move-duration) linear,
+    opacity 180ms ease-out;
+}
+.reset {
+  transition: opacity 180ms ease-out;
+}
+.caught {
+  opacity: 0;
+}
+.characters-enter-active,
+.characters-leave-active {
+  transition: opacity 240ms ease-out;
+}
+.characters-enter-from,
+.characters-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .collision,
+  .won {
+    animation: none;
+  }
+  .player,
+  .ghost,
+  .characters-enter-active,
+  .characters-leave-active {
+    transition: none;
+  }
+}
+</style>

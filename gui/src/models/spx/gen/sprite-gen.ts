@@ -326,18 +326,7 @@ export class SpriteGen extends Disposable {
     await this.prepareContentPhase.run(async () => {
       const project = this.project
 
-      // Clear existing costumes & animations
-      this.costumes.splice(0).forEach((c) => c.dispose())
-      this.animations.splice(0).forEach((a) => a.dispose())
-
-      // Prepare preview sprite
-      this.preparePreviewSprite()
-
-      // Generate default costume
-      const defaultCostumeGen = new CostumeGen(this.i18n, this, project, { settings: this.getDefaultCostumeSettings() })
-      defaultCostumeGen.setImage(image)
-      const defaultCostume = await defaultCostumeGen.finish()
-      this.costumes.push(defaultCostumeGen)
+      const defaultCostume = await this.prepareDefaultCostume(image)
 
       // Generate additional costumes & animations
       const settings = await generateSpriteContentSettings(this.settings, this.i18n.lang.value)
@@ -364,6 +353,32 @@ export class SpriteGen extends Disposable {
           .filter(([, genId]) => genId != null)
       )
     })
+  }
+
+  private async prepareDefaultCostume(image: File) {
+    // Clear existing costumes & animations
+    this.costumes.splice(0).forEach((c) => c.dispose())
+    this.animations.splice(0).forEach((a) => a.dispose())
+
+    // Prepare preview sprite
+    this.preparePreviewSprite()
+
+    // Generate default costume
+    const defaultCostumeGen = new CostumeGen(this.i18n, this, this.project, {
+      settings: this.getDefaultCostumeSettings()
+    })
+    defaultCostumeGen.setImage(image)
+    const defaultCostume = await defaultCostumeGen.finish()
+    this.costumes.push(defaultCostumeGen)
+
+    return defaultCostume
+  }
+
+  async finishWithDefaultCostume() {
+    const image = this.image
+    if (image == null) throw new Error('image expected')
+    await this.prepareDefaultCostume(image)
+    return this.finish()
   }
 
   /** Costumes gen */

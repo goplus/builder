@@ -68,11 +68,14 @@ class SpxProjectWithGens implements IProject {
   exportFiles() {
     return this.filesComputed.value
   }
+  // Both load paths must restore sprites before generation drafts can resolve their sprite IDs.
   async loadFiles(files: Files): Promise<void> {
-    await Promise.all([this.project.loadFiles(files), this.genState.load(files)])
+    await this.project.loadFiles(files)
+    await this.genState.load(files)
   }
   async load({ metadata, files }: ProjectSerialized) {
-    await Promise.all([this.project.load({ metadata, files }), this.genState.load(files)])
+    await this.project.load({ metadata, files })
+    await this.genState.load(files)
   }
   async export(signal?: AbortSignal): Promise<ProjectSerialized> {
     const files: Files = {}
@@ -102,9 +105,9 @@ export class EditorState extends Disposable {
     this.addDisposable((this.runtime = new Runtime(project)))
     this.history = history ?? new History(project)
     this.addDisposable((this.genState = new GenState(i18n, project)))
-    const projectWithGens = new SpxProjectWithGens(project, this.genState)
+    this.workingProject = new SpxProjectWithGens(project, this.genState)
     this.addDisposable(
-      (this.editing = new editing.Editing(projectWithGens, cloudHelpers, localCache, isOnline, signedIn))
+      (this.editing = new editing.Editing(this.workingProject, cloudHelpers, localCache, isOnline, signedIn))
     )
     this.addDisposable(
       (this.stageState = new StageEditorState(
@@ -138,6 +141,7 @@ export class EditorState extends Disposable {
    */
   history: History
   genState: GenState
+  readonly workingProject: IProject
   editing: editing.Editing
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
@@ -224,7 +228,7 @@ export class EditorState extends Disposable {
             return
           }
           const getSprite = () => this.project.sprites.find((s) => s.id === target.id) ?? null
-          this.spriteState = new SpriteEditorState(getSprite, prevSelected)
+          this.spriteState = new SpriteEditorState(getSprite, this.genState.spriteResources, prevSelected)
         }
         break
       default:

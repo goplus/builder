@@ -2485,7 +2485,7 @@ paths:
         - Project Releases
       summary: Create a project release
       description: |
-        Create a new release for a specific project.
+        Create a new release for a specific project. Generation drafts remain in the owner's working copy.
 
         The request fails with a conflict if the current project revision does not match `projectRevision`.
       parameters:
@@ -8518,7 +8518,7 @@ components:
           examples:
             - 1
         files:
-          description: File paths and their corresponding universal URLs associated with the project.
+          description: File paths and their corresponding universal URLs associated with the project. Only the owner receives generation draft files.
           type: object
           additionalProperties:
             type: string

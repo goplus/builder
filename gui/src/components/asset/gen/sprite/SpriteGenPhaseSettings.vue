@@ -8,8 +8,8 @@
 import { computed, ref } from 'vue'
 import { UIButton } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
-import type { Sprite } from '@/models/spx/sprite'
 import { asset2Sprite } from '@/models/spx/common/asset'
+import type { Sprite } from '@/models/spx/sprite'
 import type { SpriteGen } from '@/models/spx/gen/sprite-gen'
 import { useMessageHandle } from '@/utils/exception'
 import { humanizeTimeLeft } from '../common/time-left'
@@ -36,14 +36,18 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   resolved: [Sprite]
+  generated: [Sprite]
 }>()
 
-const canSubmit = computed(() => props.gen.image != null)
+const canSubmit = computed(() => props.gen.image != null && props.gen.imagesGenState.status !== 'running')
 
-const handleSubmit = useMessageHandle(() => props.gen.prepareContent(), {
-  en: 'Failed to generate sprite content',
-  zh: '生成精灵内容失败'
-})
+const handleSubmit = useMessageHandle(
+  async () => {
+    const sprite = await props.gen.finishWithDefaultCostume()
+    emit('generated', sprite)
+  },
+  { en: 'Failed to add sprite', zh: '添加精灵失败' }
+)
 
 // The preview area remains visible once the user has selected any generated image.
 // Example: if a user selects an image and then triggers regeneration,
@@ -91,6 +95,7 @@ const handleUseAsset = useMessageHandle(
       <SpriteSettingsInput
         :class="{ 'h-75': hasPreview }"
         :gen="gen"
+        :disabled="handleSubmit.isLoading.value"
         :description-placeholder="descriptionPlaceholder"
       />
       <!-- Fixed height to prevent layout shift when suggestions appear/disappear -->
@@ -111,7 +116,7 @@ const handleUseAsset = useMessageHandle(
         <ImageSelector
           :state="gen.imagesGenState"
           :selected="gen.imageIndex"
-          :disabled="handleSubmit.isLoading.value"
+          :disabled="handleSubmit.isLoading.value || gen.contentPreparingState.status === 'running'"
           @select="handleImageSelect"
         >
           <template #loading-item>
@@ -128,8 +133,8 @@ const handleUseAsset = useMessageHandle(
             <template v-else-if="gen.imagesGenState.status === 'finished'">
               {{
                 $t({
-                  en: 'Select the sprite you like the most, or generate new ones.',
-                  zh: '选择你最喜欢的一个精灵，或者重新生成。'
+                  en: 'Choose a costume to start with, or generate new options.',
+                  zh: '选一个造型作为精灵的初始造型，或重新生成。'
                 })
               }}
             </template>
@@ -154,20 +159,17 @@ const handleUseAsset = useMessageHandle(
       >
         {{ $t({ en: 'Use', zh: '采用' }) }}
       </UIButton>
-      <UIButton
-        v-else
-        v-radar="{
-          name: 'next',
-          desc: 'Click to proceed to the next phase of sprite generation (costume & animation generation)'
-        }"
-        type="primary"
-        size="large"
-        :disabled="!canSubmit"
-        :loading="handleSubmit.isLoading.value"
-        @click="handleSubmit.fn"
-      >
-        {{ $t({ en: 'Next', zh: '下一步' }) }}
-      </UIButton>
+      <slot v-else name="submit" :disabled="!canSubmit">
+        <UIButton
+          v-radar="{ name: 'add-sprite', desc: 'Add the sprite with its initial costume' }"
+          type="primary"
+          size="large"
+          :disabled="!canSubmit"
+          :loading="handleSubmit.isLoading.value"
+          @click="handleSubmit.fn"
+          >{{ $t({ en: 'Add sprite', zh: '添加精灵' }) }}</UIButton
+        >
+      </slot>
     </footer>
   </main>
 </template>

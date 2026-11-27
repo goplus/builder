@@ -10,7 +10,7 @@ vi.mock('@/utils/file', async (importOriginal) => ({
   useFileUrl: () => [ref('blob:animation')]
 }))
 
-async function setup() {
+async function setup(duration = 5) {
   const wrapper = shallowMount(AnimationVideoPreview, {
     props: { video: mockFile('animation.mp4'), framesConfig: null },
     global: { plugins: [createI18n({ lang: 'en' })], directives: { radar: () => {} } }
@@ -18,7 +18,7 @@ async function setup() {
   onTestFinished(() => wrapper.unmount())
   await nextTick()
   const video = wrapper.get('video')
-  Object.defineProperty(video.element, 'duration', { configurable: true, value: 5 })
+  Object.defineProperty(video.element, 'duration', { configurable: true, value: duration })
   await video.trigger('loadedmetadata')
   vi.spyOn(wrapper.get('.track-inner').element, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 0, 500, 20))
   for (const marker of wrapper.findAll('.segment-marker')) marker.element.setPointerCapture = vi.fn()
@@ -61,6 +61,16 @@ describe('Animation trim dragging', () => {
     ])
   })
 
+  it('keeps the exact end of a video when the last frame interval is partial', async () => {
+    const { wrapper, start, move } = await setup(5.175)
+    expect(wrapper.emitted('update:framesConfig')![0]).toEqual([{ startTime: 0, duration: 5175, interval: 100 }])
+    await start('right', 500)
+    await move(650)
+    await move(650, 'pointerup')
+    const [range] = wrapper.emitted('update:framesConfig')!.at(-1)! as [{ startTime: number; duration: number }]
+    expect(range.startTime + range.duration).toBe(5175)
+  })
+
   it('keeps preview seeking anchored to the pointer without changing the cut range', async () => {
     const { wrapper, move } = await setup()
     const initialStyle = wrapper.get('.segment').attributes('style')
@@ -72,5 +82,17 @@ describe('Animation trim dragging', () => {
     await move(400, 'pointerup')
     expect(wrapper.get('.segment').attributes('style')).toBe(initialStyle)
     expect(wrapper.emitted('update:framesConfig')).toHaveLength(updates)
+  })
+
+  it('keeps the last selectable frame start compatible with the extract API', async () => {
+    const { wrapper, start, move } = await setup(5.175)
+    await start('right', 500)
+    await move(650)
+    await move(650, 'pointerup')
+    await start('left', 200)
+    await move(700)
+    await move(700, 'pointerup')
+    const [range] = wrapper.emitted('update:framesConfig')!.at(-1)! as [{ startTime: number; duration: number }]
+    expect(range).toEqual({ startTime: 5000, duration: 175, interval: 100 })
   })
 })

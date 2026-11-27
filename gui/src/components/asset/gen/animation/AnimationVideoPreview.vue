@@ -145,6 +145,7 @@ import GenLoading from '../common/GenLoading.vue'
 const props = defineProps<{
   video: File
   framesConfig: FramesConfig | null
+  controlsBelow?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -160,13 +161,13 @@ const cutStartRef = ref(0)
 const cutEndRef = ref(0)
 
 /** Interval in ms between extracted animation frames */
-const frameInterval = 100
+const frameInterval = computed(() => props.framesConfig?.interval ?? 100)
 
 function notifyFramesConfigChanged() {
   emit('update:framesConfig', {
     startTime: cutStartRef.value,
     duration: cutEndRef.value - cutStartRef.value,
-    interval: frameInterval
+    interval: frameInterval.value
   })
 }
 
@@ -195,12 +196,14 @@ watch(
   videoDurationRef,
   (newDuration) => {
     if (newDuration == null) return
-    // Initialize cut range when video duration is known
-    // This causes cut range to reset when selected animation / costume changes, it'll be better
-    // to persist the cut range across animation / costume selections. TODO: Improve this later
     if (newDuration > 0 && cutEndRef.value === 0) {
+      if (props.framesConfig != null) {
+        cutStartRef.value = clamp(props.framesConfig.startTime ?? 0, 0, newDuration)
+        cutEndRef.value = clamp(cutStartRef.value + props.framesConfig.duration, cutStartRef.value, newDuration)
+        return
+      }
       cutStartRef.value = 0
-      cutEndRef.value = snapDown(newDuration)
+      cutEndRef.value = newDuration
       notifyFramesConfigChanged()
     }
   },
@@ -338,24 +341,19 @@ function handleDragEnd(e: PointerEvent) {
 
 function adjustStartTime(newTime: number, withSnap = false) {
   const time = withSnap ? snap(newTime) : newTime
-  return clamp(time, 0, cutEndRef.value - minDuration)
+  const maxStart = cutEndRef.value - frameInterval.value
+  const lastTick = Math.floor(maxStart / frameInterval.value) * frameInterval.value
+  return clamp(time, 0, Math.max(0, withSnap ? lastTick : maxStart))
 }
 
 function adjustEndTime(newTime: number, videoDuration: number, withSnap = false) {
   const time = withSnap ? snap(newTime) : newTime
-  const maxTime = withSnap ? snapDown(videoDuration) : videoDuration
-  return clamp(time, cutStartRef.value + minDuration, maxTime)
+  if (newTime >= videoDuration) return videoDuration
+  return clamp(time, cutStartRef.value + frameInterval.value, videoDuration)
 }
-
-/** Minimum allowed segment duration in ms */
-const minDuration = frameInterval
 
 function snap(timeInMs: number) {
-  return Math.round(timeInMs / frameInterval) * frameInterval
-}
-
-function snapDown(timeInMs: number) {
-  return Math.floor(timeInMs / frameInterval) * frameInterval
+  return Math.round(timeInMs / frameInterval.value) * frameInterval.value
 }
 
 function clamp(timeInMs: number, min: number, max: number) {
@@ -372,6 +370,7 @@ function formatTime(timeInMs: number) {
   <div
     v-radar="{ name: 'animation-video-preview', desc: 'Preview of the animation video' }"
     class="animation-video-preview"
+    :class="{ 'controls-below': controlsBelow }"
   >
     <div class="preview-area">
       <video ref="videoRef" class="video" :src="videoSrc ?? undefined" playsinline preload="metadata" muted loop />
@@ -463,6 +462,22 @@ function formatTime(timeInMs: number) {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.controls-below {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.controls-below .preview-area {
+  flex: 1;
+  min-height: 0;
+}
+
+.controls-below .controls {
+  position: static;
+  width: 100%;
+  flex: none;
 }
 
 .preview-area {

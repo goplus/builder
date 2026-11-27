@@ -17,6 +17,9 @@ export type Action = {
    * Adjacent **same** (reference-equal) mergeable actions will be merged into one history item.
    */
   mergeable?: boolean
+  /** Called after this action is undone or redone and the project has been restored. */
+  onUndo?: () => void
+  onRedo?: () => void
 }
 
 export type State = {
@@ -65,9 +68,11 @@ export class History {
     if (index < 0 || index >= this.states.length) throw new Error(`invalid index ${index}`)
     this.saveCurrentState()
     const { action, files } = this.states[index]
+    const afterRestore = index < this.index ? this.action?.onUndo : action?.onRedo
     this.index = index
     this.action = action
     await this.project.loadFiles(files)
+    afterRestore?.()
   }
 
   getRedoAction() {

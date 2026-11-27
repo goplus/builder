@@ -6,7 +6,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
 import { type DragSortableOptions, useDragSortable } from '@/utils/drag-and-drop'
 
-import { useSpriteGenModal } from '@/components/asset'
+import { useGenerateSprite } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteGenItem from '@/components/asset/gen/sprite/SpriteGenItem.vue'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
@@ -81,16 +81,11 @@ useDragSortable(list, listWrapper, {
   ...sortableOptions
 })
 
-const invokeSpriteGenModal = useSpriteGenModal()
+const generateSprite = useGenerateSprite()
 
 const handleSpriteGenClick = useMessageHandle(
   async (gen: SpriteGen) => {
-    const result = await invokeSpriteGenModal(editorCtx.project, gen)
-
-    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-      editorCtx.project.addSprite(result)
-      await result.autoFit()
-    })
+    const result = await generateSprite(gen)
     editorCtx.state.selectSprite(result.id)
   },
   {

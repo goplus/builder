@@ -2,6 +2,8 @@ import { defineComponent } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Visibility } from '@/apis/common'
+import { fromText } from '@/models/common/file'
+import type { IProject } from '@/models/project'
 import type { SpxProject } from '@/models/spx/project'
 import ProjectPublishModal from './ProjectPublishModal.vue'
 
@@ -115,10 +117,11 @@ function makeProject() {
   return project as unknown as SpxProject
 }
 
-function mountModal(project: SpxProject) {
+function mountModal(project: SpxProject, workingProject: Pick<IProject, 'export'> = project) {
   return mount(ProjectPublishModal, {
     props: {
       project,
+      workingProject,
       visible: true
     },
     global: {
@@ -150,13 +153,19 @@ describe('ProjectPublishModal', () => {
 
   it('creates a release from the saved public project revision', async () => {
     const project = makeProject()
-    const wrapper = mountModal(project)
+    const files = {
+      'main.spx': fromText('main.spx', 'run()'),
+      'gen/sprite-resources/index.json': fromText('index.json', '[]')
+    }
+    const workingCopy = { metadata: {}, files }
+    const wrapper = mountModal(project, { export: async () => workingCopy })
 
     await wrapper.get('textarea').setValue('Release notes')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     expect(project.setVisibility).toHaveBeenCalledWith(Visibility.Public)
+    expect(mocks.save).toHaveBeenCalledWith(workingCopy)
     const saveCallOrder = mocks.save.mock.invocationCallOrder[0]
     const releaseCallOrder = mocks.createProjectRelease.mock.invocationCallOrder[0]
     if (saveCallOrder == null || releaseCallOrder == null) throw new Error('Expected save and release calls')

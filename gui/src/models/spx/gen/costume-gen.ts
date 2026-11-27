@@ -13,6 +13,7 @@ import type { SpxProject } from '../project'
 import { Sprite } from '../sprite'
 import { Costume, type RawCostumeConfig } from '../costume'
 import {
+  type SpriteResourceOwner,
   getProjectSettings,
   getSpriteSettings,
   mapPhaseResult,
@@ -29,7 +30,6 @@ import {
   type StoredReferenceImageSelection,
   validateReferenceImage
 } from './reference-image'
-import { SpriteGen } from './sprite-gen'
 
 export type CostumeGenInits = {
   id?: string
@@ -74,7 +74,7 @@ function assetsPathFor(basePath: string, name: string) {
 export class CostumeGen extends Disposable {
   id: string
   private i18n: I18n
-  parent: Sprite | SpriteGen
+  parent: Sprite | SpriteResourceOwner
   get sprite(): Sprite {
     if (this.parent instanceof Sprite) return this.parent
     return this.parent.previewSprite
@@ -85,7 +85,7 @@ export class CostumeGen extends Disposable {
   private generatePhase: Phase<File>
   private finishPhase: Phase<Costume>
 
-  constructor(i18n: I18n, parent: Sprite | SpriteGen, project: SpxProject, inits: CostumeGenInits = {}) {
+  constructor(i18n: I18n, parent: Sprite | SpriteResourceOwner, project: SpxProject, inits: CostumeGenInits = {}) {
     super()
     this.id = inits.id ?? nanoid()
     this.i18n = i18n
@@ -117,6 +117,7 @@ export class CostumeGen extends Disposable {
     return this.settings.name
   }
   setName(name: string) {
+    if (name === this.name) return
     const err = validateCostumeName(name, this.parent)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.settings.name = name
@@ -278,7 +279,7 @@ export class CostumeGen extends Disposable {
 
   static load(
     i18n: I18n,
-    parent: Sprite | SpriteGen,
+    parent: Sprite | SpriteResourceOwner,
     project: SpxProject,
     config: RawCostumeGenConfig,
     files: Files,

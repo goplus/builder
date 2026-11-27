@@ -4,6 +4,9 @@ import { setupPageTests, mountPages, signIn, makeAsset } from '@/apps/xbuilder/p
 import { AssetType } from '@/apis/asset'
 import * as assetApis from '@/apis/asset'
 import { Visibility } from '@/apis/project'
+import { fromText } from '@/models/common/file'
+import { Costume } from '@/models/spx/costume'
+import { Sprite } from '@/models/spx/sprite'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 
@@ -47,6 +50,30 @@ describe('editor', () => {
     await rename.get('[aria-label="Name input"] input').setValue('ScoreDisplay')
     await rename.get('form').trigger('submit')
     await vi.waitFor(() => expect(project.stage.widgets[0].name).toBe('ScoreDisplay'))
+  })
+
+  it('duplicates a sprite with the changes of an action that was still running', async () => {
+    const { wrapper } = await mountPages('/editor/alice/First%20flight')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Sprites panel"]').exists()).toBe(true), { timeout: 4000 })
+    const { project, state } = wrapper.getComponent(EditorContextProvider).props()
+    const sprite = new Sprite('Fox')
+    sprite.addCostume(
+      new Costume('default', fromText('fox.svg', '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="36"/>'))
+    )
+    await state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, () => project.addSprite(sprite))
+    state.selectSprite(sprite.id)
+    let release = () => {}
+    const moving = state.history.doAction({ name: { en: 'Move sprite', zh: '移动精灵' } }, async () => {
+      await new Promise<void>((resolve) => (release = resolve))
+      sprite.setX(100)
+    })
+    await wrapper.get('[aria-label="Sprites panel"] [aria-label="Options button"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Duplicate"]').exists()).toBe(true))
+    await wrapper.get('[aria-label="Duplicate"]').trigger('click')
+    release()
+    await moving
+    await vi.waitFor(() => expect(project.sprites).toHaveLength(2))
+    expect(project.sprites[1].x).toBe(110)
   })
 
   it('searches the asset library, imports a backdrop and manages it with undo and redo', async () => {
@@ -175,7 +202,10 @@ describe('editor', () => {
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Rename modal"]').exists()).toBe(false))
 
     await wrapper.get('[aria-label="Animations tab"]').trigger('click')
-    await wrapper.get('[aria-label="Group costumes button"]').trigger('click')
+    await wrapper.get('[aria-label="Add animation"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[aria-label="Group costumes option"]').exists()).toBe(true))
+    expect(wrapper.find('[aria-label="Generate animation"]').exists()).toBe(true)
+    await wrapper.get('[aria-label="Group costumes option"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[aria-label="Group costumes modal"]').exists()).toBe(true))
     const grouping = wrapper.get('[aria-label="Group costumes modal"]')
     await grouping.get('[title="Idle"]').trigger('click')

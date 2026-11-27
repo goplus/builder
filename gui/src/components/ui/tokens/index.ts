@@ -75,6 +75,11 @@ export const lineHeight = {
   lg: '40px'
 } as const
 
+export const blockItemSize = {
+  md: '88px',
+  lg: '140px'
+} as const
+
 export const spacing = {
   // Tight inner spacing and compact gaps.
   sm: '4px',

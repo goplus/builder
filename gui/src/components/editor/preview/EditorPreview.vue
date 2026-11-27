@@ -366,7 +366,7 @@ const canManageProject = computed(() => {
   return true
 })
 const publishProject = usePublishProject()
-const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.project), {
+const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.state), {
   en: 'Failed to publish project',
   zh: '发布项目失败'
 }).fn

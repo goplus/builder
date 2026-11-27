@@ -75,11 +75,11 @@ withDefaults(
   }
 
   .ui-block-item.ui-block-item-medium {
-    --block-item-size: 88px;
+    --block-item-size: var(--ui-block-item-size-md);
   }
 
   .ui-block-item.ui-block-item-large {
-    --block-item-size: 140px;
+    --block-item-size: var(--ui-block-item-size-lg);
   }
 
   .ui-block-item.ui-block-item-interactive {

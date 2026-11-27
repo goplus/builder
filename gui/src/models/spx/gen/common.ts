@@ -46,6 +46,13 @@ function inferProjectPerspective(project: SpxProject): Perspective {
   return majorityOf(assetPerspectives) ?? Perspective.Unspecified
 }
 
+/** The sprite being previewed and the names reserved by its generated and adopted resources. */
+export interface SpriteResourceOwner {
+  previewSprite: Sprite
+  costumes: { name: string }[]
+  animations: { name: string }[]
+}
+
 export function getSpriteSettings(sprite: Sprite): SpriteSettings {
   const extraSettings = sprite.assetMetadata?.extraSettings ?? null
   return {

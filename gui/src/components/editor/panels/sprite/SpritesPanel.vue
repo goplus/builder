@@ -38,10 +38,9 @@
 import { computed } from 'vue'
 import { AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useSpriteGenModal } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile, useGenerateSprite } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
-import type { Sprite } from '@/models/spx/sprite'
 import SpriteList from '@/components/editor/sprite/SpriteList.vue'
 import PanelHeader from '../common/PanelHeader.vue'
 
@@ -74,15 +73,12 @@ const handleAddFromAssetLibrary = useMessageHandle(
   }
 ).fn
 
-const invokeSpriteGenModal = useSpriteGenModal()
+const generateSprite = useGenerateSprite()
 const handleGenerate = useMessageHandle(
   async () => {
-    const sprite: Sprite = await invokeSpriteGenModal(editorCtx.project)
-    await editorCtx.state.history.doAction({ name: { en: 'Add sprite', zh: '添加精灵' } }, async () => {
-      editorCtx.project.addSprite(sprite)
-      await sprite.autoFit()
-    })
+    const sprite = await generateSprite()
     editorCtx.state.selectSprite(sprite.id)
+    editorCtx.state.spriteState?.select('costumes')
   },
   {
     en: 'Failed to generate sprite',
