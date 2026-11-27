@@ -1,6 +1,6 @@
 # Asset Editing
 
-Users can edit the image, animation, and audio content of existing assets in the current [Project](./index.md#project). Adding, deleting, renaming, and animation settings are covered in [XBuilder](./index.md) and [Animation](./animation.md).
+Users can modify the image, animation visuals, and audio content of existing assets in the current [Project](./index.md#project), updating coupled settings and descriptions alongside the media. Adding, deleting, renaming, and general property settings (such as animation duration and state bindings) are covered in [XBuilder](./index.md) and [Animation](./animation.md).
 
 ## Background
 
@@ -12,7 +12,7 @@ Deterministic tool edits like trimming audio or adjusting volume can take effect
 
 * Costume editing
   - AI editing: Modify the whole image or specific parts based on an existing costume.
-  - Direct editing (planned): Crop the image and adjust dimensions or pivot.
+  - Direct editing (planned): Crop the image and adjust image size or offset.
 * Backdrop editing
   - AI editing: Modify the whole image or specific parts based on an existing backdrop.
 * Sound editing
@@ -25,9 +25,7 @@ Deterministic tool edits like trimming audio or adjusting volume can take effect
 
 ### Edit Targets
 
-Asset editing works on Costume, Backdrop, Animation, and Sound objects in the current Project. Edits only change the objects in the current Project and leave published [Assets](./index.md#asset) in the library untouched.
-
-Editing updates the complete asset object. When its image, frame sequence, or audio is replaced, its Name, code references, and bindings stay intact, while settings related to the content update together.
+Asset editing targets Costume, Backdrop, Animation, and Sound objects in the current Project (modifying only the objects in the current Project without affecting published [Assets](./index.md#asset) in the library). When an object's media content changes, settings coupled to that content update together, while its Name, code references, and state bindings stay intact.
 
 ### Editing Modes
 
@@ -36,7 +34,7 @@ Editing updates the complete asset object. When its image, frame sequence, or au
 
 ### Draft
 
-Each successful AI edit produces a Draft that records the input and candidate result from that run. Every edit target independently tracks its original version from when the round started, its ordered list of Drafts, and the currently selected version.
+Each successful AI edit produces a Draft that stores the input of that edit and the generated target object as a whole. Every edit target independently tracks its original version from when the round started, its ordered list of Drafts, and the currently selected version.
 
 Until the user applies or discards them, ongoing AI editing tasks and Drafts are saved with the [Project](./index.md#project) (restored only when the project owner reopens it in the editor), without entering the Project's Game content. Before adoption, Drafts are shown only for preview and comparison inside that object's editing view while the original version remains in effect across the Project; closing the editing view or saving the Project does not apply a Draft, and only confirming adoption replaces the original object with the selected Draft.
 
@@ -48,9 +46,9 @@ Users adjust content in the editor with live preview or playback; cancelling res
 
 ### AI Editing
 
-An AI edit starts from the currently selected version and generates a new version from the user's whole-asset or localized edit requirements; it also draws on the current Project Setting and the Asset Setting of the owning Sprite, Backdrop, or Sound when available.
+The input to an AI edit includes the currently selected version and the user's edit requirements (either an instruction for the whole asset, or separate instructions attached to one or more localized positions), while also drawing on the current Project Setting and the Asset Setting of the owning Sprite, Backdrop, or Sound when available.
 
-Once a Draft is applied, the original object updates to that version along with settings tied to its media:
+Each generated output is a complete target object (Costume, Backdrop, Animation, or Sound): besides the new image, animation frames, or audio, settings coupled to the media update right inside the Draft so users can preview and compare it accurately:
 
 * Costume: Updates resolution and Pivot for the new image so display size and alignment on stage stay consistent.
 * Animation: Updates frame sequences and Duration for the new animation.
@@ -70,9 +68,9 @@ In a Project, only Sprite, Backdrop, and Sound objects, which can be saved as st
 
 ## User Story
 
-### Editing a Sound Shared by Multiple Animations
+### Trimming and Previewing a Recorded Sound
 
-A user picks the same footstep Sound for both walking and landing animations, then opens the sound editor to trim the silence at the start, adjust the volume, and preview it. Saving updates that Sound directly, so both animations play the trimmed footstep sound.
+A user records a voice line as a Sound and opens the sound editor, noticing silence at the start and low volume during playback. They trim the opening silence, raise the volume, and preview it again; cancelling restores the previous state if needed, while saving updates the Sound immediately and allows stepping back through undo and redo in the editor.
 
 ### Editing a Character Costume with AI and Generating Follow-up Actions
 
