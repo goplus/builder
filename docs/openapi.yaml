@@ -1909,7 +1909,10 @@ paths:
       tags:
         - Projects
       summary: Update a project
-      description: Update the details of a specific project.
+      description: |
+        Update the supplied fields of a specific project.
+
+        The request fails with a conflict if the current project revision does not match `expectedRevision`.
       parameters:
         - name: owner
           description: Username of the project's owner.
@@ -1929,17 +1932,35 @@ paths:
           application/json:
             schema:
               type: object
-              minProperties: 1
+              required:
+                - expectedRevision
+              anyOf:
+                - required:
+                    - name
+                - required:
+                    - displayName
+                - required:
+                    - files
+                - required:
+                    - visibility
+                - required:
+                    - description
+                - required:
+                    - instructions
+                - required:
+                    - extraSettings
+                - required:
+                    - thumbnail
               properties:
                 name:
                   description: New name of the project. If provided, the project will be renamed.
                   $ref: "#/components/schemas/Project/properties/name"
+                displayName:
+                  $ref: "#/components/schemas/Project/properties/displayName"
                 files:
                   $ref: "#/components/schemas/Project/properties/files"
                 visibility:
                   $ref: "#/components/schemas/Project/properties/visibility"
-                displayName:
-                  $ref: "#/components/schemas/Project/properties/displayName"
                 description:
                   $ref: "#/components/schemas/Project/properties/description"
                 instructions:
@@ -1948,9 +1969,19 @@ paths:
                   $ref: "#/components/schemas/Project/properties/extraSettings"
                 thumbnail:
                   $ref: "#/components/schemas/Project/properties/thumbnail"
+                expectedRevision:
+                  description: Revision of the project state on which this update is based.
+                  $ref: "#/components/schemas/ProjectRevision"
+                expectedLatestReleaseID:
+                  $ref: "#/components/schemas/ExpectedProjectLatestReleaseID"
+            examples:
+              changeDisplayName:
+                value:
+                  displayName: Niu Xiao Qi
+                  expectedRevision: 7
       responses:
         "200":
-          description: Successfully updated the project.
+          description: Successfully updated the project. The revision advances only when an editable field changes.
           content:
             application/json:
               schema:
@@ -2487,7 +2518,7 @@ paths:
       description: |
         Create a new release for a specific project.
 
-        The request fails with a conflict if the current project revision does not match `projectRevision`.
+        The request fails with a conflict if the current project revision does not match `expectedProjectRevision`.
       parameters:
         - name: owner
           description: Username of the project's owner.
@@ -2510,7 +2541,7 @@ paths:
               required:
                 - name
                 - description
-                - projectRevision
+                - expectedProjectRevision
               properties:
                 name:
                   $ref: "#/components/schemas/ProjectRelease/properties/name"
@@ -2521,15 +2552,11 @@ paths:
                   allOf:
                     - $ref: "#/components/schemas/ProjectRelease/properties/thumbnail"
                   minLength: 1
-                projectRevision:
-                  description: |
-                    Expected revision of the project state from which to create the release. The request fails with a
-                    conflict if the current project revision does not match this value.
-                  type: integer
-                  format: int64
-                  minimum: 1
-                  examples:
-                    - 1
+                expectedProjectRevision:
+                  description: Revision of the project state from which to create the release.
+                  $ref: "#/components/schemas/ProjectRevision"
+                expectedLatestReleaseID:
+                  $ref: "#/components/schemas/ExpectedProjectLatestReleaseID"
       responses:
         "201":
           description: Successfully created the project release.
@@ -6828,24 +6855,24 @@ components:
             $ref: "#/components/schemas/MovedResourceError"
     ProjectUpdateConflict:
       description: |
-        The update conflicts with current project state because the requested project route moved or the requested name
-        is unavailable.
+        The requested name is unavailable, the project route has moved, or the project revision or latest release ID
+        does not match the expected value.
       content:
         application/json:
           schema:
             oneOf:
               - $ref: "#/components/schemas/ConflictError"
               - $ref: "#/components/schemas/MovedResourceError"
+              - $ref: "#/components/schemas/ProjectStateMismatchError"
     ProjectReleaseCreateConflict:
       description: |
-        The release creation conflicts with current project state because `projectRevision` does not match the current
-        project revision or the requested project route moved.
+        The project route has moved, or the project revision or latest release ID does not match the expected value.
       content:
         application/json:
           schema:
             oneOf:
-              - $ref: "#/components/schemas/ConflictError"
               - $ref: "#/components/schemas/MovedResourceError"
+              - $ref: "#/components/schemas/ProjectStateMismatchError"
     BadRequest:
       description: Invalid request syntax, parameters, or body.
       content:
@@ -7183,6 +7210,7 @@ components:
         | 40400 | 404 | Not found | The requested resource was not found. |
         | 40900 | 409 | Conflict | The request conflicts with current resource state. |
         | 40901 | 409 | Resource moved | The request used a historical resource route. |
+        | 40902 | 409 | Project state mismatch | The project revision or latest release ID did not match. |
         | 41300 | 413 | Content too large | Request or uploaded content exceeds the allowed size. |
         | 41500 | 415 | Unsupported media type | Request or uploaded content type is not supported. |
         | 42900 | 429 | Too many requests | Generic request throttling. |
@@ -7199,6 +7227,7 @@ components:
         - 40400
         - 40900
         - 40901
+        - 40902
         - 41300
         - 41500
         - 42900
@@ -7290,6 +7319,23 @@ components:
           $ref: "#/components/schemas/ProjectRelease/properties/name"
           examples:
             - v1.2.3
+
+    ProjectStateMismatchError:
+      description: Error payload for a project write that failed a revision or latest release ID check.
+      type: object
+      required:
+        - code
+        - msg
+      properties:
+        code:
+          type: integer
+          format: int32
+          enum:
+            - 40902
+        msg:
+          type: string
+          enum:
+            - Project state mismatch
 
     ByPage:
       description: Paginated response wrapper.
@@ -8511,12 +8557,8 @@ components:
 
             Changes to editable project content or metadata advance this revision. Creating releases and updating
             activity counters such as views, likes, and remixes do not.
-          type: integer
-          format: int64
-          minimum: 1
+          $ref: "#/components/schemas/ProjectRevision"
           readOnly: true
-          examples:
-            - 1
         files:
           description: File paths and their corresponding universal URLs associated with the project.
           type: object
@@ -8594,6 +8636,14 @@ components:
       examples:
         - john/NiuXiaoQi
 
+    ProjectRevision:
+      description: Monotonically increasing revision of an individual project's editable state.
+      type: integer
+      format: int64
+      minimum: 1
+      examples:
+        - 1
+
     ProjectRelease:
       description: A versioned release of a project.
       type: object
@@ -8653,6 +8703,14 @@ components:
       pattern: '^[A-Za-z0-9_-]{1,100}/[A-Za-z0-9_-]{1,100}/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
       examples:
         - john/NiuXiaoQi/v1.2.3
+
+    ExpectedProjectLatestReleaseID:
+      description: |
+        Expected ID of the latest release, checked alongside the project revision. Send `null` to require that
+        the project has no release. Omit this field to allow any latest release.
+      oneOf:
+        - $ref: "#/components/schemas/ProjectRelease/properties/id"
+        - type: "null"
 
     Asset:
       description: Reusable asset such as sprite, backdrop, or sound.
