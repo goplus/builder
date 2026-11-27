@@ -45,7 +45,7 @@ const emit = defineEmits<{
       <div class="flex flex-col items-center text-center">
         <UIImg :src="successImg" class="aspect-[2/1] w-full object-contain" />
         <div class="w-full rounded-lg bg-grey-300 px-6 py-8">
-          <div class="text-xl/[1.4] font-medium text-title">{{ $t({ en: 'Great!', zh: '太棒了！' }) }}</div>
+          <div class="text-xl/[1.4] font-medium text-title">{{ $t({ en: 'Lesson Complete', zh: '课程完成' }) }}</div>
           <CourseMarkdown
             class="mt-2 text-center"
             :value="

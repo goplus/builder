@@ -101,7 +101,7 @@ const { fn: handleStartNextCourse } = useMessageHandle(
       <div v-else class="flex flex-col items-center text-center">
         <UIImg :src="successImg" class="h-47.5 w-67.5" />
 
-        <div class="mt-5 text-2xl">{{ $t({ en: 'Great!', zh: '太棒了!' }) }}</div>
+        <div class="mt-5 text-2xl">{{ $t({ en: 'Lesson Complete', zh: '课程完成' }) }}</div>
         <div class="mt-2 text-base">{{ courseCompleteMessage }}</div>
 
         <div class="mt-10 w-full flex flex-col gap-5">
