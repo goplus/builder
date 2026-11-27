@@ -9,12 +9,15 @@ import browserslistToEsbuild from 'browserslist-to-esbuild'
 
 import { createAppHtmlEntryPlugin } from './build/vite-plugins/app-html-entry-plugin.js'
 import { createVercelOutputPlugin } from './build/vite-plugins/vercel-output-plugin.js'
+import { getDefaultLang } from './build/lang.js'
+import pageMeta from './src/apps/xbuilder/page-meta.json' with { type: 'json' }
 
 const resolve = (dir: string) => path.join(__dirname, dir)
 const xbuilderEnvDir = resolve('src/apps/xbuilder')
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, xbuilderEnvDir, '')
+  const defaultLang = getDefaultLang(env.VITE_DEFAULT_LANG)
   const vercelProxiedApiBaseURL =
     env.VITE_VERCEL_PROXIED_API_BASE_URL == null ? null : env.VITE_VERCEL_PROXIED_API_BASE_URL
 
@@ -34,7 +37,7 @@ export default defineConfig(({ mode }) => {
       createAppHtmlEntryPlugin(resolve('src/apps/xbuilder/index.html')),
       vue(),
       tailwindcss(),
-      ViteEjsPlugin(),
+      ViteEjsPlugin({ defaultLang, pageMeta: pageMeta[defaultLang] }),
       createVercelOutputPlugin({
         headers: [
           {
