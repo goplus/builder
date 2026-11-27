@@ -32,28 +32,25 @@
 ### 编辑方式
 
 * 直接编辑：通过编辑器工具直接修改内容，无需经过草稿筛选。
-* AI 编辑：基于已有内容和修改要求生成候选结果，任务状态与额度规则同 [Asset Generation](./assets-gen.zh.md#素材生成-asset-generation)。结果先存为 Draft，确认采用后才写入 Project 中的 Game。
+* AI 编辑：基于已有内容和修改要求生成候选结果，任务状态与额度规则同 [Asset Generation](./assets-gen.zh.md#素材生成-asset-generation)。结果先存为 Draft，确认采用后才在 Project 中生效。
 
 ### 草稿 Draft
 
 每次成功的 AI 编辑都会生成一版 Draft，记录这次修改的输入和候选结果。每个编辑目标各自维护本轮的原始版本、按序生成的 Draft 列表，以及当前选中的版本。
 
-用户采用或放弃之前，进行中的 AI 编辑任务和 Draft 会随 [Project](./index.zh.md#项目-project) 保存（仅项目拥有者下次在编辑器中打开时恢复），但不属于其中的游戏内容（Game）：
-
-* Draft 只在当前对象的编辑界面里预览和对比；舞台运行、导出、发布以及保存到素材库仍使用 Game 中的原版本。
-* 关闭编辑界面或保存 Project 不会让 Draft 生效；只有确认采用时，选中的 Draft 才会写入 Game 替换原对象。
+用户采用或放弃之前，进行中的 AI 编辑任务和 Draft 会随 [Project](./index.zh.md#项目-project) 保存（仅项目拥有者下次在编辑器中打开时恢复），但不进入 Project 的 Game 内容。采用前 Draft 只在当前对象的编辑界面里预览和对比，项目中生效的仍是原版本；关闭编辑界面或保存 Project 不会让 Draft 生效，只有确认采用时才会用选中的 Draft 替换原对象。
 
 ## 核心机制
 
 ### 直接编辑
 
-用户在编辑器中调整内容并实时预览或试听；取消时恢复修改前状态，保存后直接更新 Game 中的目标对象并记入撤销/重做历史。
+用户在编辑器中调整内容并实时预览或试听；取消时恢复修改前状态，保存后直接更新当前 Project 中的目标对象并记入撤销/重做历史。
 
 ### AI 编辑
 
 AI 编辑以当前选中的版本为基础，结合用户给出的整体或局部修改要求生成新版本；生成时也会参考当前 Project Setting，以及所属 Sprite、Backdrop 或 Sound 的 Asset Setting。
 
-采用某版 Draft 后，Game 中的原对象更新为这版内容，与媒体相关的配置一并调整：
+采用某版 Draft 后，原对象更新为这版内容，与媒体相关的配置一并调整：
 
 * Costume：按新图像更新分辨率和参考点（Pivot），保持舞台显示尺寸与对齐位置一致。
 * Animation：按新动画更新帧序列和 Duration。
@@ -62,11 +59,11 @@ AI 编辑以当前选中的版本为基础，结合用户给出的整体或局�
 
 用户可以在原始版本和各版 Draft 之间切换预览，也可以基于当前选中的任一版本继续用 AI 修改。如果切回原始版本或较早的一版 Draft 重新生成，新生成的 Draft 会接在那一版后面，替换掉它之后原有的草稿；如果生成失败或中途取消，已有的 Draft 保留不变。
 
-确认采用时，当前选中的 Draft 写入 Game，并记入编辑器的撤销/重做历史；选择放弃时，Game 保留原版本不变。采用或放弃都会结束本轮编辑，并清掉该对象的 Draft。
+确认采用时，用当前选中的 Draft 替换原对象，并记入编辑器的撤销/重做历史；选择放弃时保留原对象不变。采用或放弃都会结束本轮编辑，并清掉该对象的 Draft。
 
 ### Asset Setting 同步
 
-进入 Game 后，只有可独立保存为 Asset 的 Sprite、Backdrop、Sound 会保留各自的 [Asset Setting](./assets-gen.zh.md#素材设定-asset-setting)，Costume 和 Animation 不单独保存。它们在 Game 中的内容变化后，后台会异步更新对应的 Asset Setting，不阻塞当前编辑和游戏运行：
+在 Project 中，只有可独立保存为 Asset 的 Sprite、Backdrop、Sound 会保留各自的 [Asset Setting](./assets-gen.zh.md#素材设定-asset-setting)，Costume 和 Animation 不单独保存。这些对象生效的内容变化后，后台会异步更新对应的 Asset Setting，不阻塞当前编辑和游戏运行：
 
 * Backdrop、Sound：按修改后的实际内容更新 Asset Setting；原本没有设定的素材（如本地上传的文件），会根据当前内容补上一份设定。
 * Sprite：Asset Setting 只记录各 Costume 和 Animation 共有的特征。当其下的 Costume 或 Animation 被编辑或增删时，系统会同步更新 Sprite 的设定：所有子项共同变化的特征一并更新，彼此不一致的细节退回更宽泛的共同描述，原有子项全部换掉时则按新内容重新生成设定。
@@ -75,7 +72,7 @@ AI 编辑以当前选中的版本为基础，结合用户给出的整体或局�
 
 ### 剪辑多个动画共用的声音
 
-用户给角色的行走动画和落地动画选了同一个脚步声 Sound，在声音编辑器里剪掉录音开头的空白、调好音量并试听。保存后，Game 里的这份 Sound 直接更新，行走和落地动画都会播放剪辑后的脚步声。
+用户给角色的行走动画和落地动画选了同一个脚步声 Sound，在声音编辑器里剪掉录音开头的空白、调好音量并试听。保存后，这份 Sound 直接更新，行走和落地动画都会播放剪辑后的脚步声。
 
 ### 用 AI 修改角色造型并继续生成动作
 

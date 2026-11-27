@@ -27,33 +27,30 @@ Deterministic tool edits like trimming audio or adjusting volume can take effect
 
 Asset editing works on Costume, Backdrop, Animation, and Sound objects in the current Project. Edits only change the objects in the current Project and leave published [Assets](./index.md#asset) in the library untouched.
 
-Editing updates the complete asset object. When its image, frame sequence, or audio is replaced, its Name, code references, and bindings stay intact, while settings coupled to the media update together.
+Editing updates the complete asset object. When its image, frame sequence, or audio is replaced, its Name, code references, and bindings stay intact, while settings related to the content update together.
 
 ### Editing Modes
 
-* Direct editing: Modifies content with deterministic editor tools without going through drafts.
-* AI editing: Generates candidate versions from existing content and edit requirements, sharing task states and quota rules with [Asset Generation](./assets-gen.md#asset-generation). Results are kept as Drafts first and written to the Project's Game only when applied.
+* Direct editing: Modifies content directly with editor tools without going through drafts.
+* AI editing: Generates candidate versions from existing content and edit requirements, sharing task states and quota rules with [Asset Generation](./assets-gen.md#asset-generation). Results are kept as Drafts first and take effect in the Project only when applied.
 
 ### Draft
 
 Each successful AI edit produces a Draft that records the input and candidate result from that run. Every edit target independently tracks its original version from when the round started, its ordered list of Drafts, and the currently selected version.
 
-Until the user applies or discards them, ongoing AI editing tasks and Drafts are saved with the [Project](./index.md#project) (restored only when the project owner reopens it in the editor), outside its Game content:
-
-* Drafts are shown only for preview and comparison inside that object's editing view, while stage execution, exports, releases, and saving to the asset library keep using the original version in the Game.
-* Closing the editing view or saving the Project does not apply a Draft; it takes effect only when the user confirms applying a selected Draft, replacing the object in the Game.
+Until the user applies or discards them, ongoing AI editing tasks and Drafts are saved with the [Project](./index.md#project) (restored only when the project owner reopens it in the editor), without entering the Project's Game content. Before adoption, Drafts are shown only for preview and comparison inside that object's editing view while the original version remains in effect across the Project; closing the editing view or saving the Project does not apply a Draft, and only confirming adoption replaces the original object with the selected Draft.
 
 ## Core Mechanisms
 
 ### Direct Editing
 
-Users adjust content in the editor with live preview or playback; cancelling restores the state before editing, while saving updates the target object in the Game directly and records an undo/redo entry.
+Users adjust content in the editor with live preview or playback; cancelling restores the state before editing, while saving updates the target object in the current Project directly and records an undo/redo entry.
 
 ### AI Editing
 
 An AI edit starts from the currently selected version and generates a new version from the user's whole-asset or localized edit requirements; it also draws on the current Project Setting and the Asset Setting of the owning Sprite, Backdrop, or Sound when available.
 
-Once a Draft is applied, the object in the Game updates to that version along with settings tied to its media:
+Once a Draft is applied, the original object updates to that version along with settings tied to its media:
 
 * Costume: Updates resolution and Pivot for the new image so display size and alignment on stage stay consistent.
 * Animation: Updates frame sequences and Duration for the new animation.
@@ -62,11 +59,11 @@ Once a Draft is applied, the object in the Game updates to that version along wi
 
 Users can switch between the original version and any Draft to preview them, and continue editing with AI from whichever version is selected. Stepping back to the original version or an earlier Draft and generating again places the new Draft right after that version and replaces the later Drafts; if a run fails or is cancelled, existing Drafts stay intact.
 
-Applying writes the selected Draft to the Game and adds an undo/redo entry in the editor; discarding leaves the original version in the Game unchanged. Either action ends the round and clears that object's Drafts.
+Applying replaces the original object with the selected Draft and adds an undo/redo entry in the editor; discarding leaves the original object unchanged. Either action ends the round and clears that object's Drafts.
 
 ### Asset Setting Synchronization
 
-Once in the Game, only Sprite, Backdrop, and Sound objects, which can be saved as standalone Assets, retain their own [Asset Setting](./assets-gen.md#asset-setting); Costume and Animation do not store separate settings. After an asset's content in the Game changes, XBuilder updates the corresponding Asset Setting asynchronously in the background without blocking editing or running the game:
+In a Project, only Sprite, Backdrop, and Sound objects, which can be saved as standalone Assets, retain their own [Asset Setting](./assets-gen.md#asset-setting); Costume and Animation do not store separate settings. After an asset's effective content in the Project changes, XBuilder updates the corresponding Asset Setting asynchronously in the background without blocking editing or running the game:
 
 * Backdrop and Sound: Updates Asset Setting to reflect the modified content, or generates one if the asset had no setting yet (such as an uploaded local file).
 * Sprite: Asset Setting only describes traits shared across its Costume and Animation items. When those items are edited, added, or removed, XBuilder updates the Sprite setting accordingly: changes shared across all items update together, traits that now differ broaden to what they still share, and if all original items are replaced, a fresh setting is generated from the new content.
@@ -75,7 +72,7 @@ Once in the Game, only Sprite, Backdrop, and Sound objects, which can be saved a
 
 ### Editing a Sound Shared by Multiple Animations
 
-A user picks the same footstep Sound for both walking and landing animations, then opens the sound editor to trim the silence at the start, adjust the volume, and preview it. Saving updates that Sound in the Game directly, so both animations play the trimmed footstep sound.
+A user picks the same footstep Sound for both walking and landing animations, then opens the sound editor to trim the silence at the start, adjust the volume, and preview it. Saving updates that Sound directly, so both animations play the trimmed footstep sound.
 
 ### Editing a Character Costume with AI and Generating Follow-up Actions
 
