@@ -1,5 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { createI18n } from '@/utils/i18n'
 import type { APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
 
@@ -23,6 +24,7 @@ vi.mock('@/utils/exception', async (importOriginal) => ({
 
 describe('API Reference insertion', () => {
   it('disables insertion and dragging while read-only, then restores insertion', async () => {
+    const setVisible = vi.fn()
     const item = {
       definition: { package: 'spx', name: 'say', overloadId: '0' },
       insertSnippetParameterHints: []
@@ -30,12 +32,14 @@ describe('API Reference insertion', () => {
     const wrapper = shallowMount(APIReferenceItemComp, {
       props: { item, interactionDisabled: false, disabled: true },
       global: {
+        plugins: [createI18n({ lang: 'en' })],
         directives: { radar: {} },
         stubs: {
+          APIReferenceItemRow: false,
           UIDropdown: {
             name: 'UIDropdown',
-            props: ['disabled'],
-            methods: { setVisible: vi.fn() },
+            props: { disabled: Boolean },
+            methods: { setVisible },
             template: '<div><slot name="trigger" /></div>'
           }
         }
@@ -55,6 +59,7 @@ describe('API Reference insertion', () => {
     expect(trigger.attributes('draggable')).toBe('true')
     await trigger.trigger('mousedown')
     expect(trigger.classes()).toContain('before-dragging')
+    expect(setVisible).toHaveBeenCalledExactlyOnceWith(false)
     await trigger.trigger('mouseup')
     expect(trigger.classes()).not.toContain('before-dragging')
     await trigger.trigger('click')

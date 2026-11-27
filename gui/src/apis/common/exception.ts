@@ -48,7 +48,9 @@ export enum ApiExceptionCode {
   errorTooManyRequests = 42900,
   errorRateLimitExceeded = 42901,
   errorInternalServerError = 50000,
-  errorScratchFeatureNotSupported = 50101
+  errorScratchFeatureNotSupported = 50101,
+  errorServiceUnavailable = 50300,
+  errorGatewayTimeout = 50400
 }
 
 export type MovedResourceCanonical = {
@@ -128,5 +130,13 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorScratchFeatureNotSupported]: {
     en: 'Some Scratch features are not supported yet',
     zh: '部分 Scratch 特性暂不支持'
+  },
+  [ApiExceptionCode.errorServiceUnavailable]: {
+    en: 'service unavailable',
+    zh: '服务暂不可用'
+  },
+  [ApiExceptionCode.errorGatewayTimeout]: {
+    en: 'request timed out',
+    zh: '请求超时'
   }
 }

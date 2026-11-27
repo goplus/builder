@@ -40,6 +40,10 @@ export class APIReferenceController extends Disposable {
     return this.ui.codeEditor.apiReferenceProvider.provideCategoryViewInfos()
   }
 
+  search(items: APIReferenceItem[], query: string, signal: AbortSignal) {
+    return this.ui.codeEditor.apiReferenceProvider.searchAPIReference(items, query, signal)
+  }
+
   init() {
     this.addDisposer(
       watch(

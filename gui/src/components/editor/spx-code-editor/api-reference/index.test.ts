@@ -1,15 +1,22 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import * as exception from '@/utils/exception'
 import { packageSpx } from '@/utils/spx'
+import { createAPIReferenceSearch } from '@/apis/api-reference'
+import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import {
   DocumentBase,
   getTextDocumentId,
   parseDefinitionId,
   stringifyDefinitionId,
-  type APIReferenceContext
+  type APIReferenceContext,
+  type APIReferenceItem
 } from '@/components/xgo-code-editor'
 import * as spxDefinitions from '../document-base'
 import { keys } from '../document-base/key'
 import { SpxAPIReferenceProvider } from '.'
+import { getAPIReferenceSearchText } from './search'
+
+vi.mock('@/apis/api-reference', () => ({ createAPIReferenceSearch: vi.fn() }))
 
 function spxId(name: string) {
   return `xgo:${packageSpx}?${name}`
@@ -122,5 +129,86 @@ describe('SPX API Reference selection', () => {
     const apis = ['Game.onKey#0', 'Sprite.onKey#1'].map(spxId)
     expect(await references(apis)).toEqual([spxDefinitions.spriteOnKey1])
     expect(await references(apis, 'main.spx')).toEqual([spxDefinitions.gameOnKey0])
+  })
+})
+
+function candidates(): APIReferenceItem[] {
+  return ['animate', 'animateAndWait', 'play', 'wait'].map(
+    (name) =>
+      ({
+        definition: { package: 'spx', name: `Sprite.${name}` },
+        overview: `${name} name`,
+        detail: { value: { en: name, zh: name } }
+      }) as APIReferenceItem
+  )
+}
+
+describe('SPX API Reference search', () => {
+  const provider = new SpxAPIReferenceProvider(new DocumentBase())
+  it('retains related animation variants while excluding distant semantic results', async () => {
+    const items = candidates()
+    const signal = new AbortController().signal
+    vi.mocked(createAPIReferenceSearch).mockResolvedValue({
+      scores: [0.8, 0.82, 0.67, 0.4]
+    })
+    expect(await provider.searchAPIReference(items, '播放动画', signal)).toEqual([items[1], items[0]])
+    expect(createAPIReferenceSearch).toHaveBeenLastCalledWith(
+      {
+        query: '播放动画',
+        candidates: items.map(getAPIReferenceSearchText)
+      },
+      signal
+    )
+  })
+
+  it('allows no match and keeps direct names even below the semantic threshold', async () => {
+    const items = candidates()
+    vi.mocked(createAPIReferenceSearch).mockResolvedValue({
+      scores: items.map(() => 0.5)
+    })
+    expect(await provider.searchAPIReference(items, '明天的天气', new AbortController().signal)).toEqual([])
+    expect(await provider.searchAPIReference(items, 'animate', new AbortController().signal)).toEqual(items.slice(0, 2))
+  })
+
+  it('reports malformed scores and falls back to name matching', async () => {
+    const capture = vi.spyOn(exception, 'capture')
+    const items = candidates()
+    vi.mocked(createAPIReferenceSearch).mockResolvedValue({ scores: [0.9] })
+    await expect(provider.searchAPIReference(items, 'animate', new AbortController().signal)).resolves.toEqual(
+      items.slice(0, 2)
+    )
+    expect(capture).toHaveBeenCalledExactlyOnceWith(expect.any(Error), 'POST /api-reference-searches failed')
+    capture.mockRestore()
+  })
+
+  it.each([
+    { code: ApiExceptionCode.errorServiceUnavailable, reported: false },
+    { code: ApiExceptionCode.errorRateLimitExceeded, reported: true },
+    { code: ApiExceptionCode.errorInternalServerError, reported: true },
+    { code: ApiExceptionCode.errorGatewayTimeout, reported: true }
+  ])('falls back after search API error $code (reported: $reported)', async ({ code, reported }) => {
+    const capture = vi.spyOn(exception, 'capture')
+    const items = candidates()
+    const error = new ApiException(code, 'Search failed', {
+      req: new Request('https://example.test/api-reference-searches', { method: 'POST' })
+    })
+    vi.mocked(createAPIReferenceSearch).mockRejectedValueOnce(error)
+
+    await expect(provider.searchAPIReference(items, 'animate', new AbortController().signal)).resolves.toEqual(
+      items.slice(0, 2)
+    )
+    if (reported) expect(capture).toHaveBeenCalledExactlyOnceWith(error, 'POST /api-reference-searches failed')
+    else expect(capture).not.toHaveBeenCalled()
+    capture.mockRestore()
+  })
+
+  it('preserves cancellation instead of returning name matches', async () => {
+    const controller = new AbortController()
+    const reason = new exception.Cancelled('Search replaced')
+    vi.mocked(createAPIReferenceSearch).mockRejectedValueOnce(reason)
+    const result = provider.searchAPIReference(candidates(), 'animate', controller.signal)
+    controller.abort(reason)
+
+    await expect(result).rejects.toBe(reason)
   })
 })

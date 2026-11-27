@@ -83,7 +83,7 @@ export interface ICodeEditorUIController {
   dispose(): void
 }
 
-export const builtInCommandCopilotInspire: Command<[problem: string], void> = 'xgo.copilot.inspire'
+export const builtInCommandCopilotAsk: Command<[question: string], void> = 'xgo.copilot.inspire'
 export const builtInCommandCopilotExplain: Command<[target: CopilotExplainTarget], void> = 'xgo.copilot.explain'
 export const builtInCommandCopilotReview: Command<[target: CopilotReviewTarget], void> = 'xgo.copilot.review'
 export const builtInCommandCopilotFixProblem: Command<[target: CopilotFixProblemTarget], void> =
@@ -489,12 +489,13 @@ export class CodeEditorUIController extends Disposable implements ICodeEditorUIC
   }
 
   private registerCopilotCommands(copilot: ICopilot) {
-    this.registerCommand(builtInCommandCopilotInspire, {
+    const askCopilotTitle = { en: 'Ask Copilot', zh: '问问 Copilot' }
+    this.registerCommand(builtInCommandCopilotAsk, {
       icon: 'copilot',
-      title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
-      handler: (problem) => {
-        copilot.addUserTextMessage(problem, {
-          title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
+      title: askCopilotTitle,
+      handler: (question) => {
+        copilot.addUserTextMessage(question, {
+          title: askCopilotTitle,
           description: '',
           reactToEvents: false
         })

@@ -141,6 +141,7 @@ When working with backend unique string identifiers such as `username`, project 
 
 ## Vue Component Development
 
+* Add a comment for every `await nextTick()` explaining which Vue render or DOM update it waits for.
 * Generate accessibility info for interactive elements using `v-radar` directive. It sets `aria-label` from `name`, so do not add a separate `aria-label` to the same element.
 * Before adding Radar metadata, read `src/utils/radar/README.md` for its naming and accessibility conventions.
 * Keep Vue SFC sections in this logical order when applicable: optional `<script>`, `<script setup>`, `<template>`, then optional `<style>`.

@@ -1,13 +1,34 @@
 import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowReactive } from 'vue'
+import { EmptyAPIReferenceProvider } from '../../api-reference'
 import type { ITextDocument } from '../../common'
 import type { CodeEditorUIController } from '../code-editor-ui'
 import { APIReferenceController, type APIReferenceItem, type IAPIReferenceProvider } from '.'
 
 function createProvider(provideAPIReference: IAPIReferenceProvider['provideAPIReference']): IAPIReferenceProvider {
-  return { provideAPIReference, provideCategoryViewInfos: () => null }
+  return Object.assign(new EmptyAPIReferenceProvider(), { provideAPIReference })
 }
+
+it('uses the current provider for search and supports the default local matcher', async () => {
+  const animate = { definition: { name: 'Sprite.animate' }, overview: 'animate name' } as APIReferenceItem
+  const say = { definition: { name: 'Sprite.say' }, overview: 'say message' } as APIReferenceItem
+  const items = [animate, say]
+  const codeEditor = { apiReferenceProvider: createProvider(async () => items) }
+  const controller = new APIReferenceController({ codeEditor } as unknown as CodeEditorUIController)
+  const signal = new AbortController().signal
+
+  expect(await controller.search(items, ' MESSAGE ', signal)).toEqual([say])
+
+  const searchAPIReference = vi.fn().mockResolvedValue([animate])
+  codeEditor.apiReferenceProvider = Object.assign(
+    createProvider(async () => items),
+    { searchAPIReference }
+  )
+  expect(await controller.search(items, 'run an animation', signal)).toEqual([animate])
+  expect(searchAPIReference).toHaveBeenCalledExactlyOnceWith(items, 'run an animation', signal)
+  controller.dispose()
+})
 
 describe('API Reference data loading', () => {
   it('distinguishes pending requests from completed empty results on provider and document changes', async () => {

@@ -67,7 +67,7 @@ const getUINodeTextContentParamsSchema = z.object({
 
 class GetUINodeTextContentTool implements ToolDefinition {
   name = 'get_ui_node_text_content'
-  description = 'Get text content of the first visible UI node selected by a Radar selector.'
+  description = 'Get rendered text of the first visible UI node selected by a Radar selector.'
   parameters = getUINodeTextContentParamsSchema
 
   constructor(private radar: Radar) {}
@@ -75,7 +75,7 @@ class GetUINodeTextContentTool implements ToolDefinition {
   async implementation({ selector }: z.infer<typeof getUINodeTextContentParamsSchema>) {
     const nodeInfo = this.radar.select(selector)
     if (nodeInfo == null) throw new Error(`No visible Radar node matches selector: ${selector}`)
-    const textContent = nodeInfo.getElement()?.textContent ?? ''
+    const textContent = nodeInfo.getElement().innerText
     const textContentPreview = unicodeSafeSlice(textContent, 0, 500)
     return textContentPreview === textContent ? textContent : textContentPreview + '...'
   }
@@ -125,7 +125,7 @@ Each UI element's tag and attributes form a Radar selector. Use a selector whene
 
 DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly represented in the UI structure.
 
-If there's an API References UI in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
+If there's an API References panel in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
   }
 }
 
