@@ -18,14 +18,15 @@ In XBuilder, we allow users to modify the content of existing assets in the curr
 
 ## Basic Concepts
 
-There are two editing modes:
+There are two editing modes: direct editing and AI editing.
 
-* Direct editing: Modifies content or configuration with editor tools, and changes take effect directly.
-* AI editing: Generates Drafts from edit requirements, which take effect once applied; task states and quota rules are shared with [Asset Generation](./assets-gen.md#asset-generation).
+### Direct Editing
 
-### Draft
+Users modify content or configuration with editor tools, and changes take effect directly.
 
-Each successful AI edit produces a Draft. A Draft includes the following information:
+### AI Editing
+
+AI editing generates new versions from edit requirements, sharing task states and quota rules with [Asset Generation](./assets-gen.md#asset-generation). Each successful AI edit produces a Draft, which takes effect only once applied. A Draft includes the following information:
 
 * Input: The input of this edit, including the version it is based on and the edit requirements.
 * Result: The generated target object as a whole.
@@ -38,7 +39,7 @@ We call the period from the first AI edit requested on an object until the user 
 
 ## Core Mechanisms
 
-### AI Editing
+### AI Editing Input and Output
 
 The input to an AI edit includes:
 
