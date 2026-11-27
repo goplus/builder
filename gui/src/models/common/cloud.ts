@@ -181,7 +181,7 @@ async function save(metadata: PartialMetadata, files: Files, signal?: AbortSigna
 async function parseProjectData({ files: fileCollection, thumbnail: thumbnailUniversalUrl, ...extra }: ProjectData) {
   const files = getFiles(fileCollection)
   const thumbnail = thumbnailUniversalUrl === '' ? null : createFileWithUniversalUrl(thumbnailUniversalUrl)
-  const { aiDescription, aiDescriptionHash } = await extractAIDescription(files)
+  const { aiDescription, aiDescriptionHash } = await extractAIDescription(extra.type, files)
 
   const metadata: Metadata = { ...extra, thumbnail, aiDescription, aiDescriptionHash }
   return { metadata, files }

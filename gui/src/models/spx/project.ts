@@ -9,7 +9,7 @@ import { join } from '@/utils/path'
 import { debounce } from 'lodash'
 import { Disposable, getCleanupSignal, withTimeout } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
-import { Cancelled, capture } from '@/utils/exception'
+import { Cancelled, capture, DefaultException } from '@/utils/exception'
 import { getSpxProjectKnowledge } from '@/utils/spx'
 import { getStringLengthInCodePoints, unicodeSafeSlice } from '@/utils/utils'
 import { ProjectType, Visibility, type ProjectExtraSettings } from '@/apis/project'
@@ -425,6 +425,12 @@ export class SpxProject extends Disposable implements IProject {
   }
 
   setMetadata(metadata: PartialMetadata) {
+    if (metadata.type != null && metadata.type !== ProjectType.Game) {
+      throw new DefaultException({
+        en: 'A game project is required.',
+        zh: '此处需要游戏项目。'
+      })
+    }
     assign<SpxProject>(this, metadata)
   }
 

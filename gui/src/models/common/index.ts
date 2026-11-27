@@ -1,3 +1,4 @@
+import { ProjectType } from '@/apis/project'
 import { fromText, toText, type Files } from './file'
 import type { PartialMetadata } from '../project'
 
@@ -16,6 +17,7 @@ const aiDescriptionHashFileName = 'builder-ai-description.hash'
 /** Create AI description files from metadata */
 export function createAIDescriptionFiles(metadata: PartialMetadata): Files {
   const files: Files = {}
+  if (metadata.type != null && metadata.type !== ProjectType.Game) return files
   if (metadata.aiDescription != null) {
     files[aiDescriptionFileName] = fromText(aiDescriptionFileName, metadata.aiDescription)
   }
@@ -26,10 +28,14 @@ export function createAIDescriptionFiles(metadata: PartialMetadata): Files {
 }
 
 /** Extract AI description from files and remove them from files */
-export async function extractAIDescription(files: Files): Promise<{
+export async function extractAIDescription(
+  type: ProjectType,
+  files: Files
+): Promise<{
   aiDescription: string | null
   aiDescriptionHash: string | null
 }> {
+  if (type !== ProjectType.Game) return { aiDescription: null, aiDescriptionHash: null }
   let aiDescription: string | null = null
   const aiDescriptionFile = files[aiDescriptionFileName]
   if (aiDescriptionFile != null) {

@@ -41,13 +41,6 @@ export async function load(xbpFile: File) {
       const file = new LazyFile(filename(path), () => Promise.resolve(uint8Array.buffer))
       if (path === metadataFileName) {
         const m = (await toConfig(file)) as PartialMetadata
-        if (m.type == null) m.type = ProjectType.Game // Default to Game type for backward compatibility
-        if (!isSupportedProjectType(m.type)) {
-          throw new DefaultException({
-            en: `The project type "${m.type}" is not supported.`,
-            zh: `该项目类型暂不支持：${m.type}。`
-          })
-        }
         Object.assign(metadata, m)
         return
       }
@@ -59,7 +52,14 @@ export async function load(xbpFile: File) {
     })
   )
 
-  const { aiDescription, aiDescriptionHash } = await extractAIDescription(files)
+  if (metadata.type == null) metadata.type = ProjectType.Game // Default to Game type for backward compatibility
+  if (!isSupportedProjectType(metadata.type)) {
+    throw new DefaultException({
+      en: `The project type "${metadata.type}" is not supported.`,
+      zh: `该项目类型暂不支持：${metadata.type}。`
+    })
+  }
+  const { aiDescription, aiDescriptionHash } = await extractAIDescription(metadata.type, files)
   metadata.aiDescription = aiDescription
   metadata.aiDescriptionHash = aiDescriptionHash
 
