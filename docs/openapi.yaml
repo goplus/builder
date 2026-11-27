@@ -1823,7 +1823,7 @@ paths:
                   description: Defaults to `name` if not provided.
                   $ref: "#/components/schemas/Project/properties/displayName"
                 type:
-                  description: Defaults to `game` if not provided.
+                  description: A remix always inherits the source project's type. For other projects, this defaults to `game` when omitted.
                   $ref: "#/components/schemas/Project/properties/type"
                 files:
                   description: |
@@ -8496,6 +8496,8 @@ components:
           type: string
           enum:
             - game
+            - guided-course
+            - playground-course
           examples:
             - game
         displayName:
